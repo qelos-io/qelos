@@ -1,6 +1,6 @@
 import {computed, reactive} from 'vue'
 import router from '../../../router'
-import {api} from '../../../services/api'
+import {api} from '@/services/api'
 import {IAuthStore} from './types/auth-store'
 import {IUser} from './types/user'
 
@@ -11,6 +11,7 @@ export const authStore = reactive<IAuthStore>({
 })
 
 export const isAdmin = computed(() => !!(authStore.user && authStore.user.roles.includes('admin')));
+export const isPrivilegedUser = computed(() => isAdmin.value || authStore.user.roles.includes('editor'));
 
 export const logout = () => {
   authStore.user = null
@@ -32,7 +33,7 @@ export const fetchAuthUser = async () => {
   try {
     authStore.userPromise = api.get<IUser>('/api/me').then(res => res.data)
     const user = await authStore.userPromise
-    if (user?.roles.find(role => role === 'admin' || role === 'editor')) {
+    if (user?.roles?.length) {
       authStore.user = user
       return user
     } else {
@@ -49,7 +50,6 @@ export const login = async ({email, password}: { email: string, password: string
   const {data: {payload}} = await api.post<{ payload: { user: IUser } }>('/api/signin', {
     email,
     password,
-    roles: ['admin', 'editor']
   })
   authStore.user = payload.user
   authStore.isLoaded = true

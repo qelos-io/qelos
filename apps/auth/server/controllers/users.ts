@@ -161,6 +161,7 @@ async function updateUser(req: AuthRequest, res: Response) {
         tenant: req.headers.tenant
       })
       newInternalMetadata = userInternalMetadata.metadata = Object.assign(userInternalMetadata.metadata || {}, internalMetadata);
+      userInternalMetadata.markModified('metadata')
       await userInternalMetadata.save();
     }
     res.status(200).json({

@@ -2,7 +2,7 @@
   <nav :class="{show: opened}">
     <div class="mobile-mask" @click="close"/>
     <router-link to="/" class="home-logo">
-      <img alt="greenpress Admin Panel" src="../../../../assets/logo.png">
+      <img alt="SaaS" :src="config?.metadata.logoUrl">
     </router-link>
 
     <el-menu router>
@@ -14,7 +14,7 @@
         </el-menu-item>
       </div>
 
-      <div class="nav-group">
+      <div class="nav-group" v-if="isPrivilegedUser">
         <h4>{{ $t('CONTENT') }}</h4>
         <el-sub-menu index="1">
           <template #title>
@@ -47,7 +47,7 @@
         </el-sub-menu>
       </div>
 
-      <div class="nav-group">
+      <div class="nav-group" v-if="isPrivilegedUser">
         <h4>{{ $t('LOOK AND FEEL') }}</h4>
         <el-menu-item :route="{name: 'layouts'}" index="/layouts">
           <el-icon>
@@ -57,7 +57,7 @@
         </el-menu-item>
       </div>
 
-      <div class="nav-group">
+      <div class="nav-group" v-if="isPrivilegedUser">
         <h4>{{ $t('COMPONENTS') }}</h4>
 
         <el-menu-item :route="{name: 'menus'}" index="/menus">
@@ -82,7 +82,7 @@
         </el-sub-menu>
       </div>
 
-      <div class="nav-group">
+      <div class="nav-group" v-if="isPrivilegedUser">
         <h4>{{ $t('MANAGE') }}</h4>
         <el-menu-item :route="{name: 'storageList'}" index="/assets">
           <el-icon>
@@ -138,10 +138,12 @@
 import {useRouter} from 'vue-router';
 import {storeToRefs} from 'pinia';
 import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
-import {isAdmin} from '@/modules/core/store/auth';
+import {isAdmin, isPrivilegedUser} from '@/modules/core/store/auth';
+import {useAppConfiguration} from '@/modules/configurations/store/app-configuration';
 
 const router = useRouter()
 const {microFrontends} = storeToRefs(usePluginsMicroFrontends());
+const config = useAppConfiguration();
 
 defineProps({opened: Boolean})
 const emit = defineEmits(['close'])

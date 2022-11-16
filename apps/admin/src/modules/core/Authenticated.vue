@@ -4,7 +4,7 @@
     <div class="admin-content">
       <Header class="header" @open="navigationOpened = true"/>
       <router-view class="main"/>
-      <AssetsDetailsPanel/>
+      <AssetsDetailsPanel v-if="isPrivilegedUser"/>
     </div>
   </div>
 </template>
@@ -16,11 +16,11 @@ import Header from './components/layout/Header.vue'
 import Navigation from './components/layout/Navigation.vue'
 import AssetsDetailsPanel from '@/modules/assets/components/AssetsDetailsPanel/AssetsDetailsPanel.vue'
 import {useRouter} from 'vue-router'
+import {isPrivilegedUser} from '@/modules/core/store/auth';
 
 const router = useRouter()
 
 const navigationOpened = ref(false)
-
 const {isLoaded} = useAuthenticatedIntercept();
 
 router.afterEach(() => navigationOpened.value = false)
