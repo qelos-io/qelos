@@ -1,5 +1,6 @@
 import {useDispatcher} from '../../core/compositions/dispatcher';
 import configurationsService from '../../../services/configurations-service';
+import {resetConfiguration} from '@/modules/configurations/store/app-configuration';
 
 export function useConfigurationsList() {
   const {result} = useDispatcher(() => configurationsService.getAll())
@@ -18,6 +19,9 @@ export function useConfiguration(key: string) {
 export function useEditConfiguration(key: string) {
   return {
     ...useConfiguration(key),
-    updateConfiguration: (payload) => configurationsService.update(key, payload)
+    updateConfiguration: async (payload) => {
+      await configurationsService.update(key, payload)
+      await resetConfiguration();
+    }
   }
 }

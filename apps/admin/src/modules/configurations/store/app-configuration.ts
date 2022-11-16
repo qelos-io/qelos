@@ -1,7 +1,8 @@
 import { reactive, computed } from 'vue'
 import configurationsService from '../../../services/configurations-service';
+import {IAppConfiguration} from '@greenpress/sdk/dist/configurations';
 
-export const appConfigurationStore = reactive<{ loaded: false, data: any, promise: Promise<any> | null }>({
+export const appConfigurationStore = reactive<{ loaded: false, data: IAppConfiguration & any, promise: Promise<any> | null }>({
   loaded: false,
   data: null,
   promise: null
@@ -20,4 +21,10 @@ export function fetchAppConfiguration() {
     .getOne('app-configuration')
     .then(config => appConfigurationStore.data = config)
     .catch(() => ({}))
+}
+
+export function resetConfiguration() {
+  appConfigurationStore.loaded = false;
+  appConfigurationStore.promise = null;
+  fetchAppConfiguration();
 }

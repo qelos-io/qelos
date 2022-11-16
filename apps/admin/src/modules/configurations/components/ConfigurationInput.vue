@@ -1,6 +1,8 @@
 <template>
-<div>
-  <FormInput
+  <div>
+    <ColorsPaletteInput v-if="valueType.selected === 'palette'" v-model="model"/>
+    <FormInput
+      v-else
       :title="valueType.title"
       :placeholder="valueType.placeholder"
       v-model="model"
@@ -13,17 +15,18 @@
           :inactive-text="$t(valueType.options[0])"
           :active-text="$t(valueType.options[1])"/>
       </template>
-  </FormInput>
-</div>
+    </FormInput>
+  </div>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
+import {computed} from 'vue'
 import FormInput from '../../core/components/forms/FormInput.vue'
+import ColorsPaletteInput from './ColorsPaletteInput.vue'
 
 const props = defineProps({
   valueType: Object,
-  modelValue: [String, Array],
+  modelValue: [String, Array, Object],
 })
 
 const emit = defineEmits(['update:modelValue'])

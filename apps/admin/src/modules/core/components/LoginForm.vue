@@ -60,10 +60,6 @@ form {
   margin: 0 auto;
 }
 
-form ::v-deep(label) {
-	color: white;
-}
-
 .form-buttons {
 	text-align: end;
 }

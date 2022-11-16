@@ -20,6 +20,9 @@ async function fetchPluginCallback(req, plugin, callbackUrl) {
     apiPath: plugin.apiPath,
     authAcquire: plugin.authAcquire
   });
+  if (!accessToken) {
+    throw new Error('no token')
+  }
   return fetchPlugin({
     url: callbackUrl.href,
     tenant: req.headers.tenant,
@@ -88,7 +91,7 @@ export async function createPlugin(req, res) {
       hardReset,
       tenant: req.headers.tenant,
       host: req.headers.tenanthost,
-      appUrl: new URL(req.url).origin
+      appUrl: new URL(req.headers.tenanthost).origin
     });
     await plugin.save();
 
@@ -96,7 +99,8 @@ export async function createPlugin(req, res) {
     if (newRefreshToken) {
       setRefreshSecret(tenant, plugin.apiPath, newRefreshToken).catch();
     }
-  } catch {
+  } catch (e) {
+    console.log(e);
     res.status(500).json({message: 'could not create plugin'}).end();
   }
 }
@@ -128,7 +132,8 @@ export async function updatePlugin(req, res) {
 
     await plugin.save();
     res.json(plugin).end();
-  } catch {
+  } catch (e) {
+    console.log(e);
     res.status(500).json({message: 'could not update plugin'}).end();
   }
 }
@@ -143,7 +148,7 @@ export async function removePlugin(req, res) {
     if (plugin) {
       setRefreshSecret(tenant, plugin.apiPath, '').catch(() => null);
       await Promise.all([
-        removeUser(tenant, plugin.user),
+        plugin.user ? removeUser(tenant, plugin.user) : Promise.resolve(),
         plugin.remove()
       ]);
       res.json(plugin).end();

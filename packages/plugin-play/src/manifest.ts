@@ -8,6 +8,8 @@ export const manifest = {
   manifestUrl: '/api/play-manifest',
   registerUrl: '/api/register',
   callbackUrl: '/api/callback',
+  authorizeUrl: '/api/authorize',
+  unAuthorizeUrl: '/api/un-authorize',
   proxyPath: '/api/play',
   proxyUrl: '',
   subscribedEvents: [],

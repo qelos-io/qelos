@@ -6,13 +6,20 @@ export const handlers = {
   manifest: [],
   storeUser: [],
   callback: [],
+  frontendAuth: [],
+  frontendUnAuth: [],
 }
 export type StandardPayload = { sub: string, identifier: string };
 
-export type DataWithPayload<T>  = { payload: T & StandardPayload }
+export type DataWithPayload<T>  = { payload: T & StandardPayload };
+
+export type FrontendAuthorizationPayload = { code: string | number, token: string }
 
 export type RefreshTokenHandler<T> = (tokenPayload: T & StandardPayload, request: FastifyRequest) => void | DataWithPayload<T> | Promise<void | DataWithPayload<T>>
 export type NewTenantHandler<T> = ({email, password, appUrl}, request: FastifyRequest) => void | DataWithPayload<T> | Promise<void | DataWithPayload<T>>
+
+export type FrontendAuthorizationHandler = ({returnUrl, user, tenant}, request: FastifyRequest) => void | FrontendAuthorizationPayload | Promise<void | FrontendAuthorizationPayload>;
+export type FrontendUnAuthorizationHandler = ({user, tenant}) => any;
 
 export function onRefreshToken<T = any>(handler: RefreshTokenHandler<T>) {
   handlers.refreshToken.push(handler);
@@ -32,6 +39,14 @@ export function onStoreUser(handler) {
 
 export function onCallback(handler: ({user, returnUrl}, request: FastifyRequest) => void | string | Promise<void | string>) {
   handlers.callback.push(handler);
+}
+
+export function onFrontendAuthorization(handler: FrontendAuthorizationHandler) {
+  handlers.frontendAuth.push(handler);
+}
+
+export function onFrontendUnAuthorization(handler: FrontendUnAuthorizationHandler) {
+  handlers.frontendUnAuth.push(handler);
 }
 
 export default handlers;

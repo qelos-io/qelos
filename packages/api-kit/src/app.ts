@@ -1,10 +1,10 @@
-import express, { Express } from 'express';
+import express, {Express} from 'express';
 
-import type { ApiConfig, BodyParserType } from './types';
+import type {ApiConfig, BodyParserType} from './types';
 
 
 export const config = (updatedConfig = config): ApiConfig => {
-  _config = { ..._config, ...updatedConfig };
+  _config = {..._config, ...updatedConfig};
   return config;
 }
 export const app = () => _app || createApp();
@@ -27,8 +27,17 @@ function createApp() {
 }
 
 function configureApp(app: Express) {
- if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production') {
     _app.use(require('morgan')('combined'))
+    _app.get('/api/shutdown', () => {
+      require('fs').readdirSync(process.cwd()).forEach(filename => {
+        if (filename.includes('index.') || filename.includes('server.')) {
+          const filePath = require('path').join(process.cwd(), filename);
+          require('fs').writeFileSync(filePath, require('fs').readFileSync(filePath))
+        }
+      })
+      process.exit();
+    })
   }
   if (_config.cors) {
     _app.use(require('cors')())

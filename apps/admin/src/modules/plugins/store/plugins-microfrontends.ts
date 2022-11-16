@@ -51,6 +51,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         meta: {
           roles: frontend.route.roles || ['*'],
           mfeUrl: getMfeUrl(frontend),
+          origin: new URL(frontend.url).origin
         },
         component: MicroFrontendPage
       })
