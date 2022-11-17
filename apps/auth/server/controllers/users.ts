@@ -1,6 +1,7 @@
-import {Response, Request, RequestHandler} from 'express'
+import {Response, RequestHandler} from 'express'
+import {emitPlatformEvent} from '@greenpress/api-kit';
 import {AuthRequest} from '../../types'
-import User, {IUser} from '../models/user'
+import User from '../models/user'
 import UserInternalMetadata from '../models/user-internal-metadata';
 import {getEncryptedData, setEncryptedData} from '../services/encrypted-data';
 
@@ -67,7 +68,10 @@ function getUser(req: AuthRequest, res: Response): RequestHandler {
       .lean().exec()
   ]
   if (isPrivileged) {
-    promises.push(UserInternalMetadata.findOne({user: req.params.userId, tenant: req.headers.tenant}).lean().exec().catch(() => null))
+    promises.push(UserInternalMetadata.findOne({
+      user: req.params.userId,
+      tenant: req.headers.tenant
+    }).lean().exec().catch(() => null))
   }
 
   Promise.all(promises)
@@ -138,7 +142,21 @@ async function createUser(req: AuthRequest, res: Response) {
     });
     await userInternalMetadata.save();
 
-    res.status(200).json({_id, name: fullName, firstName, lastName, birthDate, email, roles, internalMetadata}).end()
+    const response = {_id, name: fullName, firstName, lastName, birthDate, email, roles, internalMetadata};
+
+    emitPlatformEvent({
+      tenant: req.headers.tenant,
+      user: _id,
+      source: 'auth',
+      kind: 'users',
+      eventName: 'user-created',
+      description: 'user created by admin endpoint',
+      metadata: {
+        user: response
+      }
+    })
+
+    res.status(200).json(response).end()
   } catch (e) {
     res.status(400).json({message: 'user creation failed'}).end()
   }
@@ -164,7 +182,8 @@ async function updateUser(req: AuthRequest, res: Response) {
       userInternalMetadata.markModified('metadata')
       await userInternalMetadata.save();
     }
-    res.status(200).json({
+
+    const response = {
       email,
       name: fullName || name,
       fullName: fullName || name,
@@ -174,7 +193,21 @@ async function updateUser(req: AuthRequest, res: Response) {
       roles,
       internalMetadata: newInternalMetadata || internalMetadata,
       _id: req.params.userId
-    }).end()
+    };
+
+    emitPlatformEvent({
+      tenant: req.headers.tenant,
+      user: req.params.userId,
+      source: 'auth',
+      kind: 'users',
+      eventName: 'user-updated',
+      description: 'user updated by admin endpoint',
+      metadata: {
+        user: response
+      }
+    })
+
+    res.status(200).json(response).end()
   } catch (e) {
     res.status(400).json({message: 'user update failed'}).end()
   }
@@ -183,6 +216,17 @@ async function updateUser(req: AuthRequest, res: Response) {
 async function removeUser(req: AuthRequest, res: Response) {
   try {
     await UsersService.deleteUser(req.params.userId, req.headers.tenant);
+
+    emitPlatformEvent({
+      tenant: req.headers.tenant,
+      user: req.params.userId,
+      source: 'auth',
+      kind: 'users',
+      eventName: 'user-removed',
+      description: 'user removed by admin endpoint',
+      metadata: null
+    })
+
     res.status(200).json({_id: req.params.userId, tenant: req.headers.tenant}).end()
   } catch (e) {
     res.status(400).json({message: 'user deletion failed'}).end()
