@@ -9,7 +9,7 @@ import './server/passport'
 import './server/routes'
 
 // start the server
-require('@greenpress/api-kit')
+require('@qelos/api-kit')
       .start(
           'Authentication Service',
           process.env.PORT || 9000,

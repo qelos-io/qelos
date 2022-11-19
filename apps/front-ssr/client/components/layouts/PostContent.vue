@@ -5,7 +5,7 @@
            v-html="content"/>
 </template>
 <script lang="ts" setup>
-import {IPost} from '@greenpress/sdk/dist/posts';
+import {IPost} from '@qelos/sdk/dist/posts';
 
 defineProps({
   post: Object as () => IPost,

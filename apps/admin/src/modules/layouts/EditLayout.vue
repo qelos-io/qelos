@@ -8,7 +8,7 @@
 import {useRoute} from 'vue-router'
 import {useEditLayout} from './compositions/layouts'
 import LayoutForm from './components/LayoutForm.vue';
-import {LayoutKind} from '@greenpress/sdk/dist/layouts';
+import {LayoutKind} from '@qelos/sdk/dist/layouts';
 
 const kind = useRoute().params.kind as LayoutKind;
 const {layout, submitting, updateLayout} = useEditLayout(kind);

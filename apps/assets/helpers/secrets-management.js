@@ -1,5 +1,5 @@
 const { internalServicesSecret, secretsToken } = require('../config')
-const secretsService = require('@greenpress/api-kit').service('SECRETS');
+const secretsService = require('@qelos/api-kit').service('SECRETS');
 
 function callSecretsService (url, tenant, key, value) {
   return secretsService({

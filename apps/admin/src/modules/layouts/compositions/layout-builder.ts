@@ -1,5 +1,5 @@
 import {onMounted, ref} from 'vue';
-import {IOnCreateEventDetail} from '@greenpress/view-builder/src';
+import {IOnCreateEventDetail} from '@qelos/view-builder/src';
 
 export function useLayoutBuilder({content, connectedData, layout}) {
     const builder = ref();

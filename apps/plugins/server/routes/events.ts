@@ -1,4 +1,4 @@
-import {getRouter, verifyUser, populateUser} from '@greenpress/api-kit';
+import {getRouter, verifyUser, populateUser} from '@qelos/api-kit';
 import {onlyEditPrivileged} from '../middlewares/privileged-check';
 import {createEvent, getAllEvents, getEvent} from '../controllers/events';
 

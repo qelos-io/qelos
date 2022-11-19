@@ -1,6 +1,6 @@
 import { reactive, computed } from 'vue'
 import configurationsService from '../../../services/configurations-service';
-import {IAppConfiguration} from '@greenpress/sdk/dist/configurations';
+import {IAppConfiguration} from '@qelos/sdk/dist/configurations';
 
 export const appConfigurationStore = reactive<{ loaded: false, data: IAppConfiguration & any, promise: Promise<any> | null }>({
   loaded: false,

@@ -1,4 +1,4 @@
-import {getRouter} from '@greenpress/api-kit';
+import {getRouter} from '@qelos/api-kit';
 import {getPluginProxy} from '../controllers/play-plugins';
 import {createProxyMiddleware} from 'http-proxy-middleware';
 import {proxyApiPrefix} from '../../config';

@@ -1,4 +1,4 @@
-import { populateUser, verifyUser } from '@greenpress/api-kit'
+import { populateUser, verifyUser } from '@qelos/api-kit'
 import {
 	deleteDraft,
 	getDraft,

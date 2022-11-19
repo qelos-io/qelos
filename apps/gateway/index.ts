@@ -1,6 +1,6 @@
-import { start, config, app as getApp } from "@greenpress/api-kit";
+import { start, config, app as getApp } from "@qelos/api-kit";
 import cacheManager from "./cache-manager";
-import apiProxy from "@greenpress/api-proxy-middleware";
+import apiProxy from "@qelos/api-proxy-middleware";
 
 config({ cors: false, bodyParser: false });
 

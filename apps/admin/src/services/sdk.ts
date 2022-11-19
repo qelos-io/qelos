@@ -1,4 +1,4 @@
-import GreenpressAdministratorSDK from '@greenpress/sdk/dist/administrator'
+import GreenpressAdministratorSDK from '@qelos/sdk/dist/administrator'
 
 const sdk = new GreenpressAdministratorSDK({
     appUrl: location.origin,

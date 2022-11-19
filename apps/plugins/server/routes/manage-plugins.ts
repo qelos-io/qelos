@@ -1,4 +1,4 @@
-import {getRouter, verifyUser, populateUser} from '@greenpress/api-kit';
+import {getRouter, verifyUser, populateUser} from '@qelos/api-kit';
 import {
   createPlugin,
   getAllPlugins,

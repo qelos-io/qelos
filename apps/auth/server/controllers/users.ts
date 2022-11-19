@@ -1,5 +1,5 @@
 import {Response, RequestHandler} from 'express'
-import {emitPlatformEvent} from '@greenpress/api-kit';
+import {emitPlatformEvent} from '@qelos/api-kit';
 import {AuthRequest} from '../../types'
 import User from '../models/user'
 import UserInternalMetadata from '../models/user-internal-metadata';

@@ -1,5 +1,5 @@
 import {internalServicesSecret, secretsToken} from '../../config';
-import {service} from '@greenpress/api-kit';
+import {service} from '@qelos/api-kit';
 import {cacheManager} from './cache-manager';
 import {fetchPlugin} from './plugins-call';
 

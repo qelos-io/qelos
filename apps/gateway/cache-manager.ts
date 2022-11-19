@@ -1,11 +1,11 @@
-import { createCacheManager } from "@greenpress/cache-manager";
+import { createCacheManager } from "@qelos/cache-manager";
 
 const redisUrl = process.env.REDIS_URL;
 const cacher = redisUrl
-  ? require("@greenpress/cache-manager/dist/redis-cache").createRedisCache(
+  ? require("@qelos/cache-manager/dist/redis-cache").createRedisCache(
       redisUrl
     )
-  : require("@greenpress/cache-manager/dist/memory-cache").createMemoryCache();
+  : require("@qelos/cache-manager/dist/memory-cache").createMemoryCache();
 
 const cacheManager = createCacheManager(cacher);
 

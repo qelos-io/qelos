@@ -1,4 +1,4 @@
-const app = require('@greenpress/api-kit').app()
+const app = require('@qelos/api-kit').app()
 import passport from 'passport';
 
 // pass the passport middleware

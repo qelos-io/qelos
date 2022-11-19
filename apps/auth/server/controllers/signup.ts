@@ -1,6 +1,6 @@
 import { NextFunction, Response } from 'express';
 import passport from 'passport';
-import {emitPlatformEvent} from '@greenpress/api-kit';
+import {emitPlatformEvent} from '@qelos/api-kit';
 import { validateSignUpForm, tokenPayload } from './signin-signup-token';
 import {AuthRequest} from '../../types';
 import {getRequestHost} from '../services/req-host';

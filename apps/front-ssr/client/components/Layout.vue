@@ -10,7 +10,7 @@ import {useHead} from '@vueuse/head';
 import {LayoutItem} from './types/layout';
 import {getLazyLayoutComponents} from '../services/layout';
 import LayoutItems from './LayoutItems.vue';
-import {IAppConfiguration} from '@greenpress/sdk/dist/configurations';
+import {IAppConfiguration} from '@qelos/sdk/dist/configurations';
 
 export default {
   name: 'Layout',

@@ -1,4 +1,4 @@
-const app = require('@greenpress/api-kit').app();
+const app = require('@qelos/api-kit').app();
 const upload = require('../middleware/upload');
 const { getStorageById } = require('../controllers/storage');
 const {

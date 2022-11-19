@@ -14,7 +14,7 @@ npm install @greenpress/sdk
 
 ```typescript
 // my-sdk.ts
-import GreenpressSDK from '@greenpress/sdk';
+import GreenpressSDK from '@qelos/sdk';
 
 const sdk = new GreenpressSDK({appUrl: 'https://yourdomain.com', fetch: window.fetch});
 export default sdk;

@@ -1,5 +1,5 @@
 import {internalServicesSecret} from '../../config';
-import {service} from '@greenpress/api-kit';
+import {service} from '@qelos/api-kit';
 
 const authService = service('AUTH', {port: process.env.AUTH_SERVICE_PORT || 9000});
 

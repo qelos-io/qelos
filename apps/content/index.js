@@ -10,5 +10,5 @@ require('./server/models').connect(mongoUri)
 
 require('./server/routes')
 
-require('@greenpress/api-kit').start('Content Service', port)
+require('@qelos/api-kit').start('Content Service', port)
 

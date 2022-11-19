@@ -1,5 +1,5 @@
-const app = require('@greenpress/api-kit').app()
-const {verifyUser, populateUser} = require('@greenpress/api-kit')
+const app = require('@qelos/api-kit').app()
+const {verifyUser, populateUser} = require('@qelos/api-kit')
 
 const editorCheck = require('../middleware/editor-check')
 

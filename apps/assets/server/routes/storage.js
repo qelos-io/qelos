@@ -1,4 +1,4 @@
-const app = require('@greenpress/api-kit').app()
+const app = require('@qelos/api-kit').app()
 const { getStorageById, createStorage, getStorageList, removeStorage, updateStorage, getStorage } = require('../controllers/storage')
 
 app

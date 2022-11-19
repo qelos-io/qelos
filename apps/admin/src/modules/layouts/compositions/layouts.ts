@@ -1,6 +1,6 @@
 import {useSubmitting} from '../../core/compositions/submitting'
 import {useDispatcher} from '../../core/compositions/dispatcher'
-import {ILayout, LayoutKind} from '@greenpress/sdk/dist/layouts';
+import {ILayout, LayoutKind} from '@qelos/sdk/dist/layouts';
 import sdk from '@/services/sdk';
 import {removeUnsavedChanges} from '@/modules/drafts/compositions/unsaved-changes';
 import {reactive} from 'vue';

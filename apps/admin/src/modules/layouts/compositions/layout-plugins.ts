@@ -1,6 +1,6 @@
 import {computed, ref, toRef} from 'vue';
-import {ILayoutContent, IPlugin} from '@greenpress/view-builder/src';
-import {LayoutConnectedDataKind} from '@greenpress/sdk/dist/layouts';
+import {ILayoutContent, IPlugin} from '@qelos/view-builder/src';
+import {LayoutConnectedDataKind} from '@qelos/sdk/dist/layouts';
 import {useBlocksList} from '@/modules/blocks/store/blocks-list';
 import useMenusList from '@/modules/menus/store/menus-list';
 

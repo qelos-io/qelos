@@ -7,7 +7,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { IMenu } from '@greenpress/sdk/dist/menus';
+import { IMenu } from '@qelos/sdk/dist/menus';
 import MenuLink from './MenuLink.vue';
 defineProps({
   menu: Object as () => IMenu,

@@ -1,4 +1,4 @@
-import { app as getApp } from "@greenpress/api-kit";
+import { app as getApp } from "@qelos/api-kit";
 import draftRoutes from "./drafts";
 
 const app = getApp();

@@ -1,11 +1,11 @@
-import GreenpressSDK from '@greenpress/sdk';
-import {LayoutConnectedDataKind} from '@greenpress/sdk/dist/layouts';
-import {IAppConfiguration} from '@greenpress/sdk/dist/configurations';
+import QelosSDK from '@qelos/sdk';
+import {LayoutConnectedDataKind} from '@qelos/sdk/dist/layouts';
+import {IAppConfiguration} from '@qelos/sdk/dist/configurations';
 
 const appUrl = ((globalThis as any).gatewayUrl as string)
 
 // @ts-ignore
-export const sdk: GreenpressSDK = import.meta.env.SSR ? new GreenpressSDK({appUrl, fetch: globalThis.fetch}) : null;
+export const sdk: QelosSDK = import.meta.env.SSR ? new QelosSDK({appUrl, fetch: globalThis.fetch}) : null;
 
 const fallbackLayout = (kind: string) => [
   {

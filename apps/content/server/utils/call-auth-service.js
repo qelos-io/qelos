@@ -1,4 +1,4 @@
-const authService = require('@greenpress/api-kit').service('AUTH')
+const authService = require('@qelos/api-kit').service('AUTH')
 
 function callAuthService (url, options) {
   return authService({

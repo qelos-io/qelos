@@ -41,7 +41,7 @@
 import {computed, ref, watch} from 'vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import {StylesMatches} from '@/modules/layouts/compositions/layout-styles';
-import {IOnCreateEventDetail} from '@greenpress/view-builder/src';
+import {IOnCreateEventDetail} from '@qelos/view-builder/src';
 
 const props = defineProps({
   layoutItem: Object as () => IOnCreateEventDetail,

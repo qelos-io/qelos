@@ -35,12 +35,12 @@
 </template>
 <script lang="ts" setup>
 import {ref, toRef} from 'vue'
-import {ILayout} from '@greenpress/sdk/dist/layouts';
+import {ILayout} from '@qelos/sdk/dist/layouts';
 import {clearNulls} from '../../core/utils/clear-nulls'
 import {useLayoutForm} from '../compositions/layouts';
 
-import '@greenpress/view-builder/dist/index.es.js';
-import '@greenpress/view-builder/dist/style.css';
+import '@qelos/view-builder/dist/index.es.js';
+import '@qelos/view-builder/dist/style.css';
 import {getStylesheetContent, usePlugins} from '@/modules/layouts/compositions/layout-plugins';
 import LayoutConnectedData from '@/modules/layouts/components/LayoutConnectedData.vue';
 import LayoutItemModal from '@/modules/layouts/components/LayoutItemModal.vue';

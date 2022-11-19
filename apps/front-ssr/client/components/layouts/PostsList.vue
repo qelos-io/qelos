@@ -12,7 +12,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import {IPost} from '@greenpress/sdk/dist/posts';
+import {IPost} from '@qelos/sdk/dist/posts';
 
 defineProps( {
   posts: Array as () => IPost[],

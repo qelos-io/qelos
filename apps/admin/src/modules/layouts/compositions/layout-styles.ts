@@ -1,5 +1,5 @@
 import {ref, Ref, watch} from 'vue';
-import {ILayoutContent} from '@greenpress/sdk/src/layouts';
+import {ILayoutContent} from '@qelos/sdk/src/layouts';
 
 const storedMatches = {};
 

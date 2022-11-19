@@ -2,7 +2,7 @@
   <div class="block-box" v-html="block.content"/>
 </template>
 <script lang="ts">
-import {IBlock} from '@greenpress/sdk/dist/blocks';
+import {IBlock} from '@qelos/sdk/dist/blocks';
 
 export default {
   props: {

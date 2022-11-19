@@ -2,7 +2,7 @@ const { getUsersMap } = require('../utils/users')
 const Post = require('../models/post')
 const Comment = require('../models/comment')
 const Category = require('../models/category')
-const { emitPlatformEvent } = require('@greenpress/api-kit');
+const { emitPlatformEvent } = require('@qelos/api-kit');
 
 const LIMIT = 30
 const MAX_LIMIT = 300

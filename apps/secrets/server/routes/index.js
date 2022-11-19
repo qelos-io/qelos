@@ -1,4 +1,4 @@
-const app = require('@greenpress/api-kit').app()
+const app = require('@qelos/api-kit').app()
 const internalCheck = require('../middleware/internal-call-check')
 
 app.use(internalCheck)

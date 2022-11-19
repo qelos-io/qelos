@@ -1,6 +1,6 @@
 import {fetch as undiciFetch} from 'undici';
-import GreenpressAdministratorSDK from '@greenpress/sdk/dist/administrator';
-import {FetchLike, GreenpressSDKOptions} from '@greenpress/sdk/dist/types';
+import GreenpressAdministratorSDK from '@qelos/sdk/dist/administrator';
+import {FetchLike, GreenpressSDKOptions} from '@qelos/sdk/dist/types';
 import config from './config';
 import {StandardPayload} from './handlers';
 

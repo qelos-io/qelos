@@ -1,4 +1,4 @@
-const app = require('@greenpress/api-kit').app()
+const app = require('@qelos/api-kit').app()
 
 require('./configurations')(app);
 require('./categories')(app);
