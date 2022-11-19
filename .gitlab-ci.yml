@@ -22,3 +22,8 @@ test:
     - npm install
     - npm run build
     - npm run test
+
+build-monorepo:
+  script:
+    - docker build -t registry.gitlab.com/qelos/monorepo:$CI_COMMIT_BRANCH .
+    - docker push registry.gitlab.com/qelos/monorepo:$CI_COMMIT_BRANCH
