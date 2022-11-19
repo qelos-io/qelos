@@ -30,8 +30,8 @@ async function waitForServerStartup(child) {
   try {
     await handleStartupProgress(child);
     console.log(green('Server is running!'));
-    console.log(`\n\rTo stop it, use: ${blue('greenpress stop')}`);
-    console.log(`\rTo populate it, use: ${blue('greenpress populate')}`);
+    console.log(`\n\rTo stop it, use: ${blue('qelos stop')}`);
+    console.log(`\rTo populate it, use: ${blue('qelos populate')}`);
     console.log(`\rTo enter your app: http://localhost:3000`);
     console.log(`\rTo enter your app's admin panel: http://localhost:3000/gp-admin/`);
   } catch (err) {

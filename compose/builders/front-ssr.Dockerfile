@@ -1,5 +1,5 @@
 ARG MONOREPO_VERSION=main
-FROM greenpress/monorepo:${MONOREPO_VERSION} as base
+FROM qelos/monorepo:${MONOREPO_VERSION} as base
 
 FROM node:16.15-alpine
 ENV PORT=3002

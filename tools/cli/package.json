@@ -1,18 +1,13 @@
 {
-  "name": "@greenpress/cli",
+  "name": "@qelos/cli",
   "version": "0.9.18",
-  "description": "CLI to install greenpress",
+  "description": "CLI to install Qelos",
   "main": "cli.js",
   "bin": {
-    "greenpress": "cli.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/greenpress/greenpress.git"
+    "qelos": "cli.js"
   },
   "keywords": [
-    "greenpress",
-    "blogs",
+    "qelos",
     "cli"
   ],
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
@@ -21,13 +16,9 @@
     "cli-progress": "3.9.0",
     "yargs": "^17.2.0"
   },
-  "bugs": {
-    "url": "https://github.com/greenpress/greenpress/issues"
-  },
   "scripts": {
     "test": "jest --runInBand"
   },
-  "homepage": "https://github.com/greenpress/greenpress#readme",
   "devDependencies": {
     "jest": "^27.0.4"
   }

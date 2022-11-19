@@ -157,7 +157,22 @@ const customPlugins: Record<string, IPlugin[]> = {
         reference: '$posts',
       }
     },
-  ]
+  ],
+  signin: [
+    {
+      match: 'SignInForm',
+      component: 'SignInForm',
+      title: 'Sign In Form',
+      description: 'Email & Password form',
+      supportChildren: false,
+      predefined: true,
+      props: {
+        emailLabel: 'Email',
+        passwordLabel: 'Password',
+        submitLabel: 'Sign In'
+      },
+    },
+  ],
 }
 
 const basicPlugins: IPlugin[] = [

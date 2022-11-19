@@ -1,5 +1,5 @@
 {
-  "name": "@greenpress/assets",
+  "name": "@qelos/assets",
   "version": "2.0.21",
   "license": "MIT",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
@@ -7,7 +7,7 @@
   "keywords": [
     "express",
     "mongoose",
-    "greenpress",
+    "qelos",
     "storage-management",
     "assets-management"
   ],
@@ -20,12 +20,9 @@
     "start": "node --use_strict index.js"
   },
   "main": "index.js",
-  "bin": {
-    "greenpress-assets": "index.js"
-  },
   "dependencies": {
     "@google-cloud/storage": "^5.4.0",
-    "@greenpress/api-kit": "^2.0.21",
+    "@qelos/api-kit": "^2.0.21",
     "aws-sdk": "^2.860.0",
     "cloudinary": "^1.27.1",
     "datauri": "^4.1.0",
@@ -36,14 +33,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "homepage": "https://github.com/greenpress/greenpress#readme",
-  "bugs": {
-    "url": "https://github.com/greenpress/greenpress/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/greenpress/greenpress.git"
   },
   "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594"
 }

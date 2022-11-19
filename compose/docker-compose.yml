@@ -3,10 +3,10 @@ services:
   redis:
     image: redis:7.0-alpine
   admin:
-    image: greenpress/admin-panel:${ADMIN_PANEL_VERSION}
+    image: qelos/admin-panel:${ADMIN_PANEL_VERSION}
     restart: always
   assets:
-    image: greenpress/assets:${ASSETS_SERVICE_VERSION}
+    image: qelos/assets:${ASSETS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${ASSETS_MONGODB_URI}
@@ -21,7 +21,7 @@ services:
       - redis
       - secrets
   front:
-    image: greenpress/front-ssr:${FRONT_SSR_VERSION}
+    image: qelos/front-ssr:${FRONT_SSR_VERSION}
     restart: always
     links:
       - gateway
@@ -29,7 +29,7 @@ services:
       IP: 0.0.0.0
       GATEWAY_SERVICE_URL: gateway
   auth:
-    image: greenpress/auth:${AUTH_SERVICE_VERSION}
+    image: qelos/auth:${AUTH_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${AUTH_MONGODB_URI}
@@ -40,7 +40,7 @@ services:
       INTERNAL_SECRET: ${INTERNAL_SECRET}
       SECRETS_TOKEN: ${AUTH_SERVICE_SECRET}
   gateway:
-    image: greenpress/gateway:${GATEWAY_VERSION}
+    image: qelos/gateway:${GATEWAY_VERSION}
     restart: always
     ports:
       - ${PORT}:3000
@@ -57,7 +57,7 @@ services:
       ADMIN_PANEL_URL: admin
       FRONT_URL: front
   content:
-    image: greenpress/content:${CONTENT_SERVICE_VERSION}
+    image: qelos/content:${CONTENT_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${CONTENT_MONGODB_URI}
@@ -68,7 +68,7 @@ services:
       - redis
       - auth
   secrets:
-    image: greenpress/secrets:${SECRETS_SERVICE_VERSION}
+    image: qelos/secrets:${SECRETS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${SECRETS_MONGODB_URI}
@@ -77,13 +77,13 @@ services:
       SECRET: ${SECRETS_SERVICE_SECRET}
       INTERNAL_SECRET: ${INTERNAL_SECRET}
   drafts:
-    image: greenpress/drafts:${DRAFTS_SERVICE_VERSION}
+    image: qelos/drafts:${DRAFTS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${DRAFTS_MONGODB_URI}
       IP: 0.0.0.0
   plugins:
-    image: greenpress/plugins:${PLUGINS_SERVICE_VERSION}
+    image: qelos/plugins:${PLUGINS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${PLUGINS_MONGODB_URI}

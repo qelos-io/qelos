@@ -1,5 +1,5 @@
 {
-  "name": "@greenpress/api-proxy-middleware",
+  "name": "@qelos/api-proxy-middleware",
   "version": "2.0.21",
   "description": "api proxy middleware",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
@@ -19,9 +19,6 @@
     "url": "git+https://github.com/greenpress/greenpress.git"
   },
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/greenpress/greenpress/issues"
-  },
   "devDependencies": {
     "typescript": "^4.2.4"
   },

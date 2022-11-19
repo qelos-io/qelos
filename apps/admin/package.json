@@ -1,5 +1,5 @@
 {
-  "name": "@greenpress/admin",
+  "name": "@qelos/admin",
   "version": "2.0.21",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "scripts": {
@@ -19,8 +19,8 @@
   "devDependencies": {
     "@element-plus/icons-vue": "^1.1.1",
     "@greenpress/gp-editor": "^2.1.1",
-    "@greenpress/sdk": "^2.0.21",
-    "@greenpress/view-builder": "^2.0.21",
+    "@qelos/sdk": "^2.0.21",
+    "@qelos/view-builder": "^2.0.21",
     "@vitejs/plugin-vue": "^2.2.4",
     "axios": "^0.24.0",
     "element-plus": "^1.2.0-beta.6",
@@ -37,16 +37,5 @@
     "vue-router": "^4.0.12"
   },
   "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  },
-  "homepage": "https://github.com/greenpress/greenpress#readme",
-  "bugs": {
-    "url": "https://github.com/greenpress/greenpress/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/greenpress/greenpress.git"
-  },
   "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594"
 }

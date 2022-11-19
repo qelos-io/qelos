@@ -6,8 +6,8 @@ import {loadAll} from '../services/sdk';
 import Layout from '../components/Layout.vue';
 import {usePage} from '../services/use-page';
 
-export const route = '/:category'
-export const name = 'category'
+export const route = '/signin'
+export const name = 'signin'
 
 export default {
   components: {Layout},

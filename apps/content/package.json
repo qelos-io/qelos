@@ -1,8 +1,8 @@
 {
-  "name": "@greenpress/content",
+  "name": "@qelos/content",
   "version": "2.0.21",
   "migrationVersion": 7,
-  "description": "Content API for greenpress platform",
+  "description": "Content API for qelos platform",
   "keywords": [
     "greenpress",
     "blog cotent",
@@ -21,8 +21,8 @@
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@greenpress/api-kit": "^2.0.21",
-    "@greenpress/cache-manager": "^2.0.21",
+    "@qelos/api-kit": "^2.0.21",
+    "@qelos/cache-manager": "^2.0.21",
     "mongoose": "^5.10.5",
     "node-fetch": "^2.6.1",
     "shortid": "^2.2.14"
@@ -32,14 +32,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "homepage": "https://github.com/greenpress/greenpress#readme",
-  "bugs": {
-    "url": "https://github.com/greenpress/greenpress/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/greenpress/greenpress.git"
   },
   "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594"
 }

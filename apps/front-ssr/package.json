@@ -1,6 +1,6 @@
 {
   "type": "module",
-  "name": "@greenpress/front-ssr",
+  "name": "@qelos/front-ssr",
   "version": "2.0.21",
   "scripts": {
     "dev": "dx dev",
@@ -9,17 +9,13 @@
     "start": "dx start"
   },
   "dependencies": {
-    "@greenpress/sdk": "^2.0.21",
+    "@qelos/sdk": "^2.0.21",
     "fastify-dx": "0.0.19",
     "fastify-vite-vue": "^3.0.0-beta.3",
     "node-fetch": "^2.6.1"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/greenpress/greenpress.git"
   },
   "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594"
 }

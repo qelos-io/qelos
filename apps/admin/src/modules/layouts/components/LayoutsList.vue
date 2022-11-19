@@ -15,10 +15,13 @@ import GpItem from '../../core/components/layout/GpItem.vue';
 
 const layouts = [
   {kind: 'index', displayName: 'Index / Home'},
+  {kind: 'signin', displayName: 'Sign In'},
+  {kind: 'Signup', displayName: 'Sign Up'},
   {kind: 'category', displayName: 'Category'},
   {kind: 'post', displayName: 'Post'},
   {kind: 'tag', displayName: 'Tags List'},
   {kind: 'search', displayName: 'Search'},
+  {kind: 'error', displayName: 'Error'},
 ]
 </script>
 <style scoped>

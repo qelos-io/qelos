@@ -1,7 +1,7 @@
 {
-  "name": "@greenpress/plugin-play",
+  "name": "@qelos/plugin-play",
   "version": "2.0.21",
-  "description": "Play a plugin for Greenpress",
+  "description": "Play a plugin for Qelos",
   "main": "./dist/index.js",
   "scripts": {
     "create-certs": "node create-cert.js",
@@ -16,17 +16,13 @@
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/greenpress/greenpress/issues"
-  },
-  "homepage": "https://github.com/greenpress/greenpress#readme",
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
     "@fastify/cookie": "^8.3.0",
     "@fastify/static": "^6.5.0",
-    "@greenpress/sdk": "^2.0.21",
+    "@qelos/sdk": "^2.0.21",
     "fastify": "^4.3.0",
     "jsonwebtoken": "^8.5.1",
     "undici": "^5.8.0"

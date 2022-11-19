@@ -3,21 +3,21 @@ services:
   mongo:
     image: mongo
     volumes:
-      - ../apps/greenpress/db-data:/data/db
+      - ../apps/db/db-data:/data/db
   redis:
     image: redis:7.0-alpine
     restart: always
   admin:
-    image: greenpress/admin-panel:${ADMIN_PANEL_VERSION}
+    image: qelos/admin-panel:${ADMIN_PANEL_VERSION}
     restart: always
   front:
-    image: greenpress/front-ssr:${FRONT_SSR_VERSION}
+    image: qelos/front-ssr:${FRONT_SSR_VERSION}
     restart: always
     environment:
       IP: 0.0.0.0
       GATEWAY_SERVICE_URL: gateway
   assets:
-    image: greenpress/assets:${ASSETS_SERVICE_VERSION}
+    image: qelos/assets:${ASSETS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${ASSETS_MONGODB_URI}
@@ -32,7 +32,7 @@ services:
       - mongo
       - redis
   auth:
-    image: greenpress/auth:${AUTH_SERVICE_VERSION}
+    image: qelos/auth:${AUTH_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${AUTH_MONGODB_URI}
@@ -45,7 +45,7 @@ services:
     depends_on:
       - mongo
   gateway:
-    image: greenpress/gateway:${GATEWAY_VERSION}
+    image: qelos/gateway:${GATEWAY_VERSION}
     restart: always
     ports:
       - ${PORT}:3000
@@ -62,7 +62,7 @@ services:
       ADMIN_PANEL_URL: admin
       FRONT_URL: front
   content:
-    image: greenpress/content:${CONTENT_SERVICE_VERSION}
+    image: qelos/content:${CONTENT_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${CONTENT_MONGODB_URI}
@@ -73,7 +73,7 @@ services:
       - mongo
       - redis
   secrets:
-    image: greenpress/secrets:${SECRETS_SERVICE_VERSION}
+    image: qelos/secrets:${SECRETS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${SECRETS_MONGODB_URI}
@@ -83,7 +83,7 @@ services:
     depends_on:
       - mongo
   drafts:
-    image: greenpress/drafts:${DRAFTS_SERVICE_VERSION}
+    image: qelos/drafts:${DRAFTS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${DRAFTS_MONGODB_URI}
@@ -91,7 +91,7 @@ services:
     depends_on:
       - mongo
   plugins:
-    image: greenpress/plugins:${PLUGINS_SERVICE_VERSION}
+    image: qelos/plugins:${PLUGINS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${PLUGINS_MONGODB_URI}

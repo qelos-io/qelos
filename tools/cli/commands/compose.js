@@ -2,7 +2,7 @@ const { composeCommand } = require('../controllers/compose');
 
 function setComposeCommand(program) {
   program
-    .command('compose [action]', 'Compose operations of Greenpress environment',
+    .command('compose [action]', 'Compose operations of Qelos environment',
       yargs => {
         return yargs
           .positional('action', {
@@ -12,7 +12,7 @@ function setComposeCommand(program) {
           })
           .option('branch', {
             alias: 'b',
-            describe: 'Select a branch to use from the greenpress repository',
+            describe: 'Select a branch to use from the qelos repository',
             default: 'main',
             type: 'string'
           })

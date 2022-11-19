@@ -5,13 +5,13 @@ const { getRandomHash } = require('../../services/hashing');
 const { green } = require('../../utils/colors');
 
 module.exports = function ({ tag, branch, mongo }) {
-	execute(`git clone --branch ${branch} https://github.com/greenpress/greenpress.git`);
+	execute(`git clone --branch ${branch} https://gitlab.com/qelos/qelos.git`);
 
 	if (!tag) {
-		tag = 'v' + require(join(process.cwd(), 'greenpress', 'package.json')).version;
+		tag = 'v' + require(join(process.cwd(), 'qelos', 'package.json')).version;
 	}
 
-	const envs = readFileSync(join(process.cwd(), 'greenpress', 'compose', '.env.example'), 'utf-8');
+	const envs = readFileSync(join(process.cwd(), 'qelos', 'compose', '.env.example'), 'utf-8');
 
 	const secrets = [
 		"JWT_SECRET",
@@ -27,7 +27,7 @@ module.exports = function ({ tag, branch, mongo }) {
 		.map(line => secrets.includes(line.replace('=', '')) ? `${line}${getRandomHash()}` : line)
 		.join('\n')
 		.replaceAll('latest', tag)
-		.replaceAll('mongodb://mongo/greenpress', mongo || 'mongodb://mongo/greenpress')
+		.replaceAll('mongodb://mongo/qelos', mongo || 'mongodb://mongo/qelos')
 
 	const yamlName = mongo ? 'docker-compose.yml' : 'docker-compose.persistent.yml';
 
@@ -35,9 +35,9 @@ module.exports = function ({ tag, branch, mongo }) {
 	writeFileSync(join(process.cwd(), '.env'), newEnvFile);
 
 	console.log('Create docker-compose file');
-	writeFileSync(join(process.cwd(), 'docker-compose.yml'), readFileSync(join(process.cwd(), 'greenpress', 'compose', yamlName), 'utf-8'));
+	writeFileSync(join(process.cwd(), 'docker-compose.yml'), readFileSync(join(process.cwd(), 'qelos', 'compose', yamlName), 'utf-8'));
 
-	execute(`rm -rf greenpress`);
+	execute(`rm -rf qelos`);
 
-	console.log('Done! now run: ' + green('greenpress compose start'));
+	console.log('Done! now run: ' + green('qelos compose start'));
 }

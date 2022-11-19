@@ -4,8 +4,8 @@ const { join } = require('path');
 
 function stopCommand() {
 
-	console.log(blue('Stopping greenpress...'));
-	let errN = execute('npm run stop', 'stop greenpress container', { cwd: join(process.cwd(), 'compose')}) ? 0 : 1;
+	console.log(blue('Stopping qelos...'));
+	let errN = execute('npm run stop', 'stop qelos container', { cwd: join(process.cwd(), 'compose')}) ? 0 : 1;
 
 	if (errN) {
 		console.log(red(`Greenpress failed to stop, failed on ${errN} steps.`));

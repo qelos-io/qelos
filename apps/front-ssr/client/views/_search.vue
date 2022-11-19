@@ -3,11 +3,9 @@
 </template>
 
 <script lang="ts">
-import {usePayload} from '../entry/core.js';
 import {loadAll} from '../services/sdk';
 import Layout from '../components/Layout.vue';
-import {LayoutItem} from '../components/types/layout';
-import {IAppConfiguration} from '@greenpress/sdk/dist/configurations';
+import {usePage} from '../services/use-page';
 
 export const route = '/search'
 export const name = 'search'
@@ -15,14 +13,10 @@ export const name = 'search'
 export default {
   components: {Layout},
   setup() {
-    const [payload, config] = usePayload() as [
-      payload: { layout: LayoutItem[], connectedData: any[] },
-      appConfiguration: IAppConfiguration
-    ];
-    return {payload, config, kind: 'search'}
+    return usePage(name)
   }
 }
 
-export const getPayload = (ctx) => loadAll('search', ctx);
+export const getPayload = (ctx) => loadAll(name, ctx);
 </script>
 

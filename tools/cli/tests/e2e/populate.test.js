@@ -6,7 +6,7 @@ describe("Populate command", () => {
   initTestSuite();
 
   beforeEach(() => {
-    execSync('greenpress create test-populate', { cwd: './tmp' });
+    execSync('qelos create test-populate', { cwd: './tmp' });
   });
 
   it('should run populate script', () => {
@@ -14,7 +14,7 @@ describe("Populate command", () => {
     pkg.scripts['populate-db'] = 'node -e "console.log(process.env.EMAIL, process.env.PASSWORD)"';
     writeFileSync('tmp/test-populate/package.json', JSON.stringify(pkg));
 
-    const result = execSync('greenpress populate -e admin@test.com -p pass', { cwd: './tmp/test-populate' }).toString();
+    const result = execSync('qelos populate -e admin@test.com -p pass', { cwd: './tmp/test-populate' }).toString();
 
     expect(result).toContain('admin@test.com');
     expect(result).toContain('pass');

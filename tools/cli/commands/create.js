@@ -2,12 +2,12 @@ const createController = require('../controllers/create');
 
 function setCreateCommand(program) {
   program
-    .command('create [name] [mode]', 'create a new website using greenpress',
+    .command('create [name] [mode]', 'create a new website using qelos',
       (yargs) => {
         return yargs
           .positional('name', {
             describe: 'The name of your application. A folder with that name will be created here.',
-            default: 'greenpress',
+            default: 'qelos',
             type: 'string'
           })
           .positional('mode', {

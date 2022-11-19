@@ -23,7 +23,7 @@ async function deployHeroku({ mongo }) {
 		process.exit(1);
 	}
 	console.log(green(`login successfully to heroku`));
-	const appName = await askQuestion('what is your application name:', `greenpress_${Date.now()}`)
+	const appName = await askQuestion('what is your application name:', `qelos_${Date.now()}`)
 	//TODO add try to askQuestion function
 	console.log(green(`heroku creating app ${appName}`));
 	if (!await execute(`heroku create ${appName}`, 'create heroku app')) {

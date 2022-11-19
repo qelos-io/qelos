@@ -1,13 +1,14 @@
 <template>
-  <Layout v-if="payload.layout" :config="config" :kind="kind" :layout="payload.layout" :connected-data="payload.connectedData"/>
+  <Layout v-if="payload.layout" :config="config" :kind="kind" :layout="payload.layout"
+          :connected-data="payload.connectedData"/>
 </template>
 <script lang="ts">
 import {loadAll} from '../services/sdk';
 import Layout from '../components/Layout.vue';
 import {usePage} from '../services/use-page';
 
-export const route = '/:category'
-export const name = 'category'
+export const route = '/signup'
+export const name = 'signup'
 
 export default {
   components: {Layout},

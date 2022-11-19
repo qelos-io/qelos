@@ -1,5 +1,5 @@
 {
-  "name": "@greenpress/auth",
+  "name": "@qelos/auth",
   "version": "2.0.21",
   "description": "Express Passport authentication service",
   "keywords": [
@@ -7,7 +7,7 @@
     "passport",
     "mongoose",
     "authentication service",
-    "greenpress"
+    "qelos"
   ],
   "scripts": {
     "build": "tsc -d",
@@ -20,8 +20,8 @@
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@greenpress/api-kit": "^2.0.21",
-    "@greenpress/cache-manager": "^2.0.21",
+    "@qelos/api-kit": "^2.0.21",
+    "@qelos/cache-manager": "^2.0.21",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.5",
     "jsonwebtoken": "^8.5.1",
@@ -43,14 +43,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bugs": {
-    "url": "https://github.com/greenpress/grenpress/issues"
-  },
-  "homepage": "https://github.com/greenpress/grenpress#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/greenpress/grenpress.git"
   },
   "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594"
 }

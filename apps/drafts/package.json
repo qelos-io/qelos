@@ -1,7 +1,7 @@
 {
-  "name": "@greenpress/drafts",
+  "name": "@qelos/drafts",
   "version": "2.0.21",
-  "description": "drafts service for the greenpress api",
+  "description": "drafts service for the qelos api",
   "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
