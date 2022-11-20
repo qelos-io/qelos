@@ -1,5 +1,6 @@
+image: node:16
+
 build-monorepo:
-  image: node:16
   stage: build
   cache:
     paths:
@@ -7,6 +8,11 @@ build-monorepo:
   script:
     - npm install
     - npm run build
+    - npm run test
+
+test-monorepo:
+  stage: test
+  script:
     - npm run test
 
 # To contribute improvements to CI/CD templates, please follow the Development guide at:
@@ -40,5 +46,5 @@ docker-build-admin:
         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
       fi
     - cd apps/admin
-    - docker build --pull -t "registry.gitlab.com/qelos/admin${tag}" .
-    - docker push "registry.gitlab.com/qelos/admin${tag}"
+    - docker build --pull -t "qelos/admin${tag}" .
+    - docker push "qelos/admin${tag}"
