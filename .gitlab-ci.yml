@@ -5,6 +5,8 @@ build-monorepo:
   artifacts:
     paths:
       - node_modules/
+      - dist/
+      - build/
   cache:
     paths:
       - node_modules/
