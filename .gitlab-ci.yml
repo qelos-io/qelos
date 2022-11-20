@@ -39,6 +39,6 @@ docker-build-admin:
         tag=":$CI_COMMIT_REF_SLUG"
         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
       fi
-    - cd compose/builders
+    - cd apps/admin
     - docker build --pull -t "registry.gitlab.com/qelos/admin${tag}" .
     - docker push "registry.gitlab.com/qelos/admin${tag}"
