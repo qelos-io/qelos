@@ -2,6 +2,9 @@ image: node:16
 
 build-monorepo:
   stage: build
+  artifacts:
+    paths:
+      - node_modules/
   cache:
     paths:
       - node_modules/
@@ -32,6 +35,7 @@ docker-build-admin:
   # Default branch leaves tag empty (= latest tag)
   # All other branches are tagged with the escaped branch name (commit ref slug)
   script:
+    - ls -la
     - |
       if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
         tag=""
