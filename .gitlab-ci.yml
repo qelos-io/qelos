@@ -14,6 +14,9 @@ build-monorepo:
     - npm install
     - npm run build
     - npm run test
+    - node tools/bundle-dependencies-polyfix admin
+    - npm run pack-package --- --scope=@qelos/admin
+    - npm run rename-pack --- --scope=@qelos/admin
 
 # To contribute improvements to CI/CD templates, please follow the Development guide at:
 # https://docs.gitlab.com/ee/development/cicd/templates.html
@@ -46,9 +49,6 @@ docker-build-admin:
         tag=":$CI_COMMIT_REF_SLUG"
         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
       fi
-    - node tools/bundle-dependencies-polyfix ${service}
-    - npm run pack-package --- --scope=@qelos/${service}
-    - npm run rename-pack --- --scope=@qelos/${service}
     - cd apps/admin
     - docker build --pull -t "$CI_REGISTRY/qelos/qelos/admin${tag}" .
     - docker push "$CI_REGISTRY/qelos/qelos/admin${tag}"
