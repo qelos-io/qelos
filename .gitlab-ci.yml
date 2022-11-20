@@ -12,6 +12,9 @@ build-monorepo:
 
 test-monorepo:
   stage: test
+  cache:
+    paths:
+      - node_modules/
   script:
     - npm run test
 
@@ -30,6 +33,9 @@ docker-build-admin:
   # Use the official docker image.
   image: docker:latest
   stage: deploy
+  cache:
+    paths:
+      - node_modules/
   services:
     - docker:dind
   before_script:
