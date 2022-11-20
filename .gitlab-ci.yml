@@ -37,7 +37,6 @@ docker-build-admin:
   # Default branch leaves tag empty (= latest tag)
   # All other branches are tagged with the escaped branch name (commit ref slug)
   script:
-    - ls -la
     - |
       if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
         tag=""
@@ -47,5 +46,6 @@ docker-build-admin:
         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
       fi
     - cd apps/admin
+    - ls -la
     - docker build --pull -t "$CI_REGISTRY/qelos/qelos/admin${tag}" .
     - docker push "$CI_REGISTRY/qelos/qelos/admin${tag}"
