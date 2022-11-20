@@ -33,5 +33,12 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594"
+  "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594",
+  "bundledDependencies": [
+    "@qelos/api-kit",
+    "@qelos/cache-manager",
+    "mongoose",
+    "node-fetch",
+    "shortid"
+  ]
 }

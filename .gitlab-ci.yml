@@ -13,16 +13,8 @@ build-monorepo:
   script:
     - npm install
     - npm run build
+    - node pack-apps.mjs
     - npm run test
-    - node tools/bundle-dependencies-polyfix admin
-    - npm run pack-package --- --scope=@qelos/admin
-    - npm run rename-pack --- --scope=@qelos/admin
-    - node tools/bundle-dependencies-polyfix auth
-    - npm run pack-package --- --scope=@qelos/auth
-    - npm run rename-pack --- --scope=@qelos/auth
-    - node tools/bundle-dependencies-polyfix assets
-    - npm run pack-package --- --scope=@qelos/assets
-    - npm run rename-pack --- --scope=@qelos/assets
 
 # To contribute improvements to CI/CD templates, please follow the Development guide at:
 # https://docs.gitlab.com/ee/development/cicd/templates.html
@@ -78,7 +70,6 @@ docker-build-auth:
     - docker build --pull -t "$CI_REGISTRY/qelos/qelos/${service}${tag}" .
     - docker push "$CI_REGISTRY/qelos/qelos/${service}${tag}"
 
-
 docker-build-assets:
   image: docker:latest
   stage: deploy
@@ -88,6 +79,48 @@ docker-build-assets:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
     - service="assets"
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+        tag=""
+        echo "Running on default branch '$CI_DEFAULT_BRANCH': tag = 'latest'"
+      else
+        tag=":$CI_COMMIT_REF_SLUG"
+        echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+      fi
+    - cd apps/${service}
+    - docker build --pull -t "$CI_REGISTRY/qelos/qelos/${service}${tag}" .
+    - docker push "$CI_REGISTRY/qelos/qelos/${service}${tag}"
+
+docker-build-content:
+  image: docker:latest
+  stage: deploy
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - service="content"
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+        tag=""
+        echo "Running on default branch '$CI_DEFAULT_BRANCH': tag = 'latest'"
+      else
+        tag=":$CI_COMMIT_REF_SLUG"
+        echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+      fi
+    - cd apps/${service}
+    - docker build --pull -t "$CI_REGISTRY/qelos/qelos/${service}${tag}" .
+    - docker push "$CI_REGISTRY/qelos/qelos/${service}${tag}"
+
+docker-build-drafts:
+  image: docker:latest
+  stage: deploy
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - service="drafts"
     - |
       if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
         tag=""

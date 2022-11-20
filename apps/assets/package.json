@@ -34,5 +34,16 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594"
+  "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594",
+  "bundledDependencies": [
+    "@google-cloud/storage",
+    "@qelos/api-kit",
+    "aws-sdk",
+    "cloudinary",
+    "datauri",
+    "ftp",
+    "mongoose",
+    "multer",
+    "uniqid"
+  ]
 }
