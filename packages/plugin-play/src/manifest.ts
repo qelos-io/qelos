@@ -13,6 +13,7 @@ export const manifest = {
   proxyPath: '/api/play',
   proxyUrl: '',
   subscribedEvents: [],
+  navBarGroups: [],
   microFrontends: [],
   authAcquire: {
     refreshTokenUrl: '/api/token/refresh',
@@ -21,6 +22,10 @@ export const manifest = {
   },
 };
 
-export type ManifestOptions = Partial<typeof manifest> & { appUrl?: string };
+export type NavBarGroup = { key: string, name: string, iconName?: string, iconSvg?: string, priority?: number };
+
+export type ManifestOptions =
+  Partial<typeof manifest>
+  & { appUrl?: string, navBarGroups?: NavBarGroup[] };
 
 export default manifest;

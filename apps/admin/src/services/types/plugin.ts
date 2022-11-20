@@ -11,6 +11,9 @@ export interface IMicroFrontend {
     path: string;
     roles: string[],
     navBarPosition: 'top' | 'bottom';
+    group?: string;
+    iconName?: string;
+    iconSvg?: string;
   };
   component?: {
     page: string;
@@ -42,5 +45,6 @@ export interface IPlugin {
     eventName?: string,
     hookUrl: string;
   }[]
+  navBarGroups?: { key: string, name: string, iconName?: string, iconSvg?: string, priority?: number }[]
   microFrontends: IMicroFrontend[]
 }

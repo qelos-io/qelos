@@ -1,6 +1,7 @@
 import express, {Express} from 'express';
 
 import type {ApiConfig, BodyParserType} from './types';
+import shutdown from './shutdown';
 
 
 export const config = (updatedConfig = config): ApiConfig => {
@@ -30,13 +31,7 @@ function configureApp(app: Express) {
   if (process.env.NODE_ENV !== 'production') {
     _app.use(require('morgan')('combined'))
     _app.get('/api/shutdown', () => {
-      require('fs').readdirSync(process.cwd()).forEach(filename => {
-        if (filename.includes('index.') || filename.includes('server.')) {
-          const filePath = require('path').join(process.cwd(), filename);
-          require('fs').writeFileSync(filePath, require('fs').readFileSync(filePath))
-        }
-      })
-      process.exit();
+      shutdown()
     })
   }
   if (_config.cors) {

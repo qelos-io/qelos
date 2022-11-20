@@ -20,11 +20,15 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
   const userRoles = computed(() => authStore.user?.roles || []);
 
   const microFrontends = computed(() => {
-    const data = {top: [], bottom: []};
+    const data = {top: [{key: '', items: [], priority: 99999}], bottom: [{key: '', items: [], priority: 99999}]};
     if (!plugins.value) {
       return data;
     }
     return plugins.value.reduce((routes, plugin) => {
+      const groups = plugin.navBarGroups?.reduce((map, group) => {
+        map[group.key] = group;
+        return map;
+      }, {}) || {};
       plugin.microFrontends?.filter(frontend =>
         frontend.active &&
         !!frontend.route &&
@@ -33,18 +37,34 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         .forEach(frontend => {
           frontend.callbackUrl = plugin.callbackUrl;
           frontend.pluginId = plugin._id;
-          if (frontend.route.navBarPosition === 'top') {
-            routes.top.push(frontend);
+          const stackTo = frontend.route.navBarPosition === 'top' ? routes.top : routes.bottom;
+          if (frontend.route.group) {
+            const groupTo = stackTo.find(group => group.key === frontend.route.group);
+            if (groupTo) {
+              groupTo.items.push(frontend);
+            } else {
+              stackTo.unshift({
+                ...groups[frontend.route.group],
+                items: [frontend]
+              })
+            }
           } else {
-            routes.bottom.push(frontend);
+            stackTo[stackTo.length - 1].items.push(frontend); // add to the un-grouped items;
           }
         });
+
+      const sortByPriority = (a, b) => (a.priority || 99999) - (b.priority || 99999);
+      routes.top = routes.top.sort(sortByPriority);
+      routes.bottom = routes.bottom.sort(sortByPriority);
       return routes;
     }, data)
   });
 
   const unwatch = watch(microFrontends, ({top, bottom}) => {
-    [...top, ...bottom].forEach(frontend => {
+    [
+      ...top.map(group => group.items).flat(),
+      ...bottom.map(group => group.items).flat()
+    ].forEach(frontend => {
       router.addRoute('playPlugin', {
         name: `plugin.${frontend.name}`,
         path: frontend.route.path,

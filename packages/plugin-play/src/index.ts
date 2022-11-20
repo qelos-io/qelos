@@ -1,6 +1,4 @@
-import {join} from 'path';
-import manifest from './manifest';
-import {RouteHandlerMethod} from 'fastify/types/route';
+import manifest, {NavBarGroup} from './manifest';
 
 export interface MicroFrontend {
   name: string;
@@ -11,6 +9,9 @@ export interface MicroFrontend {
     path: string;
     roles?: string[],
     navBarPosition: 'top' | 'bottom';
+    group?: string;
+    iconName?: string;
+    iconSvg?: string;
   };
   component?: {
     page: string;
@@ -25,4 +26,11 @@ export {getSdkForTenant, getSdk, getSdkForUrl} from './sdk';
 
 export function addMicroFrontend(mfe: MicroFrontend) {
   manifest.microFrontends.push(mfe);
+}
+
+export function addGroupedMicroFrontends(group: NavBarGroup, mfeArray: MicroFrontend[]) {
+  manifest.navBarGroups.push(group);
+  mfeArray.forEach(mfe => {
+    addMicroFrontend({...mfe, route: {...mfe.route, group: group.key}})
+  })
 }

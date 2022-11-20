@@ -1,3 +1,4 @@
+export * from './shutdown'
 export * from './app'
 export * from './router'
 export * from './internal-service'

@@ -2,17 +2,19 @@
   <nav :class="{show: opened}">
     <div class="mobile-mask" @click="close"/>
     <router-link to="/" class="home-logo">
-      <img alt="SaaS" :src="config?.metadata.logoUrl">
+      <img :alt="config?.metadata.name" :src="config?.metadata.logoUrl">
     </router-link>
 
     <el-menu router>
-      <div v-if="microFrontends.top.length" class="nav-group">
-        <h4>{{ $t('PLAY') }}</h4>
-        <el-menu-item v-for="mf in microFrontends.top" :key="mf.route.path" :route="'/play/' + mf.route.path"
-                      :index="'/play/' + mf.route.path">
-          <span>{{ mf.name }}</span>
-        </el-menu-item>
-      </div>
+      <template v-for="group in microFrontends.top">
+        <div :key="group.key" class="nav-group" v-if="group.items.length">
+          <h4 v-if="group.name">{{ group.name }}</h4>
+          <el-menu-item v-for="mf in group.items" :key="mf.route.path" :route="'/play/' + mf.route.path"
+                        :index="'/play/' + mf.route.path">
+            <span>{{ mf.name }}</span>
+          </el-menu-item>
+        </div>
+      </template>
 
       <div class="nav-group" v-if="isPrivilegedUser">
         <h4>{{ $t('CONTENT') }}</h4>
@@ -123,13 +125,16 @@
         </el-menu-item>
       </div>
 
-      <div v-if="microFrontends.bottom.length" class="nav-group">
-        <h4>{{ $t('PLAY') }}</h4>
-        <el-menu-item v-for="mf in microFrontends.bottom" :key="mf.route.path" :route="'/play/' + mf.route.path"
-                      :index="'/play/' + mf.route.path">
-          <span>{{ mf.name }}</span>
-        </el-menu-item>
-      </div>
+      <template v-for="group in microFrontends.bottom">
+        <div :key="group.key" class="nav-group" v-if="group.items.length">
+          <h4 v-if="group.name">{{ group.name }}</h4>
+          <el-menu-item v-for="mf in group.items" :key="mf.route.path" :route="'/play/' + mf.route.path"
+                        :index="'/play/' + mf.route.path">
+            <span>{{ mf.name }}</span>
+          </el-menu-item>
+        </div>
+      </template>
+
     </el-menu>
   </nav>
 </template>

@@ -1,6 +1,6 @@
-import GreenpressAdministratorSDK from '@qelos/sdk/dist/administrator'
+import QelosAdministratorSDK from '@qelos/sdk/dist/administrator'
 
-const sdk = new GreenpressAdministratorSDK({
+const sdk = new QelosAdministratorSDK({
     appUrl: location.origin,
     fetch: globalThis.fetch.bind(globalThis),
 })
