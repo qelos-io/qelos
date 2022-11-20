@@ -1,4 +1,4 @@
-test:
+build-monorepo:
   image: node:16
   stage: build
   cache:
@@ -20,10 +20,10 @@ test:
 # This template uses one generic job with conditional builds
 # for the default branch and all other (MR) branches.
 
-docker-build:
+docker-build-admin:
   # Use the official docker image.
   image: docker:latest
-  stage: build
+  stage: deploy
   services:
     - docker:dind
   before_script:
@@ -39,10 +39,6 @@ docker-build:
         tag=":$CI_COMMIT_REF_SLUG"
         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
       fi
-    - docker build --pull -t "registry.gitlab.com/qelos/monorepo${tag}" .
-    - docker push "registry.gitlab.com/qelos/monorepo${tag}"
-  # Run this job in a branch where a Dockerfile exists
-  rules:
-    - if: $CI_COMMIT_BRANCH
-      exists:
-        - Dockerfile
+    - cd compose/builders
+    - docker build --pull -t "registry.gitlab.com/qelos/admin${tag}" .
+    - docker push "registry.gitlab.com/qelos/admin${tag}"
