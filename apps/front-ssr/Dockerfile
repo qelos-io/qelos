@@ -7,6 +7,5 @@ RUN tar zxvf ./qelos-front-ssr.tgz -C ./
 
 WORKDIR /package
 COPY *.mjs *.json *.js /package/
-RUN npm install
 COPY client /package/client
 CMD npm start
