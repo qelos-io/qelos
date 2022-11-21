@@ -39,7 +39,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
           frontend.pluginId = plugin._id;
           const stackTo = frontend.route.navBarPosition === 'top' ? routes.top : routes.bottom;
           if (frontend.route.group) {
-            const groupTo = stackTo.find(group => group.key === frontend.route.group);
+            const groupTo = stackTo.find(group  => group.key === frontend.route.group);
             if (groupTo) {
               groupTo.items.push(frontend);
             } else {

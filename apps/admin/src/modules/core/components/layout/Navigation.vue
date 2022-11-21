@@ -9,9 +9,12 @@
       <template v-for="group in microFrontends.top">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.name">{{ group.name }}</h4>
-          <el-menu-item v-for="mf in group.items" :key="mf.route.path" :route="'/play/' + mf.route.path"
-                        :index="'/play/' + mf.route.path">
-            <span>{{ mf.name }}</span>
+          <el-menu-item v-for="mfe in group.items" :key="mfe.route.path" :route="'/play/' + mfe.route.path"
+                        :index="'/play/' + mfe.route.path">
+            <el-icon v-if="mfe.route.iconName">
+              <component :is="'icon-' + mfe.route.iconName"/>
+            </el-icon>
+            <span>{{ mfe.name }}</span>
           </el-menu-item>
         </div>
       </template>
@@ -128,9 +131,12 @@
       <template v-for="group in microFrontends.bottom">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.name">{{ group.name }}</h4>
-          <el-menu-item v-for="mf in group.items" :key="mf.route.path" :route="'/play/' + mf.route.path"
-                        :index="'/play/' + mf.route.path">
-            <span>{{ mf.name }}</span>
+          <el-menu-item v-for="mfe in group.items" :key="mfe.route.path" :route="'/play/' + mfe.route.path"
+                        :index="'/play/' + mfe.route.path">
+            <el-icon v-if="mfe.route.iconName">
+              <component :is="'icon-' + mfe.route.iconName"/>
+            </el-icon>
+            <span>{{ mfe.name }}</span>
           </el-menu-item>
         </div>
       </template>
