@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 
-import {LayoutConnectedDataKind} from '@qelos/sdk/dist/layouts';
+import {LayoutConnectedDataKind} from '@qelos/sdk/dist/administrator/layouts';
 import {computed, toRef} from 'vue';
 import {useBlocksList} from '@/modules/blocks/store/blocks-list';
 

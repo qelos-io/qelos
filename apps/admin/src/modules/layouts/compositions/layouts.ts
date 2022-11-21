@@ -1,6 +1,6 @@
 import {useSubmitting} from '../../core/compositions/submitting'
 import {useDispatcher} from '../../core/compositions/dispatcher'
-import {ILayout, LayoutKind} from '@qelos/sdk/dist/layouts';
+import {ILayout, LayoutKind} from '@qelos/sdk/dist/administrator/layouts';
 import sdk from '@/services/sdk';
 import {removeUnsavedChanges} from '@/modules/drafts/compositions/unsaved-changes';
 import {reactive} from 'vue';

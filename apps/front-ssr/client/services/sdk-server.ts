@@ -1,5 +1,5 @@
 import QelosSDK from '@qelos/sdk';
-import {LayoutConnectedDataKind} from '@qelos/sdk/dist/layouts';
+import {LayoutConnectedDataKind} from '@qelos/sdk/dist/administrator/layouts';
 import {IAppConfiguration} from '@qelos/sdk/dist/configurations';
 
 const appUrl = ((globalThis as any).gatewayUrl as string)

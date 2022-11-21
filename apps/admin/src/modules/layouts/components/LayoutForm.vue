@@ -35,7 +35,7 @@
 </template>
 <script lang="ts" setup>
 import {ref, toRef} from 'vue'
-import {ILayout} from '@qelos/sdk/dist/layouts';
+import {ILayout} from '@qelos/sdk/dist/administrator/layouts';
 import {clearNulls} from '../../core/utils/clear-nulls'
 import {useLayoutForm} from '../compositions/layouts';
 
