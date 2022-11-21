@@ -1,6 +1,6 @@
 export type FetchLike = (input: RequestInfo, init?: RequestInit) => Promise<Response>;
 
-export interface GreenpressSDKOptions {
+export interface QelosSDKOptions {
   appUrl: string;
   fetch: FetchLike;
   accessToken?: string;

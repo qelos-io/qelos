@@ -1,6 +1,6 @@
-import {GreenpressSDKOptions} from './types';
-import BaseSDK from './base-gp-sdk';
-import {IUser} from './authentication';
+import {QelosSDKOptions} from '../types';
+import BaseSDK from '../base-sdk';
+import {IUser} from '../authentication';
 
 export interface IManagedUser<T = any> extends IUser {
   internalMetadata?: T;
@@ -13,7 +13,7 @@ export interface IManagedUserRequest<T = any> extends IManagedUser<T> {
 export default class GpUsers<T = any, E = any> extends BaseSDK {
   private relativePath = '/api/users';
 
-  constructor(private options: GreenpressSDKOptions) {
+  constructor(private options: QelosSDKOptions) {
     super(options)
   }
 

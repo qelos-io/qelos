@@ -1,5 +1,5 @@
-import { GreenpressSDKOptions } from "./types";
-import BaseSDK from "./base-gp-sdk";
+import { QelosSDKOptions } from "./types";
+import BaseSDK from "./base-sdk";
 import { ICategory } from "./categories";
 
 export enum PostContentState {
@@ -37,7 +37,7 @@ export type GetPostsListOptions = {
 export default class GpPosts extends BaseSDK {
   private relativePath = "/api/posts";
 
-  constructor(options: GreenpressSDKOptions) {
+  constructor(options: QelosSDKOptions) {
     super(options);
   }
 

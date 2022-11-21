@@ -1,5 +1,5 @@
-import {GreenpressSDKOptions} from './types';
-import BaseSDK from './base-gp-sdk';
+import {QelosSDKOptions} from '../types';
+import BaseSDK from '../base-sdk';
 
 export interface IDraftMetadata {
   contextDisplayName?: string;
@@ -17,7 +17,7 @@ export interface IDraft extends IDraftMetadata {
 export default class GpDrafts extends BaseSDK {
   private relativePath = '/api/drafts';
 
-  constructor(options: GreenpressSDKOptions) {
+  constructor(options: QelosSDKOptions) {
     super(options)
   }
 

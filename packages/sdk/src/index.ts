@@ -1,14 +1,14 @@
-import {GreenpressSDKOptions} from './types';
-import BaseSDK from './base-gp-sdk';
+import {QelosSDKOptions} from './types';
+import BaseSDK from './base-sdk';
 import GpCategories from './categories';
 import GpPosts from './posts';
 import GpMenus from './menus';
 import GpConfigurations from './configurations';
 import GpAuthentication from './authentication';
 import GpBlocks from './blocks';
-import GpLayouts from './layouts';
+import GpLayouts from './administrator/layouts';
 
-export default class GreenpressSDK extends BaseSDK {
+export default class QelosSDK extends BaseSDK {
 
   categories: GpCategories;
   posts: GpPosts;
@@ -18,7 +18,7 @@ export default class GreenpressSDK extends BaseSDK {
   configurations: GpConfigurations;
   authentication: GpAuthentication;
 
-  constructor(private options: GreenpressSDKOptions) {
+  constructor(private options: QelosSDKOptions) {
     super(options);
     this.categories = new GpCategories(this.options);
     this.posts = new GpPosts(this.options);

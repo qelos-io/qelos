@@ -1,5 +1,5 @@
-import {GreenpressSDKOptions} from './types';
-import BaseSDK from './base-gp-sdk';
+import {QelosSDKOptions} from './types';
+import BaseSDK from './base-sdk';
 
 export interface MenuLink {
   _id?: string;
@@ -32,7 +32,7 @@ export interface IMenu {
 export default class GpMenus extends BaseSDK {
   private relativePath = '/api/menus';
 
-  constructor(options: GreenpressSDKOptions) {
+  constructor(options: QelosSDKOptions) {
     super(options)
   }
 

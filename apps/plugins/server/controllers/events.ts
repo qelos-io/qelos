@@ -23,7 +23,7 @@ export async function getEvent(req, res) {
   const event = await PlatformEvent.findOne({
     tenant: req.tenant,
     _id: req.params.eventId
-  }).lean()
+  }).lean().exec()
   res.json(event).end();
 }
 

@@ -1,11 +1,11 @@
-import { GreenpressSDKOptions } from "./types";
-import BaseSDK from "./base-gp-sdk";
-import {ILayout, LayoutKind} from './layouts';
+import { QelosSDKOptions } from "./types";
+import BaseSDK from "./base-sdk";
+import {ILayout, LayoutKind} from './administrator/layouts';
 
 export default class GpManageLayouts extends BaseSDK {
   private relativePath = "/api/layouts";
 
-  constructor(options: GreenpressSDKOptions) {
+  constructor(options: QelosSDKOptions) {
     super(options);
   }
 

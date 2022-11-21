@@ -4,6 +4,8 @@ import Plugin from '../models/plugin';
 import {getPluginToken} from './tokens-management';
 import {fetchPlugin} from './plugins-call';
 
+const ALL = '*';
+
 class HooksEmitter extends EventEmitter {
 }
 
@@ -35,12 +37,12 @@ hookEvents.on('hook', async (platformEvent: IEvent) => {
     plugin.subscribedEvents.forEach(subscribedEvent => {
       let shouldHook = false;
       if (!subscribedEvent.eventName) {
-        subscribedEvent.eventName = '*';
+        subscribedEvent.eventName = ALL;
       }
       if (subscribedEvent.source && subscribedEvent.kind && subscribedEvent.eventName) { // plugin filled all values
-        if (subscribedEvent.source === platformEvent.source &&
-          (subscribedEvent.kind === platformEvent.kind || subscribedEvent.kind === '*') &&
-          (subscribedEvent.eventName === '*' || subscribedEvent.eventName === platformEvent.eventName)) {
+        if ((subscribedEvent.source === platformEvent.source || subscribedEvent.source === ALL) &&
+          (subscribedEvent.kind === platformEvent.kind || subscribedEvent.kind === ALL) &&
+          (subscribedEvent.eventName === platformEvent.eventName || subscribedEvent.eventName === ALL)) {
           shouldHook = true;
         }
       } else if (!subscribedEvent.source && subscribedEvent.kind === platformEvent.kind) { // no source, only kind

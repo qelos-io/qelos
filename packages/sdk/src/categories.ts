@@ -1,5 +1,5 @@
-import { GreenpressSDKOptions } from "./types";
-import BaseSDK from "./base-gp-sdk";
+import { QelosSDKOptions } from "./types";
+import BaseSDK from "./base-sdk";
 
 export interface ICategory {
   _id?: string;
@@ -14,7 +14,7 @@ export interface ICategory {
 export default class GpCategories extends BaseSDK {
   private relativePath = "/api/categories";
 
-  constructor(options: GreenpressSDKOptions) {
+  constructor(options: QelosSDKOptions) {
     super(options);
   }
 

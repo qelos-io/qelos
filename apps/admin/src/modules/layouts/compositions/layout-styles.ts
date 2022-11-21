@@ -1,5 +1,5 @@
 import {ref, Ref, watch} from 'vue';
-import {ILayoutContent} from '@qelos/sdk/src/layouts';
+import {ILayoutContent} from 'packages/sdk/src/administrator/layouts';
 
 const storedMatches = {};
 

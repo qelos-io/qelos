@@ -1,5 +1,5 @@
-import { GreenpressSDKOptions } from "./types";
-import BaseSDK from "./base-gp-sdk";
+import { QelosSDKOptions } from "./types";
+import BaseSDK from "./base-sdk";
 
 export interface IAppConfiguration {
   name: string;
@@ -21,7 +21,7 @@ export interface IAppConfiguration {
 export default class GpConfigurations extends BaseSDK {
   private relativePath = "/api/configurations/app-configuration";
 
-  constructor(options: GreenpressSDKOptions) {
+  constructor(options: QelosSDKOptions) {
     super(options);
   }
 

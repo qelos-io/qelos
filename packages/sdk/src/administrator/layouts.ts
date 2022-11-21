@@ -1,5 +1,5 @@
-import { GreenpressSDKOptions } from "./types";
-import BaseSDK from "./base-gp-sdk";
+import { QelosSDKOptions } from "../types";
+import BaseSDK from "../base-sdk";
 
 export enum LayoutKind {
   INDEX = "index",
@@ -46,7 +46,7 @@ export interface ILayout {
 export default class GpLayouts extends BaseSDK {
   private relativePath = "/api/layouts";
 
-  constructor(options: GreenpressSDKOptions) {
+  constructor(options: QelosSDKOptions) {
     super(options);
   }
 

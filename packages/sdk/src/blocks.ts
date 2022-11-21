@@ -1,5 +1,5 @@
-import {GreenpressSDKOptions} from './types';
-import BaseSDK from './base-gp-sdk';
+import {QelosSDKOptions} from './types';
+import BaseSDK from './base-sdk';
 
 export interface IBlock {
   name: string;
@@ -13,7 +13,7 @@ export interface IBlock {
 export default class GpBlocks extends BaseSDK {
   private relativePath = '/api/blocks';
 
-  constructor(options: GreenpressSDKOptions) {
+  constructor(options: QelosSDKOptions) {
     super(options)
   }
 

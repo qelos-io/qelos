@@ -1,5 +1,5 @@
-import {GreenpressSDKOptions} from './types';
-import BaseSDK from './base-gp-sdk';
+import {QelosSDKOptions} from './types';
+import BaseSDK from './base-sdk';
 
 export interface IUser {
   _id: string;
@@ -41,7 +41,7 @@ export default class GpAuthentication extends BaseSDK {
     return this.#accessToken;
   }
 
-  constructor(options: GreenpressSDKOptions) {
+  constructor(options: QelosSDKOptions) {
     super(options);
     if (options.accessToken || options.getAccessToken) {
       this.#accessToken = options.accessToken || options.getAccessToken();
