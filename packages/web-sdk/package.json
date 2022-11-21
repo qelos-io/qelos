@@ -1,0 +1,18 @@
+{
+  "name": "@qelos/web-sdk",
+  "version": "2.0.21",
+  "description": "Frontend Web SDK for Qelos API",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "typescript": "^4.6.3"
+  },
+  "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594"
+}
