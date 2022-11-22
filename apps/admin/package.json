@@ -1,6 +1,6 @@
 {
   "name": "@qelos/admin",
-  "version": "2.0.21",
+  "version": "2.0.22",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -19,8 +19,8 @@
   "devDependencies": {
     "@element-plus/icons-vue": "^1.1.1",
     "@greenpress/gp-editor": "^2.1.1",
-    "@qelos/sdk": "^2.0.21",
-    "@qelos/view-builder": "^2.0.21",
+    "@qelos/sdk": "^2.0.22",
+    "@qelos/view-builder": "^2.0.22",
     "@vitejs/plugin-vue": "^2.2.4",
     "axios": "^0.24.0",
     "element-plus": "^1.2.0-beta.6",
