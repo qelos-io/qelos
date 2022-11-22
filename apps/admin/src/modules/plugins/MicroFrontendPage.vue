@@ -16,6 +16,7 @@ const currentMicroFrontend = computed(() => {
     origin: currentRoute.value.meta.origin
   }
 })
+mfeCommunicationStore.lastOrigin = currentMicroFrontend.value.origin;
 watch(currentMicroFrontend, newVal => {
   if (newVal.origin) {
     mfeCommunicationStore.lastOrigin = newVal.origin;

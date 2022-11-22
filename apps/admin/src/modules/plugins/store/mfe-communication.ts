@@ -1,5 +1,5 @@
 import {defineStore} from 'pinia';
-import {ref} from 'vue';
+import {nextTick, ref} from 'vue';
 import {useRouter} from 'vue-router';
 
 export const useMfeCommunication = defineStore('mfe-communication', function useMfeCommunication() {
@@ -17,9 +17,12 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
     }
   })
 
-  function dispatch(eventName: string, payload?: any) {
+  async function dispatch(eventName: string, payload?: any) {
+    if(!iframe.value) {
+      await nextTick();
+    }
     iframe.value.contentWindow.postMessage({
-      qelosHostname: location.hostname,
+      qelosHostname: location.origin,
       eventName,
       payload,
     }, lastOrigin.value);
@@ -40,11 +43,11 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
         dispatch('availableRoutes', routes);
         return;
       case 'changeRoute':
-        router.push({name: payload.name, params: payload.params});
+        router.push({name: payload.routeName, params: payload.params});
         return;
       case '':
     }
-  })
+  }, false)
 
 
   return {

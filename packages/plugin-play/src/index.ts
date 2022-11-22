@@ -16,6 +16,11 @@ export interface MicroFrontend {
   component?: {
     page: string;
     position: 'top' | 'left' | 'right' | 'bottom';
+  },
+  modal?: {
+    name: string;
+    params: string[] | Record<string, string>; // schema / hints for props
+    size: 'sm' | 'md' | 'xl' | 'full'
   }
 }
 
