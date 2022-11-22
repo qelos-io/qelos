@@ -1,7 +1,7 @@
 {
   "name": "@qelos/plugin-play",
   "version": "2.0.24",
-  "description": "Play a plugin for Qelos",
+  "description": "Play a plugin for Qelos!",
   "main": "./dist/index.js",
   "scripts": {
     "create-certs": "node create-cert.js",
