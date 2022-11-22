@@ -89,8 +89,8 @@ function createApp(): FastifyInstance {
   playEndpoints();
   playFrontend();
 
-  if (!(config.greenpressUrl || handlers.refreshToken.length)) {
-    throw new Error('you must provide either a refresh token handler or Greenpress application credentials');
+  if (!(config.qelosUrl || handlers.refreshToken.length)) {
+    throw new Error('you must provide either a refresh token handler or Qelos application credentials');
   }
 
   return app;

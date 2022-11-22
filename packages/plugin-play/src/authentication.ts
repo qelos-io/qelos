@@ -63,7 +63,7 @@ export function getRefreshTokenRoute(): RouteOptions {
 
   const usersSdk = getSdk().users;
 
-  if (config.greenpressUrl) {
+  if (config.qelosUrl) {
     onRefreshToken(async ({sub, identifier = ''}) => {
       const user = await usersSdk.getUser(sub);
       if (identifier.toString() !== user.internalMetadata?.tokenIdentifier) {
@@ -119,7 +119,7 @@ export function getRegisterRoute(): RouteOptions {
 
   const usersSdk = getSdk().users;
 
-  if (config.greenpressUrl) {
+  if (config.qelosUrl) {
     onNewTenant(async ({email, password, appUrl}) => {
       const tenantSdk = getSdkForUrl(appUrl)
       const emailSplit = email.split('@');
@@ -201,7 +201,7 @@ export function getRegisterRoute(): RouteOptions {
 }
 
 export function getCallbackRoute(): RouteOptions {
-  if (config.greenpressUrl) {
+  if (config.qelosUrl) {
     onCallback(async ({user, returnUrl}, request) => {
       const code = Math.floor(Math.random() * 1000).toString();
       // set the code on gp db
@@ -260,7 +260,7 @@ export function getCallbackRoute(): RouteOptions {
 }
 
 export function getFrontendAuthorizationRoute(): RouteOptions {
-  if (config.greenpressUrl) {
+  if (config.qelosUrl) {
     onFrontendAuthorization(async ({returnUrl, user, tenant}, request) => {
       const draft = await getSdk().drafts.getDraft(returnUrl, `${tenant.sub}.${user.email}`);
       if (draft && draft.contextData) {

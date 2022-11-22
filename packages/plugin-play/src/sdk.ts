@@ -8,10 +8,10 @@ let localSdk: QelosAdministratorSDK<{ tokenIdentifier: string }>;
 
 async function authenticate() {
   try {
-    await localSdk.authentication.oAuthSignin({email: config.greenpressUsername, password: config.greenpressPassword});
-    console.log('authenticated successfully to ' + config.greenpressUrl)
+    await localSdk.authentication.oAuthSignin({email: config.qelosUsername, password: config.qelosPassword});
+    console.log('authenticated successfully to ' + config.qelosUrl)
   } catch (err) {
-    console.log('could not authenticate to own greenpress app');
+    console.log('could not authenticate to own qelos app');
     process.exit(1);
   }
 }
@@ -31,7 +31,7 @@ export function getSdk(): QelosAdministratorSDK {
   if (localSdk) {
     return localSdk;
   }
-  localSdk = getSdkForUrl<{ tokenIdentifier: string }>(config.greenpressUrl);
+  localSdk = getSdkForUrl<{ tokenIdentifier: string }>(config.qelosUrl);
   authenticate();
   return localSdk;
 }

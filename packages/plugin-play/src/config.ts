@@ -6,9 +6,9 @@ const config = {
   dev: process.env.NODE_ENV !== 'production',
   refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
   accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
-  greenpressUrl: process.env.GREENPRESS_URL,
-  greenpressUsername: process.env.GREENPRESS_USERNAME,
-  greenpressPassword: process.env.GREENPRESS_PASSWORD,
+  qelosUrl: process.env.QELOS_URL,
+  qelosUsername: process.env.QELOS_USERNAME,
+  qelosPassword: process.env.QELOS_PASSWORD,
   staticFrontend: {
     root: join(process.cwd(), process.env.STATIC_ROOT || 'public'),
     prefix: process.env.STATIC_PREFIX || '/',
