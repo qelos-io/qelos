@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "rootDir": "src",
     "module": "esnext",
     "moduleResolution": "node",
     "target": "esnext",
@@ -10,6 +11,7 @@
     "esModuleInterop": true
   },
   "exclude": [
+    "examples",
     "node_modules",
     "dist"
   ]
