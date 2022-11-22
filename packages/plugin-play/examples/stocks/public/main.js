@@ -1,4 +1,4 @@
-import {authorize, code} from './future-client-sdk.js'
+import {authorize, code} from ''
 
 const {user, tenant} = await authorize()
 

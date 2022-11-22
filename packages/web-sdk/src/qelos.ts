@@ -2,6 +2,8 @@ let qelosHostname;
 
 const callbacks = new Map();
 
+const FROM = 'qelos-mfe';
+
 window.addEventListener('message', (event) => {
   if (event.data.qelosHostname) {
     qelosHostname = event.data.qelosHostname;
@@ -13,6 +15,7 @@ window.addEventListener('message', (event) => {
 
 export function dispatch(eventName: string, payload?: any) {
   postMessage({
+    from: FROM,
     eventName,
     payload
   }, qelosHostname);

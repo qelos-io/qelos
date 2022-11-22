@@ -1,3 +1,5 @@
+import {on} from './qelos';
+
 export const code = (new URL(location.href)).searchParams.get('code');
 
 export async function unAuthorize() {
@@ -25,6 +27,7 @@ export async function authorize() {
   })
 
   window.addEventListener('beforeunload', unAuthorize);
+  on('shutdown', unAuthorize);
 
   return res.json();
 }
