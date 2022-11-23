@@ -22,10 +22,13 @@ function callSecretsService(url: string, tenant: string, key: string, value?: an
 }
 
 export function getRefreshSecret(tenant: string, apiPath: string): Promise<{ value: string }> {
+  console.log('set refresh secret for ', tenant, apiPath)
   return callSecretsService('/api/secrets/get', tenant, `refresh-token-${tenant}-${apiPath}`)
 }
 
 export function setRefreshSecret(tenant: string, apiPath: string, refreshToken: string) {
+  console.log('set refresh secret for ', tenant, apiPath)
+  console.log('refresh has valid value??', !!refreshToken)
   return callSecretsService('/api/secrets/set', tenant, `refresh-token-${tenant}-${apiPath}`, refreshToken)
 }
 
@@ -41,15 +44,24 @@ export function storeOAuthPayloadForPlugin(tenant: string, apiPath: string, payl
 
 export async function refreshTokenForPlugin(tenant: string, apiPath: string, authAcquire): Promise<string> {
   const refreshToken = (await getRefreshSecret(tenant, apiPath)).value;
-  const res = await fetchPlugin({
-    url: authAcquire.refreshTokenUrl,
-    method: 'POST',
-    tenant,
-    accessToken: refreshToken,
-  })
-  const body = await res.json();
+  let tokensPayload;
+  if (refreshToken) {
+    const res = await fetchPlugin({
+      url: authAcquire.refreshTokenUrl,
+      method: 'POST',
+      tenant,
+      accessToken: refreshToken,
+    })
+    if (res.status === 200) {
+      tokensPayload = await res.json();
+    }
+  }
 
-  const accessToken = storeOAuthPayloadForPlugin(tenant, apiPath, body, authAcquire);
+  if (!tokensPayload) {
+    throw new Error('refresh token does not exist on secrets for plugin ' + tenant + ':' + apiPath);
+  }
+
+  const accessToken = storeOAuthPayloadForPlugin(tenant, apiPath, tokensPayload, authAcquire);
   return accessToken;
 }
 

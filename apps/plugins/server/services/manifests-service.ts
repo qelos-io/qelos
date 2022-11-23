@@ -4,6 +4,7 @@ import {IPlugin} from '../models/plugin';
 import {createUser, getUsers, updateUser} from './users';
 import {storeOAuthPayloadForPlugin} from './tokens-management';
 import httpAgent from './http-agent';
+import {DocumentDefinition} from 'mongoose';
 
 type PluginEnrichOptions = {
   hardReset?: boolean,
@@ -41,7 +42,7 @@ export async function loadManifest(manifestUrl: string): Promise<IPlugin & { reg
   };
 }
 
-async function registerToPlugin(plugin: IPlugin, registerUrl: string, {tenant, host, appUrl}) {
+export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, registerUrl: string, {tenant, host, appUrl}): Promise<string> {
   const email = `${plugin._id}.${tenant}@${host}`;
   const password = getRandomHash();
   const [maybeUser] = await getUsers(tenant, {email});
@@ -61,13 +62,14 @@ async function registerToPlugin(plugin: IPlugin, registerUrl: string, {tenant, h
     agent: httpAgent,
     headers: {
       'x-tenant': tenant,
-      'x-from': 'greenpress',
+      'x-from': 'qelos',
       'Content-Type': 'application/json',
     }
   })
   const payload = await res.json();
 
-  storeOAuthPayloadForPlugin(tenant, plugin.apiPath, payload, plugin.authAcquire);
+  const accessToken = storeOAuthPayloadForPlugin(tenant, plugin.apiPath, payload, plugin.authAcquire);
+  return accessToken;
 }
 
 export async function enrichPluginWithManifest(plugin: IPlugin, {

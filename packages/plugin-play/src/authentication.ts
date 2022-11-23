@@ -141,7 +141,7 @@ export function getRegisterRoute(): RouteOptions {
         user = existingUser;
         await usersSdk.update(user._id, {
           firstName: appUrl,
-          lastName: 'gp-player-app',
+          lastName: 'qelos-player-app',
           email,
           password,
           internalMetadata: {tokenIdentifier: newPayload.identifier}
@@ -149,7 +149,7 @@ export function getRegisterRoute(): RouteOptions {
       } else {
         user = await usersSdk.create({
           firstName: appUrl,
-          lastName: 'gp-player-app',
+          lastName: 'qelos-player-app',
           email,
           password,
           roles: ['user'],

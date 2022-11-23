@@ -8,7 +8,7 @@ export function fetchPlugin({url, method = 'GET', tenant, accessToken, body = ''
     agent: httpAgent,
     headers: {
       'x-tenant': tenant,
-      'x-from': 'greenpress',
+      'x-from': 'qelos',
       'Authorization': 'Bearer ' + accessToken,
       'Content-Type': 'application/json',
       ...headers

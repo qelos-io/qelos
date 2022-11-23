@@ -1,6 +1,5 @@
-const { redisUrl } = require('../../config')
-
-const { createCacheManager } = require('@qelos/cache-manager');
+import {createCacheManager} from '@qelos/cache-manager';
+import {redisUrl} from '../../config';
 
 const cacher = redisUrl ?
   require('@qelos/cache-manager/dist/redis-cache').createRedisCache(redisUrl) :
