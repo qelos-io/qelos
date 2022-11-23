@@ -1,4 +1,4 @@
-let qelosHostname;
+let qelosHostname = '*';
 
 const callbacks = new Map();
 
@@ -14,7 +14,7 @@ window.addEventListener('message', (event) => {
 })
 
 export function dispatch(eventName: string, payload?: any) {
-  postMessage({
+  window.parent.postMessage({
     from: FROM,
     eventName,
     payload

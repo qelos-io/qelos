@@ -6,11 +6,12 @@ export interface IMicroFrontend {
   url: string;
   active: boolean;
   opened: boolean;
+  roles: string[],
   route?: {
     name: string;
     path: string;
-    roles: string[],
     navBarPosition: 'top' | 'bottom';
+    roles?: string[],
     group?: string;
     iconName?: string;
     iconSvg?: string;
@@ -18,6 +19,11 @@ export interface IMicroFrontend {
   component?: {
     page: string;
     position: 'top' | 'left' | 'right' | 'bottom';
+  },
+  modal?: {
+    name: string;
+    params: string[] | Record<string, string>; // schema / hints for props
+    size: 'sm' | 'md' | 'xl' | 'full'
   }
 }
 

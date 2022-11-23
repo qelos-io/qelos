@@ -6,7 +6,7 @@
     </router-link>
 
     <el-menu router>
-      <template v-for="group in microFrontends.top">
+      <template v-for="group in navBar.top">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.name">{{ group.name }}</h4>
           <el-menu-item v-for="mfe in group.items" :key="mfe.route.path" :route="'/play/' + mfe.route.path"
@@ -128,7 +128,7 @@
         </el-menu-item>
       </div>
 
-      <template v-for="group in microFrontends.bottom">
+      <template v-for="group in navBar.bottom">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.name">{{ group.name }}</h4>
           <el-menu-item v-for="mfe in group.items" :key="mfe.route.path" :route="'/play/' + mfe.route.path"
@@ -153,7 +153,7 @@ import {isAdmin, isPrivilegedUser} from '@/modules/core/store/auth';
 import {useAppConfiguration} from '@/modules/configurations/store/app-configuration';
 
 const router = useRouter()
-const {microFrontends} = storeToRefs(usePluginsMicroFrontends());
+const {navBar} = storeToRefs(usePluginsMicroFrontends());
 const config = useAppConfiguration();
 
 defineProps({opened: Boolean})

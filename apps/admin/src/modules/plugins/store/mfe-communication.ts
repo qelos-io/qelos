@@ -1,12 +1,14 @@
 import {defineStore} from 'pinia';
-import {nextTick, ref} from 'vue';
+import {computed, nextTick, ref} from 'vue';
 import {useRouter} from 'vue-router';
+import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
 
 export const useMfeCommunication = defineStore('mfe-communication', function useMfeCommunication() {
   const lastOrigin = ref();
   const iframe = ref();
 
   const router = useRouter();
+  const {modals} = usePluginsMicroFrontends();
   const routes = router.getRoutes().map(route => {
     return {
       name: route.name,
@@ -16,9 +18,16 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
         .map(part => part.slice(1)),
     }
   })
+  const availableModals = computed(() => Object.keys(modals.value).reduce((map, modalName) => {
+    map[modalName] = {
+      name: modalName,
+      params: modals.value[modalName].params,
+    }
+    return map;
+  }, {}))
 
   async function dispatch(eventName: string, payload?: any) {
-    if(!iframe.value) {
+    if (!iframe.value) {
       await nextTick();
     }
     iframe.value.contentWindow.postMessage({
@@ -45,7 +54,9 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
       case 'changeRoute':
         router.push({name: payload.routeName, params: payload.params});
         return;
-      case '':
+      case 'modalsInterested':
+        dispatch('availableModals', availableModals.value);
+        return;
     }
   }, false)
 

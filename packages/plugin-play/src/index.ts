@@ -4,10 +4,10 @@ export interface MicroFrontend {
   name: string;
   description: string;
   url: string;
+  roles?: string[],
   route?: {
     name: string;
     path: string;
-    roles?: string[],
     navBarPosition: 'top' | 'bottom';
     group?: string;
     iconName?: string;
@@ -20,7 +20,7 @@ export interface MicroFrontend {
   modal?: {
     name: string;
     params: string[] | Record<string, string>; // schema / hints for props
-    size: 'sm' | 'md' | 'xl' | 'full'
+    size: 'sm' | 'md' | 'lg' | 'full'
   }
 }
 
