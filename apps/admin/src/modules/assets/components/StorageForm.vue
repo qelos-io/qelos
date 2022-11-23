@@ -96,7 +96,7 @@ const submit = () => {
   margin: 10px;
 
   h3 {
-	color: $main-color;
+	color: var(--main-color);
 	cursor: pointer;
   }
 }

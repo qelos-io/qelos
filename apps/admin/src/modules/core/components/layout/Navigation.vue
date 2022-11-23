@@ -170,15 +170,25 @@ $nav-width: 240px;
 nav {
   display: flex;
   flex-direction: column;
-  background-color: #fff;
-  box-shadow: 1px 1px #eee;
+  background-color: var(--nav-bg-color);
+  box-shadow: 1px 1px var(--border-color);
   transition: width .2s linear;
   width: $nav-width;
   overflow-y: auto;
 }
 
-nav .el-menu, nav .el-menu-item:hover {
-  --el-menu-hover-bg-color: var(--main-color-light);
+
+nav .el-menu, nav {
+  --el-menu-text-color: var(--secondary-color);
+  --el-menu-hover-bg-color: var(--main-color);
+  --el-menu-bg-color: var(--nav-bg-color);
+  border: 0;
+}
+.el-menu-item:hover {
+  --el-menu-text-color: var(--negative-color);
+  --el-menu-hover-bg-color: var(--main-color);
+  --el-menu-bg-color: var(--nav-bg-color);
+  border: 0;
 }
 
 .el-menu-item {
@@ -197,6 +207,16 @@ nav .el-menu, nav .el-menu-item:hover {
     border-radius: 5px;
     line-height: 50px;
     height: 50px;
+    --el-menu-text-color: var(--secondary-color);
+
+    &:hover {
+      color: var(--negative-color);
+    }
+  }
+
+  ::v-deep(.el-menu) {
+    background-color: var(--nav-bg-color);
+    --el-menu-text-color: var(--secondary-color);
   }
 }
 
@@ -214,7 +234,7 @@ a:hover {
   height: 70px;
   align-self: center;
   text-align: center;
-  background-color: #fff;
+  background-color: var(--nav-bg-color);
   transition: background 0.1s linear;
   width: $nav-width;
   position: sticky;
@@ -280,7 +300,7 @@ a:hover {
 
 .nav-group {
   h4 {
-    color: #a1a1a1;
+    color: var(--main-color);
     font-size: 13px;
     font-weight: normal;
     margin: 15px 0 5px;
@@ -291,7 +311,7 @@ a:hover {
       vertical-align: middle;
       width: 15px;
       height: 1px;
-      background-color: #a1a1a1;
+      background-color: var(--nav-bg-color);
       margin-inline-end: 5px;
     }
   }

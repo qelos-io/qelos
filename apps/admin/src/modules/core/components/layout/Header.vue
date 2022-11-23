@@ -26,7 +26,6 @@
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-
     </div>
   </header>
 </template>
@@ -63,7 +62,7 @@ header {
   margin: 15px;
   border-radius: 10px;
   background: #fff;
-  box-shadow: 2px 2px #eee;
+  box-shadow: 1px 2px var(--border-color);
 }
 
 .welcome {
@@ -73,7 +72,7 @@ header {
 
 .user-welcome {
   padding-inline-end: 10px;
-  color: $main-color;
+  color: var(--main-color);
   font-size: 16px;
 
   > i {
@@ -93,7 +92,7 @@ a {
   text-align: right;
   height: 100%;
   cursor: pointer;
-  color: $main-color;
+  color: var(--main-color);
 
   &:hover {
     text-decoration: underline;

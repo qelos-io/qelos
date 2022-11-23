@@ -11,11 +11,11 @@ table {
 
 tr, td {
   text-align: center;
-  border: 1px solid $border-color;
+  border: 1px solid var(--border-color);
 }
 
 thead th {
-  background-color: $main-color;
+  background-color: var(--main-color);
 }
 
 thead th, tbody td {
@@ -25,11 +25,11 @@ thead th, tbody td {
 }
 
 tbody tr:nth-child(even) td {
-  background-color: $border-color;
+  background-color: var(--border-color);
 }
 
 a, .link {
-  color: $negative-color;
+  color: var(--link);
   cursor: pointer;
   text-decoration: none;
   &:hover {

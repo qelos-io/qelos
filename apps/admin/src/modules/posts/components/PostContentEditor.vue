@@ -55,7 +55,7 @@
 		min-height: 300px;
 		display: block;
 		padding: 10px;
-		border: 1px solid $border-color;
+		border: 1px solid var(--border-color);
 	}
 
 	textarea {

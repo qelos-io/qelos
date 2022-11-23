@@ -26,6 +26,7 @@ textarea {
 
   .el-form-item__label {
     text-align: left;
+    color: var(--secondary-color)
   }
 }
 
@@ -43,14 +44,14 @@ textarea {
   }
 
   &.el-button--primary {
-    background-color: $main-color;
+    background-color: var(--main-color);
     color: white;
-    border: 1px solid $border-color;
+    border: 1px solid var(--border-color);
 
     &:hover {
-      background-color: $main-color;
+      background-color: var(--main-color);
       opacity: 0.8;
-      border: 1px solid $border-color;
+      border: 1px solid var(--border-color);
     }
   }
 }
@@ -67,7 +68,7 @@ textarea {
 
   h2 {
     strong {
-      color: $main-color;
+      color: var(--main-color);
 
       &:before {
         content: ': ';
@@ -90,11 +91,11 @@ textarea {
 
       &.active, &:active {
         background-color: #fff;
-        box-shadow: 2px 2px #eee;
+        box-shadow: 2px 2px var(--border-color);
       }
 
       &:hover {
-        color: $secondary-color;
+        color: var(--secondary-color);
         border: 0;
       }
     }

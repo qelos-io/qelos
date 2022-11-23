@@ -14,6 +14,6 @@
 <style scoped lang="scss">
 	@import "../../../../style/colors";
 	h1 i {
-		color: $main-color;
+    color: var(--main-color);
 	}
 </style>

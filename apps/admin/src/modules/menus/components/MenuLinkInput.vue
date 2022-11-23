@@ -67,10 +67,10 @@ export default {
 .menu-link-input {
   display: flex;
   align-items: start;
-  border: 1px solid $border-color;
+  border: 1px solid var(--border-color);
   margin: 10px;
   padding: 15px;
-  background-color: $secondary-color;
+  background-color: var(--secondary-color);
   color: #fff;
   gap: 10px;
 }

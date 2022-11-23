@@ -36,7 +36,7 @@ const to = (tab) => {
 
 h2 {
   strong {
-    color: $main-color;
+    color: var(--main-color);
 
     &:before {
       content: ': ';
@@ -76,12 +76,12 @@ h2 {
     transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
 
     &.active, &:active {
-      background-color: #fff;
-      box-shadow: 2px 2px #eee;
+      background-color: var(--negative-color);
+      box-shadow: 2px 2px var(--border-color);
     }
 
     &:hover {
-      color: $secondary-color;
+      color: var(--secondary-color);
       border: 0;
     }
   }

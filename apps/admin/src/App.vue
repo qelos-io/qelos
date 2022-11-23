@@ -35,6 +35,7 @@ watch(() => appConfig.value.colorsPalette, async (palette) => {
       ${palette.linksColor ? `--link: ${palette.linksColor};` : ''}
       ${palette.bordersColor ? `--border-color: ${palette.bordersColor};` : ''}
       ${palette.navigationBgColor ? `--nav-bg-color: ${palette.navigationBgColor};` : ''}
+      ${palette.negativeColor ? `--negative-color: ${palette.negativeColor};` : ''}
       --el-menu-hover-bg-color: var(--main-color);
     }
   `;
@@ -45,7 +46,7 @@ watch(() => appConfig.value.colorsPalette, async (palette) => {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
+  color: var(--main-color);
   height: 100%;
 }
 

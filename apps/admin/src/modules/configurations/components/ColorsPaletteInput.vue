@@ -24,6 +24,7 @@ const colors = reactive({
   bordersColor: '',
   linksColor: '',
   navigationBgColor: '',
+  negativeColor: '',
   ...props.modelValue,
 });
 
