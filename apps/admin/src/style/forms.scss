@@ -17,7 +17,7 @@ input[type="week"],
 select:focus,
 textarea {
   font-size: 16px;
-  background-color: #fbfbfb;
+  //background-color: var(--negative-color);
 }
 
 .form-item-flex, .el-form-item {
@@ -33,7 +33,7 @@ textarea {
 .el-button {
   &.el-button--default {
     background-color: var(--negative-color);
-    color: white;
+    color: var(--main-color);
     border: 1px solid var(--border-color);
     transition: background-color ease-in-out 0.3s;
 
@@ -90,7 +90,7 @@ textarea {
       transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
 
       &.active, &:active {
-        background-color: #fff;
+        background-color: var(--negative-color);
         box-shadow: 2px 2px var(--border-color);
       }
 

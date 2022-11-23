@@ -54,7 +54,7 @@ watch(() => props.storage + props.identifier, async () => {
 }
 
 .asset-box:hover {
-	background-color: #e1e1e1;
+	background-color: var(--negative-color);
 }
 
 img {

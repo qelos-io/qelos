@@ -51,8 +51,8 @@
 		position: relative;
 
 		.options-list {
-			background-color: #fff;
-			border: 1px solid #ccc;
+			background-color: var(--negative-color);
+			border: 1px solid var(--border-color);
 			position: absolute;
 			top: 100%;
 			left: 0;
@@ -67,7 +67,7 @@
 				cursor: pointer;
 
 				&:hover, &.active {
-					background-color: #eee;
+					background-color: var(--negative-color);;
 				}
 			}
 		}

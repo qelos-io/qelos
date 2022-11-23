@@ -28,7 +28,7 @@ label {
 }
 
 .el-icon {
-  color: #a1a1a1;
+  color: var(--main-color);
 }
 
 .search-input {
@@ -39,7 +39,7 @@ label {
 }
 
 .search-input::placeholder {
-  color: #a1a1a1;
+  color: var(--main-color);
   padding-inline-start: 5px;
 }
 

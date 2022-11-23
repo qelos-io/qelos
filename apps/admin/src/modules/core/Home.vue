@@ -2,21 +2,9 @@
   <div class="welcome">
     <h3>{{ $t('Switch Color Palette') }}</h3>
     <div class="blocks-list">
-      <GpItem @click="changePalette('brownish')">
-        <template v-slot:title>
-          {{ $t('Brownish') }}
-        </template>
-      </GpItem>
-      <GpItem @click="changePalette('green')">
-        <template v-slot:title>
-          {{ $t('Green') }}
-        </template>
-      </GpItem>
-      <GpItem @click="changePalette('blue')">
-        <template v-slot:title>
-          {{ $t('Blue') }}
-        </template>
-      </GpItem>
+      <div v-for="(p, index) in PALETTES" :key="index" @click="changePalette(p.palette)" class="palette">
+        <div v-for="color in p.colors" :key="color" :style="{backgroundColor: color}"></div>
+      </div>
     </div>
   </div>
   <div class="blocks-list">
@@ -65,8 +53,6 @@
   </div>
 </template>
 <style scoped lang="scss">
-@import "../../style/colors";
-
 .blocks-list {
   display: flex;
   flex-wrap: wrap;
@@ -102,6 +88,22 @@ h3 > * {
 .content {
   padding: 20px;
 }
+
+.colors-lines {
+
+  width: 100%;
+}
+.palette {
+  height: 50px;
+  display: flex;
+  flex-direction: row;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+
+  > div {
+    flex: 1;
+  }
+}
 </style>
 <script setup lang="ts">
 import GpItem from '@/modules/core/components/layout/GpItem.vue';
@@ -111,6 +113,7 @@ import {useI18n} from 'vue-i18n';
 import {useBlocksList} from '@/modules/blocks/store/blocks-list';
 import {resetConfiguration, useAppConfiguration} from '@/modules/configurations/store/app-configuration';
 import configurationsService from '@/services/configurations-service';
+import {PALETTES} from '@/modules/core/utils/colors-palettes';
 
 const config = useAppConfiguration();
 const appConfig = computed(() => config.value?.metadata && config.value.metadata || {})
@@ -122,43 +125,7 @@ const {t} = useI18n();
 
 fetchPosts.value();
 
-async function changePalette(name: string) {
-  let colorsPalette;
-  if (name === 'brownish') {
-    colorsPalette = {
-      mainColor: '#264653',
-      secondaryColor: '#2a9d8f',
-      bgColor: '#e9c46a',
-      bordersColor: '#f4a261',
-      linksColor: '#2a9d8f',
-      navigationBgColor: '#f4a261',
-      negativeColor: '#f4a261',
-    }
-  } else if (name === 'blue') {
-    colorsPalette = {
-      mainColor: '#4a4e69',
-      secondaryColor: '#c9ada7',
-      bgColor: '#f2e9e4',
-      bordersColor: '#4a4e69',
-      linksColor: '#9a8c98',
-      navigationBgColor: '#22223b',
-      negativeColor: '#c9ada7',
-    }
-  } else if (name === 'green') {
-    colorsPalette = {
-      mainColor: '#84a98c',
-      secondaryColor: '#84a98c',
-      bgColor: '#2f3e46',
-      bordersColor: '#354f52',
-      linksColor: '#84a98c',
-      navigationBgColor: '#354f52',
-      negativeColor: '#fff',
-    }
-  }
-
-  if (!colorsPalette) {
-    return;
-  }
+async function changePalette(colorsPalette) {
   await configurationsService.update('app-configuration', {
     metadata: {
       ...appConfig.value,

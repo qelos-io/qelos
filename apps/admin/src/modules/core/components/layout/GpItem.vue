@@ -11,12 +11,11 @@
 </template>
 
 <style scoped lang="scss">
-@import "../../../../style/colors";
-
 .gp-item {
-  background-color: #fff;
+  background-color: var(--negative-color);
+  color: var(--main-color);
   border-radius: 10px;
-  box-shadow: 1px 1px #ccc;
+  box-shadow: 1px 1px var(--border-color);
   margin: 20px;
   display: flex;
   flex-direction: column;
@@ -24,7 +23,7 @@
 
   &:hover {
     opacity: 0.9;
-    box-shadow: 1px 2px #ccc;
+    box-shadow: 1px 2px var(--border-color);
   }
 
   ::v-deep(*) {

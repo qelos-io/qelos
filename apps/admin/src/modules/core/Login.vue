@@ -17,7 +17,7 @@ const config = useAppConfiguration()
 
 .login-page {
   text-align: center;
-  background: linear-gradient(318deg, var(--main-color-light) 0%, var(--third-color) 100%);
+  background: linear-gradient(318deg, var(--body-bg) 0%, var(--border-color) 100%);
   height: 100%;
 }
 

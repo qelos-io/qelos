@@ -25,7 +25,7 @@
 	
 	.el-icon {
 	  font-size: 900%;
-	  color: #eee;
+	  color: var(--border-color);
 	}
   }
   
@@ -35,7 +35,7 @@
 	> * {
 	  padding-inline-end: 8px;
 	  margin-inline-end: 8px;
-	  border-inline-end: 1px solid #eee;
+	  border-inline-end: 1px solid var(--border-color);
 	  
 	  &:last-child {
 		border: none

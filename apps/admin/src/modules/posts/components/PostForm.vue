@@ -168,7 +168,7 @@ export default {
   font-size: 80%;
   padding: 6px;
   border-radius: 3px;
-  background-color: #c4ecd0;
+  background-color: var(--secondary-color);
 
   > i {
     cursor: pointer;
