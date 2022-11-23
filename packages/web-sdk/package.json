@@ -4,6 +4,7 @@
   "description": "Frontend Web SDK for Qelos API",
   "main": "./dist/index.js",
   "scripts": {
+    "prepublishOnly": "npm run build",
     "build": "tsc"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
