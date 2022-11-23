@@ -13,6 +13,11 @@ export const authStore = reactive<IAuthStore>({
 export const isAdmin = computed(() => !!(authStore.user && authStore.user.roles.includes('admin')));
 export const isPrivilegedUser = computed(() => isAdmin.value || authStore.user.roles.includes('editor'));
 
+function loadUser() {
+  authStore.userPromise = api.get<IUser>('/api/me').then(res => res.data)
+  return authStore.userPromise
+}
+
 export const logout = () => {
   authStore.user = null
   authStore.isLoaded = false
@@ -30,20 +35,23 @@ export const fetchAuthUser = async () => {
     return authStore.userPromise
   }
 
+  let user;
   try {
-    authStore.userPromise = api.get<IUser>('/api/me').then(res => res.data)
-    const user = await authStore.userPromise
-    if (user?.roles?.length) {
-      authStore.user = user
-      return user
-    } else {
-      throw new Error('user is not authorized')
+    user = await loadUser().catch(() => null);
+    if(!user) {
+      throw new Error('first attempt to load user failed');
     }
-  } catch (err) {
-    logout()
-  } finally {
-    authStore.isLoaded = true
+  } catch {
+    user = await loadUser().catch(() => null);
   }
+
+  if (user?.roles?.length) {
+    authStore.user = user
+    return user
+  } else {
+    logout()
+  }
+  authStore.isLoaded = true
 }
 
 export const login = async ({email, password}: { email: string, password: string }) => {
