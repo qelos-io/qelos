@@ -45,13 +45,13 @@ export const fetchAuthUser = async () => {
     user = await loadUser().catch(() => null);
   }
 
+  authStore.isLoaded = true
   if (user?.roles?.length) {
     authStore.user = user
     return user
   } else {
     logout()
   }
-  authStore.isLoaded = true
 }
 
 export const login = async ({email, password}: { email: string, password: string }) => {
