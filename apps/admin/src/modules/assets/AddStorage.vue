@@ -1,13 +1,11 @@
 <template>
   <div class="add-storage-page">
-    <PageTitle title="Add new Storage"/>
-    <StorageForm @submitted="submit" :submitting="submitting"/>
+    <StorageForm @submitted="submit" :submitting="submitting" title="Add new Storage"/>
   </div>
 </template>
 <script lang="ts" setup>
 import {useRouter} from 'vue-router'
 import StorageForm from './components/StorageForm.vue'
-import PageTitle from '../core/components/semantics/PageTitle.vue'
 import {useSubmitting} from '../core/compositions/submitting'
 import {addStorage} from '@/modules/assets/store/storages'
 

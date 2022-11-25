@@ -24,8 +24,6 @@ const title = computed(() => translate(props.isHomePage ? 'Edit' : props.categor
 </script>
 
 <style scoped lang="scss">
-@import "../../../style/colors";
-
 @media screen and (max-width: 780px) {
   h2 {
     font-size: 11px;

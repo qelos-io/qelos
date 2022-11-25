@@ -1,10 +1,10 @@
 <template>
   <div class="add-storage-page">
-    <PageTitle title="Edit Storage" :item-name="data.storage.name"/>
     <StorageForm
         v-if="!data.loading"
         :submitting="submitting"
         :value="data.storage"
+        title="Edit Storage"
         @submitted="submit"
     />
     <h3>{{ $t('Upload Files to Storage') }}:</h3>
@@ -12,13 +12,12 @@
   </div>
 </template>
 <script lang="ts" setup>
+import {useRoute} from 'vue-router'
 import StorageForm from './components/StorageForm.vue'
-import PageTitle from '../core/components/semantics/PageTitle.vue'
 import BasicFileUploader from './components/BasicFileUploader.vue'
 import {useStorage} from './compositions/storages'
 import {useSubmitting} from '../core/compositions/submitting'
 import {updateStorage} from '@/modules/assets/store/storages'
-import {useRoute} from 'vue-router'
 
 const {params: routeParams} = useRoute()
 const {data} = useStorage(routeParams.storageId as string)
