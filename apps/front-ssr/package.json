@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@qelos/front-ssr",
-  "version": "2.0.22",
+  "version": "2.0.28",
   "scripts": {
     "dev": "dx dev",
     "postinstall": "node build-workaround.mjs",

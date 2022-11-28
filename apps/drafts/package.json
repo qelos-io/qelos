@@ -1,6 +1,6 @@
 {
   "name": "@qelos/drafts",
-  "version": "2.0.22",
+  "version": "2.0.28",
   "description": "drafts service for the qelos api",
   "main": "dist/index.js",
   "publishConfig": {

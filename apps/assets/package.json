@@ -1,6 +1,6 @@
 {
   "name": "@qelos/assets",
-  "version": "2.0.22",
+  "version": "2.0.28",
   "license": "MIT",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "description": "manage assets like images and static files on remote servers",
