@@ -38,11 +38,11 @@
   },
   "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594",
   "bundledDependencies": [
-    "node-fetch",
     "@qelos/api-kit",
     "@qelos/cache-manager",
     "http-proxy-middleware",
     "mongoose",
+    "node-fetch",
     "uniqid"
   ]
 }

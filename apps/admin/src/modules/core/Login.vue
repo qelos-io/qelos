@@ -12,9 +12,7 @@ import {useAppConfiguration} from '@/modules/configurations/store/app-configurat
 
 const config = useAppConfiguration()
 </script>
-<style scoped lang="scss">
-@import "../../style/colors";
-
+<style scoped>
 .login-page {
   text-align: center;
   background: linear-gradient(318deg, var(--body-bg) 0%, var(--border-color) 100%);

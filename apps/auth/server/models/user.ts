@@ -64,16 +64,6 @@ const UserSchema = new mongoose.Schema<UserDocument, UserModel>({
   salt: String,
   roles: {
     type: [String],
-    validate(roles: string[]) {
-      const notValidRole = roles.find((role) => !config.roles.includes(role));
-      if (notValidRole) {
-        return Promise.reject({
-          message: 'role not valid',
-          role: notValidRole,
-        });
-      }
-      return Promise.resolve();
-    },
   },
   tokens: [
     {

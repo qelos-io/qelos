@@ -63,12 +63,9 @@ export function registerToHook(hook: { source?: string, kind?: string, eventName
 }
 
 function createApp(): FastifyInstance {
-  app = fastify( {
+  app = fastify({
     logger: !!config.dev,
-    https: {
-      cert: readFileSync(join(process.cwd(), 'cert/cert.pem')).toString(),
-      key: readFileSync(join(process.cwd(), 'cert/key.pem')).toString(),
-    }
+    https: getHttps()
   });
 
   app.addContentTypeParser('application/json', {parseAs: 'string'}, function (req, body, done) {
@@ -149,4 +146,15 @@ function playEndpoints() {
       preHandler: path.startsWith(manifest.apiPath) ? verifyAccessToken : verifyCookieToken
     });
   })
+}
+
+function getHttps() {
+  const certPath = join(process.cwd(), 'cert/cert.pem');
+  if (existsSync(certPath)) {
+    return {
+      cert: readFileSync(join(process.cwd(), 'cert/cert.pem')).toString(),
+      key: readFileSync(join(process.cwd(), 'cert/key.pem')).toString(),
+    }
+  }
+  return null;
 }
