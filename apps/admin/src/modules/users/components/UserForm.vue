@@ -1,6 +1,9 @@
 <template>
-  <el-form @submit.native.prevent="submit">
-    <FormInput title="Name" :model-value="fullName" @input="editedData.fullName = $event"/>
+  <el-form @submit.native.prevent="submit" class="user-form">
+    <div class="flex-row">
+      <FormInput title="First Name" :model-value="firstName" @input="editedData.firstName = $event"/>
+      <FormInput title="Last Name" :model-value="LastName" @input="editedData.lastName = $event"/>
+    </div>
     <FormInput title="Email" :model-value="email" @input="editedData.email = $event"/>
     <el-form-item label="Password">
       <small>Leave empty to ignore changes</small>
@@ -10,11 +13,8 @@
     </el-form-item>
     <div v-if="!hideRoles">
       <el-form-item>
-        <el-checkbox-group v-model="roles">
-          <el-checkbox label="admin"></el-checkbox>
-          <el-checkbox label="editor"></el-checkbox>
-          <el-checkbox label="plugin"></el-checkbox>
-          <el-checkbox label="user"></el-checkbox>
+        <el-checkbox-group v-model="roles" size="large">
+          <el-checkbox v-for="r in availableRoles" :key="r" :label="r" size="large"/>
         </el-checkbox-group>
       </el-form-item>
     </div>
@@ -22,7 +22,7 @@
   </el-form>
 </template>
 <script lang="ts">
-import {computed, reactive} from 'vue'
+import {computed, reactive, ref} from 'vue'
 import FormInput from '../../core/components/forms/FormInput.vue'
 import {clearNulls} from '../../core/utils/clear-nulls'
 import {useEditedInputs} from '../../core/compositions/edited-inputs'
@@ -38,25 +38,28 @@ export default {
   },
   setup(props, {emit}) {
     const editedData = reactive({
-      fullName: null,
+      firstName: null,
+      lastName: null,
       email: null,
       password: null,
       roles: props.user && props.user._id ? null : ['user'],
     });
-
     let roles;
+    let availableRoles;
 
     if (!props.hideRoles) {
       roles = computed<Array<string>>({
         get: () => editedData.roles || props.user.roles || [],
         set: (roles) => editedData.roles = roles
       });
+      availableRoles = Array.from(new Set(['admin', 'editor', 'plugin', 'user'].concat(props.user.roles || [])));
     }
 
     return {
       editedData,
-      ...useEditedInputs(editedData, props.user, ['fullName', 'email']),
+      ...useEditedInputs(editedData, props.user, ['firstName', 'lastName', 'email']),
       roles,
+      availableRoles,
       submit() {
         emit('submitted', clearNulls(editedData))
       }
@@ -64,6 +67,13 @@ export default {
   }
 }
 </script>
-<style scoped lang="scss">
+<style scoped>
+.user-form {
+  margin: 10px;
+}
 
+.flex-row > * {
+  margin: 10px;
+  flex: 1;
+}
 </style>
