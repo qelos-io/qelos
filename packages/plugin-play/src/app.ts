@@ -141,10 +141,13 @@ function playEndpoints() {
   getApp().route(getFrontendAuthorizationRoute());
   getApp().route(getFrontendUnAuthorizationRoute());
   endpoints.forEach((routeOptions, path) => {
-    getApp().route({
+    const route = {
       ...routeOptions,
-      preHandler: path.startsWith(manifest.apiPath) ? verifyAccessToken : verifyCookieToken
-    });
+    };
+    if (routeOptions.verifyToken) {
+      route.preHandler = path.startsWith(manifest.apiPath) ? verifyAccessToken : verifyCookieToken
+    }
+    getApp().route(route);
   })
 }
 

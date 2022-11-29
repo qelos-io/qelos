@@ -2,23 +2,29 @@ import {RouteOptions} from 'fastify/types/route';
 import {join} from 'path';
 import manifest from './manifest';
 
-export const endpoints = new Map<string, RouteOptions>()
+interface QelosRouteParams extends RouteOptions {
+  verifyToken: boolean;
+}
 
-export function addProxyEndpoint(path: string, options: Partial<RouteOptions>) {
+export const endpoints = new Map<string, QelosRouteParams>()
+
+export function addProxyEndpoint(path: string, options: Partial<QelosRouteParams>) {
   endpoints.set(join(manifest.apiPath, path), {
     ...options,
     url: path,
     method: options.method || 'GET',
-    handler: options.handler
+    handler: options.handler,
+    verifyToken: true,
   })
 }
 
-export function addEndpoint(path: string, options: Partial<RouteOptions>) {
+export function addEndpoint(path: string, options: Partial<QelosRouteParams>) {
   const method = options.method || 'GET';
   endpoints.set(method + '::' + path, {
     ...options,
     url: path,
     method,
-    handler: options.handler
+    handler: options.handler,
+    verifyToken: 'verifyToken' in options ? options.verifyToken : true,
   })
 }
