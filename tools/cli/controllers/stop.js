@@ -8,11 +8,11 @@ function stopCommand() {
 	let errN = execute('npm run stop', 'stop qelos container', { cwd: join(process.cwd(), 'compose')}) ? 0 : 1;
 
 	if (errN) {
-		console.log(red(`Greenpress failed to stop, failed on ${errN} steps.`));
+		console.log(red(`Qelos failed to stop, failed on ${errN} steps.`));
 		process.exit(1);
 	}
 
-	console.log(green("Greenpress stopped"));
+	console.log(green("Qelos stopped"));
 	process.exit(0);
 }
 
