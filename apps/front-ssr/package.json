@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@qelos/front-ssr",
-  "version": "2.0.28",
+  "version": "3.0.0",
   "scripts": {
     "dev": "dx dev",
     "postinstall": "node build-workaround.mjs",
@@ -9,7 +9,7 @@
     "start": "dx start"
   },
   "dependencies": {
-    "@qelos/sdk": "^2.0.22",
+    "@qelos/sdk": "^3.0.0",
     "fastify-dx": "0.0.19",
     "fastify-vite": "3.0.0-beta.8",
     "fastify-vite-vue": "3.0.0-beta.3",

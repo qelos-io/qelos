@@ -1,6 +1,6 @@
 {
   "name": "@qelos/sdk",
-  "version": "2.0.22",
+  "version": "3.0.0",
   "description": "SDK for Qelos API",
   "main": "./dist/index.js",
   "scripts": {
