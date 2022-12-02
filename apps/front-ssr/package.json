@@ -6,7 +6,7 @@
     "dev": "dx dev",
     "postinstall": "node build-workaround.mjs",
     "build": "node build-workaround.mjs && dx build",
-    "start": "./node_modules/.bin/dx start"
+    "start": "./node_modules/fastify-dx/index.mjs start"
   },
   "dependencies": {
     "@qelos/sdk": "^3.0.0",
