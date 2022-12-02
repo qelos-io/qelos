@@ -1,5 +1,5 @@
-import {readdirSync, rmSync} from "fs";
-import {exec, execSync} from "child_process";
+import {readdirSync} from "fs";
+import {exec} from "child_process";
 import {getPackagesBasicInfo} from "./tools/bundler/packages-basic-info.mjs";
 import {bundleDependencies} from "./tools/bundle-dependencies-polyfix/index.js";
 

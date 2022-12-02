@@ -11,10 +11,11 @@ build-monorepo:
     paths:
       - node_modules/
   script:
+    - npm i -g lerna@6.1.0
     - npm install
     - npm run build
     - node pack-apps.mjs
-    - npm run test
+#    - npm run test
 
 # To contribute improvements to CI/CD templates, please follow the Development guide at:
 # https://docs.gitlab.com/ee/development/cicd/templates.html
