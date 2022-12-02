@@ -1,9 +1,11 @@
 const fs = require("fs");
-const { join } = require('path');
+const {join} = require('path');
 
 function rewriteJSON(path, pkg) {
-  pkg.bundledDependencies = Object.keys(pkg.dependencies);
+  const deps = Object.keys(pkg.dependencies);
+  pkg.bundledDependencies = deps;
   fs.writeFileSync(path, JSON.stringify(pkg, null, 2));
+  return deps;
 }
 
 function bundleDependencies(appName) {
@@ -13,8 +15,11 @@ function bundleDependencies(appName) {
   }
   const pkgPath = join(__dirname, '../../apps', appName, 'package.json');
   const pkg = require(pkgPath);
-  rewriteJSON(pkgPath, pkg);
+  const deps = rewriteJSON(pkgPath, pkg);
   console.log('added bundled dependencies to ', pkgPath);
+  return deps;
 }
 
-bundleDependencies(process.argv[process.argv.length - 1]);
+module.exports = {bundleDependencies}
+
+// bundleDependencies(process.argv[process.argv.length - 1]);
