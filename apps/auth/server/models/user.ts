@@ -180,7 +180,7 @@ UserSchema.methods.getTokenByRelatedTokens = function getTokenByRelatedTokens(
 
 UserSchema.statics.getUsersList = function getUsersList(tenant: string, usersIds: ObjectId[], isPrivilegedUser = false, privilegedUserFields?: Array<string>) {
   if (isPrivilegedUser && !usersIds.length) {
-    return this.find({})
+    return this.find({tenant})
       .select(privilegedUserFields)
       .lean()
       .exec()

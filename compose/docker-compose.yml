@@ -34,6 +34,7 @@ services:
     environment:
       MONGO_URI: ${AUTH_MONGODB_URI}
       IP: 0.0.0.0
+      REDIS_URL: redis://redis
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
       APPLICATION_URL: ${APPLICATION_URL}
