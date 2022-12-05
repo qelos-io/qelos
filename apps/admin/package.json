@@ -4,7 +4,7 @@
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build --base=/gp-admin/",
+    "build": "vite build --base=/app/",
     "build:no-base": "vite build --base=/",
     "serve": "vite",
     "prepublishOnly": "(NODE_ENV=development && npm run build)",

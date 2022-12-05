@@ -5,7 +5,7 @@ import {getAbsoluteDate} from './dates';
 
 export async function getUser(query: any) {
   try {
-    const user = await User.findOne(query);
+    const user = await User.findOne(query).exec();
     if (user) {
       return user;
     }
@@ -23,7 +23,7 @@ export async function updateUser(
   let directUpdate;
   if (!(user instanceof User)) {
     if (email || roles || password) {
-      user = await User.findOne(user);
+      user = await User.findOne(user).exec();
     } else {
       directUpdate = {_id: user._id, tenant: user.tenant};
       user = {} as UserDocument;

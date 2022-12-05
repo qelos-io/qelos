@@ -14,7 +14,7 @@ import layoutsRoutes from '@/modules/layouts/routes';
 import {managePluginsRoutes, playRoutes} from '@/modules/plugins/routes';
 
 // @ts-ignore
-const BASE = import.meta.env.BASE_URL || '/gp-admin';
+const BASE = import.meta.env.BASE_URL || '/app';
 
 const router = createRouter({
   history: createWebHistory(BASE),

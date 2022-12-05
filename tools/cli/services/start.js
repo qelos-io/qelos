@@ -33,7 +33,7 @@ async function waitForServerStartup(child) {
     console.log(`\n\rTo stop it, use: ${blue('qelos stop')}`);
     console.log(`\rTo populate it, use: ${blue('qelos populate')}`);
     console.log(`\rTo enter your app: http://localhost:3000`);
-    console.log(`\rTo enter your app's admin panel: http://localhost:3000/gp-admin/`);
+    console.log(`\rTo enter your app's admin panel: http://localhost:3000/app/`);
   } catch (err) {
     console.log('An error occurred during server startup');
     process.exit(1);

@@ -37,6 +37,6 @@ const password = ref('')
 
 async function signIn() {
   await sdk.authentication.signin({email: email.value, password: password.value});
-  location.href = location.origin + '/gp-admin/';
+  location.href = location.origin + '/app/';
 }
 </script>

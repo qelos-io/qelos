@@ -5,7 +5,7 @@ import Components from "unplugin-vue-components/vite";
 
 import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
 
-const BASE_URL = process.env.BASE_URL || "/gp-admin";
+const BASE_URL = process.env.BASE_URL || "/app";
 
 export default defineConfig({
   json: {

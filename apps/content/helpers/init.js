@@ -87,7 +87,7 @@ Authentication service is responsible for the authentication mechanism and users
 Content service is responsible for menus, posts, categories (and comments in the future).
 <br>
 Front Service is responsible for the client frontend and SSR, using Fastify-DX and Vue.<br>
-The Admin Panel written in Vue and is located <a href="/gp-admin/" target="blank">/gp-admin</a>. :)
+The Admin Panel written in Vue and is located <a href="/app/" target="blank">/app</a>. :)
 </p>`],
 			tags: [],
 		})).save();
