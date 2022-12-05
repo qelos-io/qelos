@@ -1,5 +1,5 @@
 <template>
-  <div v-if="layout">
+  <div v-if="layout && blocks">
     <LayoutForm :layout="layout" :submitting="submitting" @submitted="updateLayout" />
   </div>
 </template>
@@ -9,8 +9,11 @@ import {useRoute} from 'vue-router'
 import {useEditLayout} from './compositions/layouts'
 import LayoutForm from './components/LayoutForm.vue';
 import {LayoutKind} from '@qelos/sdk/dist/administrator/layouts';
+import {toRef} from 'vue';
+import {useBlocksList} from '@/modules/blocks/store/blocks-list';
 
 const kind = useRoute().params.kind as LayoutKind;
+const blocks = toRef(useBlocksList(), 'blocks');
 const {layout, submitting, updateLayout} = useEditLayout(kind);
 </script>
 <style scoped>

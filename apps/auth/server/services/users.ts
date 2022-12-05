@@ -122,7 +122,7 @@ export async function deleteToken(
   isRelatedToken: boolean
 ) {
   try {
-    const user: any = await User.findOne({_id: userId, tenant});
+    const user: any = await User.findOne({_id: userId, tenant}).exec();
     if (isRelatedToken) {
       token = await user?.getTokenByRelatedTokens(authType, token);
     }
