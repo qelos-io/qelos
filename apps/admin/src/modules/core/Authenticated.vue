@@ -7,21 +7,28 @@
       <AssetsDetailsPanel v-if="isPrivilegedUser"/>
     </div>
   </div>
+  <template v-if="openModals.length">
+    <MicroFrontendModal v-for="{mfe, props} in openModals" :key="mfe.name" :mfe="mfe" :props="props"/>
+  </template>
+
 </template>
 
 <script lang="ts" setup>
-import {ref} from 'vue'
+import {ref, toRef} from 'vue'
 import {useAuthenticatedIntercept} from './compositions/authentication'
 import Header from './components/layout/Header.vue'
 import Navigation from './components/layout/Navigation.vue'
 import AssetsDetailsPanel from '@/modules/assets/components/AssetsDetailsPanel/AssetsDetailsPanel.vue'
 import {useRouter} from 'vue-router'
 import {isPrivilegedUser} from '@/modules/core/store/auth';
+import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
+import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.vue';
 
 const router = useRouter()
 
 const navigationOpened = ref(false)
 const {isLoaded} = useAuthenticatedIntercept();
+const openModals = toRef(usePluginsMicroFrontends(), 'openModals');
 
 router.afterEach(() => navigationOpened.value = false)
 </script>

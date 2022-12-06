@@ -133,7 +133,6 @@ export async function updatePlugin(req, res) {
     await plugin.save();
     res.json(plugin).end();
   } catch (e) {
-    console.log(e);
     res.status(500).json({message: 'could not update plugin'}).end();
   }
 }

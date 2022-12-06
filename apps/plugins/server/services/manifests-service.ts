@@ -90,12 +90,16 @@ export async function enrichPluginWithManifest(plugin: IPlugin, {
   }
   plugin.name = manifest.name || plugin.name;
   plugin.description = manifest.description || plugin.description;
+
   plugin.microFrontends = manifest.microFrontends.map(mfe => {
+    console.log('single', mfe)
     return {
       ...mfe,
       url: mfe.url.startsWith('http') ? mfe.url : new URL(mfe.url, manifest.appUrl).href,
     }
   });
+  plugin.markModified('microFrontends');
+  console.log(plugin.microFrontends)
 
   if (hardReset) {
     plugin.apiPath = manifest.apiPath;

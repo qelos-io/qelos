@@ -8,7 +8,7 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
   const iframe = ref();
 
   const router = useRouter();
-  const {modals} = usePluginsMicroFrontends();
+  const {modals, openMfeModal} = usePluginsMicroFrontends();
   const routes = router.getRoutes().map(route => {
     return {
       name: route.name,
@@ -56,6 +56,9 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
         return;
       case 'modalsInterested':
         dispatch('availableModals', availableModals.value);
+        return;
+      case 'openModal':
+        openMfeModal(payload.openModal, payload.props);
         return;
     }
   }, false)

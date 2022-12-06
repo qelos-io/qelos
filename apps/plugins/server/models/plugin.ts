@@ -2,6 +2,7 @@ import mongoose, {Document} from 'mongoose'
 
 export interface IPlugin extends Document {
   encodePath();
+
   tenant: string;
   name: string;
   description?: string;
@@ -31,6 +32,7 @@ export interface IPlugin extends Document {
     url: string;
     active: boolean;
     opened: boolean;
+    roles: string[],
     route?: {
       name: string;
       path: string;
@@ -40,6 +42,11 @@ export interface IPlugin extends Document {
     component?: {
       page: string;
       position: 'top' | 'left' | 'right' | 'bottom';
+    };
+    modal?: {
+      name: string;
+      params: string[] | Record<string, string>; // schema / hints for props
+      size: 'sm' | 'md' | 'lg' | 'full'
     }
   }[]
 }
@@ -63,17 +70,13 @@ const MicroFrontendSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  roles: [String],
   route: {
     name: String,
     path: String,
-    roles: {
-      type: [String],
-      default: ['*']
-    },
     navBarPosition: {
       type: String,
       enum: ['top', 'bottom'],
-      default: 'bottom'
     },
   },
   component: {
@@ -82,7 +85,18 @@ const MicroFrontendSchema = new mongoose.Schema({
       type: String,
       enum: ['top', 'left', 'right', 'bottom']
     }
-  }
+  },
+  modal: {
+    name: String,
+    params: {
+      type: [String],
+      required: false,
+    },
+    size: {
+      type: String,
+      enum: ['sm', 'md', 'lg', 'full']
+    }
+  },
 })
 
 const PluginSchema = new mongoose.Schema<IPlugin>({
