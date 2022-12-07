@@ -7,7 +7,7 @@
       <AssetsDetailsPanel v-if="isPrivilegedUser"/>
     </div>
   </div>
-  <template v-if="openModals.length">
+  <template v-if="openModals?.length">
     <MicroFrontendModal v-for="{mfe, props} in openModals" :key="mfe.name" :mfe="mfe" :props="props"/>
   </template>
 

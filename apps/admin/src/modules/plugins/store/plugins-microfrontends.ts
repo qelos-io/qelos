@@ -17,7 +17,6 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
   const {plugins} = storeToRefs(usePluginsList());
   const router = useRouter();
 
-  const openModals = ref([]);
   const userRoles = computed(() => authStore.user?.roles || []);
 
   const microFrontends = computed(() => {
@@ -92,25 +91,8 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     unwatch();
   });
 
-  function openMfeModal(modalName: string, props: any) {
-    const mfe = microFrontends.value.modals[modalName];
-    if (!mfe) {
-      return;
-    }
-    openModals.value.push({mfe, props});
-  }
-
-  function closeMfeModal(modalName) {
-    openModals.value = openModals.value.filter(data => {
-      return data.mfe.modal.name !== modalName
-    });
-  }
-
   return {
     navBar: computed(() => microFrontends.value.navBar),
     modals: computed(() => microFrontends.value.modals),
-    openModals,
-    openMfeModal,
-    closeMfeModal,
   }
 })

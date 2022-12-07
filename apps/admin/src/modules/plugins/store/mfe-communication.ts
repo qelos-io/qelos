@@ -8,7 +8,9 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
   const iframe = ref();
 
   const router = useRouter();
-  const {modals, openMfeModal} = usePluginsMicroFrontends();
+  const openModals = ref([]);
+
+  const {modals} = usePluginsMicroFrontends();
   const routes = router.getRoutes().map(route => {
     return {
       name: route.name,
@@ -41,6 +43,20 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
     dispatch('shutdown')
   }
 
+  function openMfeModal(modalName: string, props: any) {
+    const mfe = modals.value[modalName];
+    if (!mfe) {
+      return;
+    }
+    openModals.value.push({mfe, props});
+  }
+
+  function closeMfeModal(modalName) {
+    openModals.value = openModals.value.filter(data => {
+      return data.mfe.modal.name !== modalName
+    });
+  }
+
   window.addEventListener('message', (event) => {
     const {from, eventName, payload} = event.data || {};
 
@@ -63,10 +79,11 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
     }
   }, false)
 
-
   return {
     lastOrigin,
     iframe,
-    shutdownMfe
+    shutdownMfe,
+    openMfeModal,
+    closeMfeModal
   }
 })

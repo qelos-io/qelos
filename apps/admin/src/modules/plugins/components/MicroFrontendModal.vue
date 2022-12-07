@@ -6,9 +6,9 @@
 
 <script setup lang="ts">
 import {computed, ref, watch} from 'vue';
-import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
+import {useMfeCommunication} from '@/modules/plugins/store/mfe-communication';
 
-const {closeMfeModal} = usePluginsMicroFrontends()
+const {closeMfeModal} = useMfeCommunication()
 const isOpen = ref(true)
 const props = defineProps({
   props: Object,
