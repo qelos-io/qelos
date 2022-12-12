@@ -19,7 +19,7 @@ const configuration = new Configuration({
 	key: appConfiguration,
 	public: true,
 	metadata: {
-		name: 'greenpress',
+		name: TENANT !== '0' ? HOST : TENANT,
 		language: 'en',
 		direction: 'ltr',
 		logoUrl: '/logo.png',
@@ -75,7 +75,7 @@ Promise.all([
 			short: 'This is the first and demo post.<br>I hope you will enjoy this platform',
 			editorContentsStates: ['editor'],
 			contents: [`<p>
-	This is an example post for Greenpress platform.<br>
+	This is an example post for Qelos platform.<br>
 	You can change it as you like, but this is a reference for you to create many more blog posts in the near future.
 </p><p>
 	While I'm writing those lines, there is no website or domain for this platform, so I can't help you with instructions.<br>
