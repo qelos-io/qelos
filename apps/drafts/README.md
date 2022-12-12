@@ -1,4 +1,4 @@
-# Greenpress Drafts service
+# Qelos Drafts service
 
 ## Main Features
 - ES6

@@ -2,10 +2,6 @@
 
 An HTTP server to manage internal application secrets 
 
-
-[![Codefresh build status]( https://g.codefresh.io/api/badges/pipeline/greenpress/secrets%2Fmaster?type=cf-1)]( https%3A%2F%2Fg.codefresh.io%2Fpublic%2Faccounts%2Fgreenpress%2Fpipelines%2Fnew%2F5e84c29035717176303bb23c)
-[![npm version](https://badge.fury.io/js/%40greenpress%2Fsecrets.svg)](https://badge.fury.io/js/%40greenpress%2Fsecrets)
-
 ## Dependencies
 - Node.js
 - npm OR yarn
@@ -14,7 +10,7 @@ An HTTP server to manage internal application secrets
 ## Usage
 ### As a Docker container
 ```sh
-$ docker run -p 3001:3001 greenpress/secrets
+$ docker run -p 3001:3001 qelos/secrets
 ```
 ### As Node package
 ```sh

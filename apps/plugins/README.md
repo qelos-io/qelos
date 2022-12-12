@@ -1,8 +1,6 @@
-# Greenpress plugins system service
+# Qelos plugins system service
 
 An HTTP server to manage 3rd-party plugins for any system, combining frontend and backend plugins.
-
-[![npm version](https://badge.fury.io/js/%40greenpress%2Fplugins.svg)](https://badge.fury.io/js/%40greenpress%2Fplugins)
 
 ## Dependencies
 - Node.js
@@ -14,7 +12,7 @@ An HTTP server to manage 3rd-party plugins for any system, combining frontend an
 ## Usage
 ### As a Docker container
 ```sh
-$ docker run -p 3001:3001 greenpress/plugins
+$ docker run -p 3001:3001 qelos/plugins
 ```
 
 ## Development and Independent Usage

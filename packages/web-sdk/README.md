@@ -1,22 +1,22 @@
-# @greenpress/sdk
+# @qelos/sdk
 
-SDK to use Greenpress common API endpoints.
+SDK to use Qelos common API endpoints.
 
 Can be used for both backend and frontend applications.
 
 ## Installation
 
 ```shell
-npm install @greenpress/sdk
+npm install @qelos/sdk
 ```
 
 ## Usage
 
 ```typescript
 // my-sdk.ts
-import GreenpressSDK from '@qelos/sdk';
+import QelosSDK from '@qelos/sdk';
 
-const sdk = new GreenpressSDK({appUrl: 'https://yourdomain.com', fetch: window.fetch});
+const sdk = new QelosSDK({appUrl: 'https://yourdomain.com', fetch: window.fetch});
 export default sdk;
 ```
 **Note:** You can inject a fetch-like function, such as `node-fetch` or any fetch equivalent.

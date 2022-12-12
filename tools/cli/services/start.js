@@ -14,7 +14,7 @@ function handleStartupProgress(child) {
   })
 }
 
-function initializeGreenpress(mode, exclude) {
+function initializeApp(mode, exclude) {
   const startCmd = mode === 'prod' ? [ 'start', `--x=${exclude}` ] : [ 'run', 'dev', `--x=${exclude}` ];
   const childArgs = {
     stdio: 'pipe',
@@ -41,6 +41,6 @@ async function waitForServerStartup(child) {
 }
 
 module.exports = {
-  initializeGreenpress,
+  initializeApp,
   waitForServerStartup
 };

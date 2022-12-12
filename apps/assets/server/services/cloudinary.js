@@ -5,7 +5,7 @@ const { generateIdentifier } = require("./identifier");
 const DatauriParser = require('datauri/parser');
 const { joinUrl } = require("./url");
 
-const cloudinaryAssetTypeToGreenpressAssetType = (assetType) => ({
+const cloudinaryAssetTypeToQelosAssetType = (assetType) => ({
   raw: ASSET_TYPES.ASSET,
   image: ASSET_TYPES.IMAGE,
   video: ASSET_TYPES.ASSET,
@@ -29,7 +29,7 @@ async function loadFiles(storage, identifier = '/') {
     return ({
       name: asset.public_id,
       identifier: path.join(identifier, asset.public_id),
-      type: cloudinaryAssetTypeToGreenpressAssetType(asset.resource_type),
+      type: cloudinaryAssetTypeToQelosAssetType(asset.resource_type),
       publicUrl: joinUrl(storage.metadata.publicUrl, fileIdentifier),
       updated: asset.created_at,
     });

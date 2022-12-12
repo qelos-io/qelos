@@ -1,6 +1,6 @@
 # GreenPress API Kit
 
-This code brings together all greenpress services
+This code brings together all Qelos services
 
 ## Main Features
 

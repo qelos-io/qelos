@@ -1,11 +1,11 @@
-const { initializeGreenpress, waitForServerStartup } = require('../services/start');
+const { initializeApp, waitForServerStartup } = require('../services/start');
 
 async function startCommand({ mode, exclude }) {
   if (!exclude) {
     exclude = mode === 'prod' ? 'db' : 'none';
   }
 
-  const child = initializeGreenpress(mode, exclude);
+  const child = initializeApp(mode, exclude);
   await waitForServerStartup(child);
 
   child.onData(data => console.log(data.toString()));
