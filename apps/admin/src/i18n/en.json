@@ -27,6 +27,8 @@
   "Email": "Email",
   "Roles": "Roles",
   "Context": "Context",
+  "Key": "Key",
+  "Create Configuration": "Create Configuration",
   "Edit Configuration": "Edit Configuration",
   "Edit website configuration": "Edit website configuration",
   "app-configuration": "app-configuration",

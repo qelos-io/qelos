@@ -25,6 +25,8 @@
   "Email": "אי-מייל",
   "Roles": "תפקידים",
   "Context": "תחום",
+  "Key": "מפתח",
+  "Create Configuration": "יצירת הגדרות",
   "Edit Configuration": "עריכת הגדרות",
   "Edit website configuration": "ערוך את הגדרות האתר",
   "app-configuration": "הגדרות אפליקציה",

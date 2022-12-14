@@ -47,6 +47,7 @@ Configuration.statics.getByKey = function getByKey(tenant, key, isAdmin) {
 		return this.findOne({ key, tenant, public: true })
 			.select('tenant key metadata')
 			.lean()
+      .exec()
 			.then(config => {
 				return JSON.stringify({ tenant, key, metadata: config.metadata })
 			})

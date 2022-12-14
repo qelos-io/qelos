@@ -1,10 +1,10 @@
 <template>
   <div class="categories-page">
-    <PageTitle title="Configurations"/>
+    <ListPageTitle title="Configurations" create-route="createConfiguration"/>
     <ConfigurationsList/>
   </div>
 </template>
 <script lang="ts" setup>
 import ConfigurationsList from './components/ConfigurationsList.vue'
-import PageTitle from '../core/components/semantics/PageTitle.vue'
+import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
 </script>

@@ -12,6 +12,11 @@ const configurationsRoutes: RouteRecordRaw = {
       component: async () => (await import('./Configurations.vue')).default
     },
     {
+      path: 'new',
+      name: 'createConfiguration',
+      component: async () => (await import('./CreateConfiguration.vue')).default
+    },
+    {
       path: ':key',
       name: 'editConfiguration',
       component: async () => (await import('./EditConfiguration.vue')).default

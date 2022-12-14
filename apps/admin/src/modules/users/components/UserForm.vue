@@ -2,7 +2,7 @@
   <el-form @submit.native.prevent="submit" class="user-form">
     <div class="flex-row">
       <FormInput title="First Name" :model-value="firstName" @input="editedData.firstName = $event"/>
-      <FormInput title="Last Name" :model-value="LastName" @input="editedData.lastName = $event"/>
+      <FormInput title="Last Name" :model-value="lastName" @input="editedData.lastName = $event"/>
     </div>
     <FormInput title="Email" :model-value="email" @input="editedData.email = $event"/>
     <el-form-item label="Password">

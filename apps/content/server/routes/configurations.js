@@ -8,6 +8,7 @@ module.exports = function (app) {
     getConfiguration,
     updateConfiguration,
     getTenantByHost,
+    createConfiguration,
   } = require('../controllers/configurations')
 
   // configurations routes
@@ -15,6 +16,7 @@ module.exports = function (app) {
     .get('/api/configurations', populateUser, onlyAdmin, getConfigurationsList) // only admin can get ALL menus names
     .get('/api/configurations/:configKey', populateUser, getConfigurationByKey, getConfiguration)
     .put('/api/configurations/:configKey', populateUser, onlyAdmin, getConfigurationByKey, updateConfiguration)
-  
+    .post('/api/configurations', populateUser, onlyAdmin, createConfiguration)
+
   app.get('/internal-api/host-tenant', getTenantByHost)
 }

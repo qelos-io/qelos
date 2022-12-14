@@ -34,7 +34,9 @@
     "vitest": "^0.14.2",
     "vue": "^3.2.31",
     "vue-i18n": "^9.2.0-beta.23",
-    "vue-router": "^4.0.12"
+    "vue-router": "^4.0.12",
+    "json-editor-vue": "^0.10.2",
+    "vanilla-jsoneditor": "^0.11.4"
   },
   "license": "MIT",
   "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594",
