@@ -42,7 +42,11 @@ export async function loadManifest(manifestUrl: string): Promise<IPlugin & { reg
   };
 }
 
-export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, registerUrl: string, {tenant, host, appUrl}): Promise<string> {
+export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, registerUrl: string, {
+  tenant,
+  host,
+  appUrl
+}): Promise<string> {
   const email = `${plugin._id}.${tenant}@${host}`;
   const password = getRandomHash();
   const [maybeUser] = await getUsers(tenant, {email});
@@ -91,15 +95,26 @@ export async function enrichPluginWithManifest(plugin: IPlugin, {
   plugin.name = manifest.name || plugin.name;
   plugin.description = manifest.description || plugin.description;
 
-  plugin.microFrontends = manifest.microFrontends.map(mfe => {
-    console.log('single', mfe)
+  plugin.injectables = (manifest.injectables || [])
+    .filter(item => typeof item?.html === 'string')
+    .map(item => {
+      const oldIsActive: boolean | undefined = plugin.injectables?.find(old => old.html === item.html)?.active;
+      return {
+        name: item.name,
+        description: item.description,
+        html: item.html,
+        active: typeof oldIsActive === 'boolean' ? oldIsActive : true,
+      };
+    })
+  plugin.markModified('injectables');
+
+  plugin.microFrontends = manifest.microFrontends?.map(mfe => {
     return {
       ...mfe,
       url: mfe.url.startsWith('http') ? mfe.url : new URL(mfe.url, manifest.appUrl).href,
     }
   });
   plugin.markModified('microFrontends');
-  console.log(plugin.microFrontends)
 
   if (hardReset) {
     plugin.apiPath = manifest.apiPath;

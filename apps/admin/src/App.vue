@@ -7,8 +7,11 @@
 import {useAppConfiguration} from './modules/configurations/store/app-configuration'
 import {computed, watch} from 'vue'
 import {translate, loadLanguageAsync} from './plugins/i18n'
+import {usePluginsInjectables} from '@/modules/plugins/store/plugins-injectables';
 
 const config = useAppConfiguration()
+
+usePluginsInjectables().injectAll();
 
 const appConfig = computed(() => config.value?.metadata && config.value.metadata || {})
 

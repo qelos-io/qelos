@@ -52,5 +52,6 @@ export interface IPlugin {
     hookUrl: string;
   }[]
   navBarGroups?: { key: string, name: string, iconName?: string, iconSvg?: string, priority?: number }[]
-  microFrontends: IMicroFrontend[]
+  microFrontends: IMicroFrontend[],
+  injectables: { name?: string, description?: string, html: string, active: boolean }[]
 }

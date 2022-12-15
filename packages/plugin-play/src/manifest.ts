@@ -15,6 +15,7 @@ export const manifest = {
   subscribedEvents: [],
   navBarGroups: [],
   microFrontends: [],
+  injectables: [],
   authAcquire: {
     refreshTokenUrl: '/api/token/refresh',
     refreshTokenKey: 'refresh_token',

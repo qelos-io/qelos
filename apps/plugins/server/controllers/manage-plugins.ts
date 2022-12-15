@@ -5,7 +5,7 @@ import {removeUser} from '../services/users';
 import {fetchPlugin} from '../services/plugins-call';
 
 export function getAllPlugins(req, res) {
-  Plugin.find({tenant: req.headers.tenant}).select('-token -auth').lean()
+  Plugin.find({tenant: req.headers.tenant}).select('-token -auth').lean().exec()
     .then(list => {
       res.json(list).end();
     })

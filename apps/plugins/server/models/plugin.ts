@@ -49,6 +49,8 @@ export interface IPlugin extends Document {
       size: 'sm' | 'md' | 'lg' | 'full'
     }
   }[]
+
+  injectables: Array<{ name?: string, description?: string, html: string, active: boolean }>
 }
 
 const MicroFrontendSchema = new mongoose.Schema({
@@ -151,7 +153,13 @@ const PluginSchema = new mongoose.Schema<IPlugin>({
       required: true
     }
   }],
-  microFrontends: [MicroFrontendSchema]
+  microFrontends: [MicroFrontendSchema],
+  injectables: [{
+    name: String,
+    description: String,
+    html: String,
+    active: Boolean
+  }]
 });
 
 PluginSchema.index({tenant: 1, apiPath: 1}, {unique: true});
