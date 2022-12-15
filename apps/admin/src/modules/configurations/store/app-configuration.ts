@@ -1,4 +1,4 @@
-import { reactive, computed } from 'vue'
+import {reactive, computed} from 'vue'
 import configurationsService from '../../../services/configurations-service';
 import {IAppConfiguration} from '@qelos/sdk/dist/configurations';
 
@@ -7,6 +7,15 @@ export const appConfigurationStore = reactive<{ loaded: false, data: IAppConfigu
   data: null,
   promise: null
 })
+
+function updateMetaTags() {
+  const {name, slogan, language, direction} = appConfigurationStore.data.metadata;
+  const html = document.querySelector('html');
+  html.dir = direction;
+  html.lang = language;
+
+  document.querySelector('title').innerHTML = `${name} - ${slogan}`;
+}
 
 export function useAppConfiguration() {
   fetchAppConfiguration()
@@ -20,6 +29,7 @@ export function fetchAppConfiguration() {
   appConfigurationStore.promise = configurationsService
     .getOne('app-configuration')
     .then(config => appConfigurationStore.data = config)
+    .then(updateMetaTags)
     .catch(() => ({}))
 }
 
