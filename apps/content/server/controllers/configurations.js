@@ -2,7 +2,7 @@ const Configuration = require('../models/configuration')
 
 const BASIC_APP_CONFIGURATION_KEY = 'app-configuration'
 
-function getConfigurationByKey (req, res, next) {
+function getConfigurationByKey(req, res, next) {
   Configuration.getByKey(req.headers.tenant, req.params.configKey, req.user && req.user.isAdmin)
     .then(configuration => {
       if (!configuration) {
@@ -11,21 +11,21 @@ function getConfigurationByKey (req, res, next) {
       req.configuration = configuration
       next();
     })
-    .catch(() => res.status(404).json({ message: 'configuration not exists' }).end())
+    .catch(() => res.status(404).json({message: 'configuration not exists'}).end())
 }
 
-function getConfigurationsList (req, res) {
-  Configuration.find({ tenant: req.headers.tenant })
+function getConfigurationsList(req, res) {
+  Configuration.find({tenant: req.headers.tenant})
     .select('key public description created')
     .lean()
     .exec()
     .then(list => {
       res.status(200).json(list || []).end()
     })
-    .catch(() => res.status(401).json({ message: 'failed to load configurations list' }).end())
+    .catch(() => res.status(401).json({message: 'failed to load configurations list'}).end())
 }
 
-function getConfiguration (req, res) {
+function getConfiguration(req, res) {
   if (typeof req.configuration === 'string') {
     res.status(200).set('Content-Type', 'application/json').end(req.configuration)
   } else {
@@ -33,7 +33,7 @@ function getConfiguration (req, res) {
   }
 }
 
-async function createConfiguration (req, res) {
+async function createConfiguration(req, res) {
   const body = req.body || {}
 
   const configuration = new Configuration({
@@ -48,12 +48,12 @@ async function createConfiguration (req, res) {
       res.status(200).json(configuration).end()
     })
     .catch(() => {
-      res.status(400).json({ message: 'configuration creation failed' }).end()
+      res.status(400).json({message: 'configuration creation failed'}).end()
     })
 }
 
 
-async function updateConfiguration (req, res) {
+async function updateConfiguration(req, res) {
   const body = req.body || {}
   delete body.tenant
   const configuration = req.configuration
@@ -63,13 +63,16 @@ async function updateConfiguration (req, res) {
   }
   if (body.metadata) {
     if (configuration.key === BASIC_APP_CONFIGURATION_KEY && body.metadata.websiteUrls) {
-      const existingTenantWithUrl = await Configuration.findOne({ _id: { $ne: configuration._id }, websiteUrls: { $in: body.metadata.websiteUrls } })
+      const existingTenantWithUrl = await Configuration.findOne({
+        _id: {$ne: configuration._id},
+        websiteUrls: {$in: body.metadata.websiteUrls}
+      })
         .select('_id')
         .lean()
         .exec();
 
       if (existingTenantWithUrl) {
-        res.status(400).json({ message: 'URL already exists for another account' }).end()
+        res.status(400).json({message: 'URL already exists for another account'}).end()
         return;
       }
     }
@@ -84,19 +87,35 @@ async function updateConfiguration (req, res) {
       res.status(200).json(configuration).end()
     })
     .catch(() => {
-      res.status(400).json({ message: 'configuration update failed' }).end()
+      res.status(400).json({message: 'configuration update failed'}).end()
     })
 }
 
-function getTenantByHost (req, res) {
-  Configuration.findOne({ key: 'app-configuration', 'metadata.websiteUrls': req.query.host })
+async function removeConfiguration(req, res) {
+  const configuration = req.configuration;
+
+  if (configuration.key === 'app-configuration') {
+    res.status(400).json({message: 'remove configuration failed'}).end()
+    return;
+  }
+
+  try {
+    await configuration.remove();
+    res.status(200).json(configuration).end()
+  } catch {
+    res.status(400).json({message: 'remove configuration failed'}).end()
+  }
+}
+
+function getTenantByHost(req, res) {
+  Configuration.findOne({key: 'app-configuration', 'metadata.websiteUrls': req.query.host})
     .select('tenant metadata.websiteUrls')
     .lean()
     .exec()
     .then(appConfig => {
       return res.status(200).json(appConfig).end()
     })
-    .catch(() => res.status(401).json({ message: 'failed to load tenant from host' }).end())
+    .catch(() => res.status(401).json({message: 'failed to load tenant from host'}).end())
 }
 
 module.exports = {
@@ -105,5 +124,6 @@ module.exports = {
   getConfiguration,
   updateConfiguration,
   createConfiguration,
+  removeConfiguration,
   getTenantByHost,
 }
