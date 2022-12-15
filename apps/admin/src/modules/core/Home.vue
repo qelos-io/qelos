@@ -1,56 +1,59 @@
 <template>
-  <div class="welcome">
-    <h3>{{ $t('Switch Color Palette') }}</h3>
-    <div class="blocks-list">
-      <div v-for="(p, index) in PALETTES" :key="index" @click="changePalette(p.palette)" class="palette">
-        <div v-for="color in p.colors" :key="color" :style="{backgroundColor: color}"></div>
+  <h3>{{$t('Welcome!')}}</h3>
+  <template v-if="isPrivilegedUser">
+    <div class="welcome">
+      <h3>{{ $t('Switch Color Palette') }}</h3>
+      <div class="blocks-list">
+        <div v-for="(p, index) in PALETTES" :key="index" @click="changePalette(p.palette)" class="palette">
+          <div v-for="color in p.colors" :key="color" :style="{backgroundColor: color}"></div>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="blocks-list">
-    <GpItem>
-      <template v-slot:title>
-        {{ $t('Common operations') }}
-      </template>
+    <div class="blocks-list">
+      <GpItem>
+        <template v-slot:title>
+          {{ $t('Common operations') }}
+        </template>
 
-      <div class="content">
-        <router-link :to="{name: 'createPost'}">
-          <h3>
-            <el-icon>
-              <icon-document/>
-            </el-icon>
-            {{ $t('Create Post') }}
-          </h3>
-        </router-link>
+        <div class="content">
+          <router-link :to="{name: 'createPost'}">
+            <h3>
+              <el-icon>
+                <icon-document/>
+              </el-icon>
+              {{ $t('Create Post') }}
+            </h3>
+          </router-link>
 
-        <router-link :to="{name: 'createCategory'}">
-          <h3>
-            <el-icon>
-              <icon-folder-opened/>
-            </el-icon>
-            {{ $t('Create Category') }}
-          </h3>
-        </router-link>
+          <router-link :to="{name: 'createCategory'}">
+            <h3>
+              <el-icon>
+                <icon-folder-opened/>
+              </el-icon>
+              {{ $t('Create Category') }}
+            </h3>
+          </router-link>
 
-        <router-link :to="{name: 'editConfiguration', params: {key: 'app-configuration'}}">
-          <h3>
-            <el-icon>
-              <icon-setting/>
-            </el-icon>
-            {{ $t('Edit website configuration') }}
-          </h3>
-        </router-link>
-      </div>
-    </GpItem>
+          <router-link :to="{name: 'editConfiguration', params: {key: 'app-configuration'}}">
+            <h3>
+              <el-icon>
+                <icon-setting/>
+              </el-icon>
+              {{ $t('Edit website configuration') }}
+            </h3>
+          </router-link>
+        </div>
+      </GpItem>
 
-    <GpItem>
-      <template v-slot:title>
-        {{ $t('Information') }}
-      </template>
-      <h3 v-if="!loadingPosts">{{ t('{amount} Posts', {amount: posts.length}, posts.length) }}</h3>
-      <h3 v-if="!loadingBlocks">{{ t('{amount} Blocks', {amount: blocks.length}, blocks.length) }}</h3>
-    </GpItem>
-  </div>
+      <GpItem>
+        <template v-slot:title>
+          {{ $t('Information') }}
+        </template>
+        <h3 v-if="!loadingPosts">{{ t('{amount} Posts', {amount: posts.length}, posts.length) }}</h3>
+        <h3 v-if="!loadingBlocks">{{ t('{amount} Blocks', {amount: blocks.length}, blocks.length) }}</h3>
+      </GpItem>
+    </div>
+  </template>
 </template>
 <style scoped lang="scss">
 .blocks-list {
@@ -114,13 +117,13 @@ import {useBlocksList} from '@/modules/blocks/store/blocks-list';
 import {resetConfiguration, useAppConfiguration} from '@/modules/configurations/store/app-configuration';
 import configurationsService from '@/services/configurations-service';
 import {PALETTES} from '@/modules/core/utils/colors-palettes';
+import {isPrivilegedUser} from '@/modules/core/store/auth';
 
 const config = useAppConfiguration();
 const appConfig = computed(() => config.value?.metadata && config.value.metadata || {})
 const {loading: loadingPosts, posts, fetchPosts} = toRefs(usePostsListStore())
 
 const {loading: loadingBlocks, blocks} = toRefs(useBlocksList())
-
 const {t} = useI18n();
 
 fetchPosts.value();
