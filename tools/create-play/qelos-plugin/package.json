@@ -1,0 +1,24 @@
+{
+  "name": "qelos-plugin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "engines": {
+    "node": "16",
+    "npm": "8"
+  },
+  "scripts": {
+    "postinstall": "npm run create-certs",
+    "create-certs": "mkdir cert && node ./node_modules/@qelos/plugin-play/create-cert.js",
+    "dev": "tsx watch ./server.ts",
+    "start": "tsx ./server.ts",
+    "build:cd": "npm i --all && (cd app-ui && yarn && yarn build) && npm i --production"
+  },
+  "dependencies": {
+    "@qelos/plugin-play": "^3.0.1",
+    "tsx": "^3.12.1"
+  },
+  "devDependencies": {
+    "@types/node": "^16.18.3"
+  }
+}

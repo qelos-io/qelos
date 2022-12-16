@@ -11,7 +11,7 @@ import {usePluginsInjectables} from '@/modules/plugins/store/plugins-injectables
 
 const config = useAppConfiguration()
 
-usePluginsInjectables().injectAll();
+usePluginsInjectables();
 
 const appConfig = computed(() => config.value?.metadata && config.value.metadata || {})
 

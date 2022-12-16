@@ -1,0 +1,16 @@
+{
+  "name": "create-play",
+  "version": "1.0.8",
+  "description": "Create a new QELOS plugin",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "license": "MIT",
+  "homepage": "https://qelos.io",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "create-play": "index.js"
+  }
+}
