@@ -15,12 +15,8 @@
     "test": "lerna run test --parallel"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
-  "license": "MIT",
   "engines": {
     "node": ">=16.x"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "devDependencies": {
     "@types/jest": "^27.5.2",
