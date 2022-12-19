@@ -12,7 +12,7 @@
     "create-certs": "mkdir cert && node ./node_modules/@qelos/plugin-play/create-cert.js",
     "dev": "tsx watch ./server.ts",
     "start": "tsx ./server.ts",
-    "build:cd": "npm i --all && (cd app-ui && yarn && yarn build) && npm i --production"
+    "build:cd": "npm i --all && (cd app-ui && npm i && npm run build) && npm i --production"
   },
   "dependencies": {
     "@qelos/plugin-play": "^3.0.1",

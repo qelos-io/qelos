@@ -1,27 +1,6 @@
-import {start, addEndpoint, getSdk, addMicroFrontend} from '@qelos/plugin-play'
-
-addMicroFrontend({
-  name: 'Demo Plugin UI',
-  description: 'Description for the user',
-  url: '/index.html',
-  roles: ['*'],
-  route: {
-    name: 'example',
-    path: 'example',
-    navBarPosition: 'top'
-  }
-})
-
-addEndpoint('/api/example', {
-  method: 'GET',
-  async handler(req) {
-    return {
-      user: req.user,
-      tenant: req.tenantPayload,
-      blocks: await getSdk().blocks.getAll()
-    };
-  }
-})
+import {start} from '@qelos/plugin-play'
+import './describe-frontends'
+import './endpoints'
 
 start({
   manifest: {

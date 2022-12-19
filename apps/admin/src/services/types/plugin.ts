@@ -3,7 +3,9 @@ export interface IMicroFrontend {
   description: string;
   callbackUrl?: string;
   pluginId?: string;
-  url: string;
+  url?: string;
+  use?: string;
+  fetchUrl?: string;
   active: boolean;
   opened: boolean;
   roles: string[],

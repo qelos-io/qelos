@@ -1,5 +1,5 @@
-import {computed, ref, watch} from 'vue';
-import {useRouter} from 'vue-router';
+import {computed, watch} from 'vue';
+import {RouteRecord, useRouter} from 'vue-router';
 import {defineStore, storeToRefs} from 'pinia';
 import {usePluginsList} from './plugins-list';
 import MicroFrontendPage from '../MicroFrontendPage.vue';
@@ -74,17 +74,26 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     [
       ...top.map(group => group.items).flat(),
       ...bottom.map(group => group.items).flat()
-    ].forEach(frontend => {
-      router.addRoute('playPlugin', {
-        name: `plugin.${frontend.name}`,
-        path: frontend.route.path,
-        meta: {
-          roles: frontend.roles || frontend.route.roles || ['*'],
-          mfeUrl: getMfeUrl(frontend),
-          origin: new URL(frontend.url).origin
-        },
-        component: MicroFrontendPage
-      })
+    ].forEach(mfe => {
+      const route = {
+        name: `plugin.${mfe.name}`,
+        path: mfe.route.path,
+        component: mfe.url ? MicroFrontendPage : async () => (await import(`@/pre-designed/${mfe.use}.vue`)).default,
+        meta: null
+      }
+      if (mfe.url) {
+        route.meta = {
+          roles: mfe.roles || mfe.route.roles || ['*'],
+          mfeUrl: getMfeUrl(mfe),
+          origin: new URL(mfe.url).origin
+        }
+      } else {
+        route.meta = {
+          roles: mfe.roles || mfe.route.roles || ['*'],
+          fetchUrl: '',
+        }
+      }
+      router.addRoute('playPlugin', route)
     })
     router.removeRoute('defaultPluginPlaceholder');
     router.push(router.currentRoute.value.fullPath);

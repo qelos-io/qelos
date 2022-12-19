@@ -2,7 +2,7 @@ import {RouteOptions} from 'fastify/types/route';
 import {join} from 'path';
 import manifest from './manifest';
 
-interface QelosRouteParams extends RouteOptions {
+export interface QelosRouteParams extends RouteOptions {
   verifyToken: boolean;
 }
 

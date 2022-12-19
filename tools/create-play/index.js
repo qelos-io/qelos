@@ -42,7 +42,15 @@ function copyFolderRecursiveSync( source, target ) {
 }
 
 fs.renameSync(path.join(__dirname, 'qelos-plugin'), path.join(__dirname, projectName));
-copyFolderRecursiveSync(path.join(__dirname, projectName), cwd());
+
+try {
+  copyFolderRecursiveSync(path.join(__dirname, projectName), cwd());
+  fs.mkdirSync(path.join(__dirname, projectName, 'cert'));
+  fs.writeFileSync(path.join(__dirname, projectName, 'cert', '.gitignore'), '*');
+  fs.writeFileSync(path.join(__dirname, projectName, '.gitignore'), 'node_modules\nlogs\ndist\npublic\n.idea\n.vscode');
+} finally {
+  fs.renameSync(path.join(__dirname, projectName), path.join(__dirname, 'qelos-plugin'));
+}
 
 console.log('Qelos plugin Created');
 console.log('Please run: cd ' + projectName + ' && npm install');
