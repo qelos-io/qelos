@@ -45,9 +45,9 @@ fs.renameSync(path.join(__dirname, 'qelos-plugin'), path.join(__dirname, project
 
 try {
   copyFolderRecursiveSync(path.join(__dirname, projectName), cwd());
-  fs.mkdirSync(path.join(__dirname, projectName, 'cert'));
-  fs.writeFileSync(path.join(__dirname, projectName, 'cert', '.gitignore'), '*');
-  fs.writeFileSync(path.join(__dirname, projectName, '.gitignore'), 'node_modules\nlogs\ndist\npublic\n.idea\n.vscode');
+  fs.mkdirSync(path.join(cwd(), projectName, 'cert'));
+  fs.writeFileSync(path.join(cwd(), projectName, 'cert', '.gitignore'), '*');
+  fs.writeFileSync(path.join(cwd(), projectName, '.gitignore'), 'node_modules\nlogs\ndist\npublic\n.idea\n.vscode');
 } finally {
   fs.renameSync(path.join(__dirname, projectName), path.join(__dirname, 'qelos-plugin'));
 }
