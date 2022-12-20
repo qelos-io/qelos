@@ -15,7 +15,7 @@
     "build:cd": "npm i --all && (cd app-ui && npm i && npm run build) && npm i --production"
   },
   "dependencies": {
-    "@qelos/plugin-play": "^3.0.1",
+    "@qelos/plugin-play": "^3.0.2",
     "tsx": "^3.12.1"
   },
   "devDependencies": {
