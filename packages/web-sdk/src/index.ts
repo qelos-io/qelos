@@ -1,6 +1,6 @@
 import {on} from './qelos';
 
-export const code = (new URL(location.href)).searchParams.get('code');
+export const code = (new URL(location.href)).searchParams.get('code') || 'default';
 
 export async function unAuthorize() {
   await fetch('/api/un-authorize', {

@@ -260,18 +260,52 @@ export function getCallbackRoute(): RouteOptions {
 }
 
 export function getFrontendAuthorizationRoute(): RouteOptions {
+  let standaloneAuthorize: (reply) => Promise<any> = async () => {
+    return;
+  }
   if (config.qelosUrl) {
-    onFrontendAuthorization(async ({returnUrl, user, tenant}, request) => {
-      const draft = await getSdk().drafts.getDraft(returnUrl, `${tenant.sub}.${user.email}`);
-      if (draft && draft.contextData) {
-        return {
-          code: draft.contextData.code,
-          token: jwt.sign({code: draft.contextData, user, tenant}, config.accessTokenSecret, {expiresIn: '30min'}),
+    onFrontendAuthorization(async ({returnUrl, user, tenant}) => {
+      try {
+        const draft = await getSdk().drafts.getDraft(returnUrl, `${tenant.sub}.${user.email}`);
+        if (draft && draft.contextData) {
+          return {
+            code: draft.contextData.code,
+            token: jwt.sign({code: draft.contextData, user, tenant}, config.accessTokenSecret, {expiresIn: '30min'}),
+          }
         }
+      } catch {
+        //
       }
       return;
     });
+
+    if (config.dev) {
+      standaloneAuthorize = async (reply) => {
+        const [fullUser] = await getSdk().users.getList({exact: true, email: config.qelosUsername});
+        const user = {
+          _id: fullUser._id,
+          email: fullUser.email,
+          firstName: fullUser.firstName,
+          lastName: fullUser.lastName,
+          roles: fullUser.roles
+        }
+        const tenant = {
+          sub: user._id,
+          identifier: user.email
+        };
+        reply.setCookie('token_default', jwt.sign({
+          code: 'default',
+          user,
+          tenant
+        }, config.accessTokenSecret, {expiresIn: '30min'}));
+        return {
+          user,
+          tenant
+        };
+      }
+    }
   }
+
 
   return {
     method: 'POST',
@@ -298,8 +332,12 @@ export function getFrontendAuthorizationRoute(): RouteOptions {
           }
         }
       }
-      reply.statusCode = 401;
-      return notAuthorized;
+      const response = await standaloneAuthorize(reply);
+      if (!response) {
+        reply.statusCode = 401;
+        return notAuthorized;
+      }
+      return response;
     }
   }
 }
