@@ -15,6 +15,7 @@
       Public?
     </label>
     <FormInput title="Key" :model-value="configKey" @input="configKey = $event"/>
+    <FormInput title="Kind" :model-value="configKind" @input="configKind = $event"/>
     <JsonEditorVue v-model="metadata"/>
   </div>
 </template>
@@ -27,6 +28,7 @@ import JsonEditorVue from 'json-editor-vue'
 
 const isPublic = ref(false);
 const configKey = ref('');
+const configKind = ref('');
 const metadata = ref({});
 
 const {submitting, submit} = useSubmitting(
@@ -37,6 +39,7 @@ const {submitting, submit} = useSubmitting(
     return configurationsService.create({
       public: isPublic.value,
       key: configKey.value,
+      kind: configKind.value,
       metadata: typeof metadata.value === 'string' ? JSON.parse(metadata.value) : metadata.value
     })
   },

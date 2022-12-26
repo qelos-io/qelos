@@ -1,7 +1,7 @@
 <template>
   <div class="category-page" v-if="config">
     <PageTitle title="Edit Configuration" :item-name="$t(config.key)"/>
-    <ConfigurationForm :metadata="config.metadata" :submitting="submitting" @save="submit"/>
+    <ConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"/>
   </div>
 </template>
 <script lang="ts" setup>
@@ -15,6 +15,6 @@ const {params} = useRoute()
 const {config, updateConfiguration} = useEditConfiguration((params as any).key)
 
 const {submitting, submit} = useSubmitting(
-    (metadata) => updateConfiguration({metadata}),
-    {success: 'Configurations updated successfully', error: 'Failed to updated configurations'})
+  (metadata) => updateConfiguration({metadata}),
+  {success: 'Configurations updated successfully', error: 'Failed to updated configurations'})
 </script>

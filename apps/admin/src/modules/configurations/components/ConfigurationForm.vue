@@ -20,11 +20,12 @@ export default {
   name: 'ConfigurationForm',
   components: {SaveButton, FormInput, ConfigurationInput},
   props: {
+    kind: String,
     metadata: Object,
     submitting: Boolean
   },
-  setup({metadata}, {emit}) {
-    const {updated, edited, keys, valuesTypes} = useEditMetadata(metadata)
+  setup({kind, metadata}, {emit}) {
+    const {updated, edited, keys, valuesTypes} = useEditMetadata(kind, metadata)
 
     return {
       keys,

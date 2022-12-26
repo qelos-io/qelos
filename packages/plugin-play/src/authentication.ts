@@ -6,13 +6,6 @@ import handlers, {onCallback, onFrontendAuthorization, onNewTenant, onRefreshTok
 import config from './config';
 import {getSdk, getSdkForUrl} from './sdk';
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    tenantPayload: StandardPayload & any;
-    user?: { email, firstName, lastName }
-  }
-}
-
 const notAuthorized = {message: 'you are not authorized'};
 
 function getHostname(fullUrl: string) {

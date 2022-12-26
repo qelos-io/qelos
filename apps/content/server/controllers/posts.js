@@ -1,6 +1,5 @@
 const { getUsersMap } = require('../utils/users')
 const Post = require('../models/post')
-const Comment = require('../models/comment')
 const Category = require('../models/category')
 const { emitPlatformEvent } = require('@qelos/api-kit');
 
@@ -17,7 +16,7 @@ function getCategoryIdByPathOrId(tenant, categoryPath, categoryId) {
   return Promise.resolve(null)
 }
 
-function getDisplayPost(post, category, authorsMap = {}, comments) {
+function getDisplayPost(post, category, authorsMap = {}) {
   const authors = post.authors.map(id => authorsMap[id]).filter(Boolean);
   return Object.assign(post, {
     authors,
@@ -25,7 +24,6 @@ function getDisplayPost(post, category, authorsMap = {}, comments) {
       name: category.name,
       path: category.path
     },
-    comments: comments ? comments.map(c => c.author = authorsMap[c.author]) : undefined
   })
 }
 
@@ -125,21 +123,16 @@ function getPostsList(req, res) {
 }
 
 function getPost(req, res) {
-  Comment.find({ post: req.post._id, tenant: req.headers.tenant }).lean()
-    .then(comments => comments || [], () => [])
-    .then(comments => {
-      const authors = comments.map(c => c.author).concat(req.post.authors)
-      req.comments = comments
-      return getUsersMap(req.headers.tenant, authors).then(JSON.parse)
-    })
+  return getUsersMap(req.headers.tenant, req.post.authors)
+    .then(JSON.parse)
     .then(authorsMap => {
       res.status(200)
         .json(
           getDisplayPost(
             req.post.toObject ? req.post.toObject() : req.post,
             req.category,
-            authorsMap || {},
-            req.comments)
+            authorsMap || {}
+          )
         ).end()
     })
 }

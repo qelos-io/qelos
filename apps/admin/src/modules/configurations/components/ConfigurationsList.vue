@@ -32,6 +32,3 @@ const {list} = useConfigurationsList()
 
 const remove = useConfirmAction((config) => configurationsService.remove(config.key));
 </script>
-<style scoped lang="scss">
-
-</style>

@@ -20,6 +20,7 @@ const Configuration = new mongoose.Schema({
 		default: () => true,
 	},
 	description: String,
+  kind: String,
 	// the internal configuration object - can be whatever you want.
 	metadata: mongoose.SchemaTypes.Mixed,
 	created: {

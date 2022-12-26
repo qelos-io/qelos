@@ -33,7 +33,8 @@ const placeholders = {
   homeScreen: 'dashboard',
 };
 
-export function useEditMetadata(metadata) {
+export function useEditMetadata(kind: string, metadata) {
+  const hardConfigType = kind === 'palettes' ? ['palette'] : null;
   const keys: string[] = Object.keys(metadata);
   const editedValues = reactive(
     keys.reduce((values, key) => {
@@ -44,9 +45,9 @@ export function useEditMetadata(metadata) {
   const updated = reactive(useEditedInputModels(editedValues, metadata, keys));
   const valuesTypes = reactive(
     keys.reduce((types, key) => {
-      const options = configurationKeysTypes[key] || [
-        typeof updated[key] === 'number' ? 'number' : 'text',
-      ];
+      const options = hardConfigType ||
+        configurationKeysTypes[key] ||
+        [typeof updated[key] === 'number' ? 'number' : 'text'];
       types[key] = {
         title: titles[key] || key,
         placeholder: placeholders[key],
