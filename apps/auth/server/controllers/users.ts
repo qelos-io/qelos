@@ -11,6 +11,10 @@ const {isObjectId} = require('../../helpers/mongo-utils')
 
 const privilegedUserFields = 'email fullName firstName lastName birthDate roles';
 
+function getUserIdIfExists(_id, tenant) {
+  return User.findOne({_id, tenant}).select('_id').lean().exec();
+}
+
 function getUsersForAdmin(req: AuthRequest, res: Response): void {
   const email = req.query.email?.toString().toLowerCase() || undefined;
 
@@ -94,11 +98,13 @@ async function getUserEncryptedData(req: AuthRequest, res: Response) {
     return res.status(401).end();
   }
   try {
-    const user = await User.findOne({_id: req.params.userId, tenant}).select('_id').lean().exec();
+    const user = await getUserIdIfExists(req.params.userId, tenant);
     if (!user) {
       throw new Error('user not found');
     }
-    const {value} = await getEncryptedData(tenant, user._id);
+    const encryptedId = req.headers['x-encrypted-id'];
+    const id = user._id + (encryptedId ? ('-' + encryptedId) : '');
+    const {value} = await getEncryptedData(tenant, id);
 
     res.status(200).set('Content-Type', 'application/json').end(value);
   } catch (e) {
@@ -112,11 +118,13 @@ async function setUserEncryptedData(req: AuthRequest, res: Response) {
     return res.status(401).end();
   }
   try {
-    const user = await User.findOne({_id: req.params.userId, tenant}).select('_id').lean().exec();
+    const user = await getUserIdIfExists(req.params.userId, tenant);
     if (!user) {
       throw new Error('user not found');
     }
-    await setEncryptedData(tenant, user._id, JSON.stringify(req.body));
+    const encryptedId = req.headers['x-encrypted-id'];
+    const id = user._id + (encryptedId ? ('-' + encryptedId) : '');
+    await setEncryptedData(tenant, id, JSON.stringify(req.body));
     res.status(200).set('Content-Type', 'application/json').end('{}');
   } catch (e) {
     res.status(400).json({message: 'failed to retrieve encrypted data for user'}).end()

@@ -53,14 +53,18 @@ export default class QlUsers<T = any, E = any> extends BaseSDK {
     })
   }
 
-  getEncryptedData<Z = E>(userId: string) {
-    return this.callJsonApi<IManagedUser<Z>>(`${this.relativePath}/${userId}/encrypted`)
+  getEncryptedData<Z = E>(userId: string, encryptedId: string = '') {
+    return this.callJsonApi<IManagedUser<Z>>(`${this.relativePath}/${userId}/encrypted`, {
+      headers: {
+        'x-encrypted-id': encryptedId
+      }
+    })
   }
 
-  async setEncryptedData<Z = E>(userId: string, data: Z): Promise<void> {
+  async setEncryptedData<Z = E>(userId: string, encryptedId: string = '', data: Z): Promise<void> {
     const res = await this.callApi(`${this.relativePath}/${userId}/encrypted`, {
       method: 'post',
-      headers: {'content-type': 'application/json'},
+      headers: {'content-type': 'application/json', 'x-encrypted-id': encryptedId},
       body: JSON.stringify(data)
     })
     if (res.status >= 300) {
