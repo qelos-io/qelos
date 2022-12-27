@@ -29,37 +29,39 @@ const loadLayoutPayload = (kind: string, {req}: any) => {
         connectedData: await Promise.all(
           (layout.connectedData || []).map(async (cd) => {
             switch (cd.kind) {
-              case LayoutConnectedDataKind.POSTS:
-                cd.data = await sdk.posts.getList(
-                  {
-                    ...cd.context,
-                    populate: 'category',
-                  },
-                  extraRequest
-                );
-                break;
-              case LayoutConnectedDataKind.CATEGORY_POSTS:
-                cd.data = await sdk.posts.getList(
-                  {
-                    ...cd.context,
-                    category: req.params.category,
-                  },
-                  extraRequest
-                );
-                break;
+              // case LayoutConnectedDataKind.POSTS:
+              //   cd.data = await sdk.posts.getList(
+              //     {
+              //       ...cd.context,
+              //       populate: 'category',
+              //     },
+              //     extraRequest
+              //   );
+              //   break;
+              // case LayoutConnectedDataKind.CATEGORY_POSTS:
+              //   // cd.data = await sdk.posts.getList(
+              //   //   {
+              //   //     ...cd.context,
+              //   //     category: req.params.category,
+              //   //   },
+              //   //   extraRequest
+              //   // );
+              //   cd.data = {};
+              //   break;
               case LayoutConnectedDataKind.CATEGORY:
                 cd.data = await sdk.categories.getByPath(
                   cd.context?.path || req.params.category || '-',
                   extraRequest
                 );
                 break;
-              case LayoutConnectedDataKind.POST:
-                cd.data = await sdk.posts.getByPath(
-                  req.params.category,
-                  req.params.post,
-                  extraRequest
-                );
-                break;
+              // case LayoutConnectedDataKind.POST:
+              //   // cd.data = await sdk.posts.getByPath(
+              //   //   req.params.category,
+              //   //   req.params.post,
+              //   //   extraRequest
+              //   // );
+              //   cd.data = {}
+              //   break;
             }
             return cd;
           })
@@ -75,8 +77,11 @@ const loadLayoutPayload = (kind: string, {req}: any) => {
 }
 
 export const loadAppConfiguration = ({req}: any): Promise<IAppConfiguration> => {
-  return sdk.configurations.getAppConfiguration({headers: {tenant: req.headers.tenant}}).then(config => {
-    delete config.metadata.websiteUrls;
+  return sdk.appConfigurations.getAppConfiguration({headers: {tenant: req.headers.tenant}}).then(config => {
+    if (config.metadata) {
+      // @ts-ignore
+      delete config.metadata.websiteUrls;
+    }
     return config.metadata;
   })
 }
