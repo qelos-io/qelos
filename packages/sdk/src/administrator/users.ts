@@ -10,7 +10,7 @@ export interface IManagedUserRequest<T = any> extends IManagedUser<T> {
   password?: string;
 }
 
-export default class GpUsers<T = any, E = any> extends BaseSDK {
+export default class QlUsers<T = any, E = any> extends BaseSDK {
   private relativePath = '/api/users';
 
   constructor(private options: QelosSDKOptions) {

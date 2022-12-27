@@ -1,8 +1,8 @@
-import { QelosSDKOptions } from "./types";
-import BaseSDK from "./base-sdk";
-import {ILayout, LayoutKind} from './administrator/layouts';
+import { QelosSDKOptions } from "../types";
+import BaseSDK from "../base-sdk";
+import {ILayout, LayoutKind} from './layouts';
 
-export default class GpManageLayouts extends BaseSDK {
+export default class QlManageLayouts extends BaseSDK {
   private relativePath = "/api/layouts";
 
   constructor(options: QelosSDKOptions) {

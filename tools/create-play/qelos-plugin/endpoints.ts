@@ -6,7 +6,7 @@ addEndpoint('/api/example', {
     return {
       user: req.user,
       tenant: req.tenantPayload,
-      blocks: await getSdk().blocks.getAll()
+      blocks: await getSdk().blocks.getList()
     };
   }
 })

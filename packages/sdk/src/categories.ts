@@ -11,7 +11,7 @@ export interface ICategory {
   [key: string]: any;
 }
 
-export default class GpCategories extends BaseSDK {
+export default class QlCategories extends BaseSDK {
   private relativePath = "/api/categories";
 
   constructor(options: QelosSDKOptions) {

@@ -10,7 +10,7 @@ export interface IBlock {
   [key: string]: any;
 }
 
-export default class GpBlocks extends BaseSDK {
+export default class QlBlocks extends BaseSDK {
   private relativePath = '/api/blocks';
 
   constructor(options: QelosSDKOptions) {

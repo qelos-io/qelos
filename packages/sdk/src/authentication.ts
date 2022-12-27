@@ -32,7 +32,7 @@ export interface ISignupInformation {
   birthDate: string;
 }
 
-export default class GpAuthentication extends BaseSDK {
+export default class QlAuthentication extends BaseSDK {
 
   #refreshToken: string;
   #accessToken: string;

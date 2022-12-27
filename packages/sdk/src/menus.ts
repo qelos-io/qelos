@@ -29,7 +29,7 @@ export interface IMenu {
   [key: string]: any;
 }
 
-export default class GpMenus extends BaseSDK {
+export default class QlMenus extends BaseSDK {
   private relativePath = '/api/menus';
 
   constructor(options: QelosSDKOptions) {

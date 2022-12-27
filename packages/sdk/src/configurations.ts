@@ -18,7 +18,7 @@ export interface IAppConfiguration {
   [key: string]: any;
 }
 
-export default class GpConfigurations extends BaseSDK {
+export default class QlAppConfigurations extends BaseSDK {
   private relativePath = "/api/configurations/app-configuration";
 
   constructor(options: QelosSDKOptions) {
@@ -26,14 +26,14 @@ export default class GpConfigurations extends BaseSDK {
   }
 
   getAppConfiguration(extra?: Partial<RequestInit>) {
-    return this.callJsonApi<IAppConfiguration>(this.relativePath, extra);
+    return this.callJsonApi<{metadata: IAppConfiguration}>(this.relativePath, extra);
   }
 
-  update(changes: Partial<IAppConfiguration>, extra?: Partial<RequestInit>): Promise<IAppConfiguration> {
-    return this.callJsonApi<IAppConfiguration>(this.relativePath, {
+  update(changes: Partial<IAppConfiguration>, extra?: Partial<RequestInit>): Promise<{metadata: IAppConfiguration}> {
+    return this.callJsonApi<{metadata: IAppConfiguration}>(this.relativePath, {
       method: "put",
       headers: {'content-type': 'application/json'},
-      body: JSON.stringify(changes),
+      body: JSON.stringify({metadata: changes}),
       ...(extra || {}),
     });
   }

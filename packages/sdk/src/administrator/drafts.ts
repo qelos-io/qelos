@@ -14,7 +14,7 @@ export interface IDraft extends IDraftMetadata {
   tenant?: string;
 }
 
-export default class GpDrafts extends BaseSDK {
+export default class QlDrafts extends BaseSDK {
   private relativePath = '/api/drafts';
 
   constructor(options: QelosSDKOptions) {

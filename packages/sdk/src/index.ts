@@ -1,32 +1,31 @@
 import {QelosSDKOptions} from './types';
 import BaseSDK from './base-sdk';
-import GpCategories from './categories';
-import GpPosts from './posts';
-import GpMenus from './menus';
-import GpConfigurations from './configurations';
+import QlCategories from './categories';
+import QlMenus from './menus';
+import QlAppConfigurations from './configurations';
 import GpAuthentication from './authentication';
-import GpBlocks from './blocks';
+import QlBlocks from './blocks';
 import GpLayouts from './administrator/layouts';
+import QlLayouts from './administrator/layouts';
+import QlAuthentication from './authentication';
 
 export default class QelosSDK extends BaseSDK {
 
-  categories: GpCategories;
-  posts: GpPosts;
-  menus: GpMenus;
-  blocks: GpBlocks;
-  layouts: GpLayouts;
-  configurations: GpConfigurations;
-  authentication: GpAuthentication;
+  categories: QlCategories;
+  menus: QlMenus;
+  blocks: QlBlocks;
+  layouts: QlLayouts;
+  appConfigurations: QlAppConfigurations;
+  authentication: QlAuthentication;
 
   constructor(private options: QelosSDKOptions) {
     super(options);
-    this.categories = new GpCategories(this.options);
-    this.posts = new GpPosts(this.options);
-    this.menus = new GpMenus(this.options);
-    this.blocks = new GpBlocks(this.options);
-    this.layouts = new GpLayouts(this.options);
-    this.configurations = new GpConfigurations(this.options);
-    this.authentication = new GpAuthentication(this.options);
+    this.categories = new QlCategories(this.options);
+    this.menus = new QlMenus(this.options);
+    this.blocks = new QlBlocks(this.options);
+    this.layouts = new QlLayouts(this.options);
+    this.appConfigurations = new QlAppConfigurations(this.options);
+    this.authentication = new QlAuthentication(this.options);
 
     if (!options.getAccessToken) {
       options.getAccessToken = () => this.authentication.accessToken;

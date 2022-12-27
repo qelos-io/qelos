@@ -43,7 +43,7 @@ export interface ILayout {
   [key: string]: any;
 }
 
-export default class GpLayouts extends BaseSDK {
+export default class QlLayouts extends BaseSDK {
   private relativePath = "/api/layouts";
 
   constructor(options: QelosSDKOptions) {

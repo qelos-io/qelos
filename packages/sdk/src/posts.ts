@@ -34,7 +34,7 @@ export type GetPostsListOptions = {
   category: string;
 };
 
-export default class GpPosts extends BaseSDK {
+export default class QlPosts extends BaseSDK {
   private relativePath = "/api/posts";
 
   constructor(options: QelosSDKOptions) {
