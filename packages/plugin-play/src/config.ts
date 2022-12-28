@@ -6,6 +6,7 @@ const config = {
   dev: process.env.NODE_ENV !== 'production',
   refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
   accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
+  userPayloadSecret: process.env.USER_PAYLOAD_SECRET,
   qelosUrl: process.env.QELOS_URL,
   qelosUsername: process.env.QELOS_USERNAME,
   qelosPassword: process.env.QELOS_PASSWORD,

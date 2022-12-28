@@ -150,7 +150,7 @@ export function getRegisterRoute(): RouteOptions {
         });
       }
 
-      await usersSdk.setEncryptedData(user._id, {
+      await usersSdk.setEncryptedData(user._id, config.userPayloadSecret, {
         appUrl,
         email,
         password,
