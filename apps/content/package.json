@@ -1,6 +1,6 @@
 {
   "name": "@qelos/content",
-  "version": "3.0.5",
+  "version": "3.1.2",
   "migrationVersion": 7,
   "description": "Content API for qelos platform",
   "keywords": [
