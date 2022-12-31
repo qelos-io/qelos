@@ -8,13 +8,16 @@ import {manifest, ManifestOptions} from './manifest';
 import config, {ConfigOptions, setConfig} from './config';
 import {
   getCallbackRoute,
-  getFrontendAuthorizationRoute, getFrontendUnAuthorizationRoute,
+  getFrontendAuthorizationRoute,
+  getFrontendUnAuthorizationRoute,
   getRefreshTokenRoute,
   getRegisterRoute,
-  verifyAccessToken, verifyCookieToken
+  verifyAccessToken,
+  verifyCookieToken
 } from './authentication';
 import handlers from './handlers';
 import {endpoints} from './endpoints';
+import {LifecycleEvent, trigger} from './lifecycle';
 
 const hooks = new Set<{ subscribedEvent, path, handler }>();
 
@@ -34,6 +37,8 @@ export async function start(options?: { manifest?: ManifestOptions, config?: Con
 }
 
 export function configure(manifestOptions: ManifestOptions, appConfig: ConfigOptions) {
+  trigger(LifecycleEvent.beforeConfigure, {manifest, config, manifestOptions, configOptions: appConfig});
+
   Object.assign(manifest, manifestOptions);
   setConfig(appConfig);
 
@@ -41,6 +46,8 @@ export function configure(manifestOptions: ManifestOptions, appConfig: ConfigOpt
     manifest.appUrl = 'https://' + config.host + ':' + config.port;
   }
   manifest.proxyUrl = new URL(manifest.proxyPath, manifest.appUrl).href;
+
+  trigger(LifecycleEvent.configured, {manifest, config})
 }
 
 export function getApp(): FastifyInstance {
@@ -63,10 +70,13 @@ export function registerToHook(hook: { source?: string, kind?: string, eventName
 }
 
 function createApp(): FastifyInstance {
-  app = fastify({
+  const fastifyOptions = {
     logger: !!config.dev,
     https: getHttps()
-  });
+  };
+  trigger(LifecycleEvent.beforeCreate, {fastifyOptions, config, manifest});
+  app = fastify(fastifyOptions);
+  trigger(LifecycleEvent.beforeMount, {app, fastifyOptions, config, manifest});
 
   app.addContentTypeParser('application/json', {parseAs: 'string'}, function (req, body, done) {
     try {
@@ -89,6 +99,8 @@ function createApp(): FastifyInstance {
   if (!(config.qelosUrl || handlers.refreshToken.length)) {
     throw new Error('you must provide either a refresh token handler or Qelos application credentials');
   }
+
+  trigger(LifecycleEvent.mounted, {app, config, manifest})
 
   return app;
 }
