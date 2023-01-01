@@ -165,7 +165,7 @@ function createPost(req, res) {
         user: req.headers.user._id,
         source: 'content',
         kind: 'posts',
-        eventName: 'postCreated',
+        eventName: 'post-created',
         description: 'new post created',
         metadata: post
       })
@@ -208,7 +208,7 @@ function updatePost(req, res) {
         user: req.headers.user._id,
         source: 'content',
         kind: 'posts',
-        eventName: 'postUpdated',
+        eventName: 'post-updated',
         description: `post updated: ${rawPost.title}`,
         metadata: rawPost
       })

@@ -2,6 +2,7 @@ const ftpService = require('../services/ftp');
 const gcsService = require('../services/gcs');
 const s3Service = require('../services/s3');
 const cloudinaryService = require('../services/cloudinary');
+const {emitPlatformEvent} = require("@qelos/api-kit");
 
 const getService = ({ kind }) => ({
   gcs: gcsService,
@@ -35,7 +36,28 @@ function uploadStorageAssets(req, res) {
   }
 
   service.uploadFile(req.storage, { identifier, file, extension, prefix, type })
-    .then((result) => res.status(200).json(result).end())
+    .then((result) => {
+      res.status(200).json(result).end();
+      emitPlatformEvent({
+        tenant: req.headers.tenant,
+        user: req.headers.user._id,
+        source: 'assets',
+        kind: 'asset-operation',
+        eventName: 'asset-uploaded',
+        description: `asset updated: ${identifier}`,
+        metadata: {
+          identifier,
+          extension,
+          prefix,
+          type,
+          storage: {
+            _id: req.storage._id,
+            kind: req.storage.kind,
+            name: req.storage.name
+          }
+        }
+      })
+    })
     .catch((error) => {
       res.status(500).json({ message: error.message || 'could not upload asset' }).end();
     });
