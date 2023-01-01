@@ -19,7 +19,8 @@ export default defineConfig({
         text: 'PLUGINS',
         items: [
           {text: 'Create a Plugin', link: '/plugins/create'},
-          {text: 'Test your Plugin', link: '/plugins/test'},
+          // {text: 'Test your Plugin', link: '/plugins/test'},
+          {text: 'Plugin Lifecycle', link: '/plugins/lifecycle'},
           {text: 'Deploy your Plugin', link: '/plugins/deploy'},
           {text: 'Hooks and Events', link: '/plugins/hooks'},
           {text: 'API Proxy', link: '/plugins/api-proxy'},
