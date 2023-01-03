@@ -35,31 +35,33 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         map[group.key] = group;
         return map;
       }, {}) || {};
-      plugin.microFrontends?.filter(frontend =>
-        frontend.active &&
-        (!(frontend.roles || frontend.route?.roles) || (frontend.roles || frontend.route.roles)
+      plugin.microFrontends?.filter(mfe =>
+        mfe.active &&
+        (!(mfe.roles || mfe.route?.roles) || (mfe.roles || mfe.route.roles)
           .some(role => role === '*' || userRoles.value.includes(role)))
       )
-        .forEach(frontend => {
-          if (frontend.route) {
-            frontend.callbackUrl = plugin.callbackUrl;
-            frontend.pluginId = plugin._id;
-            const stackTo = frontend.route.navBarPosition === 'top' ? allMFEs.navBar.top : allMFEs.navBar.bottom;
-            if (frontend.route.group) {
-              const groupTo = stackTo.find(group => group.key === frontend.route.group);
+        .forEach(mfe => {
+          if (mfe.route) {
+            mfe.callbackUrl = plugin.callbackUrl;
+            mfe.pluginId = plugin._id;
+            mfe.pluginApiPath = plugin.apiPath;
+            const stackTo = mfe.route.navBarPosition === 'top' ? allMFEs.navBar.top : allMFEs.navBar.bottom;
+            // grouped routes in nav bar
+            if (mfe.route.group) {
+              const groupTo = stackTo.find(group => group.key === mfe.route.group);
               if (groupTo) {
-                groupTo.items.push(frontend);
+                groupTo.items.push(mfe);
               } else {
                 stackTo.unshift({
-                  ...groups[frontend.route.group],
-                  items: [frontend]
+                  ...groups[mfe.route.group],
+                  items: [mfe]
                 })
               }
             } else {
-              stackTo[stackTo.length - 1].items.push(frontend); // add to the un-grouped items;
+              stackTo[stackTo.length - 1].items.push(mfe); // add to the un-grouped items;
             }
-          } else if (frontend.modal) {
-            allMFEs.modals[frontend.modal.name] = frontend;
+          } else if (mfe.modal) { // modals micro frontends
+            allMFEs.modals[mfe.modal.name] = mfe;
           }
         });
 
@@ -90,7 +92,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
       } else {
         route.meta = {
           roles: mfe.roles || mfe.route.roles || ['*'],
-          fetchUrl: '',
+          mfe,
         }
       }
       router.addRoute('playPlugin', route)
