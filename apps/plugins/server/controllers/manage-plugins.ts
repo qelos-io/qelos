@@ -63,18 +63,22 @@ export function redirectToPluginMfe(req, res) {
 
       res.status(400).end();
     })
-    .catch(() => {
+    .catch((e) => {
+      logger.error('error in redirect to mfe', e);
       res.status(500).json({message: 'could not find plugin'}).end();
     })
 }
 
 
 export function getPlugin(req, res) {
-  Plugin.findOne({tenant: req.headers.tenant, _id: req.params.pluginId}).select('-token -auth').lean()
+  const query = {tenant: req.headers.tenant, _id: req.params.pluginId};
+  logger.log('get plugin endpoint', query);
+  Plugin.findOne(query).select('-token -auth').lean().exec()
     .then(plugin => {
       res.json(plugin).end();
     })
-    .catch(() => {
+    .catch((e) => {
+      logger.error('error to get plugin', query, e)
       res.status(500).json({message: 'could not find plugin'}).end();
     })
 }

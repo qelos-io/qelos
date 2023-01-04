@@ -59,6 +59,7 @@ services:
       AUTH_SERVICE_URL: auth
       ASSETS_SERVICE_URL: assets
       DRAFTS_SERVICE_URL: drafts
+      PLUGINS_SERVICE_URL: plugins
       ADMIN_PANEL_URL: admin
       FRONT_URL: front
   content:
