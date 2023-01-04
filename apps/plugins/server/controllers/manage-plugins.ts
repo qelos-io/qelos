@@ -79,7 +79,7 @@ export function getPlugin(req, res) {
     })
     .catch((e) => {
       logger.error('error to get plugin', query, e)
-      res.status(500).json({message: 'could not find plugin'}).end();
+      res.status(404).json({message: 'could not find plugin'}).end();
     })
 }
 
