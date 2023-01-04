@@ -3,6 +3,7 @@ import {clearPluginAccessToken, getPluginToken, setRefreshSecret} from '../servi
 import {enrichPluginWithManifest} from '../services/manifests-service';
 import {removeUser} from '../services/users';
 import {fetchPlugin} from '../services/plugins-call';
+import logger from '../services/logger';
 
 export function getAllPlugins(req, res) {
   Plugin.find({tenant: req.headers.tenant}).select('-token -auth').lean().exec()
@@ -79,6 +80,7 @@ export function getPlugin(req, res) {
 }
 
 export async function createPlugin(req, res) {
+  logger.log('request to create plugin', req.headers.tenanthost, req.body);
   const {tenant, token, auth, hardReset = true, ...allowedChanges} = req.body;
   const plugin = new Plugin(allowedChanges);
   plugin.tenant = req.headers.tenant;
@@ -87,12 +89,14 @@ export async function createPlugin(req, res) {
 
   try {
     await plugin.save()
+    logger.log('plugin stored', req.headers.tenanthost, plugin)
     await enrichPluginWithManifest(plugin, {
       hardReset,
       tenant: req.headers.tenant,
       host: req.headers.tenanthost,
-      appUrl: new URL(req.headers.tenanthost).origin
+      appUrl: new URL(req.headers.tenanthost.startsWith('http') ? req.headers.tenanthost : `https://${req.headers.tenanthost}`).origin
     });
+    logger.log('plugin enriched', req.headers.tenanthost, plugin);
     await plugin.save();
 
     res.json(plugin).end();
@@ -100,7 +104,7 @@ export async function createPlugin(req, res) {
       setRefreshSecret(tenant, plugin.apiPath, newRefreshToken).catch();
     }
   } catch (e) {
-    console.log(e);
+    logger.error(e);
     res.status(500).json({message: 'could not create plugin'}).end();
   }
 }
