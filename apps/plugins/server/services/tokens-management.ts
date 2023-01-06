@@ -2,6 +2,7 @@ import {internalServicesSecret, secretsToken} from '../../config';
 import {service} from '@qelos/api-kit';
 import {cacheManager} from './cache-manager';
 import {fetchPlugin} from './plugins-call';
+import logger from './logger';
 
 const secretsService = service('SECRETS', {port: process.env.SECRETS_SERVICE_PORT || 9002});
 
@@ -22,13 +23,13 @@ function callSecretsService(url: string, tenant: string, key: string, value?: an
 }
 
 export function getRefreshSecret(tenant: string, apiPath: string): Promise<{ value: string }> {
-  console.log('set refresh secret for ', tenant, apiPath)
+  logger.log('set refresh secret for ', tenant, apiPath)
   return callSecretsService('/api/secrets/get', tenant, `refresh-token-${tenant}-${apiPath}`)
 }
 
 export function setRefreshSecret(tenant: string, apiPath: string, refreshToken: string) {
-  console.log('set refresh secret for ', tenant, apiPath)
-  console.log('refresh has valid value??', !!refreshToken)
+  logger.log('set refresh secret for ', tenant, apiPath)
+  logger.log('refresh has valid value??', !!refreshToken)
   return callSecretsService('/api/secrets/set', tenant, `refresh-token-${tenant}-${apiPath}`, refreshToken)
 }
 
@@ -43,6 +44,7 @@ export function storeOAuthPayloadForPlugin(tenant: string, apiPath: string, payl
 }
 
 export async function refreshTokenForPlugin(tenant: string, apiPath: string, authAcquire): Promise<string> {
+  logger.log('refresh token for plugin', {tenant, apiPath})
   const refreshToken = (await getRefreshSecret(tenant, apiPath)).value;
   let tokensPayload;
   if (refreshToken) {

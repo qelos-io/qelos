@@ -5,6 +5,7 @@ import {createUser, getUsers, updateUser} from './users';
 import {storeOAuthPayloadForPlugin} from './tokens-management';
 import httpAgent from './http-agent';
 import {DocumentDefinition} from 'mongoose';
+import logger from './logger';
 
 type PluginEnrichOptions = {
   hardReset?: boolean,
@@ -49,11 +50,12 @@ export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, regi
 }): Promise<string> {
   const email = `${plugin._id}.${tenant}@${host}`;
   const password = getRandomHash();
+  logger.log('register to plugin', {tenant, host, appUrl});
   const [maybeUser] = await getUsers(tenant, {email});
   const metadataToStore = {
     email,
     password,
-    roles: ['plugin'],
+    roles: Array.from(new Set(['plugin'].concat(maybeUser?.roles || []))),
     firstName: plugin.name
   };
   const user = maybeUser ?
@@ -70,6 +72,10 @@ export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, regi
       'Content-Type': 'application/json',
     }
   })
+  if (res.status !== 200) {
+    (async () => logger.log('could not register to plugin', await res.text()))().catch();
+    throw new Error('could not register to plugin');
+  }
   const payload = await res.json();
 
   const accessToken = storeOAuthPayloadForPlugin(tenant, plugin.apiPath, payload, plugin.authAcquire);
