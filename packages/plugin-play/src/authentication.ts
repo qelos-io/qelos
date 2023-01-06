@@ -9,6 +9,9 @@ import {getSdk, getSdkForUrl} from './sdk';
 const notAuthorized = {message: 'you are not authorized'};
 
 function getHostname(fullUrl: string) {
+  if(!fullUrl.startsWith('http')) {
+    fullUrl = 'https://' + fullUrl;
+  }
   const url = new URL(fullUrl);
   return url.hostname;
 }
