@@ -5,11 +5,12 @@ import manifest from './manifest';
 import handlers, {onCallback, onFrontendAuthorization, onNewTenant, onRefreshToken, StandardPayload} from './handlers';
 import config from './config';
 import {getSdk, getSdkForUrl} from './sdk';
+import {ResponseError} from './response-error';
 
 const notAuthorized = {message: 'you are not authorized'};
 
 function getHostname(fullUrl: string) {
-  if(!fullUrl.startsWith('http')) {
+  if (!fullUrl.startsWith('http')) {
     fullUrl = 'https://' + fullUrl;
   }
   const url = new URL(fullUrl);
@@ -120,12 +121,21 @@ export function getRegisterRoute(): RouteOptions {
       const tenantSdk = getSdkForUrl(appUrl)
       const emailSplit = email.split('@');
       if (emailSplit.length === 2 && getHostname(appUrl) !== emailSplit[1].split(':')[0]) {
-        throw new Error('email must be provided from the same app url');
+        throw new ResponseError('email must be provided from the same app url: ' + appUrl);
       }
-      // email will be: {pluginId}.{tenantId}@${tenantHostname}
-      const {payload} = await tenantSdk.authentication.oAuthSignin({email, password});
-      if (!payload.user?.roles?.includes('plugin')) {
-        throw new Error('should retrieve a plugin user to app: ' + appUrl);
+      let currentAuthPayload;
+      try {
+        // email will be: {pluginId}.{tenantId}@${tenantHostname}
+        const {payload} = await tenantSdk.authentication.oAuthSignin({email, password});
+        if (!payload.user?.roles?.includes('plugin')) {
+          throw new ResponseError('should retrieve a plugin user to app: ' + appUrl);
+        }
+        currentAuthPayload = payload;
+      } catch (err) {
+        if (err instanceof ResponseError) {
+          throw err;
+        }
+        throw new ResponseError('failed to login to qelos tenant: ' + appUrl);
       }
       const newPayload: StandardPayload = {
         sub: '',
@@ -157,26 +167,43 @@ export function getRegisterRoute(): RouteOptions {
         appUrl,
         email,
         password,
-        currentAuthPayload: payload
+        currentAuthPayload
       })
       newPayload.sub = user._id;
       return {payload: newPayload};
     })
   }
 
+  function getMissingCredentialsError({email, password, appUrl}: any) {
+    if (email && password && appUrl) {
+      return null;
+    }
+    const missing = [];
+    if (email) {
+      missing.push('email');
+    }
+    if (password) {
+      missing.push('password');
+    }
+    if (appUrl) {
+      missing.push('appUrl');
+    }
+    return {message: 'missing credentials: ' + missing.join(', ')}
+  }
+
   return {
     method: 'POST',
     url: manifest.registerUrl,
     handler: async (request, reply) => {
-      const {email, password, appUrl} = request.body || {} as any;
-      if (!(email && password && appUrl)) {
+      const missingErr = getMissingCredentialsError(request.body || {});
+      if (missingErr) {
         reply.statusCode = 401;
-        return notAuthorized;
+        return missingErr;
       }
       try {
         if (handlers.newTenant.length) {
           for (let handler of handlers.newTenant) {
-            const result = await handler({email, password, appUrl}, request);
+            const result = await handler(request.body, request);
             if (result?.payload as StandardPayload) {
               return {
                 [manifest.authAcquire.refreshTokenKey]: jwt.sign(result.payload, config.refreshTokenSecret, {expiresIn: '90d'}),
@@ -188,6 +215,10 @@ export function getRegisterRoute(): RouteOptions {
       } catch (err) {
         if (config.dev) {
           console.log(err);
+        }
+        if (err instanceof ResponseError) {
+          reply.statusCode = err.status;
+          return {message: err.responseMessage};
         }
       }
       reply.statusCode = 401;
