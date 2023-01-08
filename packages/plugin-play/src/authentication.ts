@@ -6,6 +6,7 @@ import handlers, {onCallback, onFrontendAuthorization, onNewTenant, onRefreshTok
 import config from './config';
 import {getSdk, getSdkForUrl} from './sdk';
 import {ResponseError} from './response-error';
+import logger from './logger';
 
 const notAuthorized = {message: 'you are not authorized'};
 
@@ -132,6 +133,7 @@ export function getRegisterRoute(): RouteOptions {
         }
         currentAuthPayload = payload;
       } catch (err) {
+        logger.error('failure during login to qelos app', {email, appUrl, err})
         if (err instanceof ResponseError) {
           throw err;
         }
