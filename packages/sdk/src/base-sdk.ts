@@ -18,16 +18,11 @@ export default class BaseSDK {
 
   callJsonApi<T>(relativeUrl: string, data?: RequestInit): Promise<T> {
     return this.callApi(relativeUrl, data).then(async res => {
-      let body;
-      try {
-        body = await res.json()
-        if (res.status < 300) {
-          return body;
-        }
-      } catch {
-        throw new Error(await res.text())
+      const body = await (res.headers.get('content-type') === 'application/json' ? res.json() : res.text());
+      if (res.status >= 300) {
+        throw typeof body === 'string' ? new Error(body) : body;
       }
-      throw body;
+      return body;
     });
   }
 }
