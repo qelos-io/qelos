@@ -3,15 +3,17 @@ import QelosAdministratorSDK from '@qelos/sdk/dist/administrator';
 import {FetchLike, QelosSDKOptions} from '@qelos/sdk/dist/types';
 import config from './config';
 import {StandardPayload} from './handlers';
+import logger from './logger';
 
 let localSdk: QelosAdministratorSDK<{ tokenIdentifier: string }>;
 
 async function authenticate() {
   try {
     await localSdk.authentication.oAuthSignin({email: config.qelosUsername, password: config.qelosPassword});
-    console.log('authenticated successfully to ' + config.qelosUrl)
+    logger.log('authenticated successfully to ' + config.qelosUrl)
   } catch (err) {
-    console.log('could not authenticate to own qelos app');
+    logger.log('could not authenticate to own qelos app');
+    logger.log(err);
     process.exit(1);
   }
 }
