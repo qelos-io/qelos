@@ -10,10 +10,10 @@ let localSdk: QelosAdministratorSDK<{ tokenIdentifier: string }>;
 async function authenticate() {
   try {
     await localSdk.authentication.oAuthSignin({email: config.qelosUsername, password: config.qelosPassword});
-    logger.log('authenticated successfully to ' + config.qelosUrl)
+    console.log('authenticated successfully to ' + config.qelosUrl)
   } catch (err) {
-    logger.log('could not authenticate to own qelos app');
-    logger.log(err);
+    console.log('could not authenticate to own qelos app');
+    logger.error('connect to qelos error: ', err);
     process.exit(1);
   }
 }
