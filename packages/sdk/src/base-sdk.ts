@@ -18,11 +18,16 @@ export default class BaseSDK {
 
   callJsonApi<T>(relativeUrl: string, data?: RequestInit): Promise<T> {
     return this.callApi(relativeUrl, data).then(async res => {
-      const body = await res.json()
-      if (res.status >= 300) {
-        throw body;
+      let body;
+      try {
+        body = await res.json()
+        if (res.status < 300) {
+          return body;
+        }
+      } catch {
+        throw new Error(await res.text())
       }
-      return body;
+      throw body;
     });
   }
 }
