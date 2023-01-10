@@ -31,8 +31,15 @@ export default class QelosSDK extends BaseSDK {
       options.getAccessToken = () => this.authentication.accessToken;
     }
     if (!options.extraHeaders) {
-      options.extraHeaders = () => {
-        const token = options.getAccessToken();
+      options.extraHeaders = async (relativeUrl: string) => {
+        if (relativeUrl === '/api/token/refresh') {
+          return {};
+        }
+        let token = options.getAccessToken();
+        if (!token) {
+          await this.authentication.refreshToken()
+          token = options.getAccessToken();
+        }
         if (token) {
           return {authorization: 'Bearer ' + token}
         }

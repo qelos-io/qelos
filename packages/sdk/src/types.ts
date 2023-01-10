@@ -6,5 +6,5 @@ export interface QelosSDKOptions {
   accessToken?: string;
   refreshToken?: string;
   getAccessToken?: () => undefined | string;
-  extraHeaders?: () => { [key: string]: string };
+  extraHeaders?: (relativeUrl: string) => Promise<{ [key: string]: string }>;
 }

@@ -9,10 +9,10 @@ export default class BaseSDK {
     this.#fetch = qlOptions.fetch;
   }
 
-  callApi(relativeUrl: string, data?: RequestInit) {
+  async callApi(relativeUrl: string, data?: RequestInit) {
     data = data || {};
     data.headers = data.headers || {};
-    Object.assign(data.headers, this.qlOptions.extraHeaders());
+    Object.assign(data.headers, await this.qlOptions.extraHeaders(relativeUrl));
     return this.#fetch(this.#appUrl + relativeUrl, data);
   }
 
