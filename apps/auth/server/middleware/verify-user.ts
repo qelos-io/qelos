@@ -83,9 +83,9 @@ async function isCookieProcessed(tokenIdentifier: string) {
   try {
     const res = await cacheManager.getItem(tokenIdentifier);
     return !!res;
-  } catch {
+  } catch (err) {
     if (showLogs) {
-      console.log('failed to check isCookieProcessed');
+      console.log('failed to check isCookieProcessed', err);
     }
     return false;
   }

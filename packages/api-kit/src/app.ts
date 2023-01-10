@@ -2,7 +2,6 @@ import express, {Express} from 'express';
 
 import type {ApiConfig, BodyParserType} from './types';
 import shutdown from './shutdown';
-import * as process from 'process';
 
 
 export const config = (updatedConfig = config): ApiConfig => {
@@ -50,6 +49,9 @@ function startApp(serviceName = 'APP', port = _config.port, ip = _config.ip): Pr
   return new Promise((resolve) => {
     _app.listen(parseInt(port as string), ip, () => {
       console.log(`${serviceName} is running on port ${port}`);
+      if (_config.showLogs) {
+        console.log('logs are available');
+      }
       resolve();
     });
   })
