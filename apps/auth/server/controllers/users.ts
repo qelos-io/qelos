@@ -52,8 +52,8 @@ function getUsers(req: AuthRequest, res: Response): RequestHandler {
 
   if (!(isPrivileged || users.length)) {
     res.status(200)
-      .set('x-tenant', req.headers.tenant)
-      .set('x-user', req.userPayload?.sub || '-')
+      .setHeader('x-tenant', req.headers.tenant)
+      .setHeader('x-user', req.userPayload?.sub || '-')
       .set('Content-Type', 'application/json').end('[]')
     return;
   }
@@ -62,8 +62,8 @@ function getUsers(req: AuthRequest, res: Response): RequestHandler {
     .getUsersList(req.headers.tenant, users, isPrivileged, privilegedUserFields)
     .then(list => {
       res.status(200)
-        .set('x-tenant', req.headers.tenant)
-        .set('x-user', 'p-' + req.userPayload.sub)
+        .setHeader('x-tenant', req.headers.tenant)
+        .setHeader('x-user', 'p-' + req.userPayload.sub)
         .set('Content-Type', 'application/json').end(list)
     })
     .catch(() => res.status(404).json({message: 'could not load users'}).end())
