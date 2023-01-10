@@ -2,6 +2,7 @@ import express, {Express} from 'express';
 
 import type {ApiConfig, BodyParserType} from './types';
 import shutdown from './shutdown';
+import * as process from 'process';
 
 
 export const config = (updatedConfig = config): ApiConfig => {
@@ -15,6 +16,7 @@ let _app: Express;
 let _config: ApiConfig = {
   cors: !!process.env.API_CORS || false,
   bodyParser: (process.env.API_BODY_PARSER as BodyParserType) || 'json',
+  showLogs: !!process.env.SHOW_LOGS,
   port: process.env?.PORT || '3000',
   ip: process.env.IP || '127.0.0.1'
 };
@@ -29,16 +31,18 @@ function createApp() {
 
 function configureApp(app: Express) {
   if (process.env.NODE_ENV !== 'production') {
-    _app.use(require('morgan')('combined'))
-    _app.get('/api/shutdown', () => {
+    app.use(require('morgan')('combined'))
+    app.get('/api/shutdown', () => {
       shutdown()
     })
+  } else if (_config.showLogs) {
+    app.use(require('morgan')('combined'));
   }
   if (_config.cors) {
-    _app.use(require('cors')())
+    app.use(require('cors')())
   }
   if (_config.bodyParser) {
-    _app.use(express[_config.bodyParser]())
+    app.use(express[_config.bodyParser]())
   }
 }
 

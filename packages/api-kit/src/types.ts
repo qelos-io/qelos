@@ -5,6 +5,7 @@ export interface ApiConfig {
   bodyParser: BodyParserType;
   port: string | number;
   ip: string;
+  showLogs: boolean
 }
 
 export type BodyParserType = 'json' | 'urlencoded' | 'raw' | 'text';

@@ -51,7 +51,7 @@ export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, regi
   const email = `${plugin._id}.${tenant}@${host}`;
   const password = getRandomHash();
   logger.log('register to plugin', {tenant, host, appUrl});
-  const [maybeUser] = await getUsers(tenant, {email});
+  const [maybeUser] = await getUsers(tenant, {email, exact: true});
   const metadataToStore = {
     email,
     password,

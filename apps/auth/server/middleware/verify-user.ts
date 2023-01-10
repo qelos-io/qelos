@@ -4,12 +4,17 @@ import {
   setCookie,
   getSignedToken,
 } from '../services/tokens';
-import { getUserIfTokenExists, updateToken } from '../services/users';
-import { cookieTokenExpiration, privilegedRoles, cookieTokenVerificationTime, processedCookieExpiration } from '../../config';
-import { NextFunction, RequestHandler, Response } from 'express';
-import { AuthRequest } from '../../types';
-import { cacheManager } from '../services/cache-manager';
-import { getRequestHost } from '../services/req-host';
+import {getUserIfTokenExists, updateToken} from '../services/users';
+import {
+  cookieTokenExpiration,
+  privilegedRoles,
+  cookieTokenVerificationTime,
+  processedCookieExpiration, showLogs
+} from '../../config';
+import {NextFunction, RequestHandler, Response} from 'express';
+import {AuthRequest} from '../../types';
+import {cacheManager} from '../services/cache-manager';
+import {getRequestHost} from '../services/req-host';
 
 function oAuthVerify(req: AuthRequest, _res: Response, next: NextFunction): Promise<void> {
   // get the last part from a authorization header string like "bearer token-value"
@@ -24,9 +29,16 @@ function oAuthVerify(req: AuthRequest, _res: Response, next: NextFunction): Prom
 }
 
 async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-  // get the last part from a authorization header string like "bearer token-value"
+  // get the last part from an authorization header string like "bearer token-value"
   const token = req.signedCookies.token || req.cookies.token;
   const tenant = (req.headers.tenant = req.headers.tenant as string || '0');
+
+  if (!tenant && showLogs) {
+    console.log('CookieVerify requires a tenant', {
+      url: req.url,
+      tenanthost: req.headers.tenanthost,
+    });
+  }
 
   try {
     const payload: any = await verifyToken(token, tenant);
@@ -38,9 +50,9 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
     const newCookieIdentifier = getUniqueId();
     const [user] = await Promise.all([
       getUserIfTokenExists(
-          payload.tenant,
-          payload.sub,
-          payload.tokenIdentifier
+        payload.tenant,
+        payload.sub,
+        payload.tokenIdentifier
       ),
       setCookieAsProcessed(payload.tokenIdentifier)
     ]);
@@ -50,7 +62,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       payload.tokenIdentifier,
       newCookieIdentifier
     );
-    const { token: newToken, payload: newPayload } = getSignedToken(
+    const {token: newToken, payload: newPayload} = getSignedToken(
       user,
       newCookieIdentifier,
       String(cookieTokenExpiration / 1000)
@@ -68,8 +80,15 @@ async function setCookieAsProcessed(tokenIdentifier: string) {
 }
 
 async function isCookieProcessed(tokenIdentifier: string) {
-  const res = await cacheManager.getItem(tokenIdentifier);
-  return !!res;
+  try {
+    const res = await cacheManager.getItem(tokenIdentifier);
+    return !!res;
+  } catch {
+    if (showLogs) {
+      console.log('failed to check isCookieProcessed');
+    }
+    return false;
+  }
 }
 
 function setUserPayload(payload: any, req: AuthRequest, next: NextFunction) {

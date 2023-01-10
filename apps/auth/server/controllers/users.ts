@@ -51,14 +51,20 @@ function getUsers(req: AuthRequest, res: Response): RequestHandler {
     .filter(Boolean)
 
   if (!(isPrivileged || users.length)) {
-    res.status(200).set('Content-Type', 'application/json').end('[]')
+    res.status(200)
+      .set('x-tenant', req.headers.tenant)
+      .set('x-user', req.userPayload?.sub || '-')
+      .set('Content-Type', 'application/json').end('[]')
     return;
   }
 
   User
     .getUsersList(req.headers.tenant, users, isPrivileged, privilegedUserFields)
     .then(list => {
-      res.status(200).set('Content-Type', 'application/json').end(list)
+      res.status(200)
+        .set('x-tenant', req.headers.tenant)
+        .set('x-user', 'p-' + req.userPayload.sub)
+        .set('Content-Type', 'application/json').end(list)
     })
     .catch(() => res.status(404).json({message: 'could not load users'}).end())
 }
