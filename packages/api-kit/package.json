@@ -1,6 +1,6 @@
 {
   "name": "@qelos/api-kit",
-  "version": "3.1.13",
+  "version": "3.1.14",
   "description": "API-Kit package to help with qelos infrastructure and reuse capabilities across services",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
