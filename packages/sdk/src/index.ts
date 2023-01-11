@@ -9,6 +9,8 @@ import GpLayouts from './administrator/layouts';
 import QlLayouts from './administrator/layouts';
 import QlAuthentication from './authentication';
 
+const noExtraHeadersUrls = new Set(['/api/token/refresh', '/api/signin', '/api/signup'])
+
 export default class QelosSDK extends BaseSDK {
 
   categories: QlCategories;
@@ -32,7 +34,7 @@ export default class QelosSDK extends BaseSDK {
     }
     if (!options.extraHeaders) {
       options.extraHeaders = async (relativeUrl: string) => {
-        if (relativeUrl === '/api/token/refresh') {
+        if (noExtraHeadersUrls.has(relativeUrl)) {
           return {};
         }
         let token = options.getAccessToken();
