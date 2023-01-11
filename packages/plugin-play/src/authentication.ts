@@ -29,10 +29,8 @@ export async function verifyAccessToken(req: FastifyRequest): Promise<void> {
 
   try {
     req.tenantPayload = jwt.verify(token, config.accessTokenSecret);
-  } catch (e) {
-    if (config.dev) {
-      console.log(e);
-    }
+  } catch (err) {
+    logger.log('error in callback', err);
     throw new Error('authorization token was not valid');
   }
 }
@@ -103,9 +101,7 @@ export function getRefreshTokenRoute(): RouteOptions {
           }
         }
       } catch (err) {
-        if (config.dev) {
-          console.log(err);
-        }
+        logger.log('error in callback', err);
       }
       reply.statusCode = 401;
       return notAuthorized;
@@ -215,12 +211,11 @@ export function getRegisterRoute(): RouteOptions {
           }
         }
       } catch (err) {
-        if (config.dev) {
-          console.log(err);
-        }
         if (err instanceof ResponseError) {
           reply.statusCode = err.status;
           return {message: err.responseMessage};
+        } else {
+          logger.error('internal register error', err);
         }
       }
       reply.statusCode = 401;
@@ -278,9 +273,7 @@ export function getCallbackRoute(): RouteOptions {
           }
         }
       } catch (err) {
-        if (config.dev) {
-          console.log('error in callback', err);
-        }
+        logger.log('error in callback', err);
       }
       reply.statusCode = 401;
       return notAuthorized;
@@ -356,9 +349,7 @@ export function getFrontendAuthorizationRoute(): RouteOptions {
             }
           }
         } catch (err) {
-          if (config.dev) {
-            console.log('error in callback', err);
-          }
+          logger.log('error in callback', err);
         }
       }
       const response = await standaloneAuthorize(reply);

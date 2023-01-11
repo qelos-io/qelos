@@ -47,9 +47,7 @@ export async function getSdkForTenant(tenantPayload: StandardPayload): Promise<Q
     const sdk = getSdkForUrl(data.appUrl, data.currentAuthPayload?.refreshToken, data.currentAuthPayload?.token);
     return sdk;
   } catch (e) {
-    if (config.dev) {
-      console.log(e);
-    }
+    logger.log(e)
     return null;
   }
 }
