@@ -1,6 +1,6 @@
 {
   "name": "create-play",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "Create a new QELOS plugin",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
