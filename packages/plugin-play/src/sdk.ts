@@ -19,7 +19,11 @@ async function authenticate() {
 }
 
 export function getSdkForUrl<T = any>(appUrl: string, refreshToken?: string, accessToken?: string): QelosAdministratorSDK {
-  const options: QelosSDKOptions = {appUrl, fetch: globalThis.fetch || undiciFetch as any as FetchLike};
+  const options: QelosSDKOptions = {
+    appUrl,
+    forceRefresh: true,
+    fetch: globalThis.fetch || undiciFetch as any as FetchLike
+  };
   if (refreshToken) {
     options.refreshToken = refreshToken;
   }

@@ -18,6 +18,10 @@ export default class BaseSDK {
 
   callJsonApi<T>(relativeUrl: string, data?: RequestInit): Promise<T> {
     return this.callApi(relativeUrl, data).then(async res => {
+      if (this.qlOptions.forceRefresh && res.status === 401) {
+        await this.qlOptions.extraHeaders('', true);
+        res = await this.callApi(relativeUrl, data);
+      }
       const isJson = (res.headers.get('Content-Type') ||
         res.headers.get('content-type') ||
         res.headers.get('ContentType') ||
