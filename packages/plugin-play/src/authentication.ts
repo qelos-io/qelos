@@ -112,7 +112,8 @@ export function getRefreshTokenRoute(): RouteOptions {
 
 export function getRegisterRoute(): RouteOptions {
 
-  const usersSdk = getSdk().users;
+  const sdk = getSdk();
+  const usersSdk = sdk.users;
 
   if (config.qelosUrl) {
     onNewTenant(async ({email, password, appUrl}) => {
@@ -140,10 +141,18 @@ export function getRegisterRoute(): RouteOptions {
         sub: '',
         identifier: (Date.now() + Math.random()).toString().substring(0, 10)
       }
-      const [existingUser] = await usersSdk.getList({email, exact: true});
       let user;
-      if (existingUser) {
+      try {
+        const [existingUser] = await usersSdk.getList({email, exact: true});
         user = existingUser;
+      } catch (e) {
+        if (e?.message === 'you are not authorized') {
+          await sdk.authentication.refreshToken();
+          const [existingUser] = await usersSdk.getList({email, exact: true});
+          user = existingUser;
+        }
+      }
+      if (user) {
         await usersSdk.update(user._id, {
           firstName: appUrl,
           lastName: 'qelos-player-app',
@@ -157,7 +166,7 @@ export function getRegisterRoute(): RouteOptions {
           lastName: 'qelos-player-app',
           email,
           password,
-          roles: ['user'],
+          roles: ['user', 'qelos'],
           internalMetadata: {tokenIdentifier: newPayload.identifier}
         });
       }
