@@ -55,8 +55,12 @@ export function redirectToPluginMfe(req, res) {
         }
 
         const data = await pluginRes.json();
-
-        res.redirect(302, data.returnUrl || req.query.returnUrl);
+        try {
+          const url = data.returnUrl || atob(req.query.returnUrl);
+          res.redirect(302, url);
+        } catch (err) {
+          logger.error('error while redirecting to plugin', err);
+        }
         res.end();
         return;
       }

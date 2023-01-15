@@ -1,5 +1,5 @@
 import {computed, watch} from 'vue';
-import {RouteRecord, useRouter} from 'vue-router';
+import {useRouter} from 'vue-router';
 import {defineStore, storeToRefs} from 'pinia';
 import {usePluginsList} from './plugins-list';
 import MicroFrontendPage from '../MicroFrontendPage.vue';
@@ -10,7 +10,7 @@ function getMfeUrl(mfe: IMicroFrontend): string {
   if (!mfe.callbackUrl) {
     return mfe.url;
   }
-  return `/api/plugins/${mfe.pluginId}/callback?returnUrl=` + mfe.url;
+  return `/api/plugins/${mfe.pluginId}/callback?returnUrl=` + btoa(mfe.url);
 }
 
 export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', function usePluginsMicroFrontends() {

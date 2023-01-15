@@ -7,6 +7,7 @@ import config from './config';
 import {getSdk, getSdkForUrl} from './sdk';
 import {ResponseError} from './response-error';
 import logger from './logger';
+import {atob} from 'buffer';
 
 const notAuthorized = {message: 'you are not authorized'};
 
@@ -253,7 +254,7 @@ export function getCallbackRoute(): RouteOptions {
       const queryParams: any = request.query || {};
 
       try {
-        const returnUrl = new URL(queryParams.returnUrl);
+        const returnUrl = new URL(atob(queryParams.returnUrl));
         const user = request.headers.user ? JSON.parse(request.headers.user as string) : undefined;
         request.user = user;
 
