@@ -38,7 +38,7 @@ export function getSdk(): QelosAdministratorSDK {
     return localSdk;
   }
   localSdk = getSdkForUrl<{ tokenIdentifier: string }>(config.qelosUrl);
-  authenticate();
+  authenticate().catch();
   return localSdk;
 }
 

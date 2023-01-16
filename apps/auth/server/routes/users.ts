@@ -7,10 +7,10 @@ const {getUsersForAdmin, getUsers, createUser, getUser, updateUser, removeUser, 
 const router = getRouter()
 
 router
-  .get('/api/users', verifyUser, getUsers)
+  .get('/api/users', verifyUser, onlyPrivileged, getUsers)
   .post('/api/users', verifyUser, onlyPrivileged, createUser)
   .post('/api/users/:userId/encrypted', verifyUser, onlyPrivileged, setUserEncryptedData)
-  .get('/api/users/:userId', verifyUser, getUser)
+  .get('/api/users/:userId', verifyUser, onlyPrivileged, getUser)
   .get('/api/users/:userId/encrypted', verifyUser, onlyPrivileged, getUserEncryptedData)
   .put('/api/users/:userId', verifyUser, onlyPrivileged, updateUser)
   .delete('/api/users/:userId', verifyUser, onlyPrivileged, removeUser);
