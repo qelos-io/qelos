@@ -31,7 +31,7 @@ export async function verifyAccessToken(req: FastifyRequest): Promise<void> {
   try {
     req.tenantPayload = jwt.verify(token, config.accessTokenSecret);
   } catch (err) {
-    logger.log('error in callback', err);
+    logger.error('error in verify access token', err);
     throw new Error('authorization token was not valid');
   }
 }
@@ -64,7 +64,7 @@ export function getRefreshTokenRoute(): RouteOptions {
     onRefreshToken(async ({sub, identifier = ''}) => {
       const user = await usersSdk.getUser(sub);
       if (identifier.toString() !== user.internalMetadata?.tokenIdentifier) {
-        throw new Error('user is not verified on Qelos BaaS')
+        throw new ResponseError({message: 'user is not verified on Qelos BaaS', sub, user, identifier})
       }
       const newPayload: StandardPayload = {
         sub,
@@ -80,14 +80,10 @@ export function getRefreshTokenRoute(): RouteOptions {
     url: manifest.authAcquire.refreshTokenUrl,
     handler: async (request, reply) => {
       const expectedRefreshToken = request.headers['authorization']?.split(' ')[1];
-      if (!expectedRefreshToken) {
-        reply.statusCode = 401;
-        return notAuthorized;
-      }
       let payload: StandardPayload;
       try {
         if (!expectedRefreshToken || expectedRefreshToken === 'undefined') {
-          throw new Error('expected refresh token is empty');
+          throw new ResponseError('expected refresh token is empty');
         }
         payload = jwt.verify(expectedRefreshToken, config.refreshTokenSecret);
         if (handlers.refreshToken.length) {
@@ -102,7 +98,11 @@ export function getRefreshTokenRoute(): RouteOptions {
           }
         }
       } catch (err) {
-        logger.log('error in callback', err);
+        if (err instanceof ResponseError) {
+          logger.error('error in callback', err);
+          reply.statusCode = 401;
+          return err.responseMessage;
+        }
       }
       reply.statusCode = 401;
       return notAuthorized;
