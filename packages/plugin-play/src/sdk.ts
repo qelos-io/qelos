@@ -7,7 +7,11 @@ import logger from './logger';
 
 let localSdk: QelosAdministratorSDK<{ tokenIdentifier: string }>;
 
-async function authenticate() {
+export function authenticate() {
+  return localSdk.authentication.oAuthSignin({email: config.qelosUsername, password: config.qelosPassword});
+}
+
+async function bootstrapAuthenticate() {
   try {
     await localSdk.authentication.oAuthSignin({email: config.qelosUsername, password: config.qelosPassword});
     console.log('authenticated successfully to ' + config.qelosUrl)
@@ -38,7 +42,7 @@ export function getSdk(): QelosAdministratorSDK {
     return localSdk;
   }
   localSdk = getSdkForUrl<{ tokenIdentifier: string }>(config.qelosUrl);
-  authenticate().catch();
+  bootstrapAuthenticate().catch();
   return localSdk;
 }
 

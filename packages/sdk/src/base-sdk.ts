@@ -19,7 +19,10 @@ export default class BaseSDK {
   callJsonApi<T>(relativeUrl: string, data?: RequestInit): Promise<T> {
     return this.callApi(relativeUrl, data).then(async res => {
       if (this.qlOptions.forceRefresh && res.status === 401) {
-        await this.qlOptions.extraHeaders('', true);
+        const headers = await this.qlOptions.extraHeaders('', true);
+        if (!headers.authorization) {
+          throw new Error('could not able to refresh token');
+        }
         res = await this.callApi(relativeUrl, data);
       }
       const isJson = (res.headers.get('Content-Type') ||

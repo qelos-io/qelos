@@ -4,7 +4,7 @@ import {FastifyRequest} from 'fastify/types/request';
 import manifest from './manifest';
 import handlers, {onCallback, onFrontendAuthorization, onNewTenant, onRefreshToken, StandardPayload} from './handlers';
 import config from './config';
-import {getSdk, getSdkForUrl} from './sdk';
+import {authenticate, getSdk, getSdkForUrl} from './sdk';
 import {ResponseError} from './response-error';
 import logger from './logger';
 import {atob} from 'buffer';
@@ -146,8 +146,8 @@ export function getRegisterRoute(): RouteOptions {
         const [existingUser] = await usersSdk.getList({email, exact: true});
         user = existingUser;
       } catch (e) {
-        if (e?.message === 'you are not authorized') {
-          await sdk.authentication.refreshToken();
+        if (e?.message === 'could not able to refresh token') {
+          await authenticate();
           const [existingUser] = await usersSdk.getList({email, exact: true});
           user = existingUser;
         }
@@ -222,7 +222,7 @@ export function getRegisterRoute(): RouteOptions {
         }
       } catch (err) {
         if (err instanceof ResponseError) {
-          reply.statusCode = err.status;
+          reply.statusCode = err.status || 401;
           return {message: err.responseMessage};
         } else {
           logger.error('internal register error', err);
