@@ -182,9 +182,9 @@ export function getRegisterRoute(): RouteOptions {
     })
   }
 
-  function getMissingCredentialsError({email, password, appUrl}: any) {
+  function checkMissingCredentialsError({email, password, appUrl}: any) {
     if (email && password && appUrl) {
-      return null;
+      return;
     }
     const missing = [];
     if (email) {
@@ -196,19 +196,16 @@ export function getRegisterRoute(): RouteOptions {
     if (appUrl) {
       missing.push('appUrl');
     }
-    return {message: 'missing credentials: ' + missing.join(', ')}
+    throw new ResponseError('missing credentials: ' + missing.join(', '))
   }
 
   return {
     method: 'POST',
     url: manifest.registerUrl,
     handler: async (request, reply) => {
-      const missingErr = getMissingCredentialsError(request.body || {});
-      if (missingErr) {
-        reply.statusCode = 401;
-        return missingErr;
-      }
       try {
+        checkMissingCredentialsError(request.body || {});
+
         if (handlers.newTenant.length) {
           for (let handler of handlers.newTenant) {
             const result = await handler(request.body, request);
