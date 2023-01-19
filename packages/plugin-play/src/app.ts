@@ -147,7 +147,7 @@ function playEndpoints() {
       maxAge: 1000 * 60 * 30, // 30 MINUTES,
       secure: true,
       httpOnly: true,
-      sameSite: config.dev ? 'none' : true
+      sameSite: config.dev ? 'none' : (process.env.SAME_SITE_COOKIES || true)
     }
   } as FastifyCookieOptions);
   getApp().route(getFrontendAuthorizationRoute());
