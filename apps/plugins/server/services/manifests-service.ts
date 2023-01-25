@@ -11,6 +11,7 @@ type PluginEnrichOptions = {
   hardReset?: boolean,
   tenant: string,
   host: string,
+  apiPath?: string
   appUrl: string
 }
 
@@ -86,6 +87,7 @@ export async function enrichPluginWithManifest(plugin: IPlugin, {
   hardReset = false,
   tenant,
   host,
+  apiPath,
   appUrl
 }: PluginEnrichOptions) {
   if (!plugin.manifestUrl) {
@@ -123,7 +125,7 @@ export async function enrichPluginWithManifest(plugin: IPlugin, {
   plugin.markModified('microFrontends');
 
   if (hardReset) {
-    plugin.apiPath = manifest.apiPath;
+    plugin.apiPath = apiPath || manifest.apiPath;
     plugin.proxyUrl = manifest.proxyUrl;
     plugin.callbackUrl = manifest.callbackUrl;
     plugin.subscribedEvents = manifest.subscribedEvents;

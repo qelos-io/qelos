@@ -3,6 +3,7 @@
     <EditPluginHeader :plugin="plugin" :submitting="submitting"/>
     <div class="content">
       <FormInput title="Manifest URL" v-model="edit.manifestUrl"/>
+      <FormInput title="Plugin API Path" label="Leave empty to auto-set" v-model="edit.apiPath"/>
       <div centered>
         <el-button type="text" class="refresh-manifest" @click="refreshPluginFromManifest">
           <el-icon>
@@ -40,7 +41,7 @@ async function refreshPluginFromManifest() {
     const data = JSON.parse(str);
 
     plugin.name = data.name;
-    plugin.apiPath = data.apiPath;
+    plugin.apiPath = edit.apiPath || data.apiPath;
     plugin.proxyUrl = data.proxyUrl;
   } catch {
     //

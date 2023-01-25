@@ -4,6 +4,7 @@ import {enrichPluginWithManifest} from '../services/manifests-service';
 import {removeUser} from '../services/users';
 import {fetchPlugin} from '../services/plugins-call';
 import logger from '../services/logger';
+import {isDev} from '../../config';
 
 export function getAllPlugins(req, res) {
   Plugin.find({tenant: req.headers.tenant}).select('-token -auth').lean().exec()
@@ -65,11 +66,11 @@ export function redirectToPluginMfe(req, res) {
         return;
       }
 
-      res.status(400).end();
+      res.status(400).set('Content-Type', 'text/html').send('<h1>Try Again</h1>').end()
     })
     .catch((e) => {
       logger.error('error in redirect to mfe', e);
-      res.status(500).json({message: 'could not find plugin'}).end();
+      res.status(500).set('Content-Type', 'text/html').send('<h1>Try Again</h1>').end()
     })
 }
 
@@ -98,11 +99,13 @@ export async function createPlugin(req, res) {
   try {
     await plugin.save()
     logger.log('plugin stored', req.headers.tenanthost, plugin)
+    const protocolToUse = isDev ? 'http' : 'https';
     await enrichPluginWithManifest(plugin, {
       hardReset,
       tenant: req.headers.tenant,
       host: req.headers.tenanthost,
-      appUrl: new URL(req.headers.tenanthost.startsWith('http') ? req.headers.tenanthost : `https://${req.headers.tenanthost}`).origin
+      apiPath: allowedChanges.apiPath,
+      appUrl: new URL(req.headers.tenanthost.startsWith('http') ? req.headers.tenanthost : `${protocolToUse}://${req.headers.tenanthost}`).origin
     });
     logger.log('plugin enriched', req.headers.tenanthost, plugin);
     await plugin.save();
@@ -113,6 +116,10 @@ export async function createPlugin(req, res) {
     }
   } catch (e) {
     logger.error(e);
+    if ((e as any).message?.startsWith('E11000 duplicate key error collection')) {
+      res.status(403).json({message: 'api path already taken by another plugin. choose another path.'}).end();
+      return;
+    }
     res.status(500).json({message: 'could not create plugin'}).end();
   }
 }

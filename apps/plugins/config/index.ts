@@ -1,3 +1,4 @@
+export const isDev = process.env.NODE_ENV !== 'production';
 export const mongoUri = process.env.MONGO_URI || 'mongodb://localhost/plugins-service'
 export const redisUrl = process.env.REDIS_URL;
 export const internalServicesSecret = process.env.INTERNAL_SECRET
@@ -6,4 +7,4 @@ export const privilegedEditingRoles = process.env.PRIVILEGED_EDIT_ROLES ? proces
 export const privilegedViewingRoles = process.env.PRIVILEGED_VIEW_ROLES ? process.env.PRIVILEGED_VIEW_ROLES.split(',') : ['user', 'plugin', 'editor', 'admin'];
 export const proxyApiPrefix = process.env.PROXY_API_PREFIX || '/api/on';
 
-export const showLogs = process.env.NODE_ENV !== 'production' || process.env.SHOW_LOGS
+export const showLogs = isDev || process.env.SHOW_LOGS
