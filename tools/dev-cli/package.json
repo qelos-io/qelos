@@ -1,0 +1,24 @@
+{
+  "name": "@qelos/dev-cli",
+  "version": "0.9.18",
+  "description": "CLI to install Qelos",
+  "main": "cli.js",
+  "bin": {
+    "ql-dev": "cli.js"
+  },
+  "keywords": [
+    "qelos",
+    "cli"
+  ],
+  "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
+  "dependencies": {
+    "cli-progress": "3.9.0",
+    "yargs": "^17.2.0"
+  },
+  "scripts": {
+    "test": "jest --runInBand"
+  },
+  "devDependencies": {
+    "jest": "^27.5.1"
+  }
+}

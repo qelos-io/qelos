@@ -4,7 +4,6 @@ const yargs = require('yargs/yargs')
 const { hideBin } = require('yargs/helpers')
 const { version } = require('./package.json')
 
-
 const program = yargs(hideBin(process.argv));
 
 program.version(version)
@@ -16,14 +15,6 @@ program.option('verbose', {
 });
 
 require('./commands/create')(program)
-require('./commands/upgrade')(program)
-require('./commands/populate')(program)
-require('./commands/start')(program)
-require('./commands/compose')(program)
-// require('./commands/stop')(program)
-require('./commands/missing')(program)
-// require('./commands/deployment')(program)
-// require('./commands/deploy')(program)
-// require('./commands/logs')(program)
+// require('./commands/compose')(program)
 
 program.help().argv;
