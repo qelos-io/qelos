@@ -5,14 +5,38 @@ import DecompressZip from "decompress-zip";
 import {join} from "path";
 import rimraf from 'rimraf'
 import ProgressBar from "../utils/progress-bar.mjs";
+import * as readline from "readline";
 
 const https = follow.https;
 
+function askQuestion(question) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  return new Promise((resolve) => {
+    rl.question(question, function (answer) {
+      rl.close();
+      resolve(answer);
+    });
+  })
+}
+
 export default async function createController({name}) {
   console.log(blue('Choose a boilerplate:'))
-  const result = await cliSelect({
+  const project = await cliSelect({
     values: {vanilla: 'Vanilla', react: 'React', vue: 'Vue', solid: 'Solid', custom: 'Custom from Github'},
   })
+  let repository = project.id;
+  let organization = 'qelos-boilerplates';
+
+  if (repository === 'custom') {
+    const [githubOrg, githubRepo] = (await askQuestion('Enter custom github project (org/repo)\n')).split('/');
+    organization = githubOrg;
+    repository = githubRepo;
+  }
+
   const tempFolder = 'ql-plugin-' + Date.now();
   const file = fs.createWriteStream(tempFolder + '.zip')
 
@@ -34,7 +58,7 @@ export default async function createController({name}) {
     })
   }
 
-  const request = https.get(`https://github.com/qelos-boilerplates/${result.id}/archive/refs/heads/main.zip`, (response) => {
+  const request = https.get(`https://github.com/${organization}/${repository}/archive/refs/heads/main.zip`, (response) => {
     response.pipe(file);
     response.on('end', async () => {
       try {
