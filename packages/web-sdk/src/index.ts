@@ -1,4 +1,5 @@
 import {on} from './qelos';
+import loadStyles from './shared-style';
 
 export const code = (new URL(location.href)).searchParams.get('code') || 'default';
 
@@ -31,3 +32,5 @@ export async function authorize() {
 
   return res.json();
 }
+
+loadStyles();

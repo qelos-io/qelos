@@ -1,6 +1,6 @@
 let qelosHostname = '*';
 
-const callbacks = new Map();
+const callbacks = new Map<string, Set<{ callback, once: boolean }>>();
 
 const FROM = 'qelos-mfe';
 
@@ -9,7 +9,13 @@ window.addEventListener('message', (event) => {
     qelosHostname = event.data.qelosHostname;
   }
   if (callbacks.has(event.data.eventName)) {
-    callbacks.get(event.data.eventName).forEach(cb => cb(event.data.payload))
+    const eventCallbacks = callbacks.get(event.data.eventName);
+    eventCallbacks.forEach((item) => {
+      item.callback(event.data.payload);
+      if (item.once) {
+        eventCallbacks.delete(item);
+      }
+    })
   }
 })
 
@@ -21,9 +27,9 @@ export function dispatch(eventName: string, payload?: any) {
   }, qelosHostname);
 }
 
-export function on(eventName: string, callback: (payload: any) => unknown) {
+export function on(eventName: string, callback: (payload: any) => unknown, {once} = {once: false}) {
   if (!callbacks.has(eventName)) {
     callbacks.set(eventName, new Set())
   }
-  callbacks.get(eventName).add(callback);
+  callbacks.get(eventName).add({callback, once: once || false});
 }

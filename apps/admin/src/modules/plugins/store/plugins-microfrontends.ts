@@ -78,7 +78,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
       ...bottom.map(group => group.items).flat()
     ].forEach(mfe => {
       const route = {
-        name: `plugin.${mfe.name}`,
+        name: `plugin.${mfe.route.name}`,
         path: mfe.route.path,
         component: mfe.url ? MicroFrontendPage : async () => (await import(`@/pre-designed/${mfe.use}.vue`)).default,
         meta: null

@@ -64,6 +64,9 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
       return;
     }
     switch (eventName) {
+      case 'styleInterested':
+        dispatch('sharedStyle', document.querySelector('#app-style')?.innerHTML)
+        return;
       case 'routesInterested':
         dispatch('availableRoutes', routes);
         return;

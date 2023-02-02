@@ -32,13 +32,12 @@ watch(() => appConfig.value.colorsPalette, async (palette) => {
       ${palette.bgColor ? `--body-bg: ${palette.bgColor};` : ''}
       ${palette.mainColor ? `--main-color: ${palette.mainColor};` : ''}
       --main-color-light: #d6eedd;
-      --negative-color: #254044;
       ${palette.secondaryColor ? `--secondary-color: ${palette.secondaryColor};` : ''}
       --third-color: #c6dccc;
       ${palette.linksColor ? `--link: ${palette.linksColor};` : ''}
       ${palette.bordersColor ? `--border-color: ${palette.bordersColor};` : ''}
       ${palette.navigationBgColor ? `--nav-bg-color: ${palette.navigationBgColor};` : ''}
-      ${palette.negativeColor ? `--negative-color: ${palette.negativeColor};` : ''}
+      ${palette.negativeColor ? `--negative-color: ${palette.negativeColor};` : '--negative-color: #254044;'}
       --el-menu-hover-bg-color: var(--main-color);
     }
   `;
