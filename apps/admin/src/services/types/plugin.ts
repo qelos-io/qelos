@@ -13,7 +13,7 @@ export interface IMicroFrontend {
   route?: {
     name: string;
     path: string;
-    navBarPosition: 'top' | 'bottom';
+    navBarPosition: 'top' | 'bottom' | false;
     roles?: string[],
     group?: string;
     iconName?: string;

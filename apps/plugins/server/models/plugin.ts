@@ -37,7 +37,8 @@ export interface IPlugin extends Document {
       name: string;
       path: string;
       roles: string[],
-      navBarPosition: 'top' | 'bottom';
+      navBarPosition: 'top' | 'bottom' | false;
+      group?: string;
     };
     component?: {
       page: string;
@@ -51,6 +52,7 @@ export interface IPlugin extends Document {
   }[]
 
   injectables: Array<{ name?: string, description?: string, html: string, active: boolean }>
+  navBarGroups?: { key: string, name: string, iconName?: string, iconSvg?: string, priority?: number }[],
 }
 
 const MicroFrontendSchema = new mongoose.Schema({
@@ -78,8 +80,9 @@ const MicroFrontendSchema = new mongoose.Schema({
     path: String,
     navBarPosition: {
       type: String,
-      enum: ['top', 'bottom'],
+      enum: ['top', 'bottom', false],
     },
+    group: String,
   },
   component: {
     page: String,
@@ -159,6 +162,13 @@ const PluginSchema = new mongoose.Schema<IPlugin>({
     description: String,
     html: String,
     active: Boolean
+  }],
+  navBarGroups: [{
+    key: {type: String, required: true},
+    name: {type: String, required: true},
+    iconName: String,
+    iconSvg: String,
+    priority: Number
   }]
 });
 

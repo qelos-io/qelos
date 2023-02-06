@@ -57,6 +57,10 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
     });
   }
 
+  function triggerRouteChanged() {
+    dispatch('currentRoute', JSON.parse(JSON.stringify(router.currentRoute.value)));
+  }
+
   window.addEventListener('message', (event) => {
     const {from, eventName, payload} = event.data || {};
 
@@ -66,6 +70,9 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
     switch (eventName) {
       case 'styleInterested':
         dispatch('sharedStyle', document.querySelector('#app-style')?.innerHTML)
+        return;
+      case 'routeChangedInterested':
+        triggerRouteChanged();
         return;
       case 'routesInterested':
         dispatch('availableRoutes', routes);
@@ -85,7 +92,7 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
   return {
     lastOrigin,
     iframe,
-    dispatchMfe: dispatch,
+    triggerRouteChanged,
     shutdownMfe,
     openMfeModal,
     closeMfeModal

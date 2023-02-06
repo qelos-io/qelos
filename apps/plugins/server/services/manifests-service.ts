@@ -115,7 +115,7 @@ export async function enrichPluginWithManifest(plugin: IPlugin, {
       };
     })
   plugin.markModified('injectables');
-
+  plugin.navBarGroups = manifest.navBarGroups;
   plugin.microFrontends = manifest.microFrontends?.map(mfe => {
     return {
       ...mfe,

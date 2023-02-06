@@ -1,4 +1,4 @@
-import {on} from './qelos';
+import {dispatch, on} from './qelos';
 
 let currentRoute;
 let subscribers;
@@ -13,6 +13,8 @@ export function onRouteChanged(callback) {
   }
   subscribers.add(callback);
 }
+
+dispatch('routeChangedInterested');
 
 on('routeChanged', route => {
   currentRoute = route;
