@@ -85,6 +85,7 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
   return {
     lastOrigin,
     iframe,
+    dispatchMfe: dispatch,
     shutdownMfe,
     openMfeModal,
     closeMfeModal

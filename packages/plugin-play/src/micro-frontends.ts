@@ -24,7 +24,7 @@ export interface GlobalMicroFrontend {
   route?: {
     name: string;
     path: string;
-    navBarPosition: 'top' | 'bottom';
+    navBarPosition: 'top' | 'bottom' | false;
     group?: string;
     iconName?: string;
     iconSvg?: string;

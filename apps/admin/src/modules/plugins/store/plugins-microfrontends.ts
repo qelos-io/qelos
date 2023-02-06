@@ -26,6 +26,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         bottom: [{key: '', items: [], priority: 99999}]
       },
       modals: {} as Record<string, IMicroFrontend>,
+      onlyRoutes: [] as IMicroFrontend[]
     };
     if (!plugins.value) {
       return data;
@@ -45,20 +46,24 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
             mfe.callbackUrl = plugin.callbackUrl;
             mfe.pluginId = plugin._id;
             mfe.pluginApiPath = plugin.apiPath;
-            const stackTo = mfe.route.navBarPosition === 'top' ? allMFEs.navBar.top : allMFEs.navBar.bottom;
-            // grouped routes in nav bar
-            if (mfe.route.group) {
-              const groupTo = stackTo.find(group => group.key === mfe.route.group);
-              if (groupTo) {
-                groupTo.items.push(mfe);
+            if (mfe.route.navBarPosition) {
+              const stackTo = mfe.route.navBarPosition === 'top' ? allMFEs.navBar.top : allMFEs.navBar.bottom;
+              // grouped routes in nav bar
+              if (mfe.route.group) {
+                const groupTo = stackTo.find(group => group.key === mfe.route.group);
+                if (groupTo) {
+                  groupTo.items.push(mfe);
+                } else {
+                  stackTo.unshift({
+                    ...groups[mfe.route.group],
+                    items: [mfe]
+                  })
+                }
               } else {
-                stackTo.unshift({
-                  ...groups[mfe.route.group],
-                  items: [mfe]
-                })
+                stackTo[stackTo.length - 1].items.push(mfe); // add to the un-grouped items;
               }
             } else {
-              stackTo[stackTo.length - 1].items.push(mfe); // add to the un-grouped items;
+              allMFEs.onlyRoutes.push(mfe);
             }
           } else if (mfe.modal) { // modals micro frontends
             allMFEs.modals[mfe.modal.name] = mfe;
@@ -72,10 +77,11 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     }, data)
   });
 
-  const unwatch = watch(microFrontends, ({navBar: {top, bottom}}) => {
+  const unwatch = watch(microFrontends, ({navBar: {top, bottom}, onlyRoutes}) => {
     [
       ...top.map(group => group.items).flat(),
-      ...bottom.map(group => group.items).flat()
+      ...bottom.map(group => group.items).flat(),
+      ...onlyRoutes,
     ].forEach(mfe => {
       const route = {
         name: `plugin.${mfe.route.name}`,
@@ -98,6 +104,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
       router.addRoute('playPlugin', route)
     })
     router.removeRoute('defaultPluginPlaceholder');
+    router.removeRoute('defaultPluginPlaceholderSecond');
     router.push(router.currentRoute.value.fullPath);
     unwatch();
   });

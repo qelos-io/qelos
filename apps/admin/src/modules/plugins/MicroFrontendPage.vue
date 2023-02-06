@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, nextTick, onUnmounted, toRef, watch} from 'vue';
+import {computed, nextTick, onMounted, onUnmounted, toRef, watch} from 'vue';
 import {onBeforeRouteLeave, useRouter} from 'vue-router';
 import {useMfeCommunication} from '@/modules/plugins/store/mfe-communication';
 
@@ -30,6 +30,15 @@ onUnmounted(() => {
 onBeforeRouteLeave(async () => {
   mfeCommunicationStore.shutdownMfe()
   await nextTick()
+})
+
+function emitRoute (newRoute) {
+  mfeCommunicationStore.dispatchMfe('routeChanged', newRoute)
+}
+
+watch(currentRoute, emitRoute)
+onMounted(() => {
+  emitRoute(currentRoute.value);
 })
 </script>
 

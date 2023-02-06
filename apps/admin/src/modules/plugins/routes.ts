@@ -33,5 +33,9 @@ export const playRoutes = {
     name: 'defaultPluginPlaceholder',
     path: ':all',
     component: EmptyRoute,
+  }, {
+    name: 'defaultPluginPlaceholderSecond',
+    path: ':all/:all',
+    component: EmptyRoute,
   }]
 };
