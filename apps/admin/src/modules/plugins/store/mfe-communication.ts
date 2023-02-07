@@ -28,15 +28,24 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
     return map;
   }, {}))
 
+  const events = [];
+
+  function dispatchEvents () {
+    iframe.value.contentWindow.postMessage({
+      qelosHostname: location.origin,
+      events,
+    }, lastOrigin.value);
+    events.length = 0;
+  }
+
   async function dispatch(eventName: string, payload?: any) {
     if (!iframe.value) {
       await nextTick();
     }
-    iframe.value.contentWindow.postMessage({
-      qelosHostname: location.origin,
-      eventName,
-      payload,
-    }, lastOrigin.value);
+    if (!events.length) {
+      requestAnimationFrame(dispatchEvents)
+    }
+    events.push({eventName, payload});
   }
 
   function shutdownMfe() {
@@ -58,15 +67,10 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
   }
 
   function triggerRouteChanged() {
-    dispatch('currentRoute', JSON.parse(JSON.stringify(router.currentRoute.value)));
+    dispatch('routeChanged', JSON.parse(JSON.stringify(router.currentRoute.value)));
   }
 
-  window.addEventListener('message', (event) => {
-    const {from, eventName, payload} = event.data || {};
-
-    if (from !== 'qelos-mfe') {
-      return;
-    }
+  function onEventFromMfe({eventName, payload}) {
     switch (eventName) {
       case 'styleInterested':
         dispatch('sharedStyle', document.querySelector('#app-style')?.innerHTML)
@@ -86,6 +90,17 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
       case 'openModal':
         openMfeModal(payload.openModal, payload.props);
         return;
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    const {from, events} = event.data || {};
+
+    if (from !== 'qelos-mfe') {
+      return;
+    }
+    if (events instanceof Array) {
+      events.forEach(onEventFromMfe);
     }
   }, false)
 

@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, nextTick, onMounted, onUnmounted, toRef, watch, toRaw} from 'vue';
+import {computed, nextTick, onUnmounted, toRef, watch} from 'vue';
 import {onBeforeRouteLeave, useRouter} from 'vue-router';
 import {useMfeCommunication} from '@/modules/plugins/store/mfe-communication';
 
@@ -32,7 +32,7 @@ onBeforeRouteLeave(async () => {
   await nextTick()
 })
 
-watch(currentRoute, mfeCommunicationStore.triggerRouteChanged);
+// watch(currentRoute, mfeCommunicationStore.triggerRouteChanged);
 </script>
 
 <style scoped>
