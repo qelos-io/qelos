@@ -32,7 +32,7 @@ onBeforeRouteLeave(async () => {
   await nextTick()
 })
 
-// watch(currentRoute, mfeCommunicationStore.triggerRouteChanged);
+watch(currentRoute, mfeCommunicationStore.triggerRouteChanged);
 </script>
 
 <style scoped>
