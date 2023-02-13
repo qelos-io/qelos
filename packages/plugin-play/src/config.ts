@@ -1,8 +1,12 @@
 import { join } from 'path';
 
+const port = Number(process.env.PORT || 1086);
+const host = process.env.HOST || '0.0.0.0';
 const config = {
-  port: process.env.PORT || 1086,
-  host: process.env.HOST || '0.0.0.0',
+  port: port,
+  internalPort: Number(process.env.INTERNAL_PORT || port + 1),
+  host: host,
+  internalHost: process.env.INTERNAL_HOST || host,
   dev: process.env.NODE_ENV !== 'production',
   refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
   accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,

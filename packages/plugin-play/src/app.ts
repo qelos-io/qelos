@@ -16,20 +16,30 @@ import {
   verifyCookieToken
 } from './authentication';
 import handlers from './handlers';
-import {endpoints} from './endpoints';
+import {endpoints, internalEndpoints} from './endpoints';
 import {LifecycleEvent, trigger} from './lifecycle';
 
 const hooks = new Set<{ subscribedEvent, path, handler }>();
 
 let app: FastifyInstance;
+let internalApp: FastifyInstance;
 
 export async function start(options?: { manifest?: ManifestOptions, config?: ConfigOptions }) {
   configure(options?.manifest || {}, options?.config || {});
 
   const app = getApp();
+  if (internalEndpoints.size) {
+    createInternalApp();
+  }
   try {
     console.log('start application for environment: ', config.dev ? 'development' : 'production');
-    await app.listen({port: Number(config.port), host: config.host})
+    await app.listen({port: Number(config.port), host: config.host});
+
+    if (internalApp) {
+      console.log(`Internal Application listening on: ${config.internalHost}:${config.internalPort}`);
+      await internalApp.listen({port: Number(config.internalPort), host: config.internalHost});
+    }
+
   } catch (err) {
     app.log.error(err);
     process.exit(1);
@@ -78,15 +88,7 @@ function createApp(): FastifyInstance {
   app = fastify(fastifyOptions);
   trigger(LifecycleEvent.beforeMount, {app, fastifyOptions, config, manifest});
 
-  app.addContentTypeParser('application/json', {parseAs: 'string'}, function (req, body, done) {
-    try {
-      const bodyStr = body.toString() as string;
-      done(null, bodyStr ? JSON.parse(bodyStr) : {})
-    } catch (err) {
-      err.statusCode = 400
-      done(err, undefined)
-    }
-  });
+  app.addContentTypeParser('application/json', {parseAs: 'string'}, parseJsonRequest);
 
   app.route(getRefreshTokenRoute());
   app.route(getRegisterRoute());
@@ -103,6 +105,20 @@ function createApp(): FastifyInstance {
   trigger(LifecycleEvent.mounted, {app, config, manifest})
 
   return app;
+}
+
+function createInternalApp() {
+  const fastifyOptions = {
+    logger: !!config.dev,
+  };
+  trigger(LifecycleEvent.beforeInternalAppCreate, {fastifyOptions})
+
+  internalApp = fastify(fastifyOptions);
+  internalApp.addContentTypeParser('application/json', {parseAs: 'string'}, parseJsonRequest);
+
+  trigger(LifecycleEvent.internalAppMounted, {app: internalApp})
+
+  return internalApp;
 }
 
 function playManifest() {
@@ -172,4 +188,14 @@ function getHttps() {
     }
   }
   return null;
+}
+
+function parseJsonRequest(req, body, done) {
+  try {
+    const bodyStr = body.toString() as string;
+    done(null, bodyStr ? JSON.parse(bodyStr) : {})
+  } catch (err) {
+    err.statusCode = 400
+    done(err, undefined)
+  }
 }

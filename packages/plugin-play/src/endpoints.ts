@@ -7,6 +7,7 @@ export interface QelosRouteParams extends RouteOptions {
 }
 
 export const endpoints = new Map<string, QelosRouteParams>()
+export const internalEndpoints = new Map<string, RouteOptions>()
 
 export function addProxyEndpoint(path: string, options: Partial<QelosRouteParams>) {
   endpoints.set(join(manifest.apiPath, path), {
@@ -26,5 +27,15 @@ export function addEndpoint(path: string, options: Partial<QelosRouteParams>) {
     method,
     handler: options.handler,
     verifyToken: 'verifyToken' in options ? options.verifyToken : true,
+  })
+}
+
+export function addInternalEndpoint(path: string, options: Partial<RouteOptions>) {
+  const method = options.method || 'GET';
+  internalEndpoints.set(method + '::' + path, {
+    ...options,
+    url: path,
+    method,
+    handler: options.handler,
   })
 }
