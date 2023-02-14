@@ -116,6 +116,10 @@ function createInternalApp() {
   internalApp = fastify(fastifyOptions);
   internalApp.addContentTypeParser('application/json', {parseAs: 'string'}, parseJsonRequest);
 
+  internalEndpoints.forEach((routeOptions) => {
+    internalApp.route(routeOptions);
+  });
+
   trigger(LifecycleEvent.internalAppMounted, {app: internalApp})
 
   return internalApp;
