@@ -46,8 +46,8 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
             mfe.callbackUrl = plugin.callbackUrl;
             mfe.pluginId = plugin._id;
             mfe.pluginApiPath = plugin.apiPath;
-            if (mfe.route.navBarPosition) {
-              const stackTo = mfe.route.navBarPosition === 'top' ? allMFEs.navBar.top : allMFEs.navBar.bottom;
+            if (allMFEs.navBar[mfe.route.navBarPosition as string]) {
+              const stackTo = allMFEs.navBar[mfe.route.navBarPosition as string];
               // grouped routes in nav bar
               if (mfe.route.group) {
                 const groupTo = stackTo.find(group => group.key === mfe.route.group);

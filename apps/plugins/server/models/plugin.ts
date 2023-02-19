@@ -79,7 +79,7 @@ const MicroFrontendSchema = new mongoose.Schema({
     name: String,
     path: String,
     navBarPosition: {
-      type: String,
+      type: [String, Boolean],
       enum: ['top', 'bottom', false],
     },
     group: String,
