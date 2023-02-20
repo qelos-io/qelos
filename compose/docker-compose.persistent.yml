@@ -10,12 +10,6 @@ services:
   admin:
     image: qelos/admin-panel:${ADMIN_PANEL_VERSION}
     restart: always
-  front:
-    image: qelos/front-ssr:${FRONT_SSR_VERSION}
-    restart: always
-    environment:
-      IP: 0.0.0.0
-      GATEWAY_SERVICE_URL: gateway
   assets:
     image: qelos/assets:${ASSETS_SERVICE_VERSION}
     restart: always

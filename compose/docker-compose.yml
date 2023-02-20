@@ -20,14 +20,6 @@ services:
     depends_on:
       - redis
       - secrets
-  front:
-    image: registry.gitlab.com/qelos/qelos/front-ssr:${FRONT_SSR_VERSION}
-    restart: always
-    links:
-      - gateway
-    environment:
-      IP: 0.0.0.0
-      GATEWAY_SERVICE_URL: gateway
   auth:
     image: registry.gitlab.com/qelos/qelos/auth:${AUTH_SERVICE_VERSION}
     restart: always
