@@ -3,11 +3,15 @@ import {Response} from 'express'
 import {AuthRequest} from '../../types'
 
 export function getMe(req: AuthRequest, res: Response) {
-  const fullName = req.userPayload.fullName || req.userPayload.name;
+  const firstName = req.userPayload.firstName;
+  const lastName = req.userPayload.lastName;
+  const fullName = req.userPayload.fullName || req.userPayload.name || `${firstName} ${lastName}`;
   res.status(200).json({
     _id: req.userPayload.sub,
     email: req.userPayload.email,
     name: fullName,
+    firstName,
+    lastName,
     fullName,
     roles: req.userPayload.roles
   }).end();
