@@ -16,30 +16,12 @@
         </template>
 
         <div class="content">
-          <router-link :to="{name: 'createPost'}">
-            <h3>
-              <el-icon>
-                <icon-document/>
-              </el-icon>
-              {{ $t('Create Post') }}
-            </h3>
-          </router-link>
-
-          <router-link :to="{name: 'createCategory'}">
-            <h3>
-              <el-icon>
-                <icon-folder-opened/>
-              </el-icon>
-              {{ $t('Create Category') }}
-            </h3>
-          </router-link>
-
           <router-link :to="{name: 'editConfiguration', params: {key: 'app-configuration'}}">
             <h3>
               <el-icon>
                 <icon-setting/>
               </el-icon>
-              {{ $t('Edit website configuration') }}
+              {{ $t('Edit app configuration') }}
             </h3>
           </router-link>
         </div>
@@ -49,7 +31,6 @@
         <template v-slot:title>
           {{ $t('Information') }}
         </template>
-        <h3 v-if="!loadingPosts">{{ t('{amount} Posts', {amount: posts.length}, posts.length) }}</h3>
         <h3 v-if="!loadingBlocks">{{ t('{amount} Blocks', {amount: blocks.length}, blocks.length) }}</h3>
       </GpItem>
     </div>
@@ -110,7 +91,6 @@ h3 > * {
 </style>
 <script setup lang="ts">
 import GpItem from '@/modules/core/components/layout/GpItem.vue';
-import {usePostsListStore} from '@/modules/posts/store/posts-list';
 import {computed, toRefs} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {useBlocksList} from '@/modules/blocks/store/blocks-list';
@@ -121,12 +101,9 @@ import {isPrivilegedUser} from '@/modules/core/store/auth';
 
 const config = useAppConfiguration();
 const appConfig = computed(() => config.value?.metadata && config.value.metadata || {})
-const {loading: loadingPosts, posts, fetchPosts} = toRefs(usePostsListStore())
 
 const {loading: loadingBlocks, blocks} = toRefs(useBlocksList())
 const {t} = useI18n();
-
-fetchPosts.value();
 
 async function changePalette(colorsPalette) {
   await configurationsService.update('app-configuration', {
