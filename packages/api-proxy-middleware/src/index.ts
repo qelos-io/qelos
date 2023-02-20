@@ -21,7 +21,6 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
     adminPanel,
     assetsService,
     draftsService,
-    frontService,
     pluginsService,
     tenant: defaultTenant,
     applicationUrl,
@@ -128,5 +127,4 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
   useProxy(app, assetsService);
   useProxy(app, pluginsService);
   useProxy(app, adminPanel);
-  useProxy(app, frontService);
 }

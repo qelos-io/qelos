@@ -20,39 +20,6 @@
       </template>
 
       <div class="nav-group" v-if="isPrivilegedUser">
-        <h4>{{ $t('CONTENT') }}</h4>
-<!--        <el-sub-menu index="1">-->
-<!--          <template #title>-->
-<!--            <el-icon>-->
-<!--              <icon-document/>-->
-<!--            </el-icon>-->
-<!--            <span>{{ $t('Posts') }}</span>-->
-<!--          </template>-->
-<!--          <el-menu-item :route="{name: 'posts'}" index="/posts" :active="false">-->
-<!--            <span>{{ $t('Posts List') }}</span>-->
-<!--          </el-menu-item>-->
-<!--          <el-menu-item :route="{name: 'createPost'}" index="/posts/new">-->
-<!--            <span>{{ $t('Create Post') }}</span>-->
-<!--          </el-menu-item>-->
-<!--        </el-sub-menu>-->
-
-        <el-sub-menu index="2">
-          <template #title>
-            <el-icon>
-              <icon-folder-opened/>
-            </el-icon>
-            <span>{{ $t('Pages') }}</span>
-          </template>
-          <el-menu-item :route="{name: 'categories'}" index="/categories">
-            <span>{{ $t('Pages List') }}</span>
-          </el-menu-item>
-          <el-menu-item :route="{name: 'createCategory'}" index="/categories/new">
-            <span>{{ $t('Create Page') }}</span>
-          </el-menu-item>
-        </el-sub-menu>
-      </div>
-
-      <div class="nav-group" v-if="isPrivilegedUser">
         <h4>{{ $t('LOOK AND FEEL') }}</h4>
         <el-menu-item :route="{name: 'layouts'}" index="/layouts">
           <el-icon>
@@ -65,12 +32,6 @@
       <div class="nav-group" v-if="isPrivilegedUser">
         <h4>{{ $t('COMPONENTS') }}</h4>
 
-<!--        <el-menu-item :route="{name: 'menus'}" index="/menus">-->
-<!--          <el-icon>-->
-<!--            <icon-menu/>-->
-<!--          </el-icon>-->
-<!--          <span>{{ $t('Menus') }}</span>-->
-<!--        </el-menu-item>-->
         <el-sub-menu index="3">
           <template #title>
             <el-icon>

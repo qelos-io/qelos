@@ -5,7 +5,7 @@ import Components from "unplugin-vue-components/vite";
 
 import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
 
-const BASE_URL = process.env.BASE_URL || "/app";
+const BASE_URL = process.env.BASE_URL || "/";
 
 export default defineConfig({
   json: {

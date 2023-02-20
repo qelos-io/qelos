@@ -1,10 +1,7 @@
 import {createRouter, createWebHistory} from 'vue-router'
 import Authenticated from './modules/core/Authenticated.vue'
 import Home from './modules/core/Home.vue'
-import menusRoutes from './modules/menus/routes'
-import categoriesRoutes from './modules/categories/routes'
 import assetsRoutes from './modules/assets/routes'
-import postsRoutes from './modules/posts/routes'
 import usersRoutes from './modules/users/routes'
 import configurationsRoutes from './modules/configurations/routes'
 import {authStore, fetchAuthUser} from './modules/core/store/auth'
@@ -14,7 +11,7 @@ import layoutsRoutes from '@/modules/layouts/routes';
 import {managePluginsRoutes, playRoutes} from '@/modules/plugins/routes';
 
 // @ts-ignore
-const BASE = import.meta.env.BASE_URL || '/app';
+const BASE = import.meta.env.BASE_URL || '/';
 
 const router = createRouter({
   history: createWebHistory(BASE),
@@ -30,10 +27,7 @@ const router = createRouter({
           component: Home
         },
         configurationsRoutes,
-        menusRoutes,
-        categoriesRoutes,
         assetsRoutes,
-        postsRoutes,
         usersRoutes,
         draftsRoutes,
         blocksRoutes,
