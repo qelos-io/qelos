@@ -7,7 +7,7 @@ import {
   removePlugin,
   updatePlugin
 } from '../controllers/manage-plugins';
-import {onlyEditPrivileged, onlyViewPrivileged} from '../middlewares/privileged-check';
+import {checkEditPrivileged, onlyEditPrivileged, onlyViewPrivileged} from '../middlewares/privileged-check';
 
 export function managePlugins() {
   const router = getRouter();
@@ -15,7 +15,7 @@ export function managePlugins() {
   const AUTHENTICATION_MIDDLEWARES = [populateUser, verifyUser];
 
   router
-    .get('/api/plugins', AUTHENTICATION_MIDDLEWARES.concat(onlyViewPrivileged, getAllPlugins))
+    .get('/api/plugins', populateUser, checkEditPrivileged, getAllPlugins)
     .post('/api/plugins', AUTHENTICATION_MIDDLEWARES.concat(onlyEditPrivileged, createPlugin))
 
   router

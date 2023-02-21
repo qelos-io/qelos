@@ -7,7 +7,8 @@ import logger from '../services/logger';
 import {isDev} from '../../config';
 
 export function getAllPlugins(req, res) {
-  Plugin.find({tenant: req.headers.tenant}).select('-token -auth').lean().exec()
+  const select = req.user?.hasPluginPrivileges ? '-token -auth' : 'name description microFrontends injectables navBarGroups'
+  Plugin.find({tenant: req.headers.tenant}).select(select).lean().exec()
     .then(list => {
       res.json(list).end();
     })
