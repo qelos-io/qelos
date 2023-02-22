@@ -17,7 +17,12 @@ export function playPlugins() {
 
   async function loadPluginRequest(req, res, next) {
     const [_, apiPath] = req.originalUrl.slice(req.originalUrl.indexOf(proxyApiPrefix) + proxyApiPrefix.length).split('/');
-    const plugin = await getPluginProxy({tenant: req.headers.tenant, apiPath});
+    const plugin = await getPluginProxy({
+      tenant: req.headers.tenant,
+      apiPath,
+      host: req.headers.tenanthost,
+      appUrl: req.headers.origin
+    });
 
     if (!plugin) {
       res.status(401).json({message: 'plugin not exist'});

@@ -1,6 +1,6 @@
 import Plugin from '../models/plugin';
 import {clearPluginAccessToken, getPluginToken, setRefreshSecret} from '../services/tokens-management';
-import {enrichPluginWithManifest} from '../services/manifests-service';
+import {enrichPluginWithManifest, registerToPlugin} from '../services/manifests-service';
 import {removeUser} from '../services/users';
 import {fetchPlugin} from '../services/plugins-call';
 import logger from '../services/logger';
@@ -17,14 +17,21 @@ export function getAllPlugins(req, res) {
     })
 }
 
-async function fetchPluginCallback(req, plugin, callbackUrl) {
-  const accessToken = await getPluginToken({
+async function fetchPluginCallback({req, plugin, callbackUrl, hard = false}) {
+  let accessToken = await getPluginToken({
     tenant: req.headers.tenant,
     apiPath: plugin.apiPath,
     authAcquire: plugin.authAcquire
   });
   if (!accessToken) {
-    throw new Error('no token')
+    if (!hard) {
+      return null;
+    }
+    accessToken = await registerToPlugin(plugin, plugin.registerUrl, {
+      tenant: req.headers.tenant,
+      host: req.headers.tenanthost,
+      appUrl: req.headers.origin
+    })
   }
   return fetchPlugin({
     url: callbackUrl.href,
@@ -49,14 +56,18 @@ export function redirectToPluginMfe(req, res) {
       if (plugin.callbackUrl) {
         const callbackUrl = new URL(plugin.callbackUrl);
         callbackUrl.searchParams.append('returnUrl', req.query.returnUrl || '');
-        let pluginRes = await fetchPluginCallback(req, plugin, callbackUrl);
-
-        if (pluginRes.status >= 400) {
+        let data, pluginRes;
+        try {
+          pluginRes = await fetchPluginCallback({req, plugin, callbackUrl});
+        } catch {
+        }
+        if (pluginRes?.status >= 400) {
           await clearPluginAccessToken(req.headers.tenant, plugin.apiPath);
-          pluginRes = await fetchPluginCallback(req, plugin, callbackUrl);
+          pluginRes = await fetchPluginCallback({req, plugin, callbackUrl, hard: true});
         }
 
-        const data = await pluginRes.json();
+        data = await pluginRes?.json();
+
         try {
           const url = data.returnUrl || atob(req.query.returnUrl);
           res.redirect(302, url);

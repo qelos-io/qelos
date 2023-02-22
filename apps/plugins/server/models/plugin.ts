@@ -7,6 +7,7 @@ export interface IPlugin extends Document {
   name: string;
   description?: string;
   apiPath: string;
+  registerUrl: string;
   user: string;
   token: string;
   proxyUrl: string;
@@ -117,6 +118,7 @@ const PluginSchema = new mongoose.Schema<IPlugin>({
   description: String,
   manifestUrl: String,
   callbackUrl: String,
+  registerUrl: String,
   apiPath: {
     type: String,
     required: true,

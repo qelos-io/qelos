@@ -28,3 +28,7 @@ export function updateUser(tenant: string, userId: string, {email, password, rol
 export function removeUser(tenant: string, userId: string) {
   return callAuthService('/internal-api/users/' + userId, 'DELETE', tenant)
 }
+
+export function getUser(tenant: string, userId: string) {
+  return callAuthService('/internal-api/users/' + userId, 'GET', tenant)
+}

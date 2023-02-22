@@ -60,7 +60,9 @@ export async function refreshTokenForPlugin(tenant: string, apiPath: string, aut
   }
 
   if (!tokensPayload) {
-    throw new Error('refresh token does not exist on secrets for plugin ' + tenant + ':' + apiPath);
+    const msg = 'refresh token does not exist on secrets for plugin ' + tenant + ':' + apiPath;
+    logger.error(msg, {hadRefreshToken: !!refreshToken});
+    throw new Error(msg);
   }
 
   const accessToken = storeOAuthPayloadForPlugin(tenant, apiPath, tokensPayload, authAcquire);

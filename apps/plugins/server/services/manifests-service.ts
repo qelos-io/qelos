@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import fetch from 'node-fetch';
 import {IPlugin} from '../models/plugin';
-import {createUser, getUsers, updateUser} from './users';
+import {createUser, getUser, getUsers, updateUser} from './users';
 import {storeOAuthPayloadForPlugin} from './tokens-management';
 import httpAgent from './http-agent';
 import {DocumentDefinition} from 'mongoose';
@@ -52,7 +52,12 @@ export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, regi
   const email = `${plugin._id}.${tenant}@${host}`;
   const password = getRandomHash();
   logger.log('register to plugin', {tenant, host, appUrl});
-  const [maybeUser] = await getUsers(tenant, {email, exact: true});
+  let maybeUser;
+  if (plugin.user) {
+    maybeUser = await getUser(tenant, plugin.user);
+  } else {
+    maybeUser = ((await getUsers(tenant, {email, exact: true})) || [])[0];
+  }
   const metadataToStore = {
     email,
     password,
@@ -128,6 +133,7 @@ export async function enrichPluginWithManifest(plugin: IPlugin, {
     plugin.apiPath = apiPath || manifest.apiPath;
     plugin.proxyUrl = manifest.proxyUrl;
     plugin.callbackUrl = manifest.callbackUrl;
+    plugin.registerUrl = manifest.registerUrl;
     plugin.subscribedEvents = manifest.subscribedEvents;
     if (manifest.registerUrl) {
       plugin.encodePath();
