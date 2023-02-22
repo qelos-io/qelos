@@ -18,6 +18,13 @@ router
 router
   .get('/internal-api/users', getUsersForAdmin)
   .post('/internal-api/users', createUser)
+  .get('/internal-api/users/:userId', (req, _, next) => {
+    req.user = {
+      type: 'internal',
+      isPrivileged: true,
+    };
+    next();
+  }, getUser)
   .put('/internal-api/users/:userId', updateUser)
   .delete('/internal-api/users/:userId', removeUser);
 
