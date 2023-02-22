@@ -67,7 +67,9 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
   }
 
   function triggerRouteChanged() {
-    dispatch('routeChanged', JSON.parse(JSON.stringify(router.currentRoute.value)));
+    const {matched, ...simpleData} = router.currentRoute.value
+    const cloned = JSON.parse(JSON.stringify(simpleData))
+    dispatch('routeChanged', cloned);
   }
 
   function onEventFromMfe({eventName, payload}) {
