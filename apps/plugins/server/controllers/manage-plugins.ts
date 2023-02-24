@@ -44,6 +44,7 @@ async function fetchPluginCallback({req, plugin, callbackUrl, hard = false}) {
 }
 
 export function redirectToPluginMfe(req, res) {
+  const {returnUrl = ''} = req.query || {}
   Plugin.findOne({tenant: req.headers.tenant, _id: req.params.pluginId})
     .select('callbackUrl apiPath authAcquire')
     .lean()
@@ -55,7 +56,7 @@ export function redirectToPluginMfe(req, res) {
       }
       if (plugin.callbackUrl) {
         const callbackUrl = new URL(plugin.callbackUrl);
-        callbackUrl.searchParams.append('returnUrl', req.query.returnUrl || '');
+        callbackUrl.searchParams.append('returnUrl', returnUrl);
         let data, pluginRes;
         try {
           pluginRes = await fetchPluginCallback({req, plugin, callbackUrl});
@@ -69,7 +70,7 @@ export function redirectToPluginMfe(req, res) {
         data = await pluginRes?.json();
 
         try {
-          const url = data.returnUrl || atob(req.query.returnUrl);
+          const url = data.returnUrl || atob(returnUrl);
           res.redirect(302, url);
         } catch (err) {
           logger.error('error while redirecting to plugin', err);
