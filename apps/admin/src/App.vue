@@ -20,14 +20,24 @@ watch(() => appConfig.value.language, async (language) => {
   document.dir = translate('appDirection')
 })
 
-watch(() => appConfig.value.colorsPalette, async (palette) => {
+watch(() => {
+  const cssUrl = appConfig.value.themeStylesUrl;
+  const palette = appConfig.value.colorsPalette;
+  return {
+    cssUrl,
+    palette,
+  }
+}, ({cssUrl, palette}) => {
   let appStyle = document.querySelector('#app-style');
   if (!appStyle) {
     appStyle = document.createElement('style');
     appStyle.setAttribute('id', 'app-style');
     document.body.prepend(appStyle);
   }
+  const importCss = cssUrl ? `@import "${cssUrl}";` : '';
+
   appStyle.innerHTML = `
+    ${importCss}
     :root {
       ${palette.bgColor ? `--body-bg: ${palette.bgColor};` : ''}
       ${palette.mainColor ? `--main-color: ${palette.mainColor};` : ''}
@@ -41,6 +51,15 @@ watch(() => appConfig.value.colorsPalette, async (palette) => {
       --el-menu-hover-bg-color: var(--main-color);
     }
   `;
+})
+
+watch(() => appConfig.value.scriptUrl, () => {
+  if(!appConfig.value.scriptUrl) {
+    return;
+  }
+  const script = document.createElement('script');
+  script.setAttribute('src',appConfig.value.scriptUrl);
+  document.head.appendChild(script);
 })
 </script>
 <style lang="scss">

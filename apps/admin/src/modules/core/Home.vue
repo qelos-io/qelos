@@ -1,5 +1,5 @@
 <template>
-  <h3>{{$t('Welcome!')}}</h3>
+  <h3>{{ $t('Welcome!') }}</h3>
   <template v-if="isPrivilegedUser">
     <div class="welcome">
       <h3>{{ $t('Switch Color Palette') }}</h3>
@@ -77,6 +77,7 @@ h3 > * {
 
   width: 100%;
 }
+
 .palette {
   height: 50px;
   display: flex;
@@ -91,13 +92,15 @@ h3 > * {
 </style>
 <script setup lang="ts">
 import GpItem from '@/modules/core/components/layout/GpItem.vue';
-import {computed, toRefs} from 'vue';
+import {computed, toRefs, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {useBlocksList} from '@/modules/blocks/store/blocks-list';
 import {resetConfiguration, useAppConfiguration} from '@/modules/configurations/store/app-configuration';
 import configurationsService from '@/services/configurations-service';
 import {PALETTES} from '@/modules/core/utils/colors-palettes';
-import {isPrivilegedUser} from '@/modules/core/store/auth';
+import {authStore, isPrivilegedUser} from '@/modules/core/store/auth';
+import {useConfirmAction} from '@/modules/core/compositions/confirm-action';
+import router from '@/router';
 
 const config = useAppConfiguration();
 const appConfig = computed(() => config.value?.metadata && config.value.metadata || {})
@@ -105,7 +108,7 @@ const appConfig = computed(() => config.value?.metadata && config.value.metadata
 const {loading: loadingBlocks, blocks} = toRefs(useBlocksList())
 const {t} = useI18n();
 
-async function changePalette(colorsPalette) {
+const changePalette = useConfirmAction(async function changePalette(colorsPalette) {
   await configurationsService.update('app-configuration', {
     metadata: {
       ...appConfig.value,
@@ -113,6 +116,12 @@ async function changePalette(colorsPalette) {
     }
   })
   await resetConfiguration();
-}
+});
 
+const unWatch = watch(() => authStore.isLoaded, () => {
+  if (!isPrivilegedUser && config.value.homeScreen) {
+    router.push(config.value.homeScreen);
+  }
+  unWatch();
+})
 </script>

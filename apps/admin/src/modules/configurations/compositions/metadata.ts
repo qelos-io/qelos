@@ -19,6 +19,7 @@ const titles = {
   keywords: 'Keywords',
   theme: 'Theme Name',
   themeStylesUrl: 'Theme CSS URL',
+  scriptUrl: 'Javascript File URL',
   websiteUrls: 'Websites URLs',
   homeScreen: 'Users Home Screen',
   colorsPalette: 'Colors Palette',
@@ -29,6 +30,7 @@ const placeholders = {
   direction: 'ltr | rtl',
   logoUrl: 'https://...',
   themeStylesUrl: 'https://...',
+  scriptUrl: 'https://...',
   websiteUrls: 'https://...',
   homeScreen: 'dashboard',
 };

@@ -7,11 +7,10 @@ const { appConfiguration } = require('../config');
 require('../server/models').connect(config.mongoUri);
 
 const TENANT = process.env.TENANT || '0';
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.HOST || '127.0.0.1';
+const SLOGAN = process.env.SLOGAN;
+const LOGO_URL = process.env.LOGO_URL;
 
-const Category = mongoose.model('Category');
-const Menu = mongoose.model('Menu');
-const Post = mongoose.model('Post');
 const Configuration = mongoose.model('Configuration');
 
 const configuration = new Configuration({
@@ -22,88 +21,31 @@ const configuration = new Configuration({
 		name: TENANT !== '0' ? HOST : TENANT,
 		language: 'en',
 		direction: 'ltr',
-		logoUrl: '/logo.png',
-		description: 'Blogs and content sites open-source platform, built for the 21st century, using micro-services and best common technologies.',
-		slogan: 'amazing blog platform',
-		keywords: 'blog, platform, open-source, node, vue, fastify-dx',
-		theme: 'damal',
+		logoUrl: LOGO_URL || 'https://subscribe.qelos.io/qelos.svg',
+		description: 'Software as a Service',
+		slogan: SLOGAN || 'Amazing SaaS platform',
+		keywords: 'saas, platform, node, vue, fastify',
 		themeStylesUrl: '',
+		scriptUrl: '',
+    homeScreen: '',
 		websiteUrls: [HOST],
+    colorsPalette: {
+      mainColor: '#84a98c',
+      secondaryColor: '#84a98c',
+      bgColor: '#2f3e46',
+      bordersColor: '#354f52',
+      linksColor: '#84a98c',
+      navigationBgColor: '#354f52',
+      negativeColor: '#fff',
+    }
 	}
 })
-
-const homePage = new Category({
-	tenant: TENANT,
-	path: '-',
-	isPublic: true,
-	content: '<p>Welcome to my website!</p>'
-});
-
-
-const category = new Category({
-	tenant: TENANT,
-	name: 'Test Category',
-	path: 'test-cat',
-	isPublic: true,
-});
-
-
-const cat2 = new Category({
-	tenant: TENANT,
-	name: 'Second Category',
-	path: 'test2-cat',
-	isPublic: true,
-});
-
 
 console.log('initiate content');
 
 Promise.all([
-	category.save(),
-	cat2.save(),
-	homePage.save(),
 	configuration.save(),
 ])
-	.then(async ([newCategory, secondCat]) => {
-
-		await (new Post({
-			tenant: TENANT,
-			category: newCategory._id,
-			isPublic: true,
-			authors: [],
-			title: 'Welcome to your new blog',
-			short: 'This is the first and demo post.<br>I hope you will enjoy this platform',
-			editorContentsStates: ['editor'],
-			contents: [`<p>
-	This is an example post for Qelos platform.<br>
-	You can change it as you like, but this is a reference for you to create many more blog posts in the near future.
-</p><p>
-	While I'm writing those lines, there is no website or domain for this platform, so I can't help you with instructions.<br>
-    I can only hope you cloned it from github, and you should find all the help you need inside thr readme.md files (there's one on each service).
-</p><p>
-This platform is separated to different services, each one is supposed to do one thing.<br>
-Authentication service is responsible for the authentication mechanism and users, and can be used as a standalone for any other platform,
- so you can use it for a personal use.<br>
-Content service is responsible for menus, posts, categories (and comments in the future).
-<br>
-Front Service is responsible for the client frontend and SSR, using Fastify-DX and Vue.<br>
-The Admin Panel written in Vue and is located <a href="/app/" target="blank">/app</a>. :)
-</p>`],
-			tags: [],
-		})).save();
-
-		return (new Menu({
-			tenant: TENANT,
-			name: 'main',
-			links: [{
-				kind: 'category',
-				category: newCategory._id,
-			}, {
-				kind: 'category',
-				category: secondCat._id,
-			}]
-		})).save();
-	})
 	.then(() => {
 		console.log('content created successfully');
 		process.exit(0);

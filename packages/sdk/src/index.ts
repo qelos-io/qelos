@@ -3,9 +3,7 @@ import BaseSDK from './base-sdk';
 import QlCategories from './categories';
 import QlMenus from './menus';
 import QlAppConfigurations from './configurations';
-import GpAuthentication from './authentication';
 import QlBlocks from './blocks';
-import GpLayouts from './administrator/layouts';
 import QlLayouts from './administrator/layouts';
 import QlAuthentication from './authentication';
 
@@ -13,7 +11,6 @@ const noExtraHeadersUrls = new Set(['/api/token/refresh', '/api/signin', '/api/s
 
 export default class QelosSDK extends BaseSDK {
 
-  categories: QlCategories;
   menus: QlMenus;
   blocks: QlBlocks;
   layouts: QlLayouts;
@@ -22,7 +19,6 @@ export default class QelosSDK extends BaseSDK {
 
   constructor(private options: QelosSDKOptions) {
     super(options);
-    this.categories = new QlCategories(this.options);
     this.menus = new QlMenus(this.options);
     this.blocks = new QlBlocks(this.options);
     this.layouts = new QlLayouts(this.options);
