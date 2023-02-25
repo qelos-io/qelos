@@ -38,6 +38,16 @@ watch(() => {
 
   appStyle.innerHTML = `
     ${importCss}
+    html {
+      font-family: 'Avenir', Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      word-spacing: 1px;
+      -ms-text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%;
+      -moz-osx-font-smoothing: grayscale;
+      -webkit-font-smoothing: antialiased;
+      box-sizing: border-box;
+    }
     :root {
       ${palette.bgColor ? `--body-bg: ${palette.bgColor};` : ''}
       ${palette.mainColor ? `--main-color: ${palette.mainColor};` : ''}
@@ -72,8 +82,6 @@ watch(() => appConfig.value.scriptUrl, () => {
 }
 
 html {
-  font-family: 'Quicksand', 'Source Sans Pro', -apple-system, BlinkMacSystemFont,
-  'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 16px;
   word-spacing: 1px;
   -ms-text-size-adjust: 100%;
