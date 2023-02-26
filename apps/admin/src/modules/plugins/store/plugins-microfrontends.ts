@@ -14,7 +14,7 @@ function getMfeUrl(mfe: IMicroFrontend): string {
 }
 
 export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', function usePluginsMicroFrontends() {
-  const {plugins} = storeToRefs(usePluginsList());
+  const {plugins, loaded} = storeToRefs(usePluginsList());
   const router = useRouter();
 
   const userRoles = computed(() => authStore.user?.roles || []);
@@ -77,7 +77,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     }, data)
   });
 
-  const unwatch = watch(microFrontends, ({navBar: {top, bottom}, onlyRoutes}) => {
+  const initiateRoutes = ({navBar: {top, bottom}, onlyRoutes}) => {
     [
       ...top.map(group => group.items).flat(),
       ...bottom.map(group => group.items).flat(),
@@ -106,8 +106,16 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     router.removeRoute('defaultPluginPlaceholder');
     router.removeRoute('defaultPluginPlaceholderSecond');
     router.push(router.currentRoute.value.fullPath);
-    unwatch();
-  });
+  }
+
+  if (loaded.value) {
+    initiateRoutes(microFrontends.value);
+  } else {
+    const unwatch = watch(microFrontends, (newVal) => {
+      initiateRoutes(newVal);
+      unwatch();
+    });
+  }
 
   return {
     navBar: computed(() => microFrontends.value.navBar),

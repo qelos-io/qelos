@@ -4,6 +4,7 @@ export function useDispatcher<T = any>(callback, defaultValue: T | null = null) 
   const result = ref<T>(defaultValue)
   const loading = ref<boolean>(true)
   const error = ref<any>(null)
+  const loaded = ref(false);
 
   const caller = async () => {
     try {
@@ -12,6 +13,7 @@ export function useDispatcher<T = any>(callback, defaultValue: T | null = null) 
       error.value = e
     } finally {
       loading.value = false
+      loaded.value = true;
     }
   }
 
@@ -20,6 +22,7 @@ export function useDispatcher<T = any>(callback, defaultValue: T | null = null) 
   return {
     result,
     loading,
+    loaded,
     error,
     retry: caller
   }
