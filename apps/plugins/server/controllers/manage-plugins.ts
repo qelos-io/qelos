@@ -62,7 +62,7 @@ export function redirectToPluginMfe(req, res) {
           pluginRes = await fetchPluginCallback({req, plugin, callbackUrl});
         } catch {
         }
-        if (pluginRes?.status >= 400) {
+        if (!pluginRes || pluginRes?.status >= 400) {
           await clearPluginAccessToken(req.headers.tenant, plugin.apiPath);
           pluginRes = await fetchPluginCallback({req, plugin, callbackUrl, hard: true});
         }
@@ -73,7 +73,7 @@ export function redirectToPluginMfe(req, res) {
           const url = data.returnUrl || atob(returnUrl);
           res.redirect(302, url);
         } catch (err) {
-          logger.error('error while redirecting to plugin', err, {data, pluginStatus: pluginRes.status});
+          logger.error('error while redirecting to plugin', err, {data, pluginStatus: pluginRes?.status});
         }
         res.end();
         return;
