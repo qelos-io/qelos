@@ -73,7 +73,7 @@ export function redirectToPluginMfe(req, res) {
           const url = data.returnUrl || atob(returnUrl);
           res.redirect(302, url);
         } catch (err) {
-          logger.error('error while redirecting to plugin', err);
+          logger.error('error while redirecting to plugin', err, {data, pluginStatus: pluginRes.status});
         }
         res.end();
         return;
