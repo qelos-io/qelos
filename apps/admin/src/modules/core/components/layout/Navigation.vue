@@ -250,7 +250,6 @@ a:hover {
   }
 
   nav .home-logo {
-    background: transparent;
     width: $nav-width;
   }
 
