@@ -45,7 +45,8 @@ async function fetchPluginCallback({headers, plugin, callbackUrl, hard = false})
 
 export function redirectToPluginMfe(req, res) {
   const {returnUrl = ''} = req.query || {}
-  const headers = {origin: req.headers.tenanthost, ...req.headers};
+  const protocol = isDev ? 'http://' : 'https://';
+  const headers = {origin: `${protocol}${req.headers.tenanthost}`, ...req.headers};
   Plugin.findOne({tenant: headers.tenant, _id: req.params.pluginId})
     .select('tenant user callbackUrl registerUrl apiPath authAcquire')
     .lean()
