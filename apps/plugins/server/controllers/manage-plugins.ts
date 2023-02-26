@@ -17,9 +17,9 @@ export function getAllPlugins(req, res) {
     })
 }
 
-async function fetchPluginCallback({req, plugin, callbackUrl, hard = false}) {
+async function fetchPluginCallback({headers, plugin, callbackUrl, hard = false}) {
   let accessToken = await getPluginToken({
-    tenant: req.headers.tenant,
+    tenant: headers.tenant,
     apiPath: plugin.apiPath,
     authAcquire: plugin.authAcquire
   });
@@ -28,24 +28,25 @@ async function fetchPluginCallback({req, plugin, callbackUrl, hard = false}) {
       return null;
     }
     accessToken = await registerToPlugin(plugin, plugin.registerUrl, {
-      tenant: req.headers.tenant,
-      host: req.headers.tenanthost,
-      appUrl: req.headers.origin
+      tenant: headers.tenant,
+      host: headers.tenanthost,
+      appUrl: headers.origin
     })
   }
   return fetchPlugin({
     url: callbackUrl.href,
-    tenant: req.headers.tenant,
+    tenant: headers.tenant,
     accessToken,
     headers: {
-      user: req.headers.user
+      user: headers.user
     }
   })
 }
 
 export function redirectToPluginMfe(req, res) {
   const {returnUrl = ''} = req.query || {}
-  Plugin.findOne({tenant: req.headers.tenant, _id: req.params.pluginId})
+  const headers = {...req.headers};
+  Plugin.findOne({tenant: headers.tenant, _id: req.params.pluginId})
     .select('tenant user callbackUrl registerUrl apiPath authAcquire')
     .lean()
     .exec()
@@ -59,12 +60,12 @@ export function redirectToPluginMfe(req, res) {
         callbackUrl.searchParams.append('returnUrl', returnUrl);
         let data, pluginRes;
         try {
-          pluginRes = await fetchPluginCallback({req, plugin, callbackUrl});
+          pluginRes = await fetchPluginCallback({headers, plugin, callbackUrl});
         } catch {
         }
         if (!pluginRes || pluginRes?.status >= 400) {
-          await clearPluginAccessToken(req.headers.tenant, plugin.apiPath);
-          pluginRes = await fetchPluginCallback({req, plugin, callbackUrl, hard: true});
+          await clearPluginAccessToken(headers.tenant, plugin.apiPath);
+          pluginRes = await fetchPluginCallback({headers, plugin, callbackUrl, hard: true});
         }
 
         data = await pluginRes?.json();
