@@ -61,7 +61,7 @@ export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, regi
   const metadataToStore = {
     email,
     password,
-    roles: Array.from(new Set(['plugin'].concat(maybeUser?.roles || []))),
+    roles: Array.from(new Set(['plugin', 'admin'].concat(maybeUser?.roles || []))),
     firstName: plugin.name
   };
   const user = maybeUser ?
@@ -79,7 +79,7 @@ export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, regi
     }
   })
   if (res.status !== 200) {
-    (async () => logger.log('could not register to plugin', await res.text()))().catch();
+    (async () => logger.log('could not register to plugin', await res.text(), {email, appUrl}))().catch();
     throw new Error('could not register to plugin');
   }
   const payload = await res.json();
