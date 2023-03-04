@@ -38,7 +38,7 @@ export interface IPlugin extends Document {
       name: string;
       path: string;
       roles: string[],
-      navBarPosition: 'top' | 'bottom' | false;
+      navBarPosition: 'top' | 'bottom' | 'user-dropdown' | false;
       group?: string;
     };
     component?: {
@@ -81,7 +81,7 @@ const MicroFrontendSchema = new mongoose.Schema({
     path: String,
     navBarPosition: {
       type: [String, Boolean],
-      enum: ['top', 'bottom', false],
+      enum: ['top', 'bottom', 'user-dropdown', false],
     },
     group: String,
   },

@@ -20,6 +20,17 @@
             <el-dropdown-item>
               <router-link :to="{name: 'updateProfile'}">{{ $t('Update profile') }}</router-link>
             </el-dropdown-item>
+            <template v-for="group in customLinks" :key="group.key">
+              <template v-if="group.items.length">
+                <el-dropdown-item v-for="mfe in group.items" :key="mfe.route.path">
+                  <el-icon v-if="mfe.route.iconName">
+                    <component :is="'icon-' + mfe.route.iconName"/>
+                  </el-icon>
+                  <router-link :to="'/play/' + mfe.route.path">{{ mfe.name }}</router-link>
+                </el-dropdown-item>
+              </template>
+            </template>
+
             <el-dropdown-item @click="logout">
               {{ $t('Logout') }}
             </el-dropdown-item>
@@ -35,13 +46,18 @@ import {useAuth} from '../../compositions/authentication'
 import {translate} from '@/plugins/i18n';
 import SearchForm from '@/modules/core/components/layout/SearchForm.vue';
 import {useRouter} from 'vue-router';
+import {storeToRefs} from 'pinia';
+import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
 const emit = defineEmits(['open']);
 const {user, logout: logoutApi} = useAuth()
 const router = useRouter()
 
 const greeting = computed(() => translate('Hello {userName}', {userName: user.value?.fullName || ''}))
 
-const open = () => emit('open')
+const open = () => emit('open');
+
+const {navBar} = storeToRefs(usePluginsMicroFrontends());
+const customLinks = computed(() => navBar.value['user-dropdown']);
 
 const logout = async () => {
   await logoutApi()

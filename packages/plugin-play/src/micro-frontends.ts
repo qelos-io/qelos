@@ -24,7 +24,7 @@ export interface GlobalMicroFrontend {
   route?: {
     name: string;
     path: string;
-    navBarPosition: 'top' | 'bottom' | false;
+    navBarPosition: 'top' | 'bottom' | 'user-dropdown' | false;
     group?: string;
     iconName?: string;
     iconSvg?: string;

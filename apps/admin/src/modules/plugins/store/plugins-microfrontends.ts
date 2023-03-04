@@ -22,8 +22,9 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
   const microFrontends = computed(() => {
     const data = {
       navBar: {
-        top: [{key: '', items: [], priority: 99999}],
-        bottom: [{key: '', items: [], priority: 99999}]
+        'top': [{key: '', items: [], priority: 99999}],
+        'bottom': [{key: '', items: [], priority: 99999}],
+        'user-dropdown': [{key: '', items: [], priority: 99999}],
       },
       modals: {} as Record<string, IMicroFrontend>,
       onlyRoutes: [] as IMicroFrontend[]
@@ -73,6 +74,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
       const sortByPriority = (a, b) => (a.priority || 99999) - (b.priority || 99999);
       allMFEs.navBar.top = allMFEs.navBar.top.sort(sortByPriority);
       allMFEs.navBar.bottom = allMFEs.navBar.bottom.sort(sortByPriority);
+      allMFEs.navBar['user-dropdown'] = allMFEs.navBar['user-dropdown'].sort(sortByPriority);
       return allMFEs;
     }, data)
   });
