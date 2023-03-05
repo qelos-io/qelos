@@ -1,6 +1,6 @@
 {
   "name": "@qelos/content",
-  "version": "3.1.31",
+  "version": "3.1.34",
   "migrationVersion": 7,
   "description": "Content API for qelos platform",
   "keywords": [
@@ -22,7 +22,7 @@
   "license": "MIT",
   "dependencies": {
     "@qelos/api-kit": "^3.1.14",
-    "@qelos/cache-manager": "^3.0.1",
+    "@qelos/cache-manager": "^3.1.34",
     "mongoose": "^5.10.5",
     "node-fetch": "^2.6.1",
     "shortid": "^2.2.14"
