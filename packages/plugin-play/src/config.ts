@@ -14,6 +14,7 @@ const config = {
   qelosUrl: process.env.QELOS_URL,
   qelosUsername: process.env.QELOS_USERNAME,
   qelosPassword: process.env.QELOS_PASSWORD,
+  redisUrl: process.env.REDIS_URL,
   staticFrontend: {
     root: join(process.cwd(), process.env.STATIC_ROOT || 'public'),
     prefix: process.env.STATIC_PREFIX || '/',

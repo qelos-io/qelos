@@ -8,6 +8,7 @@ import {authenticate, getSdk, getSdkForUrl} from './sdk';
 import {ResponseError} from './response-error';
 import logger from './logger';
 import {atob} from 'buffer';
+import {cacheManager} from './cache-manager';
 
 const notAuthorized = {message: 'you are not authorized'};
 
@@ -235,19 +236,13 @@ export function getCallbackRoute(): RouteOptions {
   if (config.qelosUrl) {
     onCallback(async ({user, returnUrl}, request) => {
       const code = Math.floor(Math.random() * 1000).toString();
-      // set the code on gp db
-      // temporary set the data as drafts
-      // TODO: add callback code-based endpoint in auth service
-      await getSdk().drafts.setDraft({
-        contextType: returnUrl,
-        contextId: `${request.tenantPayload.sub}.${user.email}`,
-        contextData: {
-          code,
-          user,
-          created: Date.now(),
-          tenant: request.tenantPayload
-        }
-      })
+      // set the code on cache manager
+      await cacheManager.setItem(`${returnUrl}:${request.tenantPayload.sub}:${user.email}`, JSON.stringify({
+        code,
+        user,
+        created: Date.now(),
+        tenant: request.tenantPayload
+      }))
       return code;
     });
   }
@@ -295,11 +290,11 @@ export function getFrontendAuthorizationRoute(): RouteOptions {
   if (config.qelosUrl) {
     onFrontendAuthorization(async ({returnUrl, user, tenant}) => {
       try {
-        const draft = await getSdk().drafts.getDraft(returnUrl, `${tenant.sub}.${user.email}`);
-        if (draft && draft.contextData) {
+        const data = JSON.parse(await cacheManager.getItem(`${returnUrl}:${tenant.sub}:${user.email}`))
+        if (data) {
           return {
-            code: draft.contextData.code,
-            token: jwt.sign({code: draft.contextData, user, tenant}, config.accessTokenSecret, {expiresIn: '30min'}),
+            code: data.code,
+            token: jwt.sign({code: data.code, user, tenant}, config.accessTokenSecret, {expiresIn: '30min'}),
           }
         }
       } catch {
@@ -334,7 +329,6 @@ export function getFrontendAuthorizationRoute(): RouteOptions {
       }
     }
   }
-
 
   return {
     method: 'POST',
