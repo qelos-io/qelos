@@ -11,11 +11,11 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "redis": "3.0.2"
+    "redis": "4.6.5"
   },
   "devDependencies": {
-    "@types/redis": "^2.8.31",
-    "typescript": "^4.6.3"
+    "@types/redis": "^4.0.11",
+    "typescript": "^4.9.5"
   },
   "publishConfig": {
     "access": "public"
