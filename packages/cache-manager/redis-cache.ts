@@ -4,7 +4,7 @@ import { createClient } from 'redis';
 import { CacheManagerOptions } from "./cache-manager-options";
 
 export function createRedisCache(redisUrl: string): ICache {
-    const client = createClient({url: redisUrl});
+    const client = createClient(redisUrl);
     client.on("connect", function () {
         console.log('redis is connected for cache manager');
     });
