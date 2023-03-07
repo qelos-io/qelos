@@ -2,6 +2,8 @@ import {useDispatcher} from '../../core/compositions/dispatcher';
 import configurationsService from '../../../services/configurations-service';
 import {resetConfiguration} from '@/modules/configurations/store/app-configuration';
 
+const APP_CONFIG_KEY = 'app-configuration';
+
 export function useConfigurationsList() {
   const {result} = useDispatcher(() => configurationsService.getAll())
   return {
@@ -9,8 +11,29 @@ export function useConfigurationsList() {
   }
 }
 
+function loadAppConfig() {
+  return configurationsService.getOne(APP_CONFIG_KEY)
+    .then((config) => {
+      config.metadata = {
+        ...config.metadata,
+        homeScreen: config.metadata.homeScreen || '',
+        themeStylesUrl: config.metadata.themeStylesUrl || '',
+        colorsPalette: config.metadata.colorsPalette || {
+          mainColor: '#84a98c',
+          secondaryColor: '#84a98c',
+          bgColor: '#2f3e46',
+          bordersColor: '#354f52',
+          linksColor: '#84a98c',
+          navigationBgColor: '#354f52',
+          negativeColor: '#fff',
+        },
+      }
+      return config;
+    })
+}
+
 export function useConfiguration(key: string) {
-  const {result} = useDispatcher(() => configurationsService.getOne(key))
+  const {result} = useDispatcher(APP_CONFIG_KEY ? loadAppConfig : () => configurationsService.getOne(key))
   return {
     config: result
   }

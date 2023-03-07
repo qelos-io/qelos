@@ -36,15 +36,15 @@ function getProductThumbnail(product: IStyleProduct) {
   if (path.startsWith('https://')) {
     return path;
   }
-  return `https://marketplace.greenpress.app/styles/${product.name}/${path}`;
+  // return `https://marketplace.greenpress.app/styles/${product.name}/${path}`;
+  return null;
 }
 
 async function selectStyle(product: IStyleProduct) {
-  const res = await fetch(`https://marketplace.greenpress.app/styles/${product.name}/versions.json`);
-  const versions = await res.json();
+  // const res = await fetch(`https://marketplace.greenpress.app/styles/${product.name}/versions.json`);
+  // const versions = await res.json();
 
-  emit('submit', versions[0]);
-
+  emit('submit', null);
 }
 
 function cancel() {

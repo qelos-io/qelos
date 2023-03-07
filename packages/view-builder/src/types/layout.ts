@@ -1,7 +1,9 @@
 export interface ILayoutContent {
   component: string;
   predefined: boolean;
+  stick?: boolean; // can't be removed or dragged
   classes: string;
+  supportChildren?: boolean;
   props: {
     [key: string]: any;
   };

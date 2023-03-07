@@ -56,7 +56,7 @@
 
 .blocks-list > * {
   width: 28%;
-  margin: 20px;
+  margin: 2%;
   border: none;
 }
 

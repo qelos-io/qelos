@@ -48,14 +48,24 @@ class DragDropStore {
     }
     const contentEl = element.contentEl;
     const length = element.contentChildren.length;
+    let isPrevStick = false;
     Array.from(contentEl.children).forEach((child, index) => {
+      const isCurrentStick = child.getAttribute('draggable') === 'false';
+      const shouldSkipGap = isPrevStick || isCurrentStick;
+      isPrevStick = child.getAttribute('draggable') === 'false'
+      if (shouldSkipGap) {
+        return;
+      }
+
       const gap = document.createElement(GAP_EL_TAG);
       gap.setAttribute("insert-index", index + "");
       contentEl.insertBefore(gap, child);
     });
-    const lastGap = document.createElement(GAP_EL_TAG);
-    lastGap.setAttribute("insert-index", length + "");
-    contentEl.appendChild(lastGap);
+    if (!isPrevStick) {
+      const lastGap = document.createElement(GAP_EL_TAG);
+      lastGap.setAttribute("insert-index", length + "");
+      contentEl.appendChild(lastGap);
+    }
   }
 
   #createGaps(target?: HTMLElement) {
@@ -120,7 +130,7 @@ class DragDropStore {
     container.addNewChild(content, plugin, insertIndex);
 
     this.#dragged?.callback && this.#dragged.callback();
-    builderStore.emitLayoutChanged();
+    setTimeout(() => builderStore.emitLayoutChanged(), 1)
     this.stop();
   }
 }

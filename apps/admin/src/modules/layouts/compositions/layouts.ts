@@ -9,7 +9,8 @@ import {useEditedInputModels} from '@/modules/core/compositions/edited-inputs';
 function getBasicElement(tag: string) {
   return {
     component: tag,
-    predefined: false,
+    predefined: true,
+    stick: true,
     classes: '',
     props: {}
   };
@@ -17,11 +18,30 @@ function getBasicElement(tag: string) {
 
 function getBasicContentItem() {
   return {
-    ...getBasicElement('div'),
+    ...getBasicElement('Application'),
+    classes: 'flex-row',
     children: [
-      getBasicElement('header'),
-      getBasicElement('main'),
-      getBasicElement('footer'),
+      getBasicElement('Navigation'),
+      {
+        ...getBasicElement('Main'),
+        children: [
+          {
+            ...getBasicElement('Header'),
+            supportChildren: true,
+            children: []
+          },
+          {
+            ...getBasicElement('Content'),
+            supportChildren: true,
+            children: []
+          },
+          {
+            ...getBasicElement('Footer'),
+            supportChildren: true,
+            children: []
+          },
+        ]
+      },
     ]
   };
 }

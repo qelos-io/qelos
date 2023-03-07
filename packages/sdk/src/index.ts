@@ -31,7 +31,7 @@ export default class QelosSDK extends BaseSDK {
 
     if (!options.extraHeaders) {
       options.extraHeaders = async (relativeUrl: string, forceRefresh?: boolean) => {
-        if (noExtraHeadersUrls.has(relativeUrl)) {
+        if (globalThis.navigator || noExtraHeadersUrls.has(relativeUrl)) {
           return {};
         }
         let token = forceRefresh ? '' : options.getAccessToken();

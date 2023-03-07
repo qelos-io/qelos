@@ -73,7 +73,7 @@ export default class BuilderLayoutItem
     this.render();
   }
   get supportChildren() {
-    return !!this.plugin?.supportChildren;
+    return !!this.plugin?.supportChildren || !!this.content?.supportChildren;
   }
 
   get contentChildren() {
@@ -91,10 +91,13 @@ export default class BuilderLayoutItem
     super();
 
     if (!dragAndDropStore.isMobile) {
-      this.addEventListener("dragstart", (event) => {
+      this.addEventListener('dragstart', (event) => {
         event.stopImmediatePropagation();
-        this.classList.add("dragged");
-        event.dataTransfer!.effectAllowed = "copy";
+        if (this.content.stick) {
+          return;
+        }
+        this.classList.add('dragged');
+        event.dataTransfer!.effectAllowed = 'copy';
         dragAndDropStore.start({
           content: this.content,
           plugin: this.plugin,
@@ -104,11 +107,14 @@ export default class BuilderLayoutItem
         }, this);
 
         document.addEventListener(
-          "dragend",
+          'dragend',
           () => {
-            this.classList.remove("dragged");
+            if (this.content.stick) {
+              return;
+            }
+            this.classList.remove('dragged');
           },
-          { once: true }
+          {once: true}
         );
       });
 
@@ -120,7 +126,7 @@ export default class BuilderLayoutItem
     this.innerHTML = `
     <h4>${this.plugin?.title || this.content.component}</h4>
     <div class="layout-item-actions">
-      <a href="#" class="remove" title="remove">🗑️</a>
+      ${!this.content.stick ? `<a href="#" class="remove" title="remove">🗑️</a>` : ''}
       <a href="#" class="edit" title="edit">📝</a>
       ${
         dragAndDropStore.isMobile
@@ -129,25 +135,27 @@ export default class BuilderLayoutItem
       }
     </div>
     `;
-    this.querySelector(".layout-item-actions .remove")?.addEventListener(
-      "click",
-      () => this.#remove()
-    );
     this.querySelector(".layout-item-actions .edit")?.addEventListener(
       "click",
       () => this.#edit()
     );
-    this.querySelector(".layout-item-actions .drag")?.addEventListener(
-      "click",
-      () =>
-        dragAndDropStore.start({
-          content: this.content,
-          plugin: this.plugin,
-          callback: () => {
-            this.#remove();
-          },
-        }, this)
-    );
+    if (!this.content.stick) {
+      this.querySelector(".layout-item-actions .remove")?.addEventListener(
+        "click",
+        () => this.#remove()
+      );
+      this.querySelector(".layout-item-actions .drag")?.addEventListener(
+        "click",
+        () =>
+          dragAndDropStore.start({
+            content: this.content,
+            plugin: this.plugin,
+            callback: () => {
+              this.#remove();
+            },
+          }, this)
+      );
+    }
     this.appendChild(this.contentEl);
     const displayEl = store.getDisplayElementForItem({
       content: this.content,
@@ -156,7 +164,9 @@ export default class BuilderLayoutItem
     });
     displayEl && this.appendChild(displayEl);
     this.renderChildren(this.content?.children);
-    this.draggable = true;
+    this.draggable = typeof this.content.stick === 'boolean' ? !this.content.stick : true;
+    this.setAttribute('data-component', this.content.component);
+    this.setAttribute('data-classes', this.content.classes);
     setTimeout(() => this.setAttribute("shown", ""), 1);
   }
 

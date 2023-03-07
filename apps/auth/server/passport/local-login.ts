@@ -31,7 +31,9 @@ module.exports = new Strategy(
           cookieToken,
           user: {
             email: user.email,
-            name: user.name,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            name: user.name || user.fullName || `${user.firstName} ${user.lastName}`,
             roles: user.roles,
           },
         });

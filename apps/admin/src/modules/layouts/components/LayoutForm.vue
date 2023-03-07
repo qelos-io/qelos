@@ -1,7 +1,7 @@
 <template>
   <el-form class="layout-form" @submit.native.prevent="submit">
     <div class="flex-row">
-      <PageTitle :title="'Edit Layout'" :item-name="layout.kind"/>
+      <PageTitle title="Edit Core Layout"/>
       <div class="ops">
         <el-button type="text" @click="openStylesMarket">
           <el-icon>
@@ -12,9 +12,6 @@
       </div>
     </div>
     <div>
-      <LayoutConnectedData :connected-data="connectedData"
-                           @remove="removeConnectedData"/>
-
       <view-builder ref="builder"
                     :layout="layout" :plugins="plugins"
                     @create="onCreateItem"
@@ -42,7 +39,6 @@ import {useLayoutForm} from '../compositions/layouts';
 import '@qelos/view-builder/dist/index.es.js';
 import '@qelos/view-builder/dist/style.css';
 import {getStylesheetContent, usePlugins} from '@/modules/layouts/compositions/layout-plugins';
-import LayoutConnectedData from '@/modules/layouts/components/LayoutConnectedData.vue';
 import LayoutItemModal from '@/modules/layouts/components/LayoutItemModal.vue';
 import {useLayoutBuilder} from '@/modules/layouts/compositions/layout-builder';
 import {useLayoutStyles} from '@/modules/layouts/compositions/layout-styles';
@@ -55,7 +51,7 @@ const props = defineProps({
   submitting: Boolean
 })
 
-const plugins = usePlugins(props.layout.kind)
+const plugins = usePlugins()
 const isMarketOpen = ref(false)
 
 const emit = defineEmits(['submitted'])
@@ -104,11 +100,12 @@ const submit = () => emit('submitted', clearNulls(editedLayout))
 <style>
 view-builder {
   margin: 10px 0;
+  height: calc(100vh - 140px);
   background: rgba(200, 200, 200, 0.2);
 }
 
 builder-plugins, builder-layout {
-  max-height: 72vh;
+  max-height: calc(100vh - 140px);
   overflow: auto;
 }
 
@@ -149,7 +146,30 @@ builder-layout .flex-row > * {
   flex: 1;
 }
 
+builder-layout builder-layout-item {
+  border: 1px solid var(--border-color);
+}
+
+builder-layout [data-component="Application"] {
+  color: var(--main-color);
+}
+
+builder-layout [data-component="Application"] [data-component="Navigation"] {
+  background-color: var(--main-color);
+  color: var(--negative-color);
+  flex: 0;
+  min-width: 200px;
+}
+
+builder-layout [data-component="Application"] [data-component="Header"] {
+  background-color: #fff;
+}
+builder-layout [data-component="Application"] [data-component="Content"] {
+  background-color: var(--body-bg);
+}
+
 builder-layout .item-label {
+  display: inline-block;
   line-height: 40px;
   padding: 5px;
   margin: 0 5px;

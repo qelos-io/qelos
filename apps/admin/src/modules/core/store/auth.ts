@@ -59,7 +59,10 @@ export const login = async ({email, password}: { email: string, password: string
     email,
     password,
   })
-  authStore.user = payload.user
+  authStore.user = payload.user;
   authStore.isLoaded = true
-  authStore.userPromise = Promise.resolve(payload.user)
+  authStore.userPromise = loadUser().catch(() => payload.user).then(user => {
+    authStore.user = user;
+    return user;
+  });
 }

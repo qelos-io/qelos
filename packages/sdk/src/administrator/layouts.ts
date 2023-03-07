@@ -22,6 +22,7 @@ export enum LayoutConnectedDataKind {
 export interface ILayoutContent {
   component: string;
   predefined: boolean;
+  stick?: boolean;
   classes: string;
   children?: ILayoutContent[];
   props: {

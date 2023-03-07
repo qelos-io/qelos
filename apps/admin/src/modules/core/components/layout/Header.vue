@@ -1,6 +1,5 @@
 <template>
   <header :dir="$t('appDirection')">
-    <SearchForm/>
     <div class="welcome">
       <el-button type="default" class="btn" circle @click="open">
         <el-icon>
@@ -65,25 +64,23 @@ const logout = async () => {
 }
 </script>
 <style scoped lang="scss">
-@import "../../../../style/colors";
-
 header {
   position: sticky;
   top: 0;
   z-index: 1;
   display: flex;
   justify-content: flex-start;
-  height: 62px;
+  height: 50px;
   align-items: center;
-  margin: 15px;
-  border-radius: 10px;
   background: #fff;
-  box-shadow: 1px 2px var(--border-color);
+  border-bottom: 1px 2px var(--border-color);
 }
 
 .welcome {
+  margin-inline-start: auto;
   display: flex;
   align-items: center;
+  cursor: pointer;
 }
 
 .user-welcome {

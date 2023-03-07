@@ -22,7 +22,6 @@ export function useLayoutBuilder({content, connectedData, layout}) {
       if (!existingReference) {
         connectedData.value = connectedData.value.concat([plugin.connectedData]);
       }
-      console.log(detail)
     }
   }
 

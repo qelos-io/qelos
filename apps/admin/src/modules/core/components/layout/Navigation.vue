@@ -132,7 +132,6 @@ nav {
   display: flex;
   flex-direction: column;
   background-color: var(--nav-bg-color);
-  box-shadow: 1px 1px var(--border-color);
   transition: width .2s linear;
   width: $nav-width;
   overflow-y: auto;

@@ -3,10 +3,12 @@
     <GpItem v-for="layout in layouts" :key="layout.kind">
       <template v-slot:title>
         <router-link :to="{name: 'editLayout', params: {kind: layout.kind}}">
-          {{ layout.displayName }}
+          {{ $t(layout.displayName) }}
         </router-link>
       </template>
-      <div class="metadata"></div>
+      <div class="metadata">
+        {{ $t(layout.description) }}
+      </div>
     </GpItem>
   </div>
 </template>
@@ -14,18 +16,11 @@
 import GpItem from '../../core/components/layout/GpItem.vue';
 
 const layouts = [
-  {kind: 'index', displayName: 'Index / Home'},
-  {kind: 'signin', displayName: 'Sign In'},
-  {kind: 'Signup', displayName: 'Sign Up'},
-  {kind: 'category', displayName: 'Category'},
-  {kind: 'post', displayName: 'Post'},
-  {kind: 'tag', displayName: 'Tags List'},
-  {kind: 'search', displayName: 'Search'},
-  {kind: 'error', displayName: 'Error'},
+  {kind: 'core', displayName: 'Core Layout', description: 'Change the basics of the application layout.'},
 ]
 </script>
 <style scoped>
 .metadata {
-  padding-bottom: 15px;
+  padding: 15px;
 }
 </style>

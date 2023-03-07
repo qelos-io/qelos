@@ -12,6 +12,8 @@ const LayoutContentSchema = new mongoose.Schema({
     required: true,
   },
   predefined: Boolean,
+  stick: Boolean,
+  supportChildren: Boolean,
   classes: String,
   props: mongoose.Schema.Types.Mixed,
 });
@@ -22,7 +24,7 @@ LayoutContentSchema.add({
 const LayoutSchema = new mongoose.Schema({
   kind: {
     type: String,
-    enum: ['index', 'search', 'tag', 'category', 'post', 'error', 'signin', 'signup'],
+    enum: ['core'],
     required: true,
     index: true,
   },
