@@ -1,9 +1,15 @@
 import mongoose, {ObjectId, Document, Model} from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import * as config from '../../config';
 import {getSignedToken, getUniqueId} from '../services/tokens';
 import {cacheManager} from '../services/cache-manager';
+import {
+  cookieTokenExpiration,
+  defaultAuthType,
+  defaultRole,
+  refreshTokenExpiration,
+  refreshTokenSecret
+} from '../../config';
 
 export interface IUser {
   tenant: string;
@@ -70,12 +76,13 @@ const UserSchema = new mongoose.Schema<UserDocument, UserModel>({
       kind: {
         type: String,
         enum: ['cookie', 'oauth'],
-        default: config.defaultAuthType,
+        default: defaultAuthType,
       },
       metadata: {
         type: mongoose.Schema.Types.Mixed,
         default: () => ({}),
       },
+      expiresAt: Date,
       tokenIdentifier: String,
     },
   ],
@@ -102,11 +109,12 @@ UserSchema.methods.comparePassword = function comparePassword(
   bcrypt.compare(password, this.password, callback);
 };
 
-UserSchema.methods.getToken = function getToken(authType, expiresIn) {
+UserSchema.methods.getToken = function getToken(authType: 'cookie' | 'oauth', expiresIn?) {
   let tokenIdentifier;
   if (authType === 'cookie') {
     tokenIdentifier = getUniqueId();
     this.tokens.push({
+      expiresAt: new Date(Date.now() + cookieTokenExpiration),
       kind: authType,
       tokenIdentifier,
     });
@@ -121,6 +129,7 @@ UserSchema.methods.getRefreshToken = function getRefreshToken(relatedToken) {
     kind: 'oauth',
     tokenIdentifier,
     metadata: {relatedToken},
+    expiresAt: new Date(Date.now() + cookieTokenExpiration),
   });
 
   return jwt.sign(
@@ -129,8 +138,8 @@ UserSchema.methods.getRefreshToken = function getRefreshToken(relatedToken) {
       tenant: this.tenant,
       tokenIdentifier,
     },
-    config.refreshTokenSecret,
-    {expiresIn: config.refreshTokenExpiration}
+    refreshTokenSecret,
+    {expiresIn: refreshTokenExpiration}
   );
 };
 
@@ -208,7 +217,12 @@ UserSchema.pre('save', function saveHook(next) {
 
   // define role for new user
   if (!user.roles || user.roles.length === 0) {
-    user.roles = [config.defaultRole];
+    user.roles = [defaultRole];
+  }
+
+  if (user.tokens.length > 10) {
+    const now = Date.now();
+    user.tokens = user.tokens.filter(token => token.expiresAt && token.expiresAt - now > 0);
   }
 
   if (!this.salt) {

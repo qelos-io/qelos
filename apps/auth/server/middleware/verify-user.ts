@@ -15,6 +15,7 @@ import {NextFunction, RequestHandler, Response} from 'express';
 import {AuthRequest} from '../../types';
 import {cacheManager} from '../services/cache-manager';
 import {getRequestHost} from '../services/req-host';
+import logger from '../services/logger';
 
 function oAuthVerify(req: AuthRequest, _res: Response, next: NextFunction): Promise<void> {
   // get the last part from a authorization header string like "bearer token-value"
@@ -34,7 +35,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
   const tenant = (req.headers.tenant = req.headers.tenant as string || '0');
 
   if (!tenant && showLogs) {
-    console.log('CookieVerify requires a tenant', {
+    logger.log('CookieVerify requires a tenant', {
       url: req.url,
       tenanthost: req.headers.tenanthost,
     });
@@ -84,9 +85,7 @@ async function isCookieProcessed(tokenIdentifier: string) {
     const res = await cacheManager.getItem(tokenIdentifier);
     return !!res;
   } catch (err) {
-    if (showLogs) {
-      console.log('failed to check isCookieProcessed', err);
-    }
+    logger.log('failed to check isCookieProcessed', err);
     return false;
   }
 }

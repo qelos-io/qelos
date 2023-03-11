@@ -1,6 +1,7 @@
 import {NextFunction, Response, RequestHandler} from 'express';
 import {AuthRequest} from '../../types';
 import {showLogs} from '../../config';
+import logger from '../services/logger';
 
 export const onlyAuthenticated = <RequestHandler>function onlyAuthenticated(req: AuthRequest, res: Response, next: NextFunction) {
   if (!req.userPayload) {
@@ -14,7 +15,7 @@ export const onlyPrivileged = <RequestHandler>function onlyPrivileged(req: AuthR
   if (!(req.userPayload && req.userPayload.isPrivileged)) {
     res.status(401).json({message: 'you are not authorized'}).end();
     if (showLogs) {
-      console.log('not privileged request to only-privileged route', {
+      logger.log('not privileged request to only-privileged route', {
         tenant: req.headers.tenant,
         tenanthost: req.headers.tenanthost,
         url: req.url,

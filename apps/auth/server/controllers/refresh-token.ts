@@ -1,3 +1,6 @@
+import logger from '../services/logger';
+import {UserDocument, UserModel} from '../models/user';
+
 const User = require('../models/user')
 const { verifyRefreshToken } = require('../services/tokens')
 
@@ -12,14 +15,16 @@ export async function refreshToken (req, res) {
 
   try {
     const decoded = await verifyRefreshToken(token, tenant)
-    const user = await User.findOne({ _id: decoded.sub, tenant: decoded.tenant })
+    const user: UserDocument & UserModel = await User.findOne({ _id: decoded.sub, tenant: decoded.tenant })
 
-    if (user.refreshTokenCreated.toJSON() !== decoded.created) {
+    if (!user.tokens.some(token => token.tokenIdentifier === decoded.tokenIdentifier)) {
       throw new Error('refresh token not valid')
     }
 
-    const newToken = user.getToken()
-    const refreshToken = user.getRefreshToken()
+    user.tokens = user.tokens.filter(token => token.tokenIdentifier !== decoded.tokenIdentifier);
+
+    const newToken = user.getToken('oauth');
+    const refreshToken = user.getRefreshToken(newToken);
 
     await user.save()
 
@@ -35,6 +40,7 @@ export async function refreshToken (req, res) {
       }
     }).end()
   } catch (e) {
+    logger.error(e);
     res.status(401).end()
   }
 }
