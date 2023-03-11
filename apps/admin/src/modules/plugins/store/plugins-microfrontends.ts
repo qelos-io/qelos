@@ -91,15 +91,16 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
           component: mfe.url ? MicroFrontendPage : async () => (await import(`@/pre-designed/${mfe.use}.vue`)).default,
           meta: null
         }
+        const roles = mfe.roles || mfe.route.roles || ['*'];
         if (mfe.url) {
           route.meta = {
-            roles: mfe.roles || mfe.route.roles || ['*'],
+            roles,
             mfeUrl: getMfeUrl(mfe),
             origin: new URL(mfe.url).origin
           }
         } else {
           route.meta = {
-            roles: mfe.roles || mfe.route.roles || ['*'],
+            roles,
             mfe,
           }
         }
