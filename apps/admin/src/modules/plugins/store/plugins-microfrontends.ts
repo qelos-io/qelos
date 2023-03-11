@@ -79,32 +79,32 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     }, data)
   });
 
-  const initiateRoutes = ({navBar: {top, bottom}, onlyRoutes}) => {
-    [
-      ...top.map(group => group.items).flat(),
-      ...bottom.map(group => group.items).flat(),
-      ...onlyRoutes,
-    ].forEach(mfe => {
-      const route = {
-        name: `plugin.${mfe.route.name}`,
-        path: mfe.route.path,
-        component: mfe.url ? MicroFrontendPage : async () => (await import(`@/pre-designed/${mfe.use}.vue`)).default,
-        meta: null
-      }
-      if (mfe.url) {
-        route.meta = {
-          roles: mfe.roles || mfe.route.roles || ['*'],
-          mfeUrl: getMfeUrl(mfe),
-          origin: new URL(mfe.url).origin
+  const initiateRoutes = ({navBar, onlyRoutes}) => {
+    Object.values(navBar)
+      .map((area: { items: IMicroFrontend[] }[]) => area.map(group => group.items).flat())
+      .flat()
+      .concat(onlyRoutes as IMicroFrontend[])
+      .forEach((mfe: IMicroFrontend) => {
+        const route = {
+          name: `plugin.${mfe.route.name}`,
+          path: mfe.route.path,
+          component: mfe.url ? MicroFrontendPage : async () => (await import(`@/pre-designed/${mfe.use}.vue`)).default,
+          meta: null
         }
-      } else {
-        route.meta = {
-          roles: mfe.roles || mfe.route.roles || ['*'],
-          mfe,
+        if (mfe.url) {
+          route.meta = {
+            roles: mfe.roles || mfe.route.roles || ['*'],
+            mfeUrl: getMfeUrl(mfe),
+            origin: new URL(mfe.url).origin
+          }
+        } else {
+          route.meta = {
+            roles: mfe.roles || mfe.route.roles || ['*'],
+            mfe,
+          }
         }
-      }
-      router.addRoute('playPlugin', route)
-    })
+        router.addRoute('playPlugin', route)
+      })
     router.removeRoute('defaultPluginPlaceholder');
     router.removeRoute('defaultPluginPlaceholderSecond');
     router.push(router.currentRoute.value.fullPath);
