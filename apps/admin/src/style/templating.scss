@@ -5,7 +5,12 @@
   --negative-color: #254044;
   --secondary-color: #0a7080;
   --third-color: #c6dccc;
-  --link: var(--negative-color);
+  --link: var(--third-color);
+  --negative-link: var(--secondary-color);
   --border-color: #eee;
+  --inputs-text-color: #eee;
+  --inputs-bg-color: #d6eedd;
+  --nav-bg-color: #d6eedd;
   --el-menu-hover-bg-color: --main-color;
+  --spacing: 10px;
 }

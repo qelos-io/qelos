@@ -14,7 +14,7 @@
 </template>
 
 <script lang="ts" setup>
-import {ref, toRef} from 'vue'
+import {ref, toRef, watch} from 'vue'
 import {useAuthenticatedIntercept} from './compositions/authentication'
 import Header from './components/layout/Header.vue'
 import Navigation from './components/layout/Navigation.vue'
@@ -31,6 +31,10 @@ const {isLoaded} = useAuthenticatedIntercept();
 const openModals = toRef(usePluginsMicroFrontends(), 'openModals');
 
 router.afterEach(() => navigationOpened.value = false)
+
+watch(navigationOpened, (isOpen) => {
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+})
 </script>
 <style scoped lang="scss">
 .admin-panel {

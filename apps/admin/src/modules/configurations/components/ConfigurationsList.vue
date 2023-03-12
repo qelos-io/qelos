@@ -5,12 +5,14 @@
         <router-link :to="{name: 'editConfiguration', params: {key: config.key}}">{{ $t(config.key) }}
         </router-link>
       </template>
-      <p v-if="config.description">{{ config.description }}</p>
-      <small v-if="config.public">
-        <el-icon>
-          <icon-check/>
-        </el-icon>
-        Public</small>
+      <div class="content">
+        <p v-if="config.description">{{ config.description }}</p>
+        <small v-if="config.public">
+          <el-icon>
+            <icon-check/>
+          </el-icon>
+          Public</small>
+      </div>
       <template v-slot:actions v-if="config.key !== 'app-configuration'">
         <a @click.prevent="remove(config)">
           <el-icon>
@@ -32,3 +34,10 @@ const {list} = useConfigurationsList()
 
 const remove = useConfirmAction((config) => configurationsService.remove(config.key));
 </script>
+<style scoped>
+.content {
+  padding-inline: var(--spacing);
+}
+.content > * {
+}
+</style>

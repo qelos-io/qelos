@@ -124,7 +124,6 @@ const close = () => emit('close')
 
 </script>
 <style scoped lang="scss">
-@import "../../../../style/colors";
 
 $nav-width: 240px;
 
@@ -143,6 +142,7 @@ nav .el-menu, nav {
   --el-menu-hover-bg-color: var(--main-color);
   --el-menu-bg-color: var(--nav-bg-color);
   border: 0;
+  overflow: auto;
 }
 .el-menu-item:hover {
   --el-menu-text-color: var(--negative-color);
@@ -259,8 +259,8 @@ a:hover {
 
 .nav-group {
   h4 {
-    color: var(--main-color);
-    font-size: 13px;
+    color: var(--negative-color);
+    font-size: 16px;
     font-weight: normal;
     margin: 15px 0 5px;
 

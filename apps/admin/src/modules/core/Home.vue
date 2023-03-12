@@ -60,6 +60,15 @@
   border: none;
 }
 
+@media screen and (max-width: 1200px) {
+  .blocks-list {
+    flex-direction: column;
+    > * {
+      width: 96%;
+    }
+  }
+}
+
 h3 {
   padding: 10px;
   font-weight: normal;

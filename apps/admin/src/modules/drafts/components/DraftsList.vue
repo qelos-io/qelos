@@ -36,12 +36,6 @@ getAll()
 const getDraftLink = (draft) => {
   let routeName
   switch (draft.contextType) {
-    case 'post':
-      routeName = draft.contextId ? 'editPost' : 'createPost'
-      break;
-    case 'category':
-      routeName = draft.contextId ? 'editCategory' : 'createCategory'
-      break;
     case 'block':
       routeName = draft.contextId ? 'editBlock' : 'createBlock'
       break;

@@ -121,8 +121,6 @@ export default {
 }
 </script>
 <style scoped lang="scss">
-@import "../../../style/colors";
-
 .post-form {
   display: flex;
   flex-direction: column;

@@ -12,7 +12,6 @@
 </script>
 
 <style scoped lang="scss">
-	@import "../../../../style/colors";
 	h1 i {
     color: var(--main-color);
 	}

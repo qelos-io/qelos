@@ -32,8 +32,6 @@ const to = (tab) => {
 </script>
 
 <style scoped lang="scss">
-@import "../../../style/colors";
-
 h2 {
   strong {
     color: var(--main-color);

@@ -56,6 +56,8 @@ watch(() => {
       --third-color: #c6dccc;
       ${palette.linksColor ? `--link: ${palette.linksColor};` : ''}
       ${palette.bordersColor ? `--border-color: ${palette.bordersColor};` : ''}
+      ${palette.inputsTextColor ? `--inputs-text-color: ${palette.inputsTextColor};` : ''}
+      ${palette.inputsBgColor ? `--inputs-bg-color: ${palette.inputsBgColor};` : ''}
       ${palette.navigationBgColor ? `--nav-bg-color: ${palette.navigationBgColor};` : ''}
       ${palette.negativeColor ? `--negative-color: ${palette.negativeColor};` : '--negative-color: #254044;'}
       --el-menu-hover-bg-color: var(--main-color);

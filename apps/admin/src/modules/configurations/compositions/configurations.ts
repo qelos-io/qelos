@@ -18,14 +18,17 @@ function loadAppConfig() {
         ...config.metadata,
         homeScreen: config.metadata.homeScreen || '',
         themeStylesUrl: config.metadata.themeStylesUrl || '',
-        colorsPalette: config.metadata.colorsPalette || {
+        colorsPalette: {
           mainColor: '#84a98c',
           secondaryColor: '#84a98c',
+          negativeColor: '#fff',
           bgColor: '#2f3e46',
           bordersColor: '#354f52',
+          inputsTextColor: '#eee',
+          inputsBgColor: '#d6eedd',
           linksColor: '#84a98c',
           navigationBgColor: '#354f52',
-          negativeColor: '#fff',
+          ...config.metadata.colorsPalette,
         },
       }
       return config;

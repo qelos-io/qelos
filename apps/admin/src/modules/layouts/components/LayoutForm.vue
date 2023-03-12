@@ -155,7 +155,7 @@ builder-layout [data-component="Application"] {
 }
 
 builder-layout [data-component="Application"] [data-component="Navigation"] {
-  background-color: var(--main-color);
+  background-color: var(--nav-bg-color);
   color: var(--negative-color);
   flex: 0;
   min-width: 200px;

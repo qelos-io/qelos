@@ -62,8 +62,6 @@ export default {
 }
 </script>
 <style scoped lang="scss">
-@import "../../../style/colors";
-
 .menu-link-input {
   display: flex;
   align-items: start;

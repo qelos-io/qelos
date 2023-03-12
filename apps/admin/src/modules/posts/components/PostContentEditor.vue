@@ -43,8 +43,6 @@
   }
 </script>
 <style scoped lang="scss">
-	@import "../../../style/colors";
-
 	.content-editor {
 		display: flex;
 		flex-direction: column;
