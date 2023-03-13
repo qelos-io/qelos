@@ -74,13 +74,19 @@ watch(() => appConfig.value.scriptUrl, () => {
   document.head.appendChild(script);
 })
 </script>
-<style lang="scss">
+<style>
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--main-color);
   height: 100%;
+}
+
+@media screen and (max-width: 768px) {
+  #app {
+    height: auto;
+  }
 }
 
 html {
