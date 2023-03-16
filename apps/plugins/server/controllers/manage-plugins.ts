@@ -47,10 +47,7 @@ export function redirectToPluginMfe(req, res) {
   const {returnUrl = ''} = req.query || {}
   const protocol = isDev ? 'http://' : 'https://';
   const headers = {origin: `${protocol}${req.headers.tenanthost}`, ...req.headers};
-  Plugin.findOne({tenant: headers.tenant, _id: req.params.pluginId})
-    .select('tenant user callbackUrl registerUrl apiPath authAcquire')
-    .lean()
-    .exec()
+  Plugin.getPluginForRedirect(headers.tenant, req.params.pluginId)
     .then(async (plugin) => {
       if (!plugin) {
         res.status(404).end();

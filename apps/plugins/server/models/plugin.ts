@@ -1,4 +1,5 @@
-import mongoose, {Document} from 'mongoose'
+import mongoose, {Document, Model, LeanDocument} from 'mongoose'
+import {cacheManager} from '../services/cache-manager';
 
 export interface IPlugin extends Document {
   encodePath();
@@ -54,6 +55,10 @@ export interface IPlugin extends Document {
 
   injectables: Array<{ name?: string, description?: string, html: string, active: boolean }>
   navBarGroups?: { key: string, name: string, iconName?: string, iconSvg?: string, priority?: number }[],
+}
+
+interface PluginModel extends Model<IPlugin> {
+  getPluginForRedirect(tenant: string, _id: string): Promise<LeanDocument<IPlugin>>
 }
 
 const MicroFrontendSchema = new mongoose.Schema({
@@ -183,10 +188,19 @@ PluginSchema.methods.encodePath = function encodePath() {
   }
 };
 
+PluginSchema.statics.getPluginForRedirect = function getPluginForRedirect(tenant: string, _id: string) {
+  return cacheManager.wrap(`plugins:redirect:${tenant}:${_id}`, () => Plugin.findOne({tenant, _id})
+    .select('tenant user callbackUrl registerUrl apiPath authAcquire')
+    .lean()
+    .exec()
+    .then(JSON.stringify)
+  ).then(JSON.parse);
+}
+
 PluginSchema.pre('save', function () {
   this.encodePath();
 })
 
-const Plugin = mongoose.model<IPlugin>('Plugin', PluginSchema);
+const Plugin = mongoose.model<IPlugin, PluginModel>('Plugin', PluginSchema);
 
 export default Plugin;

@@ -12,7 +12,7 @@ export const cookieBaseDomain = process.env.COOKIE_BASE_DOMAIN ||
   );
 export const jwtSecret = process.env.JWT_SECRET || 'abcddddd';
 export const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET || 'a secret 2 phrase!!';
-export const tokenExpiration = process.env.TOKEN_EXPIRATION || '30m';
+export const tokenExpiration = process.env.TOKEN_EXPIRATION || '300m';
 export const refreshTokenExpiration = process.env.REFRESH_TOKEN_EXPIRATION || '30d';
 export const cookieTokenVerificationTime = Number(process.env.COOKIE_TOKEN_VERIFICATION_TIME || TEN_MINUTES);
 export const processedCookieExpiration = Number(process.env.PROCESSED_COOKIE_EXPIRATION || 30);

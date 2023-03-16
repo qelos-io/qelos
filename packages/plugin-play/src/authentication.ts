@@ -338,13 +338,12 @@ export function getFrontendAuthorizationRoute(): RouteOptions {
       if (returnUrl && token) {
         try {
           const {user, tenant} = jwt.verify(token, config.accessTokenSecret);
-          const now = new Date()
           try {
             Object.keys(request.cookies || {}).forEach(key => {
               if (key.startsWith('token_')) {
                 const payload = jwt.decode(request.cookies[key]);
                 if (payload.tenant.identifier === tenant.identifier) {
-                  reply.setCookie(key, '', {expires: now})
+                  reply.setCookie(key, '', {maxAge: 1})
                 }
               }
             })
