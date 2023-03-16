@@ -128,8 +128,8 @@ const changePalette = useConfirmAction(async function changePalette(colorsPalett
 });
 
 const unWatch = watch(() => authStore.isLoaded, () => {
-  if (!isPrivilegedUser && config.value.homeScreen) {
-    router.push(config.value.homeScreen);
+  if (!isPrivilegedUser && appConfig.value.homeScreen) {
+    router.push(appConfig.value.homeScreen);
   }
   unWatch();
 })
