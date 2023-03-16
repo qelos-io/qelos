@@ -60,7 +60,7 @@ const customLinks = computed(() => navBar.value['user-dropdown']);
 
 const logout = async () => {
   await logoutApi()
-  router.push('login')
+  router.push('/login')
 }
 </script>
 <style scoped lang="scss">
