@@ -54,7 +54,7 @@ export default class QlUsers<T = any, E = any> extends BaseSDK {
   }
 
   getEncryptedData<Z = E>(userId: string, encryptedId: string = '') {
-    return this.callJsonApi<IManagedUser<Z>>(`${this.relativePath}/${userId}/encrypted`, {
+    return this.callJsonApi<Z>(`${this.relativePath}/${userId}/encrypted`, {
       headers: {
         'x-encrypted-id': encryptedId
       }
