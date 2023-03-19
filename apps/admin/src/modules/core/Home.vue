@@ -134,6 +134,6 @@ const unWatch = watch(() => authStore.isLoaded, () => {
   if (!isPrivilegedUser.value && appConfig.value.homeScreen) {
     router.push(appConfig.value.homeScreen);
   }
-  unWatch();
+  setTimeout(() => unWatch(), 1)
 }, {immediate: true})
 </script>
