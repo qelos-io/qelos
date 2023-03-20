@@ -85,6 +85,7 @@ watch(() => appConfig.value.scriptUrl, () => {
 
 @media screen and (max-width: 768px) {
   #app {
+    min-height: 100%;
     height: auto;
   }
 }
