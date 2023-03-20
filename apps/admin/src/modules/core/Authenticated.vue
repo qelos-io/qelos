@@ -54,6 +54,7 @@ watch(navigationOpened, (isOpen) => {
   .main {
     flex: 1;
     overflow: auto;
+    background-color: var(--body-bg);
   }
 }
 
