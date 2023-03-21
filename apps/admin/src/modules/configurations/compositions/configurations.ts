@@ -21,6 +21,7 @@ function loadAppConfig() {
         colorsPalette: {
           mainColor: '#84a98c',
           secondaryColor: '#84a98c',
+          thirdColor: '#c6dccc',
           negativeColor: '#fff',
           bgColor: '#2f3e46',
           bordersColor: '#354f52',

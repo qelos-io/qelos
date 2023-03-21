@@ -11,6 +11,7 @@ export const PALETTES = [
     palette: {
       mainColor: '#264653',
       secondaryColor: '#e9c46a',
+      thirdColor: '#e7bc56',
       bgColor: '#e9c46a',
       bordersColor: '#f4a261',
       inputsTextColor: '#fff',
@@ -31,6 +32,7 @@ export const PALETTES = [
     palette: {
       mainColor: '#4a4e69',
       secondaryColor: '#c9ada7',
+      thirdColor: '#c59c93',
       bgColor: '#f2e9e4',
       bordersColor: '#4a4e69',
       inputsTextColor: '#fff',
@@ -50,6 +52,7 @@ export const PALETTES = [
     palette: {
       mainColor: '#84a98c',
       secondaryColor: '#84a98c',
+      thirdColor: '#759b7d',
       bgColor: '#2f3e46',
       bordersColor: '#354f52',
       inputsTextColor: '#2f3e46',

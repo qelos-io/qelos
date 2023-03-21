@@ -53,7 +53,7 @@ watch(() => {
       ${palette.mainColor ? `--main-color: ${palette.mainColor};` : ''}
       --main-color-light: #d6eedd;
       ${palette.secondaryColor ? `--secondary-color: ${palette.secondaryColor};` : ''}
-      --third-color: #c6dccc;
+      ${palette.thirdColor ? `--third-color: ${palette.thirdColor};` : '--third-color: #c6dccc;'}
       ${palette.linksColor ? `--link: ${palette.linksColor};` : ''}
       ${palette.bordersColor ? `--border-color: ${palette.bordersColor};` : ''}
       ${palette.inputsTextColor ? `--inputs-text-color: ${palette.inputsTextColor};` : ''}

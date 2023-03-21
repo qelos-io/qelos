@@ -73,7 +73,7 @@ header {
   height: 50px;
   align-items: center;
   background: #fff;
-  border-bottom: 1px 2px var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .welcome {

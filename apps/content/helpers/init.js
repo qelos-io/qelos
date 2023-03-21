@@ -32,6 +32,7 @@ const configuration = new Configuration({
     colorsPalette: {
       mainColor: '#84a98c',
       secondaryColor: '#84a98c',
+      thirdColor: '#c6dccc',
       bgColor: '#2f3e46',
       bordersColor: '#354f52',
       linksColor: '#84a98c',
