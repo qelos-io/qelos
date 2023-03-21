@@ -16,7 +16,7 @@ function getUserIdIfExists(_id, tenant) {
 }
 
 function getUsersForAdmin(req: AuthRequest, res: Response): void {
-  const email = req.query.email?.toString().toLowerCase() || undefined;
+  const email = req.query.email?.toString().toLowerCase().trim().replace(/ /g, '+') || undefined;
 
   User
     .find({tenant: req.headers.tenant, email: req.query.exact ? email : new RegExp(email)})
