@@ -20,6 +20,7 @@ function loadAppConfig() {
         themeStylesUrl: config.metadata.themeStylesUrl || '',
         colorsPalette: {
           mainColor: '#84a98c',
+          textColor: '#000',
           secondaryColor: '#84a98c',
           thirdColor: '#c6dccc',
           negativeColor: '#fff',

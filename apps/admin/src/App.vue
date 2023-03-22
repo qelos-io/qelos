@@ -52,6 +52,7 @@ watch(() => {
       ${palette.bgColor ? `--body-bg: ${palette.bgColor};` : ''}
       ${palette.mainColor ? `--main-color: ${palette.mainColor};` : ''}
       --main-color-light: #d6eedd;
+      ${palette.textColor ? `--text-color: ${palette.textColor};` : ''}
       ${palette.secondaryColor ? `--secondary-color: ${palette.secondaryColor};` : ''}
       ${palette.thirdColor ? `--third-color: ${palette.thirdColor};` : '--third-color: #c6dccc;'}
       ${palette.linksColor ? `--link: ${palette.linksColor};` : ''}

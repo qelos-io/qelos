@@ -1,6 +1,7 @@
 <template>
   <div>
     <div class="color-wrapper"><FormInput title="Main Color" v-model="colors.mainColor" type="color"/></div>
+    <div class="color-wrapper"><FormInput title="Text Color" v-model="colors.textColor" type="color"/></div>
     <div class="color-wrapper"><FormInput title="Secondary Color" v-model="colors.secondaryColor" type="color"/></div>
     <div class="color-wrapper"><FormInput title="Third Color" v-model="colors.thirdColor" type="color"/></div>
     <div class="color-wrapper"><FormInput title="Negative Color" v-model="colors.negativeColor" type="color"/></div>
@@ -23,6 +24,7 @@ const props = defineProps({
 
 const colors = reactive({
   mainColor: '',
+  textColor: '',
   secondaryColor: '',
   thirdColor: '',
   bgColor: '',

@@ -25,7 +25,7 @@ textarea {
 
   .el-form-item__label {
     text-align: left;
-    color: var(--secondary-color)
+    color: var(--text-color)
   }
 }
 
@@ -94,7 +94,7 @@ textarea {
       }
 
       &:hover {
-        color: var(--secondary-color);
+        color: var(--text-color);
         border: 0;
       }
     }

@@ -31,6 +31,7 @@ const configuration = new Configuration({
 		websiteUrls: [HOST],
     colorsPalette: {
       mainColor: '#84a98c',
+      textColor: '#000',
       secondaryColor: '#84a98c',
       thirdColor: '#c6dccc',
       bgColor: '#2f3e46',

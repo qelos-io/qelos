@@ -79,7 +79,7 @@ h2 {
     }
 
     &:hover {
-      color: var(--secondary-color);
+      color: var(--text-color);
       border: 0;
     }
   }

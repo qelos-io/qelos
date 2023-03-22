@@ -10,6 +10,7 @@ export const PALETTES = [
     ],
     palette: {
       mainColor: '#264653',
+      textColor: '#000',
       secondaryColor: '#e9c46a',
       thirdColor: '#e7bc56',
       bgColor: '#e9c46a',
@@ -31,6 +32,7 @@ export const PALETTES = [
     ],
     palette: {
       mainColor: '#4a4e69',
+      textColor: '#000',
       secondaryColor: '#c9ada7',
       thirdColor: '#c59c93',
       bgColor: '#f2e9e4',
@@ -51,6 +53,7 @@ export const PALETTES = [
     ],
     palette: {
       mainColor: '#84a98c',
+      textColor: '#000',
       secondaryColor: '#84a98c',
       thirdColor: '#759b7d',
       bgColor: '#2f3e46',
