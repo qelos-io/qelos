@@ -343,7 +343,7 @@ export function getFrontendAuthorizationRoute(): RouteOptions {
             Object.keys(request.cookies || {}).forEach(key => {
               if (key.startsWith('token_')) {
                 const payload = jwt.decode(request.cookies[key]);
-                if (payload.tenant.identifier === tenant.identifier) {
+                if (payload && payload.tenant?.identifier === tenant?.identifier) {
                   reply.setCookie(key, '', {maxAge: 1})
                 }
               }
