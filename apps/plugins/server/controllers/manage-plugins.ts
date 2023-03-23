@@ -71,6 +71,9 @@ export function redirectToPluginMfe(req, res) {
         try {
           const url = data.returnUrl || atob(returnUrl);
           res.redirect(302, url);
+          if (!data.returnUrl) {
+            logger.log('plugin did not resolve a tokenized return url. plugins returned: ', data);
+          }
         } catch (err) {
           logger.error('error while redirecting to plugin', err, {data, pluginStatus: pluginRes?.status});
         }
