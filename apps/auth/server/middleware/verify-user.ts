@@ -19,7 +19,9 @@ import logger from '../services/logger';
 
 function oAuthVerify(req: AuthRequest, _res: Response, next: NextFunction): Promise<void> {
   // get the last part from a authorization header string like "bearer token-value"
-  const token = req.headers.authorization!.split(' ')[1];
+  const tokenHeader = req.headers.authorization || req.headers.Authorization
+
+  const token = tokenHeader!.split(' ')[1];
   const tenant = (req.headers.tenant = req.headers.tenant as string || '0');
 
   return verifyToken(token, tenant)
@@ -103,9 +105,11 @@ function setUserPayload(payload: any, req: AuthRequest, next: NextFunction) {
  *  The Auth Checker middleware function.
  */
 export default <RequestHandler>function verifyUser(req: AuthRequest, res: Response, next: NextFunction) {
-  if (req.cookies.token || req.signedCookies.token) {
+  const cookie = req.cookies.token || req.signedCookies.token;
+  const token = req.headers.authorization || req.headers.Authorization
+  if (cookie) {
     cookieVerify(req, res, next).catch(next);
-  } else if (req.headers.authorization) {
+  } else if (token) {
     oAuthVerify(req, res, next).catch(next);
   } else {
     next();

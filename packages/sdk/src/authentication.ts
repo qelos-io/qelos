@@ -111,7 +111,7 @@ export default class QlAuthentication extends BaseSDK {
       {
         method: 'post',
         headers: {
-          Authorization: 'Bearer ' + refreshToken
+          authorization: 'Bearer ' + refreshToken
         }
       })
       .then(data => {
