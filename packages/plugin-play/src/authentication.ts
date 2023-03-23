@@ -237,7 +237,7 @@ export function getCallbackRoute(): RouteOptions {
     onCallback(async ({user, returnUrl}, request) => {
       const code = Math.floor(Math.random() * 1000).toString();
       // set the code on cache manager
-      const email = user?.email || 'annonymous';
+      const email = user?.email || 'anonymous';
       await cacheManager.setItem(`${returnUrl}:${request.tenantPayload.sub}:${email}`, JSON.stringify({
         code,
         user,
