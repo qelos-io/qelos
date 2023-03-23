@@ -47,6 +47,7 @@ export function redirectToPluginMfe(req, res) {
   const {returnUrl = ''} = req.query || {}
   const protocol = isDev ? 'http://' : 'https://';
   const headers = {origin: `${protocol}${req.headers.tenanthost}`, ...req.headers};
+  headers.user = headers.user || req.user;
   Plugin.getPluginForRedirect(headers.tenant, req.params.pluginId)
     .then(async (plugin) => {
       if (!plugin) {

@@ -237,7 +237,8 @@ export function getCallbackRoute(): RouteOptions {
     onCallback(async ({user, returnUrl}, request) => {
       const code = Math.floor(Math.random() * 1000).toString();
       // set the code on cache manager
-      await cacheManager.setItem(`${returnUrl}:${request.tenantPayload.sub}:${user.email}`, JSON.stringify({
+      const email = user?.email || 'annonymous';
+      await cacheManager.setItem(`${returnUrl}:${request.tenantPayload.sub}:${email}`, JSON.stringify({
         code,
         user,
         created: Date.now(),
@@ -267,7 +268,7 @@ export function getCallbackRoute(): RouteOptions {
             returnUrl.searchParams.append('token', jwt.sign({
               user,
               tenant: request.tenantPayload
-            }, config.accessTokenSecret, {expiresIn: '10min'}));
+            }, config.accessTokenSecret, {expiresIn: '30min'}));
 
             return {
               returnUrl: returnUrl.href
