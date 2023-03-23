@@ -80,7 +80,8 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
     [...authService.proxies, ...contentService.proxies, ...assetsService.proxies, ...draftsService.proxies, ...pluginsService.proxies],
     require('cors')((req, callback) => {
       // TODO: support subdomains of host
-      if (!req.disableCors && req.header('Origin') === req.header.host) {
+      const host = req.header.host || req.headers.host;
+      if (!req.disableCors && req.header('Origin') === host) {
         callback(null, { credentials: true, origin: true });
       } else {
         callback(null, { credentials: false, origin: false });

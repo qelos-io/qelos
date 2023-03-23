@@ -72,6 +72,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
     setCookie(res, newToken, null, getRequestHost(req));
     setUserPayload(newPayload, req, next);
   } catch (e) {
+    logger.log('failed to handle cookie verification', e)
     next();
   }
 }
