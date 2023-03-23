@@ -7,7 +7,7 @@
         </el-icon>
       </el-button>
 
-      <el-dropdown>
+      <el-dropdown class="user-dropdown">
         <div class="el-dropdown-link user-welcome">
           <span v-html="greeting"/>
           <el-icon>
@@ -77,10 +77,15 @@ header {
 }
 
 .welcome {
+  width: 100%;
   margin-inline-start: auto;
   display: flex;
   align-items: center;
   cursor: pointer;
+}
+
+.user-dropdown {
+  margin-inline-start: auto;
 }
 
 .user-welcome {
