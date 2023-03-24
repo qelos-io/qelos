@@ -16,9 +16,10 @@ import {AuthRequest} from '../../types';
 import {cacheManager} from '../services/cache-manager';
 import {getRequestHost} from '../services/req-host';
 import logger from '../services/logger';
+import Logger from '../services/logger';
 
 function oAuthVerify(req: AuthRequest, _res: Response, next: NextFunction): Promise<void> {
-  // get the last part from a authorization header string like "bearer token-value"
+  // get the last part from an authorization header string like "bearer token-value"
   const tokenHeader = req.headers.authorization || req.headers.Authorization
 
   const token = tokenHeader!.split(' ')[1];
@@ -51,14 +52,22 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       return;
     }
     const newCookieIdentifier = getUniqueId();
-    const [user] = await Promise.all([
-      getUserIfTokenExists(
+    let user;
+    try {
+      user = await getUserIfTokenExists(
         payload.tenant,
         payload.sub,
         payload.tokenIdentifier
-      ),
-      setCookieAsProcessed(payload.tokenIdentifier)
-    ]);
+      )
+    } catch (e) {
+      if (await isCookieProcessed(payload.tokenIdentifier)) {
+        setUserPayload(payload, req, next);
+        return;
+      } else {
+        throw e;
+      }
+    }
+    setCookieAsProcessed(payload.tokenIdentifier).catch(Logger.log);
     await updateToken(
       user,
       'cookie',
