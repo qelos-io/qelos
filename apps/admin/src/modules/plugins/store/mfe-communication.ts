@@ -30,7 +30,12 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
 
   const events = [];
 
-  function dispatchEvents () {
+  function dispatchEvents() {
+    if (!iframe.value) {
+      events.length = 0;
+      return;
+    }
+
     iframe.value.contentWindow.postMessage({
       qelosHostname: location.origin,
       events,
@@ -38,7 +43,12 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
     events.length = 0;
   }
 
-  async function dispatch(eventName: string, payload?: any) {
+  async function dispatch(eventName: string, payload?: any, {immediate = false} = {}) {
+    if (immediate && iframe.value) {
+      events.push({eventName, payload});
+      dispatchEvents();
+      return;
+    }
     if (!iframe.value) {
       await nextTick();
     }
@@ -49,7 +59,7 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
   }
 
   function shutdownMfe() {
-    dispatch('shutdown')
+    dispatch('shutdown', null, {immediate: true});
   }
 
   function openMfeModal(modalName: string, props: any) {
