@@ -82,6 +82,23 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
     dispatch('routeChanged', cloned);
   }
 
+  async function reAuthorize({returnUrl}) {
+    const url = new URL(router.currentRoute.value.meta.mfeUrl as string);
+
+    url.searchParams.delete('returnUrl')
+    url.searchParams.set('returnUrl', returnUrl);
+
+    const res = await fetch(url, {
+      headers: {
+        Accept: 'application/json'
+      }
+    });
+    if (res.status === 200) {
+      const data = await res.json();
+      dispatch('reAuthorize', data);
+    }
+  }
+
   function onEventFromMfe({eventName, payload}) {
     switch (eventName) {
       case 'styleInterested':
@@ -101,6 +118,9 @@ export const useMfeCommunication = defineStore('mfe-communication', function use
         return;
       case 'openModal':
         openMfeModal(payload.openModal, payload.props);
+        return;
+      case 'reAuthorize':
+        reAuthorize(payload);
         return;
     }
   }

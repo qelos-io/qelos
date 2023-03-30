@@ -6,6 +6,8 @@ import {fetchPlugin} from '../services/plugins-call';
 import logger from '../services/logger';
 import {isDev} from '../../config';
 
+const protocol = isDev ? 'http://' : 'https://';
+
 export function getAllPlugins(req, res) {
   const select = req.user?.hasPluginPrivileges ? '-token -auth' : 'name description callbackUrl microFrontends injectables navBarGroups'
   Plugin.find({tenant: req.headers.tenant}).select(select).lean().exec()
@@ -45,7 +47,6 @@ async function fetchPluginCallback({headers, plugin, callbackUrl, hard = false})
 
 export function redirectToPluginMfe(req, res) {
   const {returnUrl = ''} = req.query || {}
-  const protocol = isDev ? 'http://' : 'https://';
   const headers = {origin: `${protocol}${req.headers.tenanthost}`, ...req.headers};
   headers.user = headers.user || req.user;
   Plugin.getPluginForRedirect(headers.tenant, req.params.pluginId)
@@ -71,7 +72,11 @@ export function redirectToPluginMfe(req, res) {
 
         try {
           const url = data.returnUrl || atob(returnUrl);
-          res.redirect(302, url);
+          if (headers.accept === 'application/json') {
+            res.json({code: data.code, token: data.token})
+          } else {
+            res.redirect(302, url);
+          }
           if (!data.returnUrl) {
             logger.log('plugin did not resolve a tokenized return url. plugins returned: ', data);
           }

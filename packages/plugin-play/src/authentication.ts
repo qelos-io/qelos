@@ -264,13 +264,16 @@ export function getCallbackRoute(): RouteOptions {
           const code = await handler({user, returnUrl: returnUrl.href}, request)
 
           if (code && typeof code === 'string') {
-            returnUrl.searchParams.append('code', code);
-            returnUrl.searchParams.append('token', jwt.sign({
+            const token = jwt.sign({
               user,
               tenant: request.tenantPayload
-            }, config.accessTokenSecret, {expiresIn: '30min'}));
+            }, config.accessTokenSecret, {expiresIn: '30min'});
+            returnUrl.searchParams.append('code', code);
+            returnUrl.searchParams.append('token', token);
 
             return {
+              code,
+              token,
               returnUrl: returnUrl.href
             }
           }
