@@ -1,6 +1,6 @@
 {
   "name": "@qelos/admin",
-  "version": "3.2.7",
+  "version": "3.2.8",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
