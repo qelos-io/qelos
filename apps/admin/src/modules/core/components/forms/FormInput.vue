@@ -4,7 +4,7 @@
       <small v-if="label"> ({{ $t(label) }})</small>
       <small v-else-if="gap">&nbsp;</small>
       <slot name="pre"/>
-      <el-input-number v-if="type === 'number'" v-on="listeners" :model-value="modelValue"/>
+      <el-input-number v-if="type === 'number'" v-on="listeners" :model-value="modelValue as number"/>
       <AssetUploader v-else-if="type === 'upload'" v-on="listeners" :value="modelValue" class="asset-upload"/>
       <el-input v-else v-on="listeners" :model-value="modelValue" :placeholder="placeholder" :native-type="type"
                 :type="type"/>

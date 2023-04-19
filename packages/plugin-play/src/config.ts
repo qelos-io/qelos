@@ -8,6 +8,7 @@ const config = {
   host: host,
   internalHost: process.env.INTERNAL_HOST || host,
   dev: process.env.NODE_ENV !== 'production',
+  allowedTenants: process.env.ALLOWED_TENANTS?.split(',') || [],
   refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
   accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
   userPayloadSecret: process.env.USER_PAYLOAD_SECRET,

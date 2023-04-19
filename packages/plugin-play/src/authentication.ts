@@ -116,6 +116,15 @@ export function getRegisterRoute(): RouteOptions {
   const sdk = getSdk();
   const usersSdk = sdk.users;
 
+  if (config.allowedTenants?.length) {
+    onNewTenant(async ({appUrl}) => {
+      const hostname = getHostname(appUrl);
+      if (!config.allowedTenants.includes(hostname)) {
+        throw new ResponseError('your tenant is not allowed for this plugin');
+      }
+    })
+  }
+
   if (config.qelosUrl) {
     onNewTenant(async ({email, password, appUrl}) => {
       const tenantSdk = getSdkForUrl(appUrl)
