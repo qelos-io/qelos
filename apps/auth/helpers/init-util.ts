@@ -10,7 +10,8 @@ export function init() {
   const user = new User({
     tenant: process.env.TENANT,
     email: process.env.EMAIL || "test@test.com",
-    name: "Administrator",
+    firstName: "Administrator",
+    lastName: "The Ruller",
     password: process.env.PASSWORD || "admin",
     roles: [privilegedRoles[0]],
   });
