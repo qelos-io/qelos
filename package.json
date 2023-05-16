@@ -9,7 +9,7 @@
     "build": "npm run prebuild && lerna run build",
     "clean": "lerna clean --yes",
     "dev": "env-cmd lerna run dev --parallel",
-    "populate-db": "echo \"this is not the script\"",
+    "populate-db": "cd apps/auth && node helpers/init.js",
     "pack-package": "lerna exec npm pack",
     "rename-pack": "lerna exec node ../../tools/bundler/rename-pack.js",
     "test": "lerna run test --parallel"
