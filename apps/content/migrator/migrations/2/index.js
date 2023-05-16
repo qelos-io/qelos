@@ -44,7 +44,7 @@ function migrate () {
         negativeColor: '#fff',
         bgColor: '#2f3e46',
         bordersColor: '#354f52',
-        inputsTextColor: '#eee',
+        inputsTextColor: '#000',
         inputsBgColor: '#d6eedd',
         linksColor: '#84a98c',
         navigationBgColor: '#354f52',
