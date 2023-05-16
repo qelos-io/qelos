@@ -3,7 +3,7 @@ const editorsRoles = process.env.EDITORS_ROLES ? process.env.EDITORS_ROLES.split
 
 module.exports = {
   port: process.env.PORT || 9001,
-  mongoUri: process.env.MONGO_URI || 'mongodb://localhost/greenpress',
+  mongoUri: process.env.MONGO_URI || 'mongodb://localhost/qelos',
   authService: {
     protocol: process.env.AUTH_SERVICE_PROTOCOL || 'http',
     url: process.env.AUTH_SERVICE_URL || 'localhost',

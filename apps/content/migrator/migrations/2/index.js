@@ -25,15 +25,30 @@ function migrate () {
     key: appConfiguration,
     public: true,
     metadata: {
-      name: 'greenpress',
+      name: 'QELOS',
       language: 'en',
       direction: 'ltr',
       logoUrl: '/logo.png',
-      description: 'Blogs and content sites open-source platform, built for the 21st century, using micro-services and best common technologies.',
-      slogan: 'amazing blog platform',
-      keywords: 'blog, platform, open-source, node, nuxt, vue',
-      theme: 'damal',
-      themeStylesUrl: ''
+      description: 'building SaaS products',
+      slogan: 'building platforms with ease',
+      keywords: 'saas, platform, micro-frontends, vue',
+      themeStylesUrl: '',
+      homeScreen: '/',
+      scriptUrl: '',
+      websiteUrls: ['localhost'],
+      colorsPalette: {
+        mainColor: '#84a98c',
+        textColor: '#000',
+        secondaryColor: '#84a98c',
+        thirdColor: '#c6dccc',
+        negativeColor: '#fff',
+        bgColor: '#2f3e46',
+        bordersColor: '#354f52',
+        inputsTextColor: '#000',
+        inputsBgColor: '#d6eedd',
+        linksColor: '#84a98c',
+        navigationBgColor: '#354f52',
+      }
     }
   })
   return row.save()
