@@ -30,14 +30,14 @@ export interface ICrudOptions<ResourcePublicData, ResourceInsertData> {
     iconSvg?: string;
     priority?: number;
   },
-  screens: {
+  screens?: {
     list: Screen;
     create: Screen;
     edit: Screen;
   },
   publicKeys?: string[];
   verify?: (request: FastifyRequest, reply: FastifyReply) => Promise<any>;
-  createOne: (body: Partial<ResourceInsertData>, request: FastifyRequest, reply: FastifyReply) => (Promise<ResourcePublicData>),
+  createOne: (body: Partial<ResourceInsertData>, request: FastifyRequest, reply: FastifyReply) => (any | Promise<ResourcePublicData>),
   readOne: (id: string, request: FastifyRequest, reply: FastifyReply) => (Promise<ResourcePublicData>);
   readMany: (query: Record<string, string | string[]>, request: FastifyRequest, reply: FastifyReply) => (Promise<ResourcePublicData[]>);
   updateOne: (id: string, body: Partial<ResourceInsertData>, request: FastifyRequest, reply: FastifyReply) => (Promise<ResourcePublicData>);

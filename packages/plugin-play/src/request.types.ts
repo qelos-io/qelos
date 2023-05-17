@@ -1,6 +1,12 @@
 import {StandardPayload} from './handlers';
 
-export type RequestUser = { _id, email, firstName, lastName };
+export type RequestUser = {
+  _id: string,
+  email: string,
+  firstName: string,
+  lastName: string,
+  roles: string[]
+};
 
 declare module 'fastify' {
   interface FastifyRequest {
