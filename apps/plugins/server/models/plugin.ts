@@ -35,6 +35,8 @@ export interface IPlugin extends Document {
     active: boolean;
     opened: boolean;
     roles: string[],
+    crud?: string;
+    use?: string;
     route?: {
       name: string;
       path: string;
@@ -50,6 +52,15 @@ export interface IPlugin extends Document {
       name: string;
       params: string[] | Record<string, string>; // schema / hints for props
       size: 'sm' | 'md' | 'lg' | 'full'
+    }
+  }[]
+  cruds: {
+    name: string,
+    display: {
+      name: string;
+      plural: string;
+      capitalized: string;
+      capitalizedPlural: string;
     }
   }[]
 
@@ -68,6 +79,8 @@ const MicroFrontendSchema = new mongoose.Schema({
   },
   description: String,
   manifestUrl: String,
+  crud: String,
+  use: String,
   active: {
     type: Boolean,
     default: true,
@@ -176,6 +189,15 @@ const PluginSchema = new mongoose.Schema<IPlugin>({
     iconName: String,
     iconSvg: String,
     priority: Number
+  }],
+  cruds: [{
+    name: {type: String, required: true},
+    display: {
+      name: String,
+      plural: String,
+      capitalized: String,
+      capitalizedPlural: String,
+    }
   }]
 });
 

@@ -6,7 +6,16 @@ export interface IMicroFrontend {
   pluginApiPath?: string;
   url?: string;
   use?: string;
-  fetchUrl?: string;
+  crud?: string;
+  crudData?: {
+    name: string,
+    display: {
+      name: string;
+      plural: string;
+      capitalized: string;
+      capitalizedPlural: string;
+    }
+  }
   active: boolean;
   opened: boolean;
   roles: string[],
@@ -53,6 +62,15 @@ export interface IPlugin {
     kind?: string,
     eventName?: string,
     hookUrl: string;
+  }[]
+  cruds: {
+    name: string,
+    display: {
+      name: string;
+      plural: string;
+      capitalized: string;
+      capitalizedPlural: string;
+    }
   }[]
   navBarGroups?: { key: string, name: string, iconName?: string, iconSvg?: string, priority?: number }[]
   microFrontends: IMicroFrontend[],

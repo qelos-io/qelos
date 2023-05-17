@@ -1,3 +1,5 @@
+import {Crud} from './crud.types';
+
 const pkg = require(process.cwd() + '/package.json');
 
 export const manifest = {
@@ -16,6 +18,7 @@ export const manifest = {
   navBarGroups: [],
   microFrontends: [],
   injectables: [],
+  cruds: [] as Crud[],
   authAcquire: {
     refreshTokenUrl: '/api/token/refresh',
     refreshTokenKey: 'refresh_token',
@@ -27,6 +30,6 @@ export type NavBarGroup = { key: string, name: string, iconName?: string, iconSv
 
 export type ManifestOptions =
   Partial<typeof manifest>
-  & { appUrl?: string, navBarGroups?: NavBarGroup[] };
+  & { appUrl?: string, navBarGroups?: NavBarGroup[], cruds?: Crud[] };
 
 export default manifest;

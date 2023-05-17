@@ -43,6 +43,9 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
           .some(role => role === '*' || userRoles.value.includes(role)))
       )
         .forEach(mfe => {
+          if (mfe.crud) {
+            mfe.crudData = plugin.cruds.find(crud => crud.name === mfe.crud);
+          }
           if (mfe.route) {
             mfe.callbackUrl = plugin.callbackUrl;
             mfe.pluginId = plugin._id;
@@ -102,6 +105,8 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
           route.meta = {
             roles,
             mfe,
+            crudBasePath: `/api/play/${mfe.pluginApiPath}/${mfe.crudData.name}`,
+            crud: mfe.crudData,
           }
         }
         router.addRoute('playPlugin', route)
