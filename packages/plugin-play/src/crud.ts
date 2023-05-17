@@ -6,10 +6,21 @@ import manifest from './manifest';
 import {Crud, ICrudOptions} from './crud.types';
 import {addGroupedMicroFrontends} from './micro-frontends';
 
+function getPlural(word: string) {
+  const lastChar = word[word.length - 1].toLowerCase();
+  if (['x', 'h', 's'].includes(lastChar)) {
+    return word + 'es';
+  }
+  if (lastChar === 'y') {
+    return word.substring(0, word.length - 1) + 'ies';
+  }
+  return word + 's';
+}
+
 function getDisplayNames(name: string) {
-  const plural = name.toLowerCase() + (name.endsWith('e') ? 's' : 'es');
+  const plural = getPlural(name.toLowerCase());
   const capitalized = name.split(' ').map(word => word[0].toUpperCase() + word.slice(1).toLowerCase()).join(' ');
-  const capitalizedPlural = capitalized + (capitalized.endsWith('e') ? 's' : 'es');
+  const capitalizedPlural = getPlural(capitalized);
 
   return {
     name,
@@ -57,7 +68,7 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
     nav: options.nav || {}
   };
 
-  function getPublicData(item) {
+  function getPublicData(item = {}) {
     const exposed = {[crudOptions.identifierKey]: item[crudOptions.identifierKey]}
     crudOptions.publicKeys.forEach(key => exposed[key] = item[key]);
     return exposed;
