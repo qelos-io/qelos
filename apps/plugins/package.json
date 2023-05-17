@@ -1,6 +1,6 @@
 {
   "name": "@qelos/plugins",
-  "version": "3.2.8",
+  "version": "3.3.0",
   "license": "MIT",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "description": "manage plugins system",
