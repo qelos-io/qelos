@@ -1,5 +1,5 @@
 <template>
-  <h1>Rows List Page</h1>
+  <h1>Basic Form Page</h1>
   <div>route data: {{$route.meta}}</div>
 </template>
 

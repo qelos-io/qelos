@@ -1,20 +1,12 @@
 import manifest, {NavBarGroup} from './manifest';
-import {addProxyEndpoint, QelosRouteParams} from './endpoints';
 
 export interface IframeMicroFrontend extends GlobalMicroFrontend {
   url: string;
 }
 
-export interface PreDesignedMicroFrontendOptions
-  extends Pick<QelosRouteParams, 'verifyToken'>,
-    Partial<Pick<QelosRouteParams, 'handler'>>,
-    GlobalMicroFrontend {
+interface PreDesignedMicroFrontend extends GlobalMicroFrontend {
   use: string;
-  fetchUrl?: string;
-}
-
-interface PreDesignedMicroFrontend extends Omit<PreDesignedMicroFrontendOptions, 'handler' | 'verifyToken'> {
-  fetchUrl: string;
+  crud: string;
 }
 
 export interface GlobalMicroFrontend {
@@ -40,35 +32,11 @@ export interface GlobalMicroFrontend {
   }
 }
 
-export type MicroFrontendOptions = IframeMicroFrontend | PreDesignedMicroFrontendOptions
+export type MicroFrontendOptions = IframeMicroFrontend | PreDesignedMicroFrontend
 export type MicroFrontend = IframeMicroFrontend | PreDesignedMicroFrontend
 
 export function addMicroFrontend(mfe: MicroFrontendOptions) {
-  mfe = {...mfe}
-  let manifestMfe: MicroFrontend;
-  if ('use' in mfe) {
-    const verifyToken = mfe.verifyToken || true;
-    delete mfe.verifyToken;
-
-    if ('handler' in mfe) {
-      const fetchUrl = mfe.fetchUrl || btoa(mfe.name);
-      const handler = mfe.handler;
-      delete mfe.handler;
-      addProxyEndpoint(fetchUrl, {
-        handler,
-        verifyToken,
-      });
-      manifestMfe = {
-        ...mfe as PreDesignedMicroFrontend,
-        fetchUrl
-      }
-    } else if ('fetchUrl' in mfe) {
-      manifestMfe = mfe as PreDesignedMicroFrontend;
-    }
-  } else {
-    manifestMfe = mfe;
-  }
-  manifest.microFrontends.push(manifestMfe);
+  manifest.microFrontends.push({...mfe});
 }
 
 export function addGroupedMicroFrontends(group: NavBarGroup, mfeArray: MicroFrontendOptions[]) {

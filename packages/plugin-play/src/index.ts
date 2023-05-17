@@ -15,6 +15,7 @@ export {addEndpoint, addProxyEndpoint, addInternalEndpoint} from './endpoints'
 export {getSdkForTenant, getSdk, getSdkForUrl} from './sdk';
 export {addGroupedMicroFrontends, addMicroFrontend, MicroFrontend} from './micro-frontends';
 export {addInjectable, Injectable} from './injectables';
+export {createCrud} from './crud';
 export {
   logger
 }

@@ -11,7 +11,7 @@ export function init() {
     tenant: process.env.TENANT,
     email: process.env.EMAIL || "test@test.com",
     firstName: "Administrator",
-    lastName: "The Ruller",
+    lastName: "The Ruler",
     password: process.env.PASSWORD || "admin",
     roles: [privilegedRoles[0]],
   });
