@@ -177,7 +177,7 @@ function playEndpoints() {
       ...routeOptions,
     };
     if (routeOptions.verifyToken) {
-      route.preHandler = path.startsWith(manifest.apiPath) ? verifyAccessToken : verifyCookieToken
+      route.preHandler = path.startsWith(manifest.proxyPath) ? verifyAccessToken : verifyCookieToken
     }
     getApp().route(route);
   })

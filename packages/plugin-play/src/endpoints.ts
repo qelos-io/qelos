@@ -10,7 +10,7 @@ export const endpoints = new Map<string, QelosRouteParams>()
 export const internalEndpoints = new Map<string, RouteOptions>()
 
 export function addProxyEndpoint(path: string, options: Partial<QelosRouteParams>) {
-  endpoints.set(join(manifest.apiPath, path), {
+  endpoints.set(join(manifest.proxyPath, path), {
     ...options,
     url: path,
     method: options.method || 'GET',
