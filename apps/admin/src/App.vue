@@ -35,6 +35,7 @@ watch(() => {
     document.body.prepend(appStyle);
   }
   const importCss = cssUrl ? `@import "${cssUrl}";` : '';
+  palette = palette || {};
 
   appStyle.innerHTML = `
     ${importCss}

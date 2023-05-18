@@ -19,7 +19,7 @@ function getUsersForAdmin(req: AuthRequest, res: Response): void {
   const email = req.query.email?.toString().toLowerCase().trim().replace(/ /g, '+') || undefined;
 
   User
-    .find({tenant: req.headers.tenant, email: req.query.exact ? email : new RegExp(email)})
+    .find({tenant: req.headers.tenant, email: req.query.exact ? email : new RegExp(email, 'i')})
     .select(privilegedUserFields)
     .lean()
     .exec()

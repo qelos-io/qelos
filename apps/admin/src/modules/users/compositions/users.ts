@@ -2,6 +2,8 @@ import { useConfirmAction } from '../../core/compositions/confirm-action'
 import usersService from '../../../services/users-service'
 import { useDispatcher } from '../../core/compositions/dispatcher'
 import { useSubmitting } from '../../core/compositions/submitting'
+import {useRoute} from 'vue-router';
+import {watch} from 'vue';
 
 export function useEditUsers(userId) {
   const { result: user } = useDispatcher(() => usersService.getOne(userId))
@@ -46,6 +48,10 @@ export function useRemoveUser(onSuccess) {
  * @returns {{users: Ref<Array<any>>}}
  */
 export function useUsersList() {
-  const { result: users } = useDispatcher(() => usersService.getAll(), [])
+  const route = useRoute();
+
+  const { result: users, retry } = useDispatcher(() => usersService.getAll({email: route.query.q}), [])
+  watch(() => route.query.email, retry);
+
   return { users }
 }

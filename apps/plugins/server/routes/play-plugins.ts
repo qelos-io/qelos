@@ -3,6 +3,7 @@ import {getPluginProxy} from '../controllers/play-plugins';
 import {createProxyMiddleware} from 'http-proxy-middleware';
 import {proxyApiPrefix} from '../../config';
 import {IPlugin} from '../models/plugin';
+import httpAgent from '../services/http-agent';
 
 declare module 'express' {
   interface Request {
@@ -37,6 +38,7 @@ export function playPlugins() {
 
   router.use(proxyApiPrefix, loadPluginRequest, createProxyMiddleware({
     changeOrigin: true,
+    agent: httpAgent,
     pathRewrite(path, req) {
       return path.split(req.apiPath)[1];
     },

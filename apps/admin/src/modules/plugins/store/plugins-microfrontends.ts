@@ -43,6 +43,9 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
           .some(role => role === '*' || userRoles.value.includes(role)))
       )
         .forEach(mfe => {
+          if (mfe.url === '-') {
+            delete mfe.url;
+          }
           if (mfe.crud) {
             mfe.crudData = plugin.cruds.find(crud => crud.name === mfe.crud);
           }
@@ -91,7 +94,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         const route = {
           name: `plugin.${mfe.route.name}`,
           path: mfe.route.path,
-          component: mfe.url ? MicroFrontendPage : async () => (await import(`@/pre-designed/${mfe.use}.vue`)).default,
+          component: mfe.url ? MicroFrontendPage : async () => (await import(`../../../pre-designed/${mfe.use}.vue`)).default,
           meta: null
         }
         const roles = mfe.roles || mfe.route.roles || ['*'];
@@ -99,13 +102,13 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
           route.meta = {
             roles,
             mfeUrl: getMfeUrl(mfe),
-            origin: new URL(mfe.url).origin
+            origin: mfe.url ? new URL(mfe.url).origin : undefined
           }
         } else {
           route.meta = {
             roles,
             mfe,
-            crudBasePath: `/api/play/${mfe.pluginApiPath}/${mfe.crudData.name}`,
+            crudBasePath: `/api/on/${mfe.pluginApiPath}/${mfe.crudData.name}`,
             crud: mfe.crudData,
           }
         }

@@ -78,7 +78,7 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
     if (err instanceof ResponseError) {
       logger.error(err);
       reply.statusCode = err.status;
-      return err.responseMessage;
+      return {message: err.responseMessage};
     }
     throw err;
   }

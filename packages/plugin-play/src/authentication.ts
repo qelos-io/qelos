@@ -9,6 +9,7 @@ import {ResponseError} from './response-error';
 import logger from './logger';
 import {atob} from 'buffer';
 import {cacheManager} from './cache-manager';
+import {RequestUser} from './request.types';
 
 const notAuthorized = {message: 'you are not authorized'};
 
@@ -31,6 +32,7 @@ export async function verifyAccessToken(req: FastifyRequest): Promise<void> {
 
   try {
     req.tenantPayload = jwt.verify(token, config.accessTokenSecret);
+    req.user = req.headers.user ? JSON.parse(req.headers.user as string) as RequestUser : null;
   } catch (err) {
     logger.error('error in verify access token', err);
     throw new Error('authorization token was not valid');

@@ -124,7 +124,8 @@ export async function enrichPluginWithManifest(plugin: IPlugin, {
   plugin.microFrontends = manifest.microFrontends?.map(mfe => {
     return {
       ...mfe,
-      url: mfe.url.startsWith('http') ? mfe.url : new URL(mfe.url, manifest.appUrl).href,
+      roles: mfe.roles?.length ? mfe.roles : ['*'],
+      url: mfe.url ? (mfe.url.startsWith('http') ? mfe.url : new URL(mfe.url, manifest.appUrl).href) : '-',
     }
   });
   plugin.markModified('microFrontends');
