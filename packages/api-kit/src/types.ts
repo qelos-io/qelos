@@ -2,7 +2,7 @@ import type { Request } from 'express';
 
 export interface ApiConfig {
   cors: boolean;
-  bodyParser: BodyParserType;
+  bodyParser?: BodyParserType | false | null;
   port: string | number;
   ip: string;
   showLogs: boolean
