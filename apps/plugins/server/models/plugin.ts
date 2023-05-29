@@ -61,7 +61,9 @@ export interface IPlugin extends Document {
       plural: string;
       capitalized: string;
       capitalizedPlural: string;
-    }
+    },
+    identifierKey: string;
+    schema: any;
   }[]
 
   injectables: Array<{ name?: string, description?: string, html: string, active: boolean }>
@@ -197,7 +199,9 @@ const PluginSchema = new mongoose.Schema<IPlugin>({
       plural: String,
       capitalized: String,
       capitalizedPlural: String,
-    }
+    },
+    identifierKey: String,
+    schema: mongoose.SchemaTypes.Mixed,
   }]
 });
 

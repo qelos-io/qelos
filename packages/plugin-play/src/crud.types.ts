@@ -8,13 +8,28 @@ export type Crud = {
     plural: string;
     capitalized: string;
     capitalizedPlural: string;
-  }
+  },
+  identifierKey: string,
+  schema?: any,
 }
 
 export interface Screen {
   use?: string;
   structure?: string;
 }
+
+export interface ResourceProperty<T = any> {
+  public?: boolean;
+  hideInList?: boolean;
+  type?: String | Number | Boolean | Object | null | Array<T>;
+  schema?: ResourceSchema | ResourceProperty<T>;
+  validate?: (value: any) => boolean | Promise<boolean>;
+  options?: Array<any>;
+  ref?: string;
+}
+
+// @ts-ignore
+export type ResourceSchema = Record<string, ResourceProperty>;
 
 export interface ICrudOptions<ResourcePublicData, ResourceInsertData> {
   name?: string;
@@ -35,7 +50,7 @@ export interface ICrudOptions<ResourcePublicData, ResourceInsertData> {
     create: Screen;
     edit: Screen;
   },
-  publicKeys?: string[];
+  schema?: ResourceSchema,
   verify?: (request: FastifyRequest, reply: FastifyReply) => Promise<any>;
   createOne: (body: Partial<ResourceInsertData>, request: FastifyRequest, reply: FastifyReply) => (any | Promise<ResourcePublicData>),
   readOne: (id: string, request: FastifyRequest, reply: FastifyReply) => (Promise<ResourcePublicData>);

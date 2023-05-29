@@ -18,7 +18,7 @@ export function getCrud<T = any>(path: string) {
           return res.status >= 300 ? Promise.reject(res) : res
         })
     },
-    update(id: string | number, updatedData: any): Promise<T> {
+    update<Z = Omit<T, '_id'>>(id: string | number, updatedData: Partial<T>): Promise<T> {
       return api.put(`${path}/${id}`, updatedData).then(getCallData)
     }
   }

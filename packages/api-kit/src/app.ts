@@ -4,9 +4,9 @@ import type {ApiConfig, BodyParserType} from './types';
 import shutdown from './shutdown';
 
 
-export const config = (updatedConfig = config): ApiConfig => {
+export const config = (updatedConfig = _config): ApiConfig => {
   _config = {..._config, ...updatedConfig};
-  return config;
+  return _config;
 }
 export const app = () => _app || createApp();
 export const start = startApp;
@@ -43,6 +43,10 @@ function configureApp(app: Express) {
   if (_config.bodyParser) {
     app.use(express[_config.bodyParser]())
   }
+}
+
+export function getBodyParser() {
+  return express.json();
 }
 
 function startApp(serviceName = 'APP', port = _config.port, ip = _config.ip): Promise<void> {

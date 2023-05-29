@@ -29,6 +29,10 @@
   ::v-deep(*) {
   }
 
+  ::v-slotted(.metadata) {
+    margin: 10px;
+  }
+
   h4 {
     padding: 10px 10px;
     font-size: 18px;

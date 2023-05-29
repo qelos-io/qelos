@@ -1,4 +1,4 @@
-import {getRouter, verifyUser, populateUser} from '@qelos/api-kit';
+import {getRouter, verifyUser, populateUser, getBodyParser} from '@qelos/api-kit';
 import {
   createPlugin,
   getAllPlugins,
@@ -12,7 +12,7 @@ import {checkEditPrivileged, onlyEditPrivileged, onlyViewPrivileged} from '../mi
 export function managePlugins() {
   const router = getRouter();
 
-  const AUTHENTICATION_MIDDLEWARES = [populateUser, verifyUser];
+  const AUTHENTICATION_MIDDLEWARES = [getBodyParser(), populateUser, verifyUser];
 
   router
     .get('/api/plugins', populateUser, checkEditPrivileged, getAllPlugins)

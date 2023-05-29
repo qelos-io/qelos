@@ -172,12 +172,12 @@ function playEndpoints() {
   } as FastifyCookieOptions);
   getApp().route(getFrontendAuthorizationRoute());
   getApp().route(getFrontendUnAuthorizationRoute());
-  endpoints.forEach((routeOptions, path) => {
+  endpoints.forEach((routeOptions) => {
     const route = {
       ...routeOptions,
     };
     if (routeOptions.verifyToken) {
-      route.preHandler = path.startsWith(manifest.proxyPath) ? verifyAccessToken : verifyCookieToken
+      route.preHandler = routeOptions.url.startsWith(manifest.proxyPath) ? verifyAccessToken : verifyCookieToken
     }
     getApp().route(route);
   })

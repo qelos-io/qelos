@@ -14,19 +14,22 @@
   },
   "main": "server.js",
   "dependencies": {
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "vue3-runtime-template": "^1.0.2"
   },
   "devDependencies": {
     "@element-plus/icons-vue": "^1.1.1",
     "@greenpress/gp-editor": "^2.1.1",
     "@qelos/sdk": "^3.2.7",
     "@qelos/view-builder": "^3.2.2",
+    "@types/remarkable": "^2.0.3",
     "@vitejs/plugin-vue": "^2.2.4",
     "axios": "^0.24.0",
     "element-plus": "^1.2.0-beta.6",
     "json-editor-vue": "^0.10.2",
     "lodash.debounce": "^4.0.8",
     "pinia": "^2.0.14",
+    "remarkable": "^2.0.1",
     "sass": "^1.45.0",
     "typescript": "^4.9.5",
     "unplugin-vue-components": "^0.17.9",
@@ -41,6 +44,9 @@
   "license": "MIT",
   "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594",
   "bundledDependencies": [
+    "express"
+  ],
+  "bundleDependencies": [
     "express"
   ]
 }
