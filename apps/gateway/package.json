@@ -1,6 +1,6 @@
 {
   "name": "@qelos/gateway",
-  "version": "3.2.7",
+  "version": "3.3.5",
   "license": "MIT",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "description": "Qelos pure gateway",
@@ -20,7 +20,7 @@
   },
   "main": "dist/index.js",
   "dependencies": {
-    "@qelos/api-kit": "^3.2.1",
+    "@qelos/api-kit": "^3.3.5",
     "@qelos/api-proxy-middleware": "^3.2.7",
     "@qelos/cache-manager": "^3.2.1"
   },
