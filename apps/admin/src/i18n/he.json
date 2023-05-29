@@ -88,5 +88,6 @@
   "Content": "תוכן",
   "Update profile": "עדכן פרופיל",
   "{amount} Posts": "אין פוסטים | פוסט אחד | {amount} פוסטים",
-  "{amount} Blocks": "אין בלוקים | בלוק אחד | {amount} בלוקים"
+  "{amount} Blocks": "אין בלוקים | בלוק אחד | {amount} בלוקים",
+  "Search user by email": "חפש משתמש לפי כתובת דואר אלקטרוני"
 }

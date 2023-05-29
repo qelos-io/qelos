@@ -1,46 +1,50 @@
-import { useConfirmAction } from '../../core/compositions/confirm-action'
-import usersService from '../../../services/users-service'
-import { useDispatcher } from '../../core/compositions/dispatcher'
-import { useSubmitting } from '../../core/compositions/submitting'
-import {useRoute} from 'vue-router';
-import {watch} from 'vue';
+import { useConfirmAction } from "../../core/compositions/confirm-action";
+import usersService from "../../../services/users-service";
+import { useDispatcher } from "../../core/compositions/dispatcher";
+import { useSubmitting } from "../../core/compositions/submitting";
+import { useRoute } from "vue-router";
+import { watch } from "vue";
 
 export function useEditUsers(userId) {
-  const { result: user } = useDispatcher(() => usersService.getOne(userId))
-  const { submit, submitting } = useSubmitting((payload) => usersService.update(userId, payload), {
-    success: 'User updated successfully',
-    error: 'Failed to update user'
-  })
+  const { result: user } = useDispatcher(() => usersService.getOne(userId));
+  const { submit, submitting } = useSubmitting(
+    (payload) => usersService.update(userId, payload),
+    {
+      success: "User updated successfully",
+      error: "Failed to update user",
+    }
+  );
   return {
     user,
     updateUser: submit,
-    submitting
-  }
+    submitting,
+  };
 }
 
 export function useCreateUser() {
   const { submit, submitting } = useSubmitting(usersService.create, {
-    success: 'User created successfully',
-    error: 'Failed to create user'
-  })
+    success: "User created successfully",
+    error: "Failed to create user",
+  });
   return {
     createUser: submit,
-    submitting
-  }
+    submitting,
+  };
 }
 
 export function useRemoveUser(onSuccess) {
   const { submit, submitting: removing } = useSubmitting(
     (id) => usersService.remove(id).then(() => onSuccess(id)),
     {
-      success: 'User removed successfully',
-      error: 'Failed to remove user'
-    })
+      success: "User removed successfully",
+      error: "Failed to remove user",
+    }
+  );
 
   return {
-    remove: useConfirmAction(user => submit(user._id)),
-    removing
-  }
+    remove: useConfirmAction((user) => submit(user._id)),
+    removing,
+  };
 }
 
 /**
@@ -50,8 +54,11 @@ export function useRemoveUser(onSuccess) {
 export function useUsersList() {
   const route = useRoute();
 
-  const { result: users, retry } = useDispatcher(() => usersService.getAll({email: route.query.q}), [])
-  watch(() => route.query.email, retry);
+  const { result: users, retry } = useDispatcher(
+    () => usersService.getAll({ email: route.query.q }),
+    []
+  );
+  watch(() => route.query.q, retry);
 
-  return { users }
+  return { users };
 }
