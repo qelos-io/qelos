@@ -1,5 +1,6 @@
 <template>
   <div class="gp-item">
+    <LiveEditColorOpener v-if="isAdmin" color="negativeColor"/>
     <h4 v-if="$slots.title">
       <slot name="title"/>
     </h4>
@@ -20,6 +21,7 @@
   display: flex;
   flex-direction: column;
   transition: box-shadow 0.2s linear;
+  position: relative;
 
   &:hover {
     opacity: 0.9;
@@ -50,3 +52,7 @@
   }
 }
 </style>
+<script setup lang="ts">
+import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
+import {isAdmin} from '@/modules/core/store/auth';
+</script>

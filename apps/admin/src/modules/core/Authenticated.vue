@@ -3,14 +3,17 @@
     <Navigation class="navigation" :opened="navigationOpened" @close="navigationOpened = false"/>
     <div class="admin-content">
       <Header class="header" @open="navigationOpened = true"/>
-      <router-view class="main"/>
+      <div class="main">
+        <LiveEditColorOpener color="bgColor"/>
+        <router-view/>
+      </div>
       <AssetsDetailsPanel v-if="isPrivilegedUser"/>
     </div>
   </div>
   <template v-if="openModals?.length">
     <MicroFrontendModal v-for="{mfe, props} in openModals" :key="mfe.name" :mfe="mfe" :props="props"/>
   </template>
-
+  <LiveEditManager/>
 </template>
 
 <script lang="ts" setup>
@@ -23,6 +26,8 @@ import {useRouter} from 'vue-router'
 import {isPrivilegedUser} from '@/modules/core/store/auth';
 import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
 import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.vue';
+import LiveEditManager from '@/modules/layouts/components/live-edit/LiveEditManager.vue';
+import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 
 const router = useRouter()
 
@@ -55,6 +60,7 @@ watch(navigationOpened, (isOpen) => {
     flex: 1;
     overflow: auto;
     background-color: var(--body-bg);
+    position: relative;
   }
 }
 

@@ -33,6 +33,24 @@
         </template>
         <h3 v-if="!loadingBlocks">{{ t('{amount} Blocks', {amount: blocks.length}, blocks.length) }}</h3>
       </GpItem>
+
+      <GpItem>
+        <template v-slot:title>
+          {{ $t('Inputs UI') }}
+        </template>
+        <div class="metadata">
+          <p>{{ $t('Here is an input:') }}</p>
+          <FormInput :model-value="$t('Example text')"/>
+          <p>
+            {{ $t('Change Background') }}
+            <LiveEditColorOpener color="inputsBgColor"/>
+          </p>
+          <p>
+            {{ $t('Change Text Color') }}
+            <LiveEditColorOpener color="inputsTextColor"/>
+          </p>
+        </div>
+      </GpItem>
     </div>
   </template>
 </template>
@@ -63,6 +81,7 @@
 @media screen and (max-width: 1200px) {
   .blocks-list {
     flex-direction: column;
+
     > * {
       width: 96%;
     }
@@ -98,6 +117,10 @@ h3 > * {
     flex: 1;
   }
 }
+
+.gp-item p {
+  position: relative;
+}
 </style>
 <script setup lang="ts">
 import GpItem from '@/modules/core/components/layout/GpItem.vue';
@@ -110,6 +133,8 @@ import {PALETTES} from '@/modules/core/utils/colors-palettes';
 import {authStore, isPrivilegedUser} from '@/modules/core/store/auth';
 import {useConfirmAction} from '@/modules/core/compositions/confirm-action';
 import router from '@/router';
+import FormInput from '@/modules/core/components/forms/FormInput.vue';
+import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 
 const config = useAppConfiguration();
 const appConfig = computed(() => config.value?.metadata && config.value.metadata || {})

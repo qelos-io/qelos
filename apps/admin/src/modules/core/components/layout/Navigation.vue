@@ -26,6 +26,7 @@
             <icon-grid/>
           </el-icon>
           <span>{{ $t('Layouts') }}</span>
+          <LiveEditColorOpener color="secondaryColor" />
         </el-menu-item>
       </div>
 
@@ -102,6 +103,7 @@
         </div>
       </template>
 
+      <LiveEditColorOpener color="navigationBgColor"/>
     </el-menu>
   </nav>
 </template>
@@ -112,6 +114,7 @@ import {storeToRefs} from 'pinia';
 import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
 import {isAdmin, isPrivilegedUser} from '@/modules/core/store/auth';
 import {useAppConfiguration} from '@/modules/configurations/store/app-configuration';
+import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 
 const router = useRouter()
 const {navBar} = storeToRefs(usePluginsMicroFrontends());
@@ -134,6 +137,7 @@ nav {
   transition: width .2s linear;
   width: $nav-width;
   overflow-y: auto;
+  position: relative;
 }
 
 
