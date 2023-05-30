@@ -32,7 +32,7 @@ function getUsersForAdmin(req: AuthRequest, res: Response): void {
 }
 
 function getUsers(req: AuthRequest, res: Response): RequestHandler {
-  if (req.query.email || req.query.roles) {
+  if (!req.query.users) {
     getUsersForAdmin(req, res);
     return;
   }
