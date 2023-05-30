@@ -136,8 +136,7 @@ import router from '@/router';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 
-const config = useAppConfiguration();
-const appConfig = computed(() => config.value?.metadata && config.value.metadata || {})
+const {appConfig} = useAppConfiguration();
 
 const {loading: loadingBlocks, blocks} = toRefs(useBlocksList())
 const {t} = useI18n();

@@ -1,19 +1,17 @@
 <template>
   <div id="app">
-    <router-view v-if="config"/>
+    <router-view v-if="loaded"/>
   </div>
 </template>
 <script lang="ts" setup>
 import {useAppConfiguration} from './modules/configurations/store/app-configuration'
-import {computed, watch} from 'vue'
+import {watch} from 'vue'
 import {translate, loadLanguageAsync} from './plugins/i18n'
 import {usePluginsInjectables} from '@/modules/plugins/store/plugins-injectables';
 
-const config = useAppConfiguration()
+const {appConfig, loaded} = useAppConfiguration()
 
 usePluginsInjectables();
-
-const appConfig = computed(() => config.value?.metadata && config.value.metadata || {})
 
 watch(() => appConfig.value.language, async (language) => {
   await loadLanguageAsync(language)

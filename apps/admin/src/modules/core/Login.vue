@@ -1,6 +1,6 @@
 <template>
   <div class="login-page">
-    <img alt="SaaS" :src="config?.metadata.logoUrl || '../../assets/logo.png'">
+    <img alt="SaaS" :src="appConfig?.logoUrl || '../../assets/logo.png'">
     <h1>{{ $t('Please login') }}:</h1>
     <LoginForm/>
   </div>
@@ -10,7 +10,7 @@
 import LoginForm from './components/LoginForm.vue'
 import {useAppConfiguration} from '@/modules/configurations/store/app-configuration';
 
-const config = useAppConfiguration();
+const {appConfig} = useAppConfiguration();
 </script>
 <style scoped>
 .login-page {

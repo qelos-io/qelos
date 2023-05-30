@@ -2,7 +2,7 @@
   <nav :class="{show: opened}">
     <div class="mobile-mask" @click="close"/>
     <router-link to="/" class="home-logo">
-      <img :alt="config?.metadata.name" :src="config?.metadata.logoUrl">
+      <img :alt="appConfig.name" :src="appConfig.logoUrl">
     </router-link>
 
     <el-menu router>
@@ -118,7 +118,7 @@ import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEdit
 
 const router = useRouter()
 const {navBar} = storeToRefs(usePluginsMicroFrontends());
-const config = useAppConfiguration();
+const {appConfig} = useAppConfiguration();
 
 defineProps({opened: Boolean})
 const emit = defineEmits(['close'])

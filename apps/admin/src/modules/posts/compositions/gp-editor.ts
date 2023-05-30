@@ -2,11 +2,11 @@ import { computed, watch, ref } from 'vue'
 import { useAppConfiguration } from '../../configurations/store/app-configuration'
 
 export function useEditorConfig() {
-	const config = useAppConfiguration()
+	const {appConfig} = useAppConfiguration()
 	const editorConfig = ref({ language: 'en-gb' })
 
 	const language = computed(() => {
-		const lang = config.value?.metadata.language;
+		const lang = appConfig.value.language;
 		if(!lang || lang === 'en') {
 			return 'en-gb';
 		}

@@ -1,12 +1,11 @@
 import {defineStore} from 'pinia';
-import {computed, reactive, readonly, ref} from 'vue';
+import {reactive, readonly, ref} from 'vue';
 import {ColorName} from '@/modules/configurations/types/colors-palette';
 import {resetConfiguration, useAppConfiguration} from '@/modules/configurations/store/app-configuration';
 import configurationsService from '@/services/configurations-service';
 
 export const useLiveEditStore = defineStore('live-edit', () => {
-  const config = useAppConfiguration();
-  const appConfig = computed(() => config.value?.metadata && config.value.metadata || {});
+  const {appConfig} = useAppConfiguration();
   const isOpen = ref(false);
   const editing = reactive({
     inputType: null,
