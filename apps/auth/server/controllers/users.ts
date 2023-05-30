@@ -32,9 +32,7 @@ function getUsersForAdmin(req: AuthRequest, res: Response): void {
 }
 
 function getUsers(req: AuthRequest, res: Response): RequestHandler {
-  const isPrivileged = !!(req.userPayload && req.userPayload.isPrivileged)
-
-  if (isPrivileged && req.query.email) {
+  if (req.query.email || req.query.roles) {
     getUsersForAdmin(req, res);
     return;
   }
@@ -50,7 +48,7 @@ function getUsers(req: AuthRequest, res: Response): RequestHandler {
     })
     .filter(Boolean)
 
-  if (!(isPrivileged || users.length)) {
+  if (!users.length) {
     res.status(200)
       .setHeader('x-tenant', req.headers.tenant)
       .setHeader('x-user', req.userPayload?.sub || '-')
@@ -59,7 +57,7 @@ function getUsers(req: AuthRequest, res: Response): RequestHandler {
   }
 
   User
-    .getUsersList(req.headers.tenant, users, isPrivileged, privilegedUserFields)
+    .getUsersList(req.headers.tenant, users, privilegedUserFields)
     .then(list => {
       res.status(200)
         .setHeader('x-tenant', req.headers.tenant)

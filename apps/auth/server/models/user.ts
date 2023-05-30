@@ -48,7 +48,7 @@ export interface UserModel extends Model<UserDocument> {
 
   getTokenByRelatedTokens(authType: string, tokenIdentifier: string): string;
 
-  getUsersList(tenant: string, usersIds: ObjectId[], isPrivilegedUser: boolean, privilegedUserFields?: string): Promise<string>;
+  getUsersList(tenant: string, usersIds: ObjectId[], privilegedUserFields?: string): Promise<string>;
 }
 
 // define the User model schema
@@ -187,21 +187,21 @@ UserSchema.methods.getTokenByRelatedTokens = function getTokenByRelatedTokens(
   return token ? token.tokenIdentifier : tokenIdentifier;
 };
 
-UserSchema.statics.getUsersList = function getUsersList(tenant: string, usersIds: ObjectId[], isPrivilegedUser = false, privilegedUserFields?: Array<string>) {
-  if (isPrivilegedUser && !usersIds.length) {
+UserSchema.statics.getUsersList = function getUsersList(tenant: string, usersIds: ObjectId[], privilegedUserFields?: Array<string>) {
+  if (!usersIds.length) {
     return this.find({tenant})
       .select(privilegedUserFields)
       .lean()
       .exec()
       .then(users => JSON.stringify(users));
   }
-  return cacheManager.wrap(`usersList.${tenant}.${isPrivilegedUser}.${usersIds.map(id => id.toString()).join(',')}`,
+  return cacheManager.wrap(`usersList.${tenant}.${usersIds.map(id => id.toString()).join(',')}`,
     () => {
       const query: Record<string, any> = {_id: {$in: usersIds}}
       query.tenant = tenant;
 
       return this.find(query)
-        .select(isPrivilegedUser ? privilegedUserFields : 'fullName')
+        .select(privilegedUserFields)
         .lean()
         .exec()
         .then(users => JSON.stringify(users))
