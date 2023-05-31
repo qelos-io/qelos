@@ -5,7 +5,7 @@
       <Header class="header" @open="navigationOpened = true"/>
       <div class="main">
         <LiveEditColorOpener color="bgColor"/>
-        <router-view/>
+        <router-view class="main-content"/>
       </div>
       <AssetsDetailsPanel v-if="isPrivilegedUser"/>
     </div>
@@ -61,6 +61,11 @@ watch(navigationOpened, (isOpen) => {
     overflow: auto;
     background-color: var(--body-bg);
     position: relative;
+  }
+
+  .main-content {
+    width: 100%;
+    height: 100%;
   }
 }
 
