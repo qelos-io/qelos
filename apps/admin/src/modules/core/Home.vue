@@ -38,9 +38,9 @@
         <template v-slot:title>
           {{ $t('Inputs UI') }}
         </template>
-        <div class="metadata">
+        <el-form class="metadata" @submit.stop.prevent>
           <p>{{ $t('Here is an input:') }}</p>
-          <FormInput :model-value="$t('Example text')"/>
+          <FormInput v-model="exampleText"/>
           <p>
             {{ $t('Change Background') }}
             <LiveEditColorOpener color="inputsBgColor"/>
@@ -49,11 +49,52 @@
             {{ $t('Change Text Color') }}
             <LiveEditColorOpener color="inputsTextColor"/>
           </p>
-        </div>
+        </el-form>
       </GpItem>
     </div>
   </template>
 </template>
+<script setup lang="ts">
+import GpItem from '@/modules/core/components/layout/GpItem.vue';
+import {ref, toRefs, watch} from 'vue';
+import {useI18n} from 'vue-i18n';
+import {useBlocksList} from '@/modules/blocks/store/blocks-list';
+import {resetConfiguration, useAppConfiguration} from '@/modules/configurations/store/app-configuration';
+import configurationsService from '@/services/configurations-service';
+import {PALETTES} from '@/modules/core/utils/colors-palettes';
+import {authStore, isPrivilegedUser} from '@/modules/core/store/auth';
+import {useConfirmAction} from '@/modules/core/compositions/confirm-action';
+import router from '@/router';
+import FormInput from '@/modules/core/components/forms/FormInput.vue';
+import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
+
+
+const {appConfig} = useAppConfiguration();
+
+const {loading: loadingBlocks, blocks} = toRefs(useBlocksList())
+const {t} = useI18n();
+const exampleText = ref(t('Example text'));
+
+const changePalette = useConfirmAction(async function changePalette(colorsPalette) {
+  await configurationsService.update('app-configuration', {
+    metadata: {
+      ...appConfig.value,
+      colorsPalette
+    }
+  })
+  await resetConfiguration();
+});
+
+const unWatch = watch(() => authStore.isLoaded, () => {
+  if (!authStore.isLoaded) {
+    return;
+  }
+  if (!isPrivilegedUser.value && appConfig.value.homeScreen) {
+    router.push(appConfig.value.homeScreen);
+  }
+  setTimeout(() => unWatch(), 1)
+}, {immediate: true})
+</script>
 <style scoped lang="scss">
 .blocks-list {
   display: flex;
@@ -122,42 +163,3 @@ h3 > * {
   position: relative;
 }
 </style>
-<script setup lang="ts">
-import GpItem from '@/modules/core/components/layout/GpItem.vue';
-import {computed, toRefs, watch} from 'vue';
-import {useI18n} from 'vue-i18n';
-import {useBlocksList} from '@/modules/blocks/store/blocks-list';
-import {resetConfiguration, useAppConfiguration} from '@/modules/configurations/store/app-configuration';
-import configurationsService from '@/services/configurations-service';
-import {PALETTES} from '@/modules/core/utils/colors-palettes';
-import {authStore, isPrivilegedUser} from '@/modules/core/store/auth';
-import {useConfirmAction} from '@/modules/core/compositions/confirm-action';
-import router from '@/router';
-import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
-
-const {appConfig} = useAppConfiguration();
-
-const {loading: loadingBlocks, blocks} = toRefs(useBlocksList())
-const {t} = useI18n();
-
-const changePalette = useConfirmAction(async function changePalette(colorsPalette) {
-  await configurationsService.update('app-configuration', {
-    metadata: {
-      ...appConfig.value,
-      colorsPalette
-    }
-  })
-  await resetConfiguration();
-});
-
-const unWatch = watch(() => authStore.isLoaded, () => {
-  if (!authStore.isLoaded) {
-    return;
-  }
-  if (!isPrivilegedUser.value && appConfig.value.homeScreen) {
-    router.push(appConfig.value.homeScreen);
-  }
-  setTimeout(() => unWatch(), 1)
-}, {immediate: true})
-</script>
