@@ -1,30 +1,28 @@
-const mongoose = require('mongoose')
-const Post = mongoose.model('Post')
+/**
+ * initial migration - example file - nothing to migrate
+ */
 
-async function hasRowsWithoutPinned () {
-	return (!!(
-	  await Post.collection.countDocuments({ isPinned: { $exists: false } })
-	))
+/**
+ * check potential changes to migrate
+ */
+function check () {
+  return Promise.resolve(false)
 }
 
-async function check () {
-	return await hasRowsWithoutPinned()
+/**
+ * migrate relevant db rows to fit the new upgrade
+ */
+function migrate () {
+  return Promise.resolve()
 }
 
-async function migrate () {
-	console.log('start pinned migration for posts:')
-	await Post.collection.update({ isPinned: { $exists: false } }, { $set: { isPinned: false } }, { multi: true })
-
-	console.log('Done!');
-}
-
-async function verify () {
-	const foundRows = await hasRowsWithoutPinned()
-	if (foundRows) {
-		return Promise.reject('still have rows to update..  migration failed.')
-	}
+/**
+ * check if all migration changes done as expected
+ */
+function verify () {
+  return Promise.resolve()
 }
 
 module.exports = {
-	check, migrate, verify
+  check, migrate, verify
 }

@@ -1,6 +1,5 @@
 import {QelosSDKOptions} from './types';
 import BaseSDK from './base-sdk';
-import QlCategories from './categories';
 import QlMenus from './menus';
 import QlAppConfigurations from './configurations';
 import QlBlocks from './blocks';

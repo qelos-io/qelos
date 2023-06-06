@@ -10,7 +10,7 @@ const APP_CONFIGS_WITHOUT_STYLE_URL = { key: appConfiguration, metadata: { theme
  */
 
 /**
- * check if app-configuration doesn't have themeStylesUrl propery
+ * check if app-configuration doesn't have themeStylesUrl property
  */
 async function check () {
   const hasMissingThemeConfig = await Configuration.countDocuments(APP_CONFIGS_WITHOUT_STYLE_URL)

@@ -16,8 +16,6 @@ module.exports.connect = (uri) => {
   mongoose.Promise = global.Promise
 
   // load models
-  require('./category')
-  require('./post')
   require('./menu')
   require('./configuration')
   require('./block');
