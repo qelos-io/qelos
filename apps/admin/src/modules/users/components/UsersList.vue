@@ -58,6 +58,8 @@ function getUserFullName(user) {
 function filterUsers() {
   if (searchQuery.value) {
     router.push({ query: { q: searchQuery.value } });
+  } else {
+    router.push({ query: {} });
   }
 }
 
