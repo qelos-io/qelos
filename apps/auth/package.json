@@ -1,6 +1,6 @@
 {
   "name": "@qelos/auth",
-  "version": "3.3.5",
+  "version": "3.3.6",
   "description": "Express Passport authentication service",
   "keywords": [
     "express",
@@ -20,7 +20,7 @@
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@qelos/api-kit": "^3.3.5",
+    "@qelos/api-kit": "^3.3.6",
     "@qelos/cache-manager": "^3.2.1",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.5",
