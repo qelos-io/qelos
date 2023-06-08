@@ -51,6 +51,7 @@ export interface ICrudOptions<ResourcePublicData, ResourceInsertData> {
     edit: Screen;
   },
   schema?: ResourceSchema,
+  dispatchPrefix: string | false,
   verify?: (request: FastifyRequest, reply: FastifyReply) => Promise<any>;
   createOne: (body: Partial<ResourceInsertData>, request: FastifyRequest, reply: FastifyReply) => (any | Promise<ResourcePublicData>),
   readOne: (id: string, request: FastifyRequest, reply: FastifyReply) => (Promise<ResourcePublicData>);

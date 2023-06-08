@@ -1,5 +1,6 @@
 import PlatformEvent from '../models/event';
 import {emitPlatformEvent} from '../services/hook-events';
+import logger from '../services/logger';
 
 const LIMIT = 50;
 
@@ -35,9 +36,11 @@ export async function createEvent(req, res) {
     if (req.user && req.user.roles.includes('plugin')) {
       event.source = 'plugin:' + event.source;
     }
+    event.tenant = req.headers.tenant;
     await event.save();
     emitPlatformEvent(event);
   } catch (err) {
+    logger.log('something is wrong', err)
     //
   }
 

@@ -5,6 +5,7 @@ import logger from './logger';
 import manifest from './manifest';
 import {Crud, ICrudOptions, ResourceProperty, ResourceSchema} from './crud.types';
 import {addGroupedMicroFrontends} from './micro-frontends';
+import {getSdkForTenant} from './sdk';
 
 export function getPlural(word: string) {
   const lastChar = word[word.length - 1].toLowerCase();
@@ -123,6 +124,7 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
   const crudOptions: ICrudOptions<ResourcePublicData, ResourceInsertData> & Crud = {
     name: display.plural.replaceAll(' ', '-'),
     identifierKey: '_id',
+    dispatchPrefix: options.dispatchPrefix === false ? options.dispatchPrefix : options.dispatchPrefix || manifest.name,
     verify: async () => null,
     ...options,
     display: {
@@ -168,6 +170,20 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
   }
 
   const itemPath = crudOptions.name + '/:id';
+  const singlePath = crudOptions.display.name.toLowerCase().replaceAll(' ', '-');
+
+  async function triggerOperation(req, kind, metadata) {
+    if (crudOptions.dispatchPrefix) {
+      const sdk = await getSdkForTenant(req.tenantPayload);
+      sdk?.events.dispatch({
+        source: `${crudOptions.dispatchPrefix}:${crudOptions.name}`,
+        kind,
+        eventName: `${kind}-${singlePath}`,
+        user: req.user._id,
+        metadata,
+      })
+    }
+  }
 
   // get one
   addProxyEndpoint(itemPath, {
@@ -200,7 +216,7 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
         await crudOptions.verify(req, reply);
         const id: string = (req.params as any).id || '';
         const item = await crudOptions.updateOne(id, getValidatedItem(req.body, crudOptions.schema), req, reply);
-
+        triggerOperation(req, 'update', item).catch();
         if (!crudOptions.schema) {
           return item;
         }
@@ -222,7 +238,7 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
         await crudOptions.verify(req, reply);
         const id: string = (req.params as any).id || '';
         const item = await crudOptions.deleteOne(id, req, reply);
-
+        triggerOperation(req, 'delete', item).catch();
         if (!crudOptions.schema) {
           return item;
         }
@@ -243,7 +259,7 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
       try {
         await crudOptions.verify(req, reply);
         const item = await crudOptions.createOne(getValidatedItem(req.body, crudOptions.schema), req, reply);
-
+        triggerOperation(req, 'create', item).catch();
         if (!crudOptions.schema) {
           return item;
         }
@@ -282,8 +298,6 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
     identifierKey: crudOptions.identifierKey,
     schema: getJsonSchema(crudOptions.schema),
   });
-
-  const singlePath = crudOptions.display.name.toLowerCase().replaceAll(' ', '-');
 
   addGroupedMicroFrontends(
     {name: crudOptions.display.capitalizedPlural, key: crudOptions.name, ...crudOptions.nav},

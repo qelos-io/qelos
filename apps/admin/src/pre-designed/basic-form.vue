@@ -1,14 +1,16 @@
 <template>
   <main>
-    <h1>{{isEdit ? $t('Edit') : $t('Create')}} {{crud.display.capitalized}}</h1>
+    <h1>{{ isEdit ? $t('Edit') : $t('Create') }} {{ crud.display.capitalized }}</h1>
     <el-form @submit.prevent="submit">
       <div v-for="(row, key) in crud.schema" :key="key" class="row">
         <el-form-item v-if="row.type === 'Boolean'" :label="capitalize(key as string)">
-          <el-switch  v-model="item[key]" />
+          <el-switch v-model="item[key]"/>
         </el-form-item>
-        <FormInput v-else :title="capitalize(key as string)" v-model="item[key]" />
+        <FormInput v-else :title="capitalize(key as string)" v-model="item[key]"/>
       </div>
-      <div class="row"><SaveButton :submitting="submitting"/></div>
+      <div class="row">
+        <SaveButton :submitting="submitting"/>
+      </div>
     </el-form>
   </main>
 </template>
@@ -49,7 +51,16 @@ const crud = computed(() => {
 const isEdit = computed(() => !!route.params.id);
 const item = ref({});
 
-const {submit, submitting} = useSubmitting(() => api.value.update(route.params.id as string, item.value))
+const {submit, submitting} = useSubmitting(async () => {
+  if (isEdit.value) {
+    return api.value.update(route.params.id as string, item.value);
+  } else {
+    return api.value.create(item.value);
+  }
+}, {
+  success: () => isEdit.value ? 'Successfully updated' : 'Successfully created',
+  error: () => isEdit.value ? 'Failed to update' : 'Failed to create'
+})
 
 if (isEdit.value) {
   watch(api, () => {
