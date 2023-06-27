@@ -4,7 +4,7 @@ import GpItem from '@/modules/core/components/layout/GpItem.vue';
 import {useConfirmAction} from '@/modules/core/compositions/confirm-action';
 
 defineProps<{ row: any, header?: string, content: string, actions?: string }>()
-const emit = defineEmits(['remove', 'edit'])
+const emit = defineEmits(['remove', 'edit', 'view'])
 
 const askBeforeRemove = useConfirmAction(() => emit('remove'));
 
@@ -23,6 +23,7 @@ const askBeforeRemove = useConfirmAction(() => emit('remove'));
                         :template-props="{row}"
                         @remove="askBeforeRemove"
                         @edit="emit('edit')"
+                        @view="emit('view')"
       />
     </template>
   </GpItem>

@@ -4,7 +4,7 @@ import {ResponseError} from './response-error';
 import logger from './logger';
 import manifest from './manifest';
 import {Crud, ICrudOptions, ResourceProperty, ResourceSchema} from './crud.types';
-import {addGroupedMicroFrontends} from './micro-frontends';
+import {addGroupedMicroFrontends, NavBarPosition} from './micro-frontends';
 import {getSdkForTenant} from './sdk';
 
 export function getPlural(word: string) {
@@ -32,7 +32,7 @@ export function getDisplayNames(name: string) {
 }
 
 function isPropValidToDisplay(value, propSchema: ResourceSchema | ResourceProperty, dest: 'list' | 'single') {
-  return (propSchema.public &&
+  return (propSchema?.public &&
     !(propSchema.hideInList && dest === 'list') &&
     (
       typeof propSchema.type === 'undefined' ||
@@ -45,7 +45,7 @@ function fillFromSchema(exposed: any, item: any, schema: ResourceSchema, dest: '
   for (const key in schema) {
     const prop = schema[key];
     const value = item[key];
-    if (isPropValidToDisplay(value, prop.schema, dest)) {
+    if (isPropValidToDisplay(value, prop, dest)) {
       if (prop.schema && prop.type === Object) {
         exposed[key] = {}
         fillFromSchema(exposed[key], value, prop.schema as ResourceSchema);
@@ -118,6 +118,7 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
     list: {},
     create: {},
     edit: {},
+    view: {},
     ...options.screens,
   }
 
@@ -132,17 +133,21 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
       ...options.display
     },
     screens: {
-      list: {
+      list: screens.list === false ? screens.list : {
         use: screens.list.use || 'rows-list',
         structure: screens.list.structure,
       },
-      create: {
+      create: screens.create === false ? screens.create : {
         use: screens.create.use || 'basic-form',
         structure: screens.create.structure
       },
-      edit: {
+      edit: screens.edit === false ? screens.edit : {
         use: screens.edit.use || 'basic-form',
         structure: screens.edit.structure,
+      },
+      view: screens.view === false ? screens.view : {
+        use: screens.view.use || 'basic-form',
+        structure: screens.view.structure,
       },
     },
     nav: options.nav || {}
@@ -285,7 +290,7 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
           return list;
         }
 
-        return list.map(getPublicData);
+        return list.map(getPublicDataForList);
       } catch (err) {
         return handleError(err, reply);
       }
@@ -302,36 +307,51 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
   addGroupedMicroFrontends(
     {name: crudOptions.display.capitalizedPlural, key: crudOptions.name, ...crudOptions.nav},
     [
-      {
+      crudOptions.screens.list && {
         name: 'List',
         crud: crudOptions.name,
         description: 'List of ' + crudOptions.display.capitalizedPlural,
         use: crudOptions.screens.list.use,
+        structure: crudOptions.screens.list.structure,
         route: {
           name: crudOptions.name + '-list',
           path: crudOptions.name,
-          navBarPosition: 'top'
+          navBarPosition: NavBarPosition.TOP
         }
       },
-      {
+      crudOptions.screens.create && {
         name: 'Create',
         crud: crudOptions.name,
         description: 'Create a new ' + crudOptions.display.capitalized,
         use: crudOptions.screens.create.use,
+        structure: crudOptions.screens.create.structure,
         route: {
           name: 'add-' + singlePath,
           path: 'add-' + singlePath,
-          navBarPosition: 'top'
+          navBarPosition: NavBarPosition.TOP
         }
       },
-      {
+      crudOptions.screens.edit && {
         name: 'Edit',
         crud: crudOptions.name,
         description: 'Edit existing ' + crudOptions.display.capitalized,
         use: crudOptions.screens.edit.use,
+        structure: crudOptions.screens.edit.structure,
         route: {
           name: 'edit-' + singlePath,
           path: `edit-${singlePath}/:id`,
+          navBarPosition: false
+        }
+      },
+      crudOptions.screens.view && {
+        name: 'View',
+        crud: crudOptions.name,
+        description: 'View existing ' + crudOptions.display.capitalized,
+        use: crudOptions.screens.view.use,
+        structure: crudOptions.screens.view.structure,
+        route: {
+          name: 'view-' + singlePath,
+          path: `view-${singlePath}/:id`,
           navBarPosition: false
         }
       }

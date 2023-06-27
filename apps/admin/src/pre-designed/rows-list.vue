@@ -7,7 +7,8 @@
                       :content="structure.content"
                       :actions="structure.actions"
                       @remove="removeRow(row)"
-                      @edit="moveToEdit(row)"
+                      @edit="moveTo('edit', row)"
+                      @view="moveTo('view', row)"
     />
   </main>
 </template>
@@ -15,12 +16,13 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
-import {getCrud} from '@/services/crud';
 import {toHTML} from '@/services/markdown-converter';
 import TemplatedRowItem from '@/modules/pre-designed/components/TemplatedRowItem.vue';
+import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
 
 const route = useRoute();
 const router = useRouter()
+const mfes = usePluginsMicroFrontends();
 
 const crud = computed(() => {
   const crud = route.meta.crud as any || {display: {}};
@@ -53,28 +55,26 @@ function toTemplate(html) {
   return template;
 }
 
-function setRemoveButton(el: HTMLTemplateElement) {
+function setSelectorToComponent(el: HTMLTemplateElement, selector: string, componentName: string) {
   el
       .content
-      .querySelectorAll('button[for="remove"]')
+      .querySelectorAll(selector)
       .forEach(btn => {
-        const replaced = document.createElement('templated-remove-button');
+        const replaced = document.createElement(componentName);
         replaced.innerHTML = btn.innerHTML;
         (btn.parentElement || el.content).insertBefore(replaced, btn);
         btn.remove();
       })
 }
 
-function setEditButton(el: HTMLTemplateElement) {
-  el
-      .content
-      .querySelectorAll('button[for="edit"]')
-      .forEach(btn => {
-        const replaced = document.createElement('templated-edit-button');
-        replaced.innerHTML = btn.innerHTML;
-        (btn.parentElement || el.content).insertBefore(replaced, btn);
-        btn.remove();
-      })
+function setRemoveButton(el: HTMLTemplateElement) {
+  setSelectorToComponent(el, 'button[for="remove"]', 'templated-remove-button')
+}
+
+function setAllButtons(el: HTMLTemplateElement) {
+  setRemoveButton(el);
+  setSelectorToComponent(el, 'button[for="edit"]', 'templated-edit-button')
+  setSelectorToComponent(el, 'button[for="view"]', 'templated-view-button')
 }
 
 function setEditLink(el: HTMLTemplateElement) {
@@ -84,6 +84,16 @@ function setEditLink(el: HTMLTemplateElement) {
       .forEach(anchor => {
         anchor.removeAttribute('href')
         anchor.setAttribute('v-on:click.native', `$parent.$parent.$parent.$emit('edit')`)
+      })
+}
+
+function setViewLink(el: HTMLTemplateElement) {
+  el
+      .content
+      .querySelectorAll('a[href="view"]')
+      .forEach(anchor => {
+        anchor.removeAttribute('href')
+        anchor.setAttribute('v-on:click.native', `$parent.$parent.$parent.$emit('view')`)
       })
 }
 
@@ -101,9 +111,9 @@ const structure = computed(() => {
   content = template.innerHTML;
 
   const actionsTemplate = toTemplate(toHTML(actions));
-  setRemoveButton(actionsTemplate);
-  setEditButton(actionsTemplate);
+  setAllButtons(actionsTemplate);
   setEditLink(actionsTemplate);
+  setViewLink(actionsTemplate);
 
   return {
     header,
@@ -111,8 +121,7 @@ const structure = computed(() => {
     actions: actionsTemplate.innerHTML
   }
 })
-
-const api = computed(() => getCrud(route.meta.crudBasePath as string || ''))
+const api = computed(() => mfes.cruds[crud.value.name]);
 const list = ref();
 
 const identifierKey = computed<string>(() => route.meta.identifierKey as string || '_id');
@@ -126,8 +135,8 @@ async function removeRow(row) {
   load();
 }
 
-function moveToEdit(row) {
-  router.push(`edit-${crud.value.display.name}/${row[identifierKey.value]}`)
+function moveTo(to, row) {
+  router.push(`${to}-${crud.value.display.name}/${row[identifierKey.value]}`)
 }
 
 watch(api, load, {immediate: true})

@@ -1,16 +1,7 @@
 <template>
   <main>
-    <h1>{{ isEdit ? $t('Edit') : $t('Create') }} {{ crud.display.capitalized }}</h1>
     <el-form @submit.prevent="submit">
-      <div v-for="(row, key) in crud.schema" :key="key" class="row">
-        <el-form-item v-if="row.type === 'Boolean'" :label="capitalize(key as string)">
-          <el-switch v-model="item[key]"/>
-        </el-form-item>
-        <FormInput v-else :title="capitalize(key as string)" v-model="item[key]"/>
-      </div>
-      <div class="row">
-        <SaveButton :submitting="submitting"/>
-      </div>
+      <VRuntimeTemplate :template="relevantStructure" :template-props="{row: item, schema: crud.schema}"/>
     </el-form>
   </main>
 </template>
@@ -18,17 +9,16 @@
 <script lang="ts" setup>
 import {useRoute} from 'vue-router';
 import {computed, ref, watch} from 'vue';
-import {getCrud} from '@/services/crud';
-import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import {useSubmitting} from '@/modules/core/compositions/submitting';
+import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
+import VRuntimeTemplate from 'vue3-runtime-template';
 
 const route = useRoute();
-const api = computed(() => getCrud(route.meta.crudBasePath as string || ''));
+const mfes = usePluginsMicroFrontends();
 
 const crud = computed(() => {
   const crud = route.meta.crud as any || {display: {}};
-  const screens = crud.screens || {list: {}}
+  const screens: any = crud.screens || {}
   return {
     ...crud,
     display: {
@@ -37,32 +27,31 @@ const crud = computed(() => {
       ...(crud.display || {}),
     },
     screens: {
-      create: {
-        structure: null,
-        ...screens.create,
-      },
-      edit: {
-        structure: null,
-        ...screens.edit,
-      },
+      create: screens.create,
+      edit: screens.edit,
+      view: screens.view
     },
   }
 });
-const isEdit = computed(() => !!route.params.id);
+const api = computed(() => mfes.cruds[crud.value.name]);
+const isExistingItem = computed(() => !!route.params.id);
+const relevantStructure = computed(() => {
+  return (route.meta.mfe as any)?.structure;
+});
 const item = ref({});
 
 const {submit, submitting} = useSubmitting(async () => {
-  if (isEdit.value) {
+  if (isExistingItem.value) {
     return api.value.update(route.params.id as string, item.value);
   } else {
     return api.value.create(item.value);
   }
 }, {
-  success: () => isEdit.value ? 'Successfully updated' : 'Successfully created',
-  error: () => isEdit.value ? 'Failed to update' : 'Failed to create'
+  success: () => isExistingItem.value ? 'Successfully updated' : 'Successfully created',
+  error: () => isExistingItem.value ? 'Failed to update' : 'Failed to create'
 })
 
-if (isEdit.value) {
+if (isExistingItem.value) {
   watch(api, () => {
     api.value.getOne(route.params.id as string).then(data => item.value = data)
   }, {immediate: true})

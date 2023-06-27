@@ -18,6 +18,7 @@
         </el-checkbox-group>
       </el-form-item>
     </div>
+    <textarea v-model="internalMetadata"></textarea>
     <SaveButton :submitting="submitting"/>
   </el-form>
 </template>
@@ -43,6 +44,7 @@ export default {
       email: null,
       password: null,
       roles: props.user && props.user._id ? null : ['user'],
+      internalMetadata: null,
     });
     let roles;
     let availableRoles;
@@ -57,7 +59,7 @@ export default {
 
     return {
       editedData,
-      ...useEditedInputs(editedData, props.user, ['firstName', 'lastName', 'email']),
+      ...useEditedInputs(editedData, props.user, ['firstName', 'lastName', 'email', 'internalMetadata']),
       roles,
       availableRoles,
       submit() {

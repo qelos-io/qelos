@@ -7,6 +7,13 @@ export interface IframeMicroFrontend extends GlobalMicroFrontend {
 interface PreDesignedMicroFrontend extends GlobalMicroFrontend {
   use: string;
   crud: string;
+  structure: string;
+}
+
+export enum NavBarPosition {
+  TOP = 'top',
+  BOTTOM = 'bottom',
+  USER_DROPDOWN = 'user-dropdown',
 }
 
 export interface GlobalMicroFrontend {
@@ -16,7 +23,7 @@ export interface GlobalMicroFrontend {
   route?: {
     name: string;
     path: string;
-    navBarPosition: 'top' | 'bottom' | 'user-dropdown' | false;
+    navBarPosition: NavBarPosition | false;
     group?: string;
     iconName?: string;
     iconSvg?: string;
@@ -39,9 +46,11 @@ export function addMicroFrontend(mfe: MicroFrontendOptions) {
   manifest.microFrontends.push({...mfe});
 }
 
-export function addGroupedMicroFrontends(group: NavBarGroup, mfeArray: MicroFrontendOptions[]) {
+export function addGroupedMicroFrontends(group: NavBarGroup, mfeArray: (MicroFrontendOptions | false | null | undefined)[]) {
   manifest.navBarGroups.push(group);
   mfeArray.forEach(mfe => {
-    addMicroFrontend({...mfe, route: {...mfe.route, group: group.key}})
+    if (mfe) {
+      addMicroFrontend({...mfe, route: {...mfe.route, group: group.key}})
+    }
   })
 }

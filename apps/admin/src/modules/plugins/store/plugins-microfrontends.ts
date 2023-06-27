@@ -1,10 +1,11 @@
-import {computed, watch} from 'vue';
+import {computed, reactive, watch} from 'vue';
 import {useRouter} from 'vue-router';
 import {defineStore, storeToRefs} from 'pinia';
 import {usePluginsList} from './plugins-list';
 import MicroFrontendPage from '../MicroFrontendPage.vue';
 import {authStore} from '@/modules/core/store/auth';
 import {IMicroFrontend} from '@/services/types/plugin';
+import {getCrud} from '@/services/crud';
 
 function getMfeUrl(mfe: IMicroFrontend): string {
   if (!mfe.callbackUrl) {
@@ -16,6 +17,8 @@ function getMfeUrl(mfe: IMicroFrontend): string {
 export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', function usePluginsMicroFrontends() {
   const {plugins, loaded} = storeToRefs(usePluginsList());
   const router = useRouter();
+
+  const cruds = reactive({});
 
   const userRoles = computed(() => authStore.user?.roles || []);
 
@@ -108,11 +111,11 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
           route.meta = {
             roles,
             mfe,
-            crudBasePath: `/api/on/${mfe.pluginApiPath}/${mfe.crudData.name}`,
             crud: mfe.crudData,
           }
         }
         router.addRoute('playPlugin', route)
+        cruds[mfe.crudData.name] = getCrud(`/api/on/${mfe.pluginApiPath}/${mfe.crudData.name}`);
       })
     router.removeRoute('defaultPluginPlaceholder');
     router.removeRoute('defaultPluginPlaceholderSecond');
@@ -131,5 +134,6 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
   return {
     navBar: computed(() => microFrontends.value.navBar),
     modals: computed(() => microFrontends.value.modals),
+    cruds,
   }
 })

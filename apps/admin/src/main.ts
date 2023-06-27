@@ -7,8 +7,7 @@ import {i18n} from './plugins/i18n'
 import {createPinia} from 'pinia';
 import JsonEditorVue from 'json-editor-vue'
 import App from './App.vue'
-import TemplatedRemoveButton from '@/modules/pre-designed/components/TemplatedRemoveButton.vue';
-import TemplatedEditButton from '@/modules/pre-designed/components/TemplatedEditButton.vue';
+import applyGlobalTemplatesComponents from '@/modules/pre-designed/global-templates-components';
 
 const app = createApp(App)
 app.use(createPinia())
@@ -17,8 +16,7 @@ app.use(i18n)
 app.use(editor)
 app.use(JsonEditorVue)
 
-app.component('TemplatedRemoveButton', TemplatedRemoveButton)
-app.component('TemplatedEditButton', TemplatedEditButton)
+applyGlobalTemplatesComponents(app);
 
 elements(app)
 app.mount('#app')

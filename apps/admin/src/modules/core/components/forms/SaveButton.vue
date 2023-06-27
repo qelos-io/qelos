@@ -1,5 +1,8 @@
 <template>
-  <el-button native-type="submit" :loading="submitting">{{ $t(text) }}</el-button>
+  <el-button native-type="submit" :loading="submitting">
+    <slot v-if="$slots.default" />
+    <template v-else>{{ $t(text) }}</template>
+  </el-button>
 </template>
 
 <script lang="ts" setup>

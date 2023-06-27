@@ -46,9 +46,10 @@ export interface ICrudOptions<ResourcePublicData, ResourceInsertData> {
     priority?: number;
   },
   screens?: {
-    list: Screen;
-    create: Screen;
-    edit: Screen;
+    list: false | Screen;
+    create: false | Screen;
+    edit: false | Screen;
+    view: false | Screen;
   },
   schema?: ResourceSchema,
   dispatchPrefix: string | false,
