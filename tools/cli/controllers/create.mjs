@@ -46,9 +46,8 @@ export default async function createController({name}) {
     const project = await cliSelect({
       values: {
         vanilla: 'Vanilla',
-        react: 'React',
         vue: 'Vue',
-        solid: 'Solid',
+        crud: 'CRUD',
         more: 'Show more',
         custom: 'Custom from Github'
       },
