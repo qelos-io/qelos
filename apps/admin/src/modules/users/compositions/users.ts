@@ -4,9 +4,10 @@ import { useDispatcher } from "../../core/compositions/dispatcher";
 import { useSubmitting } from "../../core/compositions/submitting";
 import { useRoute } from "vue-router";
 import { watch } from "vue";
+import {IUser} from '@/modules/core/store/types/user';
 
 export function useEditUsers(userId) {
-  const { result: user } = useDispatcher(() => usersService.getOne(userId));
+  const { result: user } = useDispatcher<IUser>(() => usersService.getOne(userId));
   const { submit, submitting } = useSubmitting(
     (payload) => usersService.update(userId, payload),
     {
