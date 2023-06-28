@@ -6,4 +6,5 @@ export interface IUser {
   birthDate: string,
   email: string,
   roles: Array<string>,
+  internalMetadata?: any
 }

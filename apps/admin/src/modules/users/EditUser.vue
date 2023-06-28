@@ -1,7 +1,7 @@
 <template>
   <div class="edit-post-page">
     <PageTitle title="Edit User" v-if="user" :item-name="user.name"/>
-    <UserForm v-if="user" :user="user" @submitted="updateUser" :submitting="submitting"/>
+    <UserForm v-if="user" :user="user" @submitted="updateUser" :submitting="submitting" :as-admin="true"/>
   </div>
 </template>
 <script lang="ts" setup>

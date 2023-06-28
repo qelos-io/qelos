@@ -1,10 +1,10 @@
-import { computed } from 'vue'
+import {computed, Ref} from 'vue'
 
 export function useEditedInputs(editedObj, originalObj, propsMap = []) {
   return propsMap.reduce((comps, prop) => {
     comps[prop] = computed(() => editedObj[prop] === null ? originalObj[prop] : editedObj[prop])
     return comps
-  }, {} as any)
+  }, {} as Record<string, Ref>)
 }
 
 export function useEditedInputModels(editedObj, originalObj, propsMap: string[] = []) {
