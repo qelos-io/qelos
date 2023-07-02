@@ -16,7 +16,7 @@
     </label>
     <FormInput title="Key" :model-value="configKey" @input="configKey = $event"/>
     <FormInput title="Kind" :model-value="configKind" @input="configKind = $event"/>
-    <JsonEditorVue v-model="metadata"/>
+    <Monaco :model-value="metadata" @input="metadata = $event.target.value" /> 
   </div>
 </template>
 <script lang="ts" setup>
@@ -24,12 +24,12 @@ import {ref} from 'vue';
 import {useSubmitting} from '../core/compositions/submitting'
 import configurationsService from '@/services/configurations-service';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import JsonEditorVue from 'json-editor-vue'
+import Monaco from '../users/components/Monaco.vue';
 
 const isPublic = ref(false);
 const configKey = ref('');
 const configKind = ref('');
-const metadata = ref({});
+const metadata = ref('');
 
 const {submitting, submit} = useSubmitting(
   () => {
@@ -40,7 +40,7 @@ const {submitting, submit} = useSubmitting(
       public: isPublic.value,
       key: configKey.value,
       kind: configKind.value,
-      metadata: typeof metadata.value === 'string' ? JSON.parse(metadata.value) : metadata.value
+      metadata: JSON.parse(metadata.value)
     })
   },
   {success: 'Configurations created successfully', error: 'Failed to created configurations'})
