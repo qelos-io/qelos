@@ -23,7 +23,7 @@ import {computed} from 'vue'
 import FormInput from '../../core/components/forms/FormInput.vue'
 import {clearNulls} from '../../core/utils/clear-nulls'
 import {useBlockForm} from '../compositions/blocks'
-import {useEditorConfig} from '../../posts/compositions/gp-editor'
+import {useEditorConfig} from '../../core/compositions/gp-editor'
 import {useUnsavedChanges} from '../../drafts/compositions/unsaved-changes'
 import {IBlock} from '../../../services/types/block';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';

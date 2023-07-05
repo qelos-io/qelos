@@ -9,6 +9,7 @@ import draftsRoutes from './modules/drafts/routes';
 import blocksRoutes from './modules/blocks/routes';
 import layoutsRoutes from '@/modules/layouts/routes';
 import {managePluginsRoutes, playRoutes} from '@/modules/plugins/routes';
+import workspacesRoutes from '@/modules/workspaces/routes';
 
 // @ts-ignore
 const BASE = import.meta.env.BASE_URL || '/';
@@ -32,6 +33,7 @@ const router = createRouter({
         draftsRoutes,
         blocksRoutes,
         layoutsRoutes,
+        workspacesRoutes,
         managePluginsRoutes,
         playRoutes,
       ]
