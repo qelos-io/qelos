@@ -12,5 +12,6 @@ module.exports = {
   editorsRoles,
   adminRole,
   appConfiguration: process.env.APP_CONFIGURATION || 'app-configuration',
+  workspaceConfiguration: process.env.WORKSPACE_CONFIGURATION || 'workspace-configuration',
   redisUrl: process.env.REDIS_URL
 }

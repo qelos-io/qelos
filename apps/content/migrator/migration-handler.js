@@ -7,6 +7,7 @@ function getCurrentMigrationHandler () {
 }
 
 function clearCurrentMigrationHandler () {
+  console.log('clear current migration handler');
   return Configuration.updateOne({ key: MIGRATION_KEY }, {
     $set: {
       metadata: {

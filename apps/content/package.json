@@ -1,10 +1,10 @@
 {
   "name": "@qelos/content",
   "version": "3.3.6",
-  "migrationVersion": 7,
+  "migrationVersion": 9,
   "description": "Content API for qelos platform",
   "keywords": [
-    "greenpress",
+    "qelos",
     "blog cotent",
     "backend as a service"
   ],

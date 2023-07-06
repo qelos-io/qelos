@@ -23,7 +23,9 @@ async function start () {
   const { initMigrationConfig, getVersionConfig } = require('./migration-config')
   const { runMigrationsForward } = require('./runner')
 
-  const { migrationVersion } = require('../package.json')
+  const { migrationVersion } = require('../package.json');
+
+  console.log('migration version: ', migrationVersion);
 
   let config = await getVersionConfig();
   // new app - create initial configs
