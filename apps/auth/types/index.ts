@@ -1,4 +1,6 @@
 import {Request} from 'express'
+import mongoose from 'mongoose';
+import {IWorkspace} from '../server/models/workspace';
 
 export interface AuthRequest extends Request {
   headers: {
@@ -22,4 +24,5 @@ export interface AuthRequest extends Request {
     isPrivileged: boolean,
     user: any
   }
+  workspace?: IWorkspace & mongoose.Document<IWorkspace>
 }
