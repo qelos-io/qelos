@@ -38,7 +38,16 @@ export function getApiProxyConfig(): IApiProxyConfig {
     }),
     authService: getServiceFromEnvVars('auth', 'AUTH_SERVICE', {
       port: 9000,
-      proxies: ['/api/signin', '/api/signup', '/api/token', '/api/me', '/api/users', '/api/logout', '/api/invites'],
+      proxies: [
+        '/api/signin',
+        '/api/signup',
+        '/api/token',
+        '/api/me',
+        '/api/users',
+        '/api/logout',
+        '/api/invites',
+        '/api/workspaces'
+      ],
     }),
     assetsService: getServiceFromEnvVars('assets', 'ASSETS_SERVICE', {
       port: 9003,
