@@ -3,7 +3,7 @@ const Configuration = require('../models/configuration')
 const BASIC_APP_CONFIGURATION_KEY = 'app-configuration'
 
 function getConfigurationByKey(req, res, next) {
-  Configuration.getByKey(req.headers.tenant, req.params.configKey, req.user && req.user.isAdmin)
+  Configuration.getWithCache(req.headers.tenant, req.params.configKey, req.user && req.user.isAdmin)
     .then(configuration => {
       if (!configuration) {
         return Promise.reject(null)
@@ -55,8 +55,16 @@ async function createConfiguration(req, res) {
 
 async function updateConfiguration(req, res) {
   const body = req.body || {}
-  delete body.tenant
-  const configuration = req.configuration
+  const tenant = req.headers.tenant;
+  const configKey = req.params.configKey;
+  delete body.tenant;
+  let configuration;
+  try {
+    configuration = await Configuration.getForEdit(tenant, configKey).exec();
+  } catch {
+    res.status(404).json({message: 'configuration not exists'}).end()
+    return;
+  }
 
   if (body.description) {
     configuration.description = body.description
@@ -84,6 +92,7 @@ async function updateConfiguration(req, res) {
 
   configuration.save()
     .then(() => {
+      Configuration.clearCache(tenant, configKey);
       res.status(200).json(configuration).end()
     })
     .catch(() => {
@@ -92,9 +101,16 @@ async function updateConfiguration(req, res) {
 }
 
 async function removeConfiguration(req, res) {
-  const configuration = req.configuration;
+  let configuration;
+  try {
+    configuration = await Configuration.getForEdit(req.headers.tenant, req.params.configKey).select('key').exec();
+    Configuration.clearCache(req.headers.tenant, req.params.configKey);
+  } catch {
+    res.status(404).json({message: 'configuration not exists'}).end()
+    return;
+  }
 
-  if (configuration.key === 'app-configuration') {
+  if (configuration.key === BASIC_APP_CONFIGURATION_KEY) {
     res.status(400).json({message: 'remove configuration failed'}).end()
     return;
   }

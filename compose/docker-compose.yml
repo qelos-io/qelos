@@ -17,6 +17,7 @@ services:
       SECRETS_TOKEN: ${ASSETS_SECRETS_TOKEN}
       INTERNAL_SECRET: ${INTERNAL_SECRET}
       IP: 0.0.0.0
+      SHOW_LOGS: ${SHOW_LOGS}
     depends_on:
       - redis
       - secrets
@@ -32,6 +33,13 @@ services:
       APPLICATION_URL: ${APPLICATION_URL}
       INTERNAL_SECRET: ${INTERNAL_SECRET}
       SECRETS_TOKEN: ${AUTH_SERVICE_SECRET}
+      PLUGINS_SERVICE_URL: plugins
+      SECRETS_SERVICE_URL: secrets
+      CONTENT_SERVICE_URL: content
+      SHOW_LOGS: ${SHOW_LOGS}
+    depends_on:
+      - secrets
+      - redis
   gateway:
     image: registry.gitlab.com/qelos/qelos/gateway:${GATEWAY_VERSION}
     restart: always
@@ -50,6 +58,7 @@ services:
       PLUGINS_SERVICE_URL: plugins
       ADMIN_PANEL_URL: admin
       FRONT_URL: front
+      SHOW_LOGS: ${SHOW_LOGS}
   content:
     image: registry.gitlab.com/qelos/qelos/content:${CONTENT_SERVICE_VERSION}
     restart: always
@@ -58,9 +67,9 @@ services:
       REDIS_URL: redis://redis
       IP: 0.0.0.0
       AUTH_SERVICE_URL: auth
+      SHOW_LOGS: ${SHOW_LOGS}
     depends_on:
       - redis
-      - auth
   secrets:
     image: registry.gitlab.com/qelos/qelos/secrets:${SECRETS_SERVICE_VERSION}
     restart: always
@@ -70,12 +79,14 @@ services:
       PORT: 9002
       SECRET: ${SECRETS_SERVICE_SECRET}
       INTERNAL_SECRET: ${INTERNAL_SECRET}
+      SHOW_LOGS: ${SHOW_LOGS}
   drafts:
     image: registry.gitlab.com/qelos/qelos/drafts:${DRAFTS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${DRAFTS_MONGODB_URI}
       IP: 0.0.0.0
+      SHOW_LOGS: ${SHOW_LOGS}
   plugins:
     image: registry.gitlab.com/qelos/qelos/plugins:${PLUGINS_SERVICE_VERSION}
     restart: always
@@ -87,6 +98,7 @@ services:
       AUTH_SERVICE_URL: auth
       SECRETS_SERVICE_URL: secrets
       IP: 0.0.0.0
+      SHOW_LOGS: ${SHOW_LOGS}
     depends_on:
       - redis
 
