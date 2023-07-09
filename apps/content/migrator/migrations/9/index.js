@@ -37,7 +37,7 @@ async function migrate() {
       key: workspaceConfiguration,
       description: 'Manage The behavior of workspaces in your application',
       tenant: firstTenant,
-      public: false,
+      public: true,
       metadata: {
         isActive: false,
         creationPrivilegedRoles: ['user'],
