@@ -4,13 +4,13 @@
       {{ workspace.name }}
     </template>
     <template v-slot:actions>
-      <small v-if="workspace.isPrevilegedUser" class="link" @click.prevent="store.remove(workspace)">
+      <small v-if="workspace.isPrivilegedUser" class="link" @click.prevent="store.remove(workspace)">
         <el-icon>
           <icon-delete/>
         </el-icon>
         {{ $t('Remove') }}
       </small>
-      <small class="link">
+      <small class="link" @click="store.activate(workspace)">
         {{ $t('Move to workspace') }}
       </small>
     </template>

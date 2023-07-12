@@ -9,13 +9,17 @@
 
       <el-dropdown class="user-dropdown">
         <div class="el-dropdown-link user-welcome">
-          <span v-html="greeting"/>
+          <span>{{ user.firstName }}</span>
+          <el-avatar v-if="user.workspace"> {{user.workspace.name[0].toUpperCase()}} </el-avatar>
           <el-icon>
             <icon-arrow-down/>
           </el-icon>
         </div>
         <template #dropdown>
           <el-dropdown-menu>
+            <el-dropdown-item>
+              <span v-if="user.workspace" class="workspace-row">{{ user.workspace.name }}</span>
+            </el-dropdown-item>
             <el-dropdown-item>
               <router-link :to="{name: 'updateProfile'}">{{ $t('Update profile') }}</router-link>
             </el-dropdown-item>
@@ -51,8 +55,6 @@ const emit = defineEmits(['open']);
 const {user, logout: logoutApi} = useAuth()
 const router = useRouter()
 
-const greeting = computed(() => translate('Hello {userName}', {userName: user.value?.fullName || ''}))
-
 const open = () => emit('open');
 
 const {navBar} = storeToRefs(usePluginsMicroFrontends());
@@ -76,6 +78,10 @@ header {
   border-bottom: 1px solid var(--border-color);
 }
 
+.workspace-row {
+  color: var(--secondary-color);
+}
+
 .welcome {
   width: 100%;
   margin-inline-start: auto;
@@ -90,6 +96,9 @@ header {
 
 .user-welcome {
   padding-inline-end: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
   color: var(--main-color);
   font-size: 16px;
 

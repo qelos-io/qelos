@@ -13,7 +13,8 @@ export function getMe(req: AuthRequest, res: Response) {
     firstName,
     lastName,
     fullName,
-    roles: req.userPayload.roles
+    roles: req.userPayload.roles,
+    workspace: req.activeWorkspace
   }).end();
 }
 

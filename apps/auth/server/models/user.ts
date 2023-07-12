@@ -160,7 +160,7 @@ UserSchema.methods.updateToken = function updateToken(
       !(token.kind === authType && token.tokenIdentifier === currentPayload.tokenIdentifier)
   );
   const token = {kind: authType, tokenIdentifier: newIdentifier};
-  if (relatedToken) {
+  if (relatedToken || currentPayload.workspace) {
     (token as any).metadata = {relatedToken, workspace: currentPayload.workspace?._id};
   }
   this.tokens.push(token);

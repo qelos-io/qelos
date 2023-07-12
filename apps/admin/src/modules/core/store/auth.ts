@@ -17,7 +17,6 @@ function loadUser() {
   authStore.userPromise = api.get<IUser>('/api/me').then(res => res.data)
   return authStore.userPromise
 }
-
 export const logout = () => {
   authStore.user = null
   authStore.isLoaded = false
@@ -25,13 +24,11 @@ export const logout = () => {
   api.post('/api/logout')
   router.push({name: 'login'})
 }
-
 export const updateProfile = async (changes: Partial<IUser>) => {
   authStore.user = await api.post<IUser>('/api/me', changes).then(res => res.data)
 }
-
-export const fetchAuthUser = async () => {
-  if (authStore.user || authStore.userPromise) {
+export const fetchAuthUser = async (force: boolean = false) => {
+  if (!force && (authStore.user || authStore.userPromise)) {
     return authStore.userPromise
   }
 

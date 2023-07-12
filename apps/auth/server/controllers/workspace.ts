@@ -4,6 +4,11 @@ import Workspace from '../models/workspace';
 import {AuthRequest} from '../../types';
 import {emitPlatformEvent} from '@qelos/api-kit';
 import logger from '../services/logger';
+import {getSignedToken, getUniqueId, setCookie, verifyToken} from '../services/tokens';
+import {updateToken} from '../services/users';
+import User, {UserModel} from '../models/user';
+import {cookieTokenExpiration} from '../../config';
+import {getRequestHost} from '../services/req-host';
 
 const ObjectId = Types.ObjectId;
 
@@ -36,8 +41,13 @@ export async function getWorkspaces(req: AuthRequest, res: Response) {
       tenant,
       'members.user': ObjectId(userId),
     })
-      .select('name logo tenant').lean().exec();
-    res.status(200).json(workspaces).end()
+      .select('name logo tenant members.$').lean().exec();
+    res.status(200).json(workspaces.map(ws => {
+      return {
+        ...ws,
+        isPrivilegedUser: ws.members[0].roles.includes('admin')
+      };
+    })).end()
   } catch (err) {
     res.status(500).json({message: 'Failed to load workspace'}).end()
   }
@@ -101,8 +111,39 @@ export async function deleteWorkspace(req: AuthRequest, res: Response) {
   }
 }
 
-export function activateWorkspace(req: AuthRequest, res: Response) {
+export async function activateWorkspace(req: AuthRequest, res: Response) {
+  const token = req.signedCookies.token || req.cookies.token;
+  const tenant = req.headers.tenant;
 
+  const payload = await verifyToken(token, tenant) as any;
+  const user = await User
+    .findOne({_id: req.userPayload.sub, tenant})
+    .select('tenant email fullName firstName lastName roles tokens')
+    .exec() as any as UserModel;
+
+  payload.workspace = {
+    _id: req.workspace._id,
+    name: req.workspace.name,
+    roles: req.workspace.members[0].roles,
+  }
+  const newCookieIdentifier = getUniqueId();
+  await updateToken(
+    user,
+    'cookie',
+    payload,
+    newCookieIdentifier
+  );
+  const {token: newToken} = getSignedToken(
+    user,
+    payload.workspace,
+    newCookieIdentifier,
+    String(cookieTokenExpiration / 1000)
+  );
+
+  console.log('set the token', newToken, getRequestHost(req))
+  setCookie(res, newToken, null, getRequestHost(req));
+
+  res.json(req.workspace).end()
 }
 
 export async function getWorkspaceByParams(req, res, next) {
@@ -111,7 +152,11 @@ export async function getWorkspaceByParams(req, res, next) {
 
   try {
     const userId = ObjectId(req.userPayload.sub);
-    const workspace = await Workspace.findOne({tenant, _id, 'members.user': userId}).exec();
+    const workspace = await Workspace.findOne({
+      tenant,
+      _id,
+      'members.user': userId
+    }).select('name logo members.$').exec();
     if (!workspace) {
       res.status(404).json({message: 'workspace not found'});
       return;
