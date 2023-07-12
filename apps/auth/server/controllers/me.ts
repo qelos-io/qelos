@@ -21,7 +21,7 @@ export async function setMe(req: AuthRequest, res: Response) {
   const {email, password, name, fullName, firstName, lastName, birthDate} = req.body || {}
   try {
     await updateUser(
-      {_id: req.userPayload.sub, tenant: req.userPayload.tenant},
+      {_id: req.userPayload.sub, tenant: req.userPayload.tenant} as any,
       {email, password, fullName: fullName || name, firstName, lastName, birthDate}
     )
     res.status(200).json({
