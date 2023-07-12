@@ -2,7 +2,7 @@
   "name": "@qelos/db",
   "version": "3.0.0",
   "scripts": {
-    "dev": "docker run -p 27017-27019:27017-27019 -v $PWD/db-data:/data/db mongo"
+    "dev": "docker run -p 27017-27019:27017-27019 --name qelos-db --rm -v $PWD/db-data:/data/db mongo"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT"

@@ -17,7 +17,7 @@ export async function getUser(query: any) {
 }
 
 export async function updateUser(
-  user: UserDocument | { _id: string | Types.ObjectId, tenant: string },
+  user: UserDocument | { _id: Types.ObjectId, tenant: string },
   {email = null, password = null, fullName = null, roles = null, firstName = null, lastName = null, birthDate = null}
 ) {
   let directUpdate;
@@ -79,7 +79,7 @@ export async function deleteUser(userId: string, tenant: string) {
   }
 }
 
-export function comparePassword(user: UserModel, password: string) {
+export function comparePassword(user: UserModel, password: string): Promise<UserModel> {
   return new Promise((resolve, reject) => {
     return user.comparePassword(password.trim(), (passwordErr, isMatch) => {
       if (passwordErr) {
@@ -93,12 +93,12 @@ export function comparePassword(user: UserModel, password: string) {
   });
 }
 
-export function setToken(user: UserDocument, authType: string) {
+export function setToken({user, workspace}: { user: UserDocument, workspace?: any }, authType: string) {
   if (authType === 'oauth') {
-    return setOAuthAuthentication(user);
+    return setOAuthAuthentication(user, workspace);
   }
   if (authType === 'cookie') {
-    return setCookieAuthentication(user);
+    return setCookieAuthentication(user, workspace);
   }
   throw {code: 'INVALID_AUTH_TYPE'};
 }
@@ -106,11 +106,11 @@ export function setToken(user: UserDocument, authType: string) {
 export function updateToken(
   user: UserModel,
   authType: string,
-  currentToken: string,
+  currentPayload: { tokenIdentifier, workspace?: { _id, name, roles } },
   newToken: string
 ) {
   return user
-    .updateToken(authType, currentToken, newToken)
+    .updateToken(authType, currentPayload, newToken)
     .catch((err) => Promise.reject({code: 'UPDATE_TOKEN_FAILED', info: err}));
 }
 
@@ -134,24 +134,25 @@ export async function deleteToken(
   return true;
 }
 
-function setOAuthAuthentication(user: any) {
-  const token = user.getToken('oauth');
-  const refreshToken = user.getRefreshToken(token);
+function setOAuthAuthentication(user: any, workspace?: any) {
+  const token = user.getToken({authType: 'oauth', workspace});
+  const refreshToken = user.getRefreshToken(token, workspace);
 
   return user.save().then(() => {
     return {
       token,
       refreshToken,
       user,
+      workspace,
     };
   });
 }
 
-function setCookieAuthentication(user: any) {
-  const cookieToken = user.getToken('cookie', cookieTokenExpiration / 1000);
+function setCookieAuthentication(user: any, workspace?: any) {
+  const cookieToken = user.getToken({authType: 'cookie', expiresIn: cookieTokenExpiration / 1000, workspace});
 
   return user.save().then(() => {
-    return {user, cookieToken};
+    return {user, workspace, cookieToken};
   });
 }
 

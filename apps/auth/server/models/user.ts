@@ -12,6 +12,7 @@ import {
 } from '../../config';
 
 export interface IUser {
+  _id?: any;
   tenant: string;
   email: string;
   password: string;
@@ -33,13 +34,13 @@ export interface UserModel extends Model<UserDocument> {
     callback: (err: Error, success: boolean) => void
   ): void;
 
-  getToken(authType: string, expiresIn?: string): any;
+  getToken(payload: { authType: string, expiresIn?: string, workspace? }): any;
 
   getRefreshToken(relatedToken: string): any;
 
   updateToken(
     authType: string,
-    currentIdentifier: string,
+    currentPayload: { tokenIdentifier, workspace? },
     newIdentifier: string,
     relatedToken?: string
   ): Promise<UserDocument>;
@@ -109,7 +110,11 @@ UserSchema.methods.comparePassword = function comparePassword(
   bcrypt.compare(password, this.password, callback);
 };
 
-UserSchema.methods.getToken = function getToken(authType: 'cookie' | 'oauth', expiresIn?) {
+UserSchema.methods.getToken = function getToken({authType, expiresIn, workspace}: {
+  authType: 'cookie' | 'oauth',
+  expiresIn?,
+  workspace?
+}) {
   let tokenIdentifier;
   if (authType === 'cookie') {
     tokenIdentifier = getUniqueId();
@@ -119,16 +124,16 @@ UserSchema.methods.getToken = function getToken(authType: 'cookie' | 'oauth', ex
       tokenIdentifier,
     });
   }
-  return getSignedToken(this, tokenIdentifier, expiresIn).token;
+  return getSignedToken(this, workspace, tokenIdentifier, expiresIn).token;
 };
 
-UserSchema.methods.getRefreshToken = function getRefreshToken(relatedToken) {
+UserSchema.methods.getRefreshToken = function getRefreshToken(relatedToken, workspace?: any) {
   const tokenIdentifier = getUniqueId();
 
   this.tokens.push({
     kind: 'oauth',
     tokenIdentifier,
-    metadata: {relatedToken},
+    metadata: {relatedToken, workspace: workspace?._id},
     expiresAt: new Date(Date.now() + cookieTokenExpiration),
   });
 
@@ -136,6 +141,7 @@ UserSchema.methods.getRefreshToken = function getRefreshToken(relatedToken) {
     {
       sub: this._id,
       tenant: this.tenant,
+      workspace: workspace?._id,
       tokenIdentifier,
     },
     refreshTokenSecret,
@@ -145,17 +151,17 @@ UserSchema.methods.getRefreshToken = function getRefreshToken(relatedToken) {
 
 UserSchema.methods.updateToken = function updateToken(
   authType,
-  currentIdentifier,
+  currentPayload: { tokenIdentifier, workspace? },
   newIdentifier,
   relatedToken
 ) {
   this.tokens = this.tokens.filter(
     (token) =>
-      !(token.kind === authType && token.tokenIdentifier === currentIdentifier)
+      !(token.kind === authType && token.tokenIdentifier === currentPayload.tokenIdentifier)
   );
   const token = {kind: authType, tokenIdentifier: newIdentifier};
   if (relatedToken) {
-    (token as any).metadata = {relatedToken};
+    (token as any).metadata = {relatedToken, workspace: currentPayload.workspace?._id};
   }
   this.tokens.push(token);
 

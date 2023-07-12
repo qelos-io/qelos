@@ -2,9 +2,9 @@ import logger from '../services/logger';
 import {UserDocument, UserModel} from '../models/user';
 
 const User = require('../models/user')
-const { verifyRefreshToken } = require('../services/tokens')
+const {verifyRefreshToken} = require('../services/tokens')
 
-export async function refreshToken (req, res) {
+export async function refreshToken(req, res) {
   if (!req.headers.authorization) {
     return res.status(401).end()
   }
@@ -15,7 +15,7 @@ export async function refreshToken (req, res) {
 
   try {
     const decoded = await verifyRefreshToken(token, tenant)
-    const user: UserDocument & UserModel = await User.findOne({ _id: decoded.sub, tenant: decoded.tenant })
+    const user: UserDocument & UserModel = await User.findOne({_id: decoded.sub, tenant: decoded.tenant})
 
     if (!user.tokens.some(token => token.tokenIdentifier === decoded.tokenIdentifier)) {
       throw new Error('refresh token not valid')
@@ -23,7 +23,7 @@ export async function refreshToken (req, res) {
 
     user.tokens = user.tokens.filter(token => token.tokenIdentifier !== decoded.tokenIdentifier);
 
-    const newToken = user.getToken('oauth');
+    const newToken = user.getToken({authType: 'oauth', workspace: decoded.workspace ? {_id: decoded.workspace} : null});
     const refreshToken = user.getRefreshToken(newToken);
 
     await user.save()

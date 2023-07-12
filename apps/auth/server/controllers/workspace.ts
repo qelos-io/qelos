@@ -101,6 +101,10 @@ export async function deleteWorkspace(req: AuthRequest, res: Response) {
   }
 }
 
+export function activateWorkspace(req: AuthRequest, res: Response) {
+
+}
+
 export async function getWorkspaceByParams(req, res, next) {
   const {tenant} = req.headers || {};
   const _id = req.params.workspaceId;
@@ -112,15 +116,20 @@ export async function getWorkspaceByParams(req, res, next) {
       res.status(404).json({message: 'workspace not found'});
       return;
     }
-    const isPrivileged = !!workspace.members.some(member => (member.user as Types.ObjectId).equals(userId) && member.roles.includes('admin'))
-    if (!isPrivileged) {
-      res.status(403).send({message: 'not authorized'});
-      return;
-    }
 
     req.workspace = workspace;
     next();
   } catch {
     res.status(500).send({message: 'failed to load workspace data'});
   }
+}
+
+export function onlyWorkspacePrivileged(req, res, next) {
+  const userId = ObjectId(req.userPayload.sub);
+  const isPrivileged = !!req.workspace.members.some(member => (member.user as Types.ObjectId).equals(userId) && member.roles.includes('admin'))
+  if (!isPrivileged) {
+    res.status(403).send({message: 'not authorized'});
+    return;
+  }
+  next();
 }

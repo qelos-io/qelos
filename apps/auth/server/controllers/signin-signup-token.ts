@@ -60,14 +60,14 @@ export function validateSignInForm(payload: any) {
 }
 
 export function tokenPayload(host: string, res: Response, data: any) {
-  const { token, refreshToken, cookieToken, user } = data;
+  const { token, refreshToken, cookieToken, user, workspace } = data;
 
   if (cookieToken) {
     res = setCookie(res, cookieToken, null, host);
     return res
       .status(200)
       .json({
-        payload: { user },
+        payload: { user, workspace },
       })
       .end();
   } else {
@@ -78,6 +78,11 @@ export function tokenPayload(host: string, res: Response, data: any) {
           token,
           refreshToken,
           user,
+          workspace: workspace && {
+            _id: workspace._id,
+            name: workspace.name,
+            roles: workspace.roles
+          }
         },
       })
       .end();

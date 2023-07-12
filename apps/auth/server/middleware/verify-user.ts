@@ -16,7 +16,6 @@ import {AuthRequest} from '../../types';
 import {cacheManager} from '../services/cache-manager';
 import {getRequestHost} from '../services/req-host';
 import logger from '../services/logger';
-import Logger from '../services/logger';
 
 function oAuthVerify(req: AuthRequest, _res: Response, next: NextFunction): Promise<void> {
   // get the last part from an authorization header string like "bearer token-value"
@@ -67,15 +66,16 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
         throw e;
       }
     }
-    setCookieAsProcessed(payload.tokenIdentifier).catch(Logger.log);
+    setCookieAsProcessed(payload.tokenIdentifier).catch(logger.log);
     await updateToken(
       user,
       'cookie',
-      payload.tokenIdentifier,
+      payload,
       newCookieIdentifier
     );
     const {token: newToken, payload: newPayload} = getSignedToken(
       user,
+      payload.workspace,
       newCookieIdentifier,
       String(cookieTokenExpiration / 1000)
     );
@@ -107,6 +107,7 @@ function setUserPayload(payload: any, req: AuthRequest, next: NextFunction) {
   req.userPayload.isPrivileged = payload.roles.some((role: string) =>
     privilegedRoles.includes(role)
   );
+  req.activeWorkspace = payload.workspace;
   next();
 }
 

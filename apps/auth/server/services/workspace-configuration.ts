@@ -6,18 +6,27 @@ const contentService = service('CONTENT', {port: process.env.CONTENT_SERVICE_POR
 function callContentService(url: string, tenant: string, data?: any) {
   return contentService({
     headers: {internal_secret: internalServicesSecret, tenant},
-    method: 'POST',
+    method: 'GET',
     data,
     url
   })
     .then((axiosRes: any) => axiosRes.data)
 }
 
-export function getWorkspaceConfiguration(tenant: string): Promise<{
+export async function getWorkspaceConfiguration(tenant: string): Promise<{
   isActive: boolean,
   creationPrivilegedRoles: string[],
   viewMembersPrivilegedWsRoles: string[]
 }> {
-  return callContentService('/api/configurations/workspace-configuration', tenant);
+  return callContentService('/api/configurations/workspace-configuration', tenant)
+    .then(config => config.metadata)
+    .catch((err) => {
+      console.log(err);
+      return {
+        isActive: false,
+        creationPrivilegedRoles: [],
+        viewMembersPrivilegedWsRoles: []
+      }
+    })
 }
 
