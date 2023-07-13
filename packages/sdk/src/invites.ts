@@ -27,9 +27,9 @@ export default class QlInvites extends BaseSDK {
 
   acceptWorkspace(workspaceId: string): Promise<unknown> {
     return this.callApi(
-      `${this.relativePath}/${workspaceId}`,
+      this.relativePath,
       {
-        method: 'put',
+        method: 'post',
         headers: {'content-type': 'application/json'},
         body: JSON.stringify({
           workspace: workspaceId,
@@ -41,9 +41,9 @@ export default class QlInvites extends BaseSDK {
 
   declineWorkspace(workspaceId: string): Promise<unknown> {
     return this.callApi(
-      `${this.relativePath}/${workspaceId}`,
+      this.relativePath,
       {
-        method: 'put',
+        method: 'post',
         headers: {'content-type': 'application/json'},
         body: JSON.stringify({
           workspace: workspaceId,

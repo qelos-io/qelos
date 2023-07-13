@@ -8,6 +8,7 @@ export interface IWorkspaceMember {
 }
 
 export interface IInvite {
+  name?: string;
   email: string;
   created?: string | Date;
 }
@@ -59,5 +60,15 @@ export default class QlWorkspaces extends BaseSDK {
       headers: {'content-type': 'application/json'},
       body: JSON.stringify(workspace)
     })
+  }
+
+  activate(workspaceId: string): Promise<IWorkspace> {
+    return this.callJsonApi<IWorkspace>(
+      `${this.relativePath}/${workspaceId}`,
+      {
+        method: 'post',
+        headers: {'content-type': 'application/json'},
+      }
+    )
   }
 }
