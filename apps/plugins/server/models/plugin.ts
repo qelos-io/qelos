@@ -35,6 +35,7 @@ export interface IPlugin extends Document {
     active: boolean;
     opened: boolean;
     roles: string[],
+    workspaceRoles: string[],
     crud?: string;
     use?: string;
     structure?: string;
@@ -98,6 +99,7 @@ const MicroFrontendSchema = new mongoose.Schema({
     required: true
   },
   roles: [String],
+  workspaceRoles: [String],
   route: {
     name: String,
     path: String,

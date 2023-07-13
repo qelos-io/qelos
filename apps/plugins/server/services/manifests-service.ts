@@ -125,6 +125,7 @@ export async function enrichPluginWithManifest(plugin: IPlugin, {
     return {
       ...mfe,
       roles: mfe.roles?.length ? mfe.roles : ['*'],
+      workspaceRoles: mfe.workspaceRoles?.length ? mfe.workspaceRoles : ['*'],
       url: mfe.url ? (mfe.url.startsWith('http') ? mfe.url : new URL(mfe.url, manifest.appUrl).href) : '-',
     }
   });

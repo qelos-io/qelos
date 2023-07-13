@@ -19,6 +19,7 @@ export interface IMicroFrontend {
   active: boolean;
   opened: boolean;
   roles: string[],
+  workspaceRoles: string[],
   route?: {
     name: string;
     path: string;

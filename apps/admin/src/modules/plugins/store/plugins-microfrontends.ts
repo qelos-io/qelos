@@ -21,6 +21,15 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
   const cruds = reactive({});
 
   const userRoles = computed(() => authStore.user?.roles || []);
+  const userWsRoles = computed(() => authStore.user?.workspace?.roles || []);
+
+  const filterMfeByRoles = mfe => {
+    const routeRoles = mfe.roles || mfe.route?.roles;
+    const routeWsRoles = mfe.workspaceRoles;
+    return mfe.active &&
+      (!routeRoles?.length || routeRoles.some(role => role === '*' || userRoles.value.includes(role))) &&
+      (!routeWsRoles?.length || routeWsRoles.some(role => role === '*' || userWsRoles.value.includes(role)))
+  }
 
   const microFrontends = computed(() => {
     const data = {
@@ -40,45 +49,40 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         map[group.key] = group;
         return map;
       }, {}) || {};
-      plugin.microFrontends?.filter(mfe =>
-        mfe.active &&
-        (!(mfe.roles || mfe.route?.roles) || (mfe.roles || mfe.route.roles)
-          .some(role => role === '*' || userRoles.value.includes(role)))
-      )
-        .forEach(mfe => {
-          if (mfe.url === '-') {
-            delete mfe.url;
-          }
-          if (mfe.crud) {
-            mfe.crudData = plugin.cruds.find(crud => crud.name === mfe.crud);
-          }
-          if (mfe.route) {
-            mfe.callbackUrl = plugin.callbackUrl;
-            mfe.pluginId = plugin._id;
-            mfe.pluginApiPath = plugin.apiPath;
-            if (allMFEs.navBar[mfe.route.navBarPosition as string]) {
-              const stackTo = allMFEs.navBar[mfe.route.navBarPosition as string];
-              // grouped routes in nav bar
-              if (mfe.route.group) {
-                const groupTo = stackTo.find(group => group.key === mfe.route.group);
-                if (groupTo) {
-                  groupTo.items.push(mfe);
-                } else {
-                  stackTo.unshift({
-                    ...groups[mfe.route.group],
-                    items: [mfe]
-                  })
-                }
+      plugin.microFrontends?.filter(filterMfeByRoles).forEach(mfe => {
+        if (mfe.url === '-') {
+          delete mfe.url;
+        }
+        if (mfe.crud) {
+          mfe.crudData = plugin.cruds.find(crud => crud.name === mfe.crud);
+        }
+        if (mfe.route) {
+          mfe.callbackUrl = plugin.callbackUrl;
+          mfe.pluginId = plugin._id;
+          mfe.pluginApiPath = plugin.apiPath;
+          if (allMFEs.navBar[mfe.route.navBarPosition as string]) {
+            const stackTo = allMFEs.navBar[mfe.route.navBarPosition as string];
+            // grouped routes in nav bar
+            if (mfe.route.group) {
+              const groupTo = stackTo.find(group => group.key === mfe.route.group);
+              if (groupTo) {
+                groupTo.items.push(mfe);
               } else {
-                stackTo[stackTo.length - 1].items.push(mfe); // add to the un-grouped items;
+                stackTo.unshift({
+                  ...groups[mfe.route.group],
+                  items: [mfe]
+                })
               }
             } else {
-              allMFEs.onlyRoutes.push(mfe);
+              stackTo[stackTo.length - 1].items.push(mfe); // add to the un-grouped items;
             }
-          } else if (mfe.modal) { // modals micro frontends
-            allMFEs.modals[mfe.modal.name] = mfe;
+          } else {
+            allMFEs.onlyRoutes.push(mfe);
           }
-        });
+        } else if (mfe.modal) { // modals micro frontends
+          allMFEs.modals[mfe.modal.name] = mfe;
+        }
+      });
 
       const sortByPriority = (a, b) => (a.priority || 99999) - (b.priority || 99999);
       allMFEs.navBar.top = allMFEs.navBar.top.sort(sortByPriority);

@@ -20,6 +20,7 @@ export interface GlobalMicroFrontend {
   name: string;
   description: string;
   roles?: string[],
+  workspaceRoles?: string[],
   route?: {
     name: string;
     path: string;
