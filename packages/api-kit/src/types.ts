@@ -20,6 +20,11 @@ export type ServiceProtocol = 'http' | 'https';
 
 export interface RequestWithUser extends Omit<Request, 'headers'> {
   user?: Record<string, any>;
+  workspace?: {
+    _id: string;
+    name: string;
+    roles: string[];
+  };
   headers?: RequestHeadersWithUser
 }
 

@@ -5,6 +5,7 @@ import type { RequestWithUser } from './types';
 export function populateUser(req: RequestWithUser, res: Response, next: NextFunction): void {
   try {
     req.user = req.headers.user ? JSON.parse(req.headers.user as string) : null;
+    req.workspace = req.user?.workspace;
     next();
   } catch (e) {
     res.status(400).json({ code: 'INVALID_USER' }).end();
