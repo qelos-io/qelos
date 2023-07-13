@@ -1,4 +1,4 @@
-import {computed, reactive, watch} from 'vue';
+import {computed, reactive, toRef, watch} from 'vue';
 import {useRouter} from 'vue-router';
 import {defineStore, storeToRefs} from 'pinia';
 import {usePluginsList} from './plugins-list';
@@ -6,6 +6,7 @@ import MicroFrontendPage from '../MicroFrontendPage.vue';
 import {authStore} from '@/modules/core/store/auth';
 import {IMicroFrontend} from '@/services/types/plugin';
 import {getCrud} from '@/services/crud';
+import {useWsConfiguration} from '@/modules/configurations/store/ws-configuration';
 
 function getMfeUrl(mfe: IMicroFrontend): string {
   if (!mfe.callbackUrl) {
@@ -22,6 +23,8 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
 
   const userRoles = computed(() => authStore.user?.roles || []);
   const userWsRoles = computed(() => authStore.user?.workspace?.roles || []);
+
+  const isWorkspacesActive = toRef(useWsConfiguration(), 'isActive');
 
   const filterMfeByRoles = mfe => {
     const routeRoles = mfe.roles || mfe.route?.roles;
@@ -105,15 +108,18 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
           meta: null
         }
         const roles = mfe.roles || mfe.route.roles || ['*'];
+        const workspaceRoles = mfe.workspaceRoles || ['*'];
         if (mfe.url) {
           route.meta = {
             roles,
+            workspaceRoles,
             mfeUrl: getMfeUrl(mfe),
             origin: mfe.url ? new URL(mfe.url).origin : undefined
           }
         } else {
           route.meta = {
             roles,
+            workspaceRoles,
             mfe,
             crud: mfe.crudData,
           }

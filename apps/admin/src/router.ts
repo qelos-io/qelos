@@ -49,13 +49,22 @@ const router = createRouter({
   ]
 })
 
-router.beforeEach((to, from, next) => {
+const EVERY_ROLE_PATTERN = '*';
+const checkValidRole = role => role === EVERY_ROLE_PATTERN || authStore.user.roles.includes(role)
+const checkValidWsRole = role => authStore.user.workspace && (role === EVERY_ROLE_PATTERN || authStore.user.workspace?.roles.includes(role))
+router.beforeEach(async (to, from, next) => {
   if (to.name === 'login' || to.meta.guest || localStorage.refresh_token) {
     return next()
   }
-  fetchAuthUser()
-  if (authStore.userPromise || authStore.user) {
-    return next()
+  if (await fetchAuthUser() && authStore.user) {
+    if (
+      (!to.meta.roles || (to.meta.roles as string[]).some(checkValidRole)) &&
+      (!to.meta.workspaceRoles || (to.meta.workspaceRoles as string[]).some(checkValidWsRole))
+    ) {
+      return next()
+    } else {
+      return next(from);
+    }
   }
   next({
     name: 'login'

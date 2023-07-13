@@ -40,8 +40,8 @@ async function migrate() {
       public: true,
       metadata: {
         isActive: false,
-        creationPrivilegedRoles: ['user'],
-        viewMembersPrivilegedWsRoles: ['user'],
+        creationPrivilegedRoles: ['*'],
+        viewMembersPrivilegedWsRoles: ['*'],
       }
     })
   }

@@ -17,8 +17,11 @@
         </div>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item>
-              <span v-if="user.workspace" class="workspace-row">{{ user.workspace.name }}</span>
+            <el-dropdown-item v-if="user.workspace">
+              <span class="workspace-row">{{ user.workspace.name }}</span>
+            </el-dropdown-item>
+            <el-dropdown-item v-if="wsConfig.isActive">
+              <router-link :to="{name: 'workspaces'}">{{ $t('Workspaces') }}</router-link>
             </el-dropdown-item>
             <el-dropdown-item>
               <router-link :to="{name: 'updateProfile'}">{{ $t('Update profile') }}</router-link>
@@ -51,9 +54,12 @@ import SearchForm from '@/modules/core/components/layout/SearchForm.vue';
 import {useRouter} from 'vue-router';
 import {storeToRefs} from 'pinia';
 import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
+import {useWsConfiguration} from '@/modules/configurations/store/ws-configuration';
 const emit = defineEmits(['open']);
 const {user, logout: logoutApi} = useAuth()
 const router = useRouter()
+
+const wsConfig = useWsConfiguration()
 
 const open = () => emit('open');
 

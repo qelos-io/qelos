@@ -89,5 +89,6 @@
   "Update profile": "Update profile",
   "{amount} Posts": "No Posts | One Post | {amount} Posts",
   "{amount} Blocks": "No Blocks | One Block | {amount} Blocks",
-  "Search user by email": "Search user by email"
+  "Search user by email": "Search user by email",
+  "Workspaces": "Workspaces"
 }

@@ -5,11 +5,14 @@ const workspacesRoutes: RouteRecordRaw = {
   path: 'workspaces',
   redirect: { name: 'workspaces' },
   component: EmptyRoute,
+  meta: {
+    workspaceRoles: ['*']
+  },
   children: [
     {
       path: '',
       name: 'workspaces',
-      component: async () => (await import('./Workspaces.vue')).default
+      component: async () => (await import('./Workspaces.vue')).default,
     },
     {
       path: 'new',

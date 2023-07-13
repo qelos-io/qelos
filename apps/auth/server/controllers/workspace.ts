@@ -9,6 +9,7 @@ import {updateToken} from '../services/users';
 import User, {UserModel} from '../models/user';
 import {cookieTokenExpiration} from '../../config';
 import {getRequestHost} from '../services/req-host';
+import {getWorkspaceConfiguration} from '../services/workspace-configuration';
 
 const ObjectId = Types.ObjectId;
 
@@ -56,9 +57,18 @@ export async function getWorkspaces(req: AuthRequest, res: Response) {
 export async function createWorkspace(req: AuthRequest, res: Response) {
   const {tenant} = req.headers || {};
   const userId = req.userPayload.sub;
-  const {name, logo, invites = []} = req.body
-  try {
+  const {name, logo, invites = []} = req.body;
+  const wsConfig = await getWorkspaceConfiguration(tenant);
 
+  if (
+    wsConfig.creationPrivilegedRoles?.length &&
+    !wsConfig.creationPrivilegedRoles.some(role => role === '*' || req.userPayload.roles.includes(role))
+  ) {
+    res.status(403).json({message: 'you are not permitted to create a workspace'}).end();
+    return;
+  }
+
+  try {
     const workspace = new Workspace({tenant, name, logo, invites});
     workspace.members = [{
       user: userId,
@@ -103,9 +113,22 @@ export async function updateWorkspace(req: AuthRequest, res: Response) {
 }
 
 export async function deleteWorkspace(req: AuthRequest, res: Response) {
+  const {tenant} = req.headers || {};
+  const userId = req.userPayload.sub;
+
   try {
     await req.workspace.remove();
-    res.status(200).json(req.workspace);
+    res.status(200).json(req.workspace).end();
+
+    emitPlatformEvent({
+      tenant: tenant,
+      user: userId,
+      source: 'auth',
+      kind: 'workspaces',
+      eventName: 'workspaces-deleted',
+      description: 'workspaces deleted by user endpoint',
+      metadata: req.workspace
+    })
   } catch (err) {
     res.status(500).json(err.message).end()
   }
