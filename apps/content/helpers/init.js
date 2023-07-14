@@ -3,13 +3,14 @@
  */
 const config = require('../config');
 const mongoose = require('mongoose');
-const { appConfiguration } = require('../config');
+const { appConfiguration, workspaceConfiguration } = require('../config');
 require('../server/models').connect(config.mongoUri);
 
 const TENANT = process.env.TENANT || '0';
 const HOST = process.env.HOST || '127.0.0.1';
 const SLOGAN = process.env.SLOGAN;
 const LOGO_URL = process.env.LOGO_URL;
+const IS_WORKSPACES_ACTIVE = process.env.IS_WORKSPACES_ACTIVE === 'true';
 
 const Configuration = mongoose.model('Configuration');
 
@@ -43,10 +44,22 @@ const configuration = new Configuration({
 	}
 })
 
+const wsConfiguration = new Configuration({
+  tenant: TENANT,
+  key: workspaceConfiguration,
+  public: true,
+  metadata: {
+    isActive: IS_WORKSPACES_ACTIVE,
+    creationPrivilegedRoles: ['*'],
+    viewMembersPrivilegedWsRoles: ['*']
+  }
+})
+
 console.log('initiate content');
 
 Promise.all([
 	configuration.save(),
+  wsConfiguration.save(),
 ])
 	.then(() => {
 		console.log('content created successfully');
