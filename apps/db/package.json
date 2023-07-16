@@ -1,6 +1,6 @@
 {
   "name": "@qelos/db",
-  "version": "3.0.0",
+  "version": "3.3.8",
   "scripts": {
     "dev": "docker run -p 27017-27019:27017-27019 --name qelos-db --rm -v $PWD/db-data:/data/db mongo"
   },

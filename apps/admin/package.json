@@ -1,6 +1,6 @@
 {
   "name": "@qelos/admin",
-  "version": "3.3.7",
+  "version": "3.3.8",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -20,7 +20,7 @@
   "devDependencies": {
     "@element-plus/icons-vue": "^1.1.1",
     "@greenpress/gp-editor": "^2.1.1",
-    "@qelos/sdk": "^3.3.6",
+    "@qelos/sdk": "^3.3.8",
     "@qelos/view-builder": "^3.2.2",
     "@types/remarkable": "^2.0.3",
     "@vitejs/plugin-vue": "^2.2.4",
