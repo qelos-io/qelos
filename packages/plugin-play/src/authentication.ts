@@ -320,16 +320,9 @@ export function getFrontendAuthorizationRoute(): RouteOptions {
 
     if (config.dev) {
       standaloneAuthorize = async (reply) => {
-        const [fullUser] = await getSdk().users.getList({exact: true, email: config.qelosUsername});
-        const user = {
-          _id: fullUser._id,
-          email: fullUser.email,
-          firstName: fullUser.firstName,
-          lastName: fullUser.lastName,
-          roles: fullUser.roles
-        }
+        const user = await getSdk().authentication.getLoggedInUser();
         const tenant = {
-          sub: user._id,
+          sub: 'test-tenant-' + user._id,
           identifier: user.email
         };
         reply.setCookie('token_default', jwt.sign({

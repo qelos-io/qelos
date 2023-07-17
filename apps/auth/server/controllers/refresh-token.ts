@@ -1,21 +1,19 @@
 import logger from '../services/logger';
-import {UserDocument, UserModel} from '../models/user';
-
-const User = require('../models/user')
-const {verifyRefreshToken} = require('../services/tokens')
+import User, {UserDocument, UserModel} from '../models/user';
+import {verifyRefreshToken} from '../services/tokens';
 
 export async function refreshToken(req, res) {
   if (!req.headers.authorization) {
     return res.status(401).end()
   }
 
-  // get the last part from a authorization header string like "bearer token-value"
+  // get the last part from an authorization header string like "bearer token-value"
   const token = req.headers.authorization.split(' ')[1]
   const tenant = req.headers.tenant = req.headers.tenant || '0'
 
   try {
-    const decoded = await verifyRefreshToken(token, tenant)
-    const user: UserDocument & UserModel = await User.findOne({_id: decoded.sub, tenant: decoded.tenant})
+    const decoded = await verifyRefreshToken(token, tenant) as any;
+    const user: UserDocument & UserModel = await User.findOne({_id: decoded.sub, tenant: decoded.tenant}).exec() as any
 
     if (!user.tokens.some(token => token.tokenIdentifier === decoded.tokenIdentifier)) {
       throw new Error('refresh token not valid')

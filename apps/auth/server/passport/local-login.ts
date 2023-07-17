@@ -50,8 +50,6 @@ module.exports = new Strategy(
     ]);
     const workspace = wsConfig.isActive ? await getWorkspaceForUser(query.tenant, (user as any)._id, preSelectedWorkspace) : null;
 
-    console.log('given workspace', workspace);
-
     setToken({user: user as any as UserDocument, workspace}, authType)
       .then(({user, token, refreshToken, cookieToken}) => {
         done(null, {

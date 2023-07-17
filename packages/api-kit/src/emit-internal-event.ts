@@ -17,7 +17,10 @@ export function emitPlatformEvent(platformEvent: PlatformEvent) {
   return callPluginsService({
     method: 'POST',
     url: '/internal-api/events',
-    data: platformEvent
+    data: platformEvent,
+    headers: {
+      tenant: platformEvent.tenant
+    }
   })
     .catch()
 }
