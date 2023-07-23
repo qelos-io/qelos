@@ -18,3 +18,5 @@ const store = useInvitesList()
 const {canUserCreateWorkspace} = toRefs(useWsConfiguration())
 
 </script>
+
+
