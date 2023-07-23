@@ -1,12 +1,13 @@
 import mongoose, {Schema, Types} from 'mongoose';
 
+export type Invite = { email: string; name: string; created?: Date };
 export interface IWorkspace {
-  name: string,
-  tenant: string,
-  logo?: string,
-  members: [{ user: Types.ObjectId | string, roles: string[], created?: Date }],
-  invites: [{ email: string, name: string, created?: Date }],
-  created?: Date,
+  name: string;
+  tenant: string;
+  logo?: string;
+  members: [{ user: Types.ObjectId | string; roles: string[]; created?: Date }];
+  invites: Invite[];
+  created?: Date;
 }
 
 export const WorkspaceSchema = new mongoose.Schema<IWorkspace>({
