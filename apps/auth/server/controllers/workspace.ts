@@ -80,12 +80,25 @@ export async function createWorkspace(req: AuthRequest, res: Response) {
     emitPlatformEvent({
       tenant: tenant,
       user: userId,
-      source: 'auth',
-      kind: 'workspaces',
-      eventName: 'workspaces-created',
-      description: 'workspaces created by user endpoint',
-      metadata: workspace
-    })
+      source: "auth",
+      kind: "workspaces",
+      eventName: "workspaces-created",
+      description: "workspaces created by user endpoint",
+      metadata: workspace,
+    });
+
+    emitPlatformEvent({
+      tenant: tenant,
+      user: userId,
+      source: "auth",
+      kind: "invites",
+      eventName: "invite-created",
+      description: "invites created",
+      metadata: {
+        workspaceId: workspace._id,
+        invites,
+      },
+    });
   } catch (err) {
     res.status(500).json({message: 'failed to create workspace'}).end()
   }
