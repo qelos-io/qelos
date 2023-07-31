@@ -1,6 +1,6 @@
 {
   "name": "@qelos/plugin-play",
-  "version": "3.3.8",
+  "version": "3.3.9",
   "description": "Play a plugin for Qelos!",
   "main": "./dist/index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "@fastify/cookie": "^8.3.0",
     "@fastify/static": "^6.5.0",
     "@qelos/cache-manager": "^3.2.1",
-    "@qelos/sdk": "^3.3.8",
+    "@qelos/sdk": "^3.3.9",
     "@qelos/web-sdk": "^3.2.8",
     "fastify": "^4.3.0",
     "jsonwebtoken": "^9.0.0",
