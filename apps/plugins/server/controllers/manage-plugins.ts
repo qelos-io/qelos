@@ -171,9 +171,9 @@ export async function updatePlugin(req, res) {
 
     await plugin.save();
     res.json(plugin).end();
-  } catch (e) {
-    logger.log('error while edit plugin', e);
+  } catch (err) {
     res.status(500).json({message: 'could not update plugin'}).end();
+    logger.log('error while edit plugin', new Error((err as any)?.message || err));
   }
 }
 

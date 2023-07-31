@@ -16,7 +16,6 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
-import {toHTML} from '@/services/markdown-converter';
 import TemplatedRowItem from '@/modules/pre-designed/components/TemplatedRowItem.vue';
 import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
 
@@ -26,7 +25,6 @@ const mfes = usePluginsMicroFrontends();
 
 const crud = computed(() => {
   const crud = route.meta.crud as any || {display: {}};
-  const screens = crud.screens || {list: {}}
   return {
     ...crud,
     display: {
@@ -34,16 +32,12 @@ const crud = computed(() => {
       capitalizedPlural: 'Items',
       ...(crud.display || {}),
     },
-    screens: {
-      list: {
-        structure:
-            `### [{{ row.title }}](edit)
+    screen: {
+      structure: (route.meta.mfe as any)?.structure as string || `<h3>{{ row.title }}</h3>
 {{ row.content }}
 :!:
 <button for="edit">Edit</button>
-<button for="remove">{{ $t('Remove') }}</button>`,
-        ...screens.list,
-      },
+<button for="remove">{{ $t('Remove') }}</button>`
     },
   }
 });
@@ -98,27 +92,31 @@ function setViewLink(el: HTMLTemplateElement) {
 }
 
 const structure = computed(() => {
-  const [body, actions] = crud.value.screens.list.structure.split('\n:!:\n');
-
-  let header, content;
-  const template = toTemplate(toHTML(body));
+  let header, content, actionsContent = '';
+  const template = toTemplate(crud.value.screen.structure);
+  const actionsEl = template.content.querySelector('actions');
   setEditLink(template);
   if (template.content.firstChild.nodeName.startsWith('H')) {
     header = (template.content.firstChild as HTMLElement).outerHTML;
     template.content.removeChild(template.content.firstChild);
   }
   setRemoveButton(template);
-  content = template.innerHTML;
 
-  const actionsTemplate = toTemplate(toHTML(actions));
-  setAllButtons(actionsTemplate);
-  setEditLink(actionsTemplate);
-  setViewLink(actionsTemplate);
+  if (actionsEl) {
+    const actionsTemplate = toTemplate(actionsEl.innerHTML);
+    actionsEl.remove();
+    setAllButtons(actionsTemplate);
+    setEditLink(actionsTemplate);
+    setViewLink(actionsTemplate);
+    actionsContent = actionsTemplate.innerHTML;
+  }
+
+  content = template.innerHTML;
 
   return {
     header,
     content,
-    actions: actionsTemplate.innerHTML
+    actions: actionsContent,
   }
 })
 const api = computed(() => mfes.cruds[crud.value.name]);
@@ -127,7 +125,7 @@ const list = ref();
 const identifierKey = computed<string>(() => route.meta.identifierKey as string || '_id');
 
 function load() {
-  api.value.getAll().then(data => list.value = data);
+  api.value?.getAll().then(data => list.value = data);
 }
 
 async function removeRow(row) {

@@ -132,7 +132,7 @@ async function setUserEncryptedData(req: AuthRequest, res: Response) {
     await setEncryptedData(tenant, id, JSON.stringify(req.body));
     res.status(200).set('Content-Type', 'application/json').end('{}');
   } catch (e) {
-    res.status(400).json({message: 'failed to retrieve encrypted data for user'}).end()
+    res.status(400).json({message: 'failed to set encrypted data for user'}).end();
   }
 }
 

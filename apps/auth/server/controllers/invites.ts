@@ -49,7 +49,7 @@ export async function respondToInvite(req: AuthRequest, res: Response) {
     if (!workspace) {
       return res
         .status(404)
-        .json({message: 'workspace not found', email, workspaceId});
+        .json({message: 'workspace not found', email, workspaceId, from: 'invite-respond'});
     }
 
     const filteredInvites = workspace.invites.filter(

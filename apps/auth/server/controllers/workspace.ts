@@ -193,7 +193,7 @@ export async function getWorkspaceMembers(req: AuthRequest, res: Response) {
     }
     const workspace = await Workspace.findOne(query).select('members').lean().exec();
     if (!workspace) {
-      res.status(404).json({message: 'Workspace not found'}).end();
+      res.status(404).json({message: 'workspace not found', from: 'get-members'}).end();
       return;
     }
     res.status(200).json(workspace.members).end()
@@ -213,19 +213,19 @@ export async function getWorkspaceByParams(req, res, next) {
       _id,
       'members.user': userId
     };
-
-    if (req.isPrivilegedUser) {
+    const isPrivilegedUser = req.userPayload.isPrivileged;
+    if (isPrivilegedUser) {
       delete query['members.user'];
     }
-    const select = req.isPrivilegedUser ? 'name logo' : 'name logo members.$';
+    const select = isPrivilegedUser ? 'name logo' : 'name logo members.$';
     const workspace = await Workspace.findOne(query).select(select).exec();
     if (!workspace) {
-      res.status(404).json({message: 'workspace not found'});
+      res.status(404).json({message: 'workspace not found', from: 'get-workspace'}).end();
       return;
     }
 
     req.workspace = workspace;
-    req.isWorkspacePrivileged = req.isPrivilegedUser || !!req.workspace.members.some(member => (member.user as Types.ObjectId).equals(userId) && member.roles.includes('admin'))
+    req.isWorkspacePrivileged = isPrivilegedUser || !!req.workspace.members.some(member => (member.user as Types.ObjectId).equals(userId) && member.roles.includes('admin'))
 
     next();
   } catch {
