@@ -3,7 +3,7 @@ import {addProxyEndpoint} from './endpoints';
 import {ResponseError} from './response-error';
 import logger from './logger';
 import manifest from './manifest';
-import {Crud, ICrudOptions, ResourceProperty, ResourceSchema} from './crud.types';
+import {Crud, ICrudOptions, ResourceProperty, ResourceSchema, Screen} from './crud.types';
 import {addGroupedMicroFrontends, NavBarPosition} from './micro-frontends';
 import {getSdkForTenant} from './sdk';
 
@@ -28,6 +28,17 @@ export function getDisplayNames(name: string) {
     plural,
     capitalized,
     capitalizedPlural
+  }
+}
+
+function getMfeScreenOptions(name: string, crud: string, screen: Screen) {
+  return {
+    name,
+    crud,
+    use: screen.use,
+    structure: screen.structure,
+    roles: screen.roles,
+    workspaceRoles: screen.workspaceRoles,
   }
 }
 
@@ -308,11 +319,8 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
     {name: crudOptions.display.capitalizedPlural, key: crudOptions.name, ...crudOptions.nav},
     [
       crudOptions.screens.list && {
-        name: 'List',
-        crud: crudOptions.name,
+        ...getMfeScreenOptions('List', crudOptions.name, crudOptions.screens.list),
         description: 'List of ' + crudOptions.display.capitalizedPlural,
-        use: crudOptions.screens.list.use,
-        structure: crudOptions.screens.list.structure,
         route: {
           name: crudOptions.name + '-list',
           path: crudOptions.name,
@@ -320,11 +328,8 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
         }
       },
       crudOptions.screens.create && {
-        name: 'Create',
-        crud: crudOptions.name,
+        ...getMfeScreenOptions('Create', crudOptions.name, crudOptions.screens.create),
         description: 'Create a new ' + crudOptions.display.capitalized,
-        use: crudOptions.screens.create.use,
-        structure: crudOptions.screens.create.structure,
         route: {
           name: 'add-' + singlePath,
           path: 'add-' + singlePath,
@@ -332,11 +337,8 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
         }
       },
       crudOptions.screens.edit && {
-        name: 'Edit',
-        crud: crudOptions.name,
+        ...getMfeScreenOptions('Edit', crudOptions.name, crudOptions.screens.edit),
         description: 'Edit existing ' + crudOptions.display.capitalized,
-        use: crudOptions.screens.edit.use,
-        structure: crudOptions.screens.edit.structure,
         route: {
           name: 'edit-' + singlePath,
           path: `edit-${singlePath}/:id`,
@@ -344,11 +346,8 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
         }
       },
       crudOptions.screens.view && {
-        name: 'View',
-        crud: crudOptions.name,
+        ...getMfeScreenOptions('View', crudOptions.name, crudOptions.screens.view),
         description: 'View existing ' + crudOptions.display.capitalized,
-        use: crudOptions.screens.view.use,
-        structure: crudOptions.screens.view.structure,
         route: {
           name: 'view-' + singlePath,
           path: `view-${singlePath}/:id`,

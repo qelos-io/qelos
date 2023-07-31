@@ -4,6 +4,7 @@ import {Strategy} from 'passport-local';
 import {UserDocument, UserModel} from '../models/user';
 import {getWorkspaceConfiguration} from '../services/workspace-configuration';
 import Workspace from '../models/workspace';
+import logger from '../services/logger';
 
 function getWorkspaceForUser(tenant: string, userId: string, workspaceId: string) {
   const query: any = {
@@ -48,7 +49,14 @@ module.exports = new Strategy(
       getWorkspaceConfiguration(query.tenant),
       getUser(query).then((user) => comparePassword((user as unknown as UserModel), password))
     ]);
-    const workspace = wsConfig.isActive ? await getWorkspaceForUser(query.tenant, (user as any)._id, preSelectedWorkspace) : null;
+    let workspace;
+    if (wsConfig.isActive) {
+      try {
+        workspace = await getWorkspaceForUser(query.tenant, (user as any)._id, preSelectedWorkspace);
+      } catch (err) {
+        logger.log('Error getting workspace', query);
+      }
+    }
 
     setToken({user: user as any as UserDocument, workspace}, authType)
       .then(({user, token, refreshToken, cookieToken}) => {

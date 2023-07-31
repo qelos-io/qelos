@@ -5,7 +5,11 @@ export type RequestUser = {
   email: string,
   firstName: string,
   lastName: string,
-  roles: string[]
+  roles: string[],
+  workspace?: {
+    _id: string,
+    roles: string[]
+  }
 };
 
 declare module 'fastify' {

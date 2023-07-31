@@ -20,8 +20,7 @@ export async function getWorkspaceConfiguration(tenant: string): Promise<{
 }> {
   return callContentService('/api/configurations/workspace-configuration', tenant)
     .then(config => config.metadata)
-    .catch((err) => {
-      console.log(err);
+    .catch(() => {
       return {
         isActive: false,
         creationPrivilegedRoles: [],

@@ -14,6 +14,8 @@ export type Crud = {
 }
 
 export interface Screen {
+  roles?: string[];
+  workspaceRoles?: string[];
   use?: string;
   structure?: string;
 }
@@ -52,7 +54,7 @@ export interface ICrudOptions<ResourcePublicData, ResourceInsertData> {
     view: false | Screen;
   },
   schema?: ResourceSchema,
-  dispatchPrefix: string | false,
+  dispatchPrefix?: string | false,
   verify?: (request: FastifyRequest, reply: FastifyReply) => Promise<any>;
   createOne: (body: Partial<ResourceInsertData>, request: FastifyRequest, reply: FastifyReply) => (any | Promise<ResourcePublicData>),
   readOne: (id: string, request: FastifyRequest, reply: FastifyReply) => (Promise<ResourcePublicData>);

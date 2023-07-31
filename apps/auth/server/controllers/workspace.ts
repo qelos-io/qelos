@@ -14,21 +14,17 @@ import {getWorkspaceConfiguration} from '../services/workspace-configuration';
 const ObjectId = Types.ObjectId;
 
 export async function getWorkspace(req: AuthRequest, res: Response) {
-  const {tenant} = req.headers || {};
-  const userId = req.userPayload.sub;
-  const _id = req.params.workspaceId;
+  if (!req.isWorkspacePrivileged) {
+    res.status(200).json(req.workspace).end()
+    return;
+  }
   try {
-    const workspace = await Workspace.findOne({
-      _id,
-      tenant,
-      'members.user': ObjectId(userId),
-    })
-      .select('name logo tenant').lean().exec();
-    if (!workspace) {
-      res.status(404).json({message: 'Workspace not found'}).end();
-      return;
-    }
-    res.status(200).json(workspace).end()
+    const {members, invites} = await Workspace.findOne({_id: req.workspace._id}, 'members invites').lean().exec();
+    res.status(200).json({
+      ...req.workspace,
+      members,
+      invites,
+    }).end()
   } catch (err) {
     res.status(500).json({message: 'Failed to load workspace'}).end()
   }
@@ -176,10 +172,34 @@ export async function activateWorkspace(req: AuthRequest, res: Response) {
     String(cookieTokenExpiration / 1000)
   );
 
-  console.log('set the token', newToken, getRequestHost(req))
   setCookie(res, newToken, null, getRequestHost(req));
 
   res.json(req.workspace).end()
+}
+
+export async function getWorkspaceMembers(req: AuthRequest, res: Response) {
+  const {tenant} = req.headers || {};
+  const userId = req.userPayload.sub;
+  const _id = req.params.workspaceId;
+  try {
+    const query: any = {
+      tenant,
+      _id,
+      'members.user': userId
+    };
+
+    if (req.userPayload.isPrivileged) {
+      delete query['members.user'];
+    }
+    const workspace = await Workspace.findOne(query).select('members').lean().exec();
+    if (!workspace) {
+      res.status(404).json({message: 'Workspace not found'}).end();
+      return;
+    }
+    res.status(200).json(workspace.members).end()
+  } catch (err) {
+    res.status(500).json({message: 'Failed to load workspace members'}).end()
+  }
 }
 
 export async function getWorkspaceByParams(req, res, next) {
@@ -188,17 +208,25 @@ export async function getWorkspaceByParams(req, res, next) {
 
   try {
     const userId = ObjectId(req.userPayload.sub);
-    const workspace = await Workspace.findOne({
+    const query: any = {
       tenant,
       _id,
       'members.user': userId
-    }).select('name logo members.$').exec();
+    };
+
+    if (req.isPrivilegedUser) {
+      delete query['members.user'];
+    }
+    const select = req.isPrivilegedUser ? 'name logo' : 'name logo members.$';
+    const workspace = await Workspace.findOne(query).select(select).exec();
     if (!workspace) {
       res.status(404).json({message: 'workspace not found'});
       return;
     }
 
     req.workspace = workspace;
+    req.isWorkspacePrivileged = req.isPrivilegedUser || !!req.workspace.members.some(member => (member.user as Types.ObjectId).equals(userId) && member.roles.includes('admin'))
+
     next();
   } catch {
     res.status(500).send({message: 'failed to load workspace data'});
@@ -206,9 +234,7 @@ export async function getWorkspaceByParams(req, res, next) {
 }
 
 export function onlyWorkspacePrivileged(req, res, next) {
-  const userId = ObjectId(req.userPayload.sub);
-  const isPrivileged = !!req.workspace.members.some(member => (member.user as Types.ObjectId).equals(userId) && member.roles.includes('admin'))
-  if (!isPrivileged) {
+  if (!req.isWorkspacePrivileged) {
     res.status(403).send({message: 'not authorized'});
     return;
   }

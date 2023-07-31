@@ -35,6 +35,10 @@ export default class QlWorkspaces extends BaseSDK {
     return this.callJsonApi<IWorkspace>(`${this.relativePath}/${workspaceId}`)
   }
 
+  getMembers(workspaceId: string) {
+    return this.callJsonApi<IWorkspaceMember[]>(`${this.relativePath}/${workspaceId}/members`)
+  }
+
   getList() {
     return this.callJsonApi<IWorkspace[]>(this.relativePath);
   }

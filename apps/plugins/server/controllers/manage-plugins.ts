@@ -158,7 +158,6 @@ export async function updatePlugin(req, res) {
 
     plugin.encodePath();
 
-
     if (newRefreshToken) {
       setRefreshSecret(tenant, plugin.apiPath, newRefreshToken).catch(() => null);
     }

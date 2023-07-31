@@ -29,5 +29,6 @@ export interface AuthRequest extends Request {
     name: string,
     roles: string[]
   }
-  workspace?: IWorkspace & mongoose.Document<IWorkspace>
+  workspace?: IWorkspace & mongoose.Document<IWorkspace>,
+  isWorkspacePrivileged?: boolean;
 }

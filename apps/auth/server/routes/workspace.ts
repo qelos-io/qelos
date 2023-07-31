@@ -4,7 +4,7 @@ import {
   updateWorkspace,
   deleteWorkspace,
   getWorkspace,
-  getWorkspaceByParams, getWorkspaces, onlyWorkspacePrivileged, activateWorkspace
+  getWorkspaceByParams, getWorkspaces, onlyWorkspacePrivileged, activateWorkspace, getWorkspaceMembers
 } from '../controllers/workspace'
 import verifyUser from '../middleware/verify-user'
 import {onlyAuthenticated} from '../middleware/auth-check'
@@ -34,7 +34,16 @@ router
     '/api/workspaces/:workspaceId',
     verifyUser,
     onlyAuthenticated,
+    getWorkspaceByParams,
     getWorkspace
+  )
+  .get(
+    '/api/workspaces/:workspaceId/members',
+    verifyUser,
+    onlyAuthenticated,
+    getWorkspaceByParams,
+    onlyWorkspacePrivileged,
+    getWorkspaceMembers
   )
   .post('/api/workspaces/:workspaceId/activate', verifyUser, onlyAuthenticated, getWorkspaceByParams, activateWorkspace)
 export default router;

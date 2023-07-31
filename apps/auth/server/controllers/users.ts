@@ -4,6 +4,7 @@ import {AuthRequest} from '../../types'
 import User from '../models/user'
 import UserInternalMetadata from '../models/user-internal-metadata';
 import {getEncryptedData, setEncryptedData} from '../services/encrypted-data';
+import logger from '../services/logger';
 
 const {Types: {ObjectId}} = require('mongoose')
 const UsersService = require('../services/users')
@@ -170,6 +171,7 @@ async function createUser(req: AuthRequest, res: Response) {
 
     res.status(200).json(response).end()
   } catch (e) {
+    logger.log('internal user create error', e);
     res.status(400).json({message: 'user creation failed'}).end()
   }
 }
