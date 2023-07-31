@@ -4,7 +4,6 @@ import logger from '../services/logger';
 
 import Workspace, {Invite} from '../models/workspace';
 import {emitPlatformEvent} from '@qelos/api-kit';
-import UserInternalMetadata from '../models/user-internal-metadata';
 
 export async function getInvites(req: AuthRequest, res: Response) {
   const {email} = req.userPayload;
