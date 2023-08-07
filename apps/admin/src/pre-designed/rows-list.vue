@@ -35,9 +35,10 @@ const crud = computed(() => {
     screen: {
       structure: (route.meta.mfe as any)?.structure as string || `<h3>{{ row.title }}</h3>
 {{ row.content }}
-:!:
+<action>
 <button for="edit">Edit</button>
-<button for="remove">{{ $t('Remove') }}</button>`
+<button for="remove">{{ $t('Remove') }}</button>
+</action>`
     },
   }
 });

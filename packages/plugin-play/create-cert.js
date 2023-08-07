@@ -1,6 +1,6 @@
 const {execSync} = require('child_process');
 
-execSync(`cd cert && docker run -v ${process.cwd()}/cert:/certs \\
+execSync(`mkdir -p cert && cd cert && docker run -v ${process.cwd()}/cert:/certs \\
   -e SSL_SUBJECT=${process.env.HOSTNAME || '0.0.0.0'} stakater/ssl-certs-generator:1.0`, {stdio: 'inherit'});
 
 console.log('done.');

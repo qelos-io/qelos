@@ -40,7 +40,7 @@ export function playPlugins() {
     changeOrigin: true,
     agent: httpAgent,
     pathRewrite(path, req) {
-      return path.split(req.apiPath)[1];
+      return path.split(proxyApiPrefix + '/' + req.apiPath)[1];
     },
     router(req) {
       return req.pluginUrl;

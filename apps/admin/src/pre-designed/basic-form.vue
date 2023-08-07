@@ -1,7 +1,7 @@
 <template>
   <main>
     <el-form @submit.prevent="submit">
-      <VRuntimeTemplate :template="relevantStructure" :template-props="{row: item, schema: crud.schema}"/>
+      <VRuntimeTemplate v-if="item" :template="relevantStructure" :template-props="{row: item, schema: crud.schema}"/>
     </el-form>
   </main>
 </template>
@@ -12,13 +12,14 @@ import {computed, ref, watch} from 'vue';
 import {useSubmitting} from '@/modules/core/compositions/submitting';
 import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
 import VRuntimeTemplate from 'vue3-runtime-template';
+import {useNotifications} from '@/modules/core/compositions/notifications';
 
 const route = useRoute();
 const mfes = usePluginsMicroFrontends();
+const {error} = useNotifications()
 
 const crud = computed(() => {
   const crud = route.meta.crud as any || {display: {}};
-  const screens: any = crud.screens || {}
   return {
     ...crud,
     display: {
@@ -26,11 +27,9 @@ const crud = computed(() => {
       capitalizedPlural: 'Items',
       ...(crud.display || {}),
     },
-    screens: {
-      create: screens.create,
-      edit: screens.edit,
-      view: screens.view
-    },
+    screen: {
+      structure: (route.meta.mfe as any)?.structure
+    }
   }
 });
 const api = computed(() => mfes.cruds[crud.value.name]);
@@ -38,7 +37,7 @@ const isExistingItem = computed(() => !!route.params.id);
 const relevantStructure = computed(() => {
   return (route.meta.mfe as any)?.structure;
 });
-const item = ref({});
+const item = ref();
 
 const {submit, submitting} = useSubmitting(async () => {
   if (isExistingItem.value) {
@@ -53,17 +52,14 @@ const {submit, submitting} = useSubmitting(async () => {
 
 if (isExistingItem.value) {
   watch(api, () => {
-    api.value.getOne(route.params.id as string).then(data => item.value = data)
+    if (!route.params.id) {
+      return;
+    }
+    api.value.getOne(route.params.id as string)
+        .then(data => item.value = data)
+        .catch(() => error('Failed to load page data'))
   }, {immediate: true})
-}
-
-function capitalize(str = '') {
-  return str[0].toUpperCase() + str.substring(1, str.length);
+} else {
+  item.value = {};
 }
 </script>
-
-<style scoped>
-.row {
-  padding: var(--spacing);
-}
-</style>
