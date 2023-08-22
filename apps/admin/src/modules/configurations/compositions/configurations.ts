@@ -38,18 +38,18 @@ function loadAppConfig() {
 }
 
 export function useConfiguration(key: string) {
-  const {result} = useDispatcher(APP_CONFIG_KEY ? loadAppConfig : () => configurationsService.getOne(key))
+  const { result } = useDispatcher(() => configurationsService.getOne(key));
   return {
-    config: result
-  }
+    config: result,
+  };
 }
 
 export function useEditConfiguration(key: string) {
   return {
     ...useConfiguration(key),
     updateConfiguration: async (payload) => {
-      await configurationsService.update(key, payload)
+      await configurationsService.update(key, payload);
       await resetConfiguration();
-    }
-  }
+    },
+  };
 }

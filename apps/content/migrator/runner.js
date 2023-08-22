@@ -22,7 +22,9 @@ async function runMigration (folder) {
 }
 
 async function runMigrationsForward (from) {
-  const migrationsList = fs.readdirSync(MIGRATIONS_PATH).sort()
+  const migrationsList = fs.readdirSync(MIGRATIONS_PATH).sort((a, b) => {
+    return Number(a) - Number(b);
+  });
   console.log('start migration from ' + from + ' to ' + migrationsList[migrationsList.length - 1])
   let i = from, item
   while (i < migrationsList.length) {
