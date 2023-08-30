@@ -123,7 +123,9 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
             mfe,
             crud: mfe.crudData,
           }
-          cruds[mfe.crudData.name] = getCrud(`/api/on/${mfe.pluginApiPath}/${mfe.crudData.name}`);
+          if (mfe.crudData && !cruds[mfe.crudData.name]) {
+            cruds[mfe.crudData.name] = getCrud(`/api/on/${mfe.pluginApiPath}/${mfe.crudData.name}`);
+          }
         }
         router.addRoute('playPlugin', route)
       })
