@@ -16,7 +16,7 @@ export default defineConfig({
   server: {
     port: Number(process.env.PORT || 3001),
     proxy: {
-      "/api": process.env.VUE_APP_MAIN_APP_URL || "http://localhost:3000",
+      "/api": process.env.VUE_APP_MAIN_APP_URL || "http://127.0.0.1:3000",
     },
   },
   define: {

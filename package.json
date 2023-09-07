@@ -16,7 +16,7 @@
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "engines": {
-    "node": ">=16.x"
+    "node": ">=20.x"
   },
   "devDependencies": {
     "@types/jest": "^27.5.2",

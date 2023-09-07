@@ -1,4 +1,4 @@
-FROM node:16.5-alpine
+FROM node:20.6-alpine
 ENV NODE_ENV=production
 ENV PORT=9002
 EXPOSE $PORT

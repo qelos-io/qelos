@@ -12,7 +12,7 @@ function getServiceFromEnvVars(
   return {
     name,
     protocol: process.env[`${prefix}_PROTOCOL`] || 'http',
-    url: process.env[`${prefix}_URL`] || 'localhost',
+    url: process.env[`${prefix}_URL`] || '127.0.0.1',
     port: process.env[`${prefix}_PORT`] || port,
     proxies: getProxies(process.env[`${prefix}_PROXIES`], proxies),
   };
@@ -21,8 +21,8 @@ function getServiceFromEnvVars(
 export function getApiProxyConfig(): IApiProxyConfig {
   return {
     tenant: process.env.BASIC_TENANT || '0',
-    applicationUrl: process.env.APPLICATION_URL || 'http://localhost:3000',
-    internalUrl: process.env.INTERNAL_URL || 'http://localhost:3000',
+    applicationUrl: process.env.APPLICATION_URL || 'http://127.0.0.1:3000',
+    internalUrl: process.env.INTERNAL_URL || 'http://127.0.0.1:3000',
     excludedServices: [],
     contentService: getServiceFromEnvVars('content', 'CONTENT_SERVICE', {
       port: 9001,
