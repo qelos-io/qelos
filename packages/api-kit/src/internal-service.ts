@@ -13,7 +13,7 @@ function createServiceDescriptor(name: string, descriptorOverrides: Partial<Serv
 
   return {
     protocol: (process.env[`${name}_SERVICE_PROTOCOL`] as ServiceProtocol | undefined) || descriptorOverrides.protocol || 'http',
-    url: process.env[`${name}_SERVICE_URL`] || descriptorOverrides.url || 'localhost',
+    url: process.env[`${name}_SERVICE_URL`] || descriptorOverrides.url || '127.0.0.1',
     port: process.env[`${name}_SERVICE_PORT`] || descriptorOverrides.port || 8080,
   };
 }
