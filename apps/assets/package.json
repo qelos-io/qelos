@@ -13,7 +13,7 @@
   ],
   "engines": {
     "npm": ">=5",
-    "node": ">=10.5"
+    "node": ">=20.x"
   },
   "scripts": {
     "dev": "npm start",

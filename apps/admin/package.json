@@ -14,39 +14,36 @@
   },
   "main": "server.js",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.18.2",
     "vue3-runtime-template": "^1.0.2"
   },
   "devDependencies": {
-    "@element-plus/icons-vue": "^1.1.1",
+    "@element-plus/icons-vue": "^2.1.0",
     "@greenpress/gp-editor": "^2.1.1",
     "@qelos/sdk": "^3.3.9",
     "@qelos/view-builder": "^3.2.2",
-    "@types/remarkable": "^2.0.3",
-    "@vitejs/plugin-vue": "^2.2.4",
-    "axios": "^0.24.0",
-    "element-plus": "^1.2.0-beta.6",
+    "@types/remarkable": "^2.0.4",
+    "@vitejs/plugin-vue": "^4.3.4",
+    "axios": "^1.5.1",
+    "element-plus": "^2.3.14",
     "lodash.debounce": "^4.0.8",
-    "monaco-editor": "^0.39.0",
-    "pinia": "^2.0.14",
+    "monaco-editor": "^0.43.0",
+    "pinia": "^2.1.6",
     "remarkable": "^2.0.1",
-    "sass": "^1.45.0",
+    "sass": "^1.68.0",
     "typescript": "^4.9.5",
-    "unplugin-vue-components": "^0.17.9",
-    "vite": "^2.9.1",
+    "unplugin-vue-components": "^0.25.2",
+    "vite": "^4.4.9",
     "vite-plugin-monaco-editor": "^1.1.0",
-    "vite-plugin-style-import": "^1.4.0",
-    "vitest": "^0.14.2",
-    "vue": "^3.2.31",
-    "vue-i18n": "^9.2.0-beta.23",
-    "vue-router": "^4.0.12"
+    "vite-plugin-style-import": "^2.0.0",
+    "vitest": "^0.34.5",
+    "vue": "^3.3.4",
+    "vue-i18n": "^9.4.1",
+    "vue-router": "^4.2.5"
   },
   "license": "MIT",
   "gitHead": "c4a69b318689cb5c7d35a05f057e0ed6c9676594",
   "bundledDependencies": [
-    "express"
-  ],
-  "bundleDependencies": [
     "express"
   ]
 }

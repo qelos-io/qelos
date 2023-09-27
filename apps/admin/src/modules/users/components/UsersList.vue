@@ -1,7 +1,7 @@
 <template>
   <el-input
     class="metadata"
-    type="text"
+    size="large"
     v-model="searchQuery"
     :placeholder="$t('Search user by email')"
   />

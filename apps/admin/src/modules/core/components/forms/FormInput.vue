@@ -6,7 +6,9 @@
       <slot name="pre"/>
       <el-input-number v-if="type === 'number'" v-on="listeners" :model-value="modelValue as number"/>
       <AssetUploader v-else-if="type === 'upload'" v-on="listeners" :value="modelValue" class="asset-upload"/>
-      <el-input v-else v-on="listeners" :model-value="modelValue" :placeholder="placeholder" :native-type="type"
+      <el-input v-else v-on="listeners" :model-value="modelValue as (string | number)" :placeholder="placeholder"
+                size="large"
+                :native-type="type"
                 :type="type"/>
     </el-form-item>
     <slot/>
@@ -18,17 +20,17 @@ import AssetUploader from '@/modules/assets/components/AssetUploader.vue'
 
 export default {
   name: 'FormInput',
-  components: {AssetUploader},
+  components: { AssetUploader },
   props: {
     title: String,
     label: String,
-    type: String,
+    type: String as () => 'text' | 'textarea' | 'password' | 'button' | 'checkbox' | 'file' | 'number' | 'radio',
     placeholder: String,
     gap: Boolean,
     modelValue: [String, Number, Object]
   },
   emits: ['input', 'change', 'update:modelValue'],
-  setup(_, {emit}) {
+  setup(_, { emit }) {
     return {
       listeners: {
         input: (event) => {
