@@ -1,15 +1,11 @@
 <template>
 	<el-form class="login-form" @submit.native.prevent="submit">
 		<el-form-item :label="$t('Email')" class="form-item-flex">
-			<div dir="ltr">
-				<el-input name="email" v-model="form.email" type="email" required @focus="onFocus"/>
-			</div>
-		</el-form-item>
+      <el-input size="large" name="email" v-model="form.email" type="email" required @focus="onFocus" dir="ltr"/>
+    </el-form-item>
 		<el-form-item :label="$t('Password')" class="form-item-flex">
-			<div dir='ltr'>
-				<el-input name="password" v-model="form.password" type="password" required @focus="onFocus"/>
-			</div>
-		</el-form-item>
+      <el-input size="large" name="password" v-model="form.password" type="password" required @focus="onFocus" dir='ltr'/>
+    </el-form-item>
 		<div class="form-buttons">
       <SaveButton :submitting="submitting" text="Login"/>
 		</div>
@@ -48,8 +44,7 @@ export default {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped lang="scss">
-
+<style scoped>
 form {
   display: flex;
   flex-direction: column;
