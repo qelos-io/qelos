@@ -1,4 +1,4 @@
-import {QelosSDKOptions} from './types';
+import { QelosSDKOptions } from './types';
 import BaseSDK from './base-sdk';
 
 export interface IUser {
@@ -53,12 +53,23 @@ export default class QlAuthentication extends BaseSDK {
     }
   }
 
-  signin(credentials: ICredentials) {
-    return this.callJsonApi<{ payload: BasicPayload }>('/api/signin', {
+  async signin(credentials: ICredentials) {
+    const res = await this.callApi('/api/signin', {
       method: 'post',
-      headers: {'content-type': 'application/json'},
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify(credentials)
-    })
+    });
+    if (!res.ok) {
+      throw new Error('failed to login')
+    }
+    const body = (await res.json()) as { payload: BasicPayload }
+
+    return {
+      ...body,
+      headers: {
+        'set-cookie': res.headers?.get('set-cookie')
+      }
+    }
   }
 
   oAuthSignin(credentials: ICredentials) {
@@ -66,8 +77,8 @@ export default class QlAuthentication extends BaseSDK {
       '/api/signin',
       {
         method: 'post',
-        headers: {'content-type': 'application/json'},
-        body: JSON.stringify({...credentials, authType: 'oauth'})
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...credentials, authType: 'oauth' })
       })
       .then(data => {
         this.#accessToken = data.payload.token;
@@ -81,7 +92,7 @@ export default class QlAuthentication extends BaseSDK {
       '/api/signup',
       {
         method: 'post',
-        headers: {'content-type': 'application/json'},
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(information)
       })
   }
@@ -91,8 +102,8 @@ export default class QlAuthentication extends BaseSDK {
       '/api/signup',
       {
         method: 'post',
-        headers: {'content-type': 'application/json'},
-        body: JSON.stringify({...information, authType: 'oauth'})
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...information, authType: 'oauth' })
       })
       .then(data => {
         this.#accessToken = data.payload.token;
@@ -122,7 +133,7 @@ export default class QlAuthentication extends BaseSDK {
   }
 
   logout() {
-    return this.callApi('/api/logout', {method: 'post'})
+    return this.callApi('/api/logout', { method: 'post' })
   }
 
   getLoggedInUser() {
@@ -132,7 +143,7 @@ export default class QlAuthentication extends BaseSDK {
   updateLoggedInUser(changes: Partial<IUser & { password?: string }>): Promise<IUser> {
     return this.callJsonApi<IUser>('/api/me', {
       method: 'post',
-      headers: {'content-type': 'application/json'},
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify(changes)
     })
   }

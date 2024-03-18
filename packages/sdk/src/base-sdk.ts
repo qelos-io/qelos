@@ -1,4 +1,4 @@
-import {FetchLike, QelosSDKOptions} from './types';
+import { FetchLike, QelosSDKOptions } from './types';
 
 export default class BaseSDK {
   #appUrl: string;
@@ -34,7 +34,7 @@ export default class BaseSDK {
       if (!res.ok) {
         throw (typeof body === 'string' ? new Error(body) : body);
       }
-      return body;
+      return body
     });
   }
 }
