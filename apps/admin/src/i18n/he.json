@@ -89,6 +89,8 @@
   "Update profile": "עדכן פרופיל",
   "{amount} Posts": "אין פוסטים | פוסט אחד | {amount} פוסטים",
   "{amount} Blocks": "אין בלוקים | בלוק אחד | {amount} בלוקים",
+  "{amount} Users": "אין משתמשים | משתמש אחד | {amount} משתמשים",
+  "{amount} Workspaces": "אין מסגרות | מסגרת אחד | {amount} מסגרות",
   "Search user by email": "חפש משתמש לפי כתובת דואר אלקטרוני",
   "Workspaces": "מסגרות"
 }

@@ -4,15 +4,21 @@ import {
   updateWorkspace,
   deleteWorkspace,
   getWorkspace,
-  getWorkspaceByParams, getWorkspaces, onlyWorkspacePrivileged, activateWorkspace, getWorkspaceMembers
+  getWorkspaceByParams,
+  getWorkspaces,
+  onlyWorkspacePrivileged,
+  activateWorkspace,
+  getWorkspaceMembers,
+  getEveryWorkspaces
 } from '../controllers/workspace'
 import verifyUser from '../middleware/verify-user'
-import {onlyAuthenticated} from '../middleware/auth-check'
+import { onlyAuthenticated, onlyPrivileged } from '../middleware/auth-check'
 
 const router = getRouter()
 
 router
   .get('/api/workspaces', verifyUser, onlyAuthenticated, getWorkspaces)
+  .get('/api/workspaces/all', verifyUser, onlyPrivileged, getEveryWorkspaces)
   .post('/api/workspaces', verifyUser, onlyAuthenticated, createWorkspace)
   .put(
     '/api/workspaces/:workspaceId',

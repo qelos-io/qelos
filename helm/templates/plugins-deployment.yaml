@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    version: 1.32.0 (HEAD)
+  labels:
+    service: plugins
+  name: plugins
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: plugins
+  template:
+    spec:
+      containers:
+        - env:
+            - name: AUTH_SERVICE_URL
+              value: auth
+            - name: INTERNAL_SECRET
+            - name: IP
+              value: 0.0.0.0
+            - name: MONGO_URI
+            - name: REDIS_URL
+              value: redis://redis
+            - name: SECRETS_SERVICE_URL
+              value: secrets
+            - name: SECRETS_TOKEN
+            - name: SHOW_LOGS
+          image: 'registry.gitlab.com/qelos/qelos/plugins:main'
+          name: plugins
+      restartPolicy: Always

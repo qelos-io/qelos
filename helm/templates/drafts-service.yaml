@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    version: 1.32.0 (HEAD)
+  labels:
+    service: drafts
+  name: drafts
+spec:
+  type: ClusterIP
+  ports:
+    - name: "9005"
+      port: 9005
+      targetPort: 9005
+  selector:
+    service: drafts

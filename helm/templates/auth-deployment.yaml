@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    version: 1.32.0 (HEAD)
+  labels:
+    service: auth
+  name: auth
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: auth
+  template:
+    spec:
+      containers:
+        - env:
+            - name: APPLICATION_URL
+            - name: CONTENT_SERVICE_URL
+              value: content
+            - name: INTERNAL_SECRET
+            - name: IP
+              value: 0.0.0.0
+            - name: JWT_SECRET
+            - name: MONGO_URI
+            - name: PLUGINS_SERVICE_URL
+              value: plugins
+            - name: REDIS_URL
+              value: redis://redis
+            - name: REFRESH_TOKEN_SECRET
+            - name: SECRETS_SERVICE_URL
+              value: secrets
+            - name: SECRETS_TOKEN
+            - name: SHOW_LOGS
+          image: 'registry.gitlab.com/qelos/qelos/auth:main'
+          name: auth
+      restartPolicy: Always

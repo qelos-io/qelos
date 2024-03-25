@@ -5,8 +5,8 @@ import {defineStore} from 'pinia';
 import workspacesService from '@/services/workspaces-service';
 import {fetchAuthUser} from '@/modules/core/store/auth';
 
-const useWorkspacesList = defineStore('workspaces-list', function useMenusList() {
-  const {result, retry} = useDispatcher(() => workspacesService.getAll(), [])
+const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesList() {
+  const {result, retry, loading} = useDispatcher(() => workspacesService.getAll(), [])
 
   const {submit: remove} = useSubmitting(
     (name) => workspacesService.remove(name),
@@ -29,7 +29,7 @@ const useWorkspacesList = defineStore('workspaces-list', function useMenusList()
       success: (workspace) => `You are now active on the workspace "${workspace.name}"`
     })
 
-  return {workspaces: result, reload: retry, remove: useConfirmAction(remove), activate}
+  return {workspaces: result, reload: retry, remove: useConfirmAction(remove), activate, loading}
 })
 
 export default useWorkspacesList;

@@ -46,9 +46,23 @@ export async function getWorkspaces(req: AuthRequest, res: Response) {
       };
     })).end()
   } catch (err) {
-    res.status(500).json({message: 'Failed to load workspace'}).end()
+    res.status(500).json({message: 'Failed to load workspaces'}).end()
   }
 }
+
+export async function getEveryWorkspaces(req: AuthRequest, res: Response) {
+  const {tenant} = req.headers || {};
+  try {
+    const workspaces = await Workspace.find({
+      tenant,
+    })
+      .select('name logo tenant').lean().exec();
+    res.status(200).json(workspaces).end()
+  } catch (err) {
+    res.status(500).json({message: 'Failed to load workspaces'}).end()
+  }
+}
+
 
 export async function createWorkspace(req: AuthRequest, res: Response) {
   const {tenant} = req.headers || {};

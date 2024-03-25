@@ -3,7 +3,7 @@ import usersService from "../../../services/users-service";
 import { useDispatcher } from "../../core/compositions/dispatcher";
 import { useSubmitting } from "../../core/compositions/submitting";
 import { useRoute } from "vue-router";
-import { watch } from "vue";
+import { Ref, watch } from 'vue';
 import {IUser} from '@/modules/core/store/types/user';
 
 export function useEditUsers(userId) {
@@ -48,18 +48,14 @@ export function useRemoveUser(onSuccess) {
   };
 }
 
-/**
- *
- * @returns {{users: Ref<Array<any>>}}
- */
-export function useUsersList() {
+export function useUsersList(): { users: Ref<Array<any>>; loading: Ref<boolean> } {
   const route = useRoute();
 
-  const { result: users, retry } = useDispatcher(
+  const { result: users, retry, loading } = useDispatcher(
     () => usersService.getAll({ email: route.query.q }),
     []
   );
   watch(() => route.query.q, retry);
 
-  return { users };
+  return { users, loading };
 }
