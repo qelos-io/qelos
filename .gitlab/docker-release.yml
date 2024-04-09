@@ -1,0 +1,21 @@
+.service-release:
+  image: docker:latest
+  stage: release
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - service=$SERVICE_NAME
+    - if [ -z "$service" ]; then echo "SERVICE_NAME is not set"; exit 1; fi
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+        tag=""
+        echo "Running on default branch '$CI_DEFAULT_BRANCH': tag = 'latest'"
+      else
+        tag=":$CI_COMMIT_REF_SLUG"
+        echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+      fi
+    - cd apps/${service}
+    - docker build --pull -t "$CI_REGISTRY/qelos/qelos/${service}${tag}" .
+    - docker push "$CI_REGISTRY/qelos/qelos/${service}${tag}"
