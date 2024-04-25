@@ -14,6 +14,7 @@ export interface IApiProxyConfig {
   contentService: IServiceProxyConfig;
   authService: IServiceProxyConfig;
   assetsService: IServiceProxyConfig;
+  noCodeService: IServiceProxyConfig;
   adminPanel: IServiceProxyConfig;
   draftsService: IServiceProxyConfig;
   // frontService: IServiceProxyConfig;

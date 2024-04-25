@@ -1,5 +1,6 @@
+let plugin;
+let icons = {}
 describe('element plus plugin', () => {
-  let plugin;
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.resetAllMocks();
@@ -9,7 +10,8 @@ describe('element plus plugin', () => {
       }
     })
     vi.mock('@element-plus/icons-vue', () => {
-      return {}
+      icons = {}
+      return icons
     })
     plugin = (await import('../element')).default;
   })
@@ -44,7 +46,6 @@ describe('element plus plugin', () => {
       use: vi.fn(),
       component: vi.fn()
     }
-    const icons: any = await import('@element-plus/icons-vue');
     icons['Plus'] = 'plus-component';
     icons['Minus'] = 'minus-component';
 

@@ -3,7 +3,8 @@ import {onMounted, ref, defineProps} from 'vue'
 import monaco from '@/services/monaco-service'
 
 const props = defineProps({
-  modelValue: String
+  modelValue: String,
+  language: String,
 })
 
 const monacoRef = ref();
@@ -12,7 +13,7 @@ const monacoInstance = ref<ReturnType<typeof monaco.editor.create>>()
 onMounted(() => {
   monacoInstance.value = monaco.editor.create(monacoRef.value, {
     theme: 'vs-dark',
-    language: 'json',
+    language: props.language || 'json',
     value: props.modelValue //metaDataRef.value
   })
 })

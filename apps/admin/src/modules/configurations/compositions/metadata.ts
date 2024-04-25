@@ -23,6 +23,7 @@ const titles = {
   websiteUrls: 'Websites URLs',
   homeScreen: 'Users Home Screen',
   colorsPalette: 'Colors Palette',
+  isActive: 'Active?',
 };
 
 const placeholders = {
@@ -34,6 +35,12 @@ const placeholders = {
   websiteUrls: 'https://...',
   homeScreen: 'dashboard',
 };
+
+function getInputType(value: any) {
+  if (typeof value === 'number') return 'number'
+  if (typeof value === 'boolean') return 'switch'
+  return 'text'
+}
 
 export function useEditMetadata(kind: string, metadata) {
   const hardConfigType = kind === 'palettes' ? ['palette'] : null;
@@ -49,7 +56,7 @@ export function useEditMetadata(kind: string, metadata) {
     keys.reduce((types, key) => {
       const options = hardConfigType ||
         configurationKeysTypes[key] ||
-        [typeof updated[key] === 'number' ? 'number' : 'text'];
+        [getInputType(updated[key])];
       types[key] = {
         title: titles[key] || key,
         placeholder: placeholders[key],
