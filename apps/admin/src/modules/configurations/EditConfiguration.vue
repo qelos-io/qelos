@@ -1,7 +1,7 @@
 <template>
   <div class="category-page" v-if="config">
     <PageTitle title="Edit Configuration" :item-name="$t(config.key)"/>
-      <SsrScriptsForm  :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit" v-if="config.key === 'ssr-scripts'"></SsrScriptsForm>
+      <SsrScriptsForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit" v-if="config.key === 'ssr-scripts'"></SsrScriptsForm>
     <div v-else>
       <ConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"/>
     </div>

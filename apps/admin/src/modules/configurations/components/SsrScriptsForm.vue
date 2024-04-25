@@ -2,10 +2,10 @@
 <template>
   <el-form @submit.native.prevent="save" class="ssr-scripts-form">
       <el-form-item label="Enter head">
-        <Monaco :model-value="updated.head" @input="edited.head = $event.target.value"/>
+        <Monaco :model-value="updated.head" @input="edited.head = $event.target.value" language="html"/>
       </el-form-item>
       <el-form-item label="Enter body">
-        <Monaco :model-value="updated.body" @input="edited.body = $event.target.value" />
+        <Monaco :model-value="updated.body" @input="edited.body = $event.target.value" language="html" />
       </el-form-item>
     
       <SaveButton :submitting="submitting"/>
