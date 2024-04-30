@@ -4,7 +4,9 @@
       <img :alt="appConfig?.name || 'SaaS'" :src="appConfig?.logoUrl || '../../assets/logo.png'">
       <h1>{{ $t('Please login') }}:</h1>
     </aside>
-    <LoginForm/>
+    <div>
+      <LoginForm/>
+    </div>
   </div>
 </template>
 
