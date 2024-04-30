@@ -12,9 +12,9 @@
 
 <script setup lang="ts">
 import LoginForm from './components/LoginForm.vue'
-import {useAppConfiguration} from '@/modules/configurations/store/app-configuration';
+import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 
-const {appConfig} = useAppConfiguration();
+const { appConfig } = useAppConfiguration();
 </script>
 <style scoped>
 .login-page {
@@ -33,6 +33,7 @@ const {appConfig} = useAppConfiguration();
     width: 100%;
     flex-direction: column;
   }
+
   .login-page > * {
     width: 100%;
   }
