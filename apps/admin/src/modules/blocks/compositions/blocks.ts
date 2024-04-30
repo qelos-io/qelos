@@ -6,8 +6,17 @@ import blocksService from '../../../services/blocks-service'
 import {useEditedInputModels} from '../../core/compositions/edited-inputs';
 import {IBlock} from '@/services/types/block';
 
-export function useEditBlock(blockId: string) {
+export function useReadableBlock(blockId: string) {
   const {result: block} = useDispatcher<IBlock>(() => blocksService.getOne(blockId))
+
+  return {
+    block,
+  }
+}
+
+
+export function useEditBlock(blockId: string) {
+  const {block} = useReadableBlock(blockId)
 
   const {submit, submitting} = useSubmitting(
     (payload) => blocksService.update(blockId, payload).then((newBlock) => {
