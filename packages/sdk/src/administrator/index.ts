@@ -1,10 +1,11 @@
 import QelosSDK from '../index';
-import {QelosSDKOptions} from '../types';
+import { QelosSDKOptions } from '../types';
 import QlDrafts from './drafts';
 import QlEvents from './events';
 import QlManageLayouts from './manage-layouts';
 import QlUsers from './users';
 import QlManageConfigurations from './manage-configurations';
+import QlAdminWorkspaces from './workspaces';
 
 export default class QelosAdministratorSDK<T = any> extends QelosSDK {
   users: QlUsers<T>;
@@ -12,6 +13,7 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
   manageConfigurations: QlManageConfigurations;
   drafts: QlDrafts;
   events: QlEvents;
+  adminWorkspaces: QlAdminWorkspaces;
 
   constructor(options: QelosSDKOptions) {
     super(options);
@@ -20,5 +22,6 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
     this.manageConfigurations = new QlManageConfigurations(options);
     this.drafts = new QlDrafts(options);
     this.events = new QlEvents(options);
+    this.adminWorkspaces = new QlAdminWorkspaces(options);
   }
 }

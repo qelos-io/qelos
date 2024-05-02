@@ -17,10 +17,10 @@ function callSecretsService(url: string, tenant: string, key: string, value?: an
     .then((axiosRes: any) => axiosRes.data)
 }
 
-export function getEncryptedData(tenant: string, userId: string): Promise<{ value: string }> {
-  return callSecretsService('/api/secrets/get', tenant, `user-encrypted-data-${tenant}-${userId}`)
+export function getEncryptedData(tenant: string, itemId: string, forModel = 'user'): Promise<{ value: string }> {
+  return callSecretsService('/api/secrets/get', tenant, `${forModel}-encrypted-data-${tenant}-${itemId}`)
 }
 
-export function setEncryptedData(tenant: string, userId: string, value: string) {
-  return callSecretsService('/api/secrets/set', tenant, `user-encrypted-data-${tenant}-${userId}`, value)
+export function setEncryptedData(tenant: string, itemId: string, value: string, forModel = 'user') {
+  return callSecretsService('/api/secrets/set', tenant, `${forModel}-encrypted-data-${tenant}-${itemId}`, value)
 }

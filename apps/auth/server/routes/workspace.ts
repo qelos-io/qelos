@@ -9,7 +9,8 @@ import {
   onlyWorkspacePrivileged,
   activateWorkspace,
   getWorkspaceMembers,
-  getEveryWorkspaces
+  getEveryWorkspaces,
+  getWorkspaceEncryptedData, setWorkspaceEncryptedData
 } from '../controllers/workspace'
 import verifyUser from '../middleware/verify-user'
 import { onlyAuthenticated, onlyPrivileged } from '../middleware/auth-check'
@@ -51,5 +52,7 @@ router
     onlyWorkspacePrivileged,
     getWorkspaceMembers
   )
+  .get('/api/workspaces/:workspaceId/encrypted', verifyUser, onlyPrivileged, getWorkspaceEncryptedData)
+  .post('/api/workspaces/:workspaceId/encrypted', verifyUser, onlyPrivileged, setWorkspaceEncryptedData)
   .post('/api/workspaces/:workspaceId/activate', verifyUser, onlyAuthenticated, getWorkspaceByParams, activateWorkspace)
 export default router;
