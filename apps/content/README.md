@@ -3,7 +3,6 @@
 A content service for qelos platform 
 
 ## Main Features
-- manage menus
 - manage categories
 - manage posts
 - manage comments

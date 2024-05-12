@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const fetch = require('node-fetch');
 const cacheManager = require('../utils/cache-manager');
-const Menu = require('./menu');
 const Block = require('./block');
 
 const cachePrefix = "layout:";
@@ -36,7 +35,7 @@ const LayoutSchema = new mongoose.Schema({
     {
       kind: {
         type: String,
-        enum: ['block', 'menu', 'http', 'post', 'posts', 'categoryPosts', 'category']
+        enum: ['block', 'http', 'post', 'posts', 'categoryPosts', 'category']
       },
       context: mongoose.Schema.Types.Mixed,
       identifier: String,
@@ -66,9 +65,6 @@ LayoutSchema.statics.getSingleLayout = function getSingleLayout({kind, tenant, u
             const {kind, identifier, context} = item;
             let data;
             switch (kind) {
-              case 'menu':
-                data = await Menu.getSingleMenu({name: identifier, tenant});
-                break;
               case 'block':
                 data = await Block.getSingleBlock({blockId: identifier, tenant});
                 break;

@@ -29,7 +29,6 @@ export function getApiProxyConfig(): IApiProxyConfig {
       proxies: [
         '/api/categories',
         '/api/posts',
-        '/api/menus',
         '/api/tags',
         '/api/blocks',
         '/api/configurations',

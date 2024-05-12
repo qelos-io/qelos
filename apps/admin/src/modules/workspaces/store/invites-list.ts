@@ -10,7 +10,7 @@ export enum InviteKind {
   ACCEPT = 'accept',
 }
 
-const useInvitesList = defineStore('invites-list', function useMenusList() {
+const useInvitesList = defineStore('invites-list', function useInitesList() {
   const { result, retry } = useDispatcher(() => invitesService.getAll(), []);
 
   const respondToInvite = ({workspace, kind}: {workspace: string, kind: InviteKind}) => {
