@@ -14,6 +14,7 @@
 import LoginForm from './components/LoginForm.vue'
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 
+const { appConfig } = useAppConfiguration();
 </script>
 <style scoped>
 .login-page {
