@@ -10,7 +10,7 @@
       <el-dropdown class="user-dropdown">
         <div class="el-dropdown-link user-welcome">
           <span>{{ user.firstName }}</span>
-          <el-avatar v-if="user.workspace"> {{user.workspace.name[0].toUpperCase()}} </el-avatar>
+          <el-avatar v-if="user.workspace"> {{ user.workspace.name[0].toUpperCase() }}</el-avatar>
           <el-icon>
             <icon-arrow-down/>
           </el-icon>
@@ -47,23 +47,24 @@
   </header>
 </template>
 <script lang="ts" setup>
-import {computed} from 'vue';
-import {useAuth} from '../../compositions/authentication'
-import {translate} from '@/plugins/i18n';
+import { computed } from 'vue';
+import { useAuth } from '../../compositions/authentication'
+import { translate } from '@/plugins/i18n';
 import SearchForm from '@/modules/core/components/layout/SearchForm.vue';
-import {useRouter} from 'vue-router';
-import {storeToRefs} from 'pinia';
-import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
-import {useWsConfiguration} from '@/modules/configurations/store/ws-configuration';
+import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+
 const emit = defineEmits(['open']);
-const {user, logout: logoutApi} = useAuth()
+const { user, logout: logoutApi } = useAuth()
 const router = useRouter()
 
 const wsConfig = useWsConfiguration()
 
 const open = () => emit('open');
 
-const {navBar} = storeToRefs(usePluginsMicroFrontends());
+const { navBar } = storeToRefs(usePluginsMicroFrontends());
 const customLinks = computed(() => navBar.value['user-dropdown']);
 
 const logout = async () => {

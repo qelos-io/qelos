@@ -205,34 +205,39 @@ export async function activateWorkspace(req: AuthRequest, res: Response) {
   const token = req.signedCookies.token || req.cookies.token;
   const tenant = req.headers.tenant;
 
-  const payload = await verifyToken(token, tenant) as any;
-  const user = await User
-    .findOne({ _id: req.userPayload.sub, tenant })
-    .select('tenant email fullName firstName lastName roles tokens')
-    .exec() as any as UserModel;
+  try {
 
-  payload.workspace = {
-    _id: req.workspace._id,
-    name: req.workspace.name,
-    roles: req.workspace.members[0].roles,
+    const payload = await verifyToken(token, tenant) as any;
+    const user = await User
+      .findOne({ _id: req.userPayload.sub, tenant })
+      .select('tenant email fullName firstName lastName roles tokens')
+      .exec() as any as UserModel;
+
+    payload.workspace = {
+      _id: req.workspace._id,
+      name: req.workspace.name,
+      roles: req.workspace.members?.[0].roles || ['admin'],
+    }
+    const newCookieIdentifier = getUniqueId();
+    await updateToken(
+      user,
+      'cookie',
+      payload,
+      newCookieIdentifier
+    );
+    const { token: newToken } = getSignedToken(
+      user,
+      payload.workspace,
+      newCookieIdentifier,
+      String(cookieTokenExpiration / 1000)
+    );
+
+    setCookie(res, newToken, null, getRequestHost(req));
+
+    res.json(req.workspace).end()
+  } catch (err) {
+    res.status(500).json({ message: 'failed to activate workspace' }).end()
   }
-  const newCookieIdentifier = getUniqueId();
-  await updateToken(
-    user,
-    'cookie',
-    payload,
-    newCookieIdentifier
-  );
-  const { token: newToken } = getSignedToken(
-    user,
-    payload.workspace,
-    newCookieIdentifier,
-    String(cookieTokenExpiration / 1000)
-  );
-
-  setCookie(res, newToken, null, getRequestHost(req));
-
-  res.json(req.workspace).end()
 }
 
 export async function getWorkspaceMembers(req: AuthRequest, res: Response) {
@@ -269,11 +274,10 @@ export async function getWorkspaceByParams(req, res, next) {
     const query: any = {
       tenant,
       _id,
-      'members.user': userId
     };
     const isPrivilegedUser = req.userPayload.isPrivileged;
-    if (isPrivilegedUser) {
-      delete query['members.user'];
+    if (!isPrivilegedUser) {
+      query['members.user'] = userId;
     }
     const select = isPrivilegedUser ? 'name logo' : 'name logo members.$';
     const workspace = await Workspace.findOne(query).select(select).exec();

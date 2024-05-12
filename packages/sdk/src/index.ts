@@ -1,6 +1,5 @@
 import {QelosSDKOptions} from './types';
 import BaseSDK from './base-sdk';
-import QlMenus from './menus';
 import QlAppConfigurations from './configurations';
 import QlBlocks from './blocks';
 import QlLayouts from './administrator/layouts';
@@ -12,7 +11,6 @@ const noExtraHeadersUrls = new Set(['/api/token/refresh', '/api/signin', '/api/s
 
 export default class QelosSDK extends BaseSDK {
 
-  menus: QlMenus;
   blocks: QlBlocks;
   layouts: QlLayouts;
   appConfigurations: QlAppConfigurations;
@@ -22,7 +20,6 @@ export default class QelosSDK extends BaseSDK {
 
   constructor(private options: QelosSDKOptions) {
     super(options);
-    this.menus = new QlMenus(this.options);
     this.blocks = new QlBlocks(this.options);
     this.layouts = new QlLayouts(this.options);
     this.appConfigurations = new QlAppConfigurations(this.options);

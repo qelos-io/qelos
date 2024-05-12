@@ -6,7 +6,7 @@ export interface IWorkspace extends Document {
   name: string;
   tenant: string;
   logo?: string;
-  members: [{ user: Types.ObjectId | string; roles: string[]; created?: Date }];
+  members: { user: Types.ObjectId | string; roles: string[]; created?: Date }[];
   invites: Invite[];
   created?: Date;
 }
