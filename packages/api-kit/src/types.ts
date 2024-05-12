@@ -28,7 +28,8 @@ export interface RequestWithUser extends Omit<Request, 'headers'> {
   headers?: RequestHeadersWithUser
 }
 
-type RequestHeadersWithUser = Request['headers'] | {
-  user?: string
+type RequestHeadersWithUser = Request['headers'] & {
+  user?: string;
+  tenant: string;
 };
 

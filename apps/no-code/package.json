@@ -24,6 +24,7 @@
     "@qelos/cache-manager": "^3.4.0",
     "mongoose": "^5.10.5",
     "node-fetch": "^2.6.1",
+    "qs": "^6.12.1",
     "uniqid": "^5.0.3"
   },
   "publishConfig": {
@@ -37,6 +38,13 @@
   },
   "gitHead": "d6e98230be662ec343c5b09b9115d21a9358e682",
   "bundledDependencies": [
+    "@qelos/api-kit",
+    "@qelos/cache-manager",
+    "mongoose",
+    "node-fetch",
+    "uniqid"
+  ],
+  "bundleDependencies": [
     "@qelos/api-kit",
     "@qelos/cache-manager",
     "mongoose",

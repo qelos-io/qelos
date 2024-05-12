@@ -12,15 +12,29 @@ const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
   },
   identifier: {
     type: String,
-    required: true
+    required: true,
+    validate(value: string) {
+      if (!value.match(/^[a-zA-Z0-9_]+$/)) {
+        throw new Error('Invalid identifier');
+      }
+    }
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    index: true,
+    required: true,
+  },
+  workspace: {
+    type: mongoose.Schema.Types.ObjectId,
+    index: true,
+    required: false,
   },
   title: {
     type: String,
     required: true,
   },
   blueprint: {
-    ref: 'Blueprint',
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     required: true
   },
   metadata: {

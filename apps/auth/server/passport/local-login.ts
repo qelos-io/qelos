@@ -1,8 +1,8 @@
-import {defaultAuthType} from '../../config';
-import {getUser, comparePassword, setToken} from '../services/users';
-import {Strategy} from 'passport-local';
-import {UserDocument, UserModel} from '../models/user';
-import {getWorkspaceConfiguration} from '../services/workspace-configuration';
+import { defaultAuthType } from '../../config';
+import { getUser, comparePassword, setToken } from '../services/users';
+import { Strategy } from 'passport-local';
+import { UserDocument, UserModel } from '../models/user';
+import { getWorkspaceConfiguration } from '../services/workspace-configuration';
 import Workspace from '../models/workspace';
 import logger from '../services/logger';
 
@@ -18,7 +18,7 @@ function getWorkspaceForUser(tenant: string, userId: string, workspaceId: string
     .findOne(query)
     .select('name members.$')
     .exec()
-    .then(({_id, name, members}) => ({
+    .then(({ _id, name, members }) => ({
       _id,
       name,
       roles: members[0].roles
@@ -37,11 +37,11 @@ module.exports = new Strategy(
       email: string;
       tenant: undefined | string;
       roles?: { $in: string[] };
-    } = {email: email.trim(), tenant: req.headers.tenant as string};
+    } = { email: email.trim(), tenant: req.headers.tenant as string };
     const authType = req.body.authType || defaultAuthType;
 
     if (req.body.roles && req.body.roles instanceof Array) {
-      query.roles = {$in: req.body.roles};
+      query.roles = { $in: req.body.roles };
     }
     const preSelectedWorkspace = req.body.workspace;
 
@@ -58,8 +58,8 @@ module.exports = new Strategy(
       }
     }
 
-    setToken({user: user as any as UserDocument, workspace}, authType)
-      .then(({user, token, refreshToken, cookieToken}) => {
+    setToken({ user: user as any as UserDocument, workspace }, authType)
+      .then(({ user, token, refreshToken, cookieToken }) => {
         done(null, {
           token,
           refreshToken,
