@@ -21,5 +21,12 @@ module.exports = function (app) {
     .post('/api/configurations', populateUser, onlyAdmin, createConfiguration)
 
   app.get('/internal-api/host-tenant', getTenantByHost)
-  app.get('/internal-api/configurations/:configKey', getConfiguration)
+  app.get('/internal-api/configurations/:configKey',
+    (req, res, next) => {
+      req.headers.tenant = req.query.tenant || req.headers.tenant
+      req.user = {
+        isAdmin: true
+      }
+      next()
+    }, getConfigurationByKey, getConfiguration)
 }

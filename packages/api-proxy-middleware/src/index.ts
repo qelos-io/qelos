@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
-import {createProxyMiddleware as proxy} from 'http-proxy-middleware';
-import {IApiProxyConfig, IServiceProxyConfig} from './types';
-import {getApiProxyConfig} from './config';
+import { createProxyMiddleware as proxy } from 'http-proxy-middleware';
+import { IApiProxyConfig, IServiceProxyConfig } from './types';
+import { getApiProxyConfig } from './config';
 
 function getProxy(target: string) {
   return proxy({
@@ -13,6 +13,9 @@ function getProxy(target: string) {
 function getProxyTarget(service: IServiceProxyConfig) {
   return `${service.protocol}://${service.url}:${service.port}`;
 }
+
+const STATIC_HEAD = '<link rel="icon" href="/favicon.ico" /><title>APP</title>'
+
 
 export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cacheManager) {
   const {
@@ -37,15 +40,27 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
     app.use(service.proxies, getProxy(getProxyTarget(service)));
   }
 
+  const indexHtmlPromise = fetch(getProxyTarget(adminPanel) + '/index.html').then(res => res.text())
+
   const defaultApplicationHost = new URL(applicationUrl).host;
   const meUrl = getProxyTarget(authService) + '/api/me';
   const hostTenantUrl = getProxyTarget(contentService) + '/internal-api/host-tenant';
+  const ssrScriptsUrl = getProxyTarget(contentService) + '/internal-api/configurations/ssr-scripts';
 
   function getTenantByHost(hostUrl: string) {
-    return cacheManager.wrap('host-tenant:' + hostUrl, () => {
+    return cacheManager.wrap(':' + hostUrl, () => {
       return fetch(hostTenantUrl + '?host=' + hostUrl)
         .then((res) => res.json())
         .then((data) => data.tenant);
+    });
+  }
+
+  function getTenantSsrScripts(tenant: string) {
+    return cacheManager.wrap('ssr-scripts:' + tenant, () => {
+      return fetch(ssrScriptsUrl + '?tenant=' + tenant)
+        .then((res) => res.json())
+        .then((data) => data.metadata)
+        .catch(() => ({}));
     });
   }
 
@@ -131,5 +146,23 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
   useProxy(app, assetsService);
   useProxy(app, noCodeService);
   useProxy(app, pluginsService);
+
+  const ignoreExtensions = ['js', 'json', 'jpg', 'svg', 'png', 'ico', 'ts', 'vue', 'css', 'map', 'scss', 'json', 'mjs']
+
+  app.use(async (req, res, next) => {
+    const extension = req.path.split('.').pop();
+    if (req.path.startsWith('/@') || req.path.startsWith('src') || ignoreExtensions.includes(extension)) {
+      next()
+      return;
+    }
+
+    const scripts = await getTenantSsrScripts(req.headers.tenant)
+    const html = (await indexHtmlPromise)
+      .replace('<!--HEAD-->', scripts.head || STATIC_HEAD)
+      .replace('<!--BODY-->', scripts.body || '');
+
+    res.set('content-type', 'text/html').send(html).end()
+  })
+
   useProxy(app, adminPanel);
 }

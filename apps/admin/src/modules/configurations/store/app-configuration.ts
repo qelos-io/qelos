@@ -1,8 +1,12 @@
-import {reactive, computed} from 'vue'
+import { reactive, computed } from 'vue'
 import configurationsService from '../../../services/configurations-service';
-import {IAppConfiguration} from '@qelos/sdk/dist/configurations';
+import { IAppConfiguration } from '@qelos/sdk/dist/configurations';
 
-export const appConfigurationStore = reactive<{ loaded: boolean, data: IAppConfiguration & any, promise: Promise<any> | null }>({
+export const appConfigurationStore = reactive<{
+  loaded: boolean,
+  data: IAppConfiguration & any,
+  promise: Promise<any> | null
+}>({
   loaded: false,
   data: null,
   promise: null
@@ -11,12 +15,17 @@ export const appConfigurationStore = reactive<{ loaded: boolean, data: IAppConfi
 const appConfig = computed(() => appConfigurationStore.data?.metadata && appConfigurationStore.data.metadata || {});
 
 function updateMetaTags() {
-  const {name, slogan, language, direction} = appConfigurationStore.data.metadata;
+  const { name, slogan, language, direction } = appConfigurationStore.data.metadata;
   const html = document.querySelector('html');
   html.dir = direction;
   html.lang = language;
 
-  document.querySelector('title').innerHTML = `${name} - ${slogan}`;
+  let title = document.querySelector('title');
+  if (!title) {
+    title = document.createElement('title');
+    document.head.appendChild(title);
+  }
+  title.innerHTML = `${name} - ${slogan}`;
   appConfigurationStore.loaded = true;
 }
 

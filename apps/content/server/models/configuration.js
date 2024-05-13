@@ -29,19 +29,19 @@ const Configuration = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
-}, {collection: 'configurations'})
+}, { collection: 'configurations' })
 
-Configuration.index({tenant: 1, key: 1}, {unique: true});
+Configuration.index({ tenant: 1, key: 1 }, { unique: true });
 
 Configuration.statics.getForEdit = function (tenant, key) {
-  return this.findOne({key, tenant});
+  return this.findOne({ key, tenant });
 }
 
 Configuration.statics.clearCache = function (tenant, key) {
   const publicKey = cachePrefix + tenant + ':' + key;
   const adminKey = cachePrefix + tenant + ':admin:' + key;
-  cacheManager.setItem(publicKey, '', {ttl: 1}).catch()
-  cacheManager.setItem(adminKey, '', {ttl: 1}).catch()
+  cacheManager.setItem(publicKey, '', { ttl: 1 }).catch()
+  cacheManager.setItem(adminKey, '', { ttl: 1 }).catch()
 }
 
 Configuration.statics.getWithCache = function getByKey(tenant, key, isAdmin) {
@@ -54,25 +54,25 @@ Configuration.statics.getWithCache = function getByKey(tenant, key, isAdmin) {
             tenant,
             key,
             metadata: config.metadata
-          }, {ttl: FOREVER_TTL})).catch()
+          }, { ttl: FOREVER_TTL })).catch()
         }
-        return JSON.stringify({tenant, key, metadata: config.metadata});
+        return JSON.stringify({ tenant, key, metadata: config.metadata });
       });
-    }, {ttl: FOREVER_TTL})
+    }, { ttl: FOREVER_TTL })
   }
   return cacheManager.wrap(cachePrefix + tenant + ':' + key, () => {
-    return this.findOne({key, tenant, public: true})
+    return this.findOne({ key, tenant, public: true })
       .select('tenant key metadata')
       .lean()
       .exec()
       .then(config => {
-        return JSON.stringify({tenant, key, metadata: config.metadata})
+        return JSON.stringify({ tenant, key, metadata: config.metadata })
       })
-  }, {ttl: FOREVER_TTL})
+  }, { ttl: FOREVER_TTL })
 }
 
 Configuration.post('save', function () {
-  cacheManager.setItem(cachePrefix + this.tenant + ':' + this.key, '', {ttl: 1})
+  cacheManager.setItem(cachePrefix + this.tenant + ':' + this.key, '', { ttl: 1 })
 })
 
 module.exports = mongoose.model('Configuration', Configuration)
