@@ -26,7 +26,7 @@
             <icon-grid/>
           </el-icon>
           <span>{{ $t('Layouts') }}</span>
-          <LiveEditColorOpener color="secondaryColor" />
+          <LiveEditColorOpener color="secondaryColor"/>
         </el-menu-item>
       </div>
 
@@ -109,18 +109,18 @@
 </template>
 
 <script lang="ts" setup>
-import {useRouter} from 'vue-router';
-import {storeToRefs} from 'pinia';
-import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
-import {isAdmin, isPrivilegedUser} from '@/modules/core/store/auth';
-import {useAppConfiguration} from '@/modules/configurations/store/app-configuration';
+import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
+import { isAdmin, isPrivilegedUser } from '@/modules/core/store/auth';
+import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 
 const router = useRouter()
-const {navBar} = storeToRefs(usePluginsMicroFrontends());
-const {appConfig} = useAppConfiguration();
+const { navBar } = storeToRefs(usePluginsMicroFrontends());
+const { appConfig } = useAppConfiguration();
 
-defineProps({opened: Boolean})
+defineProps({ opened: Boolean })
 const emit = defineEmits(['close'])
 
 const close = () => emit('close')
@@ -148,6 +148,7 @@ nav .el-menu, nav {
   border: 0;
   overflow: auto;
 }
+
 .el-menu-item:hover {
   --el-menu-text-color: var(--negative-color);
   --el-menu-hover-bg-color: var(--main-color);

@@ -1,5 +1,5 @@
-import {usePluginsList} from '@/modules/plugins/store/plugins-list';
-import {watch} from 'vue';
+import { usePluginsList } from '@/modules/plugins/store/plugins-list';
+import { watch } from 'vue';
 
 export function usePluginsInjectables() {
   const store = usePluginsList();
@@ -9,7 +9,7 @@ export function usePluginsInjectables() {
   function injectAll() {
     let allHTML = ''
 
-    function addInjectable({active, html}) {
+    function addInjectable({ active, html }) {
       if (active) {
         allHTML += html
       }

@@ -1,11 +1,11 @@
-import {App} from '@vue/runtime-core';
+import { App } from '@vue/runtime-core';
 import TemplatedRemoveButton from './components/TemplatedRemoveButton.vue';
 import TemplatedEditButton from './components/TemplatedEditButton.vue';
 import TemplatedViewButton from './components/TemplatedViewButton.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 
-export default function applyGlobalTemplatesComponents (app: App) {
+export default function applyGlobalTemplatesComponents(app: App) {
   app.component('TemplatedRemoveButton', TemplatedRemoveButton)
   app.component('TemplatedEditButton', TemplatedEditButton)
   app.component('TemplatedViewButton', TemplatedViewButton)

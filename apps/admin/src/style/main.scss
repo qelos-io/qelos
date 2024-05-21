@@ -32,8 +32,9 @@ a, .link {
   color: var(--link);
   cursor: pointer;
   text-decoration: none;
+
   &:hover {
-	border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
   }
 }
 
@@ -48,6 +49,10 @@ p {
 .flex-row {
   display: flex;
   flex-direction: row;
+}
+
+.flex-0 {
+  flex: 0;
 }
 
 [centered] {
