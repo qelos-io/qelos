@@ -55,6 +55,6 @@ const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
 BlueprintEntitySchema.index({ tenant: 1, blueprint: 1 });
 BlueprintEntitySchema.index({ tenant: 1, blueprint: 1, identifier: 1 }, { unique: true });
 
-const BlueprintEntity = mongoose.model<IBlueprintEntity>('Blueprint', BlueprintEntitySchema);
+const BlueprintEntity = mongoose.model<IBlueprintEntity>('BlueprintEntity', BlueprintEntitySchema);
 
 export default BlueprintEntity;

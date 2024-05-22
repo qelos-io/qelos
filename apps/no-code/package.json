@@ -13,6 +13,7 @@
     "node": ">=18.5"
   },
   "scripts": {
+    "ddev": "npx tsx watch ./index.ts",
     "prepublishOnly": "tsc",
     "build": "tsc",
     "start": "node --use_strict dist/index.js"
