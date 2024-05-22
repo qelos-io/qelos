@@ -7,19 +7,19 @@
 </template>
 
 <script lang="ts" setup>
-import {useRoute} from 'vue-router';
-import {computed, ref, watch} from 'vue';
-import {useSubmitting} from '@/modules/core/compositions/submitting';
-import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
+import { useRoute } from 'vue-router';
+import { computed, provide, ref, watch } from 'vue';
+import { useSubmitting } from '@/modules/core/compositions/submitting';
+import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import VRuntimeTemplate from 'vue3-runtime-template';
-import {useNotifications} from '@/modules/core/compositions/notifications';
+import { useNotifications } from '@/modules/core/compositions/notifications';
 
 const route = useRoute();
 const mfes = usePluginsMicroFrontends();
-const {error} = useNotifications()
+const { error } = useNotifications()
 
 const crud = computed(() => {
-  const crud = route.meta.crud as any || {display: {}};
+  const crud = route.meta.crud as any || { display: {} };
   return {
     ...crud,
     display: {
@@ -39,7 +39,7 @@ const relevantStructure = computed(() => {
 });
 const item = ref();
 
-const {submit, submitting} = useSubmitting(async () => {
+const { submit, submitting } = useSubmitting(async () => {
   if (isExistingItem.value) {
     return api.value.update(route.params.id as string, item.value);
   } else {
@@ -50,6 +50,8 @@ const {submit, submitting} = useSubmitting(async () => {
   error: () => isExistingItem.value ? 'Failed to update' : 'Failed to create'
 })
 
+provide('submitting', submitting)
+
 if (isExistingItem.value) {
   watch(api, () => {
     if (!route.params.id) {
@@ -58,7 +60,7 @@ if (isExistingItem.value) {
     api.value.getOne(route.params.id as string)
         .then(data => item.value = data)
         .catch(() => error('Failed to load page data'))
-  }, {immediate: true})
+  }, { immediate: true })
 } else {
   item.value = {};
 }
