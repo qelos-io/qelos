@@ -1,6 +1,6 @@
 {
   "name": "@qelos/api-proxy-middleware",
-  "version": "3.4.1",
+  "version": "3.5.0",
   "description": "api proxy middleware",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "homepage": "https://github.com/greenpress/greenpress#readme",
