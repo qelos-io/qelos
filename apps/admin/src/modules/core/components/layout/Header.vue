@@ -7,70 +7,46 @@
         </el-icon>
       </el-button>
 
-      <el-dropdown class="user-dropdown">
-        <div class="el-dropdown-link user-welcome">
-          <span>{{ user.firstName }}</span>
-          <el-avatar v-if="user.workspace"> {{ user.workspace.name[0].toUpperCase() }}</el-avatar>
-          <el-icon>
-            <icon-arrow-down/>
-          </el-icon>
-        </div>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item v-if="user.workspace">
-              <span class="workspace-row">{{ user.workspace.name }}</span>
-            </el-dropdown-item>
-            <el-dropdown-item v-if="wsConfig.isActive">
-              <router-link :to="{name: 'workspaces'}">{{ $t('Workspaces') }}</router-link>
-            </el-dropdown-item>
-            <el-dropdown-item>
-              <router-link :to="{name: 'updateProfile'}">{{ $t('Update profile') }}</router-link>
-            </el-dropdown-item>
-            <template v-for="group in customLinks" :key="group.key">
-              <template v-if="group.items.length">
-                <el-dropdown-item v-for="mfe in group.items" :key="mfe.route.path">
-                  <el-icon v-if="mfe.route.iconName">
-                    <component :is="'icon-' + mfe.route.iconName"/>
-                  </el-icon>
-                  <router-link :to="'/play/' + mfe.route.path">{{ mfe.name }}</router-link>
-                </el-dropdown-item>
-              </template>
-            </template>
+      <el-input
+          v-if="route.meta?.searchQuery"
+          class="query-input"
+          size="large"
+          v-model.trim="query"
+          :placeholder="$t(route?.meta?.searchPlaceholder as string || 'Search...')"
+      />
 
-            <el-dropdown-item @click="logout">
-              {{ $t('Logout') }}
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+      <HeaderUserDropdown/>
     </div>
   </header>
 </template>
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { useAuth } from '../../compositions/authentication'
-import { translate } from '@/plugins/i18n';
-import SearchForm from '@/modules/core/components/layout/SearchForm.vue';
-import { useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
-import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
-import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import { computed, ref, watch } from 'vue';
+import debounce from 'lodash.debounce';
+import { useRoute, useRouter } from 'vue-router';
+import HeaderUserDropdown from '@/modules/core/components/layout/HeaderUserDropdown.vue';
 
 const emit = defineEmits(['open']);
-const { user, logout: logoutApi } = useAuth()
 const router = useRouter()
+const route = useRoute()
 
-const wsConfig = useWsConfiguration()
+const tempQuery = ref('')
+
+const query = computed({
+  get: () => tempQuery.value || route.query.q?.toString(),
+  set: (value: string) => {
+    tempQuery.value = value;
+  }
+});
+
+watch(tempQuery, debounce((value: string) => {
+  if (value === null) {
+    return;
+  }
+  router.push({ query: { ...route.query, q: value } })
+  tempQuery.value = null
+}, 500))
 
 const open = () => emit('open');
-
-const { navBar } = storeToRefs(usePluginsMicroFrontends());
-const customLinks = computed(() => navBar.value['user-dropdown']);
-
-const logout = async () => {
-  await logoutApi()
-  router.push('/login')
-}
 </script>
 <style scoped lang="scss">
 header {
@@ -153,5 +129,10 @@ a {
   .btn {
     display: block;
   }
+}
+
+.query-input {
+  margin-inline: 10px;
+  max-width: 300px;
 }
 </style>

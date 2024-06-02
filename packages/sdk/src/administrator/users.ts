@@ -21,7 +21,7 @@ export default class QlUsers<T = any, E = any> extends BaseSDK {
     return this.callJsonApi<IManagedUser<Z>>(`${this.relativePath}/${userId}`)
   }
 
-  getList(filters?: { email: string, exact?: boolean }) {
+  getList(filters?: { username: string, exact?: boolean }) {
     return this.callJsonApi<IUser[]>(
       this.relativePath +
       (filters ?

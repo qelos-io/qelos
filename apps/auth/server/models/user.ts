@@ -1,8 +1,8 @@
-import mongoose, {ObjectId, Document, Model} from 'mongoose';
+import mongoose, { ObjectId, Document, Model } from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import {getSignedToken, getUniqueId} from '../services/tokens';
-import {cacheManager} from '../services/cache-manager';
+import { getSignedToken, getUniqueId } from '../services/tokens';
+import { cacheManager } from '../services/cache-manager';
 import {
   cookieTokenExpiration,
   defaultAuthType,
@@ -14,7 +14,9 @@ import {
 export interface IUser {
   _id?: any;
   tenant: string;
-  email: string;
+  username: string;
+  email?: string;
+  phone?: string;
   password: string;
   fullName: string;
   firstName: string;
@@ -23,6 +25,7 @@ export interface IUser {
   salt: string;
   roles: string[];
   tokens: any[];
+  metadata: any;
 }
 
 export interface UserDocument extends IUser, Document {
@@ -59,10 +62,17 @@ const UserSchema = new mongoose.Schema<UserDocument, UserModel>({
     index: true,
     default: '0',
   },
-  email: {
+  username: {
     type: String,
     required: true,
   },
+  email: {
+    type: String,
+    validate(email = '') {
+      return !email || (typeof email === 'string' && /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email));
+    }
+  },
+  phone: String,
   password: String,
   fullName: String,
   firstName: String,
@@ -72,6 +82,7 @@ const UserSchema = new mongoose.Schema<UserDocument, UserModel>({
   roles: {
     type: [String],
   },
+  metadata: mongoose.Schema.Types.Mixed,
   tokens: [
     {
       kind: {
@@ -93,7 +104,7 @@ const UserSchema = new mongoose.Schema<UserDocument, UserModel>({
   },
 });
 
-UserSchema.index({tenant: 1, email: 1}, {unique: true});
+UserSchema.index({ tenant: 1, username: 1 }, { unique: true });
 
 /**
  * Compare the passed password with the value in the database. A model method.
@@ -110,7 +121,7 @@ UserSchema.methods.comparePassword = function comparePassword(
   bcrypt.compare(password, this.password, callback);
 };
 
-UserSchema.methods.getToken = function getToken({authType, expiresIn, workspace}: {
+UserSchema.methods.getToken = function getToken({ authType, expiresIn, workspace }: {
   authType: 'cookie' | 'oauth',
   expiresIn?,
   workspace?
@@ -133,7 +144,7 @@ UserSchema.methods.getRefreshToken = function getRefreshToken(relatedToken, work
   this.tokens.push({
     kind: 'oauth',
     tokenIdentifier,
-    metadata: {relatedToken, workspace: workspace?._id},
+    metadata: { relatedToken, workspace: workspace?._id },
     expiresAt: new Date(Date.now() + cookieTokenExpiration),
   });
 
@@ -145,7 +156,7 @@ UserSchema.methods.getRefreshToken = function getRefreshToken(relatedToken, work
       tokenIdentifier,
     },
     refreshTokenSecret,
-    {expiresIn: refreshTokenExpiration}
+    { expiresIn: refreshTokenExpiration }
   );
 };
 
@@ -159,9 +170,9 @@ UserSchema.methods.updateToken = function updateToken(
     (token) =>
       !(token.kind === authType && token.tokenIdentifier === currentPayload.tokenIdentifier)
   );
-  const token = {kind: authType, tokenIdentifier: newIdentifier};
+  const token = { kind: authType, tokenIdentifier: newIdentifier };
   if (relatedToken || currentPayload.workspace) {
-    (token as any).metadata = {relatedToken, workspace: currentPayload.workspace?._id};
+    (token as any).metadata = { relatedToken, workspace: currentPayload.workspace?._id };
   }
   this.tokens.push(token);
 
@@ -195,23 +206,26 @@ UserSchema.methods.getTokenByRelatedTokens = function getTokenByRelatedTokens(
 
 UserSchema.statics.getUsersList = function getUsersList(tenant: string, usersIds: ObjectId[], privilegedUserFields?: Array<string>) {
   if (!usersIds.length) {
-    return this.find({tenant})
+    return this.find({ tenant })
       .select(privilegedUserFields)
       .lean()
       .exec()
       .then(users => JSON.stringify(users));
   }
   return cacheManager.wrap(`usersList.${tenant}.${usersIds.map(id => id.toString()).join(',')}`,
-    () => {
-      const query: Record<string, any> = {_id: {$in: usersIds}}
+    async () => {
+      const query: Record<string, any> = { _id: { $in: usersIds } }
       query.tenant = tenant;
 
-      return this.find(query)
-        .select(privilegedUserFields)
-        .lean()
-        .exec()
-        .then(users => JSON.stringify(users))
-        .catch(() => '[]');
+      try {
+        const users = await this.find(query)
+          .select(privilegedUserFields)
+          .lean()
+          .exec();
+        return JSON.stringify(users);
+      } catch {
+        return '[]';
+      }
     });
 }
 
@@ -220,6 +234,10 @@ UserSchema.statics.getUsersList = function getUsersList(tenant: string, usersIds
  */
 UserSchema.pre('save', function saveHook(next) {
   const user = this;
+
+  if (user.email && !user.username) {
+    user.username = user.email;
+  }
 
   // define role for new user
   if (!user.roles || user.roles.length === 0) {

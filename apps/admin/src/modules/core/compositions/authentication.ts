@@ -12,11 +12,11 @@ export function useAuthenticatedIntercept() {
 }
 
 export function useLogin() {
-  const form = reactive({ email: '', password: '' })
+  const form = reactive({ username: '', password: '' })
   return {
     form,
     login: () => {
-      return login({ email: form.email, password: form.password })
+      return login({ username: form.username, password: form.password })
     },
     isLoggedIn: computed(() => !!authStore.user)
   }

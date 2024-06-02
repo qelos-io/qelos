@@ -1,11 +1,4 @@
 <template>
-  <el-input
-    class="metadata"
-    size="large"
-    v-model="searchQuery"
-    :placeholder="$t('Search user by email')"
-  />
-
   <GpItem v-for="user in users" :key="user._id">
     <template v-slot:title>
       <router-link :to="{ name: 'editUser', params: { userId: user._id } }">{{
@@ -30,19 +23,15 @@
   </GpItem>
 </template>
 <script lang="ts" setup>
-import { ref, watch } from "vue";
 import { useUsersList, useRemoveUser } from "../compositions/users";
 import GpItem from "@/modules/core/components/layout/GpItem.vue";
-import router from "@/router";
-import debounce from "lodash.debounce";
 
-const searchQuery = ref("");
 const { users } = useUsersList();
 const { remove } = useRemoveUser((id) => {
   users.value = users.value.filter((user) => user._id !== id);
 });
 
-const join = (arr) => arr.join(", ");
+const join = (arr: string[]) => arr.join(", ");
 
 function getUserFullName(user) {
   let fullName = user.name || user.fullName;
@@ -54,17 +43,6 @@ function getUserFullName(user) {
   }
   return "Unknown";
 }
-
-function filterUsers() {
-  if (searchQuery.value) {
-    router.push({ query: { q: searchQuery.value } });
-  } else {
-    router.push({ query: {} });
-  }
-}
-
-const debouncedFilter = debounce(filterUsers, 1000); // 1 second delay
-watch(() => searchQuery.value, debouncedFilter);
 </script>
 <style scoped>
 .metadata {

@@ -1,25 +1,25 @@
-import User, {UserDocument} from '../models/user';
-import {setToken} from '../services/users';
+import User, { UserDocument } from '../models/user';
+import { setToken } from '../services/users';
 
-import {defaultAuthType, defaultRole} from '../../config';
-import {Strategy} from 'passport-local';
-import {getAbsoluteDate} from '../services/dates';
+import { defaultAuthType, defaultRole } from '../../config';
+import { Strategy } from 'passport-local';
+import { getAbsoluteDate } from '../services/dates';
 
 /**
  * Return the Passport Local Strategy object.
  */
 module.exports = new Strategy(
   {
-    usernameField: 'email',
+    usernameField: 'username',
     passwordField: 'password',
     session: false,
     passReqToCallback: true,
   },
-  (req, email, password, done) => {
+  (req, username = '', password, done) => {
     const { name, fullName, firstName, lastName, birthDate } = req.body || {};
     const newUser = new User({
       tenant: req.headers.tenant,
-      email: email.trim(),
+      username: username.trim() || req.body?.email?.trim(),
       password: password.trim(),
       fullName: fullName || name || (`${firstName} ${lastName}`),
       firstName,
@@ -29,7 +29,7 @@ module.exports = new Strategy(
     });
     const authType = req.body.authType || defaultAuthType;
 
-    setToken({user: newUser}, authType)
+    setToken({ user: newUser }, authType)
       .then(({
                user,
                token,
@@ -41,6 +41,7 @@ module.exports = new Strategy(
           refreshToken,
           cookieToken,
           user: {
+            username: user.username,
             email: user.email,
             name: user.fullName,
             fullName: user.fullName,

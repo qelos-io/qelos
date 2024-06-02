@@ -1,6 +1,6 @@
 import mongoose, { Schema, Types, Document } from 'mongoose';
 
-export type Invite = { email: string; name: string; created?: Date };
+export type Invite = { email: string; phone: string; name: string; created?: Date };
 
 export interface IWorkspace extends Document {
   name: string;
@@ -32,6 +32,7 @@ export const WorkspaceSchema = new mongoose.Schema<IWorkspace>({
   }],
   invites: [{
     email: { type: String },
+    phone: { type: String },
     name: { type: String },
     created: { type: Date, default: Date.now }
   }],

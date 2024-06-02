@@ -64,6 +64,7 @@
   "Base Storage Path": "Base Storage Path",
   "Authentication Secrets": "Authentication Secrets",
   "Username": "Username",
+  "Username / Email": "Username / Email",
   "FTP Host": "FTP Host",
   "Bucket Name": "Bucket Name",
   "Select GCS JSON Key": "Select GCS JSON Key",

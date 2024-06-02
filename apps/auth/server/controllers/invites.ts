@@ -1,19 +1,37 @@
-import {Response} from 'express'
-import {AuthRequest} from '../../types'
+import { Response } from 'express'
+import { AuthRequest } from '../../types'
 import logger from '../services/logger';
 
-import Workspace, {Invite} from '../models/workspace';
-import {emitPlatformEvent} from '@qelos/api-kit';
+import Workspace, { Invite } from '../models/workspace';
+import { emitPlatformEvent } from '@qelos/api-kit';
 
 export async function getInvites(req: AuthRequest, res: Response) {
-  const {email} = req.userPayload;
-  const {tenant} = req.headers;
+  const { username } = req.userPayload;
+  const { tenant } = req.headers;
+
+  const query = {
+    tenant,
+  }
+
+  let email = req.userPayload.email;
+  let phone;
+  if (!req.userPayload.email) {
+    if (req.authConfig.treatUsernameAs === 'email') {
+      email = username;
+    } else if (req.authConfig.treatUsernameAs === 'phone') {
+      phone = username;
+    }
+  }
+  if (email) {
+    query['invites.email'] = email;
+  } else if (phone) {
+    query['invites.phone'] = phone;
+  } else {
+    return res.status(500).json({ message: 'missing email or phone' });
+  }
 
   try {
-    const invites = await Workspace.find({
-      tenant,
-      'invites.email': email,
-    })
+    const invites = await Workspace.find(query)
       .select('_id name logo')
       .lean()
       .exec();
@@ -21,23 +39,23 @@ export async function getInvites(req: AuthRequest, res: Response) {
     res.send(invites);
   } catch (error) {
     logger.log('failed to get invites', error);
-    res.status(500).json({message: 'failed to retrieve invites list'}).end();
+    res.status(500).json({ message: 'failed to retrieve invites list' }).end();
   }
 }
 
 export async function respondToInvite(req: AuthRequest, res: Response) {
-  const {workspace: workspaceId, kind = 'decline'} = req.body;
-  const {email} = req.userPayload;
-  const {tenant} = req.headers;
+  const { workspace: workspaceId, kind = 'decline' } = req.body;
+  const { email } = req.userPayload;
+  const { tenant } = req.headers;
 
   if (!workspaceId) {
-    return res.status(400).json({message: 'missing workspaceId'});
+    return res.status(400).json({ message: 'missing workspaceId' });
   }
 
   if (!['accept', 'decline'].includes(kind)) {
     return res
       .status(400)
-      .json({message: 'respond kind should be either "accept" or "decline"'});
+      .json({ message: 'respond kind should be either "accept" or "decline"' });
   }
 
   try {
@@ -49,7 +67,7 @@ export async function respondToInvite(req: AuthRequest, res: Response) {
     if (!workspace) {
       return res
         .status(404)
-        .json({message: 'workspace not found', email, workspaceId, from: 'invite-respond'});
+        .json({ message: 'workspace not found', email, workspaceId, from: 'invite-respond' });
     }
 
     const filteredInvites = workspace.invites.filter(
@@ -75,7 +93,7 @@ export async function respondToInvite(req: AuthRequest, res: Response) {
       eventName: 'invite responded',
       description: 'invitation was responded by the user',
       metadata: {
-        workspace: {_id: workspaceId, name: workspace.name},
+        workspace: { _id: workspaceId, name: workspace.name },
         respond: {
           userId: req.userPayload.sub,
           kind,
@@ -85,8 +103,8 @@ export async function respondToInvite(req: AuthRequest, res: Response) {
     });
   } catch (error) {
     logger.log('failed to respond to invite', error);
-    res.status(500).json({message: 'failed to respond to invite'}).end();
+    res.status(500).json({ message: 'failed to respond to invite' }).end();
   }
 
-  res.status(200).json({success: true});
+  res.status(200).json({ success: true });
 }

@@ -18,6 +18,7 @@
       <el-input v-else v-on="listeners" :model-value="modelValue as (string | number)" :placeholder="placeholder"
                 size="large"
                 :native-type="type"
+                :disabled="disabled"
                 :type="type"/>
     </el-form-item>
     <slot/>
@@ -36,7 +37,8 @@ export default {
     type: String as () => 'text' | 'textarea' | 'password' | 'button' | 'checkbox' | 'file' | 'number' | 'radio' | 'upload' | 'switch' | 'color',
     placeholder: String,
     gap: Boolean,
-    modelValue: [String, Number, Object, Boolean]
+    modelValue: [String, Number, Object, Boolean],
+    disabled: Boolean,
   },
   emits: ['input', 'change', 'update:modelValue'],
   setup(_, { emit }) {

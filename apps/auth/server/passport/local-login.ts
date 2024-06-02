@@ -27,17 +27,17 @@ function getWorkspaceForUser(tenant: string, userId: string, workspaceId: string
 
 module.exports = new Strategy(
   {
-    usernameField: 'email',
+    usernameField: 'username',
     passwordField: 'password',
     session: false,
     passReqToCallback: true,
   },
-  async (req, email, password, done) => {
+  async (req, username, password, done) => {
     const query: {
-      email: string;
+      username: string;
       tenant: undefined | string;
       roles?: { $in: string[] };
-    } = { email: email.trim(), tenant: req.headers.tenant as string };
+    } = { username: username.trim() || req.body?.email?.trim(), tenant: req.headers.tenant as string };
     const authType = req.body.authType || defaultAuthType;
 
     if (req.body.roles && req.body.roles instanceof Array) {
@@ -66,6 +66,7 @@ module.exports = new Strategy(
           cookieToken,
           workspace,
           user: {
+            username: user.username,
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
