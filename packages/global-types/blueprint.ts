@@ -1,0 +1,57 @@
+export enum EntityIdentifierMechanism {
+  OBJECT_ID = 'objectid',
+  GUID = 'guid'
+}
+
+export enum BlueprintPropertyType {
+  STRING = 'string',
+  NUMBER = 'number',
+  BOOLEAN = 'boolean',
+  DATE = 'date',
+  DATETIME = 'datetime',
+  TIME = 'time'
+}
+
+export enum PermissionScope {
+  USER = 'user',
+  WORKSPACE = 'workspace',
+  TENANT = 'tenant'
+}
+
+export enum CRUDOperation {
+  CREATE = 'create',
+  READ = 'read',
+  UPDATE = 'update',
+  DELETE = 'delete'
+}
+
+export interface IPermissionsDescriptor {
+  scope: PermissionScope,
+  operation: CRUDOperation,
+  roleBased: string[],
+  workspaceRoleBased: string[],
+}
+
+export interface IBlueprint {
+  tenant: string;
+  identifier: string,
+  name: string,
+  description?: string,
+  entityIdentifierMechanism: EntityIdentifierMechanism,
+  permissions: Array<Partial<IPermissionsDescriptor>>,
+  permissionScope: PermissionScope,
+  properties: Record<string, {
+    title: string,
+    type: BlueprintPropertyType,
+    description: string,
+    required: boolean,
+    enum?: string[],
+    multi?: boolean,
+    min?: number,
+    max?: number,
+  }>,
+  updateMapping: Record<string, string>,
+  relations: { key: string, target: string }[],
+  created: Date;
+  updated: Date;
+}

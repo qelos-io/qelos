@@ -1,4 +1,4 @@
-import {getRouter, verifyUser, populateUser} from '@qelos/api-kit';
+import { getRouter, verifyUser, populateUser } from '@qelos/api-kit';
 import { checkAllPrivileges, onlyEditPrivileged } from '../middlewares/privileged-check';
 import {
   createBlueprint,

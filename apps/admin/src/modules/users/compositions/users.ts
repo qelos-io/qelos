@@ -48,10 +48,10 @@ export function useRemoveUser(onSuccess) {
   };
 }
 
-export function useUsersList(): { users: Ref<Array<any>>; loading: Ref<boolean> } {
+export function useUsersList(): { users: Ref<Array<IUser>>; loading: Ref<boolean> } {
   const route = useRoute();
 
-  const { result: users, retry, loading } = useDispatcher(
+  const { result: users, retry, loading } = useDispatcher<IUser[]>(
     () => usersService.getAll({ username: route.query.q }),
     []
   );

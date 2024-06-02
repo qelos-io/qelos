@@ -1,5 +1,5 @@
-import {getRouter, verifyUser, populateUser} from '@qelos/api-kit';
-import {onlyEditPrivileged} from '../middlewares/privileged-check';
+import { getRouter, verifyUser, populateUser } from '@qelos/api-kit';
+import { onlyEditPrivileged } from '../middlewares/privileged-check';
 
 const screensRouter = getRouter();
 

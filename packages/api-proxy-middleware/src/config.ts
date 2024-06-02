@@ -54,7 +54,7 @@ export function getApiProxyConfig(): IApiProxyConfig {
     }),
     noCodeService: getServiceFromEnvVars('no-code', 'NO_CODE_SERVICE', {
       port: 9004,
-      proxies: ['/api/blueprints'],
+      proxies: ['/api/blueprints', '/api/screens'],
     }),
     adminPanel: getServiceFromEnvVars('admin', 'ADMIN_PANEL', { port: 3001, proxies: ['/'] }),
     draftsService: getServiceFromEnvVars('drafts', 'DRAFTS_SERVICE', { port: 9005, proxies: ['/api/drafts'] }),

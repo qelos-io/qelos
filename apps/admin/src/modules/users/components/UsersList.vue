@@ -6,7 +6,7 @@
       }}</router-link>
     </template>
     <div class="metadata">
-      <p>
+      <p v-if="user.email">
         {{ $t("Email") }}:
         <a :href="'mailto:' + user.email" @click.stop>{{ user.email }}</a>
       </p>

@@ -1,6 +1,9 @@
-import {privilegedEditingRoles, privilegedViewingRoles} from '../../config';
+import { privilegedEditingRoles, privilegedViewingRoles } from '../../config';
 
-export function checkAllPrivileges(req, res, next) {
+export function checkAllPrivileges(req, _res, next) {
+  if (!(req.user?.roles instanceof Array)) {
+    return next();
+  }
   if (req.user.roles.find(role => privilegedViewingRoles.includes(role))) {
     req.user.hasViewingPrivileges = true
   }
@@ -22,7 +25,7 @@ export function onlyViewPrivileged(req, res, next) {
 }
 
 export function onlyEditPrivileged(req, res, next) {
-  if (req.user.isPrivileged || req.user.roles.find(role => privilegedEditingRoles.includes(role))) {
+  if (req.user.isPrivileged || req.user.roles?.find(role => privilegedEditingRoles.includes(role))) {
     req.user.isPrivileged = true
     return next()
   }
