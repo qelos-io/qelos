@@ -8,7 +8,11 @@ const usersRoutes = {
     {
       path: '',
       name: 'users',
-      component: async () => (await import('./Users.vue')).default
+      component: async () => (await import('./Users.vue')).default,
+      meta: {
+        searchQuery: true,
+        searchPlaceholder: 'Search user by email or username',
+      }
     },
     {
       path: 'me',

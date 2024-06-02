@@ -1,7 +1,7 @@
 <template>
   <el-form class="login-form" @submit.native.prevent="submit">
-    <el-form-item :label="$t('Email')" class="form-item-flex">
-      <el-input size="large" name="email" v-model="form.email" type="email" required @focus="onFocus" dir="ltr"/>
+    <el-form-item :label="$t('Username / Email')" class="form-item-flex">
+      <el-input size="large" name="username" v-model="form.username" :type="metadata.treatUsernameAs" required @focus="onFocus" dir="ltr"/>
     </el-form-item>
     <el-form-item :label="$t('Password')" class="form-item-flex">
       <el-input size="large" name="password" v-model="form.password" type="password" required @focus="onFocus"
@@ -19,8 +19,10 @@ import { useLogin } from '../compositions/authentication'
 import { useSubmitting } from '../compositions/submitting'
 import { useRouter } from 'vue-router'
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
+import { useAuthConfiguration } from '@/modules/configurations/store/auth-configuration';
 
 const { login, form, isLoggedIn } = useLogin()
+const { metadata } = useAuthConfiguration()
 const router = useRouter()
 
 const { submit, submitting } = useSubmitting(login, { error: 'Login failed' })

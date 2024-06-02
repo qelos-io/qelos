@@ -4,17 +4,17 @@ import {
   setCookie,
   getSignedToken,
 } from '../services/tokens';
-import {getUserIfTokenExists, updateToken} from '../services/users';
+import { getUserIfTokenExists, updateToken } from '../services/users';
 import {
   cookieTokenExpiration,
   privilegedRoles,
   cookieTokenVerificationTime,
   processedCookieExpiration, showLogs
 } from '../../config';
-import {NextFunction, RequestHandler, Response} from 'express';
-import {AuthRequest} from '../../types';
-import {cacheManager} from '../services/cache-manager';
-import {getRequestHost} from '../services/req-host';
+import { NextFunction, RequestHandler, Response } from 'express';
+import { AuthRequest } from '../../types';
+import { cacheManager } from '../services/cache-manager';
+import { getRequestHost } from '../services/req-host';
 import logger from '../services/logger';
 
 function oAuthVerify(req: AuthRequest, _res: Response, next: NextFunction): Promise<void> {
@@ -73,7 +73,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       payload,
       newCookieIdentifier
     );
-    const {token: newToken, payload: newPayload} = getSignedToken(
+    const { token: newToken, payload: newPayload } = getSignedToken(
       user,
       payload.workspace,
       newCookieIdentifier,
@@ -89,7 +89,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
 }
 
 async function setCookieAsProcessed(tokenIdentifier: string) {
-  await cacheManager.setItem(tokenIdentifier, 'tokenIdentifier', {ttl: processedCookieExpiration});
+  await cacheManager.setItem(tokenIdentifier, 'tokenIdentifier', { ttl: processedCookieExpiration });
 }
 
 async function isCookieProcessed(tokenIdentifier: string) {
@@ -118,9 +118,9 @@ export default <RequestHandler>function verifyUser(req: AuthRequest, res: Respon
   const cookie = req.cookies.token || req.signedCookies.token;
   const token = req.headers.authorization || req.headers.Authorization
   if (cookie) {
-    cookieVerify(req, res, next).catch(next);
+    return cookieVerify(req, res, next).catch(next);
   } else if (token) {
-    oAuthVerify(req, res, next).catch(next);
+    return oAuthVerify(req, res, next).catch(next);
   } else {
     next();
   }

@@ -1,6 +1,6 @@
-import {updateUser} from '../services/users'
-import {Response} from 'express'
-import {AuthRequest} from '../../types'
+import { updateUser } from '../services/users'
+import { Response } from 'express'
+import { AuthRequest } from '../../types'
 
 export function getMe(req: AuthRequest, res: Response) {
   const firstName = req.userPayload.firstName;
@@ -8,6 +8,7 @@ export function getMe(req: AuthRequest, res: Response) {
   const fullName = req.userPayload.fullName || req.userPayload.name || `${firstName} ${lastName}`;
   res.status(200).json({
     _id: req.userPayload.sub,
+    username: req.userPayload.username,
     email: req.userPayload.email,
     name: fullName,
     firstName,
@@ -19,15 +20,18 @@ export function getMe(req: AuthRequest, res: Response) {
 }
 
 export async function setMe(req: AuthRequest, res: Response) {
-  const {email, password, name, fullName, firstName, lastName, birthDate} = req.body || {}
+  const { username, password, name, fullName, firstName, lastName, birthDate, metadata } = req.body || {}
   try {
     await updateUser(
-      {_id: req.userPayload.sub, tenant: req.userPayload.tenant} as any,
-      {email, password, fullName: fullName || name, firstName, lastName, birthDate}
+      { _id: req.userPayload.sub, tenant: req.userPayload.tenant } as any,
+      { password, fullName: fullName || name, firstName, lastName, birthDate, metadata },
+      req.authConfig
     )
     res.status(200).json({
       _id: req.userPayload.sub,
-      email: email || req.userPayload.email,
+      username: username || req.userPayload.username,
+      email: req.userPayload.email,
+      phone: req.userPayload.phone,
       name: name || req.userPayload.name,
       fullName: fullName || req.userPayload.fullName,
       firstName: firstName || req.userPayload.firstName,
@@ -36,6 +40,6 @@ export async function setMe(req: AuthRequest, res: Response) {
       roles: req.userPayload.roles
     }).end()
   } catch (e) {
-    res.status(500).json({message: 'failed to update your user information'}).end()
+    res.status(500).json({ message: 'failed to update your user information' }).end()
   }
 }

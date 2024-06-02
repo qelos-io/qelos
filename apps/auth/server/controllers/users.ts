@@ -1,31 +1,69 @@
-import {Response, RequestHandler} from 'express'
-import {emitPlatformEvent} from '@qelos/api-kit';
-import {AuthRequest} from '../../types'
+import { Response, RequestHandler } from 'express'
+import { emitPlatformEvent } from '@qelos/api-kit';
+import { AuthRequest } from '../../types'
 import User from '../models/user'
 import UserInternalMetadata from '../models/user-internal-metadata';
-import {getEncryptedData, setEncryptedData} from '../services/encrypted-data';
+import { getEncryptedData, setEncryptedData } from '../services/encrypted-data';
 import logger from '../services/logger';
+import { isObjectId } from '../../helpers/mongo-utils';
+import * as UsersService from '../services/users';
+import { Types, Schema } from 'mongoose';
 
-const {Types: {ObjectId}} = require('mongoose')
-const UsersService = require('../services/users')
-const {isObjectId} = require('../../helpers/mongo-utils')
+import ObjectId = Types.ObjectId
+import { getValidMetadata } from '../services/users';
 
-const privilegedUserFields = 'email fullName firstName lastName birthDate roles';
+const privilegedUserFields = 'username email phone fullName firstName lastName birthDate roles';
 
 function getUserIdIfExists(_id, tenant) {
-  return User.findOne({_id, tenant}).select('_id').lean().exec();
+  return User.findOne({ _id, tenant }).select('_id').lean().exec();
 }
 
 function getUsersForAdmin(req: AuthRequest, res: Response): void {
+  // support old versions
   const email = req.query.email?.toString().toLowerCase().trim().replace(/ /g, '+') || undefined;
 
+  const username = email || req.query.username?.toString().toLowerCase().trim().replace(/ /g, '+') || undefined;
+
+
+  const query = {
+    tenant: req.headers.tenant,
+    username: req.query.exact ? username : (username ? new RegExp(username, 'i') : undefined),
+    $or: []
+  }
+  if (!username) {
+    delete query.username;
+  }
+
+  // temporary to support migration
+  query.$or = [
+    {
+      username: query.username
+    },
+    {
+      email: query.username
+    }
+  ]
+  delete query.username;
+
+
   User
-    .find({tenant: req.headers.tenant, email: req.query.exact ? email : new RegExp(email, 'i')})
+    .find(query)
     .select(privilegedUserFields)
     .lean()
     .exec()
     .then(users => {
+      const emptyUsernames = users.filter(user => !user.username)
+      emptyUsernames.forEach(user => user.username = user.email);
       res.json(users).end();
+
+      if (emptyUsernames.length) {
+        logger.log('user email migration for tenant ' + query.tenant);
+        Promise.all(emptyUsernames.map(user => User.updateOne({ _id: user.id }, {
+          $set: { username: user.username },
+          $unset: { email: 1 }
+        }))).catch()
+      }
+
     })
     .catch(() => {
       res.json([]).end();
@@ -58,21 +96,21 @@ function getUsers(req: AuthRequest, res: Response): RequestHandler {
   }
 
   User
-    .getUsersList(req.headers.tenant, users, privilegedUserFields)
+    .getUsersList(req.headers.tenant, users.filter(Boolean) as any as Schema.Types.ObjectId[], privilegedUserFields)
     .then(list => {
       res.status(200)
         .setHeader('x-tenant', req.headers.tenant)
         .setHeader('x-user', 'p-' + req.userPayload.sub)
         .set('Content-Type', 'application/json').end(list)
     })
-    .catch(() => res.status(404).json({message: 'could not load users'}).end())
+    .catch(() => res.status(404).json({ message: 'could not load users' }).end())
 }
 
 function getUser(req: AuthRequest, res: Response): RequestHandler {
   const isPrivileged = !!(req.userPayload && req.userPayload.isPrivileged)
 
   const promises: Array<Promise<any>> = [
-    User.findOne({_id: req.params.userId, tenant: req.headers.tenant})
+    User.findOne({ _id: req.params.userId, tenant: req.headers.tenant })
       .select(isPrivileged ? privilegedUserFields : 'fullName')
       .lean().exec()
   ]
@@ -93,7 +131,7 @@ function getUser(req: AuthRequest, res: Response): RequestHandler {
       }
       res.status(200).json(user).end()
     })
-    .catch(() => res.status(404).json({message: 'user not exists'}).end())
+    .catch(() => res.status(404).json({ message: 'user not exists' }).end())
   return;
 }
 
@@ -109,7 +147,7 @@ async function getUserEncryptedData(req: AuthRequest, res: Response) {
     }
     const encryptedId = req.headers['x-encrypted-id'];
     const id = user._id + (encryptedId ? ('-' + encryptedId) : '');
-    const {value} = await getEncryptedData(tenant, id);
+    const { value } = await getEncryptedData(tenant, id);
 
     res.status(200).set('Content-Type', 'application/json').end(value);
   } catch (e) {
@@ -132,22 +170,29 @@ async function setUserEncryptedData(req: AuthRequest, res: Response) {
     await setEncryptedData(tenant, id, JSON.stringify(req.body));
     res.status(200).set('Content-Type', 'application/json').end('{}');
   } catch (e) {
-    res.status(400).json({message: 'failed to set encrypted data for user'}).end();
+    res.status(400).json({ message: 'failed to set encrypted data for user' }).end();
   }
 }
 
 async function createUser(req: AuthRequest, res: Response) {
-  const {tenant, name, internalMetadata, ...userData} = req.body
+  const { tenant, name, internalMetadata, metadata, ...userData } = req.body
   const user = new User(userData);
   user.tenant = req.headers.tenant;
   if (!user.fullName && name) {
     user.fullName = name;
   }
+  if (metadata) {
+    try {
+      user.metadata = getValidMetadata(metadata, req.authConfig.additionalUserFields);
+    } catch {
+      // nothing
+    }
+  }
   try {
     if (!user.tenant) {
       throw new Error('tenant is missing');
     }
-    const {_id, fullName, firstName, lastName, birthDate, email, roles} = await user.save()
+    const { _id, fullName, firstName, lastName, birthDate, username, roles } = await user.save()
     const userInternalMetadata = new UserInternalMetadata({
       tenant: req.headers.tenant,
       user: _id,
@@ -155,7 +200,7 @@ async function createUser(req: AuthRequest, res: Response) {
     });
     await userInternalMetadata.save();
 
-    const response = {_id, name: fullName, firstName, lastName, birthDate, email, roles, internalMetadata};
+    const response = { _id, name: fullName, firstName, lastName, birthDate, username, roles, internalMetadata };
 
     emitPlatformEvent({
       tenant: req.headers.tenant,
@@ -172,17 +217,26 @@ async function createUser(req: AuthRequest, res: Response) {
     res.status(200).json(response).end()
   } catch (e) {
     logger.log('internal user create error', e);
-    res.status(400).json({message: 'user creation failed'}).end()
+    res.status(400).json({ message: 'user creation failed' }).end()
   }
 }
 
 async function updateUser(req: AuthRequest, res: Response) {
-  const {email, roles, name, password, fullName, firstName, lastName, birthDate, internalMetadata} = req.body || {}
+  const { username, roles, name, password, fullName, firstName, lastName, birthDate, internalMetadata } = req.body || {}
+  let metadata;
   let newInternalMetadata;
   try {
+    if (req.body?.metadata) {
+      metadata = getValidMetadata(req.body?.metadata, req.authConfig.additionalUserFields);
+    }
+  } catch {
+    metadata = null;
+  }
+  try {
     await UsersService.updateUser(
-      {_id: req.params.userId, tenant: req.headers.tenant},
-      {email, roles, password, fullName: fullName || name, firstName, lastName, birthDate}
+      { _id: req.params.userId, tenant: req.headers.tenant },
+      { username, roles, password, fullName: fullName || name, firstName, lastName, birthDate, metadata },
+      req.authConfig
     )
     if (internalMetadata) {
       const userInternalMetadata = (await UserInternalMetadata.findOne({
@@ -198,7 +252,7 @@ async function updateUser(req: AuthRequest, res: Response) {
     }
 
     const response = {
-      email,
+      username,
       name: fullName || name,
       fullName: fullName || name,
       firstName,
@@ -223,7 +277,7 @@ async function updateUser(req: AuthRequest, res: Response) {
 
     res.status(200).json(response).end()
   } catch (e) {
-    res.status(400).json({message: 'user update failed'}).end()
+    res.status(400).json({ message: 'user update failed' }).end()
   }
 }
 
@@ -241,9 +295,9 @@ async function removeUser(req: AuthRequest, res: Response) {
       metadata: null
     })
 
-    res.status(200).json({_id: req.params.userId, tenant: req.headers.tenant}).end()
+    res.status(200).json({ _id: req.params.userId, tenant: req.headers.tenant }).end()
   } catch (e) {
-    res.status(400).json({message: 'user deletion failed'}).end()
+    res.status(400).json({ message: 'user deletion failed' }).end()
   }
 }
 

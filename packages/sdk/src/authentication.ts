@@ -3,18 +3,21 @@ import BaseSDK from './base-sdk';
 
 export interface IUser {
   _id: string;
+  username: string;
   email: string;
+  phone?: string;
   fullName: string;
   firstName: string;
   lastName: string;
   birthDate: string;
   roles: string[];
+  metadata: any;
 
   [key: string]: any;
 }
 
 export interface ICredentials {
-  email: string;
+  username: string;
   password: string;
   roles?: string[];
 }
@@ -24,7 +27,9 @@ export interface BasicPayload {
 }
 
 export interface ISignupInformation {
-  email: string;
+  username: string;
+  email?: string;
+  phone?: string;
   password: string;
   fullName?: string;
   firstName: string;

@@ -2,7 +2,9 @@ import {StandardPayload} from './handlers';
 
 export type RequestUser = {
   _id: string,
-  email: string,
+  username: string,
+  email?: string,
+  phone?: string,
   firstName: string,
   lastName: string,
   roles: string[],

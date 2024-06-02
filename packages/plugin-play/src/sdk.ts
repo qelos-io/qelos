@@ -1,19 +1,19 @@
-import {fetch as undiciFetch} from 'undici';
+import { fetch as undiciFetch } from 'undici';
 import QelosAdministratorSDK from '@qelos/sdk/dist/administrator';
-import {FetchLike, QelosSDKOptions} from '@qelos/sdk/dist/types';
+import { FetchLike, QelosSDKOptions } from '@qelos/sdk/dist/types';
 import config from './config';
-import {StandardPayload} from './handlers';
+import { StandardPayload } from './handlers';
 import logger from './logger';
 
 let localSdk: QelosAdministratorSDK<{ tokenIdentifier: string }>;
 
 export function authenticate() {
-  return localSdk.authentication.oAuthSignin({email: config.qelosUsername, password: config.qelosPassword});
+  return localSdk.authentication.oAuthSignin({ username: config.qelosUsername, password: config.qelosPassword });
 }
 
 async function bootstrapAuthenticate() {
   try {
-    await localSdk.authentication.oAuthSignin({email: config.qelosUsername, password: config.qelosPassword});
+    await localSdk.authentication.oAuthSignin({ username: config.qelosUsername, password: config.qelosPassword });
     console.log('authenticated successfully to ' + config.qelosUrl)
   } catch (err) {
     console.log('could not authenticate to own qelos app');

@@ -1,8 +1,8 @@
-import {defineStore} from 'pinia';
-import {useDispatcher} from '@/modules/core/compositions/dispatcher';
+import { defineStore } from 'pinia';
+import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import configurationsService from '@/services/configurations-service';
-import {computed, ref} from 'vue';
-import {authStore} from '@/modules/core/store/auth';
+import { computed } from 'vue';
+import { authStore } from '@/modules/core/store/auth';
 
 export const useWsConfiguration = defineStore('ws-configuration', () => {
   const DEFAULT_VALUE = {
@@ -10,7 +10,7 @@ export const useWsConfiguration = defineStore('ws-configuration', () => {
     creationPrivilegedRoles: [],
     viewMembersPrivilegedWsRoles: []
   }
-  const {result, loaded, loading} = useDispatcher(() => configurationsService.getOne('workspace-configuration'), {
+  const { result, loaded, loading } = useDispatcher(() => configurationsService.getOne('workspace-configuration'), {
     metadata: DEFAULT_VALUE
   });
 

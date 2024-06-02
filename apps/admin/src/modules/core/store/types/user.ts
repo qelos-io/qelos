@@ -4,8 +4,10 @@ export interface IUser {
   firstName: string,
   lastName: string,
   birthDate: string,
+  username: string,
   email: string,
   roles: Array<string>,
+  metadata: any,
   internalMetadata?: any,
   workspace?: {
     _id: string,

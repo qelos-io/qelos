@@ -62,6 +62,7 @@
   "Base Storage Path": "נתיב בסיס מקור אחסון",
   "Authentication Secrets": "ססמאות אימות",
   "Username": "שם משתמש/ת",
+  "Username / Email": "שם משתמש/ת או כתובת דואר אלקטרוני",
   "FTP Host": "מארח FTP",
   "Bucket Name": "שם Bucket",
   "Select GCS JSON Key": "בחר GCS JSON Key",

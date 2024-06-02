@@ -1,8 +1,8 @@
-import {computed, reactive} from 'vue'
+import { computed, reactive } from 'vue'
 import router from '../../../router'
-import {api} from '@/services/api'
-import {IAuthStore} from './types/auth-store'
-import {IUser} from './types/user'
+import { api } from '@/services/api'
+import { IAuthStore } from './types/auth-store'
+import { IUser } from './types/user'
 
 export const authStore = reactive<IAuthStore>({
   user: null,
@@ -17,12 +17,13 @@ function loadUser() {
   authStore.userPromise = api.get<IUser>('/api/me').then(res => res.data)
   return authStore.userPromise
 }
+
 export const logout = () => {
   authStore.user = null
   authStore.isLoaded = false
   authStore.userPromise = null
   api.post('/api/logout')
-  router.push({name: 'login'})
+  router.push({ name: 'login' })
 }
 export const updateProfile = async (changes: Partial<IUser>) => {
   authStore.user = await api.post<IUser>('/api/me', changes).then(res => res.data)
@@ -35,7 +36,7 @@ export const fetchAuthUser = async (force: boolean = false) => {
   let user;
   try {
     user = await loadUser().catch(() => null);
-    if(!user) {
+    if (!user) {
       throw new Error('first attempt to load user failed');
     }
   } catch {
@@ -51,9 +52,9 @@ export const fetchAuthUser = async (force: boolean = false) => {
   }
 }
 
-export const login = async ({email, password}: { email: string, password: string }) => {
-  const {data: {payload}} = await api.post<{ payload: { user: IUser } }>('/api/signin', {
-    email,
+export const login = async ({ username, password }: { username: string, password: string }) => {
+  const { data: { payload } } = await api.post<{ payload: { user: IUser } }>('/api/signin', {
+    username,
     password,
   })
   authStore.user = payload.user;

@@ -1,26 +1,26 @@
 <template>
   <el-form @submit.native.prevent="submit" class="user-form">
     <div class="flex-row">
-      <FormInput title="First Name" :model-value="firstName" @input="editedData.firstName = $event" />
-      <FormInput title="Last Name" :model-value="lastName" @input="editedData.lastName = $event" />
+      <FormInput title="First Name" :model-value="firstName" @input="editedData.firstName = $event"/>
+      <FormInput title="Last Name" :model-value="lastName" @input="editedData.lastName = $event"/>
     </div>
-    <FormInput title="Email" :model-value="email" @input="editedData.email = $event" />
+    <FormInput title="Username / Email" :disabled="!asAdmin" :model-value="username" @input="editedData.username = $event"/>
     <el-form-item label="Password">
       <small>Leave empty to ignore changes</small>
-      <el-input name="password" type="password" v-model="editedData.password" />
+      <el-input name="password" type="password" v-model="editedData.password"/>
     </el-form-item>
     <div v-if="!hideRoles">
       <el-form-item>
         <el-checkbox-group v-model="roles" size="large">
-          <el-checkbox v-for="r in availableRoles" :key="r" :label="r" size="large" />
+          <el-checkbox v-for="r in availableRoles" :key="r" :label="r" size="large"/>
         </el-checkbox-group>
       </el-form-item>
     </div>
     <el-form-item label="Meta data" v-if="asAdmin">
-      <Monaco :model-value="internalMetadata" @input="editedData.internalMetadata = $event.target.value" />
+      <Monaco :model-value="internalMetadata" @input="editedData.internalMetadata = $event.target.value"/>
     </el-form-item>
 
-    <SaveButton :submitting="submitting" />
+    <SaveButton :submitting="submitting"/>
   </el-form>
 </template>
 <script lang="ts" setup>
@@ -43,7 +43,7 @@ const emit = defineEmits(['submitted']);
 const editedData = reactive({
   firstName: null,
   lastName: null,
-  email: null,
+  username: null,
   password: null,
   roles: props.user && props.user._id ? null : ['user'],
   internalMetadata: props.user.internalMetadata ? JSON.stringify(props.user.internalMetadata, null, 2) : null
@@ -60,7 +60,12 @@ if (!props.hideRoles) {
   availableRoles = Array.from(new Set(['admin', 'editor', 'plugin', 'user'].concat(props.user.roles || [])));
 }
 
-const {firstName, lastName, email, internalMetadata} = useEditedInputs(editedData, props.user, ['firstName', 'lastName', 'email', 'internalMetadata'])
+const {
+  firstName,
+  lastName,
+  username,
+  internalMetadata
+} = useEditedInputs(editedData, props.user, ['firstName', 'lastName', 'username', 'internalMetadata'])
 
 function submit() {
   editedData.internalMetadata = JSON.parse(editedData.internalMetadata);
@@ -72,7 +77,7 @@ function submit() {
   margin: 10px;
 }
 
-.flex-row>* {
+.flex-row > * {
   margin: 10px;
   flex: 1;
 }

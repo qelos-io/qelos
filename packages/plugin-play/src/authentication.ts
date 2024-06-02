@@ -1,17 +1,23 @@
 import jwt from 'jsonwebtoken';
-import {RouteOptions} from 'fastify/types/route';
-import {FastifyRequest} from 'fastify/types/request';
+import { RouteOptions } from 'fastify/types/route';
+import { FastifyRequest } from 'fastify/types/request';
 import manifest from './manifest';
-import handlers, {onCallback, onFrontendAuthorization, onNewTenant, onRefreshToken, StandardPayload} from './handlers';
+import handlers, {
+  onCallback,
+  onFrontendAuthorization,
+  onNewTenant,
+  onRefreshToken,
+  StandardPayload
+} from './handlers';
 import config from './config';
-import {authenticate, getSdk, getSdkForUrl} from './sdk';
-import {ResponseError} from './response-error';
+import { authenticate, getSdk, getSdkForUrl } from './sdk';
+import { ResponseError } from './response-error';
 import logger from './logger';
-import {atob} from 'buffer';
-import {cacheManager} from './cache-manager';
-import {RequestUser} from './request.types';
+import { atob } from 'buffer';
+import { cacheManager } from './cache-manager';
+import { RequestUser } from './request.types';
 
-const notAuthorized = {message: 'you are not authorized'};
+const notAuthorized = { message: 'you are not authorized' };
 
 function getHostname(fullUrl: string) {
   if (!fullUrl.startsWith('http')) {
@@ -22,7 +28,7 @@ function getHostname(fullUrl: string) {
 }
 
 export async function verifyAccessToken(req: FastifyRequest): Promise<void> {
-  const {authorization} = req.headers;
+  const { authorization } = req.headers;
 
   const token = authorization?.split(' ')[1];
 
@@ -40,7 +46,7 @@ export async function verifyAccessToken(req: FastifyRequest): Promise<void> {
 }
 
 export async function verifyCookieToken(req: FastifyRequest): Promise<void> {
-  const {code} = req.headers;
+  const { code } = req.headers;
   if (!code) {
     throw new Error('authorization code was not provided');
   }
@@ -64,17 +70,17 @@ export function getRefreshTokenRoute(): RouteOptions {
   const usersSdk = getSdk().users;
 
   if (config.qelosUrl) {
-    onRefreshToken(async ({sub, identifier = ''}) => {
+    onRefreshToken(async ({ sub, identifier = '' }) => {
       const user = await usersSdk.getUser(sub);
       if (identifier.toString() !== user.internalMetadata?.tokenIdentifier) {
-        throw new ResponseError({message: 'user is not verified on Qelos BaaS', sub, user, identifier})
+        throw new ResponseError({ message: 'user is not verified on Qelos BaaS', sub, user, identifier })
       }
       const newPayload: StandardPayload = {
         sub,
         identifier: (Date.now() + Math.random()).toString().substring(0, 10)
       }
-      await usersSdk.update(sub, {internalMetadata: {tokenIdentifier: newPayload.identifier}})
-      return {payload: newPayload};
+      await usersSdk.update(sub, { internalMetadata: { tokenIdentifier: newPayload.identifier } })
+      return { payload: newPayload };
     })
   }
 
@@ -94,8 +100,8 @@ export function getRefreshTokenRoute(): RouteOptions {
             const result = await handler(payload, request);
             if (result?.payload as StandardPayload) {
               return {
-                [manifest.authAcquire.refreshTokenKey]: jwt.sign(result.payload, config.refreshTokenSecret, {expiresIn: '90d'}),
-                [manifest.authAcquire.accessTokenKey]: jwt.sign(result.payload, config.accessTokenSecret, {expiresIn: '1h'}),
+                [manifest.authAcquire.refreshTokenKey]: jwt.sign(result.payload, config.refreshTokenSecret, { expiresIn: '90d' }),
+                [manifest.authAcquire.accessTokenKey]: jwt.sign(result.payload, config.accessTokenSecret, { expiresIn: '1h' }),
               }
             }
           }
@@ -119,7 +125,7 @@ export function getRegisterRoute(): RouteOptions {
   const usersSdk = sdk.users;
 
   if (config.allowedTenants?.length) {
-    onNewTenant(async ({appUrl}) => {
+    onNewTenant(async ({ appUrl }) => {
       const hostname = getHostname(appUrl);
       if (!config.allowedTenants.includes(hostname)) {
         throw new ResponseError('your tenant is not allowed for this plugin');
@@ -128,22 +134,22 @@ export function getRegisterRoute(): RouteOptions {
   }
 
   if (config.qelosUrl) {
-    onNewTenant(async ({email, password, appUrl}) => {
+    onNewTenant(async ({ username, password, appUrl }) => {
       const tenantSdk = getSdkForUrl(appUrl)
-      const emailSplit = email.split('@');
+      const emailSplit = username.split('@');
       if (emailSplit.length === 2 && getHostname(appUrl) !== emailSplit[1].split(':')[0]) {
         throw new ResponseError('email must be provided from the same app url: ' + appUrl);
       }
       let currentAuthPayload;
       try {
         // email will be: {pluginId}.{tenantId}@${tenantHostname}
-        const {payload} = await tenantSdk.authentication.oAuthSignin({email, password});
+        const { payload } = await tenantSdk.authentication.oAuthSignin({ username, password });
         if (!payload.user?.roles?.includes('plugin')) {
           throw new ResponseError('should retrieve a plugin user to app: ' + appUrl);
         }
         currentAuthPayload = payload;
       } catch (err) {
-        logger.error('failure during login to qelos app', {email, appUrl, err})
+        logger.error('failure during login to qelos app', { username, appUrl, err })
         if (err instanceof ResponseError) {
           throw err;
         }
@@ -155,12 +161,12 @@ export function getRegisterRoute(): RouteOptions {
       }
       let user;
       try {
-        const [existingUser] = await usersSdk.getList({email, exact: true});
+        const [existingUser] = await usersSdk.getList({ username, exact: true });
         user = existingUser;
       } catch (e) {
         if (e?.message === 'could not able to refresh token') {
           await authenticate();
-          const [existingUser] = await usersSdk.getList({email, exact: true});
+          const [existingUser] = await usersSdk.getList({ username, exact: true });
           user = existingUser;
         }
       }
@@ -168,39 +174,39 @@ export function getRegisterRoute(): RouteOptions {
         await usersSdk.update(user._id, {
           firstName: appUrl,
           lastName: 'qelos-player-app',
-          email,
+          username,
           password,
-          internalMetadata: {tokenIdentifier: newPayload.identifier}
+          internalMetadata: { tokenIdentifier: newPayload.identifier }
         });
       } else {
         user = await usersSdk.create({
           firstName: appUrl,
           lastName: 'qelos-player-app',
-          email,
+          username,
           password,
           roles: ['user', 'qelos'],
-          internalMetadata: {tokenIdentifier: newPayload.identifier}
+          internalMetadata: { tokenIdentifier: newPayload.identifier }
         });
       }
 
       await usersSdk.setEncryptedData(user._id, config.userPayloadSecret, {
         appUrl,
-        email,
+        username,
         password,
         currentAuthPayload
       })
       newPayload.sub = user._id;
-      return {payload: newPayload};
+      return { payload: newPayload };
     })
   }
 
-  function checkMissingCredentialsError({email, password, appUrl}: any) {
-    if (email && password && appUrl) {
+  function checkMissingCredentialsError({ username, password, appUrl }: any) {
+    if (username && password && appUrl) {
       return;
     }
     const missing = [];
-    if (email) {
-      missing.push('email');
+    if (username) {
+      missing.push('username');
     }
     if (password) {
       missing.push('password');
@@ -223,8 +229,8 @@ export function getRegisterRoute(): RouteOptions {
             const result = await handler(request.body, request);
             if (result?.payload as StandardPayload) {
               return {
-                [manifest.authAcquire.refreshTokenKey]: jwt.sign(result.payload, config.refreshTokenSecret, {expiresIn: '90d'}),
-                [manifest.authAcquire.accessTokenKey]: jwt.sign(result.payload, config.accessTokenSecret, {expiresIn: '1h'}),
+                [manifest.authAcquire.refreshTokenKey]: jwt.sign(result.payload, config.refreshTokenSecret, { expiresIn: '90d' }),
+                [manifest.authAcquire.accessTokenKey]: jwt.sign(result.payload, config.accessTokenSecret, { expiresIn: '1h' }),
               }
             }
           }
@@ -232,7 +238,7 @@ export function getRegisterRoute(): RouteOptions {
       } catch (err) {
         if (err instanceof ResponseError) {
           reply.statusCode = err.status || 401;
-          return {message: err.responseMessage};
+          return { message: err.responseMessage };
         } else {
           logger.error('internal register error', err);
         }
@@ -245,11 +251,11 @@ export function getRegisterRoute(): RouteOptions {
 
 export function getCallbackRoute(): RouteOptions {
   if (config.qelosUrl) {
-    onCallback(async ({user, returnUrl}, request) => {
+    onCallback(async ({ user, returnUrl }, request) => {
       const code = Math.floor(Math.random() * 1000).toString();
       // set the code on cache manager
-      const email = user?.email || 'anonymous';
-      await cacheManager.setItem(`${returnUrl}:${request.tenantPayload.sub}:${email}`, JSON.stringify({
+      const username = user?.username || 'anonymous';
+      await cacheManager.setItem(`${returnUrl}:${request.tenantPayload.sub}:${username}`, JSON.stringify({
         code,
         user,
         created: Date.now(),
@@ -272,13 +278,13 @@ export function getCallbackRoute(): RouteOptions {
         request.user = user;
 
         for (let handler of handlers.callback) {
-          const code = await handler({user, returnUrl: returnUrl.href}, request)
+          const code = await handler({ user, returnUrl: returnUrl.href }, request)
 
           if (code && typeof code === 'string') {
             const token = jwt.sign({
               user,
               tenant: request.tenantPayload
-            }, config.accessTokenSecret, {expiresIn: '30min'});
+            }, config.accessTokenSecret, { expiresIn: '30min' });
             returnUrl.searchParams.append('code', code);
             returnUrl.searchParams.append('token', token);
 
@@ -303,13 +309,13 @@ export function getFrontendAuthorizationRoute(): RouteOptions {
     return;
   }
   if (config.qelosUrl) {
-    onFrontendAuthorization(async ({returnUrl, user, tenant}) => {
+    onFrontendAuthorization(async ({ returnUrl, user, tenant }) => {
       try {
         const data = JSON.parse(await cacheManager.getItem(`${returnUrl}:${tenant.sub}:${user.email}`))
         if (data) {
           return {
             code: data.code,
-            token: jwt.sign({code: data.code, user, tenant}, config.accessTokenSecret, {expiresIn: '30min'}),
+            token: jwt.sign({ code: data.code, user, tenant }, config.accessTokenSecret, { expiresIn: '30min' }),
           }
         }
       } catch {
@@ -329,7 +335,7 @@ export function getFrontendAuthorizationRoute(): RouteOptions {
           code: 'default',
           user,
           tenant
-        }, config.accessTokenSecret, {expiresIn: '30min'}));
+        }, config.accessTokenSecret, { expiresIn: '30min' }));
         return {
           user,
           tenant
@@ -342,16 +348,16 @@ export function getFrontendAuthorizationRoute(): RouteOptions {
     method: 'POST',
     url: manifest.authorizeUrl,
     handler: async (request, reply) => {
-      const {returnUrl, token}: any = request.body || {};
+      const { returnUrl, token }: any = request.body || {};
       if (returnUrl && token) {
         try {
-          const {user, tenant} = jwt.verify(token, config.accessTokenSecret);
+          const { user, tenant } = jwt.verify(token, config.accessTokenSecret);
           try {
             Object.keys(request.cookies || {}).forEach(key => {
               if (key.startsWith('token_')) {
                 const payload = jwt.decode(request.cookies[key]);
                 if (payload && payload.tenant?.identifier === tenant?.identifier) {
-                  reply.setCookie(key, '', {maxAge: 1})
+                  reply.setCookie(key, '', { maxAge: 1 })
                 }
               }
             })
@@ -359,7 +365,7 @@ export function getFrontendAuthorizationRoute(): RouteOptions {
             logger.error('failed to remove duplicate cookies', err);
           }
           for (let handler of handlers.frontendAuth) {
-            const cookieData = await handler({returnUrl, user, tenant}, request);
+            const cookieData = await handler({ returnUrl, user, tenant }, request);
 
             if (cookieData && cookieData.code && cookieData.token) {
               reply.setCookie('token_' + cookieData.code, cookieData.token);
@@ -392,8 +398,8 @@ export function getFrontendUnAuthorizationRoute(): RouteOptions {
       const code = request.headers.code;
       const user = request.user;
       const tenant = request.tenantPayload;
-      reply.setCookie('token_' + code, '', {maxAge: 1});
-      handlers.frontendUnAuth.forEach((handler) => handler({user, tenant}));
+      reply.setCookie('token_' + code, '', { maxAge: 1 });
+      handlers.frontendUnAuth.forEach((handler) => handler({ user, tenant }));
       return 'OK';
     }
   }

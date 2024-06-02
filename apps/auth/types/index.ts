@@ -1,6 +1,7 @@
-import {Request} from 'express'
+import { Request } from 'express'
 import mongoose from 'mongoose';
-import {IWorkspace} from '../server/models/workspace';
+import { IWorkspace } from '../server/models/workspace';
+import { IAuthConfigurationMetadata } from '../server/services/auth-configuration';
 
 export interface AuthRequest extends Request {
   headers: {
@@ -14,7 +15,9 @@ export interface AuthRequest extends Request {
   userPayload: {
     sub: string,
     tenant: string,
-    email: string,
+    username: string,
+    email?: string,
+    phone?: string,
     name: string,
     fullName: string,
     firstName: string,
@@ -31,4 +34,5 @@ export interface AuthRequest extends Request {
   }
   workspace?: IWorkspace & mongoose.Document<IWorkspace>,
   isWorkspacePrivileged?: boolean;
+  authConfig: IAuthConfigurationMetadata;
 }

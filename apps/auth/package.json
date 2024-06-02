@@ -31,6 +31,7 @@
     "validator": "^7.0.0"
   },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
     "@types/bcryptjs": "^2.4.2",
     "@types/express": "^4.17.11",
     "@types/jest": "^27.5.2",
@@ -46,6 +47,17 @@
   },
   "gitHead": "d6e98230be662ec343c5b09b9115d21a9358e682",
   "bundledDependencies": [
+    "@qelos/api-kit",
+    "@qelos/cache-manager",
+    "bcryptjs",
+    "cookie-parser",
+    "jsonwebtoken",
+    "mongoose",
+    "passport",
+    "passport-local",
+    "validator"
+  ],
+  "bundleDependencies": [
     "@qelos/api-kit",
     "@qelos/cache-manager",
     "bcryptjs",

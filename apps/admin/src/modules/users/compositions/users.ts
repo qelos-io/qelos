@@ -52,7 +52,7 @@ export function useUsersList(): { users: Ref<Array<any>>; loading: Ref<boolean> 
   const route = useRoute();
 
   const { result: users, retry, loading } = useDispatcher(
-    () => usersService.getAll({ email: route.query.q }),
+    () => usersService.getAll({ username: route.query.q }),
     []
   );
   watch(() => route.query.q, retry);

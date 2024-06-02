@@ -1,4 +1,4 @@
-import {FastifyRequest} from 'fastify/types/request';
+import { FastifyRequest } from 'fastify/types/request';
 
 export const handlers = {
   refreshToken: [],
@@ -11,15 +11,23 @@ export const handlers = {
 }
 export type StandardPayload = { sub: string, identifier: string };
 
-export type DataWithPayload<T>  = { payload: T & StandardPayload };
+export type DataWithPayload<T> = { payload: T & StandardPayload };
 
 export type FrontendAuthorizationPayload = { code: string | number, token: string }
 
 export type RefreshTokenHandler<T> = (tokenPayload: T & StandardPayload, request: FastifyRequest) => void | DataWithPayload<T> | Promise<void | DataWithPayload<T>>
-export type NewTenantHandler<T> = ({email, password, appUrl}, request: FastifyRequest) => void | DataWithPayload<T> | Promise<void | DataWithPayload<T>>
+export type NewTenantHandler<T> = ({
+                                     username,
+                                     password,
+                                     appUrl
+                                   }, request: FastifyRequest) => void | DataWithPayload<T> | Promise<void | DataWithPayload<T>>
 
-export type FrontendAuthorizationHandler = ({returnUrl, user, tenant}, request: FastifyRequest) => void | FrontendAuthorizationPayload | Promise<void | FrontendAuthorizationPayload>;
-export type FrontendUnAuthorizationHandler = ({user, tenant}) => any;
+export type FrontendAuthorizationHandler = ({
+                                              returnUrl,
+                                              user,
+                                              tenant
+                                            }, request: FastifyRequest) => void | FrontendAuthorizationPayload | Promise<void | FrontendAuthorizationPayload>;
+export type FrontendUnAuthorizationHandler = ({ user, tenant }) => any;
 
 export function onRefreshToken<T = any>(handler: RefreshTokenHandler<T>) {
   handlers.refreshToken.push(handler);
@@ -37,7 +45,10 @@ export function onStoreUser(handler) {
   handlers.storeUser.push(handler);
 }
 
-export function onCallback(handler: ({user, returnUrl}, request: FastifyRequest) => void | string | Promise<void | string>) {
+export function onCallback(handler: ({
+                                       user,
+                                       returnUrl
+                                     }, request: FastifyRequest) => void | string | Promise<void | string>) {
   handlers.callback.push(handler);
 }
 
