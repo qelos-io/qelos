@@ -1,4 +1,4 @@
-import Blueprint, { IBlueprint, IPermissionsDescriptor } from '../models/blueprint';
+import Blueprint, { IBlueprint } from '../models/blueprint';
 import BlueprintEntity from '../models/blueprint-entity';
 
 export async function getAllBlueprints(req, res) {

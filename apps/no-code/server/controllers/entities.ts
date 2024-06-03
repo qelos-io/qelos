@@ -1,7 +1,8 @@
 import qs from 'qs'
 import BlueprintEntity from '../models/blueprint-entity';
-import { IBlueprint, PermissionScope } from '../models/blueprint';
+import { IBlueprint } from '../models/blueprint';
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
+import { PermissionScope } from '@qelos/global-types';
 
 type Full<T> = {
   [P in keyof T]-?: T[P];
