@@ -1,29 +1,65 @@
 <template>
-  <GpItem v-for="blueprint in store.blueprints"
-          :key="blueprint.identifier"
-          :id="'blueprint-' + blueprint.identifier">
-    <template v-slot:title>
-      {{ blueprint.name }}
-      <small>{{ blueprint.description }}</small>
-    </template>
-    <div class="metadata">
-      <p v-for="(field, key) in blueprint.properties" :key="key">
-        <strong>{{ key }}:</strong> {{ field.type }}
-      </p>
-    </div>
-    <template v-slot:actions>
-      <small class="link" @click.prevent="store.remove(blueprint.identifier)">
-        <el-icon>
-          <icon-delete/>
-        </el-icon>
-        {{ $t('Remove') }}
-      </small>
-    </template>
-  </GpItem>
+  <div class="list">
+    <GpItem v-for="blueprint in store.blueprints"
+            :key="blueprint.identifier"
+            :id="'blueprint-' + blueprint.identifier"
+            class="blueprint-item"
+    >
+      <template v-slot:title>
+        {{ blueprint.name }}
+        <small>{{ blueprint.description }}</small>
+      </template>
+      <div class="metadata">
+        <table>
+          <tr v-for="(field, key) in blueprint.properties" :key="key">
+            <td>
+              {{ field.title }}
+              <el-tooltip v-if="field.description" :content="field.description">
+                <el-icon >
+                  <icon-question-filled/>
+                </el-icon>
+              </el-tooltip>
+            </td>
+            <td>{{ field.type }}</td>
+          </tr>
+        </table>
+      </div>
+      <template v-slot:actions>
+        <RemoveButton wide @click="removeWithConfirm(blueprint.identifier)"/>
+      </template>
+    </GpItem>
+  </div>
 </template>
 <script lang="ts" setup>
-import GpItem from '../../core/components/layout/GpItem.vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
+import GpItem from '../../core/components/layout/GpItem.vue';
+import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 
 const store = useBlueprintsStore()
+const removeWithConfirm = useConfirmAction(store.remove)
 </script>
+<style scoped>
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.blueprint-item {
+  flex: 1;
+  max-width: 600px;
+  min-width: calc(50% - 40px);
+}
+
+@media (max-width: 480px) {
+  .list {
+    flex-direction: column;
+  }
+
+  .blueprint-item {
+    min-width: auto;
+    max-width: none;
+  }
+}
+</style>

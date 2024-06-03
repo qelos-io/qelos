@@ -6,10 +6,60 @@ import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { IBlueprint } from '@qelos/global-types';
 
 export const useBlueprintsStore = defineStore('blueprints', () => {
-  const { result, retry, loading } = useDispatcher<IBlueprint[]>(() => blueprintsService.getAll(), []);
+  const { result: blueprints, retry, loading } = useDispatcher<IBlueprint[]>(() => {
+    return blueprintsService.getAll()
+    // return [
+    //   {
+    //     tenant: '0',
+    //     identifier: 'category',
+    //     name: 'Category',
+    //     entityIdentifierMechanism: EntityIdentifierMechanism.OBJECT_ID,
+    //     permissions: [],
+    //     permissionScope: PermissionScope.WORKSPACE,
+    //     properties: {
+    //       title: {
+    //         title: 'Title',
+    //         type: BlueprintPropertyType.STRING,
+    //         description: '',
+    //         required: true,
+    //       },
+    //     },
+    //     updateMapping: {},
+    //     relations: [],
+    //     created: new Date(),
+    //     updated: new Date()
+    //   },
+    //   {
+    //     tenant: '0',
+    //     identifier: 'todo',
+    //     name: 'Todo',
+    //     entityIdentifierMechanism: EntityIdentifierMechanism.OBJECT_ID,
+    //     permissions: [],
+    //     permissionScope: PermissionScope.WORKSPACE,
+    //     properties: {
+    //       title: {
+    //         title: 'Title',
+    //         type: BlueprintPropertyType.STRING,
+    //         description: '',
+    //         required: true,
+    //       },
+    //       content: {
+    //         title: 'Content',
+    //         type: BlueprintPropertyType.STRING,
+    //         description: 'More content to the issue',
+    //         required: true,
+    //       }
+    //     },
+    //     updateMapping: {},
+    //     relations: [],
+    //     created: new Date(),
+    //     updated: new Date()
+    //   }
+    // ]
+  }, []);
 
   const selectedItemIdentifier = ref(null)
-  const selectedItem = computed<IBlueprint | undefined>(() => selectedItemIdentifier.value && result.value?.find((item) => item.identifier === selectedItemIdentifier.value))
+  const selectedItem = computed<IBlueprint | undefined>(() => selectedItemIdentifier.value && blueprints.value?.find((item) => item.identifier === selectedItemIdentifier.value))
 
   const { submit: create, submitting: submittingNewItem } = useSubmitting(blueprintsService.create, {
     success: 'Blueprint created successfully',
@@ -27,7 +77,7 @@ export const useBlueprintsStore = defineStore('blueprints', () => {
   })
 
   return {
-    blueprints: result,
+    blueprints,
     retry,
     loading,
     create,
