@@ -61,3 +61,8 @@ docker-release-secrets:
   extends: .service-release
   variables:
     SERVICE_NAME: secrets
+
+docker-release-no-code:
+  extends: .service-release
+  variables:
+    SERVICE_NAME: no-code
