@@ -27,13 +27,13 @@ watch(() => wsConfig.loaded, (loaded) => {
           operation: CRUDOperation.CREATE,
           scope: PermissionScope.USER,
           roleBased: ['admin', 'user'],
-          workspaceRoleBased: ['admin', 'user']
+          workspaceRoleBased: ['admin', 'member']
         },
         {
           operation: CRUDOperation.READ,
           scope: tenantScope,
           roleBased: ['admin', 'user'],
-          workspaceRoleBased: ['admin', 'user']
+          workspaceRoleBased: ['admin', 'member']
         },
         {
           operation: CRUDOperation.UPDATE,
