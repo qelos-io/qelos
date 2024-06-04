@@ -1,14 +1,14 @@
 <template>
-  <div class="create-plugin-page" v-if="plugin">
+  <div>
     <PluginForm :plugin="plugin" :submitting="submitting" @submitted="save"/>
   </div>
 </template>
 <script lang="ts" setup>
 import PluginForm from './components/PluginForm.vue';
-import {useCreatePlugin} from './compositions/manage-plugin';
-import {usePluginsList} from '@/modules/plugins/store/plugins-list';
+import { useCreatePlugin } from './compositions/manage-plugin';
+import { usePluginsList } from '@/modules/plugins/store/plugins-list';
 
-const {plugin, submitting, savePlugin} = useCreatePlugin();
+const { plugin, submitting, savePlugin } = useCreatePlugin();
 const store = usePluginsList()
 
 const save = async (data) => {

@@ -1,5 +1,5 @@
 <template>
-  <div class="menus-page">
+  <div>
     <ListPageTitle title="Blueprints" create-route="createBlueprint"/>
     <BlueprintsList/>
   </div>

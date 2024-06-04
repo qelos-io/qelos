@@ -1,20 +1,13 @@
 <template>
-  <div class="edit-header">
-    <h2>{{ $t(plugin._id ? 'Edit Plugin' : 'Create Plugin') }}<strong>{{ plugin.name }}</strong></h2>
-    <div class="buttons-group">
-      <el-button native-type="submit" type="primary" :loading="submitting">
-        <el-icon>
-          <icon-promotion/>
-        </el-icon>
-      </el-button>
-    </div>
-  </div>
+  <EditHeader>
+    {{ $t(plugin._id ? 'Edit Plugin' : 'Create Plugin') }}<strong>{{ plugin.name }}</strong>
+  </EditHeader>
 </template>
 <script lang="ts" setup>
 import { IPlugin } from '@/services/types/plugin';
+import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 
 defineProps({
-  plugin: Object as () => IPlugin,
-  submitting: Boolean
+  plugin: Object as () => any & Partial<IPlugin>,
 })
 </script>

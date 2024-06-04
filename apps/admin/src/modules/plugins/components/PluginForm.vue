@@ -1,6 +1,6 @@
 <template>
   <el-form @submit.native.prevent="submit">
-    <EditPluginHeader :plugin="plugin" :submitting="submitting"/>
+    <EditPluginHeader :plugin="plugin"/>
     <div class="content">
       <div class="fast-refresh-manifest">
         <FormRowGroup>
@@ -20,13 +20,13 @@
         <FormInput title="Name" v-model="edit.name"/>
         <FormInput title="Description" v-model="edit.description"/>
       </FormRowGroup>
-      <h2>{{$t('APIs') }}</h2>
+      <h2>{{ $t('APIs') }}</h2>
       <FormRowGroup>
         <FormInput title="API Path" :label="apiPathLabel" v-model="edit.apiPath"/>
         <FormInput title="Proxy URL" :label="proxyUrlLabel" v-model="edit.proxyUrl"/>
       </FormRowGroup>
-      <h2>{{$t('Hooks & Events') }}</h2>
-      <h2>{{$t('CRUDs') }}</h2>
+      <h2>{{ $t('Hooks & Events') }}</h2>
+      <h2>{{ $t('CRUDs') }}</h2>
       <h2>{{ $t('Micro-Frontends') }}</h2>
       <div v-for="(mfe, index) in edit.microFrontends" :key="index">
         <FormRowGroup>
@@ -39,8 +39,10 @@
         </FormRowGroup>
         <FormRowGroup>
           <FormInput title="URL" v-model="mfe.url"/>
-          <FormInput title="Roles" :model-value="mfe.roles.join(',')" @update:modelValue="mfe.roles = $event.split(',')"/>
-          <FormInput title="Workspace Roles" :model-value="mfe.workspaceRoles" @update:modelValue="mfe.workspaceRoles = $event.split(',')"/>
+          <FormInput title="Roles" :model-value="mfe.roles.join(',')"
+                     @update:modelValue="mfe.roles = $event.split(',')"/>
+          <FormInput title="Workspace Roles" :model-value="mfe.workspaceRoles"
+                     @update:modelValue="mfe.workspaceRoles = $event.split(',')"/>
         </FormRowGroup>
       </div>
       <AddMore
@@ -65,7 +67,7 @@
   </el-form>
 </template>
 <script lang="ts" setup>
-import { computed, reactive } from 'vue';
+import { computed, PropType, provide, reactive, toRef } from 'vue';
 import { IPlugin } from '@/services/types/plugin';
 import EditPluginHeader from './EditPluginHeader.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
@@ -75,14 +77,15 @@ import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 
 const props = defineProps({
-  plugin: Object as () => IPlugin,
+  plugin: Object as PropType<Partial<IPlugin>>,
   submitting: Boolean
 });
 
+provide('submitting', toRef(props, 'submitting'))
 
 const emit = defineEmits(['submitted']);
 
-const edit = reactive<IPlugin>({ ...props.plugin });
+const edit = reactive<Partial<IPlugin>>({ ...props.plugin as Partial<IPlugin> });
 
 const pluginJson = computed({
   get: () => JSON.stringify(edit, null, 2),

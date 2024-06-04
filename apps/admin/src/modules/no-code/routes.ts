@@ -1,4 +1,5 @@
 import EmptyRoute from '../core/components/layout/EmptyRoute.vue'
+import CreateBlueprint from '@/modules/no-code/CreateBlueprint.vue';
 
 const noCodeRoutes = {
   path: 'no-code',
@@ -9,7 +10,7 @@ const noCodeRoutes = {
     {
       name: 'createBlueprint',
       path: 'create-blueprint',
-      component: EmptyRoute
+      component: async () => (await import('./CreateBlueprint.vue')).default
     },
     {
       name: 'blueprints',

@@ -14,11 +14,7 @@
           <tr v-for="(field, key) in blueprint.properties" :key="key">
             <td>
               {{ field.title }}
-              <el-tooltip v-if="field.description" :content="field.description">
-                <el-icon >
-                  <icon-question-filled/>
-                </el-icon>
-              </el-tooltip>
+              <InfoIcon v-if="field.description" :content="field.description"/>
             </td>
             <td>{{ field.type }}</td>
           </tr>
@@ -31,9 +27,10 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import GpItem from '../../core/components/layout/GpItem.vue';
+import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 
 const store = useBlueprintsStore()

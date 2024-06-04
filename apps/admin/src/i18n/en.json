@@ -93,5 +93,7 @@
   "{amount} Users": "No Users | One User | {amount} Users",
   "{amount} Workspaces": "No Workspaces | One Workspace | {amount} Workspaces",
   "Search user by email": "Search user by email",
-  "Workspaces": "Workspaces"
+  "Workspaces": "Workspaces",
+  "Create Blueprint": "Create Blueprint",
+  "Edit Blueprint": "Edit Blueprint"
 }
