@@ -32,7 +32,7 @@ const crud = computed(() => {
     }
   }
 });
-const api = computed(() => mfes.cruds[crud.value.name]);
+const api = computed(() => mfes.cruds[crud.value.name].api);
 const isExistingItem = computed(() => !!route.params.id);
 const relevantStructure = computed(() => {
   return (route.meta.mfe as any)?.structure;

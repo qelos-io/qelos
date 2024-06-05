@@ -120,10 +120,9 @@ const structure = computed(() => {
     actions: actionsContent,
   }
 })
-const api = computed(() => mfes.cruds[crud.value.name]);
+const api = computed(() => mfes.cruds[crud.value.name].api);
+const identifierKey = computed(() => mfes.cruds[crud.value.name].identifierKey || '_id');
 const list = ref();
-
-const identifierKey = computed<string>(() => route.meta.identifierKey as string || '_id');
 
 function load() {
   api.value?.getAll().then(data => {
