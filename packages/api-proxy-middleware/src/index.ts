@@ -157,10 +157,16 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
       return;
     }
 
-    const scripts = await getTenantSsrScripts(req.headers.tenant)
-    const html = (await indexHtmlPromise)
-      .replace('<!--HEAD-->', scripts?.head || STATIC_HEAD)
-      .replace('<!--BODY-->', scripts?.body || '');
+    let html = await indexHtmlPromise;
+
+    try {
+      const scripts = await getTenantSsrScripts(req.headers.tenant)
+      html = html
+        .replace('<!--HEAD-->', scripts?.head || STATIC_HEAD)
+        .replace('<!--BODY-->', scripts?.body || '');
+    } catch {
+      // error in parse ssr-scripts
+    }
 
     res.set('content-type', 'text/html').send(html).end()
   })
