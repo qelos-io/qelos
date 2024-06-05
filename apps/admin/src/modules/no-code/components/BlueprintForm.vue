@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { provide, reactive, toRef, watch } from 'vue';
-import { IBlueprint } from '@qelos/global-types';
+import { computed, provide, reactive, ref, toRef, watch } from 'vue';
+import { BlueprintPropertyType, IBlueprint } from '@qelos/global-types';
 import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
@@ -20,6 +20,12 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits(['submitted']);
 
 const edit = reactive({ name: '', ...props.blueprint });
+
+const blueprintProperties = ref(
+    Object
+        .entries(edit.properties || {})
+        .map(([key, value]) => ({ key, ...value }))
+);
 
 provide('submitting', toRef(props, 'submitting'));
 
@@ -73,16 +79,43 @@ function submit() {
           <template #title>
             <h3>{{ $t('Properties') }}</h3>
           </template>
-          <FormRowGroup v-for="(property, key) in edit.properties" :key="key" class="property">
-            <FormInput v-model="property.title" title="Title" required/>
-            <BlueprintPropertyTypeSelector v-model="property.type"/>
-            <FormInput v-model="property.description" title="Description"/>
-            <FormInput v-model="property.required" title="Required" type="switch"/>
-            <FormInput v-model="property.multi" title="Multi" type="switch"/>
-            <div class="flex-0 remove-row">
-              <RemoveButton @click="delete edit.properties[key]"/>
-            </div>
-          </FormRowGroup>
+          <p>
+            {{ $t('Properties determine the structure of the blueprint.') }}<br>
+            {{ $t('Each entity will also have an identifier and a title, regardless of those custom entities.') }}
+          </p>
+          <div v-for="(entry, index) in blueprintProperties" :key="index" class="property">
+            <FormRowGroup>
+              <FormInput v-model="entry.key" title="Key" required/>
+              <FormInput v-model="entry.title" title="Title" required/>
+              <BlueprintPropertyTypeSelector v-model="entry.type"/>
+            </FormRowGroup>
+            <FormInput v-model="entry.description" title="Description"/>
+            <el-form-item  v-if="entry.type === BlueprintPropertyType.STRING" :label="$t('Enum')">
+              <el-select
+                  v-model="entry.enum"
+                  multiple
+                  filterable
+                  allow-create
+                  default-first-option
+                  :reserve-keyword="false"
+                  :placeholder="$t('Enter valid options')"
+              >
+                <el-option v-for="item in entry.enum" :key="item" :label="item" :value="item"/>
+              </el-select>
+            </el-form-item>
+            <FormRowGroup>
+              <FormInput v-model="entry.required" title="Required" type="switch" class="flex-0"/>
+              <FormInput v-model="entry.multi" title="Multi" type="switch" class="flex-0"/>
+              <template v-if="entry.type === BlueprintPropertyType.STRING">
+                <FormInput v-model="entry.max" title="Max Length" type="number"  class="flex-0"/>
+              </template>
+              <div class="flex-0 remove-row">
+                <RemoveButton @click="blueprintProperties.splice(blueprintProperties.indexOf(entry), 1)"/>
+              </div>
+            </FormRowGroup>
+          </div>
+          <AddMore
+              @click="blueprintProperties.push({key: 'new_item', title: '', enum: [], type: BlueprintPropertyType.STRING, description: '', required: false, multi: false})"/>
         </el-collapse-item>
       </el-collapse>
     </div>

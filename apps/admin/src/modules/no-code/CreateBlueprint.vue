@@ -59,7 +59,8 @@ watch(() => wsConfig.loaded, (loaded) => {
           roleBased: ['admin', 'user'],
           workspaceRoleBased: ['admin']
         },
-      ]
+      ],
+      properties: {}
     }
   }
 }, { immediate: true })
