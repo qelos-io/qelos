@@ -60,8 +60,9 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
       return fetch(ssrScriptsUrl + '?tenant=' + tenant)
         .then((res) => res.json())
         .then((data) => data.metadata || {})
-        .catch(() => ({}));
-    });
+        .catch(() => ({}))
+        .then(JSON.stringify)
+    }).then(JSON.parse);
   }
 
   app.use(async (req, res, next) => {
