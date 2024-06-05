@@ -8,3 +8,6 @@ dev
 tools/cli
 docs
 coverage
+.cloudfairy/libraries
+.cloudfairy/*-data
+.cloudfairy.build

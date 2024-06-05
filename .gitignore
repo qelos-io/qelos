@@ -15,3 +15,6 @@ coverage
 *.tgz
 Chart.lock
 .DS_Store
+.cloudfairy/libraries
+.cloudfairy/*-data
+.cloudfairy.build

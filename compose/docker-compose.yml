@@ -57,7 +57,6 @@ services:
       DRAFTS_SERVICE_URL: drafts
       PLUGINS_SERVICE_URL: plugins
       ADMIN_PANEL_URL: admin
-      FRONT_URL: front
       SHOW_LOGS: ${SHOW_LOGS}
   content:
     image: registry.gitlab.com/qelos/qelos/content:${CONTENT_SERVICE_VERSION}
