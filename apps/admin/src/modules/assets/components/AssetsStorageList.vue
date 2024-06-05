@@ -18,7 +18,7 @@
 <script lang="ts" setup>
   import { useStorageList } from '../compositions/storages'
   import { useConfirmAction } from '../../core/compositions/confirm-action'
-  import GpItem from '@/modules/core/components/layout/GpItem.vue';
+  import GpItem from '@/modules/core/components/layout/BlockItem.vue';
 
   const list = useStorageList();
 

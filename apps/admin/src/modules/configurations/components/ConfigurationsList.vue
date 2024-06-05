@@ -26,7 +26,7 @@
 </template>
 <script lang="ts" setup>
 import {useConfigurationsList} from '../compositions/configurations'
-import GpItem from '../../core/components/layout/GpItem.vue';
+import GpItem from '../../core/components/layout/BlockItem.vue';
 import configurationsService from '@/services/configurations-service';
 import {useConfirmAction} from '@/modules/core/compositions/confirm-action';
 

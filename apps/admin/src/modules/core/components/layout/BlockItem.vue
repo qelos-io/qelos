@@ -1,5 +1,5 @@
 <template>
-  <div class="gp-item">
+  <div class="item">
     <LiveEditColorOpener v-if="isAdmin" color="negativeColor"/>
     <h4 v-if="$slots.title">
       <slot name="title"/>
@@ -12,7 +12,7 @@
 </template>
 
 <style scoped lang="scss">
-.gp-item {
+.item {
   background-color: var(--negative-color);
   color: var(--main-color);
   border-radius: 10px;
@@ -47,6 +47,7 @@
 
 .actions {
   margin: auto 10px 10px 10px;
+
   > ::v-deep(*) {
     padding-inline-end: 10px;
   }
@@ -54,5 +55,5 @@
 </style>
 <script setup lang="ts">
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
-import {isAdmin} from '@/modules/core/store/auth';
+import { isAdmin } from '@/modules/core/store/auth';
 </script>

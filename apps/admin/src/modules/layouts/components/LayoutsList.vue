@@ -13,7 +13,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import GpItem from '../../core/components/layout/GpItem.vue';
+import GpItem from '../../core/components/layout/BlockItem.vue';
 
 const layouts = [
   {kind: 'core', displayName: 'Core Layout', description: 'Change the basics of the application layout.'},

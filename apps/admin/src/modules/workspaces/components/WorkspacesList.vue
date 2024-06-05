@@ -17,7 +17,7 @@
   </GpItem>
 </template>
 <script lang="ts" setup>
-import GpItem from '../../core/components/layout/GpItem.vue';
+import GpItem from '../../core/components/layout/BlockItem.vue';
 import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 
 const store = useWorkspacesList()

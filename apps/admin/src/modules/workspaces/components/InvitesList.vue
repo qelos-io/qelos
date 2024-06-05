@@ -16,7 +16,7 @@
   </GpItem>
 </template>
 <script lang="ts" setup>
-import GpItem from '../../core/components/layout/GpItem.vue';
+import GpItem from '../../core/components/layout/BlockItem.vue';
 import useInvitesList from '@/modules/workspaces/store/invites-list';
 
 const store = useInvitesList()

@@ -24,7 +24,7 @@
 </template>
 <script lang="ts" setup>
 import { useUsersList, useRemoveUser } from "../compositions/users";
-import GpItem from "@/modules/core/components/layout/GpItem.vue";
+import GpItem from "@/modules/core/components/layout/BlockItem.vue";
 
 const { users } = useUsersList();
 const { remove } = useRemoveUser((id) => {

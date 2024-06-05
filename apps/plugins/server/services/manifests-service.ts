@@ -1,10 +1,10 @@
 import crypto from 'crypto';
 import fetch from 'node-fetch';
-import {IPlugin} from '../models/plugin';
-import {createUser, getUser, getUsers, updateUser} from './users';
-import {storeOAuthPayloadForPlugin} from './tokens-management';
+import { IPlugin } from '../models/plugin';
+import { createUser, getUser, getUsers, updateUser } from './users';
+import { storeOAuthPayloadForPlugin } from './tokens-management';
 import httpAgent from './http-agent';
-import {DocumentDefinition} from 'mongoose';
+import { DocumentDefinition } from 'mongoose';
 import logger from './logger';
 
 type PluginEnrichOptions = {
@@ -49,17 +49,17 @@ export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, regi
   host,
   appUrl
 }): Promise<string> {
-  const email = `${plugin._id}.${tenant}@${host}`;
+  const username = `${plugin._id}.${tenant}@${host}`;
   const password = getRandomHash();
-  logger.log('register to plugin', {tenant, host, appUrl});
+  logger.log('register to plugin', { tenant, host, appUrl });
   let maybeUser;
   if (plugin.user) {
     maybeUser = await getUser(tenant, plugin.user);
   } else {
-    maybeUser = ((await getUsers(tenant, {email, exact: true})) || [])[0];
+    maybeUser = ((await getUsers(tenant, { username, exact: true })) || [])[0];
   }
   const metadataToStore = {
-    email,
+    username,
     password,
     roles: Array.from(new Set(['plugin', 'admin'].concat(maybeUser?.roles || []))),
     firstName: plugin.name
@@ -70,7 +70,7 @@ export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, regi
   plugin.user = user._id;
   const res = await fetch(registerUrl, {
     method: 'POST',
-    body: JSON.stringify({email, password, appUrl}),
+    body: JSON.stringify({ username, password, appUrl }),
     agent: httpAgent,
     headers: {
       'x-tenant': tenant,
@@ -79,7 +79,7 @@ export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, regi
     }
   })
   if (res.status !== 200) {
-    (async () => logger.log('could not register to plugin', await res.text(), {email, appUrl}))().catch();
+    (async () => logger.log('could not register to plugin', await res.text(), { username, appUrl }))().catch();
     throw new Error('could not register to plugin');
   }
   const payload = await res.json();
@@ -140,7 +140,7 @@ export async function enrichPluginWithManifest(plugin: IPlugin, {
     plugin.cruds = manifest.cruds;
     if (manifest.registerUrl) {
       plugin.encodePath();
-      await registerToPlugin(plugin, manifest.registerUrl, {tenant, host, appUrl});
+      await registerToPlugin(plugin, manifest.registerUrl, { tenant, host, appUrl });
     }
   }
   return plugin;

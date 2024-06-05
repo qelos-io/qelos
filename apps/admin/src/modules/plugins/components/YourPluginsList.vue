@@ -31,7 +31,7 @@
   </GpItem>
 </template>
 <script lang="ts" setup>
-import GpItem from '../../core/components/layout/GpItem.vue';
+import GpItem from '../../core/components/layout/BlockItem.vue';
 import {usePluginsList} from '@/modules/plugins/store/plugins-list';
 import {useConfirmAction} from '@/modules/core/compositions/confirm-action';
 

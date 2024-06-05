@@ -1,5 +1,5 @@
-import mongoose, {Document, Model, LeanDocument} from 'mongoose'
-import {cacheManager} from '../services/cache-manager';
+import mongoose, { Document, Model, LeanDocument } from 'mongoose'
+import { cacheManager } from '../services/cache-manager';
 
 export interface IPlugin extends Document {
   encodePath();
@@ -104,7 +104,10 @@ const MicroFrontendSchema = new mongoose.Schema({
     name: String,
     path: String,
     navBarPosition: {
-      enum: ['top', 'bottom', 'user-dropdown', false],
+      type: mongoose.Schema.Types.Mixed,
+      validate(position = false) {
+        return ['top', 'bottom', 'user-dropdown', false].includes(position)
+      },
     },
     group: String,
   },
@@ -189,14 +192,14 @@ const PluginSchema = new mongoose.Schema<IPlugin>({
     active: Boolean
   }],
   navBarGroups: [{
-    key: {type: String, required: true},
-    name: {type: String, required: true},
+    key: { type: String, required: true },
+    name: { type: String, required: true },
     iconName: String,
     iconSvg: String,
     priority: Number
   }],
   cruds: [{
-    name: {type: String, required: true},
+    name: { type: String, required: true },
     display: {
       name: String,
       plural: String,
@@ -208,7 +211,7 @@ const PluginSchema = new mongoose.Schema<IPlugin>({
   }]
 });
 
-PluginSchema.index({tenant: 1, apiPath: 1}, {unique: true});
+PluginSchema.index({ tenant: 1, apiPath: 1 }, { unique: true });
 
 PluginSchema.methods.encodePath = function encodePath() {
   // make sure name doesn't have any sort of slashes.
@@ -218,7 +221,7 @@ PluginSchema.methods.encodePath = function encodePath() {
 };
 
 PluginSchema.statics.getPluginForRedirect = function getPluginForRedirect(tenant: string, _id: string) {
-  return cacheManager.wrap(`plugins:redirect:${tenant}:${_id}`, () => Plugin.findOne({tenant, _id})
+  return cacheManager.wrap(`plugins:redirect:${tenant}:${_id}`, () => Plugin.findOne({ tenant, _id })
     .select('tenant user callbackUrl registerUrl apiPath authAcquire')
     .lean()
     .exec()

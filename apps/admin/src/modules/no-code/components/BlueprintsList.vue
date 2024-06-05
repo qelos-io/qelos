@@ -27,7 +27,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import GpItem from '../../core/components/layout/GpItem.vue';
+import GpItem from '../../core/components/layout/BlockItem.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';

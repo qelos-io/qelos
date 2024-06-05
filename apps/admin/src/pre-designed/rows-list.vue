@@ -45,7 +45,7 @@ const crud = computed(() => {
 
 function toTemplate(html) {
   const template = document.createElement('template');
-  template.innerHTML = html;
+  template.innerHTML = html.trim();
 
   return template;
 }
@@ -109,10 +109,10 @@ const structure = computed(() => {
     setAllButtons(actionsTemplate);
     setEditLink(actionsTemplate);
     setViewLink(actionsTemplate);
-    actionsContent = actionsTemplate.innerHTML;
+    actionsContent = actionsTemplate.innerHTML.trim();
   }
 
-  content = template.innerHTML;
+  content = template.innerHTML.trim();
 
   return {
     header,
@@ -126,7 +126,9 @@ const list = ref();
 const identifierKey = computed<string>(() => route.meta.identifierKey as string || '_id');
 
 function load() {
-  api.value?.getAll().then(data => list.value = data);
+  api.value?.getAll().then(data => {
+    list.value = data
+  });
 }
 
 async function removeRow(row) {

@@ -6,6 +6,7 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
+import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 
 export default function applyGlobalTemplatesComponents(app: App) {
   app.component('TemplatedRemoveButton', TemplatedRemoveButton)
@@ -15,4 +16,5 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('SaveButton', SaveButton)
   app.component('EditHeader', EditHeader)
   app.component('InfoIcon', InfoIcon)
+  app.component('BlockItem', BlockItem)
 }

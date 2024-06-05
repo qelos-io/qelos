@@ -69,7 +69,7 @@ const UserSchema = new mongoose.Schema<UserDocument, UserModel>({
   email: {
     type: String,
     validate(email = '') {
-      return !email || (typeof email === 'string' && /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email));
+      return !email || email.includes('@')
     }
   },
   phone: String,
@@ -237,6 +237,10 @@ UserSchema.pre('save', function saveHook(next) {
 
   if (user.email && !user.username) {
     user.username = user.email;
+  }
+
+  if (!user.email) {
+    user.email = user.username.includes('@') ? user.username : (user.username + '@null')
   }
 
   // define role for new user

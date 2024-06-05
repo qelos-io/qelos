@@ -17,7 +17,7 @@
 </template>
 <script lang="ts" setup>
 import {useConfirmAction} from '../../core/compositions/confirm-action'
-import GpItem from '../../core/components/layout/GpItem.vue';
+import GpItem from '../../core/components/layout/BlockItem.vue';
 import {useBlocksList} from '@/modules/blocks/store/blocks-list';
 
 const state = useBlocksList()

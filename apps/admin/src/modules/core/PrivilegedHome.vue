@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import GpItem from '@/modules/core/components/layout/GpItem.vue';
+import GpItem from '@/modules/core/components/layout/BlockItem.vue';
 import { ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useBlocksList } from '@/modules/blocks/store/blocks-list';
@@ -164,7 +164,7 @@ h3 > * {
   }
 }
 
-.gp-item p {
+.item p {
   position: relative;
 }
 </style>

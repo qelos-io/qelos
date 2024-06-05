@@ -23,7 +23,7 @@
 <script lang="ts" setup>
 import {ref, watch} from 'vue';
 import {IStyleProduct, useStylesMarketplace} from '@/modules/layouts/compositions/styles-marketplace';
-import GpItem from '@/modules/core/components/layout/GpItem.vue';
+import GpItem from '@/modules/core/components/layout/BlockItem.vue';
 
 const emit = defineEmits(['cancel', 'submit']);
 
