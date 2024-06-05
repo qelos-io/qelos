@@ -158,8 +158,8 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
 
     const scripts = await getTenantSsrScripts(req.headers.tenant)
     const html = (await indexHtmlPromise)
-      .replace('<!--HEAD-->', scripts.head || STATIC_HEAD)
-      .replace('<!--BODY-->', scripts.body || '');
+      .replace('<!--HEAD-->', scripts?.head || STATIC_HEAD)
+      .replace('<!--BODY-->', scripts?.body || '');
 
     res.set('content-type', 'text/html').send(html).end()
   })
