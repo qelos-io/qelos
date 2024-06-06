@@ -57,6 +57,12 @@ function setSelectorToComponent(el: HTMLTemplateElement, selector: string, compo
       .forEach(btn => {
         const replaced = document.createElement(componentName);
         replaced.innerHTML = btn.innerHTML;
+        btn.getAttributeNames()
+            .map(attr => {
+              if (attr !== 'for') {
+                replaced.setAttribute(attr, btn.getAttribute(attr))
+              }
+            });
         (btn.parentElement || el.content).insertBefore(replaced, btn);
         btn.remove();
       })
@@ -144,5 +150,7 @@ watch(() => route.query, load);
 </script>
 
 <style scoped>
-
+main {
+  overflow: auto;
+}
 </style>
