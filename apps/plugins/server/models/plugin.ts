@@ -86,6 +86,8 @@ const MicroFrontendSchema = new mongoose.Schema({
   crud: String,
   use: String,
   structure: String,
+  searchQuery: Boolean,
+  searchPlaceholder: String,
   active: {
     type: Boolean,
     default: true,

@@ -39,6 +39,8 @@ function getMfeScreenOptions(name: string, crud: string, screen: Screen) {
     structure: screen.structure,
     roles: screen.roles,
     workspaceRoles: screen.workspaceRoles,
+    searchQuery: screen.searchQuery,
+    searchPlaceholder: screen.searchPlaceholder,
   }
 }
 
@@ -145,18 +147,22 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
     },
     screens: {
       list: screens.list === false ? screens.list : {
+        ...screens.list,
         use: screens.list.use || 'rows-list',
         structure: screens.list.structure,
       },
       create: screens.create === false ? screens.create : {
+        ...screens.create,
         use: screens.create.use || 'basic-form',
         structure: screens.create.structure
       },
       edit: screens.edit === false ? screens.edit : {
+        ...screens.edit,
         use: screens.edit.use || 'basic-form',
         structure: screens.edit.structure,
       },
       view: screens.view === false ? screens.view : {
+        ...screens.view,
         use: screens.view.use || 'basic-form',
         structure: screens.view.structure,
       },

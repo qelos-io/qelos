@@ -1,12 +1,12 @@
-import {computed, reactive, toRef, watch} from 'vue';
-import {useRouter} from 'vue-router';
-import {defineStore, storeToRefs} from 'pinia';
-import {usePluginsList} from './plugins-list';
+import { computed, reactive, toRef, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { defineStore, storeToRefs } from 'pinia';
+import { usePluginsList } from './plugins-list';
 import MicroFrontendPage from '../MicroFrontendPage.vue';
-import {authStore} from '@/modules/core/store/auth';
-import {IMicroFrontend} from '@/services/types/plugin';
-import {getCrud} from '@/services/crud';
-import {useWsConfiguration} from '@/modules/configurations/store/ws-configuration';
+import { authStore } from '@/modules/core/store/auth';
+import { IMicroFrontend } from '@/services/types/plugin';
+import { getCrud } from '@/services/crud';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 
 function getMfeUrl(mfe: IMicroFrontend): string {
   if (!mfe.callbackUrl) {
@@ -16,7 +16,7 @@ function getMfeUrl(mfe: IMicroFrontend): string {
 }
 
 export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', function usePluginsMicroFrontends() {
-  const {plugins, loaded} = storeToRefs(usePluginsList());
+  const { plugins, loaded } = storeToRefs(usePluginsList());
   const router = useRouter();
 
   const cruds = reactive({});
@@ -37,9 +37,9 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
   const microFrontends = computed(() => {
     const data = {
       navBar: {
-        'top': [{key: '', items: [], priority: 99999}],
-        'bottom': [{key: '', items: [], priority: 99999}],
-        'user-dropdown': [{key: '', items: [], priority: 99999}],
+        'top': [{ key: '', items: [], priority: 99999 }],
+        'bottom': [{ key: '', items: [], priority: 99999 }],
+        'user-dropdown': [{ key: '', items: [], priority: 99999 }],
       },
       modals: {} as Record<string, IMicroFrontend>,
       onlyRoutes: [] as IMicroFrontend[]
@@ -95,7 +95,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     }, data)
   });
 
-  const initiateRoutes = ({navBar, onlyRoutes}) => {
+  const initiateRoutes = ({ navBar, onlyRoutes }) => {
     Object.values(navBar)
       .map((area: { items: IMicroFrontend[] }[]) => area.map(group => group.items).flat())
       .flat()
@@ -121,6 +121,8 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
             roles,
             workspaceRoles,
             mfe,
+            searchQuery: mfe.searchQuery,
+            searchPlaceholder: mfe.searchPlaceholder,
             crud: mfe.crudData,
           }
           if (mfe.crudData && !cruds[mfe.crudData.name]) {

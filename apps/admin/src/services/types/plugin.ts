@@ -7,8 +7,11 @@ export interface IMicroFrontend {
   url?: string;
   use?: string;
   crud?: string;
+  searchQuery?: boolean;
+  searchPlaceholder?: string;
   crudData?: {
     name: string,
+    identifierKey?: string,
     display: {
       name: string;
       plural: string;

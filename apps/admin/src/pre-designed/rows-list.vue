@@ -14,17 +14,17 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref, watch} from 'vue';
-import {useRoute, useRouter} from 'vue-router';
+import { computed, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import TemplatedRowItem from '@/modules/pre-designed/components/TemplatedRowItem.vue';
-import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
+import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 
 const route = useRoute();
 const router = useRouter()
 const mfes = usePluginsMicroFrontends();
 
 const crud = computed(() => {
-  const crud = route.meta.crud as any || {display: {}};
+  const crud = route.meta.crud as any || { display: {} };
   return {
     ...crud,
     display: {
@@ -125,7 +125,7 @@ const identifierKey = computed(() => mfes.cruds[crud.value.name].identifierKey |
 const list = ref();
 
 function load() {
-  api.value?.getAll().then(data => {
+  api.value?.getAll({ q: route.query.q }).then(data => {
     list.value = data
   });
 }
@@ -139,7 +139,8 @@ function moveTo(to, row) {
   router.push(`${to}-${crud.value.display.name}/${row[identifierKey.value]}`)
 }
 
-watch(api, load, {immediate: true})
+watch(api, load, { immediate: true })
+watch(() => route.query, load);
 </script>
 
 <style scoped>

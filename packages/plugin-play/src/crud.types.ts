@@ -11,6 +11,8 @@ export type Crud = {
   },
   identifierKey: string,
   schema?: any,
+  searchQuery?: boolean,
+  searchPlaceholder?: string,
 }
 
 export interface Screen {
@@ -18,6 +20,8 @@ export interface Screen {
   workspaceRoles?: string[];
   use?: string;
   structure?: string;
+  searchQuery?: boolean;
+  searchPlaceholder?: string;
 }
 
 export interface ResourceProperty<T = any> {

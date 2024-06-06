@@ -21,6 +21,8 @@ export interface GlobalMicroFrontend {
   description: string;
   roles?: string[],
   workspaceRoles?: string[],
+  searchQuery?: boolean,
+  searchPlaceholder?: string,
   route?: {
     name: string;
     path: string;

@@ -29,10 +29,10 @@ const emit = defineEmits(['open']);
 const router = useRouter()
 const route = useRoute()
 
-const tempQuery = ref('')
+const tempQuery = ref(null)
 
 const query = computed({
-  get: () => tempQuery.value || route.query.q?.toString(),
+  get: () => typeof tempQuery.value === 'string' ? tempQuery.value : route.query.q?.toString(),
   set: (value: string) => {
     tempQuery.value = value;
   }
