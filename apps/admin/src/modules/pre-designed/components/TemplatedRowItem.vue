@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import VRuntimeTemplate from 'vue3-runtime-template';
-import GpItem from '@/modules/core/components/layout/BlockItem.vue';
+import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { useAuth } from '@/modules/core/compositions/authentication';
 
-defineProps<{ row: any, header?: string, content: string, actions?: string }>()
+defineProps<{ row: any, header?: string, content: string, actions?: string, identifierKey: string }>()
 const emit = defineEmits(['remove', 'edit', 'view'])
 
 const askBeforeRemove = useConfirmAction(() => emit('remove'));
@@ -13,7 +13,7 @@ const { user } = useAuth()
 </script>
 
 <template>
-  <GpItem>
+  <BlockItem v-bind="row.$attr || {}">
     <template #title v-if="header">
       <VRuntimeTemplate :template="header" :template-props="{row, user}"/>
     </template>
@@ -28,7 +28,7 @@ const { user } = useAuth()
                         @view="emit('view')"
       />
     </template>
-  </GpItem>
+  </BlockItem>
 </template>
 
 <style scoped>

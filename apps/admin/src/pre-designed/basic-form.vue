@@ -57,8 +57,8 @@ async function handleAfterSubmit(updatedItem) {
     const templateParams = { ...updatedItem, IDENTIFIER: createdItem[identifierKey.value] }
     await router.push({
       name: navigateTo.name,
-      params: renderParams(navigateTo.params, templateParams),
-      query: renderParams(navigateTo.query, templateParams)
+      params: renderParams(navigateTo.params || {}, templateParams),
+      query: renderParams(navigateTo.query || {}, templateParams)
     })
   } else if (crud.value.clearAfterSubmit) {
     item.value = {}
@@ -82,16 +82,12 @@ const { submit, submitting } = useSubmitting(async () => {
 
 provide('submitting', submitting)
 
-if (isExistingItem.value) {
-  watch(api, () => {
-    if (!route.params.id) {
-      return;
-    }
-    api.value.getOne(route.params.id as string)
-        .then(data => item.value = data)
-        .catch(() => error('Failed to load page data'))
-  }, { immediate: true })
-} else {
-  item.value = {};
-}
+watch([() => route.name, () => route.params.id], () => {
+  if (!route.params.id) {
+    item.value = {};
+  }
+  api.value.getOne(route.params.id as string)
+      .then(data => item.value = data)
+      .catch(() => error('Failed to load page data'))
+}, { immediate: true })
 </script>

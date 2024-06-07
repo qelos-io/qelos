@@ -1,5 +1,5 @@
 <template>
-  <div class="item">
+  <div class="item block-item">
     <LiveEditColorOpener v-if="isAdmin" color="negativeColor"/>
     <h4 v-if="$slots.title">
       <slot name="title"/>

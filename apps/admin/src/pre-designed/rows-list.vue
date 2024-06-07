@@ -6,6 +6,7 @@
                       :header="structure.header"
                       :content="structure.content"
                       :actions="structure.actions"
+                      :identifier-key="identifierKey"
                       @remove="removeRow(row)"
                       @edit="moveTo('edit', row)"
                       @view="moveTo('view', row)"
@@ -22,6 +23,8 @@ import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microf
 const route = useRoute();
 const router = useRouter()
 const mfes = usePluginsMicroFrontends();
+
+const inlineStyles = ref('')
 
 const crud = computed(() => {
   const crud = route.meta.crud as any || { display: {} };
@@ -98,10 +101,20 @@ function setViewLink(el: HTMLTemplateElement) {
       })
 }
 
+function getAllStyles(el) {
+  const styles = [];
+  el.content.querySelectorAll('style').forEach(style => {
+    styles.push(style.innerHTML);
+    style.remove();
+  });
+  return styles.join('\n');
+}
+
 const structure = computed(() => {
   let header, content, actionsContent = '';
   const template = toTemplate(crud.value.screen.structure);
   const actionsEl = template.content.querySelector('actions');
+  inlineStyles.value = getAllStyles(template);
   setEditLink(template);
   if (template.content.firstChild.nodeName.startsWith('H')) {
     header = (template.content.firstChild as HTMLElement).outerHTML;
