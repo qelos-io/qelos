@@ -51,7 +51,7 @@ function renderParams(obj, params) {
   }, {})
 }
 
-function handleAfterSubmit(updatedItem) {
+async function handleAfterSubmit(updatedItem) {
   if (crud.value.navigateAfterSubmit) {
     const navigateTo = crud.value.navigateAfterSubmit;
     const templateParams = { ...updatedItem, IDENTIFIER: createdItem[identifierKey.value] }
