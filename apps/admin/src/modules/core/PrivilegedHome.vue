@@ -56,21 +56,17 @@
 
 <script setup lang="ts">
 import GpItem from '@/modules/core/components/layout/BlockItem.vue';
-import { ref, toRefs, watch } from 'vue';
+import { ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useBlocksList } from '@/modules/blocks/store/blocks-list';
 import { resetConfiguration, useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import configurationsService from '@/services/configurations-service';
 import { PALETTES } from '@/modules/core/utils/colors-palettes';
-import { authStore, isPrivilegedUser } from '@/modules/core/store/auth';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
-import router from '@/router';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 import { useUsersList } from '@/modules/users/compositions/users';
-import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 import useAdminWorkspacesList from '@/modules/workspaces/store/admin-workspaces-list';
-
 
 const { appConfig } = useAppConfiguration();
 
@@ -89,16 +85,6 @@ const changePalette = useConfirmAction(async function changePalette(colorsPalett
   })
   await resetConfiguration();
 });
-
-const unWatch = watch(() => authStore.isLoaded, () => {
-  if (!authStore.isLoaded) {
-    return;
-  }
-  if (!isPrivilegedUser.value && appConfig.value.homeScreen) {
-    router.push(appConfig.value.homeScreen);
-  }
-  setTimeout(() => unWatch(), 1)
-}, { immediate: true })
 </script>
 <style scoped lang="scss">
 .blocks-list {

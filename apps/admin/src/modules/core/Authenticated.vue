@@ -17,14 +17,14 @@
 </template>
 
 <script lang="ts" setup>
-import {ref, toRef, watch} from 'vue'
-import {useAuthenticatedIntercept} from './compositions/authentication'
+import { ref, toRef, watch } from 'vue'
+import { useAuthenticatedIntercept } from './compositions/authentication'
 import Header from './components/layout/Header.vue'
 import Navigation from './components/layout/Navigation.vue'
 import AssetsDetailsPanel from '@/modules/assets/components/AssetsDetailsPanel/AssetsDetailsPanel.vue'
-import {useRouter} from 'vue-router'
-import {isPrivilegedUser} from '@/modules/core/store/auth';
-import {usePluginsMicroFrontends} from '@/modules/plugins/store/plugins-microfrontends';
+import { useRouter } from 'vue-router'
+import { isPrivilegedUser } from '@/modules/core/store/auth';
+import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.vue';
 import LiveEditManager from '@/modules/layouts/components/live-edit/LiveEditManager.vue';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
@@ -32,7 +32,7 @@ import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEdit
 const router = useRouter()
 
 const navigationOpened = ref(false)
-const {isLoaded} = useAuthenticatedIntercept();
+const { isLoaded } = useAuthenticatedIntercept();
 const openModals = toRef(usePluginsMicroFrontends(), 'openModals');
 
 router.afterEach(() => navigationOpened.value = false)
