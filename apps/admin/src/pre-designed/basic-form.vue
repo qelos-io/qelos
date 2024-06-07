@@ -7,7 +7,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { computed, provide, ref, watch } from 'vue';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
@@ -15,6 +15,7 @@ import VRuntimeTemplate from 'vue3-runtime-template';
 import { useNotifications } from '@/modules/core/compositions/notifications';
 
 const route = useRoute();
+const router = useRouter();
 const mfes = usePluginsMicroFrontends();
 const { error } = useNotifications()
 
@@ -33,17 +34,46 @@ const crud = computed(() => {
   }
 });
 const api = computed(() => mfes.cruds[crud.value.name].api);
+const identifierKey = computed(() => mfes.cruds[crud.value.name].identifierKey || '_id');
 const isExistingItem = computed(() => !!route.params.id);
 const relevantStructure = computed(() => {
   return (route.meta.mfe as any)?.structure;
 });
 const item = ref();
 
+function renderParams(obj, params) {
+  return Object.keys(obj).reduce((result, key) => {
+    // replace any {key} in obj[key] with the value of params[key]
+    result[key] = obj[key].replace(/{(\w+)}/g, (match, p1) => {
+      return params[p1];
+    });
+    return result;
+  }, {})
+}
+
+function handleAfterSubmit(updatedItem) {
+  if (crud.value.navigateAfterSubmit) {
+    const navigateTo = crud.value.navigateAfterSubmit;
+    const templateParams = { ...updatedItem, IDENTIFIER: createdItem[identifierKey.value] }
+    await router.push({
+      name: navigateTo.name,
+      params: renderParams(navigateTo.params, templateParams),
+      query: renderParams(navigateTo.query, templateParams)
+    })
+  } else if (crud.value.clearAfterSubmit) {
+    item.value = {}
+  }
+}
+
 const { submit, submitting } = useSubmitting(async () => {
   if (isExistingItem.value) {
-    return api.value.update(route.params.id as string, item.value);
+    const updatedItem = await api.value.update(route.params.id as string, item.value);
+    handleAfterSubmit(updatedItem);
+    return updatedItem;
   } else {
-    return api.value.create(item.value);
+    const createdItem = await api.value.create(item.value);
+    handleAfterSubmit(createdItem);
+    return createdItem;
   }
 }, {
   success: () => isExistingItem.value ? 'Successfully updated' : 'Successfully created',

@@ -1,82 +1,16 @@
 import mongoose, { Document, Model, LeanDocument } from 'mongoose'
 import { cacheManager } from '../services/cache-manager';
+import { IMicroFrontend, IPlugin as IPluginType } from '@qelos/global-types';
 
-export interface IPlugin extends Document {
+export interface IPlugin extends Document, IPluginType {
   encodePath();
-
-  tenant: string;
-  name: string;
-  description?: string;
-  apiPath: string;
-  registerUrl: string;
-  user: string;
-  token: string;
-  proxyUrl: string;
-  authAcquire: {
-    refreshTokenUrl: string;
-    refreshTokenKey: string;
-    accessTokenKey: string;
-  };
-  auth: {
-    refreshTokenIdentifier?: string;
-  };
-  manifestUrl: string,
-  callbackUrl?: string,
-  subscribedEvents: {
-    source?: string,
-    kind?: string,
-    eventName?: string,
-    hookUrl: string;
-  }[]
-  microFrontends: {
-    name: string;
-    description: string;
-    url: string;
-    active: boolean;
-    opened: boolean;
-    roles: string[],
-    workspaceRoles: string[],
-    crud?: string;
-    use?: string;
-    structure?: string;
-    route?: {
-      name: string;
-      path: string;
-      roles: string[],
-      navBarPosition: 'top' | 'bottom' | 'user-dropdown' | false;
-      group?: string;
-    };
-    component?: {
-      page: string;
-      position: 'top' | 'left' | 'right' | 'bottom';
-    };
-    modal?: {
-      name: string;
-      params: string[] | Record<string, string>; // schema / hints for props
-      size: 'sm' | 'md' | 'lg' | 'full'
-    }
-  }[]
-  cruds: {
-    name: string,
-    display: {
-      name: string;
-      plural: string;
-      capitalized: string;
-      capitalizedPlural: string;
-    },
-    identifierKey: string;
-    schema: any;
-  }[]
-
-  injectables: Array<{ name?: string, description?: string, html: string, active: boolean }>
-  navBarGroups?: { key: string, name: string, iconName?: string, iconSvg?: string, priority?: number }[],
 }
 
 interface PluginModel extends Model<IPlugin> {
   getPluginForRedirect(tenant: string, _id: string): Promise<LeanDocument<IPlugin>>
 }
 
-const MicroFrontendSchema = new mongoose.Schema({
+const MicroFrontendSchema = new mongoose.Schema<IMicroFrontend>({
   name: {
     type: String,
     required: true
@@ -88,6 +22,11 @@ const MicroFrontendSchema = new mongoose.Schema({
   structure: String,
   searchQuery: Boolean,
   searchPlaceholder: String,
+  navigateAfterSubmit: {
+    name: String,
+    params: mongoose.Schema.Types.Mixed,
+    query: mongoose.Schema.Types.Mixed,
+  },
   active: {
     type: Boolean,
     default: true,

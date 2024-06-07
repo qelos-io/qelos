@@ -21,6 +21,21 @@ function getRandomHash() {
   return crypto.createHash('sha1').update(currentDate + random).digest('hex');
 }
 
+function onlyStrings(obj: any = {}): Record<string, string> {
+  if (typeof obj !== 'object') {
+    return {}
+  }
+  const newObj = {};
+  // get only properties with value type string
+  for (let key in obj) {
+    const value = obj[key];
+    if (typeof value === 'string') {
+      newObj[key] = value;
+    }
+  }
+  return newObj
+}
+
 export async function loadManifest(manifestUrl: string): Promise<IPlugin & { registerUrl?: string, appUrl?: string }> {
   const res = await fetch(manifestUrl, {
     agent: httpAgent,
@@ -124,6 +139,11 @@ export async function enrichPluginWithManifest(plugin: IPlugin, {
   plugin.microFrontends = manifest.microFrontends?.map(mfe => {
     return {
       ...mfe,
+      navigateAfterSubmit: mfe.navigateAfterSubmit && {
+        name: mfe.navigateAfterSubmit.name,
+        query: onlyStrings(mfe.navigateAfterSubmit.query),
+        params: onlyStrings(mfe.navigateAfterSubmit.query),
+      },
       roles: mfe.roles?.length ? mfe.roles : ['*'],
       workspaceRoles: mfe.workspaceRoles?.length ? mfe.workspaceRoles : ['*'],
       url: mfe.url ? (mfe.url.startsWith('http') ? mfe.url : new URL(mfe.url, manifest.appUrl).href) : '-',

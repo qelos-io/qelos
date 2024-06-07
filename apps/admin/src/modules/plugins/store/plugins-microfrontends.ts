@@ -123,12 +123,16 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
             mfe,
             searchQuery: mfe.searchQuery,
             searchPlaceholder: mfe.searchPlaceholder,
+            navigateAfterSubmit: mfe.navigateAfterSubmit,
+            clearAfterSubmit: mfe.clearAfterSubmit,
             crud: mfe.crudData,
           }
           if (mfe.crudData && !cruds[mfe.crudData.name]) {
             cruds[mfe.crudData.name] = {
               api: getCrud(`/api/on/${mfe.pluginApiPath}/${mfe.crudData.name}`),
-              identifierKey: mfe.crudData.identifierKey
+              identifierKey: mfe.crudData.identifierKey,
+              navigateAfterSubmit: mfe.navigateAfterSubmit,
+              clearAfterSubmit: mfe.clearAfterSubmit,
             };
           }
         }

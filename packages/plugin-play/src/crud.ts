@@ -1,11 +1,11 @@
-import {FastifyReply} from 'fastify/types/reply';
-import {addProxyEndpoint} from './endpoints';
-import {ResponseError} from './response-error';
+import { FastifyReply } from 'fastify/types/reply';
+import { addProxyEndpoint } from './endpoints';
+import { ResponseError } from './response-error';
 import logger from './logger';
 import manifest from './manifest';
-import {Crud, ICrudOptions, ResourceProperty, ResourceSchema, Screen} from './crud.types';
-import {addGroupedMicroFrontends, NavBarPosition} from './micro-frontends';
-import {getSdkForTenant} from './sdk';
+import { Crud, ICrudOptions, ResourceProperty, ResourceSchema, Screen } from './crud.types';
+import { addGroupedMicroFrontends, NavBarPosition } from './micro-frontends';
+import { getSdkForTenant } from './sdk';
 
 export function getPlural(word: string) {
   const lastChar = word[word.length - 1].toLowerCase();
@@ -41,6 +41,8 @@ function getMfeScreenOptions(name: string, crud: string, screen: Screen) {
     workspaceRoles: screen.workspaceRoles,
     searchQuery: screen.searchQuery,
     searchPlaceholder: screen.searchPlaceholder,
+    navigateAfterSubmit: screen.navigateAfterSubmit,
+    clearAfterSubmit: screen.clearAfterSubmit,
   }
 }
 
@@ -93,7 +95,7 @@ function getJsonSchema(schema: ResourceSchema) {
       type: schema[key].type?.name
     }
     if (schema[key].schema) {
-      schema[key].schema = getJsonSchema({data: schema[key].schema}).data;
+      schema[key].schema = getJsonSchema({ data: schema[key].schema }).data;
     }
   }
   return json;
@@ -171,13 +173,13 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
   };
 
   function getPublicData(item = {}) {
-    const exposed = {[crudOptions.identifierKey]: item[crudOptions.identifierKey]}
+    const exposed = { [crudOptions.identifierKey]: item[crudOptions.identifierKey] }
     fillFromSchema(exposed, item, crudOptions.schema);
     return exposed;
   }
 
   function getPublicDataForList(item = {}) {
-    const exposed = {[crudOptions.identifierKey]: item[crudOptions.identifierKey]}
+    const exposed = { [crudOptions.identifierKey]: item[crudOptions.identifierKey] }
     fillFromSchema(exposed, item, crudOptions.schema, 'list');
     return exposed;
   }
@@ -186,7 +188,7 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
     if (err instanceof ResponseError) {
       logger.error(err);
       reply.statusCode = err.status;
-      return {message: err.responseMessage};
+      return { message: err.responseMessage };
     }
     throw err;
   }
@@ -322,7 +324,7 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
   });
 
   addGroupedMicroFrontends(
-    {name: crudOptions.display.capitalizedPlural, key: crudOptions.name, ...crudOptions.nav},
+    { name: crudOptions.display.capitalizedPlural, key: crudOptions.name, ...crudOptions.nav },
     [
       crudOptions.screens.list && {
         ...getMfeScreenOptions('List', crudOptions.name, crudOptions.screens.list),
@@ -340,7 +342,14 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
           name: 'add-' + singlePath,
           path: 'add-' + singlePath,
           navBarPosition: NavBarPosition.TOP
-        }
+        },
+        navigateAfterSubmit: crudOptions.screens.edit && {
+          name: 'edit-' + singlePath,
+          params: {
+            id: '{IDENTIFIER}'
+          }
+        },
+        clearAfterSubmit: !crudOptions.screens.edit,
       },
       crudOptions.screens.edit && {
         ...getMfeScreenOptions('Edit', crudOptions.name, crudOptions.screens.edit),
@@ -349,7 +358,7 @@ export function createCrud<ResourcePublicData = any, ResourceInsertData = any>(
           name: 'edit-' + singlePath,
           path: `edit-${singlePath}/:id`,
           navBarPosition: false
-        }
+        },
       },
       crudOptions.screens.view && {
         ...getMfeScreenOptions('View', crudOptions.name, crudOptions.screens.view),

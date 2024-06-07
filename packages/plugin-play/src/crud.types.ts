@@ -1,6 +1,5 @@
-import {FastifyRequest} from 'fastify/types/request';
-import {FastifyReply} from 'fastify/types/reply';
-
+import { FastifyRequest } from 'fastify/types/request';
+import { FastifyReply } from 'fastify/types/reply';
 export type Crud = {
   name: string,
   display: {
@@ -22,6 +21,12 @@ export interface Screen {
   structure?: string;
   searchQuery?: boolean;
   searchPlaceholder?: string;
+  navigateAfterSubmit?: {
+    name: string,
+    params: Record<string, string>,
+    query: Record<string, string>,
+  },
+  clearAfterSubmit?: boolean,
 }
 
 export interface ResourceProperty<T = any> {

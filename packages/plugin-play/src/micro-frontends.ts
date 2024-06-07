@@ -1,4 +1,4 @@
-import manifest, {NavBarGroup} from './manifest';
+import manifest, { NavBarGroup } from './manifest';
 
 export interface IframeMicroFrontend extends GlobalMicroFrontend {
   url: string;
@@ -23,6 +23,12 @@ export interface GlobalMicroFrontend {
   workspaceRoles?: string[],
   searchQuery?: boolean,
   searchPlaceholder?: string,
+  navigateAfterSubmit?: {
+    name: string,
+    params?: any,
+    query?: any,
+  },
+  clearAfterSubmit?: boolean,
   route?: {
     name: string;
     path: string;
@@ -46,14 +52,14 @@ export type MicroFrontendOptions = IframeMicroFrontend | PreDesignedMicroFronten
 export type MicroFrontend = IframeMicroFrontend | PreDesignedMicroFrontend
 
 export function addMicroFrontend(mfe: MicroFrontendOptions) {
-  manifest.microFrontends.push({...mfe});
+  manifest.microFrontends.push({ ...mfe });
 }
 
 export function addGroupedMicroFrontends(group: NavBarGroup, mfeArray: (MicroFrontendOptions | false | null | undefined)[]) {
   manifest.navBarGroups.push(group);
   mfeArray.forEach(mfe => {
     if (mfe) {
-      addMicroFrontend({...mfe, route: {...mfe.route, group: group.key}})
+      addMicroFrontend({ ...mfe, route: { ...mfe.route, group: group.key } })
     }
   })
 }
