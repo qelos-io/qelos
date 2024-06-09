@@ -1,25 +1,25 @@
 import Plugin from '../models/plugin';
-import {clearPluginAccessToken, getPluginToken, setRefreshSecret} from '../services/tokens-management';
-import {enrichPluginWithManifest, registerToPlugin} from '../services/manifests-service';
-import {removeUser} from '../services/users';
-import {fetchPlugin} from '../services/plugins-call';
+import { clearPluginAccessToken, getPluginToken, setRefreshSecret } from '../services/tokens-management';
+import { enrichPluginWithManifest, registerToPlugin } from '../services/manifests-service';
+import { removeUser } from '../services/users';
+import { fetchPlugin } from '../services/plugins-call';
 import logger from '../services/logger';
-import {isDev} from '../../config';
+import { isDev } from '../../config';
 
 const protocol = isDev ? 'http://' : 'https://';
 
 export function getAllPlugins(req, res) {
   const select = req.user?.hasPluginPrivileges ? '-token -auth' : 'name description callbackUrl microFrontends injectables navBarGroups cruds'
-  Plugin.find({tenant: req.headers.tenant}).select(select).lean().exec()
+  Plugin.find({ tenant: req.headers.tenant }).select(select).lean().exec()
     .then(list => {
       res.json(list).end();
     })
     .catch(() => {
-      res.status(500).json({message: 'could not get plugins'}).end();
+      res.status(500).json({ message: 'could not get plugins' }).end();
     })
 }
 
-async function fetchPluginCallback({headers, plugin, callbackUrl, hard = false}) {
+async function fetchPluginCallback({ headers, plugin, callbackUrl, hard = false }) {
   let accessToken = await getPluginToken({
     tenant: headers.tenant,
     apiPath: plugin.apiPath,
@@ -46,8 +46,8 @@ async function fetchPluginCallback({headers, plugin, callbackUrl, hard = false})
 }
 
 export function redirectToPluginMfe(req, res) {
-  const {returnUrl = ''} = req.query || {}
-  const headers = {origin: `${protocol}${req.headers.tenanthost}`, ...req.headers};
+  const { returnUrl = '' } = req.query || {}
+  const headers = { origin: `${protocol}${req.headers.tenanthost}`, ...req.headers };
   headers.user = headers.user || req.user;
   Plugin.getPluginForRedirect(headers.tenant, req.params.pluginId)
     .then(async (plugin) => {
@@ -60,12 +60,12 @@ export function redirectToPluginMfe(req, res) {
         callbackUrl.searchParams.append('returnUrl', returnUrl);
         let data, pluginRes;
         try {
-          pluginRes = await fetchPluginCallback({headers, plugin, callbackUrl});
+          pluginRes = await fetchPluginCallback({ headers, plugin, callbackUrl });
         } catch {
         }
         if (!pluginRes || pluginRes?.status >= 400) {
           await clearPluginAccessToken(headers.tenant, plugin.apiPath);
-          pluginRes = await fetchPluginCallback({headers, plugin, callbackUrl, hard: true});
+          pluginRes = await fetchPluginCallback({ headers, plugin, callbackUrl, hard: true });
         }
 
         data = await pluginRes?.json();
@@ -73,7 +73,7 @@ export function redirectToPluginMfe(req, res) {
         try {
           const url = data.returnUrl || atob(returnUrl);
           if (headers.accept === 'application/json') {
-            res.json({code: data.code, token: data.token})
+            res.json({ code: data.code, token: data.token })
           } else {
             res.redirect(302, url);
           }
@@ -81,7 +81,7 @@ export function redirectToPluginMfe(req, res) {
             logger.log('plugin did not resolve a tokenized return url. plugins returned: ', data);
           }
         } catch (err) {
-          logger.error('error while redirecting to plugin', err, {data, pluginStatus: pluginRes?.status});
+          logger.error('error while redirecting to plugin', err, { data, pluginStatus: pluginRes?.status });
         }
         res.end();
         return;
@@ -97,7 +97,7 @@ export function redirectToPluginMfe(req, res) {
 
 
 export function getPlugin(req, res) {
-  const query = {tenant: req.headers.tenant, _id: req.params.pluginId};
+  const query = { tenant: req.headers.tenant, _id: req.params.pluginId };
   logger.log('get plugin endpoint', query);
   Plugin.findOne(query).select('-token -auth').lean().exec()
     .then(plugin => {
@@ -105,13 +105,13 @@ export function getPlugin(req, res) {
     })
     .catch((e) => {
       logger.error('error to get plugin', query, e)
-      res.status(404).json({message: 'could not find plugin'}).end();
+      res.status(404).json({ message: 'could not find plugin' }).end();
     })
 }
 
 export async function createPlugin(req, res) {
   logger.log('request to create plugin', req.headers.tenanthost, req.body);
-  const {tenant, token, auth, hardReset = true, ...allowedChanges} = req.body;
+  const { tenant, token, auth, hardReset = true, ...allowedChanges } = req.body;
   const plugin = new Plugin(allowedChanges);
   plugin.tenant = req.headers.tenant;
 
@@ -138,20 +138,20 @@ export async function createPlugin(req, res) {
   } catch (e) {
     logger.error(e);
     if ((e as any).message?.startsWith('E11000 duplicate key error collection')) {
-      res.status(403).json({message: 'api path already taken by another plugin. choose another path.'}).end();
+      res.status(403).json({ message: 'api path already taken by another plugin. choose another path.' }).end();
       return;
     }
-    res.status(500).json({message: 'could not create plugin'}).end();
+    res.status(500).json({ message: 'could not create plugin' }).end();
   }
 }
 
 export async function updatePlugin(req, res) {
   try {
-    const plugin = await Plugin.findOne({tenant: req.headers.tenant, _id: req.params.pluginId});
+    const plugin = await Plugin.findOne({ tenant: req.headers.tenant, _id: req.params.pluginId });
     if (!plugin) {
       throw new Error('plugin not found');
     }
-    const {tenant, token, auth, hardReset = false, ...allowedChanges} = req.body;
+    const { tenant, token, auth, hardReset = false, ...allowedChanges } = req.body;
 
     const newRefreshToken = allowedChanges.authAcquire?.refreshToken;
     Object.assign(plugin, allowedChanges);
@@ -171,8 +171,8 @@ export async function updatePlugin(req, res) {
 
     await plugin.save();
     res.json(plugin).end();
-  } catch (err) {
-    res.status(500).json({message: 'could not update plugin'}).end();
+  } catch (err: any) {
+    res.status(500).json({ message: err?.responseError || 'could not update plugin' }).end();
     logger.log('error while edit plugin', new Error((err as any)?.message || err));
   }
 }
@@ -192,9 +192,9 @@ export async function removePlugin(req, res) {
       ]);
       res.json(plugin).end();
     } else {
-      res.status(404).json({message: 'could not find plugin'}).end();
+      res.status(404).json({ message: 'could not find plugin' }).end();
     }
   } catch {
-    res.status(500).json({message: 'could not remove plugin'}).end();
+    res.status(500).json({ message: 'could not remove plugin' }).end();
   }
 }

@@ -94,8 +94,17 @@ export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, regi
     }
   })
   if (res.status !== 200) {
-    (async () => logger.log('could not register to plugin', await res.text(), { username, appUrl }))().catch();
-    throw new Error('could not register to plugin');
+    const result = await res.text();
+    (async () => logger.log('could not register to plugin', result, { username, appUrl, result }))().catch();
+    let message = 'unknown reason'
+    try {
+      message = JSON.parse(result)?.message || message;
+    } catch {
+      //
+    }
+    const error: any = new Error('could not register to plugin');
+    error.responseError = 'could not register to plugin: ' + message
+    throw error;
   }
   const payload = await res.json();
 
