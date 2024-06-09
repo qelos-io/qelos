@@ -32,19 +32,19 @@ function getUsersForAdmin(req: AuthRequest, res: Response): void {
   }
   if (!username) {
     delete query.username;
+    delete query.$or;
+  } else {
+    // temporary to support migration
+    query.$or = [
+      {
+        username: query.username
+      },
+      {
+        email: query.username
+      }
+    ]
+    delete query.username;
   }
-
-  // temporary to support migration
-  query.$or = [
-    {
-      username: query.username
-    },
-    {
-      email: query.username
-    }
-  ]
-  delete query.username;
-
 
   User
     .find(query)
