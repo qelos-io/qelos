@@ -70,6 +70,16 @@ export async function updateUser(
 
   if (username) {
     user.username = username;
+    switch (authConfig?.treatUsernameAs) {
+      case 'email':
+        user.email = user.username;
+        break;
+      case 'phone':
+        user.phone = user.username;
+        break;
+      default:
+        break;
+    }
   }
 
   if (password) {
@@ -94,17 +104,6 @@ export async function updateUser(
 
   if (metadata && authConfig) {
     user.metadata = getValidMetadata(metadata, authConfig.additionalUserFields);
-  }
-
-  switch (authConfig?.treatUsernameAs) {
-    case 'email':
-      user.email = user.username;
-      break;
-    case 'phone':
-      user.phone = user.username;
-      break;
-    default:
-      break;
   }
 
   return (directUpdate
