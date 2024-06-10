@@ -1,5 +1,5 @@
 import { defaultAuthType } from '../../config';
-import { getUser, comparePassword, setToken } from '../services/users';
+import { getUser, comparePassword, setToken, clearOldTokens } from '../services/users';
 import { Strategy } from 'passport-local';
 import { UserDocument, UserModel } from '../models/user';
 import { getWorkspaceConfiguration } from '../services/workspace-configuration';
@@ -75,6 +75,7 @@ module.exports = new Strategy(
           },
         });
       })
-      .catch(done);
+      .catch((err) => done(err))
+      .finally(() => setTimeout(() => clearOldTokens((user as any)._id).catch(), 1))
   }
 );

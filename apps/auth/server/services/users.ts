@@ -216,3 +216,21 @@ export function getUserIfTokenExists(tenant: string, userId: string, tokenId: st
     .catch(() => Promise.reject({ code: 'USER_WITH_TOKEN_NOT_EXISTS' }));
 }
 
+export async function clearOldTokens(userId: string) {
+  if (!userId) {
+    return;
+  }
+  const user: any = await User.findOne({ _id: userId }).select('tokens').exec();
+
+  if (!user) {
+    return;
+  }
+  const now = Date.now()
+  const validTokens = user.tokens.find(t => new Date(t.expiresAt).getTime() > now)
+
+  if (validTokens.length === user.tokens) {
+    return
+  }
+
+  await User.updateOne({ _id: userId }, { $set: { tokens: validTokens } }).exec()
+}
