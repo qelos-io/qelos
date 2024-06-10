@@ -3,6 +3,7 @@ import { cookieTokenExpiration } from '../../config';
 import { Types } from 'mongoose';
 import { getAbsoluteDate } from './dates';
 import { IAdditionalField, IAuthConfigurationMetadata } from './auth-configuration';
+import logger from './logger';
 
 export function getValidMetadata(metadata: any = {}, additionalFields: IAdditionalField[] = []) {
   const result = {};
@@ -109,9 +110,10 @@ export async function updateUser(
   return (directUpdate
       ? User.updateOne(directUpdate, { $set: user })
       : user.save()
-  ).catch((err: Error) =>
-    Promise.reject({ code: 'UPDATE_USER_FAILED', info: err })
-  );
+  ).catch((err: Error) => {
+    logger.error('failed to update user', err)
+    return Promise.reject({ code: 'UPDATE_USER_FAILED', info: err })
+  });
 }
 
 export async function deleteUser(userId: string, tenant: string) {
