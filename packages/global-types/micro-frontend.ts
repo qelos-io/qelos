@@ -1,3 +1,5 @@
+import { IScreenRequirement } from './ScreenRequirement';
+
 export interface IMicroFrontend {
   name: string;
   description: string;
@@ -11,6 +13,7 @@ export interface IMicroFrontend {
   structure?: string;
   searchQuery?: boolean,
   searchPlaceholder?: string,
+  requirements?: IScreenRequirement[]
   navigateAfterSubmit?: {
     name: string,
     params: Record<string, string>,

@@ -1,45 +1,36 @@
 <template>
   <main>
     <el-form @submit.prevent="submit">
-      <VRuntimeTemplate v-if="item" :template="relevantStructure" :template-props="{row: item, schema: crud.schema}"/>
+      <VRuntimeTemplate v-if="item" :template="relevantStructure"
+                        :template-props="{row: item, schema: crud.schema, cruds, requirements}"/>
     </el-form>
   </main>
 </template>
 
 <script lang="ts" setup>
 import { useRoute, useRouter } from 'vue-router';
-import { computed, provide, ref, watch } from 'vue';
+import { computed, provide, ref, toRef, toRefs, watch } from 'vue';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import VRuntimeTemplate from 'vue3-runtime-template';
 import { useNotifications } from '@/modules/core/compositions/notifications';
+import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-item-crud';
+import { useDynamicRouteItem } from '@/modules/pre-designed/compositions/dynamic-route-item';
+import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
 
 const route = useRoute();
 const router = useRouter();
 const mfes = usePluginsMicroFrontends();
 const { error } = useNotifications()
 
-const crud = computed(() => {
-  const crud = route.meta.crud as any || { display: {} };
-  return {
-    ...crud,
-    display: {
-      name: 'item',
-      capitalizedPlural: 'Items',
-      ...(crud.display || {}),
-    },
-    screen: {
-      structure: (route.meta.mfe as any)?.structure
-    }
-  }
-});
-const api = computed(() => mfes.cruds[crud.value.name].api);
+const cruds = toRef(mfes, 'cruds')
+const { api, crud, relevantStructure } = useSingleItemCrud()
+
 const identifierKey = computed(() => mfes.cruds[crud.value.name].identifierKey || '_id');
 const isExistingItem = computed(() => !!route.params.id);
-const relevantStructure = computed(() => {
-  return (route.meta.mfe as any)?.structure;
-});
 const item = ref();
+
+useDynamicRouteItem(api, item);
 
 function renderParams(obj, params) {
   return Object.keys(obj).reduce((result, key) => {
@@ -81,13 +72,5 @@ const { submit, submitting } = useSubmitting(async () => {
 })
 
 provide('submitting', submitting)
-
-watch([() => route.name, () => route.params.id], () => {
-  if (!route.params.id) {
-    item.value = {};
-  }
-  api.value.getOne(route.params.id as string)
-      .then(data => item.value = data)
-      .catch(() => error('Failed to load page data'))
-}, { immediate: true })
+const { requirements } = toRefs(useScreenRequirementsStore())
 </script>

@@ -126,6 +126,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
             navigateAfterSubmit: mfe.navigateAfterSubmit,
             clearAfterSubmit: mfe.clearAfterSubmit,
             crud: mfe.crudData,
+            screenRequirements: mfe.requirements,
           }
           if (mfe.crudData && !cruds[mfe.crudData.name]) {
             cruds[mfe.crudData.name] = {

@@ -27,6 +27,23 @@ const MicroFrontendSchema = new mongoose.Schema<IMicroFrontend>({
     params: mongoose.Schema.Types.Mixed,
     query: mongoose.Schema.Types.Mixed,
   },
+  requirements: [{
+    key: {
+      type: String,
+      required: true
+    },
+    fromHTTP: {
+      uri: String,
+      method: {
+        type: String,
+        enum: ['GET', 'POST', 'PUT', 'DELETE']
+      },
+    },
+    fromCrud: {
+      name: String,
+      identifier: String,
+    }
+  }],
   active: {
     type: Boolean,
     default: true,
