@@ -277,7 +277,7 @@ async function updateUser(req: AuthRequest, res: Response) {
 
     res.status(200).json(response).end()
   } catch (e) {
-    res.status(400).json({ message: 'user update failed' }).end()
+    res.status(500).json({ message: 'user update failed', info: e?.info }).end()
   }
 }
 
