@@ -58,12 +58,10 @@ function getUsersForAdmin(req: AuthRequest, res: Response): void {
 
       if (emptyUsernames.length) {
         logger.log('user email migration for tenant ' + query.tenant);
-        Promise.all(emptyUsernames.map(user => User.updateOne({ _id: user.id }, {
+        Promise.all(emptyUsernames.map(user => User.updateOne({ _id: user._id }, {
           $set: { username: user.username },
-          $unset: { email: 1 }
-        }))).catch()
+        }).exec())).catch()
       }
-
     })
     .catch(() => {
       res.json([]).end();
