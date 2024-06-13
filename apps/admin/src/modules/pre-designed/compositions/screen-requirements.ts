@@ -14,11 +14,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
   const cachedDispatchers = {}
 
   watch([() => route.meta.screenRequirements, mfes], (reqs: IScreenRequirement[] | undefined) => {
-    if (!(reqs instanceof Array)) {
-      return;
-    }
-
-    if (!reqs.length) {
+    if (!(reqs instanceof Array && reqs.length)) {
       requirements.value = {}
       return;
     }
