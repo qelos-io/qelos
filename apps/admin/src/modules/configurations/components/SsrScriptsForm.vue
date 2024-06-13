@@ -24,7 +24,7 @@ const props = defineProps({
   metadata: Object as () => ({ head: string, body: string }),
   submitting: Boolean
 })
-const { updated, edited } = useEditMetadata<typeof props.metadata>(props.kind, props.metadata)
+const { updated, edited } = useEditMetadata<typeof props.metadata>(props.kind, props.metadata || {})
 const emit = defineEmits(['save']);
 
 const defaultMetadata = {
