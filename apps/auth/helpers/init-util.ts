@@ -9,7 +9,7 @@ const User = model("User");
 export function init() {
   const user = new User({
     tenant: process.env.TENANT,
-    email: process.env.EMAIL || "test@test.com",
+    username: process.env.EMAIL || "test@test.com",
     firstName: "Administrator",
     lastName: "The Ruler",
     password: process.env.PASSWORD || "admin",
