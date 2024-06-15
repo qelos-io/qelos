@@ -46,7 +46,7 @@ async function migrate() {
     });
   }
   allTenants.shift();
-  migrate();
+  return migrate();
 }
 
 /**
