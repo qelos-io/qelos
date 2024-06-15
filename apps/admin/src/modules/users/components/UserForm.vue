@@ -1,5 +1,6 @@
 <template>
   <el-form @submit.native.prevent="submit" class="user-form">
+    <EditHeader><slot/></EditHeader>
     <div class="flex-row">
       <FormInput title="First Name" :model-value="firstName" @input="editedData.firstName = $event"/>
       <FormInput title="Last Name" :model-value="lastName" @input="editedData.lastName = $event"/>
@@ -31,6 +32,7 @@ import { useEditedInputs } from '../../core/compositions/edited-inputs'
 import { IUser } from '../../core/store/types/user';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import Monaco from './Monaco.vue';
+import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 
 const props = defineProps({
   user: Object as () => IUser,
