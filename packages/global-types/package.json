@@ -6,5 +6,9 @@
   "types": "index.ts",
   "scripts": {},
   "author": "",
-  "license": "MIT"
+  "gitHead": "0c89581c94896414d53b99a63788829fe3caab4c",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }
