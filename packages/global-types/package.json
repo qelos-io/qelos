@@ -1,11 +1,10 @@
 {
   "name": "@qelos/global-types",
-  "version": "3.5.0",
+  "version": "3.5.1",
   "description": "",
   "main": "index.ts",
   "types": "index.ts",
-  "scripts": {
-  },
+  "scripts": {},
   "author": "",
   "license": "MIT"
 }
