@@ -16,6 +16,7 @@ import logger from './logger';
 import { atob } from 'buffer';
 import { cacheManager } from './cache-manager';
 import { RequestUser } from './request.types';
+import { FastifyReply } from 'fastify/types/reply';
 
 const notAuthorized = { message: 'you are not authorized' };
 
@@ -27,7 +28,7 @@ function getHostname(fullUrl: string) {
   return url.hostname;
 }
 
-export async function verifyAccessToken(req: FastifyRequest): Promise<void> {
+export async function verifyAccessToken(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const { authorization } = req.headers;
 
   const token = authorization?.split(' ')[1];
@@ -41,6 +42,8 @@ export async function verifyAccessToken(req: FastifyRequest): Promise<void> {
     req.user = req.headers.user ? JSON.parse(req.headers.user as string) as RequestUser : null;
   } catch (err) {
     logger.error('error in verify access token', err);
+    reply.statusCode = 407;
+    reply.header('x-q-auth', 'unauthorized');
     throw new Error('authorization token was not valid');
   }
 }

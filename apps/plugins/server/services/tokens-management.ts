@@ -1,14 +1,14 @@
-import {internalServicesSecret, secretsToken} from '../../config';
-import {service} from '@qelos/api-kit';
-import {cacheManager} from './cache-manager';
-import {fetchPlugin} from './plugins-call';
+import { internalServicesSecret, secretsToken } from '../../config';
+import { service } from '@qelos/api-kit';
+import { cacheManager } from './cache-manager';
+import { fetchPlugin } from './plugins-call';
 import logger from './logger';
 
-const secretsService = service('SECRETS', {port: process.env.SECRETS_SERVICE_PORT || 9002});
+const secretsService = service('SECRETS', { port: process.env.SECRETS_SERVICE_PORT || 9002 });
 
 function callSecretsService(url: string, tenant: string, key: string, value?: any) {
   return secretsService({
-    headers: {internal_secret: internalServicesSecret, tenant},
+    headers: { internal_secret: internalServicesSecret, tenant },
     method: 'POST',
     data: {
       key,
@@ -38,13 +38,13 @@ export function storeOAuthPayloadForPlugin(tenant: string, apiPath: string, payl
   const accessToken = payload[authAcquire.accessTokenKey];
 
   setRefreshSecret(tenant, apiPath, newRefreshToken).catch();
-  cacheManager.setItem(`plugins:${tenant}-${apiPath}:access-token`, accessToken, {ttl: 60000}).catch()
+  cacheManager.setItem(`plugins:${tenant}-${apiPath}:access-token`, accessToken, { ttl: 60000 }).catch()
 
   return accessToken;
 }
 
 export async function refreshTokenForPlugin(tenant: string, apiPath: string, authAcquire): Promise<string> {
-  logger.log('refresh token for plugin', {tenant, apiPath})
+  logger.log('refresh token for plugin', { tenant, apiPath })
   const refreshToken = (await getRefreshSecret(tenant, apiPath)).value;
   let tokensPayload;
   if (refreshToken) {
@@ -61,7 +61,7 @@ export async function refreshTokenForPlugin(tenant: string, apiPath: string, aut
 
   if (!tokensPayload) {
     const msg = 'refresh token does not exist on secrets for plugin ' + tenant + ':' + apiPath;
-    logger.error(msg, {hadRefreshToken: !!refreshToken});
+    logger.error(msg, { hadRefreshToken: !!refreshToken });
     throw new Error(msg);
   }
 
@@ -74,10 +74,15 @@ export function getPluginAccessToken(tenant: string, apiPath: string) {
 }
 
 export function clearPluginAccessToken(tenant: string, apiPath: string) {
-  return cacheManager.setItem(`plugins:${tenant}-${apiPath}:access-token`, '', {ttl: 1}).catch()
+  return cacheManager.setItem(`plugins:${tenant}-${apiPath}:access-token`, '', { ttl: 1 }).catch()
 }
 
-export async function getPluginToken(plugin: { tenant: string, apiPath: string, authAcquire?, token? }): Promise<string> {
+export async function getPluginToken(plugin: {
+  tenant: string,
+  apiPath: string,
+  authAcquire?,
+  token?
+}): Promise<string> {
   return (await getPluginAccessToken(plugin.tenant, plugin.apiPath).catch(() => null)) ||
     (await refreshTokenForPlugin(plugin.tenant, plugin.apiPath, plugin.authAcquire).catch(() => null)) ||
     plugin.token

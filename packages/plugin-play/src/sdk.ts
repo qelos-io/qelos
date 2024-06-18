@@ -48,7 +48,7 @@ export function getSdk(): QelosAdministratorSDK {
 
 export async function getSdkForTenant(tenantPayload: StandardPayload): Promise<QelosAdministratorSDK | null> {
   try {
-    const data = await getSdk().users.getEncryptedData(tenantPayload.sub);
+    const data = await getEncryptedDataForTenant(tenantPayload, config.userPayloadSecret);
     if (!data.appUrl) {
       return null;
     }
@@ -58,4 +58,12 @@ export async function getSdkForTenant(tenantPayload: StandardPayload): Promise<Q
     logger.log(e)
     return null;
   }
+}
+
+export function getEncryptedDataForTenant(tenantPayload: StandardPayload, encryptedId: string = '') {
+  return getSdk().users.getEncryptedData(tenantPayload.sub, encryptedId);
+}
+
+export function setEncryptedDataForTenant(tenantPayload: StandardPayload, encryptedId: string = '', data: any) {
+  return getSdk().users.setEncryptedData(tenantPayload.sub, encryptedId, data);
 }
