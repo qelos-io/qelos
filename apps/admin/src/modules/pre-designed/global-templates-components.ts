@@ -8,6 +8,7 @@ import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+import Monaco from '@/modules/users/components/Monaco.vue';
 
 export default function applyGlobalTemplatesComponents(app: App) {
   app.component('TemplatedRemoveButton', TemplatedRemoveButton)
@@ -19,5 +20,6 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('EditHeader', EditHeader)
   app.component('InfoIcon', InfoIcon)
   app.component('BlockItem', BlockItem)
+  app.component('Monaco', Monaco)
 
 }
