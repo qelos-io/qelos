@@ -1,6 +1,6 @@
 {
   "name": "@qelos/no-code",
-  "version": "3.5.1",
+  "version": "3.5.2",
   "license": "MIT",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "description": "manage no-code mechanism",
@@ -31,7 +31,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@qelos/global-types": "^3.5.1",
+    "@qelos/global-types": "^3.5.2",
     "@types/express": "^4.17.8",
     "@types/mongoose": "^5.7.36",
     "@types/node": "^16.11.22",
