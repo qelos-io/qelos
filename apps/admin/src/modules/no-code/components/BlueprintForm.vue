@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, provide, reactive, ref, toRef, watch } from 'vue';
-import { BlueprintPropertyType, IBlueprint } from '@qelos/global-types';
+import { provide, reactive, ref, toRef, watch } from 'vue';
+import { BlueprintPropertyType, EntityIdentifierMechanism, IBlueprint } from '@qelos/global-types';
 import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
@@ -25,6 +25,12 @@ const blueprintProperties = ref(
     Object
         .entries(edit.properties || {})
         .map(([key, value]) => ({ key, ...value }))
+);
+
+const blueprintMapping = ref(
+    Object
+        .entries(edit.updateMapping || {})
+        .map(([key, value]) => ({ key, value }))
 );
 
 provide('submitting', toRef(props, 'submitting'));
@@ -79,6 +85,12 @@ function submit() {
           <template #title>
             <h3>{{ $t('Properties') }}</h3>
           </template>
+          <el-form-item :label="$t('Identifier Mechanism for Entities')">
+            <el-select v-model="blueprint.entityIdentifierMechanism" requried :placeholder="$t('Select mechanism')">
+              <el-option label="Object ID" :value="EntityIdentifierMechanism.OBJECT_ID"/>
+              <el-option label="GUID" :value="EntityIdentifierMechanism.GUID"/>
+            </el-select>
+          </el-form-item>
           <p>
             {{ $t('Properties determine the structure of the blueprint.') }}<br>
             {{ $t('Each entity will also have an identifier and a title, regardless of those custom entities.') }}
@@ -90,7 +102,7 @@ function submit() {
               <BlueprintPropertyTypeSelector v-model="entry.type"/>
             </FormRowGroup>
             <FormInput v-model="entry.description" title="Description"/>
-            <el-form-item  v-if="entry.type === BlueprintPropertyType.STRING" :label="$t('Enum')">
+            <el-form-item v-if="entry.type === BlueprintPropertyType.STRING" :label="$t('Enum')">
               <el-select
                   v-model="entry.enum"
                   multiple
@@ -107,7 +119,7 @@ function submit() {
               <FormInput v-model="entry.required" title="Required" type="switch" class="flex-0"/>
               <FormInput v-model="entry.multi" title="Multi" type="switch" class="flex-0"/>
               <template v-if="entry.type === BlueprintPropertyType.STRING">
-                <FormInput v-model="entry.max" title="Max Length" type="number"  class="flex-0"/>
+                <FormInput v-model="entry.max" title="Max Length" type="number" class="flex-0"/>
               </template>
               <div class="flex-0 remove-row">
                 <RemoveButton @click="blueprintProperties.splice(blueprintProperties.indexOf(entry), 1)"/>
@@ -116,6 +128,48 @@ function submit() {
           </div>
           <AddMore
               @click="blueprintProperties.push({key: 'new_item', title: '', enum: [], type: BlueprintPropertyType.STRING, description: '', required: false, multi: false})"/>
+        </el-collapse-item>
+
+        <el-collapse-item name="3">
+          <template #title>
+            <h3>{{ $t('On-Save Mapping') }}</h3>
+          </template>
+          <p>
+            {{ $t('Properties can be calculated on save.') }}<br>
+            {{ $t('Each property key can have JQ calculation for its final data.') }}<br>
+            {{ $t('Those calculations will run on our backend, before save for each entity.') }}
+          </p>
+          <div v-for="(entry, index) in blueprintMapping" :key="index" class="property">
+            <FormRowGroup>
+              <FormInput v-model="entry.key" title="Key" class="flex-0"/>
+              <FormInput v-model="entry.value" title="JQ Calculation"/>
+              <div class="flex-0 remove-row">
+                <RemoveButton @click="blueprintMapping.splice(blueprintMapping.indexOf(entry), 1)"/>
+              </div>
+            </FormRowGroup>
+          </div>
+          <AddMore @click="blueprintMapping.push({key: '', value: ''})"/>
+        </el-collapse-item>
+
+        <el-collapse-item name="4">
+          <template #title>
+            <h3>{{ $t('Properties Relations') }}</h3>
+          </template>
+          <p>
+            {{ $t('Relations are the logical connection between two or more entities.') }}<br>
+            {{ $t('Each relation will have a key and a target.') }}<br>
+            {{ $t('The target is the entity that will be connected to the current entity.') }}
+          </p>
+          <div v-for="(entry, index) in blueprint.relations" :key="index" class="property">
+            <FormRowGroup>
+              <FormInput v-model="entry.key" title="Key" class="flex-0"/>
+              <FormInput v-model="entry.target" title="Target Blueprint"/>
+              <div class="flex-0 remove-row">
+                <RemoveButton @click="blueprint.relations.splice(blueprint.relations.indexOf(entry), 1)"/>
+              </div>
+            </FormRowGroup>
+          </div>
+          <AddMore @click="blueprint.relations.push({key: '', target: ''})"/>
         </el-collapse-item>
       </el-collapse>
     </div>

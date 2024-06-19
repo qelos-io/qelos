@@ -1,5 +1,4 @@
-import EmptyRoute from '../core/components/layout/EmptyRoute.vue'
-import CreateBlueprint from '@/modules/no-code/CreateBlueprint.vue';
+import EmptyRoute from '../core/components/layout/EmptyRoute.vue';
 
 const noCodeRoutes = {
   path: 'no-code',
