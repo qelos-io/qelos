@@ -12,6 +12,11 @@ const noCodeRoutes = {
       component: async () => (await import('./CreateBlueprint.vue')).default
     },
     {
+      name: 'editBlueprint',
+      path: 'edit-blueprint/:blueprintIdentifier',
+      component: async () => (await import('./EditBlueprint.vue')).default
+    },
+    {
       name: 'blueprints',
       path: 'blueprints',
       component: async () => (await import('./Blueprints.vue')).default

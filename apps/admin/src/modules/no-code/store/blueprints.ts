@@ -87,7 +87,7 @@ export const useBlueprintsStore = defineStore('blueprints', () => {
     submittingUpdateItem,
     submittingDeletedItem,
     selectedItem,
-    async selectItem(identifier: string) {
+    selectItem(identifier: string) {
       selectedItemIdentifier.value = identifier;
     }
   }

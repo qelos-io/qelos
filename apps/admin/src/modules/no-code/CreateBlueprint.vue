@@ -1,6 +1,6 @@
 <template>
   <div v-if="wsConfig.loaded">
-    <BlueprintForm :blueprint="emptyBlueprint" :submitting="store.submittingNewItem"/>
+    <BlueprintForm :blueprint="emptyBlueprint" :submitting="store.submittingNewItem" @submitted="submit"/>
   </div>
 </template>
 <script lang="ts" setup>
@@ -9,10 +9,18 @@ import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import BlueprintForm from '@/modules/no-code/components/BlueprintForm.vue';
 import { CRUDOperation, EntityIdentifierMechanism, IBlueprint, PermissionScope } from '@qelos/global-types';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const store = useBlueprintsStore();
 const wsConfig = useWsConfiguration();
 const emptyBlueprint = ref<Partial<IBlueprint>>()
+
+async function submit(payload: Partial<IBlueprint>) {
+  const data = await store.create(payload);
+  store.retry();
+  router.push({ name: 'editBlueprint', params: { blueprintIdentifier: data.identifier } });
+}
 
 
 watch(() => wsConfig.loaded, (loaded) => {
