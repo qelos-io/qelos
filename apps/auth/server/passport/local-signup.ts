@@ -19,7 +19,7 @@ module.exports = new Strategy(
     const { name, fullName, firstName, lastName, birthDate } = req.body || {};
     const newUser = new User({
       tenant: req.headers.tenant,
-      username: username.trim() || req.body?.email?.trim(),
+      username: username.toLowerCase().trim() || req.body?.email?.toLowerCase().trim(),
       password: password.trim(),
       fullName: fullName || name || (`${firstName} ${lastName}`),
       firstName,

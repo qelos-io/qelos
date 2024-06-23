@@ -186,6 +186,12 @@ async function createUser(req: AuthRequest, res: Response) {
       // nothing
     }
   }
+  if (req.authConfig.treatUsernameAs === 'email') {
+    user.username = user.username.toLowerCase().trim().replace(/ /g, '+');
+    if (user.username.indexOf('@') === -1) {
+      throw new Error('username should be an email address');
+    }
+  }
   try {
     if (!user.tenant) {
       throw new Error('tenant is missing');

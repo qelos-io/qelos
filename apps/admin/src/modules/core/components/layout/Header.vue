@@ -11,7 +11,7 @@
           v-if="route.meta?.searchQuery"
           class="query-input"
           size="large"
-          v-model.trim="query"
+          v-model="query"
           :placeholder="$t(route?.meta?.searchPlaceholder as string || 'Search...')"
       />
 
