@@ -1,5 +1,5 @@
 import { getRouter, verifyUser, populateUser } from '@qelos/api-kit';
-import { checkAllPrivileges, onlyEditPrivileged } from '../middlewares/privileged-check';
+import { checkAllPrivileges } from '../middlewares/privileged-check';
 import { getBlueprintByIdentifierMiddleware } from '../middlewares/blueprints';
 import {
   createBlueprintEntity,

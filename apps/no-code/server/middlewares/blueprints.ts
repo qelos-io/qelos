@@ -4,7 +4,7 @@ import { cacheManager } from '../services/cache-manager';
 export async function getBlueprintByIdentifierMiddleware(req, res, next) {
   const blueprintIdentifier = req.params.blueprintIdentifier;
   try {
-    const blueprint = cacheManager.wrap(`blueprint:${req.headers.tenant}:${blueprintIdentifier}`, async () => {
+    const blueprint = await cacheManager.wrap(`blueprint:${req.headers.tenant}:${blueprintIdentifier}`, async () => {
       const blueprint = await Blueprint
         .findOne({
           tenant: req.headers.tenant,

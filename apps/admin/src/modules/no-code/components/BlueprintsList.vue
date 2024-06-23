@@ -6,7 +6,7 @@
             class="blueprint-item"
     >
       <template v-slot:title>
-        {{ blueprint.name }}
+        <router-link :to="{name: 'editBlueprint', params: {blueprintIdentifier: blueprint.identifier}}">{{ blueprint.name }}</router-link>
         <small>{{ blueprint.description }}</small>
       </template>
       <div class="metadata">

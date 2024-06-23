@@ -9,6 +9,7 @@ import CrudOperationSelector from '@/modules/no-code/components/CrudOperationSel
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import BlueprintPropertyTypeSelector from '@/modules/no-code/components/BlueprintPropertyTypeSelector.vue';
+import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
 
 const props = withDefaults(defineProps<{
   submitting: boolean;
@@ -145,7 +146,7 @@ function submit() {
           </p>
           <div v-for="(entry, index) in blueprintMapping" :key="index" class="property">
             <FormRowGroup>
-              <FormInput v-model="entry.key" title="Key" class="flex-0"/>
+              <FormInput v-model="entry.key" title="Key"/>
               <FormInput v-model="entry.value" title="JQ Calculation"/>
               <div class="flex-0 remove-row">
                 <RemoveButton @click="blueprintMapping.splice(blueprintMapping.indexOf(entry), 1)"/>
@@ -166,8 +167,8 @@ function submit() {
           </p>
           <div v-for="(entry, index) in blueprint.relations" :key="index" class="property">
             <FormRowGroup>
-              <FormInput v-model="entry.key" title="Key" class="flex-0"/>
-              <FormInput v-model="entry.target" title="Target Blueprint"/>
+              <FormInput v-model="entry.key" title="Key" />
+              <BlueprintSelector title="Target Blueprint" v-model="entry.target"/>
               <div class="flex-0 remove-row">
                 <RemoveButton @click="blueprint.relations.splice(blueprint.relations.indexOf(entry), 1)"/>
               </div>

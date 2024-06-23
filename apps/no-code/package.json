@@ -25,7 +25,8 @@
     "mongoose": "^5.10.5",
     "node-fetch": "^2.6.1",
     "qs": "^6.12.1",
-    "uniqid": "^5.0.3"
+    "uniqid": "^5.0.3",
+    "uuid": "^10.0.0"
   },
   "publishConfig": {
     "access": "public"
