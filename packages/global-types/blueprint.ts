@@ -32,6 +32,17 @@ export interface IPermissionsDescriptor {
   workspaceRoleBased: string[],
 }
 
+export interface IBlueprintPropertyDescriptor {
+  title: string,
+  type: BlueprintPropertyType,
+  description: string,
+  required: boolean,
+  enum?: string[],
+  multi?: boolean,
+  min?: number,
+  max?: number,
+}
+
 export interface IBlueprint {
   tenant: string;
   identifier: string,
@@ -40,16 +51,7 @@ export interface IBlueprint {
   entityIdentifierMechanism: EntityIdentifierMechanism,
   permissions: Array<Partial<IPermissionsDescriptor>>,
   permissionScope: PermissionScope,
-  properties: Record<string, {
-    title: string,
-    type: BlueprintPropertyType,
-    description: string,
-    required: boolean,
-    enum?: string[],
-    multi?: boolean,
-    min?: number,
-    max?: number,
-  }>,
+  properties: Record<string, IBlueprintPropertyDescriptor>,
   updateMapping: Record<string, string>,
   relations: { key: string, target: string }[],
   created: Date;

@@ -1,7 +1,13 @@
 import mongoose, { Document } from 'mongoose'
 
 export interface IBlueprintEntity extends Document {
-
+  tenant: string;
+  identifier: string;
+  user: mongoose.Schema.Types.ObjectId;
+  workspace: mongoose.Schema.Types.ObjectId;
+  metadata: any;
+  created: Date,
+  updated: Date,
 }
 
 const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
@@ -28,10 +34,6 @@ const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
     type: mongoose.Schema.Types.ObjectId,
     index: true,
     required: false,
-  },
-  title: {
-    type: String,
-    required: true,
   },
   blueprint: {
     type: String,

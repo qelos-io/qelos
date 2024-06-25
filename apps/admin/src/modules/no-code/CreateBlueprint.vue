@@ -7,7 +7,13 @@
 import { ref, watch } from 'vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import BlueprintForm from '@/modules/no-code/components/BlueprintForm.vue';
-import { CRUDOperation, EntityIdentifierMechanism, IBlueprint, PermissionScope } from '@qelos/global-types';
+import {
+  BlueprintPropertyType,
+  CRUDOperation,
+  EntityIdentifierMechanism,
+  IBlueprint,
+  PermissionScope
+} from '@qelos/global-types';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import { useRouter } from 'vue-router';
 
@@ -70,7 +76,14 @@ watch(() => wsConfig.loaded, (loaded) => {
           workspaceRoleBased: ['admin']
         },
       ],
-      properties: {},
+      properties: {
+        title: {
+          title: 'Title',
+          type: BlueprintPropertyType.STRING,
+          description: 'The title of the entity',
+          required: true,
+        }
+      },
       updateMapping: {},
       relations: []
     }

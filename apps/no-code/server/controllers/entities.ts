@@ -1,11 +1,13 @@
 import qs from 'qs'
 import { v4 as uuidv4 } from 'uuid';
+import jq from 'node-jq';
 import BlueprintEntity from '../models/blueprint-entity';
 import { IBlueprint } from '../models/blueprint';
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
 import { PermissionScope } from '@qelos/global-types';
 import mongoose from 'mongoose';
 import logger from '../services/logger';
+import { getValidBlueprintMetadata, validateValue } from '../services/entities.service';
 
 type Full<T> = {
   [P in keyof T]-?: T[P];
@@ -89,15 +91,44 @@ export async function createBlueprintEntity(req, res) {
       identifier: blueprint.entityIdentifierMechanism === 'objectid' ? new mongoose.Types.ObjectId() : uuidv4(),
       user: req.user._id,
       workspace: req.workspace?._id,
-      title: body.title,
-      metadata: body.metadata || {},
+      metadata: {},
     });
 
-    // run the update mapping pre-save
-
     // validate the metadata
+    entity.metadata = getValidBlueprintMetadata(body.metadata, body.metadata);
+
+
+    // run the update mapping pre-save
+    const entries = Object.entries(blueprint.updateMapping);
+    await Promise.all(entries
+      .map(
+        ([key, value]) => jq.run(value, entity).then(result => {
+          validateValue(key, result, blueprint.properties[key]);
+          entity.metadata[key] = result;
+        })
+      )
+    );
 
     // validate the relations
+    await Promise.all(blueprint.relations
+      .map(relation => {
+        const target = entity.metadata[relation.key];
+        if (!target) {
+          return;
+        }
+        return BlueprintEntity.findOne({
+          tenant: req.headers.tenant,
+          blueprint: relation.target,
+          identifier: target,
+        }).select('_id')
+          .lean()
+          .exec()
+          .then(targetEntity => {
+            if (!targetEntity) {
+              throw new Error('relation target not found');
+            }
+          });
+      }))
 
     await entity.save();
     return entity;
