@@ -1,13 +1,16 @@
 import qs from 'qs'
 import { v4 as uuidv4 } from 'uuid';
-import jq from 'node-jq';
-import BlueprintEntity from '../models/blueprint-entity';
+import BlueprintEntity, { IBlueprintEntity } from '../models/blueprint-entity';
 import { IBlueprint } from '../models/blueprint';
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
 import { PermissionScope } from '@qelos/global-types';
 import mongoose from 'mongoose';
 import logger from '../services/logger';
-import { getValidBlueprintMetadata, validateValue } from '../services/entities.service';
+import {
+  getValidBlueprintMetadata,
+  updateEntityMapping,
+  validateEntityRelations,
+} from '../services/entities.service';
 
 type Full<T> = {
   [P in keyof T]-?: T[P];
@@ -33,6 +36,19 @@ function getEntityQuery({ entityIdentifier, blueprint, req }: {
   return query;
 }
 
+async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBlueprint, entity: IBlueprintEntity) {
+  const body = req.body || {}
+
+  // validate the metadata
+  entity.metadata = getValidBlueprintMetadata(body.metadata, blueprint);
+
+  // run the update mapping pre-save
+  await updateEntityMapping(blueprint, entity);
+
+  // validate the relations
+  await validateEntityRelations(req.headers.tenant, blueprint, entity);
+}
+
 export async function getAllBlueprintEntities(req, res) {
   const blueprint = req.blueprint;
   try {
@@ -40,15 +56,17 @@ export async function getAllBlueprintEntities(req, res) {
       res.status(404).json({ message: 'blueprint not found' }).end();
       return;
     }
-    const entities = await BlueprintEntity.find({
-      ...qs.parse(req.url, { depth: 3 }),
+    const query = {
+      ...qs.parse(req._parsedUrl.query, { depth: 3 }),
       ...getEntityQuery({ blueprint, req })
-    })
+    }
+    logger.log(req, query)
+    const entities = await BlueprintEntity.find(query)
       .lean()
       .exec()
 
     res.json(entities).end();
-  } catch {
+  } catch  {
     res.status(500).json({ message: 'something went wrong with entities' }).end();
   }
 }
@@ -56,16 +74,7 @@ export async function getAllBlueprintEntities(req, res) {
 export async function getSingleBlueprintEntity(req, res) {
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
-  const query: any = {
-    tenant: req.headers.tenant,
-    blueprint: blueprint.identifier,
-    identifier: entityIdentifier,
-  };
-  if (blueprint.permissionScope === PermissionScope.USER) {
-    query.user = req.user._id
-  } else if (blueprint.permissionScope === PermissionScope.WORKSPACE) {
-    query.workspace = req.workspace._id
-  }
+  const query = getEntityQuery({ blueprint, req, entityIdentifier })
   try {
     const entity = await BlueprintEntity.findOne(query)
       .lean()
@@ -83,7 +92,6 @@ export async function getSingleBlueprintEntity(req, res) {
 
 export async function createBlueprintEntity(req, res) {
   const blueprint: IBlueprint = req.blueprint;
-  const body = req.body || {}
   try {
     const entity = new BlueprintEntity({
       tenant: req.headers.tenant,
@@ -94,44 +102,11 @@ export async function createBlueprintEntity(req, res) {
       metadata: {},
     });
 
-    // validate the metadata
-    entity.metadata = getValidBlueprintMetadata(body.metadata, body.metadata);
-
-
-    // run the update mapping pre-save
-    const entries = Object.entries(blueprint.updateMapping);
-    await Promise.all(entries
-      .map(
-        ([key, value]) => jq.run(value, entity).then(result => {
-          validateValue(key, result, blueprint.properties[key]);
-          entity.metadata[key] = result;
-        })
-      )
-    );
-
-    // validate the relations
-    await Promise.all(blueprint.relations
-      .map(relation => {
-        const target = entity.metadata[relation.key];
-        if (!target) {
-          return;
-        }
-        return BlueprintEntity.findOne({
-          tenant: req.headers.tenant,
-          blueprint: relation.target,
-          identifier: target,
-        }).select('_id')
-          .lean()
-          .exec()
-          .then(targetEntity => {
-            if (!targetEntity) {
-              throw new Error('relation target not found');
-            }
-          });
-      }))
+    await updateAllEntityMetadata(req, blueprint, entity);
 
     await entity.save();
-    return entity;
+    res.status(200).json(entity).end()
+    return;
   } catch (err) {
     logger.error(err);
     res.status(500).json({ message: 'something went wrong with entity creation' }).end();
@@ -139,9 +114,53 @@ export async function createBlueprintEntity(req, res) {
 }
 
 export async function updateBlueprintEntity(req, res) {
+  const entityIdentifier = req.params.entityIdentifier;
+  const blueprint: IBlueprint = req.blueprint;
+  const query = getEntityQuery({ blueprint, req, entityIdentifier });
+  let entity: IBlueprintEntity
+  try {
+    const givenEntity = await BlueprintEntity.findOne(query).exec()
 
+    if (!givenEntity) {
+      if (!givenEntity) {
+        res.status(404).json({ message: 'entity not found' }).end();
+        return;
+      }
+    }
+    entity = givenEntity;
+  } catch (err) {
+    logger.error(err);
+    res.status(500).json({ message: 'something went wrong with entity' }).end();
+    return;
+  }
+  try {
+    await updateAllEntityMetadata(req, blueprint, entity);
+
+    await entity.save();
+    res.status(200).json(entity).end()
+  } catch (err) {
+    logger.error(err)
+    res.status(500).json({ message: 'something went wrong with entity' }).end();
+  }
 }
 
 export async function removeBlueprintEntity(req, res) {
+  const entityIdentifier = req.params.entityIdentifier;
+  const blueprint: IBlueprint = req.blueprint;
+  const query = getEntityQuery({ blueprint, req, entityIdentifier });
+  try {
+    const entity = await BlueprintEntity.findOne(query)
+      .lean()
+      .exec()
 
+    if (!entity) {
+      res.status(404).json({ message: 'entity not found' }).end();
+      return;
+    }
+    await BlueprintEntity.deleteOne(query).exec();
+    res.json(entity).end();
+  } catch (err) {
+    logger.error(err);
+    res.status(500).json({ message: 'something went wrong with entity deletion' }).end();
+  }
 }

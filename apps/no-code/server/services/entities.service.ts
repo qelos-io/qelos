@@ -1,7 +1,12 @@
 import { IBlueprint } from '../models/blueprint';
 import { IBlueprintPropertyDescriptor } from '@qelos/global-types';
+import BlueprintEntity, { IBlueprintEntity } from '../models/blueprint-entity';
+import * as jq from 'node-jq';
 
 export function validateValue(key: string, value: any, property: IBlueprintPropertyDescriptor) {
+  if (typeof value === 'undefined' && !property.required) {
+    return;
+  }
   if (property.type === 'number') {
     if (isNaN(value)) {
       throw new Error(`Property ${key} must be a number`);
@@ -33,7 +38,7 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
       throw new Error(`Property ${key} must be a time`);
     }
   }
-  if (property.enum && !property.enum.includes(value)) {
+  if (property.enum && property.enum.length && !property.enum.includes(value)) {
     throw new Error(`Property ${key} must be one of ${property.enum.join(', ')}`);
   }
   if (property.min && value < property.min) {
@@ -71,4 +76,38 @@ export function getValidBlueprintMetadata(metadata: any, blueprint: IBlueprint) 
     }
   }
   return validData;
+}
+
+export async function updateEntityMapping(blueprint: IBlueprint, entity: IBlueprintEntity) {
+  const entries = Object.entries(blueprint.updateMapping);
+  await Promise.all(entries
+    .map(
+      ([key, value]) => jq.run(value, entity).then(result => {
+        validateValue(key, result, blueprint.properties[key]);
+        entity.metadata[key] = result;
+      })
+    )
+  );
+}
+
+export function validateEntityRelations(tenant: string, blueprint: IBlueprint, entity: IBlueprintEntity) {
+  return Promise.all(blueprint.relations
+    .map(relation => {
+      const target = entity.metadata[relation.key];
+      if (!target) {
+        return;
+      }
+      return BlueprintEntity.findOne({
+        tenant,
+        blueprint: relation.target,
+        identifier: target,
+      }).select('_id')
+        .lean()
+        .exec()
+        .then(targetEntity => {
+          if (!targetEntity) {
+            throw new Error('relation target not found');
+          }
+        });
+    }))
 }
