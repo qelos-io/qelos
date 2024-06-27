@@ -3,23 +3,21 @@ import { v4 as uuidv4 } from 'uuid';
 import BlueprintEntity, { IBlueprintEntity } from '../models/blueprint-entity';
 import { IBlueprint } from '../models/blueprint';
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
-import { PermissionScope } from '@qelos/global-types';
+import { CRUDOperation, PermissionScope } from '@qelos/global-types';
 import mongoose from 'mongoose';
 import logger from '../services/logger';
-import {
-  getValidBlueprintMetadata,
-  updateEntityMapping,
-  validateEntityRelations,
-} from '../services/entities.service';
+import { getValidBlueprintMetadata, updateEntityMapping, validateEntityRelations, } from '../services/entities.service';
+import { getUserPermittedScopes } from '../services/entities-permissions.service';
 
 type Full<T> = {
   [P in keyof T]-?: T[P];
 }
 
-function getEntityQuery({ entityIdentifier, blueprint, req }: {
+function getEntityQuery({ entityIdentifier, blueprint, req, permittedScopes }: {
   entityIdentifier?: string,
   blueprint: IBlueprint,
-  req: Full<RequestWithUser>
+  req: Full<RequestWithUser>,
+  permittedScopes: PermissionScope[] | true
 }) {
   const query: any = {
     tenant: req.headers.tenant,
@@ -28,10 +26,14 @@ function getEntityQuery({ entityIdentifier, blueprint, req }: {
   if (entityIdentifier) {
     query.identifier = entityIdentifier;
   }
-  if (blueprint.permissionScope === PermissionScope.USER) {
-    query.user = req.user._id
-  } else if (blueprint.permissionScope === PermissionScope.WORKSPACE) {
-    query.workspace = req.workspace._id
+  if (permittedScopes instanceof Array) {
+    if (!permittedScopes.includes(PermissionScope.TENANT)) {
+      if (blueprint.permissionScope === PermissionScope.WORKSPACE) {
+        query.workspace = req.workspace._id
+      } else if (blueprint.permissionScope === PermissionScope.USER) {
+        query.user = req.user._id
+      }
+    }
   }
   return query;
 }
@@ -51,6 +53,11 @@ async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBluepri
 
 export async function getAllBlueprintEntities(req, res) {
   const blueprint = req.blueprint;
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin === 'true');
+  if (!(permittedScopes === true || permittedScopes.length > 0)) {
+    res.status(403).json({ message: 'not permitted' }).end();
+    return;
+  }
   try {
     if (!blueprint) {
       res.status(404).json({ message: 'blueprint not found' }).end();
@@ -58,15 +65,14 @@ export async function getAllBlueprintEntities(req, res) {
     }
     const query = {
       ...qs.parse(req._parsedUrl.query, { depth: 3 }),
-      ...getEntityQuery({ blueprint, req })
+      ...getEntityQuery({ blueprint, req, permittedScopes })
     }
-    logger.log(req, query)
     const entities = await BlueprintEntity.find(query)
       .lean()
       .exec()
 
     res.json(entities).end();
-  } catch  {
+  } catch {
     res.status(500).json({ message: 'something went wrong with entities' }).end();
   }
 }
@@ -74,7 +80,12 @@ export async function getAllBlueprintEntities(req, res) {
 export async function getSingleBlueprintEntity(req, res) {
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
-  const query = getEntityQuery({ blueprint, req, entityIdentifier })
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin === 'true');
+  if (!(permittedScopes === true || permittedScopes.length > 0)) {
+    res.status(403).json({ message: 'not permitted' }).end();
+    return;
+  }
+  const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes })
   try {
     const entity = await BlueprintEntity.findOne(query)
       .lean()
@@ -92,6 +103,11 @@ export async function getSingleBlueprintEntity(req, res) {
 
 export async function createBlueprintEntity(req, res) {
   const blueprint: IBlueprint = req.blueprint;
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.CREATE, req.query.bypassAdmin === 'true');
+  if (!(permittedScopes === true || permittedScopes.length > 0)) {
+    res.status(403).json({ message: 'not permitted' }).end();
+    return;
+  }
   try {
     const entity = new BlueprintEntity({
       tenant: req.headers.tenant,
@@ -116,7 +132,12 @@ export async function createBlueprintEntity(req, res) {
 export async function updateBlueprintEntity(req, res) {
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
-  const query = getEntityQuery({ blueprint, req, entityIdentifier });
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.UPDATE, req.query.bypassAdmin === 'true');
+  if (!(permittedScopes === true || permittedScopes.length > 0)) {
+    res.status(403).json({ message: 'not permitted' }).end();
+    return;
+  }
+  const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes });
   let entity: IBlueprintEntity
   try {
     const givenEntity = await BlueprintEntity.findOne(query).exec()
@@ -147,7 +168,12 @@ export async function updateBlueprintEntity(req, res) {
 export async function removeBlueprintEntity(req, res) {
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
-  const query = getEntityQuery({ blueprint, req, entityIdentifier });
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.DELETE, req.query.bypassAdmin === 'true');
+  if (!(permittedScopes === true || permittedScopes.length > 0)) {
+    res.status(403).json({ message: 'not permitted' }).end();
+    return;
+  }
+  const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes });
   try {
     const entity = await BlueprintEntity.findOne(query)
       .lean()
