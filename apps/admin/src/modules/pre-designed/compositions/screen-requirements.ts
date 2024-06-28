@@ -1,6 +1,7 @@
 import { ref, toRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { defineStore } from 'pinia';
+import { IScreenRequirement } from '@qelos/global-types'
 import { api, getCallData } from '@/services/api';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
@@ -13,7 +14,8 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
 
   const cachedDispatchers = {}
 
-  watch([() => route.meta.screenRequirements, mfes], (reqs: IScreenRequirement[] | undefined) => {
+  watch(() => [route.meta.screenRequirements, mfes], () => {
+    const reqs = route.meta.screenRequirements;
     if (!(reqs instanceof Array && reqs.length)) {
       requirements.value = {}
       return;
