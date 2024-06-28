@@ -3,7 +3,7 @@
   "version": "3.5.2",
   "description": "api proxy middleware",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
-  "homepage": "https://github.com/greenpress/greenpress#readme",
+  "homepage": "https://gitlab.com/qelos/qelos#readme",
   "private": false,
   "main": "./dist/index.js",
   "scripts": {
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/greenpress/greenpress.git"
+    "url": "git+https://gitlab.com/qelos/qelos.git"
   },
   "license": "MIT",
   "devDependencies": {

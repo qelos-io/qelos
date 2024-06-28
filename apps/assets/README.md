@@ -6,8 +6,6 @@ An HTTP server to manage static assets on several assets providers
 - Node.js
 - npm OR yarn
 - MongoDB
-- [Authentication-service](https://github.com/greenpress/authentication-service)
-- [Secrets-service](https://github.com/greenpress/secrets-service)
 
 ## Usage
 ### As a Docker container
