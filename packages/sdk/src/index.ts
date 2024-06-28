@@ -6,6 +6,7 @@ import QlLayouts from './administrator/layouts';
 import QlAuthentication from './authentication';
 import QlWorkspaces from './workspaces';
 import QlInvites from './invites';
+import QlBlueprints from './blueprints';
 
 const noExtraHeadersUrls = new Set(['/api/token/refresh', '/api/signin', '/api/signup'])
 
@@ -17,6 +18,7 @@ export default class QelosSDK extends BaseSDK {
   authentication: QlAuthentication;
   workspaces: QlWorkspaces;
   invites: QlInvites;
+  blueprints: QlBlueprints;
 
   constructor(private options: QelosSDKOptions) {
     super(options);
@@ -26,6 +28,7 @@ export default class QelosSDK extends BaseSDK {
     this.authentication = new QlAuthentication(this.options);
     this.workspaces = new QlWorkspaces(this.options);
     this.invites = new QlInvites(this.options);
+    this.blueprints = new QlBlueprints(this.options);
 
     if (!options.getAccessToken) {
       options.getAccessToken = () => this.authentication.accessToken;
