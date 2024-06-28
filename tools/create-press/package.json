@@ -1,20 +1,20 @@
 {
   "name": "create-press",
   "version": "1.0.0",
-  "description": "Create a new Greenpress application",
+  "description": "Create a new Qelos application",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/greenpress/greenoress.git"
+    "url": "git+https://gitlab.com/qelos/qelos.git"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/greenpress/greenpress/issues"
+    "url": "https://gitlab.com/qelos/qelos/issues"
   },
-  "homepage": "https://github.com/greenpress/greenpress#readme",
+  "homepage": "https://gitlab.com/qelos/qelos#readme",
   "publishConfig": {
     "access": "public"
   },

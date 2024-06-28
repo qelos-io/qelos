@@ -30,9 +30,9 @@
     "@types/node": "^14.11.1",
     "typescript": "^4.9.5"
   },
-  "homepage": "https://github.com/greenpress/greenpress#readme",
+  "homepage": "https://gitlab.com/qelos/qelos#readme",
   "bugs": {
-    "url": "https://github.com/greenpress/greenpress/issues"
+    "url": "https://gitlab.com/qelos/qelos/issues"
   },
   "repository": {
     "type": "git",
