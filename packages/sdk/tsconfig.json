@@ -1,18 +1,18 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "rootDir": "./src",
     "module": "ESNext",
     "target": "esnext",
     "outDir": "./dist",
+    "moduleResolution": "node",
     "sourceMap": true,
     "declaration": true,
     "skipLibCheck": true,
     "paths": {
-      "@qelos/global-types": ["./node_modules/@qelos/global-types/index.ts"]
+      "@qelos/global-types": [
+        "node_modules/@qelos/global-types/index.ts"
+      ]
     }
-  },
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  }
 }
