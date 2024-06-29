@@ -12,8 +12,8 @@ export default class QlBlueprintEntities<T = any> extends BaseSDK {
     return this.callJsonApi<T>(`${this.relativePath}/${this.blueprintKey}/${identifier}`)
   }
 
-  getList() {
-    return this.callJsonApi<T[]>(`${this.relativePath}/${this.blueprintKey}`);
+  getList(query?: Record<string, any>) {
+    return this.callJsonApi<T[]>(`${this.relativePath}/${this.blueprintKey}${query ? `?${new URLSearchParams(query)}` : ''}`);
   }
 
   remove(identifier: string): Promise<any> {

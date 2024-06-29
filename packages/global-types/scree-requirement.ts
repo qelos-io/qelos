@@ -7,5 +7,9 @@ export interface IScreenRequirement {
   fromCrud?: {
     name: string,
     identifier?: string,
+  },
+  fromBlueprint?: {
+    name: string,
+    identifier?: string,
   }
 }

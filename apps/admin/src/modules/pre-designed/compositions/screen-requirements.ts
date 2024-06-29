@@ -5,6 +5,7 @@ import { IScreenRequirement } from '@qelos/global-types'
 import { api, getCallData } from '@/services/api';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
+import Sdk from '@/services/sdk';
 
 export const useScreenRequirementsStore = defineStore('screen-requirements', function useScreenRequirements() {
   const route = useRoute()
@@ -37,7 +38,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
           if (cachedDispatchers[cachedKey]) {
             cachedDispatchers[cachedKey].retry();
           } else {
-            cachedDispatchers[cachedKey] = useDispatcher(() => api.getAll(item.fromCrud.identifier), [])
+            cachedDispatchers[cachedKey] = useDispatcher(() => api.getAll(), [])
           }
           all[item.key] = cachedDispatchers[cachedKey];
         }
@@ -51,6 +52,25 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
             method,
             url: item.fromHTTP.uri
           }).then(getCallData), null)
+        }
+      } else if (item.fromBlueprint) {
+        const entitiesOfBlueprint = Sdk.blueprints.entitiesOf(item.fromBlueprint.name)
+        if (item.fromBlueprint.identifier) {
+          const cachedKey = `blueprint:${item.fromBlueprint.name}:single:${item.fromBlueprint.identifier}`;
+          if (cachedDispatchers[cachedKey]) {
+            cachedDispatchers[cachedKey].retry();
+          } else {
+            cachedDispatchers[cachedKey] = useDispatcher(() => entitiesOfBlueprint.getEntity(item.fromBlueprint.identifier), null)
+          }
+          all[item.key] = cachedDispatchers[cachedKey];
+        } else {
+          const cachedKey = `blueprint:${item.fromBlueprint.name}:all`;
+          if (cachedDispatchers[cachedKey]) {
+            cachedDispatchers[cachedKey].retry();
+          } else {
+            cachedDispatchers[cachedKey] = useDispatcher(() => entitiesOfBlueprint.getList(), [])
+          }
+          all[item.key] = cachedDispatchers[cachedKey];
         }
       }
 
