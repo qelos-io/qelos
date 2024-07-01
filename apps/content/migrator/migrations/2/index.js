@@ -11,7 +11,7 @@ const Configuration = mongoose.model('Configuration')
 /**
  * check potential changes to migrate
  */
-async function check () {
+async function check() {
   const hasConfig = await Configuration.countDocuments({ key: appConfiguration })
   return !hasConfig
 }
@@ -19,7 +19,7 @@ async function check () {
 /**
  * migrate relevant db rows to fit the new upgrade
  */
-function migrate () {
+function migrate() {
   const row = new Configuration({
     tenant: TENANT,
     key: appConfiguration,
@@ -35,7 +35,7 @@ function migrate () {
       themeStylesUrl: '',
       homeScreen: '/',
       scriptUrl: '',
-      websiteUrls: ['localhost'],
+      websiteUrls: ['localhost:3000', '127.0.0.1'],
       colorsPalette: {
         mainColor: '#84a98c',
         textColor: '#000',
@@ -57,7 +57,7 @@ function migrate () {
 /**
  * check if all migration changes done as expected
  */
-function verify () {
+function verify() {
   return Configuration.countDocuments({ key: appConfiguration }).then(count => {
     if (!count) return Promise.reject()
   })
