@@ -1,18 +1,32 @@
-let shutdown = () => {
+import fs from 'node:fs';
+import path from 'node:path';
+
+let shutdown = (_code?: number) => {
   process.exit();
 };
 
 if (process.env.NODE_ENV !== 'production') {
-  shutdown = () => {
-    const fs = require('fs');
+  console.log('trying to require tmp file...')
+  try {
     const cwd = process.cwd();
-    fs.readdirSync(cwd).forEach(filename => {
-      if (filename.includes('index.') || filename.includes('server.')) {
-        const filePath = require('path').join(cwd, filename);
-        fs.writeFileSync(filePath, fs.readFileSync(filePath))
+    const tempFolder = path.join(cwd, 'tmp');
+    const tempFile = path.join(tempFolder, 'tmp.js');
+    if (!fs.existsSync(tempFolder)) {
+      fs.mkdirSync(tempFolder)
+    }
+    if (!fs.existsSync(tempFile)) {
+      fs.writeFileSync(tempFile, '');
+    }
+    require(tempFile)
+
+    shutdown = (code?: number | string) => {
+      if (code?.toString() === '1') {
+        fs.writeFileSync(tempFile, '')
       }
-    })
-    process.exit();
+      process.exit();
+    }
+  } catch (err) {
+    console.error(err)
   }
 
   process.on('exit', shutdown);
