@@ -5,7 +5,7 @@
       <img :alt="appConfig.name" :src="appConfig.logoUrl">
     </router-link>
 
-    <el-menu router>
+    <el-menu router :default-active="$route.path">
       <template v-for="group in navBar.top">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.name">{{ group.name }}</h4>
@@ -58,7 +58,7 @@
           <span>{{ $t('Storage & Assets') }}</span>
         </el-menu-item>
 
-        <el-menu-item v-if="isAdmin" :route="{name: 'users'}" index="/users">
+        <el-menu-item v-if="isAdmin" index="/users">
           <el-icon>
             <icon-user/>
           </el-icon>
@@ -109,14 +109,12 @@
 </template>
 
 <script lang="ts" setup>
-import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { isAdmin, isPrivilegedUser } from '@/modules/core/store/auth';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 
-const router = useRouter()
 const { navBar } = storeToRefs(usePluginsMicroFrontends());
 const { appConfig } = useAppConfiguration();
 
@@ -145,6 +143,7 @@ nav .el-menu, nav {
   --el-menu-text-color: var(--secondary-color);
   --el-menu-hover-bg-color: var(--main-color);
   --el-menu-bg-color: var(--nav-bg-color);
+  --el-menu-active-color: var(--third-color);
   border: 0;
   overflow: auto;
 }

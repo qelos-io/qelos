@@ -28,7 +28,7 @@ function migrate() {
       name: 'QELOS',
       language: 'en',
       direction: 'ltr',
-      logoUrl: '/logo.png',
+      logoUrl: "https://subscribe.qelos.io/qelos.svg",
       description: 'building SaaS products',
       slogan: 'building platforms with ease',
       keywords: 'saas, platform, micro-frontends, vue',
@@ -37,17 +37,17 @@ function migrate() {
       scriptUrl: '',
       websiteUrls: ['localhost:3000', '127.0.0.1'],
       colorsPalette: {
-        mainColor: '#84a98c',
-        textColor: '#000',
-        secondaryColor: '#84a98c',
-        thirdColor: '#c6dccc',
-        negativeColor: '#fff',
-        bgColor: '#2f3e46',
-        bordersColor: '#354f52',
-        inputsTextColor: '#000',
-        inputsBgColor: '#d6eedd',
-        linksColor: '#84a98c',
-        navigationBgColor: '#354f52',
+        mainColor: "#4d1438",
+        textColor: "#000",
+        secondaryColor: "#ffffff",
+        thirdColor: "#e2c7f0",
+        bgColor: "#ffffff",
+        bordersColor: "#354f52",
+        linksColor: "#4d1438",
+        navigationBgColor: "#000000",
+        negativeColor: "#ededed",
+        inputsTextColor: "#000",
+        inputsBgColor: "#ffffff"
       }
     }
   })
