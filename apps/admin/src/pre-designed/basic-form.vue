@@ -45,7 +45,7 @@ function renderParams(obj, params) {
 async function handleAfterSubmit(updatedItem) {
   if (crud.value.navigateAfterSubmit) {
     const navigateTo = crud.value.navigateAfterSubmit;
-    const templateParams = { ...updatedItem, IDENTIFIER: createdItem[identifierKey.value] }
+    const templateParams = { ...updatedItem, IDENTIFIER: updatedItem[identifierKey.value] }
     await router.push({
       name: navigateTo.name,
       params: renderParams(navigateTo.params || {}, templateParams),
