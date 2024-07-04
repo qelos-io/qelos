@@ -11,7 +11,6 @@ import { Types, Schema } from 'mongoose';
 
 import ObjectId = Types.ObjectId
 import { getValidMetadata } from '../services/users';
-import { authConfigCheck } from '../middleware/auth-config-check';
 
 const privilegedUserFields = 'username phone fullName firstName lastName birthDate roles';
 
@@ -156,7 +155,7 @@ async function setUserEncryptedData(req: AuthRequest, res: Response) {
 }
 
 async function createUser(req: AuthRequest, res: Response) {
-  logger.log('create new user from admin', req.authConfigCheck, req.body)
+  logger.log('create new user from admin', req.authConfig, req.body)
   const { tenant, name, internalMetadata, metadata, ...userData } = req.body
   const user = new User(userData);
   user.tenant = req.headers.tenant;
