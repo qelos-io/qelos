@@ -6,7 +6,6 @@
 </template>
 
 <script lang="ts" setup>
-import { useRoute, useRouter } from 'vue-router';
 import { ref, toRef, toRefs } from 'vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import VRuntimeTemplate from 'vue3-runtime-template';
@@ -14,8 +13,6 @@ import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-it
 import { useDynamicRouteItem } from '@/modules/pre-designed/compositions/dynamic-route-item';
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
 
-const route = useRoute();
-const router = useRouter();
 const mfes = usePluginsMicroFrontends();
 const item = ref();
 

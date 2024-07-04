@@ -11,61 +11,44 @@ import { Types, Schema } from 'mongoose';
 
 import ObjectId = Types.ObjectId
 import { getValidMetadata } from '../services/users';
+import { authConfigCheck } from '../middleware/auth-config-check';
 
-const privilegedUserFields = 'username email phone fullName firstName lastName birthDate roles';
+const privilegedUserFields = 'username phone fullName firstName lastName birthDate roles';
 
 function getUserIdIfExists(_id, tenant) {
   return User.findOne({ _id, tenant }).select('_id').lean().exec();
 }
 
 function getUsersForAdmin(req: AuthRequest, res: Response): void {
-  // support old versions
-  const email = req.query.email?.toString().toLowerCase().trim().replace(/ /g, '+') || undefined;
+  logger.log('getting users for admin', req.query)
+  try {
+    // support old versions
+    const username = req.query.username?.toString().toLowerCase().trim().replace(/ /g, '+') || undefined;
 
-  const username = email || req.query.username?.toString().toLowerCase().trim().replace(/ /g, '+') || undefined;
+    const query = {
+      tenant: req.headers.tenant,
+      username: req.query.exact ? username : (username ? new RegExp(username, 'i') : undefined),
+    }
 
+    logger.log('admin db query', query)
 
-  const query = {
-    tenant: req.headers.tenant,
-    username: req.query.exact ? username : (username ? new RegExp(username, 'i') : undefined),
-    $or: []
+    User
+      .find(query)
+      .select(privilegedUserFields)
+      .lean()
+      .exec()
+      .then((users = []) => {
+        logger.log('users found', users)
+        res.json(users).end();
+      })
+      .catch((err) => {
+        logger.error('failed to load users for admin', req.query, err);
+        res.json([]).end();
+      })
+  } catch (err) {
+    logger.error('failed to load users for admin', req.query, err);
+    res.json([]).end();
   }
-  if (!username) {
-    delete query.username;
-    delete query.$or;
-  } else {
-    // temporary to support migration
-    query.$or = [
-      {
-        username: query.username
-      },
-      {
-        email: query.username
-      }
-    ]
-    delete query.username;
-  }
-
-  User
-    .find(query)
-    .select(privilegedUserFields)
-    .lean()
-    .exec()
-    .then(users => {
-      const emptyUsernames = users.filter(user => !user.username)
-      emptyUsernames.forEach(user => user.username = user.email);
-      res.json(users).end();
-
-      if (emptyUsernames.length) {
-        logger.log('user email migration for tenant ' + query.tenant);
-        Promise.all(emptyUsernames.map(user => User.updateOne({ _id: user._id }, {
-          $set: { username: user.username },
-        }).exec())).catch()
-      }
-    })
-    .catch(() => {
-      res.json([]).end();
-    })
 }
 
 function getUsers(req: AuthRequest, res: Response): RequestHandler {
@@ -173,6 +156,7 @@ async function setUserEncryptedData(req: AuthRequest, res: Response) {
 }
 
 async function createUser(req: AuthRequest, res: Response) {
+  logger.log('create new user from admin', req.authConfigCheck, req.body)
   const { tenant, name, internalMetadata, metadata, ...userData } = req.body
   const user = new User(userData);
   user.tenant = req.headers.tenant;

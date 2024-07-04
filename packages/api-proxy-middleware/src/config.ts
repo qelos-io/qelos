@@ -27,9 +27,6 @@ export function getApiProxyConfig(): IApiProxyConfig {
     contentService: getServiceFromEnvVars('content', 'CONTENT_SERVICE', {
       port: 9001,
       proxies: [
-        '/api/categories',
-        '/api/posts',
-        '/api/tags',
         '/api/blocks',
         '/api/configurations',
         '/api/layouts',

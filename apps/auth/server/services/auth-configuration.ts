@@ -24,7 +24,12 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
     let value: any;
     try {
       const config = await callContentService('/api/configurations/auth-configuration', tenant);
-      value = config.metadata;
+      value = config.metadata || {
+        treatUsernameAs: 'email',
+        showLoginPage: true,
+        showRegisterPage: false,
+        additionalUserFields: [],
+      };
     } catch {
       value = {
         treatUsernameAs: 'email',
