@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  qelos-db:
+    image: mongo
+    container_name: qelos-db
+    ports:
+      - "27017:27017"
+      - "27018:27018"
+      - "27019:27019"
+    volumes:
+      - ./db-data:/data/db
+    restart: always
+networks:
+  common_network:
