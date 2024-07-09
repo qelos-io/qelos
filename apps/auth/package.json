@@ -56,16 +56,5 @@
     "passport",
     "passport-local",
     "validator"
-  ],
-  "bundleDependencies": [
-    "@qelos/api-kit",
-    "@qelos/cache-manager",
-    "bcryptjs",
-    "cookie-parser",
-    "jsonwebtoken",
-    "mongoose",
-    "passport",
-    "passport-local",
-    "validator"
   ]
 }

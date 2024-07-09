@@ -51,8 +51,5 @@
   "gitHead": "62025e31d7904cabdd7619aa9e7b02d5ee6e0b93",
   "bundledDependencies": [
     "express"
-  ],
-  "bundleDependencies": [
-    "express"
   ]
 }

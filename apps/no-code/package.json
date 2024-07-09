@@ -43,13 +43,7 @@
   "bundledDependencies": [
     "@qelos/api-kit",
     "@qelos/cache-manager",
-    "mongoose",
-    "node-fetch",
-    "uniqid"
-  ],
-  "bundleDependencies": [
-    "@qelos/api-kit",
-    "@qelos/cache-manager",
+    "@qelos/global-types",
     "mongoose",
     "node-fetch",
     "uniqid"

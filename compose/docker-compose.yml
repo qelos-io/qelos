@@ -3,7 +3,7 @@ services:
   redis:
     image: redis:7.0-alpine
   admin:
-    image: registry.gitlab.com/qelos/qelos/admin-panel:${ADMIN_PANEL_VERSION}
+    image: registry.gitlab.com/qelos/qelos/admin:${ADMIN_PANEL_VERSION}
     restart: always
   assets:
     image: registry.gitlab.com/qelos/qelos/assets:${ASSETS_SERVICE_VERSION}
@@ -91,6 +91,20 @@ services:
     restart: always
     environment:
       MONGO_URI: ${PLUGINS_MONGODB_URI}
+      REDIS_URL: redis://redis
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      SECRETS_TOKEN: ${PLUGINS_SERVICE_SECRET}
+      AUTH_SERVICE_URL: auth
+      SECRETS_SERVICE_URL: secrets
+      IP: 0.0.0.0
+      SHOW_LOGS: ${SHOW_LOGS}
+    depends_on:
+      - redis
+  no-code:
+    image: registry.gitlab.com/qelos/qelos/no-code:${NOCODE_SERVICE_VERSION}
+    restart: always
+    environment:
+      MONGO_URI: ${NOCODE_MONGODB_URI}
       REDIS_URL: redis://redis
       INTERNAL_SECRET: ${INTERNAL_SECRET}
       SECRETS_TOKEN: ${PLUGINS_SERVICE_SECRET}
