@@ -29,6 +29,10 @@ function getUsersForAdmin(req: AuthRequest, res: Response): void {
       username: req.query.exact ? username : (username ? new RegExp(username, 'i') : undefined),
     }
 
+    if (!query.username) {
+      delete query.username;
+    }
+
     logger.log('admin db query', query)
 
     User
