@@ -1,8 +1,44 @@
-import { updateUser } from '../services/users'
+import { getUser, updateUser } from '../services/users'
 import { Response } from 'express'
 import { AuthRequest } from '../../types'
+import { getWorkspaceForUser } from '../services/workspaces';
+
+async function getImpersonate(req: AuthRequest, res: Response) {
+  const userId = req.headers['x-impersonate-user'] as string;
+  const workspaceId = req.headers['x-impersonate-workspace'] as string;
+  const [user, workspace] = await Promise.all([
+    getUser({ username: req.headers['x-impersonate-user'] as string, tenant: req.userPayload.tenant }).catch(),
+    workspaceId ? getWorkspaceForUser(req.headers.tenant, userId, workspaceId).catch() : Promise.resolve()
+  ])
+
+  if (!user) {
+    return res.status(403).json({ message: 'user not exist' }).end()
+  }
+  if (workspaceId && !workspace) {
+    return res.status(403).json({ message: 'workspace not exist' }).end()
+  }
+
+  const firstName = user.firstName;
+  const lastName = user.lastName;
+  const fullName = user.fullName || `${firstName} ${lastName}`;
+  res.status(200).json({
+    _id: user._id,
+    username:user.username,
+    email: user.email,
+    name: fullName,
+    firstName,
+    lastName,
+    fullName,
+    roles: user.roles,
+    workspace
+  }).end();
+}
 
 export function getMe(req: AuthRequest, res: Response) {
+  if (req.userPayload.isPrivileged && req.headers['x-impersonate-user']) {
+    return getImpersonate(req, res)
+  }
+
   const firstName = req.userPayload.firstName;
   const lastName = req.userPayload.lastName;
   const fullName = req.userPayload.fullName || req.userPayload.name || `${firstName} ${lastName}`;

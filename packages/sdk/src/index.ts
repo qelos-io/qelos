@@ -1,4 +1,4 @@
-import {QelosSDKOptions} from './types';
+import { QelosSDKOptions } from './types';
 import BaseSDK from './base-sdk';
 import QlAppConfigurations from './configurations';
 import QlBlocks from './blocks';
@@ -11,6 +11,7 @@ import QlBlueprints from './blueprints';
 const noExtraHeadersUrls = new Set(['/api/token/refresh', '/api/signin', '/api/signup'])
 
 export default class QelosSDK extends BaseSDK {
+  #customHeaders = {}
 
   blocks: QlBlocks;
   layouts: QlLayouts;
@@ -37,7 +38,7 @@ export default class QelosSDK extends BaseSDK {
     if (!options.extraHeaders) {
       options.extraHeaders = async (relativeUrl: string, forceRefresh?: boolean) => {
         if (globalThis.navigator || noExtraHeadersUrls.has(relativeUrl)) {
-          return {};
+          return { ...this.#customHeaders };
         }
         let token = forceRefresh ? '' : options.getAccessToken();
         if (!token) {
@@ -45,11 +46,19 @@ export default class QelosSDK extends BaseSDK {
           token = options.getAccessToken();
         }
         if (token) {
-          return {authorization: 'Bearer ' + token}
+          return { authorization: 'Bearer ' + token, ...this.#customHeaders }
         }
-        return {}
+        return { ...this.#customHeaders }
       }
     }
+  }
+
+  setCustomHeader(key: string, value: string) {
+    this.#customHeaders[key] = value;
+  }
+
+  removeCustomHeader(key: string) {
+    delete this.#customHeaders[key];
   }
 
 }

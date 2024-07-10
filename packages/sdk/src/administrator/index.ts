@@ -27,4 +27,16 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
     this.events = new QlEvents(options);
     this.adminWorkspaces = new QlAdminWorkspaces(options);
   }
+
+  impersonateUser(userId: string, workspaceId?: string) {
+    this.setCustomHeader('x-impersonate-user', userId);
+    if (workspaceId) {
+      this.setCustomHeader('x-impersonate-workspace', workspaceId);
+    }
+  }
+
+  clearImpersonation() {
+    this.removeCustomHeader('x-impersonate-user');
+    this.removeCustomHeader('x-impersonate-workspace');
+  }
 }

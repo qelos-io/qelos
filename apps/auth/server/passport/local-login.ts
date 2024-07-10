@@ -3,27 +3,8 @@ import { getUser, comparePassword, setToken, clearOldTokens } from '../services/
 import { Strategy } from 'passport-local';
 import { UserDocument, UserModel } from '../models/user';
 import { getWorkspaceConfiguration } from '../services/workspace-configuration';
-import Workspace from '../models/workspace';
 import logger from '../services/logger';
-
-function getWorkspaceForUser(tenant: string, userId: string, workspaceId: string) {
-  const query: any = {
-    tenant,
-    'members.user': userId
-  };
-  if (workspaceId) {
-    query._id = workspaceId;
-  }
-  return Workspace
-    .findOne(query)
-    .select('name members.$')
-    .exec()
-    .then(({ _id, name, members }) => ({
-      _id,
-      name,
-      roles: members[0].roles
-    }))
-}
+import { getWorkspaceForUser } from '../services/workspaces';
 
 module.exports = new Strategy(
   {
