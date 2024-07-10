@@ -34,7 +34,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "d6e98230be662ec343c5b09b9115d21a9358e682",
+  "gitHead": "a952292a7de503674aac40136fb448dc6350e55a",
   "bundledDependencies": [
     "@google-cloud/storage",
     "@qelos/api-kit",
