@@ -8,4 +8,5 @@ export interface QelosSDKOptions {
   getAccessToken?: () => undefined | string;
   extraHeaders?: (relativeUrl: string, forceRefresh?: boolean) => Promise<{ [key: string]: string }>;
   forceRefresh?: boolean;
+  extraQueryParams?: () => Record<string, string>
 }

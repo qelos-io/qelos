@@ -37,4 +37,9 @@ export default class BaseSDK {
       return body
     });
   }
+
+  getQueryParams(moreQuery?: Record<string, any>) {
+    const qs = this.qlOptions.extraQueryParams ? { ...this.qlOptions.extraQueryParams(), ...(moreQuery || {}) } : moreQuery;
+    return qs ? `?${new URLSearchParams(qs)}` : '';
+  }
 }

@@ -36,12 +36,16 @@ const blueprintMapping = ref(
 
 provide('submitting', toRef(props, 'submitting'));
 
+function getKeyFromName(newName: string) {
+  return newName
+      .replace(/ /g, '_')
+      .replace(/[^a-zA-Z0-9_]/g, '')
+      .toLowerCase()
+}
+
 watch(() => edit.name, (newName) => {
   if (newName && newName.trim()) {
-    edit.identifier = newName
-        .replace(/ /g, '_')
-        .replace(/[^a-zA-Z0-9_]/g, '')
-        .toLowerCase()
+    edit.identifier = getKeyFromName(newName)
   }
 })
 
@@ -103,7 +107,7 @@ function submit() {
           <div v-for="(entry, index) in blueprintProperties" :key="index" class="property">
             <FormRowGroup>
               <FormInput v-model="entry.key" title="Key" required/>
-              <FormInput v-model="entry.title" title="Title" required/>
+              <FormInput v-model="entry.title" @input="entry.key = getKeyFromName($event)" title="Title" required/>
               <BlueprintPropertyTypeSelector v-model="entry.type"/>
             </FormRowGroup>
             <FormInput v-model="entry.description" title="Description"/>

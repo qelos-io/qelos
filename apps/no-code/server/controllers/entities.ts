@@ -108,13 +108,23 @@ export async function createBlueprintEntity(req, res) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;
   }
+  let user = req.user._id;
+  let workspace = req.workspace?._id;
+  if (permittedScopes === true) {
+    if (req.body.user) {
+      user = req.body.user;
+    }
+    if (req.body.workspace) {
+      workspace = req.body.workspace;
+    }
+  }
   try {
     const entity = new BlueprintEntity({
       tenant: req.headers.tenant,
       blueprint: blueprint.identifier,
       identifier: blueprint.entityIdentifierMechanism === 'objectid' ? new mongoose.Types.ObjectId() : uuidv4(),
-      user: req.user._id,
-      workspace: req.workspace?._id,
+      user,
+      workspace,
       metadata: {},
     });
 
@@ -138,6 +148,14 @@ export async function updateBlueprintEntity(req, res) {
     return;
   }
   const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes });
+  if (permittedScopes === true) {
+    if (req.body.user) {
+      query.user = req.body.user;
+    }
+    if (req.body.workspace) {
+      query.workspace = req.body.workspace;
+    }
+  }
   let entity: IBlueprintEntity
   try {
     const givenEntity = await BlueprintEntity.findOne(query).exec()
@@ -174,6 +192,14 @@ export async function removeBlueprintEntity(req, res) {
     return;
   }
   const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes });
+  if (permittedScopes === true) {
+    if (req.body.user) {
+      query.user = req.body.user;
+    }
+    if (req.body.workspace) {
+      query.workspace = req.body.workspace;
+    }
+  }
   try {
     const entity = await BlueprintEntity.findOne(query)
       .lean()
