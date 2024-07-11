@@ -1,4 +1,4 @@
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import router from '../../../router'
 import { api } from '@/services/api'
 import { IAuthStore } from './types/auth-store'
@@ -12,7 +12,7 @@ export const authStore = reactive<IAuthStore>({
 
 export const isAdmin = computed(() => !!(authStore.user && authStore.user.roles.includes('admin')));
 export const isPrivilegedUser = computed(() => isAdmin.value || authStore.user.roles.includes('editor'));
-
+export const isEditingEnabled = ref(false);
 function loadUser() {
   authStore.userPromise = api.get<IUser>('/api/me').then(res => res.data)
   return authStore.userPromise

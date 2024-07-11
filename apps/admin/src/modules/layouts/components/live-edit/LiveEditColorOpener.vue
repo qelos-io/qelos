@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import {useLiveEditStore} from '@/modules/layouts/store/live-edit';
-import {isAdmin} from '@/modules/core/store/auth';
+import { useLiveEditStore } from '@/modules/layouts/store/live-edit';
+import { isEditingEnabled } from '@/modules/core/store/auth';
 
-const {openPaletteColorLiveEdit} = useLiveEditStore()
+const { openPaletteColorLiveEdit } = useLiveEditStore()
 
-defineProps<{color: string}>()
+defineProps<{ color: string }>()
 </script>
 
 <template>
-  <div v-if="isAdmin" class="live-edit-opener" @click.stop="openPaletteColorLiveEdit(color)">
-    <el-icon >
+  <div v-if="isEditingEnabled" class="live-edit-opener" @click.stop="openPaletteColorLiveEdit(color)">
+    <el-icon>
       <icon-brush/>
     </el-icon>
   </div>

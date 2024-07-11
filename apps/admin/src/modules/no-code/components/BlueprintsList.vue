@@ -59,4 +59,11 @@ const removeWithConfirm = useConfirmAction(store.remove)
     max-width: none;
   }
 }
+
+table {
+  border-collapse: collapse;
+  td {
+    padding: 3px;
+  }
+}
 </style>

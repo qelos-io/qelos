@@ -22,7 +22,7 @@ export function useSingleItemCrud() {
   });
   const api = computed(() => mfes.cruds[crud.value.name].api);
   const relevantStructure = computed(() => {
-    return (route.meta.mfe as any)?.structure;
+    return (route.meta.mfe as any)?.structure || '<div></div>';
   });
 
   return {

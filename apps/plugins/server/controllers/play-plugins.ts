@@ -4,11 +4,11 @@ import {registerToPlugin} from '../services/manifests-service';
 
 export async function getPluginProxy({tenant, apiPath, host, appUrl}): Promise<Pick<IPlugin, 'token' | 'proxyUrl'> | null> {
   const [plugin, token] = await Promise.all([
-    Plugin.findOne({tenant, apiPath}).select('token proxyUrl authAcquire').lean(),
+    Plugin.findOne({ tenant, apiPath }).select('token proxyUrl authAcquire').lean(),
     getPluginAccessToken(tenant, apiPath)
   ]);
 
-  if (!plugin) {
+  if (!(plugin && plugin.proxyUrl)) {
     return null;
   }
 
@@ -23,5 +23,5 @@ export async function getPluginProxy({tenant, apiPath, host, appUrl}): Promise<P
     }
   }
 
-  return {token: accessToken, proxyUrl: plugin.proxyUrl};
+  return { token: accessToken, proxyUrl: plugin.proxyUrl };
 }

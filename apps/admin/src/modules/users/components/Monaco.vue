@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref, defineProps} from 'vue'
+import { onMounted, ref, defineProps } from 'vue'
 import monaco from '@/services/monaco-service'
 
 const props = defineProps({
@@ -8,14 +8,23 @@ const props = defineProps({
 })
 
 const monacoRef = ref();
-const monacoInstance = ref<ReturnType<typeof monaco.editor.create>>()
+let monacoInstance;
 
 onMounted(() => {
-  monacoInstance.value = monaco.editor.create(monacoRef.value, {
+  monacoInstance = monaco.editor.create(monacoRef.value, {
     theme: 'vs-dark',
     language: props.language || 'json',
     value: props.modelValue //metaDataRef.value,
   })
+})
+
+defineExpose({
+  getMonaco() {
+    return monacoInstance;
+  },
+  updateValue: (value: string) => {
+    monacoInstance?.setValue(value)
+  }
 })
 
 </script>

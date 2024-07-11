@@ -156,6 +156,10 @@ export async function updatePlugin(req, res) {
     const newRefreshToken = allowedChanges.authAcquire?.refreshToken;
     Object.assign(plugin, allowedChanges);
 
+    if (allowedChanges.microFrontends) {
+      logger.log('microfrontends changed', allowedChanges.microFrontends)
+      plugin.markModified('microFrontends');
+    }
     plugin.encodePath();
 
     if (newRefreshToken) {

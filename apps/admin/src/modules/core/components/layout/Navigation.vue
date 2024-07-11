@@ -72,6 +72,13 @@
           <span>{{ $t('Drafts') }}</span>
         </el-menu-item>
 
+        <el-menu-item v-if="isAdmin" :route="{name: 'blueprints'}" index="/no-code/blueprints">
+          <el-icon>
+            <font-awesome-icon :icon="['fas', 'database']" />
+          </el-icon>
+          <span>{{ $t('Blueprints') }}</span>
+        </el-menu-item>
+
         <el-menu-item v-if="isAdmin" :route="{name: 'configurations'}" index="/configurations">
           <el-icon>
             <icon-setting/>
@@ -102,7 +109,16 @@
           </el-menu-item>
         </div>
       </template>
-
+      <p v-if="isAdmin" style="text-align: center">
+        <span style="padding-inline-end: 10px; color: var(--negative-color)">{{ $t('Edit Design') }}</span>
+        <span>
+          <el-switch
+              v-model="isEditingEnabled"
+              size="large"
+              inline-prompt
+          />
+        </span>
+      </p>
       <LiveEditColorOpener color="navigationBgColor"/>
     </el-menu>
   </nav>
@@ -111,9 +127,10 @@
 <script lang="ts" setup>
 import { storeToRefs } from 'pinia';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
-import { isAdmin, isPrivilegedUser } from '@/modules/core/store/auth';
+import { isAdmin, isEditingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 const { navBar } = storeToRefs(usePluginsMicroFrontends());
 const { appConfig } = useAppConfiguration();

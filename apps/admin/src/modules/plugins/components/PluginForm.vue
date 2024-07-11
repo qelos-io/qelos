@@ -15,59 +15,100 @@
           </el-button>
         </div>
       </div>
-      <h2>{{ $t('Basic Information') }}</h2>
-      <FormRowGroup>
-        <FormInput title="Name" v-model="edit.name"/>
-        <FormInput title="Description" v-model="edit.description"/>
-      </FormRowGroup>
-      <h2>{{ $t('APIs') }}</h2>
-      <FormRowGroup>
-        <FormInput title="API Path" :label="apiPathLabel" v-model="edit.apiPath"/>
-        <FormInput title="Proxy URL" :label="proxyUrlLabel" v-model="edit.proxyUrl"/>
-      </FormRowGroup>
-      <h2>{{ $t('Hooks & Events') }}</h2>
-      <h2>{{ $t('CRUDs') }}</h2>
-      <h2>{{ $t('Micro-Frontends') }}</h2>
-      <div v-for="(mfe, index) in edit.microFrontends" :key="index">
-        <FormRowGroup>
-          <FormInput class="flex-0" type="switch" v-model="mfe.active"/>
-          <FormInput title="Name" v-model="mfe.name"/>
-          <FormInput title="Description" v-model="mfe.description"/>
-          <div class="flex-0 remove-row">
-            <RemoveButton @click="edit.microFrontends.splice(index, 1)"/>
+      <el-collapse accordion>
+        <el-collapse-item>
+          <template #title>
+            <h2>{{ $t('Basic Information') }}</h2>
+          </template>
+          <FormRowGroup>
+            <FormInput title="Name" v-model="edit.name"/>
+            <FormInput title="Description" v-model="edit.description"/>
+          </FormRowGroup>
+        </el-collapse-item>
+        <el-collapse-item>
+          <template #title>
+            <h2>{{ $t('APIs') }}</h2>
+          </template>
+          <FormRowGroup>
+            <FormInput title="API Path" :label="apiPathLabel" v-model="edit.apiPath"/>
+            <FormInput title="Proxy URL" :label="proxyUrlLabel" v-model="edit.proxyUrl"/>
+          </FormRowGroup>
+        </el-collapse-item>
+        <el-collapse-item>
+          <template #title>
+            <h2>{{ $t('Hooks & Events') }}</h2>
+          </template>
+          Soon
+        </el-collapse-item>
+        <el-collapse-item>
+          <template #title>
+            <h2>{{ $t('CRUDs') }}</h2>
+          </template>
+          Soon
+        </el-collapse-item>
+        <el-collapse-item>
+          <template #title>
+            <h2>{{ $t('Micro-Frontends') }}</h2>
+          </template>
+          <div v-for="(mfe, index) in edit.microFrontends" :key="index" class="sub-item">
+            <FormRowGroup>
+              <FormInput class="flex-0" type="switch" v-model="mfe.active"/>
+              <FormInput title="Name" v-model="mfe.name"/>
+              <FormInput title="Description" v-model="mfe.description"/>
+              <div class="flex-0 remove-row">
+                <RemoveButton @click="edit.microFrontends.splice(index, 1)"/>
+              </div>
+            </FormRowGroup>
+            <FormRowGroup>
+              <FormInput title="URL" v-model="mfe.url"/>
+              <FormInput title="Roles" :model-value="mfe.roles.join(',')"
+                         @update:modelValue="mfe.roles = $event.split(',')"/>
+              <FormInput title="Workspace Roles" :model-value="mfe.workspaceRoles"
+                         @update:modelValue="mfe.workspaceRoles = $event.split(',')"/>
+            </FormRowGroup>
+            <FormInput title="Route?" type="switch"
+                       :model-value="!!mfe.route"
+                       @change="mfe.route = $event ? {navBarPosition: false} : undefined"/>
+            <FormRowGroup v-if="mfe.route">
+              <FormInput title="Route Name" v-model="mfe.route.name"/>
+              <FormInput title="Route Path" v-model="mfe.route.path"/>
+              <NavigationPositionSelector v-model="mfe.route.navBarPosition"/>
+            </FormRowGroup>
+            <FormRowGroup >
+              <FormInput title="No code / Low Code Screens?" type="switch"
+                         :model-value="!!mfe.use"
+                         @change="mfe.use = $event ? 'plain' : undefined"/>
+              <PreDesignedScreensSelector v-if="mfe.use" v-model="mfe.use"/>
+            </FormRowGroup>
           </div>
-        </FormRowGroup>
-        <FormRowGroup>
-          <FormInput title="URL" v-model="mfe.url"/>
-          <FormInput title="Roles" :model-value="mfe.roles.join(',')"
-                     @update:modelValue="mfe.roles = $event.split(',')"/>
-          <FormInput title="Workspace Roles" :model-value="mfe.workspaceRoles"
-                     @update:modelValue="mfe.workspaceRoles = $event.split(',')"/>
-        </FormRowGroup>
-      </div>
-      <AddMore
-          @click="edit.microFrontends.push({ name: '', description: '', active: true, opened: true, url: '', roles: [], workspaceRoles: [] })"/>
-      <h2>{{ $t('Injectables') }}</h2>
-      <div v-for="(inject, index) in edit.injectables" :key="index">
-        <FormRowGroup>
-          <FormInput class="flex-0" type="switch" v-model="inject.active"/>
-          <FormInput title="Name" v-model="inject.name"/>
-          <FormInput title="Description" v-model="inject.description"/>
-          <div class="flex-0 remove-row">
-            <RemoveButton @click="edit.injectables.splice(index, 1)"/>
+          <AddMore @click="addMoreMicroFrontend"/>
+        </el-collapse-item>
+        <el-collapse-item>
+          <template #title>
+            <h2>{{ $t('Injectables') }}</h2>
+          </template>
+          <div v-for="(inject, index) in edit.injectables" class="sub-item" :key="index">
+            <FormRowGroup>
+              <FormInput class="flex-0" type="switch" v-model="inject.active"/>
+              <FormInput title="Name" v-model="inject.name"/>
+              <FormInput title="Description" v-model="inject.description"/>
+              <div class="flex-0 remove-row">
+                <RemoveButton @click="edit.injectables.splice(index, 1)"/>
+              </div>
+            </FormRowGroup>
+            <Monaco v-if="inject.active" v-model="inject.html" language="html"/>
           </div>
-        </FormRowGroup>
-        <Monaco v-if="inject.active" v-model="inject.html" language="html"/>
-      </div>
-      <AddMore @click="addMoreInjectable"/>
-      <h2>{{ $t('Summary') }}</h2>
-      <Monaco v-model="pluginJson" language="json"/>
+          <AddMore @click="addMoreInjectable"/>
+        </el-collapse-item>
+      </el-collapse>
 
+      <h2>{{ $t('Summary') }}</h2>
+      <Monaco ref="editor" :model-value="pluginJson" @change="pluginJson = editor.getMonaco().getValue()" language="json"/>
     </div>
   </el-form>
 </template>
 <script lang="ts" setup>
-import { computed, PropType, provide, reactive, toRef } from 'vue';
+import { computed, PropType, provide, reactive, ref, toRef, watch } from 'vue';
 import { IPlugin } from '@/services/types/plugin';
 import EditPluginHeader from './EditPluginHeader.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
@@ -75,6 +116,8 @@ import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+import NavigationPositionSelector from '@/modules/plugins/components/NavigationPositionSelector.vue';
+import PreDesignedScreensSelector from '@/modules/plugins/components/PreDesignedScreensSelector.vue';
 
 const props = defineProps({
   plugin: Object as PropType<Partial<IPlugin>>,
@@ -82,21 +125,25 @@ const props = defineProps({
 });
 
 provide('submitting', toRef(props, 'submitting'))
-
+const editor = ref()
 const emit = defineEmits(['submitted']);
 
 const edit = reactive<Partial<IPlugin>>({ ...props.plugin as Partial<IPlugin> });
 
 const pluginJson = computed({
-  get: () => JSON.stringify(edit, null, 2),
+  get: () => JSON.stringify({ ...edit, injectables: edit.injectables, microFrontends: edit.microFrontends }, null, 2),
   set: (value: string) => {
     try {
       Object.assign(edit, JSON.parse(value));
-    } catch {
-      //
+    } catch(err) {
+      console.log(err)
     }
   }
 });
+
+watch(edit, () => {
+  editor.value.updateValue(pluginJson.value)
+}, { deep: true })
 
 const apiPathLabel = computed(() => `Every call to ${location.protocol}//${location.host}/api/on/${edit.apiPath}/*`);
 const proxyUrlLabel = computed(() => `Will proxy to ${edit.proxyUrl}/*`);
@@ -119,12 +166,25 @@ async function refreshPluginFromManifest() {
   emit('submitted', plugin);
 }
 
+function addMoreMicroFrontend() {
+  if (!edit.microFrontends) edit.microFrontends = [];
+  edit.microFrontends.push({
+    name: '',
+    description: '',
+    active: true,
+    opened: true,
+    url: '',
+    roles: ['*'],
+    workspaceRoles: ['*']
+  })
+}
+
 function addMoreInjectable() {
   if (!edit.injectables) edit.injectables = [];
   edit.injectables.push({ name: '', description: '', active: true, html: '<!--Custom HTML-->' });
 }
 
-const submit = () => alert('soon');
+const submit = () => emit('submitted', edit);
 </script>
 <style scoped>
 .content {
@@ -141,6 +201,15 @@ const submit = () => alert('soon');
 .refresh-manifest {
   text-align: center;
   font-size: 36px;
+}
+
+.sub-item:after {
+  content: '  ';
+  display: block;
+  width: 50%;
+  border-block-end: 1px solid var(--border-color);
+  margin-inline: auto;
+  margin-block-end: 10px;
 }
 
 .remove-row {

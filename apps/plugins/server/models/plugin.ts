@@ -1,4 +1,5 @@
 import mongoose, { Document, Model, LeanDocument } from 'mongoose'
+import uniqid from 'uniqid';
 import { cacheManager } from '../services/cache-manager';
 import { IMicroFrontend, IPlugin as IPluginType } from '@qelos/global-types';
 
@@ -54,7 +55,6 @@ const MicroFrontendSchema = new mongoose.Schema<IMicroFrontend>({
   },
   url: {
     type: String,
-    required: true
   },
   roles: [String],
   workspaceRoles: [String],
@@ -131,7 +131,7 @@ const PluginSchema = new mongoose.Schema<IPlugin>({
   token: String,
   proxyUrl: {
     type: String,
-    required: true
+    // required: true
   },
   subscribedEvents: [{
     source: String,
@@ -172,6 +172,7 @@ const PluginSchema = new mongoose.Schema<IPlugin>({
 PluginSchema.index({ tenant: 1, apiPath: 1 }, { unique: true });
 
 PluginSchema.methods.encodePath = function encodePath() {
+
   // make sure name doesn't have any sort of slashes.
   if (this.apiPath.includes('/') || this.apiPath.includes('\\')) {
     this.apiPath = this.apiPath.replace(/[\/\\]/g, ':');
@@ -186,6 +187,12 @@ PluginSchema.statics.getPluginForRedirect = function getPluginForRedirect(tenant
     .then(JSON.stringify)
   ).then(JSON.parse);
 }
+
+PluginSchema.pre('validate', function () {
+  if (!this.apiPath) {
+    this.apiPath = uniqid()
+  }
+})
 
 PluginSchema.pre('save', function () {
   this.encodePath();
