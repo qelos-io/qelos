@@ -2,26 +2,26 @@
   <main>
     <el-form @submit.prevent="submit">
       <VRuntimeTemplate v-if="item" :template="relevantStructure"
-                        :template-props="{row: item, schema: crud.schema, cruds, requirements}"/>
+                        :template-props="{row: item, schema: crud.schema, cruds, requirements, user}"/>
     </el-form>
   </main>
 </template>
 
 <script lang="ts" setup>
 import { useRoute, useRouter } from 'vue-router';
-import { computed, provide, ref, toRef, toRefs, watch } from 'vue';
+import { computed, provide, ref, toRef, toRefs } from 'vue';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import VRuntimeTemplate from 'vue3-runtime-template';
-import { useNotifications } from '@/modules/core/compositions/notifications';
 import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-item-crud';
 import { useDynamicRouteItem } from '@/modules/pre-designed/compositions/dynamic-route-item';
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
+import { useAuth } from '@/modules/core/compositions/authentication';
 
 const route = useRoute();
 const router = useRouter();
+const { user } = useAuth()
 const mfes = usePluginsMicroFrontends();
-const { error } = useNotifications()
 
 const cruds = toRef(mfes, 'cruds')
 const { api, crud, relevantStructure } = useSingleItemCrud()
