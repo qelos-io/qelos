@@ -17,6 +17,7 @@ import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-it
 import { useDynamicRouteItem } from '@/modules/pre-designed/compositions/dynamic-route-item';
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
 import { useAuth } from '@/modules/core/compositions/authentication';
+import { isEditingEnabled } from '@/modules/core/store/auth';
 
 const route = useRoute();
 const router = useRouter();
@@ -29,6 +30,7 @@ const { api, crud, relevantStructure } = useSingleItemCrud()
 const identifierKey = computed(() => mfes.cruds[crud.value.name].identifierKey || '_id');
 const isExistingItem = computed(() => !!route.params.id);
 const item = ref();
+const { requirements } = toRefs(useScreenRequirementsStore())
 
 useDynamicRouteItem(api, item);
 
@@ -71,6 +73,6 @@ const { submit, submitting } = useSubmitting(async () => {
   error: () => isExistingItem.value ? 'Failed to update' : 'Failed to create'
 })
 
-provide('submitting', submitting)
-const { requirements } = toRefs(useScreenRequirementsStore())
+provide('submitting', submitting);
+provide('isEditable', isEditingEnabled);
 </script>

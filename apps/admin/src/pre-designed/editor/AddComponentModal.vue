@@ -1,0 +1,187 @@
+<template>
+  <el-dialog
+      v-model="dialogVisible"
+      title="Tips"
+      width="80vw"
+  >
+    <el-steps style="width: 100%;" :active="active" finish-status="success">
+      <el-step title="Component"/>
+      <el-step title="Properties"/>
+    </el-steps>
+    <div v-if="active === 0">
+      <h2>Select Component</h2>
+
+      <component v-for="(component, key) in availableComponents"
+                 :key="key"
+                 :is="component.mock"
+                 :style="{opacity: selectedComponent === key ? 1 : 0.7, cursor: 'pointer'}"
+                 @click="selectComponent(key)"/>
+    </div>
+    <div v-else-if="active === 1">
+      <h2>Set Properties</h2>
+      <div v-for="prop in availableComponents[selectedComponent].requiredProps" :key="prop.prop">
+        <h3>{{ prop.label }}</h3>
+        <FormRowGroup v-if="prop.source === 'requirements'">
+          <el-form-item class="flex-0">
+            <el-switch
+                v-model="crudsOrBlueprints"
+                inactive-value="cruds"
+                active-value="blueprints"
+                :inactive-text="$t('Resources')"
+                :active-text="$t('Blueprints')"/>
+          </el-form-item>
+          <el-form-item v-if="crudsOrBlueprints === 'cruds'" label="Choose Resource">
+            <el-select v-model="propsBuilder[prop.prop]" placeholder="Select">
+              <el-option
+                  v-for="(crud, key) in cruds"
+                  :key="key"
+                  :label="capitalize(key)"
+                  :value="key"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item v-else label="Choose Blueprint">
+            <el-select v-model="propsBuilder[prop.prop]"
+                       @change="refillColumnsFromBlueprint(propsBuilder[prop.prop])"
+                       placeholder="Select">
+              <el-option
+                  v-for="blueprint in blueprints"
+                  :key="blueprint.identifier"
+                  :label="blueprint.name"
+                  :value="blueprint.identifier"
+              />
+            </el-select>
+          </el-form-item>
+        </FormRowGroup>
+        <div v-else>
+          <FormRowGroup v-for="(col, index) in propsBuilder.columns" :key="index">
+            <FormInput v-for="child in prop.children"
+                       :class="child.type === 'switch' ? 'flex-0' : ''"
+                       :key="child.prop"
+                       :type="child.type"
+                       :title="child.label"
+                       v-model="col[child.prop]"
+            />
+            <div class="flex-0 remove-row">
+              <RemoveButton @click="propsBuilder.columns.splice(index, 1)"/>
+            </div>
+          </FormRowGroup>
+          <AddMore @click="propsBuilder.columns.push({})"/>
+        </div>
+      </div>
+    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="dialogVisible = false">Cancel</el-button>
+        <div>
+          <el-button v-if="active > 0" type="primary" @click="active--">
+            Back
+          </el-button>
+          <el-button v-if="active === 1" type="primary" @click="submit">
+            Confirm
+          </el-button>
+        </div>
+      </div>
+    </template>
+  </el-dialog>
+</template>
+
+<script lang="ts" setup>
+import { capitalize, ref, toRef, watch } from 'vue'
+import MockTable from '@/pre-designed/editor/MockTable.vue';
+import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
+import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
+import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
+import FormInput from '@/modules/core/components/forms/FormInput.vue';
+import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+import AddMore from '@/modules/core/components/forms/AddMore.vue';
+
+const dialogVisible = ref(true)
+const active = ref(0)
+const selectedComponent = ref()
+const propsBuilder = ref<any>({})
+const cruds = toRef(usePluginsMicroFrontends(), 'cruds')
+const blueprints = toRef(useBlueprintsStore(), 'blueprints');
+const crudsOrBlueprints = ref('blueprints');
+
+const availableComponents = {
+  QuickTable: {
+    component: QuickTable,
+    mock: MockTable,
+    requiredProps: [
+      { prop: 'data', label: 'Data', type: 'array', source: 'requirements' },
+      {
+        prop: 'columns', label: 'Columns', type: 'array', source: 'manual',
+        children: [
+          { prop: 'prop', label: 'Property', type: 'text' },
+          { prop: 'label', label: 'Label', type: 'text' },
+          { prop: 'width', label: 'Width', type: 'text' },
+          { prop: 'minWidth', label: 'Min Width', type: 'text' },
+          { prop: 'fixed', label: 'Fixed', type: 'switch' },
+        ]
+      }
+    ]
+  }
+}
+
+const emit = defineEmits(['save', 'close'])
+
+function selectComponent(key: string) {
+  selectedComponent.value = key;
+  propsBuilder.value = {
+    data: '',
+    columns: [{}]
+  };
+  active.value++;
+}
+
+function refillColumnsFromBlueprint(blueprintId: string) {
+  const blueprint = blueprints.value.find(b => b.identifier === blueprintId);
+  if (blueprint) {
+    propsBuilder.value.columns = Object.keys(blueprint.properties).map((propName: any) => {
+      const prop = blueprint.properties[propName];
+      return {
+        prop: propName,
+        label: prop.title,
+        fixed: prop.type === 'boolean',
+      }
+    })
+  }
+}
+
+function submit() {
+  emit('save', {
+    component: selectedComponent.value,
+    requirements: availableComponents[selectedComponent.value].requiredProps
+        .filter(prop => prop.source === 'requirements')
+        .reduce((acc, prop) => {
+          acc[propsBuilder.value[prop.prop]] = {
+            key: propsBuilder.value[prop.prop],
+            [crudsOrBlueprints.value === 'blueprints' ? 'fromBlueprint' : 'fromCrud']: {
+              name: propsBuilder.value[prop.prop],
+            }
+          }
+          return acc;
+        }, {}),
+    props: propsBuilder.value
+  });
+  dialogVisible.value = false;
+}
+
+watch(dialogVisible, isOpen => {
+  if (!isOpen) {
+    emit('close');
+  }
+})
+</script>
+<style scoped>
+.dialog-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.remove-row {
+  margin-bottom: 18px;
+}
+</style>

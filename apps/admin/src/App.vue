@@ -5,7 +5,7 @@
 </template>
 <script lang="ts" setup>
 import {useAppConfiguration} from './modules/configurations/store/app-configuration'
-import {watch} from 'vue'
+import { provide, ref, watch } from 'vue'
 import {translate, loadLanguageAsync} from './plugins/i18n'
 import {usePluginsInjectables} from '@/modules/plugins/store/plugins-injectables';
 
@@ -73,6 +73,8 @@ watch(() => appConfig.value.scriptUrl, () => {
   script.setAttribute('src',appConfig.value.scriptUrl);
   document.head.appendChild(script);
 })
+
+provide('isEditable', ref(false));
 </script>
 <style>
 #app {
