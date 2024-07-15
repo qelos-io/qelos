@@ -43,6 +43,10 @@ const MicroFrontendSchema = new mongoose.Schema<IMicroFrontend>({
     fromCrud: {
       name: String,
       identifier: String,
+    },
+    fromBlueprint: {
+      name: String,
+      identifier: String,
     }
   }],
   active: {

@@ -1,8 +1,8 @@
 <template>
   <div centered>
-    <el-button native-type="button" type="text" size="large">
+    <el-button native-type="button" text size="large">
       <el-icon>
-        <icon-plus/>
+        <font-awesome-icon :icon="['fas', 'plus']" />
       </el-icon>
       {{ $t('ADD') }}
     </el-button>

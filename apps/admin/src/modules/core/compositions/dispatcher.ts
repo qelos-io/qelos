@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-export function useDispatcher<T = any>(callback, defaultValue: T | null = null) {
+export function useDispatcher<T = any>(callback, defaultValue: T | null = null, lazy = false) {
   const result = ref<T>(defaultValue)
   const loading = ref<boolean>(true)
   const error = ref<any>(null)
@@ -17,7 +17,9 @@ export function useDispatcher<T = any>(callback, defaultValue: T | null = null) 
     }
   }
 
-  caller()
+  if (!lazy) {
+    caller()
+  }
 
   return {
     result,

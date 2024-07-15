@@ -76,7 +76,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
 
       return all
     }, {})
-  })
+  }, { immediate: true })
 
   return {
     requirements

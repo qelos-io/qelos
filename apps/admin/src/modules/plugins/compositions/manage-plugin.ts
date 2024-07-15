@@ -5,8 +5,12 @@ import { IPlugin } from '@/services/types/plugin';
 import { usePluginsList } from '../store/plugins-list';
 import { reactive } from 'vue';
 
-export function useEditPlugin(pluginId: string) {
-  const { loading, result: plugin } = useDispatcher<IPlugin>(() => pluginsService.getOne(pluginId));
+export function useEditPlugin(pluginId?: string) {
+  const {
+    loading,
+    result: plugin,
+    retry: reload
+  } = useDispatcher<IPlugin>(() => pluginsService.getOne(pluginId), null, !pluginId);
   const { removePlugin, retry } = usePluginsList();
 
   const { submit: updatePlugin, submitting } = useSubmitting(
@@ -24,6 +28,13 @@ export function useEditPlugin(pluginId: string) {
     loading,
     submitting,
     plugin,
+    load: async (newId?: string) => {
+      if (newId) {
+        pluginId = newId
+      }
+      await reload()
+      return plugin.value;
+    },
     removePlugin: () => removePlugin(plugin.value),
     updatePlugin
   }

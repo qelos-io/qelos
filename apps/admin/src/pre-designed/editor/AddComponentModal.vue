@@ -106,7 +106,7 @@ const blueprints = toRef(useBlueprintsStore(), 'blueprints');
 const crudsOrBlueprints = ref('blueprints');
 
 const availableComponents = {
-  QuickTable: {
+  'quick-table': {
     component: QuickTable,
     mock: MockTable,
     requiredProps: [

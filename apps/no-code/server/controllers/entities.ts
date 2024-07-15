@@ -53,7 +53,8 @@ async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBluepri
 
 export async function getAllBlueprintEntities(req, res) {
   const blueprint = req.blueprint;
-  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin === 'true');
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin);
+
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;

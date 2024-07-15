@@ -9,7 +9,10 @@ export function getUserPermittedScopes(user: any, blueprint: IBlueprint, operati
     blueprint.permissions
       .filter(p =>
         p.operation === operation &&
-        (p.roleBased?.includes(user.role) || (user.workspace?.roles && p.workspaceRoleBased?.includes(user.workspace.roles)))
+        (
+          p.roleBased?.some(role => role === '*' || user.roles.includes(role)) ||
+          (user.workspace?.roles && p.workspaceRoleBased?.some(role => role === '*' || user.workspace.roles.includes(role)))
+        )
       )
       .map(p => p.scope)
       .filter(Boolean)

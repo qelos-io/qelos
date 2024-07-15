@@ -1,5 +1,5 @@
 <template>
-  <el-button type="text" native-type="button">
+  <el-button text native-type="button">
     <el-icon>
       <icon-delete/>
     </el-icon>
