@@ -117,7 +117,7 @@ const availableComponents = {
     mock: MockListPageTitle,
     requiredProps: [
       { prop: 'title', label: 'Title', type: 'text', source: 'manual' },
-      { prop: 'on-create', label: 'Path to Create New Item', type: 'text', source: 'manual' },
+      { prop: 'create-route-path', label: 'Path to Create New Item', type: 'text', source: 'manual' },
     ]
   },
   'quick-table': {

@@ -2,9 +2,9 @@
   <h1>
     <RemoveButton v-if="editableManager" class="remove-component-btn" @click="editableManager.removeComponent($el)" />
     <span>{{ $t(title) }}</span>
-    <el-button type="primary" v-if="createRoute || onCreate" @click="create">
-      <el-icon>
-        <icon-edit/>
+    <el-button text v-if="createRoutePath || createRoute || onCreate" @click="create">
+      <el-icon size="28">
+        <font-awesome-icon :icon="['far', 'square-plus']" />
       </el-icon>
     </el-button>
   </h1>
@@ -20,6 +20,7 @@ const emit = defineEmits(['create', 'removeComponent'])
 const props = defineProps({
   title: String,
   createRoute: String,
+  createRoutePath: String,
   onCreate: Function
 })
 
@@ -27,7 +28,7 @@ function create() {
   if (props.onCreate) {
     emit('create')
   } else {
-    router.push({ name: props.createRoute })
+    router.push(props.createRoutePath || { name: props.createRoute })
   }
 }
 
