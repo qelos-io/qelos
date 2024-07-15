@@ -1,8 +1,6 @@
 <template>
   <main>
-    <VRuntimeTemplate v-if="item" :template="relevantStructure"
-                      @removeComponent="removeComponent"
-                      :template-props="{...requirements, row: item, schema: crud.schema, cruds, user}"/>
+    <VRuntimeTemplate v-if="item" :template="relevantStructure" :template-props="{...requirements, row: item, schema: crud.schema, cruds, user}"/>
     <AddMore v-if="isEditingEnabled" @click="openAddComponentModal"/>
 
     <AddComponentModal v-if="addComponent" @save="submitComponentToTemplate" @close="addComponent = undefined"/>
@@ -10,7 +8,7 @@
 </template>
 
 <script lang="ts" setup>
-import { provide, ref, toRef, toRefs } from 'vue';
+import { computed, provide, ref, toRef, toRefs } from 'vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import VRuntimeTemplate from 'vue3-runtime-template';
 import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-item-crud';
@@ -23,6 +21,7 @@ import AddComponentModal from '@/pre-designed/editor/AddComponentModal.vue';
 import { useRoute } from 'vue-router';
 import { useEditPlugin } from '@/modules/plugins/compositions/manage-plugin';
 import { IMicroFrontend } from '@/services/types/plugin';
+import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 
 const route = useRoute();
 const { load: loadPlugin, updatePlugin } = useEditPlugin()
@@ -48,7 +47,7 @@ async function submitComponentToTemplate(data) {
   const el = document.createElement(data.component);
 
   Object.keys(data.props).forEach(propName => {
-    el.setAttribute('v-bind:' + propName, typeof data.props[propName] === 'object' ? JSON.stringify(data.props[propName]) : data.props[propName] + '?.result');
+    el.setAttribute(propName, data.props[propName]);
   })
 
   const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId)
@@ -61,9 +60,11 @@ async function submitComponentToTemplate(data) {
   pluginMfe.requirements.push(...Object.values(data.requirements) as any[])
 
   await updatePlugin(plugin)
+  route.meta.mfe.structure = pluginMfe.structure;
+  route.meta.screenRequirements = pluginMfe.requirements;
 }
 
-async function removeComponent(el: HTMLElement) {
+const removeComponent = useConfirmAction(async function removeComponent(el: HTMLElement) {
   const index = Array.from(el.parentElement.children).findIndex(child => child === el)
 
   const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId);
@@ -77,7 +78,7 @@ async function removeComponent(el: HTMLElement) {
 
   child.getAttributeNames()
       .filter(attr => attr.startsWith('v-bind:'))
-      .map(attr => child.getAttribute(attr).split('.')[0])
+      .map(attr => child.getAttribute(attr).split('.')[0].replace('?', ''))
       .forEach(optionalKey => {
         if (pluginMfe.requirements.find(req => req.key === optionalKey)) {
           pluginMfe.requirements = pluginMfe.requirements.filter(req => req.key !== optionalKey)
@@ -85,8 +86,12 @@ async function removeComponent(el: HTMLElement) {
       })
 
   await updatePlugin(plugin)
-}
+  route.meta.mfe.structure = pluginMfe.structure;
+  route.meta.screenRequirements = pluginMfe.requirements;
+})
 
 const { requirements } = toRefs(useScreenRequirementsStore())
-provide('isEditable', isEditingEnabled);
+provide('editableManager', computed(() => isEditingEnabled.value && {
+  removeComponent
+}));
 </script>

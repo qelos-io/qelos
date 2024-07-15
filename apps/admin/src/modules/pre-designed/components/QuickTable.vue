@@ -13,14 +13,13 @@ defineProps<{
   }>
 }>()
 
-const isEditable = inject('isEditable');
-
-defineEmits(['removeComponent'])
+const editableManager = inject('editableManager');
+defineEmits(['removeComponent']);
 </script>
 
 <template>
   <div class="quick-table-wrapper">
-    <RemoveButton v-if="isEditable" class="remove" @click="$emit('removeComponent', $el)" />
+    <RemoveButton v-if="editableManager" class="remove-component-btn" @click="editableManager.removeComponent($el)" />
     <el-table :data="data" style="width: 100%" max-height="250">
       <el-table-column v-for="(col, index) in columns" :key="index" v-bind="col"/>
     </el-table>
@@ -30,13 +29,5 @@ defineEmits(['removeComponent'])
 <style scoped>
 .quick-table-wrapper {
   position: relative;
-}
-
-.remove {
-  position: absolute;
-  top: 10px;
-  inset-inline-end: 0;
-  z-index: 2;
-  font-size: 150%;
 }
 </style>

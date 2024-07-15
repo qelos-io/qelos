@@ -20,7 +20,7 @@
     <div v-else-if="active === 1">
       <h2>Set Properties</h2>
       <div v-for="prop in availableComponents[selectedComponent].requiredProps" :key="prop.prop">
-        <h3>{{ prop.label }}</h3>
+        <h3 v-if="prop.type === 'array'">{{ prop.label }}</h3>
         <FormRowGroup v-if="prop.source === 'requirements'">
           <el-form-item class="flex-0">
             <el-switch
@@ -53,7 +53,7 @@
             </el-select>
           </el-form-item>
         </FormRowGroup>
-        <div v-else>
+        <div v-else-if="prop.type === 'array'">
           <FormRowGroup v-for="(col, index) in propsBuilder.columns" :key="index">
             <FormInput v-for="child in prop.children"
                        :class="child.type === 'switch' ? 'flex-0' : ''"
@@ -68,6 +68,10 @@
           </FormRowGroup>
           <AddMore @click="propsBuilder.columns.push({})"/>
         </div>
+        <FormInput v-else
+                   :type="prop.type"
+                   :title="prop.label"
+                   v-model="propsBuilder[prop.prop]"/>
       </div>
     </div>
     <template #footer>
@@ -96,6 +100,8 @@ import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
+import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
+import MockListPageTitle from '@/pre-designed/editor/MockListPageTitle.vue';
 
 const dialogVisible = ref(true)
 const active = ref(0)
@@ -106,6 +112,14 @@ const blueprints = toRef(useBlueprintsStore(), 'blueprints');
 const crudsOrBlueprints = ref('blueprints');
 
 const availableComponents = {
+  'list-page-title': {
+    component: ListPageTitle,
+    mock: MockListPageTitle,
+    requiredProps: [
+      { prop: 'title', label: 'Title', type: 'text', source: 'manual' },
+      { prop: 'on-create', label: 'Path to Create New Item', type: 'text', source: 'manual' },
+    ]
+  },
   'quick-table': {
     component: QuickTable,
     mock: MockTable,
@@ -122,7 +136,7 @@ const availableComponents = {
         ]
       }
     ]
-  }
+  },
 }
 
 const emit = defineEmits(['save', 'close'])
@@ -133,6 +147,18 @@ function selectComponent(key: string) {
     data: '',
     columns: [{}]
   };
+
+  propsBuilder.value = availableComponents[key].requiredProps.reduce((acc, prop) => {
+    if (prop.source === 'requirements') {
+      acc[prop.prop] = '';
+    } else if (prop.type === 'array') {
+      acc[prop.prop] = [{}];
+    } else {
+      acc[prop.prop] = '';
+    }
+    return acc;
+  }, {});
+
   active.value++;
 }
 
@@ -151,9 +177,23 @@ function refillColumnsFromBlueprint(blueprintId: string) {
 }
 
 function submit() {
+  const requiredProps = availableComponents[selectedComponent.value].requiredProps;
+  const props = {}
+  for (const propName in propsBuilder.value) {
+    const val = propsBuilder.value[propName];
+    if (!val) continue;
+    if (typeof val == 'object') {
+      props['v-bind:' + propName] = JSON.stringify(val);
+    } else if (requiredProps.find(p => p.prop === propName).source === 'requirements') {
+      props['v-bind:' + propName] = val + '?.result'
+    } else {
+      props[propName] = val;
+    }
+  }
+
   emit('save', {
     component: selectedComponent.value,
-    requirements: availableComponents[selectedComponent.value].requiredProps
+    requirements: requiredProps
         .filter(prop => prop.source === 'requirements')
         .reduce((acc, prop) => {
           acc[propsBuilder.value[prop.prop]] = {
@@ -164,7 +204,7 @@ function submit() {
           }
           return acc;
         }, {}),
-    props: propsBuilder.value
+    props,
   });
   dialogVisible.value = false;
 }

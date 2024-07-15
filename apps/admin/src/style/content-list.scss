@@ -60,3 +60,11 @@
 	width: 90%;
   }
 }
+
+.remove-component-btn {
+	position: absolute;
+	top: 10px;
+	inset-inline-end: 0;
+	z-index: 2;
+	font-size: 150%;
+}

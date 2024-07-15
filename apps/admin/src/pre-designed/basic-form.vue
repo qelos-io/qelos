@@ -74,5 +74,6 @@ const { submit, submitting } = useSubmitting(async () => {
 })
 
 provide('submitting', submitting);
-provide('isEditable', isEditingEnabled);
-</script>
+provide('editableManager', computed(() => isEditingEnabled.value && {
+  removeComponent: () => null
+}));</script>

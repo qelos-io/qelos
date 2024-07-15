@@ -74,7 +74,7 @@ watch(() => appConfig.value.scriptUrl, () => {
   document.head.appendChild(script);
 })
 
-provide('isEditable', ref(false));
+provide('editableManager', ref(false));
 </script>
 <style>
 #app {
