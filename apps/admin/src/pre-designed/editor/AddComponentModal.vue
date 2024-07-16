@@ -168,7 +168,7 @@ function refillColumnsFromBlueprint(blueprintId: string) {
     propsBuilder.value.columns = Object.keys(blueprint.properties).map((propName: any) => {
       const prop = blueprint.properties[propName];
       return {
-        prop: propName,
+        prop: 'metadata.' + propName,
         label: prop.title,
         fixed: prop.type === 'boolean',
       }

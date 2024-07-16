@@ -59,6 +59,7 @@ export async function getAllBlueprintEntities(req, res) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;
   }
+  console.log('permitted scopes', permittedScopes)
   try {
     if (!blueprint) {
       res.status(404).json({ message: 'blueprint not found' }).end();
@@ -67,6 +68,9 @@ export async function getAllBlueprintEntities(req, res) {
     const query = {
       ...qs.parse(req._parsedUrl.query, { depth: 3 }),
       ...getEntityQuery({ blueprint, req, permittedScopes })
+    }
+    if ('bypassAdmin' in req.query) {
+      delete query.bypassAdmin;
     }
     const entities = await BlueprintEntity.find(query)
       .lean()
