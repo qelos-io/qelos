@@ -1,6 +1,7 @@
 import { IScreenRequirement } from './scree-requirement';
 
 export interface IMicroFrontend {
+  _id?: string;
   name: string;
   description: string;
   url: string;

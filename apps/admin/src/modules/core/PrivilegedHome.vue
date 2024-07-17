@@ -24,7 +24,7 @@
             <router-link :to="{name: 'editConfiguration', params: {key: 'app-configuration'}}">
               <h3>
                 <el-icon>
-                  <icon-setting/>
+                  <font-awesome-icon :icon="['fas', 'gear']" />
                 </el-icon>
                 {{ $t('Edit app configuration') }}
               </h3>
@@ -90,7 +90,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 const { appConfig } = useAppConfiguration();
 
 const { loading: loadingBlocks, blocks } = toRefs(useBlocksList())
-const { loading: loadingUsers, users } = toRefs(useUsersList())
+const { loading: loadingUsers, users } = useUsersList()
 const { loading: loadingWorkspaces, workspaces } = toRefs(useAdminWorkspacesList())
 const { t } = useI18n();
 const exampleText = ref(t('Example text'));

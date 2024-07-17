@@ -91,7 +91,7 @@
 </template>
 
 <script lang="ts" setup>
-import { capitalize, ref, toRef, watch } from 'vue'
+import { capitalize, provide, ref, toRef, watch } from 'vue'
 import MockTable from '@/pre-designed/editor/MockTable.vue';
 import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
@@ -214,6 +214,8 @@ watch(dialogVisible, isOpen => {
     emit('close');
   }
 })
+
+provide('editableManager', ref(false))
 </script>
 <style scoped>
 .dialog-footer {

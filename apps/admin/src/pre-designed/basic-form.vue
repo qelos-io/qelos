@@ -2,9 +2,10 @@
   <main>
     <el-form @submit.prevent="submit">
       <VRuntimeTemplate v-if="item" :template="relevantStructure"
-                        :template-props="{row: item, schema: crud.schema, cruds, requirements, user}"/>
+                        :template-props="{...requirements, row: item, schema: crud.schema, cruds, user}"/>
     </el-form>
   </main>
+  <AddComponentModal v-if="addComponent" @save="submitComponentToTemplate" @close="addComponent = undefined"/>
 </template>
 
 <script lang="ts" setup>
@@ -18,6 +19,8 @@ import { useDynamicRouteItem } from '@/modules/pre-designed/compositions/dynamic
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
 import { useAuth } from '@/modules/core/compositions/authentication';
 import { isEditingEnabled } from '@/modules/core/store/auth';
+import { useEditMfeStructure } from '@/modules/no-code/compositions/edit-mfe-structure';
+import AddComponentModal from '@/pre-designed/editor/AddComponentModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -74,6 +77,5 @@ const { submit, submitting } = useSubmitting(async () => {
 })
 
 provide('submitting', submitting);
-provide('editableManager', computed(() => isEditingEnabled.value && {
-  removeComponent: () => null
-}));</script>
+const { addComponent, submitComponentToTemplate } = useEditMfeStructure()
+</script>

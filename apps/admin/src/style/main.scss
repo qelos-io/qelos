@@ -1,6 +1,98 @@
+@import "reset.css";
 @import "templating";
 @import "forms";
 @import "element-ui-rtl";
+
+
+/* Titles */
+h1 {
+  font-size: 2em;
+  color: var(--text-color);
+}
+
+h2 {
+  font-size: 1.8em;
+}
+
+h3 {
+  font-size: 1.4em;
+  color: var(--text-color);
+}
+
+/* Paragraphs */
+p {
+  text-align: justify;
+}
+
+/* Links */
+a {
+  color: var(--link);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--link);
+  filter: brightness(85%);
+  text-decoration: underline;
+}
+
+/* Lists */
+ul, ol {
+  margin-bottom: 15px;
+  padding-left: 30px;
+}
+
+li {
+  margin-bottom: 5px;
+}
+
+/* Blockquotes */
+blockquote {
+  font-style: italic;
+  border-left: 4px solid var(--border-color);
+  padding-left: 20px;
+  margin: 20px 0;
+  color: var(--text-color);
+}
+
+/* Code blocks */
+pre {
+  background-color: var(--body-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 15px;
+  overflow-x: auto;
+  margin-bottom: 15px;
+}
+
+code {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9em;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 15px;
+  border-radius: 4px;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  h1 {
+    font-size: 2em;
+  }
+
+  h2 {
+    font-size: 1.5em;
+  }
+
+  h3 {
+    font-size: 1.2em;
+  }
+}
 
 table {
   width: calc(100% - 30px);

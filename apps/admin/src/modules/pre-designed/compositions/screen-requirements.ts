@@ -15,7 +15,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
 
   const cachedDispatchers = {}
 
-  watch(() => [route.meta.screenRequirements, mfes], () => {
+  const reloadRequirements = () => {
     const reqs = route.meta.screenRequirements;
     if (!(reqs instanceof Array && reqs.length)) {
       requirements.value = {}
@@ -76,9 +76,12 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
 
       return all
     }, {})
-  }, { immediate: true })
+  }
+
+  watch(() => [route.meta.screenRequirements, mfes.navBar, mfes.modals, mfes.cruds], reloadRequirements, { immediate: true })
 
   return {
-    requirements
+    requirements,
+    reloadRequirements
   }
 })

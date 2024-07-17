@@ -1,6 +1,8 @@
 <template>
   <h1>
-    <RemoveButton v-if="editableManager" class="remove-component-btn" @click="editableManager.removeComponent($el)" />
+    <RemoveButton v-if="editableManager"
+                  class="remove-component-btn"
+                  @click="editableManager.removeComponent($el)" />
     <span>{{ $t(title) }}</span>
     <el-button text v-if="createRoutePath || createRoute || onCreate" @click="create">
       <el-icon size="28">
@@ -38,8 +40,15 @@ const editableManager = inject('editableManager');
 
 <style scoped lang="scss">
 h1 {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--body-bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   span {
-    margin-inline-end: 20px;
+    margin-inline-end: auto;
   }
 
   > * {

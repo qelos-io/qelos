@@ -22,6 +22,7 @@ defineProps<{ color: string }>()
   top: 0;
   inset-inline: calc(100% - 28px);
   font-size: 24px;
+  z-index: 2;
 }
 
 .live-edit-opener:hover {

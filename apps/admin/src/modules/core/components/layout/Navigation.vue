@@ -9,7 +9,9 @@
       <template v-for="group in navBar.top">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.name">{{ group.name }}</h4>
-          <el-menu-item v-for="mfe in group.items" :key="mfe.route.path" :route="'/play/' + mfe.route.path"
+          <el-menu-item v-for="mfe in group.items"
+                        :key="mfe.route.path"
+                        :route="'/play/' + mfe.route.path"
                         :index="'/play/' + mfe.route.path">
             <el-icon v-if="mfe.route.iconName">
               <component :is="'icon-' + mfe.route.iconName"/>
@@ -53,21 +55,21 @@
         <h4>{{ $t('MANAGE') }}</h4>
         <el-menu-item :route="{name: 'storageList'}" index="/assets">
           <el-icon>
-            <icon-files/>
+            <font-awesome-icon :icon="['fas', 'folder-tree']" />
           </el-icon>
           <span>{{ $t('Storage & Assets') }}</span>
         </el-menu-item>
 
         <el-menu-item v-if="isAdmin" index="/users">
           <el-icon>
-            <icon-user/>
+            <font-awesome-icon :icon="['fas', 'users']" />
           </el-icon>
           <span>{{ $t('Users') }}</span>
         </el-menu-item>
 
         <el-menu-item :route="{name: 'drafts'}" index="/drafts">
           <el-icon>
-            <icon-document-copy/>
+            <font-awesome-icon :icon="['far', 'file-lines']" />
           </el-icon>
           <span>{{ $t('Drafts') }}</span>
         </el-menu-item>
@@ -81,7 +83,7 @@
 
         <el-menu-item v-if="isAdmin" :route="{name: 'configurations'}" index="/configurations">
           <el-icon>
-            <icon-setting/>
+            <font-awesome-icon :icon="['fas', 'gear']" />
           </el-icon>
           <span>{{ $t('Configurations') }}</span>
         </el-menu-item>
@@ -91,7 +93,7 @@
         <h4>{{ $t('PLUGINS') }}</h4>
         <el-menu-item :route="{name: 'plugins'}" index="/plugins">
           <el-icon>
-            <icon-sugar/>
+            <font-awesome-icon :icon="['fas', 'plug-circle-bolt']" />
           </el-icon>
           <span>{{ $t('Plugins List') }}</span>
         </el-menu-item>
