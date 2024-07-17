@@ -1,9 +1,9 @@
 <template>
   <header :dir="$t('appDirection')">
     <div class="welcome">
-      <el-button type="default" class="btn" circle @click="open">
+      <el-button class="mobile-menu-opener" text circle size="large" @click="open">
         <el-icon>
-          <icon-menu/>
+          <font-awesome-icon :icon="['fas', 'bars']" />
         </el-icon>
       </el-button>
 
@@ -90,9 +90,7 @@ header {
   }
 }
 
-.btn {
-  margin-inline-start: 10px;
-  font-size: 18px;
+.mobile-menu-opener {
   display: none;
 }
 
@@ -126,7 +124,7 @@ a {
 }
 
 @media (max-width: 600px) {
-  .btn {
+  .mobile-menu-opener {
     display: block;
   }
 }

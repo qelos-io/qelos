@@ -55,35 +55,35 @@
         <h4>{{ $t('MANAGE') }}</h4>
         <el-menu-item :route="{name: 'storageList'}" index="/assets">
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'folder-tree']" />
+            <font-awesome-icon :icon="['fas', 'folder-tree']"/>
           </el-icon>
           <span>{{ $t('Storage & Assets') }}</span>
         </el-menu-item>
 
         <el-menu-item v-if="isAdmin" index="/users">
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'users']" />
+            <font-awesome-icon :icon="['fas', 'users']"/>
           </el-icon>
           <span>{{ $t('Users') }}</span>
         </el-menu-item>
 
         <el-menu-item :route="{name: 'drafts'}" index="/drafts">
           <el-icon>
-            <font-awesome-icon :icon="['far', 'file-lines']" />
+            <font-awesome-icon :icon="['far', 'file-lines']"/>
           </el-icon>
           <span>{{ $t('Drafts') }}</span>
         </el-menu-item>
 
         <el-menu-item v-if="isAdmin" :route="{name: 'blueprints'}" index="/no-code/blueprints">
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'database']" />
+            <font-awesome-icon :icon="['fas', 'database']"/>
           </el-icon>
           <span>{{ $t('Blueprints') }}</span>
         </el-menu-item>
 
         <el-menu-item v-if="isAdmin" :route="{name: 'configurations'}" index="/configurations">
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'gear']" />
+            <font-awesome-icon :icon="['fas', 'gear']"/>
           </el-icon>
           <span>{{ $t('Configurations') }}</span>
         </el-menu-item>
@@ -93,7 +93,7 @@
         <h4>{{ $t('PLUGINS') }}</h4>
         <el-menu-item :route="{name: 'plugins'}" index="/plugins">
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'plug-circle-bolt']" />
+            <font-awesome-icon :icon="['fas', 'plug-circle-bolt']"/>
           </el-icon>
           <span>{{ $t('Plugins List') }}</span>
         </el-menu-item>
