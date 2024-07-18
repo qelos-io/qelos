@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
-import { ref } from 'vue';
+import { provide, ref, toRef } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 
 const emit = defineEmits(['save', 'close'])
@@ -9,7 +9,10 @@ const emit = defineEmits(['save', 'close'])
 const props = defineProps<{
   pageName: string,
   mfe: any,
+  submitting: boolean
 }>()
+
+provide('submitting', toRef(props, 'submitting'))
 
 const openCodeSection = ref('1');
 
@@ -65,7 +68,3 @@ function save() {
     </el-collapse>
   </el-form>
 </template>
-
-<style scoped>
-
-</style>

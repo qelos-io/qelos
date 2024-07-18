@@ -2,6 +2,7 @@
   <EditPageStructure v-if="isEditingEnabled && updateCode"
                      :page-name="pageName"
                      :mfe="editedPluginMfe"
+                     :submitting="submitting"
                      @save="saveCodeEditor"
                      @close="closeCodeEditor"/>
   <main v-else>
@@ -14,7 +15,7 @@
 </template>
 
 <script lang="ts" setup>
-import { provide, ref, toRef, toRefs } from 'vue';
+import { ref, toRef, toRefs } from 'vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import VRuntimeTemplate from 'vue3-runtime-template';
 import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-item-crud';
@@ -71,5 +72,4 @@ const { submit: saveCodeEditor, submitting } = useSubmitting(async ({ structure,
   await submitCodeToTemplate(structure, requirements)
   updateCode.value = true;
 })
-provide('submitting', submitting)
 </script>
