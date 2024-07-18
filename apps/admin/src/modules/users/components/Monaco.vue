@@ -13,8 +13,9 @@ let monacoInstance;
 onMounted(() => {
   monacoInstance = monaco.editor.create(monacoRef.value, {
     theme: 'vs-dark',
+    automaticLayout: true,
     language: props.language || 'json',
-    value: props.modelValue //metaDataRef.value,
+    value: props.modelValue,
   })
 })
 

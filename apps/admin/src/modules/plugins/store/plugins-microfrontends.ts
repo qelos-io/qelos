@@ -112,6 +112,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         const workspaceRoles = mfe.workspaceRoles || ['*'];
         if (mfe.url) {
           route.meta = {
+            name: mfe.name,
             roles,
             workspaceRoles,
             mfeUrl: getMfeUrl(mfe),
@@ -119,6 +120,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
           }
         } else {
           route.meta = {
+            name: mfe.name,
             roles,
             workspaceRoles,
             mfe,

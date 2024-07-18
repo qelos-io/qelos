@@ -4,6 +4,7 @@
       <slot/>
     </h2>
     <div class="buttons-group">
+      <slot name="buttons"/>
       <el-button native-type="submit" type="primary" :loading="submitting">
         <el-icon>
           <component :is="'icon-' + icon"/>

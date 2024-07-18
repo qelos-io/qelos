@@ -11,6 +11,41 @@ export function useEditMfeStructure() {
   const { load: loadPlugin, updatePlugin } = useEditPlugin()
   const addComponent = ref()
   const { reloadRequirements } = useScreenRequirementsStore()
+  const editedPluginMfe = ref<IMicroFrontend>()
+
+  async function getUpdatedPluginAndMfe() {
+    const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId)
+    const routeMfe = route.meta.mfe as IMicroFrontend;
+
+    const pluginMfe: IMicroFrontend = plugin.microFrontends.find(mfe => mfe._id === routeMfe._id);
+
+    return {
+      plugin,
+      pluginMfe,
+      routeMfe
+    }
+  }
+
+  async function fetchMfe() {
+    editedPluginMfe.value = null;
+    const { pluginMfe } = await getUpdatedPluginAndMfe()
+    editedPluginMfe.value = pluginMfe;
+  }
+
+  function updateRouteFromPluginMfe(routeMfe, pluginMfe: IMicroFrontend) {
+    routeMfe.structure = pluginMfe.structure;
+    route.meta.screenRequirements = pluginMfe.requirements;
+    reloadRequirements();
+  }
+
+  async function submitCodeToTemplate(structure: string, requirements: any[]) {
+    const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
+
+    pluginMfe.structure = structure;
+    pluginMfe.requirements = requirements;
+    await updatePlugin(plugin);
+    updateRouteFromPluginMfe(routeMfe, pluginMfe);
+  }
 
   async function submitComponentToTemplate(data) {
     const el = document.createElement(data.component);
@@ -19,10 +54,8 @@ export function useEditMfeStructure() {
       el.setAttribute(propName, data.props[propName]);
     })
 
-    const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId)
-    const routeMfe = route.meta.mfe as IMicroFrontend;
+    const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
 
-    const pluginMfe: IMicroFrontend = plugin.microFrontends.find(mfe => mfe._id === routeMfe._id);
     pluginMfe.structure ||= '';
 
     pluginMfe.structure += el.outerHTML.trim();
@@ -30,18 +63,14 @@ export function useEditMfeStructure() {
     pluginMfe.requirements.push(...Object.values(data.requirements) as any[])
 
     await updatePlugin(plugin);
-
-    routeMfe.structure = pluginMfe.structure;
-    route.meta.screenRequirements = pluginMfe.requirements;
-    reloadRequirements();
+    updateRouteFromPluginMfe(routeMfe, pluginMfe);
   }
 
   const removeComponent = useConfirmAction(async function removeComponent(el: HTMLElement) {
     const index = Array.from(el.parentElement.children).findIndex(child => child === el)
 
-    const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId);
-    const routeMfe = route.meta.mfe as IMicroFrontend;
-    const pluginMfe: IMicroFrontend = plugin.microFrontends.find(mfe => mfe._id === routeMfe._id);
+    const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
+
     const template = document.createElement('template');
 
     template.innerHTML = pluginMfe.structure;
@@ -59,8 +88,7 @@ export function useEditMfeStructure() {
       })
 
     await updatePlugin(plugin)
-    routeMfe.structure = pluginMfe.structure;
-    route.meta.screenRequirements = pluginMfe.requirements;
+    updateRouteFromPluginMfe(routeMfe, pluginMfe);
   })
 
   provide('editableManager', computed(() => isEditingEnabled.value && {
@@ -68,7 +96,11 @@ export function useEditMfeStructure() {
   }));
 
   return {
+    pageName: computed(() => route.meta.name as string),
     addComponent,
     submitComponentToTemplate,
+    fetchMfe,
+    editedPluginMfe,
+    submitCodeToTemplate
   }
 }
