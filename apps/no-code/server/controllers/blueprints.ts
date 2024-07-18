@@ -1,5 +1,6 @@
 import Blueprint, { IBlueprint } from '../models/blueprint';
 import BlueprintEntity from '../models/blueprint-entity';
+import { cacheManager } from '../services/cache-manager';
 
 export async function getAllBlueprints(req, res) {
   const list = await Blueprint.find({
@@ -64,6 +65,7 @@ export async function updateBlueprint(req, res) {
 
   try {
     await blueprint.save();
+    cacheManager.setItem(`blueprint:${req.headers.tenant}:${bluePrintIdentifier}`, JSON.stringify(blueprint)).catch()
     res.json(blueprint).end();
   } catch {
     res.status(400).json({ message: 'failed to update blueprint' }).end();
@@ -120,6 +122,7 @@ export async function patchBlueprint(req, res) {
 
   try {
     await blueprint.save();
+    cacheManager.setItem(`blueprint:${req.headers.tenant}:${bluePrintIdentifier}`, JSON.stringify(blueprint)).catch()
     res.json(blueprint).end();
   } catch {
     res.status(400).json({ message: 'failed to update blueprint' }).end();
