@@ -2,10 +2,12 @@ import Blueprint, { IBlueprint } from '../models/blueprint';
 import BlueprintEntity from '../models/blueprint-entity';
 import { cacheManager } from '../services/cache-manager';
 
+const VIEWER_FIELDS = 'tenant identifier name description properties created updated';
+
 export async function getAllBlueprints(req, res) {
   const list = await Blueprint.find({
     tenant: req.headers.tenant,
-  })
+  }, req.user?.isPrivileged ? undefined : VIEWER_FIELDS)
     .lean()
     .exec()
 
@@ -18,7 +20,7 @@ export async function getSingleBlueprint(req, res) {
   const blueprint = await Blueprint.findOne({
     tenant: req.headers.tenant,
     identifier: blueprintIdentifier
-  })
+  }, req.user?.isPrivileged ? undefined : VIEWER_FIELDS)
     .lean()
     .exec()
 

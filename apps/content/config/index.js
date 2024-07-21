@@ -12,6 +12,7 @@ module.exports = {
   editorsRoles,
   adminRole,
   appConfiguration: process.env.APP_CONFIGURATION || "app-configuration",
+  allowedToChangeWebsiteUrls: process.env.ALLOW_WEBSITE_URLS_CHANGE !== 'false' || true,
   workspaceConfiguration:
     process.env.WORKSPACE_CONFIGURATION || "workspace-configuration",
   ssrScriptsConfiguration: process.env.SSR_SCRIPTS || "ssr-scripts",

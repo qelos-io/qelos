@@ -1,4 +1,5 @@
 const Configuration = require('../models/configuration')
+const { allowedToChangeWebsiteUrls } = require("../../config");
 
 const BASIC_APP_CONFIGURATION_KEY = 'app-configuration'
 
@@ -11,18 +12,18 @@ function getConfigurationByKey(req, res, next) {
       req.configuration = configuration
       next();
     })
-    .catch(() => res.status(404).json({message: 'configuration not exists'}).end())
+    .catch(() => res.status(404).json({ message: 'configuration not exists' }).end())
 }
 
 function getConfigurationsList(req, res) {
-  Configuration.find({tenant: req.headers.tenant})
+  Configuration.find({ tenant: req.headers.tenant })
     .select('key public description created')
     .lean()
     .exec()
     .then(list => {
       res.status(200).json(list || []).end()
     })
-    .catch(() => res.status(401).json({message: 'failed to load configurations list'}).end())
+    .catch(() => res.status(401).json({ message: 'failed to load configurations list' }).end())
 }
 
 function getConfiguration(req, res) {
@@ -48,7 +49,7 @@ async function createConfiguration(req, res) {
       res.status(200).json(configuration).end()
     })
     .catch(() => {
-      res.status(400).json({message: 'configuration creation failed'}).end()
+      res.status(400).json({ message: 'configuration creation failed' }).end()
     })
 }
 
@@ -62,7 +63,7 @@ async function updateConfiguration(req, res) {
   try {
     configuration = await Configuration.getForEdit(tenant, configKey).exec();
   } catch {
-    res.status(404).json({message: 'configuration not exists'}).end()
+    res.status(404).json({ message: 'configuration not exists' }).end()
     return;
   }
 
@@ -71,16 +72,20 @@ async function updateConfiguration(req, res) {
   }
   if (body.metadata) {
     if (configuration.key === BASIC_APP_CONFIGURATION_KEY && body.metadata.websiteUrls) {
+      if (!allowedToChangeWebsiteUrls) {
+        res.status(400).json({ message: 'Not allowed to change websiteUrls' }).end()
+        return;
+      }
       const existingTenantWithUrl = await Configuration.findOne({
-        _id: {$ne: configuration._id},
-        websiteUrls: {$in: body.metadata.websiteUrls}
+        _id: { $ne: configuration._id },
+        websiteUrls: { $in: body.metadata.websiteUrls }
       })
         .select('_id')
         .lean()
         .exec();
 
       if (existingTenantWithUrl) {
-        res.status(400).json({message: 'URL already exists for another account'}).end()
+        res.status(400).json({ message: 'URL already exists for another account' }).end()
         return;
       }
     }
@@ -96,7 +101,7 @@ async function updateConfiguration(req, res) {
       res.status(200).json(configuration).end()
     })
     .catch(() => {
-      res.status(400).json({message: 'configuration update failed'}).end()
+      res.status(400).json({ message: 'configuration update failed' }).end()
     })
 }
 
@@ -106,12 +111,12 @@ async function removeConfiguration(req, res) {
     configuration = await Configuration.getForEdit(req.headers.tenant, req.params.configKey).select('key').exec();
     Configuration.clearCache(req.headers.tenant, req.params.configKey);
   } catch {
-    res.status(404).json({message: 'configuration not exists'}).end()
+    res.status(404).json({ message: 'configuration not exists' }).end()
     return;
   }
 
   if (configuration.key === BASIC_APP_CONFIGURATION_KEY) {
-    res.status(400).json({message: 'remove configuration failed'}).end()
+    res.status(400).json({ message: 'remove configuration failed' }).end()
     return;
   }
 
@@ -119,19 +124,19 @@ async function removeConfiguration(req, res) {
     await configuration.remove();
     res.status(200).json(configuration).end()
   } catch {
-    res.status(400).json({message: 'remove configuration failed'}).end()
+    res.status(400).json({ message: 'remove configuration failed' }).end()
   }
 }
 
 function getTenantByHost(req, res) {
-  Configuration.findOne({key: 'app-configuration', 'metadata.websiteUrls': req.query.host})
+  Configuration.findOne({ key: 'app-configuration', 'metadata.websiteUrls': req.query.host })
     .select('tenant metadata.websiteUrls')
     .lean()
     .exec()
     .then(appConfig => {
       return res.status(200).json(appConfig).end()
     })
-    .catch(() => res.status(401).json({message: 'failed to load tenant from host'}).end())
+    .catch(() => res.status(401).json({ message: 'failed to load tenant from host' }).end())
 }
 
 module.exports = {
