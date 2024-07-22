@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-form-item :label="title ? $t(title) : null">
+    <el-form-item :label="title ? $t(title) : null" :required="required">
       <small v-if="label"> ({{ $t(label) }})</small>
       <small v-else-if="gap">&nbsp;</small>
       <slot name="pre"/>
@@ -20,6 +20,7 @@
                 :size="size || 'large'"
                 :native-type="type"
                 :disabled="disabled"
+                :required="required"
                 :type="type"/>
     </el-form-item>
     <slot/>
@@ -41,6 +42,7 @@ export default {
     size: String as () => 'large' | 'default' | 'small',
     modelValue: [String, Number, Object, Boolean],
     disabled: Boolean,
+    required: Boolean,
   },
   emits: ['input', 'change', 'update:modelValue'],
   setup(_, { emit }) {

@@ -15,13 +15,13 @@
           </el-button>
         </div>
       </div>
-      <el-collapse accordion>
-        <el-collapse-item>
+      <el-collapse accordion model-value="1">
+        <el-collapse-item name="1">
           <template #title>
             <h2>{{ $t('Basic Information') }}</h2>
           </template>
           <FormRowGroup>
-            <FormInput title="Name" v-model="edit.name"/>
+            <FormInput title="Name" v-model="edit.name" required/>
             <FormInput title="Description" v-model="edit.description"/>
           </FormRowGroup>
         </el-collapse-item>
@@ -50,38 +50,7 @@
           <template #title>
             <h2>{{ $t('Micro-Frontends') }}</h2>
           </template>
-          <div v-for="(mfe, index) in edit.microFrontends" :key="index" class="sub-item">
-            <FormRowGroup>
-              <FormInput class="flex-0" type="switch" v-model="mfe.active"/>
-              <FormInput title="Name" v-model="mfe.name"/>
-              <FormInput title="Description" v-model="mfe.description"/>
-              <div class="flex-0 remove-row">
-                <RemoveButton @click="edit.microFrontends.splice(index, 1)"/>
-              </div>
-            </FormRowGroup>
-            <FormRowGroup>
-              <FormInput title="URL" v-model="mfe.url"/>
-              <FormInput title="Roles" :model-value="mfe.roles.join(',')"
-                         @update:modelValue="mfe.roles = $event.split(',')"/>
-              <FormInput title="Workspace Roles" :model-value="mfe.workspaceRoles"
-                         @update:modelValue="mfe.workspaceRoles = $event.split(',')"/>
-            </FormRowGroup>
-            <FormInput title="Route?" type="switch"
-                       :model-value="!!mfe.route"
-                       @change="mfe.route = $event ? {navBarPosition: false} : undefined"/>
-            <FormRowGroup v-if="mfe.route">
-              <FormInput title="Route Name" v-model="mfe.route.name"/>
-              <FormInput title="Route Path" v-model="mfe.route.path"/>
-              <NavigationPositionSelector v-model="mfe.route.navBarPosition"/>
-            </FormRowGroup>
-            <FormRowGroup >
-              <FormInput title="No code / Low Code Screens?" type="switch"
-                         :model-value="!!mfe.use"
-                         @change="mfe.use = $event ? 'plain' : undefined"/>
-              <PreDesignedScreensSelector v-if="mfe.use" v-model="mfe.use"/>
-            </FormRowGroup>
-          </div>
-          <AddMore @click="addMoreMicroFrontend"/>
+          <EditPluginMicroFrontends/>
         </el-collapse-item>
         <el-collapse-item>
           <template #title>
@@ -118,6 +87,7 @@ import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import NavigationPositionSelector from '@/modules/plugins/components/NavigationPositionSelector.vue';
 import PreDesignedScreensSelector from '@/modules/plugins/components/PreDesignedScreensSelector.vue';
+import EditPluginMicroFrontends from '@/modules/plugins/components/EditPluginMicroFrontends.vue';
 
 const props = defineProps({
   plugin: Object as PropType<Partial<IPlugin>>,
@@ -129,6 +99,7 @@ const editor = ref()
 const emit = defineEmits(['submitted']);
 
 const edit = reactive<Partial<IPlugin>>({ ...props.plugin as Partial<IPlugin> });
+provide('edit', edit);
 
 const pluginJson = computed({
   get: () => JSON.stringify({ ...edit, injectables: edit.injectables, microFrontends: edit.microFrontends }, null, 2),
@@ -164,19 +135,6 @@ async function refreshPluginFromManifest() {
     //
   }
   emit('submitted', plugin);
-}
-
-function addMoreMicroFrontend() {
-  if (!edit.microFrontends) edit.microFrontends = [];
-  edit.microFrontends.push({
-    name: '',
-    description: '',
-    active: true,
-    opened: true,
-    url: '',
-    roles: ['*'],
-    workspaceRoles: ['*']
-  })
 }
 
 function addMoreInjectable() {
