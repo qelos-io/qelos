@@ -179,11 +179,17 @@ function refillColumnsFromBlueprint(blueprintId: string) {
 function submit() {
   const requiredProps = availableComponents[selectedComponent.value].requiredProps;
   const props = {}
+  const customData = {};
   for (const propName in propsBuilder.value) {
     const val = propsBuilder.value[propName];
     if (!val) continue;
     if (typeof val == 'object') {
-      props['v-bind:' + propName] = JSON.stringify(val);
+      const keyName = propName + '_' + Date.now().toString().substring(0, 5);
+      customData[keyName] = {
+        key: keyName,
+        fromData: val
+      }
+      props['v-bind:' + propName] = keyName;
     } else if (requiredProps.find(p => p.prop === propName).source === 'requirements') {
       props['v-bind:' + propName] = val + '?.result'
     } else {
@@ -203,7 +209,7 @@ function submit() {
             }
           }
           return acc;
-        }, {}),
+        }, customData),
     props,
   });
   dialogVisible.value = false;

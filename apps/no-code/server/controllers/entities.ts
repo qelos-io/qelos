@@ -29,6 +29,9 @@ function getEntityQuery({ entityIdentifier, blueprint, req, permittedScopes }: {
   if (permittedScopes instanceof Array) {
     if (!permittedScopes.includes(PermissionScope.TENANT)) {
       if (blueprint.permissionScope === PermissionScope.WORKSPACE) {
+        if (!req.workspace) {
+          throw new Error('user is not connected to a workspace');
+        }
         query.workspace = req.workspace._id
       } else if (blueprint.permissionScope === PermissionScope.USER) {
         query.user = req.user._id
@@ -76,7 +79,8 @@ export async function getAllBlueprintEntities(req, res) {
       .exec()
 
     res.json(entities).end();
-  } catch {
+  } catch (err) {
+    logger.log('entities error', err);
     res.status(500).json({ message: 'something went wrong with entities' }).end();
   }
 }
