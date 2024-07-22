@@ -53,6 +53,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
             url: item.fromHTTP.uri
           }).then(getCallData), null)
         }
+        all[item.key] = cachedDispatchers[cachedKey];
       } else if (item.fromBlueprint) {
         const entitiesOfBlueprint = Sdk.blueprints.entitiesOf(item.fromBlueprint.name)
         if (item.fromBlueprint.identifier) {

@@ -8,21 +8,21 @@ export async function getAllEvents(req, res) {
   const {page = 0} = req.query;
   const skip = Number(page * LIMIT);
 
-  const event = await PlatformEvent
+  const events = await PlatformEvent
     .find({
-      tenant: req.tenant,
+      tenant: req.headers.tenant,
     })
     .select('-metadata')
     .sort('-created')
     .skip(isNaN(skip) ? 0 : skip)
     .limit(LIMIT)
     .lean();
-  res.json(event).end();
+  res.json(events).end();
 }
 
 export async function getEvent(req, res) {
   const event = await PlatformEvent.findOne({
-    tenant: req.tenant,
+    tenant: req.headers.tenant,
     _id: req.params.eventId
   }).lean().exec()
   res.json(event).end();

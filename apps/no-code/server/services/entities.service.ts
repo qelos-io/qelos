@@ -98,6 +98,9 @@ export function getValidBlueprintMetadata(metadata: any, blueprint: IBlueprint) 
 }
 
 export async function updateEntityMapping(blueprint: IBlueprint, entity: IBlueprintEntity) {
+  if (blueprint.updateMapping) {
+    return;
+  }
   const entries = Object.entries(blueprint.updateMapping);
   await Promise.all(entries
     .map(
