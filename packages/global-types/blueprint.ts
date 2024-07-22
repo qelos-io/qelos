@@ -9,7 +9,8 @@ export enum BlueprintPropertyType {
   BOOLEAN = 'boolean',
   DATE = 'date',
   DATETIME = 'datetime',
-  TIME = 'time'
+  TIME = 'time',
+  OBJECT = 'object'
 }
 
 export enum PermissionScope {
@@ -41,6 +42,7 @@ export interface IBlueprintPropertyDescriptor {
   multi?: boolean,
   min?: number,
   max?: number,
+  schema?: any;
 }
 
 export interface IBlueprint {

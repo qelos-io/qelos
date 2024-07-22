@@ -47,7 +47,8 @@ const MicroFrontendSchema = new mongoose.Schema<IMicroFrontend>({
     fromBlueprint: {
       name: String,
       identifier: String,
-    }
+    },
+    fromData: mongoose.Schema.Types.Mixed
   }],
   active: {
     type: Boolean,

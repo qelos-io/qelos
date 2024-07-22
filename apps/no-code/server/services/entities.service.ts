@@ -2,6 +2,18 @@ import { IBlueprint } from '../models/blueprint';
 import { IBlueprintPropertyDescriptor } from '@qelos/global-types';
 import BlueprintEntity, { IBlueprintEntity } from '../models/blueprint-entity';
 import * as jq from 'node-jq';
+import Ajv from 'ajv';
+
+const ajv = new Ajv()
+
+// a json schema that is equal to Record<string, string>
+const defaultValidate = ajv.compile({
+  type: 'object',
+  additionalProperties: {
+    type: 'string'
+  }
+})
+
 
 export function validateValue(key: string, value: any, property: IBlueprintPropertyDescriptor) {
   if (typeof value === 'undefined' && !property.required) {
@@ -15,6 +27,13 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
   if (property.type === 'boolean') {
     if (typeof value !== 'boolean') {
       throw new Error(`Property ${key} must be a boolean`);
+    }
+  }
+  if (property.type === 'object') {
+    const validate = property.schema ? ajv.compile(property.schema) : defaultValidate;
+    const isValid = validate(value);
+    if (!isValid) {
+      throw new Error(`Property ${key} must be a valid object`);
     }
   }
   if (property.type === 'string') {

@@ -11,5 +11,6 @@ export interface IScreenRequirement {
   fromBlueprint?: {
     name: string,
     identifier?: string,
-  }
+  },
+  fromData?: any;
 }

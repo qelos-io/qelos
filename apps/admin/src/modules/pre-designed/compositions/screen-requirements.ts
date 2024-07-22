@@ -72,6 +72,8 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
           }
           all[item.key] = cachedDispatchers[cachedKey];
         }
+      } else if (item.fromData) {
+        all[item.key] = ref(item.fromData);
       }
 
       return all
