@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import logger from '../services/logger';
 import { getValidBlueprintMetadata, updateEntityMapping, validateEntityRelations, } from '../services/entities.service';
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
+import { emitPlatformEvent } from '@qelos/api-kit';
 
 type Full<T> = {
   [P in keyof T]-?: T[P];
@@ -139,6 +140,22 @@ export async function createBlueprintEntity(req, res) {
     await updateAllEntityMetadata(req, blueprint, entity);
 
     await entity.save();
+    if (blueprint.dispatchers?.create) {
+      emitPlatformEvent({
+        tenant: entity.tenant,
+        user: entity.user.toString(),
+        source: 'blueprints',
+        kind: blueprint.identifier,
+        eventName: 'create',
+        description: `${blueprint.name} created`,
+        metadata: {
+          workspace: entity.workspace.toString(),
+          entity: entity.identifier,
+          blueprint: blueprint.identifier,
+        },
+      }).catch(logger.error);
+    }
+
     res.status(200).json(entity).end()
     return;
   } catch (err) {
@@ -183,7 +200,27 @@ export async function updateBlueprintEntity(req, res) {
   try {
     await updateAllEntityMetadata(req, blueprint, entity);
 
+    const modifiedFields = blueprint.dispatchers?.update && entity.modifiedPaths({ includeChildren: true });
+
     await entity.save();
+
+    if (blueprint.dispatchers?.update) {
+      emitPlatformEvent({
+        tenant: entity.tenant,
+        user: entity.user.toString(),
+        source: 'blueprints',
+        kind: blueprint.identifier,
+        eventName: 'update',
+        description: `${blueprint.name} updated`,
+        metadata: {
+          workspace: entity.workspace.toString(),
+          entity: entity.identifier,
+          blueprint: blueprint.identifier,
+          modifiedFields,
+        },
+      }).catch(logger.error);
+    }
+
     res.status(200).json(entity).end()
   } catch (err) {
     logger.error(err)
@@ -218,6 +255,23 @@ export async function removeBlueprintEntity(req, res) {
       return;
     }
     await BlueprintEntity.deleteOne(query).exec();
+
+    if (blueprint.dispatchers?.update) {
+      emitPlatformEvent({
+        tenant: entity.tenant,
+        user: entity.user.toString(),
+        source: 'blueprints',
+        kind: blueprint.identifier,
+        eventName: 'delete',
+        description: `${blueprint.name} deleted`,
+        metadata: {
+          workspace: entity.workspace.toString(),
+          entity: entity.identifier,
+          blueprint: blueprint.identifier,
+        },
+      }).catch(logger.error);
+    }
+
     res.json(entity).end();
   } catch (err) {
     logger.error(err);

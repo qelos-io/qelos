@@ -56,6 +56,11 @@ export interface IBlueprint {
   properties: Record<string, IBlueprintPropertyDescriptor>,
   updateMapping: Record<string, string>,
   relations: { key: string, target: string }[],
+  dispatchers: {
+    create: boolean,
+    update: boolean,
+    delete: boolean
+  }
   created: Date;
   updated: Date;
 }

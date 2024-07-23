@@ -53,6 +53,20 @@ const BlueprintSchema = new mongoose.Schema<IBlueprint>({
     target: String
   }],
   updateMapping: mongoose.SchemaTypes.Mixed,
+  dispatchers: {
+    create: {
+      type: Boolean,
+      default: () => false
+    },
+    update: {
+      type: Boolean,
+      default: () => false
+    },
+    delete: {
+      type: Boolean,
+      default: () => false
+    },
+  },
   created: {
     type: Date,
     default: Date.now,

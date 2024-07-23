@@ -90,7 +90,6 @@ function openModal(row: any, index: number) {
 }
 
 function submitMfe() {
-  alert('yo')
   edit.microFrontends[editedMfeIndex.value] = editedMfe.value;
   editingMode.value = false;
 }

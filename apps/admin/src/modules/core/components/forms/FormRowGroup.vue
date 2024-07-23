@@ -13,6 +13,10 @@
   align-items: flex-end;
 }
 
+.form-row-group[align-start] {
+  justify-content: flex-start;
+}
+
 .form-row-group[align-center] {
   align-items: center;
 }

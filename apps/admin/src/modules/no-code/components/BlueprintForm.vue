@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { provide, reactive, ref, toRef, watch } from 'vue';
-import { BlueprintPropertyType, EntityIdentifierMechanism, IBlueprint } from '@qelos/global-types';
+import { EntityIdentifierMechanism, IBlueprint } from '@qelos/global-types';
 import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
@@ -8,8 +8,9 @@ import PermissionScopeSelector from '@/modules/no-code/components/PermissionScop
 import CrudOperationSelector from '@/modules/no-code/components/CrudOperationSelector.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
-import BlueprintPropertyTypeSelector from '@/modules/no-code/components/BlueprintPropertyTypeSelector.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
+import EditBlueprintProperties from '@/modules/no-code/components/EditBlueprintProperties.vue';
+import { getKeyFromName } from '@/modules/core/utils/texts';
 
 const props = withDefaults(defineProps<{
   submitting: boolean;
@@ -20,13 +21,9 @@ const props = withDefaults(defineProps<{
 });
 const emit = defineEmits(['submitted']);
 
-const edit = reactive({ name: '', ...props.blueprint });
-
-const blueprintProperties = ref(
-    Object
-        .entries(edit.properties || {})
-        .map(([key, value]) => ({ key, ...value }))
-);
+const edit = reactive<Partial<IBlueprint>>({ name: '', dispatchers: { create: false, delete: false, update: false }, ...props.blueprint });
+const blueprintProperties = ref()
+provide('edit', edit);
 
 const blueprintMapping = ref(
     Object
@@ -35,13 +32,6 @@ const blueprintMapping = ref(
 );
 
 provide('submitting', toRef(props, 'submitting'));
-
-function getKeyFromName(newName: string) {
-  return newName
-      .replace(/ /g, '_')
-      .replace(/[^a-zA-Z0-9_]/g, '')
-      .toLowerCase()
-}
 
 watch(() => edit.name, (newName) => {
   if (newName && newName.trim()) {
@@ -104,39 +94,7 @@ function submit() {
             {{ $t('Properties determine the structure of the blueprint.') }}<br>
             {{ $t('Each entity will also have an identifier and a title, regardless of those custom entities.') }}
           </p>
-          <div v-for="(entry, index) in blueprintProperties" :key="index" class="property">
-            <FormRowGroup>
-              <FormInput v-model="entry.key" title="Key" required/>
-              <FormInput v-model="entry.title" @input="entry.key = getKeyFromName($event)" title="Title" required/>
-              <BlueprintPropertyTypeSelector v-model="entry.type"/>
-            </FormRowGroup>
-            <FormInput v-model="entry.description" title="Description"/>
-            <el-form-item v-if="entry.type === BlueprintPropertyType.STRING" :label="$t('Enum')">
-              <el-select
-                  v-model="entry.enum"
-                  multiple
-                  filterable
-                  allow-create
-                  default-first-option
-                  :reserve-keyword="false"
-                  :placeholder="$t('Enter valid options')"
-              >
-                <el-option v-for="item in entry.enum" :key="item" :label="item" :value="item"/>
-              </el-select>
-            </el-form-item>
-            <FormRowGroup>
-              <FormInput v-model="entry.required" title="Required" type="switch" class="flex-0"/>
-              <FormInput v-model="entry.multi" title="Multi" type="switch" class="flex-0"/>
-              <template v-if="entry.type === BlueprintPropertyType.STRING">
-                <FormInput v-model="entry.max" title="Max Length" type="number" class="flex-0"/>
-              </template>
-              <div class="flex-0 remove-row">
-                <RemoveButton @click="blueprintProperties.splice(blueprintProperties.indexOf(entry), 1)"/>
-              </div>
-            </FormRowGroup>
-          </div>
-          <AddMore
-              @click="blueprintProperties.push({key: 'new_item', title: '', enum: [], type: BlueprintPropertyType.STRING, description: '', required: false, multi: false})"/>
+          <EditBlueprintProperties @changed="blueprintProperties = $event" />
         </el-collapse-item>
 
         <el-collapse-item name="3">
@@ -169,16 +127,31 @@ function submit() {
             {{ $t('Each relation will have a key and a target.') }}<br>
             {{ $t('The target is the entity that will be connected to the current entity.') }}
           </p>
-          <div v-for="(entry, index) in blueprint.relations" :key="index" class="property">
+          <div v-for="(entry, index) in edit.relations" :key="index" class="property">
             <FormRowGroup>
               <FormInput v-model="entry.key" title="Key" />
               <BlueprintSelector title="Target Blueprint" v-model="entry.target"/>
               <div class="flex-0 remove-row">
-                <RemoveButton @click="blueprint.relations.splice(blueprint.relations.indexOf(entry), 1)"/>
+                <RemoveButton @click="edit.relations.splice(edit.relations.indexOf(entry), 1)"/>
               </div>
             </FormRowGroup>
           </div>
-          <AddMore @click="blueprint.relations.push({key: '', target: ''})"/>
+          <AddMore @click="edit.relations.push({key: '', target: ''})"/>
+        </el-collapse-item>
+
+        <el-collapse-item name="5">
+          <template #title>
+            <h3>{{ $t('Events Emitting') }}</h3>
+          </template>
+          <p>
+            {{ $t('Applying this feature will allow you to create webhooks and subscribe to changes made on entities.') }}
+          </p>
+          <FormRowGroup align-start>
+            <FormInput v-model="edit.dispatchers.create" title="Create" type="switch" class="flex-0"/>
+            <FormInput v-model="edit.dispatchers.update" title="Update" type="switch" class="flex-0"/>
+            <FormInput v-model="edit.dispatchers.delete" title="Delete" type="switch" class="flex-0"/>
+          </FormRowGroup>
+
         </el-collapse-item>
       </el-collapse>
     </div>
