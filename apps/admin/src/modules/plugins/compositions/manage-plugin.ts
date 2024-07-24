@@ -18,7 +18,7 @@ export function useEditPlugin(pluginId?: string) {
       pluginsService.update(pluginId, changes).then(retry),
     {
       success: 'Plugin updated successfully',
-      error: (err) => {
+      error: (err: Error & any) => {
         return err?.response?.data?.message || 'Failed to update plugin'
       }
     }

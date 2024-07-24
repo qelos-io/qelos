@@ -11,11 +11,14 @@
     <div v-if="active === 0">
       <h2>Select Component</h2>
 
-      <component v-for="(component, key) in availableComponents"
-                 :key="key"
-                 :is="component.mock"
-                 :style="{opacity: selectedComponent === key ? 1 : 0.7, cursor: 'pointer'}"
-                 @click="selectComponent(key)"/>
+      <div v-for="(component, key) in availableComponents"
+           :key="key"
+           :style="{opacity: selectedComponent === key ? 1 : 0.7}"
+           class="mock-component"
+           @click="selectComponent(key)">
+        <component v-if="component.mock" :is="component.mock">{{ component.description }}</component>
+      </div>
+
     </div>
     <div v-else-if="active === 1">
       <h2>Set Properties</h2>
@@ -71,6 +74,8 @@
         <FormInput v-else
                    :type="prop.type"
                    :title="prop.label"
+                   :label="prop.description"
+                   :placeholder="prop.placeholder"
                    v-model="propsBuilder[prop.prop]"/>
       </div>
     </div>
@@ -102,6 +107,7 @@ import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
 import MockListPageTitle from '@/pre-designed/editor/MockListPageTitle.vue';
+import GeneralForm from '@/modules/pre-designed/components/GeneralForm.vue';
 
 const dialogVisible = ref(true)
 const active = ref(0)
@@ -137,6 +143,40 @@ const availableComponents = {
       }
     ]
   },
+  'general-form': {
+    component: GeneralForm,
+    mock: 'h2',
+    description: 'Choose this box to create a form',
+    requiredProps: [
+      {
+        prop: 'on-submit',
+        label: 'On Submit',
+        type: 'text',
+        source: 'manual',
+        bind: true,
+        value: '(form) => sdk.blueprints.entitiesOf(\'todo\').create(form)',
+        description: 'Function to call when form is submitted'
+      },
+      {
+        prop: 'data', label: 'Data', type: 'text', source: 'manual',
+        description: 'Data to be used in the form'
+      },
+      {
+        props: 'submit-msg',
+        type: 'text',
+        label: 'Success Message',
+        placeholder: 'Submitted successfully',
+        source: 'manual'
+      },
+      {
+        props: 'error-msg',
+        type: 'text',
+        label: 'Error Message',
+        placeholder: 'Failed to submit entity',
+        source: 'manual'
+      }
+    ]
+  }
 }
 
 const emit = defineEmits(['save', 'close'])
@@ -150,11 +190,11 @@ function selectComponent(key: string) {
 
   propsBuilder.value = availableComponents[key].requiredProps.reduce((acc, prop) => {
     if (prop.source === 'requirements') {
-      acc[prop.prop] = '';
+      acc[prop.prop] = prop.value || '';
     } else if (prop.type === 'array') {
       acc[prop.prop] = [{}];
     } else {
-      acc[prop.prop] = '';
+      acc[prop.prop] = prop.value || '';
     }
     return acc;
   }, {});
@@ -181,6 +221,7 @@ function submit() {
   const props = {}
   const customData = {};
   for (const propName in propsBuilder.value) {
+    const propData = requiredProps.find(p => p.prop === propName);
     const val = propsBuilder.value[propName];
     if (!val) continue;
     if (typeof val == 'object') {
@@ -190,10 +231,10 @@ function submit() {
         fromData: val
       }
       props['v-bind:' + propName] = keyName;
-    } else if (requiredProps.find(p => p.prop === propName).source === 'requirements') {
+    } else if (propData.source === 'requirements') {
       props['v-bind:' + propName] = val + '?.result'
     } else {
-      props[propName] = val;
+      props[propData.bind ? ('v-bind:' + propName) : propName] = val;
     }
   }
 
@@ -231,5 +272,17 @@ provide('editableManager', ref(false))
 
 .remove-row {
   margin-bottom: 18px;
+}
+
+.mock-component {
+  cursor: pointer;
+  border: 1px solid #eee;
+  margin: 10px;
+  padding: 10px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #eee;
+  }
 }
 </style>
