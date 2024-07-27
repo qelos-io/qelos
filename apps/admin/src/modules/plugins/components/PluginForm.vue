@@ -38,7 +38,50 @@
           <template #title>
             <h2>{{ $t('Hooks & Events') }}</h2>
           </template>
-          Soon
+          <div v-for="(event, index) in edit.subscribedEvents" class="sub-item" :key="index">
+            <FormRowGroup>
+              <el-form-item>
+                <template #label>
+                  {{ $t('Source') }}
+                  <InfoIcon content="Plugin events will have a prefix of 'plugin:' before their custom event names"/>
+                </template>
+                <el-select
+                    v-model="event.source"
+                    filterable
+                    allow-create
+                    default-first-option
+                    :reserve-keyword="false"
+                    :placeholder="$t('*')"
+                >
+                  <el-option :label="$t('(*) All')" value="*"/>
+                  <el-option :label="$t('Authentication')" value="auth"/>
+                  <el-option :label="$t('Assets')" value="assets"/>
+                  <el-option :label="$t('Blueprints')" value="blueprints"/>
+                </el-select>
+              </el-form-item>
+              <template v-if="event.source === 'blueprints'">
+                <BlueprintSelector title="Kind" v-model="event.kind"/>
+                <el-form-item :label="$t('Event Name')">
+                  <el-select v-model="event.eventName">
+                    <el-option :label="$t('Create')" value="create"/>
+                    <el-option :label="$t('Update')" value="update"/>
+                    <el-option :label="$t('Delete')" value="delete"/>
+                  </el-select>
+                </el-form-item>
+              </template>
+              <template v-else>
+                <FormInput title="Kind" v-model="event.kind" :placeholder="$t('(*) All')"/>
+                <FormInput title="Event Name" v-model="event.eventName" :placeholder="$t('(*) All')"/>
+              </template>
+            </FormRowGroup>
+            <FormRowGroup>
+              <FormInput title="Webhook URL" type="url" v-model="event.hookUrl" required placeholder="https://..."/>
+              <div class="flex-0 remove-row">
+                <RemoveButton @click="edit.subscribedEvents.splice(index, 1)"/>
+              </div>
+            </FormRowGroup>
+          </div>
+          <AddMore @click="edit.subscribedEvents.push({source: '', kind: '', eventName: '', hookUrl: ''})"/>
         </el-collapse-item>
         <el-collapse-item>
           <template #title>
@@ -72,7 +115,8 @@
       </el-collapse>
 
       <h2>{{ $t('Summary') }}</h2>
-      <Monaco ref="editor" :model-value="pluginJson" @change="pluginJson = editor.getMonaco().getValue()" language="json"/>
+      <Monaco ref="editor" :model-value="pluginJson" @change="pluginJson = editor.getMonaco().getValue()"
+              language="json"/>
     </div>
   </el-form>
 </template>
@@ -88,6 +132,8 @@ import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import NavigationPositionSelector from '@/modules/plugins/components/NavigationPositionSelector.vue';
 import PreDesignedScreensSelector from '@/modules/plugins/components/PreDesignedScreensSelector.vue';
 import EditPluginMicroFrontends from '@/modules/plugins/components/EditPluginMicroFrontends.vue';
+import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
+import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
 
 const props = defineProps({
   plugin: Object as PropType<Partial<IPlugin>>,
@@ -106,7 +152,7 @@ const pluginJson = computed({
   set: (value: string) => {
     try {
       Object.assign(edit, JSON.parse(value));
-    } catch(err) {
+    } catch (err) {
       console.log(err)
     }
   }

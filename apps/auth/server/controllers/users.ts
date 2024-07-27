@@ -19,7 +19,6 @@ function getUserIdIfExists(_id, tenant) {
 }
 
 function getUsersForAdmin(req: AuthRequest, res: Response): void {
-  logger.log('getting users for admin', req.query)
   try {
     // support old versions
     const username = req.query.username?.toString().toLowerCase().trim().replace(/ /g, '+') || undefined;
@@ -41,7 +40,6 @@ function getUsersForAdmin(req: AuthRequest, res: Response): void {
       .lean()
       .exec()
       .then((users = []) => {
-        logger.log('users found', users)
         res.json(users).end();
       })
       .catch((err) => {

@@ -1,7 +1,7 @@
-const isProduction = process.env.NODE_ENV !== 'development'
+const isProduction = process.env.NODE_ENV === 'production';
 
 const httpAgent = isProduction ?
-  new (require('https').Agent)({
+  new (require('node:https').Agent)({
     rejectUnauthorized: false,
   })
   : undefined

@@ -56,7 +56,7 @@ async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBluepri
 }
 
 export async function getAllBlueprintEntities(req, res) {
-  const blueprint = req.blueprint;
+  const blueprint = req.blueprint as IBlueprint;
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin);
 
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
@@ -78,6 +78,17 @@ export async function getAllBlueprintEntities(req, res) {
     const entities = await BlueprintEntity.find(query)
       .lean()
       .exec()
+
+    blueprint.relations?.map(relation => {
+      const query = {
+        ...getEntityQuery({ blueprint, req, permittedScopes }),
+        identifier: {
+          $in: Array.from(new Set(entities.map(entity => {
+            return entity.metadata[relation.key];
+          })))
+        }
+      }
+    })
 
     res.json(entities).end();
   } catch (err) {
@@ -141,6 +152,7 @@ export async function createBlueprintEntity(req, res) {
 
     await entity.save();
     if (blueprint.dispatchers?.create) {
+      logger.log('dispatch create event');
       emitPlatformEvent({
         tenant: entity.tenant,
         user: entity.user.toString(),

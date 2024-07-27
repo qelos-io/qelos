@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
+import { storeToRefs } from 'pinia';
 
 const model = defineModel('modelValue', {
   type: String,
@@ -9,7 +10,7 @@ const model = defineModel('modelValue', {
 
 defineProps<{ title?: string, info?: string }>()
 
-const { blueprints: allBlueprints } = useBlueprintsStore()
+const {blueprints} = storeToRefs(useBlueprintsStore())
 
 </script>
 
@@ -20,8 +21,8 @@ const { blueprints: allBlueprints } = useBlueprintsStore()
       <InfoIcon v-if="info" :content="$t(info)"/>
     </template>
     <el-select v-model="model" filterable>
-      <el-option v-for="(blueprint, index) in allBlueprints"
-                 :key="index"
+      <el-option v-for="(blueprint, index) in blueprints"
+                 :key="index + '-' + blueprint.identifier"
                  :label="blueprint.name"
                  :value="blueprint.identifier"/>
     </el-select>

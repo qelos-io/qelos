@@ -1,8 +1,9 @@
 import EventEmitter from 'events';
-import {IEvent} from '../models/event';
+import { IEvent } from '../models/event';
 import Plugin from '../models/plugin';
-import {getPluginToken} from './tokens-management';
-import {fetchPlugin} from './plugins-call';
+import { getPluginToken } from './tokens-management';
+import { fetchPlugin } from './plugins-call';
+import logger from './logger';
 
 const ALL = '*';
 
@@ -18,12 +19,12 @@ export function emitPlatformEvent(event: IEvent) {
 hookEvents.on('hook', async (platformEvent: IEvent) => {
   const awaitedPlugins = await Plugin.find({
     $and: [
-      {tenant: platformEvent.tenant},
+      { tenant: platformEvent.tenant },
       {
         $or: [
-          {'subscribedEvents.source': platformEvent.source},
-          {'subscribedEvents.kind': platformEvent.kind},
-          {'subscribedEvents.eventName': platformEvent.eventName},
+          { 'subscribedEvents.source': platformEvent.source },
+          { 'subscribedEvents.kind': platformEvent.kind },
+          { 'subscribedEvents.eventName': platformEvent.eventName },
         ]
       }
     ]
@@ -52,21 +53,21 @@ hookEvents.on('hook', async (platformEvent: IEvent) => {
       }
 
       if (shouldHook) {
-        hooks.push({hookUrl: subscribedEvent.hookUrl})
+        hooks.push({ hookUrl: subscribedEvent.hookUrl })
       }
     })
 
     if (hooks.length) {
       const accessToken = await getPluginToken(plugin)
 
-      hooks.forEach(({hookUrl}) => {
+      hooks.forEach(({ hookUrl }) => {
         return fetchPlugin({
           url: hookUrl,
           method: 'POST',
           tenant: plugin.tenant,
           accessToken,
           body: emittedEventContent
-        }).catch(() => null);
+        }).catch(logger.error);
       })
     }
   })).catch(() => null);

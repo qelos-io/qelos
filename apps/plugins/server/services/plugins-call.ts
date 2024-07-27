@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import httpAgent from './http-agent';
 
-export function fetchPlugin({url, method = 'GET', tenant, accessToken, body = '', headers = {}}) {
+export function fetchPlugin({ url, method = 'GET', tenant, accessToken, body = '', headers = {} }) {
   return fetch(url, {
     method,
     body: body || undefined,

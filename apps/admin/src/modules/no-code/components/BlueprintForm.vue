@@ -40,11 +40,14 @@ watch(() => edit.name, (newName) => {
 })
 
 function submit() {
-  emit('submitted', {
-    ...edit,
-    properties: blueprintProperties.value.reduce((acc, { key, ...rest }) => ({ ...acc, [key]: rest }), {}),
-    updateMapping: blueprintMapping.value.reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {}),
-  })
+  const data = { ...edit };
+  if (blueprintProperties.value) {
+    data.properties = blueprintProperties.value.reduce((acc, { key, ...rest }) => ({ ...acc, [key]: rest }), {});
+  }
+  if (blueprintMapping.value) {
+    data.updateMapping = blueprintMapping.value.reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {});
+  }
+  emit('submitted', data)
 }
 </script>
 

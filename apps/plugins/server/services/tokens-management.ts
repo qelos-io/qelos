@@ -23,7 +23,7 @@ function callSecretsService(url: string, tenant: string, key: string, value?: an
 }
 
 export function getRefreshSecret(tenant: string, apiPath: string): Promise<{ value: string }> {
-  logger.log('set refresh secret for ', tenant, apiPath)
+  logger.log('get refresh secret for ', tenant, apiPath)
   return callSecretsService('/api/secrets/get', tenant, `refresh-token-${tenant}-${apiPath}`)
 }
 
