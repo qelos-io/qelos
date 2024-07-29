@@ -1,6 +1,7 @@
 ---
 title: QELOS Installation and Setup Guide
 editLink: true
+
 ---
 
 # {{ $frontmatter.title }}
