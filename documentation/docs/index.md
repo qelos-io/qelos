@@ -10,3 +10,11 @@ editLink: true
   <p><strong>Enjoy your QELOS!</strong></p>
   
 </div>
+
+Getting started with QELOS is simple. Follow these steps to install and set up your development environment:
+
+1. **[Installation](./getting-started/installation.md)**: Learn how to install QELOS on your system.
+2. **[Create Blueprints](./getting-started/create-blueprints.md)**: Discover how to create and manage your blueprints.
+3. **[Create Your First Plugin](./getting-started/create-your-first-plugin.md)**: Discover how to create and manage your first plugin.
+4. **[Design Settings](./getting-started/design-settings.md)**: Find out how to design your admin panel.
+5. **[Deployment](./getting-started/deployment.md)**: Find out how to deploy your application to a production environment.

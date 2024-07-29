@@ -1,4 +1,4 @@
-import {defineConfig} from 'vitepress'
+import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'QELOS',
@@ -9,37 +9,39 @@ export default defineConfig({
       {
         text: 'GETTING STARTED',
         items: [
-          {text: 'Intro to QELOS', link: '/getting-started/intro'},
-          {text: 'Installation', link: '/getting-started/installation'},
-          {text: 'Deployment', link: '/getting-started/deployment'},
-          {text: 'Create your first plugin', link: '/getting-started/create-your-first-plugin'},
+          { text: 'Intro to QELOS', link: '/getting-started/intro' },
+          { text: 'Installation', link: '/getting-started/installation' },
+          { text: 'Create your first plugin', link: '/getting-started/create-your-first-plugin' },
+          { text: 'Create Blueprints', link: '/getting-started/create-blueprints' },
+          { text: 'Design Settings', link: '/getting-started/design-settings' },
+          { text: 'Deployment', link: '/getting-started/deployment' },
         ]
       },
       {
         text: 'PLUGINS',
         items: [
-          {text: 'Create a Plugin', link: '/plugins/create'},
+          { text: 'Create a Plugin', link: '/plugins/create' },
           // {text: 'Test your Plugin', link: '/plugins/test'},
-          {text: 'Plugin Lifecycle', link: '/plugins/lifecycle'},
-          {text: 'Deploy your Plugin', link: '/plugins/deploy'},
-          {text: 'Hooks and Events', link: '/plugins/hooks'},
-          {text: 'API Proxy', link: '/plugins/api-proxy'},
-          {text: 'Micro-Frontend', link: '/plugins/micro-frontend'},
-          {text: 'Pre-Designed Frontends', link: '/plugins/pre-designed-frontends'},
+          { text: 'Plugin Lifecycle', link: '/plugins/lifecycle' },
+          { text: 'Deploy your Plugin', link: '/plugins/deploy' },
+          { text: 'Hooks and Events', link: '/plugins/hooks' },
+          { text: 'API Proxy', link: '/plugins/api-proxy' },
+          { text: 'Micro-Frontend', link: '/plugins/micro-frontend' },
+          { text: 'Pre-Designed Frontends', link: '/plugins/pre-designed-frontends' },
         ]
       },
       {
         text: 'MICRO-FRONTENDS',
         items: [
-          {text: 'Cross-Domain Authorization', link: '/mfe/cross-domain-authorization'},
+          { text: 'Cross-Domain Authorization', link: '/mfe/cross-domain-authorization' },
         ]
       },
       {
         text: 'PRE-DESIGNED FRONTENDS',
         items: [
-          {text: 'Blocks List', link: '/pre-designed-frontends/blocks-list'},
-          {text: 'Rows List', link: '/pre-designed-frontends/rows-list'},
-          {text: 'Free HTML', link: '/pre-designed-frontends/free-html'},
+          { text: 'Blocks List', link: '/pre-designed-frontends/blocks-list' },
+          { text: 'Rows List', link: '/pre-designed-frontends/rows-list' },
+          { text: 'Free HTML', link: '/pre-designed-frontends/free-html' },
         ]
       }
     ]
