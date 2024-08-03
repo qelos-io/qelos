@@ -1,3 +1,5 @@
+
+
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
@@ -15,6 +17,21 @@ export default defineConfig({
           { text: 'Create Blueprints', link: '/getting-started/create-blueprints' },
           { text: 'Design Settings', link: '/getting-started/design-settings' },
           { text: 'Deployment', link: '/getting-started/deployment' },
+        ]
+      },
+      {
+        text: 'SDK',
+        items: [
+          { text: 'Introduction to the SDK', link: '/sdk/sdk' },
+          { text: 'Installation', link: '/sdk/installation' },
+          { text: 'Authentication', link: '/sdk/authentication' },
+          { text: 'Basic Usage', link: '/sdk/basic_usage' },
+          { text: 'Blueprints Operations', link: '/sdk/blueprints_operations' },
+          { text: 'Managing Configurations', link: '/sdk/managing_configurations' },
+          { text: 'Managing Layouts', link: '/sdk/managing_layouts' },
+          { text: 'Managing Plugins', link: '/sdk/managing_plugins' },
+          { text: 'Managing Users', link: '/sdk/managing_users' },
+          { text: 'Managing Workspaces', link: '/sdk/managing_workspaces' }
         ]
       },
       {
@@ -47,3 +64,7 @@ export default defineConfig({
     ]
   }
 })
+
+
+
+
