@@ -1,5 +1,5 @@
 const Client = require('ftp')
-const { getSecret } = require('../../helpers/secrets-management')
+const { getSecret } = require('../services/secrets-management')
 
 class Ftp {
   constructor (storage) {

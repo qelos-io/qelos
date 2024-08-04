@@ -1,6 +1,6 @@
 const path = require('path')
 const uniqid = require('uniqid')
-const ASSET_TYPES = require('../../helpers/asset-types.json')
+const ASSET_TYPES = require('../utils/asset-types.json')
 const Ftp = require('../models/ftp')
 const { joinUrl, isImage } = require('./url')
 

@@ -1,4 +1,4 @@
-const { getSecret } = require("../../helpers/secrets-management");
+const { getSecret } = require("../services/secrets-management");
 const cloudinary = require('cloudinary').v2;
 
 class Cloudinary {
