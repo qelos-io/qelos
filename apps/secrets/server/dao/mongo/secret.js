@@ -9,7 +9,12 @@ function setItem(tenant, key, value) {
   return Secret.findOneAndUpdate({ tenant, key }, { $set: { tenant, key, value } }, { upsert: true });
 }
 
+function removeAll(tenant) {
+  Secret.deleteMany({ tenant })
+}
+
 module.exports = {
   getItem,
-  setItem
+  setItem,
+  removeAll
 };

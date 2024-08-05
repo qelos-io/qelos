@@ -1,5 +1,5 @@
 const { extname } = require('path')
-const imageExtensions = new Set(require('../../helpers/image-extensions.json'))
+const imageExtensions = new Set(require('../utils/image-extensions.json'))
 
 function joinUrl (baseUrl, relativePath) {
   const base = baseUrl.endsWith('/') ? baseUrl : (baseUrl + '/')

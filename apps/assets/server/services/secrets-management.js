@@ -1,4 +1,4 @@
-const { internalServicesSecret, secretsToken } = require('../config')
+const { internalServicesSecret, secretsToken } = require('../../config')
 const secretsService = require('@qelos/api-kit').service('SECRETS', {port: process.env.SECRETS_SERVICE_PORT || 9002});
 
 function callSecretsService (url, tenant, key, value) {

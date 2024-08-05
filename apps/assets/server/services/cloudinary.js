@@ -1,6 +1,6 @@
 const Cloudinary = require("../models/cloudinary");
 const path = require("path");
-const ASSET_TYPES = require('../../helpers/asset-types.json');
+const ASSET_TYPES = require('../utils/asset-types.json');
 const { generateIdentifier } = require("./identifier");
 const DatauriParser = require('datauri/parser');
 const { joinUrl } = require("./url");

@@ -1,4 +1,4 @@
-const ASSET_TYPES = require('../../helpers/asset-types.json');
+const ASSET_TYPES = require('../utils/asset-types.json');
 const { isImage } = require('./url');
 
 function getAssetType(metadata) {

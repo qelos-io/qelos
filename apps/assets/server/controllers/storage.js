@@ -1,7 +1,7 @@
 const uniqid = require('uniqid');
 const {dev} = require('../../config')
 const Storage = require('../models/storage');
-const {setSecret} = require('../../helpers/secrets-management');
+const {setSecret} = require('../services/secrets-management');
 
 async function createStorage(req, res) {
   const body = req.body || {};

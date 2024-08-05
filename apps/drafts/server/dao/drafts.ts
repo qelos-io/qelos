@@ -27,6 +27,10 @@ class DraftDao {
 	removeDraft(query: GetDraftQuery) {
 		return this.model.removeDraft(query)
 	}
+
+  removeTenantDrafts(tenant: string) {
+    return this.model.removeTenantDrafts(tenant)
+  }
 }
 
 const draftDao = new DraftDao

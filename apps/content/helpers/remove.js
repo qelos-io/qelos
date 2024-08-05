@@ -1,0 +1,31 @@
+const config = require('../config');
+const mongoose = require('mongoose');
+require("../server/models").connect(config.mongoUri);
+
+const TENANT = process.env.TENANT;
+
+if (!TENANT) {
+  console.log('you must specify the tenant you want to be removed');
+  process.exit(0);
+}
+
+const Configuration = mongoose.model("Configuration");
+const Block = mongoose.model("Block");
+const Layout = mongoose.model("Layout");
+
+console.log("initiate remove tenant");
+
+Promise.all([
+  Configuration.deleteMany({ tenant: TENANT }),
+  Block.deleteMany({ tenant: TENANT }),
+  Layout.deleteMany({ tenant: TENANT }),
+])
+  .then(() => {
+    console.log("tenant deleted successfully");
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.log(err);
+    process.exit(1);
+  });
+
