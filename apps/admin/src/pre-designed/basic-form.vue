@@ -7,8 +7,10 @@
                      @close="closeCodeEditor"/>
   <main v-else>
     <el-form @submit.prevent="submit">
-      <VRuntimeTemplate v-if="item" :template="relevantStructure"
-                        :template-props="templateProps"/>
+      <ErrorBoundary>
+        <VRuntimeTemplate v-if="item" :template="relevantStructure" :template-props="templateProps"/>
+      </ErrorBoundary>
+
     </el-form>
     <EditButtons v-if="isEditingEnabled" @wizard="openAddComponentModal" @code="openCodeEditor"/>
     <AddComponentModal v-if="addComponent" @save="submitComponentToTemplate" @close="addComponent = undefined"/>
@@ -31,6 +33,7 @@ import AddComponentModal from '@/pre-designed/editor/AddComponentModal.vue';
 import EditButtons from '@/pre-designed/editor/EditButtons.vue';
 import EditPageStructure from '@/pre-designed/editor/EditPageStructure.vue';
 import sdk from '@/services/sdk';
+import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
 
 const route = useRoute();
 const router = useRouter();

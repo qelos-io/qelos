@@ -1,16 +1,18 @@
 <template>
   <main>
     <h1>{{ crud.display.capitalizedPlural }}</h1>
-    <TemplatedRowItem v-for="(row, index) in list" :key="row[identifierKey] || index"
-                      :row="row"
-                      :header="structure.header"
-                      :content="structure.content"
-                      :actions="structure.actions"
-                      :identifier-key="identifierKey"
-                      @remove="removeRow(row)"
-                      @edit="moveTo('edit', row)"
-                      @view="moveTo('view', row)"
-    />
+    <ErrorBoundary>
+      <TemplatedRowItem v-for="(row, index) in list" :key="row[identifierKey] || index"
+                        :row="row"
+                        :header="structure.header"
+                        :content="structure.content"
+                        :actions="structure.actions"
+                        :identifier-key="identifierKey"
+                        @remove="removeRow(row)"
+                        @edit="moveTo('edit', row)"
+                        @view="moveTo('view', row)"
+      />
+    </ErrorBoundary>
   </main>
 </template>
 
@@ -19,6 +21,7 @@ import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import TemplatedRowItem from '@/modules/pre-designed/components/TemplatedRowItem.vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
+import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
 
 const route = useRoute();
 const router = useRouter()
