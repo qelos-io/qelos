@@ -16,7 +16,7 @@
     "dev": "npx tsx watch ./index.ts",
     "prepublishOnly": "tsc",
     "build": "tsc",
-    "start": "node --use_strict --loader tsx index.ts"
+    "start": "node --use_strict --import tsx index.ts"
   },
   "main": "dist/index.js",
   "dependencies": {
