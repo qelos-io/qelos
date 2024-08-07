@@ -16,7 +16,7 @@
     "dev": "npx tsx watch ./index.ts",
     "prepublishOnly": "tsc",
     "build": "tsc",
-    "start": "node --use_strict dist/index.js"
+    "start": "node --use_strict --loader tsx index.ts"
   },
   "main": "dist/index.js",
   "dependencies": {
@@ -25,11 +25,10 @@
     "@qelos/global-types": "^3.5.5",
     "ajv": "^8.17.1",
     "mongoose": "^5.10.5",
-    "node-fetch": "^2.6.1",
     "node-jq": "^4.4.0",
     "qs": "^6.12.1",
-    "uniqid": "^5.0.3",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "tsx": "^3.12.7"
   },
   "publishConfig": {
     "access": "public"
@@ -47,7 +46,7 @@
     "@qelos/global-types",
     "mongoose",
     "node-fetch",
-    "uniqid"
+    "tsx"
   ],
   "bundleDependencies": [
     "@qelos/api-kit",
@@ -55,6 +54,6 @@
     "@qelos/global-types",
     "mongoose",
     "node-fetch",
-    "uniqid"
+    "tsx"
   ]
 }
