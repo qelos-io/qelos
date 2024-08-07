@@ -45,15 +45,21 @@
     "@qelos/cache-manager",
     "@qelos/global-types",
     "mongoose",
-    "node-fetch",
-    "tsx"
+    "ajv",
+    "node-jq",
+    "tsx",
+    "uuid",
+    "qs"
   ],
   "bundleDependencies": [
     "@qelos/api-kit",
     "@qelos/cache-manager",
     "@qelos/global-types",
     "mongoose",
-    "node-fetch",
-    "tsx"
+    "ajv",
+    "node-jq",
+    "tsx",
+    "uuid",
+    "qs"
   ]
 }
