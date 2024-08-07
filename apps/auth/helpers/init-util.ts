@@ -1,18 +1,18 @@
 /**
  * this file used to initiate basic data inside the authentication service
  */
-import { model } from "mongoose";
-import {privilegedRoles} from "../config";
+import { model } from 'mongoose';
+import { privilegedRoles } from '../config';
 
-const User = model("User");
+const User = model('User');
 
 export function init() {
   const user = new User({
     tenant: process.env.TENANT,
-    username: process.env.EMAIL || "test@test.com",
-    firstName: "Administrator",
-    lastName: "The Ruler",
-    password: process.env.PASSWORD || "admin",
+    username: process.env.USERNAME || process.env.EMAIL || 'test@test.com',
+    firstName: process.env.FIRST_NAME || 'Administrator',
+    lastName: process.env.LAST_NAME || 'The Ruler',
+    password: process.env.PASSWORD || 'admin',
     roles: [privilegedRoles[0]],
   });
 
@@ -23,7 +23,7 @@ export function init() {
 
 export function reset(): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (process.env.NODE_ENV !== "production") {
+    if (process.env.NODE_ENV !== 'production') {
       User.deleteMany({}, {}, (err) => {
         if (err) {
           return reject(err);
@@ -36,7 +36,7 @@ export function reset(): Promise<void> {
         });
       });
     } else {
-      return reject(new Error("cannot reset production"));
+      return reject(new Error('cannot reset production'));
     }
   });
 }

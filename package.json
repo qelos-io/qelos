@@ -8,7 +8,7 @@
     "prebuild": "lerna run prebuild --parallel",
     "build": "npm run prebuild && lerna run build",
     "clean": "lerna clean --yes",
-    "dev": "env-cmd lerna run dev --parallel",
+    "dev": "lerna run db && env-cmd lerna run dev --parallel",
     "predev": "kill-port 3000 3001 9000 9001 9002 9003 9004 9005 9006 9007 && docker rm -f qelos-db",
     "postdev": "npm run predev",
     "populate-db": "cd apps/auth && node helpers/init.js",

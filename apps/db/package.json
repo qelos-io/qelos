@@ -2,7 +2,7 @@
   "name": "@qelos/db",
   "version": "3.5.5",
   "scripts": {
-    "dev": "docker compose up"
+    "db": "docker compose up -d"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",

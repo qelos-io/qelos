@@ -59,7 +59,6 @@ hookEvents.on('hook', async (platformEvent: IEvent) => {
 
     if (hooks.length) {
       const accessToken = await getPluginToken(plugin)
-
       hooks.forEach(({ hookUrl }) => {
         return fetchPlugin({
           url: hookUrl,

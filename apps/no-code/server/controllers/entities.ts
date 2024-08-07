@@ -161,7 +161,7 @@ export async function createBlueprintEntity(req, res) {
         eventName: 'create',
         description: `${blueprint.name} created`,
         metadata: {
-          workspace: entity.workspace.toString(),
+          workspace: entity.workspace?.toString(),
           entity: entity.identifier,
           blueprint: blueprint.identifier,
         },
