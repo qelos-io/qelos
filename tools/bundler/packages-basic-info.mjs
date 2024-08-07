@@ -1,7 +1,7 @@
-import {execSync} from "child_process";
+import { execSync } from "child_process";
 
 export function getPackagesBasicInfo() {
-  const packages = execSync('lerna la', {cwd: process.cwd()}).toString().split('\n');
+  const packages = execSync('lerna la', { cwd: process.cwd() }).toString().split('\n');
 
   return packages
     .map(line => {

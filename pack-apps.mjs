@@ -1,7 +1,7 @@
-import {readdirSync} from "fs";
-import {exec} from "child_process";
-import {getPackagesBasicInfo} from "./tools/bundler/packages-basic-info.mjs";
-import {bundleDependencies} from "./tools/bundle-dependencies-polyfix/index.js";
+import { readdirSync } from "fs";
+import { exec } from "child_process";
+import { getPackagesBasicInfo } from "./tools/bundler/packages-basic-info.mjs";
+import { bundleDependencies } from "./tools/bundle-dependencies-polyfix/index.js";
 
 const packages = getPackagesBasicInfo();
 

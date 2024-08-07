@@ -1,5 +1,5 @@
 const fs = require("fs");
-const {join} = require('path');
+const { join } = require('path');
 
 function rewriteJSON(path, pkg) {
   const deps = Object.keys(pkg.dependencies);
@@ -20,6 +20,6 @@ function bundleDependencies(appName) {
   return deps;
 }
 
-module.exports = {bundleDependencies}
+module.exports = { bundleDependencies }
 
 // bundleDependencies(process.argv[process.argv.length - 1]);

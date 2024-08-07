@@ -57,6 +57,7 @@ services:
       DRAFTS_SERVICE_URL: drafts
       PLUGINS_SERVICE_URL: plugins
       ADMIN_PANEL_URL: admin
+      NO_CODE_SERVICE_URL: no-code
       SHOW_LOGS: ${SHOW_LOGS}
   content:
     image: registry.gitlab.com/qelos/qelos/content:${CONTENT_SERVICE_VERSION}
@@ -107,9 +108,10 @@ services:
       MONGO_URI: ${NOCODE_MONGODB_URI}
       REDIS_URL: redis://redis
       INTERNAL_SECRET: ${INTERNAL_SECRET}
-      SECRETS_TOKEN: ${PLUGINS_SERVICE_SECRET}
+      SECRETS_TOKEN: ${NOCODE_SERVICE_SECRET}
       AUTH_SERVICE_URL: auth
       SECRETS_SERVICE_URL: secrets
+      PORT: 9004
       IP: 0.0.0.0
       SHOW_LOGS: ${SHOW_LOGS}
     depends_on:
