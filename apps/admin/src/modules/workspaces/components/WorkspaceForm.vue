@@ -15,13 +15,13 @@
       <AddMore @click="addItem"/>
     </div>
 
-    <div v-if="workspace._id">
-      <h3>{{$t('Members')}}</h3>
-      <QuickTable :data="members" :columns="membersColumns"/>
-    </div>
-
     <SaveButton class="save-btn" :submitting="submitting">Save</SaveButton>
   </el-form>
+
+  <div class="container" v-if="workspace._id">
+    <h3>{{$t('Members')}}</h3>
+    <QuickTable :data="members" :columns="membersColumns"/>
+  </div>
 </template>
 
 <script lang="ts" setup>
