@@ -1,7 +1,7 @@
-import {getRouter} from '@qelos/api-kit';
+import { getRouter } from '@qelos/api-kit';
 import verifyUser from '../middleware/verify-user';
-import {onlyAuthenticated} from '../middleware/auth-check';
-import {getInvites, respondToInvite} from '../controllers/invites';
+import { onlyAuthenticated } from '../middleware/auth-check';
+import { getInvites, respondToInvite } from '../controllers/invites';
 
 const invitesRouter = getRouter()
 

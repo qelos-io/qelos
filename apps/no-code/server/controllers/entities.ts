@@ -9,6 +9,7 @@ import logger from '../services/logger';
 import { getValidBlueprintMetadata, updateEntityMapping, validateEntityRelations, } from '../services/entities.service';
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
 import { emitPlatformEvent } from '@qelos/api-kit';
+import { ResponseError } from '../services/response-error';
 
 type Full<T> = {
   [P in keyof T]-?: T[P];
@@ -31,7 +32,7 @@ function getEntityQuery({ entityIdentifier, blueprint, req, permittedScopes }: {
     if (!permittedScopes.includes(PermissionScope.TENANT)) {
       if (blueprint.permissionScope === PermissionScope.WORKSPACE) {
         if (!req.workspace) {
-          throw new Error('user is not connected to a workspace');
+          throw new ResponseError('user is not connected to a workspace', 403);
         }
         query.workspace = req.workspace._id
       } else if (blueprint.permissionScope === PermissionScope.USER) {
@@ -93,7 +94,11 @@ export async function getAllBlueprintEntities(req, res) {
     res.json(entities).end();
   } catch (err) {
     logger.log('entities error', err);
-    res.status(500).json({ message: 'something went wrong with entities' }).end();
+    if (err instanceof ResponseError) {
+      res.status(err.status).json({ message: err.responseMessage }).end();
+    } else {
+      res.status(500).json({ message: 'something went wrong with entities' }).end();
+    }
   }
 }
 
@@ -172,7 +177,11 @@ export async function createBlueprintEntity(req, res) {
     return;
   } catch (err) {
     logger.error(err);
-    res.status(500).json({ message: 'something went wrong with entity creation' }).end();
+    if (err instanceof ResponseError) {
+      res.status(err.status).json({ message: err.responseMessage }).end();
+    } else {
+      res.status(500).json({ message: 'something went wrong with entity creation' }).end();
+    }
   }
 }
 
@@ -235,8 +244,12 @@ export async function updateBlueprintEntity(req, res) {
 
     res.status(200).json(entity).end()
   } catch (err) {
-    logger.error(err)
-    res.status(500).json({ message: 'something went wrong with entity' }).end();
+    logger.error(err);
+    if (err instanceof ResponseError) {
+      res.status(err.status).json({ message: err.responseMessage }).end();
+    } else {
+      res.status(500).json({ message: 'something went wrong with entity' }).end();
+    }
   }
 }
 

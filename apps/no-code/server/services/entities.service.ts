@@ -3,6 +3,7 @@ import { IBlueprintPropertyDescriptor } from '@qelos/global-types';
 import BlueprintEntity, { IBlueprintEntity } from '../models/blueprint-entity';
 import * as jq from 'node-jq';
 import Ajv from 'ajv';
+import { ResponseError } from './response-error';
 
 const ajv = new Ajv()
 
@@ -21,53 +22,53 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
   }
   if (property.type === 'number') {
     if (isNaN(value)) {
-      throw new Error(`Property ${key} must be a number`);
+      throw new ResponseError(`Property ${key} must be a number`, 406);
     }
   }
   if (property.type === 'boolean') {
     if (typeof value !== 'boolean') {
-      throw new Error(`Property ${key} must be a boolean`);
+      throw new ResponseError(`Property ${key} must be a boolean`, 406);
     }
   }
   if (property.type === 'object') {
     const validate = property.schema ? ajv.compile(property.schema) : defaultValidate;
     const isValid = validate(value);
     if (!isValid) {
-      throw new Error(`Property ${key} must be a valid object`);
+      throw new ResponseError(`Property ${key} must be a valid object`, 406);
     }
   }
   if (property.type === 'string') {
     if (typeof value !== 'string') {
-      throw new Error(`Property ${key} must be a string`);
+      throw new ResponseError(`Property ${key} must be a string`, 406);
     }
   }
   if (property.type === 'date') {
     if (new Date(value).toString() === 'Invalid Date') {
-      throw new Error(`Property ${key} must be a date`);
+      throw new ResponseError(`Property ${key} must be a date`, 406);
     }
   }
   if (property.type === 'datetime') {
     if (new Date(value).toString() === 'Invalid Date') {
-      throw new Error(`Property ${key} must be a datetime`);
+      throw new ResponseError(`Property ${key} must be a datetime`, 406);
     }
   }
   if (property.type === 'time') {
     const [hours, minutes] = value?.split(':');
     if (isNaN(parseInt(hours)) || isNaN(parseInt(minutes))) {
-      throw new Error(`Property ${key} must be a time`);
+      throw new ResponseError(`Property ${key} must be a time`, 406);
     }
   }
   if (property.enum && property.enum.length && !property.enum.includes(value)) {
-    throw new Error(`Property ${key} must be one of ${property.enum.join(', ')}`);
+    throw new ResponseError(`Property ${key} must be one of ${property.enum.join(', ')}`, 406);
   }
   if (property.min && value < property.min) {
-    throw new Error(`Property ${key} must be greater than ${property.min}`);
+    throw new ResponseError(`Property ${key} must be greater than ${property.min}`, 406);
   }
   if (property.max && value > property.max) {
-    throw new Error(`Property ${key} must be less than ${property.max}`);
+    throw new ResponseError(`Property ${key} must be less than ${property.max}`, 406);
   }
   if (property.required && !value) {
-    throw new Error(`Property ${key} is required`);
+    throw new ResponseError(`Property ${key} is required`, 406);
   }
 }
 
@@ -81,7 +82,7 @@ export function getValidBlueprintMetadata(metadata: any, blueprint: IBlueprint) 
       if (property.multi) {
         const isArray = Array.isArray(value);
         if (property.required && !isArray) {
-          throw new Error(`Property ${key} must be an array`);
+          throw new ResponseError(`Property ${key} must be an array`, 406);
         }
         if (isArray) {
           for (const val of value) {
@@ -113,23 +114,22 @@ export async function updateEntityMapping(blueprint: IBlueprint, entity: IBluepr
 }
 
 export function validateEntityRelations(tenant: string, blueprint: IBlueprint, entity: IBlueprintEntity) {
-  return Promise.all(blueprint.relations
-    .map(relation => {
-      const target = entity.metadata[relation.key];
-      if (!target) {
-        return;
-      }
-      return BlueprintEntity.findOne({
-        tenant,
-        blueprint: relation.target,
-        identifier: target,
-      }).select('_id')
-        .lean()
-        .exec()
-        .then(targetEntity => {
-          if (!targetEntity) {
-            throw new Error('relation target not found');
-          }
-        });
-    }))
+  return Promise.all(blueprint.relations.map(relation => {
+    const target = entity.metadata?.[relation.key];
+    if (!target) {
+      return;
+    }
+    return BlueprintEntity.findOne({
+      tenant,
+      blueprint: relation.target,
+      identifier: target,
+    }).select('_id')
+      .lean()
+      .exec()
+      .then(targetEntity => {
+        if (!targetEntity) {
+          throw new ResponseError(`relation target ${relation.target} not found: ${target}`, 406);
+        }
+      });
+  }))
 }

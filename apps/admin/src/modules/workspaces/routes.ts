@@ -17,6 +17,11 @@ const workspacesRoutes: RouteRecordRaw = {
       name: "createWorkspace",
       component: async () => (await import("./CreateWorkspace.vue")).default,
     },
+    {
+      path: ':id',
+      name: 'editWorkspace',
+      component: async () => (await import('./EditWorkspace.vue')).default,
+    }
   ],
 };
 

@@ -1,10 +1,12 @@
 <template>
   <GpItem v-for="workspace in store.workspaces" :key="workspace._id">
     <template v-slot:title>
-      {{ workspace.name }}
+      <router-link :to="{name: 'editWorkspace', params: {id: workspace._id}}">
+        {{ workspace.name }}
+      </router-link>
     </template>
     <template v-slot:actions>
-      <small v-if="workspace.isPrivilegedUser" class="link" @click.prevent="store.remove(workspace)">
+      <small v-if="workspace.isPrivilegedUser" class="link" @click.prevent="store.remove(workspace._id)">
         <el-icon>
           <icon-delete/>
         </el-icon>

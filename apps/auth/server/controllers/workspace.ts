@@ -27,7 +27,7 @@ export async function getWorkspace(req: AuthRequest, res: Response) {
   try {
     const { members, invites } = await Workspace.findOne({ _id: req.workspace._id }, 'members invites').lean().exec();
     res.status(200).json({
-      ...req.workspace,
+      ...req.workspace.toJSON(),
       members,
       invites,
     }).end()
@@ -159,7 +159,7 @@ export async function createWorkspace(req: AuthRequest, res: Response) {
 }
 
 export async function updateWorkspace(req: AuthRequest, res: Response) {
-  const { name, logo } = req.body;
+  const { name, logo, invites } = req.body;
   const workspace = req.workspace;
   try {
 
@@ -169,6 +169,10 @@ export async function updateWorkspace(req: AuthRequest, res: Response) {
 
     if (logo) {
       workspace.logo = logo;
+    }
+
+    if (invites) {
+      workspace.invites = invites;
     }
 
     await workspace.save();
@@ -259,7 +263,20 @@ export async function getWorkspaceMembers(req: AuthRequest, res: Response) {
       res.status(404).json({ message: 'workspace not found', from: 'get-members' }).end();
       return;
     }
-    res.status(200).json(workspace.members).end()
+
+    let users = await User.find({
+      tenant,
+      _id: workspace.members.map(member => member.user)
+    }).select('_id email fullName firstName lastName').lean().exec();
+
+    users = users.map(user => {
+      return {
+        ...user,
+        ...workspace.members.find(member => user._id.equals(member.user))
+      }
+    })
+
+    res.status(200).json(users).end()
   } catch (err) {
     res.status(500).json({ message: 'Failed to load workspace members' }).end()
   }
