@@ -159,6 +159,7 @@ const availableComponents = {
       },
       {
         prop: 'data', label: 'Data', type: 'text', source: 'manual',
+        bind: true,
         description: 'Data to be used in the form'
       },
       {
