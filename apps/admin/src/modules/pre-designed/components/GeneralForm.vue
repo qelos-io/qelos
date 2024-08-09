@@ -5,7 +5,7 @@ import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 
 const props = defineProps<{
   onSubmit?: (data: any) => Promise<unknown>;
-  data: any | Promise<any>,
+  data?: any | Promise<any>,
   successMsg?: string;
   errorMsg?: string;
 }>();
@@ -22,7 +22,8 @@ const { submit, submitting } = useSubmitting(async () => {
   return result;
 }, {
   success: props.successMsg || 'Submitted successfully',
-  error: props.errorMsg || 'Failed to submit entity'});
+  error: props.errorMsg || 'Failed to submit entity'
+});
 
 provide('submitting', submitting);
 

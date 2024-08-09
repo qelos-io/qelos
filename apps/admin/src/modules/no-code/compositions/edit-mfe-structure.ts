@@ -54,6 +54,13 @@ export function useEditMfeStructure() {
       el.setAttribute(propName, data.props[propName]);
     })
 
+    if (data.innerHTML) {
+      el.innerHTML = data.innerHTML;
+    }
+    if (data.classes) {
+      el.classList.add(data.classes)
+    }
+
     const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
 
     pluginMfe.structure ||= '';

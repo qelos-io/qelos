@@ -56,6 +56,18 @@
             </el-select>
           </el-form-item>
         </FormRowGroup>
+        <FormRowGroup v-else-if="prop.source === 'blueprint'">
+          <el-form-item label="Choose Blueprint">
+            <el-select v-model="propsBuilder[prop.prop]" placeholder="Select">
+              <el-option
+                  v-for="blueprint in blueprints"
+                  :key="blueprint.identifier"
+                  :label="blueprint.name"
+                  :value="blueprint.identifier"
+              />
+            </el-select>
+          </el-form-item>
+        </FormRowGroup>
         <div v-else-if="prop.type === 'array'">
           <FormRowGroup v-for="(col, index) in propsBuilder.columns" :key="index">
             <FormInput v-for="child in prop.children"
@@ -150,12 +162,11 @@ const availableComponents = {
     requiredProps: [
       {
         prop: 'on-submit',
-        label: 'On Submit',
-        type: 'text',
-        source: 'manual',
+        source: 'blueprint',
         bind: true,
-        value: '(form) => sdk.blueprints.entitiesOf(\'todo\').create(form)',
-        description: 'Function to call when form is submitted'
+        valueBuilder: (blueprint: string) => {
+          return `(form) => sdk.blueprints.entitiesOf('${blueprint}').create(form)`
+        },
       },
       {
         prop: 'data', label: 'Data', type: 'text', source: 'manual',
@@ -176,7 +187,24 @@ const availableComponents = {
         placeholder: 'Failed to submit entity',
         source: 'manual'
       }
-    ]
+    ],
+    getInnerHTML: (propsBuilder: any) => {
+      const blueprintId = propsBuilder['on-submit'];
+      const blueprint = blueprints.value.find(b => b.identifier === blueprintId);
+      if (!blueprint) {
+        return '';
+      }
+      const blueprintsInputs = Object.keys(blueprint.properties).map((propName: any) => {
+        const prop = blueprint.properties[propName];
+        return `<form-input title="${prop.title}" label="${prop.description}" ${prop.required ? 'required="true"' : ''} v-model="form.${propName}"></form-input>`
+      }).join('\n');
+      return `<template #default="{form}">
+    <edit-header>Edit ${blueprint.name}</edit-header>
+    <div class="container">
+    ${blueprintsInputs}
+</div>
+</template>`
+    }
   }
 }
 
@@ -223,7 +251,10 @@ function submit() {
   const customData = {};
   for (const propName in propsBuilder.value) {
     const propData = requiredProps.find(p => p.prop === propName);
-    const val = propsBuilder.value[propName];
+    if (!propData) {
+      continue;
+    }
+    const val = propData.valueBuilder ? propData.valueBuilder(propsBuilder.value[propName]) : propsBuilder.value[propName];
     if (!val) continue;
     if (typeof val == 'object') {
       const keyName = propName + '_' + Date.now().toString().substring(0, 5);
@@ -253,6 +284,8 @@ function submit() {
           return acc;
         }, customData),
     props,
+    classes: availableComponents[selectedComponent.value].classes,
+    innerHTML: availableComponents[selectedComponent.value].getInnerHTML?.(propsBuilder.value) || null
   });
   dialogVisible.value = false;
 }
