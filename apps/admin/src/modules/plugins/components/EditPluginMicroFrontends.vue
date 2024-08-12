@@ -134,7 +134,7 @@ function submitMfe() {
                  @change="editedMfe.route = $event ? getBasicMfe() : undefined"/>
       <FormRowGroup v-if="editedMfe.route">
         <FormInput title="Route Name" v-model="editedMfe.route.name"/>
-        <FormInput title="Route Path" v-model="editedMfe.route.path"/>
+        <FormInput title="Route Path" v-model="editedMfe.route.path" required/>
         <NavigationPositionSelector v-model="editedMfe.route.navBarPosition"/>
       </FormRowGroup>
       <FormRowGroup>

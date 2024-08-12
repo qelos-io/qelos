@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, toRef, toRefs } from 'vue';
+import { computed, ref, toRef, toRefs, watch } from 'vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import VRuntimeTemplate from 'vue3-runtime-template';
 import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-item-crud';
@@ -32,7 +32,9 @@ import { useSubmitting } from '@/modules/core/compositions/submitting';
 import EditPageStructure from '@/pre-designed/editor/EditPageStructure.vue';
 import sdk from '@/services/sdk';
 import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
+import { useRoute } from 'vue-router';
 
+const route = useRoute();
 const mfes = usePluginsMicroFrontends();
 const item = ref();
 
@@ -75,6 +77,12 @@ function closeCodeEditor() {
 const { submit: saveCodeEditor, submitting } = useSubmitting(async ({ structure, requirements }) => {
   await submitCodeToTemplate(structure, requirements)
   updateCode.value = true;
+})
+
+watch(() => route.fullPath, () => {
+  if (updateCode.value) {
+    openCodeEditor();
+  }
 })
 
 const templateProps = computed(() => {

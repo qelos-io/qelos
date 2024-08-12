@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
-import { provide, ref, toRef } from 'vue';
+import { provide, ref, toRef, watch } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 
 const emit = defineEmits(['save', 'close'])
@@ -19,12 +19,18 @@ const openCodeSection = ref('1');
 const editedRequirements = ref('')
 const htmlEditor = ref()
 const requirementsEditor = ref()
-editedRequirements.value = JSON.stringify(props.mfe.requirements.map(req => {
-  return {
-    ...req,
-    _id: undefined,
+
+
+watch(() => props.mfe?.requirements, () => {
+  if (props.mfe) {
+    editedRequirements.value = JSON.stringify(props.mfe.requirements.map(req => {
+      return {
+        ...req,
+        _id: undefined,
+      }
+    }), null, 2);
   }
-}), null, 2);
+}, { immediate: true })
 
 function save() {
   emit('save', {
@@ -42,7 +48,7 @@ function save() {
         <el-button @click="$emit('close')">Close</el-button>
       </template>
     </EditHeader>
-    <el-collapse accordion v-model="openCodeSection">
+    <el-collapse v-if="mfe" accordion v-model="openCodeSection">
       <el-collapse-item name="1">
         <template #title>
           <h3>{{ $t('HTML') }}</h3>
@@ -50,7 +56,6 @@ function save() {
         <Monaco v-if="openCodeSection === '1'"
                 ref="htmlEditor"
                 v-model="mfe.structure"
-                @keyup="mfe.structure = htmlEditor.getMonaco().getValue()"
                 language="html"
                 style="min-height:65vh"/>
       </el-collapse-item>
@@ -62,7 +67,6 @@ function save() {
                 ref="requirementsEditor"
                 v-model="editedRequirements"
                 language="json"
-                @keyup="editedRequirements = requirementsEditor.getMonaco().getValue()"
                 style="min-height:65vh"/>
       </el-collapse-item>
     </el-collapse>

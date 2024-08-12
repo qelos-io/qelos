@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, defineProps } from 'vue'
+import { onMounted, ref, defineProps, watch } from 'vue'
 import monaco from '@/services/monaco-service'
 
 const props = defineProps({
@@ -30,6 +30,13 @@ defineExpose({
   }
 })
 
+watch(() => props.modelValue, (newValue) => {
+  if (props.modelValue !== monacoInstance?.getValue()) {
+    monacoInstance?.setValue(newValue)
+  }
+})
+
+
 function emitUpdate() {
   emit('update:modelValue', monacoInstance.getValue())
 }
@@ -37,7 +44,7 @@ function emitUpdate() {
 </script>
 
 <template>
-  <div class="monaco" ref="monacoRef" @change="emitUpdate"></div>
+  <div class="monaco" ref="monacoRef" @keyup="emitUpdate"></div>
 </template>
 <style scoped>
 .monaco {
