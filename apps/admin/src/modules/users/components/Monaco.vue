@@ -7,6 +7,8 @@ const props = defineProps({
   language: String,
 })
 
+const emit = defineEmits(['update:modelValue'])
+
 const monacoRef = ref();
 let monacoInstance;
 
@@ -28,10 +30,14 @@ defineExpose({
   }
 })
 
+function emitUpdate() {
+  emit('update:modelValue', monacoInstance.getValue())
+}
+
 </script>
 
 <template>
-  <div class="monaco" ref="monacoRef"></div>
+  <div class="monaco" ref="monacoRef" @change="emitUpdate"></div>
 </template>
 <style scoped>
 .monaco {

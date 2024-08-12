@@ -12,6 +12,8 @@ import Monaco from '@/modules/users/components/Monaco.vue';
 import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
 import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
 import GeneralForm from '@/modules/pre-designed/components/GeneralForm.vue';
+import ConfirmMessage from '@/modules/pre-designed/components/ConfirmMessage.vue';
+import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 
 export default function applyGlobalTemplatesComponents(app: App) {
   app.component('TemplatedRemoveButton', TemplatedRemoveButton)
@@ -27,5 +29,7 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('QuickTable', QuickTable)
   app.component('ListPageTitle', ListPageTitle)
   app.component('GeneralForm', GeneralForm)
+  app.component('ConfirmMessage', ConfirmMessage)
+  app.component('RemoveButton', RemoveButton)
 
 }

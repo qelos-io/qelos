@@ -165,7 +165,7 @@ const availableComponents = {
         source: 'blueprint',
         bind: true,
         valueBuilder: (blueprint: string) => {
-          return `(form) => sdk.blueprints.entitiesOf('${blueprint}').create(form)`
+          return `(form) => sdk.blueprints.entitiesOf('${blueprint}').create({metadata: form})`
         },
       },
       {
@@ -198,6 +198,7 @@ const availableComponents = {
         const prop = blueprint.properties[propName];
         return `<form-input title="${prop.title}" label="${prop.description}" ${prop.required ? 'required="true"' : ''} v-model="form.${propName}"></form-input>`
       }).join('\n');
+
       return `<template #default="{form}">
     <edit-header>Edit ${blueprint.name}</edit-header>
     <div class="container">
