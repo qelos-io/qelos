@@ -157,7 +157,7 @@ export async function updatePlugin(req, res) {
     Object.assign(plugin, allowedChanges);
 
     if (allowedChanges.microFrontends) {
-      logger.log('microfrontends changed', allowedChanges.microFrontends)
+      logger.log('micro frontends changed', allowedChanges.microFrontends)
       plugin.markModified('microFrontends');
     }
     plugin.encodePath();
@@ -172,6 +172,10 @@ export async function updatePlugin(req, res) {
       host: req.headers.tenanthost,
       appUrl: req.headers.origin
     });
+
+    if (token) {
+      plugin.token = token;
+    }
 
     await plugin.save();
     res.json(plugin).end();
