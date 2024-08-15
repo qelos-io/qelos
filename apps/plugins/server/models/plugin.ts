@@ -39,14 +39,17 @@ const MicroFrontendSchema = new mongoose.Schema<IMicroFrontend>({
         type: String,
         enum: ['GET', 'POST', 'PUT', 'DELETE']
       },
+      query: mongoose.Schema.Types.Mixed,
     },
     fromCrud: {
       name: String,
       identifier: String,
+      query: mongoose.Schema.Types.Mixed,
     },
     fromBlueprint: {
       name: String,
       identifier: String,
+      query: mongoose.Schema.Types.Mixed,
     },
     fromData: mongoose.Schema.Types.Mixed
   }],
