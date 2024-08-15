@@ -1,4 +1,4 @@
-import { IScreenRequirement } from './scree-requirement';
+import { IScreenRequirement } from './screen-requirement';
 
 export interface IMicroFrontend {
   _id?: string;

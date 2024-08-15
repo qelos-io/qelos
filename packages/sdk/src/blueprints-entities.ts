@@ -1,5 +1,6 @@
 import { QelosSDKOptions } from './types';
 import BaseSDK from './base-sdk';
+import { ICommonQueryFilters } from '@qelos/global-types';
 
 export default class QlBlueprintEntities<T = any> extends BaseSDK {
   private relativePath = '/api/blueprints';
@@ -12,7 +13,7 @@ export default class QlBlueprintEntities<T = any> extends BaseSDK {
     return this.callJsonApi<T>(`${this.relativePath}/${this.blueprintKey}/entities/${identifier}${this.getQueryParams()}`)
   }
 
-  getList(query?: Record<string, any>) {
+  getList(query?: ICommonQueryFilters & Record<string, any>) {
     return this.callJsonApi<T[]>(`${this.relativePath}/${this.blueprintKey}/entities${this.getQueryParams(query)}`);
   }
 

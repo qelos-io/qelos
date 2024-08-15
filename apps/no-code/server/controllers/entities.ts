@@ -80,16 +80,31 @@ export async function getAllBlueprintEntities(req, res) {
       .lean()
       .exec()
 
-    blueprint.relations?.map(relation => {
-      const query = {
-        ...getEntityQuery({ blueprint, req, permittedScopes }),
-        identifier: {
-          $in: Array.from(new Set(entities.map(entity => {
-            return entity.metadata[relation.key];
-          })))
-        }
-      }
-    })
+    if (req.query.$populate) {
+      const relations = await Promise.all(
+        blueprint.relations?.map(async relation => {
+          const query = {
+            ...getEntityQuery({ blueprint, req, permittedScopes }),
+            blueprint: relation.target,
+            identifier: {
+              $in: Array.from(new Set(entities.map(entity => {
+                return entity.metadata[relation.key];
+              }).filter(Boolean)))
+            }
+          }
+          return {
+            key: relation.key,
+            items: await BlueprintEntity.find(query).lean().exec()
+          }
+        })
+      )
+
+      entities.forEach(entity => {
+        relations.forEach(relation => {
+          entity.metadata[relation.key] = relation.items.find(item => item.identifier === entity.metadata[relation.key]);
+        })
+      })
+    }
 
     res.json(entities).end();
   } catch (err) {
