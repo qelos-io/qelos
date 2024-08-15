@@ -73,6 +73,7 @@ export async function getAllBlueprintEntities(req, res) {
       ...qs.parse(req._parsedUrl.query, { depth: 3 }),
       ...getEntityQuery({ blueprint, req, permittedScopes })
     }
+    delete query.$populate;
     if ('bypassAdmin' in req.query) {
       delete query.bypassAdmin;
     }
