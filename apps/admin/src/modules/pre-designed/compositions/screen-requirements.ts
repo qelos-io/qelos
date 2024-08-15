@@ -67,10 +67,10 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
         } else {
           const cachedKey = `blueprint:${item.fromBlueprint.name}:all`;
           if (cachedDispatchers[cachedKey]) {
-            cachedDispatchers[cachedKey]._query = item.fromBlueprint.query || {};
+            cachedDispatchers[cachedKey].metadata.value = item.fromBlueprint;
             cachedDispatchers[cachedKey].retry();
           } else {
-            cachedDispatchers[cachedKey] = useDispatcher(() => entitiesOfBlueprint.getList((entitiesOfBlueprint as any)._query), [])
+            cachedDispatchers[cachedKey] = useDispatcher(({ query }) => entitiesOfBlueprint.getList(query), [], false, item.fromBlueprint)
           }
           all[item.key] = cachedDispatchers[cachedKey];
         }

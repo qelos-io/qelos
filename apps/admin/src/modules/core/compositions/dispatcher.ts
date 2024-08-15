@@ -1,14 +1,15 @@
 import { ref } from 'vue'
 
-export function useDispatcher<T = any>(callback, defaultValue: T | null = null, lazy = false) {
+export function useDispatcher<T = any>(callback, defaultValue: T | null = null, lazy = false, initialMetadata?: any) {
   const result = ref<T>(defaultValue)
   const loading = ref<boolean>(true)
   const error = ref<any>(null)
   const loaded = ref(false);
+  const metadata = ref(initialMetadata);
 
   const caller = async () => {
     try {
-      result.value = await callback()
+      result.value = await callback(metadata.value)
     } catch (e) {
       error.value = e
     } finally {
@@ -26,6 +27,7 @@ export function useDispatcher<T = any>(callback, defaultValue: T | null = null, 
     loading,
     loaded,
     error,
+    metadata,
     retry: caller
   }
 }
