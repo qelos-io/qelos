@@ -1,6 +1,6 @@
 import { QelosSDKOptions } from './types';
 import BaseSDK from './base-sdk';
-import { IBlueprint } from '@qelos/global-types';
+import type { IBlueprint } from '@qelos/global-types';
 import QlBlueprintEntities from './blueprints-entities';
 
 export default class QlBlueprints extends BaseSDK {

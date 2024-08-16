@@ -1,6 +1,6 @@
 import { QelosSDKOptions } from './types';
 import BaseSDK from './base-sdk';
-import { ICommonQueryFilters } from '@qelos/global-types';
+import type { ICommonQueryFilters } from '@qelos/global-types';
 
 export default class QlBlueprintEntities<T = any> extends BaseSDK {
   private relativePath = '/api/blueprints';
