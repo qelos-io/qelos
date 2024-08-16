@@ -1,6 +1,6 @@
 {
   "name": "@qelos/sdk",
-  "version": "3.6.1",
+  "version": "3.6.2",
   "description": "SDK for Qelos API",
   "main": "./dist/index.js",
   "scripts": {
@@ -12,7 +12,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@qelos/global-types": "^3.6.1"
+    "@qelos/global-types": "^3.6.2"
   },
   "devDependencies": {
     "typescript": "^4.9.5"

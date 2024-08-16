@@ -1,6 +1,6 @@
 {
   "name": "@qelos/plugins",
-  "version": "3.6.1",
+  "version": "3.6.2",
   "license": "MIT",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "description": "manage plugins system",
@@ -20,9 +20,9 @@
   },
   "main": "dist/index.js",
   "dependencies": {
-    "@qelos/api-kit": "^3.6.1",
+    "@qelos/api-kit": "^3.6.2",
     "@qelos/cache-manager": "^3.4.1",
-    "@qelos/global-types": "^3.6.1",
+    "@qelos/global-types": "^3.6.2",
     "http-proxy-middleware": "^1.3.1",
     "mongoose": "^5.10.5",
     "node-fetch": "^2.6.1",
