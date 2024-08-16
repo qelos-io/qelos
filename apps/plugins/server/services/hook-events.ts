@@ -17,6 +17,7 @@ export function emitPlatformEvent(event: IEvent) {
 }
 
 hookEvents.on('hook', async (platformEvent: IEvent) => {
+  logger.log('hook event', platformEvent);
   const awaitedPlugins = await Plugin.find({
     $and: [
       { tenant: platformEvent.tenant },

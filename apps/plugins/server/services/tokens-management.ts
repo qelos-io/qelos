@@ -47,7 +47,7 @@ export async function refreshTokenForPlugin(tenant: string, apiPath: string, aut
   logger.log('refresh token for plugin', { tenant, apiPath })
   const refreshToken = (await getRefreshSecret(tenant, apiPath)).value;
   let tokensPayload;
-  if (refreshToken) {
+  if (refreshToken && authAcquire?.refreshTokenUrl) {
     const res = await fetchPlugin({
       url: authAcquire.refreshTokenUrl,
       method: 'POST',
