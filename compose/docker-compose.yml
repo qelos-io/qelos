@@ -111,6 +111,7 @@ services:
       SECRETS_TOKEN: ${NOCODE_SERVICE_SECRET}
       AUTH_SERVICE_URL: auth
       SECRETS_SERVICE_URL: secrets
+      PLUGINS_SERVICE_URL: plugins
       PORT: 9004
       IP: 0.0.0.0
       SHOW_LOGS: ${SHOW_LOGS}
