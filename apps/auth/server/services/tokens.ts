@@ -1,5 +1,5 @@
-import {Response} from 'express'
-import jwt, {Secret} from 'jsonwebtoken'
+import { Response } from 'express'
+import jwt, { Secret } from 'jsonwebtoken'
 import {
   jwtSecret, refreshTokenSecret, tokenExpiration,
   cookieTokenExpiration, cookieBaseDomain
@@ -21,7 +21,7 @@ function verify(token: string, tenant: string, secret: Secret) {
     jwt.verify(token, secret, (err, decoded) => {
       if (err || !decoded || (decoded as any).tenant !== tenant) {
         // the 401 code is for unauthorized status
-        return reject(err || {message: 'token is empty'})
+        return reject(err || { message: 'token is empty' })
       }
       return resolve(decoded)
     })
@@ -33,7 +33,7 @@ export function getUniqueId(creationTime = Date.now().toString()) {
 }
 
 function getCookieParameters(cookieId: string, maxAge: string, domain?: string) {
-  let cookieParams: any = {maxAge, httpOnly: true}
+  let cookieParams: any = { maxAge, httpOnly: true }
   if (domain || cookieBaseDomain) {
     cookieParams.domain = domain || cookieBaseDomain
     cookieParams.sameSite = 'None'
@@ -68,7 +68,7 @@ export function getSignedToken(user: any, workspace: any, tokenIdentifier: strin
   }
   return {
     payload: secretParams,
-    token: jwt.sign(secretParams, jwtSecret, {expiresIn})
+    token: jwt.sign(secretParams, jwtSecret, { expiresIn })
   }
 }
 

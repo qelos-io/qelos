@@ -17,7 +17,7 @@ import { cacheManager } from '../services/cache-manager';
 import { getRequestHost } from '../services/req-host';
 import logger from '../services/logger';
 
-function oAuthVerify(req: AuthRequest, _res: Response, next: NextFunction): Promise<void> {
+function oAuthVerify(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   // get the last part from an authorization header string like "bearer token-value"
   const tokenHeader = req.headers.authorization || req.headers.Authorization
 
@@ -27,6 +27,10 @@ function oAuthVerify(req: AuthRequest, _res: Response, next: NextFunction): Prom
   return verifyToken(token, tenant)
     .then((payload) => setUserPayload(payload, req, next))
     .catch(() => {
+      if (token && tenant) {
+        res.status(401).json({ message: 'authorization token is not valid.' }).end();
+        return;
+      }
       next();
     });
 }
