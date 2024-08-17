@@ -6,7 +6,7 @@ export default class BaseSDK {
 
   constructor(private qlOptions: QelosSDKOptions) {
     this.#appUrl = qlOptions.appUrl.endsWith('/') ? qlOptions.appUrl.slice(0, -1) : qlOptions.appUrl;
-    this.#fetch = qlOptions.fetch;
+    this.#fetch = qlOptions.fetch || globalThis.fetch;
   }
 
   async callApi(relativeUrl: string, data?: RequestInit) {
