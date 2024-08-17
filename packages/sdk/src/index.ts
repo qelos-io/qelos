@@ -31,13 +31,15 @@ export default class QelosSDK extends BaseSDK {
     this.invites = new QlInvites(this.options);
     this.blueprints = new QlBlueprints(this.options);
 
+    const isBrowser = globalThis.navigator && globalThis.window && globalThis.document
+
     if (!options.getAccessToken) {
       options.getAccessToken = () => this.authentication.accessToken;
     }
 
     if (!options.extraHeaders) {
       options.extraHeaders = async (relativeUrl: string, forceRefresh?: boolean) => {
-        if (globalThis.navigator || noExtraHeadersUrls.has(relativeUrl)) {
+        if (isBrowser || noExtraHeadersUrls.has(relativeUrl)) {
           return { ...this.#customHeaders };
         }
         let token = forceRefresh ? '' : options.getAccessToken();
