@@ -104,9 +104,9 @@ async function isCookieProcessed(tokenIdentifier: string) {
 
 function setUserPayload(payload: any, req: AuthRequest, next: NextFunction) {
   req.userPayload = payload;
-  req.userPayload.isPrivileged = payload.roles.some((role: string) =>
-    privilegedRoles.includes(role)
-  );
+  req.userPayload.isPrivileged = payload.roles.some((role: string) => {
+    return privilegedRoles.includes(role)
+  });
   req.activeWorkspace = payload.workspace;
   next();
 }
