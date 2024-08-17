@@ -27,9 +27,11 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
     this.events = new QlEvents(options);
     this.adminWorkspaces = new QlAdminWorkspaces(options);
 
-    options.extraQueryParams = () => ({
-      bypassAdmin: 'true'
-    })
+    if (!options.extraQueryParams) {
+      options.extraQueryParams = () => ({
+        bypassAdmin: 'true'
+      })
+    }
   }
 
   impersonateUser(userId: string, workspaceId?: string) {
