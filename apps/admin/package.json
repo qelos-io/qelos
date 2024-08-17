@@ -48,7 +48,7 @@
     "vue-router": "^4.3.2"
   },
   "license": "MIT",
-  "gitHead": "8ec5f78787a21b9ee73085a0375282ff940fb2a5",
+  "gitHead": "aada0d72a4d54a1b37e26ecb3c5138c0437c0c20",
   "bundledDependencies": [
     "express"
   ]
