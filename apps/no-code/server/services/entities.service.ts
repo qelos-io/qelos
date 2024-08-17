@@ -67,7 +67,7 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
   if (property.max && value > property.max) {
     throw new ResponseError(`Property ${key} must be less than ${property.max}`, 406);
   }
-  if (property.required && !value) {
+  if (property.required && typeof value === 'undefined') {
     throw new ResponseError(`Property ${key} is required`, 406);
   }
 }
