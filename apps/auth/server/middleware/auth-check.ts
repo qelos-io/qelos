@@ -21,6 +21,7 @@ export const onlyPrivileged = <RequestHandler>function onlyPrivileged(req: AuthR
         tenanthost: req.headers.tenanthost,
         url: req.url,
         user: req.userPayload,
+        headers: req.headers,
       });
     }
     return;
