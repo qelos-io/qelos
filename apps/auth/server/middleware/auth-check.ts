@@ -5,7 +5,7 @@ import logger from '../services/logger';
 
 export const onlyAuthenticated = <RequestHandler>function onlyAuthenticated(req: AuthRequest, res: Response, next: NextFunction) {
   if (!req.userPayload) {
-    res.status(401).json({ message: 'you are not authorized' }).end();
+    res.status(401).json({ message: 'you are not authorized. must be logged in.' }).end();
     return;
   }
   next()
@@ -13,7 +13,7 @@ export const onlyAuthenticated = <RequestHandler>function onlyAuthenticated(req:
 
 export const onlyPrivileged = <RequestHandler>function onlyPrivileged(req: AuthRequest, res: Response, next: NextFunction) {
   if (!(req.userPayload && req.userPayload.isPrivileged)) {
-    res.status(401).json({ message: 'you are not authorized' }).end();
+    res.status(401).json({ message: 'you are not privileged' }).end();
     if (showLogs) {
       logger.log('not privileged request to only-privileged route', {
         tenant: req.headers.tenant,

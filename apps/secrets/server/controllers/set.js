@@ -4,7 +4,7 @@ module.exports = function setSecret(req, res) {
   const { key, value, token } = req.body || {}
 
   if (!(key && token)) {
-    res.status(400).json({ message: 'you are not authorized' }).end();
+    res.status(400).json({ message: 'missing parameters to set values' }).end();
     return;
   }
 

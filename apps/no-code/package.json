@@ -39,7 +39,7 @@
     "@types/node": "^16.11.22",
     "typescript": "^4.9.5"
   },
-  "gitHead": "7f8510c913d3d4d3ce8afe6fb60028751f8f6d64",
+  "gitHead": "8ec5f78787a21b9ee73085a0375282ff940fb2a5",
   "bundledDependencies": [
     "@qelos/api-kit",
     "@qelos/cache-manager",

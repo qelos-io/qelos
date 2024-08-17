@@ -4,7 +4,7 @@ module.exports = function getSecret(req, res) {
   const { key, token } = req.body || {}
 
   if (!(key && token)) {
-    return res.status(400).json({ message: 'you are not authorized' }).end()
+    return res.status(400).json({ message: 'missing parameters to recognize values' }).end()
   }
 
   return SecretService.getDecrypted(req.headers.tenant, key, token)
