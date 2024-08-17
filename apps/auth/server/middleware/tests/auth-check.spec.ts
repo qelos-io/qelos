@@ -17,7 +17,7 @@ describe('Auth Check middlewares', () => {
 
         expect(resMock.status).toBeCalledWith(401);
         expect(resMock.json).toBeCalledWith({
-          message: 'you are not authorized',
+          message: 'you are not authorized. must be logged in.',
         });
         expect(resMock.end).toBeCalled();
       });
