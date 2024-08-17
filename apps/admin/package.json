@@ -1,6 +1,6 @@
 {
   "name": "@qelos/admin",
-  "version": "3.6.2",
+  "version": "3.6.3",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -25,8 +25,8 @@
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
     "@fortawesome/vue-fontawesome": "^3.0.8",
     "@greenpress/gp-editor": "^2.1.1",
-    "@qelos/global-types": "^3.6.2",
-    "@qelos/sdk": "^3.6.2",
+    "@qelos/global-types": "^3.6.3",
+    "@qelos/sdk": "^3.6.3",
     "@qelos/view-builder": "^3.2.2",
     "@types/remarkable": "^2.0.8",
     "@vitejs/plugin-vue": "^5.0.4",

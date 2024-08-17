@@ -1,6 +1,6 @@
 {
   "name": "@qelos/drafts",
-  "version": "3.6.2",
+  "version": "3.6.3",
   "description": "drafts service for the qelos api",
   "main": "dist/index.js",
   "publishConfig": {
@@ -20,7 +20,7 @@
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@qelos/api-kit": "^3.6.2",
+    "@qelos/api-kit": "^3.6.3",
     "mongoose": "^5.10.5"
   },
   "devDependencies": {
