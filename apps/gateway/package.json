@@ -13,16 +13,17 @@
     "node": ">=20.x"
   },
   "scripts": {
-    "dev": "npm start",
+    "dev": "node --import tsx --watch index.ts",
     "prepublishOnly": "tsc",
     "build": "tsc",
-    "start": "node --use_strict dist/index.js"
+    "start": "node --import tsx index.ts"
   },
   "main": "dist/index.js",
   "dependencies": {
     "@qelos/api-kit": "^3.6.3",
     "@qelos/api-proxy-middleware": "^3.6.3",
-    "@qelos/cache-manager": "^3.4.1"
+    "@qelos/cache-manager": "^3.4.1",
+    "tsx": "^3.12.7"
   },
   "publishConfig": {
     "access": "public"

@@ -7,4 +7,12 @@ config({ cors: false, bodyParser: false });
 const app = getApp();
 apiProxy(app, {}, cacheManager);
 
-start("Gateway", process.env.PORT || 3000, process.env.IP || "0.0.0.0");
+const port = process.env.PORT || 3000;
+const address = process.env.IP || "0.0.0.0";
+start("Gateway", port, address)
+  .finally(() => {
+    if (process.env.NODE_ENV !== 'production') {
+      fetch(`http://${address}:${port}`)
+        .then(res => res.status < 500 ? console.log('Gateway is running on dev') : process.exit(1));
+    }
+  });
