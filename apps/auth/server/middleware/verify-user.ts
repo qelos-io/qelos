@@ -4,7 +4,7 @@ import {
   setCookie,
   getSignedToken,
 } from '../services/tokens';
-import { getUserIfTokenExists, updateToken } from '../services/users';
+import { getCookieTokenName, getCookieTokenValue, getUserIfTokenExists, updateToken } from '../services/users';
 import {
   cookieTokenExpiration,
   privilegedRoles,
@@ -37,8 +37,8 @@ function oAuthVerify(req: AuthRequest, res: Response, next: NextFunction): Promi
 
 async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   // get the last part from an authorization header string like "bearer token-value"
-  const token = req.signedCookies.token || req.cookies.token;
   const tenant = (req.headers.tenant = req.headers.tenant as string || '0');
+  const token = getCookieTokenValue(req);
 
   if (!tenant && showLogs) {
     logger.log('CookieVerify requires a tenant', {
@@ -84,7 +84,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       String(cookieTokenExpiration / 1000)
     );
 
-    setCookie(res, newToken, null, getRequestHost(req));
+    setCookie(res, getCookieTokenName(req.headers.tenant), newToken, null, getRequestHost(req));
     setUserPayload(newPayload, req, next);
   } catch (e) {
     logger.log('failed to handle cookie verification', e)

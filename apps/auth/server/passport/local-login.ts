@@ -42,6 +42,7 @@ module.exports = new Strategy(
     setToken({ user: user as any as UserDocument, workspace }, authType)
       .then(({ user, token, refreshToken, cookieToken }) => {
         done(null, {
+          tenant: query.tenant,
           token,
           refreshToken,
           cookieToken,

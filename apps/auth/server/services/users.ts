@@ -4,6 +4,7 @@ import { Types } from 'mongoose';
 import { getAbsoluteDate } from './dates';
 import { IAdditionalField, IAuthConfigurationMetadata } from './auth-configuration';
 import logger from './logger';
+import { AuthRequest } from '../../types';
 
 export function getValidMetadata(metadata: any = {}, additionalFields: IAdditionalField[] = []) {
   const result = {};
@@ -233,4 +234,13 @@ export async function clearOldTokens(userId: string) {
   }
 
   await User.updateOne({ _id: userId }, { $set: { tokens: validTokens } }).exec()
+}
+
+export function getCookieTokenName(tenant: string) {
+  return `qlt_${tenant.substring(0, 8)}`;
+}
+
+export function getCookieTokenValue(req: AuthRequest) {
+  const tokenKey = getCookieTokenName(req.headers.tenant);
+  return req.signedCookies[tokenKey] || req.cookies[tokenKey] || req.signedCookies.token || req.cookies.token;
 }

@@ -33,19 +33,19 @@ export function getUniqueId(creationTime = Date.now().toString()) {
 }
 
 function getCookieParameters(cookieId: string, maxAge: string, domain?: string) {
-  let cookieParams: any = { maxAge, httpOnly: true }
+  let cookieParams: any = { maxAge, httpOnly: true, path: '/api' }
   if (domain || cookieBaseDomain) {
     cookieParams.domain = domain || cookieBaseDomain
     cookieParams.sameSite = 'None'
     cookieParams.secure = true
   }
 
-  return ['token', cookieId, cookieParams]
+  return [cookieId, cookieParams]
 }
 
-export function setCookie(res: Response, cookieId: string, maxAge?: number | string, domain?: string) {
-  const [type, id, parameters] = getCookieParameters(cookieId, (maxAge || cookieTokenExpiration).toString(), domain)
-  res.cookie(type, id, parameters)
+export function setCookie(res: Response, cookieName: string, cookieId: string, maxAge?: number | string, domain?: string) {
+  const [id, parameters] = getCookieParameters(cookieId, (maxAge || cookieTokenExpiration).toString(), domain)
+  res.cookie(cookieName, id, parameters)
   return res
 }
 

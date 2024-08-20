@@ -1,3 +1,5 @@
+import { getCookieTokenName } from '../services/users';
+
 const {
   validateBasicSignUpForm,
 } = require("../../helpers/form-validations");
@@ -60,10 +62,10 @@ export function validateSignInForm(payload: any) {
 }
 
 export function tokenPayload(host: string, res: Response, data: any) {
-  const { token, refreshToken, cookieToken, user, workspace } = data;
+  const { tenant, token, refreshToken, cookieToken, user, workspace } = data;
 
   if (cookieToken) {
-    res = setCookie(res, cookieToken, null, host);
+    res = setCookie(res, getCookieTokenName(tenant), cookieToken, null, host);
     return res
       .status(200)
       .json({

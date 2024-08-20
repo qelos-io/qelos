@@ -37,6 +37,7 @@ module.exports = new Strategy(
                cookieToken
              }: { user: UserDocument, token: string, refreshToken: string, cookieToken: string }) => {
         done(null, {
+          tenant: req.headers.tenant,
           token,
           refreshToken,
           cookieToken,

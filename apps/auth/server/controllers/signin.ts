@@ -1,8 +1,8 @@
-import passport from "passport";
-import {Response, NextFunction} from "express";
-import { validateSignInForm, tokenPayload } from "./signin-signup-token";
-import {AuthRequest} from '../../types';
-import {getRequestHost} from '../services/req-host';
+import passport from 'passport';
+import { Response, NextFunction } from 'express';
+import { validateSignInForm, tokenPayload } from './signin-signup-token';
+import { AuthRequest } from '../../types';
+import { getRequestHost } from '../services/req-host';
 
 export function signin(req: AuthRequest, res: Response, next: NextFunction) {
   const validationErrors = validateSignInForm(req.body);
@@ -11,18 +11,18 @@ export function signin(req: AuthRequest, res: Response, next: NextFunction) {
     return res.status(401).json({ errors: validationErrors });
   }
 
-  return passport.authenticate("local-login", (error, data) => {
+  return passport.authenticate('local-login', (error, data) => {
     if (error !== null) {
       return res.status(401).json({
         errors: {
-          [error.code === "INCORRECT_CREDENTIALS" ? "password" : "general"]: error,
+          [error.code === 'INCORRECT_CREDENTIALS' ? 'password' : 'general']: error,
         },
       });
     }
     if (!data) {
       return res.status(401).json({
         errors: {
-          password: "password is incorrect",
+          password: 'password is incorrect',
         },
       });
     }

@@ -5,7 +5,7 @@ import { AuthRequest } from '../../types';
 import { emitPlatformEvent } from '@qelos/api-kit';
 import logger from '../services/logger';
 import { getSignedToken, getUniqueId, setCookie, verifyToken } from '../services/tokens';
-import { updateToken } from '../services/users';
+import { getCookieTokenName, updateToken } from '../services/users';
 import User, { UserModel } from '../models/user';
 import { cookieTokenExpiration } from '../../config';
 import { getRequestHost } from '../services/req-host';
@@ -236,7 +236,7 @@ export async function activateWorkspace(req: AuthRequest, res: Response) {
       String(cookieTokenExpiration / 1000)
     );
 
-    setCookie(res, newToken, null, getRequestHost(req));
+    setCookie(res, getCookieTokenName(tenant), newToken, null, getRequestHost(req));
 
     res.json(req.workspace).end()
   } catch (err) {
