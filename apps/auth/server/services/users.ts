@@ -237,7 +237,7 @@ export async function clearOldTokens(userId: string) {
 }
 
 export function getCookieTokenName(tenant: string) {
-  return `qlt_${tenant.substring(0, 8)}`;
+  return `qlt_${tenant.substring(0, 8)}`.trim();
 }
 
 export function getCookieTokenValue(req: AuthRequest) {
