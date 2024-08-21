@@ -119,7 +119,7 @@ function setUserPayload(payload: any, req: AuthRequest, next: NextFunction) {
  *  The Auth Checker middleware function.
  */
 export default <RequestHandler>function verifyUser(req: AuthRequest, res: Response, next: NextFunction) {
-  const cookie = req.cookies.token || req.signedCookies.token;
+  const cookie = getCookieTokenValue(req);
   const token = req.headers.authorization || req.headers.Authorization
   if (cookie) {
     return cookieVerify(req, res, next).catch(next);

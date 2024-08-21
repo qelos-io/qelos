@@ -109,7 +109,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
   );
 
   app.use(allServicesPrefixesExceptAuth, (req, res, next) => {
-    if (!(req.headers.authorization || (req.headers.cookie && req.headers.cookie.includes('token=')))) {
+    if (!(req.headers.authorization || (req.headers.cookie && req.headers.cookie.includes('qlt_')))) {
       next();
       return;
     }
