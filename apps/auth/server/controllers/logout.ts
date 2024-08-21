@@ -1,6 +1,6 @@
 import { Response } from "express";
 import { AuthRequest } from "../../types";
-import { deleteToken, getCookieTokenName } from '../services/users';
+import { deleteToken, getCookieTokenName, getCookieTokenValue } from '../services/users';
 import {getRequestHost} from '../services/req-host';
 const { setCookie } = require("../services/tokens");
 
@@ -18,10 +18,11 @@ function removeToken(
 export async function logout(req: AuthRequest, res: Response) {
   const tenant = (req.headers.tenant = (req.headers.tenant as string) || "0");
   const userId = req.userPayload.sub;
+  const cookieToken = getCookieTokenValue(req);
 
   let token, authType;
-  if (req.cookies.token || req.signedCookies.token) {
-    token = req.cookies.token || req.signedCookies.token;
+  if (cookieToken) {
+    token = cookieToken;
     authType = "cookie";
     setCookie(res, getCookieTokenName(tenant), "", -1, getRequestHost(req));
   } else {

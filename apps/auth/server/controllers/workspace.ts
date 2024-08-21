@@ -5,7 +5,7 @@ import { AuthRequest } from '../../types';
 import { emitPlatformEvent } from '@qelos/api-kit';
 import logger from '../services/logger';
 import { getSignedToken, getUniqueId, setCookie, verifyToken } from '../services/tokens';
-import { getCookieTokenName, updateToken } from '../services/users';
+import { getCookieTokenName, getCookieTokenValue, updateToken } from '../services/users';
 import User, { UserModel } from '../models/user';
 import { cookieTokenExpiration } from '../../config';
 import { getRequestHost } from '../services/req-host';
@@ -206,7 +206,7 @@ export async function deleteWorkspace(req: AuthRequest, res: Response) {
 }
 
 export async function activateWorkspace(req: AuthRequest, res: Response) {
-  const token = req.signedCookies.token || req.cookies.token;
+  const token = getCookieTokenValue(req);
   const tenant = req.headers.tenant;
 
   try {
