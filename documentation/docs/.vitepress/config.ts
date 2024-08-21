@@ -37,6 +37,7 @@ export default defineConfig({
       {
         text: 'PLUGINS',
         items: [
+          { text: 'Create a Plugin Page', link: '/plugins/create-page' },
           { text: 'Create a Plugin', link: '/plugins/create' },
           // {text: 'Test your Plugin', link: '/plugins/test'},
           { text: 'Plugin Lifecycle', link: '/plugins/lifecycle' },
