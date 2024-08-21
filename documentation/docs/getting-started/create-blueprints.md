@@ -43,13 +43,13 @@ Blueprints are templates or schemas that define the structure, fields, and behav
 
 - Define the permissions for the blueprint, specifying who can create, update, and delete entries.
 
-![QELOS Blueprint6](/blueprints/blueprint6.png)
+![QELOS Blueprint19](/blueprints/blueprint19.png)
 
 ### 6. Add Properties
 
 - Properties determine the structure of the blueprint. Each entity also have identifier and title, regardless of those custom entities.
 
-![QELOS Blueprint7](/blueprints/blueprint7.png)
+![QELOS Blueprint17](/blueprints/blueprint17.png)
 
 Here you we have slots for: identifier, title, key, type, description, enum, required, multi(array) and max length.
 
@@ -76,7 +76,7 @@ For example for blueprint "Book" we can add:
 
 - Define the connections between two or more entities. Each relation will have a key and target. The target is the entity that will be connected to the current entity.
 
-![QELOS Blueprint10](/blueprints/blueprint11.png)
+![QELOS Blueprint18](/blueprints/blueprint18.png)
 
 - Here you can add relational fields if your blueprint needs to reference other blueprints (e.g., category references).
 
@@ -87,16 +87,33 @@ For example we can add:
 | Key              | category (from properties of blueprint) |
 | Target Blueprint | Category                                |
 
-### 9. Save the Blueprint
+
+### 9. Events Emitting
+
+![QELOS Blueprint16](/blueprints/blueprint16.png)
+
+The **Events Emitting** section allows you to configure webhooks and subscribe to changes made on entities within your blueprint. By enabling this feature, you can automatically trigger external actions or notifications when specific operations occur.
+
+You can choose to emit events for the following operations:
+
+- **Create**: Emits an event when a new entity is created.
+- **Update**: Emits an event when an existing entity is updated.
+- **Delete**: Emits an event when an entity is deleted.
+
+These emitted events can be connected to webhooks, allowing your system to respond dynamically to changes within the data managed by the blueprint.
+
+
+
+### 10. Save the Blueprint
 
 - Click the "Save" button to store your blueprint. This creates a RESTful API endpoint, a database entry, and validation rules for your blueprint.
 
 ![QELOS Blueprint13](/blueprints/blueprint13.png)
 
-### 10. Check Your Created Blueprint
+### 11. Check Your Created Blueprint
 
 ![QELOS Blueprint12](/blueprints/blueprint12.png)
 
 Each blueprint has a RESTful API, database, and validation for the metadata, values, and relations.
 
-
+![QELOS Blueprint14](/blueprints/blueprint14.png)
