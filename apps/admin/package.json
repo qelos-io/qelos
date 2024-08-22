@@ -14,7 +14,9 @@
   },
   "main": "server.js",
   "dependencies": {
+    "@primevue/themes": "^4.0.4",
     "express": "^4.19.2",
+    "primevue": "^4.0.4",
     "vue3-runtime-template": "^1.0.2"
   },
   "devDependencies": {
@@ -50,6 +52,9 @@
   "license": "MIT",
   "gitHead": "aada0d72a4d54a1b37e26ecb3c5138c0437c0c20",
   "bundledDependencies": [
+    "express"
+  ],
+  "bundleDependencies": [
     "express"
   ]
 }

@@ -60,6 +60,7 @@ watch(navigationOpened, (isOpen) => {
     flex: 1;
     overflow: auto;
     background-color: var(--body-bg);
+    padding-bottom: 10px;
     position: relative;
   }
 

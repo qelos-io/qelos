@@ -268,6 +268,8 @@ a:hover {
 
 @media (min-width: 1200px) {
   nav {
+    margin: var(--spacing);
+    border-radius: 10px;
     width: $nav-width;
   }
 

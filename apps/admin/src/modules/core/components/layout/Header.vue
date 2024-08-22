@@ -3,7 +3,7 @@
     <div class="welcome">
       <el-button class="mobile-menu-opener" text circle size="large" @click="open">
         <el-icon>
-          <font-awesome-icon :icon="['fas', 'bars']" />
+          <font-awesome-icon :icon="['fas', 'bars']"/>
         </el-icon>
       </el-button>
 
@@ -50,6 +50,8 @@ const open = () => emit('open');
 </script>
 <style scoped lang="scss">
 header {
+  margin: var(--spacing);
+  border-radius: 10px;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -58,7 +60,8 @@ header {
   height: 50px;
   align-items: center;
   background: #fff;
-  border-bottom: 1px solid var(--border-color);
+  border: 1px solid var(--border-color);
+  box-shadow: 1px 0.5px var(--border-color);
 }
 
 .workspace-row {

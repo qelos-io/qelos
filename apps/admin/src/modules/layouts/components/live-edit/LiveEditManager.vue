@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import {useLiveEditStore} from '@/modules/layouts/store/live-edit';
-import {ref, toRefs, watch} from 'vue';
+import { useLiveEditStore } from '@/modules/layouts/store/live-edit';
+import { ref, toRefs, watch } from 'vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import {isAdmin} from '@/modules/core/store/auth';
+import { isAdmin } from '@/modules/core/store/auth';
+import ColorPicker from 'primevue/colorpicker';
+import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 
-const {isOpen, editing, cancelEdit, submitEdit} = toRefs(useLiveEditStore());
+const { isOpen, editing, cancelEdit, submitEdit } = toRefs(useLiveEditStore());
+
 
 const model = ref()
 const isActuallyOpen = ref(false);
@@ -24,8 +27,12 @@ watch(isActuallyOpen, () => {
 <template>
   <template v-if="isAdmin">
     <el-dialog v-model="isActuallyOpen" :title="'Edit Palette Color: ' + editing.keyName">
-      <FormInput v-model="model" type="color"/>
-      <FormInput :title="$t('Or enter a valid CSS color:')" v-model="model" type="text"/>
+      <FormRowGroup>
+        <div class="flex-0">
+          <ColorPicker v-if="model" :model-value="model" @update:modelValue="model = '#' + $event" inline/>
+        </div>
+        <FormInput :title="$t('Or enter a valid CSS color:')" v-model="model" type="text"/>
+      </FormRowGroup>
       <template #footer>
       <span class="dialog-footer">
         <el-button @click="cancelEdit">{{ $t('Cancel') }}</el-button>

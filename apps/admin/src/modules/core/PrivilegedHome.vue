@@ -1,19 +1,13 @@
 <template>
-  <el-collapse accordion model-value="2">
-    <el-collapse-item name="1">
-      <template #title>
-        <h3>{{ $t('Switch Color Palette') }}</h3>
-      </template>
+  <el-tabs accordion model-value="metadata">
+    <el-tab-pane name="colors" :label="$t('Switch Color Palette')">
       <div class="blocks-list">
         <div v-for="(p, index) in PALETTES" :key="index" @click="changePalette(p.palette)" class="palette">
           <div v-for="color in p.colors" :key="color" :style="{backgroundColor: color}"></div>
         </div>
       </div>
-    </el-collapse-item>
-    <el-collapse-item name="2">
-      <template #title>
-        <h3>{{ $t('Application Metadata') }}</h3>
-      </template>
+    </el-tab-pane>
+    <el-tab-pane name="metadata" :label="$t('Application Metadata')">
       <div class="blocks-list">
         <GpItem>
           <template v-slot:title>
@@ -22,12 +16,12 @@
 
           <div class="content">
             <router-link :to="{name: 'editConfiguration', params: {key: 'app-configuration'}}">
-              <h3>
+              <h4 class="flex-row">
                 <el-icon>
                   <font-awesome-icon :icon="['fas', 'gear']" />
                 </el-icon>
-                {{ $t('Edit app configuration') }}
-              </h3>
+                <span>{{ $t('Edit app configuration') }}</span>
+              </h4>
             </router-link>
           </div>
         </GpItem>
@@ -36,11 +30,11 @@
           <template v-slot:title>
             {{ $t('Information') }}
           </template>
-          <h3 v-if="!loadingBlocks">{{ t('{amount} Blocks', { amount: blocks.length }, blocks.length) }}</h3>
-          <h3 v-if="!loadingUsers">{{ t('{amount} Users', { amount: users.length }, users.length) }}</h3>
-          <h3 v-if="!loadingWorkspaces">{{
+          <h4 class="container" v-if="!loadingBlocks">{{ t('{amount} Blocks', { amount: blocks.length }, blocks.length) }}</h4>
+          <h4 class="container" v-if="!loadingUsers">{{ t('{amount} Users', { amount: users.length }, users.length) }}</h4>
+          <h4 class="container" v-if="!loadingWorkspaces">{{
               t('{amount} Workspaces', { amount: workspaces.length }, workspaces.length)
-            }}</h3>
+            }}</h4>
         </GpItem>
 
         <GpItem>
@@ -61,14 +55,11 @@
           </el-form>
         </GpItem>
       </div>
-    </el-collapse-item>
-    <el-collapse-item name="3">
-      <template #title>
-        <h3>{{ $t('Blueprints') }} <font-awesome-icon :icon="['fas', 'flask']" /></h3>
-      </template>
+    </el-tab-pane>
+    <el-tab-pane name="blueprints" :label="$t('Blueprints')">
       <BlueprintsList/>
-    </el-collapse-item>
-  </el-collapse>
+    </el-tab-pane>
+  </el-tabs>
 </template>
 
 <script setup lang="ts">

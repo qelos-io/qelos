@@ -1,3 +1,4 @@
+@import 'element-plus/dist/index.css';
 @import "reset.css";
 @import "templating";
 @import "forms";
@@ -165,6 +166,11 @@ p {
 
 .container {
   margin: 10px;
+}
+
+.el-collapse {
+  --el-collapse-header-bg-color: var(--body-bg);
+  --el-collapse-content-bg-color: var(--body-bg);
 }
 
 @import "content-list";

@@ -8,12 +8,14 @@ import fontAwesome from './plugins/font-awesome';
 import { createPinia } from 'pinia';
 import App from './App.vue'
 import applyGlobalTemplatesComponents from '@/modules/pre-designed/global-templates-components';
+import usePrimeVue from '@/plugins/prime';
 
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(i18n)
 app.use(editor)
+usePrimeVue(app);
 fontAwesome(app)
 applyGlobalTemplatesComponents(app);
 
