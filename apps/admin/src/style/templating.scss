@@ -12,8 +12,9 @@
   --inputs-text-color: #eee;
   --inputs-bg-color: #d6eedd;
   --nav-bg-color: #d6eedd;
-  --el-menu-hover-bg-color: --main-color;
+  --el-menu-hover-bg-color: var(--main-color);
   --spacing: 10px;
+  --p-colorpicker-panel-background: #1e293b;
 }
 
 .el-input__wrapper {

@@ -1,12 +1,5 @@
 <template>
   <el-tabs accordion model-value="metadata">
-    <el-tab-pane name="colors" :label="$t('Switch Color Palette')">
-      <div class="blocks-list">
-        <div v-for="(p, index) in PALETTES" :key="index" @click="changePalette(p.palette)" class="palette">
-          <div v-for="color in p.colors" :key="color" :style="{backgroundColor: color}"></div>
-        </div>
-      </div>
-    </el-tab-pane>
     <el-tab-pane name="metadata" :label="$t('Application Metadata')">
       <div class="blocks-list">
         <GpItem>
@@ -14,13 +7,23 @@
             {{ $t('Common operations') }}
           </template>
 
-          <div class="content">
+          <div class="container">
             <router-link :to="{name: 'editConfiguration', params: {key: 'app-configuration'}}">
               <h4 class="flex-row">
                 <el-icon>
-                  <font-awesome-icon :icon="['fas', 'gear']" />
+                  <font-awesome-icon :icon="['fas', 'gear']"/>
                 </el-icon>
-                <span>{{ $t('Edit app configuration') }}</span>
+                <span class="pad-start">{{ $t('Edit App Settings') }}</span>
+              </h4>
+            </router-link>
+          </div>
+          <div class="container">
+            <router-link :to="{name: 'editConfiguration', params: {key: 'ssr-scripts'}}">
+              <h4 class="flex-row">
+                <el-icon>
+                  <font-awesome-icon :icon="['fab', 'html5']"/>
+                </el-icon>
+                <span class="pad-start">{{ $t('Edit SSR Scripts') }}</span>
               </h4>
             </router-link>
           </div>
@@ -30,8 +33,12 @@
           <template v-slot:title>
             {{ $t('Information') }}
           </template>
-          <h4 class="container" v-if="!loadingBlocks">{{ t('{amount} Blocks', { amount: blocks.length }, blocks.length) }}</h4>
-          <h4 class="container" v-if="!loadingUsers">{{ t('{amount} Users', { amount: users.length }, users.length) }}</h4>
+          <h4 class="container" v-if="!loadingBlocks">{{
+              t('{amount} Blocks', { amount: blocks.length }, blocks.length)
+            }}</h4>
+          <h4 class="container" v-if="!loadingUsers">{{
+              t('{amount} Users', { amount: users.length }, users.length)
+            }}</h4>
           <h4 class="container" v-if="!loadingWorkspaces">{{
               t('{amount} Workspaces', { amount: workspaces.length }, workspaces.length)
             }}</h4>
@@ -56,7 +63,19 @@
         </GpItem>
       </div>
     </el-tab-pane>
+    <el-tab-pane name="colors" :label="$t('Color Palette & Design')">
+      <div class="blocks-list">
+        <div v-for="(p, index) in PALETTES" :key="index" @click="changePalette(p.palette)" class="palette">
+          <div v-for="color in p.colors" :key="color" :style="{backgroundColor: color}"></div>
+        </div>
+      </div>
+      <DesignConfiguration v-if="configLoaded"/>
+    </el-tab-pane>
     <el-tab-pane name="blueprints" :label="$t('Blueprints')">
+      <el-button @click.prevent="$router.push({name: 'createBlueprint'})">
+        <font-awesome-icon :icon="['fas', 'plus']"/>
+        <span class="pad-start">{{ $t('Create Blueprint') }}</span>
+      </el-button>
       <BlueprintsList/>
     </el-tab-pane>
   </el-tabs>
@@ -77,8 +96,9 @@ import { useUsersList } from '@/modules/users/compositions/users';
 import useAdminWorkspacesList from '@/modules/workspaces/store/admin-workspaces-list';
 import BlueprintsList from '@/modules/no-code/components/BlueprintsList.vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import DesignConfiguration from '@/modules/configurations/components/DesignConfiguration.vue';
 
-const { appConfig } = useAppConfiguration();
+const { appConfig, loaded: configLoaded } = useAppConfiguration();
 
 const { loading: loadingBlocks, blocks } = toRefs(useBlocksList())
 const { loading: loadingUsers, users } = useUsersList()

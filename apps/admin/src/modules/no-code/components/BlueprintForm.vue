@@ -21,7 +21,10 @@ const props = withDefaults(defineProps<{
 });
 const emit = defineEmits(['submitted']);
 
-const edit = reactive<Partial<IBlueprint>>({ name: '', dispatchers: { create: false, delete: false, update: false }, ...props.blueprint });
+const edit = reactive<Partial<IBlueprint>>({
+  name: '',
+  dispatchers: { create: false, delete: false, update: false }, ...props.blueprint
+});
 const blueprintProperties = ref()
 provide('edit', edit);
 
@@ -58,106 +61,95 @@ function submit() {
       <strong v-if="blueprint?.name">{{ blueprint.name }}</strong>
     </EditHeader>
 
-    <div class="input-group">
-      <FormInput v-model="edit.name" title="Name" required/>
-      <FormInput v-model="edit.identifier" title="Identifier" required/>
+    <el-tabs model-value="general">
+      <el-tab-pane :label="$t('General')" name="general">
+        <div class="input-group">
+          <FormInput v-model="edit.name" title="Name" required/>
+          <FormInput v-model="edit.identifier" title="Identifier" required/>
 
-      <FormInput v-model="edit.description" title="Description"/>
-      <el-collapse accordion>
-        <el-collapse-item name="1">
-          <template #title>
-            <h3>{{ $t('Permissions and Roles') }}</h3>
-          </template>
-          <PermissionScopeSelector v-model="edit.permissionScope"/>
-          <FormRowGroup v-for="(permission, index) in edit.permissions" :key="index" class="permission">
-            <CrudOperationSelector v-model="permission.operation"/>
-            <PermissionScopeSelector v-model="permission.scope"/>
-            <FormInput title="Roles" :model-value="permission.roleBased.join(',')"
-                       @update:modelValue="permission.roleBased = $event.split(',')"/>
-            <FormInput title="Workspace Roles" :model-value="permission.workspaceRoleBased.join(',')"
-                       @update:modelValue="permission.workspaceRoleBased = $event.split(',')"/>
+          <FormInput v-model="edit.description" title="Description"/>
+        </div>
+      </el-tab-pane>
+
+      <el-tab-pane :label="$t('Permissions and Roles')" name="rbac">
+        <PermissionScopeSelector v-model="edit.permissionScope"/>
+        <FormRowGroup v-for="(permission, index) in edit.permissions" :key="index" class="permission">
+          <CrudOperationSelector v-model="permission.operation"/>
+          <PermissionScopeSelector v-model="permission.scope"/>
+          <FormInput title="Roles" :model-value="permission.roleBased.join(',')"
+                     @update:modelValue="permission.roleBased = $event.split(',')"/>
+          <FormInput title="Workspace Roles" :model-value="permission.workspaceRoleBased.join(',')"
+                     @update:modelValue="permission.workspaceRoleBased = $event.split(',')"/>
+          <div class="flex-0 remove-row">
+            <RemoveButton @click="edit.permissions.splice(edit.permissions.indexOf(permission), 1)"/>
+          </div>
+        </FormRowGroup>
+        <AddMore @click="edit.permissions.push({workspaceRoleBased: [], roleBased: []})"/>
+      </el-tab-pane>
+
+      <el-tab-pane :label="$t('Properties')" name="properties">
+        <el-form-item :label="$t('Identifier Mechanism for Entities')">
+          <el-select v-model="blueprint.entityIdentifierMechanism" requried :placeholder="$t('Select mechanism')">
+            <el-option label="Object ID" :value="EntityIdentifierMechanism.OBJECT_ID"/>
+            <el-option label="GUID" :value="EntityIdentifierMechanism.GUID"/>
+          </el-select>
+        </el-form-item>
+        <p>
+          {{ $t('Properties determine the structure of the blueprint.') }}<br>
+          {{ $t('Each entity will also have an identifier and a title, regardless of those custom entities.') }}
+        </p>
+        <EditBlueprintProperties @changed="blueprintProperties = $event"/>
+      </el-tab-pane>
+
+      <el-tab-pane :label="$t('On-Save Mapping')" name="mapping">
+        <p>
+          {{ $t('Properties can be calculated on save.') }}<br>
+          {{ $t('Each property key can have JQ calculation for its final data.') }}<br>
+          {{ $t('Those calculations will run on our backend, before save for each entity.') }}
+        </p>
+        <div v-for="(entry, index) in blueprintMapping" :key="index" class="property">
+          <FormRowGroup>
+            <FormInput v-model="entry.key" title="Key"/>
+            <FormInput v-model="entry.value" title="JQ Calculation"/>
             <div class="flex-0 remove-row">
-              <RemoveButton @click="edit.permissions.splice(edit.permissions.indexOf(permission), 1)"/>
+              <RemoveButton @click="blueprintMapping.splice(blueprintMapping.indexOf(entry), 1)"/>
             </div>
           </FormRowGroup>
-          <AddMore @click="edit.permissions.push({workspaceRoleBased: [], roleBased: []})"/>
-        </el-collapse-item>
+        </div>
+        <AddMore @click="blueprintMapping.push({key: '', value: ''})"/>
+      </el-tab-pane>
 
-        <el-collapse-item name="2">
-          <template #title>
-            <h3>{{ $t('Properties') }}</h3>
-          </template>
-          <el-form-item :label="$t('Identifier Mechanism for Entities')">
-            <el-select v-model="blueprint.entityIdentifierMechanism" requried :placeholder="$t('Select mechanism')">
-              <el-option label="Object ID" :value="EntityIdentifierMechanism.OBJECT_ID"/>
-              <el-option label="GUID" :value="EntityIdentifierMechanism.GUID"/>
-            </el-select>
-          </el-form-item>
-          <p>
-            {{ $t('Properties determine the structure of the blueprint.') }}<br>
-            {{ $t('Each entity will also have an identifier and a title, regardless of those custom entities.') }}
-          </p>
-          <EditBlueprintProperties @changed="blueprintProperties = $event" />
-        </el-collapse-item>
-
-        <el-collapse-item name="3">
-          <template #title>
-            <h3>{{ $t('On-Save Mapping') }}</h3>
-          </template>
-          <p>
-            {{ $t('Properties can be calculated on save.') }}<br>
-            {{ $t('Each property key can have JQ calculation for its final data.') }}<br>
-            {{ $t('Those calculations will run on our backend, before save for each entity.') }}
-          </p>
-          <div v-for="(entry, index) in blueprintMapping" :key="index" class="property">
-            <FormRowGroup>
-              <FormInput v-model="entry.key" title="Key"/>
-              <FormInput v-model="entry.value" title="JQ Calculation"/>
-              <div class="flex-0 remove-row">
-                <RemoveButton @click="blueprintMapping.splice(blueprintMapping.indexOf(entry), 1)"/>
-              </div>
-            </FormRowGroup>
-          </div>
-          <AddMore @click="blueprintMapping.push({key: '', value: ''})"/>
-        </el-collapse-item>
-
-        <el-collapse-item name="4">
-          <template #title>
-            <h3>{{ $t('Properties Relations') }}</h3>
-          </template>
-          <p>
-            {{ $t('Relations are the logical connection between two or more entities.') }}<br>
-            {{ $t('Each relation will have a key and a target.') }}<br>
-            {{ $t('The target is the entity that will be connected to the current entity.') }}
-          </p>
-          <div v-for="(entry, index) in edit.relations" :key="index" class="property">
-            <FormRowGroup>
-              <FormInput v-model="entry.key" title="Key" />
-              <BlueprintSelector title="Target Blueprint" v-model="entry.target"/>
-              <div class="flex-0 remove-row">
-                <RemoveButton @click="edit.relations.splice(edit.relations.indexOf(entry), 1)"/>
-              </div>
-            </FormRowGroup>
-          </div>
-          <AddMore @click="edit.relations.push({key: '', target: ''})"/>
-        </el-collapse-item>
-
-        <el-collapse-item name="5">
-          <template #title>
-            <h3>{{ $t('Events Emitting') }}</h3>
-          </template>
-          <p>
-            {{ $t('Applying this feature will allow you to create webhooks and subscribe to changes made on entities.') }}
-          </p>
-          <FormRowGroup align-start>
-            <FormInput v-model="edit.dispatchers.create" title="Create" type="switch" class="flex-0"/>
-            <FormInput v-model="edit.dispatchers.update" title="Update" type="switch" class="flex-0"/>
-            <FormInput v-model="edit.dispatchers.delete" title="Delete" type="switch" class="flex-0"/>
+      <el-tab-pane :label="$t('Properties Relations')" name="relations">
+        <p>
+          {{ $t('Relations are the logical connection between two or more entities.') }}<br>
+          {{ $t('Each relation will have a key and a target.') }}<br>
+          {{ $t('The target is the entity that will be connected to the current entity.') }}
+        </p>
+        <div v-for="(entry, index) in edit.relations" :key="index" class="property">
+          <FormRowGroup>
+            <FormInput v-model="entry.key" title="Key"/>
+            <BlueprintSelector title="Target Blueprint" v-model="entry.target"/>
+            <div class="flex-0 remove-row">
+              <RemoveButton @click="edit.relations.splice(edit.relations.indexOf(entry), 1)"/>
+            </div>
           </FormRowGroup>
+        </div>
+        <AddMore @click="edit.relations.push({key: '', target: ''})"/>
+      </el-tab-pane>
 
-        </el-collapse-item>
-      </el-collapse>
-    </div>
+      <el-tab-pane :label="$t('Events Emitting')" name="events">
+        <p>
+          {{
+            $t('Applying this feature will allow you to create webhooks and subscribe to changes made on entities.')
+          }}
+        </p>
+        <FormRowGroup align-start>
+          <FormInput v-model="edit.dispatchers.create" title="Create" type="switch" class="flex-0"/>
+          <FormInput v-model="edit.dispatchers.update" title="Update" type="switch" class="flex-0"/>
+          <FormInput v-model="edit.dispatchers.delete" title="Delete" type="switch" class="flex-0"/>
+        </FormRowGroup>
+      </el-tab-pane>
+    </el-tabs>
   </el-form>
 </template>
 <style scoped>

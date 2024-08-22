@@ -4,12 +4,12 @@
   </div>
 </template>
 <script lang="ts" setup>
-import {useAppConfiguration} from './modules/configurations/store/app-configuration'
+import { useAppConfiguration } from './modules/configurations/store/app-configuration'
 import { provide, ref, watch } from 'vue'
-import {translate, loadLanguageAsync} from './plugins/i18n'
-import {usePluginsInjectables} from '@/modules/plugins/store/plugins-injectables';
+import { translate, loadLanguageAsync } from './plugins/i18n'
+import { usePluginsInjectables } from '@/modules/plugins/store/plugins-injectables';
 
-const {appConfig, loaded} = useAppConfiguration()
+const { appConfig, loaded } = useAppConfiguration()
 
 usePluginsInjectables();
 
@@ -25,7 +25,7 @@ watch(() => {
     cssUrl,
     palette,
   }
-}, ({cssUrl, palette}) => {
+}, ({ cssUrl, palette }) => {
   let appStyle = document.querySelector('#app-style');
   if (!appStyle) {
     appStyle = document.createElement('style');
@@ -50,7 +50,7 @@ watch(() => {
     :root {
       ${palette.bgColor ? `--body-bg: ${palette.bgColor};` : ''}
       ${palette.mainColor ? `--main-color: ${palette.mainColor};` : ''}
-      --main-color-light: #d6eedd;
+      ${palette.mainColorLight ? `--main-color-light: ${palette.mainColorLight};` : ''}
       ${palette.textColor ? `--text-color: ${palette.textColor};` : ''}
       ${palette.secondaryColor ? `--secondary-color: ${palette.secondaryColor};` : ''}
       ${palette.thirdColor ? `--third-color: ${palette.thirdColor};` : '--third-color: #c6dccc;'}
@@ -60,17 +60,16 @@ watch(() => {
       ${palette.inputsBgColor ? `--inputs-bg-color: ${palette.inputsBgColor};` : ''}
       ${palette.navigationBgColor ? `--nav-bg-color: ${palette.navigationBgColor};` : ''}
       ${palette.negativeColor ? `--negative-color: ${palette.negativeColor};` : '--negative-color: #254044;'}
-      --el-menu-hover-bg-color: var(--main-color);
     }
   `;
 })
 
 watch(() => appConfig.value.scriptUrl, () => {
-  if(!appConfig.value.scriptUrl) {
+  if (!appConfig.value.scriptUrl) {
     return;
   }
   const script = document.createElement('script');
-  script.setAttribute('src',appConfig.value.scriptUrl);
+  script.setAttribute('src', appConfig.value.scriptUrl);
   document.head.appendChild(script);
 })
 

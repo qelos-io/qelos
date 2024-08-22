@@ -11,6 +11,7 @@ export interface IAppConfiguration {
   direction: string;
   titleSuffix: string;
   themeStylesUrl: string;
+  scriptUrl: string;
   homeScreen: string;
   colorsPalette: Record<string, string>;
   websiteUrls: string[];

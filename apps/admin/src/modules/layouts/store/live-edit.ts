@@ -1,11 +1,11 @@
-import {defineStore} from 'pinia';
-import {reactive, readonly, ref} from 'vue';
-import {ColorName} from '@/modules/configurations/types/colors-palette';
-import {resetConfiguration, useAppConfiguration} from '@/modules/configurations/store/app-configuration';
+import { defineStore } from 'pinia';
+import { reactive, readonly, ref } from 'vue';
+import { ColorName } from '@/modules/configurations/types/colors-palette';
+import { softResetConfiguration, useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import configurationsService from '@/services/configurations-service';
 
 export const useLiveEditStore = defineStore('live-edit', () => {
-  const {appConfig} = useAppConfiguration();
+  const { appConfig } = useAppConfiguration();
   const isOpen = ref(false);
   const editing = reactive({
     inputType: null,
@@ -13,10 +13,6 @@ export const useLiveEditStore = defineStore('live-edit', () => {
     keyName: null,
     currentValue: null
   })
-
-  function openLiveEdit(key: string) {
-
-  }
 
   function openPaletteColorLiveEdit(key: string) {
     editing.inputType = 'color';
@@ -43,7 +39,7 @@ export const useLiveEditStore = defineStore('live-edit', () => {
         colorsPalette
       }
     })
-    await resetConfiguration();
+    await softResetConfiguration();
   }
 
   function cancelEdit() {
@@ -53,9 +49,9 @@ export const useLiveEditStore = defineStore('live-edit', () => {
   return {
     isOpen,
     editing: readonly(editing),
-    openLiveEdit,
     openPaletteColorLiveEdit,
     submitEdit,
+    changePalette,
     cancelEdit
   }
 })

@@ -12,7 +12,7 @@ export const appConfigurationStore = reactive<{
   promise: null
 })
 
-const appConfig = computed(() => appConfigurationStore.data?.metadata && appConfigurationStore.data.metadata || {});
+const appConfig = computed<IAppConfiguration>(() => appConfigurationStore.data?.metadata && appConfigurationStore.data.metadata || {});
 
 function updateMetaTags() {
   const { name, slogan, language, direction } = appConfigurationStore.data.metadata;
@@ -29,6 +29,21 @@ function updateMetaTags() {
   appConfigurationStore.loaded = true;
 }
 
+function callAppConfiguration() {
+  appConfigurationStore.promise = configurationsService
+    .getOne('app-configuration')
+    .then(config => appConfigurationStore.data = config)
+    .then(updateMetaTags)
+    .catch(() => ({}))
+}
+
+export function fetchAppConfiguration() {
+  if (appConfigurationStore.loaded || appConfigurationStore.promise) {
+    return
+  }
+  callAppConfiguration()
+}
+
 export function useAppConfiguration() {
   fetchAppConfiguration()
   return {
@@ -37,19 +52,13 @@ export function useAppConfiguration() {
   }
 }
 
-export function fetchAppConfiguration() {
-  if (appConfigurationStore.loaded || appConfigurationStore.promise) {
-    return
-  }
-  appConfigurationStore.promise = configurationsService
-    .getOne('app-configuration')
-    .then(config => appConfigurationStore.data = config)
-    .then(updateMetaTags)
-    .catch(() => ({}))
-}
-
 export function resetConfiguration() {
   appConfigurationStore.loaded = false;
   appConfigurationStore.promise = null;
   fetchAppConfiguration();
+}
+
+
+export function softResetConfiguration() {
+  callAppConfiguration();
 }

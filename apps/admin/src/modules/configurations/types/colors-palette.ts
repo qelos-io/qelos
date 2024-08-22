@@ -1,5 +1,6 @@
 export enum ColorName {
   mainColor = 'Main Color',
+  mainColorLight = 'Main Color Light',
   textColor = 'Text Color',
   secondaryColor = 'Secondary Color',
   thirdColor = 'Third Color',

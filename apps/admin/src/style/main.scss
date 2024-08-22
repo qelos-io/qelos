@@ -168,6 +168,10 @@ p {
   margin: 10px;
 }
 
+.pad-start {
+  padding-inline-start: 10px;
+}
+
 .el-collapse {
   --el-collapse-header-bg-color: var(--body-bg);
   --el-collapse-content-bg-color: var(--body-bg);
