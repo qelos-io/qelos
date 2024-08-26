@@ -13,14 +13,20 @@
         </el-icon>
         {{ $t('Clone') }}
       </el-button>
-<!--      <el-button>-->
-<!--        <el-icon class="edit-bar-icon">-->
-<!--          <font-awesome-icon :icon="['fas', 'gears']"/>-->
-<!--        </el-icon>-->
-<!--        {{ $t('Settings') }}-->
-<!--      </el-button>-->
-      <el-button type="danger">
-        <el-icon class="edit-bar-icon" @click="removePage">
+      <el-button @click="openAddComponentModal()">
+        <el-icon>
+          <font-awesome-icon :icon="['fas', 'layer-group']" />
+        </el-icon>
+        <span>{{ $t('Wizard') }}</span>
+      </el-button>
+      <el-button @click="openCodeEditor()">
+        <el-icon>
+          <font-awesome-icon :icon="['fas', 'code']" />
+        </el-icon>
+        <span>{{ $t('Code') }}</span>
+      </el-button>
+      <el-button type="danger" @click="removePage">
+        <el-icon class="edit-bar-icon">
           <font-awesome-icon :icon="['fas', 'trash']"/>
         </el-icon>
         {{ $t('Remove') }}
@@ -31,7 +37,6 @@
                         :template="relevantStructure"
                         :template-props="templateProps"/>
     </ErrorBoundary>
-    <EditButtons v-if="isEditingEnabled" @wizard="openAddComponentModal" @code="openCodeEditor"/>
     <AddComponentModal v-if="addComponent" @save="submitComponentToTemplate" @close="addComponent = undefined"/>
   </main>
 </template>
@@ -124,9 +129,9 @@ main {
 }
 
 .edit-bar {
-  position: absolute;
-  z-index: 3;
-  top: 0;
+  position: fixed;
+  z-index: 4;
+  top: 70px;
   right: 40px;
 }
 

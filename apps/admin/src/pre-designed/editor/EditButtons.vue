@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import AddMore from '@/modules/core/components/forms/AddMore.vue';
-
 defineEmits(['code', 'wizard'])
 </script>
 
