@@ -1,10 +1,14 @@
 <template>
   <el-form @submit.native.prevent="save" class="config-form">
-    <ConfigurationInput
-        v-for="key in keys"
-        :key="key"
-        v-model="updated[key]"
-        :valueType="valuesTypes[key]"/>
+    <el-button type="primary" @click="editorMode = !editorMode">{{ $t('Toggle Editor') }}</el-button>
+    <Monaco v-if="editorMode" v-model="metadataJSON"/>
+    <template v-else>
+      <ConfigurationInput
+          v-for="key in keys"
+          :key="key"
+          v-model="updated[key]"
+          :valueType="valuesTypes[key]"/>
+    </template>
     <SaveButton :submitting="submitting"/>
   </el-form>
 </template>
@@ -15,10 +19,12 @@ import { clearNulls } from '../../core/utils/clear-nulls';
 import FormInput from '../../core/components/forms/FormInput.vue';
 import ConfigurationInput from './ConfigurationInput.vue'
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
+import { computed, ref } from 'vue';
+import Monaco from '@/modules/users/components/Monaco.vue';
 
 export default {
   name: 'ConfigurationForm',
-  components: { SaveButton, FormInput, ConfigurationInput },
+  components: { Monaco, SaveButton, FormInput, ConfigurationInput },
   props: {
     kind: String,
     metadata: Object,
@@ -27,13 +33,33 @@ export default {
   setup({ kind, metadata }, { emit }) {
     const { updated, edited, keys, valuesTypes } = useEditMetadata(kind, metadata)
 
+    const editorMode = ref(false);
+
+
+    const metadataObj = ref(metadata);
+    const metadataJSON = computed({
+      get: () => JSON.stringify(metadata, null, 2),
+      set: (value: string) => {
+        try {
+          metadataObj.value = JSON.parse(value);
+        } catch (e) {
+        }
+      }
+    })
+
     return {
       keys,
       valuesTypes,
       updated,
       edited,
+      editorMode,
+      metadataJSON,
       save() {
-        emit('save', clearNulls(edited))
+        if (editorMode.value) {
+          emit('save', metadataObj.value);
+        } else {
+          emit('save', clearNulls(edited))
+        }
       }
     }
   }
