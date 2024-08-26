@@ -6,6 +6,26 @@
                      @save="saveCodeEditor"
                      @close="closeCodeEditor"/>
   <main v-else>
+    <el-button-group v-if="isEditingEnabled" class="edit-bar">
+      <el-button @click="clonePage">
+        <el-icon class="edit-bar-icon">
+          <font-awesome-icon :icon="['far', 'clone']"/>
+        </el-icon>
+        {{ $t('Clone') }}
+      </el-button>
+<!--      <el-button>-->
+<!--        <el-icon class="edit-bar-icon">-->
+<!--          <font-awesome-icon :icon="['fas', 'gears']"/>-->
+<!--        </el-icon>-->
+<!--        {{ $t('Settings') }}-->
+<!--      </el-button>-->
+      <el-button type="danger">
+        <el-icon class="edit-bar-icon" @click="removePage">
+          <font-awesome-icon :icon="['fas', 'trash']"/>
+        </el-icon>
+        {{ $t('Remove') }}
+      </el-button>
+    </el-button-group>
     <ErrorBoundary>
       <VRuntimeTemplate v-if="item"
                         :template="relevantStructure"
@@ -58,10 +78,11 @@ const {
   pageName,
   fetchMfe,
   editedPluginMfe,
-  submitCodeToTemplate
+  submitCodeToTemplate,
+  clonePage,
+  removePage,
 } = useEditMfeStructure()
 const updateCode = ref(false)
-
 
 async function openCodeEditor() {
   await fetchMfe()
@@ -96,3 +117,20 @@ const templateProps = computed(() => {
   };
 })
 </script>
+
+<style scoped>
+main {
+  position: relative;
+}
+
+.edit-bar {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 40px;
+}
+
+.edit-bar-icon {
+  margin-inline-end: 10px;
+}
+</style>

@@ -2,12 +2,13 @@ import { computed, provide, ref } from 'vue';
 import { IMicroFrontend } from '@/services/types/plugin';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { isEditingEnabled } from '@/modules/core/store/auth';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useEditPlugin } from '@/modules/plugins/compositions/manage-plugin';
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
 
 export function useEditMfeStructure() {
   const route = useRoute();
+  const router = useRouter()
   const { load: loadPlugin, updatePlugin } = useEditPlugin()
   const addComponent = ref()
   const { reloadRequirements } = useScreenRequirementsStore()
@@ -73,6 +74,24 @@ export function useEditMfeStructure() {
     updateRouteFromPluginMfe(routeMfe, pluginMfe);
   }
 
+  async function clonePage() {
+    const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId);
+    const routeMfe = route.meta.mfe as IMicroFrontend;
+    const pluginMfe: IMicroFrontend = plugin.microFrontends.find(mfe => mfe._id === routeMfe._id);
+
+    const clone: IMicroFrontend = JSON.parse(JSON.stringify(pluginMfe));
+    clone.name = clone.name + ' (copy)';
+    clone.route.path = clone.route.path + '-copy';
+    if (clone.route.name) {
+      clone.route.name = clone.route.name + '-copy';
+    }
+    delete clone._id;
+    plugin.microFrontends.push(clone);
+
+    await updatePlugin(plugin);
+    location.reload();
+  }
+
   const removeComponent = useConfirmAction(async function removeComponent(el: HTMLElement) {
     const index = Array.from(el.parentElement.children).findIndex(child => child === el)
 
@@ -98,6 +117,15 @@ export function useEditMfeStructure() {
     updateRouteFromPluginMfe(routeMfe, pluginMfe);
   })
 
+  const removePage = useConfirmAction(async function removePage() {
+    const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId);
+    const routeMfe = route.meta.mfe as IMicroFrontend;
+    plugin.microFrontends = plugin.microFrontends.filter(mfe => mfe._id !== routeMfe._id);
+
+    await updatePlugin(plugin)
+    await router.push('/');
+  })
+
   provide('editableManager', computed(() => isEditingEnabled.value && {
     removeComponent
   }));
@@ -108,6 +136,8 @@ export function useEditMfeStructure() {
     submitComponentToTemplate,
     fetchMfe,
     editedPluginMfe,
-    submitCodeToTemplate
+    submitCodeToTemplate,
+    clonePage,
+    removePage
   }
 }
