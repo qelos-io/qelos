@@ -3,10 +3,8 @@
     <RemoveButton v-if="editableManager" class="remove-component-btn" @click="editableManager.removeComponent($el)" />
     <span>{{ $t(title) }}</span>
     <slot name="content"></slot>
-    <el-button text v-if="createRoutePath || createRoute || onCreate" @click="create" class="add-button">
-      <el-icon size="28">
-        <font-awesome-icon :icon="['far', 'square-plus']" />
-      </el-icon>
+    <el-button v-if="createRoutePath || createRoute || onCreate" @click="create" class="add-button">
+      {{ $t('Create') }}
     </el-button>
   </h1>
 </template>
@@ -42,10 +40,9 @@ const editableManager = inject('editableManager');
   display: flex;
   align-items: center;
   width: 100%;
-
 }
 
 .add-button {
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 </style>
