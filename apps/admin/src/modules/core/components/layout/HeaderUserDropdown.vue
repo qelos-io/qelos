@@ -9,12 +9,7 @@
     </div>
     <template #dropdown>
       <el-dropdown-menu>
-        <el-dropdown-item v-if="user.workspace">
-          <span class="workspace-row">{{ user.workspace.name }}</span>
-        </el-dropdown-item>
-        <el-dropdown-item v-if="wsConfig.isActive">
-          <router-link :to="{name: 'workspaces'}">{{ $t('Workspaces') }}</router-link>
-        </el-dropdown-item>
+        <HeaderUserWorkspacesSelection v-if="wsConfig.isActive" />
         <el-dropdown-item>
           <router-link :to="{name: 'updateProfile'}">{{ $t('Update profile') }}</router-link>
         </el-dropdown-item>
@@ -43,6 +38,7 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import HeaderUserWorkspacesSelection from '@/modules/core/components/layout/HeaderUserWorkspacesSelection.vue';
 
 const emit = defineEmits(['open']);
 const { user, logout: logoutApi } = useAuth()
@@ -58,10 +54,6 @@ const logout = async () => {
 }
 </script>
 <style scoped lang="scss">
-.workspace-row {
-  color: var(--secondary-color);
-}
-
 .user-dropdown {
   margin-inline-start: auto;
 }

@@ -35,7 +35,7 @@ const navigationOpened = ref(false)
 const { isLoaded } = useAuthenticatedIntercept();
 const openModals = toRef(usePluginsMicroFrontends(), 'openModals');
 
-router.afterEach(() => navigationOpened.value = false)
+router.afterEach(() => navigationOpened.value = false);
 
 watch(navigationOpened, (isOpen) => {
   document.body.style.overflow = isOpen ? 'hidden' : '';

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <PageTitle title="Edit Workspace"/>
+    <PageTitle title="Workspace" :item-name="workspace?.name"/>
     <WorkspaceForm v-if="loaded" :workspace='workspace' @submitted="save"/>
   </div>
 </template>
