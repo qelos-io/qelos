@@ -23,9 +23,13 @@ function getUsersForAdmin(req: AuthRequest, res: Response): void {
     // support old versions
     const username = req.query.username?.toString().toLowerCase().trim().replace(/ /g, '+') || undefined;
 
-    const query = {
+    const query: any = {
       tenant: req.headers.tenant,
-      username: req.query.exact ? username : (username ? new RegExp(username, 'i') : undefined),
+      username: req.query.exact ? username ? new RegExp(username, 'i') : undefined : username ? new RegExp(username, 'i') : undefined,
+    };
+
+    if (typeof (req.query as any).roles === 'string') { 
+      query.roles = { $in: (req.query as any).roles.split(',').map((role: string) => role.trim()) };
     }
 
     if (!query.username) {
