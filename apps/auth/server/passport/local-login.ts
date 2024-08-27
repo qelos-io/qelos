@@ -5,6 +5,9 @@ import { UserDocument, UserModel } from '../models/user';
 import { getWorkspaceConfiguration } from '../services/workspace-configuration';
 import logger from '../services/logger';
 import { getWorkspaceForUser } from '../services/workspaces';
+import { Types } from 'mongoose';
+
+const ObjectId = Types.ObjectId;
 
 module.exports = new Strategy(
   {
@@ -33,7 +36,7 @@ module.exports = new Strategy(
     let workspace;
     if (wsConfig.isActive) {
       try {
-        workspace = await getWorkspaceForUser(query.tenant, (user as any)._id, preSelectedWorkspace);
+        workspace = await getWorkspaceForUser(query.tenant, ObjectId((user as any)._id), preSelectedWorkspace);
       } catch (err) {
         logger.log('Error getting workspace', query);
       }

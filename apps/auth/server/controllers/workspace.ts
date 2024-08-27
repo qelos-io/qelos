@@ -210,7 +210,6 @@ export async function activateWorkspace(req: AuthRequest, res: Response) {
   const tenant = req.headers.tenant;
 
   try {
-
     const payload = await verifyToken(token, tenant) as any;
     const user = await User
       .findOne({ _id: req.userPayload.sub, tenant })

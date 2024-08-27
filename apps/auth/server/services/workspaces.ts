@@ -1,6 +1,6 @@
 import Workspace from '../models/workspace';
 
-export function getWorkspaceForUser(tenant: string, userId: string, workspaceId: string) {
+export async function getWorkspaceForUser(tenant: string, userId: any, workspaceId?: string) {
   const query: any = {
     tenant,
     'members.user': userId
@@ -8,13 +8,13 @@ export function getWorkspaceForUser(tenant: string, userId: string, workspaceId:
   if (workspaceId) {
     query._id = workspaceId;
   }
-  return Workspace
+  const { _id, name, members } = await Workspace
     .findOne(query)
     .select('name members.$')
-    .exec()
-    .then(({ _id, name, members }) => ({
-      _id,
-      name,
-      roles: members[0].roles
-    }))
+    .exec();
+  return ({
+    _id,
+    name,
+    roles: members[0].roles
+  });
 }
