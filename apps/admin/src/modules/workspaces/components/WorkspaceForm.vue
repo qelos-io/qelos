@@ -18,7 +18,7 @@
     <SaveButton class="save-btn" :submitting="submitting">Save</SaveButton>
   </el-form>
 
-  <div class="container" v-if="workspace._id">
+  <div class="container" v-if="workspace._id && members">
     <h3>{{$t('Members')}}</h3>
     <QuickTable :data="members" :columns="membersColumns"/>
   </div>

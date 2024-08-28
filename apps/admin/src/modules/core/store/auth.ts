@@ -18,12 +18,13 @@ function loadUser() {
   return authStore.userPromise
 }
 
-export const logout = () => {
+export const logout = async () => {
   authStore.user = null
   authStore.isLoaded = false
   authStore.userPromise = null
   api.post('/api/logout')
-  router.push({ name: 'login' })
+  await router.push({ name: 'login' })
+  location.reload()
 }
 export const updateProfile = async (changes: Partial<IUser>) => {
   authStore.user = await api.post<IUser>('/api/me', changes).then(res => res.data)

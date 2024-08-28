@@ -35,7 +35,7 @@ export function useUpdateWorkspace(workspaceId: string) {
 }
 
 export function useWorkspaceMembers(workspaceId: string) {
-  const { result: members, loaded, retry } = useDispatcher<any[]>(() => workspacesMembersService.getAll(workspaceId), [], true);
+  const { result: members, loaded, retry } = useDispatcher<any[]>(() => workspacesMembersService.getAll(workspaceId), null, true);
 
   return {
     members,
