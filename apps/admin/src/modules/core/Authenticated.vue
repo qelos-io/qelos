@@ -55,9 +55,12 @@ watch(navigationOpened, (isOpen) => {
   display: flex;
   flex-direction: column;
   flex: 1;
+  height: 100%;
 
   .main {
     flex: 1;
+    display: flex;
+    flex-direction: column;
     overflow: auto;
     background-color: var(--body-bg);
     padding-bottom: 10px;

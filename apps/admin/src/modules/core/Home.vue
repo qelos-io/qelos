@@ -1,5 +1,4 @@
 <template>
-  <h3>{{ $t('Welcome!') }}</h3>
   <PrivilegedHome v-if="isPrivilegedUser"/>
   <NonPrivilegedHome v-if="loaded && authStore.isLoaded && !isPrivilegedUser"/>
 </template>
@@ -11,9 +10,3 @@ import { useAppConfiguration } from '@/modules/configurations/store/app-configur
 
 const { loaded } = useAppConfiguration();
 </script>
-<style scoped>
-h3 {
-  padding: 10px;
-  font-weight: normal;
-}
-</style>

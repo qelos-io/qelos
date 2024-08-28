@@ -20,3 +20,14 @@
 .el-input__wrapper {
   --el-input-bg-color: var(--inputs-bg-color);
 }
+
+.el-tabs {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.el-tabs__content {
+  overflow: auto;
+}

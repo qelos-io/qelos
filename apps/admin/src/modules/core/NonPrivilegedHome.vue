@@ -9,3 +9,12 @@ if (appConfig.value.homeScreen) {
   router.push(appConfig.value.homeScreen);
 }
 </script>
+<template>
+  <h3>{{ $t('Welcome!') }}</h3>
+</template>
+<style scoped>
+h3 {
+  padding: 10px;
+  font-weight: normal;
+}
+</style>

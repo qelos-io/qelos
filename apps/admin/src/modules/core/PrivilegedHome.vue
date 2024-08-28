@@ -1,4 +1,5 @@
 <template>
+<div class="flex-container">
   <el-tabs accordion model-value="metadata">
     <el-tab-pane name="metadata" :label="$t('Application Metadata')">
       <div class="blocks-list">
@@ -79,6 +80,7 @@
       <BlueprintsList/>
     </el-tab-pane>
   </el-tabs>
+</div>
 </template>
 
 <script setup lang="ts">

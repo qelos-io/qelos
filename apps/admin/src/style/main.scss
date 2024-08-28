@@ -147,6 +147,10 @@ p {
   flex: 0;
 }
 
+.flex-1 {
+  flex: 1;
+}
+
 [centered] {
   display: flex;
   justify-content: center;
@@ -166,6 +170,13 @@ p {
 
 .container {
   margin: 10px;
+}
+
+.flex-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex: 1;
 }
 
 .pad-start {
