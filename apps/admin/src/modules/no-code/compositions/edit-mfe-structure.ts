@@ -93,6 +93,10 @@ export function useEditMfeStructure() {
   }
 
   const removeComponent = useConfirmAction(async function removeComponent(el: HTMLElement) {
+    if (!el.parentElement.classList.contains('template-content')) {
+      alert('deletion not available in this context.');
+      return;
+    }
     const index = Array.from(el.parentElement.children).findIndex(child => child === el)
 
     const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()

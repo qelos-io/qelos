@@ -8,6 +8,7 @@ const props = defineProps<{
   data?: any | Promise<any>,
   successMsg?: string;
   errorMsg?: string;
+  clearAfterSubmit?: boolean;
 }>();
 const emit = defineEmits(['submitted'])
 
@@ -19,6 +20,9 @@ const form = ref()
 const { submit, submitting } = useSubmitting(async () => {
   const result = await props.onSubmit?.(form.value);
   emit('submitted', result);
+  if (props.clearAfterSubmit) {
+    form.value = getClonedData();
+  }
   return result;
 }, {
   success: props.successMsg || 'Submitted successfully',

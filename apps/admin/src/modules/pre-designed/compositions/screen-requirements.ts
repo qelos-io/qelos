@@ -13,7 +13,13 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
   const cruds = toRef(mfes, 'cruds');
   const requirements = ref()
 
+  function getBlueprintCacheKey(name: string, identifier?: string) {
+    return identifier ? `blueprint:${name}:single:${identifier}` : `blueprint:${name}:all`
+  }
+
   const cachedDispatchers = {}
+
+  let currentDispatchers = {}
 
   const reloadRequirements = () => {
     const reqs = route.meta.screenRequirements;
@@ -21,7 +27,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
       requirements.value = {}
       return;
     }
-
+    currentDispatchers = {}
     requirements.value = reqs.reduce((all, item: IScreenRequirement) => {
       if (item.fromCrud) {
         const api = cruds.value[item.fromCrud.name]?.api;
@@ -32,6 +38,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
           } else {
             cachedDispatchers[cachedKey] = useDispatcher(() => api.getOne(item.fromCrud.identifier), null)
           }
+          currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
         } else if (api) {
           const cachedKey = `crud:${item.fromCrud.name}:all`;
@@ -40,6 +47,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
           } else {
             cachedDispatchers[cachedKey] = useDispatcher(() => api.getAll(), [])
           }
+          currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
         }
       } else if (item.fromHTTP) {
@@ -53,25 +61,28 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
             url: item.fromHTTP.uri
           }).then(getCallData), null)
         }
+        currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
         all[item.key] = cachedDispatchers[cachedKey];
       } else if (item.fromBlueprint) {
         const entitiesOfBlueprint = Sdk.blueprints.entitiesOf(item.fromBlueprint.name)
         if (item.fromBlueprint.identifier) {
-          const cachedKey = `blueprint:${item.fromBlueprint.name}:single:${item.fromBlueprint.identifier}`;
+          const cachedKey = getBlueprintCacheKey(item.fromBlueprint.name, item.fromBlueprint.identifier);
           if (cachedDispatchers[cachedKey]) {
             cachedDispatchers[cachedKey].retry();
           } else {
             cachedDispatchers[cachedKey] = useDispatcher(() => entitiesOfBlueprint.getEntity(item.fromBlueprint.identifier), null)
           }
+          currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
         } else {
-          const cachedKey = `blueprint:${item.fromBlueprint.name}:all`;
+          const cachedKey = getBlueprintCacheKey(item.fromBlueprint.name);
           if (cachedDispatchers[cachedKey]) {
             cachedDispatchers[cachedKey].metadata.value = item.fromBlueprint;
             cachedDispatchers[cachedKey].retry();
           } else {
             cachedDispatchers[cachedKey] = useDispatcher(({ query }) => entitiesOfBlueprint.getList(query), [], false, item.fromBlueprint)
           }
+          currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
         }
       } else if (item.fromData) {
@@ -84,8 +95,16 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
 
   watch(() => [route.meta.screenRequirements, mfes.navBar, mfes.modals, mfes.cruds], reloadRequirements, { immediate: true })
 
+  const reloadBlueprintRequirements = (name: string) => {
+    const key = getBlueprintCacheKey(name);
+    if (cachedDispatchers[key]) {
+      cachedDispatchers[key].retry();
+    }
+  }
+
   return {
     requirements,
-    reloadRequirements
+    reloadRequirements,
+    reloadBlueprintRequirements
   }
 })

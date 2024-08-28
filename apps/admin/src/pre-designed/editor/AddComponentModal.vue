@@ -119,7 +119,7 @@ import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
 import MockListPageTitle from '@/pre-designed/editor/MockListPageTitle.vue';
-import GeneralForm from '@/modules/pre-designed/components/GeneralForm.vue';
+import BlueprintEntityForm from '@/modules/pre-designed/components/BlueprintEntityForm.vue';
 
 const dialogVisible = ref(true)
 const active = ref(0)
@@ -155,18 +155,14 @@ const availableComponents = {
       }
     ]
   },
-  'general-form': {
-    component: GeneralForm,
+  'blueprint-entity-form': {
+    component: BlueprintEntityForm,
     mock: 'h2',
     description: 'Choose this box to create a form',
     requiredProps: [
       {
-        prop: 'on-submit',
+        prop: 'blueprint',
         source: 'blueprint',
-        bind: true,
-        valueBuilder: (blueprint: string) => {
-          return `(form) => sdk.blueprints.entitiesOf('${blueprint}').create({metadata: form})`
-        },
       },
       {
         prop: 'data', label: 'Data', type: 'text', source: 'manual',
@@ -186,10 +182,15 @@ const availableComponents = {
         label: 'Error Message',
         placeholder: 'Failed to submit entity',
         source: 'manual'
-      }
+      },
+      {
+        prop: 'clear-after-submit', label: 'Clear Form After Submit?', type: 'switch', source: 'manual',
+        bind: true,
+        value: true,
+      },
     ],
     getInnerHTML: (propsBuilder: any) => {
-      const blueprintId = propsBuilder['on-submit'];
+      const blueprintId = propsBuilder.blueprint;
       const blueprint = blueprints.value.find(b => b.identifier === blueprintId);
       if (!blueprint) {
         return '';
