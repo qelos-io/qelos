@@ -6,12 +6,15 @@ import Monaco from '@/modules/users/components/Monaco.vue';
 import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+import { IMicroFrontend } from '@/services/types/plugin';
+import FormInput from '@/modules/core/components/forms/FormInput.vue';
+import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 
 const emit = defineEmits(['save', 'close'])
 
 const props = defineProps<{
   pageName: string,
-  mfe: any,
+  mfe: IMicroFrontend,
   submitting: boolean
 }>()
 
@@ -24,6 +27,10 @@ const editedRequirementsObj = ref([])
 const htmlEditor = ref()
 const requirementsEditor = ref()
 const editorMode = ref(true)
+
+const editedSettings = ref<Partial<IMicroFrontend> & { roles: string[] }>({
+  roles: []
+})
 
 const requirementsColumns = [
   {
@@ -39,15 +46,25 @@ const requirementsColumns = [
     label: 'Details',
   }]
 
-watch(() => props.mfe?.requirements, () => {
-  if (props.mfe) {
-    editedRequirements.value = JSON.stringify(props.mfe.requirements.map(req => {
-      return {
-        ...req,
-        _id: undefined,
-      }
-    }), null, 2);
-    editedRequirementsObj.value = JSON.parse(editedRequirements.value)
+watch(() => props.mfe, (mfe) => {
+  if (!props.mfe) {
+    return;
+  }
+  editedRequirements.value = JSON.stringify(props.mfe.requirements.map(req => {
+    return {
+      ...req,
+      _id: undefined,
+    }
+  }), null, 2);
+  editedRequirementsObj.value = JSON.parse(editedRequirements.value);
+
+  editedSettings.value = {
+    active: mfe.active,
+    roles: typeof mfe.roles === 'string' ? mfe.roles.split(',') : (mfe.roles || []),
+    workspaceRoles: mfe.workspaceRoles,
+    route: mfe.route,
+    searchPlaceholder: mfe.searchPlaceholder,
+    searchQuery: mfe.searchQuery,
   }
 }, { immediate: true })
 
@@ -66,6 +83,7 @@ function toggleEditorMode() {
 
 function save() {
   emit('save', {
+    settings: editedSettings.value,
     structure: props.mfe.structure,
     requirements: JSON.parse(editedRequirements.value)
   });
@@ -113,6 +131,7 @@ function updateRowJSON(row: any, key: string, value: string) {
     //
   }
 }
+
 provide('editableManager', ref(false));
 </script>
 
@@ -137,7 +156,7 @@ provide('editableManager', ref(false));
           <el-button-group>
             <el-button @click="toggleEditorMode">
               <el-icon>
-                <font-awesome-icon :icon="['fas', 'code']" />
+                <font-awesome-icon :icon="['fas', 'code']"/>
               </el-icon>
               <span>{{ $t('Toggle Code Editor') }}</span>
             </el-button>
@@ -151,7 +170,8 @@ provide('editableManager', ref(false));
             <QuickTable :data="editedRequirementsObj" :columns="requirementsColumns">
               <template #key="{row}">
                 <FormRowGroup>
-                  <RemoveButton class="flex-0" @click="editedRequirementsObj.splice(editedRequirementsObj.indexOf(row), 1)"/>
+                  <RemoveButton class="flex-0"
+                                @click="editedRequirementsObj.splice(editedRequirementsObj.indexOf(row), 1)"/>
                   <el-input required v-model="row.key"/>
                 </FormRowGroup>
               </template>
@@ -181,6 +201,55 @@ provide('editableManager', ref(false));
           </div>
         </div>
       </el-tab-pane>
+      <el-tab-pane name="settings" :label="$t('Settings')">
+        <FormInput type="switch" v-model="editedSettings.active" :title="$t('Active?')"/>
+
+        <FormRowGroup>
+          <el-form-item>
+            <template #label>
+              {{ $t('Roles') }}
+              <InfoIcon content="Only specified roles will be able to access this page"/>
+            </template>
+            <el-select
+                v-model="editedSettings.roles"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                :reserve-keyword="false"
+            >
+              <template  v-for="role in props.mfe.roles">
+                <el-option v-if="role !== '*'" :key="role" :label="role" :value="role"/>
+              </template>
+              <el-option label="All (*)" value="*"/>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <template #label>
+              {{ $t('Workspace Roles') }}
+              <InfoIcon content="Only specified workspace roles will be able to access this page"/>
+            </template>
+            <el-select
+                v-model="editedSettings.roles"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                :reserve-keyword="false"
+            >
+              <template  v-for="role in props.mfe.roles">
+                <el-option v-if="role !== '*'" :key="role" :label="role" :value="role"/>
+              </template>
+              <el-option label="All (*)" value="*"/>
+            </el-select>
+          </el-form-item>
+        </FormRowGroup>
+
+        <FormRowGroup>
+          <FormInput type="switch" class="flex-0" v-model="editedSettings.searchQuery" :title="$t('Search')"/>
+          <FormInput v-model="editedSettings.searchPlaceholder" :title="$t('Search Placeholder')"/>
+        </FormRowGroup>
+      </el-tab-pane>
     </el-tabs>
   </el-form>
 </template>
@@ -190,6 +259,7 @@ provide('editableManager', ref(false));
   display: flex;
   flex-direction: column;
 }
+
 .tab-content {
   width: 100%;
   height: 100%;

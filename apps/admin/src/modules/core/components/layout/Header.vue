@@ -15,6 +15,19 @@
           :placeholder="$t(route?.meta?.searchPlaceholder as string || 'Search...')"
       />
 
+      <div v-if="isAdmin" class="apply-editor">
+        <span>
+          <el-switch
+              v-model="isEditingEnabled"
+              active-text="-Edit Mode-"
+              inactive-text="-Edit Mode-"
+              style="--el-switch-on-color: var(--border-color);"
+              size="large"
+              inline-prompt
+          />
+        </span>
+      </div>
+
       <HeaderUserDropdown/>
     </div>
   </header>
@@ -24,6 +37,7 @@ import { computed, ref, watch } from 'vue';
 import debounce from 'lodash.debounce';
 import { useRoute, useRouter } from 'vue-router';
 import HeaderUserDropdown from '@/modules/core/components/layout/HeaderUserDropdown.vue';
+import { isAdmin, isEditingEnabled } from '@/modules/core/store/auth';
 
 const emit = defineEmits(['open']);
 const router = useRouter()
@@ -74,10 +88,6 @@ header {
   display: flex;
   align-items: center;
   cursor: pointer;
-}
-
-.user-dropdown {
-  margin-inline-start: auto;
 }
 
 .user-welcome {
@@ -135,5 +145,10 @@ a {
 .query-input {
   margin-inline: 10px;
   max-width: 300px;
+}
+
+.apply-editor {
+  text-align: center;
+  margin-inline: auto 10px;
 }
 </style>

@@ -54,10 +54,6 @@ const logout = async () => {
 }
 </script>
 <style scoped lang="scss">
-.user-dropdown {
-  margin-inline-start: auto;
-}
-
 .user-welcome {
   padding-inline-end: 10px;
   display: flex;

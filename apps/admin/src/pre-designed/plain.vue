@@ -101,8 +101,8 @@ function closeCodeEditor() {
   updateCode.value = false;
 }
 
-const { submit: saveCodeEditor, submitting } = useSubmitting(async ({ structure, requirements }) => {
-  await submitCodeToTemplate(structure, requirements)
+const { submit: saveCodeEditor, submitting } = useSubmitting(async ({ structure, requirements, settings }) => {
+  await submitCodeToTemplate(structure, requirements, settings)
   updateCode.value = true;
 })
 

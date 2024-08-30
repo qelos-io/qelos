@@ -39,11 +39,12 @@ export function useEditMfeStructure() {
     reloadRequirements();
   }
 
-  async function submitCodeToTemplate(structure: string, requirements: any[]) {
+  async function submitCodeToTemplate(structure: string, requirements: any[], otherSettings: Partial<IMicroFrontend>) {
     const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
 
     pluginMfe.structure = structure;
     pluginMfe.requirements = requirements;
+    Object.assign(pluginMfe, otherSettings);
     await updatePlugin(plugin);
     updateRouteFromPluginMfe(routeMfe, pluginMfe);
   }
