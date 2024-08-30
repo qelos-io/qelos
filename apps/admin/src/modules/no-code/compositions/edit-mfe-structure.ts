@@ -36,6 +36,8 @@ export function useEditMfeStructure() {
   function updateRouteFromPluginMfe(routeMfe, pluginMfe: IMicroFrontend) {
     routeMfe.structure = pluginMfe.structure;
     route.meta.screenRequirements = pluginMfe.requirements;
+    route.meta.searchQuuery = pluginMfe.searchQuery;
+    route.meta.searchPlaceholder = pluginMfe.searchPlaceholder;
     reloadRequirements();
   }
 
