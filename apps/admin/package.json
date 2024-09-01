@@ -15,8 +15,10 @@
   "main": "server.js",
   "dependencies": {
     "@primevue/themes": "^4.0.4",
+    "echarts": "^5.5.1",
     "express": "^4.19.2",
     "primevue": "^4.0.4",
+    "vue-echarts": "^7.0.3",
     "vue3-runtime-template": "^1.0.2"
   },
   "devDependencies": {

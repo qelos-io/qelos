@@ -25,7 +25,9 @@ describe('Auth Check middlewares - verifyUser', () => {
       const req = {
         cookies: {},
         signedCookies: {},
-        headers: {},
+        headers: {
+          tenant: 'tenant-1',
+        },
       };
       const res = {};
       const next = jest.fn();
@@ -46,6 +48,7 @@ describe('Auth Check middlewares - verifyUser', () => {
         cookies: {},
         signedCookies: {},
         headers: {
+          tenant: 'tenant-1',
           authorization: 'Bearer token-value',
         }
       };
@@ -63,6 +66,7 @@ describe('Auth Check middlewares - verifyUser', () => {
         cookies: {},
         signedCookies: {},
         headers: {
+          tenant: 'tenant-1',
           authorization: 'Bearer token-value',
         }
       };
@@ -85,6 +89,7 @@ describe('Auth Check middlewares - verifyUser', () => {
         cookies: {},
         signedCookies: {},
         headers: {
+          tenant: 'tenant-1',
           authorization: 'Bearer valid-token',
         }
       };
@@ -112,6 +117,7 @@ describe('Auth Check middlewares - verifyUser', () => {
         cookies: {},
         signedCookies: {},
         headers: {
+          tenant: 'tenant-1',
           authorization: 'Bearer valid-token',
         }
       };
@@ -139,6 +145,7 @@ describe('Auth Check middlewares - verifyUser', () => {
         cookies: {},
         signedCookies: {},
         headers: {
+          tenant: 'tenant-1',
           authorization: 'Bearer valid-token',
         }
       };
@@ -166,6 +173,7 @@ describe('Auth Check middlewares - verifyUser', () => {
         cookies: {},
         signedCookies: {},
         headers: {
+          tenant: 'tenant-1',
           authorization: 'Bearer valid-token',
         }
       };
@@ -194,7 +202,9 @@ describe('Auth Check middlewares - verifyUser', () => {
           token: 'cookie-token'
         },
         signedCookies: {},
-        headers: {}
+        headers: {
+          tenant: 'tenant-1',
+        }
       };
       const res = {};
       const next = jest.fn();
