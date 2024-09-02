@@ -5,9 +5,10 @@ import { isPrivilegedUser } from '@/modules/core/store/auth';
 const error = ref()
 onErrorCaptured((err) => {
   error.value = err;
+
+  console.error(err);
   return false
 })
-isPrivilegedUser
 </script>
 
 <template>

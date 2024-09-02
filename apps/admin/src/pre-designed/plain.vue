@@ -32,9 +32,10 @@
         {{ $t('Remove') }}
       </el-button>
     </el-button-group>
-    <ErrorBoundary>
+    <ErrorBoundary v-if="isRequirementsLoaded">
       <div class="template-content">
         <VRuntimeTemplate v-if="item"
+                          :key="$route.fullPath"
                           :template="relevantStructure"
                           :template-props="templateProps"/>
       </div>
@@ -69,7 +70,7 @@ const cruds = toRef(mfes, 'cruds')
 const { user } = useAuth()
 
 const { api, crud, relevantStructure } = useSingleItemCrud()
-const { requirements } = toRefs(useScreenRequirementsStore())
+const { requirements, isRequirementsLoaded } = toRefs(useScreenRequirementsStore())
 useDynamicRouteItem(api, item);
 
 function openAddComponentModal(el?: HTMLElement) {

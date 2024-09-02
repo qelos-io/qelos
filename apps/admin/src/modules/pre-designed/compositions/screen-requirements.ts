@@ -1,4 +1,4 @@
-import { ref, toRef, watch } from 'vue';
+import { computed, ref, toRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { defineStore } from 'pinia';
 import { IScreenRequirement } from '@qelos/global-types'
@@ -95,6 +95,15 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
 
   watch(() => [route.meta.screenRequirements, mfes.navBar, mfes.modals, mfes.cruds], reloadRequirements, { immediate: true })
 
+  const isRequirementsLoaded = computed(() => {
+    const hasEmptyRequirement = (route.meta.screenRequirements as IScreenRequirement[] || [])
+      .map((item: IScreenRequirement) => item.key)
+      .some(key => typeof requirements.value[key] === 'undefined')
+
+    console.log('test loaded', hasEmptyRequirement)
+    return !hasEmptyRequirement;
+  })
+
   const reloadBlueprintRequirements = (name: string) => {
     const key = getBlueprintCacheKey(name);
     if (cachedDispatchers[key]) {
@@ -103,6 +112,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
   }
 
   return {
+    isRequirementsLoaded,
     requirements,
     reloadRequirements,
     reloadBlueprintRequirements

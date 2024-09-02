@@ -203,7 +203,7 @@ const availableComponents = {
       }
       const blueprintsInputs = Object.keys(blueprint.properties).map((propName: any) => {
         const prop = blueprint.properties[propName];
-        return `<form-input title="${prop.title}" label="${prop.description}" ${prop.required ? 'required="true"' : ''} v-model="form.${propName}"></form-input>`
+        return `<form-input title="${prop.title}" label="${prop.description}" ${prop.required ? ':required="true"' : ''} v-model="form.${propName}"></form-input>`
       }).join('\n');
 
       return `<template #default="{form}">
