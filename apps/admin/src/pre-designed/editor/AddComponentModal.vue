@@ -217,6 +217,9 @@ const availableComponents = {
   'v-chart': {
     component: VChart,
     mock: MockVChart,
+    extendProps: (props: any) => {
+      props[':autoresize'] = true;
+    },
     requiredProps: [
       { prop: 'height', label: 'Height', type: 'text', source: 'manual', placeholder: '(400px)' },
       { prop: 'option', label: 'Option', type: 'text', bind: true, source: 'manual', placeholder: 'Enter a requirement key' },
@@ -262,7 +265,8 @@ function refillColumnsFromBlueprint(blueprintId: string) {
 }
 
 function submit() {
-  const requiredProps = availableComponents[selectedComponent.value].requiredProps;
+  const descriptor = availableComponents[selectedComponent.value];
+  const requiredProps = descriptor.requiredProps;
   const props = {}
   const customData = {};
   for (const propName in propsBuilder.value) {
@@ -285,6 +289,8 @@ function submit() {
       props[propData.bind ? ('v-bind:' + propName) : propName] = val;
     }
   }
+
+  descriptor.extendProps?.(props);
 
   emit('save', {
     component: selectedComponent.value,
