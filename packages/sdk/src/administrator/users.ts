@@ -1,6 +1,6 @@
-import {QelosSDKOptions} from '../types';
+import { QelosSDKOptions } from '../types';
 import BaseSDK from '../base-sdk';
-import {IUser} from '../authentication';
+import { IUser } from '../authentication';
 
 export interface IManagedUser<T = any> extends IUser {
   internalMetadata?: T;
@@ -21,17 +21,20 @@ export default class QlUsers<T = any, E = any> extends BaseSDK {
     return this.callJsonApi<IManagedUser<Z>>(`${this.relativePath}/${userId}`)
   }
 
-  getList(filters?: { username: string, exact?: boolean }) {
-    return this.callJsonApi<IUser[]>(
-      this.relativePath +
-      (filters ?
-        `?${Object.entries(filters).map(([key, value]) => `${key}=${value}`).join('&')}` :
-        '')
-    );
+  // Method getList accepts filters including roles
+  getList(filters?: { username?: string; exact?: boolean; roles?: string[] }) {
+    const queryParams = filters
+      ? `?${Object.entries(filters)
+        .map(([key, value]) =>
+          Array.isArray(value) ? `${key}=${value.join(',')}` : `${key}=${value}`
+        ).join('&')}`
+      : '';
+
+    return this.callJsonApi<IUser[]>(`${this.relativePath}${queryParams}`);
   }
 
   remove(userId: string): Promise<any> {
-    return this.callApi(`${this.relativePath}/${userId}`, {method: 'delete'});
+    return this.callApi(`${this.relativePath}/${userId}`, { method: 'delete' });
   }
 
   update<Z = T>(userId: string, changes: Partial<IManagedUserRequest<Z>>): Promise<IManagedUser> {
@@ -39,7 +42,7 @@ export default class QlUsers<T = any, E = any> extends BaseSDK {
       `${this.relativePath}/${userId}`,
       {
         method: 'put',
-        headers: {'content-type': 'application/json'},
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(changes)
       }
     )
@@ -48,7 +51,7 @@ export default class QlUsers<T = any, E = any> extends BaseSDK {
   create<Z = T>(user: Omit<IManagedUserRequest<Z>, '_id' | 'fullName' | 'birthDate'>): Promise<IManagedUser<Z>> {
     return this.callJsonApi<IManagedUser>(this.relativePath, {
       method: 'post',
-      headers: {'content-type': 'application/json'},
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify(user)
     })
   }
@@ -64,7 +67,7 @@ export default class QlUsers<T = any, E = any> extends BaseSDK {
   async setEncryptedData<Z = E>(userId: string, encryptedId: string = '', data: Z): Promise<void> {
     const res = await this.callApi(`${this.relativePath}/${userId}/encrypted`, {
       method: 'post',
-      headers: {'content-type': 'application/json', 'x-encrypted-id': encryptedId},
+      headers: { 'content-type': 'application/json', 'x-encrypted-id': encryptedId },
       body: JSON.stringify(data)
     })
     if (res.status >= 300) {

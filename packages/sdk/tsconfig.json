@@ -13,6 +13,7 @@
       "@qelos/global-types": [
         "node_modules/@qelos/global-types/index.ts"
       ]
-    }
-  }
+    },
+  },
+  "exclude": ["src/**/*.test.ts"]
 }
