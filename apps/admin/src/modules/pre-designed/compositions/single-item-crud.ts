@@ -25,7 +25,19 @@ export function useSingleItemCrud() {
     return (route.meta.mfe as any)?.structure || '<div></div>';
   });
 
+  const styles = computed(() => {
+    if (relevantStructure.value.includes('<style>')) {
+      // get all style elements
+      const styleElements = relevantStructure.value.match(/<style>(.*?)<\/style>/g);
+      //strip style tags
+      return styleElements.map((styleElement) => styleElement.replace(/<style>/g, '').replace(/<\/style>/g, ''));
+    }
+  })
+
   return {
-    crud, api, relevantStructure
+    crud,
+    api,
+    relevantStructure,
+    styles
   }
 }

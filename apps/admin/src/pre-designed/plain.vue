@@ -45,7 +45,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, toRef, toRefs, watch } from 'vue';
+import { computed, onUnmounted, ref, toRef, toRefs, watch } from 'vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import VRuntimeTemplate from 'vue3-runtime-template';
 import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-item-crud';
@@ -60,6 +60,7 @@ import EditPageStructure from '@/pre-designed/editor/EditPageStructure.vue';
 import sdk from '@/services/sdk';
 import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
 import { useRoute } from 'vue-router';
+import { useGlobalStyles } from '@/modules/pre-designed/compositions/global-styles';
 
 const route = useRoute();
 const mfes = usePluginsMicroFrontends();
@@ -69,9 +70,10 @@ const cruds = toRef(mfes, 'cruds')
 
 const { user } = useAuth()
 
-const { api, crud, relevantStructure } = useSingleItemCrud()
+const { api, crud, relevantStructure, styles } = useSingleItemCrud()
 const { requirements, isRequirementsLoaded } = toRefs(useScreenRequirementsStore())
 useDynamicRouteItem(api, item);
+useGlobalStyles(styles);
 
 function openAddComponentModal(el?: HTMLElement) {
   addComponent.value = {
