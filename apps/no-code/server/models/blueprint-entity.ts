@@ -3,6 +3,7 @@ import mongoose, { Document } from 'mongoose'
 export interface IBlueprintEntity extends Document {
   tenant: string;
   identifier: string;
+  blueprint: string;
   user: mongoose.Schema.Types.ObjectId;
   workspace: mongoose.Schema.Types.ObjectId;
   metadata: any;

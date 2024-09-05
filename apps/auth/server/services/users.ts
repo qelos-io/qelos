@@ -59,7 +59,7 @@ export async function updateUser(
   let directUpdate;
   if (!(user instanceof User)) {
     if (username || roles || password) {
-      user = await User.findOne(user).exec();
+      user = await User.findOne({ _id: user._id, tenant: user.tenant }).exec();
     } else {
       directUpdate = { _id: user._id, tenant: user.tenant };
       user = {} as UserDocument;

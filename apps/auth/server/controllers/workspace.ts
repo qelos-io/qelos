@@ -42,7 +42,7 @@ export async function getWorkspaces(req: AuthRequest, res: Response) {
   try {
     const workspaces = await Workspace.find({
       tenant,
-      'members.user': ObjectId(userId),
+      'members.user': new ObjectId(userId),
     })
       .select('name logo tenant members.$').lean().exec();
     res.status(200).json(workspaces.map(ws => {
@@ -188,7 +188,7 @@ export async function deleteWorkspace(req: AuthRequest, res: Response) {
   const userId = req.userPayload.sub;
 
   try {
-    await req.workspace.remove();
+    await req.workspace.deleteOne();
     res.status(200).json(req.workspace).end();
 
     emitPlatformEvent({
@@ -271,7 +271,7 @@ export async function getWorkspaceMembers(req: AuthRequest, res: Response) {
     users = users.map(user => {
       return {
         ...user,
-        ...workspace.members.find(member => user._id.equals(member.user))
+        ...workspace.members.find(member => (user._id as Types.ObjectId).equals(member.user))
       }
     })
 
@@ -286,7 +286,7 @@ export async function getWorkspaceByParams(req, res, next) {
   const _id = req.params.workspaceId;
 
   try {
-    const userId = ObjectId(req.userPayload.sub);
+    const userId = new ObjectId(req.userPayload.sub);
     const query: any = {
       tenant,
       _id,

@@ -4,7 +4,6 @@ import { IPlugin } from '../models/plugin';
 import { createUser, getUser, getUsers, updateUser } from './users';
 import { storeOAuthPayloadForPlugin } from './tokens-management';
 import httpAgent from './http-agent';
-import { DocumentDefinition } from 'mongoose';
 import logger from './logger';
 
 type PluginEnrichOptions = {
@@ -59,7 +58,7 @@ export async function loadManifest(manifestUrl: string): Promise<IPlugin & { reg
   };
 }
 
-export async function registerToPlugin(plugin: DocumentDefinition<IPlugin>, registerUrl: string, {
+export async function registerToPlugin(plugin: IPlugin, registerUrl: string, {
   tenant,
   host,
   appUrl

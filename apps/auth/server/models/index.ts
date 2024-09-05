@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 export const connect = (uri:string) => {
-	mongoose.connect(uri, {useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true});
+  mongoose.connect(uri, {})
 	// plug in the promise library:
 	mongoose.Promise = global.Promise;
 

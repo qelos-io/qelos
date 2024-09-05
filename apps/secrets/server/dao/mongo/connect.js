@@ -1,12 +1,7 @@
 const mongoose = require('mongoose');
 
 module.exports = (uri) => {
-  mongoose.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-  });
+  mongoose.connect(uri, {});
   // plug in the promise library:
   mongoose.Promise = global.Promise;
 

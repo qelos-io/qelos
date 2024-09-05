@@ -1,11 +1,11 @@
-import express, {Express} from 'express';
+import express, { Express } from 'express';
 
-import type {ApiConfig, BodyParserType} from './types';
+import type { ApiConfig, BodyParserType } from './types';
 import shutdown from './shutdown';
 
 
 export const config = (updatedConfig: any = _config): ApiConfig => {
-  _config = {..._config, ...updatedConfig};
+  _config = { ..._config, ...updatedConfig };
   return _config;
 }
 export const app = () => _app || createApp();

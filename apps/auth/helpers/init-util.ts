@@ -21,24 +21,13 @@ export function init() {
   });
 }
 
-export function reset(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (process.env.NODE_ENV !== 'production') {
-      User.deleteMany({}, {}, (err) => {
-        if (err) {
-          return reject(err);
-        }
-        User.syncIndexes({}, (errIdx) => {
-          if (errIdx) {
-            reject(errIdx);
-          }
-          resolve();
-        });
-      });
-    } else {
-      return reject(new Error('cannot reset production'));
-    }
-  });
+export async function reset(): Promise<void> {
+  if (process.env.NODE_ENV !== 'production') {
+    await User.deleteMany({}, {});
+    await User.syncIndexes({})
+  } else {
+    throw new Error('cannot reset production');
+  }
 }
 
 

@@ -1,8 +1,6 @@
-const AWS = require('aws-sdk');
+const AWS = require('@aws-sdk/client-s3');
 const { getSecret } = require('../services/secrets-management');
 const ASSET_TYPES = require('../utils/asset-types.json');
-
-AWS.config.setPromisesDependency();
 
 class S3 {
   constructor(storage) {
@@ -13,7 +11,7 @@ class S3 {
 
         this._client = new AWS.S3({
           accessKeyId,
-          secretAccessKey
+          secretAccessKey,
         });
         this.bucket = { name: storage.metadata.bucketName };
 
@@ -26,14 +24,12 @@ class S3 {
 
   async list(path) {
     try {
-
       const listedObjects = await this._client
         .listObjectsV2({
           Bucket: this.bucket.name,
           Prefix: path.slice(1),
           Delimiter: "/"
         })
-        .promise();
 
       const files = listedObjects.Contents.map(content => ({
         ...content,
@@ -58,14 +54,13 @@ class S3 {
 
   async upload(fullPath, file) {
     try {
-      this._client
-        .upload({
+      await this._client
+        .createMultipartUpload({
           Bucket: this.bucket.name,
           Key: fullPath.slice(1),
           Body: file.buffer,
           ContentType: file.type
         })
-        .promise();
 
     } catch (error) {
       throw { message: 'could not upload asset to storage: ' + this.name };
@@ -80,7 +75,7 @@ class S3 {
         Delimiter: "/"
       };
 
-      const listedObjects = await this._client.listObjectsV2(params).promise();
+      const listedObjects = await this._client.listObjectsV2(params);
 
       if (listedObjects.Contents.length === 0) return;
 
@@ -89,7 +84,7 @@ class S3 {
         Delete: { Objects: listedObjects.Contents.map(({ Key }) => ({ Key })) }
       };
 
-      await this._client.deleteObjects(deleteParams).promise();
+      await this._client.deleteObjects(deleteParams);
 
       if (listedObjects.IsTruncated) await this.remove(file);
 
@@ -108,9 +103,7 @@ class S3 {
         Key: newFullPath.slice(1),
       };
 
-      await this._client
-        .copyObject(params)
-        .promise();
+      await this._client.copyObject(params);
 
       await this.remove(oldFullPath);
 

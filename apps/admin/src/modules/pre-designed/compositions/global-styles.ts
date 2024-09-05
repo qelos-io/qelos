@@ -5,7 +5,7 @@ export function useGlobalStyles(styles: Ref<string[]>) {
   document.body.appendChild(styleTag);
 
   watch(styles, (styles) => {
-    styleTag.innerHTML = styles.join('\n');
+    styleTag.innerHTML = styles?.join('\n');
   }, { immediate: true });
 
   onUnmounted(() => {

@@ -1,4 +1,4 @@
-import mongoose, { Document, Model, LeanDocument } from 'mongoose'
+import mongoose, { Document, Model } from 'mongoose'
 import uniqid from 'uniqid';
 import { cacheManager } from '../services/cache-manager';
 import { IMicroFrontend, IPlugin as IPluginType } from '@qelos/global-types';
@@ -8,7 +8,7 @@ export interface IPlugin extends Document, IPluginType {
 }
 
 interface PluginModel extends Model<IPlugin> {
-  getPluginForRedirect(tenant: string, _id: string): Promise<LeanDocument<IPlugin>>
+  getPluginForRedirect(tenant: string, _id: string): Promise<IPluginType>
 }
 
 const MicroFrontendSchema = new mongoose.Schema<IMicroFrontend>({

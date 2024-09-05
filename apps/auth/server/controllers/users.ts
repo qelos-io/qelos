@@ -67,7 +67,7 @@ function getUsers(req: AuthRequest, res: Response): RequestHandler {
     .map(id => {
       const val = id.trim()
       if (isObjectId(val)) {
-        return ObjectId(val)
+        return new ObjectId(val)
       }
       return false
     })
@@ -197,7 +197,7 @@ async function createUser(req: AuthRequest, res: Response) {
 
     emitPlatformEvent({
       tenant: req.headers.tenant,
-      user: _id,
+      user: _id as string,
       source: 'auth',
       kind: 'users',
       eventName: 'user-created',

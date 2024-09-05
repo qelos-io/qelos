@@ -26,9 +26,10 @@ export interface IUser {
   roles: string[];
   tokens: any[];
   metadata: any;
+  created: Date;
 }
 
-export interface UserDocument extends IUser, Document {
+export interface UserDocument extends Omit<IUser, '_id'>, Document {
 }
 
 export interface UserModel extends Model<UserDocument> {

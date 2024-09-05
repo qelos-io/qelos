@@ -4,6 +4,7 @@ export interface IMicroFrontend {
   _id?: string;
   name: string;
   description: string;
+  manifestUrl: string;
   url: string;
   active: boolean;
   opened: boolean;

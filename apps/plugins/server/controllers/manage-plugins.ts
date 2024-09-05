@@ -196,7 +196,7 @@ export async function removePlugin(req, res) {
       setRefreshSecret(tenant, plugin.apiPath, '').catch(() => null);
       await Promise.all([
         plugin.user ? removeUser(tenant, plugin.user) : Promise.resolve(),
-        plugin.remove()
+        plugin.deleteOne()
       ]);
       res.json(plugin).end();
     } else {

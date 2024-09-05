@@ -1,6 +1,6 @@
-import {getRouter, verifyUser, populateUser, getBodyParser} from '@qelos/api-kit';
-import {onlyEditPrivileged, onlyEditPrivilegedOrPlugin} from '../middlewares/privileged-check';
-import {createEvent, getAllEvents, getEvent} from '../controllers/events';
+import { getRouter, verifyUser, populateUser, getBodyParser } from '@qelos/api-kit';
+import { onlyEditPrivileged, onlyEditPrivilegedOrPlugin } from '../middlewares/privileged-check';
+import { createEvent, getAllEvents, getEvent } from '../controllers/events';
 
 const eventsRouter = getRouter();
 

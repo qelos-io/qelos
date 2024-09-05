@@ -13,9 +13,9 @@
     "access": "public"
   },
   "dependencies": {
-    "axios": "^1.6.8",
+    "axios": "^1.7.7",
     "cors": "^2.8.5",
-    "express": "^4.19.2",
+    "express": "4.19.2",
     "morgan": "^1.10.0"
   },
   "gitHead": "8ec5f78787a21b9ee73085a0375282ff940fb2a5",

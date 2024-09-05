@@ -132,9 +132,9 @@ export async function patchBlueprint(req, res) {
 }
 
 export async function removeBlueprint(req, res) {
-  const blueprintIdentifier = req.params.blueprintIdentifier;
+  const blueprintIdentifier = req.params.blueprintIdentifier.toString();
   try {
-    const existingEntities = await BlueprintEntity.count({
+    const existingEntities = await BlueprintEntity.countDocuments({
       tenant: req.headers.tenant,
       blueprint: blueprintIdentifier
     }).lean().exec();

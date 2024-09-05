@@ -3,10 +3,10 @@ import mongoose, {Document} from 'mongoose';
 export interface IDraft extends Document {
   user: string;
   tenant: string;
+  contextId: string | null;
   contextType: string;
   contextDisplayName?: string;
   contextRouteParams?: any;
-  contextId: string | null;
   contextData: any;
 }
 

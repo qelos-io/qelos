@@ -15,6 +15,6 @@ const UserInternalMetadataSchema = new mongoose.Schema({
 
 UserInternalMetadataSchema.index({tenant: 1, user: 1}, {unique: true});
 
-const UserInternalMetadata = mongoose.model<{ metadata?: any }>('UserInternalMetadata', UserInternalMetadataSchema);
+const UserInternalMetadata = mongoose.model<{ metadata?: any, user: Schema.Types.ObjectId, tenant: string }>('UserInternalMetadata', UserInternalMetadataSchema);
 export default UserInternalMetadata
 

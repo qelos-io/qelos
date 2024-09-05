@@ -23,7 +23,7 @@
   "dependencies": {
     "@qelos/api-kit": "^3.6.3",
     "@qelos/cache-manager": "^3.4.1",
-    "mongoose": "^5.10.5",
+    "mongoose": "^8.6.1",
     "node-fetch": "^2.6.1",
     "shortid": "^2.2.14"
   },

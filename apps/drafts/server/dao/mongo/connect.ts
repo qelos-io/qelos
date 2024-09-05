@@ -3,12 +3,7 @@ import mongoose from 'mongoose'
 module.exports = (uri: string) => {
 	mongoose.connect(
 		uri,
-		{
-			useNewUrlParser: true,
-			useUnifiedTopology: true,
-			useCreateIndex: true,
-			useFindAndModify: true
-		}
+		{}
 	)
 	// plug in the promise library:
 	mongoose.Promise = global.Promise
