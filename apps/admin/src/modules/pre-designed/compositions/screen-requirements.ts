@@ -99,8 +99,6 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
     const hasEmptyRequirement = (route.meta.screenRequirements as IScreenRequirement[] || [])
       .map((item: IScreenRequirement) => item.key)
       .some(key => typeof requirements.value[key] === 'undefined')
-
-    console.log('test loaded', hasEmptyRequirement)
     return !hasEmptyRequirement;
   })
 

@@ -2,12 +2,15 @@
 import { onErrorCaptured, ref } from 'vue';
 import { isPrivilegedUser } from '@/modules/core/store/auth';
 
+const emit = defineEmits(['error'])
+
 const error = ref()
 onErrorCaptured((err) => {
   error.value = err;
+  emit('error', err);
 
   console.error(err);
-  return false
+  return false;
 })
 </script>
 

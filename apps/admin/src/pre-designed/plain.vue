@@ -32,10 +32,10 @@
         {{ $t('Remove') }}
       </el-button>
     </el-button-group>
-    <ErrorBoundary v-if="isRequirementsLoaded">
+    <ErrorBoundary v-if="isRequirementsLoaded" @error="updates++" :key="$route.fullPath + updates">
       <div class="template-content">
         <VRuntimeTemplate v-if="item"
-                          :key="$route.fullPath"
+
                           :template="relevantStructure"
                           :template-props="templateProps"/>
       </div>
@@ -45,7 +45,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onUnmounted, ref, toRef, toRefs, watch } from 'vue';
+import { computed, ref, toRef, toRefs, watch } from 'vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import VRuntimeTemplate from 'vue3-runtime-template';
 import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-item-crud';
@@ -65,7 +65,7 @@ import { useGlobalStyles } from '@/modules/pre-designed/compositions/global-styl
 const route = useRoute();
 const mfes = usePluginsMicroFrontends();
 const item = ref();
-
+const updates = ref(0)
 const cruds = toRef(mfes, 'cruds')
 
 const { user } = useAuth()
@@ -113,6 +113,10 @@ watch(() => route.fullPath, () => {
   if (updateCode.value) {
     openCodeEditor();
   }
+})
+
+watch(relevantStructure, () => {
+  updates.value++;
 })
 
 const templateProps = computed(() => {

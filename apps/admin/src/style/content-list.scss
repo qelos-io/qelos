@@ -61,6 +61,11 @@
   }
 }
 
+*:has(> .remove-component-btn) {
+	border: 2px dotted #ccc;
+	border-radius: var(--spacing);
+}
+
 .remove-component-btn {
 	inset-inline-start: 0;
 	z-index: 2;

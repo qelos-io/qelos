@@ -203,7 +203,10 @@ const availableComponents = {
       }
       const blueprintsInputs = Object.keys(blueprint.properties).map((propName: any) => {
         const prop = blueprint.properties[propName];
-        return `<form-input title="${prop.title}" label="${prop.description}" ${prop.required ? ':required="true"' : ''} v-model="form.${propName}"></form-input>`
+        const propType = prop.type;
+        const elementType = propType === 'boolean' ? 'switch' : propType;
+
+        return `<form-input title="${prop.title}" type="${elementType}" label="${prop.description}" ${prop.required ? ':required="true"' : ''} v-model="form.${propName}"></form-input>`
       }).join('\n');
 
       return `<template #default="{form}">
