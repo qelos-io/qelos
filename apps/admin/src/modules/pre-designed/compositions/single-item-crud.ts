@@ -28,7 +28,7 @@ export function useSingleItemCrud() {
   const styles = computed(() => {
     if (relevantStructure.value.includes('<style>')) {
       // get all style elements
-      const styleElements = relevantStructure.value.match(/<style>(.*?)<\/style>/g);
+      const styleElements = relevantStructure.value.replace(/\n/g, '').match(/<style>(.*?)<\/style>/g);
       //strip style tags
       return styleElements.map((styleElement) => styleElement.replace(/<style>/g, '').replace(/<\/style>/g, ''));
     }
