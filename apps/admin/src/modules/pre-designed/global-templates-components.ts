@@ -16,6 +16,7 @@ import ConfirmMessage from '@/modules/pre-designed/components/ConfirmMessage.vue
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import BlueprintEntityForm from '@/modules/pre-designed/components/BlueprintEntityForm.vue';
 import VChart from '@/modules/pre-designed/components/VChart.vue';
+import EditableContent from '@/modules/pre-designed/components/EditableContent.vue';
 
 export default function applyGlobalTemplatesComponents(app: App) {
   app.component('TemplatedRemoveButton', TemplatedRemoveButton)
@@ -35,4 +36,5 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('ConfirmMessage', ConfirmMessage)
   app.component('RemoveButton', RemoveButton)
   app.component('VChart', VChart)
+  app.component('EditableContent', EditableContent)
 }

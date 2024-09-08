@@ -98,19 +98,27 @@ export function useEditMfeStructure() {
   }
 
   const removeComponent = useConfirmAction(async function removeComponent(el: HTMLElement) {
-    if (!el.parentElement.classList.contains('template-content')) {
-      alert('deletion not available in this context.');
+    const qlId = el.getAttribute('data-ql-id');
+
+    if (!qlId) {
       return;
     }
-    const index = Array.from(el.parentElement.children).findIndex(child => child === el)
 
     const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
 
     const template = document.createElement('template');
 
     template.innerHTML = pluginMfe.structure;
-    const child = template.content.children[index];
-    template.content.removeChild(template.content.childNodes[index]);
+    const elements = Array.from(template.content.querySelectorAll('*'));
+    elements.length = Number(qlId) + 1;
+    elements.forEach((el, index) => {
+      el.setAttribute('data-ql-id', index.toString());
+    })
+    const child = elements[Number(qlId)];
+    child.remove();
+    elements.forEach((el) => {
+      el?.removeAttribute('data-ql-id');
+    })
     pluginMfe.structure = template.innerHTML.trim();
 
     child.getAttributeNames()

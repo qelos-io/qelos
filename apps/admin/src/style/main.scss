@@ -139,8 +139,21 @@ p {
 }
 
 .flex-row {
+  flex: 1;
   display: flex;
   flex-direction: row;
+}
+
+.flex-row-column {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+}
+
+@media (max-width: 600px) {
+  .flex-row-column {
+    flex-direction: column;
+  }
 }
 
 .flex-0 {

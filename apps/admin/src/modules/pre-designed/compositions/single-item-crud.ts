@@ -1,6 +1,7 @@
 import { computed } from 'vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { useRoute } from 'vue-router';
+import { isEditingEnabled } from '@/modules/core/store/auth';
 
 export function useSingleItemCrud() {
   const mfes = usePluginsMicroFrontends();
@@ -21,16 +22,39 @@ export function useSingleItemCrud() {
     }
   });
   const api = computed(() => mfes.cruds[crud.value.name].api);
-  const relevantStructure = computed(() => {
+  const givenStructure = computed(() => {
     return (route.meta.mfe as any)?.structure || '<div></div>';
   });
 
+  function getTemplate(html: string) {
+    const template = document.createElement('template');
+    template.innerHTML = givenStructure.value;
+    return template;
+  }
+
+  const relevantStructure = computed(() => {
+    const template = getTemplate(givenStructure.value);
+
+    template.content.querySelectorAll('*').forEach((el, index) => {
+      el.setAttribute('data-ql-id', index.toString());
+    });
+    if (isEditingEnabled.value) {
+      Array.from(template.content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, div')).forEach((el) => {
+        const newEl = document.createElement('editable-content');
+        el.replaceWith(newEl);
+        newEl.appendChild(el);
+        el.getAttributeNames().forEach((attr) => {
+          newEl.setAttribute(attr, el.getAttribute(attr));
+        })
+      })
+    }
+    return template.innerHTML;
+  });
+
   const styles = computed(() => {
-    if (relevantStructure.value.includes('<style>')) {
-      // get all style elements
-      const styleElements = relevantStructure.value.replace(/\n/g, '').match(/<style>(.*?)<\/style>/g);
-      //strip style tags
-      return styleElements.map((styleElement) => styleElement.replace(/<style>/g, '').replace(/<\/style>/g, ''));
+    if (givenStructure.value.includes('<style>')) {
+      return Array.from(getTemplate(givenStructure.value).content.querySelectorAll('style'))
+        .map((style) => style.innerHTML).join('\n');
     }
   })
 

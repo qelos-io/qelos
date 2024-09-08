@@ -1,5 +1,5 @@
-import {ref, Ref, watch} from 'vue';
-import {ILayoutContent} from 'packages/sdk/src/administrator/layouts';
+import { ref, Ref, watch } from 'vue';
+import { ILayoutContent } from '@qelos/view-builder/src';
 
 const storedMatches = {};
 
@@ -15,45 +15,45 @@ const storedMatches = {};
 export type StylesMatches = Record<string, string[]>;
 
 function cachedFetch(url): Promise<StylesMatches> {
-    const promise: Promise<StylesMatches> = storedMatches[url] ||
-        (
-            storedMatches[url] = fetch(url)
-                .then(res => res.json())
-                .catch(() => ({}))
-        );
-    return promise;
+  const promise: Promise<StylesMatches> = storedMatches[url] ||
+    (
+      storedMatches[url] = fetch(url)
+        .then(res => res.json())
+        .catch(() => ({}))
+    );
+  return promise;
 }
 
 export function useLayoutStyles(layoutContent: Ref<ILayoutContent[]>) {
-    const layoutStyles = ref<StylesMatches>();
+  const layoutStyles = ref<StylesMatches>();
 
-    const check = async () => {
-        const styles = await Promise.all(
-            layoutContent.value
-                .filter(item => item.component === 'link' && item.props?.rel === 'stylesheet' && item.props?.href)
-                .map(item => item.props.href + '.matches.json')
-                .map(cachedFetch)
-        );
+  const check = async () => {
+    const styles = await Promise.all(
+      layoutContent.value
+        .filter(item => item.component === 'link' && item.props?.rel === 'stylesheet' && item.props?.href)
+        .map(item => item.props.href + '.matches.json')
+        .map(cachedFetch)
+    );
 
-        const mergedStyles = styles.reduce((merged, styles) => {
-            Object.keys(styles).map(selector => {
-                const classes = styles[selector];
-                if (merged[selector]) {
-                    merged[selector].push(...classes);
-                } else {
-                    merged[selector] = [...classes];
-                }
-            });
-            return merged;
-        }, {} as StylesMatches);
+    const mergedStyles = styles.reduce((merged, styles) => {
+      Object.keys(styles).map(selector => {
+        const classes = styles[selector];
+        if (merged[selector]) {
+          merged[selector].push(...classes);
+        } else {
+          merged[selector] = [...classes];
+        }
+      });
+      return merged;
+    }, {} as StylesMatches);
 
-        layoutStyles.value = mergedStyles;
-    }
+    layoutStyles.value = mergedStyles;
+  }
 
-    watch(layoutContent, check, {immediate: true});
+  watch(layoutContent, check, { immediate: true });
 
-    return {
-        layoutStyles,
-        check,
-    }
+  return {
+    layoutStyles,
+    check,
+  }
 }
