@@ -62,12 +62,16 @@
 }
 
 *:has(> .remove-component-btn) {
-	border: 2px dotted #ccc;
-	border-radius: var(--spacing);
+	border: 1px dashed #ccc;
+	position: relative;
 }
 
 .remove-component-btn {
-	inset-inline-start: 0;
-	z-index: 2;
-	font-size: 150%;
+	position: absolute;
+	top: -8px;
+	left: -15px;
+	font-size: 14px;
+	background-color: transparent;
+	border: 0 solid transparent;
+	color: var(--el-button-text-color);
 }
