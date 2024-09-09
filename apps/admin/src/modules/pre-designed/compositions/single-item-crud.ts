@@ -54,7 +54,8 @@ export function useSingleItemCrud() {
   const styles = computed(() => {
     if (givenStructure.value.includes('<style>')) {
       return Array.from(getTemplate(givenStructure.value).content.querySelectorAll('style'))
-        .map((style) => style.innerHTML).join('\n');
+        .map((style) => style.innerHTML)
+        .join('\n');
     }
   })
 
