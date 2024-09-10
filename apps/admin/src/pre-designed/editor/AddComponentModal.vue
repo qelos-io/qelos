@@ -1,7 +1,7 @@
 <template>
   <el-dialog
       v-model="dialogVisible"
-      title="Tips"
+      title="Add Component to Page"
       width="80vw"
       height="50vh"
       modal-class="add-component-modal"

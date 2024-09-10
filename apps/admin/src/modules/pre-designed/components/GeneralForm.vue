@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { inject, provide, ref, watch } from 'vue';
+import { provide, ref, watch } from 'vue';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
-import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 
 const props = defineProps<{
   onSubmit?: (data: any) => Promise<unknown>;
@@ -34,12 +34,11 @@ provide('submitting', submitting);
 watch(() => props.data, () => {
   form.value = getClonedData();
 }, { immediate: true });
-const editableManager = inject<any>('editableManager');
 </script>
 
 <template>
   <el-form @submit.prevent="submit">
-    <RemoveButton v-if="editableManager" class="remove-component-btn" @click="editableManager.removeComponent($el)"/>
+    <EditComponentBar/>
     <slot v-bind="{submit, submitting, data, form}"/>
   </el-form>
 </template>

@@ -13,6 +13,7 @@ export function useEditMfeStructure() {
   const addComponent = ref()
   const { reloadRequirements } = useScreenRequirementsStore()
   const editedPluginMfe = ref<IMicroFrontend>()
+  const editedComponentContext = ref();
 
   async function getUpdatedPluginAndMfe() {
     const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId)
@@ -97,15 +98,13 @@ export function useEditMfeStructure() {
     location.reload();
   }
 
-  const removeComponent = useConfirmAction(async function removeComponent(el: HTMLElement) {
+  async function getEditedComponent(el: Element) {
     const qlId = el.getAttribute('data-ql-id');
 
     if (!qlId) {
-      return;
+      return {};
     }
-
     const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
-
     const template = document.createElement('template');
 
     template.innerHTML = pluginMfe.structure;
@@ -115,15 +114,30 @@ export function useEditMfeStructure() {
       el.setAttribute('data-ql-id', index.toString());
     })
     const child = elements[Number(qlId)];
-    child.remove();
     elements.forEach((el) => {
       el?.removeAttribute('data-ql-id');
     })
+
+    return {
+      template,
+      editChild: child,
+      routeMfe,
+      pluginMfe,
+      plugin
+    };
+  }
+
+  const removeComponent = useConfirmAction(async function removeComponent(el: HTMLElement) {
+    const { editChild, pluginMfe, template, routeMfe, plugin } = await getEditedComponent(el);
+    if (!editChild) {
+      return;
+    }
+    editChild.remove();
     pluginMfe.structure = template.innerHTML.trim();
 
-    child.getAttributeNames()
+    editChild.getAttributeNames()
       .filter(attr => attr.startsWith('v-bind:'))
-      .map(attr => child.getAttribute(attr).split('.')[0].replace('?', ''))
+      .map(attr => editChild.getAttribute(attr).split('.')[0].replace('?', ''))
       .forEach(optionalKey => {
         if (pluginMfe.requirements.find(req => req.key === optionalKey)) {
           pluginMfe.requirements = pluginMfe.requirements.filter(req => req.key !== optionalKey)
@@ -133,6 +147,23 @@ export function useEditMfeStructure() {
     await updatePlugin(plugin)
     updateRouteFromPluginMfe(routeMfe, pluginMfe);
   })
+
+  const editComponent = async function (el: HTMLElement) {
+    editedComponentContext.value = await getEditedComponent(el);
+  }
+  const finishEditComponent = async function (newElement: HTMLElement) {
+    const { pluginMfe, template, routeMfe, plugin, editChild } = editedComponentContext.value;
+
+    if (!editChild) {
+      return;
+    }
+
+    editChild.replaceWith(newElement);
+    pluginMfe.structure = template.innerHTML.trim();
+
+    await updatePlugin(plugin)
+    updateRouteFromPluginMfe(routeMfe, pluginMfe);
+  }
 
   const removePage = useConfirmAction(async function removePage() {
     const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId);
@@ -144,7 +175,8 @@ export function useEditMfeStructure() {
   })
 
   provide('editableManager', computed(() => isEditingEnabled.value && {
-    removeComponent
+    removeComponent,
+    editComponent,
   }));
 
   return {
@@ -155,6 +187,8 @@ export function useEditMfeStructure() {
     editedPluginMfe,
     submitCodeToTemplate,
     clonePage,
-    removePage
+    removePage,
+    editedComponentContext,
+    finishEditComponent
   }
 }

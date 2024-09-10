@@ -1,10 +1,11 @@
 <script lang="ts">
 
-import { inject, onBeforeMount, shallowRef } from 'vue';
+import { onBeforeMount, shallowRef } from 'vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 
 export default {
-  components: { RemoveButton },
+  components: { EditComponentBar, RemoveButton },
   props: {
     height: {
       type: String,
@@ -19,10 +20,8 @@ export default {
       }
       EChart.value = (await import('vue-echarts')).default;
     });
-    const editableManager = inject('editableManager');
 
     return {
-      editableManager,
       EChart,
     }
   }
@@ -31,7 +30,7 @@ export default {
 
 <template>
   <div class="wrapper">
-    <RemoveButton v-if="editableManager" class="remove-component-btn" @click="editableManager.removeComponent($el)"/>
+    <EditComponentBar/>
     <component v-if="EChart" :is="EChart" v-bind="$attrs"></component>
   </div>
 </template>

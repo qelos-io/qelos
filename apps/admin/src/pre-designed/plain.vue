@@ -15,13 +15,13 @@
       </el-button>
       <el-button @click="openAddComponentModal()">
         <el-icon>
-          <font-awesome-icon :icon="['fas', 'layer-group']" />
+          <font-awesome-icon :icon="['fas', 'layer-group']"/>
         </el-icon>
         <span>{{ $t('Wizard') }}</span>
       </el-button>
       <el-button @click="openCodeEditor()">
         <el-icon>
-          <font-awesome-icon :icon="['fas', 'code']" />
+          <font-awesome-icon :icon="['fas', 'code']"/>
         </el-icon>
         <span>{{ $t('Code') }}</span>
       </el-button>
@@ -41,6 +41,8 @@
       </div>
     </ErrorBoundary>
     <AddComponentModal v-if="addComponent" @save="submitComponentToTemplate" @close="addComponent = undefined"/>
+    <EditComponentModal v-if="editedComponentContext?.editChild" v-model="editedComponentContext.editChild"
+                        @save="finishEditComponent"/>
   </main>
 </template>
 
@@ -61,6 +63,7 @@ import sdk from '@/services/sdk';
 import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
 import { useRoute } from 'vue-router';
 import { useGlobalStyles } from '@/modules/pre-designed/compositions/global-styles';
+import EditComponentModal from '@/pre-designed/editor/EditComponentModal.vue';
 
 const route = useRoute();
 const mfes = usePluginsMicroFrontends();
@@ -90,6 +93,8 @@ const {
   submitCodeToTemplate,
   clonePage,
   removePage,
+  editedComponentContext,
+  finishEditComponent
 } = useEditMfeStructure()
 const updateCode = ref(false)
 

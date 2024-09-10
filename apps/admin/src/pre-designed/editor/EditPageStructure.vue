@@ -218,7 +218,7 @@ provide('editableManager', ref(false));
                 default-first-option
                 :reserve-keyword="false"
             >
-              <template  v-for="role in props.mfe.roles">
+              <template v-for="role in props.mfe.roles">
                 <el-option v-if="role !== '*'" :key="role" :label="role" :value="role"/>
               </template>
               <el-option label="All (*)" value="*"/>
@@ -237,7 +237,7 @@ provide('editableManager', ref(false));
                 default-first-option
                 :reserve-keyword="false"
             >
-              <template  v-for="role in props.mfe.roles">
+              <template v-for="role in props.mfe.roles">
                 <el-option v-if="role !== '*'" :key="role" :label="role" :value="role"/>
               </template>
               <el-option label="All (*)" value="*"/>
