@@ -1,5 +1,6 @@
 <template>
   <div>
+    <EditComponentBar/>
     <el-form-item :label="title ? $t(title) : null" :required="required">
       <small v-if="label"> ({{ $t(label) }})</small>
       <small v-else-if="gap">&nbsp;</small>
@@ -29,10 +30,11 @@
 
 <script lang="ts">
 import AssetUploader from '@/modules/assets/components/AssetUploader.vue'
+import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 
 export default {
   name: 'FormInput',
-  components: { AssetUploader },
+  components: { EditComponentBar, AssetUploader },
   props: {
     title: String,
     label: String,

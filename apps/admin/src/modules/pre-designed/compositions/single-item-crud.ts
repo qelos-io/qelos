@@ -26,25 +26,35 @@ export function useSingleItemCrud() {
     return (route.meta.mfe as any)?.structure || '<div></div>';
   });
 
-  function getTemplate(html: string) {
+  function getTemplate(html: string = givenStructure.value) {
     const template = document.createElement('template');
-    template.innerHTML = givenStructure.value;
+    template.innerHTML = html;
     return template;
   }
 
   const relevantStructure = computed(() => {
     const template = getTemplate(givenStructure.value);
 
-    template.content.querySelectorAll('*').forEach((el, index) => {
-      el.setAttribute('data-ql-id', index.toString());
-    });
     if (isEditingEnabled.value) {
+      template.content.querySelectorAll('*').forEach((el, index) => {
+        el.setAttribute('data-ql-id', index.toString());
+
+        if (el.tagName.toLowerCase() === 'template') {
+          Array.from((el as HTMLTemplateElement).content.querySelectorAll('*')).forEach((innerEl, index) => {
+            innerEl.setAttribute('data-ql-id', (index + 1).toString() + '-inner-' + index.toString());
+          })
+          return;
+        }
+      });
       Array.from(template.content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, div')).forEach((el) => {
         const newEl = document.createElement('editable-content');
         el.replaceWith(newEl);
         newEl.appendChild(el);
         el.getAttributeNames().forEach((attr) => {
           newEl.setAttribute(attr, el.getAttribute(attr));
+          if (attr.startsWith('v-else')) {
+            el.removeAttribute(attr);
+          }
         })
       })
     }

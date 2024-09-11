@@ -106,16 +106,37 @@ export function useEditMfeStructure() {
     }
     const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
     const template = document.createElement('template');
-
+    let child;
     template.innerHTML = pluginMfe.structure;
     const elements = Array.from(template.content.querySelectorAll('*'));
-    elements.length = Number(qlId) + 1;
+    elements.length = Number(qlId.split('-inner')[0]) + 2;
     elements.forEach((el, index) => {
-      el.setAttribute('data-ql-id', index.toString());
+      const id = index.toString();
+      el.setAttribute('data-ql-id', id);
+
+      if (qlId === id) {
+        child = el;
+      }
+
+      if (el.tagName.toLowerCase() === 'template') {
+        Array.from((el as HTMLTemplateElement).content.querySelectorAll('*')).forEach((innerEl, innerIndex) => {
+          const innerId = index.toString() + '-inner-' + innerIndex.toString();
+          innerEl.setAttribute('data-ql-id', innerId);
+          if (innerId === qlId) {
+            child = innerEl;
+          }
+        })
+      }
     })
-    const child = elements[Number(qlId)];
+    child = child || elements[Number(qlId)];
     elements.forEach((el) => {
       el?.removeAttribute('data-ql-id');
+
+      if (el.tagName.toLowerCase() === 'template') {
+        Array.from((el as HTMLTemplateElement).content.querySelectorAll('*')).forEach((innerEl) => {
+          innerEl.removeAttribute('data-ql-id');
+        })
+      }
     })
 
     return {

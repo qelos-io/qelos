@@ -35,7 +35,6 @@
     <ErrorBoundary v-if="isRequirementsLoaded" @error="reRenderAfterError" :key="$route.fullPath + updates">
       <div class="template-content">
         <VRuntimeTemplate v-if="item"
-
                           :template="relevantStructure"
                           :template-props="templateProps"/>
       </div>

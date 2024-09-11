@@ -37,7 +37,7 @@ const emit = defineEmits(['save'])
 const modelProps = ref(model.value?.getAttributeNames()
     .map(propName => {
       const name = propName.includes(':') ? propName.split(':')[1] : propName;
-      const value = model.value.getAttribute(name)
+      const value = model.value.getAttribute(propName)
       const type: 'switch' | 'text' = (typeof value === 'boolean' || value === 'true' || value === 'false') ? 'switch' : 'text';
       return {
         propName,

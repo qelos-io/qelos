@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { inject } from 'vue';
+
 const editableManager = inject('editableManager');
 </script>
 
@@ -22,19 +23,21 @@ const editableManager = inject('editableManager');
 *:has(> .edit-component-bar) {
   border: 1px dashed #ccc;
   position: relative;
+  padding-block-end: 28px;
 
-  &:hover {
-    .edit-component-bar {
-      display: block;
-    }
+  &:hover > .edit-component-bar {
+    display: block;
   }
 }
 
+</style>
+<style scoped>
 .edit-component-bar {
   display: none;
   position: absolute;
   z-index: 99;
-  top: 0;
-  left: 0;
+  margin: 0 auto;
+  bottom: 0;
+  left: calc(50% - 71px);
 }
 </style>
