@@ -18,7 +18,7 @@ const props = defineProps<{
   <div class="quick-table-wrapper">
     <EditComponentBar/>
     <el-table v-if="props.data && props.columns?.length" :data="data" style="width: 100%" border @row-click="$emit('row-click', $event)">
-      <el-table-column v-for="(col, index) in columns" :key="index" v-bind="col">
+      <el-table-column v-for="(col, index) in columns" :key="index" v-bind="col" :index="index">
         <template v-if="$slots[col.prop]" #default="scope"><slot :name="col.prop" v-bind="scope"/></template>
       </el-table-column>
     </el-table>
