@@ -32,7 +32,7 @@
         {{ $t('Remove') }}
       </el-button>
     </el-button-group>
-    <ErrorBoundary v-if="isRequirementsLoaded" @error="updates++" :key="$route.fullPath + updates">
+    <ErrorBoundary v-if="isRequirementsLoaded" @error="reRenderAfterError" :key="$route.fullPath + updates">
       <div class="template-content">
         <VRuntimeTemplate v-if="item"
 
@@ -47,7 +47,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, toRef, toRefs, watch } from 'vue';
+import { computed, nextTick, ref, toRef, toRefs, watch } from 'vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import VRuntimeTemplate from 'vue3-runtime-template';
 import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-item-crud';
@@ -68,8 +68,16 @@ import EditComponentModal from '@/pre-designed/editor/EditComponentModal.vue';
 const route = useRoute();
 const mfes = usePluginsMicroFrontends();
 const item = ref();
-const updates = ref(0)
 const cruds = toRef(mfes, 'cruds')
+
+const updates = ref(0)
+async function reRenderAfterError() {
+  if (updates.value > 5) {
+    return;
+  }
+  await nextTick();
+  updates.value++;
+}
 
 const { user } = useAuth()
 
