@@ -1,11 +1,9 @@
 <script lang="ts">
-
 import { onBeforeMount, shallowRef } from 'vue';
-import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 
 export default {
-  components: { EditComponentBar, RemoveButton },
+  components: { EditComponentBar },
   props: {
     height: {
       type: String,
