@@ -154,7 +154,13 @@ nav .el-menu, nav {
   --el-menu-bg-color: var(--nav-bg-color);
   --el-menu-active-color: var(--third-color);
   border: 0;
-  overflow: auto;
+  scrollbar-color: var(--el-menu-hover-bg-color) var(--nav-bg-color);
+  overflow: hidden;
+  scrollbar-width: thin;
+
+  &:hover {
+    overflow: auto;
+  }
 }
 
 .el-menu-item:hover {

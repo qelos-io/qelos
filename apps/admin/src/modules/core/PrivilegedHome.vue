@@ -1,6 +1,6 @@
 <template>
 <div class="flex-container">
-  <el-tabs accordion model-value="metadata">
+  <el-tabs model-value="metadata">
     <el-tab-pane name="metadata" :label="$t('Application Metadata')">
       <div class="blocks-list">
         <GpItem>
