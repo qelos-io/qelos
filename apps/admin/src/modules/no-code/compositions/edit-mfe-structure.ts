@@ -111,17 +111,19 @@ export function useEditMfeStructure() {
     const elements = Array.from(template.content.querySelectorAll('*'));
     elements.length = Number(qlId.split('-inner')[0]) + 2;
     elements.forEach((el, index) => {
+      if (child) {
+        return;
+      }
       const id = index.toString();
-      el.setAttribute('data-ql-id', id);
 
       if (qlId === id) {
         child = el;
+        return;
       }
 
       if (el.tagName.toLowerCase() === 'template') {
         Array.from((el as HTMLTemplateElement).content.querySelectorAll('*')).forEach((innerEl, innerIndex) => {
           const innerId = index.toString() + '-inner-' + innerIndex.toString();
-          innerEl.setAttribute('data-ql-id', innerId);
           if (innerId === qlId) {
             child = innerEl;
           }
@@ -129,15 +131,6 @@ export function useEditMfeStructure() {
       }
     })
     child = child || elements[Number(qlId)];
-    elements.forEach((el) => {
-      el?.removeAttribute('data-ql-id');
-
-      if (el.tagName.toLowerCase() === 'template') {
-        Array.from((el as HTMLTemplateElement).content.querySelectorAll('*')).forEach((innerEl) => {
-          innerEl.removeAttribute('data-ql-id');
-        })
-      }
-    })
 
     return {
       template,

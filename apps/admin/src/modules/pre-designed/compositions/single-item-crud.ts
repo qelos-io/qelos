@@ -40,8 +40,8 @@ export function useSingleItemCrud() {
         el.setAttribute('data-ql-id', index.toString());
 
         if (el.tagName.toLowerCase() === 'template') {
-          Array.from((el as HTMLTemplateElement).content.querySelectorAll('*')).forEach((innerEl, index) => {
-            innerEl.setAttribute('data-ql-id', (index + 1).toString() + '-inner-' + index.toString());
+          Array.from((el as HTMLTemplateElement).content.querySelectorAll('*')).forEach((innerEl, innerIndex) => {
+            innerEl.setAttribute('data-ql-id', index.toString() + '-inner-' + innerIndex.toString());
           })
           return;
         }
