@@ -76,6 +76,18 @@ export function useEditMfeStructure() {
     pluginMfe.requirements ||= [];
     pluginMfe.requirements.push(...Object.values(data.requirements) as any[])
 
+    const uniqueRequirements = {};
+    pluginMfe.requirements.forEach(req => {
+      if (!uniqueRequirements[req.key]) {
+        uniqueRequirements[req.key] = req;
+        return;
+      }
+      if (uniqueRequirements[req.key].fromData && req.fromData) {
+        Object.assign(uniqueRequirements[req.key].fromData, req.fromData);
+      }
+    })
+    pluginMfe.requirements = Object.values(uniqueRequirements);
+
     await updatePlugin(plugin);
     updateRouteFromPluginMfe(routeMfe, pluginMfe);
   }

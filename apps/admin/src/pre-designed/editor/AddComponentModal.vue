@@ -126,6 +126,7 @@ import MockListPageTitle from '@/pre-designed/editor/MockListPageTitle.vue';
 import BlueprintEntityForm from '@/modules/pre-designed/components/BlueprintEntityForm.vue';
 import VChart from '@/modules/pre-designed/components/VChart.vue';
 import MockVChart from '@/pre-designed/editor/MockVChart.vue';
+import RemoveConfirmation from '@/modules/pre-designed/components/RemoveConfirmation.vue';
 
 const dialogVisible = ref(true)
 const active = ref(0)
@@ -159,12 +160,18 @@ const availableComponents = {
           { prop: 'fixed', label: 'Fixed', type: 'switch' },
         ]
       }
-    ]
+    ],
+    extendRequirements: (requirements: any, props: any) => {
+      requirements[props['v-bind:columns']]?.fromData.push({ prop: '_operations', label: ' ' })
+    },
+    getInnerHTML: (propsBuilder: any) => {
+      return `<template #_operations="{row}"><remove-button @click="pageState ? (pageState.${propsBuilder.data}ToRemove = row.identifier) : null"/></template>`
+    }
   },
   'blueprint-entity-form': {
     component: BlueprintEntityForm,
     mock: 'h2',
-    description: 'Choose this box to create a form',
+    description: 'Blueprint Form',
     requiredProps: [
       {
         prop: 'blueprint',
@@ -225,8 +232,35 @@ const availableComponents = {
     },
     requiredProps: [
       { prop: 'height', label: 'Height', type: 'text', source: 'manual', placeholder: '(400px)' },
-      { prop: 'option', label: 'Option', type: 'text', bind: true, source: 'manual', placeholder: 'Enter a requirement key' },
+      {
+        prop: 'option',
+        label: 'Option',
+        type: 'text',
+        bind: true,
+        source: 'manual',
+        placeholder: 'Enter a requirement key'
+      },
     ]
+  },
+  'remove-confirmation': {
+    component: RemoveConfirmation,
+    mock: 'h2',
+    description: 'Remove Confirmation',
+    requiredProps: [
+      { prop: 'resource', label: 'Resource', source: 'blueprint' },
+    ],
+    extendProps: (props: any) => {
+      props['target'] = 'blueprint';
+      props['v-model'] = `pageState.${props.resource}ToRemove`;
+    },
+    extendRequirements: (requirements: any, props: any) => {
+      requirements.pageState = {
+        key: 'pageState',
+        fromData: {
+          [`${props.resource}ToRemove`]: null
+        }
+      }
+    }
   }
 }
 
@@ -294,6 +328,7 @@ function submit() {
   }
 
   descriptor.extendProps?.(props);
+  descriptor.extendRequirements?.(customData, props);
 
   emit('save', {
     component: selectedComponent.value,
@@ -356,6 +391,7 @@ provide('editableManager', ref(false))
   display: flex;
   flex-direction: column;
 }
+
 .add-component-modal .el-dialog__body {
   display: flex;
   flex: 1;

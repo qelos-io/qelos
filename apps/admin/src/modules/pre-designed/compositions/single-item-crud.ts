@@ -46,7 +46,7 @@ export function useSingleItemCrud() {
           return;
         }
       });
-      Array.from(template.content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, div')).forEach((el) => {
+      Array.from(template.content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, div, remove-confirmation')).forEach((el) => {
         const newEl = document.createElement('editable-content');
         el.replaceWith(newEl);
         newEl.appendChild(el);
