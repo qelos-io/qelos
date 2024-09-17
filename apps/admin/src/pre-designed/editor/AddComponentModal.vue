@@ -127,6 +127,7 @@ import BlueprintEntityForm from '@/modules/pre-designed/components/BlueprintEnti
 import VChart from '@/modules/pre-designed/components/VChart.vue';
 import MockVChart from '@/pre-designed/editor/MockVChart.vue';
 import RemoveConfirmation from '@/modules/pre-designed/components/RemoveConfirmation.vue';
+import { useEditorComponents } from '@/modules/pre-designed/compositions/editor-components';
 
 const dialogVisible = ref(true)
 const active = ref(0)
@@ -136,133 +137,7 @@ const cruds = toRef(usePluginsMicroFrontends(), 'cruds')
 const blueprints = toRef(useBlueprintsStore(), 'blueprints');
 const crudsOrBlueprints = ref('blueprints');
 
-const availableComponents = {
-  'list-page-title': {
-    component: ListPageTitle,
-    mock: MockListPageTitle,
-    requiredProps: [
-      { prop: 'title', label: 'Title', type: 'text', source: 'manual' },
-      { prop: 'create-route-path', label: 'Path to Create New Item', type: 'text', source: 'manual' },
-    ]
-  },
-  'quick-table': {
-    component: QuickTable,
-    mock: MockTable,
-    requiredProps: [
-      { prop: 'data', label: 'Data', type: 'array', source: 'requirements' },
-      {
-        prop: 'columns', label: 'Columns', type: 'array', source: 'manual',
-        children: [
-          { prop: 'prop', label: 'Property', type: 'text' },
-          { prop: 'label', label: 'Label', type: 'text' },
-          { prop: 'width', label: 'Width', type: 'text' },
-          { prop: 'minWidth', label: 'Min Width', type: 'text' },
-          { prop: 'fixed', label: 'Fixed', type: 'switch' },
-        ]
-      }
-    ],
-    extendRequirements: (requirements: any, props: any) => {
-      requirements[props['v-bind:columns']]?.fromData.push({ prop: '_operations', label: ' ' })
-    },
-    getInnerHTML: (propsBuilder: any) => {
-      return `<template #_operations="{row}"><remove-button @click="pageState ? (pageState.${propsBuilder.data}ToRemove = row.identifier) : null"/></template>`
-    }
-  },
-  'blueprint-entity-form': {
-    component: BlueprintEntityForm,
-    mock: 'h2',
-    description: 'Blueprint Form',
-    requiredProps: [
-      {
-        prop: 'blueprint',
-        source: 'blueprint',
-      },
-      {
-        prop: 'data', label: 'Data', type: 'text', source: 'manual',
-        bind: true,
-        description: 'Data to be used in the form'
-      },
-      {
-        props: 'submit-msg',
-        type: 'text',
-        label: 'Success Message',
-        placeholder: 'Submitted successfully',
-        source: 'manual'
-      },
-      {
-        props: 'error-msg',
-        type: 'text',
-        label: 'Error Message',
-        placeholder: 'Failed to submit entity',
-        source: 'manual'
-      },
-      {
-        prop: 'clear-after-submit', label: 'Clear Form After Submit?', type: 'switch', source: 'manual',
-        bind: true,
-        value: true,
-      },
-    ],
-    getInnerHTML: (propsBuilder: any) => {
-      const blueprintId = propsBuilder.blueprint;
-      const blueprint = blueprints.value.find(b => b.identifier === blueprintId);
-      if (!blueprint) {
-        return '';
-      }
-      const blueprintsInputs = Object.keys(blueprint.properties).map((propName: any) => {
-        const prop = blueprint.properties[propName];
-        const propType = prop.type;
-        const elementType = propType === 'boolean' ? 'switch' : propType;
-
-        return `<form-input title="${prop.title}" type="${elementType}" label="${prop.description}" ${prop.required ? ':required="true"' : ''} v-model="form.${propName}"></form-input>`
-      }).join('\n');
-
-      return `<template #default="{form}">
-    <edit-header>Edit ${blueprint.name}</edit-header>
-    <div class="container">
-    ${blueprintsInputs}
-</div>
-</template>`
-    }
-  },
-  'v-chart': {
-    component: VChart,
-    mock: MockVChart,
-    extendProps: (props: any) => {
-      props[':autoresize'] = true;
-    },
-    requiredProps: [
-      { prop: 'height', label: 'Height', type: 'text', source: 'manual', placeholder: '(400px)' },
-      {
-        prop: 'option',
-        label: 'Option',
-        type: 'text',
-        bind: true,
-        source: 'manual',
-        placeholder: 'Enter a requirement key'
-      },
-    ]
-  },
-  'remove-confirmation': {
-    component: RemoveConfirmation,
-    mock: 'h2',
-    description: 'Remove Confirmation',
-    requiredProps: [
-      { prop: 'resource', label: 'Resource', source: 'blueprint' },
-    ],
-    extendProps: (props: any) => {
-      props['target'] = 'blueprint';
-      props['v-model'] = `pageState.${props.resource}ToRemove`;
-    },
-    extendRequirements: (requirements: any, props: any) => {
-      requirements.pageState = {
-        key: 'pageState',
-        fromData: {
-          [`${props.resource}ToRemove`]: null
-        }
-      }
-    }
-  }
-}
+const { availableComponents } = useEditorComponents();
 
 const emit = defineEmits(['save', 'close'])
 
@@ -331,7 +206,7 @@ function submit() {
   descriptor.extendRequirements?.(customData, props);
 
   emit('save', {
-    component: selectedComponent.value,
+    component: descriptor.tag || selectedComponent.value,
     requirements: requiredProps
         .filter(prop => prop.source === 'requirements')
         .reduce((acc, prop) => {
@@ -345,7 +220,7 @@ function submit() {
         }, customData),
     props,
     classes: availableComponents[selectedComponent.value].classes,
-    innerHTML: availableComponents[selectedComponent.value].getInnerHTML?.(propsBuilder.value) || null
+    innerHTML: availableComponents[selectedComponent.value].getInnerHTML?.(propsBuilder.value, props) || null
   });
   dialogVisible.value = false;
 }
