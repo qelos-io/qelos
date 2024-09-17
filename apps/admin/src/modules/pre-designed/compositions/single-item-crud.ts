@@ -32,6 +32,23 @@ export function useSingleItemCrud() {
     return template;
   }
 
+  function convertToEditableContent(template: HTMLTemplateElement) {
+    Array.from(template.content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, div, remove-confirmation, block-item')).forEach((el) => {
+      const newEl = document.createElement('editable-content');
+      el.replaceWith(newEl);
+      newEl.appendChild(el);
+      el.getAttributeNames().forEach((attr) => {
+        if (attr.startsWith('#')) {
+          return;
+        }
+        newEl.setAttribute(attr, el.getAttribute(attr));
+        if (attr.startsWith('v-else')) {
+          el.removeAttribute(attr);
+        }
+      })
+    })
+  }
+
   const relevantStructure = computed(() => {
     const template = getTemplate(givenStructure.value);
 
@@ -46,17 +63,8 @@ export function useSingleItemCrud() {
           return;
         }
       });
-      Array.from(template.content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, div, remove-confirmation')).forEach((el) => {
-        const newEl = document.createElement('editable-content');
-        el.replaceWith(newEl);
-        newEl.appendChild(el);
-        el.getAttributeNames().forEach((attr) => {
-          newEl.setAttribute(attr, el.getAttribute(attr));
-          if (attr.startsWith('v-else')) {
-            el.removeAttribute(attr);
-          }
-        })
-      })
+      convertToEditableContent(template);
+      template.content.querySelectorAll('template').forEach((el => convertToEditableContent(el)))
     }
     return template.innerHTML;
   });

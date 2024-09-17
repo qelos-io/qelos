@@ -159,11 +159,24 @@ p {
 .flex-0 {
   flex: 0;
 }
-
 .flex-1 {
   flex: 1;
 }
-
+.flex-2 {
+  flex: 2;
+}
+.flex-3 {
+  flex: 3;
+}
+.flex-4 {
+  flex: 4;
+}
+.flex-5 {
+  flex: 5;
+}
+.flex-6 {
+  flex: 6;
+}
 [centered] {
   display: flex;
   justify-content: center;
@@ -199,6 +212,10 @@ p {
 .el-collapse {
   --el-collapse-header-bg-color: var(--body-bg);
   --el-collapse-content-bg-color: var(--body-bg);
+}
+
+.danger {
+  color: var(--el-color-danger-dark-2);
 }
 
 @import "content-list";

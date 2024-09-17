@@ -5,18 +5,21 @@ const editableManager = inject('editableManager');
 </script>
 
 <template>
-  <el-button-group class="edit-component-bar" v-if="editableManager">
-    <el-button type="danger" size="small" @click="editableManager.removeComponent($parent.$el)">
-      <el-icon>
-        <font-awesome-icon :icon="['fas', 'trash']"/>
-      </el-icon>
+  <el-dropdown class="edit-component-bar" v-if="editableManager">
+    <el-button text class="el-dropdown-link">
+      <font-awesome-icon :icon="['fas', 'ellipsis-vertical']" />
     </el-button>
-    <el-button size="small" @click="editableManager.editComponent($parent.$el)">
-      <el-icon>
-        <icon-edit/>
-      </el-icon>
-    </el-button>
-  </el-button-group>
+    <template #dropdown>
+      <el-dropdown-menu>
+        <el-dropdown-item @click="editableManager.editComponent($parent.$el)">
+          {{$t('Update')}}
+        </el-dropdown-item>
+        <el-dropdown-item class="danger" @click="editableManager.removeComponent($parent.$el)">
+          {{$t('Remove')}}
+        </el-dropdown-item>
+      </el-dropdown-menu>
+    </template>
+  </el-dropdown>
 </template>
 
 <style lang="scss">
@@ -24,20 +27,20 @@ const editableManager = inject('editableManager');
   border: 1px dashed #ccc;
   position: relative;
   padding-block-end: 28px;
-
-  &:hover > .edit-component-bar {
-    display: block;
-  }
 }
 
 </style>
 <style scoped>
 .edit-component-bar {
-  display: none;
   position: absolute;
   z-index: 99;
   margin: 0 auto;
-  bottom: 0;
-  left: calc(50% - 71px);
+  top: 0;
+  right: 0;
+}
+.el-dropdown-link {
+  cursor: pointer;
+  user-select: none;
+  outline: none;
 }
 </style>

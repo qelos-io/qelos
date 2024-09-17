@@ -170,14 +170,18 @@ export function useEditorComponents() {
       requiredProps: [
         { prop: 'blocks', label: 'Blocks', type: 'number', source: 'manual', value: 2 },
       ],
-      extendProps(props) {
-
-      },
       getInnerHTML(_, props) {
         const amount = Number(props.blocks || 0);
         delete props.blocks;
         if (amount) {
-          return Array.from({ length: amount }).map((_, index) => `<div class="flex-1">Column ${index + 1}</div>`).join('\n');
+          return Array.from({ length: amount }).map((_, index) =>
+            `<block-item class="flex-1">
+        <template #header><h3>Column ${index + 1}</h3></template>
+        <div>any content</div>
+        <template #actions>
+<div><el-button text>Remove</el-button><el-button text>Update</el-button></div>
+        </template>
+    </block-item>`).join('\n');
         }
         return '';
       },
