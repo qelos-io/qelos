@@ -104,7 +104,7 @@ function submitMfe() {
       {{ MfeBaseTemplate[row.use] }}
     </template>
     <template #route="{row}">
-      /play/{{ row.route?.path }}
+      /{{ row.route?.path }}
     </template>
     <template #operation="{row, $index}">
       <el-button text @click="openModal(row, $index)">

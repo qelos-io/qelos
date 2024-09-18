@@ -35,7 +35,7 @@ The **List Page Title Tool** allows you to add a **Title** and a **Path to Creat
 1. **Title**: Enter the title to be displayed on the list page, which serves as the main header for users.
 2. **Path to Create New Item** (Optional): Define the relative URL path where users can create new items. This path should start with a forward slash (`/`) to ensure correct navigation.
 
-   - **Relative URL**: Ensure that the path is a relative URL. For example, if your creation page is located at `/play/way1`, input `/play/way1` as the path.
+   - **Relative URL**: Ensure that the path is a relative URL. For example, if your creation page is located at `/way1`, input `/way1` as the path.
    - **Customizable Paths**: If you've created separate pages—one for the list and one for the new item creation—you can link the creation page here. This will enable a plus icon next to the title, providing a shortcut to the creation page.
    - **First Slash Requirement**: It's essential to include a forward slash (`/`) at the beginning of the path to ensure correct navigation.
 

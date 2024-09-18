@@ -11,8 +11,8 @@
           <h4 v-if="group.name">{{ group.name }}</h4>
           <el-menu-item v-for="mfe in group.items"
                         :key="mfe.route.path"
-                        :route="'/play/' + mfe.route.path"
-                        :index="'/play/' + mfe.route.path">
+                        :route="'/' + mfe.route.path"
+                        :index="'/' + mfe.route.path">
             <el-icon v-if="mfe.route.iconName">
               <component :is="'icon-' + mfe.route.iconName"/>
             </el-icon>
@@ -102,8 +102,8 @@
       <template v-for="group in navBar.bottom">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.name">{{ group.name }}</h4>
-          <el-menu-item v-for="mfe in group.items" :key="mfe.route.path" :route="'/play/' + mfe.route.path"
-                        :index="'/play/' + mfe.route.path">
+          <el-menu-item v-for="mfe in group.items" :key="mfe.route.path" :route="'/' + mfe.route.path"
+                        :index="'/' + mfe.route.path">
             <el-icon v-if="mfe.route.iconName">
               <component :is="'icon-' + mfe.route.iconName"/>
             </el-icon>

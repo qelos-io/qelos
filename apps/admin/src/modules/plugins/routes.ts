@@ -26,7 +26,7 @@ export const managePluginsRoutes = {
 
 
 export const playRoutes = {
-  path: 'play',
+  path: '',
   name: 'playPlugin',
   component: EmptyRoute,
   children: [{

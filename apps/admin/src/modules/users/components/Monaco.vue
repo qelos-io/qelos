@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, defineProps, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import monaco from '@/services/monaco-service'
 
 const props = defineProps({

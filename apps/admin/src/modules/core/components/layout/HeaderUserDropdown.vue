@@ -19,7 +19,7 @@
               <el-icon v-if="mfe.route.iconName">
                 <component :is="'icon-' + mfe.route.iconName"/>
               </el-icon>
-              <router-link :to="'/play/' + mfe.route.path">{{ mfe.name }}</router-link>
+              <router-link :to="'/' + mfe.route.path">{{ mfe.name }}</router-link>
             </el-dropdown-item>
           </template>
         </template>

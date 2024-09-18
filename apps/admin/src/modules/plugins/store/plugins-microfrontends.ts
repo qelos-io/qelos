@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router';
 import { defineStore, storeToRefs } from 'pinia';
 import { usePluginsList } from './plugins-list';
 import MicroFrontendPage from '../MicroFrontendPage.vue';
-import { authStore } from '@/modules/core/store/auth';
+import { authStore, isAdmin } from '@/modules/core/store/auth';
 import { IMicroFrontend } from '@/services/types/plugin';
 import { getCrud } from '@/services/crud';
 import { IMetaCrud } from '@/modules/plugins/store/types';
@@ -97,6 +97,11 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
   });
 
   const initiateRoutes = ({ navBar, onlyRoutes }) => {
+    const allRoutes = router.getRoutes().reduce((map, route) => {
+      map[route.path] = route;
+      return map;
+    }, {});
+    console.log(allRoutes)
     Object.values(navBar)
       .map((area: { items: IMicroFrontend[] }[]) => area.map(group => group.items).flat())
       .flat()
@@ -140,6 +145,10 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
             };
           }
         }
+        const routerPath = '/' + mfe.route.path;
+        if (allRoutes[routerPath]) {
+          router.removeRoute(allRoutes[routerPath].name);
+        }
         router.addRoute('playPlugin', route)
       })
     router.removeRoute('defaultPluginPlaceholder');
@@ -147,12 +156,14 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     router.push(router.currentRoute.value.fullPath);
   }
 
-  if (loaded.value) {
+  if (loaded.value && !isAdmin.value) {
     initiateRoutes(microFrontends.value);
   } else {
     const unwatch = watch(microFrontends, (newVal) => {
       initiateRoutes(newVal);
-      unwatch();
+      if (!isAdmin.value) {
+        unwatch();
+      }
     });
   }
 

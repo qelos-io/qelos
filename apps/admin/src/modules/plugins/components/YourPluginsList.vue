@@ -9,7 +9,7 @@
         <h4>{{ $t('Micro-Frontends') }}:</h4>
         <ul class="micro-frontends">
           <li v-for="mf in plugin.microFrontends" :key="mf.path">
-            <router-link v-if="mf.route" :to="'/play/' + mf.route.path">{{mf.name}}</router-link>
+            <router-link v-if="mf.route" :to="'/' + mf.route.path">{{mf.name}}</router-link>
             <span v-else>{{mf.name}}</span>
           </li>
         </ul>
