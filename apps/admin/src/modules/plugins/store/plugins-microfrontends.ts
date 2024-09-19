@@ -101,7 +101,6 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
       map[route.path] = route;
       return map;
     }, {});
-    console.log(allRoutes)
     Object.values(navBar)
       .map((area: { items: IMicroFrontend[] }[]) => area.map(group => group.items).flat())
       .flat()
@@ -160,11 +159,14 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     initiateRoutes(microFrontends.value);
   } else {
     const unwatch = watch(microFrontends, (newVal) => {
+      if (!newVal) {
+        return;
+      }
       initiateRoutes(newVal);
       if (!isAdmin.value) {
         unwatch();
       }
-    });
+    }, { immediate: true });
   }
 
   return {
