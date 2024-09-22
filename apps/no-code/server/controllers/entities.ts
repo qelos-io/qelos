@@ -56,6 +56,34 @@ async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBluepri
   await validateEntityRelations(req.headers.tenant, blueprint, entity);
 }
 
+async function hasReachedLimitations(req: RequestWithUser, blueprint: IBlueprint, entity: any) {
+  if (!blueprint.limitations?.length) {
+    return false;
+  }
+
+  const results = await Promise.all(blueprint.limitations.map(async limit => {
+    const limitedProps = limit.properties?.reduce((map, prop) => {
+      map[`metadata.${prop}`] = entity.metadata[prop];
+      return map;
+    }, {});
+    const query: any = {
+      tenant: req.headers.tenant,
+      blueprint: blueprint.identifier,
+      ...(limitedProps || {})
+    }
+    if (limit.scope === PermissionScope.WORKSPACE) {
+      query.workspace = entity.workspace;
+    } else if (limit.scope === PermissionScope.USER) {
+      query.user = entity.user;
+    }
+    const existingEntities = await BlueprintEntity.countDocuments(query).lean().exec();
+    if (existingEntities >= limit.value) {
+      return true;
+    }
+  }))
+  return results.includes(true);
+}
+
 export async function getAllBlueprintEntities(req, res) {
   const blueprint = req.blueprint as IBlueprint;
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin);
@@ -149,6 +177,7 @@ export async function createBlueprintEntity(req, res) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;
   }
+
   let user = req.user._id;
   let workspace = req.workspace?._id;
   if (permittedScopes === true) {
@@ -170,6 +199,12 @@ export async function createBlueprintEntity(req, res) {
     });
 
     await updateAllEntityMetadata(req, blueprint, entity);
+
+    const reachedLimit = await hasReachedLimitations(req, blueprint, entity);
+    if (reachedLimit) {
+      res.status(403).json({ message: 'reached limit of allowed entities' }).end();
+      return;
+    }
 
     await entity.save();
     if (blueprint.dispatchers?.create) {

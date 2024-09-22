@@ -149,6 +149,13 @@ function submit() {
           <FormInput v-model="edit.dispatchers.delete" title="Delete" type="switch" class="flex-0"/>
         </FormRowGroup>
       </el-tab-pane>
+      <el-tab-pane :label="$t('Limitations')" name="limitations">
+        <p>
+          {{
+            $t('Limit users to create new entities according to specific rules.')
+          }}
+        </p>
+      </el-tab-pane>
     </el-tabs>
   </el-form>
 </template>

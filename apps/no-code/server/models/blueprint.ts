@@ -31,6 +31,20 @@ const BlueprintSchema = new mongoose.Schema<IBlueprint>({
     default: () => EntityIdentifierMechanism.OBJECT_ID,
     enum: Object.values(EntityIdentifierMechanism)
   },
+  limitations: [{
+    scope: {
+      type: String,
+      required: true,
+      enum: Object.values(PermissionScope),
+    },
+    properties: [{
+      type: String,
+    }],
+    value: {
+      type: Number,
+      required: true,
+    }
+  }],
   permissions: [{
     scope: {
       type: String,

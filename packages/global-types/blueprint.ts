@@ -47,20 +47,25 @@ export interface IBlueprintPropertyDescriptor {
 
 export interface IBlueprint {
   tenant: string;
-  identifier: string,
-  name: string,
-  description?: string,
-  entityIdentifierMechanism: EntityIdentifierMechanism,
-  permissions: Array<Partial<IPermissionsDescriptor>>,
-  permissionScope: PermissionScope,
-  properties: Record<string, IBlueprintPropertyDescriptor>,
-  updateMapping: Record<string, string>,
-  relations: { key: string, target: string }[],
+  identifier: string;
+  name: string;
+  description?: string;
+  entityIdentifierMechanism: EntityIdentifierMechanism;
+  permissions: Array<Partial<IPermissionsDescriptor>>;
+  permissionScope: PermissionScope;
+  properties: Record<string, IBlueprintPropertyDescriptor>;
+  updateMapping: Record<string, string>;
+  relations: { key: string, target: string }[];
+  limitations?: Array<{
+    scope: PermissionScope;
+    properties?: string[];
+    value: number;
+  }>;
   dispatchers: {
     create: boolean,
     update: boolean,
     delete: boolean
-  }
+  };
   created: Date;
   updated: Date;
 }

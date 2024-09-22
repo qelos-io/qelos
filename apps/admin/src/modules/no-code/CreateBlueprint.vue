@@ -85,7 +85,8 @@ watch(() => wsConfig.loaded, (loaded) => {
         }
       },
       updateMapping: {},
-      relations: []
+      relations: [],
+      limitations: []
     }
   }
 }, { immediate: true })
