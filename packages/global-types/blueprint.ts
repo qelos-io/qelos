@@ -45,6 +45,12 @@ export interface IBlueprintPropertyDescriptor {
   schema?: any;
 }
 
+export interface IBlueprintLimitation {
+  scope: PermissionScope;
+  properties?: string[];
+  value: number;
+}
+
 export interface IBlueprint {
   tenant: string;
   identifier: string;
@@ -56,11 +62,7 @@ export interface IBlueprint {
   properties: Record<string, IBlueprintPropertyDescriptor>;
   updateMapping: Record<string, string>;
   relations: { key: string, target: string }[];
-  limitations?: Array<{
-    scope: PermissionScope;
-    properties?: string[];
-    value: number;
-  }>;
+  limitations?: Array<IBlueprintLimitation>;
   dispatchers: {
     create: boolean,
     update: boolean,

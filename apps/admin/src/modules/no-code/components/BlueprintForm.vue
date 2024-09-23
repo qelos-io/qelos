@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { capitalize, provide, reactive, ref, toRef, watch } from 'vue';
+import { provide, reactive, ref, toRef, watch } from 'vue';
 import { EntityIdentifierMechanism, IBlueprint, PermissionScope } from '@qelos/global-types';
 import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
@@ -11,7 +11,7 @@ import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
 import EditBlueprintProperties from '@/modules/no-code/components/EditBlueprintProperties.vue';
 import { getKeyFromName } from '@/modules/core/utils/texts';
-import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
+import BlueprintLimitationsInput from '@/modules/no-code/components/blueprint-form/BlueprintLimitationsInput.vue';
 
 const props = withDefaults(defineProps<{
   submitting: boolean;
@@ -42,16 +42,6 @@ watch(() => edit.name, (newName) => {
     edit.identifier = getKeyFromName(newName)
   }
 })
-
-function addLimitation() {
-  if (!edit.limitations) {
-    edit.limitations = [];
-  }
-  edit.limitations.push({
-    scope: edit.permissionScope || PermissionScope.USER,
-    value: 1
-  })
-}
 
 function submit() {
   const data = { ...edit };
@@ -166,30 +156,11 @@ function submit() {
             $t('Limit users to create new entities according to specific rules.')
           }}
         </p>
+        <BlueprintLimitationsInput
+            :permission-scope="edit.permissionScope"
+            :properties="edit.properties"
+            v-model="edit.limitations"/>
       </el-tab-pane>
-      <div v-for="(limit, index) in edit.limitations" :key="index" class="property">
-        <FormRowGroup>
-          <PermissionScopeSelector v-model="limit.scope"/>
-          <el-form-item>
-            <template #label>
-              {{ $t('Properties') }}
-              <InfoIcon content="Permission scope determines the level at which the permission is applied."/>
-            </template>
-            <el-select multiple
-                       filterable
-                       allow-create
-                       default-first-option
-                       v-model="limit.properties">
-              <el-option v-for="(prop, key) in edit.properties" :key="key" :label="prop.title" :value="key"/>
-            </el-select>
-          </el-form-item>
-          <FormInput v-model="limit.value" type="number" title="Limit Amount"/>
-          <div class="flex-0 remove-row">
-            <RemoveButton @click="edit.relations.splice(edit.relations.indexOf(entry), 1)"/>
-          </div>
-        </FormRowGroup>
-      </div>
-      <AddMore @click="addLimitation"/>
     </el-tabs>
   </el-form>
 </template>
