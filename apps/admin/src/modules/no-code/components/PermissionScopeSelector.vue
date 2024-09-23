@@ -3,13 +3,14 @@ import { capitalize } from 'vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import { PermissionScope } from '@qelos/global-types';
 
+defineProps<{title?: string}>()
 const model = defineModel('modelValue')
 </script>
 
 <template>
   <el-form-item>
     <template #label>
-      {{ $t('Permission Scope') }}
+      {{ $t(title || 'Permission Scope') }}
       <InfoIcon content="Permission scope determines the level at which the permission is applied."/>
     </template>
     <el-select v-model="model">
