@@ -1,20 +1,30 @@
 <template>
-  <nav :class="{show: opened}">
-    <div class="mobile-mask" @click="close"/>
+  <nav :class="{ show: opened }">
+    <div class="mobile-mask" @click="close" />
     <router-link to="/" class="home-logo">
       <img :alt="appConfig.name" :src="appConfig.logoUrl">
     </router-link>
 
     <el-menu router :default-active="$route.path">
+      <div class="nav-group">
+
+        <el-menu-item @click="openDrawer">
+          <el-icon>
+            <font-awesome-icon :icon="['fas', 'plus-circle']" />
+          </el-icon>
+          <span>{{ $t('Create New Plugin') }}</span>
+        </el-menu-item>
+
+        <QuicklyCreateMicrofrontends v-model="dialogVisible" />
+       
+      </div>
       <template v-for="group in navBar.top">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.name">{{ group.name }}</h4>
-          <el-menu-item v-for="mfe in group.items"
-                        :key="mfe.route.path"
-                        :route="'/' + mfe.route.path"
-                        :index="'/' + mfe.route.path">
+          <el-menu-item v-for="mfe in group.items" :key="mfe.route.path" :route="'/' + mfe.route.path"
+            :index="'/' + mfe.route.path">
             <el-icon v-if="mfe.route.iconName">
-              <component :is="'icon-' + mfe.route.iconName"/>
+              <component :is="'icon-' + mfe.route.iconName" />
             </el-icon>
             <span>{{ mfe.name }}</span>
           </el-menu-item>
@@ -23,12 +33,12 @@
 
       <div class="nav-group" v-if="isPrivilegedUser">
         <h4>{{ $t('LOOK AND FEEL') }}</h4>
-        <el-menu-item :route="{name: 'layouts'}" index="/layouts">
+        <el-menu-item :route="{ name: 'layouts' }" index="/layouts">
           <el-icon>
-            <icon-grid/>
+            <icon-grid />
           </el-icon>
           <span>{{ $t('Layouts') }}</span>
-          <LiveEditColorOpener color="secondaryColor"/>
+          <LiveEditColorOpener color="secondaryColor" />
         </el-menu-item>
       </div>
 
@@ -38,14 +48,14 @@
         <el-sub-menu index="3">
           <template #title>
             <el-icon>
-              <icon-box/>
+              <icon-box />
             </el-icon>
             <span>{{ $t('Content Boxes') }}</span>
           </template>
-          <el-menu-item :route="{name: 'blocks'}" index="/blocks">
+          <el-menu-item :route="{ name: 'blocks' }" index="/blocks">
             <span>{{ $t('Boxes List') }}</span>
           </el-menu-item>
-          <el-menu-item :route="{name: 'createBlock'}" index="/blocks/new">
+          <el-menu-item :route="{ name: 'createBlock' }" index="/blocks/new">
             <span>{{ $t('Create Content Box') }}</span>
           </el-menu-item>
         </el-sub-menu>
@@ -53,37 +63,37 @@
 
       <div class="nav-group" v-if="isPrivilegedUser">
         <h4>{{ $t('MANAGE') }}</h4>
-        <el-menu-item :route="{name: 'storageList'}" index="/assets">
+        <el-menu-item :route="{ name: 'storageList' }" index="/assets">
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'folder-tree']"/>
+            <font-awesome-icon :icon="['fas', 'folder-tree']" />
           </el-icon>
           <span>{{ $t('Storage & Assets') }}</span>
         </el-menu-item>
 
         <el-menu-item v-if="isAdmin" index="/users">
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'users']"/>
+            <font-awesome-icon :icon="['fas', 'users']" />
           </el-icon>
           <span>{{ $t('Users') }}</span>
         </el-menu-item>
 
-        <el-menu-item :route="{name: 'drafts'}" index="/drafts">
+        <el-menu-item :route="{ name: 'drafts' }" index="/drafts">
           <el-icon>
-            <font-awesome-icon :icon="['far', 'file-lines']"/>
+            <font-awesome-icon :icon="['far', 'file-lines']" />
           </el-icon>
           <span>{{ $t('Drafts') }}</span>
         </el-menu-item>
 
-        <el-menu-item v-if="isAdmin" :route="{name: 'blueprints'}" index="/no-code/blueprints">
+        <el-menu-item v-if="isAdmin" :route="{ name: 'blueprints' }" index="/no-code/blueprints">
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'database']"/>
+            <font-awesome-icon :icon="['fas', 'database']" />
           </el-icon>
           <span>{{ $t('Blueprints') }}</span>
         </el-menu-item>
 
-        <el-menu-item v-if="isAdmin" :route="{name: 'configurations'}" index="/configurations">
+        <el-menu-item v-if="isAdmin" :route="{ name: 'configurations' }" index="/configurations">
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'gear']"/>
+            <font-awesome-icon :icon="['fas', 'gear']" />
           </el-icon>
           <span>{{ $t('Configurations') }}</span>
         </el-menu-item>
@@ -91,9 +101,9 @@
 
       <div class="nav-group" v-if="isAdmin">
         <h4>{{ $t('PLUGINS') }}</h4>
-        <el-menu-item :route="{name: 'plugins'}" index="/plugins">
+        <el-menu-item :route="{ name: 'plugins' }" index="/plugins">
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'plug-circle-bolt']"/>
+            <font-awesome-icon :icon="['fas', 'plug-circle-bolt']" />
           </el-icon>
           <span>{{ $t('Plugins List') }}</span>
         </el-menu-item>
@@ -103,15 +113,15 @@
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.name">{{ group.name }}</h4>
           <el-menu-item v-for="mfe in group.items" :key="mfe.route.path" :route="'/' + mfe.route.path"
-                        :index="'/' + mfe.route.path">
+            :index="'/' + mfe.route.path">
             <el-icon v-if="mfe.route.iconName">
-              <component :is="'icon-' + mfe.route.iconName"/>
+              <component :is="'icon-' + mfe.route.iconName" />
             </el-icon>
             <span>{{ mfe.name }}</span>
           </el-menu-item>
         </div>
       </template>
-      <LiveEditColorOpener color="navigationBgColor"/>
+      <LiveEditColorOpener color="navigationBgColor" />
     </el-menu>
   </nav>
 </template>
@@ -123,9 +133,18 @@ import { isAdmin, isPrivilegedUser } from '@/modules/core/store/auth';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-
+import { ref } from 'vue';
 const { navBar } = storeToRefs(usePluginsMicroFrontends());
 const { appConfig } = useAppConfiguration();
+import QuicklyCreateMicrofrontends from './navigation/QuicklyCreateMicrofrontends.vue';
+
+// Visibility state of the modal window
+const dialogVisible = ref(false);
+
+const openDrawer = () => {
+  dialogVisible.value = true;
+};
+
 
 defineProps({ opened: Boolean })
 const emit = defineEmits(['close'])
@@ -134,7 +153,6 @@ const close = () => emit('close')
 
 </script>
 <style scoped lang="scss">
-
 $nav-width: 240px;
 
 nav {
@@ -147,8 +165,8 @@ nav {
   position: relative;
 }
 
-
-nav .el-menu, nav {
+nav .el-menu,
+nav {
   --el-menu-text-color: var(--secondary-color);
   --el-menu-hover-bg-color: var(--main-color);
   --el-menu-bg-color: var(--nav-bg-color);
