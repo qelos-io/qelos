@@ -2,16 +2,18 @@
   <div class="palette">
     <div class="color-wrapper" v-for="(title, key) in ColorName" :key="key">
       <ColorPicker :model-value="colors[key]" @update:modelValue="updateColor(key, $event)"/>
-      <div>{{ $t(title) }}</div>
+      <div>{{ t(title) }}</div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, watch } from 'vue';
-import FormInput from '../../core/components/forms/FormInput.vue';
+import { ref } from 'vue';
 import { ColorName } from '@/modules/configurations/types/colors-palette';
 import ColorPicker from 'primevue/colorpicker';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
   modelValue: Object as () => Record<string, string>,

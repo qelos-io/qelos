@@ -1,5 +1,5 @@
 <template>
-	<el-form class="storage-form" @submit.native.prevent="submit">
+  <el-form class="storage-form" @submit.native.prevent="submit">
     <div class="edit-header">
       <h2>{{ title }}<strong v-if="value">{{ value.name }}</strong></h2>
       <div class="buttons-group">
@@ -10,28 +10,28 @@
         </el-button>
       </div>
     </div>
-		<div class="form-content">
+    <div class="form-content">
       <FormInput
-        title="Name"
-        :model-value="editedStorage.name"
-        @input="editedStorage.name = $event"
+          title="Name"
+          :model-value="editedStorage.name"
+          @input="editedStorage.name = $event"
       />
       <FormInput
-        title="Public URL"
-        :model-value="editedStorage.metadata.publicUrl"
-        @input="editedStorage.metadata.publicUrl = $event"
+          title="Public URL"
+          :model-value="editedStorage.metadata.publicUrl"
+          @input="editedStorage.metadata.publicUrl = $event"
       />
       <FormInput
-        title="Base Storage Path"
-        :model-value="editedStorage.metadata.basePath"
-        @input="editedStorage.metadata.basePath = $event"
+          title="Base Storage Path"
+          :model-value="editedStorage.metadata.basePath"
+          @input="editedStorage.metadata.basePath = $event"
       />
       <p>
         <label>
-          {{ $t('Kind') }}:
+          {{ t('Kind') }}:
           <el-select
-            :model-value="editedStorage.kind"
-            @change="editedStorage.kind = $event"
+              :model-value="editedStorage.kind"
+              @change="editedStorage.kind = $event"
           >
             <el-option value="s3" label="Amazon S3"/>
             <el-option value="gcs" label="Google Cloud"/>
@@ -41,10 +41,10 @@
         </label>
       </p>
       <FormInput
-        v-if="editedStorage.kind !== 'ftp'"
-        :title="editedStorage.kind === 'cloudinary' ? 'Cloud Name' : 'Bucket Name'"
-        :model-value="editedStorage.metadata.bucketName"
-        @input="editedStorage.metadata.bucketName = $event"
+          v-if="editedStorage.kind !== 'ftp'"
+          :title="editedStorage.kind === 'cloudinary' ? 'Cloud Name' : 'Bucket Name'"
+          :model-value="editedStorage.metadata.bucketName"
+          @input="editedStorage.metadata.bucketName = $event"
       />
       <div class="authentication">
         <h3 @click="showAuth = !showAuth">
@@ -52,29 +52,29 @@
             <icon-arrow-down v-if="showAuth"/>
             <icon-arrow-right v-else/>
           </el-icon>
-          {{ $t('Authentication Secrets') }}
+          {{ t('Authentication Secrets') }}
         </h3>
         <template v-if="showAuth">
           <StorageFtpAuth
-            v-if="editedStorage.kind === 'ftp'"
-            v-model="editedStorage.authentication"
+              v-if="editedStorage.kind === 'ftp'"
+              v-model="editedStorage.authentication"
           />
           <StorageGcsAuth
-            v-else-if="editedStorage.kind === 'gcs'"
-            v-model="editedStorage.authentication"
+              v-else-if="editedStorage.kind === 'gcs'"
+              v-model="editedStorage.authentication"
           />
           <StorageS3Auth
-            v-else-if="editedStorage.kind === 's3'"
-            v-model="editedStorage.authentication"
+              v-else-if="editedStorage.kind === 's3'"
+              v-model="editedStorage.authentication"
           />
           <StorageCloudinaryAuth
-            v-if="editedStorage.kind === 'cloudinary'"
-            v-model="editedStorage.authentication"
+              v-if="editedStorage.kind === 'cloudinary'"
+              v-model="editedStorage.authentication"
           />
         </template>
       </div>
     </div>
-	</el-form>
+  </el-form>
 </template>
 <script lang="ts" setup>
 import StorageFtpAuth from './StorageFtpAuth.vue'
@@ -83,12 +83,15 @@ import StorageS3Auth from './StorageS3Auth.vue'
 import StorageCloudinaryAuth from './StorageCloudinaryAuth.vue'
 import FormInput from '../../core/components/forms/FormInput.vue'
 import { useStorageForm } from '../compositions/storages'
-import {IStorage} from '@/services/types/storage';
+import { IStorage } from '@/services/types/storage';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
-	value: Object as () => IStorage,
+  value: Object as () => IStorage,
   title: String,
-	submitting: Boolean
+  submitting: Boolean
 })
 
 const emit = defineEmits(['submitted'])
@@ -96,7 +99,7 @@ const emit = defineEmits(['submitted'])
 const { editedStorage, showAuth } = useStorageForm(props)
 
 const submit = () => {
-	return emit('submitted', editedStorage)
+  return emit('submitted', editedStorage)
 }
 </script>
 <style scoped lang="scss">
@@ -115,8 +118,8 @@ const submit = () => {
   margin: 10px;
 
   h3 {
-	color: var(--main-color);
-	cursor: pointer;
+    color: var(--main-color);
+    cursor: pointer;
   }
 }
 </style>

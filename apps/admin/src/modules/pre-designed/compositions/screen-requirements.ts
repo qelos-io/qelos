@@ -58,7 +58,8 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
         } else {
           cachedDispatchers[cachedKey] = useDispatcher(() => api.request({
             method,
-            url: item.fromHTTP.uri
+            url: item.fromHTTP.uri,
+            params: item.fromHTTP.query
           }).then(getCallData), null)
         }
         currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];

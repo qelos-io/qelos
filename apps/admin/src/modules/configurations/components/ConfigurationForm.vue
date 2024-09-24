@@ -1,6 +1,6 @@
 <template>
   <el-form @submit.native.prevent="save" class="config-form">
-    <el-button type="primary" @click="editorMode = !editorMode">{{ $t('Toggle Editor') }}</el-button>
+    <el-button type="primary" @click="editorMode = !editorMode">{{ t('Toggle Editor') }}</el-button>
     <Monaco v-if="editorMode" v-model="metadataJSON"/>
     <template v-else>
       <ConfigurationInput
@@ -21,6 +21,7 @@ import ConfigurationInput from './ConfigurationInput.vue'
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import { computed, ref } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
+import { useI18n } from 'vue-i18n';
 
 export default {
   name: 'ConfigurationForm',
@@ -31,6 +32,7 @@ export default {
     submitting: Boolean
   },
   setup({ kind, metadata }, { emit }) {
+    const { t } = useI18n();
     const { updated, edited, keys, valuesTypes } = useEditMetadata(kind, metadata)
 
     const editorMode = ref(false);
@@ -48,6 +50,7 @@ export default {
     })
 
     return {
+      t,
       keys,
       valuesTypes,
       updated,

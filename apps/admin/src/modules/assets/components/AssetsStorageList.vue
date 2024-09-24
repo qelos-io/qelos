@@ -8,7 +8,10 @@
       </template>
       <template v-slot:actions>
         <a @click.prevent="remove(item)">
-          <el-icon><icon-delete/></el-icon> {{ $t('Remove') }}
+          <el-icon>
+            <icon-delete/>
+          </el-icon>
+          {{ t('Remove') }}
         </a>
         <img :src="`logos/storage-${item.kind}.png`">
       </template>
@@ -16,14 +19,16 @@
   </div>
 </template>
 <script lang="ts" setup>
-  import { useStorageList } from '../compositions/storages'
-  import { useConfirmAction } from '../../core/compositions/confirm-action'
-  import GpItem from '@/modules/core/components/layout/BlockItem.vue';
+import { useStorageList } from '../compositions/storages'
+import { useConfirmAction } from '../../core/compositions/confirm-action'
+import GpItem from '@/modules/core/components/layout/BlockItem.vue';
+import { useI18n } from 'vue-i18n';
 
-  const list = useStorageList();
+const { t } = useI18n();
+const list = useStorageList();
 
-  const items = list.items;
-  const remove = useConfirmAction(list.remove)
+const items = list.items;
+const remove = useConfirmAction(list.remove)
 </script>
 <style scoped>
 img {
