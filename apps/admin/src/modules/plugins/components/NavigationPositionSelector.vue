@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 
-const model = defineModel('modelValue', {
+const model = defineModel<string | boolean>('modelValue', {
   type: [String, Boolean],
   default: ''
 })
