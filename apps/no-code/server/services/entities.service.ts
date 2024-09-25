@@ -1,9 +1,10 @@
 import { IBlueprint } from '../models/blueprint';
-import { IBlueprintPropertyDescriptor } from '@qelos/global-types';
+import { IBlueprintPropertyDescriptor, PermissionScope } from '@qelos/global-types';
 import BlueprintEntity, { IBlueprintEntity } from '../models/blueprint-entity';
 import * as jq from 'node-jq';
 import Ajv from 'ajv';
 import { ResponseError } from './response-error';
+import { RequestWithUser } from '@qelos/api-kit/dist/types';
 
 const ajv = new Ajv()
 
@@ -132,4 +133,37 @@ export function validateEntityRelations(tenant: string, blueprint: IBlueprint, e
         }
       });
   }))
+}
+
+
+type Full<T> = {
+  [P in keyof T]-?: T[P];
+}
+
+export function getEntityQuery({ entityIdentifier, blueprint, req, permittedScopes }: {
+  entityIdentifier?: string,
+  blueprint: IBlueprint,
+  req: Full<RequestWithUser>,
+  permittedScopes: PermissionScope[] | true
+}) {
+  const query: any = {
+    tenant: req.headers.tenant,
+    blueprint: blueprint.identifier,
+  };
+  if (entityIdentifier) {
+    query.identifier = entityIdentifier;
+  }
+  if (permittedScopes instanceof Array) {
+    if (!permittedScopes.includes(PermissionScope.TENANT)) {
+      if (blueprint.permissionScope === PermissionScope.WORKSPACE) {
+        if (!req.workspace) {
+          throw new ResponseError('user is not connected to a workspace', 403);
+        }
+        query.workspace = req.workspace._id
+      } else if (blueprint.permissionScope === PermissionScope.USER) {
+        query.user = req.user._id
+      }
+    }
+  }
+  return query;
 }

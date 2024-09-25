@@ -6,42 +6,15 @@ import { RequestWithUser } from '@qelos/api-kit/dist/types';
 import { CRUDOperation, PermissionScope } from '@qelos/global-types';
 import mongoose from 'mongoose';
 import logger from '../services/logger';
-import { getValidBlueprintMetadata, updateEntityMapping, validateEntityRelations, } from '../services/entities.service';
+import {
+  getEntityQuery,
+  getValidBlueprintMetadata,
+  updateEntityMapping,
+  validateEntityRelations,
+} from '../services/entities.service';
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
 import { emitPlatformEvent } from '@qelos/api-kit';
 import { ResponseError } from '../services/response-error';
-
-type Full<T> = {
-  [P in keyof T]-?: T[P];
-}
-
-function getEntityQuery({ entityIdentifier, blueprint, req, permittedScopes }: {
-  entityIdentifier?: string,
-  blueprint: IBlueprint,
-  req: Full<RequestWithUser>,
-  permittedScopes: PermissionScope[] | true
-}) {
-  const query: any = {
-    tenant: req.headers.tenant,
-    blueprint: blueprint.identifier,
-  };
-  if (entityIdentifier) {
-    query.identifier = entityIdentifier;
-  }
-  if (permittedScopes instanceof Array) {
-    if (!permittedScopes.includes(PermissionScope.TENANT)) {
-      if (blueprint.permissionScope === PermissionScope.WORKSPACE) {
-        if (!req.workspace) {
-          throw new ResponseError('user is not connected to a workspace', 403);
-        }
-        query.workspace = req.workspace._id
-      } else if (blueprint.permissionScope === PermissionScope.USER) {
-        query.user = req.user._id
-      }
-    }
-  }
-  return query;
-}
 
 async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBlueprint, entity: IBlueprintEntity) {
   const body = req.body || {}

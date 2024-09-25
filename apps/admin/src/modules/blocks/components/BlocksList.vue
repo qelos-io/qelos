@@ -9,7 +9,7 @@
       <div class="metadata">{{ block.description }}</div>
       <template v-slot:actions>
         <a @click.prevent="askBeforeRemove(block)">
-          <el-icon><icon-delete/></el-icon> {{ $t('Remove') }}
+          <el-icon><icon-delete/></el-icon> {{ t('Remove') }}
         </a>
       </template>
     </GpItem>
@@ -19,7 +19,9 @@
 import {useConfirmAction} from '../../core/compositions/confirm-action'
 import GpItem from '../../core/components/layout/BlockItem.vue';
 import {useBlocksList} from '@/modules/blocks/store/blocks-list';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const state = useBlocksList()
 
 const askBeforeRemove = useConfirmAction(state.removeBlock);

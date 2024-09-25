@@ -19,5 +19,7 @@ usePrimeVue(app);
 fontAwesome(app)
 applyGlobalTemplatesComponents(app);
 
+app.config.globalProperties.$t = i18n.global.t;
+
 elements(app)
 app.mount('#app')

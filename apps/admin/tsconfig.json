@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-	"baseUrl": ".",
-	"paths": {
-	  "@/*": [
-		"./src/*"
-	  ]
-	},
-	"types": [
-		"vitest/globals",
-		"element-plus/global"
-	]
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "types": [
+      "vitest/globals",
+      "element-plus/global"
+    ]
   }
 }
