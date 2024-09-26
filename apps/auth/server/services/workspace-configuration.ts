@@ -16,6 +16,13 @@ export async function getWorkspaceConfiguration(tenant: string): Promise<{
           viewMembersPrivilegedWsRoles: []
         }
       }).then(JSON.stringify);
-  }).then(JSON.parse);
+  }).then(JSON.parse)
+    .catch(() => {
+      return {
+        isActive: false,
+        creationPrivilegedRoles: [],
+        viewMembersPrivilegedWsRoles: []
+      }
+    })
 }
 

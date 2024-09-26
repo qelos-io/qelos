@@ -31,8 +31,13 @@ module.exports = new Strategy(
 
     const [wsConfig, user] = await Promise.all([
       getWorkspaceConfiguration(query.tenant),
-      getUser(query).then((user) => comparePassword((user as unknown as UserModel), password))
+      getUser(query)
+        .then((user) => user && comparePassword((user as unknown as UserModel), password))
+        .catch(() => null)
     ]);
+    if (!user) {
+      return done({ message: 'Invalid username or password' });
+    }
     let workspace;
     if (wsConfig.isActive) {
       try {
