@@ -48,7 +48,14 @@ const router = createRouter({
       meta: {
         guest: true
       }
-    }
+    },
+    {
+      path: '/auth/callback',
+      component: async () => (await import('./modules/core/AuthCallback.vue')).default,
+      meta: {
+        guest: true
+      }
+    },
   ]
 })
 
