@@ -135,6 +135,39 @@ export function validateEntityRelations(tenant: string, blueprint: IBlueprint, e
   }))
 }
 
+export function getEntityIndexes(blueprint: IBlueprint, entity: IBlueprintEntity): string[] {
+  const list = blueprint.relations.map(relation => {
+    const target = entity.metadata?.[relation.key];
+    if (!target) {
+      return;
+    }
+    return `${relation.key}:${target}`;
+  })
+
+  return list.filter(Boolean) as string[];
+}
+
+export function convertQueryToIndexes(query: any, blueprint: IBlueprint) {
+  if (!blueprint.relations?.length) {
+    return query;
+  }
+  const $all: string[] = [];
+  blueprint.relations.forEach(relation => {
+    const value = query[`metadata.${relation.key}`];
+    if (typeof value === 'string') {
+      delete query[`metadata.${relation.key}`];
+      $all.push(`${relation.key}:${value}`);
+    }
+  });
+  if ($all.length) {
+    if (query.indexes instanceof Array) {
+      query.indexes = { $in: query.indexes, $all }
+    } else {
+      query.indexes = { ...query.indexes, $all }
+    }
+  }
+
+}
 
 type Full<T> = {
   [P in keyof T]-?: T[P];

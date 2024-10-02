@@ -6,7 +6,9 @@
             class="blueprint-item"
     >
       <template v-slot:title>
-        <router-link :to="{name: 'editBlueprint', params: {blueprintIdentifier: blueprint.identifier}}">{{ blueprint.name }}</router-link>
+        <router-link :to="{name: 'editBlueprint', params: {blueprintIdentifier: blueprint.identifier}}">
+          {{ blueprint.name }}
+        </router-link>
         <small>{{ blueprint.description }}</small>
       </template>
       <div class="metadata">
@@ -22,6 +24,9 @@
       </div>
       <template v-slot:actions>
         <RemoveButton wide @click="removeWithConfirm(blueprint.identifier)"/>
+        <el-button wide text type="danger" @click="removeAllEntities(blueprint.identifier)">
+          {{$t('Remove All Entities')}}
+        </el-button>
       </template>
     </GpItem>
   </div>
@@ -32,9 +37,12 @@ import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
+import sdk from '@/services/sdk';
 
 const store = useBlueprintsStore()
 const removeWithConfirm = useConfirmAction(store.remove)
+
+const removeAllEntities = useConfirmAction((identifier: string) => sdk.blueprints.entitiesOf(identifier).remove('all'))
 </script>
 <style scoped>
 .list {
@@ -62,6 +70,7 @@ const removeWithConfirm = useConfirmAction(store.remove)
 
 table {
   border-collapse: collapse;
+
   td {
     padding: 3px;
   }

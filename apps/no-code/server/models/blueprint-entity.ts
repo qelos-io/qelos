@@ -7,6 +7,7 @@ export interface IBlueprintEntity extends Document {
   user: mongoose.Schema.Types.ObjectId;
   workspace: mongoose.Schema.Types.ObjectId;
   metadata: any;
+  indexes: string[];
   created: Date,
   updated: Date,
 }
@@ -45,6 +46,10 @@ const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
     required: true,
     default: () => ({})
   },
+  indexes: [{
+    type: String,
+    required: true,
+  }],
   created: {
     type: Date,
     default: Date.now,
@@ -57,6 +62,7 @@ const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
 
 BlueprintEntitySchema.index({ tenant: 1, blueprint: 1 });
 BlueprintEntitySchema.index({ tenant: 1, blueprint: 1, identifier: 1 }, { unique: true });
+BlueprintEntitySchema.index({ tenant: 1, indexes: 1 });
 
 const BlueprintEntity = mongoose.model<IBlueprintEntity>('BlueprintEntity', BlueprintEntitySchema);
 

@@ -16,17 +16,17 @@ export const useBlueprintsStore = defineStore('blueprints', () => {
   const { submit: create, submitting: submittingNewItem } = useSubmitting(blueprintsService.create, {
     success: 'Blueprint created successfully',
     error: 'Failed to create blueprint'
-  })
+  }, retry)
 
   const { submit: update, submitting: submittingUpdateItem } = useSubmitting(blueprintsService.update, {
     success: 'Blueprint updated successfully',
     error: 'Failed to update blueprint'
-  })
+  }, retry)
 
   const { submit: remove, submitting: submittingDeletedItem } = useSubmitting(blueprintsService.remove, {
     success: 'Blueprint removed successfully',
-    error: 'Failed to removed blueprint'
-  })
+    error: (err: any) => err?.response?.data?.message || 'Failed to removed blueprint'
+  }, retry)
 
   return {
     blueprints,

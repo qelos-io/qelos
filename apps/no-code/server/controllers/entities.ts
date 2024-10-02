@@ -1,12 +1,14 @@
 import qs from 'qs'
 import { v4 as uuidv4 } from 'uuid';
 import BlueprintEntity, { IBlueprintEntity } from '../models/blueprint-entity';
-import { IBlueprint } from '../models/blueprint';
+import Blueprint, { IBlueprint } from '../models/blueprint';
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
 import { CRUDOperation, PermissionScope } from '@qelos/global-types';
 import mongoose from 'mongoose';
 import logger from '../services/logger';
 import {
+  convertQueryToIndexes,
+  getEntityIndexes,
   getEntityQuery,
   getValidBlueprintMetadata,
   updateEntityMapping,
@@ -27,6 +29,8 @@ async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBluepri
 
   // validate the relations
   await validateEntityRelations(req.headers.tenant, blueprint, entity);
+
+  entity.indexes = getEntityIndexes(blueprint, entity);
 }
 
 async function hasReachedLimitations(req: RequestWithUser, blueprint: IBlueprint, entity: any) {
@@ -78,6 +82,7 @@ export async function getAllBlueprintEntities(req, res) {
     if ('bypassAdmin' in req.query) {
       delete query.bypassAdmin;
     }
+    convertQueryToIndexes(query, blueprint);
     const entities = await BlueprintEntity.find(query)
       .lean()
       .exec()
@@ -324,6 +329,48 @@ export async function removeBlueprintEntity(req, res) {
     res.json(entity).end();
   } catch (err) {
     logger.error(err);
+    res.status(500).json({ message: 'something went wrong with entity deletion' }).end();
+  }
+}
+
+export async function removeAllBlueprintEntities(req, res) {
+  const blueprintIdentifier = req.params.blueprintIdentifier.toString();
+
+  const blueprintsWithRelations = await Blueprint.find({
+    tenant: req.headers.tenant,
+    'relations.target': blueprintIdentifier
+  }).select('identifier relations').lean().exec();
+
+  if (blueprintsWithRelations.length) {
+    const entitiesOfRelations = await BlueprintEntity.countDocuments({
+      tenant: req.headers.tenant,
+      $or: blueprintsWithRelations
+        .filter(blueprint => blueprint.identifier !== blueprintIdentifier)
+        .map(blueprint => {
+          const relation = blueprint.relations.find(relation => relation.target === blueprintIdentifier) as any;
+          return {
+            [`metadata.${relation.key}`]: {
+              $exists: true
+            },
+            blueprint: blueprint.identifier
+          }
+        })
+    }).exec();
+
+    if (entitiesOfRelations) {
+      res.status(403).json({ message: 'you cannot remove entities with related entities' }).end();
+      return;
+    }
+  }
+
+  try {
+    const entities = await BlueprintEntity.deleteMany({
+      tenant: req.headers.tenant,
+      blueprint: blueprintIdentifier
+    }).exec();
+
+    res.json(entities).end();
+  } catch {
     res.status(500).json({ message: 'something went wrong with entity deletion' }).end();
   }
 }

@@ -6,7 +6,7 @@ export interface IErrorMessages {
   success?: string | ((data: any) => string),
 }
 
-export function useSubmitting(submitFn, messages: IErrorMessages = {}) {
+export function useSubmitting(submitFn, messages: IErrorMessages = {}, afterSuccess?: Function) {
   const submitting = ref(false)
   const { error, success } = useNotifications()
   const errorMessage = typeof messages.error === 'function' ? messages.error : (err) => messages.error || err.message || err
@@ -19,6 +19,9 @@ export function useSubmitting(submitFn, messages: IErrorMessages = {}) {
         const msg = successMessage(data)
         if (msg) {
           success(msg)
+        }
+        if (afterSuccess) {
+          afterSuccess(data);
         }
         return data
       })
