@@ -5,6 +5,7 @@ import { getAbsoluteDate } from './dates';
 import { IAdditionalField, IAuthConfigurationMetadata } from './auth-configuration';
 import logger from './logger';
 import { AuthRequest } from '../../types';
+import { verifyToken } from './tokens';
 
 export function getValidMetadata(metadata: any = {}, additionalFields: IAdditionalField[] = []) {
   const result = {};
@@ -176,6 +177,8 @@ export async function deleteToken(
     const user: any = await User.findOne({ _id: userId, tenant }).exec();
     if (isRelatedToken) {
       token = await user?.getTokenByRelatedTokens(authType, token);
+    } else {
+      token = ((await verifyToken(token, tenant)) as any)?.tokenIdentifier || '';
     }
     user?.deleteToken(authType, token);
   } catch (e) {
@@ -227,7 +230,7 @@ export async function clearOldTokens(userId: string) {
     return;
   }
   const now = Date.now()
-  const validTokens = user.tokens.find(t => new Date(t.expiresAt).getTime() > now)
+  const validTokens = user.tokens.filter(t => new Date(t.expiresAt).getTime() > now)
 
   if (validTokens.length === user.tokens) {
     return

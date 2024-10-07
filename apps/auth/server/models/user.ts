@@ -56,6 +56,20 @@ export interface UserModel extends Model<UserDocument> {
   getUsersList(tenant: string, usersIds: ObjectId[], privilegedUserFields?: string): Promise<string>;
 }
 
+const TokenSchema = new mongoose.Schema({
+  kind: {
+    type: String,
+    enum: ['cookie', 'oauth'],
+    default: () => defaultAuthType,
+  },
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: () => ({}),
+  },
+  tokenIdentifier: String,
+  expiresAt: Date,
+})
+
 // define the User model schema
 const UserSchema = new mongoose.Schema<UserDocument, UserModel>({
   tenant: {
@@ -84,21 +98,7 @@ const UserSchema = new mongoose.Schema<UserDocument, UserModel>({
     type: [String],
   },
   metadata: mongoose.Schema.Types.Mixed,
-  tokens: [
-    {
-      kind: {
-        type: String,
-        enum: ['cookie', 'oauth'],
-        default: defaultAuthType,
-      },
-      metadata: {
-        type: mongoose.Schema.Types.Mixed,
-        default: () => ({}),
-      },
-      expiresAt: Date,
-      tokenIdentifier: String,
-    },
-  ],
+  tokens: [TokenSchema],
   created: {
     type: Date,
     default: Date.now,
@@ -135,6 +135,7 @@ UserSchema.methods.getToken = function getToken({ authType, expiresIn, workspace
       kind: authType,
       tokenIdentifier,
     });
+    this.markModified('tokens');
   }
   return getSignedToken(this, workspace, tokenIdentifier, expiresIn).token;
 };
@@ -186,7 +187,7 @@ UserSchema.methods.deleteToken = function deleteToken(
 ) {
   this.tokens = this.tokens.filter(
     (token) =>
-      token.kind === authType && token.tokenIdentifier === tokenIdentifier
+      !(token.kind === authType && token.tokenIdentifier === tokenIdentifier)
   );
 
   return this.save();
@@ -199,7 +200,7 @@ UserSchema.methods.getTokenByRelatedTokens = function getTokenByRelatedTokens(
   const token = this.tokens.find(
     (token) =>
       token.kind === authType &&
-      token.metadata.toString().includes(tokenIdentifier)
+      token.metadata?.relatedToken === tokenIdentifier
   );
 
   return token ? token.tokenIdentifier : tokenIdentifier;
