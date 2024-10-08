@@ -123,11 +123,21 @@ export async function createWorkspace(req: AuthRequest, res: Response) {
   }
 
   try {
-    const workspace = new Workspace({ tenant, name, logo, invites });
+    const workspace = new Workspace({ tenant, name, logo, invites, labels: [] });
     workspace.members = [{
       user: userId,
       roles: ['admin', 'user']
-    }]
+    }];
+
+    if (req.userPayload.isPrivileged) {
+      if (req.body.members?.length) {
+        workspace.members = req.body.members;
+      }
+      if (req.body.labels instanceof Array) {
+        workspace.labels = req.body.labels;
+      }
+    }
+
     await workspace.save();
     res.status(200).json(workspace).end()
 
@@ -173,6 +183,15 @@ export async function updateWorkspace(req: AuthRequest, res: Response) {
 
     if (invites) {
       workspace.invites = invites;
+    }
+
+    if (req.userPayload.isPrivileged) {
+      if (req.body.members?.length) {
+        workspace.members = req.body.members;
+      }
+      if (req.body.labels instanceof Array) {
+        workspace.labels = req.body.labels;
+      }
     }
 
     await workspace.save();

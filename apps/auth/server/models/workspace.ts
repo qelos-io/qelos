@@ -7,6 +7,7 @@ export interface IWorkspace extends Document {
   tenant: string;
   logo?: string;
   members: { user: Types.ObjectId | string; roles: string[]; created?: Date }[];
+  labels: string[];
   invites: Invite[];
   created?: Date;
 }
@@ -30,6 +31,7 @@ export const WorkspaceSchema = new mongoose.Schema<IWorkspace>({
     roles: [{ type: String, required: true }],
     created: { type: Date, default: Date.now }
   }],
+  labels: [{ type: String, required: true }],
   invites: [{
     email: { type: String },
     phone: { type: String },
