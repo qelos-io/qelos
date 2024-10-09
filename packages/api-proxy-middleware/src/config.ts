@@ -1,4 +1,4 @@
-import {IApiProxyConfig, IServiceProxyConfig} from './types';
+import { IApiProxyConfig, IServiceProxyConfig } from './types';
 
 function getProxies(envVar: string = '', defaults: Array<string> = []) {
   return envVar ? envVar.split(',') : defaults;
@@ -42,7 +42,8 @@ export function getApiProxyConfig(): IApiProxyConfig {
         '/api/users',
         '/api/logout',
         '/api/invites',
-        '/api/workspaces'
+        '/api/workspaces',
+        '/api/auth'
       ],
     }),
     assetsService: getServiceFromEnvVars('assets', 'ASSETS_SERVICE', {
