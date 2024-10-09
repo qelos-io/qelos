@@ -164,7 +164,9 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
       }
       initiateRoutes(newVal);
       if (!isAdmin.value) {
-        unwatch();
+        setTimeout(() => {
+          unwatch();
+        }, 1)
       }
     }, { immediate: true });
   }
