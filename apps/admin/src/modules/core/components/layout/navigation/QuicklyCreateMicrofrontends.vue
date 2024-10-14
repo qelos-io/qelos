@@ -9,7 +9,7 @@
 						<el-option v-for="plugin in plugins" :key="plugin._id" :label="plugin.name" :value="plugin._id">
 							{{ plugin.name }}
 						</el-option>
-						<el-option label="Add New Page" value="addNewPage">{{ $t('Add New Page') }}
+						<el-option label="Add New Page" value="addNewPage">{{ $t('Add New Plugin') }}
 
 						</el-option>
 					</el-select>
