@@ -6,9 +6,9 @@
     </router-link>
 
     <el-menu router :default-active="$route.path">
-      <div class="nav-group">
+      <div class="nav-group" v-if="isPrivilegedUser">
 
-        <el-menu-item v-if="isPrivilegedUser" @click="openDrawer">
+        <el-menu-item  @click="openDrawer">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'plus-circle']"/>
           </el-icon>
