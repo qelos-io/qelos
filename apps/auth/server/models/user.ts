@@ -149,6 +149,7 @@ UserSchema.methods.getRefreshToken = function getRefreshToken(relatedToken, work
     metadata: { relatedToken, workspace: workspace?._id },
     expiresAt: new Date(Date.now() + cookieTokenExpiration),
   });
+  this.markModified('tokens');
 
   return jwt.sign(
     {
