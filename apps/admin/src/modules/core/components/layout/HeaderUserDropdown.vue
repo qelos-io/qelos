@@ -9,7 +9,7 @@
     </div>
     <template #dropdown>
       <el-dropdown-menu>
-        <HeaderUserWorkspacesSelection v-if="wsConfig.isActive" />
+        <HeaderUserWorkspacesSelection v-if="wsConfig.isActive"/>
         <el-dropdown-item>
           <router-link :to="{name: 'updateProfile'}">{{ $t('Update profile') }}</router-link>
         </el-dropdown-item>
@@ -54,6 +54,10 @@ const logout = async () => {
 }
 </script>
 <style scoped lang="scss">
+.user-dropdown {
+  margin-inline-start: auto;
+}
+
 .user-welcome {
   padding-inline-end: 10px;
   display: flex;
