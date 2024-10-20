@@ -1,5 +1,5 @@
 <template>
-  <el-dropdown class="user-dropdown">
+  <el-dropdown :class="{'user-dropdown': true, 'viewer': !isAdmin}">
     <div class="el-dropdown-link user-welcome">
       <span>{{ user.firstName }}</span>
       <el-avatar v-if="user.workspace"> {{ user.workspace.name[0].toUpperCase() }}</el-avatar>
@@ -39,6 +39,7 @@ import { storeToRefs } from 'pinia';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import HeaderUserWorkspacesSelection from '@/modules/core/components/layout/HeaderUserWorkspacesSelection.vue';
+import { isAdmin } from '@/modules/core/store/auth';
 
 const emit = defineEmits(['open']);
 const { user, logout: logoutApi } = useAuth()
@@ -54,7 +55,7 @@ const logout = async () => {
 }
 </script>
 <style scoped lang="scss">
-.user-dropdown {
+.user-dropdown.viewer {
   margin-inline-start: auto;
 }
 
