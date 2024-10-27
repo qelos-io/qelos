@@ -1,4 +1,4 @@
-import {Crud} from './crud.types';
+import { Crud } from './crud.types';
 
 const pkg = require(process.cwd() + '/package.json');
 
@@ -23,7 +23,7 @@ export const manifest = {
     refreshTokenUrl: '/api/token/refresh',
     refreshTokenKey: 'refresh_token',
     accessTokenKey: 'access_token'
-  },
+  }
 };
 
 export type NavBarGroup = { key: string, name: string, iconName?: string, iconSvg?: string, priority?: number };

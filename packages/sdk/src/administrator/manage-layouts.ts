@@ -1,9 +1,9 @@
-import { QelosSDKOptions } from "../types";
-import BaseSDK from "../base-sdk";
-import {ILayout, LayoutKind} from './layouts';
+import { QelosSDKOptions, RequestExtra } from '../types';
+import BaseSDK from '../base-sdk';
+import { ILayout, LayoutKind } from './layouts';
 
 export default class QlManageLayouts extends BaseSDK {
-  private relativePath = "/api/layouts";
+  private relativePath = '/api/layouts';
 
   constructor(options: QelosSDKOptions) {
     super(options);
@@ -19,7 +19,7 @@ export default class QlManageLayouts extends BaseSDK {
 
   remove(kind: LayoutKind, extra?: Partial<RequestInit>): Promise<any> {
     return this.callApi(`${this.relativePath}/${kind}`, {
-      method: "delete",
+      method: 'delete',
       ...(extra || {}),
     });
   }
@@ -27,20 +27,20 @@ export default class QlManageLayouts extends BaseSDK {
   update(
     kind: LayoutKind,
     changes: Partial<ILayout>,
-    extra?: Partial<RequestInit>
+    extra?: RequestExtra
   ): Promise<ILayout> {
     return this.callJsonApi<ILayout>(`${this.relativePath}/${kind}`, {
-      method: "put",
-      headers: {'content-type': 'application/json'},
+      method: 'put',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify(changes),
       ...(extra || {}),
     });
   }
 
-  create(layout: ILayout, extra?: Partial<RequestInit>): Promise<ILayout> {
+  create(layout: ILayout, extra?: RequestExtra): Promise<ILayout> {
     return this.callJsonApi<ILayout>(this.relativePath, {
-      method: "post",
-      headers: {'content-type': 'application/json'},
+      method: 'post',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify(layout),
       ...(extra || {}),
     });

@@ -26,7 +26,8 @@ export function getSdkForUrl<T = any>(appUrl: string, refreshToken?: string, acc
   const options: QelosSDKOptions = {
     appUrl,
     forceRefresh: true,
-    fetch: globalThis.fetch || undiciFetch as any as FetchLike
+    fetch: globalThis.fetch || undiciFetch as any as FetchLike,
+    ...(config.sdkOptions || {}),
   };
   if (refreshToken) {
     options.refreshToken = refreshToken;

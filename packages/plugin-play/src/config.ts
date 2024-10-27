@@ -1,4 +1,5 @@
 import { join } from 'path';
+import { QelosSDKOptions } from '@qelos/sdk/dist/types';
 
 const port = Number(process.env.PORT || 1086);
 const host = process.env.HOST || '0.0.0.0';
@@ -19,7 +20,8 @@ const config = {
   staticFrontend: {
     root: join(process.cwd(), process.env.STATIC_ROOT || 'public'),
     prefix: process.env.STATIC_PREFIX || '/',
-  }
+  },
+  sdkOptions: {} as Partial<QelosSDKOptions>
 };
 
 export type ConfigOptions = Partial<typeof config>;

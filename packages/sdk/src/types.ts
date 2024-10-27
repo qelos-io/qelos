@@ -10,3 +10,5 @@ export interface QelosSDKOptions {
   forceRefresh?: boolean;
   extraQueryParams?: () => Record<string, string>
 }
+
+export type RequestExtra = Partial<RequestInit & { query?: Record<string, string> }>

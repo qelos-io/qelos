@@ -150,7 +150,8 @@ export async function getSingleBlueprintEntity(req, res) {
 
 export async function createBlueprintEntity(req, res) {
   const blueprint: IBlueprint = req.blueprint;
-  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.CREATE, req.query.bypassAdmin === 'true');
+  const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.CREATE, bypassAdmin);
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;
@@ -217,7 +218,8 @@ export async function createBlueprintEntity(req, res) {
 export async function updateBlueprintEntity(req, res) {
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
-  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.UPDATE, req.query.bypassAdmin === 'true');
+  const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.UPDATE, bypassAdmin);
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;
