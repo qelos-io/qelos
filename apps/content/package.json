@@ -1,6 +1,6 @@
 {
   "name": "@qelos/content",
-  "version": "3.6.3",
+  "version": "3.6.6",
   "migrationVersion": 11,
   "description": "Content API for qelos platform",
   "keywords": [
@@ -21,8 +21,8 @@
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@qelos/api-kit": "^3.6.3",
-    "@qelos/cache-manager": "^3.4.1",
+    "@qelos/api-kit": "^3.6.6",
+    "@qelos/cache-manager": "^3.6.6",
     "mongoose": "^8.6.1",
     "node-fetch": "^2.6.1",
     "shortid": "^2.2.14"
