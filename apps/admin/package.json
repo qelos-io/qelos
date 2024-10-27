@@ -52,7 +52,7 @@
     "vue3-runtime-template": "^1.0.2"
   },
   "license": "MIT",
-  "gitHead": "aada0d72a4d54a1b37e26ecb3c5138c0437c0c20",
+  "gitHead": "1359351ce7a1092614382cc6ff0db6400855e73b",
   "bundledDependencies": [
     "express"
   ],
