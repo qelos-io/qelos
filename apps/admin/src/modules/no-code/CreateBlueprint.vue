@@ -28,7 +28,6 @@ async function submit(payload: Partial<IBlueprint>) {
   router.push({ name: 'editBlueprint', params: { blueprintIdentifier: data.identifier } });
 }
 
-
 watch(() => wsConfig.loaded, (loaded) => {
   if (loaded) {
     const tenantScope = wsConfig.isActive ? PermissionScope.WORKSPACE : PermissionScope.USER;
@@ -43,37 +42,43 @@ watch(() => wsConfig.loaded, (loaded) => {
           operation: CRUDOperation.CREATE,
           scope: PermissionScope.USER,
           roleBased: ['admin', 'user'],
-          workspaceRoleBased: ['admin', 'member']
+          workspaceRoleBased: ['admin', 'member'],
+          workspaceLabelsBased: ['*']   // workspaceLabelsBased
         },
         {
           operation: CRUDOperation.READ,
           scope: tenantScope,
           roleBased: ['admin', 'user'],
-          workspaceRoleBased: ['admin', 'member']
+          workspaceRoleBased: ['admin', 'member'],
+          workspaceLabelsBased: ['*']
         },
         {
           operation: CRUDOperation.UPDATE,
           scope: PermissionScope.USER,
           roleBased: ['admin', 'user'],
-          workspaceRoleBased: ['admin', 'member']
+          workspaceRoleBased: ['admin', 'member'],
+          workspaceLabelsBased: ['*']
         },
         {
           operation: CRUDOperation.UPDATE,
           scope: PermissionScope.WORKSPACE,
           roleBased: ['admin', 'user'],
-          workspaceRoleBased: ['admin']
+          workspaceRoleBased: ['admin'],
+          workspaceLabelsBased: ['*']
         },
         {
           operation: CRUDOperation.DELETE,
           scope: PermissionScope.USER,
           roleBased: ['admin', 'user'],
-          workspaceRoleBased: ['admin', 'member']
+          workspaceRoleBased: ['admin', 'member'],
+          workspaceLabelsBased: ['*']
         },
         {
           operation: CRUDOperation.DELETE,
           scope: PermissionScope.WORKSPACE,
           roleBased: ['admin', 'user'],
-          workspaceRoleBased: ['admin']
+          workspaceRoleBased: ['admin'],
+          workspaceLabelsBased: ['*']
         },
       ],
       properties: {
@@ -91,3 +96,4 @@ watch(() => wsConfig.loaded, (loaded) => {
   }
 }, { immediate: true })
 </script>
+

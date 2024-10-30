@@ -31,6 +31,7 @@ export interface IPermissionsDescriptor {
   operation: CRUDOperation,
   roleBased: string[],
   workspaceRoleBased: string[],
+  workspaceLabelsBased: string[],
 }
 
 export interface IBlueprintPropertyDescriptor {
