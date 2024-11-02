@@ -56,7 +56,7 @@ const BlueprintSchema = new mongoose.Schema<IBlueprint>({
     },
     roleBased: [String],
     workspaceRoleBased: [String],
-    workspaceLabelsBased: [String], // New field for workspace labels associated with specific permissions
+    workspaceLabelsBased: [String],
   }],
   permissionScope: {
     type: String,

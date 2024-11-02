@@ -24,6 +24,7 @@ export interface RequestWithUser extends Omit<Request, 'headers'> {
     _id: string;
     name: string;
     roles: string[];
+    labels?: string[]; 
   };
   headers?: RequestHeadersWithUser
 }
