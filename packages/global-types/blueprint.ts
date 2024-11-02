@@ -71,4 +71,5 @@ export interface IBlueprint {
   };
   created: Date;
   updated: Date;
+  workspaceLabelsBased?: string[];
 }
