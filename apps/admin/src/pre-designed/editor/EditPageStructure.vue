@@ -230,14 +230,14 @@ provide('editableManager', ref(false));
               <InfoIcon content="Only specified workspace roles will be able to access this page"/>
             </template>
             <el-select
-                v-model="editedSettings.roles"
+                v-model="editedSettings.workspaceRoles"
                 multiple
                 filterable
                 allow-create
                 default-first-option
                 :reserve-keyword="false"
             >
-              <template v-for="role in props.mfe.roles">
+              <template v-for="role in props.mfe.workspaceRoles">
                 <el-option v-if="role !== '*'" :key="role" :label="role" :value="role"/>
               </template>
               <el-option label="All (*)" value="*"/>
