@@ -12,6 +12,10 @@ import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vu
 import EditBlueprintProperties from '@/modules/no-code/components/EditBlueprintProperties.vue';
 import { getKeyFromName } from '@/modules/core/utils/texts';
 import BlueprintLimitationsInput from '@/modules/no-code/components/blueprint-form/BlueprintLimitationsInput.vue';
+import WorkspaceLabelSelector from '@/modules/no-code/components/WorkspaceLabelSelector.vue';
+
+// temporary sample
+const availableLabels = ['developer', 'admin', 'user'];
 
 const props = withDefaults(defineProps<{
   submitting: boolean;
@@ -81,6 +85,9 @@ function submit() {
                      @update:modelValue="permission.roleBased = $event.split(',')"/>
           <FormInput title="Workspace Roles" :model-value="permission.workspaceRoleBased.join(',')"
                      @update:modelValue="permission.workspaceRoleBased = $event.split(',')"/>
+                     <WorkspaceLabelSelector v-model="permission.workspaceLabelsBased" :availableLabels="availableLabels"
+            placeholder="Choose labels" />
+
           <div class="flex-0 remove-row">
             <RemoveButton @click="edit.permissions.splice(edit.permissions.indexOf(permission), 1)"/>
           </div>
