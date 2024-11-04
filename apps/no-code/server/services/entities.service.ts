@@ -192,15 +192,9 @@ export function getEntityQuery({ entityIdentifier, blueprint, req, permittedScop
         if (!req.workspace) {
           throw new ResponseError('user is not connected to a workspace', 403);
         }
-        query.workspace = req.workspace._id
-        if (req.workspace.labels && blueprint.workspaceLabelsBased && blueprint.workspaceLabelsBased.length > 0) {
-          const hasMatchingLabel = req.workspace.labels.some(label => blueprint.workspaceLabelsBased!.includes(label));
-          if (!hasMatchingLabel) {
-            throw new ResponseError('user workspace does not match required labels', 403);
-          }
-        }
+        query.workspace = req.workspace._id;
       } else if (blueprint.permissionScope === PermissionScope.USER) {
-        query.user = req.user._id
+        query.user = req.user._id;
       }
     }
   }
