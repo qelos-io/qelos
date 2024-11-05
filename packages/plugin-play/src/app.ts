@@ -1,11 +1,11 @@
-import {existsSync, readFileSync} from 'fs';
-import {join} from 'path';
-import fastify, {FastifyInstance} from 'fastify';
-import {RouteHandlerMethod} from 'fastify/types/route';
-import type {FastifyCookieOptions} from '@fastify/cookie'
-import cookie from '@fastify/cookie'
-import {manifest, ManifestOptions} from './manifest';
-import config, {ConfigOptions, setConfig} from './config';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import fastify, { FastifyInstance } from 'fastify';
+import { RouteHandlerMethod } from 'fastify/types/route';
+import type { FastifyCookieOptions } from '@fastify/cookie';
+import cookie from '@fastify/cookie';
+import { manifest, ManifestOptions } from './manifest';
+import config, { ConfigOptions, setConfig } from './config';
 import {
   getCallbackRoute,
   getFrontendAuthorizationRoute,
@@ -16,8 +16,8 @@ import {
   verifyCookieToken
 } from './authentication';
 import handlers from './handlers';
-import {endpoints, internalEndpoints} from './endpoints';
-import {LifecycleEvent, trigger} from './lifecycle';
+import { endpoints, internalEndpoints } from './endpoints';
+import { LifecycleEvent, trigger } from './lifecycle';
 
 const hooks = new Set<{ subscribedEvent, path, handler }>();
 
@@ -28,16 +28,18 @@ export async function start(options?: { manifest?: ManifestOptions, config?: Con
   configure(options?.manifest || {}, options?.config || {});
 
   const app = getApp();
+  trigger(LifecycleEvent.appMounted, { app })
+
   if (internalEndpoints.size) {
     createInternalApp();
   }
   try {
     console.log('start application for environment: ', config.dev ? 'development' : 'production');
-    await app.listen({port: Number(config.port), host: config.host});
+    await app.listen({ port: Number(config.port), host: config.host });
 
     if (internalApp) {
       console.log(`Internal Application listening on: ${config.internalHost}:${config.internalPort}`);
-      await internalApp.listen({port: Number(config.internalPort), host: config.internalHost});
+      await internalApp.listen({ port: Number(config.internalPort), host: config.internalHost });
     }
 
   } catch (err) {
@@ -47,7 +49,7 @@ export async function start(options?: { manifest?: ManifestOptions, config?: Con
 }
 
 export function configure(manifestOptions: ManifestOptions, appConfig: ConfigOptions) {
-  trigger(LifecycleEvent.beforeConfigure, {manifest, config, manifestOptions, configOptions: appConfig});
+  trigger(LifecycleEvent.beforeConfigure, { manifest, config, manifestOptions, configOptions: appConfig });
 
   Object.assign(manifest, manifestOptions);
   setConfig(appConfig);
@@ -57,14 +59,19 @@ export function configure(manifestOptions: ManifestOptions, appConfig: ConfigOpt
   }
   manifest.proxyUrl = new URL(manifest.proxyPath, manifest.appUrl).href;
 
-  trigger(LifecycleEvent.configured, {manifest, config})
+  trigger(LifecycleEvent.configured, { manifest, config })
 }
 
 export function getApp(): FastifyInstance {
   return app || createApp();
 }
 
-export function registerToHook(hook: { source?: string, kind?: string, eventName?: string, path?: string }, handler: RouteHandlerMethod) {
+export function registerToHook(hook: {
+  source?: string,
+  kind?: string,
+  eventName?: string,
+  path?: string
+}, handler: RouteHandlerMethod) {
   hook.path = hook.path || btoa(JSON.stringify(hook));
   const subscribedEvent = {
     source: hook.source || '*',
@@ -84,11 +91,11 @@ function createApp(): FastifyInstance {
     logger: !!config.dev,
     https: getHttps()
   };
-  trigger(LifecycleEvent.beforeCreate, {fastifyOptions, config, manifest});
+  trigger(LifecycleEvent.beforeCreate, { fastifyOptions, config, manifest });
   app = fastify(fastifyOptions);
-  trigger(LifecycleEvent.beforeMount, {app, fastifyOptions, config, manifest});
+  trigger(LifecycleEvent.beforeMount, { app, fastifyOptions, config, manifest });
 
-  app.addContentTypeParser('application/json', {parseAs: 'string'}, parseJsonRequest);
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, parseJsonRequest);
 
   app.route(getRefreshTokenRoute());
   app.route(getRegisterRoute());
@@ -102,7 +109,7 @@ function createApp(): FastifyInstance {
     throw new Error('you must provide either a refresh token handler or Qelos application credentials');
   }
 
-  trigger(LifecycleEvent.mounted, {app, config, manifest})
+  trigger(LifecycleEvent.mounted, { app, config, manifest })
 
   return app;
 }
@@ -111,16 +118,16 @@ function createInternalApp() {
   const fastifyOptions = {
     logger: !!config.dev,
   };
-  trigger(LifecycleEvent.beforeInternalAppCreate, {fastifyOptions})
+  trigger(LifecycleEvent.beforeInternalAppCreate, { fastifyOptions })
 
   internalApp = fastify(fastifyOptions);
-  internalApp.addContentTypeParser('application/json', {parseAs: 'string'}, parseJsonRequest);
+  internalApp.addContentTypeParser('application/json', { parseAs: 'string' }, parseJsonRequest);
 
   internalEndpoints.forEach((routeOptions) => {
     internalApp.route(routeOptions);
   });
 
-  trigger(LifecycleEvent.internalAppMounted, {app: internalApp})
+  trigger(LifecycleEvent.internalAppMounted, { app: internalApp })
 
   return internalApp;
 }
@@ -129,8 +136,8 @@ function playManifest() {
   getApp().route({
     method: 'GET',
     url: manifest.manifestUrl,
-    handler({headers, body}, res) {
-      setImmediate(() => handlers.manifest.forEach(cb => cb({headers, body})));
+    handler({ headers, body }, res) {
+      setImmediate(() => handlers.manifest.forEach(cb => cb({ headers, body })));
       res.header('Access-Control-Allow-Origin', '*');
       return manifest;
     }

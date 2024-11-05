@@ -1,6 +1,6 @@
-import {FastifyInstance} from 'fastify';
-import {ConfigOptions} from './config';
-import {ManifestOptions} from './manifest';
+import { FastifyInstance } from 'fastify';
+import { ConfigOptions } from './config';
+import { ManifestOptions } from './manifest';
 
 export enum LifecycleEvent {
   beforeCreate,
@@ -9,19 +9,20 @@ export enum LifecycleEvent {
   beforeConfigure,
   configured,
   beforeInternalAppCreate,
-  internalAppMounted
+  internalAppMounted,
+  appMounted,
 }
 
 
 export interface BeforeCreatePayload {
-  fastifyOptions: {logger: boolean, https: string | null} & any,
+  fastifyOptions: { logger: boolean, https: string | null } & any,
   config: ConfigOptions,
   manifest: ManifestOptions,
 }
 
 export interface BeforeMountPayload {
   app: FastifyInstance,
-  fastifyOptions: {logger: boolean, https: string | null} & any,
+  fastifyOptions: { logger: boolean, https: string | null } & any,
   config: ConfigOptions,
   manifest: ManifestOptions,
 }
@@ -45,10 +46,10 @@ export interface ConfiguredPayload {
 }
 
 export interface BeforeInternalAppCreatePayload {
-  fastifyOptions: {logger: boolean, https: string | null} & any,
+  fastifyOptions: { logger: boolean, https: string | null } & any,
 }
 
-export interface InternalAppMountedPayload {
+export interface AppMountedPayload {
   app: FastifyInstance,
 }
 
@@ -69,7 +70,8 @@ export function on(eventName: LifecycleEvent.beforeMount, callback: (payload: Be
 export function on(eventName: LifecycleEvent.configured, callback: (payload: ConfiguredPayload) => unknown): void;
 export function on(eventName: LifecycleEvent.mounted, callback: (payload: MountedPayload) => unknown): void;
 export function on(eventName: LifecycleEvent.beforeInternalAppCreate, callback: (payload: BeforeInternalAppCreatePayload) => unknown): void;
-export function on(eventName: LifecycleEvent.internalAppMounted, callback: (payload: InternalAppMountedPayload) => unknown): void;
+export function on(eventName: LifecycleEvent.internalAppMounted, callback: (payload: AppMountedPayload) => unknown): void;
+export function on(eventName: LifecycleEvent.appMounted, callback: (payload: AppMountedPayload) => unknown): void;
 export function on(eventName: LifecycleEvent, callback) {
   callbacks[eventName].add(callback);
 }
@@ -80,7 +82,8 @@ export function trigger(eventName: LifecycleEvent.beforeMount, payload: BeforeMo
 export function trigger(eventName: LifecycleEvent.configured, payload: ConfiguredPayload): void;
 export function trigger(eventName: LifecycleEvent.mounted, payload: MountedPayload): void;
 export function trigger(eventName: LifecycleEvent.beforeInternalAppCreate, payload: BeforeInternalAppCreatePayload): void;
-export function trigger(eventName: LifecycleEvent.internalAppMounted, payload: InternalAppMountedPayload): void;
+export function trigger(eventName: LifecycleEvent.internalAppMounted, payload: AppMountedPayload): void;
+export function trigger(eventName: LifecycleEvent.appMounted, payload: AppMountedPayload): void;
 export function trigger(eventName: LifecycleEvent, payload) {
   const set = callbacks[eventName];
   set?.forEach(callback => {
