@@ -5,8 +5,9 @@
     "db": "docker compose up -d"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "gitHead": "8ec5f78787a21b9ee73085a0375282ff940fb2a5",
+  "private": false,
   "publishConfig": {
     "access": "public"
   }
