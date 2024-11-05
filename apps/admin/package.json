@@ -2,6 +2,9 @@
   "name": "@qelos/admin",
   "version": "3.7.1",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
