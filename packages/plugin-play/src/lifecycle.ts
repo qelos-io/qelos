@@ -62,6 +62,7 @@ const callbacks = {
   [LifecycleEvent.configured]: new Set<((payload) => unknown)>(),
   [LifecycleEvent.beforeInternalAppCreate]: new Set<((payload) => unknown)>(),
   [LifecycleEvent.internalAppMounted]: new Set<((payload) => unknown)>(),
+  [LifecycleEvent.appMounted]: new Set<((payload) => unknown)>(),
 };
 
 export function on(eventName: LifecycleEvent.beforeCreate, callback: (payload: BeforeCreatePayload) => unknown): void;
