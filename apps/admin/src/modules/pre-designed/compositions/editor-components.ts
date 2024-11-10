@@ -96,6 +96,13 @@ export function useEditorComponents() {
           source: 'manual'
         },
         {
+          prop: 'navigate-after-submit',
+          type: 'text',
+          label: 'Navigate After Submit',
+          placeholder: 'Enter a route name to navigate after submit succeeded (entity `identifier` will be injected to route).',
+          source: 'manual'
+        },
+        {
           prop: 'clear-after-submit', label: 'Clear Form After Submit?', type: 'switch', source: 'manual',
           bind: true,
           value: true,
