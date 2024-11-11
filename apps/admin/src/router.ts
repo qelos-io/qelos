@@ -8,7 +8,7 @@ import { authStore, fetchAuthUser } from './modules/core/store/auth'
 import draftsRoutes from './modules/drafts/routes';
 import blocksRoutes from './modules/blocks/routes';
 import layoutsRoutes from '@/modules/layouts/routes';
-import { managePluginsRoutes, playRoutes } from '@/modules/plugins/routes';
+import { adminRoutesScreenEditor, managePluginsRoutes, playGuestRoutes, playRoutes } from '@/modules/plugins/routes';
 import workspacesRoutes from '@/modules/workspaces/routes';
 import noCodeRoutes from '@/modules/no-code/routes';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
@@ -39,6 +39,7 @@ const router = createRouter({
         noCodeRoutes,
         managePluginsRoutes,
         playRoutes,
+        adminRoutesScreenEditor
       ]
     },
     {
@@ -56,6 +57,7 @@ const router = createRouter({
         guest: true
       }
     },
+    playGuestRoutes
   ]
 })
 

@@ -18,6 +18,7 @@ const MicroFrontendSchema = new mongoose.Schema<IMicroFrontend>({
   },
   description: String,
   manifestUrl: String,
+  guest: Boolean,
   crud: String,
   use: String,
   structure: String,

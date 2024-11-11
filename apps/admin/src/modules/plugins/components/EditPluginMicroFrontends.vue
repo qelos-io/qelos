@@ -123,11 +123,15 @@ function submitMfe() {
         <FormInput title="Description" v-model="editedMfe.description"/>
       </FormRowGroup>
       <FormRowGroup>
+        <FormInput class="flex-0" type="switch" title="Guest?" v-model="editedMfe.guest"/>
         <FormInput title="URL" v-model="editedMfe.url"/>
-        <FormInput title="Roles" :model-value="editedMfe.roles.join(',')"
-                   @update:modelValue="editedMfe.roles = $event.split(',')"/>
-        <FormInput title="Workspace Roles" :model-value="editedMfe.workspaceRoles"
-                   @update:modelValue="editedMfe.workspaceRoles = $event.split(',')"/>
+        <template v-if="!editedMfe.guest">
+          <FormInput title="Roles" :model-value="editedMfe.roles.join(',')"
+                     @update:modelValue="editedMfe.roles = $event.split(',')"/>
+          <FormInput title="Workspace Roles" :model-value="editedMfe.workspaceRoles"
+                     @update:modelValue="editedMfe.workspaceRoles = $event.split(',')"/>
+        </template>
+
       </FormRowGroup>
       <FormInput title="Route?" type="switch"
                  :model-value="!!editedMfe.route"

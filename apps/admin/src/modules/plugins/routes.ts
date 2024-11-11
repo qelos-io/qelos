@@ -4,7 +4,7 @@ import EmptyRoute from '@/modules/core/components/layout/EmptyRoute.vue';
 export const managePluginsRoutes = {
   path: 'plugins',
   component: EmptyRoute,
-  redirect: {name: 'plugins'},
+  redirect: { name: 'plugins' },
   children: [
     {
       path: '',
@@ -24,7 +24,6 @@ export const managePluginsRoutes = {
   ]
 };
 
-
 export const playRoutes = {
   path: '',
   name: 'playPlugin',
@@ -36,6 +35,36 @@ export const playRoutes = {
   }, {
     name: 'defaultPluginPlaceholderSecond',
     path: ':all/:other',
+    component: EmptyRoute,
+  }]
+};
+
+export const adminRoutesScreenEditor = {
+  path: 'screen-editor',
+  name: 'screenEditor',
+  component: EmptyRoute,
+  children: [{
+    name: 'defaultAdminPluginPlaceholder',
+    path: ':allGuest',
+    component: EmptyRoute,
+  }, {
+    name: 'defaultAdminPluginPlaceholderSecond',
+    path: ':allGuest/:other',
+    component: EmptyRoute,
+  }]
+}
+
+export const playGuestRoutes = {
+  path: '/',
+  name: 'playGuestPlugin',
+  component: EmptyRoute,
+  children: [{
+    name: 'defaultGuestPluginPlaceholder',
+    path: ':allGuest',
+    component: EmptyRoute,
+  }, {
+    name: 'defaultGuestPluginPlaceholderSecond',
+    path: ':allGuest/:other',
     component: EmptyRoute,
   }]
 };

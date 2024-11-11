@@ -119,6 +119,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
             name: mfe.name,
             roles,
             workspaceRoles,
+            guest: !!mfe.guest,
             mfeUrl: getMfeUrl(mfe),
             origin: mfe.url ? new URL(mfe.url).origin : undefined
           }
@@ -128,6 +129,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
             roles,
             workspaceRoles,
             mfe,
+            guest: !!mfe.guest,
             searchQuery: mfe.searchQuery,
             searchPlaceholder: mfe.searchPlaceholder,
             navigateAfterSubmit: mfe.navigateAfterSubmit,
@@ -148,10 +150,19 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         if (allRoutes[routerPath]) {
           router.removeRoute(allRoutes[routerPath].name);
         }
-        router.addRoute('playPlugin', route)
+        if (mfe.guest) {
+          router.addRoute('playGuestPlugin', route)
+          router.addRoute('screenEditor', { ...route, name: null, meta: { ...route.meta, guest: false, roles: ['admin'] } })
+        } else {
+          router.addRoute('playPlugin', route)
+        }
       })
     router.removeRoute('defaultPluginPlaceholder');
+    router.removeRoute('defaultGuestPluginPlaceholder');
     router.removeRoute('defaultPluginPlaceholderSecond');
+    router.removeRoute('defaultGuestPluginPlaceholderSecond');
+    router.removeRoute('defaultAdminPluginPlaceholder');
+    router.removeRoute('defaultAdminPluginPlaceholderSecond');
     router.push(router.currentRoute.value.fullPath);
   }
 

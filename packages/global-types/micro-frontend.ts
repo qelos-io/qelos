@@ -5,6 +5,7 @@ export interface IMicroFrontend {
   name: string;
   description: string;
   manifestUrl: string;
+  guest?: boolean;
   url: string;
   active: boolean;
   opened: boolean;

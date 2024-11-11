@@ -9,7 +9,10 @@
         <h4>{{ $t('Micro-Frontends') }}:</h4>
         <ul class="micro-frontends">
           <li v-for="mf in plugin.microFrontends" :key="mf.path">
-            <router-link v-if="mf.route" :to="'/' + mf.route.path">{{mf.name}}</router-link>
+            <template v-if="mf.route">
+              <router-link :to="'/' + mf.route.path">{{mf.name}}</router-link>
+              &nbsp;<span v-if="mf.guest">(<router-link :to="'screen-editor/' + mf.route.path">{{$t('Guest Page Editor')}}</router-link>)</span>
+            </template>
             <span v-else>{{mf.name}}</span>
           </li>
         </ul>
