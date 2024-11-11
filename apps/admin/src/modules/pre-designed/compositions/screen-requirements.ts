@@ -21,6 +21,10 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
 
   let currentDispatchers = {}
 
+  function getIdentifierFromRouteParams(identifier: string) {
+    return identifier.replace(/{{(.*?)}}/g, (_, key) => route?.params?.[key]?.toString() || '')
+  }
+
   const reloadRequirements = () => {
     const reqs = route.meta.screenRequirements;
     if (!(reqs instanceof Array && reqs.length)) {
@@ -32,11 +36,12 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
       if (item.fromCrud) {
         const api = cruds.value[item.fromCrud.name]?.api;
         if (api && item.fromCrud.identifier) {
-          const cachedKey = `crud:${item.fromCrud.name}:single:${item.fromCrud.identifier}`;
+          const identifier = getIdentifierFromRouteParams(item.fromCrud.identifier);
+          const cachedKey = `crud:${item.fromCrud.name}:single:${identifier}`;
           if (cachedDispatchers[cachedKey]) {
             cachedDispatchers[cachedKey].retry();
           } else {
-            cachedDispatchers[cachedKey] = useDispatcher(() => api.getOne(item.fromCrud.identifier), null)
+            cachedDispatchers[cachedKey] = useDispatcher(() => api.getOne(identifier), null)
           }
           currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
@@ -67,11 +72,12 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
       } else if (item.fromBlueprint) {
         const entitiesOfBlueprint = Sdk.blueprints.entitiesOf(item.fromBlueprint.name)
         if (item.fromBlueprint.identifier) {
-          const cachedKey = getBlueprintCacheKey(item.fromBlueprint.name, item.fromBlueprint.identifier);
+          const identifier = getIdentifierFromRouteParams(item.fromBlueprint.identifier);
+          const cachedKey = getBlueprintCacheKey(item.fromBlueprint.name, identifier);
           if (cachedDispatchers[cachedKey]) {
             cachedDispatchers[cachedKey].retry();
           } else {
-            cachedDispatchers[cachedKey] = useDispatcher(() => entitiesOfBlueprint.getEntity(item.fromBlueprint.identifier), null)
+            cachedDispatchers[cachedKey] = useDispatcher(() => entitiesOfBlueprint.getEntity(identifier), null)
           }
           currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
