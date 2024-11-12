@@ -16,6 +16,18 @@
           active-text="Y"
           inactive-text="N"
       />
+      <el-select v-else-if="type === 'select'" :model-value="modelValue as any" :placeholder="placeholder"
+                 :size="size || 'large'"
+                 :native-type="type"
+                 :disabled="disabled"
+                 :required="required">
+        <template v-if="options?.length">
+          <el-option v-for="(option, index) in options"
+                     :key="option[optionValue] || option.identifier || option._id || index"
+                     :label="option[optionLabel] || option.name || option.title || option.label || option.metadata?.title || option"
+                     :value="option[optionValue] || option.identifier || option._id"/>
+        </template>
+      </el-select>
       <AssetUploader v-else-if="type === 'upload'" v-on="listeners" :value="modelValue" class="asset-upload"/>
       <el-input v-else v-on="listeners" :model-value="modelValue as (string | number)" :placeholder="placeholder"
                 :size="size || 'large'"
@@ -38,13 +50,16 @@ export default {
   props: {
     title: String,
     label: String,
-    type: String as () => 'text' | 'textarea' | 'password' | 'button' | 'checkbox' | 'file' | 'number' | 'radio' | 'upload' | 'switch' | 'color' | 'url',
+    type: String as () => 'text' | 'textarea' | 'password' | 'button' | 'checkbox' | 'file' | 'number' | 'radio' | 'upload' | 'switch' | 'color' | 'url' | 'select',
     placeholder: String,
     gap: Boolean,
     size: String as () => 'large' | 'default' | 'small',
     modelValue: [String, Number, Object, Boolean],
     disabled: Boolean,
     required: Boolean,
+    options: Array as () => any[],
+    optionValue: String,
+    optionLabel: String
   },
   emits: ['input', 'change', 'update:modelValue'],
   setup(_, { emit }) {
