@@ -20,7 +20,7 @@ const emit = defineEmits(['update:modelValue']);
 <template>
   <el-form-item>
     <template #label> {{ title || 'Workspace Labels' }}</template>
-    <el-select :model-value="props.modelValue" multiple :placeholder="placeholder" title="Workspace Labels"
+    <el-select :model-value="props.modelValue" allow-create multiple :placeholder="placeholder" title="Workspace Labels"
       class="styled-select" @change="(value) => {
 
         emit('update:modelValue', value)

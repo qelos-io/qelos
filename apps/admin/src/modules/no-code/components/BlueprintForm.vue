@@ -15,7 +15,7 @@ import BlueprintLimitationsInput from '@/modules/no-code/components/blueprint-fo
 import WorkspaceLabelSelector from '@/modules/no-code/components/WorkspaceLabelSelector.vue';
 
 // temporary sample
-const availableLabels = ['developer', 'admin', 'user'];
+const availableLabels = ['*', 'supplier', 'store', 'consumer'];
 
 const props = withDefaults(defineProps<{
   submitting: boolean;
