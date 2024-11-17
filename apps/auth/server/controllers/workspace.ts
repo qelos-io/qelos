@@ -127,19 +127,21 @@ export async function createWorkspace(req: AuthRequest, res: Response) {
     return;
   }
 
-  if (wsConfig.allowNonLabeledWorkspaces && labels.length === 0) {
-    res.status(400).json({ message: 'please provide labels with valid values.' }).end();
-    return;
-  }
+  if (!wsConfig.allowNonLabeledWorkspaces) {
+    if (labels.length === 0) {
+      res.status(400).json({ message: 'please provide labels with valid values.' }).end();
+      return;
+    }
 
-  const selectedLabelsDefinition = wsConfig.labels.find(definition => {
-    return definition.value?.length === labels.length &&
-      definition.value.map(label => labels.includes(label)).length === labels.length;
-  })
+    const selectedLabelsDefinition = wsConfig.labels.find(definition => {
+      return definition.value?.length === labels.length &&
+        definition.value.map(label => labels.includes(label)).length === labels.length;
+    })
 
-  if (!selectedLabelsDefinition) {
-    res.status(400).json({ message: 'provided labels does not match available options.' }).end();
-    return;
+    if (!selectedLabelsDefinition) {
+      res.status(400).json({ message: 'provided labels does not match available options.' }).end();
+      return;
+    }
   }
 
   try {
@@ -225,6 +227,12 @@ export async function updateWorkspace(req: AuthRequest, res: Response) {
 export async function deleteWorkspace(req: AuthRequest, res: Response) {
   const { tenant } = req.headers || {};
   const userId = req.userPayload.sub;
+
+  if (req.activeWorkspace._id && req.workspace._id.equals(req.activeWorkspace._id)) {
+    res.status(400).json({ message: 'You cannot remove your active workspace.' }).end();
+    return;
+  }
+
 
   try {
     await req.workspace.deleteOne();

@@ -10,11 +10,15 @@ const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesL
   const { result, retry, loading } = useDispatcher<IWorkspace[]>(() => workspacesService.getAll(), [])
 
   const { submit: remove } = useSubmitting(
-    (workspaceId: string) => workspacesService.remove(workspaceId),
+    (workspaceId: string) => {
+      return workspacesService.remove(workspaceId)
+    },
     {
-      error: 'Failed to remove workspace',
+      error: (err: any) => {
+        return err?.response?.data?.message || 'Failed to removed workspace'
+      },
       success: 'Workspace removed successfully'
-    })
+    }, () => retry())
 
   const activateSilently = async (workspace: IWorkspace) => {
     const res = await fetch(`/api/workspaces/${workspace._id}/activate`, { method: 'POST' })
@@ -26,9 +30,9 @@ const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesL
   }
 
   const { submit: activate } = useSubmitting(activateSilently, {
-      error: 'Filed to move to workspace',
-      success: (workspace) => `You are now active on the workspace "${workspace.name}"`
-    })
+    error: 'Filed to move to workspace',
+    success: (workspace) => `You are now active on the workspace "${workspace.name}"`
+  })
 
   return { workspaces: result, reload: retry, remove: useConfirmAction(remove), activate, activateSilently, loading }
 })
