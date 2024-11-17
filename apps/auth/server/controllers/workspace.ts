@@ -228,7 +228,7 @@ export async function deleteWorkspace(req: AuthRequest, res: Response) {
   const { tenant } = req.headers || {};
   const userId = req.userPayload.sub;
 
-  if (req.activeWorkspace._id && req.workspace._id.toString() === req.activeWorkspace?._id) {
+  if (req.activeWorkspace?._id && req.workspace._id.toString() === req.activeWorkspace._id) {
     res.status(400).json({ message: 'You cannot remove your active workspace.' }).end();
     return;
   }
