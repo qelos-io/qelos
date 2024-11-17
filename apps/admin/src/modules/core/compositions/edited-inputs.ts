@@ -1,4 +1,4 @@
-import {computed, Ref} from 'vue'
+import { computed, Ref } from 'vue'
 
 export function useEditedInputs(editedObj, originalObj, propsMap = []) {
   return propsMap.reduce((comps, prop) => {

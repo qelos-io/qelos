@@ -111,7 +111,7 @@ export async function setWorkspaceEncryptedData(req, res) {
 export async function createWorkspace(req: AuthRequest, res: Response) {
   const { tenant } = req.headers || {};
   const userId = req.userPayload.sub;
-  const { name, logo, invites = [] } = req.body;
+  const { name, logo, invites = [], labels = [] } = req.body;
   const wsConfig = await getWorkspaceConfiguration(tenant);
 
   if (
@@ -122,8 +122,28 @@ export async function createWorkspace(req: AuthRequest, res: Response) {
     return;
   }
 
+  if (!(labels instanceof Array)) {
+    res.status(400).json({ message: 'please provide all mandatory properties (missing "labels").' }).end();
+    return;
+  }
+
+  if (wsConfig.allowNonLabeledWorkspaces && labels.length === 0) {
+    res.status(400).json({ message: 'please provide labels with valid values.' }).end();
+    return;
+  }
+
+  const selectedLabelsDefinition = wsConfig.labels.find(definition => {
+    return definition.value?.length === labels.length &&
+      definition.value.map(label => labels.includes(label)).length === labels.length;
+  })
+
+  if (!selectedLabelsDefinition) {
+    res.status(400).json({ message: 'provided labels does not match available options.' }).end();
+    return;
+  }
+
   try {
-    const workspace = new Workspace({ tenant, name, logo, invites, labels: [] });
+    const workspace = new Workspace({ tenant, name, logo, invites, labels });
     workspace.members = [{
       user: userId,
       roles: ['admin', 'user']

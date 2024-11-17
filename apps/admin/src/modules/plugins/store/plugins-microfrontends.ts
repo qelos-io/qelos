@@ -1,4 +1,4 @@
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { defineStore, storeToRefs } from 'pinia';
 import { usePluginsList } from './plugins-list';
@@ -186,5 +186,6 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     navBar: computed(() => microFrontends.value.navBar),
     modals: computed(() => microFrontends.value.modals),
     cruds,
+    openModals: ref([])
   }
 })

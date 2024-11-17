@@ -22,6 +22,7 @@
   "dependencies": {
     "@qelos/api-kit": "^3.7.4",
     "@qelos/cache-manager": "^3.7.4",
+    "@qelos/global-types": "^3.7.4",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.5",
     "jsonwebtoken": "^9.0.0",

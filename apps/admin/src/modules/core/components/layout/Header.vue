@@ -1,7 +1,7 @@
 <template>
   <header :dir="$t('appDirection')">
     <div class="welcome">
-      <el-button class="mobile-menu-opener" text circle size="large" @click="open">
+      <el-button class="mobile-menu-opener" v-if="$isMobile" text circle size="large" @click="open">
         <el-icon>
           <font-awesome-icon :icon="['fas', 'bars']"/>
         </el-icon>
@@ -15,7 +15,7 @@
           :placeholder="$t(route?.meta?.searchPlaceholder as string || 'Search...')"
       />
 
-      <div v-if="isAdmin" class="apply-editor">
+      <div v-if="isAdmin && !$isMobile" class="apply-editor">
         <span>
           <el-switch
               v-model="isEditingEnabled"

@@ -5,7 +5,7 @@
       <FormInput title="Workspace Logo" v-model="data.logo"/>
     </div>
     <!-- <FormInput title="Workspace InviteList" :model-value="data.invites" @input="data.invites = $event" /> -->
-    <span>{{$t('Workspace Invite List')}}</span>
+    <span>{{ $t('Workspace Invite List') }}</span>
     <div class="flex-row" v-for="(invite, index) in data.invites" :key="index">
       <FormInput title="Name" v-model="invite.name"/>
       <FormInput title="Email" v-model="invite.email"/>
@@ -19,7 +19,7 @@
   </el-form>
 
   <div class="container" v-if="workspace._id && members">
-    <h3>{{$t('Members')}}</h3>
+    <h3>{{ $t('Members') }}</h3>
     <QuickTable :data="members" :columns="membersColumns"/>
   </div>
 </template>
@@ -63,6 +63,7 @@ const data = reactive<Partial<IWorkspace>>({
     name: null,
     email: null,
   }],
+  labels: [],
 });
 
 function submit() {

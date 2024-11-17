@@ -8,7 +8,9 @@ export const useWsConfiguration = defineStore('ws-configuration', () => {
   const DEFAULT_VALUE = {
     isActive: false,
     creationPrivilegedRoles: [],
-    viewMembersPrivilegedWsRoles: []
+    viewMembersPrivilegedWsRoles: [],
+    labels: [],
+    allowNonLabeledWorkspaces: true
   }
   const { result, loaded, loading } = useDispatcher(() => configurationsService.getOne('workspace-configuration'), {
     metadata: DEFAULT_VALUE

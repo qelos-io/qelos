@@ -1,9 +1,9 @@
 const mongoose = require('mongoose')
-const {workspaceConfiguration} = require('../../../config')
+const { workspaceConfiguration } = require('../../../config')
 
 const Configuration = mongoose.model('Configuration')
 
-const WORKSPACE_CONFIG = {key: workspaceConfiguration};
+const WORKSPACE_CONFIG = { key: workspaceConfiguration };
 
 let allTenants = [];
 
@@ -31,7 +31,7 @@ async function migrate() {
   if (!firstTenant) {
     return;
   }
-  const doc = await Configuration.findOne({key: workspaceConfiguration, tenant: firstTenant}).exec();
+  const doc = await Configuration.findOne({ key: workspaceConfiguration, tenant: firstTenant }).exec();
   if (!doc) {
     await Configuration.create({
       key: workspaceConfiguration,
@@ -42,6 +42,8 @@ async function migrate() {
         isActive: false,
         creationPrivilegedRoles: ['*'],
         viewMembersPrivilegedWsRoles: ['*'],
+        labels: [],
+        allowNonLabeledWorkspaces: true
       }
     })
   }

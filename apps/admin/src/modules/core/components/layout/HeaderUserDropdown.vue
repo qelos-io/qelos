@@ -1,5 +1,5 @@
 <template>
-  <el-dropdown :class="{'user-dropdown': true, 'viewer': !isAdmin}">
+  <el-dropdown :class="{'user-dropdown': true, 'viewer': !isAdmin || $isMobile}">
     <div class="el-dropdown-link user-welcome">
       <span>{{ user.firstName }}</span>
       <el-avatar v-if="user.workspace"> {{ user.workspace.name[0].toUpperCase() }}</el-avatar>

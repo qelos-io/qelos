@@ -20,6 +20,7 @@ export interface IWorkspace {
 
   members?: IWorkspaceMember[];
   invites?: IInvite[];
+  labels: string[]
 
   [key: string]: any;
 }
