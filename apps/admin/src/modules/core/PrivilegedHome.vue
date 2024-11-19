@@ -1,86 +1,96 @@
 <template>
-<div class="flex-container">
-  <el-tabs model-value="metadata">
-    <el-tab-pane name="metadata" :label="$t('Application Metadata')">
-      <div class="blocks-list">
-        <GpItem>
-          <template v-slot:title>
-            {{ $t('Common operations') }}
-          </template>
+  <div class="flex-container">
+    <el-tabs model-value="metadata">
+      <el-tab-pane name="metadata" :label="$t('Application Metadata')">
+        <div class="blocks-list">
+          <GpItem>
+            <template v-slot:title>
+              {{ $t('Common operations') }}
+            </template>
 
-          <div class="container">
-            <router-link :to="{name: 'editConfiguration', params: {key: 'app-configuration'}}">
-              <h4 class="flex-row">
-                <el-icon>
-                  <font-awesome-icon :icon="['fas', 'gear']"/>
-                </el-icon>
-                <span class="pad-start">{{ $t('Edit App Settings') }}</span>
-              </h4>
-            </router-link>
-          </div>
-          <div class="container">
-            <router-link :to="{name: 'editConfiguration', params: {key: 'ssr-scripts'}}">
-              <h4 class="flex-row">
-                <el-icon>
-                  <font-awesome-icon :icon="['fab', 'html5']"/>
-                </el-icon>
-                <span class="pad-start">{{ $t('Edit SSR Scripts') }}</span>
-              </h4>
-            </router-link>
-          </div>
-        </GpItem>
+            <div class="container">
+              <router-link :to="{name: 'editConfiguration', params: {key: 'app-configuration'}}">
+                <h4 class="flex-row">
+                  <el-icon>
+                    <font-awesome-icon :icon="['fas', 'gear']"/>
+                  </el-icon>
+                  <span class="pad-start">{{ $t('Edit App Settings') }}</span>
+                </h4>
+              </router-link>
+            </div>
+            <div class="container">
+              <router-link :to="{name: 'editConfiguration', params: {key: 'ssr-scripts'}}">
+                <h4 class="flex-row">
+                  <el-icon>
+                    <font-awesome-icon :icon="['fab', 'html5']"/>
+                  </el-icon>
+                  <span class="pad-start">{{ $t('Edit SSR Scripts') }}</span>
+                </h4>
+              </router-link>
+            </div>
+            <div class="container">
+              <router-link :to="{name: 'editConfiguration', params: {key: 'workspace-configuration'}}">
+                <h4 class="flex-row">
+                  <el-icon>
+                    <font-awesome-icon :icon="['far', 'building']"/>
+                  </el-icon>
+                  <span class="pad-start">{{ $t('Edit Workspaces Settings') }}</span>
+                </h4>
+              </router-link>
+            </div>
+          </GpItem>
 
-        <GpItem>
-          <template v-slot:title>
-            {{ $t('Information') }}
-          </template>
-          <h4 class="container" v-if="!loadingBlocks">{{
-              t('{amount} Blocks', { amount: blocks.length }, blocks.length)
-            }}</h4>
-          <h4 class="container" v-if="!loadingUsers">{{
-              t('{amount} Users', { amount: users.length }, users.length)
-            }}</h4>
-          <h4 class="container" v-if="!loadingWorkspaces">{{
-              t('{amount} Workspaces', { amount: workspaces.length }, workspaces.length)
-            }}</h4>
-        </GpItem>
+          <GpItem>
+            <template v-slot:title>
+              {{ $t('Information') }}
+            </template>
+            <h4 class="container" v-if="!loadingBlocks">{{
+                t('{amount} Blocks', { amount: blocks.length }, blocks.length)
+              }}</h4>
+            <h4 class="container" v-if="!loadingUsers">{{
+                t('{amount} Users', { amount: users.length }, users.length)
+              }}</h4>
+            <h4 class="container" v-if="!loadingWorkspaces">{{
+                t('{amount} Workspaces', { amount: workspaces.length }, workspaces.length)
+              }}</h4>
+          </GpItem>
 
-        <GpItem>
-          <template v-slot:title>
-            {{ $t('Inputs UI') }}
-          </template>
-          <el-form class="metadata" @submit.stop.prevent>
-            <p>{{ $t('Here is an input:') }}</p>
-            <FormInput v-model="exampleText"/>
-            <p>
-              {{ $t('Change Background') }}
-              <LiveEditColorOpener color="inputsBgColor"/>
-            </p>
-            <p>
-              {{ $t('Change Text Color') }}
-              <LiveEditColorOpener color="inputsTextColor"/>
-            </p>
-          </el-form>
-        </GpItem>
-      </div>
-    </el-tab-pane>
-    <el-tab-pane name="colors" :label="$t('Color Palette & Design')">
-      <div class="blocks-list">
-        <div v-for="(p, index) in PALETTES" :key="index" @click="changePalette(p.palette)" class="palette">
-          <div v-for="color in p.colors" :key="color" :style="{backgroundColor: color}"></div>
+          <GpItem>
+            <template v-slot:title>
+              {{ $t('Inputs UI') }}
+            </template>
+            <el-form class="metadata" @submit.stop.prevent>
+              <p>{{ $t('Here is an input:') }}</p>
+              <FormInput v-model="exampleText"/>
+              <p>
+                {{ $t('Change Background') }}
+                <LiveEditColorOpener color="inputsBgColor"/>
+              </p>
+              <p>
+                {{ $t('Change Text Color') }}
+                <LiveEditColorOpener color="inputsTextColor"/>
+              </p>
+            </el-form>
+          </GpItem>
         </div>
-      </div>
-      <DesignConfiguration v-if="configLoaded"/>
-    </el-tab-pane>
-    <el-tab-pane name="blueprints" :label="$t('Blueprints')">
-      <el-button @click.prevent="$router.push({name: 'createBlueprint'})">
-        <font-awesome-icon :icon="['fas', 'plus']"/>
-        <span class="pad-start">{{ $t('Create Blueprint') }}</span>
-      </el-button>
-      <BlueprintsList/>
-    </el-tab-pane>
-  </el-tabs>
-</div>
+      </el-tab-pane>
+      <el-tab-pane name="colors" :label="$t('Color Palette & Design')">
+        <div class="blocks-list">
+          <div v-for="(p, index) in PALETTES" :key="index" @click="changePalette(p.palette)" class="palette">
+            <div v-for="color in p.colors" :key="color" :style="{backgroundColor: color}"></div>
+          </div>
+        </div>
+        <DesignConfiguration v-if="configLoaded"/>
+      </el-tab-pane>
+      <el-tab-pane name="blueprints" :label="$t('Blueprints')">
+        <el-button @click.prevent="$router.push({name: 'createBlueprint'})">
+          <font-awesome-icon :icon="['fas', 'plus']"/>
+          <span class="pad-start">{{ $t('Create Blueprint') }}</span>
+        </el-button>
+        <BlueprintsList/>
+      </el-tab-pane>
+    </el-tabs>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -131,8 +141,8 @@ const changePalette = useConfirmAction(async function changePalette(colorsPalett
 }
 
 @media screen and (min-width: 1200px) {
-  .blocks-list, container {
-    padding: 0 2%;
+  .blocks-list {
+    padding: 0 1%;
   }
 }
 

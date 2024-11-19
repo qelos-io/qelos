@@ -2,22 +2,34 @@
   <div class="palette">
     <div class="color-wrapper" v-for="(title, key) in ColorName" :key="key">
       <ColorPicker :model-value="colors[key]" @update:modelValue="updateColor(key, $event)"/>
-      <div>{{ t(title) }}</div>
+      <div v-if="inputState[key] !== 'input'" @dblclick="inputState[key] = 'input'">{{ t(title) }}</div>
+      <input v-else v-model="colors[key]" @change="emit('update:modelValue', colors)" autofocus
+             @focusout="clearState(key)"
+             @blur="clearState(key)"
+             @keyup.enter="clearState(key)"
+             @keyup.esc="clearState(key)"
+             class="flex-1"/>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { ColorName } from '@/modules/configurations/types/colors-palette';
 import ColorPicker from 'primevue/colorpicker';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 
+function clearState(key) {
+  inputState[key] = '';
+}
+
 const props = defineProps({
   modelValue: Object as () => Record<string, string>,
 })
+
+const inputState = reactive({});
 
 const colors = ref({
   mainColor: '',
@@ -41,7 +53,6 @@ function updateColor(key: string, value: string) {
   if (colors[key] === '#' + value) {
     return;
   }
-  console.log(value)
 
   colors.value[key] = '#' + value;
   emit('update:modelValue', colors.value);
