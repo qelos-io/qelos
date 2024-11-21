@@ -77,6 +77,13 @@
           <span>{{ $t('Users') }}</span>
         </el-menu-item>
 
+        <el-menu-item v-if="isAdmin" index="/admin/workspaces">
+          <el-icon>
+            <font-awesome-icon :icon="['fas', 'briefcase']"/>
+          </el-icon>
+          <span>{{ $t('Workspaces') }}</span>
+        </el-menu-item>
+
         <el-menu-item :route="{ name: 'drafts' }" index="/drafts">
           <el-icon>
             <font-awesome-icon :icon="['far', 'file-lines']"/>

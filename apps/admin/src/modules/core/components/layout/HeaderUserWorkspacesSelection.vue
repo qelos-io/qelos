@@ -1,6 +1,6 @@
 <template>
   <el-dropdown-item v-if="user.workspace">
-    <router-link :to="{ name: 'editWorkspace', params: {id: user.workspace._id} }">
+    <router-link :to="{ name: 'editMyWorkspace', params: {id: user.workspace._id} }">
       <span class="workspace-row">{{ user.workspace.name }}</span>
     </router-link>
   </el-dropdown-item>

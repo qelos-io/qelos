@@ -12,6 +12,7 @@ const usersRoutes = {
       meta: {
         searchQuery: true,
         searchPlaceholder: 'Search user by email or username',
+        roles: ['admin']
       }
     },
     {
