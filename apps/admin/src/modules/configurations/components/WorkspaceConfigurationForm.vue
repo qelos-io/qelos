@@ -60,6 +60,10 @@
           <el-option :label="$t(`merchant`)" value="merchant"/>
         </el-select>
       </el-form-item>
+
+      <div class="flex-0 remove-row">
+        <RemoveButton @click="edited.labels.splice(index, 1)"/>
+      </div>
     </FormRowGroup>
     <AddMore @click="edited.labels.push({title: '', description: '', value: []})"/>
     <SaveButton :submitting="submitting"/>
@@ -75,6 +79,7 @@ import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
+import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 
 const props = defineProps({
   kind: String,

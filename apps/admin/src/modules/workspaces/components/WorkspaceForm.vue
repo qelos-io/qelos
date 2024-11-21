@@ -4,6 +4,20 @@
       <FormInput title="Workspace Name" v-model="data.name"/>
       <FormInput title="Workspace Logo" v-model="data.logo"/>
     </div>
+
+    <template v-if="!workspace._id">
+      <h3>{{ $t('Select your workspace type') }}</h3>
+      <FormRowGroup>
+        <el-form-item v-for="option of wsConfig.metadata.labels">
+          <el-button @click.prevent="selectedLabels = option"
+                     size="large"
+                     :class="{ selected: selectedLabels === option, 'flex-1': true }"
+                     :type="selectedLabels === option ? 'primary' : 'info'">{{ option.title }}
+          </el-button>
+        </el-form-item>
+      </FormRowGroup>
+    </template>
+
     <!-- <FormInput title="Workspace InviteList" :model-value="data.invites" @input="data.invites = $event" /> -->
     <span>{{ $t('Workspace Invite List') }}</span>
     <div class="flex-row" v-for="(invite, index) in data.invites" :key="index">
@@ -25,7 +39,7 @@
 </template>
 
 <script lang="ts" setup>
-import { PropType, reactive } from 'vue';
+import { PropType, reactive, ref } from 'vue';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import FormInput from '../../core/components/forms/FormInput.vue';
 import { clearNulls } from '../../core/utils/clear-nulls';
@@ -33,6 +47,9 @@ import AddMore from '../../core/components/forms/AddMore.vue';
 import { IWorkspace } from '@qelos/sdk/dist/workspaces';
 import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
 import { useWorkspaceMembers } from '@/modules/workspaces/compositions/workspaces';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+import { WorkspaceLabelDefinition } from '@qelos/global-types'
 
 const membersColumns = [
   { label: 'First Name', prop: 'firstName' },
@@ -51,6 +68,8 @@ const { workspace } = defineProps({
 const emit = defineEmits(['submitted']);
 
 const { load: loadMembers, members } = useWorkspaceMembers(workspace._id);
+const wsConfig = useWsConfiguration();
+const selectedLabels = ref<WorkspaceLabelDefinition>()
 
 if (workspace._id) {
   loadMembers();
@@ -63,10 +82,13 @@ const data = reactive<Partial<IWorkspace>>({
     name: null,
     email: null,
   }],
-  labels: [],
+  labels: workspace.labels || [],
 });
 
 function submit() {
+  if (!workspace._id) {
+    data.labels = selectedLabels.value.value || [];
+  }
   emit('submitted', clearNulls(data))
 }
 
