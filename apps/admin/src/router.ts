@@ -9,7 +9,7 @@ import draftsRoutes from './modules/drafts/routes';
 import blocksRoutes from './modules/blocks/routes';
 import layoutsRoutes from '@/modules/layouts/routes';
 import { adminRoutesScreenEditor, managePluginsRoutes, playGuestRoutes, playRoutes } from '@/modules/plugins/routes';
-import workspacesRoutes from '@/modules/workspaces/routes';
+import {workspacesRoutes, adminWorkspacesRoutes,} from '@/modules/workspaces/routes';
 import noCodeRoutes from '@/modules/no-code/routes';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 
@@ -36,6 +36,7 @@ const router = createRouter({
         blocksRoutes,
         layoutsRoutes,
         workspacesRoutes,
+        adminWorkspacesRoutes,
         noCodeRoutes,
         managePluginsRoutes,
         playRoutes,

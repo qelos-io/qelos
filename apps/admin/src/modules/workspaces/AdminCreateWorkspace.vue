@@ -18,7 +18,7 @@ const store = useWorkspacesList();
 const save = async (data) => {
   const { _id } = await createWorkspace(data)
   await store.reload()
-  await router.push({ name: 'editWorkspace', params: { id: _id } });
+  await router.push({ name: 'editMyWorkspace', params: { id: _id } });
 };
 
 </script>
