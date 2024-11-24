@@ -39,6 +39,7 @@ function getMfeScreenOptions(name: string, crud: string, screen: Screen) {
     structure: screen.structure,
     roles: screen.roles,
     workspaceRoles: screen.workspaceRoles,
+    workspaceLabels: screen.workspaceLabels,
     searchQuery: screen.searchQuery,
     searchPlaceholder: screen.searchPlaceholder,
     navigateAfterSubmit: screen.navigateAfterSubmit,

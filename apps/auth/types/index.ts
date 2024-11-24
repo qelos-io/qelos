@@ -31,6 +31,7 @@ export interface AuthRequest extends Request {
     _id: string,
     name: string,
     roles: string[]
+    labels: string[]
   }
   workspace?: IWorkspace & mongoose.Document<IWorkspace>,
   isWorkspacePrivileged?: boolean;

@@ -11,6 +11,7 @@ export interface IMicroFrontend {
   opened: boolean;
   roles: string[],
   workspaceRoles: string[],
+  workspaceLabels?: string[],
   crud?: string;
   use?: string;
   structure?: string;

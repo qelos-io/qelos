@@ -10,6 +10,7 @@ import { UnwrapNestedRefs } from '@vue/reactivity';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
 import { MfeBaseTemplate } from '@/modules/plugins/types';
+import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 
 const edit = inject<UnwrapNestedRefs<Partial<IPlugin>>>('edit');
 
@@ -21,12 +22,15 @@ function addMoreMicroFrontend() {
     {
       name: '',
       description: '',
+      manifestUrl: '',
       active: true,
       opened: true,
       url: '',
       roles: ['*'],
-      workspaceRoles: ['*']
-    }]
+      workspaceRoles: ['*'],
+      workspaceLabels: ['*']
+    }
+  ]
 }
 
 function getBasicMfe(): {
@@ -68,6 +72,10 @@ const columns = ref([
   {
     prop: 'workspaceRoles',
     label: 'Workspace Roles'
+  },
+  {
+    prop: 'workspaceLabels',
+    label: 'Workspace Labels'
   },
   {
     prop: 'route',
@@ -123,15 +131,21 @@ function submitMfe() {
         <FormInput title="Description" v-model="editedMfe.description"/>
       </FormRowGroup>
       <FormRowGroup>
+        <FormInput title="No code / Low Code Screens?" type="switch"
+                   :model-value="!!editedMfe.use"
+                   @change="editedMfe.use = $event ? 'plain' : undefined"/>
+        <PreDesignedScreensSelector v-if="editedMfe.use" v-model="editedMfe.use"/>
+        <FormInput v-else title="URL (Iframe)" placeholder="https://..." v-model="editedMfe.url"/>
+      </FormRowGroup>
+      <FormRowGroup>
         <FormInput class="flex-0" type="switch" title="Guest?" v-model="editedMfe.guest"/>
-        <FormInput title="URL" v-model="editedMfe.url"/>
         <template v-if="!editedMfe.guest">
-          <FormInput title="Roles" :model-value="editedMfe.roles.join(',')"
-                     @update:modelValue="editedMfe.roles = $event.split(',')"/>
-          <FormInput title="Workspace Roles" :model-value="editedMfe.workspaceRoles"
-                     @update:modelValue="editedMfe.workspaceRoles = $event.split(',')"/>
+          <LabelsInput title="Roles" v-model="editedMfe.roles"/>
         </template>
-
+      </FormRowGroup>
+      <FormRowGroup v-if="!editedMfe.guest">
+        <LabelsInput title="Workspace Roles" v-model="editedMfe.workspaceRoles"/>
+        <LabelsInput title="Workspace Labels" v-model="editedMfe.workspaceLabels"/>
       </FormRowGroup>
       <FormInput title="Route?" type="switch"
                  :model-value="!!editedMfe.route"
@@ -140,12 +154,6 @@ function submitMfe() {
         <FormInput title="Route Name" v-model="editedMfe.route.name"/>
         <FormInput title="Route Path" v-model="editedMfe.route.path" required/>
         <NavigationPositionSelector v-model="editedMfe.route.navBarPosition"/>
-      </FormRowGroup>
-      <FormRowGroup>
-        <FormInput title="No code / Low Code Screens?" type="switch"
-                   :model-value="!!editedMfe.use"
-                   @change="editedMfe.use = $event ? 'plain' : undefined"/>
-        <PreDesignedScreensSelector v-if="editedMfe.use" v-model="editedMfe.use"/>
       </FormRowGroup>
       <template #footer>
         <div class="dialog-footer">

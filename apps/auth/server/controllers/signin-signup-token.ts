@@ -83,7 +83,8 @@ export function tokenPayload(host: string, res: Response, data: any) {
           workspace: workspace && {
             _id: workspace._id,
             name: workspace.name,
-            roles: workspace.roles
+            roles: workspace.roles,
+            labels: workspace.labels
           }
         },
       })

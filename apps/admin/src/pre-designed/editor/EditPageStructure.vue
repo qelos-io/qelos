@@ -9,6 +9,7 @@ import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { IMicroFrontend } from '@/services/types/plugin';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
+import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 
 const emit = defineEmits(['save', 'close'])
 
@@ -62,6 +63,7 @@ watch(() => props.mfe, (mfe) => {
     active: mfe.active,
     roles: typeof mfe.roles === 'string' ? mfe.roles.split(',') : (mfe.roles || []),
     workspaceRoles: mfe.workspaceRoles,
+    workspaceLabels: mfe.workspaceLabels,
     route: mfe.route,
     searchPlaceholder: mfe.searchPlaceholder,
     searchQuery: mfe.searchQuery,
@@ -243,6 +245,7 @@ provide('editableManager', ref(false));
               <el-option label="All (*)" value="*"/>
             </el-select>
           </el-form-item>
+          <LabelsInput title="Workspace Labels" v-model="props.mfe.workspaceLabels"/>
         </FormRowGroup>
 
         <FormRowGroup>

@@ -140,6 +140,7 @@ const addMicroFrontendToPlugin = async (pluginId: string, position: string, mfeN
 			opened: true,
 			roles: mfeTemplate.roles || ['*'],
 			workspaceRoles: mfeTemplate.workspaceRoles || ['*'],
+      workspaceLabels: mfeTemplate.workspaceLabels || ['*'],
 			use: mfeTemplate.use || 'plain',
 			requirements: mfeTemplate.requirements || [],
 			route: {
@@ -177,6 +178,7 @@ const createPlugin = async (position: string, pluginName: string) => {
 					url: '',
 					roles: ['*'],
 					workspaceRoles: ['*'],
+          workspaceLabels: ['*'],
 					route: {
 						name: formattedPluginName,
 						path: formattedPluginName,

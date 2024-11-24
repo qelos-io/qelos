@@ -24,15 +24,17 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
 
   const userRoles = computed(() => authStore.user?.roles || []);
   const userWsRoles = computed(() => authStore.user?.workspace?.roles || []);
+  const userWsLabels = computed(() => authStore.user?.workspace?.labels || []);
 
   // const isWorkspacesActive = toRef(useWsConfiguration(), 'isActive');
 
   const filterMfeByRoles = mfe => {
     const routeRoles = mfe.roles || mfe.route?.roles;
     const routeWsRoles = mfe.workspaceRoles;
+    const routeWsLabels = mfe.workspaceLabels;
     return mfe.active &&
       (!routeRoles?.length || routeRoles.some(role => role === '*' || userRoles.value.includes(role))) &&
-      (!routeWsRoles?.length || routeWsRoles.some(role => role === '*' || userWsRoles.value.includes(role)))
+      (!routeWsLabels?.length || routeWsLabels.some(label => label === '*' || userWsLabels.value.includes(label)))
   }
 
   const microFrontends = computed(() => {
@@ -114,11 +116,13 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         }
         const roles = mfe.roles || mfe.route.roles || ['*'];
         const workspaceRoles = mfe.workspaceRoles || ['*'];
+        const workspaceLabels = mfe.workspaceLabels || ['*'];
         if (mfe.url) {
           route.meta = {
             name: mfe.name,
             roles,
             workspaceRoles,
+            workspaceLabels,
             guest: !!mfe.guest,
             mfeUrl: getMfeUrl(mfe),
             origin: mfe.url ? new URL(mfe.url).origin : undefined
@@ -128,6 +132,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
             name: mfe.name,
             roles,
             workspaceRoles,
+            workspaceLabels,
             mfe,
             guest: !!mfe.guest,
             searchQuery: mfe.searchQuery,

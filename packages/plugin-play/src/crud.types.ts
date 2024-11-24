@@ -17,6 +17,7 @@ export type Crud = {
 export interface Screen {
   roles?: string[];
   workspaceRoles?: string[];
+  workspaceLabels?: string[];
   use?: string;
   structure?: string;
   searchQuery?: boolean;

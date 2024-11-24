@@ -154,6 +154,7 @@ export async function enrichPluginWithManifest(plugin: IPlugin, {
       },
       roles: mfe.roles?.length ? mfe.roles : ['*'],
       workspaceRoles: mfe.workspaceRoles?.length ? mfe.workspaceRoles : ['*'],
+      workspaceLabels: mfe.workspaceLabels?.length ? mfe.workspaceLabels : ['*'],
       url: mfe.url ? (mfe.url.startsWith('http') ? mfe.url : new URL(mfe.url, manifest.appUrl).href) : '-',
     }
   });

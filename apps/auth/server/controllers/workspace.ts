@@ -267,6 +267,7 @@ export async function activateWorkspace(req: AuthRequest, res: Response) {
       _id: req.workspace._id,
       name: req.workspace.name,
       roles: req.workspace.members?.[0].roles || ['admin'],
+      labels: req.workspace.labels || []
     }
     const newCookieIdentifier = getUniqueId();
     await updateToken(
@@ -342,7 +343,7 @@ export async function getWorkspaceByParams(req, res, next) {
     if (!isPrivilegedUser) {
       query['members.user'] = userId;
     }
-    const select = isPrivilegedUser ? 'name logo' : 'name logo members.$';
+    const select = isPrivilegedUser ? 'name logo labels' : 'name logo labels members.$';
     const workspace = await Workspace.findOne(query).select(select).exec();
     if (!workspace) {
       res.status(404).json({ message: 'workspace not found', from: 'get-workspace' }).end();

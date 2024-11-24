@@ -67,6 +67,7 @@ const MicroFrontendSchema = new mongoose.Schema<IMicroFrontend>({
   },
   roles: [String],
   workspaceRoles: [String],
+  workspaceLabels: [String],
   route: {
     name: String,
     path: String,
