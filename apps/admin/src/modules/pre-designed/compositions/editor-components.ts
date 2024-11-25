@@ -192,6 +192,25 @@ export function useEditorComponents() {
         }
         return '';
       },
+    },
+    'container': {
+      component: 'div',
+      tag: 'div',
+      mock: 'h2',
+      description: 'Container',
+      classes: 'container',
+      requiredProps: [
+        { prop: 'paragraphs', label: 'Paragraphs', type: 'number', source: 'manual', value: 2 },
+      ],
+      getInnerHTML(_, props) {
+        const amount = Number(props.paragraphs || 0);
+        delete props.paragraphs;
+        if (amount) {
+          return Array.from({ length: amount }).map((_, index) =>
+            `<p>Paragraph ${index + 1}</p>`).join('\n');
+        }
+        return '';
+      },
     }
   }
 

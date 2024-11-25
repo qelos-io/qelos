@@ -1,18 +1,18 @@
 <template>
   <el-dialog
       v-model="dialogVisible"
-      title="Add Component to Page"
+      :title="$t('Add Component to Page')"
       width="80vw"
       height="50vh"
       modal-class="add-component-modal"
   >
     <el-steps style="width: 100%;" :active="active" finish-status="success">
-      <el-step title="Component"/>
-      <el-step title="Properties"/>
+      <el-step :title="$t('Component')"/>
+      <el-step :title="$t('Properties')"/>
     </el-steps>
     <div class="content">
       <div v-if="active === 0">
-        <h2>Select Component</h2>
+        <h2>{{ $t('Select Component') }}</h2>
 
         <div v-for="(component, key) in availableComponents"
              :key="key"
@@ -24,7 +24,7 @@
 
       </div>
       <div v-else-if="active === 1">
-        <h2>Set Properties</h2>
+        <h2>{{ $t('Set Properties') }}}</h2>
         <div v-for="prop in availableComponents[selectedComponent].requiredProps" :key="prop.prop">
           <h3 v-if="prop.type === 'array'">{{ prop.label }}</h3>
           <FormRowGroup v-if="prop.source === 'requirements'">
@@ -36,8 +36,8 @@
                   :inactive-text="$t('Resources')"
                   :active-text="$t('Blueprints')"/>
             </el-form-item>
-            <el-form-item v-if="crudsOrBlueprints === 'cruds'" label="Choose Resource">
-              <el-select v-model="propsBuilder[prop.prop]" placeholder="Select">
+            <el-form-item v-if="crudsOrBlueprints === 'cruds'" :label="$t('Choose Resource')">
+              <el-select v-model="propsBuilder[prop.prop]" :placeholder="$t('Select')">
                 <el-option
                     v-for="(crud, key) in cruds"
                     :key="key"
@@ -46,10 +46,10 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item v-else label="Choose Blueprint">
+            <el-form-item v-else :label="$t('Choose Blueprint')">
               <el-select v-model="propsBuilder[prop.prop]"
                          @change="refillColumnsFromBlueprint(propsBuilder[prop.prop])"
-                         placeholder="Select">
+                         :placeholder="$t('Select')">
                 <el-option
                     v-for="blueprint in blueprints"
                     :key="blueprint.identifier"
@@ -60,8 +60,8 @@
             </el-form-item>
           </FormRowGroup>
           <FormRowGroup v-else-if="prop.source === 'blueprint'">
-            <el-form-item label="Choose Blueprint">
-              <el-select v-model="propsBuilder[prop.prop]" placeholder="Select">
+            <el-form-item :label="$t('Choose Blueprint')">
+              <el-select v-model="propsBuilder[prop.prop]" :placeholder="$t('Select')">
                 <el-option
                     v-for="blueprint in blueprints"
                     :key="blueprint.identifier"
@@ -97,13 +97,13 @@
     </div>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="dialogVisible = false">Cancel</el-button>
+        <el-button @click="dialogVisible = false">{{ $t('Cancel') }}</el-button>
         <div>
           <el-button v-if="active > 0" type="primary" @click="active--">
-            Back
+            {{ $t('Back') }}
           </el-button>
           <el-button v-if="active === 1" type="primary" @click="submit">
-            Confirm
+            {{ $t('Confirm') }}
           </el-button>
         </div>
       </div>
@@ -113,20 +113,12 @@
 
 <script lang="ts" setup>
 import { capitalize, provide, ref, toRef, watch } from 'vue'
-import MockTable from '@/pre-designed/editor/MockTable.vue';
-import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
-import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
-import MockListPageTitle from '@/pre-designed/editor/MockListPageTitle.vue';
-import BlueprintEntityForm from '@/modules/pre-designed/components/BlueprintEntityForm.vue';
-import VChart from '@/modules/pre-designed/components/VChart.vue';
-import MockVChart from '@/pre-designed/editor/MockVChart.vue';
-import RemoveConfirmation from '@/modules/pre-designed/components/RemoveConfirmation.vue';
 import { useEditorComponents } from '@/modules/pre-designed/compositions/editor-components';
 
 const dialogVisible = ref(true)
