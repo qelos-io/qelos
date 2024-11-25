@@ -39,7 +39,7 @@
                           :template-props="templateProps"/>
       </div>
     </ErrorBoundary>
-    <AddComponentModal v-if="addComponent" @save="submitComponentToTemplate" @close="addComponent = undefined"/>
+    <AddComponentModal v-if="addComponentOptions" @save="submitComponentToTemplate" @close="addComponentOptions = undefined"/>
     <EditComponentModal v-if="editedComponentContext?.editChild" v-model="editedComponentContext.editChild"
                         @save="finishEditComponent"/>
   </main>
@@ -86,13 +86,13 @@ useDynamicRouteItem(api, item);
 useGlobalStyles(styles);
 
 function openAddComponentModal(el?: HTMLElement) {
-  addComponent.value = {
+  addComponentOptions.value = {
     afterEl: el,
   }
 }
 
 const {
-  addComponent,
+  addComponentOptions,
   submitComponentToTemplate,
   pageName,
   fetchMfe,

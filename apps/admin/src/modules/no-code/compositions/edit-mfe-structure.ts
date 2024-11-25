@@ -10,7 +10,7 @@ export function useEditMfeStructure() {
   const route = useRoute();
   const router = useRouter()
   const { load: loadPlugin, updatePlugin } = useEditPlugin()
-  const addComponent = ref()
+  const addComponentOptions = ref<{ beforeEl?: HTMLElement, afterEl?: HTMLElement }>()
   const { reloadRequirements } = useScreenRequirementsStore()
   const editedPluginMfe = ref<IMicroFrontend>()
   const editedComponentContext = ref();
@@ -57,6 +57,7 @@ export function useEditMfeStructure() {
 
   async function submitComponentToTemplate(data) {
     const el = document.createElement(data.component);
+    const options = addComponentOptions.value;
 
     Object.keys(data.props).forEach(propName => {
       el.setAttribute(propName, data.props[propName]);
@@ -69,11 +70,23 @@ export function useEditMfeStructure() {
       el.classList.add(data.classes)
     }
 
-    const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
 
-    pluginMfe.structure ||= '';
+    const {
+      editChild,
+      pluginMfe,
+      template,
+      routeMfe,
+      plugin
+    } = await getEditedComponent(options.beforeEl || options.afterEl || null);
 
-    pluginMfe.structure += el.outerHTML.trim();
+    if (options.beforeEl) {
+      (editChild as HTMLElement).before(el);
+    } else if (options.afterEl) {
+      (editChild as HTMLElement).after(el);
+    } else {
+      template.content.appendChild(el);
+    }
+    pluginMfe.structure = template.innerHTML.trim();
     pluginMfe.requirements ||= [];
     pluginMfe.requirements.push(...Object.values(data.requirements) as any[])
 
@@ -111,39 +124,41 @@ export function useEditMfeStructure() {
     location.reload();
   }
 
-  async function getEditedComponent(el: Element) {
-    const qlId = el.getAttribute('data-ql-id');
+  async function getEditedComponent(el: Element | null) {
+    const qlId = el?.getAttribute('data-ql-id');
 
-    if (!qlId) {
+    if (el !== null && !qlId) {
       return {};
     }
     const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
     const template = document.createElement('template');
     let child;
     template.innerHTML = pluginMfe.structure;
-    const elements = Array.from(template.content.querySelectorAll('*'));
-    elements.length = Number(qlId.split('-inner')[0]) + 2;
-    elements.forEach((el, index) => {
-      if (child) {
-        return;
-      }
-      const id = index.toString();
+    if (el !== null) {
+      const elements = Array.from(template.content.querySelectorAll('*'));
+      elements.length = Number(qlId.split('-inner')[0]) + 2;
+      elements.forEach((el, index) => {
+        if (child) {
+          return;
+        }
+        const id = index.toString();
 
-      if (qlId === id) {
-        child = el;
-        return;
-      }
+        if (qlId === id) {
+          child = el;
+          return;
+        }
 
-      if (el.tagName.toLowerCase() === 'template') {
-        Array.from((el as HTMLTemplateElement).content.querySelectorAll('*')).forEach((innerEl, innerIndex) => {
-          const innerId = index.toString() + '-inner-' + innerIndex.toString();
-          if (innerId === qlId) {
-            child = innerEl;
-          }
-        })
-      }
-    })
-    child = child || elements[Number(qlId)];
+        if (el.tagName.toLowerCase() === 'template') {
+          Array.from((el as HTMLTemplateElement).content.querySelectorAll('*')).forEach((innerEl, innerIndex) => {
+            const innerId = index.toString() + '-inner-' + innerIndex.toString();
+            if (innerId === qlId) {
+              child = innerEl;
+            }
+          })
+        }
+      })
+      child = child || elements[Number(qlId)];
+    }
 
     return {
       template,
@@ -204,11 +219,13 @@ export function useEditMfeStructure() {
   provide('editableManager', computed(() => isEditingEnabled.value && {
     removeComponent,
     editComponent,
+    addComponentBefore: (el: HTMLElement) => addComponentOptions.value = { beforeEl: el },
+    addComponentAfter: (el: HTMLElement) => addComponentOptions.value = { afterEl: el },
   }));
 
   return {
     pageName: computed(() => route.meta.name as string),
-    addComponent,
+    addComponentOptions,
     submitComponentToTemplate,
     fetchMfe,
     editedPluginMfe,

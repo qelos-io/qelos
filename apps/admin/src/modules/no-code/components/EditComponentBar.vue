@@ -7,15 +7,27 @@ const editableManager = inject('editableManager');
 <template>
   <el-dropdown class="edit-component-bar" v-if="editableManager">
     <el-button text class="el-dropdown-link">
-      <font-awesome-icon :icon="['fas', 'ellipsis-vertical']" />
+      <font-awesome-icon :icon="['fas', 'ellipsis-vertical']"/>
     </el-button>
     <template #dropdown>
       <el-dropdown-menu>
         <el-dropdown-item @click="editableManager.editComponent($parent.$el)">
-          {{$t('Update')}}
+          {{ $t('Update') }}
+        </el-dropdown-item>
+        <el-dropdown-item @click="editableManager.addComponentBefore($parent.$el)">
+          <el-icon>
+            <font-awesome-icon :icon="['fas', 'rotate-left']" />
+          </el-icon>
+          <span>{{ $t('Add Component Before') }}</span>
+        </el-dropdown-item>
+        <el-dropdown-item @click="editableManager.addComponentAfter($parent.$el)">
+          <el-icon>
+            <font-awesome-icon :icon="['fas', 'rotate-right']" />
+          </el-icon>
+          <span>{{ $t('Add Component After') }}</span>
         </el-dropdown-item>
         <el-dropdown-item class="danger" @click="editableManager.removeComponent($parent.$el)">
-          {{$t('Remove')}}
+          {{ $t('Remove') }}
         </el-dropdown-item>
       </el-dropdown-menu>
     </template>
@@ -38,6 +50,7 @@ const editableManager = inject('editableManager');
   top: 0;
   right: 0;
 }
+
 .el-dropdown-link {
   cursor: pointer;
   user-select: none;
