@@ -5,6 +5,6 @@ import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue'
 <template>
   <div>
     <EditComponentBar/>
-    <slot />
+    <slot/>
   </div>
 </template>
