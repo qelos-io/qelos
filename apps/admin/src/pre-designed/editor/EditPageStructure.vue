@@ -30,7 +30,9 @@ const requirementsEditor = ref()
 const editorMode = ref(true)
 
 const editedSettings = ref<Partial<IMicroFrontend> & { roles: string[] }>({
-  roles: []
+  roles: [],
+  workspaceRoles: [],
+  workspaceLabels: [],
 })
 
 const requirementsColumns = [
@@ -245,7 +247,7 @@ provide('editableManager', ref(false));
               <el-option label="All (*)" value="*"/>
             </el-select>
           </el-form-item>
-          <LabelsInput title="Workspace Labels" v-model="props.mfe.workspaceLabels"/>
+          <LabelsInput title="Workspace Labels" v-model="editedSettings.workspaceLabels"/>
         </FormRowGroup>
 
         <FormRowGroup>

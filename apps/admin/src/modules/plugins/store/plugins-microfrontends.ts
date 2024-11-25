@@ -34,6 +34,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     const routeWsLabels = mfe.workspaceLabels;
     return mfe.active &&
       (!routeRoles?.length || routeRoles.some(role => role === '*' || userRoles.value.includes(role))) &&
+      (!routeWsRoles?.length || routeWsRoles.some(role => role === '*' || userWsRoles.value.includes(role))) &&
       (!routeWsLabels?.length || routeWsLabels.some(label => label === '*' || userWsLabels.value.includes(label)))
   }
 
@@ -55,7 +56,8 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         map[group.key] = group;
         return map;
       }, {}) || {};
-      plugin.microFrontends?.filter(filterMfeByRoles).forEach(mfe => {
+      const filteredMFEs = (isAdmin.value ? plugin.microFrontends : plugin.microFrontends?.filter(filterMfeByRoles)) || [];
+      filteredMFEs.forEach(mfe => {
         if (mfe.url === '-') {
           delete mfe.url;
         }
@@ -171,21 +173,12 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     router.push(router.currentRoute.value.fullPath);
   }
 
-  if (loaded.value && !isAdmin.value) {
-    initiateRoutes(microFrontends.value);
-  } else {
-    const unwatch = watch(microFrontends, (newVal) => {
-      if (!newVal) {
-        return;
-      }
-      initiateRoutes(newVal);
-      if (!isAdmin.value) {
-        setTimeout(() => {
-          unwatch();
-        }, 1)
-      }
-    }, { immediate: true });
-  }
+  watch(microFrontends, (newVal) => {
+    if (!newVal) {
+      return;
+    }
+    initiateRoutes(newVal);
+  }, { immediate: true });
 
   return {
     navBar: computed(() => microFrontends.value.navBar),

@@ -4,7 +4,7 @@ import Home from './modules/core/Home.vue'
 import assetsRoutes from './modules/assets/routes'
 import usersRoutes from './modules/users/routes'
 import configurationsRoutes from './modules/configurations/routes'
-import { authStore, fetchAuthUser } from './modules/core/store/auth'
+import { authStore, fetchAuthUser, isAdmin } from './modules/core/store/auth'
 import draftsRoutes from './modules/drafts/routes';
 import blocksRoutes from './modules/blocks/routes';
 import layoutsRoutes from '@/modules/layouts/routes';
@@ -73,13 +73,14 @@ router.beforeEach(async (to, from, next) => {
   }
   if (await fetchAuthUser() && authStore.user) {
     if (
+      isAdmin.value ||
       (!to.meta.roles || (to.meta.roles as string[]).some(checkValidRole)) &&
       (!to.meta.workspaceRoles || (to.meta.workspaceRoles as string[]).some(checkValidWsRole)) &&
-      (!to.meta.workspaceLabels || (to.meta.workspaceLabels as string[]).some(checkValidWsLabels))
+      (!to.meta.workspaceLabels?.length || (to.meta.workspaceLabels as string[]).some(checkValidWsLabels))
     ) {
       return next()
     } else {
-      return next(from);
+      return next(to.fullPath === from.fullPath ? '/' : from);
     }
   }
   next({
