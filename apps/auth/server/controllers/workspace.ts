@@ -58,11 +58,27 @@ export async function getWorkspaces(req: AuthRequest, res: Response) {
 
 export async function getEveryWorkspaces(req: AuthRequest, res: Response) {
   const { tenant } = req.headers || {};
+  const dbQuery: any = {
+    tenant,
+  };
+  if (req.query._id) {
+    if (req.query._id instanceof Array) {
+      dbQuery._id = { $in: req.query._id };
+    } else {
+      dbQuery._id = { $in: req.query._id.toString().split(',') }
+    }
+  }
+  if (req.query.q) {
+    const reg = new RegExp(req.query.q.toString(), 'i');
+    dbQuery.$or = [
+      { name: reg },
+      { 'invites.email': reg },
+      { 'invites.name': reg },
+    ]
+  }
   try {
-    const workspaces = await Workspace.find({
-      tenant,
-    })
-      .select('name logo tenant').lean().exec();
+    const workspaces = await Workspace.find(dbQuery)
+      .select(req.query.select?.toString().trim().replace(/,/, ' ') || 'name logo tenant labels').lean().exec();
     res.status(200).json(workspaces).end()
   } catch (err) {
     res.status(500).json({ message: 'Failed to load workspaces' }).end()

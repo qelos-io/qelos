@@ -41,7 +41,7 @@ const paginatedData = computed(() => {
     </el-table>
     <!-- Pagination is only displayed if the total amount of data is greater than the page size -->
     <el-pagination 
-    v-if="props.data.length > pageSize"
+    v-if="props.data && props.data.length > pageSize"
     :current-page="currentPage"
     :page-size="pageSize"
     :total="props.data.length"

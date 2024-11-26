@@ -55,4 +55,13 @@ router
   .get('/api/workspaces/:workspaceId/encrypted', verifyUser, onlyPrivileged, getWorkspaceEncryptedData)
   .post('/api/workspaces/:workspaceId/encrypted', verifyUser, onlyPrivileged, setWorkspaceEncryptedData)
   .post('/api/workspaces/:workspaceId/activate', verifyUser, onlyAuthenticated, getWorkspaceByParams, activateWorkspace)
+
+router
+  .get('/internal-api/workspaces', (req, _, next) => {
+    req.user = {
+      type: 'internal',
+      isPrivileged: true,
+    };
+    next();
+  }, getEveryWorkspaces)
 export default router;

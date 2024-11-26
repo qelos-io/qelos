@@ -20,6 +20,13 @@ export function getUsers(tenant: string, {email, exact = false}) {
   }).then(JSON.parse);
 }
 
+
+export function getWorkspaces(tenant: string, fields: string[], workspaceIds: string[]) {
+  return cacheManager.wrap(`plugins:ws:${tenant}`, () => {
+    return callAuthService(`/internal-api/workspaces?_id=${workspaceIds}&select=${fields.join(',')}`, 'GET', tenant).then(JSON.stringify)
+  }).then(JSON.parse);
+}
+
 export function createUser(tenant: string, {email, password, roles, firstName}) {
   return callAuthService('/internal-api/users', 'POST', tenant, {email, password, roles, firstName});
 }

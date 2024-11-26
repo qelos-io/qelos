@@ -17,6 +17,7 @@ import {
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
 import { emitPlatformEvent } from '@qelos/api-kit';
 import { ResponseError } from '../services/response-error';
+import { getWorkspaces } from '../services/users';
 
 async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBlueprint, entity: IBlueprintEntity) {
   const body = req.body || {}
@@ -88,28 +89,40 @@ export async function getAllBlueprintEntities(req, res) {
       .exec()
 
     if (req.query.$populate) {
-      const relations = await Promise.all(
-        blueprint.relations?.map(async relation => {
-          const query = {
-            ...getEntityQuery({ blueprint, req, permittedScopes }),
-            blueprint: relation.target,
-            identifier: {
-              $in: Array.from(new Set(entities.map(entity => {
-                return entity.metadata[relation.key];
-              }).filter(Boolean)))
+      const uniqueWorkspaces: string[] = Array.from(new Set(entities.map(entity => entity.workspace?.toString()).filter(Boolean)));
+
+      const [workspaces, relations] = await Promise.all([
+        uniqueWorkspaces.length ? await getWorkspaces(req.headers.tenant, ['name', 'logo'], uniqueWorkspaces) : Promise.all([]),
+        await Promise.all(
+          blueprint.relations?.map(async relation => {
+            const query = {
+              ...getEntityQuery({ blueprint, req, permittedScopes }),
+              blueprint: relation.target,
+              identifier: {
+                $in: Array.from(new Set(entities.map(entity => {
+                  return entity.metadata[relation.key];
+                }).filter(Boolean)))
+              }
             }
-          }
-          return {
-            key: relation.key,
-            items: await BlueprintEntity.find(query).lean().exec()
-          }
-        })
-      )
+            return {
+              key: relation.key,
+              items: await BlueprintEntity.find(query).lean().exec()
+            }
+          })
+        )
+      ])
+
+      const workspacesMap = workspaces.reduce((map, workspace) => {
+        map[workspace._id] = workspace;
+        return map;
+      }, {})
 
       entities.forEach(entity => {
         relations.forEach(relation => {
           entity.metadata[relation.key] = relation.items.find(item => item.identifier === entity.metadata[relation.key]);
         })
+
+        entity.workspace = workspacesMap[entity.workspace?.toString()];
       })
     }
 
