@@ -33,6 +33,7 @@
             <FormInput title="API Path" :label="apiPathLabel" v-model="edit.apiPath"/>
             <FormInput title="Proxy URL" :label="proxyUrlLabel" v-model="edit.proxyUrl"/>
           </FormRowGroup>
+          <FormInput title="Manual Token" label="Qelos will use this token as Bearer token. Leave empty to keep previous value" v-model="edit.token"/>
         </el-collapse-item>
         <el-collapse-item>
           <template #title>
