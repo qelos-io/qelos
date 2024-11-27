@@ -13,6 +13,7 @@ import EditBlueprintProperties from '@/modules/no-code/components/EditBlueprintP
 import { getKeyFromName } from '@/modules/core/utils/texts';
 import BlueprintLimitationsInput from '@/modules/no-code/components/blueprint-form/BlueprintLimitationsInput.vue';
 import WorkspaceLabelSelector from '@/modules/no-code/components/WorkspaceLabelSelector.vue';
+import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 
 // temporary sample
 const availableLabels = ['*', 'supplier', 'store', 'consumer'];
@@ -79,25 +80,22 @@ function submit() {
       <el-tab-pane :label="$t('Permissions and Roles')" name="rbac">
         <PermissionScopeSelector v-model="edit.permissionScope"/>
         <FormRowGroup v-for="(permission, index) in edit.permissions" :key="index" class="permission">
-          <CrudOperationSelector v-model="permission.operation"/>
-          <PermissionScopeSelector v-model="permission.scope"/>
-          <FormInput title="Roles" :model-value="permission.roleBased.join(',')"
-                     @update:modelValue="permission.roleBased = $event.split(',')"/>
-          <FormInput title="Workspace Roles" :model-value="permission.workspaceRoleBased.join(',')"
-                     @update:modelValue="permission.workspaceRoleBased = $event.split(',')"/>
-                     <WorkspaceLabelSelector v-model="permission.workspaceLabelsBased" :availableLabels="availableLabels"
-            placeholder="Choose labels" />
+          <CrudOperationSelector v-model="permission.operation" class="flex-0"/>
+          <PermissionScopeSelector v-model="permission.scope" class="flex-1"/>
+          <LabelsInput title="Roles" v-model="permission.roleBased" class="roles-input"/>
+          <LabelsInput title="Workspace Roles" v-model="permission.workspaceRoleBased" class="roles-input"/>
+          <WorkspaceLabelSelector class="roles-input" v-model="permission.workspaceLabelsBased" :availableLabels="availableLabels" placeholder="Choose labels"/>
 
           <div class="flex-0 remove-row">
             <RemoveButton @click="edit.permissions.splice(edit.permissions.indexOf(permission), 1)"/>
           </div>
         </FormRowGroup>
-        <AddMore @click="edit.permissions.push({workspaceRoleBased: [], roleBased: []})"/>
+        <AddMore @click="edit.permissions.push({workspaceRoleBased: [], roleBased: [], workspaceLabelsBased: ['*']})"/>
       </el-tab-pane>
 
       <el-tab-pane :label="$t('Properties')" name="properties">
         <el-form-item :label="$t('Identifier Mechanism for Entities')">
-          <el-select v-model="blueprint.entityIdentifierMechanism" requried :placeholder="$t('Select mechanism')">
+          <el-select v-model="blueprint.entityIdentifierMechanism" required :placeholder="$t('Select mechanism')">
             <el-option label="Object ID" :value="EntityIdentifierMechanism.OBJECT_ID"/>
             <el-option label="GUID" :value="EntityIdentifierMechanism.GUID"/>
           </el-select>
@@ -178,5 +176,15 @@ h3 {
 
 .remove-row {
   margin-bottom: 18px;
+}
+
+.permission {
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 15px;
+}
+
+.roles-input {
+  min-width:400px;
 }
 </style>

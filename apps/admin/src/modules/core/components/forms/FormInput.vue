@@ -20,6 +20,9 @@
                  :size="size || 'large'"
                  :native-type="type"
                  :disabled="disabled"
+                 v-on="listeners"
+                 v-bind="selectOptions"
+                 @update:model-value="$emit('update:modelValue', $event)"
                  :required="required">
         <template v-if="options?.length">
           <el-option v-for="(option, index) in options"
@@ -59,7 +62,11 @@ export default {
     required: Boolean,
     options: Array as () => any[],
     optionValue: String,
-    optionLabel: String
+    optionLabel: String,
+    selectOptions: {
+      type: Object,
+      default: () => ({})
+    },
   },
   emits: ['input', 'change', 'update:modelValue'],
   setup(_, { emit }) {
