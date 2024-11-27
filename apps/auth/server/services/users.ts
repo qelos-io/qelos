@@ -53,6 +53,7 @@ export async function updateUser(
     firstName = null,
     lastName = null,
     birthDate = null,
+    profileImage = null,
     metadata = null
   },
   authConfig?: IAuthConfigurationMetadata
@@ -99,6 +100,10 @@ export async function updateUser(
 
   if (birthDate) {
     user.birthDate = getAbsoluteDate(birthDate);
+  }
+
+  if (profileImage) {
+    user.profileImage = profileImage;
   }
 
   if (roles) {

@@ -22,6 +22,7 @@ export interface IUser {
   firstName: string;
   lastName: string;
   birthDate: string;
+  profileImage: string;
   salt: string;
   roles: string[];
   tokens: any[];
@@ -93,6 +94,7 @@ const UserSchema = new mongoose.Schema<UserDocument, UserModel>({
   firstName: String,
   lastName: String,
   birthDate: String,
+  profileImage: String,
   salt: String,
   roles: {
     type: [String],

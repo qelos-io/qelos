@@ -12,7 +12,7 @@ import { Types, Schema } from 'mongoose';
 import ObjectId = Types.ObjectId
 import { getValidMetadata } from '../services/users';
 
-const privilegedUserFields = 'username phone fullName firstName lastName birthDate roles';
+const privilegedUserFields = 'username phone fullName firstName lastName birthDate roles profileImage';
 
 function getUserIdIfExists(_id, tenant) {
   return User.findOne({ _id, tenant }).select('_id').lean().exec();
@@ -28,8 +28,12 @@ function getUsersForAdmin(req: AuthRequest, res: Response): void {
       username: req.query.exact ? username ? new RegExp(username, 'i') : undefined : username ? new RegExp(username, 'i') : undefined,
     };
 
-    if (typeof (req.query as any).roles === 'string') { 
+    if (typeof (req.query as any).roles === 'string') {
       query.roles = { $in: (req.query as any).roles.split(',').map((role: string) => role.trim()) };
+    }
+
+    if (req.query._id) {
+      query._id = { $in: (req.query._id as string).split(',').map(id => new ObjectId(id.trim())) };
     }
 
     if (!query.username) {
@@ -40,7 +44,7 @@ function getUsersForAdmin(req: AuthRequest, res: Response): void {
 
     User
       .find(query)
-      .select(privilegedUserFields)
+      .select(req.query.select ? req.query.select.toString().replace(/,/, ' ') : privilegedUserFields)
       .lean()
       .exec()
       .then((users = []) => {
@@ -215,7 +219,18 @@ async function createUser(req: AuthRequest, res: Response) {
 }
 
 async function updateUser(req: AuthRequest, res: Response) {
-  const { username, roles, name, password, fullName, firstName, lastName, birthDate, internalMetadata } = req.body || {}
+  const {
+    username,
+    roles,
+    name,
+    password,
+    fullName,
+    firstName,
+    lastName,
+    birthDate,
+    profileImage,
+    internalMetadata
+  } = req.body || {}
   let metadata;
   let newInternalMetadata;
   try {
@@ -228,7 +243,7 @@ async function updateUser(req: AuthRequest, res: Response) {
   try {
     await UsersService.updateUser(
       { _id: req.params.userId, tenant: req.headers.tenant },
-      { username, roles, password, fullName: fullName || name, firstName, lastName, birthDate, metadata },
+      { username, roles, password, fullName: fullName || name, firstName, lastName, birthDate, metadata, profileImage },
       req.authConfig
     )
     if (internalMetadata) {
@@ -251,6 +266,7 @@ async function updateUser(req: AuthRequest, res: Response) {
       firstName,
       lastName,
       birthDate,
+      profileImage,
       roles,
       internalMetadata: newInternalMetadata || internalMetadata,
       _id: req.params.userId

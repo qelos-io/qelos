@@ -17,7 +17,7 @@ import {
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
 import { emitPlatformEvent } from '@qelos/api-kit';
 import { ResponseError } from '../services/response-error';
-import { getWorkspaces } from '../services/users';
+import { getUsersByIds, getWorkspaces } from '../services/users';
 
 async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBlueprint, entity: IBlueprintEntity) {
   const body = req.body || {}
@@ -90,9 +90,11 @@ export async function getAllBlueprintEntities(req, res) {
 
     if (req.query.$populate) {
       const uniqueWorkspaces: string[] = Array.from(new Set(entities.map(entity => entity.workspace?.toString()).filter(Boolean)));
+      const uniqueUsers: string[] = Array.from(new Set(entities.map(entity => entity.user?.toString()).filter(Boolean)));
 
-      const [workspaces, relations] = await Promise.all([
+      const [workspaces, users, relations] = await Promise.all([
         uniqueWorkspaces.length ? await getWorkspaces(req.headers.tenant, ['name', 'logo'], uniqueWorkspaces) : Promise.all([]),
+        uniqueUsers.length ? await getUsersByIds(req.headers.tenant, ['firstName', 'lastName', 'profileImage'], uniqueUsers) : Promise.all([]),
         await Promise.all(
           blueprint.relations?.map(async relation => {
             const query = {
@@ -117,12 +119,18 @@ export async function getAllBlueprintEntities(req, res) {
         return map;
       }, {})
 
+      const usersMap = users.reduce((map, user) => {
+        map[user._id] = user;
+        return map;
+      }, {})
+
       entities.forEach(entity => {
         relations.forEach(relation => {
-          entity.metadata[relation.key] = relation.items.find(item => item.identifier === entity.metadata[relation.key]);
+          entity.metadata[relation.key] = relation.items?.find(item => item.identifier === entity.metadata[relation.key]);
         })
 
         entity.workspace = workspacesMap[entity.workspace?.toString()];
+        entity.user = usersMap[entity.user?.toString()];
       })
     }
 
