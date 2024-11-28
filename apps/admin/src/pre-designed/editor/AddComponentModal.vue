@@ -11,87 +11,92 @@
       <el-step :title="$t('Properties')"/>
     </el-steps>
     <div class="content">
-      <div v-if="active === 0">
-        <h2>{{ $t('Select Component') }}</h2>
-
-        <div v-for="(component, key) in availableComponents"
-             :key="key"
-             :style="{opacity: selectedComponent === key ? 1 : 0.7}"
-             class="mock-component"
-             @click="selectComponent(key)">
-          <component v-if="component.mock" :is="component.mock">{{ component.description }}</component>
-        </div>
-
-      </div>
-      <div v-else-if="active === 1">
-        <h2>{{ $t('Set Properties') }}}</h2>
-        <div v-for="prop in availableComponents[selectedComponent].requiredProps" :key="prop.prop">
-          <h3 v-if="prop.type === 'array'">{{ prop.label }}</h3>
-          <FormRowGroup v-if="prop.source === 'requirements'">
-            <el-form-item class="flex-0">
-              <el-switch
-                  v-model="crudsOrBlueprints"
-                  inactive-value="cruds"
-                  active-value="blueprints"
-                  :inactive-text="$t('Resources')"
-                  :active-text="$t('Blueprints')"/>
-            </el-form-item>
-            <el-form-item v-if="crudsOrBlueprints === 'cruds'" :label="$t('Choose Resource')">
-              <el-select v-model="propsBuilder[prop.prop]" :placeholder="$t('Select')">
-                <el-option
-                    v-for="(crud, key) in cruds"
-                    :key="key"
-                    :label="capitalize(key)"
-                    :value="key"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item v-else :label="$t('Choose Blueprint')">
-              <el-select v-model="propsBuilder[prop.prop]"
-                         @change="refillColumnsFromBlueprint(propsBuilder[prop.prop])"
-                         :placeholder="$t('Select')">
-                <el-option
-                    v-for="blueprint in blueprints"
-                    :key="blueprint.identifier"
-                    :label="blueprint.name"
-                    :value="blueprint.identifier"
-                />
-              </el-select>
-            </el-form-item>
-          </FormRowGroup>
-          <FormRowGroup v-else-if="prop.source === 'blueprint'">
-            <el-form-item :label="$t('Choose Blueprint')">
-              <el-select v-model="propsBuilder[prop.prop]" :placeholder="$t('Select')">
-                <el-option
-                    v-for="blueprint in blueprints"
-                    :key="blueprint.identifier"
-                    :label="blueprint.name"
-                    :value="blueprint.identifier"
-                />
-              </el-select>
-            </el-form-item>
-          </FormRowGroup>
-          <div v-else-if="prop.type === 'array'">
-            <FormRowGroup v-for="(col, index) in propsBuilder.columns" :key="index">
-              <FormInput v-for="child in prop.children"
-                         :class="child.type === 'switch' ? 'flex-0' : ''"
-                         :key="child.prop"
-                         :type="child.type"
-                         :title="child.label"
-                         v-model="col[child.prop]"
-              />
-              <div class="flex-0 remove-row">
-                <RemoveButton @click="propsBuilder.columns.splice(index, 1)"/>
-              </div>
-            </FormRowGroup>
-            <AddMore @click="propsBuilder.columns.push({})"/>
+      <div v-if="active === 0" class="content">
+        <h2 class="flex-0">{{ $t('Select Component') }}</h2>
+        <div class="step-content components-list">
+          <div v-for="(component, key) in availableComponents"
+               :key="key"
+               :style="{opacity: selectedComponent === key ? 1 : 0.7}"
+               class="mock-component"
+               @click="selectComponent(key)">
+            <h3>{{ component.title }}</h3>
+            <p v-if="component.description" class="component-description"><strong>{{ component.description }}</strong>
+            </p>
+            <component v-if="component.mock" :is="component.mock"></component>
           </div>
-          <FormInput v-else
-                     :type="prop.type"
-                     :title="prop.label"
-                     :label="prop.description"
-                     :placeholder="prop.placeholder"
-                     v-model="propsBuilder[prop.prop]"/>
+        </div>
+      </div>
+      <div v-else-if="active === 1" class="content">
+        <h2 class="flex-0">{{ $t('Set Properties') }}</h2>
+        <div class="step-content">
+          <div v-for="prop in availableComponents[selectedComponent].requiredProps" :key="prop.prop">
+            <h3 v-if="prop.type === 'array'">{{ prop.label }}</h3>
+            <FormRowGroup v-if="prop.source === 'requirements'">
+              <el-form-item class="flex-0">
+                <el-switch
+                    v-model="crudsOrBlueprints"
+                    inactive-value="cruds"
+                    active-value="blueprints"
+                    :inactive-text="$t('Resources')"
+                    :active-text="$t('Blueprints')"/>
+              </el-form-item>
+              <el-form-item v-if="crudsOrBlueprints === 'cruds'" :label="$t('Choose Resource')">
+                <el-select v-model="propsBuilder[prop.prop]" :placeholder="$t('Select')">
+                  <el-option
+                      v-for="(crud, key) in cruds"
+                      :key="key"
+                      :label="capitalize(key)"
+                      :value="key"
+                  />
+                </el-select>
+              </el-form-item>
+              <el-form-item v-else :label="$t('Choose Blueprint')">
+                <el-select v-model="propsBuilder[prop.prop]"
+                           @change="refillColumnsFromBlueprint(propsBuilder[prop.prop])"
+                           :placeholder="$t('Select')">
+                  <el-option
+                      v-for="blueprint in blueprints"
+                      :key="blueprint.identifier"
+                      :label="blueprint.name"
+                      :value="blueprint.identifier"
+                  />
+                </el-select>
+              </el-form-item>
+            </FormRowGroup>
+            <FormRowGroup v-else-if="prop.source === 'blueprint'">
+              <el-form-item :label="$t('Choose Blueprint')">
+                <el-select v-model="propsBuilder[prop.prop]" :placeholder="$t('Select')">
+                  <el-option
+                      v-for="blueprint in blueprints"
+                      :key="blueprint.identifier"
+                      :label="blueprint.name"
+                      :value="blueprint.identifier"
+                  />
+                </el-select>
+              </el-form-item>
+            </FormRowGroup>
+            <div v-else-if="prop.type === 'array'">
+              <FormRowGroup v-for="(col, index) in propsBuilder.columns" :key="index">
+                <FormInput v-for="child in prop.children"
+                           :class="child.type === 'switch' ? 'flex-0' : ''"
+                           :key="child.prop"
+                           :type="child.type"
+                           :title="child.label"
+                           v-model="col[child.prop]"
+                />
+                <div class="flex-0 remove-row">
+                  <RemoveButton @click="propsBuilder.columns.splice(index, 1)"/>
+                </div>
+              </FormRowGroup>
+              <AddMore @click="propsBuilder.columns.push({})"/>
+            </div>
+            <FormInput v-else
+                       :type="prop.type"
+                       :title="prop.label"
+                       :label="prop.description"
+                       :placeholder="prop.placeholder"
+                       v-model="propsBuilder[prop.prop]"/>
+          </div>
         </div>
       </div>
     </div>
@@ -226,6 +231,15 @@ watch(dialogVisible, isOpen => {
 provide('editableManager', ref(false))
 </script>
 <style scoped>
+.step-content {
+  overflow: auto;
+}
+
+.components-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
 .dialog-footer {
   display: flex;
   justify-content: space-between;
@@ -237,10 +251,12 @@ provide('editableManager', ref(false))
 
 .mock-component {
   cursor: pointer;
-  border: 1px solid #eee;
+  border: 1px solid #ccc;
   margin: 10px;
   padding: 10px;
   transition: background-color 0.2s ease;
+  max-width: calc(66.7% - 20px);
+  min-width: calc(33.3% - 20px);
 
   &:hover {
     background-color: #eee;
@@ -248,7 +264,10 @@ provide('editableManager', ref(false))
 }
 
 .content {
+  display: flex;
   overflow: auto;
+  max-height: 100%;
+  flex-direction: column;
 }
 </style>
 <style>

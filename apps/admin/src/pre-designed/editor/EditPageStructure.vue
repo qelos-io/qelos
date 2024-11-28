@@ -10,6 +10,7 @@ import { IMicroFrontend } from '@/services/types/plugin';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
+import EditPageRequirements from '@/pre-designed/editor/EditPageRequirements.vue';
 
 const emit = defineEmits(['save', 'close'])
 
@@ -23,11 +24,8 @@ provide('submitting', toRef(props, 'submitting'))
 
 const openCodeSection = ref('html');
 
-const editedRequirements = ref('[]')
-const editedRequirementsObj = ref([])
 const htmlEditor = ref()
 const requirementsEditor = ref()
-const editorMode = ref(true)
 
 const editedSettings = ref<Partial<IMicroFrontend> & { roles: string[] }>({
   roles: [],
@@ -35,32 +33,18 @@ const editedSettings = ref<Partial<IMicroFrontend> & { roles: string[] }>({
   workspaceLabels: [],
 })
 
-const requirementsColumns = [
-  {
-    prop: 'key',
-    label: 'Key',
-  },
-  {
-    prop: 'type',
-    label: 'Type',
-  },
-  {
-    prop: 'details',
-    label: 'Details',
-  }]
+const editedRequirements = ref<any[]>();
 
 watch(() => props.mfe, (mfe) => {
   if (!props.mfe) {
     return;
   }
-  editedRequirements.value = JSON.stringify(props.mfe.requirements.map(req => {
+  editedRequirements.value = props.mfe.requirements.map(req => {
     return {
       ...req,
       _id: undefined,
     }
-  }), null, 2);
-  editedRequirementsObj.value = JSON.parse(editedRequirements.value);
-
+  })
   editedSettings.value = {
     active: mfe.active,
     roles: typeof mfe.roles === 'string' ? mfe.roles.split(',') : (mfe.roles || []),
@@ -72,68 +56,13 @@ watch(() => props.mfe, (mfe) => {
   }
 }, { immediate: true })
 
-watch(editedRequirementsObj, () => {
-  editedRequirements.value = JSON.stringify(editedRequirementsObj.value, null, 2)
-}, { deep: true })
-
-function toggleEditorMode() {
-  editorMode.value = !editorMode.value;
-  if (editorMode.value) {
-    editedRequirements.value = JSON.stringify(editedRequirementsObj.value, null, 2)
-  } else {
-    editedRequirementsObj.value = JSON.parse(editedRequirements.value)
-  }
-}
 
 function save() {
   emit('save', {
     settings: editedSettings.value,
     structure: props.mfe.structure,
-    requirements: JSON.parse(editedRequirements.value)
+    requirements: editedRequirements.value
   });
-}
-
-function getRowType(row: any) {
-  if (row.fromBlueprint) {
-    return 'fromBlueprint';
-  }
-  if (row.fromCrud) {
-    return 'fromCrud';
-  }
-  if (row.fromData) {
-    return 'fromData';
-  }
-  if (row.fromHTTP) {
-    return 'fromHTTP';
-  }
-}
-
-function updateRowType(row: any, type: string) {
-  const data = row[getRowType(row)];
-  delete row[getRowType(row)]
-
-  row[type] = data;
-}
-
-function addRequirement() {
-  editedRequirementsObj.value.push({
-    key: '',
-    fromBlueprint: {
-      name: ''
-    },
-  })
-}
-
-function json(obj: any) {
-  return JSON.stringify(obj, null, 2)
-}
-
-function updateRowJSON(row: any, key: string, value: string) {
-  try {
-    row[key] = JSON.parse(value);
-  } catch {
-    //
-  }
 }
 
 provide('editableManager', ref(false));
@@ -157,52 +86,7 @@ provide('editableManager', ref(false));
       </el-tab-pane>
       <el-tab-pane name="requirements" :label="$t('Requirements')">
         <div class="tab-content" v-if="openCodeSection === 'requirements'">
-          <el-button-group>
-            <el-button @click="toggleEditorMode">
-              <el-icon>
-                <font-awesome-icon :icon="['fas', 'code']"/>
-              </el-icon>
-              <span>{{ $t('Toggle Code Editor') }}</span>
-            </el-button>
-            <el-button @click="addRequirement">{{ $t('Add Requirement') }}</el-button>
-          </el-button-group>
-          <Monaco v-if="editorMode" ref="requirementsEditor"
-                  v-model="editedRequirements"
-                  language="json"
-                  style="min-height:65vh"/>
-          <div v-else class="flex-1">
-            <QuickTable :data="editedRequirementsObj" :columns="requirementsColumns">
-              <template #key="{row}">
-                <FormRowGroup>
-                  <RemoveButton class="flex-0"
-                                @click="editedRequirementsObj.splice(editedRequirementsObj.indexOf(row), 1)"/>
-                  <el-input required v-model="row.key"/>
-                </FormRowGroup>
-              </template>
-              <template #type="{row}" style="width: 100px;">
-                <el-select :model-value="getRowType(row)" @update:model-value="updateRowType(row, $event)">
-                  <el-option value="fromBlueprint" :label="$t('Blueprint')"/>
-                  <el-option value="fromCrud" :label="$t('CRUD')"/>
-                  <el-option value="fromData" :label="$t('Data')"/>
-                  <el-option value="fromHTTP" :label="$t('HTTP')"/>
-                </el-select>
-              </template>
-              <template #details="{row}">
-                <Monaco v-if="row.fromBlueprint" :model-value="json(row.fromBlueprint)"
-                        style="max-height:80px;"
-                        @update:model-value="updateRowJSON(row, 'fromBlueprint', $event)"/>
-                <Monaco v-if="row.fromCrud" :model-value="json(row.fromCrud)"
-                        style="max-height:80px;"
-                        @update:model-value="updateRowJSON(row, 'fromCrud', $event)"/>
-                <Monaco v-if="row.fromData" :model-value="json(row.fromData)"
-                        style="max-height:300px;"
-                        @update:model-value="updateRowJSON(row, 'fromData', $event)"/>
-                <Monaco v-if="row.fromHTTP" :model-value="json(row.fromHTTP)"
-                        style="max-height:100px;"
-                        @update:model-value="updateRowJSON(row, 'fromHTTP', $event)"/>
-              </template>
-            </QuickTable>
-          </div>
+          <EditPageRequirements v-model="editedRequirements"/>
         </div>
       </el-tab-pane>
       <el-tab-pane name="settings" :label="$t('Settings')">

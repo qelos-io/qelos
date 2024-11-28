@@ -13,6 +13,7 @@ export interface EditorComponent {
   component: any;
   tag?: string;
   mock?: any;
+  title?: string;
   description?: string;
   classes?: string;
   requiredProps: Array<{
@@ -37,6 +38,8 @@ export function useEditorComponents() {
 
   const availableComponents: Record<string, EditorComponent> = {
     'list-page-title': {
+      title: 'List Page Title',
+      description: 'A title and a button to create a new item.',
       component: ListPageTitle,
       mock: MockListPageTitle,
       requiredProps: [
@@ -44,7 +47,51 @@ export function useEditorComponents() {
         { prop: 'create-route-path', label: 'Path to Create New Item', type: 'text', source: 'manual' },
       ]
     },
+    'div.flex-row-column': {
+      component: 'div',
+      tag: 'div',
+      title: 'Flex Row (Desktop) / Column (Mobile)',
+      classes: 'flex-row-column',
+      requiredProps: [
+        { prop: 'blocks', label: 'Blocks', type: 'number', source: 'manual', value: 2 },
+      ],
+      getInnerHTML(_, props) {
+        const amount = Number(props.blocks || 0);
+        delete props.blocks;
+        if (amount) {
+          return Array.from({ length: amount }).map((_, index) =>
+            `<block-item class="flex-1">
+        <template #header><h3>Column ${index + 1}</h3></template>
+        <div>any content</div>
+        <template #actions>
+<div><el-button text>Remove</el-button><el-button text>Update</el-button></div>
+        </template>
+    </block-item>`).join('\n');
+        }
+        return '';
+      },
+    },
+    'container': {
+      component: 'div',
+      tag: 'div',
+      title: 'Container',
+      classes: 'container',
+      requiredProps: [
+        { prop: 'paragraphs', label: 'Paragraphs', type: 'number', source: 'manual', value: 2 },
+      ],
+      getInnerHTML(_, props) {
+        const amount = Number(props.paragraphs || 0);
+        delete props.paragraphs;
+        if (amount) {
+          return Array.from({ length: amount }).map((_, index) =>
+            `<p>Paragraph ${index + 1}</p>`).join('\n');
+        }
+        return '';
+      },
+    },
     'quick-table': {
+      title: 'Quick Table',
+      description: 'This table includes a remove button for each row and pagination.',
       component: QuickTable,
       mock: MockTable,
       requiredProps: [
@@ -69,8 +116,8 @@ export function useEditorComponents() {
     },
     'blueprint-entity-form': {
       component: BlueprintEntityForm,
-      mock: 'h2',
-      description: 'Blueprint Form',
+      title: 'Blueprint Form',
+      description: 'Complete form to create a new blueprint entity.',
       requiredProps: [
         {
           prop: 'blueprint',
@@ -131,6 +178,7 @@ export function useEditorComponents() {
       }
     },
     'v-chart': {
+      title: 'Apache EChart',
       component: VChart,
       mock: MockVChart,
       extendProps: (props: any) => {
@@ -150,8 +198,8 @@ export function useEditorComponents() {
     },
     'remove-confirmation': {
       component: RemoveConfirmation,
-      mock: 'h2',
-      description: 'Remove Confirmation',
+      title: 'Remove Confirmation',
+      description: 'Manage confirmation dialog to remove an entity.',
       requiredProps: [
         { prop: 'resource', label: 'Resource', source: 'blueprint' },
       ],
@@ -168,50 +216,6 @@ export function useEditorComponents() {
         }
       }
     },
-    'div.flex-row-column': {
-      component: 'div',
-      tag: 'div',
-      mock: 'h2',
-      description: 'Flex Row Column',
-      classes: 'flex-row-column',
-      requiredProps: [
-        { prop: 'blocks', label: 'Blocks', type: 'number', source: 'manual', value: 2 },
-      ],
-      getInnerHTML(_, props) {
-        const amount = Number(props.blocks || 0);
-        delete props.blocks;
-        if (amount) {
-          return Array.from({ length: amount }).map((_, index) =>
-            `<block-item class="flex-1">
-        <template #header><h3>Column ${index + 1}</h3></template>
-        <div>any content</div>
-        <template #actions>
-<div><el-button text>Remove</el-button><el-button text>Update</el-button></div>
-        </template>
-    </block-item>`).join('\n');
-        }
-        return '';
-      },
-    },
-    'container': {
-      component: 'div',
-      tag: 'div',
-      mock: 'h2',
-      description: 'Container',
-      classes: 'container',
-      requiredProps: [
-        { prop: 'paragraphs', label: 'Paragraphs', type: 'number', source: 'manual', value: 2 },
-      ],
-      getInnerHTML(_, props) {
-        const amount = Number(props.paragraphs || 0);
-        delete props.paragraphs;
-        if (amount) {
-          return Array.from({ length: amount }).map((_, index) =>
-            `<p>Paragraph ${index + 1}</p>`).join('\n');
-        }
-        return '';
-      },
-    }
   }
 
   return {

@@ -17,7 +17,7 @@ function getMfeUrl(mfe: IMicroFrontend): string {
 }
 
 export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', function usePluginsMicroFrontends() {
-  const { plugins, loaded } = storeToRefs(usePluginsList());
+  const { plugins } = storeToRefs(usePluginsList());
   const router = useRouter();
 
   const cruds = reactive<Record<string, IMetaCrud>>(getAllStandardMetaCruds());
