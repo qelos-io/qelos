@@ -1,5 +1,16 @@
 import mongoose, { Document } from 'mongoose'
 
+export interface IAuditItem {
+  ip: string;
+  userAgent: string;
+  timestamp: Date;
+}
+
+export interface IAuditInfo {
+  created: IAuditItem
+  updated?: IAuditItem
+}
+
 export interface IBlueprintEntity extends Document {
   tenant: string;
   identifier: string;
@@ -8,8 +19,9 @@ export interface IBlueprintEntity extends Document {
   workspace: mongoose.Schema.Types.ObjectId;
   metadata: any;
   indexes: string[];
-  created: Date,
-  updated: Date,
+  created: Date;
+  updated: Date;
+  auditInfo: IAuditInfo;
 }
 
 const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
@@ -57,6 +69,22 @@ const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
   updated: {
     type: Date,
     default: Date.now,
+  },
+  auditInfo: {
+    created: {
+      ip: String,
+      userAgent: String,
+      timestamp: {
+        type: Date,
+      },
+    },
+    updated: {
+      ip: String,
+      userAgent: String,
+      timestamp: {
+        type: Date,
+      },
+    }
   }
 });
 

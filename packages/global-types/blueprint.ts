@@ -29,6 +29,7 @@ export enum CRUDOperation {
 export interface IPermissionsDescriptor {
   scope: PermissionScope,
   operation: CRUDOperation,
+  guest: boolean,
   roleBased: string[],
   workspaceRoleBased: string[],
   workspaceLabelsBased: string[],

@@ -54,6 +54,10 @@ const BlueprintSchema = new mongoose.Schema<IBlueprint>({
       type: String,
       enum: Object.values(CRUDOperation)
     },
+    guest: {
+      type: Boolean,
+      default: () => false
+    },
     roleBased: [String],
     workspaceRoleBased: [String],
     workspaceLabelsBased: [String],

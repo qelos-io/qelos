@@ -1,6 +1,6 @@
 import qs from 'qs'
 import { v4 as uuidv4 } from 'uuid';
-import BlueprintEntity, { IBlueprintEntity } from '../models/blueprint-entity';
+import BlueprintEntity, { IAuditItem, IBlueprintEntity } from '../models/blueprint-entity';
 import Blueprint, { IBlueprint } from '../models/blueprint';
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
 import { CRUDOperation, PermissionScope } from '@qelos/global-types';
@@ -18,6 +18,15 @@ import { getUserPermittedScopes } from '../services/entities-permissions.service
 import { emitPlatformEvent } from '@qelos/api-kit';
 import { ResponseError } from '../services/response-error';
 import { getUsersByIds, getWorkspaces } from '../services/users';
+import type { Request } from 'express';
+
+function getAuditItem(req: Request): IAuditItem {
+  return {
+    ip: req.ip || 'Unknown',
+    userAgent: req.headers['user-agent'] || 'Unknown',
+    timestamp: new Date(),
+  }
+}
 
 async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBlueprint, entity: IBlueprintEntity) {
   const body = req.body || {}
@@ -62,6 +71,8 @@ async function hasReachedLimitations(req: RequestWithUser, blueprint: IBlueprint
   return results.includes(true);
 }
 
+const GLOBAL_PERMITTED_FIELDS = '-auditInfo';
+
 export async function getAllBlueprintEntities(req, res) {
   const blueprint = req.blueprint as IBlueprint;
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin);
@@ -84,7 +95,7 @@ export async function getAllBlueprintEntities(req, res) {
       delete query.bypassAdmin;
     }
     convertQueryToIndexes(query, blueprint);
-    const entities = await BlueprintEntity.find(query)
+    const entities = await BlueprintEntity.find(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS)
       .lean()
       .exec()
 
@@ -155,7 +166,7 @@ export async function getSingleBlueprintEntity(req, res) {
   }
   const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes })
   try {
-    const entity = await BlueprintEntity.findOne(query)
+    const entity = await BlueprintEntity.findOne(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS)
       .lean()
       .exec()
 
@@ -170,6 +181,7 @@ export async function getSingleBlueprintEntity(req, res) {
 }
 
 export async function createBlueprintEntity(req, res) {
+  const auditItem = getAuditItem(req);
   const blueprint: IBlueprint = req.blueprint;
   const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.CREATE, bypassAdmin);
@@ -196,6 +208,7 @@ export async function createBlueprintEntity(req, res) {
       user,
       workspace,
       metadata: {},
+      auditInfo: { created: auditItem }
     });
 
     await updateAllEntityMetadata(req, blueprint, entity);
@@ -224,7 +237,9 @@ export async function createBlueprintEntity(req, res) {
       }).catch(logger.error);
     }
 
-    res.status(200).json(entity).end()
+    const { auditInfo, ...response } = entity.toObject();
+
+    res.status(200).json(response).end()
     return;
   } catch (err) {
     logger.error(err);
@@ -237,6 +252,8 @@ export async function createBlueprintEntity(req, res) {
 }
 
 export async function updateBlueprintEntity(req, res) {
+  const auditItem = getAuditItem(req);
+
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
   const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
@@ -275,6 +292,9 @@ export async function updateBlueprintEntity(req, res) {
 
     const modifiedFields = blueprint.dispatchers?.update && entity.modifiedPaths({ includeChildren: true });
 
+    entity.auditInfo ||= { created: { ip: 'Unknown', userAgent: 'Unknown', timestamp: entity.created } };
+    entity.auditInfo.updated = auditItem;
+
     await entity.save();
 
     if (blueprint.dispatchers?.update) {
@@ -294,7 +314,9 @@ export async function updateBlueprintEntity(req, res) {
       }).catch(logger.error);
     }
 
-    res.status(200).json(entity).end()
+    const { auditInfo, ...response } = entity.toObject();
+
+    res.status(200).json(response).end()
   } catch (err) {
     logger.error(err);
     if (err instanceof ResponseError) {
@@ -323,7 +345,7 @@ export async function removeBlueprintEntity(req, res) {
     }
   }
   try {
-    const entity = await BlueprintEntity.findOne(query)
+    const entity = await BlueprintEntity.findOne(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS)
       .lean()
       .exec()
 
@@ -387,12 +409,12 @@ export async function removeAllBlueprintEntities(req, res) {
   }
 
   try {
-    const entities = await BlueprintEntity.deleteMany({
+    const result = await BlueprintEntity.deleteMany({
       tenant: req.headers.tenant,
       blueprint: blueprintIdentifier
     }).exec();
 
-    res.json(entities).end();
+    res.json(result).end();
   } catch {
     res.status(500).json({ message: 'something went wrong with entity deletion' }).end();
   }

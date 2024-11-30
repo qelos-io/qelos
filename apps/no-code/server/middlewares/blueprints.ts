@@ -1,21 +1,9 @@
-import Blueprint from '../models/blueprint';
-import { cacheManager } from '../services/cache-manager';
+import { getBlueprint } from '../services/blueprints.service';
 
 export async function getBlueprintByIdentifierMiddleware(req, res, next) {
   const blueprintIdentifier = req.params.blueprintIdentifier;
   try {
-    const blueprint = await cacheManager.wrap(`blueprint:${req.headers.tenant}:${blueprintIdentifier}`, async () => {
-      const blueprint = await Blueprint
-        .findOne({
-          tenant: req.headers.tenant,
-          identifier: blueprintIdentifier,
-        })
-        .lean()
-        .exec()
-
-      return JSON.stringify(blueprint);
-    })
-      .then((blueprint) => JSON.parse(blueprint));
+    const blueprint = await getBlueprint(req.headers.tenant, blueprintIdentifier);
 
     if (!blueprint) {
       res.status(404).json({ message: 'blueprint not found' }).end();
