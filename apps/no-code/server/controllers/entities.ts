@@ -19,6 +19,7 @@ import { emitPlatformEvent } from '@qelos/api-kit';
 import { ResponseError } from '../services/response-error';
 import { getUsersByIds, getWorkspaces } from '../services/users';
 import type { Request } from 'express';
+import { hasGuestReachedLimit } from '../services/guest-request-limit';
 
 function getAuditItem(req: Request): IAuditItem {
   return {
@@ -181,7 +182,14 @@ export async function getSingleBlueprintEntity(req, res) {
 }
 
 export async function createBlueprintEntity(req, res) {
+  const guestMode = !req.user;
   const auditItem = getAuditItem(req);
+
+  if (guestMode && await hasGuestReachedLimit(auditItem)) {
+    res.status(403).json({ message: 'guest limit reached' }).end();
+    return;
+  }
+
   const blueprint: IBlueprint = req.blueprint;
   const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.CREATE, bypassAdmin);
@@ -252,7 +260,13 @@ export async function createBlueprintEntity(req, res) {
 }
 
 export async function updateBlueprintEntity(req, res) {
+  const guestMode = !req.user;
   const auditItem = getAuditItem(req);
+
+  if (guestMode && await hasGuestReachedLimit(auditItem)) {
+    res.status(403).json({ message: 'guest limit reached' }).end();
+    return;
+  }
 
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
@@ -328,6 +342,13 @@ export async function updateBlueprintEntity(req, res) {
 }
 
 export async function removeBlueprintEntity(req, res) {
+  const guestMode = !req.user;
+  const auditItem = getAuditItem(req);
+
+  if (guestMode && await hasGuestReachedLimit(auditItem)) {
+    res.status(403).json({ message: 'guest limit reached' }).end();
+    return;
+  }
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.DELETE, req.query.bypassAdmin === 'true');
