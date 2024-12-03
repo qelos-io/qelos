@@ -5,7 +5,7 @@
       <FormInput title="Workspace Logo" v-model="data.logo"/>
     </div>
 
-    <template v-if="!workspace._id">
+    <template v-if="!workspace._id && wsConfig.metadata.labels.length">
       <h3>{{ $t('Select your workspace type') }}</h3>
       <FormRowGroup>
         <el-form-item v-for="option of wsConfig.metadata.labels">
