@@ -5,7 +5,7 @@
       <FormInput title="Workspace Logo" v-model="data.logo"/>
     </div>
 
-    <template v-if="!workspace._id && wsConfig.metadata.labels.length">
+    <template v-if="!workspace._id && wsConfig.metadata.labels.length > 1">
       <h3>{{ $t('Select your workspace type') }}</h3>
       <FormRowGroup>
         <el-form-item v-for="option of wsConfig.metadata.labels">
@@ -87,7 +87,10 @@ const data = reactive<Partial<IWorkspace>>({
 
 function submit() {
   if (!workspace._id) {
-    data.labels = selectedLabels.value.value || [];
+    data.labels = selectedLabels.value?.value || [];
+    if (wsConfig.metadata.labels?.length === 1) {
+      data.labels = wsConfig.metadata.labels[0].value;
+    }
   }
   emit('submitted', clearNulls(data))
 }
