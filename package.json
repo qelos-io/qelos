@@ -25,7 +25,7 @@
     "@types/node": "^16.11.22",
     "env-cmd": "^10.1.0",
     "jest": "^29.7.0",
-    "kill-port": "^2.0.1",
+    "kill-port": "github:davidmeirlevy/kill-port#3c286412b896f9979febaf0d2987a771c6b8083e",
     "lerna": "^6.1.0",
     "ts-node": "^10.2.1",
     "tsx": "^3.12.7"
