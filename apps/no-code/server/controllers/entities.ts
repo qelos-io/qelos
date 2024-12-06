@@ -20,6 +20,7 @@ import { ResponseError } from '../services/response-error';
 import { getUsersByIds, getWorkspaces } from '../services/users';
 import type { Request } from 'express';
 import { hasGuestReachedLimit } from '../services/guest-request-limit';
+import { getBlueprint } from '../services/blueprints.service';
 
 function getAuditItem(req: Request): IAuditItem {
   return {
@@ -92,6 +93,7 @@ export async function getAllBlueprintEntities(req, res) {
       ...getEntityQuery({ blueprint, req, permittedScopes })
     }
     delete query.$populate;
+    delete query.$outerPopulate;
     if ('bypassAdmin' in req.query) {
       delete query.bypassAdmin;
     }
@@ -143,6 +145,46 @@ export async function getAllBlueprintEntities(req, res) {
 
         entity.workspace = workspacesMap[entity.workspace?.toString()];
         entity.user = usersMap[entity.user?.toString()];
+      })
+    }
+
+    // outerPopulate can looks like:
+    // ?$outerPopulate=setKey:blueprintName:scope,setKey:blueprintName:scope
+    if (req.query.$outerPopulate) {
+      const outerEntities = await Promise.all(
+        req.query.$outerPopulate.split(',').map(async (expression: string = '') => {
+          const [setKey, blueprintName, scope] = expression.split(':');
+          const queryBuilder = { blueprintName, scope, setKey, blueprint: await getBlueprint(req.headers.tenant, blueprintName) };
+
+          const relation = queryBuilder.blueprint.relations.find(bp => bp.target === blueprint.identifier);
+          if (!relation) {
+            return;
+          }
+          const permission = getUserPermittedScopes(req.user, queryBuilder.blueprint, CRUDOperation.READ, req.query.bypassAdmin);
+          if (permission === true || permission.length > 0) {
+            const entityQuery = getEntityQuery({ blueprint: queryBuilder.blueprint, req, permittedScopes: permission });
+            if (queryBuilder.scope === PermissionScope.USER) {
+              entityQuery.user = req.user._id;
+            } else if (queryBuilder.scope === PermissionScope.WORKSPACE) {
+              entityQuery.workspace = req.workspace?._id;
+            }
+            entityQuery.indexes = { $in: entities.map(entity => `${relation.key}:${entity.identifier}`) };
+            return {
+              entities: await BlueprintEntity.find(entityQuery).select(GLOBAL_PERMITTED_FIELDS).lean().exec(),
+              key: queryBuilder.setKey,
+              relationKey: relation.key,
+            }
+          }
+        })
+      )
+
+      entities.forEach(entity => {
+        outerEntities.forEach(outerEntity => {
+          if (!outerEntity) {
+            return;
+          }
+          entity[outerEntity.key] = outerEntity.entities.filter(outer => outer.metadata[outerEntity.relationKey] === entity.identifier);
+        });
       })
     }
 

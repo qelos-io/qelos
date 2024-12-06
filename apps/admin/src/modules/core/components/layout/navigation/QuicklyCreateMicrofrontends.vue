@@ -129,7 +129,7 @@ const addMicroFrontendToPlugin = async (pluginId: string, position: string, mfeN
 	const selectedPlugin = plugins.find(plugin => plugin.name === pluginId);
 
 	if (selectedPlugin) {
-		const mfeTemplate = selectedPlugin.microFrontends[0]; // Template for the new MFE
+		const mfeTemplate = selectedPlugin.microFrontends[0] || {} as any; // Template for the new MFE
 
 		const newMFE = {
 			name: mfeName || 'New MFE', // Name from the form or default value
@@ -146,7 +146,7 @@ const addMicroFrontendToPlugin = async (pluginId: string, position: string, mfeN
 			route: {
 				name: mfeName.toLowerCase().replace(/\s+/g, '-') + '-copy',
 				path: mfeName.toLowerCase().replace(/\s+/g, '-') + '-copy',
-				roles: mfeTemplate.route.roles || ['*'],
+				roles: mfeTemplate.route?.roles || ['*'],
 				navBarPosition: position as 'top' | 'bottom' | 'user-dropdown' | false,
 			},
 		};
