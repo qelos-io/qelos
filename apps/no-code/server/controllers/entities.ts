@@ -183,7 +183,7 @@ export async function getAllBlueprintEntities(req, res) {
           if (!outerEntity) {
             return;
           }
-          entity[outerEntity.key] = outerEntity.entities.filter(outer => outer.metadata[outerEntity.relationKey] === entity.identifier);
+          entity[outerEntity.key] = outerEntity.entities?.filter(outer => outer.metadata[outerEntity.relationKey] === entity.identifier) || [];
         });
       })
     }
