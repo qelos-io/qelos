@@ -1,7 +1,7 @@
 import { computed, ref, toRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { defineStore } from 'pinia';
-import { IScreenRequirement } from '@qelos/global-types'
+import { IBlueprint, IScreenRequirement } from '@qelos/global-types'
 import { api, getCallData } from '@/services/api';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
@@ -94,7 +94,13 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
                 return;
               }
               const values = value instanceof Array ? value : [value];
-              const uniqueIdentifiers = Array.from(new Set(values.map(v => v?.identifier)));
+              const uniqueIdentifiers: string[] = Array.from(
+                new Set(values
+                  .map(v => v?.identifier ||
+                    Object.values(v || { }).flat().map((row: IBlueprint | undefined) => row?.identifier))
+                  .filter(Boolean)
+                )
+              );
 
               const everyData = await Promise.all(uniqueIdentifiers.map(async identifier => {
                 return {
