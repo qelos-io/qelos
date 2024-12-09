@@ -12,6 +12,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
   const mfes = usePluginsMicroFrontends();
   const cruds = toRef(mfes, 'cruds');
   const requirements = ref()
+  const unWatchers = [];
 
   function getBlueprintCacheKey(name: string, identifier?: string) {
     return identifier ? `blueprint:${name}:single:${identifier}` : `blueprint:${name}:all`
@@ -27,11 +28,14 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
 
   const reloadRequirements = () => {
     const reqs = route.meta.screenRequirements;
+    const watchers = [];
     if (!(reqs instanceof Array && reqs.length)) {
       requirements.value = {}
       return;
     }
-    currentDispatchers = {}
+    currentDispatchers = {};
+    unWatchers.forEach(w => w());
+    unWatchers.length = 0;
     requirements.value = reqs.reduce((all, item: IScreenRequirement) => {
       if (item.fromCrud) {
         const api = cruds.value[item.fromCrud.name]?.api;
@@ -81,6 +85,31 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
           }
           currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
+        } else if (item.fromBlueprint.dependsOn) {
+          const cachedKey = getBlueprintCacheKey(item.fromBlueprint.name);
+          if (!cachedDispatchers[cachedKey]) {
+            cachedDispatchers[cachedKey] = useDispatcher(async ({ query, dependsOn, dependsField }) => {
+              const value = all[dependsOn]?.result?.value;
+              if (!value) {
+                return;
+              }
+              const values = value instanceof Array ? value : [value];
+              const uniqueIdentifiers = Array.from(new Set(values.map(v => v?.identifier)));
+
+              const everyData = await Promise.all(uniqueIdentifiers.map(async identifier => {
+                return {
+                  identifier,
+                  data: await entitiesOfBlueprint.getList({ ...query, [dependsField]: identifier })
+                }
+              }))
+              return everyData.reduce((map, item) => {
+                map[item.identifier] = item.data;
+                return map;
+              }, {})
+            }, {}, true, item.fromBlueprint)
+          }
+          watchers.push({ key: item.fromBlueprint.dependsOn, callback: cachedDispatchers[cachedKey].retry })
+          all[item.key] = cachedDispatchers[cachedKey];
         } else {
           const cachedKey = getBlueprintCacheKey(item.fromBlueprint.name);
           if (cachedDispatchers[cachedKey]) {
@@ -98,6 +127,10 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
 
       return all
     }, {})
+
+    watchers.forEach(({ key, callback }) => {
+      unWatchers.push(watch(() => requirements.value[key]?.result, callback))
+    });
   }
 
   watch(() => [route.meta.screenRequirements, mfes.navBar, mfes.modals, mfes.cruds], reloadRequirements, { immediate: true })

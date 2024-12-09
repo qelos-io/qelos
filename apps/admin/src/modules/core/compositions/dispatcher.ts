@@ -1,11 +1,11 @@
 import { ref } from 'vue'
 
-export function useDispatcher<T = any>(callback, defaultValue: T | null = null, lazy = false, initialMetadata?: any) {
+export function useDispatcher<T = any, Z = any>(callback, defaultValue: T | null = null, lazy = false, initialMetadata?: Z) {
   const result = ref<T>(defaultValue)
   const loading = ref<boolean>(true)
   const error = ref<any>(null)
   const loaded = ref(false);
-  const metadata = ref(initialMetadata);
+  const metadata = ref<Z>(initialMetadata);
 
   const caller = async () => {
     try {

@@ -51,6 +51,8 @@ const MicroFrontendSchema = new mongoose.Schema<IMicroFrontend>({
       name: String,
       identifier: String,
       query: mongoose.Schema.Types.Mixed,
+      dependsOn: String,
+      dependsField: String,
     },
     fromData: mongoose.Schema.Types.Mixed
   }],

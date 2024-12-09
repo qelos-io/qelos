@@ -14,6 +14,8 @@ export interface IScreenRequirement {
     name: string,
     identifier?: string,
     query?: any,
+    dependsOn?: string;
+    dependsField?: string;
   },
   fromData?: any;
 }
