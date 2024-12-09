@@ -22,6 +22,7 @@ export function getUsers(tenant: string, { email, exact = false }) {
 
 export function getUsersByIds(tenant: string, fields: string[], usersIds: string[]) {
   const ids = usersIds.join(',');
+  console.log('fields for users!!!!!', fields.join(','))
   return cacheManager.wrap(`no-code:users:${tenant}:${ids}`, () => {
     return callAuthService(`/internal-api/users?_id=${ids}&select=${fields.join(',')}`, 'GET', tenant).then(JSON.stringify)
   }).then(JSON.parse);
