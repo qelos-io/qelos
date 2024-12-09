@@ -15,21 +15,21 @@ function callAuthService(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE',
 }
 
 export function getUsers(tenant: string, { email, exact = false }) {
-  return cacheManager.wrap(`plugins:users:${tenant}:${email}:${!!exact}`, () => {
+  return cacheManager.wrap(`no-code:users:${tenant}:${email}:${!!exact}`, () => {
     return callAuthService(`/internal-api/users?email=${email}` + (exact ? '&exact=true' : ''), 'GET', tenant).then(JSON.stringify)
   }).then(JSON.parse);
 }
 
 export function getUsersByIds(tenant: string, fields: string[], usersIds: string[]) {
   const ids = usersIds.join(',');
-  return cacheManager.wrap(`plugins:users:${tenant}:${ids}`, () => {
+  return cacheManager.wrap(`no-code:users:${tenant}:${ids}`, () => {
     return callAuthService(`/internal-api/users?_id=${ids}&select=${fields.join(',')}`, 'GET', tenant).then(JSON.stringify)
   }).then(JSON.parse);
 }
 
 export function getWorkspaces(tenant: string, fields: string[], workspaceIds: string[]) {
   const ids = workspaceIds.join(',');
-  return cacheManager.wrap(`plugins:ws:${tenant}:${ids}`, () => {
+  return cacheManager.wrap(`no-code:ws:${tenant}:${ids}`, () => {
     return callAuthService(`/internal-api/workspaces?_id=${ids}&select=${fields.join(',')}`, 'GET', tenant).then(JSON.stringify)
   }).then(JSON.parse);
 }
@@ -39,7 +39,7 @@ export function createUser(tenant: string, { email, password, roles, firstName }
 }
 
 export function updateUser(tenant: string, userId: string, { password, roles, firstName }) {
-  cacheManager.setItem(`plugins:user:${tenant}:${userId}`, '{}', { ttl: 1 }).catch();
+  cacheManager.setItem(`no-code:user:${tenant}:${userId}`, '{}', { ttl: 1 }).catch();
   return callAuthService('/internal-api/users/' + userId, 'PUT', tenant, { password, roles, firstName });
 }
 
@@ -48,7 +48,7 @@ export function removeUser(tenant: string, userId: string) {
 }
 
 export function getUser(tenant: string, userId: string) {
-  return cacheManager.wrap(`plugins:user:${tenant}:${userId}`, () => {
+  return cacheManager.wrap(`no-code:user:${tenant}:${userId}`, () => {
     return callAuthService('/internal-api/users/' + userId, 'GET', tenant).then(JSON.stringify)
   }).then(JSON.parse);
 }

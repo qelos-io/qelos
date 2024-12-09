@@ -17,7 +17,7 @@ import {
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
 import { emitPlatformEvent } from '@qelos/api-kit';
 import { ResponseError } from '../services/response-error';
-import { getUsersByIds, getWorkspaces } from '../services/users';
+import { getUser, getUsersByIds, getWorkspaces } from '../services/users';
 import type { Request } from 'express';
 import { hasGuestReachedLimit } from '../services/guest-request-limit';
 import { getBlueprint } from '../services/blueprints.service';
@@ -107,9 +107,9 @@ export async function getAllBlueprintEntities(req, res) {
       const uniqueUsers: string[] = Array.from(new Set(entities.map(entity => entity.user?.toString()).filter(Boolean)));
 
       const [workspaces, users, relations] = await Promise.all([
-        uniqueWorkspaces.length ? await getWorkspaces(req.headers.tenant, ['name', 'logo'], uniqueWorkspaces) : Promise.all([]),
-        uniqueUsers.length ? await getUsersByIds(req.headers.tenant, ['firstName', 'lastName', 'profileImage'], uniqueUsers) : Promise.all([]),
-        await Promise.all(
+        uniqueWorkspaces.length ? getWorkspaces(req.headers.tenant, ['name', 'logo'], uniqueWorkspaces) : Promise.all([]),
+        uniqueUsers.length ? getUsersByIds(req.headers.tenant, ['firstName', 'lastName', 'profileImage'], uniqueUsers) : Promise.all([]),
+        Promise.all(
           blueprint.relations?.map(async relation => {
             const query = {
               ...getEntityQuery({ blueprint, req, permittedScopes }),
@@ -122,7 +122,7 @@ export async function getAllBlueprintEntities(req, res) {
             }
             return {
               key: relation.key,
-              items: await BlueprintEntity.find(query).lean().exec()
+              items: await BlueprintEntity.find(query).select(GLOBAL_PERMITTED_FIELDS).lean().exec()
             }
           })
         )
@@ -154,7 +154,12 @@ export async function getAllBlueprintEntities(req, res) {
       const outerEntities = await Promise.all(
         req.query.$outerPopulate.split(',').map(async (expression: string = '') => {
           const [setKey, blueprintName, scope] = expression.split(':');
-          const queryBuilder = { blueprintName, scope, setKey, blueprint: await getBlueprint(req.headers.tenant, blueprintName) };
+          const queryBuilder = {
+            blueprintName,
+            scope,
+            setKey,
+            blueprint: await getBlueprint(req.headers.tenant, blueprintName)
+          };
 
           const relation = queryBuilder.blueprint.relations.find(bp => bp.target === blueprint.identifier);
           if (!relation) {
@@ -217,6 +222,30 @@ export async function getSingleBlueprintEntity(req, res) {
       res.status(404).json({ message: 'entity not found' }).end();
       return;
     }
+
+    if (req.query.$populate) {
+      const [[workspace], [user]] = await Promise.all([
+        entity.workspace ? getWorkspaces(req.headers.tenant, ['name', 'logo'], [entity.workspace.toString()]) : Promise.resolve([]),
+        getUsersByIds(req.headers.tenant, ['firstName', 'lastName', 'profileImage'], [entity.user.toString()]),
+        Promise.all(
+          blueprint.relations?.map(async relation => {
+            const relationIdentifier = entity.metadata[relation.key];
+            if (!relationIdentifier) {
+              return;
+            }
+            const query = {
+              ...getEntityQuery({ blueprint, req, permittedScopes }),
+              blueprint: relation.target,
+              identifier: entity.metadata[relation.key]
+            }
+            entity.metadata[relation.key] = await BlueprintEntity.findOne(query).select(GLOBAL_PERMITTED_FIELDS).lean().exec()
+          })
+        )
+      ])
+      entity.user = user;
+      entity.workspace = workspace;
+    }
+
     res.json(entity).end();
   } catch {
     res.status(500).json({ message: 'something went wrong with entity' }).end();
