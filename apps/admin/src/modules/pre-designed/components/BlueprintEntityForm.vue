@@ -13,9 +13,13 @@ const props = defineProps<{
   errorMsg?: string;
   clearAfterSubmit?: boolean;
   navigateAfterSubmit?: string;
+  onSubmit?: (data: any) => Promise<unknown>;
 }>()
 
-const onSubmit = (form) => sdk.blueprints.entitiesOf(props.blueprint).create({ metadata: form })
+const onSubmit = async (form) => {
+  await props.onSubmit?.(form);
+  return sdk.blueprints.entitiesOf(props.blueprint).create({ metadata: form })
+}
 
 const { reloadBlueprintRequirements } = useScreenRequirementsStore();
 
