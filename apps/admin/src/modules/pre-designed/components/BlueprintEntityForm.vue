@@ -17,7 +17,9 @@ const props = defineProps<{
 }>()
 
 const onSubmit = async (form) => {
-  await props.onSubmit?.(form);
+  if (typeof props.onSubmit === 'function') {
+    await props.onSubmit(form);
+  }
   return sdk.blueprints.entitiesOf(props.blueprint).create({ metadata: form })
 }
 
