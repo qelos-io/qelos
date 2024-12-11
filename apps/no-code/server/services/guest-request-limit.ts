@@ -9,7 +9,7 @@ const KEY_PREFIX = 'no-code::guest-request::count::'
 export async function hasGuestReachedLimit(auditItem: IAuditItem): Promise<boolean> {
   try {
     const key = `${KEY_PREFIX}${auditItem.ip}::${auditItem.userAgent}`;
-    const count = Number((await cacheManager.getItem(key)) || 0);
+    const count = Number((await cacheManager.getItem(key).catch(() => 0)) || 0);
 
     if (count > REQUESTS_LIMIT) {
       return true;
