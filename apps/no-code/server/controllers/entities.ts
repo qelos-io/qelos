@@ -17,7 +17,7 @@ import {
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
 import { emitPlatformEvent } from '@qelos/api-kit';
 import { ResponseError } from '../services/response-error';
-import { getUser, getUsersByIds, getWorkspaces } from '../services/users';
+import { getUsersByIds, getWorkspaces } from '../services/users';
 import type { Request } from 'express';
 import { hasGuestReachedLimit } from '../services/guest-request-limit';
 import { getBlueprint } from '../services/blueprints.service';
