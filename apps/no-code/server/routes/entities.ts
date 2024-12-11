@@ -12,7 +12,7 @@ import {
 
 const entitiesRouter = getRouter();
 
-const AUTHENTICATION_MIDDLEWARES = [populateUser, verifyUser, checkAllPrivileges, getBlueprintByIdentifierMiddleware]
+const AUTHENTICATION_MIDDLEWARES = [populateUser, checkAllPrivileges, getBlueprintByIdentifierMiddleware]
 const AUTHENTICATION_MIDDLEWARES_FOR_ADMIN = [populateUser, verifyUser, onlyEditPrivileged]
 
 entitiesRouter
