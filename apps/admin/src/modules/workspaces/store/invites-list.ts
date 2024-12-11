@@ -19,6 +19,7 @@ const useInvitesList = defineStore('invites-list', function useInvitesList() {
       kind
     }).finally(() => {
       workspaces.reload()
+      retry();
       workspaces.activate({ _id: workspace })
     });
   }

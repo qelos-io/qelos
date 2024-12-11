@@ -22,10 +22,7 @@ export const logout = async () => {
   authStore.user = null
   authStore.isLoaded = false
   authStore.userPromise = null
-  api.post('/api/logout').catch()
-  if (location.pathname !== '/login') {
-    location.href = '/login';
-  }
+  api.post('/api/logout').catch();
 }
 export const updateProfile = async (changes: Partial<IUser>) => {
   authStore.user = await api.post<IUser>('/api/me', changes).then(res => res.data)

@@ -62,9 +62,11 @@ export const playGuestRoutes = {
     name: 'defaultGuestPluginPlaceholder',
     path: ':allGuest',
     component: EmptyRoute,
+    meta: { guest: true },
   }, {
     name: 'defaultGuestPluginPlaceholderSecond',
     path: ':allGuest/:other',
     component: EmptyRoute,
+    meta: { guest: true },
   }]
 };

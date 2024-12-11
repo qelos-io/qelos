@@ -105,13 +105,15 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
       map[route.path] = route;
       return map;
     }, {});
-    Object.values(navBar)
+    const allPluginsRoutes = Object.values(navBar)
       .map((area: { items: IMicroFrontend[] }[]) => area.map(group => group.items).flat())
       .flat()
-      .concat(onlyRoutes as IMicroFrontend[])
+      .concat(onlyRoutes as IMicroFrontend[]);
+
+    allPluginsRoutes
       .forEach((mfe: IMicroFrontend) => {
         const route = {
-          name: `plugin.${mfe.route.name}`,
+          name: `${mfe.route.name}`,
           path: mfe.route.path,
           component: mfe.url ? MicroFrontendPage : async () => (await import(`../../../pre-designed/${mfe.use}.vue`)).default,
           meta: null
@@ -158,19 +160,23 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
           router.removeRoute(allRoutes[routerPath].name);
         }
         if (mfe.guest) {
-          router.addRoute('playGuestPlugin', route)
+          router.addRoute({...route, path: '/' + route.path});
           router.addRoute('screenEditor', { ...route, name: null, meta: { ...route.meta, guest: false, roles: ['admin'] } })
         } else {
           router.addRoute('playPlugin', route)
         }
       })
-    router.removeRoute('defaultPluginPlaceholder');
-    router.removeRoute('defaultGuestPluginPlaceholder');
-    router.removeRoute('defaultPluginPlaceholderSecond');
-    router.removeRoute('defaultGuestPluginPlaceholderSecond');
-    router.removeRoute('defaultAdminPluginPlaceholder');
-    router.removeRoute('defaultAdminPluginPlaceholderSecond');
-    router.push(router.currentRoute.value.fullPath);
+
+    if (allPluginsRoutes.length) {
+      router.removeRoute('playGuestPlugin');
+      router.removeRoute('defaultPluginPlaceholder');
+      router.removeRoute('defaultGuestPluginPlaceholder');
+      router.removeRoute('defaultPluginPlaceholderSecond');
+      router.removeRoute('defaultGuestPluginPlaceholderSecond');
+      router.removeRoute('defaultAdminPluginPlaceholder');
+      router.removeRoute('defaultAdminPluginPlaceholderSecond');
+      router.push(location.pathname);
+    }
   }
 
   watch(microFrontends, (newVal) => {

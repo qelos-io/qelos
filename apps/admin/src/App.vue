@@ -8,9 +8,10 @@ import { useAppConfiguration } from './modules/configurations/store/app-configur
 import { provide, ref, watch } from 'vue'
 import { translate, loadLanguageAsync } from './plugins/i18n'
 import { usePluginsInjectables } from '@/modules/plugins/store/plugins-injectables';
+import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 
 const { appConfig, loaded } = useAppConfiguration()
-
+usePluginsMicroFrontends();
 usePluginsInjectables();
 
 watch(() => appConfig.value.language, async (language) => {

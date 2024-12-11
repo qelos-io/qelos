@@ -19,6 +19,7 @@ const BASE = import.meta.env.BASE_URL || '/';
 const router = createRouter({
   history: createWebHistory(BASE),
   routes: [
+    playGuestRoutes,
     {
       path: '/',
       name: 'authenticated',
@@ -58,7 +59,6 @@ const router = createRouter({
         guest: true
       }
     },
-    playGuestRoutes
   ]
 })
 
