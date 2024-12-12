@@ -25,7 +25,7 @@ export function getUserPermittedScopes(user: any, blueprint: IBlueprint, operati
         return p.roleBased?.some(role => role === '*' || user.roles.includes(role)) ||
           (user.workspace?.roles && p.workspaceRoleBased?.some(role => role === '*' || user.workspace.roles.includes(role)))
       })
-      .map(p => p.scope)
+      .map(p => p.scope || PermissionScope.USER)
       .filter(Boolean)
   )) as PermissionScope[];
 }

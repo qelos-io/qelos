@@ -269,7 +269,7 @@ export async function createBlueprintEntity(req, res) {
     return;
   }
 
-  let user = req.user._id;
+  let user = req.user?._id;
   let workspace = req.workspace?._id;
   if (permittedScopes === true) {
     if (req.body.user) {

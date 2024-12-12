@@ -42,7 +42,7 @@ const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     index: true,
-    required: true,
+    required: false,
   },
   workspace: {
     type: mongoose.Schema.Types.ObjectId,

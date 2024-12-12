@@ -79,13 +79,17 @@ function submit() {
 
       <el-tab-pane :label="$t('Permissions and Roles')" name="rbac">
         <PermissionScopeSelector v-model="edit.permissionScope"/>
-        <FormRowGroup v-for="(permission, index) in edit.permissions" :key="index" class="permission">
+        <FormRowGroup v-for="(permission, index) in edit.permissions" :key="index"
+                      :class="{ permission: true, guest: permission.guest }">
           <CrudOperationSelector v-model="permission.operation" class="flex-0"/>
-          <PermissionScopeSelector v-model="permission.scope" class="flex-1"/>
-          <LabelsInput title="Roles" v-model="permission.roleBased" class="roles-input"/>
-          <LabelsInput title="Workspace Roles" v-model="permission.workspaceRoleBased" class="roles-input"/>
-          <WorkspaceLabelSelector class="roles-input" v-model="permission.workspaceLabelsBased" :availableLabels="availableLabels" placeholder="Choose labels"/>
-
+          <FormInput type="switch" v-model="permission.guest" title="Guest?" class="flex-0"/>
+          <template v-if="!permission.guest">
+            <PermissionScopeSelector v-model="permission.scope" class="flex-1"/>
+            <LabelsInput title="Roles" v-model="permission.roleBased" class="roles-input"/>
+            <LabelsInput title="Workspace Roles" v-model="permission.workspaceRoleBased" class="roles-input"/>
+            <WorkspaceLabelSelector class="roles-input" v-model="permission.workspaceLabelsBased"
+                                    :availableLabels="availableLabels" placeholder="Choose labels"/>
+          </template>
           <div class="flex-0 remove-row">
             <RemoveButton @click="edit.permissions.splice(edit.permissions.indexOf(permission), 1)"/>
           </div>
@@ -184,7 +188,15 @@ h3 {
   margin-bottom: 15px;
 }
 
+.permission.guest {
+  justify-content: flex-start;
+}
+
+.permission.guest .remove-row {
+  margin-bottom: 22px;
+}
+
 .roles-input {
-  min-width:400px;
+  min-width: 400px;
 }
 </style>
