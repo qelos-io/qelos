@@ -13,12 +13,12 @@ const props = defineProps<{
   errorMsg?: string;
   clearAfterSubmit?: boolean;
   navigateAfterSubmit?: string;
-  onSubmit?: (data: any) => Promise<unknown>;
+  beforeSubmit?: (data: any) => Promise<unknown>;
 }>()
 
 const onSubmit = async (form) => {
-  if (typeof props.onSubmit === 'function') {
-    await props.onSubmit(form);
+  if (typeof props.beforeSubmit === 'function') {
+    await props.beforeSubmit(form);
   }
   return sdk.blueprints.entitiesOf(props.blueprint).create({ metadata: form })
 }
