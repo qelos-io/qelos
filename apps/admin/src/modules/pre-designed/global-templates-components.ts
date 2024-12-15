@@ -18,6 +18,8 @@ import BlueprintEntityForm from '@/modules/pre-designed/components/BlueprintEnti
 import VChart from '@/modules/pre-designed/components/VChart.vue';
 import EditableContent from '@/modules/pre-designed/components/EditableContent.vue';
 import RemoveConfirmation from './components/RemoveConfirmation.vue';
+import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
+import Pre from '@/modules/pre-designed/components/Pre.vue';
 
 export default function applyGlobalTemplatesComponents(app: App) {
   app.component('TemplatedRemoveButton', TemplatedRemoveButton)
@@ -39,4 +41,6 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('VChart', VChart)
   app.component('EditableContent', EditableContent)
   app.component('RemoveConfirmation', RemoveConfirmation)
+  app.component('StatsCard', StatsCard)
+  app.component('QPre', Pre)
 }

@@ -1,5 +1,5 @@
 <template>
-  <el-card class="container">
+  <el-card class="container" shadow="hover">
     <template v-if="$slots.title" #header>
       <h3><slot name="title"/></h3>
     </template>
