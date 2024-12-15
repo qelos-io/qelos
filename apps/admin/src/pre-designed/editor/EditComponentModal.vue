@@ -2,17 +2,20 @@
   <el-form @submit.stop="submit">
     <el-drawer
         v-model="dialogVisible"
-        title="Edit Components"
+        :title="$t('Edit Component')"
         size="40%"
         class="edit-component-drawer"
         direction="btt">
-      <el-button type="primary" @click="editorMode = !editorMode">{{ $t('Toggle Editor') }}</el-button>
-      <div v-if="editorMode" style="height:100%;">
+      <el-button-group>
+        <el-button @click="editorMode = 'props'" :type="editorMode === 'props' ? 'primary' : 'info'">{{ $t('Properties') }}</el-button>
+        <el-button @click="editorMode = 'code'" :type="editorMode === 'code' ? 'primary' : 'info'">{{ $t('Code') }}</el-button>
+      </el-button-group>
+      <div v-if="editorMode === 'code'" style="height:100%;">
         <Monaco v-model="modelHTML"
                 language="html"
                 style="height:100%;"/>
       </div>
-      <FormRowGroup v-else>
+      <FormRowGroup v-if="editorMode === 'props'">
         <FormInput v-for="prop in modelProps"
                    :key="prop.propName"
                    :type="prop.type"
@@ -37,7 +40,7 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 
-const editorMode = ref(false);
+const editorMode = ref('props');
 const dialogVisible = ref(true)
 const model = defineModel<HTMLElement>()
 const emit = defineEmits(['save'])
@@ -126,6 +129,9 @@ function setAttributesToModel() {
 }
 
 function setHtmlToModel() {
+  if (!modelHTML.value) {
+    return;
+  }
   const template = document.createElement('template');
   template.innerHTML = modelHTML.value;
   const newEl = template.content.firstChild as HTMLElement;
@@ -138,21 +144,21 @@ function setHtmlToModel() {
   });
 }
 
-watch(editorMode, () => {
-  if (editorMode.value) {
-    setAttributesToModel();
-    modelHTML.value = model.value.outerHTML;
-  } else {
+watch(editorMode, (newMode, oldMode) => {
+  if (newMode === 'props') {
     setHtmlToModel();
     setModelProps();
+  } else if (oldMode === 'props') {
+    setAttributesToModel();
+    modelHTML.value = model.value.outerHTML;
   }
 })
 
 function submit() {
-  if (editorMode.value) {
-    setHtmlToModel();
-  } else {
+  if (editorMode.value === 'props') {
     setAttributesToModel();
+  } else {
+    setHtmlToModel();
   }
   emit('save', model.value);
   dialogVisible.value = false;
