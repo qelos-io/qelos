@@ -3,6 +3,32 @@
     <el-tabs model-value="metadata">
       <el-tab-pane name="metadata" :label="$t('Application Metadata')">
         <div class="blocks-list">
+
+          <StatsCard v-if="!loadingBlocks"
+                     color="cyan"
+                     :value="blocks.length"
+                     title="Total Blocks"
+                     actionText="View Blocks"
+                     actionRoute="/blocks"
+                     icon="box"
+          />
+          <StatsCard v-if="!loadingUsers"
+                     color="blue"
+                     :value="users.length"
+                     title="Total Users"
+                     actionText="View Users"
+                     actionRoute="/users"
+                     :fa-icon="['fas', 'users']"
+          />
+          <StatsCard v-if="!loadingWorkspaces"
+                     :value="workspaces.length"
+                     color="purple"
+                     title="Total Workspaces"
+                     actionText="View Workspaces"
+                     actionRoute="/admin/workspaces"
+                     :fa-icon="['fas', 'briefcase']"
+          />
+
           <GpItem>
             <template v-slot:title>
               {{ $t('Common operations') }}
@@ -39,22 +65,6 @@
               </router-link>
             </div>
           </GpItem>
-
-          <GpItem>
-            <template v-slot:title>
-              {{ $t('Information') }}
-            </template>
-            <h4 class="container" v-if="!loadingBlocks">{{
-                t('{amount} Blocks', { amount: blocks.length }, blocks.length)
-              }}</h4>
-            <h4 class="container" v-if="!loadingUsers">{{
-                t('{amount} Users', { amount: users.length }, users.length)
-              }}</h4>
-            <h4 class="container" v-if="!loadingWorkspaces">{{
-                t('{amount} Workspaces', { amount: workspaces.length }, workspaces.length)
-              }}</h4>
-          </GpItem>
-
           <GpItem>
             <template v-slot:title>
               {{ $t('Inputs UI') }}
@@ -109,6 +119,7 @@ import useAdminWorkspacesList from '@/modules/workspaces/store/admin-workspaces-
 import BlueprintsList from '@/modules/no-code/components/BlueprintsList.vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import DesignConfiguration from '@/modules/configurations/components/DesignConfiguration.vue';
+import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
 
 const { appConfig, loaded: configLoaded } = useAppConfiguration();
 
@@ -153,7 +164,6 @@ const changePalette = useConfirmAction(async function changePalette(colorsPalett
 .blocks-list > * {
   width: 28%;
   margin: 2%;
-  border: none;
 }
 
 @media screen and (max-width: 1200px) {
