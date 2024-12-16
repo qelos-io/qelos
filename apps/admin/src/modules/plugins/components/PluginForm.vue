@@ -114,8 +114,6 @@ import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
-import NavigationPositionSelector from '@/modules/plugins/components/NavigationPositionSelector.vue';
-import PreDesignedScreensSelector from '@/modules/plugins/components/PreDesignedScreensSelector.vue';
 import EditPluginMicroFrontends from '@/modules/plugins/components/EditPluginMicroFrontends.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
