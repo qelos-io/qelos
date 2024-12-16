@@ -41,7 +41,6 @@ function getUsersForAdmin(req: AuthRequest, res: Response): void {
     }
 
     logger.log('admin db query', query)
-    console.log('fields for users!!!!!', req.query.select ? req.query.select.toString().replace(/,/, ' ') : privilegedUserFields)
 
     User
       .find(query)

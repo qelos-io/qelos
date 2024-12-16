@@ -74,6 +74,17 @@ async function hasReachedLimitations(req: RequestWithUser, blueprint: IBlueprint
 }
 
 const GLOBAL_PERMITTED_FIELDS = '-auditInfo';
+const DEFAULT_LIMIT = 1000;
+
+function getSortQuery(req: Request) {
+  if (!req.query.$sort) {
+    return 'created';
+  }
+  if (req.query.$sort instanceof Array) {
+    return req.query.$sort.join(' ');
+  }
+  return req.query.$sort;
+}
 
 export async function getAllBlueprintEntities(req, res) {
   const blueprint = req.blueprint as IBlueprint;
@@ -93,12 +104,23 @@ export async function getAllBlueprintEntities(req, res) {
       ...getEntityQuery({ blueprint, req, permittedScopes })
     }
     delete query.$populate;
+    delete query.$sort;
+    delete query.$limit;
+    delete query.$outerPopulate;
     delete query.$outerPopulate;
     if ('bypassAdmin' in req.query) {
       delete query.bypassAdmin;
     }
+    const sort = getSortQuery(req);
+    const limit = req.query.$limit && (parseInt(req.query.$limit) || DEFAULT_LIMIT);
+    const page = req.query.$page && (parseInt(req.query.$page) || 1);
     convertQueryToIndexes(query, blueprint);
-    const entities = await BlueprintEntity.find(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS)
+    const entities = await BlueprintEntity
+      .find(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS, {
+        sort,
+        limit: limit || (req.query.$page ? DEFAULT_LIMIT : undefined),
+        skip: req.query.$page ? (page - 1) * (limit || DEFAULT_LIMIT) : undefined
+      })
       .lean()
       .exec()
 
