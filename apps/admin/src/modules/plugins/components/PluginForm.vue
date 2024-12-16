@@ -2,25 +2,26 @@
   <el-form @submit.native.prevent="submit">
     <EditPluginHeader :plugin="plugin"/>
     <div class="content">
-      <div class="fast-refresh-manifest">
-        <FormRowGroup>
-          <FormInput title="Manifest URL" label="required" v-model="edit.manifestUrl"/>
-          <FormInput title="Plugin API Path" label="Leave empty to auto-set" v-model="edit.apiPath"/>
-        </FormRowGroup>
-        <div centered>
-          <el-button type="text" class="refresh-manifest" @click="refreshPluginFromManifest">
-            <el-icon>
-              <icon-refresh/>
-            </el-icon>
-          </el-button>
-        </div>
-      </div>
       <el-tabs>
         <el-tab-pane :label="$t('Basic Information')">
           <FormRowGroup>
             <FormInput title="Name" v-model="edit.name" required/>
             <FormInput title="Description" v-model="edit.description"/>
           </FormRowGroup>
+          <div class="fast-refresh-manifest">
+            <h3>{{$t('Quick Remote Load')}}</h3>
+            <FormRowGroup>
+              <FormInput title="Manifest URL" label="required" v-model="edit.manifestUrl"/>
+              <FormInput title="Plugin API Path" label="Leave empty to auto-set" v-model="edit.apiPath"/>
+            </FormRowGroup>
+            <div centered>
+              <el-button type="text" class="refresh-manifest" @click="refreshPluginFromManifest">
+                <el-icon>
+                  <icon-refresh/>
+                </el-icon>
+              </el-button>
+            </div>
+          </div>
         </el-tab-pane>
         <el-tab-pane :label="$t('APIs')">
           <FormRowGroup>
