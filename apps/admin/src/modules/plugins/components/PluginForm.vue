@@ -15,30 +15,22 @@
           </el-button>
         </div>
       </div>
-      <el-collapse accordion model-value="1">
-        <el-collapse-item name="1">
-          <template #title>
-            <h2>{{ $t('Basic Information') }}</h2>
-          </template>
+      <el-tabs>
+        <el-tab-pane :label="$t('Basic Information')">
           <FormRowGroup>
             <FormInput title="Name" v-model="edit.name" required/>
             <FormInput title="Description" v-model="edit.description"/>
           </FormRowGroup>
-        </el-collapse-item>
-        <el-collapse-item>
-          <template #title>
-            <h2>{{ $t('APIs') }}</h2>
-          </template>
+        </el-tab-pane>
+        <el-tab-pane :label="$t('APIs')">
           <FormRowGroup>
             <FormInput title="API Path" :label="apiPathLabel" v-model="edit.apiPath"/>
             <FormInput title="Proxy URL" :label="proxyUrlLabel" v-model="edit.proxyUrl"/>
           </FormRowGroup>
           <FormInput title="Manual Token" label="Qelos will use this token as Bearer token. Leave empty to keep previous value" v-model="edit.token"/>
-        </el-collapse-item>
-        <el-collapse-item>
-          <template #title>
-            <h2>{{ $t('Hooks & Events') }}</h2>
-          </template>
+        </el-tab-pane>
+        <el-tab-pane :label="$t('Hooks & Events')">
+          <p>{{$t('The ability to subscribe to system and custom events using web hooks.')}}</p>
           <div v-for="(event, index) in edit.subscribedEvents" class="sub-item" :key="index">
             <FormRowGroup>
               <el-form-item>
@@ -83,23 +75,15 @@
             </FormRowGroup>
           </div>
           <AddMore @click="edit.subscribedEvents.push({source: '', kind: '', eventName: '', hookUrl: ''})"/>
-        </el-collapse-item>
-        <el-collapse-item>
-          <template #title>
-            <h2>{{ $t('CRUDs') }}</h2>
-          </template>
+        </el-tab-pane>
+        <el-tab-pane :label="$t('CRUDs')">
           Soon
-        </el-collapse-item>
-        <el-collapse-item>
-          <template #title>
-            <h2>{{ $t('Micro-Frontends') }}</h2>
-          </template>
+        </el-tab-pane>
+        <el-tab-pane :label="$t('Micro-Frontends')">
           <EditPluginMicroFrontends/>
-        </el-collapse-item>
-        <el-collapse-item>
-          <template #title>
-            <h2>{{ $t('Injectables') }}</h2>
-          </template>
+        </el-tab-pane>
+        <el-tab-pane :label="$t('Injectables')">
+          <p>{{$t('The ability to inject any custom HTML / CSS / JS to all the pages.')}}</p>
           <div v-for="(inject, index) in edit.injectables" class="sub-item" :key="index">
             <FormRowGroup>
               <FormInput class="flex-0" type="switch" v-model="inject.active"/>
@@ -112,8 +96,8 @@
             <Monaco v-if="inject.active" v-model="inject.html" language="html"/>
           </div>
           <AddMore @click="addMoreInjectable"/>
-        </el-collapse-item>
-      </el-collapse>
+        </el-tab-pane>
+      </el-tabs>
 
       <h2>{{ $t('Summary') }}</h2>
       <Monaco ref="editor" :model-value="pluginJson" @change="pluginJson = editor.getMonaco().getValue()"
