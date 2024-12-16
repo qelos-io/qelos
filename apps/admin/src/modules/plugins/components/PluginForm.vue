@@ -97,11 +97,11 @@
           </div>
           <AddMore @click="addMoreInjectable"/>
         </el-tab-pane>
+        <el-tab-pane :label="$t('Summary')">
+          <Monaco ref="editor" :model-value="pluginJson" @change="pluginJson = editor.getMonaco().getValue()"
+                  language="json"/>
+        </el-tab-pane>
       </el-tabs>
-
-      <h2>{{ $t('Summary') }}</h2>
-      <Monaco ref="editor" :model-value="pluginJson" @change="pluginJson = editor.getMonaco().getValue()"
-              language="json"/>
     </div>
   </el-form>
 </template>
