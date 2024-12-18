@@ -95,6 +95,7 @@
                        :title="prop.label"
                        :label="prop.description"
                        :placeholder="prop.placeholder"
+                       :options="prop.options"
                        v-model="propsBuilder[prop.prop]"/>
           </div>
         </div>

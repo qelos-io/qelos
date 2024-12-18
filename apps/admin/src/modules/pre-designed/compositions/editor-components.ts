@@ -8,6 +8,8 @@ import MockVChart from '@/pre-designed/editor/MockVChart.vue';
 import RemoveConfirmation from '@/modules/pre-designed/components/RemoveConfirmation.vue';
 import { toRef } from 'vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
+import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
+import MockStatsCard from '@/pre-designed/editor/MockStatsCard.vue';
 
 export interface EditorComponent {
   component: any;
@@ -19,9 +21,10 @@ export interface EditorComponent {
   requiredProps: Array<{
     prop: string,
     label?: string,
-    type?: 'text' | 'textarea' | 'password' | 'button' | 'checkbox' | 'file' | 'number' | 'radio' | 'upload' | 'switch' | 'color' | 'url' | 'array',
+    type?: 'text' | 'textarea' | 'password' | 'button' | 'checkbox' | 'file' | 'number' | 'radio' | 'upload' | 'switch' | 'color' | 'url' | 'array' | 'select',
     description?: string,
     placeholder?: string,
+    options?: Array<{ identifier: string, name: string }>,
     value?: any,
     bind?: boolean,
     source: string,
@@ -216,6 +219,54 @@ export function useEditorComponents() {
         }
       }
     },
+    'stats-card': {
+      component: StatsCard,
+      mock: MockStatsCard,
+      title: 'Statistics Card',
+      requiredProps: [
+        { prop: 'title', label: 'Title', type: 'text', source: 'manual', placeholder: 'Enter the card title' },
+        {
+          prop: 'color', label: 'Color', type: 'select', source: 'manual', placeholder: 'Choose a color',
+          options: [
+            { identifier: 'blue', name: 'Blue' },
+            { identifier: 'green', name: 'Green' },
+            { identifier: 'red', name: 'Red' },
+            { identifier: 'yellow', name: 'Yellow' },
+            { identifier: 'purple', name: 'Purple' },
+            { identifier: 'gray', name: 'Gray' },
+            { identifier: 'orange', name: 'Orange' },
+            { identifier: 'pink', name: 'Pink' },
+            { identifier: 'cyan', name: 'Cyan' },
+            { identifier: 'primary', name: 'Primary' },
+            { identifier: 'success', name: 'Success' },
+            { identifier: 'warning', name: 'Warning' },
+            { identifier: 'danger', name: 'Danger' },
+            { identifier: 'info', name: 'Info' },
+          ]
+        },
+        {
+          prop: 'fa-icon', label: 'Background Icon from Font-awesome', bind: true,
+          description: 'Look for icons at: https://fontawesome.com/search?o=r&m=free',
+          type: 'text', source: 'manual', placeholder: 'Font Awesome icon name (e.g. [\'fas\', \'briefcase\']).'
+        },
+        {
+          prop: 'value',
+          label: 'Value',
+          type: 'text',
+          bind: true,
+          source: 'manual',
+          placeholder: 'Enter a number or a reference to a variable'
+        },
+        { prop: 'route-text', label: 'Action Text', type: 'text', source: 'manual', placeholder: 'Do Something' },
+        {
+          prop: 'route-route',
+          label: 'Action Route',
+          type: 'text',
+          source: 'manual',
+          placeholder: 'Path to navigate when action clicked (e.g. /my-page).'
+        },
+      ],
+    }
   }
 
   return {
