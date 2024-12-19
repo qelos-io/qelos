@@ -1,4 +1,4 @@
-import {getRouter} from '@qelos/api-kit'
+import { getRouter } from '@qelos/api-kit'
 import {
   createWorkspace,
   updateWorkspace,
@@ -9,6 +9,9 @@ import {
   onlyWorkspacePrivileged,
   activateWorkspace,
   getWorkspaceMembers,
+  addWorkspaceMember,
+  deleteWorkspaceMember,
+  updateWorkspaceMember,
   getEveryWorkspaces,
   getWorkspaceEncryptedData, setWorkspaceEncryptedData
 } from '../controllers/workspace'
@@ -52,6 +55,9 @@ router
     onlyWorkspacePrivileged,
     getWorkspaceMembers
   )
+  .post('/api/workspaces/:workspaceId/members', verifyUser, onlyPrivileged, getWorkspaceByParams, addWorkspaceMember)
+  .put('/api/workspaces/:workspaceId/members/:userId', verifyUser, onlyAuthenticated, getWorkspaceByParams, onlyWorkspacePrivileged, updateWorkspaceMember)
+  .delete('/api/workspaces/:workspaceId/members/:userId', verifyUser, onlyAuthenticated, getWorkspaceByParams, onlyWorkspacePrivileged, deleteWorkspaceMember)
   .get('/api/workspaces/:workspaceId/encrypted', verifyUser, onlyPrivileged, getWorkspaceEncryptedData)
   .post('/api/workspaces/:workspaceId/encrypted', verifyUser, onlyPrivileged, setWorkspaceEncryptedData)
   .post('/api/workspaces/:workspaceId/activate', verifyUser, onlyAuthenticated, getWorkspaceByParams, activateWorkspace)

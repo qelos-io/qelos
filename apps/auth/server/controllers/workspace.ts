@@ -207,7 +207,7 @@ export async function createWorkspace(req: AuthRequest, res: Response) {
 }
 
 export async function updateWorkspace(req: AuthRequest, res: Response) {
-  const { name, logo, invites } = req.body;
+  const { name, logo, invites, members, labels } = req.body;
   const workspace = req.workspace;
   try {
 
@@ -222,15 +222,34 @@ export async function updateWorkspace(req: AuthRequest, res: Response) {
     if (invites) {
       workspace.invites = invites;
     }
-
     if (req.userPayload.isPrivileged) {
-      if (req.body.members?.length) {
-        workspace.members = req.body.members;
+      if (members) {
+        if (!Array.isArray(members)) {
+          return res
+            .status(400)
+            .json({ message: "Invalid data. Must be an array." })
+            .end();
+        }
+        if (members.length === 0) {
+          return res
+            .status(400)
+            .json({ message: "Members cannot be empty." })
+            .end();
+        }
+        workspace.members = members;
       }
-      if (req.body.labels instanceof Array) {
-        workspace.labels = req.body.labels;
+
+      if (labels) {
+        if (!(labels instanceof Array)) {
+          return res
+            .status(400)
+            .json({ message: "Invalid data. Must be an array." })
+            .end();
+        }
+        workspace.labels = labels;
       }
     }
+
 
     await workspace.save();
     res.status(200).json(workspace).end()
@@ -342,6 +361,105 @@ export async function getWorkspaceMembers(req: AuthRequest, res: Response) {
     res.status(200).json(users).end()
   } catch (err) {
     res.status(500).json({ message: 'Failed to load workspace members' }).end()
+  }
+}
+
+export async function addWorkspaceMember(req: AuthRequest, res: Response) {
+  const { tenant } = req.headers || {};
+  const { workspaceId } = req.params;
+  const { userId, roles } = req.body;
+
+  if (!userId || !roles || !Array.isArray(roles)) {
+    return res.status(400).json({ message: 'Invalid input. Provide "userId", "roles".' }).end();
+  }
+
+  try {
+    const user = await User.findOne({ tenant, _id: userId }).exec();
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' }).end();
+    }
+
+    const workspace = await Workspace.findOne({ tenant, _id: workspaceId }).exec();
+    if (!workspace) {
+      return res.status(404).json({ message: 'Workspace not found.' }).end();
+    }
+
+    if (workspace.members.some(member => member.user.toString() === user._id.toString())) {
+      return res.status(400).json({ message: 'User is already a member of the workspace.' }).end();
+    }
+
+    workspace.members.push({ user: user._id as Types.ObjectId, roles });
+    await workspace.save();
+
+    res.status(200).json({ message: 'Member added successfully.', workspace }).end();
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to add member.', error: err.message }).end();
+  }
+}
+
+export async function deleteWorkspaceMember(req: AuthRequest, res: Response) {
+  const { tenant } = req.headers || {};
+  const { userId } = req.params;
+
+  try {
+    const workspace = await Workspace.findOne({ tenant, 'members.user': userId }).exec();
+
+    if (!workspace) {
+      return res.status(404).json({ message: 'Workspace not found.' });
+    }
+    const memberIndex = workspace.members.findIndex((member: any) => {
+      return member.user.toString() === userId;
+    });
+
+    if (memberIndex === -1) {
+      return res.status(404).json({ message: 'Member not found in the workspace.' });
+    }
+
+    workspace.members.splice(memberIndex, 1);
+    await workspace.save();
+
+    return res.status(200).json({
+      message: 'Member removed from workspace.',
+      removedMemberId: userId,
+      userId,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to remove member.', error: err.message });
+  }
+}
+
+export async function updateWorkspaceMember(req: AuthRequest, res: Response) {
+  const { tenant } = req.headers || {};
+  const { workspaceId, userId } = req.params;
+  const { roles } = req.body;
+
+  if (!roles || !Array.isArray(roles)) {
+    return res.status(400).json({ message: 'Invalid input. "roles" must be an array.' });
+  }
+
+  try {
+
+    const workspace = await Workspace.findOne({ tenant, _id: workspaceId }).exec();
+    if (!workspace) {
+      return res.status(404).json({ message: 'Workspace not found.' });
+    }
+
+    const member = workspace.members.find((member: any) => member.user.toString() === userId);
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found in the workspace.' });
+    }
+
+    member.roles = [...roles];
+
+    await workspace.save();
+
+    return res.status(200).json({
+      message: 'Member roles updated successfully.',
+      updatedMember: member,
+      workspaceId,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to update member roles.', error: err.message });
   }
 }
 
