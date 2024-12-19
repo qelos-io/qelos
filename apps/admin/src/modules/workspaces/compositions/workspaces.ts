@@ -34,6 +34,59 @@ export function useUpdateWorkspace(workspaceId: string) {
   };
 }
 
+export function useAddWorkspaceMember(workspaceId: string) {
+  const { submit, submitting } = useSubmitting(
+    ({ userId, roles }: { userId: string; roles: string[] }) => {
+      return workspacesMembersService.add(workspaceId, userId, roles);
+    },
+    {
+      success: 'Member added successfully',
+      error: 'Failed to add member',
+    }
+  );
+
+  return {
+    addNewMember: submit,
+    adding: submitting,
+  };
+}
+
+export function useDeleteWorkspaceMember(workspaceId: string) {
+  const { submit, submitting } = useSubmitting(
+    (userId: string) => {
+
+      return workspacesMembersService.delete(workspaceId, userId);
+    },
+    {
+      success: 'Member deleted successfully',
+      error: 'Failed to delete member',
+    })
+  return {
+    deleteMember: submit,
+    deleting: submitting,
+  };
+}
+
+export function useUpdateWorkspaceMember(workspaceId: string) {
+  const { submit, submitting } = useSubmitting(
+    ({ userId, roles }: { userId: string; roles: string[] }) => {
+      const memberData = { roles };
+
+      return workspacesMembersService.update(workspaceId, userId, memberData);
+    },
+    {
+      success: 'Member updated successfully',
+      error: 'Failed to update member',
+    }
+  );
+
+  return {
+    updateMember: submit,
+    updating: submitting,
+  };
+}
+
+
 export function useWorkspaceMembers(workspaceId: string) {
   const { result: members, loaded, retry } = useDispatcher<any[]>(() => workspacesMembersService.getAll(workspaceId), null, true);
 
@@ -42,5 +95,4 @@ export function useWorkspaceMembers(workspaceId: string) {
     loaded,
     load: retry,
   }
-
 }

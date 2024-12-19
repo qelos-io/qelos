@@ -27,7 +27,7 @@ const filteredWorkspaces = computed(() => {
   <div>
     <BlockItem v-for="workspace in filteredWorkspaces" :key="workspace._id">
       <template v-slot:title>
-        <router-link :to="{ name: 'editMyWorkspace', params: { id: workspace._id } }">
+        <router-link :to="{ name: 'adminEditWorkspace', params: { id: workspace._id } }">
           {{ workspace.name }}
         </router-link>
       </template>
