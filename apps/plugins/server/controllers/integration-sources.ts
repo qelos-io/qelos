@@ -120,7 +120,7 @@ export async function removeIntegrationSource(req, res) {
       .exec()
 
     if (!source) {
-      res.status(404).end({ message: 'integration source not found' });
+      res.status(404).json({ message: 'integration source not found' }).end();
       return;
     }
 
