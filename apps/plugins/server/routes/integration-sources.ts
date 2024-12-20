@@ -1,0 +1,24 @@
+import { getRouter, verifyUser, populateUser, getBodyParser } from '@qelos/api-kit';
+import { onlyEditPrivilegedOrPlugin } from '../middlewares/privileged-check';
+import {
+  createIntegrationSource,
+  getAllIntegrationSources,
+  getIntegrationSource, removeIntegrationSource, updateIntegrationSource
+} from '../controllers/integration-sources';
+
+export function integrationSourcesRouter() {
+  const router = getRouter();
+
+  const AUTHENTICATION_MIDDLEWARES = [getBodyParser(), populateUser, verifyUser, onlyEditPrivilegedOrPlugin];
+
+  router
+    .get('/api/integration-sources', AUTHENTICATION_MIDDLEWARES.concat(getAllIntegrationSources))
+    .post('/api/integration-sources', AUTHENTICATION_MIDDLEWARES.concat(createIntegrationSource))
+
+  router
+    .get('/api/integration-sources/:sourceId', AUTHENTICATION_MIDDLEWARES.concat(getIntegrationSource))
+    .put('/api/integration-sources/:sourceId', AUTHENTICATION_MIDDLEWARES.concat(updateIntegrationSource))
+    .delete('/api/integration-sources/:sourceId', AUTHENTICATION_MIDDLEWARES.concat(removeIntegrationSource))
+
+  return router;
+}

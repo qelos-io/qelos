@@ -1,36 +1,17 @@
-import { internalServicesSecret, secretsToken } from '../../config';
-import { service } from '@qelos/api-kit';
 import { cacheManager } from './cache-manager';
 import { fetchPlugin } from './plugins-call';
 import logger from './logger';
-
-const secretsService = service('SECRETS', { port: process.env.SECRETS_SERVICE_PORT || 9002 });
-
-function callSecretsService(url: string, tenant: string, key: string, value?: any) {
-  return secretsService({
-    headers: { internal_secret: internalServicesSecret, tenant },
-    method: 'POST',
-    data: {
-      key,
-      value,
-      token: secretsToken
-    },
-    url
-  })
-    .then((axiosRes: any) => {
-      return axiosRes.data;
-    })
-}
+import { getSecret, setSecret } from './secrets-service';
 
 export function getRefreshSecret(tenant: string, apiPath: string): Promise<{ value: string }> {
   logger.log('get refresh secret for ', tenant, apiPath)
-  return callSecretsService('/api/secrets/get', tenant, `refresh-token-${tenant}-${apiPath}`)
+  return getSecret(tenant, `refresh-token-${tenant}-${apiPath}`)
 }
 
 export function setRefreshSecret(tenant: string, apiPath: string, refreshToken: string) {
   logger.log('set refresh secret for ', tenant, apiPath)
   logger.log('refresh has valid value??', !!refreshToken)
-  return callSecretsService('/api/secrets/set', tenant, `refresh-token-${tenant}-${apiPath}`, refreshToken)
+  return setSecret(tenant, `refresh-token-${tenant}-${apiPath}`, refreshToken)
 }
 
 export function storeOAuthPayloadForPlugin(tenant: string, apiPath: string, payload, authAcquire) {
