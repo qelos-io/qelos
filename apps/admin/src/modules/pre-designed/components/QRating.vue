@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-defineModel<number>()
+const model = defineModel<number>()
 
 const props = defineProps<{
   onIcon?: string,
@@ -15,7 +15,7 @@ const flexDirection = computed(() => {
 </script>
 
 <template>
-  <Rating v-model="modelValue" class="rating">
+  <Rating v-model="model" class="rating">
     <template v-if="onIcon" #onicon>
       <img :src="onIcon" alt="Rate On" height="24" width="24"/>
     </template>
