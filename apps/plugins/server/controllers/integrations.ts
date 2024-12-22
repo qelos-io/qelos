@@ -1,4 +1,7 @@
 import Integration from '../models/integration';
+import Plugin from '../models/plugin';
+import { validateIntegrationTarget } from '../services/integrations-target-service';
+import { validateIntegrationTrigger } from '../services/integrations-trigger-service';
 
 export async function getAllIntegrations(req, res) {
   const query: any = { tenant: req.headers.tenant };
@@ -36,10 +39,33 @@ export async function getIntegration(req, res) {
 }
 
 export async function createIntegration(req, res) {
-  const integration = new Integration(req.body);
-  integration.tenant = req.headers.tenant;
+  const { trigger, target } = req.body || {}
+
+  if (!trigger || !target) {
+    res.status(400).json({ message: 'trigger and target are required' }).end();
+    return;
+  }
+
+  const userId = req.user._id;
+  const plugin = await Plugin.findOne({ tenant: req.headers.tenant, user: userId }).select('_id').lean().exec();
+
+  const integration = new Integration({
+    tenant: req.headers.tenant,
+    user: userId,
+    plugin: plugin?._id,
+    trigger,
+    target
+  });
+
 
   try {
+    const [triggerSource, targetSource] = await Promise.all([
+      validateIntegrationTrigger(req.headers.tenant, integration.trigger),
+      validateIntegrationTarget(req.headers.tenant, integration.target)
+    ]);
+
+    // should register the trigger integration source
+
     await integration.save();
     res.json(integration).end();
   } catch {
