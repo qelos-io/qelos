@@ -82,9 +82,11 @@ export async function updateIntegration(req, res) {
     }
     if (req.body?.trigger) {
       integration.trigger = req.body.trigger;
+      const triggerSource = await validateIntegrationTrigger(req.headers.tenant, integration.trigger);
     }
     if (req.body?.target) {
       integration.target = req.body.target;
+      const targetSource = await validateIntegrationTarget(req.headers.tenant, integration.target);
     }
     if (integration.isModified()) {
       await integration.save();
