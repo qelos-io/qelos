@@ -21,6 +21,7 @@ import RemoveConfirmation from './components/RemoveConfirmation.vue';
 import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
 import Pre from '@/modules/pre-designed/components/Pre.vue';
 import ContentBox from '@/modules/pre-designed/components/ContentBox.vue';
+import QRating from '@/modules/pre-designed/components/QRating.vue';
 
 export default function applyGlobalTemplatesComponents(app: App) {
   app.component('TemplatedRemoveButton', TemplatedRemoveButton)
@@ -45,4 +46,5 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('StatsCard', StatsCard)
   app.component('QPre', Pre)
   app.component('ContentBox', ContentBox);
+  app.component('QRating', QRating)
 }
