@@ -1,10 +1,11 @@
 import { Response } from 'express';
+import qs from 'qs'
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
 import { BlueprintPropertyType, CRUDOperation } from '@qelos/global-types';
 import { IBlueprint } from '../models/blueprint';
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
 import BlueprintEntity from '../models/blueprint-entity';
-import { getEntityQuery } from '../services/entities.service';
+import { Full, getEntityQuery } from '../services/entities.service';
 
 export function checkChartPermissions(req, res: Response, next: Function) {
   const blueprint: IBlueprint = req.blueprint;
@@ -104,9 +105,21 @@ export async function getStandardChart(req, res: Response) {
   }).end();
 }
 
-export function getPieChart(req: RequestWithUser, res: Response) {
+export async function getPieChart(req: RequestWithUser, res: Response) {
   const blueprint: IBlueprint = req.blueprint;
 
   // return this kind of object: https://echarts.apache.org/examples/en/editor.html?c=pie-simple
   res.json({ type: 'line', data: [] }).end();
+}
+
+export async function getCountCard(req: Full<RequestWithUser>, res: Response) {
+  const blueprint: IBlueprint = req.blueprint;
+
+  const query = {
+    ...qs.parse(req._parsedUrl.query, { depth: 3 }),
+    ...getEntityQuery({ blueprint, req, permittedScopes: req.permittedScopes })
+  }
+
+  const data = await BlueprintEntity.countDocuments(query).exec();
+  res.json({ count: data }).end();
 }

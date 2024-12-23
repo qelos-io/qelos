@@ -169,7 +169,7 @@ export function convertQueryToIndexes(query: any, blueprint: IBlueprint) {
 
 }
 
-type Full<T> = {
+export type Full<T> = {
   [P in keyof T]-?: T[P];
 }
 
