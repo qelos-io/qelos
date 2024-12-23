@@ -18,6 +18,18 @@ const blueprintProperties = ref(
 
 const emit = defineEmits(['changed'])
 
+function addItem() {
+  blueprintProperties.value.push({
+    key: 'new_item',
+    title: '',
+    enum: [],
+    type: BlueprintPropertyType.STRING,
+    description: '',
+    required: false,
+    multi: false
+  })
+}
+
 watch(blueprintProperties, () => {
   emit('changed', blueprintProperties.value)
 }, { deep: true });
@@ -44,6 +56,10 @@ watch(blueprintProperties, () => {
         <el-option v-for="item in entry.enum" :key="item" :label="item" :value="item"/>
       </el-select>
     </el-form-item>
+    <FormRowGroup v-if="entry.type === BlueprintPropertyType.NUMBER">
+      <FormInput v-model="entry.min" type="number" title="Min"/>
+      <FormInput v-model="entry.max" type="number" title="Max"/>
+    </FormRowGroup>
     <FormRowGroup>
       <FormInput v-model="entry.required" title="Required" type="switch" class="flex-0"/>
       <FormInput v-model="entry.multi" title="Multi" type="switch" class="flex-0"/>
@@ -55,8 +71,7 @@ watch(blueprintProperties, () => {
       </div>
     </FormRowGroup>
   </div>
-  <AddMore
-      @click="blueprintProperties.push({key: 'new_item', title: '', enum: [], type: BlueprintPropertyType.STRING, description: '', required: false, multi: false})"/>
+  <AddMore @click="addItem"/>
 </template>
 
 <style scoped>

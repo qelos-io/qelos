@@ -62,10 +62,10 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
   if (property.enum && property.enum.length && !property.enum.includes(value)) {
     throw new ResponseError(`Property ${key} must be one of ${property.enum.join(', ')}`, 406);
   }
-  if (property.min && value < property.min) {
+  if (typeof property.min !== 'undefined' && value < property.min) {
     throw new ResponseError(`Property ${key} must be greater than ${property.min}`, 406);
   }
-  if (property.max && value > property.max) {
+  if (typeof property.max !== 'undefined' && value > property.max) {
     throw new ResponseError(`Property ${key} must be less than ${property.max}`, 406);
   }
   if (property.required && typeof value === 'undefined') {
