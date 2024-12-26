@@ -53,6 +53,7 @@
                    multiple
                    filterable
                    allow-create
+                   required
                    default-first-option
                    :reserve-keyword="false">
           <el-option :label="$t(`customer`)" value="customer"/>
@@ -80,6 +81,8 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+import { useNotifications } from '@/modules/core/compositions/notifications';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
   kind: String,
@@ -103,8 +106,19 @@ const edited = ref<WorkspaceConfigurationMetadata>({
 
 const emit = defineEmits(['save']);
 
+const notifications = useNotifications();
+const { t: $t } = useI18n();
+
 
 function save() {
+  if (!edited.value.allowNonLabeledWorkspaces && !edited.value.labels.length) {
+    notifications.error($t('At least one label must be defined'));
+    return;
+  }
+  if (edited.value.labels.some(label => !label.title || !label.value.length)) {
+    notifications.error($t('All labels must have a title and at least one value'));
+    return;
+  }
   emit('save', edited.value)
 }
 </script>
