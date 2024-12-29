@@ -39,6 +39,8 @@ export default defineConfig({
         items: [
           { text: 'Create a Plugin Page', link: '/plugins/create-page' },
           { text: 'Create a Plugin', link: '/plugins/create' },
+          { text: 'Quick Plugin Page Creator', link: '/plugins/quick-create-page' },
+          { text: 'Edit Mode - Plugin Page Editor', link: '/plugins/plugin-page-editor' },
           // {text: 'Test your Plugin', link: '/plugins/test'},
           { text: 'Plugin Lifecycle', link: '/plugins/lifecycle' },
           { text: 'Deploy your Plugin', link: '/plugins/deploy' },
