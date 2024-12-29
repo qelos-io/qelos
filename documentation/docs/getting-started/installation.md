@@ -95,8 +95,15 @@ npm run dev
 
 ### 5. Populate the Database with Initial Data
 
+For macOS or Linux users: Run the command:
+
 ```bash
 npm run populate-db
+```
+For Windows users: Run the command:
+
+```bash
+USERNAME=test@test.com npm run populate-db
 ```
 
 ### 6. Access the Application
