@@ -257,9 +257,9 @@ export function useEditorComponents() {
           source: 'manual',
           placeholder: 'Enter a number or a reference to a variable'
         },
-        { prop: 'route-text', label: 'Action Text', type: 'text', source: 'manual', placeholder: 'Do Something' },
+        { prop: 'action-text', label: 'Action Text', type: 'text', source: 'manual', placeholder: 'Do Something' },
         {
-          prop: 'route-route',
+          prop: 'action-route',
           label: 'Action Route',
           type: 'text',
           source: 'manual',
