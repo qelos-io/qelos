@@ -8,10 +8,16 @@ import { authStore, fetchAuthUser, isAdmin } from './modules/core/store/auth'
 import draftsRoutes from './modules/drafts/routes';
 import blocksRoutes from './modules/blocks/routes';
 import layoutsRoutes from '@/modules/layouts/routes';
-import { adminRoutesScreenEditor, managePluginsRoutes, playGuestRoutes, playRoutes } from '@/modules/plugins/routes';
+import {
+  adminRoutesScreenEditor,
+  managePluginsRoutes,
+  playGuestRoutes,
+  playRoutes
+} from '@/modules/plugins/routes';
 import {workspacesRoutes, adminWorkspacesRoutes,} from '@/modules/workspaces/routes';
 import noCodeRoutes from '@/modules/no-code/routes';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
+import { integrationsRoutes } from '@/modules/integrations/routes';
 
 // @ts-ignore
 const BASE = import.meta.env.BASE_URL || '/';
@@ -40,8 +46,9 @@ const router = createRouter({
         adminWorkspacesRoutes,
         noCodeRoutes,
         managePluginsRoutes,
+        integrationsRoutes,
         playRoutes,
-        adminRoutesScreenEditor
+        adminRoutesScreenEditor,
       ]
     },
     {

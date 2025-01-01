@@ -13,6 +13,7 @@ export interface IIntegrationSource extends Document {
   plugin?: mongoose.Schema.Types.ObjectId;
   user: string;
   authentication: string;
+  metadata: any;
   name: string;
   labels: string[];
   kind: IntegrationSourceKind;
@@ -36,6 +37,10 @@ const IntegrationSourceSchema = new mongoose.Schema<IIntegrationSource>({
   authentication: {
     type: String,
     required: true
+  },
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: () => {}
   },
   name: {
     type: String,

@@ -1,6 +1,7 @@
 import IntegrationSource from '../models/integration-source';
 import Plugin from '../models/plugin';
 import { storeEncryptedSourceAuthentication } from '../services/source-authentication-service';
+import { validateSourceMetadata } from '../services/source-metadata-service';
 
 const PUBLIC_FIELDS = '-authentication';
 
@@ -43,7 +44,7 @@ export async function getIntegrationSource(req, res) {
 }
 
 export async function createIntegrationSource(req, res) {
-  const { authentication, name, labels, kind } = req.body;
+  const { authentication, name, labels, kind, metadata } = req.body;
 
   const userId = req.user._id;
   const plugin = await Plugin.findOne({ tenant: req.headers.tenant, user: userId }).select('_id').lean().exec();
@@ -55,6 +56,7 @@ export async function createIntegrationSource(req, res) {
     name,
     labels,
     kind,
+    metadata: validateSourceMetadata(metadata),
     user: userId,
     plugin: plugin?._id,
     authentication: authId,
@@ -73,7 +75,7 @@ export async function createIntegrationSource(req, res) {
 }
 
 export async function updateIntegrationSource(req, res) {
-  const { authentication, name, labels } = req.body;
+  const { authentication, name, labels, metadata } = req.body;
 
   try {
     const source = await IntegrationSource
@@ -90,6 +92,9 @@ export async function updateIntegrationSource(req, res) {
     }
     if (labels) {
       source.labels = labels;
+    }
+    if (metadata) {
+      source.metadata = validateSourceMetadata(source.kind, metadata);
     }
 
     if (authentication) {

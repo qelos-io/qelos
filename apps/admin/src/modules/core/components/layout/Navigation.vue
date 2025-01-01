@@ -114,6 +114,12 @@
           </el-icon>
           <span>{{ $t('Plugins List') }}</span>
         </el-menu-item>
+        <el-menu-item :route="{ name: 'integrations-kinds' }" index="/integrations">
+          <el-icon>
+            <font-awesome-icon :icon="['fas', 'arrows-turn-to-dots']" />
+          </el-icon>
+          <span>{{ $t('Integrations') }}</span>
+        </el-menu-item>
       </div>
 
       <template v-for="group in navBar.bottom">
