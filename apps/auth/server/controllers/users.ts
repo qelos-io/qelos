@@ -11,6 +11,7 @@ import { Types, Schema } from 'mongoose';
 
 import ObjectId = Types.ObjectId
 import { getValidMetadata } from '../services/users';
+import Workspace from '../models/workspace';
 
 const privilegedUserFields = 'username phone fullName firstName lastName birthDate roles profileImage';
 
@@ -18,7 +19,7 @@ function getUserIdIfExists(_id, tenant) {
   return User.findOne({ _id, tenant }).select('_id').lean().exec();
 }
 
-function getUsersForAdmin(req: AuthRequest, res: Response): void {
+export function getUsersForAdmin(req: AuthRequest, res: Response): void {
   try {
     // support old versions
     const username = req.query.username?.toString().toLowerCase().trim().replace(/ /g, '+') || undefined;
@@ -60,7 +61,7 @@ function getUsersForAdmin(req: AuthRequest, res: Response): void {
   }
 }
 
-function getUsers(req: AuthRequest, res: Response): RequestHandler {
+export function getUsers(req: AuthRequest, res: Response): RequestHandler {
   if (!req.query.users) {
     getUsersForAdmin(req, res);
     return;
@@ -96,7 +97,7 @@ function getUsers(req: AuthRequest, res: Response): RequestHandler {
     .catch(() => res.status(404).json({ message: 'could not load users' }).end())
 }
 
-function getUser(req: AuthRequest, res: Response): RequestHandler {
+export function getUser(req: AuthRequest, res: Response): RequestHandler {
   const isPrivileged = !!(req.userPayload && req.userPayload.isPrivileged)
 
   const promises: Array<Promise<any>> = [
@@ -125,7 +126,7 @@ function getUser(req: AuthRequest, res: Response): RequestHandler {
   return;
 }
 
-async function getUserEncryptedData(req: AuthRequest, res: Response) {
+export async function getUserEncryptedData(req: AuthRequest, res: Response) {
   const tenant = req.headers.tenant as string;
   if (!tenant) {
     return res.status(401).end();
@@ -145,7 +146,7 @@ async function getUserEncryptedData(req: AuthRequest, res: Response) {
   }
 }
 
-async function setUserEncryptedData(req: AuthRequest, res: Response) {
+export async function setUserEncryptedData(req: AuthRequest, res: Response) {
   const tenant = req.headers.tenant as string;
   if (!tenant) {
     return res.status(401).end();
@@ -164,7 +165,7 @@ async function setUserEncryptedData(req: AuthRequest, res: Response) {
   }
 }
 
-async function createUser(req: AuthRequest, res: Response) {
+export async function createUser(req: AuthRequest, res: Response) {
   logger.log('create new user from admin', req.authConfig, req.body)
   const { tenant, name, internalMetadata, metadata, ...userData } = req.body
   const user = new User(userData);
@@ -218,7 +219,7 @@ async function createUser(req: AuthRequest, res: Response) {
   }
 }
 
-async function updateUser(req: AuthRequest, res: Response) {
+export async function updateUser(req: AuthRequest, res: Response) {
   const {
     username,
     roles,
@@ -290,7 +291,7 @@ async function updateUser(req: AuthRequest, res: Response) {
   }
 }
 
-async function removeUser(req: AuthRequest, res: Response) {
+export async function removeUser(req: AuthRequest, res: Response) {
   try {
     await UsersService.deleteUser(req.params.userId, req.headers.tenant);
 
@@ -310,13 +311,14 @@ async function removeUser(req: AuthRequest, res: Response) {
   }
 }
 
-export default {
-  getUsersForAdmin,
-  getUsers,
-  createUser,
-  getUser,
-  updateUser,
-  removeUser,
-  getUserEncryptedData,
-  setUserEncryptedData
+export async function getUsersStats(req: AuthRequest, res: Response) {
+  try {
+    const [users, workspaces] = await Promise.all([
+      User.countDocuments({ tenant: req.headers.tenant }).exec(),
+      Workspace.countDocuments({ tenant: req.headers.tenant }).exec()
+    ]);
+    res.status(200).json({ users, workspaces }).end();
+  } catch (e) {
+    res.status(500).json({ message: 'could not load users stats' }).end();
+  }
 }

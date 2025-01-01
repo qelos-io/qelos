@@ -12,16 +12,16 @@
                      actionRoute="/blocks"
                      icon="box"
           />
-          <StatsCard v-if="!loadingUsers"
+          <StatsCard v-if="!loadingStats"
                      color="blue"
-                     :value="users.length"
+                     :value="stats.users"
                      title="Total Users"
                      actionText="View Users"
                      actionRoute="/users"
                      :fa-icon="['fas', 'users']"
           />
-          <StatsCard v-if="!loadingWorkspaces"
-                     :value="workspaces.length"
+          <StatsCard v-if="!loadingStats"
+                     :value="stats.workspaces"
                      color="purple"
                      title="Total Workspaces"
                      actionText="View Workspaces"
@@ -120,12 +120,12 @@ import BlueprintsList from '@/modules/no-code/components/BlueprintsList.vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import DesignConfiguration from '@/modules/configurations/components/DesignConfiguration.vue';
 import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
+import { useUsersStats } from '@/modules/users/compositions/users-stats';
 
 const { appConfig, loaded: configLoaded } = useAppConfiguration();
 
 const { loading: loadingBlocks, blocks } = toRefs(useBlocksList())
-const { loading: loadingUsers, users } = useUsersList()
-const { loading: loadingWorkspaces, workspaces } = toRefs(useAdminWorkspacesList())
+const { loading: loadingStats, stats } = useUsersStats()
 const { t } = useI18n();
 const exampleText = ref(t('Example text'));
 

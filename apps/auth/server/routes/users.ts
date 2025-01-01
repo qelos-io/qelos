@@ -1,10 +1,5 @@
 import { getRouter } from '@qelos/api-kit'
-import users from '../controllers/users'
-import verifyUser from '../middleware/verify-user'
-import { onlyPrivileged } from '../middleware/auth-check'
-import { authConfigCheck } from '../middleware/auth-config-check';
-
-const {
+import {
   getUsersForAdmin,
   getUsers,
   createUser,
@@ -12,14 +7,20 @@ const {
   updateUser,
   removeUser,
   getUserEncryptedData,
-  setUserEncryptedData
-} = users
+  setUserEncryptedData,
+  getUsersStats
+} from '../controllers/users'
+import verifyUser from '../middleware/verify-user'
+import { onlyPrivileged } from '../middleware/auth-check'
+import { authConfigCheck } from '../middleware/auth-config-check';
+
 const router = getRouter()
 
 router
   .get('/api/users', verifyUser, onlyPrivileged, getUsers)
   .post('/api/users', verifyUser, onlyPrivileged, authConfigCheck, createUser)
   .post('/api/users/:userId/encrypted', verifyUser, onlyPrivileged, setUserEncryptedData)
+  .get('/api/users/stats', verifyUser, onlyPrivileged, getUsersStats)
   .get('/api/users/:userId', verifyUser, onlyPrivileged, getUser)
   .get('/api/users/:userId/encrypted', verifyUser, onlyPrivileged, getUserEncryptedData)
   .put('/api/users/:userId', verifyUser, onlyPrivileged, authConfigCheck, updateUser)
