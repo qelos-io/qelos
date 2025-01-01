@@ -7,7 +7,6 @@ import configurationsRoutes from './modules/configurations/routes'
 import { authStore, fetchAuthUser, isAdmin } from './modules/core/store/auth'
 import draftsRoutes from './modules/drafts/routes';
 import blocksRoutes from './modules/blocks/routes';
-import layoutsRoutes from '@/modules/layouts/routes';
 import {
   adminRoutesScreenEditor,
   managePluginsRoutes,
@@ -41,7 +40,6 @@ const router = createRouter({
         usersRoutes,
         draftsRoutes,
         blocksRoutes,
-        layoutsRoutes,
         workspacesRoutes,
         adminWorkspacesRoutes,
         noCodeRoutes,

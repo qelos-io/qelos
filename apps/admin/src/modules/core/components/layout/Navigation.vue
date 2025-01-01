@@ -32,17 +32,6 @@
       </template>
 
       <div class="nav-group" v-if="isPrivilegedUser">
-        <h4>{{ $t('LOOK AND FEEL') }}</h4>
-        <el-menu-item :route="{ name: 'layouts' }" index="/layouts">
-          <el-icon>
-            <icon-grid/>
-          </el-icon>
-          <span>{{ $t('Layouts') }}</span>
-          <LiveEditColorOpener color="secondaryColor"/>
-        </el-menu-item>
-      </div>
-
-      <div class="nav-group" v-if="isPrivilegedUser">
         <h4>{{ $t('COMPONENTS') }}</h4>
 
         <el-sub-menu index="3">
