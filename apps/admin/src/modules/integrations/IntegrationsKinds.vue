@@ -3,8 +3,8 @@ import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 </script>
 
 <template>
-  <h1>{{$t('Integrations')}}</h1>
-  <p>{{$t('Choose any provider to manage connections and operations.')}}</p>
+  <h1>{{ $t('Integrations') }}</h1>
+  <p>{{ $t('Choose any provider to manage connections and operations.') }}</p>
 
   <div class="blocks-list">
     <BlockItem class="source">
@@ -13,7 +13,9 @@ import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
       </div>
       <template #actions>
         <div class="actions">
-          <el-button text>Connections</el-button>
+          <el-button @click="$router.push({name: 'integrations-sources', params: {kind: 'qelos'}})" text>
+            Connections
+          </el-button>
           <el-button text>Integrations</el-button>
         </div>
       </template>
@@ -24,7 +26,9 @@ import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
       </div>
       <template #actions>
         <div class="actions">
-          <el-button text>Connections</el-button>
+          <el-button text @click="$router.push({name: 'integrations-sources', params: {kind: 'openai'}})">
+            Connections
+          </el-button>
           <el-button text>Integrations</el-button>
         </div>
       </template>
@@ -35,7 +39,9 @@ import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
       </div>
       <template #actions>
         <div class="actions">
-          <el-button text>Connections</el-button>
+          <el-button text @click="$router.push({name: 'integrations-sources', params: {kind: 'supabase'}})">
+            Connections
+          </el-button>
           <el-button text>Integrations</el-button>
         </div>
       </template>
@@ -46,7 +52,8 @@ import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
       </div>
       <template #actions>
         <div class="actions">
-          <el-button text>Connections</el-button>
+          <el-button text @click="$router.push({name: 'integrations-sources', params: {kind: 'n8n'}})">Connections
+          </el-button>
           <el-button text>Integrations</el-button>
         </div>
       </template>
@@ -57,7 +64,9 @@ import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
       </div>
       <template #actions>
         <div class="actions">
-          <el-button text>Connections</el-button>
+          <el-button text @click="$router.push({name: 'integrations-sources', params: {kind: 'smtp'}})">
+            Connections
+          </el-button>
           <el-button text>Integrations</el-button>
         </div>
       </template>

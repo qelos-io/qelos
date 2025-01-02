@@ -9,6 +9,11 @@ export const integrationsRoutes = {
       path: '',
       name: 'integrations-kinds',
       component: async () => (await import('@/modules/integrations/IntegrationsKinds.vue')).default,
+    },
+    {
+      path: ':kind/sources',
+      name: 'integrations-sources',
+      component: async () => (await import('@/modules/integrations/IntegrationsSources.vue')).default,
     }
   ]
 }
