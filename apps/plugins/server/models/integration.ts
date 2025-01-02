@@ -4,6 +4,7 @@ export interface IIntegration extends Document {
   tenant: string;
   plugin?: mongoose.Schema.Types.ObjectId;
   user: string;
+  kind: string[];
   trigger: IIntegrationEntity;
   target: IIntegrationEntity;
   created: Date;
@@ -45,6 +46,7 @@ const IntegrationSchema = new mongoose.Schema<IIntegration>({
     type: String,
     required: true,
   },
+  kind: [String],
   trigger: IntegrationEntitySchema,
   target: IntegrationEntitySchema,
   created: {

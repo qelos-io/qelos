@@ -64,6 +64,8 @@ export async function createIntegration(req, res) {
       validateIntegrationTarget(req.headers.tenant, integration.target)
     ]);
 
+    integration.kind = [triggerSource.kind, targetSource.kind];
+
     // should register the trigger integration source
 
     await integration.save();
@@ -83,10 +85,12 @@ export async function updateIntegration(req, res) {
     if (req.body?.trigger) {
       integration.trigger = req.body.trigger;
       const triggerSource = await validateIntegrationTrigger(req.headers.tenant, integration.trigger);
+      integration.kind = [triggerSource.kind, integration.kind[1]];
     }
     if (req.body?.target) {
       integration.target = req.body.target;
       const targetSource = await validateIntegrationTarget(req.headers.tenant, integration.target);
+      integration.kind = [integration.kind[0], targetSource.kind];
     }
     if (integration.isModified()) {
       await integration.save();
