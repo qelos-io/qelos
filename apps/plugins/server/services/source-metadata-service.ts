@@ -1,7 +1,7 @@
-import { IntegrationSourceKind } from '../models/integration-source';
+import { IntegrationSourceKind } from "@qelos/global-types";
 
 export async function validateSourceMetadata(kind: IntegrationSourceKind, metadata: any = {}) {
-  if (kind === 'qelos') {
+  if (kind === IntegrationSourceKind.Qelos) {
     const { external = false, url } = metadata;
     if (external) {
       if (!url) {

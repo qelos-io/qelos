@@ -1,10 +1,15 @@
+import { IntegrationSourceKind } from '@qelos/global-types';
 import { IIntegrationEntity } from '../models/integration';
 import IntegrationSource from '../models/integration-source';
 
-const supportedSources = {
-  qelos: {
+const supportedSources: Record<IntegrationSourceKind, Record<string, string[] | undefined> | null> = {
+  [IntegrationSourceKind.Qelos]: {
     webhook: ['source', 'kind', 'eventName']
   },
+  [IntegrationSourceKind.OpenAI]: null,
+  [IntegrationSourceKind.N8n]: null,
+  [IntegrationSourceKind.SMTP]: null,
+  [IntegrationSourceKind.Supabase]: null,
 }
 
 export async function validateIntegrationTrigger(tenant: string, trigger: IIntegrationEntity) {
@@ -17,7 +22,7 @@ export async function validateIntegrationTrigger(tenant: string, trigger: IInteg
     throw new Error('target source not found');
   }
 
-  const supportedOperations: Record<string, string[]> = supportedSources[source.kind];
+  const supportedOperations = supportedSources[source.kind];
 
   if (!supportedOperations) {
     throw new Error('unsupported trigger source kind');

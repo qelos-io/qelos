@@ -1,23 +1,8 @@
+import { IntegrationSourceKind, IIntegrationSource as IIntegrationSourceBase } from '@qelos/global-types';
 import mongoose, { Document } from 'mongoose'
 
-export enum IntegrationSourceKind {
-  Qelos = 'qelos',
-  OpenAI = 'openai',
-  SMTP = 'smtp',
-  N8n = 'n8n',
-  Supabase = 'supabase',
-}
-
-export interface IIntegrationSource extends Document {
-  tenant: string;
-  plugin?: mongoose.Schema.Types.ObjectId;
-  user: string;
-  authentication: string;
-  metadata: any;
-  name: string;
-  labels: string[];
-  kind: IntegrationSourceKind;
-  created: Date;
+export interface IIntegrationSource extends Omit<IIntegrationSourceBase, 'plugin'>, Document {
+  plugin?: string | mongoose.Schema.Types.ObjectId;
 }
 
 const IntegrationSourceSchema = new mongoose.Schema<IIntegrationSource>({
