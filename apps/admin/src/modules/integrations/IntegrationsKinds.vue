@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
+import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
+
+const kinds = useIntegrationKinds();
 </script>
 
 <template>
@@ -7,64 +10,14 @@ import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
   <p>{{ $t('Choose any provider to manage connections and operations.') }}</p>
 
   <div class="blocks-list">
-    <BlockItem class="source">
+    <BlockItem class="source" v-for="kind in kinds" :key="kind.kind">
       <div centered>
-        <img src="/logos/qelos_small.jpg">
+        <img v-if="kind.logo" :src="kind.logo">
+        <p v-else class="large">{{kind.name}}</p>
       </div>
       <template #actions>
         <div class="actions">
-          <el-button @click="$router.push({name: 'integrations-sources', params: {kind: 'qelos'}})" text>
-            Connections
-          </el-button>
-          <el-button text>Integrations</el-button>
-        </div>
-      </template>
-    </BlockItem>
-    <BlockItem class="source">
-      <div centered>
-        <img src="/logos/openai.svg">
-      </div>
-      <template #actions>
-        <div class="actions">
-          <el-button text @click="$router.push({name: 'integrations-sources', params: {kind: 'openai'}})">
-            Connections
-          </el-button>
-          <el-button text>Integrations</el-button>
-        </div>
-      </template>
-    </BlockItem>
-    <BlockItem class="source">
-      <div centered>
-        <img src="/logos/supabase.png">
-      </div>
-      <template #actions>
-        <div class="actions">
-          <el-button text @click="$router.push({name: 'integrations-sources', params: {kind: 'supabase'}})">
-            Connections
-          </el-button>
-          <el-button text>Integrations</el-button>
-        </div>
-      </template>
-    </BlockItem>
-    <BlockItem class="source">
-      <div centered>
-        <img src="/logos/n8n.png">
-      </div>
-      <template #actions>
-        <div class="actions">
-          <el-button text @click="$router.push({name: 'integrations-sources', params: {kind: 'n8n'}})">Connections
-          </el-button>
-          <el-button text>Integrations</el-button>
-        </div>
-      </template>
-    </BlockItem>
-    <BlockItem class="source">
-      <div centered>
-        <p class="large">SMTP</p>
-      </div>
-      <template #actions>
-        <div class="actions">
-          <el-button text @click="$router.push({name: 'integrations-sources', params: {kind: 'smtp'}})">
+          <el-button @click="$router.push({name: 'integrations-sources', params: {kind: kind.kind}})" text>
             Connections
           </el-button>
           <el-button text>Integrations</el-button>
