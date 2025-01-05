@@ -8,8 +8,8 @@ export async function getEncryptedSourceAuthentication(tenant: string, kind: Int
 
 export async function storeEncryptedSourceAuthentication(tenant: string, kind: IntegrationSourceKind, authentication: any = {}, authId = uniqid()) {
   if (kind === IntegrationSourceKind.Qelos) {
-    const { username, password } = authentication;
-    await setSecret(tenant, `integration-source-${kind}-${authId}`, { username, password });
+    const { password } = authentication;
+    await setSecret(tenant, `integration-source-${kind}-${authId}`, { password });
     return authId;
   }
 

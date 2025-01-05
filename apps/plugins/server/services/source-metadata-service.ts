@@ -2,9 +2,9 @@ import { IntegrationSourceKind } from "@qelos/global-types";
 
 export async function validateSourceMetadata(kind: IntegrationSourceKind, metadata: any = {}) {
   if (kind === IntegrationSourceKind.Qelos) {
-    const { external = false, url } = metadata;
+    const { external = false, url, username } = metadata;
     if (external) {
-      if (!url) {
+      if (!(url && username)) {
         return false;
       }
       try {
@@ -14,6 +14,7 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
       }
       return {
         external,
+        username,
         url,
       }
     }
