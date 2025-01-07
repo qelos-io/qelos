@@ -133,7 +133,7 @@ export function useEditMfeStructure() {
     const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
     const template = document.createElement('template');
     let child;
-    template.innerHTML = pluginMfe.structure;
+    template.innerHTML = pluginMfe.structure || '';
     if (el !== null) {
       const elements = Array.from(template.content.querySelectorAll('*'));
       elements.length = Number(qlId.split('-inner')[0]) + 2;
