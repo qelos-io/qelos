@@ -4,12 +4,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { api } from '@/services/api';
 
 const route = useRoute();
-const router = useRouter();
 const response = ref('');
 const hasToken = ref(false);
-
-const refreshToken = route.query.rt as string || '';
-const returnUrl = route.query.returnUrl as string || '/';
 
 async function callbackFromOAuth(refreshToken: string, returnUrl: string) {
   try {
@@ -17,6 +13,7 @@ async function callbackFromOAuth(refreshToken: string, returnUrl: string) {
 
     if (res.status === 200) {
       hasToken.value = true;
+      location.href = returnUrl || '/';
     } else {
       response.value = 'Error processing refresh token';
     }
@@ -25,13 +22,18 @@ async function callbackFromOAuth(refreshToken: string, returnUrl: string) {
   }
 }
 
-watch(hasToken, (newVal) => {
-  if (newVal) {
-    router.push(returnUrl || '/');
+watch(response, (value) => {
+  if (value?.startsWith('Error') && hasToken) {
+    setTimeout(() => {
+      location.href = '/';
+    }, 1000);
   }
 });
 
 onMounted(() => {
+  const refreshToken = route.query.rt as string || '';
+  const returnUrl = route.query.returnUrl as string || '/';
+
   // Get parameters from query
   if (refreshToken) {
     // Token conversion
@@ -44,8 +46,5 @@ onMounted(() => {
 
 <template>
   <p v-if="response">{{ response }}</p>
-  <p v-else-if="hasToken">
-    <router-link :to="returnUrl">{{ $t('Go to home') }}</router-link>
-  </p>
   <p v-else>Processing...</p>
 </template>
