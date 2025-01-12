@@ -33,7 +33,21 @@ export function usePluginsInjectables() {
     const template = document.createElement('template');
     template.innerHTML = allHTML;
 
+    const scripts = template.content.querySelectorAll('script');
+    const clonedScripts = Array.from(scripts).map(script => {
+      const clone = document.createElement('script');
+      script.getAttributeNames().forEach(attr => {
+        clone.setAttribute(attr, script.getAttribute(attr));
+      })
+      clone.innerHTML = script.innerHTML;
+      script.remove();
+      return clone;
+    });
+
     document.body.append(template.content);
+    if (clonedScripts?.length) {
+      clonedScripts.forEach(script => document.body.append(script));
+    }
 
     unwatch();
   }
