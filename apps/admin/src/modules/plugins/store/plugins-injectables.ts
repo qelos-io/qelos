@@ -13,6 +13,9 @@ export function usePluginsInjectables() {
     return appContext.app.config.globalProperties.$router;
   }
   window['getSdk'] = () => sdk;
+  window['registerComponent'] = (name: string, component: any) => {
+    appContext.app.component(name, component);
+  }
 
   let unwatch;
 
