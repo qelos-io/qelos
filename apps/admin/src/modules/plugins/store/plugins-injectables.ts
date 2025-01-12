@@ -1,5 +1,6 @@
 import { usePluginsList } from '@/modules/plugins/store/plugins-list';
 import { watch, getCurrentInstance } from 'vue';
+import * as vue from 'vue';
 import sdk from '@/services/sdk';
 
 export function usePluginsInjectables() {
@@ -16,6 +17,7 @@ export function usePluginsInjectables() {
   window['registerComponent'] = (name: string, component: any) => {
     appContext.app.component(name, component);
   }
+  window['Vue'] = vue;
 
   let unwatch;
 
