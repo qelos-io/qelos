@@ -1,8 +1,5 @@
 import { defineStore } from 'pinia';
-import { useDispatcher } from '@/modules/core/compositions/dispatcher';
-import { IBlock } from '@/services/types/block';
 import blocksService from '@/services/blocks-service';
-import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { computed, reactive } from 'vue';
 
 export const useBlocks = defineStore('blocks', function useBlocks() {
