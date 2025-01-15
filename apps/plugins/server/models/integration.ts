@@ -1,24 +1,18 @@
-import mongoose, { Document } from 'mongoose'
+import mongoose, { Document, Schema } from 'mongoose';
+import { IIntegration as IIntegrationBase, IIntegrationEntity as IIntegrationEntityBase } from '@qelos/global-types';
 
-export interface IIntegration extends Document {
-  tenant: string;
-  plugin?: mongoose.Schema.Types.ObjectId;
-  user: string;
-  kind: string[];
+interface IIntegrationEntity extends Omit<IIntegrationEntityBase, 'source'>, Document {
+  source: mongoose.Schema.Types.ObjectId;
+}
+
+interface IIntegration extends Omit<IIntegrationBase, '_id' | 'trigger' | 'target'>, Document {
   trigger: IIntegrationEntity;
   target: IIntegrationEntity;
-  created: Date;
 }
 
-export interface IIntegrationEntity {
-  source: mongoose.Schema.Types.ObjectId,
-  operation: string,
-  details: any;
-}
-
-const IntegrationEntitySchema = new mongoose.Schema<IIntegrationEntity>({
+const IntegrationEntitySchema = new Schema<IIntegrationEntity>({
   source: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'IntegrationSource',
     required: true,
   },
@@ -27,19 +21,19 @@ const IntegrationEntitySchema = new mongoose.Schema<IIntegrationEntity>({
     required: true,
   },
   details: {
-    type: mongoose.Schema.Types.Mixed,
+    type: Schema.Types.Mixed,
     default: {},
-  }
+  },
 });
 
-const IntegrationSchema = new mongoose.Schema<IIntegration>({
+const IntegrationSchema = new Schema<IIntegration>({
   tenant: {
     type: String,
     index: true,
-    required: true
+    required: true,
   },
   plugin: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'Plugin',
   },
   user: {
@@ -52,7 +46,7 @@ const IntegrationSchema = new mongoose.Schema<IIntegration>({
   created: {
     type: Date,
     default: Date.now,
-  }
+  },
 });
 
 const Integration = mongoose.model<IIntegration>('Integration', IntegrationSchema);
