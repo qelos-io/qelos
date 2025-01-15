@@ -1,5 +1,4 @@
-import { IntegrationSourceKind } from '@qelos/global-types';
-import { IIntegrationEntity } from '../models/integration';
+import { IntegrationSourceKind, IIntegrationEntity } from '@qelos/global-types';
 import IntegrationSource from '../models/integration-source';
 
 const supportedSources: Record<IntegrationSourceKind, Record<string, string[] | undefined> | null> = {
