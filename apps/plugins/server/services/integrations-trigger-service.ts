@@ -1,5 +1,6 @@
-import { IntegrationSourceKind, IIntegrationEntity } from '@qelos/global-types';
+import { IntegrationSourceKind } from '@qelos/global-types';
 import IntegrationSource from '../models/integration-source';
+import { IIntegrationEntity } from '../models/integration';
 
 const supportedSources: Record<IntegrationSourceKind, Record<string, string[] | undefined> | null> = {
   [IntegrationSourceKind.Qelos]: {
@@ -7,7 +8,7 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, string[] | 
   },
   [IntegrationSourceKind.OpenAI]: null,
   [IntegrationSourceKind.N8n]: null,
-  [IntegrationSourceKind.SMTP]: null,
+  [IntegrationSourceKind.Email]: null,
   [IntegrationSourceKind.Supabase]: null,
 }
 

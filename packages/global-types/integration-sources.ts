@@ -2,7 +2,7 @@
 export enum IntegrationSourceKind {
   Qelos = 'qelos',
   OpenAI = 'openai',
-  SMTP = 'smtp',
+  Email = 'email',
   N8n = 'n8n',
   Supabase = 'supabase',
 }

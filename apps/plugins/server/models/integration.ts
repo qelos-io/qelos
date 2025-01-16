@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { IIntegration as IIntegrationBase, IIntegrationEntity as IIntegrationEntityBase } from '@qelos/global-types';
 
-interface IIntegrationEntity extends Omit<IIntegrationEntityBase, 'source'>, Document {
+export interface IIntegrationEntity extends Omit<IIntegrationEntityBase, 'source'>, Document {
   source: mongoose.Schema.Types.ObjectId;
 }
 

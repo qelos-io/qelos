@@ -13,5 +13,11 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
     return authId;
   }
 
+  if (kind === IntegrationSourceKind.OpenAI) {
+    const { token } = authentication;
+    await setSecret(tenant, `integration-source-${kind}-${authId}`, { token });
+    return authId;
+  }
+
   return;
 }

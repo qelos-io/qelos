@@ -22,9 +22,9 @@ export function useIntegrationKinds(): Record<IntegrationSourceKind, { logo?, na
       name: 'n8n',
       kind: IntegrationSourceKind.N8n,
     },
-    [IntegrationSourceKind.SMTP]: {
-      name: 'SMTP',
-      kind: IntegrationSourceKind.SMTP
+    [IntegrationSourceKind.Email]: {
+      name: 'EMAIL',
+      kind: IntegrationSourceKind.Email
     }
   }
 }

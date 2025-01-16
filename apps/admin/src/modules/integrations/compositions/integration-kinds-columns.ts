@@ -9,6 +9,6 @@ export function useIntegrationKindsColumns(): Record<IntegrationSourceKind, Arra
     [IntegrationSourceKind.OpenAI]: [],
     [IntegrationSourceKind.Supabase]: [],
     [IntegrationSourceKind.N8n]: [],
-    [IntegrationSourceKind.SMTP]: []
+    [IntegrationSourceKind.Email]: []
   }
 }

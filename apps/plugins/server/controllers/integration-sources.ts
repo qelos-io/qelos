@@ -97,11 +97,12 @@ export async function updateIntegrationSource(req, res) {
       source.metadata = validateSourceMetadata(source.kind, metadata);
     }
 
-    if (authentication) {
+    if (typeof authentication === 'object' && Object.keys(authentication).length) {
       const kind = source.kind;
       const newAuthId = await storeEncryptedSourceAuthentication(req.headers.tenant, kind, authentication);
 
       if (newAuthId) {
+        // remove old authentication
         storeEncryptedSourceAuthentication(req.headers.tenant, kind, null, source.authentication).catch();
         source.authentication = newAuthId;
       }
@@ -121,7 +122,6 @@ export async function removeIntegrationSource(req, res) {
     const query = { _id: req.params.sourceId, tenant: req.headers.tenant };
     const source = await IntegrationSource
       .findOne(query)
-      .select(PUBLIC_FIELDS)
       .exec()
 
     if (!source) {
@@ -129,8 +129,10 @@ export async function removeIntegrationSource(req, res) {
       return;
     }
 
+    const { authentication, ...permittedData } = source;
+    storeEncryptedSourceAuthentication(req.headers.tenant, source.kind, null, authentication).catch();
     await IntegrationSource.deleteOne(query).exec();
-    res.end(source);
+    res.json(permittedData).end();
   } catch {
     res.status(500).json({ message: 'could not delete integration source' }).end();
   }

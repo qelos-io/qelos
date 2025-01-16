@@ -135,7 +135,7 @@ const getTargetOperations = (source: string) => {
       { value: 'trigger', label: 'Trigger' },
       { value: 'execute', label: 'Execute' },
     ],
-    smtp: [
+    email: [
       { value: 'trigger', label: 'Trigger' },
       { value: 'execute', label: 'Execute' },
     ],
@@ -162,7 +162,7 @@ const getTriggerOperations = (source: string) => {
       { value: 'trigger', label: 'Trigger' },
       { value: 'execute', label: 'Execute' },
     ],
-    smtp: [
+    email: [
       { value: 'trigger', label: 'Trigger' },
       { value: 'execute', label: 'Execute' },
     ],
