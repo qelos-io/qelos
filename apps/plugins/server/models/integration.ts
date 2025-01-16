@@ -5,7 +5,7 @@ export interface IIntegrationEntity extends Omit<IIntegrationEntityBase, 'source
   source: mongoose.Schema.Types.ObjectId;
 }
 
-interface IIntegration extends Omit<IIntegrationBase, '_id' | 'trigger' | 'target'>, Document {
+export interface IIntegration extends Omit<IIntegrationBase, '_id' | 'trigger' | 'target'>, Document {
   trigger: IIntegrationEntity;
   target: IIntegrationEntity;
 }
@@ -43,12 +43,27 @@ const IntegrationSchema = new Schema<IIntegration>({
   kind: [String],
   trigger: IntegrationEntitySchema,
   target: IntegrationEntitySchema,
+  dataManipulation: {
+    type: [{
+      map: {
+        type: Schema.Types.Mixed,
+        default: {},
+      },
+      populate: {
+        type: Schema.Types.Mixed,
+        default: {},
+      },
+    }],
+    default: [],
+  },
   created: {
     type: Date,
     default: Date.now,
   },
 });
 
+IntegrationSchema.index({ tenant: 1 });
+IntegrationSchema.index({ tenant: 1, kind: 1 });
 const Integration = mongoose.model<IIntegration>('Integration', IntegrationSchema);
 
 export default Integration;

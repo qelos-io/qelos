@@ -7,7 +7,7 @@ export interface IPlugin extends Document, IPluginType {
   encodePath();
 }
 
-interface PluginModel extends Model<IPlugin> {
+export interface PluginModel extends Model<IPlugin> {
   getPluginForRedirect(tenant: string, _id: string): Promise<IPluginType>
 }
 

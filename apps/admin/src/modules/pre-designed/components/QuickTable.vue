@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
-import { ref, computed, defineProps } from 'vue';
+import { ref, computed } from 'vue';
 
 const props = defineProps<{
   data: any[],

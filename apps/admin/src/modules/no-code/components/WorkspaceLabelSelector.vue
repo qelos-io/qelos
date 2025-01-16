@@ -1,6 +1,5 @@
 <!-- WorkspaceLabelSelector.vue -->
 <script setup lang="ts">
-import { defineProps } from 'vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 
 const props = defineProps<{
