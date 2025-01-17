@@ -50,6 +50,7 @@
   "bundledDependencies": [
     "@qelos/api-kit",
     "@qelos/cache-manager",
+    "@qelos/global-types",
     "bcryptjs",
     "cookie-parser",
     "jsonwebtoken",

@@ -43,12 +43,12 @@
     "@qelos/api-kit",
     "@qelos/cache-manager",
     "@qelos/global-types",
-    "mongoose",
     "ajv",
+    "mongoose",
     "node-jq",
+    "qs",
     "tsx",
-    "uuid",
-    "qs"
+    "uuid"
   ],
   "bundleDependencies": [
     "@qelos/api-kit",

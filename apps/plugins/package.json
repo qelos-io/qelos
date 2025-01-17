@@ -41,9 +41,13 @@
   "bundledDependencies": [
     "@qelos/api-kit",
     "@qelos/cache-manager",
+    "@qelos/global-types",
     "http-proxy-middleware",
     "mongoose",
     "node-fetch",
+    "node-jq",
+    "openai",
+    "tsx",
     "uniqid"
   ],
   "bundleDependencies": [

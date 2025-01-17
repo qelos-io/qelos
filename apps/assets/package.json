@@ -36,9 +36,9 @@
   },
   "gitHead": "19f9c9c5e119299f5bbe3f9cf9acb44578eb10cb",
   "bundledDependencies": [
+    "@aws-sdk/client-s3",
     "@google-cloud/storage",
     "@qelos/api-kit",
-    "aws-sdk",
     "cloudinary",
     "datauri",
     "ftp",

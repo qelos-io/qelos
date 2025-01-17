@@ -37,6 +37,7 @@
   "bundledDependencies": [
     "@qelos/api-kit",
     "@qelos/api-proxy-middleware",
-    "@qelos/cache-manager"
+    "@qelos/cache-manager",
+    "tsx"
   ]
 }
