@@ -39,7 +39,7 @@
 </template>
 
 <script lang="ts" setup>
-import { PropType, reactive, ref } from 'vue';
+import { onMounted, PropType, reactive, ref } from 'vue';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import FormInput from '../../core/components/forms/FormInput.vue';
 import { clearNulls } from '../../core/utils/clear-nulls';
@@ -50,6 +50,7 @@ import { useWorkspaceMembers } from '@/modules/workspaces/compositions/workspace
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { WorkspaceLabelDefinition } from '@qelos/global-types'
+import { ElNotification } from 'element-plus';
 
 const membersColumns = [
   { label: 'First Name', prop: 'firstName' },
@@ -73,6 +74,10 @@ const selectedLabels = ref<WorkspaceLabelDefinition>()
 
 if (workspace._id) {
   loadMembers();
+} else {
+  onMounted(() => {
+    selectedLabels.value = wsConfig.metadata.labels?.[0];
+  })
 }
 
 const data = reactive<Partial<IWorkspace>>({
@@ -88,6 +93,10 @@ const data = reactive<Partial<IWorkspace>>({
 function submit() {
   if (!workspace._id) {
     data.labels = selectedLabels.value?.value || [];
+    if (!wsConfig.metadata.allowNonLabeledWorkspaces) {
+      ElNotification.error('Please select a workspace type');
+      return;
+    }
     if (wsConfig.metadata.labels?.length === 1) {
       data.labels = wsConfig.metadata.labels[0].value;
     }
