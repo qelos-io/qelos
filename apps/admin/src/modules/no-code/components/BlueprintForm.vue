@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide, reactive, ref, toRef, watch } from 'vue';
+import { computed, provide, reactive, ref, toRef, watch } from 'vue';
 import { EntityIdentifierMechanism, IBlueprint, PermissionScope } from '@qelos/global-types';
 import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
@@ -17,7 +17,7 @@ import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 
 // temporary sample
 const availableLabels = ['*', 'supplier', 'store', 'consumer'];
-
+const editor = ref()
 const props = withDefaults(defineProps<{
   submitting: boolean;
   blueprint: Partial<IBlueprint>;
@@ -35,12 +35,44 @@ const blueprintProperties = ref()
 provide('edit', edit);
 
 const blueprintMapping = ref(
-    Object
-        .entries(edit.updateMapping || {})
-        .map(([key, value]) => ({ key, value }))
+  Object
+    .entries(edit.updateMapping || {})
+    .map(([key, value]) => ({ key, value }))
 );
 
 provide('submitting', toRef(props, 'submitting'));
+
+// 
+const blueprintJson = computed({
+  get: () => JSON.stringify(
+    {
+      ...edit,
+      properties: blueprintProperties.value,
+      updateMapping: blueprintMapping.value.reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {})
+    },
+    null,
+    2
+  ),
+  set: (value: string) => {
+    try {
+      const parsed = JSON.parse(value);
+      Object.assign(edit, parsed);
+      blueprintProperties.value = Object.entries(parsed.properties || {}).map(([key, value]) => ({
+        key, ...(value as Record<string, any>)
+      }));
+      blueprintMapping.value = Object.entries(parsed.updateMapping || {}).map(([key, value]) => ({ key, value: String(value) }));
+    } catch (err) {
+      console.error('Invalid JSON:', err);
+    }
+  }
+});
+
+watch(edit, () => {
+  if (editor.value) {
+    editor.value.updateValue(blueprintJson.value)
+  }
+}, { deep: true })
+
 
 watch(() => edit.name, (newName) => {
   if (newName && newName.trim()) {
@@ -70,45 +102,46 @@ function submit() {
     <el-tabs model-value="general">
       <el-tab-pane :label="$t('General')" name="general">
         <div class="input-group">
-          <FormInput v-model="edit.name" title="Name" required/>
-          <FormInput v-model="edit.identifier" title="Identifier" required/>
+          <FormInput v-model="edit.name" title="Name" required />
+          <FormInput v-model="edit.identifier" title="Identifier" required />
 
-          <FormInput v-model="edit.description" title="Description"/>
+          <FormInput v-model="edit.description" title="Description" />
         </div>
       </el-tab-pane>
 
       <el-tab-pane :label="$t('Permissions and Roles')" name="rbac">
-        <PermissionScopeSelector v-model="edit.permissionScope"/>
+        <PermissionScopeSelector v-model="edit.permissionScope" />
         <FormRowGroup v-for="(permission, index) in edit.permissions" :key="index"
-                      :class="{ permission: true, guest: permission.guest }">
-          <CrudOperationSelector v-model="permission.operation" class="flex-0"/>
-          <FormInput type="switch" v-model="permission.guest" title="Guest?" class="flex-0"/>
+          :class="{ permission: true, guest: permission.guest }">
+          <CrudOperationSelector v-model="permission.operation" class="flex-0" />
+          <FormInput type="switch" v-model="permission.guest" title="Guest?" class="flex-0" />
           <template v-if="!permission.guest">
-            <PermissionScopeSelector v-model="permission.scope" class="flex-1"/>
-            <LabelsInput title="Roles" v-model="permission.roleBased" class="roles-input"/>
-            <LabelsInput title="Workspace Roles" v-model="permission.workspaceRoleBased" class="roles-input"/>
+            <PermissionScopeSelector v-model="permission.scope" class="flex-1" />
+            <LabelsInput title="Roles" v-model="permission.roleBased" class="roles-input" />
+            <LabelsInput title="Workspace Roles" v-model="permission.workspaceRoleBased" class="roles-input" />
             <WorkspaceLabelSelector class="roles-input" v-model="permission.workspaceLabelsBased"
-                                    :availableLabels="availableLabels" placeholder="Choose labels"/>
+              :availableLabels="availableLabels" placeholder="Choose labels" />
           </template>
           <div class="flex-0 remove-row">
-            <RemoveButton @click="edit.permissions.splice(edit.permissions.indexOf(permission), 1)"/>
+            <RemoveButton @click="edit.permissions.splice(edit.permissions.indexOf(permission), 1)" />
           </div>
         </FormRowGroup>
-        <AddMore @click="edit.permissions.push({workspaceRoleBased: [], roleBased: [], workspaceLabelsBased: ['*']})"/>
+        <AddMore
+          @click="edit.permissions.push({ workspaceRoleBased: [], roleBased: [], workspaceLabelsBased: ['*'] })" />
       </el-tab-pane>
 
       <el-tab-pane :label="$t('Properties')" name="properties">
         <el-form-item :label="$t('Identifier Mechanism for Entities')">
           <el-select v-model="blueprint.entityIdentifierMechanism" required :placeholder="$t('Select mechanism')">
-            <el-option label="Object ID" :value="EntityIdentifierMechanism.OBJECT_ID"/>
-            <el-option label="GUID" :value="EntityIdentifierMechanism.GUID"/>
+            <el-option label="Object ID" :value="EntityIdentifierMechanism.OBJECT_ID" />
+            <el-option label="GUID" :value="EntityIdentifierMechanism.GUID" />
           </el-select>
         </el-form-item>
         <p>
           {{ $t('Properties determine the structure of the blueprint.') }}<br>
           {{ $t('Each entity will also have an identifier and a title, regardless of those custom entities.') }}
         </p>
-        <EditBlueprintProperties @changed="blueprintProperties = $event"/>
+        <EditBlueprintProperties @changed="blueprintProperties = $event" />
       </el-tab-pane>
 
       <el-tab-pane :label="$t('On-Save Mapping')" name="mapping">
@@ -119,14 +152,14 @@ function submit() {
         </p>
         <div v-for="(entry, index) in blueprintMapping" :key="index" class="property">
           <FormRowGroup>
-            <FormInput v-model="entry.key" title="Key"/>
-            <FormInput v-model="entry.value" title="JQ Calculation"/>
+            <FormInput v-model="entry.key" title="Key" />
+            <FormInput v-model="entry.value" title="JQ Calculation" />
             <div class="flex-0 remove-row">
-              <RemoveButton @click="blueprintMapping.splice(blueprintMapping.indexOf(entry), 1)"/>
+              <RemoveButton @click="blueprintMapping.splice(blueprintMapping.indexOf(entry), 1)" />
             </div>
           </FormRowGroup>
         </div>
-        <AddMore @click="blueprintMapping.push({key: '', value: ''})"/>
+        <AddMore @click="blueprintMapping.push({ key: '', value: '' })" />
       </el-tab-pane>
 
       <el-tab-pane :label="$t('Properties Relations')" name="relations">
@@ -137,14 +170,14 @@ function submit() {
         </p>
         <div v-for="(entry, index) in edit.relations" :key="index" class="property">
           <FormRowGroup>
-            <FormInput v-model="entry.key" title="Key"/>
-            <BlueprintSelector title="Target Blueprint" v-model="entry.target"/>
+            <FormInput v-model="entry.key" title="Key" />
+            <BlueprintSelector title="Target Blueprint" v-model="entry.target" />
             <div class="flex-0 remove-row">
-              <RemoveButton @click="edit.relations.splice(edit.relations.indexOf(entry), 1)"/>
+              <RemoveButton @click="edit.relations.splice(edit.relations.indexOf(entry), 1)" />
             </div>
           </FormRowGroup>
         </div>
-        <AddMore @click="edit.relations.push({key: '', target: ''})"/>
+        <AddMore @click="edit.relations.push({ key: '', target: '' })" />
       </el-tab-pane>
 
       <el-tab-pane :label="$t('Events Emitting')" name="events">
@@ -154,9 +187,9 @@ function submit() {
           }}
         </p>
         <FormRowGroup align-start>
-          <FormInput v-model="edit.dispatchers.create" title="Create" type="switch" class="flex-0"/>
-          <FormInput v-model="edit.dispatchers.update" title="Update" type="switch" class="flex-0"/>
-          <FormInput v-model="edit.dispatchers.delete" title="Delete" type="switch" class="flex-0"/>
+          <FormInput v-model="edit.dispatchers.create" title="Create" type="switch" class="flex-0" />
+          <FormInput v-model="edit.dispatchers.update" title="Update" type="switch" class="flex-0" />
+          <FormInput v-model="edit.dispatchers.delete" title="Delete" type="switch" class="flex-0" />
         </FormRowGroup>
       </el-tab-pane>
       <el-tab-pane :label="$t('Limitations')" name="limitations">
@@ -165,11 +198,14 @@ function submit() {
             $t('Limit users to create new entities according to specific rules.')
           }}
         </p>
-        <BlueprintLimitationsInput
-            :permission-scope="edit.permissionScope"
-            :properties="edit.properties"
-            v-model="edit.limitations"/>
+        <BlueprintLimitationsInput :permission-scope="edit.permissionScope" :properties="edit.properties"
+          v-model="edit.limitations" />
       </el-tab-pane>
+      <el-tab-pane :label="$t('Summary')">
+        <Monaco ref="editor" :model-value="blueprintJson" @change="blueprintJson = editor.getMonaco().getValue()"
+          language="json" />
+      </el-tab-pane>
+
     </el-tabs>
   </el-form>
 </template>
