@@ -1,5 +1,4 @@
 import { computed, reactive, ref } from 'vue'
-import router from '../../../router'
 import { api } from '@/services/api'
 import { IAuthStore } from './types/auth-store'
 import { IUser } from './types/user'

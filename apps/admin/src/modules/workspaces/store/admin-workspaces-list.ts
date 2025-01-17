@@ -17,7 +17,7 @@ const useAdminWorkspacesList = defineStore('admin-workspaces-list', function use
   }, []);
 
   const { submit: remove } = useSubmitting(
-    (workspaceId: string) => workspacesService.remove(workspaceId),
+    (workspaceId: string) => workspacesService.remove(workspaceId).then(() => retry()),
     {
       error: 'Failed to remove workspace',
       success: 'Workspace removed successfully'

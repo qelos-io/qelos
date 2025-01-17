@@ -19,11 +19,11 @@
     </template>
 
     <!-- <FormInput title="Workspace InviteList" :model-value="data.invites" @input="data.invites = $event" /> -->
-    <span>{{ $t('Workspace Invite List') }}</span>
+    <h3>{{ $t('Workspace Invite List') }}</h3>
     <div class="flex-row" v-for="(invite, index) in data.invites" :key="index">
       <FormInput title="Name" v-model="invite.name"/>
       <FormInput title="Email" v-model="invite.email"/>
-      <button type="button" class="remove-button" @click="removeItem(index)">remove</button>
+      <RemoveButton wide @click="removeItem(index)"/>
     </div>
     <div>
       <AddMore @click="addItem"/>
@@ -51,6 +51,7 @@ import { useWsConfiguration } from '@/modules/configurations/store/ws-configurat
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { WorkspaceLabelDefinition } from '@qelos/global-types'
 import { ElNotification } from 'element-plus';
+import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 
 const membersColumns = [
   { label: 'First Name', prop: 'firstName' },
@@ -75,7 +76,8 @@ const selectedLabels = ref<WorkspaceLabelDefinition>()
 if (workspace._id) {
   loadMembers();
 } else {
-  onMounted(() => {
+  onMounted(async () => {
+    await wsConfig.promise;
     selectedLabels.value = wsConfig.metadata.labels?.[0];
   })
 }

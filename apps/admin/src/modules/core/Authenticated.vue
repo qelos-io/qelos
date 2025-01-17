@@ -17,25 +17,46 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, toRef, watch } from 'vue'
-import { useAuthenticatedIntercept } from './compositions/authentication'
+import { onBeforeMount, ref, toRef, watch } from 'vue'
+import { useAuth, useAuthenticatedIntercept } from './compositions/authentication'
 import Header from './components/layout/Header.vue'
 import Navigation from './components/layout/Navigation.vue'
 import AssetsDetailsPanel from '@/modules/assets/components/AssetsDetailsPanel/AssetsDetailsPanel.vue'
-import { useRouter } from 'vue-router'
-import { isPrivilegedUser } from '@/modules/core/store/auth';
+import { onBeforeRouteUpdate, useRouter } from 'vue-router'
+import { authStore, isPrivilegedUser } from '@/modules/core/store/auth';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.vue';
 import LiveEditManager from '@/modules/layouts/components/live-edit/LiveEditManager.vue';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 
 const router = useRouter()
+const wsConfig = useWsConfiguration()
+const { user } = useAuth();
 
 const navigationOpened = ref(false)
 const { isLoaded } = useAuthenticatedIntercept();
 const openModals = toRef(usePluginsMicroFrontends(), 'openModals');
 
 router.afterEach(() => navigationOpened.value = false);
+
+onBeforeRouteUpdate(async (to, from) => {
+  await authStore.userPromise;
+  if (to.name === 'createMyWorkspace') {
+    return;
+  }
+  if (wsConfig.isActive && !user.value.workspace) {
+    return { name: 'createMyWorkspace' };
+  }
+  return;
+})
+onBeforeMount(async () => {
+  await wsConfig.promise;
+  await authStore.userPromise;
+  if (wsConfig.isActive && !authStore.user.workspace) {
+    await router.push({ name: 'createMyWorkspace' });
+  }
+});
 
 watch(navigationOpened, (isOpen) => {
   document.body.style.overflow = isOpen ? 'hidden' : '';

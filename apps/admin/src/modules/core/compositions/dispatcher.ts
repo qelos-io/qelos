@@ -6,6 +6,7 @@ export function useDispatcher<T = any, Z = any>(callback, defaultValue: T | null
   const error = ref<any>(null)
   const loaded = ref(false);
   const metadata = ref<Z>(initialMetadata);
+  const promise = ref<Promise<void>>();
 
   const caller = async () => {
     try {
@@ -19,7 +20,7 @@ export function useDispatcher<T = any, Z = any>(callback, defaultValue: T | null
   }
 
   if (!lazy) {
-    caller()
+    promise.value = caller()
   }
 
   return {
@@ -28,6 +29,10 @@ export function useDispatcher<T = any, Z = any>(callback, defaultValue: T | null
     loaded,
     error,
     metadata,
-    retry: caller
+    retry: () => {
+      promise.value = caller()
+      return promise.value;
+    },
+    promise
   }
 }

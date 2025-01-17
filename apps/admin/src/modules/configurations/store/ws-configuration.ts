@@ -13,7 +13,7 @@ export const useWsConfiguration = defineStore('ws-configuration', () => {
     labels: [],
     allowNonLabeledWorkspaces: true
   }
-  const { result, loaded, loading } = useDispatcher(() => configurationsService.getOne('workspace-configuration'), {
+  const { result, loaded, loading, promise } = useDispatcher(() => configurationsService.getOne('workspace-configuration'), {
     metadata: DEFAULT_VALUE
   });
 
@@ -33,6 +33,7 @@ export const useWsConfiguration = defineStore('ws-configuration', () => {
     loaded,
     loading,
     isActive,
-    canUserCreateWorkspace
+    canUserCreateWorkspace,
+    promise,
   }
 })

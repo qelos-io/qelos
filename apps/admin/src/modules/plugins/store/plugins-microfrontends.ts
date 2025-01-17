@@ -175,7 +175,9 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
       router.removeRoute('defaultGuestPluginPlaceholderSecond');
       router.removeRoute('defaultAdminPluginPlaceholder');
       router.removeRoute('defaultAdminPluginPlaceholderSecond');
-      router.push(location.pathname);
+      if (location.pathname === '/' || !allRoutes[location.pathname]) {
+        router.push(location.pathname);
+      }
     }
   }
 
