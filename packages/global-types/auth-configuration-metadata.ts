@@ -1,0 +1,21 @@
+
+export interface IUserAdditionalField {
+  key: string
+  name: string,
+  label: string,
+  inputType: 'text' | 'email' | 'phone' | 'select' | 'checkbox' | 'radio',
+  valueType: 'string' | 'number' | 'boolean',
+  required: boolean,
+  defaultValue?: any;
+  options?: Array<{ label: string, value: string }>,
+}
+
+export interface IAuthConfigurationMetadata {
+  treatUsernameAs: 'email' | 'username' | 'phone',
+  showLoginPage: boolean,
+  showRegisterPage: boolean,
+  socialLoginsSources?: {
+    linkedin?: string,
+  }
+  additionalUserFields: Array<IUserAdditionalField>
+}

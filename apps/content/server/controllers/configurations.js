@@ -93,6 +93,7 @@ async function updateConfiguration(req, res) {
       ...configuration.metadata,
       ...body.metadata
     }
+    configuration.markModified('metadata')
   }
 
   configuration.save()

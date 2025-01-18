@@ -1,23 +1,6 @@
 import { callContentService } from './content-service-api';
 import { cacheManager } from './cache-manager';
-
-export interface IAdditionalField {
-  key: string
-  name: string,
-  label: string,
-  inputType: 'text' | 'email' | 'phone' | 'select' | 'checkbox' | 'radio',
-  valueType: 'string' | 'number' | 'boolean',
-  required: boolean,
-  defaultValue?: any;
-  options?: Array<{ label: string, value: string }>,
-}
-
-export interface IAuthConfigurationMetadata {
-  treatUsernameAs: 'email' | 'username' | 'phone',
-  showLoginPage: boolean,
-  showRegisterPage: boolean,
-  additionalUserFields: Array<IAdditionalField>
-}
+import { IAuthConfigurationMetadata } from '@qelos/global-types';
 
 export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigurationMetadata> {
   return cacheManager.wrap('auth-configuration:' + tenant, async () => {
@@ -29,6 +12,7 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
         showLoginPage: true,
         showRegisterPage: false,
         additionalUserFields: [],
+        socialLoginsSources: {},
       };
     } catch {
       value = {
@@ -36,6 +20,7 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
         showLoginPage: true,
         showRegisterPage: false,
         additionalUserFields: [],
+        socialLoginsSources: {},
       };
     }
     return JSON.stringify(value);

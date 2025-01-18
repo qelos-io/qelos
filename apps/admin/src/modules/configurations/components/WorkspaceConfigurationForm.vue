@@ -74,7 +74,6 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
-import { clearNulls } from '../../core/utils/clear-nulls';
 import { WorkspaceConfigurationMetadata } from '@qelos/global-types';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';

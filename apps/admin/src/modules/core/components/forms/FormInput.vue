@@ -30,6 +30,7 @@
                      :label="option[optionLabel] || option.name || option.title || option.label || option.metadata?.title || option"
                      :value="option[optionValue] || option.identifier || option._id"/>
         </template>
+        <slot name="options"/>
       </el-select>
       <AssetUploader v-else-if="type === 'upload'" v-on="listeners" :value="modelValue" class="asset-upload"/>
       <el-input v-else v-on="listeners" :model-value="modelValue as (string | number)" :placeholder="placeholder"

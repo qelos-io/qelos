@@ -5,6 +5,7 @@ export enum IntegrationSourceKind {
   Email = 'email',
   N8n = 'n8n',
   Supabase = 'supabase',
+  LinkedIn = 'linkedin',
 }
 
 export interface IIntegrationSource {

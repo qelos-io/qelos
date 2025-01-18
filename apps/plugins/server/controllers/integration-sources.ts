@@ -1,6 +1,9 @@
 import IntegrationSource from '../models/integration-source';
 import Plugin from '../models/plugin';
-import { storeEncryptedSourceAuthentication } from '../services/source-authentication-service';
+import {
+  getEncryptedSourceAuthentication,
+  storeEncryptedSourceAuthentication
+} from '../services/source-authentication-service';
 import { validateSourceMetadata } from '../services/source-metadata-service';
 
 const PUBLIC_FIELDS = '-authentication';
@@ -38,6 +41,28 @@ export async function getIntegrationSource(req, res) {
     }
 
     res.json(source).end();
+  } catch {
+    res.status(500).json({ message: 'could not get integration source' }).end();
+  }
+}
+
+
+export async function getInternalIntegrationSource(req, res) {
+  try {
+    const source = await IntegrationSource
+      .findOne({ _id: req.params.sourceId, tenant: req.headers.tenant })
+      .lean()
+      .exec()
+
+    if (!source) {
+      res.status(404).end();
+      return;
+    }
+
+    res.json({
+      ...source,
+      authentication: await getEncryptedSourceAuthentication(req.headers.tenant, source.kind, source.authentication)
+    }).end();
   } catch {
     res.status(500).json({ message: 'could not get integration source' }).end();
   }

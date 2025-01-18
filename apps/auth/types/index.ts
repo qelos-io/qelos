@@ -1,7 +1,7 @@
+import { IAuthConfigurationMetadata } from '@qelos/global-types';
 import { Request } from 'express'
 import mongoose from 'mongoose';
 import { IWorkspace } from '../server/models/workspace';
-import { IAuthConfigurationMetadata } from '../server/services/auth-configuration';
 
 export interface AuthRequest extends Request {
   headers: {

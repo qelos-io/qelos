@@ -2,12 +2,12 @@ import User, { UserDocument, UserModel } from '../models/user';
 import { cookieTokenExpiration } from '../../config';
 import { Types } from 'mongoose';
 import { getAbsoluteDate } from './dates';
-import { IAdditionalField, IAuthConfigurationMetadata } from './auth-configuration';
 import logger from './logger';
 import { AuthRequest } from '../../types';
 import { verifyToken } from './tokens';
+import { IAuthConfigurationMetadata, IUserAdditionalField } from '@qelos/global-types';
 
-export function getValidMetadata(metadata: any = {}, additionalFields: IAdditionalField[] = []) {
+export function getValidMetadata(metadata: any = {}, additionalFields: IUserAdditionalField[] = []) {
   const result = {};
   for (const field of additionalFields) {
     if (metadata[field.key] !== undefined && typeof metadata[field.key] === field.valueType) {

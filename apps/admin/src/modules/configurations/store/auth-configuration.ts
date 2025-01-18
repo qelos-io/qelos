@@ -2,22 +2,7 @@ import { computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import configurationsService from '@/services/configurations-service';
-
-export interface IAuthConfigurationMetadata {
-  treatUsernameAs: 'email' | 'username' | 'phone',
-  showLoginPage: boolean,
-  showRegisterPage: boolean,
-  additionalUserFields: Array<{
-    key: string
-    name: string,
-    label: string,
-    inputType: 'text' | 'email' | 'phone' | 'select' | 'checkbox' | 'radio',
-    valueType: 'string' | 'number' | 'boolean',
-    required: boolean,
-    defaultValue: any,
-    options?: Array<{ label: string, value: string }>,
-  }>
-}
+import { IAuthConfigurationMetadata } from '@qelos/global-types';
 
 export const useAuthConfiguration = defineStore('auth-configuration', () => {
   const DEFAULT_VALUE: IAuthConfigurationMetadata = {

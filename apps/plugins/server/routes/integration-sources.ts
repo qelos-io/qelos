@@ -3,7 +3,7 @@ import { onlyEditPrivilegedOrPlugin } from '../middlewares/privileged-check';
 import {
   createIntegrationSource,
   getAllIntegrationSources,
-  getIntegrationSource, removeIntegrationSource, updateIntegrationSource
+  getIntegrationSource, getInternalIntegrationSource, removeIntegrationSource, updateIntegrationSource
 } from '../controllers/integration-sources';
 
 export function integrationSourcesRouter() {
@@ -19,6 +19,10 @@ export function integrationSourcesRouter() {
     .get('/api/integration-sources/:sourceId', AUTHENTICATION_MIDDLEWARES.concat(getIntegrationSource))
     .put('/api/integration-sources/:sourceId', AUTHENTICATION_MIDDLEWARES.concat(updateIntegrationSource))
     .delete('/api/integration-sources/:sourceId', AUTHENTICATION_MIDDLEWARES.concat(removeIntegrationSource))
+
+
+  router
+    .get('/internal-api/integration-sources/:sourceId', getInternalIntegrationSource)
 
   return router;
 }
