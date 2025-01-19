@@ -2,7 +2,7 @@
   <div class="login-page">
     <aside>
       <img :alt="appConfig?.name || 'SaaS'" :src="appConfig?.logoUrl || '../../assets/logo.png'">
-      <h1>{{ $t('Please login') }}:</h1>
+      <h1>{{ $t('Welcome') }}</h1>
     </aside>
     <div>
       <LoginForm/>

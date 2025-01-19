@@ -1,18 +1,23 @@
 <template>
   <el-form @submit.native.prevent="save" class="auth-configuration-form">
     <FormRowGroup>
-      <FormInput v-model="edited.showLoginPage" title="Show Login Page?" type="switch"/>
-      <FormInput v-model="edited.showRegisterPage" title="Show Registration Page?" type="switch"/>
-    </FormRowGroup>
-    <FormRowGroup>
-      <FormInput v-model="edited.treatUsernameAs" title="Treat Username As" label="Regarding to username validations"
-                 type="select">
-        <template #options>
-          <el-option label="Email" value="email"/>
-          <el-option label="Username" value="username"/>
-          <el-option label="Phone" value="phone"/>
-        </template>
-      </FormInput>
+      <BlockItem>
+        <FormInput v-model="edited.showLoginPage" title="Show Login Page?" type="switch"/>
+      </BlockItem>
+      <BlockItem>
+        <FormInput v-model="edited.showRegisterPage" title="Show Registration Page?" type="switch"/>
+      </BlockItem>
+      <BlockItem>
+        <FormInput v-model="edited.treatUsernameAs"
+                   title="Treat Username As" label="Regarding to username validations"
+                   type="select">
+          <template #options>
+            <el-option label="Email" value="email"/>
+            <el-option label="Username" value="username"/>
+            <el-option label="Phone" value="phone"/>
+          </template>
+        </FormInput>
+      </BlockItem>
     </FormRowGroup>
     <h3>{{ $t('Additional User Fields') }}</h3>
     <FormRowGroup v-for="(row, index) in edited.additionalUserFields" :key="index">
@@ -39,17 +44,24 @@
         <RemoveButton @click="edited.additionalUserFields.splice(index, 1)"/>
       </div>
     </FormRowGroup>
-
-    <h3>{{ $t('Social Logins') }}</h3>
-    <FormRowGroup>
-      <FormInput v-model="edited.socialLoginsSources.linkedin" title="LinkedIn" type="select">
-        <template #options>
-          <el-option v-for="source in linkedinSources" :key="source._id" :label="source.name" :value="source._id"/>
-        </template>
-      </FormInput>
-    </FormRowGroup>
     <AddMore
         @click="edited.additionalUserFields.push({inputType: 'text',key: undefined ,label: undefined ,name: undefined ,required: false ,valueType: 'string'})"/>
+    <h3>{{ $t('Social Logins') }}</h3>
+    <FormRowGroup>
+      <BlockItem>
+        <FormInput v-model="edited.socialLoginsSources.linkedin"
+                   placeholder="Select LinkedIn Integration Source"
+                   type="select" class="social-input">
+          <template #pre>
+            <font-awesome-icon :icon="['fab', 'linkedin']" />
+            <span class="pad-start">{{ $t('LinkedIn') }}</span>
+          </template>
+          <template #options>
+            <el-option v-for="source in linkedinSources" :key="source._id" :label="source.name" :value="source._id"/>
+          </template>
+        </FormInput>
+      </BlockItem>
+    </FormRowGroup>
     <SaveButton :submitting="submitting"/>
   </el-form>
 </template>
@@ -63,6 +75,7 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import { useIntegrationSources } from '@/modules/integrations/compositions/integration-sources';
+import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 
 const props = defineProps({
   kind: String,
@@ -92,4 +105,7 @@ function save() {
 }
 </script>
 <style scoped>
+.form-row-group {
+  align-items: center;
+}
 </style>

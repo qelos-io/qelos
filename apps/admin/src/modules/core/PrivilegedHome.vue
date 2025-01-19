@@ -64,6 +64,16 @@
                 </h4>
               </router-link>
             </div>
+            <div class="container">
+              <router-link :to="{name: 'editConfiguration', params: {key: 'auth-configuration'}}">
+                <h4 class="flex-row">
+                  <el-icon>
+                    <font-awesome-icon :icon="['fas', 'key']" />
+                  </el-icon>
+                  <span class="pad-start">{{ $t('Edit Authentication Settings') }}</span>
+                </h4>
+              </router-link>
+            </div>
           </GpItem>
           <GpItem>
             <template v-slot:title>
