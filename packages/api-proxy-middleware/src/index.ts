@@ -6,7 +6,8 @@ import { getApiProxyConfig } from './config';
 const CSP = {
   default: `'self' 'unsafe-inline' 'unsafe-eval' https://*.clarity.ms https://*.qelos.io ${process.env.PRODUCTION ? '' : 'ws:'}`,
   img: `data: https: 'self'`,
-  connect: `'self' https: ${process.env.PRODUCTION ? '' : 'http: ws:'}`
+  connect: `'self' https: ${process.env.PRODUCTION ? '' : 'http: ws:'}`,
+  frame: `'self' 'unsafe-inline' 'unsafe-eval' https: ${process.env.PRODUCTION ? '' : 'http:'}`,
 }
 
 function getProxy(target: string) {
@@ -174,7 +175,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
       // error in parse ssr-scripts
     }
 
-    res.set('Content-Security-Policy', `default-src ${CSP.default}; img-src ${CSP.img}; connect-src ${CSP.connect};`);
+    res.set('Content-Security-Policy', `default-src ${CSP.default}; img-src ${CSP.img}; connect-src ${CSP.connect}; frame-src ${CSP.frame};`);
     res.set('content-type', 'text/html').send(html).end()
   })
 
