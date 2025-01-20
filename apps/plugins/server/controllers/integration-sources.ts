@@ -68,6 +68,15 @@ export async function getInternalIntegrationSource(req, res) {
   }
 }
 
+/*
+body: {
+  name: 'my source',
+  labels: ['label1', 'label2'],
+  kind: 'linkedin',
+  metadata: { clientId: string, scopes: string[] },
+  authentication: { clientSecret: string }
+}
+*/
 export async function createIntegrationSource(req, res) {
   const { authentication, name, labels, kind, metadata } = req.body;
 
@@ -81,7 +90,7 @@ export async function createIntegrationSource(req, res) {
     name,
     labels,
     kind,
-    metadata: validateSourceMetadata(metadata),
+    metadata: validateSourceMetadata(kind, metadata),
     user: userId,
     plugin: plugin?._id,
     authentication: authId,
