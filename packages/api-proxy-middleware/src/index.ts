@@ -3,6 +3,12 @@ import { createProxyMiddleware as proxy } from 'http-proxy-middleware';
 import { IApiProxyConfig, IServiceProxyConfig } from './types';
 import { getApiProxyConfig } from './config';
 
+const CSP = {
+  default: `'self' 'unsafe-inline' 'unsafe-eval' https://*.clarity.ms https://*.qelos.io ${process.env.PRODUCTION ? '' : 'ws:'}`,
+  img: `data: https: 'self'`,
+  connect: `'self' https: ${process.env.PRODUCTION ? '' : 'http: ws:'}`
+}
+
 function getProxy(target: string) {
   return proxy({
     target,
@@ -99,7 +105,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
     [...authService.proxies, ...allServicesPrefixesExceptAuth],
     require('cors')((req, callback) => {
       // TODO: support subdomains of host
-      const host = req.header.host || req.headers.host;
+      const host = req.header.host || req.headers.host
       if (!req.disableCors && req.header('Origin') === host) {
         callback(null, { credentials: true, origin: true });
       } else {
@@ -168,6 +174,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
       // error in parse ssr-scripts
     }
 
+    res.set('Content-Security-Policy', `default-src ${CSP.default}; img-src ${CSP.img}; connect-src ${CSP.connect};`);
     res.set('content-type', 'text/html').send(html).end()
   })
 
