@@ -31,10 +31,10 @@ app.config.globalProperties.$t = i18n.global.t;
 elements(app)
 app.mount('#app')
 
-if (import.meta.env.VITE_SENTRY_DSN) {
+if (import.meta.env.VITE_SENTRY_DSN || window.SENTRY_DSN) {
   Sentry.init({
     app,
-    dsn: import.meta.env.VITE_SENTRY_DSN,
+    dsn: import.meta.env.VITE_SENTRY_DSN || window.SENTRY_DSN,
     integrations: [],
   });
 }
