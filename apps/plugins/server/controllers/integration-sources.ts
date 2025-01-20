@@ -73,7 +73,7 @@ body: {
   name: 'my source',
   labels: ['label1', 'label2'],
   kind: 'linkedin',
-  metadata: { clientId: string, scopes: string[] },
+  metadata: { clientId: string, scope: string },
   authentication: { clientSecret: string }
 }
 */
