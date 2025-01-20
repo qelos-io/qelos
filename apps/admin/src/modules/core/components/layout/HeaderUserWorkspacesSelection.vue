@@ -9,20 +9,9 @@
   </el-dropdown-item>
 </template>
 <script lang="ts" setup>
-import { watch } from 'vue';
 import { useAuth } from '@/modules/core/compositions/authentication';
-import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 
 const { user } = useAuth()
-const workspacesStore = useWorkspacesList();
-
-if (!user.value.workspace) {
-  watch(() => workspacesStore.workspaces, () => {
-    if (workspacesStore.workspaces.length) {
-      workspacesStore.activateSilently(workspacesStore.workspaces[0])
-    }
-  }, { once: true })
-}
 </script>
 <style scoped>
 .workspace-row {

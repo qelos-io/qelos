@@ -29,9 +29,11 @@ import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.
 import LiveEditManager from '@/modules/layouts/components/live-edit/LiveEditManager.vue';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 
 const router = useRouter()
 const wsConfig = useWsConfiguration()
+const workspacesStore = useWorkspacesList()
 const { user } = useAuth();
 
 const navigationOpened = ref(false)
@@ -54,7 +56,12 @@ onBeforeMount(async () => {
   await wsConfig.promise;
   await authStore.userPromise;
   if (wsConfig.isActive && !authStore.user.workspace) {
-    await router.push({ name: 'createMyWorkspace' });
+    await workspacesStore.promise;
+    if (workspacesStore.workspaces.length) {
+      await workspacesStore.activateSilently(workspacesStore.workspaces[0])
+    } else {
+      await router.push({ name: 'createMyWorkspace' });
+    }
   }
 });
 

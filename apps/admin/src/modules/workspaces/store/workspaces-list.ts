@@ -7,7 +7,7 @@ import { fetchAuthUser } from '@/modules/core/store/auth';
 import { IWorkspace } from '@qelos/sdk/dist/workspaces';
 
 const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesList() {
-  const { result, retry, loading } = useDispatcher<IWorkspace[]>(() => workspacesService.getAll(), [])
+  const { result, retry, loading, promise } = useDispatcher<IWorkspace[]>(() => workspacesService.getAll(), [])
 
   const { submit: remove } = useSubmitting(
     (workspaceId: string) => {
@@ -34,7 +34,7 @@ const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesL
     success: (workspace) => `You are now active on the workspace "${workspace.name}"`
   })
 
-  return { workspaces: result, reload: retry, remove: useConfirmAction(remove), activate, activateSilently, loading }
+  return { workspaces: result, reload: retry, remove: useConfirmAction(remove), activate, activateSilently, loading, promise }
 })
 
 export default useWorkspacesList;
