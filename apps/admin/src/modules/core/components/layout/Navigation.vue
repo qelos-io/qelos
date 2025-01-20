@@ -8,7 +8,7 @@
     <el-menu router :default-active="$route.path">
       <div class="nav-group" v-if="isPrivilegedUser">
 
-        <el-menu-item  @click="openDrawer">
+        <el-menu-item id="menu-item-create-new-page" @click="openDrawer">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'plus-circle']"/>
           </el-icon>
@@ -80,7 +80,7 @@
           <span>{{ $t('Drafts') }}</span>
         </el-menu-item>
 
-        <el-menu-item v-if="isAdmin" :route="{ name: 'blueprints' }" index="/no-code/blueprints">
+        <el-menu-item id="menu-item-blueprints" v-if="isAdmin" :route="{ name: 'blueprints' }" index="/no-code/blueprints">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'database']"/>
           </el-icon>

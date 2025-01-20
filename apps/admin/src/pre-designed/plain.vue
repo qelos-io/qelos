@@ -13,13 +13,13 @@
         </el-icon>
         {{ $t('Clone') }}
       </el-button>
-      <el-button @click="openAddComponentModal()">
+      <el-button @click="openAddComponentModal()" id="no-code-wizard-btn">
         <el-icon>
           <font-awesome-icon :icon="['fas', 'layer-group']"/>
         </el-icon>
         <span>{{ $t('Wizard') }}</span>
       </el-button>
-      <el-button @click="openCodeEditor()">
+      <el-button @click="openCodeEditor()" id="no-code-code-btn">
         <el-icon>
           <font-awesome-icon :icon="['fas', 'code']"/>
         </el-icon>
@@ -43,6 +43,7 @@
     <EditComponentModal v-if="editedComponentContext?.editChild" v-model="editedComponentContext.editChild"
                         @save="finishEditComponent"/>
   </main>
+  <EditorTour v-if="isPrivilegedUser"/>
 </template>
 
 <script lang="ts" setup>
@@ -53,7 +54,7 @@ import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-it
 import { useDynamicRouteItem } from '@/modules/pre-designed/compositions/dynamic-route-item';
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
 import { useAuth } from '@/modules/core/compositions/authentication';
-import { isEditingEnabled } from '@/modules/core/store/auth';
+import { isEditingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
 import AddComponentModal from '@/pre-designed/editor/AddComponentModal.vue';
 import { useEditMfeStructure } from '@/modules/no-code/compositions/edit-mfe-structure';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
@@ -63,6 +64,7 @@ import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
 import { useRoute } from 'vue-router';
 import { useGlobalStyles } from '@/modules/pre-designed/compositions/global-styles';
 import EditComponentModal from '@/pre-designed/editor/EditComponentModal.vue';
+import EditorTour from '@/pre-designed/editor/EditorTour.vue';
 
 const route = useRoute();
 const mfes = usePluginsMicroFrontends();
@@ -140,7 +142,11 @@ const templateProps = computed(() => {
     user: user.value,
     sdk
   };
-})
+});
+
+if (isPrivilegedUser.value && !isEditingEnabled.value && relevantStructure.value === '<div></div>') {
+  isEditingEnabled.value = true;
+}
 </script>
 
 <style scoped>

@@ -1,9 +1,12 @@
 <template>
   <div class="list">
-    <GpItem v-for="blueprint in store.blueprints"
-            :key="blueprint.identifier"
-            :id="'blueprint-' + blueprint.identifier"
-            class="blueprint-item"
+    <BlockItem v-for="blueprint in store.blueprints"
+               :key="blueprint.identifier"
+               :id="'blueprint-' + blueprint.identifier"
+
+               @mouseenter="markRelationships(blueprint)"
+               @mouseleave="unmarkRelationships"
+               :class="{'blueprint-item': true, marked: isMarked(blueprint)}"
     >
       <template v-slot:title>
         <router-link :to="{name: 'editBlueprint', params: {blueprintIdentifier: blueprint.identifier}}">
@@ -25,24 +28,43 @@
       <template v-slot:actions>
         <RemoveButton wide @click="removeWithConfirm(blueprint.identifier)"/>
         <el-button wide text type="danger" @click="removeAllEntities(blueprint.identifier)">
-          {{$t('Remove All Entities')}}
+          {{ $t('Remove All Entities') }}
         </el-button>
       </template>
-    </GpItem>
+    </BlockItem>
   </div>
 </template>
 <script lang="ts" setup>
-import GpItem from '../../core/components/layout/BlockItem.vue';
+import { ref } from 'vue';
+import { IBlueprint } from '@qelos/global-types'
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import sdk from '@/services/sdk';
+import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 
 const store = useBlueprintsStore()
 const removeWithConfirm = useConfirmAction(store.remove)
 
 const removeAllEntities = useConfirmAction((identifier: string) => sdk.blueprints.entitiesOf(identifier).remove('all'))
+
+const markedRelationships = ref<Record<string, boolean>>({})
+
+function markRelationships(blueprint: IBlueprint) {
+  markedRelationships.value = blueprint.relations.map(r => r.target).reduce((acc, target) => {
+    acc[target] = true;
+    return acc;
+  }, {});
+}
+
+function unmarkRelationships() {
+  markedRelationships.value = {}
+}
+
+function isMarked(blueprint: IBlueprint) {
+  return markedRelationships.value[blueprint.identifier];
+}
 </script>
 <style scoped>
 .list {
@@ -55,6 +77,10 @@ const removeAllEntities = useConfirmAction((identifier: string) => sdk.blueprint
   flex: 1;
   max-width: 600px;
   min-width: calc(50% - 40px);
+}
+
+.marked {
+  background-color: rgba(250, 246, 212, 0.54);
 }
 
 @media (max-width: 480px) {

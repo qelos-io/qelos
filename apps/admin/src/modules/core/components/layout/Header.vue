@@ -15,7 +15,7 @@
           :placeholder="$t(route?.meta?.searchPlaceholder as string || 'Search...')"
       />
 
-      <div v-if="isAdmin && !$isMobile" class="apply-editor">
+      <div v-if="isAdmin && !$isMobile" class="apply-editor" id="edit-mode-toggle">
         <span>
           <el-switch
               v-model="isEditingEnabled"

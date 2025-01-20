@@ -29,7 +29,7 @@
                      :fa-icon="['fas', 'briefcase']"
           />
 
-          <GpItem>
+          <BlockItem id="dashboard-common-ops">
             <template v-slot:title>
               {{ $t('Common operations') }}
             </template>
@@ -68,14 +68,14 @@
               <router-link :to="{name: 'editConfiguration', params: {key: 'auth-configuration'}}">
                 <h4 class="flex-row">
                   <el-icon>
-                    <font-awesome-icon :icon="['fas', 'key']" />
+                    <font-awesome-icon :icon="['fas', 'key']"/>
                   </el-icon>
                   <span class="pad-start">{{ $t('Edit Authentication Settings') }}</span>
                 </h4>
               </router-link>
             </div>
-          </GpItem>
-          <GpItem>
+          </BlockItem>
+          <BlockItem>
             <template v-slot:title>
               {{ $t('Inputs UI') }}
             </template>
@@ -91,7 +91,7 @@
                 <LiveEditColorOpener color="inputsTextColor"/>
               </p>
             </el-form>
-          </GpItem>
+          </BlockItem>
         </div>
       </el-tab-pane>
       <el-tab-pane name="colors" :label="$t('Color Palette & Design')">
@@ -111,10 +111,25 @@
       </el-tab-pane>
     </el-tabs>
   </div>
+  <el-tour v-model="toursStore.tourOpen" @finish="toursStore.tourFinished">
+    <el-tour-step
+        target="#menu-item-blueprints"
+        title="Create your Database"
+        description="Blueprints are the definitions of your database, permissions, and Restful API. Create your first blueprint now!"
+    />
+    <el-tour-step
+        target="#menu-item-create-new-page"
+        title="Create your Pages"
+        description="Once you created a database, it's time to create your pages. Click here to create your first page."
+    />
+    <el-tour-step
+        target="#dashboard-common-ops"
+        title="Configurations and Settings"
+        description="Your application theme and layout, analytics scripts, login mechanism and account mechanism."/>
+  </el-tour>
 </template>
 
 <script setup lang="ts">
-import GpItem from '@/modules/core/components/layout/BlockItem.vue';
 import { ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useBlocksList } from '@/modules/blocks/store/blocks-list';
@@ -124,13 +139,13 @@ import { PALETTES } from '@/modules/core/utils/colors-palettes';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
-import { useUsersList } from '@/modules/users/compositions/users';
-import useAdminWorkspacesList from '@/modules/workspaces/store/admin-workspaces-list';
 import BlueprintsList from '@/modules/no-code/components/BlueprintsList.vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import DesignConfiguration from '@/modules/configurations/components/DesignConfiguration.vue';
 import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
 import { useUsersStats } from '@/modules/users/compositions/users-stats';
+import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
+import { useToursStore } from '@/modules/core/store/tours';
 
 const { appConfig, loaded: configLoaded } = useAppConfiguration();
 
@@ -148,6 +163,9 @@ const changePalette = useConfirmAction(async function changePalette(colorsPalett
   })
   await resetConfiguration();
 });
+
+const toursStore = useToursStore();
+toursStore.setCurrentTour('dashboard', 1);
 </script>
 <style scoped lang="scss">
 .blocks-list {

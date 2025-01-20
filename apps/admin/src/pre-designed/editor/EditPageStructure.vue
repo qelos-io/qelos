@@ -3,8 +3,6 @@
 import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import { provide, ref, toRef, watch } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
-import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
-import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { IMicroFrontend } from '@/services/types/plugin';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';

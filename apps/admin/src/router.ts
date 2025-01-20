@@ -13,7 +13,7 @@ import {
   playGuestRoutes,
   playRoutes
 } from '@/modules/plugins/routes';
-import {workspacesRoutes, adminWorkspacesRoutes,} from '@/modules/workspaces/routes';
+import { workspacesRoutes, adminWorkspacesRoutes } from '@/modules/workspaces/routes';
 import noCodeRoutes from '@/modules/no-code/routes';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import { integrationsRoutes } from '@/modules/integrations/routes';
@@ -34,6 +34,11 @@ const router = createRouter({
           path: '/',
           name: 'home',
           component: Home
+        },
+        {
+          path: 'admin-dashboard',
+          name: 'admin-dashboard',
+          component: async () => (await import('./modules/core/PrivilegedHome.vue')).default,
         },
         configurationsRoutes,
         assetsRoutes,
