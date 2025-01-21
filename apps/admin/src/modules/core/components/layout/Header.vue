@@ -19,9 +19,9 @@
         <span>
           <el-switch
               v-model="isEditingEnabled"
-              active-text="-Edit Mode-"
-              inactive-text="-Edit Mode-"
-              style="--el-switch-on-color: var(--border-color);"
+              active-text="Editor View"
+              inactive-text="User View"
+              style="--el-switch-on-color: #6bc7bc; --el-switch-off-color: #e7bc56;"
               size="large"
               inline-prompt
           />
