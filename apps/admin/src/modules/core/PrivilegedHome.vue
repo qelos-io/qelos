@@ -111,22 +111,6 @@
       </el-tab-pane>
     </el-tabs>
   </div>
-  <el-tour v-model="toursStore.tourOpen" @finish="toursStore.tourFinished">
-    <el-tour-step
-        target="#menu-item-blueprints"
-        title="Create your Database"
-        description="Blueprints are the definitions of your database, permissions, and Restful API. Create your first blueprint now!"
-    />
-    <el-tour-step
-        target="#menu-item-create-new-page"
-        title="Create your Pages"
-        description="Once you created a database, it's time to create your pages. Click here to create your first page."
-    />
-    <el-tour-step
-        target="#dashboard-common-ops"
-        title="Configurations and Settings"
-        description="Your application theme and layout, analytics scripts, login mechanism and account mechanism."/>
-  </el-tour>
 </template>
 
 <script setup lang="ts">
@@ -145,7 +129,6 @@ import DesignConfiguration from '@/modules/configurations/components/DesignConfi
 import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
 import { useUsersStats } from '@/modules/users/compositions/users-stats';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
-import { useToursStore } from '@/modules/core/store/tours';
 
 const { appConfig, loaded: configLoaded } = useAppConfiguration();
 
@@ -163,9 +146,6 @@ const changePalette = useConfirmAction(async function changePalette(colorsPalett
   })
   await resetConfiguration();
 });
-
-const toursStore = useToursStore();
-toursStore.setCurrentTour('dashboard', 1);
 </script>
 <style scoped lang="scss">
 .blocks-list {
