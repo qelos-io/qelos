@@ -1,11 +1,11 @@
 <template>
   <el-form @submit.native.prevent="save" class="ssr-scripts-form">
     <el-form-item label="Enter head">
-      <Monaco :model-value="updated.head || defaultMetadata.head" @keyup="edited.head = $event.target.value"
+      <Monaco :model-value="updated.head || defaultMetadata.head" @input="edited.head = $event.target.value"
               language="html"/>
     </el-form-item>
     <el-form-item label="Enter body">
-      <Monaco :model-value="updated.body || defaultMetadata.body" @keyup="edited.body = $event.target.value"
+      <Monaco :model-value="updated.body || defaultMetadata.body" @input="edited.body = $event.target.value"
               language="html"/>
     </el-form-item>
 
