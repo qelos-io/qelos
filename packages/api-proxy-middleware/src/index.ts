@@ -4,7 +4,7 @@ import { IApiProxyConfig, IServiceProxyConfig } from './types';
 import { getApiProxyConfig } from './config';
 
 const CSP = {
-  default: `'self' 'unsafe-inline' 'unsafe-eval' https://*.clarity.ms https://*.qelos.io ${process.env.PRODUCTION ? '' : 'ws:'}`,
+  default: `'self' 'unsafe-inline' 'unsafe-eval' https: https://*.clarity.ms https://*.qelos.io ${process.env.PRODUCTION ? '' : 'ws:'}`,
   img: `data: https: 'self'`,
   connect: `'self' https: ${process.env.PRODUCTION ? '' : 'http: ws:'}`,
   frame: `'self' 'unsafe-inline' 'unsafe-eval' https: ${process.env.PRODUCTION ? '' : 'http:'}`,
