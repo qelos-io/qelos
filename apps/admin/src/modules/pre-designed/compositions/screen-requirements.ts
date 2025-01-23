@@ -23,7 +23,21 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
   let currentDispatchers = {}
 
   function getIdentifierFromRouteParams(identifier: string) {
-    return identifier.replace(/{{(.*?)}}/g, (_, key) => route?.params?.[key]?.toString() || '')
+    return identifier.replace(/{{(.*?)}}/g, (_, key) => {
+      if (!route) {
+        return '';
+      }
+      const [firstPart, secondPart] = key.split('.');
+      const value = secondPart ? route[firstPart]?.[secondPart] : (route.params?.[key] || route.query?.[key]);
+      return value?.toString() || ''
+    })
+  }
+
+  function getQueryParamsFromRouteParams(query: Record<string, string>) {
+    return Object.entries(query).reduce((map, [key, value]) => {
+      map[key] = getIdentifierFromRouteParams(value);
+      return map;
+    }, {})
   }
 
   const reloadRequirements = () => {
@@ -67,8 +81,8 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
         } else {
           cachedDispatchers[cachedKey] = useDispatcher(() => api.request({
             method,
-            url: item.fromHTTP.uri,
-            params: item.fromHTTP.query
+            url: getIdentifierFromRouteParams(item.fromHTTP.uri),
+            params: getQueryParamsFromRouteParams(item.fromHTTP.query)
           }).then(getCallData), null)
         }
         currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
@@ -97,7 +111,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
               const uniqueIdentifiers: string[] = Array.from(
                 new Set(values
                   .map(v => v?.identifier ||
-                    Object.values(v || { }).flat().map((row: IBlueprint | undefined) => row?.identifier))
+                    Object.values(v || {}).flat().map((row: IBlueprint | undefined) => row?.identifier))
                   .filter(Boolean)
                 )
               );
