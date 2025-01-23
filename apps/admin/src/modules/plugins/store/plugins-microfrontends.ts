@@ -171,7 +171,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         }
       })
 
-    if (plugins.value?.length) {
+    if (plugins.value) {
       ['playGuestPlugin',
         'defaultPluginPlaceholder',
         'defaultGuestPluginPlaceholder',
