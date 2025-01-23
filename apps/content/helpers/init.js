@@ -71,12 +71,28 @@ const ssrConfiguration = new Configuration({
   },
 });
 
+
+const authConfiguration = new Configuration({
+  tenant: TENANT,
+  key: 'auth-configuration',
+  public: true,
+  metadata: {
+    treatUsernameAs: 'email',
+    showLoginPage: true,
+    showRegisterPage: false,
+    additionalUserFields: [],
+    socialLoginsSources: {},
+  },
+});
+
+
 console.log("initiate content");
 
 Promise.all([
   configuration.save(),
   wsConfiguration.save(),
   ssrConfiguration.save(),
+  authConfiguration.save(),
 ])
   .then(() => {
     console.log("content created successfully");

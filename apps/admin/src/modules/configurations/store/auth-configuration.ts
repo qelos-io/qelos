@@ -10,6 +10,7 @@ export const useAuthConfiguration = defineStore('auth-configuration', () => {
     showLoginPage: true,
     showRegisterPage: false,
     additionalUserFields: [],
+    socialLoginsSources: {},
   }
   const { result, loaded, loading } = useDispatcher(() => configurationsService.getOne('auth-configuration'), {
     metadata: DEFAULT_VALUE
