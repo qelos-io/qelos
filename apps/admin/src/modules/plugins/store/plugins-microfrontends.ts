@@ -160,21 +160,30 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
           router.removeRoute(allRoutes[routerPath].name);
         }
         if (mfe.guest) {
-          router.addRoute({...route, path: '/' + route.path});
-          router.addRoute('screenEditor', { ...route, name: null, meta: { ...route.meta, guest: false, roles: ['admin'] } })
+          router.addRoute({ ...route, path: '/' + route.path });
+          router.addRoute('screenEditor', {
+            ...route,
+            name: null,
+            meta: { ...route.meta, guest: false, roles: ['admin'] }
+          })
         } else {
           router.addRoute('playPlugin', route)
         }
       })
 
-    if (allPluginsRoutes.length) {
-      router.removeRoute('playGuestPlugin');
-      router.removeRoute('defaultPluginPlaceholder');
-      router.removeRoute('defaultGuestPluginPlaceholder');
-      router.removeRoute('defaultPluginPlaceholderSecond');
-      router.removeRoute('defaultGuestPluginPlaceholderSecond');
-      router.removeRoute('defaultAdminPluginPlaceholder');
-      router.removeRoute('defaultAdminPluginPlaceholderSecond');
+    if (plugins.value?.length) {
+      ['playGuestPlugin',
+        'defaultPluginPlaceholder',
+        'defaultGuestPluginPlaceholder',
+        'defaultPluginPlaceholderSecond',
+        'defaultGuestPluginPlaceholderSecond',
+        'defaultAdminPluginPlaceholder',
+        'defaultAdminPluginPlaceholderSecond'
+      ].forEach(routeName => {
+        if (router.hasRoute(routeName)) {
+          router.removeRoute(routeName);
+        }
+      })
       if (location.pathname === '/' || !allRoutes[location.pathname]) {
         router.push(location.pathname);
       }

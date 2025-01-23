@@ -7,7 +7,6 @@
 
     <el-menu router :default-active="$route.path">
       <div class="nav-group" v-if="isEditingEnabled">
-
         <el-menu-item id="menu-item-create-new-page" @click="openDrawer">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'plus-circle']"/>
@@ -30,6 +29,14 @@
           </el-menu-item>
         </div>
       </template>
+
+
+      <el-menu-item v-if="isPrivilegedUser" route="/admin-dashboard" index="/admin-dashboard">
+        <el-icon>
+          <font-awesome-icon :icon="['fas', 'chart-column']" />
+        </el-icon>
+        <span>{{ $t('Admin Dashboard') }}</span>
+      </el-menu-item>
 
       <div class="nav-group" v-if="isEditingEnabled">
         <h4>{{ $t('COMPONENTS') }}</h4>
@@ -131,7 +138,7 @@
 <script lang="ts" setup>
 import { storeToRefs } from 'pinia';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
-import { isAdmin, isEditingEnabled } from '@/modules/core/store/auth';
+import { isAdmin, isEditingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
