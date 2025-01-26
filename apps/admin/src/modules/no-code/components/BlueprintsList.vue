@@ -18,10 +18,13 @@
         <table>
           <tr v-for="(field, key) in blueprint.properties" :key="key">
             <td>
-              {{ field.title }}
+              {{ field.title }}<span v-if="field.required" class="danger">*</span>
               <InfoIcon v-if="field.description" :content="field.description"/>
             </td>
-            <td>{{ field.type }}</td>
+            <td>
+              {{ field.multi ? ($t('List of') + ' ') : '' }}{{ capitalize(field.type) }}
+              <span v-if="field.min || field.max">{{ getMinMax(field.min, field.max) }}</span>
+            </td>
           </tr>
         </table>
       </div>
@@ -35,7 +38,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { capitalize, ref } from 'vue';
 import { IBlueprint } from '@qelos/global-types'
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
@@ -64,6 +67,16 @@ function unmarkRelationships() {
 
 function isMarked(blueprint: IBlueprint) {
   return markedRelationships.value[blueprint.identifier];
+}
+
+function getMinMax(min, max) {
+  if (min && max) {
+    return `(${min} - ${max})`;
+  } else if (min) {
+    return `(${min} and above)`;
+  } else if (max) {
+    return `(up to ${max})`;
+  }
 }
 </script>
 <style scoped>
