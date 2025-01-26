@@ -44,7 +44,7 @@ router.afterEach(() => navigationOpened.value = false);
 
 onBeforeRouteUpdate(async (to, from) => {
   await authStore.userPromise;
-  if (to.name === 'createMyWorkspace') {
+  if (to.name === 'createMyWorkspace' || isPrivilegedUser.value) {
     return;
   }
   if (wsConfig.isActive && !user.value.workspace) {
