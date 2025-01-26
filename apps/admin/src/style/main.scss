@@ -127,11 +127,6 @@ tbody tr:nth-child(even) td {
 a, .link {
   color: var(--link);
   cursor: pointer;
-  text-decoration: none;
-
-  &:hover {
-    border-bottom: 1px solid #ddd;
-  }
 }
 
 .small, [small] {
