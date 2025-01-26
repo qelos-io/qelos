@@ -25,7 +25,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
   let currentDispatchers = {}
 
   function getIdentifierFromAppState(identifier: string) {
-    return identifier.replace(/{{(.*?)}}/g, (_, key) => {
+    return (identifier.toString?.() || '').replace(/{{(.*?)}}/g, (_, key) => {
       if (!route) {
         return '';
       }
