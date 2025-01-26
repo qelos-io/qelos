@@ -95,12 +95,12 @@ const data = reactive<Partial<IWorkspace>>({
 function submit() {
   if (!workspace._id) {
     data.labels = selectedLabels.value?.value || [];
-    if (!wsConfig.metadata.allowNonLabeledWorkspaces) {
-      ElNotification.error('Please select a workspace type');
-      return;
-    }
     if (wsConfig.metadata.labels?.length === 1) {
       data.labels = wsConfig.metadata.labels[0].value;
+    }
+    if (!wsConfig.metadata.allowNonLabeledWorkspaces && !data.labels.length) {
+      ElNotification.error('Please select a workspace type');
+      return;
     }
   }
   emit('submitted', clearNulls(data))
