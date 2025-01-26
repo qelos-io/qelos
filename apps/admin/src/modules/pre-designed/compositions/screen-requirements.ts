@@ -6,6 +6,7 @@ import { api, getCallData } from '@/services/api';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import Sdk from '@/services/sdk';
+import { useAuth } from '@/modules/core/compositions/authentication';
 
 export const useScreenRequirementsStore = defineStore('screen-requirements', function useScreenRequirements() {
   const route = useRoute()
@@ -13,6 +14,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
   const cruds = toRef(mfes, 'cruds');
   const requirements = ref()
   const unWatchers = [];
+  const { user } = useAuth();
 
   function getBlueprintCacheKey(name: string, identifier?: string) {
     return identifier ? `blueprint:${name}:single:${identifier}` : `blueprint:${name}:all`
@@ -22,20 +24,25 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
 
   let currentDispatchers = {}
 
-  function getIdentifierFromRouteParams(identifier: string) {
+  function getIdentifierFromAppState(identifier: string) {
     return identifier.replace(/{{(.*?)}}/g, (_, key) => {
       if (!route) {
         return '';
       }
       const [firstPart, secondPart] = key.split('.');
-      const value = secondPart ? route[firstPart]?.[secondPart] : (route.params?.[key] || route.query?.[key]);
-      return value?.toString() || ''
+      if (secondPart) {
+        if (firstPart === 'user') {
+          return user.value[secondPart] || '';
+        }
+        return route[firstPart]?.[secondPart] || '';
+      }
+      return (route.params?.[key] || route.query?.[key]) || '';
     })
   }
 
-  function getQueryParamsFromRouteParams(query: Record<string, string> = {}) {
+  function getQueryParamsFromAppState(query: Record<string, string> = {}) {
     return Object.entries(query).reduce((map, [key, value]) => {
-      map[key] = getIdentifierFromRouteParams(value);
+      map[key] = getIdentifierFromAppState(value);
       return map;
     }, {})
   }
@@ -54,7 +61,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
       if (item.fromCrud) {
         const api = cruds.value[item.fromCrud.name]?.api;
         if (api && item.fromCrud.identifier) {
-          const identifier = getIdentifierFromRouteParams(item.fromCrud.identifier);
+          const identifier = getIdentifierFromAppState(item.fromCrud.identifier);
           const cachedKey = `crud:${item.fromCrud.name}:single:${identifier}`;
           if (cachedDispatchers[cachedKey]) {
             cachedDispatchers[cachedKey].retry();
@@ -81,8 +88,8 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
         } else {
           cachedDispatchers[cachedKey] = useDispatcher(() => api.request({
             method,
-            url: getIdentifierFromRouteParams(item.fromHTTP.uri),
-            params: getQueryParamsFromRouteParams(item.fromHTTP.query)
+            url: getIdentifierFromAppState(item.fromHTTP.uri),
+            params: getQueryParamsFromAppState(item.fromHTTP.query)
           }).then(getCallData), null)
         }
         currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
@@ -90,12 +97,12 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
       } else if (item.fromBlueprint) {
         const entitiesOfBlueprint = Sdk.blueprints.entitiesOf(item.fromBlueprint.name)
         if (item.fromBlueprint.identifier) {
-          const identifier = getIdentifierFromRouteParams(item.fromBlueprint.identifier);
+          const identifier = getIdentifierFromAppState(item.fromBlueprint.identifier);
           const cachedKey = getBlueprintCacheKey(item.fromBlueprint.name, identifier);
           if (cachedDispatchers[cachedKey]) {
             cachedDispatchers[cachedKey].retry();
           } else {
-            cachedDispatchers[cachedKey] = useDispatcher(() => entitiesOfBlueprint.getEntity(identifier, { query: getQueryParamsFromRouteParams(item.fromBlueprint.query) }), null)
+            cachedDispatchers[cachedKey] = useDispatcher(() => entitiesOfBlueprint.getEntity(identifier, { query: getQueryParamsFromAppState(item.fromBlueprint.query) }), null)
           }
           currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
