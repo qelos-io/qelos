@@ -33,7 +33,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
     })
   }
 
-  function getQueryParamsFromRouteParams(query: Record<string, string>) {
+  function getQueryParamsFromRouteParams(query: Record<string, string> = {}) {
     return Object.entries(query).reduce((map, [key, value]) => {
       map[key] = getIdentifierFromRouteParams(value);
       return map;
@@ -95,7 +95,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
           if (cachedDispatchers[cachedKey]) {
             cachedDispatchers[cachedKey].retry();
           } else {
-            cachedDispatchers[cachedKey] = useDispatcher(() => entitiesOfBlueprint.getEntity(identifier), null)
+            cachedDispatchers[cachedKey] = useDispatcher(() => entitiesOfBlueprint.getEntity(identifier, { query: getQueryParamsFromRouteParams(item.fromBlueprint.query) }), null)
           }
           currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
