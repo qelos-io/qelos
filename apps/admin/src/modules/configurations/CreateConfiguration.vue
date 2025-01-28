@@ -11,8 +11,7 @@
       </div>
     </div>
     <label>
-      <el-checkbox :checked="isPublic" @input="isPublic = !isPublic"/>
-      Public?
+      <FormInput title="Public" v-model="isPublic" type="switch"/>
     </label>
     <FormInput title="Key" :model-value="configKey" @input="configKey = $event"/>
     <FormInput title="Kind" :model-value="configKind" @input="configKind = $event"/>
