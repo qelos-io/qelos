@@ -10,7 +10,7 @@ export const authStore = reactive<IAuthStore>({
 })
 
 export const isAdmin = computed(() => !!(authStore.user && authStore.user.roles.includes('admin')));
-export const isPrivilegedUser = computed(() => isAdmin.value || authStore.user.roles.includes('editor'));
+export const isPrivilegedUser = computed(() => !!(isAdmin.value || authStore.user?.roles.includes('editor')));
 export const isEditingEnabled = ref(false);
 function loadUser() {
   authStore.userPromise = api.get<IUser>('/api/me').then(res => res.data)
