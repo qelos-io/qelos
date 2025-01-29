@@ -1,7 +1,7 @@
 <template>
-  <div class="edit-post-page">
+  <div>
     <UserForm v-if="user" :user="user" @submitted="updateUser" :submitting="submitting" :as-admin="true">
-      {{ $t('Edit User') }}
+      {{ $t('Edit User') }} "{{ user.username }}"
       <strong v-if="user?.name">{{ user.name }}</strong>
     </UserForm>
   </div>

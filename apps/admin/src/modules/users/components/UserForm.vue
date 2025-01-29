@@ -20,8 +20,6 @@
     <el-form-item label="Meta data" v-if="asAdmin">
       <Monaco :model-value="internalMetadata" @input="editedData.internalMetadata = $event.target.value"/>
     </el-form-item>
-
-    <SaveButton :submitting="submitting"/>
   </el-form>
 </template>
 <script lang="ts" setup>
