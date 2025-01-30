@@ -22,6 +22,7 @@ import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
 import Pre from '@/modules/pre-designed/components/Pre.vue';
 import ContentBox from '@/modules/pre-designed/components/ContentBox.vue';
 import QRating from '@/modules/pre-designed/components/QRating.vue';
+import CopyToClipboard from '@/modules/pre-designed/components/CopyToClipboard.vue';
 
 export default function applyGlobalTemplatesComponents(app: App) {
   app.component('TemplatedRemoveButton', TemplatedRemoveButton)
@@ -47,4 +48,5 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('QPre', Pre)
   app.component('ContentBox', ContentBox);
   app.component('QRating', QRating)
+  app.component('CopyToClipboard', CopyToClipboard)
 }
