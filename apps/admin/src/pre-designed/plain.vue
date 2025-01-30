@@ -140,7 +140,8 @@ const templateProps = computed(() => {
     schema: crud.value.schema,
     cruds: cruds.value,
     user: user.value,
-    sdk
+    sdk,
+    location,
   };
 });
 
