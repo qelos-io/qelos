@@ -56,7 +56,7 @@ function uploadStorageAssets(req, res) {
             name: req.storage.name
           }
         }
-      })
+      }).catch()
     })
     .catch((error) => {
       res.status(500).json({ message: error.message || 'could not upload asset' }).end();

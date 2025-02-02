@@ -2,7 +2,9 @@
   <el-dropdown :class="{'user-dropdown': true, 'viewer': !isAdmin || $isMobile}">
     <div class="el-dropdown-link user-welcome">
       <span>{{ user.firstName }}</span>
-      <el-avatar v-if="user.workspace"> {{ user.workspace.name[0].toUpperCase() }}</el-avatar>
+      <el-avatar class="avatar-img" v-if="user.workspace || user.profileImage" :src="user.profileImage">
+        {{ user.workspace?.name[0].toUpperCase() }}
+      </el-avatar>
       <el-icon>
         <icon-arrow-down/>
       </el-icon>
@@ -83,5 +85,9 @@ a {
   &:hover {
     text-decoration: underline;
   }
+}
+
+.avatar-img :deep(img) {
+  margin: 0;
 }
 </style>

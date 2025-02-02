@@ -23,6 +23,7 @@ export interface AuthRequest extends Request {
     firstName: string,
     lastName: string,
     birthDate: string,
+    profileImage: string,
     roles: string[],
     isPrivileged: boolean,
     user: any

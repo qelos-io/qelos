@@ -23,13 +23,14 @@ async function getImpersonate(req: AuthRequest, res: Response) {
   const fullName = user.fullName || `${firstName} ${lastName}`;
   res.status(200).json({
     _id: user._id,
-    username:user.username,
+    username: user.username,
     email: user.email,
     name: fullName,
     firstName,
     lastName,
     fullName,
     roles: user.roles,
+    profileImage: req.userPayload.profileImage,
     workspace
   }).end();
 }
@@ -50,17 +51,18 @@ export function getMe(req: AuthRequest, res: Response) {
     firstName,
     lastName,
     fullName,
+    profileImage: req.userPayload.profileImage,
     roles: req.userPayload.roles,
     workspace: req.activeWorkspace
   }).end();
 }
 
 export async function setMe(req: AuthRequest, res: Response) {
-  const { username, password, name, fullName, firstName, lastName, birthDate, metadata } = req.body || {}
+  const { username, password, name, fullName, firstName, lastName, birthDate, profileImage, metadata } = req.body || {}
   try {
     await updateUser(
       { _id: req.userPayload.sub, tenant: req.userPayload.tenant } as any,
-      { password, fullName: fullName || name, firstName, lastName, birthDate, metadata },
+      { password, fullName: fullName || name, firstName, lastName, birthDate, profileImage, metadata },
       req.authConfig
     )
     res.status(200).json({
@@ -73,7 +75,9 @@ export async function setMe(req: AuthRequest, res: Response) {
       firstName: firstName || req.userPayload.firstName,
       lastName: lastName || req.userPayload.lastName,
       birthDate: birthDate || req.userPayload.birthDate,
-      roles: req.userPayload.roles
+      roles: req.userPayload.roles,
+      profileImage: profileImage || req.userPayload.profileImage,
+      workspace: req.activeWorkspace
     }).end()
   } catch (e) {
     res.status(500).json({ message: 'failed to update your user information' }).end()

@@ -61,7 +61,8 @@ export function getSignedToken(user: any, workspace: any, tokenIdentifier: strin
     fullName: user.fullName,
     firstName: user.firstName,
     lastName: user.lastName,
-    roles: user.roles
+    roles: user.roles,
+    profileImage: user.profileImage,
   }
   if (tokenIdentifier) {
     (secretParams as any).tokenIdentifier = tokenIdentifier
