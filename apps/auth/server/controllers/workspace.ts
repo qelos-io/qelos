@@ -295,7 +295,7 @@ export async function activateWorkspace(req: AuthRequest, res: Response) {
     const payload = await verifyToken(token, tenant) as any;
     const user = await User
       .findOne({ _id: req.userPayload.sub, tenant })
-      .select('tenant email fullName firstName lastName roles tokens')
+      .select('tenant email fullName firstName lastName roles tokens profileImage')
       .exec() as any as UserModel;
 
     payload.workspace = {
