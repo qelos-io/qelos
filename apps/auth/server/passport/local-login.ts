@@ -41,7 +41,7 @@ module.exports = new Strategy(
     let workspace;
     if (wsConfig.isActive) {
       try {
-        workspace = await getWorkspaceForUser(query.tenant, new ObjectId((user as any)._id), preSelectedWorkspace);
+        workspace = await getWorkspaceForUser(query.tenant, user._id, preSelectedWorkspace);
       } catch (err) {
         logger.log('Error getting workspace', query);
       }
