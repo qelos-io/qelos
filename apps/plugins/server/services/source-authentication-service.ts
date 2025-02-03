@@ -21,9 +21,15 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
 
   if (kind === IntegrationSourceKind.LinkedIn) {
     const { clientSecret } = authentication;
+    if (!clientSecret) {
+      return; // No secret to store
+    }
     await setSecret(tenant, `integration-source-${kind}-${authId}`, { clientSecret });
     return authId;
   }
-
   return;
+}
+
+export async function removeEncryptedSourceAuthentication(tenant: string, kind: IntegrationSourceKind, authId: string) {
+  await setSecret(tenant, `integration-source-${kind}-${authId}`, null);
 }

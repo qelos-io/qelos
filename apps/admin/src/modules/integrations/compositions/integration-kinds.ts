@@ -25,6 +25,11 @@ export function useIntegrationKinds(): Record<IntegrationSourceKind, { logo?, na
     [IntegrationSourceKind.Email]: {
       name: 'EMAIL',
       kind: IntegrationSourceKind.Email
+    },
+    [IntegrationSourceKind.LinkedIn]: {
+      logo: '/logos/linkedin.png',
+      name: 'LinkedIn',
+      kind: IntegrationSourceKind.LinkedIn
     }
   }
 }

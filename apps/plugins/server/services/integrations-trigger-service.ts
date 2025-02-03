@@ -10,6 +10,7 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, string[] | 
   [IntegrationSourceKind.N8n]: null,
   [IntegrationSourceKind.Email]: null,
   [IntegrationSourceKind.Supabase]: null,
+  [IntegrationSourceKind.LinkedIn]: null,
 }
 
 export async function validateIntegrationTrigger(tenant: string, trigger: IIntegrationEntity) {

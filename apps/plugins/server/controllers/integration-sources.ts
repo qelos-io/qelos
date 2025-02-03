@@ -1,7 +1,9 @@
+
 import IntegrationSource from '../models/integration-source';
 import Plugin from '../models/plugin';
 import {
   getEncryptedSourceAuthentication,
+  removeEncryptedSourceAuthentication,
   storeEncryptedSourceAuthentication
 } from '../services/source-authentication-service';
 import { validateSourceMetadata } from '../services/source-metadata-service';
@@ -68,15 +70,6 @@ export async function getInternalIntegrationSource(req, res) {
   }
 }
 
-/*
-body: {
-  name: 'my source',
-  labels: ['label1', 'label2'],
-  kind: 'linkedin',
-  metadata: { clientId: string, scope: string },
-  authentication: { clientSecret: string }
-}
-*/
 export async function createIntegrationSource(req, res) {
   const { authentication, name, labels, kind, metadata } = req.body;
 
@@ -85,12 +78,14 @@ export async function createIntegrationSource(req, res) {
 
   const authId = await storeEncryptedSourceAuthentication(req.headers.tenant, kind, authentication);
 
+  const validatedMetadata = await validateSourceMetadata(kind, metadata);
+
   const source = new IntegrationSource({
     tenant: req.headers.tenant,
     name,
     labels,
     kind,
-    metadata: validateSourceMetadata(kind, metadata),
+    metadata: validatedMetadata,
     user: userId,
     plugin: plugin?._id,
     authentication: authId,
@@ -107,6 +102,16 @@ export async function createIntegrationSource(req, res) {
     res.status(500).json({ message: 'could not create integration source' }).end();
   }
 }
+
+/*
+body: {
+  name: 'my source',
+  labels: ['label1', 'label2'],
+  kind: 'linkedin',
+  metadata: { clientId: string, scope: string },
+  authentication: { clientSecret: string }
+}
+*/
 
 export async function updateIntegrationSource(req, res) {
   const { authentication, name, labels, metadata } = req.body;
@@ -127,8 +132,10 @@ export async function updateIntegrationSource(req, res) {
     if (labels) {
       source.labels = labels;
     }
+
     if (metadata) {
-      source.metadata = validateSourceMetadata(source.kind, metadata);
+      const validatedMetadata = (await validateSourceMetadata(source.kind, metadata)) || source.metadata;
+      source.metadata = validatedMetadata;
     }
 
     if (typeof authentication === 'object' && Object.keys(authentication).length) {
@@ -156,18 +163,28 @@ export async function removeIntegrationSource(req, res) {
     const query = { _id: req.params.sourceId, tenant: req.headers.tenant };
     const source = await IntegrationSource
       .findOne(query)
+      .lean()
       .exec()
 
     if (!source) {
       res.status(404).json({ message: 'integration source not found' }).end();
       return;
     }
-
     const { authentication, ...permittedData } = source;
-    storeEncryptedSourceAuthentication(req.headers.tenant, source.kind, null, authentication).catch();
+
+    if (authentication && typeof authentication === 'string') {
+
+      await removeEncryptedSourceAuthentication(req.headers.tenant, source.kind, authentication);
+    } else {
+
+      res.status(400).json({ message: 'Authentication is not a valid string' }).end();
+      return;
+    }
+
     await IntegrationSource.deleteOne(query).exec();
     res.json(permittedData).end();
   } catch {
+
     res.status(500).json({ message: 'could not delete integration source' }).end();
   }
 }
