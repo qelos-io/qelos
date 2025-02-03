@@ -36,5 +36,13 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     };
   }
 
+  if (kind === IntegrationSourceKind.LinkedIn) {
+    const { clientId, scope } = metadata;
+    if (!clientId || typeof clientId !== 'string' || !scope || typeof scope !== 'string') {
+      throw new Error("Invalid LinkedIn metadata: clientId and scope are required.");
+    }
+    return { clientId, scope };
+  }
+  
   return {};
 }
