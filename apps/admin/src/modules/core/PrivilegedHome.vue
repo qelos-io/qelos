@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-container">
+  <div class="dashboard flex-container">
     <el-tabs model-value="metadata">
       <el-tab-pane name="metadata" :label="$t('Application Metadata')">
         <div class="blocks-list">
@@ -111,6 +111,7 @@
       </el-tab-pane>
     </el-tabs>
   </div>
+<!--  <footer><QuickStartWizard/></footer>-->
 </template>
 
 <script setup lang="ts">
@@ -129,6 +130,7 @@ import DesignConfiguration from '@/modules/configurations/components/DesignConfi
 import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
 import { useUsersStats } from '@/modules/users/compositions/users-stats';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
+import QuickStartWizard from '@/modules/admins/components/QuickStartWizard.vue';
 
 const { appConfig, loaded: configLoaded } = useAppConfiguration();
 
@@ -148,6 +150,9 @@ const changePalette = useConfirmAction(async function changePalette(colorsPalett
 });
 </script>
 <style scoped lang="scss">
+.dashboard {
+  padding-block-end: 50px;
+}
 .blocks-list {
   display: flex;
   flex-wrap: wrap;
@@ -199,7 +204,6 @@ h3 > * {
 }
 
 .colors-lines {
-
   width: 100%;
 }
 
@@ -217,5 +221,14 @@ h3 > * {
 
 .item p {
   position: relative;
+}
+
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: var(--body-bg);
+  padding: 10px;
+  border-top: 1px solid var(--border-color);
 }
 </style>
