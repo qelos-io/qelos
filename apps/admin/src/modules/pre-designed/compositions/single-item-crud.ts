@@ -41,7 +41,7 @@ export function useSingleItemCrud() {
         if (attr.startsWith('#')) {
           return;
         }
-        newEl.setAttribute(attr, el.getAttribute(attr));
+        newEl.setAttribute(attr.startsWith('@') ? attr.replace('@', 'v-on:') : attr, el.getAttribute(attr));
         if (attr.startsWith('v-else')) {
           el.removeAttribute(attr);
         }

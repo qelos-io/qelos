@@ -1,7 +1,7 @@
-import {start, config} from '@qelos/api-kit';
-import {connect} from './server/models';
-import {mongoUri} from './config';
-import {loadRoutes} from './server/routes';
+import { start, config } from '@qelos/api-kit';
+import { connect } from './server/models';
+import { mongoUri } from './config';
+import { loadRoutes } from './server/routes';
 //
 // // connect to the database and load models
 connect(mongoUri)

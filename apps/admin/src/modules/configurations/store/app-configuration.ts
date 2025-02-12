@@ -48,6 +48,7 @@ export function useAppConfiguration() {
   fetchAppConfiguration()
   return {
     loaded: computed(() => appConfigurationStore.loaded),
+    promise: appConfigurationStore.promise,
     appConfig,
   }
 }
