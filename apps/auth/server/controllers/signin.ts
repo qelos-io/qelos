@@ -26,7 +26,6 @@ export function signin(req: AuthRequest, res: Response, next: NextFunction) {
         },
       });
     }
-
     tokenPayload(getRequestHost(req), res, data);
   })(req, res, next);
 }
