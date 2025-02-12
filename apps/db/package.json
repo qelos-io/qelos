@@ -6,7 +6,7 @@
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "Apache-2.0",
-  "gitHead": "8ec5f78787a21b9ee73085a0375282ff940fb2a5",
+  "gitHead": "59114120c83b8327ffcf68cbe185f7fc4ffadcb2",
   "private": false,
   "publishConfig": {
     "access": "public"

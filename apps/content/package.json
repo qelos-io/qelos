@@ -33,7 +33,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "19f9c9c5e119299f5bbe3f9cf9acb44578eb10cb",
+  "gitHead": "59114120c83b8327ffcf68cbe185f7fc4ffadcb2",
   "bundledDependencies": [
     "@qelos/api-kit",
     "@qelos/cache-manager",
