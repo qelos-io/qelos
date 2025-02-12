@@ -1,6 +1,6 @@
 {
   "name": "@qelos/db",
-  "version": "3.7.6",
+  "version": "3.7.7",
   "scripts": {
     "db": "docker compose up -d"
   },

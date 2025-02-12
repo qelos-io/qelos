@@ -1,6 +1,6 @@
 {
   "name": "@qelos/no-code",
-  "version": "3.7.6",
+  "version": "3.7.7",
   "license": "MIT",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "description": "manage no-code mechanism",
@@ -20,9 +20,9 @@
   },
   "main": "dist/index.js",
   "dependencies": {
-    "@qelos/api-kit": "^3.7.6",
-    "@qelos/cache-manager": "^3.7.6",
-    "@qelos/global-types": "^3.7.6",
+    "@qelos/api-kit": "^3.7.7",
+    "@qelos/cache-manager": "^3.7.7",
+    "@qelos/global-types": "^3.7.7",
     "ajv": "^8.17.1",
     "mongoose": "^8.6.1",
     "node-jq": "^4.4.0",
