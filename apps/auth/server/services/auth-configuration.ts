@@ -24,5 +24,5 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
       };
     }
     return JSON.stringify(value);
-  }).then(JSON.parse);
+  }, { ttl: 60 * 5 /* 5 minutes */ }).then(JSON.parse);
 }

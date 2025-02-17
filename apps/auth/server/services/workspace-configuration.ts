@@ -15,7 +15,7 @@ export async function getWorkspaceConfiguration(tenant: string): Promise<Workspa
           allowNonLabeledWorkspaces: true
         }
       }).then(JSON.stringify);
-  }).then(JSON.parse)
+  }, { ttl: 60 * 5 /* 5 minutes */ }).then(JSON.parse)
     .catch(() => {
       return {
         isActive: false,
