@@ -16,7 +16,7 @@ type AuthWithLinkedinRequest = AuthRequest & { source: DecryptedSourceAuthentica
 
 export async function getLinkedinSource(req: AuthWithLinkedinRequest, res, next) {
   if (!req.authConfig.socialLoginsSources?.linkedin) {
-    res.status(400).json({ message: 'LinkedIn social login is not enabled' });
+    res.status(400).json({ message: 'LinkedIn social login does not exist' });
     return;
   }
 
