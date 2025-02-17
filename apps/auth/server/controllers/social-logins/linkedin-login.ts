@@ -89,9 +89,13 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
       userData = jwt.decode(tokenData.id_token);
     }
 
-    let user = await User.findOne({ email: userData.email, tenant: req.headers.tenant });
-
-    if (!user) {
+    let user: ReturnType<getUser>;
+    try {
+      user = await getUser({ username: userData.email, tenant: req.headers.tenant });
+      user.email = userData.email;
+      user.profileImage = userData.picture || user.profileImage;
+      await user.save();
+    } catch {
       user = new User({
         tenant: req.headers.tenant,
         username: userData.email,
@@ -101,7 +105,6 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
         lastName: userData.family_name || '',
         profileImage: userData.picture || '',
       });
-
       await user.save();
 
       emitPlatformEvent({
@@ -127,21 +130,20 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
           source: 'linkedin',
         },
       });
-
-      await setEncryptedData(req.headers.tenant, `${user.id}-linkedinToken`, JSON.stringify(tokenData))
-
-      const requestHost = getRequestHost(req);
-      const { token: newToken } = getSignedToken(
-        user,
-        null,
-        getUniqueId(),
-        String(cookieTokenExpiration / 1000)
-      );
-
-      setCookie(res, getCookieTokenName(user.tenant), newToken, null, requestHost);
-      res.redirect('/');
     }
 
+    await setEncryptedData(req.headers.tenant, `${user.id}-linkedinToken`, JSON.stringify(tokenData))
+
+    const requestHost = getRequestHost(req);
+    const { token: newToken } = getSignedToken(
+      user,
+      null,
+      getUniqueId(),
+      String(cookieTokenExpiration / 1000)
+    );
+
+    setCookie(res, getCookieTokenName(user.tenant), newToken, null, requestHost);
+    res.redirect('/');
   } catch (error) {
     return res.status(500).json({ message: 'Internal server error' });
   }
