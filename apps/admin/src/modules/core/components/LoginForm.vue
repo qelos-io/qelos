@@ -13,13 +13,15 @@
         <SaveButton :submitting="submitting" :text="$t('Login')" />
       </div>
     </el-form>
-    <div class="separator">
-      <span>{{ $t('OR') }}</span>
-    </div>
-    <el-button type="primary" class="linkedin-button" @click="loginWithLinkedIn">
-      <font-awesome-icon :icon="['fab', 'linkedin']" class="linkedin-icon" />
-      <span>{{ $t('Login with LinkedIn') }}</span>
-    </el-button>
+    <template v-if="metadata.socialLoginsSources?.linkedin">
+      <div class="separator">
+        <span>{{ $t('OR') }}</span>
+      </div>
+      <el-button type="primary" class="linkedin-button" @click="loginWithLinkedIn">
+        <font-awesome-icon :icon="['fab', 'linkedin']" class="linkedin-icon" />
+        <span>{{ $t('Login with LinkedIn') }}</span>
+      </el-button>
+    </template>
   </div>
 </template>
 
