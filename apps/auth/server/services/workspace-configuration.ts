@@ -4,7 +4,7 @@ import { WorkspaceConfigurationMetadata } from '@qelos/global-types'
 
 export async function getWorkspaceConfiguration(tenant: string): Promise<WorkspaceConfigurationMetadata> {
   return cacheManager.wrap('ws-configuration:' + tenant, () => {
-    return callContentService('/api/configurations/workspace-configuration', tenant)
+    return callContentService('/internal-api/configurations/workspace-configuration', tenant)
       .then(config => config.metadata)
       .catch(() => {
         return {

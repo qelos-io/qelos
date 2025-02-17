@@ -6,7 +6,7 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
   return cacheManager.wrap('auth-configuration:' + tenant, async () => {
     let value: any;
     try {
-      const config = await callContentService('/api/configurations/auth-configuration', tenant);
+      const config = await callContentService('/internal-api/configurations/auth-configuration', tenant);
       value = config.metadata || {
         treatUsernameAs: 'email',
         showLoginPage: true,

@@ -1,6 +1,6 @@
-import {service} from './internal-service';
+import { service } from './internal-service';
 
-const callPluginsService = service('PLUGINS', {port: 9006});
+const callPluginsService = service('PLUGINS', { port: process.env.PLUGINS_SERVICE_PORT || 9006 })
 
 export interface PlatformEvent {
   tenant: string;
