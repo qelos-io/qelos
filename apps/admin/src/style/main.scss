@@ -36,7 +36,7 @@ a {
   transition: color 0.3s ease;
 }
 
-a:hover {
+a:hover, a.primary-link {
   color: var(--link);
   filter: brightness(85%);
   text-decoration: underline;

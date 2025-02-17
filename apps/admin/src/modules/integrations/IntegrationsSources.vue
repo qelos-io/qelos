@@ -6,20 +6,20 @@ import { useIntegrationKinds } from '@/modules/integrations/compositions/integra
 import { useIntegrationSources } from '@/modules/integrations/compositions/integration-sources';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
-import { Ref } from 'vue';
 import IntegrationSourceForm from './IntegrationSourceForm.vue';
 import integrationSourcesService from '@/services/integration-sources-service';
 import { useConfirmAction } from '../core/compositions/confirm-action';
+import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 
 const route = useRoute();
 const kind = route.params.kind.toString() as IntegrationSourceKind;
 const kindData = useIntegrationKinds()[kind];
 const filteredConnections = computed(() => data.value || []);
-const formVisible: Ref<boolean> = ref(false);
+const formVisible = ref(false);
 const editingIntegration = ref<any>(null);
 const isEditing = ref(false);
 
-const { result: data, loading, error } = useIntegrationSources(kind);
+const { result: data, loading, error, loaded } = useIntegrationSources(kind);
 
 const { submit: saveConnection, submitting: saving } = useSubmitting(
   async (formData: any) => {
@@ -50,7 +50,7 @@ const { submit: saveConnection, submitting: saving } = useSubmitting(
   () => (formVisible.value = false)
 );
 
-const { submit: deleteConnectionBase, submitting: deleting } = useSubmitting(
+const { submit: deleteConnectionBase } = useSubmitting(
   async (_id: string) => {
     try {
 
@@ -112,7 +112,7 @@ const closeForm = () => {
 
   <!-- Connections cards -->
   <div class="blocks-list">
-    <BlockItem v-for="connection in filteredConnections" :key="connection.id" class="connection-card">
+    <BlockItem v-for="connection in filteredConnections" :key="connection._id" class="connection-card">
       <template #header>
         <h3>{{ connection.name }}</h3>
       </template>
@@ -135,19 +135,18 @@ const closeForm = () => {
       <template #actions>
         <el-button size="small" type="primary" @click="openEditForm(connection)">{{ $t('Edit') }}</el-button>
         <RemoveButton wide @click="deleteConnection(connection._id)" />
-
       </template>
     </BlockItem>
   </div>
 
   <!-- If there are no connections -->
-  <div v-if="!filteredConnections.length" class="empty-state">
-    <p>{{ $t('No connections found. Create one to get started.') }}</p>
+  <div v-if="loaded && !filteredConnections.length" class="empty-state">
+    <p centered>{{ $t('No connections found. Create one to get started.') }}</p>
     <el-button type="primary" @click="openCreateForm">{{ $t('Create Connection') }}</el-button>
   </div>
 
   <!-- Modal -->
-  <el-dialog v-model="formVisible" :title="editingIntegration?.id ? 'Edit Connection' : 'Create Connection'" width="50%"
+  <el-dialog v-model="formVisible" :title="$t(editingIntegration?._id ? 'Edit Connection' : 'Create Connection')" width="50%"
     @close="closeForm">
     <IntegrationSourceForm v-model="editingIntegration" :kind="kind" @submit="saveConnection" @close="closeForm" />
   </el-dialog>

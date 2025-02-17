@@ -49,16 +49,29 @@
     <h3>{{ $t('Social Logins') }}</h3>
     <FormRowGroup>
       <BlockItem>
-        <FormInput v-model="edited.socialLoginsSources.linkedin"
+        <div v-if="linkedinSourcesLoaded && !linkedinSources?.length">
+          <font-awesome-icon :icon="['fab', 'linkedin']"/>
+          <span class="pad-start">{{ $t('LinkedIn') }}</span>
+          <el-alert :closable="false" type="info">
+            {{ $t('You have not integrated any LinkedIn connections.') }}
+            <router-link
+                class="primary-link"
+                :to="{name: 'integrations-sources', params: { kind: 'linkedin'}}">
+              {{ $t('Navigate to LinkedIn Connections') }}
+            </router-link>
+            {{ $t('to create one.') }}
+          </el-alert>
+        </div>
+        <FormInput v-else v-model="edited.socialLoginsSources.linkedin"
                    placeholder="Select LinkedIn Integration Source"
                    type="select" class="social-input">
           <template #pre>
-            <font-awesome-icon :icon="['fab', 'linkedin']" />
+            <font-awesome-icon :icon="['fab', 'linkedin']"/>
             <span class="pad-start">{{ $t('LinkedIn') }}</span>
           </template>
           <template #options>
-            <el-option :label="`(${$t('none')})`" :value="null" />
-            <el-option v-for="source in linkedinSources" :key="source._id" :label="source.name" :value="source._id" />
+            <el-option :label="`(${$t('none')})`" :value="null"/>
+            <el-option v-for="source in linkedinSources" :key="source._id" :label="source.name" :value="source._id"/>
           </template>
         </FormInput>
       </BlockItem>
@@ -99,7 +112,10 @@ const edited = ref<IAuthConfigurationMetadata>({
 
 const emit = defineEmits(['save']);
 
-const { result: linkedinSources } = useIntegrationSources(IntegrationSourceKind.LinkedIn);
+const {
+  result: linkedinSources,
+  loaded: linkedinSourcesLoaded
+} = useIntegrationSources(IntegrationSourceKind.LinkedIn);
 
 function save() {
   emit('save', edited.value)
