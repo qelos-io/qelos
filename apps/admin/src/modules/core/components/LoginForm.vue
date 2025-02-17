@@ -3,14 +3,14 @@
     <el-form class="login-form" @submit.native.prevent="submit">
       <el-form-item :label="$t('Username / Email')" class="form-item-flex">
         <el-input size="large" name="username" v-model="form.username" :type="metadata.treatUsernameAs" required
-          @focus="onFocus" dir="ltr" />
+                  @focus="onFocus" dir="ltr"/>
       </el-form-item>
       <el-form-item :label="$t('Password')" class="form-item-flex">
         <el-input size="large" name="password" v-model="form.password" type="password" required @focus="onFocus"
-          dir='ltr' />
+                  dir='ltr'/>
       </el-form-item>
       <div class="form-buttons">
-        <SaveButton :submitting="submitting" :text="$t('Login')" />
+        <SaveButton :submitting="submitting" :text="$t('Login')"/>
       </div>
     </el-form>
     <template v-if="metadata.socialLoginsSources?.linkedin">
@@ -18,7 +18,7 @@
         <span>{{ $t('OR') }}</span>
       </div>
       <el-button type="primary" class="linkedin-button" @click="loginWithLinkedIn">
-        <font-awesome-icon :icon="['fab', 'linkedin']" class="linkedin-icon" />
+        <font-awesome-icon :icon="['fab', 'linkedin']" class="linkedin-icon"/>
         <span>{{ $t('Login with LinkedIn') }}</span>
       </el-button>
     </template>
@@ -26,7 +26,7 @@
 </template>
 
 <script lang="ts" setup>
-import { watch } from 'vue'
+import { toRef, watch } from 'vue'
 import { useLogin } from '../compositions/authentication'
 import { useSubmitting } from '../compositions/submitting'
 import { useRouter } from 'vue-router'
@@ -34,7 +34,7 @@ import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import { useAuthConfiguration } from '@/modules/configurations/store/auth-configuration';
 
 const { login, form, isLoggedIn } = useLogin()
-const { metadata } = useAuthConfiguration()
+const metadata = toRef(useAuthConfiguration(), 'metadata')
 const router = useRouter()
 
 const { submit, submitting } = useSubmitting(login, { error: 'Login failed' })

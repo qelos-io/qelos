@@ -1,5 +1,5 @@
 import { AuthRequest } from '../../../types';
-import User from '../../models/user';
+import User, { UserDocument } from '../../models/user';
 import { DecryptedSourceAuthentication, getIntegrationSource } from '../../services/integration-source';
 import { getRequestHost } from '../../services/req-host';
 import jwt from 'jsonwebtoken';
@@ -89,7 +89,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
       userData = jwt.decode(tokenData.id_token);
     }
 
-    let user: ReturnType<getUser>;
+    let user: UserDocument;
     try {
       user = await getUser({ username: userData.email, tenant: req.headers.tenant });
       user.email = userData.email;
