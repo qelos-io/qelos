@@ -1,6 +1,7 @@
 import { usePluginsList } from '@/modules/plugins/store/plugins-list';
 import { watch, getCurrentInstance } from 'vue';
 import * as vue from 'vue';
+import * as vueRouter from 'vue-router';
 import sdk from '@/services/sdk';
 
 export function usePluginsInjectables() {
@@ -18,6 +19,7 @@ export function usePluginsInjectables() {
     appContext.app.component(name, component);
   }
   window['Vue'] = vue;
+  window['VueRouter'] = vueRouter;
 
   let unwatch;
 
