@@ -65,6 +65,23 @@ async function hasReachedLimitations(req: RequestWithUser, blueprint: IBlueprint
     } else if (limit.scope === PermissionScope.USER) {
       query.user = entity.user;
     }
+    if (limit.roles?.length) {
+      // check if this rule is meant for users with specific roles
+      if (!limit.roles.includes('*') && !req.user?.roles.some(role => limit.roles.includes(role))) {
+        return false; // this means that current user doesn't have the required role for limitation.
+      }
+    }
+    if (limit.workspaceLabels?.length) {
+      const workspace = req.user?.workspace;
+      if (!limit.workspaceLabels.includes('*') && !workspace) {
+        // specified workspace labels but no workspace is set - deny!
+        return true; // "true" means hasReachedLimitations ? === true
+      }
+      // if workspace doesn't have one of the required labels - return false;
+      if (!limit.workspaceLabels.includes('*') && !limit.workspaceLabels.some(label => workspace.labels.includes(label))) {
+        return false; // "false" means hasReachedLimitations ? === false, because this specific limit is not meant for this kind of workspace
+      }
+    }
     const existingEntities = await BlueprintEntity.countDocuments(query).lean().exec();
     if (existingEntities >= limit.value) {
       return true;

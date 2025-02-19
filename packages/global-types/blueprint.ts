@@ -49,6 +49,8 @@ export interface IBlueprintPropertyDescriptor {
 
 export interface IBlueprintLimitation {
   scope: PermissionScope;
+  workspaceLabels: string[];
+  roles: string[];
   properties?: string[];
   value: number;
 }

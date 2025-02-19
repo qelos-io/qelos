@@ -37,6 +37,8 @@ const BlueprintSchema = new mongoose.Schema<IBlueprint>({
       required: true,
       enum: Object.values(PermissionScope),
     },
+    workspaceLabels: [String],
+    roles: [String],
     properties: [{
       type: String,
     }],
