@@ -1,4 +1,4 @@
-import { getUser, updateUser } from '../services/users'
+import { getUser, getUserMetadata, updateUser } from '../services/users'
 import { Response } from 'express'
 import { AuthRequest } from '../../types'
 import { getWorkspaceForUser } from '../services/workspaces';
@@ -30,14 +30,22 @@ async function getImpersonate(req: AuthRequest, res: Response) {
     lastName,
     fullName,
     roles: user.roles,
-    profileImage: req.userPayload.profileImage,
+    profileImage: user.profileImage,
+    metadata: user.metadata,
     workspace
   }).end();
 }
 
-export function getMe(req: AuthRequest, res: Response) {
+export async function getMe(req: AuthRequest, res: Response) {
   if (req.userPayload.isPrivileged && req.headers['x-impersonate-user']) {
     return getImpersonate(req, res)
+  }
+
+  let metadata = {};
+  try {
+     metadata = await getUserMetadata(req.userPayload.sub, req.headers.tenant);
+  } catch {
+    //
   }
 
   const firstName = req.userPayload.firstName;
@@ -53,6 +61,7 @@ export function getMe(req: AuthRequest, res: Response) {
     fullName,
     profileImage: req.userPayload.profileImage,
     roles: req.userPayload.roles,
+    metadata,
     workspace: req.activeWorkspace
   }).end();
 }
@@ -77,6 +86,7 @@ export async function setMe(req: AuthRequest, res: Response) {
       birthDate: birthDate || req.userPayload.birthDate,
       roles: req.userPayload.roles,
       profileImage: profileImage || req.userPayload.profileImage,
+      metadata,
       workspace: req.activeWorkspace
     }).end()
   } catch (e) {

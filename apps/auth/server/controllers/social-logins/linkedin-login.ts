@@ -81,7 +81,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
     }
 
     if (!tokenData.id_token) {
-      return res.status(400).json({ message: 'ID token is missing in the response' })
+      return res.status(400).json({ message: 'ID token is missing in the response' }).end();
     }
 
     let userData;

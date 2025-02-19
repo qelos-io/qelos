@@ -252,3 +252,11 @@ export function getCookieTokenValue(req: AuthRequest) {
   const tokenKey = getCookieTokenName(req.headers.tenant);
   return req.signedCookies[tokenKey] || req.cookies[tokenKey] || req.signedCookies.token || req.cookies.token;
 }
+
+export async function getUserMetadata(userId: string, tenant: string) {
+  const user = await User.findOne({
+    _id: userId,
+    tenant
+  }).select('metadata').lean().exec();
+  return user?.metadata || {};
+}

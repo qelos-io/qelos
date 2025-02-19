@@ -51,7 +51,11 @@ export function setCookie(res: Response, cookieName: string, cookieId: string, m
 
 export function getSignedToken(user: any, workspace: any, tokenIdentifier: string, expiresIn = tokenExpiration) {
   const secretParams = {
-    workspace,
+    workspace: workspace ? {
+      ...workspace,
+      // encode workspace name that might contain special characters
+      name: encodeURIComponent(workspace.name || '')
+    } : undefined,
     sub: user._id,
     tenant: user.tenant,
     username: user.username,

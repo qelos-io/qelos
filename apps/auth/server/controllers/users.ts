@@ -166,9 +166,18 @@ export async function setUserEncryptedData(req: AuthRequest, res: Response) {
 }
 
 export async function createUser(req: AuthRequest, res: Response) {
-  logger.log('create new user from admin', req.authConfig, req.body)
   const { tenant, name, internalMetadata, metadata, ...userData } = req.body
   const user = new User(userData);
+
+  if (req.authConfig.treatUsernameAs === 'email') {
+    user.username = user.username.toLowerCase().trim().replace(/ /g, '+');
+    user.email = user.username;
+    if (!user.username.includes('@')) {
+      res.status(400).json({ message: 'username should be an email address' }).end();
+      return;
+    }
+  }
+
   user.tenant = req.headers.tenant;
   if (!user.fullName && name) {
     user.fullName = name;
@@ -178,12 +187,6 @@ export async function createUser(req: AuthRequest, res: Response) {
       user.metadata = getValidMetadata(metadata, req.authConfig.additionalUserFields);
     } catch {
       // nothing
-    }
-  }
-  if (req.authConfig.treatUsernameAs === 'email') {
-    user.username = user.username.toLowerCase().trim().replace(/ /g, '+');
-    if (user.username.indexOf('@') === -1) {
-      throw new Error('username should be an email address');
     }
   }
   try {
