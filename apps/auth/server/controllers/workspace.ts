@@ -184,8 +184,8 @@ export async function createWorkspace(req: AuthRequest, res: Response) {
       user: userId,
       source: 'auth',
       kind: 'workspaces',
-      eventName: 'workspaces-created',
-      description: 'workspaces created by user endpoint',
+      eventName: 'workspace-created',
+      description: 'workspace created by user endpoint',
       metadata: workspace,
     });
 
@@ -278,8 +278,8 @@ export async function deleteWorkspace(req: AuthRequest, res: Response) {
       user: userId,
       source: 'auth',
       kind: 'workspaces',
-      eventName: 'workspaces-deleted',
-      description: 'workspaces deleted by user endpoint',
+      eventName: 'workspace-deleted',
+      description: 'workspace deleted by user endpoint',
       metadata: req.workspace
     })
   } catch (err) {
