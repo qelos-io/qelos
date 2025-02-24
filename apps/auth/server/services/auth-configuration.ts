@@ -11,6 +11,7 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
         treatUsernameAs: 'email',
         showLoginPage: true,
         showRegisterPage: false,
+        allowSocialAutoRegistration: true,
         additionalUserFields: [],
         socialLoginsSources: {},
       };
@@ -19,6 +20,7 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
         treatUsernameAs: 'email',
         showLoginPage: true,
         showRegisterPage: false,
+        allowSocialAutoRegistration: true,
         additionalUserFields: [],
         socialLoginsSources: {},
       };

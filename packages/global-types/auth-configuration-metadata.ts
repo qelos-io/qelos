@@ -17,5 +17,6 @@ export interface IAuthConfigurationMetadata {
   socialLoginsSources?: {
     linkedin?: string,
   }
+  allowSocialAutoRegistration?: boolean,
   additionalUserFields: Array<IUserAdditionalField>
 }

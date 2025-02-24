@@ -9,6 +9,7 @@ export const useAuthConfiguration = defineStore('auth-configuration', () => {
     treatUsernameAs: 'email',
     showLoginPage: true,
     showRegisterPage: false,
+    allowSocialAutoRegistration: true,
     additionalUserFields: [],
     socialLoginsSources: {},
   }

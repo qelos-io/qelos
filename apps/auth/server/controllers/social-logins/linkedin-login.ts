@@ -96,6 +96,10 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
       user.profileImage = userData.picture || user.profileImage;
       await user.save();
     } catch {
+      if (typeof req.authConfig.allowSocialAutoRegistration === 'boolean' && !req.authConfig.allowSocialAutoRegistration) {
+        res.redirect('/login?error=needs-registration&email=' + encodeURIComponent(userData.email)).end();
+        return;
+      }
       user = new User({
         tenant: req.headers.tenant,
         username: userData.email,
@@ -143,7 +147,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
     );
 
     setCookie(res, getCookieTokenName(user.tenant), newToken, null, requestHost);
-    res.redirect('/');
+    res.redirect('/').end();
   } catch (error) {
     return res.status(500).json({ message: 'Internal server error' });
   }

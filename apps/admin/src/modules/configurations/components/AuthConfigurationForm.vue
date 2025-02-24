@@ -49,6 +49,9 @@
     <h3>{{ $t('Social Logins') }}</h3>
     <FormRowGroup>
       <BlockItem>
+        <FormInput v-model="edited.allowSocialAutoRegistration" title="Auto register non-existing users?" type="switch"/>
+      </BlockItem>
+      <BlockItem>
         <div v-if="linkedinSourcesLoaded && !linkedinSources?.length">
           <font-awesome-icon :icon="['fab', 'linkedin']"/>
           <span class="pad-start">{{ $t('LinkedIn') }}</span>
@@ -101,6 +104,7 @@ const defaultMetadata: IAuthConfigurationMetadata = {
   treatUsernameAs: 'email',
   showLoginPage: true,
   showRegisterPage: false,
+  allowSocialAutoRegistration: true,
   additionalUserFields: [],
   socialLoginsSources: {},
 }
