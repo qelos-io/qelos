@@ -73,15 +73,18 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
     const tokenData = await tokenResponse.json();
 
     if (!tokenResponse.ok) {
-      return res.status(tokenResponse.status).json({ message: 'Failed to get access token', details: tokenData });
+      res.status(tokenResponse.status).json({ message: 'Failed to get access token', details: tokenData }).end();
+      return;
     }
 
     if (!tokenData.access_token) {
-      return res.status(400).json({ message: 'Failed to get access token' })
+      res.status(400).json({ message: 'Failed to get access token' }).end();
+      return;
     }
 
     if (!tokenData.id_token) {
-      return res.status(400).json({ message: 'ID token is missing in the response' }).end();
+      res.status(400).json({ message: 'ID token is missing in the response' }).end();
+      return
     }
 
     let userData;
@@ -97,7 +100,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
       await user.save();
     } catch {
       if (typeof req.authConfig.allowSocialAutoRegistration === 'boolean' && !req.authConfig.allowSocialAutoRegistration) {
-        res.redirect('/login?error=needs-registration&email=' + encodeURIComponent(userData.email)).end();
+        res.redirect('/login?error=needs-registration&email=' + encodeURIComponent(userData.email));
         return;
       }
       user = new User({
@@ -147,7 +150,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
     );
 
     setCookie(res, getCookieTokenName(user.tenant), newToken, null, requestHost);
-    res.redirect('/').end();
+    res.redirect('/');
   } catch (error) {
     return res.status(500).json({ message: 'Internal server error' });
   }
