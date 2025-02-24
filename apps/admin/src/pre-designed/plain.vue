@@ -54,7 +54,7 @@ import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-it
 import { useDynamicRouteItem } from '@/modules/pre-designed/compositions/dynamic-route-item';
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
 import { useAuth } from '@/modules/core/compositions/authentication';
-import { isEditingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
+import { fetchAuthUser, isEditingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
 import AddComponentModal from '@/pre-designed/editor/AddComponentModal.vue';
 import { useEditMfeStructure } from '@/modules/no-code/compositions/edit-mfe-structure';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
@@ -80,7 +80,8 @@ async function reRenderAfterError() {
   updates.value++;
 }
 
-const { user } = useAuth()
+fetchAuthUser(false, true);
+const { user, isLoaded: userLoaded, userPromise } = useAuth()
 
 const { api, crud, relevantStructure, styles } = useSingleItemCrud()
 const { requirements, isRequirementsLoaded } = toRefs(useScreenRequirementsStore())
@@ -140,6 +141,8 @@ const templateProps = computed(() => {
     schema: crud.value.schema,
     cruds: cruds.value,
     user: user.value,
+    userLoaded,
+    userPromise,
     sdk,
     location,
   };

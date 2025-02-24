@@ -26,7 +26,7 @@ export const logout = async () => {
 export const updateProfile = async (changes: Partial<IUser>) => {
   authStore.user = await api.post<IUser>('/api/me', changes).then(res => res.data)
 }
-export const fetchAuthUser = async (force: boolean = false) => {
+export const fetchAuthUser = async (force: boolean = false, optionalUser: boolean = false) => {
   if (!force && (authStore.user || authStore.userPromise)) {
     return authStore.userPromise
   }
@@ -45,7 +45,7 @@ export const fetchAuthUser = async (force: boolean = false) => {
   if (user?.roles?.length) {
     authStore.user = user
     return user
-  } else {
+  } else if (!optionalUser) {
     logout()
   }
 }

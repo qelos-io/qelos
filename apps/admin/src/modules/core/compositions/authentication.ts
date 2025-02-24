@@ -25,6 +25,8 @@ export function useLogin() {
 export function useAuth() {
   return {
     logout,
-    user: computed(() => authStore.user)
+    user: computed(() => authStore.user),
+    isLoaded: computed(() => authStore.isLoaded),
+    userPromise: computed(() => authStore.userPromise)
   }
 }
