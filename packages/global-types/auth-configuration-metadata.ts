@@ -12,6 +12,8 @@ export interface IUserAdditionalField {
 
 export interface IAuthConfigurationMetadata {
   treatUsernameAs: 'email' | 'username' | 'phone',
+  formPosition: 'left' | 'right' | 'center' | 'top' | 'bottom',
+  loginTitle?: string,
   showLoginPage: boolean,
   showRegisterPage: boolean,
   socialLoginsSources?: {

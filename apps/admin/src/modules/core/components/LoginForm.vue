@@ -2,7 +2,7 @@
   <div class="login-container">
     <el-form class="login-form" @submit.native.prevent="submit">
       <el-form-item :label="$t('Username / Email')" class="form-item-flex">
-        <el-input size="large" name="username" v-model="form.username" :type="metadata.treatUsernameAs" required
+        <el-input size="large" name="username" v-model="form.username" :type="authConfig.treatUsernameAs" required
                   @focus="onFocus" dir="ltr"/>
       </el-form-item>
       <el-form-item :label="$t('Password')" class="form-item-flex">
@@ -13,7 +13,7 @@
         <SaveButton :submitting="submitting" :text="$t('Login')"/>
       </div>
     </el-form>
-    <template v-if="metadata.socialLoginsSources?.linkedin">
+    <template v-if="authConfig.socialLoginsSources?.linkedin">
       <div class="separator">
         <span>{{ $t('OR') }}</span>
       </div>
@@ -26,15 +26,16 @@
 </template>
 
 <script lang="ts" setup>
-import { toRef, watch } from 'vue'
+import { watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useLogin } from '../compositions/authentication'
 import { useSubmitting } from '../compositions/submitting'
-import { useRouter } from 'vue-router'
+import { IAuthConfigurationMetadata } from '@qelos/global-types';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
-import { useAuthConfiguration } from '@/modules/configurations/store/auth-configuration';
+
+defineProps<{ authConfig: IAuthConfigurationMetadata }>()
 
 const { login, form, isLoggedIn } = useLogin()
-const metadata = toRef(useAuthConfiguration(), 'metadata')
 const router = useRouter()
 
 const { submit, submitting } = useSubmitting(login, { error: 'Login failed' })
@@ -63,7 +64,6 @@ const loginWithLinkedIn = () => {
   margin: 0 auto;
   padding: 20px;
   background: #fff;
-
 }
 
 form {

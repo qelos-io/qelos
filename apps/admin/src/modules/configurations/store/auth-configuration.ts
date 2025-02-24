@@ -7,6 +7,7 @@ import { IAuthConfigurationMetadata } from '@qelos/global-types';
 export const useAuthConfiguration = defineStore('auth-configuration', () => {
   const DEFAULT_VALUE: IAuthConfigurationMetadata = {
     treatUsernameAs: 'email',
+    formPosition: 'right',
     showLoginPage: true,
     showRegisterPage: false,
     allowSocialAutoRegistration: true,

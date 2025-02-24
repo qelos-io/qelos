@@ -9,6 +9,7 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
       const config = await callContentService('/internal-api/configurations/auth-configuration', tenant);
       value = config.metadata || {
         treatUsernameAs: 'email',
+        formPosition: 'right',
         showLoginPage: true,
         showRegisterPage: false,
         allowSocialAutoRegistration: true,
@@ -18,6 +19,7 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
     } catch {
       value = {
         treatUsernameAs: 'email',
+        formPosition: 'right',
         showLoginPage: true,
         showRegisterPage: false,
         allowSocialAutoRegistration: true,
