@@ -1,12 +1,17 @@
 <script setup lang="ts">
-defineProps<{ title: string }>()
+import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
+
+defineProps<{ title: string, info?: string }>()
 const model = defineModel()
 
 </script>
 
 <template>
   <el-form-item>
-    <template #label>{{ $t(title) }}</template>
+    <template #label>{{ $t(title) }}
+      <InfoIcon v-if="info" :content="$t(info)"/>
+
+    </template>
     <el-select
         v-model="model"
         multiple

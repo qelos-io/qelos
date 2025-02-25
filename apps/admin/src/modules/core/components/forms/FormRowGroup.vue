@@ -13,6 +13,10 @@
   align-items: flex-end;
 }
 
+.form-row-group[wrap] {
+  flex-wrap: wrap;
+}
+
 .form-row-group[align-start] {
   justify-content: flex-start;
 }

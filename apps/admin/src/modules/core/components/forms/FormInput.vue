@@ -54,7 +54,7 @@ export default {
   props: {
     title: String,
     label: String,
-    type: String as () => 'text' | 'textarea' | 'password' | 'button' | 'checkbox' | 'file' | 'number' | 'radio' | 'upload' | 'switch' | 'color' | 'url' | 'select',
+    type: String as () => 'text' | 'textarea' | 'password' | 'button' | 'checkbox' | 'file' | 'email' | 'number' | 'radio' | 'upload' | 'switch' | 'color' | 'url' | 'select',
     placeholder: String,
     gap: Boolean,
     size: String as () => 'large' | 'default' | 'small',

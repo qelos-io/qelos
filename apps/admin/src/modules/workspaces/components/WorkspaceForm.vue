@@ -1,14 +1,16 @@
 <template>
   <el-form @submit.native.prevent="submit" class="workspace-form">
-    <div class="flex-row">
-      <FormInput title="Workspace Name" v-model="data.name"/>
-      <FormInput title="Workspace Logo" v-model="data.logo"/>
-    </div>
+    <BlockItem>
+      <div class="flex-row">
+        <FormInput title="Workspace Name" v-model="data.name"/>
+        <FormInput v-if="wsConfig.allowLogo" title="Workspace Logo" v-model="data.logo"/>
+      </div>
+    </BlockItem>
 
-    <template v-if="!workspace._id && wsConfig.metadata.labels?.length > 1">
-      <h3>{{ $t('Select your workspace type') }}</h3>
+    <template v-if="!workspace._id && filteredLabels.length > 1">
+      <h3>{{ $t(wsConfig.labelsSelectorTitle || 'Select your workspace type') }}</h3>
       <FormRowGroup>
-        <el-form-item v-for="option of wsConfig.metadata.labels">
+        <el-form-item v-for="option of filteredLabels">
           <el-button @click.prevent="selectedLabels = option"
                      size="large"
                      :class="{ selected: selectedLabels === option, 'flex-1': true }"
@@ -19,12 +21,15 @@
     </template>
 
     <!-- <FormInput title="Workspace InviteList" :model-value="data.invites" @input="data.invites = $event" /> -->
-    <h3>{{ $t('Workspace Invite List') }}</h3>
-    <div class="flex-row" v-for="(invite, index) in data.invites" :key="index">
-      <FormInput title="Name" v-model="invite.name"/>
-      <FormInput title="Email" v-model="invite.email"/>
-      <RemoveButton wide @click="removeItem(index)"/>
-    </div>
+    <h3>{{ $t('Invite Members') }}</h3>
+    <p>{{ $t('If you want to invite members to this workspace, enter their email addresses below.') }}</p>
+    <FormRowGroup align-start v-for="(invite, index) in data.invites" :key="index">
+      <FormInput title="Name" v-model="invite.name" class="flex-1"/>
+      <FormInput title="Email" type="email" v-model="invite.email" class="flex-1"/>
+      <div class="flex-0 remove-row">
+        <RemoveButton class="is-align-center" wide @click="removeItem(index)"/>
+      </div>
+    </FormRowGroup>
     <div>
       <AddMore @click="addItem"/>
     </div>
@@ -39,7 +44,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, PropType, reactive, ref } from 'vue';
+import { computed, PropType, reactive, ref } from 'vue';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import FormInput from '../../core/components/forms/FormInput.vue';
 import { clearNulls } from '../../core/utils/clear-nulls';
@@ -47,11 +52,12 @@ import AddMore from '../../core/components/forms/AddMore.vue';
 import { IWorkspace } from '@qelos/sdk/dist/workspaces';
 import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
 import { useWorkspaceMembers } from '@/modules/workspaces/compositions/workspaces';
-import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
-import { WorkspaceLabelDefinition } from '@qelos/global-types'
+import { WorkspaceConfigurationMetadata, WorkspaceLabelDefinition } from '@qelos/global-types'
 import { ElNotification } from 'element-plus';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
+import { useAuth } from '@/modules/core/compositions/authentication';
 
 const membersColumns = [
   { label: 'First Name', prop: 'firstName' },
@@ -60,26 +66,30 @@ const membersColumns = [
   { label: 'Roles', prop: 'roles' },
 ]
 
-const { workspace } = defineProps({
+const { workspace, wsConfig } = defineProps({
   submitting: Boolean,
   workspace: {
     type: Object as PropType<any>,
     default: () => ({})
-  }
+  },
+  wsConfig: Object as PropType<WorkspaceConfigurationMetadata>,
 })
 const emit = defineEmits(['submitted']);
 
+const { user } = useAuth();
+
+const filteredLabels = computed(() => wsConfig.labels?.filter(l => !l.allowedRolesForCreation ||
+    l.allowedRolesForCreation.includes('*') ||
+    l.allowedRolesForCreation.some(r => user.value.roles.includes(r))
+) || []);
+
 const { load: loadMembers, members } = useWorkspaceMembers(workspace._id);
-const wsConfig = useWsConfiguration();
 const selectedLabels = ref<WorkspaceLabelDefinition>()
 
 if (workspace._id) {
   loadMembers();
 } else {
-  onMounted(async () => {
-    await wsConfig.promise;
-    selectedLabels.value = wsConfig.metadata.labels?.[0];
-  })
+  selectedLabels.value = filteredLabels.value[0];
 }
 
 const data = reactive<Partial<IWorkspace>>({
@@ -95,13 +105,13 @@ const data = reactive<Partial<IWorkspace>>({
 function submit() {
   if (!workspace._id) {
     let labels = selectedLabels.value?.value || [];
-    if (wsConfig.metadata.labels?.length === 1) {
-      labels = wsConfig.metadata.labels[0].value;
+    if (filteredLabels.value.length === 1) {
+      labels = filteredLabels.value[0].value;
     }
     if (labels.length) {
       data.labels = labels;
     }
-    if (data.labels.length === 0 && !wsConfig.metadata.allowNonLabeledWorkspaces) {
+    if (data.labels.length === 0 && !wsConfig.allowNonLabeledWorkspaces) {
       ElNotification.error('Please select a workspace type');
       return;
     }
@@ -126,20 +136,13 @@ function removeItem(index) {
   margin: 10px;
 }
 
+h3 {
+  margin-block: 15px;
+}
+
 .flex-row > * {
   margin: 10px;
   flex: 1;
-}
-
-.remove-button {
-  margin-left: 8px;
-  margin-top: 45px;
-  color: red;
-  width: 20px;
-  height: 45px;
-  background-color: transparent;
-  flex-grow: 0.5;
-  box-shadow: none;
 }
 
 .save-btn {

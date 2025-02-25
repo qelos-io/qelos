@@ -10,6 +10,10 @@ const props = defineProps<{
   selectedLabels: string[];
 }>();
 
+if (!store.loading) {
+  store.reload();
+}
+
 const filteredWorkspaces = computed(() => {
   const reg = new RegExp(route.query.q?.toString(), 'i');
 

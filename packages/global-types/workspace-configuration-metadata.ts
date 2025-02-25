@@ -1,7 +1,8 @@
 export interface WorkspaceLabelDefinition {
   title: string,
   description: string,
-  value: string[]
+  value: string[],
+  allowedRolesForCreation?: string[],
 }
 
 export interface WorkspaceConfigurationMetadata {
@@ -9,5 +10,9 @@ export interface WorkspaceConfigurationMetadata {
   creationPrivilegedRoles: string[],
   viewMembersPrivilegedWsRoles: string[],
   labels: WorkspaceLabelDefinition[],
-  allowNonLabeledWorkspaces: true
+  allowNonLabeledWorkspaces: true,
+  allowLogo?: boolean,
+  createWorkspacePageTitle?: string,
+  labelsSelectorTitle?: string,
+
 }
