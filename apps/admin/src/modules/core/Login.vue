@@ -1,5 +1,5 @@
 <template>
-  <div class="login-page">
+  <div class="login-page" v-if="config">
     <aside>
       <img :alt="appConfig?.name || 'SaaS'" :src="appConfig?.logoUrl || '../../assets/logo.png'">
       <h1>{{ $t(config?.loginTitle || 'Welcome') }}</h1>
