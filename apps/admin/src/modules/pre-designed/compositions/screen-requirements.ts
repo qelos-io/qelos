@@ -33,6 +33,8 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
       if (secondPart) {
         if (firstPart === 'user') {
           return user.value[secondPart] || '';
+        } else if (firstPart === 'workspace'){
+          return user.value?.workspace?.[secondPart] || '';
         }
         return route[firstPart]?.[secondPart] || '';
       }
@@ -143,7 +145,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
             cachedDispatchers[cachedKey].metadata.value = item.fromBlueprint;
             cachedDispatchers[cachedKey].retry();
           } else {
-            cachedDispatchers[cachedKey] = useDispatcher(({ query }) => entitiesOfBlueprint.getList(query), [], false, item.fromBlueprint)
+            cachedDispatchers[cachedKey] = useDispatcher(({ query }) => entitiesOfBlueprint.getList(getQueryParamsFromAppState(query)), [], false, item.fromBlueprint)
           }
           currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
