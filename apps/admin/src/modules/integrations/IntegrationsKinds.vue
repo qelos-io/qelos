@@ -39,7 +39,7 @@ const kinds = useIntegrationKinds();
   max-width: 100%;
   max-height: 150px;
   margin: 10px;
-  border-radius: 10px;
+  border-radius: var(--border-radius);
 }
 
 .blocks-list > * {

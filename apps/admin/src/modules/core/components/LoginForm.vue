@@ -123,7 +123,7 @@ form {
   justify-content: center;
   padding: 20px;
   font-size: 16px;
-  border-radius: 6px;
+  border-radius: calc(var(--border-radius) * 1.2);
   transition: background 0.3s;
 }
 

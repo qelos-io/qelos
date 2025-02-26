@@ -1,23 +1,8 @@
+import type { IAppConfigurationMetadata as IAppConfiguration } from '@qelos/global-types';
 import { QelosSDKOptions } from "./types";
 import BaseSDK from "./base-sdk";
 
-export interface IAppConfiguration {
-  name: string;
-  logoUrl: string;
-  description: string;
-  keywords: string;
-  slogan: string;
-  language: string;
-  direction: string;
-  titleSuffix: string;
-  themeStylesUrl: string;
-  scriptUrl: string;
-  homeScreen: string;
-  colorsPalette: Record<string, string>;
-  websiteUrls: string[];
-
-  [key: string]: any;
-}
+export type { IAppConfiguration };
 
 export default class QlAppConfigurations extends BaseSDK {
   private relativePath = "/api/configurations/app-configuration";

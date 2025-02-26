@@ -6,7 +6,9 @@
     <WorkspaceConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"
                                 v-else-if="config.key === 'workspace-configuration'"/>
     <AuthConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"
-                                v-else-if="config.key === 'auth-configuration'"/>
+                           v-else-if="config.key === 'auth-configuration'"/>
+    <AppConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"
+                          v-else-if="config.key === 'app-configuration'"/>
     <div v-else>
       <ConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"/>
     </div>
@@ -21,6 +23,7 @@ import SsrScriptsForm from './components/SsrScriptsForm.vue'
 import { useRoute } from 'vue-router'
 import WorkspaceConfigurationForm from '@/modules/configurations/components/WorkspaceConfigurationForm.vue';
 import AuthConfigurationForm from '@/modules/configurations/components/AuthConfigurationForm.vue';
+import AppConfigurationForm from '@/modules/configurations/components/AppConfigurationForm.vue';
 
 const { params } = useRoute()
 const { config, updateConfiguration } = useEditConfiguration((params as any).key)

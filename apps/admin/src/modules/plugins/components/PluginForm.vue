@@ -180,7 +180,7 @@ const submit = () => emit('submitted', edit);
 }
 
 .fast-refresh-manifest {
-  border-radius: 5px;
+  border-radius: var(--border-radius);
   border: 1px solid var(--border-color);
   padding: 10px;
   margin: 10px;

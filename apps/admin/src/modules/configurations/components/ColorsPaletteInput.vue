@@ -79,7 +79,7 @@ function updateColor(key: string, value: string) {
 .color-wrapper :deep(input) {
   width: 48px;
   height: 48px;
-  border-radius: 4px;
+  border-radius: calc(var(--border-radius) * 0.8);
   border: 1px solid var(--border-color);
 }
 

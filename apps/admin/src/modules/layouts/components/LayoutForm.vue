@@ -121,7 +121,7 @@ builder-layout {
 builder-plugin-item {
   background-color: #efefef;
   border: 1px solid #e1e1e1;
-  border-radius: 5px;
+  border-radius: var(--border-radius);
   margin-block-end: 10px;
 }
 
@@ -173,7 +173,7 @@ builder-layout .item-label {
   line-height: 40px;
   padding: 5px;
   margin: 0 5px;
-  border-radius: 4px;
+  border-radius: var(--border-radius);
   background-color: #eee;
   color: #000;
 }

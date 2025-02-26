@@ -22,9 +22,11 @@ watch(() => appConfig.value.language, async (language) => {
 watch(() => {
   const cssUrl = appConfig.value.themeStylesUrl;
   const palette = appConfig.value.colorsPalette;
+  const borderRadius = appConfig.value.borderRadius;
   return {
     cssUrl,
     palette,
+    borderRadius,
   }
 }, ({ cssUrl, palette }) => {
   let appStyle = document.querySelector('#app-style');
@@ -49,6 +51,7 @@ watch(() => {
       box-sizing: border-box;
     }
     :root {
+      --border-radius: ${typeof appConfig.value.borderRadius === 'number' ? appConfig.value.borderRadius : 5}px;
       ${palette.bgColor ? `--body-bg: ${palette.bgColor};` : ''}
       ${palette.mainColor ? `--main-color: ${palette.mainColor};` : ''}
       ${palette.mainColorLight ? `--main-color-light: ${palette.mainColorLight};` : ''}

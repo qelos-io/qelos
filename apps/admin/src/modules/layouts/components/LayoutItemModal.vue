@@ -133,7 +133,7 @@ function submit() {
 .optional-classes .label {
   margin: 0 5px;
   padding: 5px;
-  border-radius: 4px;
+  border-radius: var(--border-radius);
   background-color: #eee;
   cursor: pointer;
 }

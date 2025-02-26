@@ -71,29 +71,35 @@ async function updateConfiguration(req, res) {
     configuration.description = body.description
   }
   if (body.metadata) {
-    if (configuration.key === BASIC_APP_CONFIGURATION_KEY && body.metadata.websiteUrls) {
-      if (!allowedToChangeWebsiteUrls) {
-        res.status(400).json({ message: 'Not allowed to change websiteUrls' }).end()
-        return;
-      }
-      const existingTenantWithUrl = await Configuration.findOne({
-        _id: { $ne: configuration._id },
-        websiteUrls: { $in: body.metadata.websiteUrls }
-      })
-        .select('_id')
-        .lean()
-        .exec();
+    if (configuration.key === BASIC_APP_CONFIGURATION_KEY && body.metadata.websiteUrls?.length) {
+      if (allowedToChangeWebsiteUrls &&
+        (
+          !configuration.metadata.websiteUrls.every((url) => url === body.metadata.websiteUrls.includes(url)) ||
+          !body.metadata.websiteUrls.every((url) => url === configuration.metadata.websiteUrls.includes(url))
+        )
+      ) {
+        const existingTenantWithUrl = await Configuration.findOne({
+          _id: { $ne: configuration._id },
+          websiteUrls: { $in: body.metadata.websiteUrls }
+        })
+          .select('_id')
+          .lean()
+          .exec();
 
-      if (existingTenantWithUrl) {
-        res.status(400).json({ message: 'URL already exists for another account' }).end()
-        return;
+        if (existingTenantWithUrl) {
+          res.status(400).json({ message: 'URL already exists for another account' }).end()
+          return;
+        }
       }
+      configuration.metadata = {
+        ...configuration.metadata,
+        ...body.metadata
+      }
+    } else {
+      delete body.metadata.websiteUrls;
     }
-    configuration.metadata = {
-      ...configuration.metadata,
-      ...body.metadata
-    }
-    configuration.markModified('metadata')
+
+    configuration.markModified('metadata');
   }
 
   configuration.save()

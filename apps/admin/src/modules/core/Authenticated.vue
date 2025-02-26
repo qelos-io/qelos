@@ -91,7 +91,7 @@ watch(navigationOpened, (isOpen) => {
     flex-direction: column;
     overflow: auto;
     background-color: var(--body-bg);
-    padding-bottom: 10px;
+    padding-bottom: 0;
     position: relative;
   }
 

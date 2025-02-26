@@ -101,7 +101,7 @@ function emitRemove(e, cd) {
 .item {
   background-color: var(--secondary-color);
   padding: 10px;
-  border-radius: 5px;
+  border-radius: var(--border-radius);
   color: #fff;
   transition: background-color 0.2s linear;
   cursor: pointer;

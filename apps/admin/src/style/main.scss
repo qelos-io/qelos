@@ -65,7 +65,7 @@ blockquote {
 pre {
   background-color: var(--body-bg);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius);
   padding: 15px;
   overflow-x: auto;
   margin-bottom: 15px;
@@ -81,7 +81,7 @@ img {
   max-width: 100%;
   height: auto;
   margin-bottom: 15px;
-  border-radius: 4px;
+  border-radius: var(--border-radius);
 }
 
 /* Responsive design */
@@ -214,6 +214,10 @@ p {
   flex-direction: column;
   height: 100%;
   flex: 1;
+}
+
+.pad-top {
+  padding-top: 10px;
 }
 
 .pad-start {

@@ -14,6 +14,7 @@
   --nav-bg-color: #d6eedd;
   --el-menu-hover-bg-color: var(--main-color);
   --spacing: 10px;
+  --border-radius: 5px;
   --p-colorpicker-panel-background: #1e293b;
 }
 
@@ -34,4 +35,8 @@
 
 .el-statistic {
   --el-statistic-content-font-size: 300%;
+}
+
+.el-card {
+  --el-card-border-radius: var(--border-radius);
 }

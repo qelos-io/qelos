@@ -65,7 +65,7 @@ const open = () => emit('open');
 <style scoped lang="scss">
 header {
   margin: var(--spacing);
-  border-radius: 10px;
+  border-radius: var(--border-radius);
   position: sticky;
   top: 0;
   z-index: 1;
