@@ -1,5 +1,5 @@
 <template>
-  <div class="login-page" v-if="config">
+  <div class="login-page" v-if="loaded">
     <aside>
       <img :alt="appConfig?.name || 'SaaS'" :src="appConfig?.logoUrl || '../../assets/logo.png'">
       <h1>{{ $t(config?.loginTitle || 'Welcome') }}</h1>
@@ -11,14 +11,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, toRef } from 'vue';
+import { computed, toRefs } from 'vue';
 import LoginForm from './components/LoginForm.vue'
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import { IAuthConfigurationMetadata } from '@qelos/global-types';
 import { useAuthConfiguration } from '@/modules/configurations/store/auth-configuration';
 
 const props = defineProps<{ authConfig?: IAuthConfigurationMetadata }>()
-const metadata = toRef(useAuthConfiguration(), 'metadata')
+const { metadata, loaded } = toRefs(useAuthConfiguration())
 const config = computed(() => props.authConfig || metadata.value)
 
 const flexDirection = computed(() => {
