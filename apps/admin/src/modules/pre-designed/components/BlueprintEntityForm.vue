@@ -14,13 +14,18 @@ const props = defineProps<{
   clearAfterSubmit?: boolean;
   navigateAfterSubmit?: string;
   beforeSubmit?: (data: any) => Promise<unknown>;
+  identifier?: string;
 }>()
 
 const onSubmit = async (form) => {
   if (typeof props.beforeSubmit === 'function') {
     await props.beforeSubmit(form);
   }
-  return sdk.blueprints.entitiesOf(props.blueprint).create({ metadata: form })
+  if (props.identifier) {
+    return sdk.blueprints.entitiesOf(props.blueprint).update(props.identifier, { metadata: form })
+  } else {
+    return sdk.blueprints.entitiesOf(props.blueprint).create({ metadata: form })
+  }
 }
 
 const { reloadBlueprintRequirements } = useScreenRequirementsStore();
