@@ -1,11 +1,11 @@
 <template>
   <el-form @submit.native.prevent="save" class="ssr-scripts-form">
     <el-form-item label="Enter head">
-      <Monaco :model-value="updated.head || defaultMetadata.head" @input="edited.head = $event.target.value"
+      <Monaco v-model="edited.head"
               language="html"/>
     </el-form-item>
     <el-form-item label="Enter body">
-      <Monaco :model-value="updated.body || defaultMetadata.body" @input="edited.body = $event.target.value"
+      <Monaco v-model="edited.body"
               language="html"/>
     </el-form-item>
 
@@ -18,19 +18,25 @@ import Monaco from '../../users/components/Monaco.vue'
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import { clearNulls } from '../../core/utils/clear-nulls';
 import { useEditMetadata } from '../compositions/metadata';
+import { ref } from 'vue';
 
 const props = defineProps({
   kind: String,
   metadata: Object as () => ({ head: string, body: string }),
   submitting: Boolean
 })
-const { updated, edited } = useEditMetadata<typeof props.metadata>(props.kind, props.metadata || {})
-const emit = defineEmits(['save']);
+
 
 const defaultMetadata = {
   head: `<link rel="icon" href="/favicon.ico" /><title>APP</title>`,
   body: ''
 }
+const edited = ref({
+  head: props.metadata?.head || defaultMetadata.head,
+  body: props.metadata?.body || defaultMetadata.body
+})
+const emit = defineEmits(['save']);
+
 
 function save() {
   emit('save', clearNulls(edited))
