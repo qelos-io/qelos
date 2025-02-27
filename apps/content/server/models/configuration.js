@@ -42,6 +42,9 @@ Configuration.statics.clearCache = function (tenant, key) {
   const adminKey = cachePrefix + tenant + ':admin:' + key;
   cacheManager.setItem(publicKey, '', { ttl: 1 }).catch()
   cacheManager.setItem(adminKey, '', { ttl: 1 }).catch()
+  if (key === 'ssr-scripts') {
+    cacheManager.setItem(`ssr-scripts:${tenant}`, '', { ttl: 1 }).catch()
+  }
 }
 
 Configuration.statics.getWithCache = function getByKey(tenant, key, isAdmin) {
