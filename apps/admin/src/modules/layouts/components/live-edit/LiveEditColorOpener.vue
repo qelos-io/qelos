@@ -21,7 +21,7 @@ defineProps<{ color: string }>()
   position: absolute;
   top: 0;
   inset-inline: calc(100% - 28px);
-  font-size: 24px;
+  font-size: var(--large-font-size);
   z-index: 2;
 }
 

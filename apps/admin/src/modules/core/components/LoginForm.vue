@@ -90,7 +90,7 @@ form {
 }
 
 .linkedin-icon {
-  font-size: 18px;
+  font-size: calc(var(--base-font-size) * 1.1);
 }
 
 .separator {
@@ -122,7 +122,7 @@ form {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  font-size: 16px;
+  font-size: var(--base-font-size);
   border-radius: calc(var(--border-radius) * 1.2);
   transition: background 0.3s;
 }
@@ -132,7 +132,7 @@ form {
 }
 
 .linkedin-icon {
-  font-size: 24px;
+  font-size: var(--large-font-size);
   margin-right: 18px;
 }
 </style>

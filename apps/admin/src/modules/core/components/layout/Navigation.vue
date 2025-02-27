@@ -308,7 +308,7 @@ a:hover {
 .nav-group {
   h4 {
     color: var(--negative-color);
-    font-size: 16px;
+    font-size: var(--base-font-size);
     font-weight: normal;
     margin: 15px 0 5px;
 

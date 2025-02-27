@@ -6,7 +6,7 @@
     </FormRowGroup>
     <LabelsInput title="Hostnames" v-model="edited.websiteUrls"/>
     <FormRowGroup>
-      <FormInput title="Layout Direction" v-model="edited.direction" type="select" >
+      <FormInput title="Layout Direction" v-model="edited.direction" type="select">
         <template #options>
           <el-option value="rtl" label="Right to Left"/>
           <el-option value="ltr" label="Left to Right"/>
@@ -58,9 +58,20 @@
     <h3>{{ $t('Custom Scripts and Styling') }}</h3>
     <ColorsPaletteInput v-model="edited.colorsPalette"/>
     <FormRowGroup>
-      <el-form-item :title="$t('Radius')">
-        <el-slider v-model="edited.borderRadius" :step="1" :min="0" :max="20" show-stops />
-      </el-form-item>
+      <div class="flex-row">
+        <el-form-item :label="$t('Border Radius')" class="flex-1">
+          <el-slider v-model="edited.borderRadius" :step="1" :min="0" :max="20" show-stops/>
+        </el-form-item>
+        <div class="border-radius-demo" :style="{borderRadius: edited.borderRadius + 'px'}"></div>
+      </div>
+      <div class="flex-row">
+        <el-form-item :label="$t('Base Font Size')" class="flex-1">
+          <el-slider v-model="edited.baseFontSize" :step="1" :min="8" :max="28" show-stops/>
+        </el-form-item>
+        <div class="font-size-demo" :style="{fontSize: edited.baseFontSize + 'px'}">ABC</div>
+      </div>
+    </FormRowGroup>
+    <FormRowGroup>
       <FormInput title="Custom CSS URL" v-model="edited.themeStylesUrl" type="url" placeholder="https://.."/>
       <FormInput title="Custom JavaScript URL" v-model="edited.scriptUrl" type="url" placeholder="https://.."/>
     </FormRowGroup>
@@ -98,6 +109,7 @@ const defaultMetadata: IAppConfigurationMetadata = {
   slogan: '',
   themeStylesUrl: '',
   borderRadius: 5,
+  baseFontSize: 16,
   websiteUrls: []
 }
 
@@ -121,7 +133,23 @@ h3 {
   margin: 40px 0 20px;
 }
 
+.border-radius-demo {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border-color);
+  background-color: var(--main-color-light);
+  align-self: center;
+  margin-block-start: 10px;
+}
+
+.font-size-demo {
+  height: 30px;
+  align-self: center;
+  padding: 10px;
+}
+
 .submit-wrapper {
+  z-index: 1;
   background-color: var(--body-bg);
   margin: 0;
   padding: 20px;

@@ -171,7 +171,7 @@ const changePalette = useConfirmAction(async function changePalette(colorsPalett
 }
 
 .blocks-list i {
-  font-size: 24px;
+  font-size: var(--large-font-size);
 }
 
 .blocks-list > * {

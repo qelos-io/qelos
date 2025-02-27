@@ -24,7 +24,7 @@ label {
   justify-content: flex-start;
   align-items: center;
   margin: 10px;
-  font-size: 22px;
+  font-size: var(--large-font-size);
 }
 
 .el-icon {

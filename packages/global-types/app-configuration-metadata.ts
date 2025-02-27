@@ -12,6 +12,7 @@ export interface IAppConfigurationMetadata {
   homeScreen: string;
   colorsPalette: Record<string, string>;
   borderRadius: number;
+  baseFontSize: number;
   websiteUrls: string[];
 
   [key: string]: any;

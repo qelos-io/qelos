@@ -40,18 +40,9 @@ watch(() => {
 
   appStyle.innerHTML = `
     ${importCss}
-    html {
-      font-family: 'Avenir', Helvetica, Arial, sans-serif;
-      font-size: 16px;
-      word-spacing: 1px;
-      -ms-text-size-adjust: 100%;
-      -webkit-text-size-adjust: 100%;
-      -moz-osx-font-smoothing: grayscale;
-      -webkit-font-smoothing: antialiased;
-      box-sizing: border-box;
-    }
     :root {
       --border-radius: ${typeof appConfig.value.borderRadius === 'number' ? appConfig.value.borderRadius : 5}px;
+      --base-font-size: ${typeof appConfig.value.baseFontSize === 'number' ? appConfig.value.baseFontSize : 16}px;
       ${palette.bgColor ? `--body-bg: ${palette.bgColor};` : ''}
       ${palette.mainColor ? `--main-color: ${palette.mainColor};` : ''}
       ${palette.mainColorLight ? `--main-color-light: ${palette.mainColorLight};` : ''}
@@ -84,18 +75,7 @@ provide('editableManager', ref(false));
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: var(--main-color);
-  height: 100%;
-}
-
-html {
-  font-size: 16px;
-  word-spacing: 1px;
-  -ms-text-size-adjust: 100%;
-  -webkit-text-size-adjust: 100%;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
-  box-sizing: border-box;
+  color: var(--text-color);
   height: 100%;
 }
 

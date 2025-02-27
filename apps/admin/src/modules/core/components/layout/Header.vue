@@ -95,8 +95,8 @@ header {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: var(--main-color);
-  font-size: 16px;
+  color: var(--text-color);
+  font-size: var(--base-font-size);
 
   > i {
     margin-inline-start: 5px;
@@ -113,7 +113,7 @@ a {
   text-align: right;
   height: 100%;
   cursor: pointer;
-  color: var(--main-color);
+  color: var(--link);
 
   &:hover {
     text-decoration: underline;

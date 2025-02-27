@@ -1,5 +1,5 @@
 <template>
-  <div class="form-row-group">
+  <div class="form-row-group flex-row-column">
     <slot/>
   </div>
 </template>
@@ -7,10 +7,13 @@
 <style scoped>
 .form-row-group {
   gap: 10px;
-  display: flex;
-  flex-direction: row;
   justify-content: space-between;
   align-items: flex-end;
+}
+@media (max-width: 600px) {
+  .form-row-group {
+    align-items: stretch;
+  }
 }
 
 .form-row-group[wrap] {
