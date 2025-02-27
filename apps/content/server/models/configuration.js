@@ -45,6 +45,9 @@ Configuration.statics.clearCache = function (tenant, key) {
   if (key === 'ssr-scripts') {
     cacheManager.setItem(`ssr-scripts:${tenant}`, '', { ttl: 1 }).catch()
   }
+  if (key === 'app-configuration') {
+    cacheManager.setItem(`app-configuration:${tenant}`, '', { ttl: 1 }).catch()
+  }
 }
 
 Configuration.statics.getWithCache = function getByKey(tenant, key, isAdmin) {

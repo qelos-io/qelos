@@ -91,14 +91,13 @@ async function updateConfiguration(req, res) {
           return;
         }
       }
-      configuration.metadata = {
-        ...configuration.metadata,
-        ...body.metadata
-      }
     } else {
       delete body.metadata.websiteUrls;
     }
-
+    configuration.metadata = {
+      ...configuration.metadata,
+      ...body.metadata
+    }
     configuration.markModified('metadata');
   }
 

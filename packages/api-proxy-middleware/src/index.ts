@@ -54,6 +54,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
   const meUrl = getProxyTarget(authService) + '/api/me';
   const hostTenantUrl = getProxyTarget(contentService) + '/internal-api/host-tenant';
   const ssrScriptsUrl = getProxyTarget(contentService) + '/internal-api/configurations/ssr-scripts';
+  const appConfigUrl = getProxyTarget(contentService) + '/internal-api/configurations/app-configuration';
 
   function getTenantByHost(hostUrl: string) {
     return cacheManager.wrap(':' + hostUrl, () => {
@@ -71,6 +72,44 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
         .catch(() => ({}))
         .then(JSON.stringify)
     }).then(JSON.parse);
+  }
+
+  function getAppConfig(tenant: string) {
+    return cacheManager.wrap('app-configuration:' + tenant, () => {
+      return fetch(appConfigUrl + '?tenant=' + tenant)
+        .then((res) => res.json())
+        .then((data) => data.metadata || {})
+        .catch(() => ({}))
+        .then(JSON.stringify)
+    }).then(JSON.parse);
+  }
+
+  async function getTenantHTML(tenant: string) {
+    return cacheManager.wrap('tenant-html:' + tenant, async () => {
+      let html = await indexHtmlPromise;
+
+      try {
+        const [scripts, config] = await Promise.all([
+          getTenantSsrScripts(tenant),
+          getAppConfig(tenant)
+        ])
+        html = html
+          .replace('<!--HEAD-->', scripts?.head || STATIC_HEAD)
+          .replace('<!--BODY-->', scripts?.body || '')
+
+        // replace {{propName}} with config[propName]
+        html = html.replace(/{{(.*?)}}/g, (_, propName) => {
+          if (propName.includes('.')) {
+            const [key, value] = propName.split('.');
+            return config[key]?.[value] || '';
+          }
+          return config[propName] || '';
+        });
+      } catch {
+        // error in parse ssr-scripts
+      }
+      return html;
+    }, { ttl: 60 }).catch(() => '')
   }
 
   app.use(async (req, res, next) => {
@@ -165,16 +204,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
       return;
     }
 
-    let html = await indexHtmlPromise;
-
-    try {
-      const scripts = await getTenantSsrScripts(req.headers.tenant)
-      html = html
-        .replace('<!--HEAD-->', scripts?.head || STATIC_HEAD)
-        .replace('<!--BODY-->', scripts?.body || '');
-    } catch {
-      // error in parse ssr-scripts
-    }
+    const html = await getTenantHTML(req.headers.tenant);
 
     res.set('Content-Security-Policy', `default-src ${CSP.default}; img-src ${CSP.img}; connect-src ${CSP.connect}; frame-src ${CSP.frame}; style-src-elem ${CSP.style};`);
     res.set('content-type', 'text/html').send(html).end()
