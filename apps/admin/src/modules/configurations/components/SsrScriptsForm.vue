@@ -39,7 +39,7 @@ const emit = defineEmits(['save']);
 
 
 function save() {
-  emit('save', clearNulls(edited))
+  emit('save', clearNulls(edited.value))
 }
 </script>
 
