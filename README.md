@@ -1,3 +1,6 @@
+For the latest installation instructions, please refer to the official documentation:  
+➡️ [**QELOS Installation and Setup Guide**](https://docs.qelos.io/getting-started/installation.html)
+
 ## Dependencies
 #### Direct usage
 - Node.js
