@@ -31,7 +31,7 @@ function getAuditItem(req: Request): IAuditItem {
 }
 
 async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBlueprint, entity: IBlueprintEntity) {
-  const body = req.body || {}
+  const { _id, ...body } = req.body || {}
 
   // validate the metadata
   entity.metadata = getValidBlueprintMetadata(body.metadata, blueprint);
@@ -438,7 +438,7 @@ export async function updateBlueprintEntity(req, res) {
       }).catch(logger.error);
     }
 
-    const { auditInfo, ...response } = entity.toObject();
+    const { auditInfo, _id, ...response } = entity.toObject();
 
     res.status(200).json(response).end()
   } catch (err) {
