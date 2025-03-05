@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { api } from '@/services/api'
 import { IAuthStore } from './types/auth-store'
 import { IUser } from './types/user'
@@ -11,7 +11,15 @@ export const authStore = reactive<IAuthStore>({
 
 export const isAdmin = computed(() => !!(authStore.user && authStore.user.roles.includes('admin')));
 export const isPrivilegedUser = computed(() => !!(isAdmin.value || authStore.user?.roles.includes('editor')));
-export const isEditingEnabled = ref(false);
+export const isEditingEnabled = ref<boolean>(localStorage.adminEditingEnabled === 'true');
+
+function handleAdminFeatures() {
+  if (isAdmin.value) {
+    watch(isEditingEnabled, (newVal: boolean) => {
+      (requestIdleCallback || setTimeout)(() => localStorage.setItem('adminEditingEnabled', newVal.toString()))
+    });
+  }
+}
 function loadUser() {
   authStore.userPromise = api.get<IUser>('/api/me').then(res => res.data)
   return authStore.userPromise
@@ -43,7 +51,8 @@ export const fetchAuthUser = async (force: boolean = false, optionalUser: boolea
 
   authStore.isLoaded = true
   if (user?.roles?.length) {
-    authStore.user = user
+    authStore.user = user;
+    handleAdminFeatures();
     return user
   } else if (!optionalUser) {
     logout()
