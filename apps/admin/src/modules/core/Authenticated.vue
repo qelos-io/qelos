@@ -4,7 +4,6 @@
     <div class="admin-content">
       <Header class="header" @open="navigationOpened = true"/>
       <div class="main">
-        <LiveEditColorOpener color="bgColor"/>
         <router-view class="main-content"/>
       </div>
       <AssetsDetailsPanel v-if="isPrivilegedUser"/>
@@ -27,7 +26,6 @@ import { authStore, isPrivilegedUser } from '@/modules/core/store/auth';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.vue';
 import LiveEditManager from '@/modules/layouts/components/live-edit/LiveEditManager.vue';
-import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 

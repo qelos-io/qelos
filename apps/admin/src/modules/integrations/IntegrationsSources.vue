@@ -6,10 +6,11 @@ import { useIntegrationKinds } from '@/modules/integrations/compositions/integra
 import { useIntegrationSources } from '@/modules/integrations/compositions/integration-sources';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
-import IntegrationSourceForm from './IntegrationSourceForm.vue';
 import integrationSourcesService from '@/services/integration-sources-service';
 import { useConfirmAction } from '../core/compositions/confirm-action';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
+import IntegrationSourceFormModal from '@/modules/integrations/components/IntegrationSourceFormModal.vue';
 
 const route = useRoute();
 const kind = route.params.kind.toString() as IntegrationSourceKind;
@@ -22,50 +23,50 @@ const isEditing = ref(false);
 const { result: data, loading, error, loaded } = useIntegrationSources(kind);
 
 const { submit: saveConnection, submitting: saving } = useSubmitting(
-  async (formData: any) => {
-    try {
+    async (formData: any) => {
+      try {
 
-      let savedData;
-      if (editingIntegration.value?._id) {
-        isEditing.value = true;
-        // Update an existing connection
-        savedData = await integrationSourcesService.update(editingIntegration.value._id, formData);
-      } else {
-        isEditing.value = false;
-        // Create a new connection in the database
-        savedData = await integrationSourcesService.create(formData);
+        let savedData;
+        if (editingIntegration.value?._id) {
+          isEditing.value = true;
+          // Update an existing connection
+          savedData = await integrationSourcesService.update(editingIntegration.value._id, formData);
+        } else {
+          isEditing.value = false;
+          // Create a new connection in the database
+          savedData = await integrationSourcesService.create(formData);
+        }
+        // Update the connection list after saving
+        data.value = await integrationSourcesService.getAll({ kind });
+
+        return savedData;
+      } catch (error) {
+        throw error;
       }
-      // Update the connection list after saving
-      data.value = await integrationSourcesService.getAll({ kind });
-
-      return savedData;
-    } catch (error) {
-      throw error;
-    }
-  },
-  {
-    success: () => (isEditing.value ? 'Connection updated successfully' : 'Connection created successfully'),
-    error: 'Failed to save connection',
-  },
-  () => (formVisible.value = false)
+    },
+    {
+      success: () => (isEditing.value ? 'Connection updated successfully' : 'Connection created successfully'),
+      error: 'Failed to save connection',
+    },
+    () => (formVisible.value = false)
 );
 
 const { submit: deleteConnectionBase } = useSubmitting(
-  async (_id: string) => {
-    try {
+    async (_id: string) => {
+      try {
 
-      await integrationSourcesService.remove(_id);
-      data.value = await integrationSourcesService.getAll({ kind });
-      return _id;
+        await integrationSourcesService.remove(_id);
+        data.value = await integrationSourcesService.getAll({ kind });
+        return _id;
 
-    } catch (error) {
-      throw error;
+      } catch (error) {
+        throw error;
+      }
+    },
+    {
+      success: 'Connection deleted successfully',
+      error: 'Failed to delete connection',
     }
-  },
-  {
-    success: 'Connection deleted successfully',
-    error: 'Failed to delete connection',
-  }
 );
 
 const deleteConnection = useConfirmAction(deleteConnectionBase, {
@@ -105,10 +106,10 @@ const closeForm = () => {
 </script>
 
 <template>
-  <h1>
-    <img v-if="kindData?.logo" class="head-logo" :alt="kindData?.name" :src="kindData?.logo" />
+  <ListPageTitle @create="openCreateForm">
+    <img v-if="kindData?.logo" class="head-logo" :alt="kindData?.name" :src="kindData?.logo"/>
     <span>{{ kindData?.name }} {{ $t('Connections') }}</span>
-  </h1>
+  </ListPageTitle>
 
   <!-- Connections cards -->
   <div class="blocks-list">
@@ -134,7 +135,7 @@ const closeForm = () => {
       </p>
       <template #actions>
         <el-button size="small" type="primary" @click="openEditForm(connection)">{{ $t('Edit') }}</el-button>
-        <RemoveButton wide @click="deleteConnection(connection._id)" />
+        <RemoveButton wide @click="deleteConnection(connection._id)"/>
       </template>
     </BlockItem>
   </div>
@@ -145,11 +146,9 @@ const closeForm = () => {
     <el-button type="primary" @click="openCreateForm">{{ $t('Create Connection') }}</el-button>
   </div>
 
-  <!-- Modal -->
-  <el-dialog v-model="formVisible" :title="$t(editingIntegration?._id ? 'Edit Connection' : 'Create Connection')" width="50%"
-    @close="closeForm">
-    <IntegrationSourceForm v-model="editingIntegration" :kind="kind" @submit="saveConnection" @close="closeForm" />
-  </el-dialog>
+  <IntegrationSourceFormModal v-model:visible="formVisible" v-model:editing-integration="editingIntegration"
+                              :kind="kind"
+                              @save="saveConnection" @close="closeForm"/>
 </template>
 
 <style scoped>

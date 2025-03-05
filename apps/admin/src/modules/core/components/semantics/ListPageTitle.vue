@@ -1,7 +1,8 @@
 <template>
   <h1 class="title-container">
     <EditComponentBar/>
-    <span>{{ t(title) }}</span>
+    <slot v-if="$slots.default"/>
+    <span v-else>{{ t(title) }}</span>
     <slot name="content"></slot>
     <el-button v-if="createRoutePath || createRoute || onCreate" @click="create" class="add-button">
       {{ t('Create') }}
