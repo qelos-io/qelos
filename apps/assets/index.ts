@@ -1,4 +1,4 @@
-const { mongoUri } = require('./config')
+import { mongoUri } from './config'
 
 // connect to the database and load models
 require('./server/models').connect(mongoUri)

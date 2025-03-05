@@ -1,7 +1,19 @@
 const uniqid = require('uniqid');
-const {dev} = require('../../config')
+const { dev } = require('../../config')
 const Storage = require('../models/storage');
-const {setSecret} = require('../services/secrets-management');
+const { setSecret } = require('../services/secrets-management');
+
+function getRelevantAuthenticationData(kind, payload = {}) {
+  if (kind === 'ftp') {
+    return {
+      host: payload.host?.replace('ftp://', ''),
+      username: payload.username,
+      password: payload.password
+    }
+  }
+
+  return payload;
+}
 
 async function createStorage(req, res) {
   const body = req.body || {};
@@ -14,7 +26,7 @@ async function createStorage(req, res) {
   });
 
   try {
-    await setSecret(storage.tenant, storage.authentication, body.authentication);
+    await setSecret(storage.tenant, storage.authentication, getRelevantAuthenticationData(storage.kind, body.authentication));
   } catch (e) {
     if (dev) {
       console.log(e);
@@ -27,17 +39,17 @@ async function createStorage(req, res) {
   }
 
   storage.save()
-    .then(({_id, name, kind, metadata}) => {
-      res.status(200).json({_id, name, kind, metadata}).end();
+    .then(({ _id, name, kind, metadata }) => {
+      res.status(200).json({ _id, name, kind, metadata }).end();
     })
     .catch(() => {
-      res.status(400).json({message: 'storage creation failed'}).end();
+      res.status(400).json({ message: 'storage creation failed' }).end();
     });
 }
 
 function getStorageList(req, res) {
 
-  return Storage.find({tenant: req.headers.tenant})
+  return Storage.find({ tenant: req.headers.tenant })
     .select('kind name metadata')
     .lean()
     .then(list => {
@@ -46,13 +58,13 @@ function getStorageList(req, res) {
       }
       return res.status(200).jsonp(list).end();
     })
-    .catch(() => res.status(400).json({message: 'error loading storage list'}).end());
+    .catch(() => res.status(400).json({ message: 'error loading storage list' }).end());
 }
 
 function removeStorage(req, res) {
   req.storage.remove()
     .then(() => res.status(200).json({}).end())
-    .catch(() => res.status(400).json({message: 'failed to remove storage'}).end());
+    .catch(() => res.status(400).json({ message: 'failed to remove storage' }).end());
 }
 
 function updateStorage(req, res) {
@@ -63,7 +75,7 @@ function updateStorage(req, res) {
   }
   if ((body.kind && body.kind !== req.storage.kind) || body.authentication) {
     req.storage.kind = body.kind || req.storage.kind;
-    promise = setSecret(req.storage.tenant, req.storage.authentication, body.authentication);
+    promise = setSecret(req.storage.tenant, req.storage.authentication, getRelevantAuthenticationData(req.storage.kind, body.authentication));
   }
   if (body.metadata) {
     req.storage.metadata = body.metadata;
@@ -75,11 +87,11 @@ function updateStorage(req, res) {
       kind: req.storage.kind,
       metadata: req.storage.metadata
     }).end())
-    .catch(() => res.status(400).json({message: 'failed to update storage'}).end());
+    .catch(() => res.status(400).json({ message: 'failed to update storage' }).end());
 }
 
 function getStorageById(req, res, next) {
-  return Storage.findOne({_id: req.params.storageId, tenant: req.headers.tenant})
+  return Storage.findOne({ _id: req.params.storageId, tenant: req.headers.tenant })
     .then(storage => {
       if (!storage) {
         throw new Error('storage not exists');
@@ -87,12 +99,12 @@ function getStorageById(req, res, next) {
       req.storage = storage;
       next();
     })
-    .catch(() => res.status(404).json({message: 'could not find storage'}).end());
+    .catch(() => res.status(404).json({ message: 'could not find storage' }).end());
 }
 
 function getStorage(req, res) {
-  const {_id, name, kind, metadata} = req.storage;
-  res.status(200).json({_id, name, kind, metadata}).end();
+  const { _id, name, kind, metadata } = req.storage;
+  res.status(200).json({ _id, name, kind, metadata }).end();
 }
 
-module.exports = {createStorage, getStorageList, removeStorage, getStorageById, updateStorage, getStorage};
+module.exports = { createStorage, getStorageList, removeStorage, getStorageById, updateStorage, getStorage };
