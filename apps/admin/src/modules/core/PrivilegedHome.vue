@@ -82,11 +82,11 @@
             <el-form class="metadata" @submit.stop.prevent>
               <p>{{ $t('Here is an input:') }}</p>
               <FormInput v-model="exampleText"/>
-              <p>
+              <p class="relative">
                 {{ $t('Change Background') }}
                 <LiveEditColorOpener color="inputsBgColor"/>
               </p>
-              <p>
+              <p class="relative">
                 {{ $t('Change Text Color') }}
                 <LiveEditColorOpener color="inputsTextColor"/>
               </p>

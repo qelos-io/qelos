@@ -41,7 +41,7 @@ export const PALETTES = [
       thirdColor: '#c9ada7',
       bgColor: '#f2e9e4',
       bordersColor: '#4a4e69',
-      inputsTextColor: '#fff',
+      inputsTextColor: '#000',
       inputsBgColor: '#f4f0ee',
       linksColor: '#4a4e69',
       navigationBgColor: '#22223b',
