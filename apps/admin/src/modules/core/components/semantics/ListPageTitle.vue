@@ -4,7 +4,7 @@
     <slot v-if="$slots.default"/>
     <span v-else>{{ t(title) }}</span>
     <slot name="content"></slot>
-    <el-button v-if="createRoutePath || createRoute || onCreate" @click="create" class="add-button">
+    <el-button v-if="createRoutePath || createRoute || createRouteQuery || onCreate" @click="create" class="add-button">
       {{ t('Create') }}
     </el-button>
   </h1>

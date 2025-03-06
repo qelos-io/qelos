@@ -12,7 +12,7 @@ const props = defineProps<{
   successMsg?: string;
   errorMsg?: string;
   clearAfterSubmit?: boolean;
-  navigateAfterSubmit?: string;
+  navigateAfterSubmit?: string | any;
   beforeSubmit?: (data: any) => Promise<unknown>;
   identifier?: string;
 }>()
@@ -33,12 +33,12 @@ const { reloadBlueprintRequirements } = useScreenRequirementsStore();
 function afterSubmit(result: any) {
   reloadBlueprintRequirements(props.blueprint);
   if (props.navigateAfterSubmit) {
-    router.push({
+    router.push(typeof props.navigateAfterSubmit === 'string' ? {
       name: props.navigateAfterSubmit,
       params: {
         identifier: result.identifier
       }
-    })
+    } : props.navigateAfterSubmit)
   }
 }
 </script>

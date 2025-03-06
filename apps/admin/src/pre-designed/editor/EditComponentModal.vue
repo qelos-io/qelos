@@ -118,7 +118,11 @@ function setModelProps() {
 
 function setAttributesToModel() {
   modelProps.value.forEach(prop => {
-    model.value.setAttribute(prop.propName, prop.value.toString())
+    try {
+      model.value.setAttribute(prop.propName, prop.value.toString())
+    } catch {
+      //
+    }
   });
   if (!model.value.getAttribute('style')) {
     model.value.removeAttribute('style');
@@ -140,7 +144,11 @@ function setHtmlToModel() {
     model.value.removeAttribute(attr);
   });
   newEl.getAttributeNames().forEach(attr => {
-    model.value.setAttribute(attr, newEl.getAttribute(attr));
+    try {
+      model.value.setAttribute(attr, newEl.getAttribute(attr));
+    } catch {
+      //
+    }
   });
 }
 

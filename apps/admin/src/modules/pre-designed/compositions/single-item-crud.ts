@@ -38,10 +38,18 @@ export function useSingleItemCrud() {
       el.replaceWith(newEl);
       newEl.appendChild(el);
       el.getAttributeNames().forEach((attr) => {
+        attr = attr.trim();
+        if (!attr) {
+          return;
+        }
         if (attr.startsWith('#')) {
           return;
         }
-        newEl.setAttribute(attr.startsWith('@') ? attr.replace('@', 'v-on:') : attr, el.getAttribute(attr));
+        try {
+          newEl.setAttribute(attr.startsWith('@') ? attr.replace('@', 'v-on:') : attr, el.getAttribute(attr));
+        } catch {
+          //
+        }
         if (attr.startsWith('v-else')) {
           el.removeAttribute(attr);
         }

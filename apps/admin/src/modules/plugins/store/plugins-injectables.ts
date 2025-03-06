@@ -41,7 +41,11 @@ export function usePluginsInjectables() {
     const clonedScripts = Array.from(scripts).map(script => {
       const clone = document.createElement('script');
       script.getAttributeNames().forEach(attr => {
-        clone.setAttribute(attr, script.getAttribute(attr));
+        try {
+          clone.setAttribute(attr, script.getAttribute(attr));
+        } catch {
+          //
+        }
       })
       clone.innerHTML = script.innerHTML;
       script.remove();

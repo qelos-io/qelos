@@ -173,7 +173,7 @@ export function useEditorComponents() {
         }).join('\n');
 
         return `<template #default="{form}">
-    <edit-header>Edit ${blueprint.name}</edit-header>
+    <edit-header>{{form.identifier ? 'Edit' : 'Create'}} ${blueprint.name}</edit-header>
     <div class="container">
     ${blueprintsInputs}
 </div>

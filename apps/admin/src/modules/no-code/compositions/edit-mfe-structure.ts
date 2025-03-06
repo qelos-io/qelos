@@ -60,7 +60,11 @@ export function useEditMfeStructure() {
     const options = addComponentOptions.value;
 
     Object.keys(data.props).forEach(propName => {
-      el.setAttribute(propName, data.props[propName]);
+      try {
+        el.setAttribute(propName, data.props[propName]);
+      } catch {
+        //
+      }
     })
 
     if (data.innerHTML) {

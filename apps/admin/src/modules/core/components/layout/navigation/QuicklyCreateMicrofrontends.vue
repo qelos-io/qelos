@@ -23,8 +23,8 @@
           <FormInput type="select" v-model="boilerplateType">
             <template #options>
               <el-option value="table" :label="$t('Table')"/>
-<!--              <el-option value="grid" :label="$t('Grid')"/>-->
-<!--              <el-option value="block" :label="$t('Blocks')"/>-->
+              <!--              <el-option value="grid" :label="$t('Grid')"/>-->
+              <!--              <el-option value="block" :label="$t('Blocks')"/>-->
             </template>
           </FormInput>
         </template>
@@ -125,6 +125,11 @@ ${availableComponents['quick-table']?.getInnerHTML({ data: dataKey }, {})}
     })
     boilerplate.structure += `<remove-confirmation v-model="pageState.${dataKey}ToRemove" target="blueprint" resource="${selectedBlueprint.identifier}"></remove-confirmation>`
   }
+
+  boilerplate.structure += `<el-dialog :model-value="$route.query.mode === 'create'" @close="$router.push({ query: {} })">
+<blueprint-entity-form :navigate-after-submit="{query: {}}" blueprint="${selectedBlueprint.identifier}" v-bind:data="pageState.${selectedBlueprint.identifier}ToEdit" v-bind:clear-after-submit="true">
+${availableComponents['blueprint-entity-form']?.getInnerHTML({ blueprint: selectedBlueprint.identifier }, {})}
+</blueprint-entity-form></el-dialog>`
 
   return boilerplate;
 }
