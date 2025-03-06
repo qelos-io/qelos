@@ -99,7 +99,7 @@ async function getBoilerPlate() {
     };
   }
   const boilerplate: { structure: string, requirements: IScreenRequirement[] } = {
-    structure: `<list-page-title title="${pageTitle}" v-bind:create-route-query="{ mode: $route.query.mode ? undefined : 'create' }" />`,
+    structure: `<list-page-title title="${pageTitle}" v-bind:create-route-query="{ mode: $route.query.mode ? undefined : 'create' }"></list-page-title>`,
     requirements: [{
       key: 'pageState',
       fromData: {
