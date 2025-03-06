@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import ConfirmMessage from '@/modules/pre-designed/components/ConfirmMessage.vue';
 import { toRef } from 'vue';
+import ConfirmMessage from '@/modules/pre-designed/components/ConfirmMessage.vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import sdk from '@/services/sdk';
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';

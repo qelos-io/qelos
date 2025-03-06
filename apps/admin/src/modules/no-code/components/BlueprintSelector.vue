@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
-import { storeToRefs } from 'pinia';
 
 const model = defineModel('modelValue', {
   type: String,
@@ -10,7 +10,7 @@ const model = defineModel('modelValue', {
 
 defineProps<{ title?: string, info?: string }>()
 
-const {blueprints} = storeToRefs(useBlueprintsStore())
+const { blueprints } = storeToRefs(useBlueprintsStore())
 
 </script>
 

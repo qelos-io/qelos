@@ -24,14 +24,23 @@ const props = defineProps({
   title: String,
   createRoute: String,
   createRoutePath: String,
+  createRouteQuery: Object,
   onCreate: Function
 });
 
 function create() {
   if (props.onCreate) {
     emit('create');
+  } else if (props.createRoutePath) {
+    router.push(props.createRoutePath);
   } else {
-    router.push(props.createRoutePath || { name: props.createRoute });
+    const to: any = {}
+    if (props.createRoute) {
+      to.name = props.createRoute;
+    } if (props.createRouteQuery) {
+      to.query = props.createRouteQuery;
+    }
+    router.push(to);
   }
 }
 </script>

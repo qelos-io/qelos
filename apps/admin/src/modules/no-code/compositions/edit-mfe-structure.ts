@@ -70,7 +70,6 @@ export function useEditMfeStructure() {
       el.classList.add(data.classes)
     }
 
-
     const {
       editChild,
       pluginMfe,
