@@ -135,7 +135,7 @@ const cruds = toRef(usePluginsMicroFrontends(), 'cruds')
 const blueprints = toRef(useBlueprintsStore(), 'blueprints');
 const crudsOrBlueprints = ref('blueprints');
 
-const { availableComponents } = useEditorComponents();
+const { availableComponents, getColumnsFromBlueprint } = useEditorComponents();
 
 const emit = defineEmits(['save', 'close'])
 
@@ -161,16 +161,9 @@ function selectComponent(key: string) {
 }
 
 function refillColumnsFromBlueprint(blueprintId: string) {
-  const blueprint = blueprints.value.find(b => b.identifier === blueprintId);
-  if (blueprint) {
-    propsBuilder.value.columns = Object.keys(blueprint.properties).map((propName: any) => {
-      const prop = blueprint.properties[propName];
-      return {
-        prop: 'metadata.' + propName,
-        label: prop.title,
-        fixed: prop.type === 'boolean',
-      }
-    })
+  const columns = getColumnsFromBlueprint(blueprintId)
+  if (columns) {
+    propsBuilder.value.columns = columns;
   }
 }
 

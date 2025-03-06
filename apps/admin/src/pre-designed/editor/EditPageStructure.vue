@@ -1,7 +1,6 @@
 <script setup lang="ts">
-
-import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import { provide, ref, toRef, watch } from 'vue';
+import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { IMicroFrontend } from '@/services/types/plugin';
@@ -23,7 +22,6 @@ provide('submitting', toRef(props, 'submitting'))
 const openCodeSection = ref('html');
 
 const htmlEditor = ref()
-const requirementsEditor = ref()
 
 const editedSettings = ref<Partial<IMicroFrontend> & { roles: string[] }>({
   roles: [],

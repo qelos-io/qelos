@@ -269,7 +269,23 @@ export function useEditorComponents() {
     }
   }
 
+  function getColumnsFromBlueprint(blueprintId: string) {
+    const blueprint = blueprints.value.find(b => b.identifier === blueprintId);
+    if (!blueprint) {
+      return;
+    }
+    return Object.keys(blueprint.properties).map((propName: any) => {
+      const prop = blueprint.properties[propName];
+      return {
+        prop: 'metadata.' + propName,
+        label: prop.title,
+        fixed: prop.type === 'boolean',
+      }
+    })
+  }
+
   return {
-    availableComponents
+    availableComponents,
+    getColumnsFromBlueprint
   }
 }
