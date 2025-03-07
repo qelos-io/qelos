@@ -19,12 +19,26 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
     return authId;
   }
 
+  if (kind === IntegrationSourceKind.N8n) {
+    const { apikey } = authentication;
+    await setSecret(tenant, `integration-source-${kind}-${authId}`, { apikey });
+    return authId;
+  }
+
   if (kind === IntegrationSourceKind.LinkedIn) {
     const { clientSecret } = authentication;
     if (!clientSecret) {
       return; // No secret to store
     }
     await setSecret(tenant, `integration-source-${kind}-${authId}`, { clientSecret });
+    return authId;
+  }
+  if (kind === IntegrationSourceKind.Http) {
+    const { securedHeaders } = authentication;
+    if (!securedHeaders || Object.values(securedHeaders).find(v => typeof v !== 'string')) {
+      return;
+    }
+    await setSecret(tenant, `integration-source-${kind}-${authId}`, { securedHeaders });
     return authId;
   }
   return;

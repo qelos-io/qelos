@@ -10,6 +10,7 @@ config({
   bodyParser: null,
 })
 
-loadRoutes().then(() => {
-  start('Plugins Service', process.env.PORT || 9006, process.env.IP || '127.0.0.1')
+loadRoutes().then(async () => {
+  await import('./server/services/hook-events-subscriber');
+  return start('Plugins Service', process.env.PORT || 9006, process.env.IP || '127.0.0.1')
 })

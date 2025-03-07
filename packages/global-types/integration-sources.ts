@@ -5,6 +5,7 @@ export enum IntegrationSourceKind {
   N8n = 'n8n',
   Supabase = 'supabase',
   LinkedIn = 'linkedin',
+  Http = 'http',
 }
 
 export interface IIntegrationSource {
@@ -17,6 +18,23 @@ export interface IIntegrationSource {
   labels: string[];
   kind: IntegrationSourceKind;
   created: Date;
+}
+
+export enum HttpTargetOperation {
+  makeRequest = 'makeRequest',
+}
+
+export enum QelosTargetOperation {
+  webhook = 'webhook',
+  createBlueprintEntity = 'createBlueprintEntity',
+  createUser = 'createUser',
+  updateUser = 'updateUser',
+  setUserRoles = 'setUserRoles',
+  setWorkspaceLabels = 'setWorkspaceLabels',
+}
+
+export enum OpenAITargetOperation {
+  chatCompletion = 'chatCompletion',
 }
 
 export interface ILinkedInSource extends IIntegrationSource {
@@ -76,5 +94,18 @@ export interface IEmailSource extends IIntegrationSource {
     pop3: string;
     smtp: string;
     senderName: string;
+  };
+}
+
+export interface IHttpSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.Http;
+  authentication: {
+    securedHeaders: Record<string, string>;
+  };
+  metadata: {
+    baseUrl: string;
+    headers: Record<string, string>;
+    queryParams: Record<string, string>;
   };
 }

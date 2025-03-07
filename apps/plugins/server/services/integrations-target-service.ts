@@ -1,21 +1,34 @@
 import { IIntegrationEntity } from '../models/integration';
 import IntegrationSource from '../models/integration-source';
-import { IntegrationSourceKind } from '@qelos/global-types';
+import {
+  HttpTargetOperation,
+  IntegrationSourceKind,
+  OpenAITargetOperation,
+  QelosTargetOperation
+} from '@qelos/global-types';
 
 const supportedSources = {
   [IntegrationSourceKind.Qelos]: {
-    webhook: {
+    [QelosTargetOperation.webhook]: {
       required: ['source', 'kind', 'eventName'],
       optional: [],
     }
   },
   [IntegrationSourceKind.OpenAI]: {
-    createCompletion: {
+    [OpenAITargetOperation.chatCompletion]: {
       required: [],
       optional: ['pre_messages', 'model', 'temperature', 'max_tokens', 'top_p', 'frequency_penalty', 'presence_penalty', 'stop'],
     }
   },
+  [IntegrationSourceKind.Http]: {
+    [HttpTargetOperation.makeRequest]: {
+      required: [],
+      optional: ['headers', 'body', 'query', 'method', 'url'],
+    }
+  }
 }
+
+const COMMON_OPTIONAL_PARAMS = ['triggerResponse'];
 
 export async function validateIntegrationTarget(tenant: string, target: IIntegrationEntity) {
   if (!target || !target.source || !target.operation) {
@@ -45,7 +58,12 @@ export async function validateIntegrationTarget(tenant: string, target: IIntegra
     throw new Error(`operation ${target.operation} must contain relevant details: ${params.required.join(',')}`)
   }
 
-  const invalidParams = Object.keys(target.details).filter(key => !params.required.includes(key) && !params.optional.includes(key));
+  const invalidParams = Object.keys(target.details)
+    .filter(key =>
+      !params.required.includes(key) &&
+      !params.optional.includes(key) &&
+      !COMMON_OPTIONAL_PARAMS.includes(key)
+    );
   if (invalidParams.length) {
     throw new Error(`operation ${target.operation} contains invalid details: ${invalidParams.join(',')}`)
   }

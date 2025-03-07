@@ -20,9 +20,9 @@ const formVisible = ref(false);
 const editingIntegration = ref<any>(null);
 const isEditing = ref(false);
 
-const { result: data, loading, error, loaded } = useIntegrationSources(kind);
+const { result: data, loaded } = useIntegrationSources(kind);
 
-const { submit: saveConnection, submitting: saving } = useSubmitting(
+const { submit: saveConnection } = useSubmitting(
     async (formData: any) => {
       try {
 
