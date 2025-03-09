@@ -76,7 +76,7 @@
                      type="switch"/>
         </BlockItem>
         <BlockItem class="flex-1">
-          <div v-if="linkedinSourcesLoaded && !linkedinSources?.length">
+          <div v-if="sourcedLoaded && !linkedinSources?.length">
             <font-awesome-icon :icon="['fab', 'linkedin']"/>
             <span class="pad-start">{{ $t('LinkedIn') }}</span>
             <el-alert :closable="false" type="info">
@@ -110,16 +110,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed, ref, toRefs } from 'vue';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import { IAuthConfigurationMetadata, IntegrationSourceKind } from '@qelos/global-types';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
-import { useIntegrationSources } from '@/modules/integrations/compositions/integration-sources';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 import Login from '@/modules/core/Login.vue';
+import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 
 const props = defineProps({
   kind: String,
@@ -145,10 +145,11 @@ const edited = ref<IAuthConfigurationMetadata>({
 
 const emit = defineEmits(['save']);
 
-const {
-  result: linkedinSources,
-  loaded: linkedinSourcesLoaded
-} = useIntegrationSources(IntegrationSourceKind.LinkedIn);
+const { groupedSources, loaded: sourcedLoaded } = toRefs(useIntegrationSourcesStore())
+
+const linkedInSources = computed(() => {
+  return groupedSources.value[IntegrationSourceKind.LinkedIn] || []
+})
 
 function save() {
   emit('save', edited.value)
