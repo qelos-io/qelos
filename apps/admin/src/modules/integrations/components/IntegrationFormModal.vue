@@ -3,10 +3,23 @@ import { computed, reactive, ref, watch } from 'vue';
 import { IIntegration } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
+import { useSubmitting } from '@/modules/core/compositions/submitting';
+import integrationsService from '@/services/integrations-service';
+import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
+import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
+import {
+  useIntegrationKindsTargetOperations,
+  useIntegrationKindsTriggerOperations
+} from '@/modules/integrations/compositions/integration-kinds-operations';
 
 const visible = defineModel<boolean>('visible')
 const props = defineProps<{ editingIntegration?: any }>()
 defineEmits(['close', 'save'])
+
+const kinds = useIntegrationKinds();
+const store = useIntegrationSourcesStore();
+const triggerOperations = useIntegrationKindsTriggerOperations();
+const targetOperations = useIntegrationKindsTargetOperations();
 
 const model = ref<any>();
 
@@ -55,38 +68,83 @@ const dataManipulation = computed({
   }
 });
 
+const selectedTriggerSource = computed(() => store.result?.find(s => s._id === form.trigger.source));
+const selectedTargetSource = computed(() => store.result?.find(s => s._id === form.target.source));
+
+watch(selectedTargetSource, () => {
+  form.target.details = structuredClone(targetOperations[form.target.operation]?.details || {})
+})
+
 watch(visible, () => {
   if (visible.value) {
     model.value = props.editingIntegration || {};
   }
 })
+
+const { submit, submitting } = useSubmitting(() => props.editingIntegration?._id ?
+    integrationsService.update(props.editingIntegration?._id, model.value) : integrationsService.create(model.value))
 </script>
 
 <template>
-  <el-dialog v-model="visible" :title="$t(editingIntegration?._id ? 'Edit Integration' : 'Create Integration')"
+  <el-dialog top="2vh" v-model="visible"
+             :title="$t(editingIntegration?._id ? 'Edit Integration' : 'Create Integration')"
              width="50%"
              @close="$emit('close', $event)">
-    <el-form v-if="visible">
+    <el-form v-if="visible" @submit="submit">
       <el-tabs>
         <el-tab-pane :label="$t('Trigger')">
-          <FormInput v-model="form.trigger.source" title="Connection" label="Connection that will trigger this workflow"/>
-          <FormInput v-model="form.trigger.operation" title="Operation" label="Operation that will trigger this workflow"/>
-          <Monaco v-model="triggerDetails" />
+          <FormInput type="select" v-model="form.trigger.source" title="Connection"
+                     label="Connection that will trigger this workflow">
+            <template #options>
+              <el-option v-for="source in store.result"
+                         :key="source._id"
+                         :value="source._id"
+                         :label="source.name" class="flex-row flex-middle">
+                <img v-if="kinds[source.kind].logo" :src="kinds[source.kind].logo"
+                     :alt="kinds[source.kind].name"/>
+                <small v-else>{{ kinds[source.kind].name }}</small>
+                {{ source.name }}
+              </el-option>
+            </template>
+          </FormInput>
+          <FormInput v-model="form.trigger.operation" title="Operation"
+                     type="select"
+                     :options="triggerOperations[selectedTriggerSource?.kind] || []"
+                     option-value="name"
+                     option-label="label"
+                     label="Operation that will trigger this workflow"/>
+          <Monaco v-model="triggerDetails"/>
         </el-tab-pane>
         <el-tab-pane :label="$t('Data Manipulation')">
           <Monaco v-model="dataManipulation"/>
         </el-tab-pane>
         <el-tab-pane :label="$t('Target')">
-          <FormInput v-model="form.target.source" title="Connection"
-                     label="Connection that will be triggered by this workflow"/>
+          <FormInput type="select" v-model="form.target.source" title="Connection"
+                     label="Connection that will be triggered by this workflow">
+            <template #options>
+              <el-option v-for="source in store.result"
+                         :key="source._id"
+                         :value="source._id"
+                         :label="source.name" class="flex-row flex-middle">
+                <img v-if="kinds[source.kind].logo" :src="kinds[source.kind].logo"
+                     :alt="kinds[source.kind].name"/>
+                <small v-else>{{ kinds[source.kind].name }}</small>
+                {{ source.name }}
+              </el-option>
+            </template>
+          </FormInput>
           <FormInput v-model="form.target.operation" title="Operation"
+                     type="select"
+                     :options="targetOperations[selectedTargetSource?.kind]"
+                     option-value="name"
+                     option-label="label"
                      label="Operation that will be triggered by this workflow"/>
-          <Monaco v-model="targetDetails" />
+          <Monaco v-model="targetDetails"/>
         </el-tab-pane>
 
       </el-tabs>
       <el-form-item>
-        <el-button type="primary">{{ $t('Save') }}</el-button>
+        <el-button type="primary" :disabled="submitting" :loading="submitting">{{ $t('Save') }}</el-button>
         <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
       </el-form-item>
     </el-form>
@@ -94,5 +152,15 @@ watch(visible, () => {
 </template>
 
 <style scoped>
+img {
+  border-radius: 0;
+  height: 20px;
+  margin: 0;
+}
 
+img, small {
+  margin-inline-end: 10px;
+  font-weight: bold;
+  font-style: italic;
+}
 </style>

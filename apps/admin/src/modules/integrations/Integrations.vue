@@ -26,6 +26,13 @@ const { loaded, result } = useIntegrations();
     <EmptyState v-if="loaded && result.length === 0" description="No integrations found.">
       <el-button type="primary" @click="$router.push({query: {mode: 'create'}})">Create new Integration</el-button>
     </EmptyState>
+    <div>
+      <BlockItem class="source" v-for="integration in result" :key="integration._id">
+        <img :src="kinds[integration.kind[0]]?.logo" :alt="kinds[integration.kind[0]]?.name">
+        --->
+        <img :src="kinds[integration.kind[1]]?.logo" :alt="kinds[integration.kind[1]]?.name">
+      </BlockItem>
+    </div>
 
     <IntegrationFormModal :visible="$route.query.mode === 'create'" @close="$router.push({query: {mode: undefined}})"/>
   </div>

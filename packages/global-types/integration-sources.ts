@@ -9,6 +9,7 @@ export enum IntegrationSourceKind {
 }
 
 export interface IIntegrationSource {
+  _id?: string;
   tenant: string;
   plugin?: string;
   user: string;
@@ -22,6 +23,10 @@ export interface IIntegrationSource {
 
 export enum HttpTargetOperation {
   makeRequest = 'makeRequest',
+}
+
+export enum QelosTriggerOperation {
+  webhook = 'webhook',
 }
 
 export enum QelosTargetOperation {

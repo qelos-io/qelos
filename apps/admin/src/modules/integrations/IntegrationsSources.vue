@@ -3,7 +3,6 @@ import { ref, computed } from 'vue';
 import { IntegrationSourceKind } from '@qelos/global-types';
 import { useRoute } from 'vue-router';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
-import { useIntegrationSources } from '@/modules/integrations/compositions/integration-sources';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 import integrationSourcesService from '@/services/integration-sources-service';
@@ -12,16 +11,19 @@ import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
 import IntegrationSourceFormModal from '@/modules/integrations/components/IntegrationSourceFormModal.vue';
 import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
+import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 
 const route = useRoute();
 const kind = route.params.kind.toString() as IntegrationSourceKind;
 const kindData = useIntegrationKinds()[kind];
+const store = useIntegrationSourcesStore();
+const data = computed(() => store.groupedSources[kind]);
+
 const filteredConnections = computed(() => data.value || []);
 const formVisible = ref(false);
 const editingIntegration = ref<any>(null);
 const isEditing = ref(false);
 
-const { result: data, loaded } = useIntegrationSources(kind);
 
 const { submit: saveConnection } = useSubmitting(
     async (formData: any) => {
@@ -38,7 +40,7 @@ const { submit: saveConnection } = useSubmitting(
           savedData = await integrationSourcesService.create(formData);
         }
         // Update the connection list after saving
-        data.value = await integrationSourcesService.getAll({ kind });
+        await store.retry();
 
         return savedData;
       } catch (error) {
@@ -57,7 +59,7 @@ const { submit: deleteConnectionBase } = useSubmitting(
       try {
 
         await integrationSourcesService.remove(_id);
-        data.value = await integrationSourcesService.getAll({ kind });
+        await store.retry();
         return _id;
 
       } catch (error) {
@@ -142,7 +144,8 @@ const closeForm = () => {
   </div>
 
   <!-- If there are no connections -->
-  <EmptyState v-if="loaded && !filteredConnections.length" description="No connections found. Create one to get started.">
+  <EmptyState v-if="store.loaded && !filteredConnections.length"
+              description="No connections found. Create one to get started.">
     <el-button type="primary" @click="openCreateForm">{{ $t('Create Connection') }}</el-button>
   </EmptyState>
 
