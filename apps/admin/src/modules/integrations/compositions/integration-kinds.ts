@@ -30,6 +30,10 @@ export function useIntegrationKinds(): Record<IntegrationSourceKind, { logo?, na
       logo: '/logos/linkedin.png',
       name: 'LinkedIn',
       kind: IntegrationSourceKind.LinkedIn
+    },
+    [IntegrationSourceKind.Http]: {
+      name: 'HTTP',
+      kind: IntegrationSourceKind.Http
     }
   }
 }

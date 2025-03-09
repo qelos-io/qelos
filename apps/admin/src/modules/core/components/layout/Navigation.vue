@@ -110,7 +110,7 @@
           </el-icon>
           <span>{{ $t('Plugins List') }}</span>
         </el-menu-item>
-        <el-menu-item :route="{ name: 'integrations-kinds' }" index="/integrations">
+        <el-menu-item :route="{ name: 'integrations' }" index="/integrations">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'arrows-turn-to-dots']" />
           </el-icon>

@@ -11,6 +11,7 @@ import { useConfirmAction } from '../core/compositions/confirm-action';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
 import IntegrationSourceFormModal from '@/modules/integrations/components/IntegrationSourceFormModal.vue';
+import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
 
 const route = useRoute();
 const kind = route.params.kind.toString() as IntegrationSourceKind;
@@ -141,10 +142,9 @@ const closeForm = () => {
   </div>
 
   <!-- If there are no connections -->
-  <div v-if="loaded && !filteredConnections.length" class="empty-state">
-    <p centered>{{ $t('No connections found. Create one to get started.') }}</p>
+  <EmptyState v-if="loaded && !filteredConnections.length" description="No connections found. Create one to get started.">
     <el-button type="primary" @click="openCreateForm">{{ $t('Create Connection') }}</el-button>
-  </div>
+  </EmptyState>
 
   <IntegrationSourceFormModal v-model:visible="formVisible" v-model:editing-integration="editingIntegration"
                               :kind="kind"
@@ -176,10 +176,5 @@ h1 {
 
 .role {
   margin: 0 3px;
-}
-
-.empty-state {
-  text-align: center;
-  margin-top: 20px;
 }
 </style>
