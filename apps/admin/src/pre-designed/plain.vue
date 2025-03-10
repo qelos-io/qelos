@@ -65,7 +65,9 @@ import { useRoute } from 'vue-router';
 import { useGlobalStyles } from '@/modules/pre-designed/compositions/global-styles';
 import EditComponentModal from '@/pre-designed/editor/EditComponentModal.vue';
 import EditorTour from '@/pre-designed/editor/EditorTour.vue';
+import { usePluginsStore } from '@/modules/plugins/store/pluginsStore';
 
+const pluginsStore = usePluginsStore(); 
 const route = useRoute();
 const mfes = usePluginsMicroFrontends();
 const item = ref();
@@ -82,6 +84,10 @@ async function reRenderAfterError() {
 
 fetchAuthUser(false, true);
 const { user, isLoaded: userLoaded, userPromise } = useAuth()
+
+watch(() => pluginsStore.componentUpdates, () => {
+  updates.value++;
+});
 
 const { api, crud, relevantStructure, styles } = useSingleItemCrud()
 const { requirements, isRequirementsLoaded } = toRefs(useScreenRequirementsStore())

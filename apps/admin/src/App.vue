@@ -1,18 +1,22 @@
 <template>
   <div id="app">
-    <router-view v-if="loaded"/>
+    <router-view v-if="isAppReady"/>
   </div>
 </template>
 <script lang="ts" setup>
 import { useAppConfiguration } from './modules/configurations/store/app-configuration'
-import { provide, ref, watch } from 'vue'
+import { computed, provide, ref, watch } from 'vue'
 import { translate, loadLanguageAsync } from './plugins/i18n'
 import { usePluginsInjectables } from '@/modules/plugins/store/plugins-injectables';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
+import { usePluginsStore } from './modules/plugins/store/pluginsStore';
 
 const { appConfig, loaded } = useAppConfiguration()
 usePluginsMicroFrontends();
 usePluginsInjectables();
+const pluginsStore = usePluginsStore(); 
+
+const isAppReady = computed(() => loaded.value && pluginsStore.injectablesLoaded);
 
 watch(() => appConfig.value.language, async (language) => {
   await loadLanguageAsync(language)

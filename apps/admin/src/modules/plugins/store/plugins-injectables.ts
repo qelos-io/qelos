@@ -1,12 +1,14 @@
 import { usePluginsList } from '@/modules/plugins/store/plugins-list';
-import { watch, getCurrentInstance } from 'vue';
+import { ref, watch, getCurrentInstance } from 'vue';
 import * as vue from 'vue';
 import * as vueRouter from 'vue-router';
 import sdk from '@/services/sdk';
+import { usePluginsStore } from './pluginsStore';
 
 export function usePluginsInjectables() {
   const { appContext } = getCurrentInstance();
   const store = usePluginsList();
+  const pluginsStore = usePluginsStore();
 
   window['getApp'] = () => {
     return appContext.app;
@@ -15,50 +17,73 @@ export function usePluginsInjectables() {
     return appContext.app.config.globalProperties.$router;
   }
   window['getSdk'] = () => sdk;
+
   window['registerComponent'] = (name: string, component: any) => {
+    pluginsStore.incrementComponentUpdates();
     appContext.app.component(name, component);
+
   }
+
   window['Vue'] = vue;
   window['VueRouter'] = vueRouter;
 
   let unwatch;
 
   function injectAll() {
-    let allHTML = ''
+    try {
 
-    function addInjectable({ active, html }) {
-      if (active) {
-        allHTML += html
-      }
-    }
+      let allHTML = ''
 
-    store.plugins.forEach(plugin => plugin.injectables?.forEach(addInjectable))
-
-    const template = document.createElement('template');
-    template.innerHTML = allHTML;
-
-    const scripts = template.content.querySelectorAll('script');
-    const clonedScripts = Array.from(scripts).map(script => {
-      const clone = document.createElement('script');
-      script.getAttributeNames().forEach(attr => {
-        try {
-          clone.setAttribute(attr, script.getAttribute(attr));
-        } catch {
-          //
+      function addInjectable({ active, html }) {
+        if (active) {
+          allHTML += html
         }
-      })
-      clone.innerHTML = script.innerHTML;
-      script.remove();
-      return clone;
-    });
+      }
 
-    document.body.append(template.content);
-    if (clonedScripts?.length) {
-      clonedScripts.forEach(script => document.body.append(script));
+      store.plugins.forEach(plugin => {
+        plugin.injectables?.forEach(addInjectable)
+      })
+
+      if (!allHTML) {
+        pluginsStore.injectablesLoaded = true;
+        return;
+      }
+
+      const template = document.createElement('template');
+      template.innerHTML = allHTML;
+
+      const scripts = template.content.querySelectorAll('script');
+      const clonedScripts = Array.from(scripts).map(script => {
+        const clone = document.createElement('script');
+        script.getAttributeNames().forEach(attr => {
+          try {
+            clone.setAttribute(attr, script.getAttribute(attr));
+          } catch {
+            //
+          }
+        })
+        clone.innerHTML = script.innerHTML;
+        script.remove();
+        return clone;
+      });
+
+      document.body.append(template.content);
+      if (clonedScripts?.length) {
+        clonedScripts.forEach(script => document.body.append(script));
+      }
+
+      pluginsStore.injectablesLoaded = true;
     }
 
-    unwatch();
+    catch (error) {
+
+      pluginsStore.injectablesLoaded = true;
+    } finally {
+      if (unwatch) unwatch();
+    }
   }
 
   unwatch = watch(() => store.plugins, injectAll);
+
+  return { injectablesLoaded: pluginsStore.injectablesLoaded, componentUpdates: pluginsStore.componentUpdates };
 }
