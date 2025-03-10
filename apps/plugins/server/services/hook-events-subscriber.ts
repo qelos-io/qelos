@@ -7,7 +7,7 @@ import { fetchPlugin } from './plugins-call';
 import logger from './logger';
 import Integration, { IIntegration } from '../models/integration';
 import { IntegrationSourceKind } from '@qelos/global-types';
-import { getUser } from './users';
+import { getUser, getWorkspaces } from './users';
 import { callIntegrationTarget } from './integration-target-call';
 import { hookEvents } from './hook-events';
 
@@ -60,8 +60,9 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
   const event = platformEvent.toObject();
   Promise.all(awaitedIntegrations.map(async integration => {
     // every step in data manipulation should be executed in order, asynchronously
-    const calculatedData = integration.dataManipulation.reduce(async (acc, { map, populate }) => {
-      const data = await acc;
+    const calculatedData = integration.dataManipulation.reduce(async (acc, { map, populate, clean }) => {
+      const previousData = await acc;
+      const data = clean ? {} : previousData;
       await Promise.all([
         ...Object.entries(map).map(async ([key, value]) => {
           // value is a JQ expression to be assigned to the key
@@ -70,11 +71,10 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
         ...Object.entries(populate).map(async ([key, { source, blueprint }]) => {
           if (source === 'user') {
             data[key] = await getUser(platformEvent.tenant, data[key])
-          }
-          if (source === 'workspace') {
+          } else if (source === 'workspace') {
             // populate data from given object using qelos source. If blueprint is provided, it will be used to fetch the blueprint entity
-          }
-          if (source === 'blueprintEntity') {
+            data[key] = await getWorkspaces(platformEvent.tenant, data[key])
+          } else if (source === 'blueprintEntity') {
             // populate data from given object using qelos source. If blueprint is provided, it will be used to fetch the blueprint entity
           }
         })

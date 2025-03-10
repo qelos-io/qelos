@@ -38,3 +38,10 @@ export function getUser(tenant: string, userId: string) {
     return callAuthService('/internal-api/users/' + userId, 'GET', tenant).then(JSON.stringify)
   }).then(JSON.parse);
 }
+
+export function getWorkspaces(tenant: string, workspaceIds: string | string[]) {
+  const ids = typeof workspaceIds === 'string' ? workspaceIds : workspaceIds.join(',');
+  return cacheManager.wrap(`plugins:ws:${tenant}:${ids}`, () => {
+    return callAuthService(`/internal-api/workspaces?_id=${ids}&select=_id,name,logo,members,labels)}`, 'GET', tenant).then(JSON.stringify)
+  }).then(JSON.parse);
+}
