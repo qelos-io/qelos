@@ -111,7 +111,7 @@ async function getBoilerPlate() {
   if (boilerplateType.value === 'table') {
     const dataKey = getPlural(selectedBlueprint.identifier);
     boilerplate.structure += `<empty-state v-if="${dataKey}?.loaded && !${dataKey}.result.length" description="No ${dataKey} found">
-<el-button type="primary" v-on:click="$router.push({ query: { mode: 'create' } })">Create ${selectedBlueprint.name}"></el-button>
+<el-button type="primary" v-on:click="$router.push({ query: { mode: 'create' } })">Create ${selectedBlueprint.name}</el-button>
 </empty-state>
 <quick-table v-if="${dataKey}?.loaded && ${dataKey}.result?.length" :columns="tableColumns" :data="${dataKey}.result">
 ${availableComponents['quick-table']?.getInnerHTML({ data: dataKey }, {})}
