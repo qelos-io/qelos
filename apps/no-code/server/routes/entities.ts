@@ -23,4 +23,10 @@ entitiesRouter
   .delete('/api/blueprints/:blueprintIdentifier/entities/all', AUTHENTICATION_MIDDLEWARES_FOR_ADMIN.concat(removeAllBlueprintEntities))
   .delete('/api/blueprints/:blueprintIdentifier/entities/:entityIdentifier', AUTHENTICATION_MIDDLEWARES.concat(removeBlueprintEntity))
 
+entitiesRouter
+  .get('/internal-api/blueprints/:blueprintIdentifier/entities/:entityIdentifier', (req, res, next) => {
+    req.user = { roles: ['admin'] }
+    next();
+  }, getSingleBlueprintEntity)
+
 export default entitiesRouter;

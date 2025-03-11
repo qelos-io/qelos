@@ -10,8 +10,23 @@ import { IntegrationSourceKind } from '@qelos/global-types';
 import { getUser, getWorkspaces } from './users';
 import { callIntegrationTarget } from './integration-target-call';
 import { hookEvents } from './hook-events';
+import { getBlueprintEntity } from './no-code-service';
 
 const ALL = '*';
+
+async function processMapRecursively(value: any, data: any): Promise<any> {
+  if (typeof value === 'object' && value !== null) {
+    const result: any = Array.isArray(value) ? [] : {};
+    for (const [k, v] of Object.entries(value)) {
+      result[k] = await processMapRecursively(v, data);
+    }
+    return result;
+  } else if (typeof value === 'string') {
+    // If it's a string, treat it as a JQ expression
+    return await jq.run(value, data);
+  }
+  return value;
+}
 
 function executePluginsSubscribedWebhooks(platformEvent: IEvent, awaitedPlugins: IPlugin[]) {
   const emittedEventContent = JSON.stringify(platformEvent.toObject());
@@ -65,8 +80,7 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
       const data = clean ? {} : previousData;
       await Promise.all([
         ...Object.entries(map).map(async ([key, value]) => {
-          // value is a JQ expression to be assigned to the key
-          data[key] = await jq.run(value, data);
+          data[key] = await processMapRecursively(value, data);
         }),
         ...Object.entries(populate).map(async ([key, { source, blueprint }]) => {
           if (source === 'user') {
@@ -74,7 +88,8 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
           } else if (source === 'workspace') {
             // populate data from given object using qelos source. If blueprint is provided, it will be used to fetch the blueprint entity
             data[key] = await getWorkspaces(platformEvent.tenant, data[key])
-          } else if (source === 'blueprintEntity') {
+          } else if (source === 'blueprintEntity' && blueprint) {
+            data[key] = await (getBlueprintEntity(platformEvent.tenant, blueprint, data[key]))
             // populate data from given object using qelos source. If blueprint is provided, it will be used to fetch the blueprint entity
           }
         })

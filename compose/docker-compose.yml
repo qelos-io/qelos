@@ -97,6 +97,7 @@ services:
       SECRETS_TOKEN: ${PLUGINS_SERVICE_SECRET}
       AUTH_SERVICE_URL: auth
       SECRETS_SERVICE_URL: secrets
+      NO_CODE_SERVICE_URL: no-code
       IP: 0.0.0.0
       SHOW_LOGS: ${SHOW_LOGS}
     depends_on:
