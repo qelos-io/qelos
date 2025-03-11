@@ -11,7 +11,7 @@ export function useDynamicRouteItem(api, item) {
       item.value = {};
       return;
     }
-    api.value.getOne(route.params.id as string)
+    api.value?.getOne?.(route.params.id as string)
       .then(data => item.value = data)
       .catch(() => error('Failed to load page data'))
   }, { immediate: true });
