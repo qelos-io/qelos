@@ -11,11 +11,7 @@
       <el-input name="password" type="password" v-model="editedData.password"/>
     </el-form-item>
     <div v-if="!hideRoles">
-      <el-form-item>
-        <el-checkbox-group v-model="roles" size="large">
-          <el-checkbox v-for="r in availableRoles" :key="r" :label="r" size="large"/>
-        </el-checkbox-group>
-      </el-form-item>
+      <LabelsInput title="Roles" v-model="roles"/>
     </div>
     <el-form-item label="Meta data" v-if="asAdmin">
       <Monaco :model-value="internalMetadata" @input="editedData.internalMetadata = $event.target.value"/>
@@ -31,6 +27,7 @@ import { IUser } from '../../core/store/types/user';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import Monaco from './Monaco.vue';
 import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
+import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 
 const props = defineProps({
   user: Object as () => IUser,

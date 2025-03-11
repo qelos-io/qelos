@@ -27,6 +27,8 @@ export interface IUser {
   roles: string[];
   tokens: any[];
   metadata: any;
+  emailVerified?: boolean;
+  socialLogins: string[],
   created: Date;
 }
 
@@ -87,6 +89,10 @@ const UserSchema = new mongoose.Schema<UserDocument, UserModel>({
     validate(email = '') {
       return !email || email.includes('@')
     }
+  },
+  emailVerified: {
+    type: Boolean,
+    default: () => false,
   },
   phone: String,
   password: String,

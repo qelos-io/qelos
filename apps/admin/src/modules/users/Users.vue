@@ -2,18 +2,15 @@
   <div class="about-page">
     <div class="header-container">
       <ListPageTitle title="Users" create-route="createUser">
-     
         <template v-slot:content>
           <div class="filter-container">
-            <UserFilter />
+            <UserFilter :users="users"/>
           </div>
         </template>
-        
       </ListPageTitle>
-
     </div>
 
-    <UsersList />
+    <UsersList :users="filteredUsers" @removed="removeUser"/>
   </div>
 </template>
 
@@ -21,13 +18,8 @@
 import UsersList from './components/UsersList.vue';
 import ListPageTitle from '../core/components/semantics/ListPageTitle.vue';
 import UserFilter from './components/UserFilter.vue';
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
-
-function create() {
-  router.push({ name: 'createUser' });
-}
+import { useUsersList } from '@/modules/users/compositions/users';
+const { filteredUsers, users, removeUser } = useUsersList();
 </script>
 
 <style scoped>

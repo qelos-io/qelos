@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 import { getCookieTokenName, getUser } from '../../services/users';
 import { getSignedToken, getUniqueId, setCookie } from '../../services/tokens';
 import { cookieTokenExpiration } from '../../../config';
-import { getEncryptedData, setEncryptedData } from '../../services/encrypted-data';
+import { setEncryptedData } from '../../services/encrypted-data';
 import { emitPlatformEvent } from '@qelos/api-kit';
 
 const LINKEDIN_AUTH_URL = 'https://www.linkedin.com/oauth/v2/authorization'
@@ -97,6 +97,13 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
       user = await getUser({ username: userData.email, tenant: req.headers.tenant });
       user.email = userData.email;
       user.profileImage = userData.picture || user.profileImage;
+      if (!user.emailVerified) {
+        user.emailVerified = true;
+      }
+      if (!user.socialLogins.includes('linkedin')) {
+        user.socialLogins.push('linkedin');
+        user.markModified('socialLogins');
+      }
       await user.save();
     } catch {
       if (typeof req.authConfig.allowSocialAutoRegistration === 'boolean' && !req.authConfig.allowSocialAutoRegistration) {
@@ -111,6 +118,8 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
         firstName: userData.given_name || '',
         lastName: userData.family_name || '',
         profileImage: userData.picture || '',
+        emailVerified: true,
+        socialLogins: ['linkedin'],
       });
       await user.save();
 
