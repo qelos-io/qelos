@@ -34,7 +34,34 @@ const form = reactive<Pick<IIntegration, 'trigger' | 'target' | 'dataManipulatio
     operation: '',
     details: {}
   },
-  dataManipulation: []
+  dataManipulation: [
+    {
+      'map': {},
+      'populate': {
+        user: {
+          source: 'user'
+        },
+        workspace: {
+          source: 'workspace'
+        }
+      }
+    },
+    {
+      map: {
+        userEmail: '.user.email',
+        workspaceMembers: '.workspace.members | map(.user)'
+      },
+      populate: {}
+    },
+    {
+      map: {},
+      populate: {
+        workspaceMembers: {
+          source: 'user'
+        }
+      }
+    }
+  ]
 })
 
 const triggerDetails = computed({
@@ -71,9 +98,14 @@ const dataManipulation = computed({
 const selectedTriggerSource = computed(() => store.result?.find(s => s._id === form.trigger.source));
 const selectedTargetSource = computed(() => store.result?.find(s => s._id === form.target.source));
 
+watch([() => form.trigger.operation, () => form.trigger.source], () => {
+  const operation = triggerOperations[selectedTriggerSource.value?.kind]?.find(o => o.name === form.trigger.operation)
+  form.trigger.details = structuredClone(operation?.details || {});
+});
 watch(selectedTargetSource, () => {
   form.target.details = structuredClone(targetOperations[form.target.operation]?.details || {})
 })
+
 
 watch(visible, () => {
   if (visible.value) {
@@ -94,6 +126,7 @@ const { submit, submitting } = useSubmitting(() => props.editingIntegration?._id
       <el-tabs>
         <el-tab-pane :label="$t('Trigger')">
           <FormInput type="select" v-model="form.trigger.source" title="Connection"
+                     @change="form.trigger.operation = ''"
                      label="Connection that will trigger this workflow">
             <template #options>
               <el-option v-for="source in store.result"
