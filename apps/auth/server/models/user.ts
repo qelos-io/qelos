@@ -28,7 +28,7 @@ export interface IUser {
   tokens: any[];
   metadata: any;
   emailVerified?: boolean;
-  socialLogins: string[],
+  socialLogins?: string[],
   created: Date;
 }
 
@@ -94,6 +94,7 @@ const UserSchema = new mongoose.Schema<UserDocument, UserModel>({
     type: Boolean,
     default: () => false,
   },
+  socialLogins: [String],
   phone: String,
   password: String,
   fullName: String,
