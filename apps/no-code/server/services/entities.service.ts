@@ -44,7 +44,7 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
     }
   }
   if (property.type === 'file') {
-    if (value?.startsWith?.('http')) {
+    if (!value?.startsWith?.('http')) {
       throw new ResponseError(`Property ${key} must be a valid file`, 406);
     }
   }

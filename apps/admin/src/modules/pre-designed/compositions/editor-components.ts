@@ -33,7 +33,7 @@ export interface EditorComponent {
   }>;
   extendProps?: (props: any) => void;
   extendRequirements?: (requirements: any, props: any) => void;
-  getInnerHTML?: (propsBuilder: any, props: any) => string;
+  getInnerHTML?: (propsBuilder: any, props: any, requirements?: any) => string;
 }
 
 export function useEditorComponents() {
@@ -113,8 +113,23 @@ export function useEditorComponents() {
       extendRequirements: (requirements: any, props: any) => {
         requirements[props['v-bind:columns']]?.fromData.push({ prop: '_operations', label: ' ' })
       },
-      getInnerHTML: (propsBuilder: any) => {
-        return `<template #_operations="{row}"><remove-button @click="pageState ? (pageState.${propsBuilder.data}ToRemove = row.identifier) : null"/></template>`
+      getInnerHTML: (propsBuilder: any, _props, requirements = {}) => {
+        let html = `<template #_operations="{row}"><remove-button @click="pageState ? (pageState.${propsBuilder.data}ToRemove = row.identifier) : null"/></template>`;
+        const blueprintId = requirements[propsBuilder.data]?.fromBlueprint?.name || propsBuilder.data;
+        const blueprint = blueprints.value.find(b => b.identifier === blueprintId);
+        if (blueprint) {
+          propsBuilder.columns?.forEach(column => {
+            const property = blueprint.properties[column.prop.split('.')[1]];
+            if (property?.type === 'file') {
+              const KEY = `row.${column.prop}`
+              html += `<template #${column.prop}="{row}">
+<img v-if="['jpg', 'png', 'jpeg', 'gif', 'svg'].includes(${KEY}?.split?.('.').pop().toLowerCase())" :src="${KEY}" style="max-width: 100px;" alt="Image"/>
+<a v-else :href="${KEY}" target="_blank">Download</a>
+</template>`;
+            }
+          })
+        }
+        return html;
       }
     },
     'blueprint-entity-form': {

@@ -62,7 +62,7 @@ const { savePlugin } = useCreatePlugin();
 const { success, error } = useNotifications();
 
 const pluginList = ref('');
-const position = ref<string | boolean>(false);
+const position = ref<string | boolean>('top');
 const pageName = ref('');
 
 const props = defineProps({
@@ -110,15 +110,10 @@ async function getBoilerPlate() {
 
   if (boilerplateType.value === 'table') {
     const dataKey = getPlural(selectedBlueprint.identifier);
-    boilerplate.structure += `<empty-state v-if="${dataKey}?.loaded && !${dataKey}.result.length" description="No ${dataKey} found">
-<el-button type="primary" v-on:click="$router.push({ query: { mode: 'create' } })">Create ${selectedBlueprint.name}</el-button>
-</empty-state>
-<quick-table v-if="${dataKey}?.loaded && ${dataKey}.result?.length" :columns="tableColumns" :data="${dataKey}.result">
-${availableComponents['quick-table']?.getInnerHTML({ data: dataKey }, {})}
-</quick-table>`
+    const columns = [...getColumnsFromBlueprint(selectedBlueprint.identifier), { prop: '_operations', label: ' ' }];
     boilerplate.requirements.push({
       key: 'tableColumns',
-      fromData: [...getColumnsFromBlueprint(selectedBlueprint.identifier), { prop: '_operations', label: ' ' }]
+      fromData: columns
     })
     boilerplate.requirements.push({
       key: dataKey,
@@ -126,12 +121,18 @@ ${availableComponents['quick-table']?.getInnerHTML({ data: dataKey }, {})}
         name: selectedBlueprint.identifier
       }
     })
+    boilerplate.structure += `<empty-state v-if="${dataKey}?.loaded && !${dataKey}.result.length" description="No ${dataKey} found">
+<el-button type="primary" v-on:click="$router.push({ query: { mode: 'create' } })">Create ${selectedBlueprint.name}</el-button>
+</empty-state>
+<quick-table v-if="${dataKey}?.loaded && ${dataKey}.result?.length" :columns="tableColumns" :data="${dataKey}.result">
+${availableComponents['quick-table']?.getInnerHTML({ data: dataKey, columns: columns }, {}, boilerplate.requirements.reduce((obj, item) => ({ ...obj, [item.key]: item }), {}))}
+</quick-table>`
     boilerplate.structure += `<remove-confirmation v-model="pageState.${dataKey}ToRemove" target="blueprint" resource="${selectedBlueprint.identifier}"></remove-confirmation>`
   }
 
   boilerplate.structure += `<el-dialog :model-value="$route.query.mode === 'create'" @close="$router.push({ query: {} })">
 <blueprint-entity-form :navigate-after-submit="{query: {}}" blueprint="${selectedBlueprint.identifier}" v-bind:data="pageState.${selectedBlueprint.identifier}ToEdit" v-bind:clear-after-submit="true">
-${availableComponents['blueprint-entity-form']?.getInnerHTML({ blueprint: selectedBlueprint.identifier }, {})}
+${availableComponents['blueprint-entity-form']?.getInnerHTML({ blueprint: selectedBlueprint.identifier }, {}, boilerplate.requirements.reduce((obj, item) => ({ ...obj, [item.key]: item }), {}))}
 </blueprint-entity-form></el-dialog>`
 
   return boilerplate;

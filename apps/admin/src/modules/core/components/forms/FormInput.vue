@@ -32,7 +32,7 @@
         </template>
         <slot name="options"/>
       </el-select>
-      <AssetUploader v-else-if="type === 'upload' || type === 'file'" v-on="listeners" :value="modelValue" class="asset-upload"/>
+      <AssetUploader v-else-if="type === 'upload' || type === 'file'" v-on="listeners" :value="modelValue" @change="$emit('update:modelValue', $event)" class="asset-upload"/>
       <el-input v-else v-on="listeners" :model-value="modelValue as (string | number)" :placeholder="placeholder"
                 :size="size || 'large'"
                 :native-type="type"

@@ -195,23 +195,23 @@ function submit() {
 
   descriptor.extendProps?.(props);
   descriptor.extendRequirements?.(customData, props);
-
+  const requirements = requiredProps
+      .filter(prop => prop.source === 'requirements')
+      .reduce((acc, prop) => {
+        acc[propsBuilder.value[prop.prop]] = {
+          key: propsBuilder.value[prop.prop],
+          [crudsOrBlueprints.value === 'blueprints' ? 'fromBlueprint' : 'fromCrud']: {
+            name: propsBuilder.value[prop.prop],
+          }
+        }
+        return acc;
+      }, customData);
   emit('save', {
     component: descriptor.tag || selectedComponent.value,
-    requirements: requiredProps
-        .filter(prop => prop.source === 'requirements')
-        .reduce((acc, prop) => {
-          acc[propsBuilder.value[prop.prop]] = {
-            key: propsBuilder.value[prop.prop],
-            [crudsOrBlueprints.value === 'blueprints' ? 'fromBlueprint' : 'fromCrud']: {
-              name: propsBuilder.value[prop.prop],
-            }
-          }
-          return acc;
-        }, customData),
+    requirements,
     props,
     classes: availableComponents[selectedComponent.value].classes,
-    innerHTML: availableComponents[selectedComponent.value].getInnerHTML?.(propsBuilder.value, props) || null
+    innerHTML: availableComponents[selectedComponent.value].getInnerHTML?.(propsBuilder.value, props, requirements) || null
   });
   dialogVisible.value = false;
 }
