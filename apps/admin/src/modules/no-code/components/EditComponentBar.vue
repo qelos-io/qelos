@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import { inject } from 'vue';
+import { inject, nextTick, onMounted, ref } from 'vue';
 
 const editableManager = inject('editableManager');
+const show = ref(false);
+
+onMounted(async () => {
+  await nextTick();
+  if (editableManager) {
+    (requestIdleCallback || setTimeout)(() => show.value = true)
+  }
+})
 </script>
 
 <template>
-  <el-dropdown class="edit-component-bar" v-if="editableManager">
+  <el-dropdown class="edit-component-bar" v-if="editableManager && show">
     <el-button text class="el-dropdown-link">
       <font-awesome-icon :icon="['fas', 'ellipsis-vertical']"/>
     </el-button>
@@ -16,13 +24,13 @@ const editableManager = inject('editableManager');
         </el-dropdown-item>
         <el-dropdown-item @click="editableManager.addComponentBefore($parent.$el)">
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'rotate-left']" />
+            <font-awesome-icon :icon="['fas', 'rotate-left']"/>
           </el-icon>
           <span>{{ $t('Add Component Before') }}</span>
         </el-dropdown-item>
         <el-dropdown-item @click="editableManager.addComponentAfter($parent.$el)">
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'rotate-right']" />
+            <font-awesome-icon :icon="['fas', 'rotate-right']"/>
           </el-icon>
           <span>{{ $t('Add Component After') }}</span>
         </el-dropdown-item>

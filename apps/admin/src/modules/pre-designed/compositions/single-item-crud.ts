@@ -3,6 +3,9 @@ import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microf
 import { useRoute } from 'vue-router';
 import { isEditingEnabled } from '@/modules/core/store/auth';
 
+const editableContent = document.createElement('editable-content');
+
+
 export function useSingleItemCrud() {
   const mfes = usePluginsMicroFrontends();
   const route = useRoute()
@@ -34,26 +37,24 @@ export function useSingleItemCrud() {
 
   function convertToEditableContent(template: HTMLTemplateElement) {
     Array.from(template.content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, div, remove-confirmation, block-item')).forEach((el) => {
-      const newEl = document.createElement('editable-content');
+      const newEl = editableContent.cloneNode() as HTMLElement;
       el.replaceWith(newEl);
-      newEl.appendChild(el);
       el.getAttributeNames().forEach((attr) => {
         attr = attr.trim();
-        if (!attr) {
-          return;
-        }
-        if (attr.startsWith('#')) {
+        const firstChar = attr[0];
+        if (!attr || firstChar === '#') {
           return;
         }
         try {
-          newEl.setAttribute(attr.startsWith('@') ? attr.replace('@', 'v-on:') : attr, el.getAttribute(attr));
+          newEl.setAttribute(firstChar === '@' ? attr.replace('@', 'v-on:') : attr, el.getAttribute(attr));
         } catch {
           //
         }
-        if (attr.startsWith('v-else')) {
+        if (attr.startsWith('v-else') || attr === 'v-for') {
           el.removeAttribute(attr);
         }
       })
+      newEl.appendChild(el);
     })
   }
 
