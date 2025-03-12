@@ -137,6 +137,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
       return;
     }
     req.headers.tenanthost = req.headers.host;
+    req.headers.user = '';
     next();
   });
 
