@@ -36,6 +36,10 @@
       </template>
     </BlockItem>
   </div>
+  <EmptyState v-if="store.loaded && !store.blueprints?.length"
+              description="Create your first blueprint to start using the No-Code module">
+    <el-button type="primary" @click="$router.push({ name: 'createBlueprint' })">{{ $t('Create new Integration') }}</el-button>
+  </EmptyState>
 </template>
 <script lang="ts" setup>
 import { capitalize, ref } from 'vue';
@@ -46,6 +50,7 @@ import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import sdk from '@/services/sdk';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
+import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
 
 const store = useBlueprintsStore()
 const removeWithConfirm = useConfirmAction(store.remove)
