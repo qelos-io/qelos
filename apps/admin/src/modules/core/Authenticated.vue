@@ -28,10 +28,12 @@ import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.
 import LiveEditManager from '@/modules/layouts/components/live-edit/LiveEditManager.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
+import useInvitesList from '@/modules/workspaces/store/invites-list';
 
 const router = useRouter()
 const wsConfig = useWsConfiguration()
 const workspacesStore = useWorkspacesList()
+const invitesStore = useInvitesList()
 const { user } = useAuth();
 
 const navigationOpened = ref(false)
@@ -42,10 +44,14 @@ router.afterEach(() => navigationOpened.value = false);
 
 onBeforeRouteUpdate(async (to, from) => {
   await authStore.userPromise;
-  if (to.name === 'createMyWorkspace' || isPrivilegedUser.value) {
+  if (to.name === 'createMyWorkspace' || to.name === 'workspaces' || isPrivilegedUser.value) {
     return;
   }
   if (wsConfig.isActive && !user.value.workspace) {
+    await invitesStore.promise;
+    if (invitesStore.invites.length) {
+      return { name: 'workspaces' }
+    }
     return { name: 'createMyWorkspace' };
   }
   return;
@@ -58,7 +64,8 @@ onBeforeMount(async () => {
     if (workspacesStore.workspaces.length) {
       await workspacesStore.activateSilently(workspacesStore.workspaces[0])
     } else {
-      await router.push({ name: 'createMyWorkspace' });
+      await invitesStore.promise;
+      await router.push({ name: invitesStore.invites.length ? 'workspaces' : 'createMyWorkspace' });
     }
   }
 });

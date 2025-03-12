@@ -9,7 +9,7 @@ export enum InviteKind {
 }
 
 const useInvitesList = defineStore('invites-list', function useInvitesList() {
-  const { result, retry } = useDispatcher(() => invitesService.getAll(), []);
+  const { result, retry, promise } = useDispatcher(() => invitesService.getAll(), []);
 
   const workspaces = useWorkspacesList();
 
@@ -24,7 +24,7 @@ const useInvitesList = defineStore('invites-list', function useInvitesList() {
     });
   }
 
-  return { invites: result, reload: retry, respondToInvite }
+  return { invites: result, reload: retry, respondToInvite, promise }
 })
 
 export default useInvitesList;
