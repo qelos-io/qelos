@@ -10,7 +10,8 @@ export enum BlueprintPropertyType {
   DATE = 'date',
   DATETIME = 'datetime',
   TIME = 'time',
-  OBJECT = 'object'
+  OBJECT = 'object',
+  FILE = 'file'
 }
 
 export enum PermissionScope {

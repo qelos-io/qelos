@@ -43,6 +43,11 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
       throw new ResponseError(`Property ${key} must be a string`, 406);
     }
   }
+  if (property.type === 'file') {
+    if (value?.startsWith?.('http')) {
+      throw new ResponseError(`Property ${key} must be a valid file`, 406);
+    }
+  }
   if (property.type === 'date') {
     if (new Date(value).toString() === 'Invalid Date') {
       throw new ResponseError(`Property ${key} must be a date`, 406);

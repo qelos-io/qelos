@@ -20,6 +20,7 @@ const model = defineModel('modelValue')
       <el-option :label="$t(capitalize(BlueprintPropertyType.TIME))" :value="BlueprintPropertyType.TIME"/>
       <el-option :label="$t(capitalize(BlueprintPropertyType.DATETIME))" :value="BlueprintPropertyType.DATETIME"/>
       <el-option :label="$t(capitalize(BlueprintPropertyType.OBJECT))" :value="BlueprintPropertyType.OBJECT"/>
+      <el-option :label="$t(capitalize(BlueprintPropertyType.FILE))" :value="BlueprintPropertyType.FILE"/>
     </el-select>
   </el-form-item>
 </template>
