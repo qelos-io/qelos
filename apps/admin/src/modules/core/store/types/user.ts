@@ -7,6 +7,7 @@ export interface IUser {
   username: string,
   email: string,
   emailVerified?: boolean,
+  profileImage?: string,
   socialLogins: string[],
   roles: Array<string>,
   metadata: any,

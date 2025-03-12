@@ -2,11 +2,13 @@
   <BlockItem v-for="user in users" :key="user._id">
     <template v-slot:title>
       <router-link :to="{ name: 'editUser', params: { userId: user._id } }">
+        <el-avatar class="avatar-img" v-if="user.profileImage" :src="user.profileImage" />
         {{ getUserFullName(user) }}
       </router-link>
     </template>
     <div class="metadata">
       <p v-if="user.username">{{ $t('Username') }}: {{ user.username }}</p>
+      <p v-if="user.emailVerified">{{ $t('Email Verified') }}</p>
       <p v-if="user.socialLogins?.length">
         <font-awesome-icon v-for="icon in user.socialLogins" :key="icon" :icon="['fab', icon]"/>
       </p>
@@ -57,5 +59,8 @@ function getUserFullName(user) {
 
 .role {
   margin-inline: 5px;
+}
+.avatar-img {
+  margin: 0;
 }
 </style>
