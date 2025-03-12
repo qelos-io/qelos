@@ -18,9 +18,9 @@
         <el-dropdown-item v-if="isAdmin" id="edit-mode-toggle">
           <el-switch
               v-model="isManagingEnabled"
-              active-text="Manager View"
-              inactive-text="User View"
-              style="--el-switch-on-color: #6bc7bc; --el-switch-off-color: #e7bc56;"
+              active-text="Manager"
+              inactive-text="Manager"
+              style="--el-switch-on-color: #3da62d; --el-switch-off-color: #b33939;"
               size="large"
               inline-prompt
           />
@@ -28,9 +28,9 @@
         <el-dropdown-item v-if="isAdmin" id="edit-mode-toggle">
           <el-switch
               v-model="isEditingEnabled"
-              active-text="Editor View"
-              inactive-text="User View"
-              style="--el-switch-on-color: #6bc7bc; --el-switch-off-color: #e7bc56;"
+              active-text="Editor"
+              inactive-text="Editor"
+              style="--el-switch-on-color: #3da62d; --el-switch-off-color: #b33939;"
               size="large"
               inline-prompt
           />
