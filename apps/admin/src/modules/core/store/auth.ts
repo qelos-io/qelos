@@ -11,13 +11,22 @@ export const authStore = reactive<IAuthStore>({
 
 export const isAdmin = computed(() => !!(authStore.user && authStore.user.roles.includes('admin')));
 export const isPrivilegedUser = computed(() => !!(isAdmin.value || authStore.user?.roles.includes('editor')));
-export const isEditingEnabled = ref<boolean>(localStorage.adminEditingEnabled === 'true');
+export const isEditingEnabled = ref<boolean>(false);
+export const isManagingEnabled = ref<boolean>(false);
 
 function handleAdminFeatures() {
   if (isAdmin.value) {
+    isEditingEnabled.value = localStorage.getItem('adminEditingEnabled') === 'true';
+    isManagingEnabled.value = localStorage.getItem('adminManagingEnabled') === 'true';
     watch(isEditingEnabled, (newVal: boolean) => {
       (requestIdleCallback || setTimeout)(() => localStorage.setItem('adminEditingEnabled', newVal.toString()))
     });
+    watch(isManagingEnabled, (newVal: boolean) => {
+      (requestIdleCallback || setTimeout)(() => localStorage.setItem('adminManagingEnabled', newVal.toString()))
+    });
+  } else {
+    isEditingEnabled.value = false;
+    isManagingEnabled.value = false;
   }
 }
 function loadUser() {

@@ -14,20 +14,6 @@
           v-model="query"
           :placeholder="$t(route?.meta?.searchPlaceholder as string || 'Search...')"
       />
-
-      <div v-if="isAdmin && !$isMobile" class="apply-editor" id="edit-mode-toggle">
-        <span>
-          <el-switch
-              v-model="isEditingEnabled"
-              active-text="Editor View"
-              inactive-text="User View"
-              style="--el-switch-on-color: #6bc7bc; --el-switch-off-color: #e7bc56;"
-              size="large"
-              inline-prompt
-          />
-        </span>
-      </div>
-
       <HeaderUserDropdown/>
     </div>
   </header>

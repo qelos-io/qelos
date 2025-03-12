@@ -38,7 +38,7 @@
         <span>{{ $t('Admin Dashboard') }}</span>
       </el-menu-item>
 
-      <div class="nav-group" v-if="isEditingEnabled">
+      <div class="nav-group" v-if="isManagingEnabled">
         <h4>{{ $t('COMPONENTS') }}</h4>
 
         <el-sub-menu index="3">
@@ -57,7 +57,7 @@
         </el-sub-menu>
       </div>
 
-      <div class="nav-group" v-if="isEditingEnabled">
+      <div class="nav-group" v-if="isManagingEnabled">
         <h4>{{ $t('MANAGE') }}</h4>
         <el-menu-item :route="{ name: 'storageList' }" index="/assets">
           <el-icon>
@@ -66,14 +66,14 @@
           <span>{{ $t('Storage & Assets') }}</span>
         </el-menu-item>
 
-        <el-menu-item v-if="isAdmin && isEditingEnabled" index="/users">
+        <el-menu-item v-if="isAdmin && isManagingEnabled" index="/users">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'users']"/>
           </el-icon>
           <span>{{ $t('Users') }}</span>
         </el-menu-item>
 
-        <el-menu-item v-if="isAdmin && isEditingEnabled" index="/admin/workspaces">
+        <el-menu-item v-if="isAdmin && isManagingEnabled" index="/admin/workspaces">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'briefcase']"/>
           </el-icon>
@@ -87,14 +87,14 @@
           <span>{{ $t('Drafts') }}</span>
         </el-menu-item>
 
-        <el-menu-item id="menu-item-blueprints" v-if="isAdmin && isEditingEnabled" :route="{ name: 'blueprints' }" index="/no-code/blueprints">
+        <el-menu-item id="menu-item-blueprints" v-if="isAdmin && isManagingEnabled" :route="{ name: 'blueprints' }" index="/no-code/blueprints">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'database']"/>
           </el-icon>
           <span>{{ $t('Blueprints') }}</span>
         </el-menu-item>
 
-        <el-menu-item v-if="isAdmin && isEditingEnabled" :route="{ name: 'configurations' }" index="/configurations">
+        <el-menu-item v-if="isAdmin && isManagingEnabled" :route="{ name: 'configurations' }" index="/configurations">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'gear']"/>
           </el-icon>
@@ -102,7 +102,7 @@
         </el-menu-item>
       </div>
 
-      <div class="nav-group" v-if="isAdmin && isEditingEnabled">
+      <div class="nav-group" v-if="isAdmin && isManagingEnabled">
         <h4>{{ $t('PLUGINS') }}</h4>
         <el-menu-item :route="{ name: 'plugins' }" index="/plugins">
           <el-icon>
@@ -138,7 +138,7 @@
 <script lang="ts" setup>
 import { storeToRefs } from 'pinia';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
-import { isAdmin, isEditingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
+import { isAdmin, isEditingEnabled, isManagingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
