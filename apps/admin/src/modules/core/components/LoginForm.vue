@@ -40,7 +40,17 @@ const router = useRouter()
 
 const { submit, submitting } = useSubmitting(login, { error: 'Login failed' })
 
-watch(isLoggedIn, (is) => is && router.push({ name: 'home' }))
+watch(isLoggedIn, (is) => {
+  if (is) {
+    const redirect = router.currentRoute.value.query.redirect as string
+    if (redirect) {
+      router.push(redirect);
+      return
+    } else {
+      router.push({ name: 'home' })
+    }
+  }
+})
 
 const onFocus = () => {
   window.scrollTo(0, 0)

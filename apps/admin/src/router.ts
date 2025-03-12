@@ -94,7 +94,10 @@ router.beforeEach(async (to, from, next) => {
     }
   }
   next({
-    name: 'login'
+    name: 'login',
+    query: {
+      redirect: location.href.replace(location.origin, '')
+    }
   })
 })
 
