@@ -71,21 +71,30 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       }
     }
     setCookieAsProcessed(payload.tokenIdentifier).catch(logger.log);
-    await updateToken(
-      user,
-      'cookie',
-      payload,
-      newCookieIdentifier
-    );
-    const { token: newToken, payload: newPayload } = getSignedToken(
-      user,
-      payload.workspace,
-      newCookieIdentifier,
-      String(cookieTokenExpiration / 1000)
-    );
+    try {
+      await updateToken(
+        user,
+        'cookie',
+        payload,
+        newCookieIdentifier
+      );
+      const { token: newToken, payload: newPayload } = getSignedToken(
+        user,
+        payload.workspace,
+        newCookieIdentifier,
+        String(cookieTokenExpiration / 1000)
+      );
 
-    setCookie(res, getCookieTokenName(req.headers.tenant), newToken, null, getRequestHost(req));
-    setUserPayload(newPayload, req, next);
+      setCookie(res, getCookieTokenName(req.headers.tenant), newToken, null, getRequestHost(req));
+      setUserPayload(newPayload, req, next);
+    } catch (e) {
+      if (await isCookieProcessed(payload.tokenIdentifier)) {
+        setUserPayload(payload, req, next);
+        return;
+      } else {
+        throw e;
+      }
+    }
   } catch (e) {
     logger.log('failed to handle cookie verification', e)
     next();
