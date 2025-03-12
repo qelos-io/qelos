@@ -100,7 +100,8 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
       if (!user.emailVerified) {
         user.emailVerified = true;
       }
-      if (!user.socialLogins.includes('linkedin')) {
+      if (!user.socialLogins?.includes('linkedin')) {
+        user.socialLogins = user.socialLogins || [];
         user.socialLogins.push('linkedin');
         user.markModified('socialLogins');
       }
