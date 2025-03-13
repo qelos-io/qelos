@@ -38,7 +38,7 @@
   </div>
   <EmptyState v-if="store.loaded && !store.blueprints?.length"
               description="Create your first blueprint to start using the No-Code module">
-    <el-button type="primary" @click="$router.push({ name: 'createBlueprint' })">{{ $t('Create new Integration') }}</el-button>
+    <el-button type="primary" @click="$router.push({ name: 'createBlueprint' })">{{ $t('Create new Blueprint') }}</el-button>
   </EmptyState>
 </template>
 <script lang="ts" setup>

@@ -61,7 +61,7 @@ const { plugins, retry } = usePluginsList();
 const { savePlugin } = useCreatePlugin();
 const { success, error } = useNotifications();
 
-const pluginList = ref('');
+const pluginList = ref('addNewPage');
 const position = ref<string | boolean>('top');
 const pageName = ref('');
 
@@ -121,8 +121,8 @@ async function getBoilerPlate() {
         name: selectedBlueprint.identifier
       }
     })
-    boilerplate.structure += `<empty-state v-if="${dataKey}?.loaded && !${dataKey}.result.length" description="No ${dataKey} found">
-<el-button type="primary" v-on:click="$router.push({ query: { mode: 'create' } })">Create ${selectedBlueprint.name}</el-button>
+    boilerplate.structure += `<empty-state v-if="${dataKey}?.loaded && !${dataKey}.result.length" description="No ${getPlural(selectedBlueprint.name)} found">
+<el-button type="primary" v-on:click="$router.push({ query: { mode: 'create' } })">Create a ${selectedBlueprint.name}</el-button>
 </empty-state>
 <quick-table v-if="${dataKey}?.loaded && ${dataKey}.result?.length" :columns="tableColumns" :data="${dataKey}.result">
 ${availableComponents['quick-table']?.getInnerHTML({ data: dataKey, columns: columns }, {}, boilerplate.requirements.reduce((obj, item) => ({ ...obj, [item.key]: item }), {}))}
@@ -188,13 +188,12 @@ const submit = async () => {
 const handleMenuCommand = (pluginId: string) => {
   const selectedPlugin = plugins.find(plugin => plugin._id === pluginId);
   if (selectedPlugin) {
-    pluginList.value = selectedPlugin.name;
-
+    pluginList.value = selectedPlugin._id;
   }
 };
 
 const addMicroFrontendToPlugin = async (pluginId: string, position: string, mfeName: string) => {
-  const selectedPlugin = plugins.find(plugin => plugin.name === pluginId);
+  const selectedPlugin = plugins.find(plugin => plugin._id === pluginId);
 
   if (selectedPlugin) {
     const mfeTemplate = selectedPlugin.microFrontends[0] || {} as any; // Template for the new MFE
@@ -262,7 +261,7 @@ const createPlugin = async (position: string, pluginName: string) => {
     };
 
     await savePlugin(newPlugin);
-
+    retry();
   }
 };
 </script>
