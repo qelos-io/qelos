@@ -106,8 +106,4 @@ a {
     text-decoration: underline;
   }
 }
-
-.avatar-img :deep(img) {
-  margin: 0;
-}
 </style>

@@ -60,7 +60,4 @@ function getUserFullName(user) {
 .role {
   margin-inline: 5px;
 }
-.avatar-img {
-  margin: 0;
-}
 </style>
