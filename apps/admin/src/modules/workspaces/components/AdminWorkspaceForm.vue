@@ -210,7 +210,7 @@ function submit() {
 
 const filteredMembers = computed(() => {
 	const searchTerm = searchQueryForMembers.value.toLowerCase();
-	return members.value.filter((member) => {
+	return (members.value || []).filter((member) => {
 		return (
 			!searchTerm ||
 			member.email.toLowerCase().includes(searchTerm) ||
