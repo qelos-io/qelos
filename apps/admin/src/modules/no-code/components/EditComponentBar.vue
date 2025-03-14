@@ -3,7 +3,7 @@ import { inject, nextTick, onMounted, ref } from 'vue';
 
 const editableManager = inject('editableManager');
 const show = ref(false);
-const runIdle = typeof window["requestIdleCallback"] ? requestIdleCallback : setTimeout;
+const runIdle = typeof window["requestIdleCallback"] === "function" ? requestIdleCallback : setTimeout;
 onMounted(async () => {
   await nextTick();
   if (editableManager) {
