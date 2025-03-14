@@ -3,6 +3,8 @@ import { api } from '@/services/api'
 import { IAuthStore } from './types/auth-store'
 import { IUser } from './types/user'
 
+const runIdle = typeof window["requestIdleCallback"] === "function" ? requestIdleCallback : setTimeout;
+
 export const authStore = reactive<IAuthStore>({
   user: null,
   isLoaded: false,
@@ -19,10 +21,10 @@ function handleAdminFeatures() {
     isEditingEnabled.value = localStorage.getItem('adminEditingEnabled') === 'true';
     isManagingEnabled.value = localStorage.getItem('adminManagingEnabled') === 'true';
     watch(isEditingEnabled, (newVal: boolean) => {
-      (requestIdleCallback || setTimeout)(() => localStorage.setItem('adminEditingEnabled', newVal.toString()))
+      runIdle(() => localStorage.setItem('adminEditingEnabled', newVal.toString()))
     });
     watch(isManagingEnabled, (newVal: boolean) => {
-      (requestIdleCallback || setTimeout)(() => localStorage.setItem('adminManagingEnabled', newVal.toString()))
+      runIdle(() => localStorage.setItem('adminManagingEnabled', newVal.toString()))
     });
   } else {
     isEditingEnabled.value = false;
