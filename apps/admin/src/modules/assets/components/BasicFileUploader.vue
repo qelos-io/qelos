@@ -29,6 +29,7 @@
     props: {
       storage: String
     },
+    emits: ['upload'],
     setup(props, { emit }) {
       const location = ref('')
 			const { headers, uploadUrl, setUploadUrl, withCredentials } = useAssetsUpload(

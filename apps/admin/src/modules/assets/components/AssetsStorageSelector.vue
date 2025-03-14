@@ -12,16 +12,26 @@
   </div>
 </template>
 <script lang="ts" setup>
+import { nextTick, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStorageList } from '../compositions/storages'
 import { useModelChange } from '../../core/compositions/model-change'
-import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 const props = defineProps<{ value?: string }>()
 const emit = defineEmits(['change']);
 
-const { items } = useStorageList()
+const { items, loaded } = useStorageList()
 const { selected, change } = useModelChange(props.value, items, emit);
+
+const unwatch = watch(loaded, () => {
+  if (loaded.value) {
+    if (items.value.length === 1) {
+      change(items.value[0])
+    }
+    nextTick(() => unwatch())
+  }
+}, { immediate: true });
 </script>
 <style scoped>
 .select-storage {

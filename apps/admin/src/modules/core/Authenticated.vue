@@ -6,7 +6,7 @@
       <div class="main">
         <router-view class="main-content"/>
       </div>
-      <AssetsDetailsPanel v-if="isPrivilegedUser"/>
+      <AssetsDetailsPanel v-if="isPrivilegedUser && (isManagingEnabled || isEditingEnabled)"/>
     </div>
   </div>
   <template v-if="openModals?.length">
@@ -22,7 +22,7 @@ import Header from './components/layout/Header.vue'
 import Navigation from './components/layout/Navigation.vue'
 import AssetsDetailsPanel from '@/modules/assets/components/AssetsDetailsPanel/AssetsDetailsPanel.vue'
 import { onBeforeRouteUpdate, useRouter } from 'vue-router'
-import { authStore, isPrivilegedUser } from '@/modules/core/store/auth';
+import { authStore, isEditingEnabled, isManagingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.vue';
 import LiveEditManager from '@/modules/layouts/components/live-edit/LiveEditManager.vue';

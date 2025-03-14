@@ -17,6 +17,7 @@ export function useStorageList() {
 
   return {
     items: computed(() => storagesStore.storages),
+    loaded: computed(() => storagesStore.loaded),
     remove
   }
 }
