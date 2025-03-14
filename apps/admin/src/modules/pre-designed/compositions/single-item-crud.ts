@@ -36,7 +36,7 @@ export function useSingleItemCrud() {
   }
 
   function convertToEditableContent(template: HTMLTemplateElement) {
-    Array.from(template.content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, div, remove-confirmation, block-item')).forEach((el) => {
+    Array.from(template.content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, div, remove-confirmation, block-item, empty-state')).forEach((el) => {
       const newEl = editableContent.cloneNode() as HTMLElement;
       el.replaceWith(newEl);
       el.getAttributeNames().forEach((attr) => {
