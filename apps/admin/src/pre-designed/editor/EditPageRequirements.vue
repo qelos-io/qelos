@@ -2,31 +2,16 @@
 import { ref, watch } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
-import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
-import CrudOperationSelector from '@/modules/no-code/components/CrudOperationSelector.vue';
+import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 
 const editorMode = ref(false)
 
 const model = defineModel<any[]>();
 
 const modelString = ref(json(model.value))
-
-const requirementsColumns = [
-  {
-    prop: 'key',
-    label: 'Key',
-  },
-  {
-    prop: 'type',
-    label: 'Type',
-  },
-  {
-    prop: 'details',
-    label: 'Details',
-  }]
 
 watch(model.value, () => {
   modelString.value = json(model.value);
@@ -107,66 +92,80 @@ function clearIfEmpty($event: any, obj: any, key: string) {
           language="json"
           style="min-height:65vh"/>
   <div v-else class="flex-1">
-    <QuickTable :data="model" :columns="requirementsColumns">
-      <template #key="{row}">
-        <FormRowGroup>
-          <RemoveButton class="flex-0"
-                        @click="model.splice(model.indexOf(row), 1)"/>
-          <el-input required v-model="row.key"/>
-        </FormRowGroup>
+    <BlockItem v-for="(row, index) in model" :key="index">
+      <template #header>
+        <el-input required v-model="row.key" :placeholder="$t('Key')"/>
       </template>
-      <template #type="{row}">
-        <el-select :model-value="getRowType(row)" @update:model-value="updateRowType(row, $event)">
-          <el-option value="fromBlueprint" :label="$t('Blueprint')"/>
-          <el-option value="fromCrud" :label="$t('CRUD')"/>
-          <el-option value="fromData" :label="$t('Data')"/>
-          <el-option value="fromHTTP" :label="$t('HTTP')"/>
-        </el-select>
+      <template #default>
+        <FormInput type="select" title="Requirement Type" :model-value="getRowType(row)"
+                   @update:model-value="updateRowType(row, $event)">
+          <template #options>
+            <el-option value="fromBlueprint" :label="$t('Blueprint')"/>
+            <el-option value="fromCrud" :label="$t('CRUD')"/>
+            <el-option value="fromData" :label="$t('Data')"/>
+            <el-option value="fromHTTP" :label="$t('HTTP')"/>
+          </template>
+        </FormInput>
+        <div>
+          <div v-if="row.fromBlueprint">
+            <FormRowGroup>
+              <BlueprintSelector v-model="row.fromBlueprint.name"/>
+              <FormInput v-model="row.fromBlueprint.identifier" title="Entity Identifier"
+                         label="Keep empty to load all blueprint entities"
+                         placeholder="Try to use: {{identifier}} for dynamic route param"
+                         @update:model-value="clearIfEmpty($event, row.fromBlueprint, 'identifier')"/>
+            </FormRowGroup>
+            <div>
+              <el-checkbox :model-value="row.fromBlueprint.query?.$populate"
+                                 @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $populate: $event || undefined }">
+                {{ $t('Populate') }}
+              </el-checkbox>
+              <el-checkbox :model-value="row.fromBlueprint.query?.$outerPopulate"
+                           @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $outerPopulate: $event || undefined }">
+                {{ $t('Outer Populate') }}
+              </el-checkbox>
+            </div>
+            <el-form-item :label="$t('Query Params')">
+              <Monaco :model-value="json(row.fromBlueprint.query) || '{}'"
+                      style="max-height:100px;"
+                      @update:model-value="updateRowJSON(row.fromBlueprint, 'query', $event);"/>
+            </el-form-item>
+          </div>
+          <div v-if="row.fromCrud">
+            <el-form-item :label="$t('CRUD Name')" required>
+              <el-select v-model="row.fromCrud.name">
+                <el-option :label="$t('Configurations')" value="configurations"/>
+                <el-option :label="$t('Blocks')" value="blocks"/>
+                <el-option :label="$t('Blueprints')" value="blueprints"/>
+                <el-option :label="$t('Invites')" value="invites"/>
+                <el-option :label="$t('Plugins')" value="plugins"/>
+                <el-option :label="$t('Storages')" value="storages"/>
+                <el-option :label="$t('Users')" value="users"/>
+                <el-option :label="$t('Workspaces')" value="workspaces"/>
+              </el-select>
+            </el-form-item>
+            <FormInput v-model="row.fromCrud.identifier" title="Identifier"
+                       placeholder="Try to use: {{identifier}} for dynamic route param"
+                       @update:model-value="clearIfEmpty($event, row.fromCrud, 'identifier')"/>
+          </div>
+          <Monaco v-if="row.fromData" :model-value="json(row.fromData)"
+                  style="max-height:350px;"
+                  @update:model-value="updateRowJSON(row, 'fromData', $event)"/>
+          <div v-if="row.fromHTTP">
+            <FormInput v-model="row.fromHTTP.uri" title="URL" placeholder="https://example.com/api" required/>
+            <FormInput v-model="row.fromHTTP.method" title="Method" placeholder="GET"
+                       @update:model-value="clearIfEmpty($event, row.fromHTTP, 'method')"/>
+            <el-form-item :label="$t('Query Params')">
+              <Monaco :model-value="json(row.fromHTTP.query) || '{}'"
+                      style="max-height:100px;"
+                      @update:model-value="updateRowJSON(row.fromHTTP, 'query', $event);"/>
+            </el-form-item>
+          </div>
+        </div>
       </template>
-      <template #details="{row}">
-        <div v-if="row.fromBlueprint">
-          <BlueprintSelector v-model="row.fromBlueprint.name"/>
-          <FormInput v-model="row.fromBlueprint.identifier" title="Identifier"
-                     placeholder="Try to use: {{identifier}} for dynamic route param"
-                     @update:model-value="clearIfEmpty($event, row.fromBlueprint, 'identifier')"/>
-          <el-form-item :label="$t('Query Params')">
-            <Monaco :model-value="json(row.fromBlueprint.query) || '{}'"
-                    style="max-height:100px;"
-                    @update:model-value="updateRowJSON(row.fromBlueprint, 'query', $event);"/>
-          </el-form-item>
-
-        </div>
-        <div v-if="row.fromCrud">
-          <el-form-item :label="$t('CRUD Name')" required>
-            <el-select v-model="row.fromCrud.name">
-              <el-option :label="$t('Configurations')" value="configurations"/>
-              <el-option :label="$t('Blocks')" value="blocks"/>
-              <el-option :label="$t('Blueprints')" value="blueprints"/>
-              <el-option :label="$t('Invites')" value="invites"/>
-              <el-option :label="$t('Plugins')" value="plugins"/>
-              <el-option :label="$t('Storages')" value="storages"/>
-              <el-option :label="$t('Users')" value="users"/>
-              <el-option :label="$t('Workspaces')" value="workspaces"/>
-            </el-select>
-          </el-form-item>
-          <FormInput v-model="row.fromCrud.identifier" title="Identifier"
-                     placeholder="Try to use: {{identifier}} for dynamic route param"
-                     @update:model-value="clearIfEmpty($event, row.fromCrud, 'identifier')"/>
-        </div>
-        <Monaco v-if="row.fromData" :model-value="json(row.fromData)"
-                style="max-height:350px;"
-                @update:model-value="updateRowJSON(row, 'fromData', $event)"/>
-        <div v-if="row.fromHTTP">
-          <FormInput v-model="row.fromHTTP.uri" title="URL" placeholder="https://example.com/api" required/>
-          <FormInput v-model="row.fromHTTP.method" title="Method" placeholder="GET"
-                     @update:model-value="clearIfEmpty($event, row.fromHTTP, 'method')"/>
-          <el-form-item :label="$t('Query Params')">
-            <Monaco :model-value="json(row.fromHTTP.query) || '{}'"
-                    style="max-height:100px;"
-                    @update:model-value="updateRowJSON(row.fromHTTP, 'query', $event);"/>
-          </el-form-item>
-        </div>
+      <template #actions>
+        <RemoveButton wide @click="model.splice(model.indexOf(row), 1)"/>
       </template>
-    </QuickTable>
+    </BlockItem>
   </div>
 </template>

@@ -18,4 +18,5 @@ export interface IScreenRequirement {
     dependsField?: string;
   },
   fromData?: any;
+  lazy?: boolean;
 }

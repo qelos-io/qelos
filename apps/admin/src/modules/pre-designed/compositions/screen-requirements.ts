@@ -33,7 +33,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
       if (secondPart) {
         if (firstPart === 'user') {
           return user.value[secondPart] || '';
-        } else if (firstPart === 'workspace'){
+        } else if (firstPart === 'workspace') {
           return user.value?.workspace?.[secondPart] || '';
         }
         return route[firstPart]?.[secondPart] || '';
@@ -68,7 +68,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
           if (cachedDispatchers[cachedKey]) {
             cachedDispatchers[cachedKey].retry();
           } else {
-            cachedDispatchers[cachedKey] = useDispatcher(() => api.getOne(identifier), null)
+            cachedDispatchers[cachedKey] = useDispatcher(() => api.getOne(identifier), null, !!item.lazy)
           }
           currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
@@ -77,7 +77,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
           if (cachedDispatchers[cachedKey]) {
             cachedDispatchers[cachedKey].retry();
           } else {
-            cachedDispatchers[cachedKey] = useDispatcher(() => api.getAll(), [])
+            cachedDispatchers[cachedKey] = useDispatcher(() => api.getAll(), [], !!item.lazy)
           }
           currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
@@ -92,7 +92,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
             method,
             url: getIdentifierFromAppState(item.fromHTTP.uri),
             params: getQueryParamsFromAppState(item.fromHTTP.query)
-          }).then(getCallData), null)
+          }).then(getCallData), null, !!item.lazy)
         }
         currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
         all[item.key] = cachedDispatchers[cachedKey];
@@ -104,7 +104,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
           if (cachedDispatchers[cachedKey]) {
             cachedDispatchers[cachedKey].retry();
           } else {
-            cachedDispatchers[cachedKey] = useDispatcher(() => entitiesOfBlueprint.getEntity(identifier, { query: getQueryParamsFromAppState(item.fromBlueprint.query) }), null)
+            cachedDispatchers[cachedKey] = useDispatcher(() => entitiesOfBlueprint.getEntity(identifier, { query: getQueryParamsFromAppState(item.fromBlueprint.query) }), null, !!item.lazy)
           }
           currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
@@ -145,7 +145,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
             cachedDispatchers[cachedKey].metadata.value = item.fromBlueprint;
             cachedDispatchers[cachedKey].retry();
           } else {
-            cachedDispatchers[cachedKey] = useDispatcher(({ query }) => entitiesOfBlueprint.getList(getQueryParamsFromAppState(query)), [], false, item.fromBlueprint)
+            cachedDispatchers[cachedKey] = useDispatcher(({ query }) => entitiesOfBlueprint.getList(getQueryParamsFromAppState(query)), [], !!item.lazy, item.fromBlueprint)
           }
           currentDispatchers[cachedKey] = cachedDispatchers[cachedKey];
           all[item.key] = cachedDispatchers[cachedKey];
