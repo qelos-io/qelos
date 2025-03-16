@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { capitalize, ref, watch } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
+import { getPlural } from '@/modules/core/utils/texts';
 
 const editorMode = ref(false)
 
@@ -75,6 +76,17 @@ function clearIfEmpty($event: any, obj: any, key: string) {
   }
 }
 
+function getInstructionsCode(row) {
+  if (row.fromBlueprint && row.fromBlueprint.name) {
+    const blueprintName = capitalize(row.fromBlueprint.name);
+    const texts = [
+      `<strong>{{${row.key}.result}}</strong> will be ${row.fromBlueprint.identifier ? ('a ' + blueprintName + ' entity') : 'an array of ' + getPlural(blueprintName) + ' entities'}`,
+      `<strong>{{${row.key}.loading}}</strong> and <strong>{{${row.key}.loaded}}</strong> can help you distinguish rather the API call is loading or loaded.`
+    ]
+    return texts.join('<br>')
+  }
+}
+
 </script>
 
 <template>
@@ -116,48 +128,87 @@ function clearIfEmpty($event: any, obj: any, key: string) {
                          @update:model-value="clearIfEmpty($event, row.fromBlueprint, 'identifier')"/>
             </FormRowGroup>
             <div>
+              <el-checkbox v-model="row.lazy">
+                {{ $t('Lazy') }}
+              </el-checkbox>
               <el-checkbox :model-value="row.fromBlueprint.query?.$populate"
-                                 @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $populate: $event || undefined }">
+                           @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $populate: $event || undefined }">
                 {{ $t('Populate') }}
               </el-checkbox>
-              <el-checkbox :model-value="row.fromBlueprint.query?.$outerPopulate"
-                           @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $outerPopulate: $event || undefined }">
+              <el-checkbox :model-value="!!row.fromBlueprint.query?.$outerPopulate"
+                           @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $outerPopulate: $event ? 'setKey:blueprintName:scope' : undefined }">
                 {{ $t('Outer Populate') }}
+              </el-checkbox>
+              <el-checkbox :model-value="!!row.fromBlueprint.query?.$sort"
+                           @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $sort: $event ? '{{query.sortBy}}' : undefined }">
+                {{ $t('Sort') }}
+              </el-checkbox>
+              <el-checkbox :model-value="!!row.fromBlueprint.query?.$limit"
+                           @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $limit: $event ? 100 : undefined }">
+                {{ $t('Limit # Documents') }}
+              </el-checkbox>
+              <el-checkbox :model-value="!!row.fromBlueprint.query?.$page"
+                           @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $page: $event ? '{{query.page}}' : undefined }">
+                {{ $t('Page') }}
               </el-checkbox>
             </div>
             <el-form-item :label="$t('Query Params')">
               <Monaco :model-value="json(row.fromBlueprint.query) || '{}'"
-                      style="max-height:100px;"
+                      style="max-height:200px;"
                       @update:model-value="updateRowJSON(row.fromBlueprint, 'query', $event);"/>
             </el-form-item>
+            <details>
+              <summary>
+                {{ $t('Usage Instructions') }}
+              </summary>
+              <p>
+                {{ $t('You can use the following variables in your template:') }}
+                <br>
+                <i v-html="getInstructionsCode(row)"></i>
+              </p>
+            </details>
           </div>
           <div v-if="row.fromCrud">
-            <el-form-item :label="$t('CRUD Name')" required>
-              <el-select v-model="row.fromCrud.name">
-                <el-option :label="$t('Configurations')" value="configurations"/>
-                <el-option :label="$t('Blocks')" value="blocks"/>
-                <el-option :label="$t('Blueprints')" value="blueprints"/>
-                <el-option :label="$t('Invites')" value="invites"/>
-                <el-option :label="$t('Plugins')" value="plugins"/>
-                <el-option :label="$t('Storages')" value="storages"/>
-                <el-option :label="$t('Users')" value="users"/>
-                <el-option :label="$t('Workspaces')" value="workspaces"/>
-              </el-select>
-            </el-form-item>
-            <FormInput v-model="row.fromCrud.identifier" title="Identifier"
-                       placeholder="Try to use: {{identifier}} for dynamic route param"
-                       @update:model-value="clearIfEmpty($event, row.fromCrud, 'identifier')"/>
+            <FormRowGroup>
+              <el-form-item :label="$t('CRUD Name')" required>
+                <el-select v-model="row.fromCrud.name">
+                  <el-option :label="$t('Configurations')" value="configurations"/>
+                  <el-option :label="$t('Blocks')" value="blocks"/>
+                  <el-option :label="$t('Blueprints')" value="blueprints"/>
+                  <el-option :label="$t('Invites')" value="invites"/>
+                  <el-option :label="$t('Plugins')" value="plugins"/>
+                  <el-option :label="$t('Storages')" value="storages"/>
+                  <el-option :label="$t('Users')" value="users"/>
+                  <el-option :label="$t('Workspaces')" value="workspaces"/>
+                </el-select>
+              </el-form-item>
+              <FormInput v-model="row.fromCrud.identifier" title="Identifier"
+                         placeholder="Try to use: {{identifier}} for dynamic route param"
+                         @update:model-value="clearIfEmpty($event, row.fromCrud, 'identifier')"/>
+            </FormRowGroup>
+            <div>
+              <el-checkbox v-model="row.lazy">
+                {{ $t('Lazy') }}
+              </el-checkbox>
+            </div>
           </div>
           <Monaco v-if="row.fromData" :model-value="json(row.fromData)"
                   style="max-height:350px;"
                   @update:model-value="updateRowJSON(row, 'fromData', $event)"/>
           <div v-if="row.fromHTTP">
-            <FormInput v-model="row.fromHTTP.uri" title="URL" placeholder="https://example.com/api" required/>
-            <FormInput v-model="row.fromHTTP.method" title="Method" placeholder="GET"
-                       @update:model-value="clearIfEmpty($event, row.fromHTTP, 'method')"/>
+            <FormRowGroup>
+              <FormInput v-model="row.fromHTTP.method" title="Method" placeholder="GET"
+                         @update:model-value="clearIfEmpty($event, row.fromHTTP, 'method')"/>
+              <FormInput v-model="row.fromHTTP.uri" title="URL" placeholder="https://example.com/api" required/>
+            </FormRowGroup>
+            <div>
+              <el-checkbox v-model="row.lazy">
+                {{ $t('Lazy') }}
+              </el-checkbox>
+            </div>
             <el-form-item :label="$t('Query Params')">
               <Monaco :model-value="json(row.fromHTTP.query) || '{}'"
-                      style="max-height:100px;"
+                      style="max-height:200px;"
                       @update:model-value="updateRowJSON(row.fromHTTP, 'query', $event);"/>
             </el-form-item>
           </div>
@@ -169,3 +220,17 @@ function clearIfEmpty($event: any, obj: any, key: string) {
     </BlockItem>
   </div>
 </template>
+<style scoped>
+details {
+  margin-inline-start: 20px;
+
+  &[open] > summary {
+    list-style-type: disclosure-open;
+  }
+
+  > summary {
+    list-style-type: disclosure-closed;
+    user-select: none;
+  }
+}
+</style>

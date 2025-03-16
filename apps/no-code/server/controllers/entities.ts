@@ -123,7 +123,7 @@ export async function getAllBlueprintEntities(req, res) {
     delete query.$populate;
     delete query.$sort;
     delete query.$limit;
-    delete query.$outerPopulate;
+    delete query.$page;
     delete query.$outerPopulate;
     if ('bypassAdmin' in req.query) {
       delete query.bypassAdmin;
