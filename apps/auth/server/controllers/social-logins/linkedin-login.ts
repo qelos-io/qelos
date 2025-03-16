@@ -8,6 +8,9 @@ import { getSignedToken, getUniqueId, setCookie } from '../../services/tokens';
 import { cookieTokenExpiration } from '../../../config';
 import { setEncryptedData } from '../../services/encrypted-data';
 import { emitPlatformEvent } from '@qelos/api-kit';
+import { getWorkspaceConfiguration } from '../../services/workspace-configuration';
+import { getWorkspaceForUser } from '../../services/workspaces';
+import logger from '../../services/logger';
 
 const LINKEDIN_AUTH_URL = 'https://www.linkedin.com/oauth/v2/authorization'
 const LINKEDIN_TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken'
@@ -151,10 +154,20 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
 
     await setEncryptedData(req.headers.tenant, `${user.id}-linkedinToken`, JSON.stringify(tokenData))
 
+    let workspace;
+    try {
+      const wsConfig = await getWorkspaceConfiguration(req.headers.tenant)
+      if (wsConfig.isActive) {
+        workspace = await getWorkspaceForUser(req.headers.tenant, user._id, user.tokens?.at(-1)?.metadata?.workspace);
+      }
+    } catch {
+      logger.log('Error getting workspace in linkedin login');
+    }
+
     const requestHost = getRequestHost(req);
     const { token: newToken } = getSignedToken(
       user,
-      null,
+      workspace,
       getUniqueId(),
       String(cookieTokenExpiration / 1000)
     );
