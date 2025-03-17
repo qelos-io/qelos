@@ -98,7 +98,7 @@
             </template>
             <template #options>
               <el-option :label="`(${$t('none')})`" :value="null"/>
-              <el-option v-for="source in linkedinSources" :key="source._id" :label="source.name" :value="source._id"/>
+              <el-option v-for="source in linkedInSources" :key="source._id" :label="source.name" :value="source._id"/>
             </template>
           </FormInput>
         </BlockItem>
