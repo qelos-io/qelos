@@ -25,7 +25,8 @@ const props = defineProps({
   createRoute: String,
   createRoutePath: String,
   createRouteQuery: Object,
-  onCreate: Function
+  onCreate: Function,
+  createText: String,
 });
 
 function create() {
