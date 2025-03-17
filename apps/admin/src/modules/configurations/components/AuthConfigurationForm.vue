@@ -76,7 +76,7 @@
                      type="switch"/>
         </BlockItem>
         <BlockItem class="flex-1">
-          <div v-if="sourcedLoaded && !linkedinSources?.length">
+          <div v-if="sourcedLoaded && !linkedInSources?.length">
             <font-awesome-icon :icon="['fab', 'linkedin']"/>
             <span class="pad-start">{{ $t('LinkedIn') }}</span>
             <el-alert :closable="false" type="info">
@@ -156,10 +156,6 @@ function save() {
 }
 </script>
 <style scoped>
-.form-row-group {
-  align-items: center;
-}
-
 .login-demo {
   border: 4px solid var(--border-color);
   margin-inline-end: 10px;
