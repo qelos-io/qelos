@@ -38,7 +38,7 @@ module.exports = new Strategy(
     let workspace;
     if (wsConfig.isActive) {
       try {
-        workspace = await getWorkspaceForUser(query.tenant, user._id, preSelectedWorkspace || user.tokens?.at(-1)?.metadata?.workspace);
+        workspace = await getWorkspaceForUser(query.tenant, user._id, preSelectedWorkspace || user.lastLogin?.workspace || user.tokens?.at(-1)?.metadata?.workspace);
       } catch (err) {
         logger.log('Error getting workspace', query);
       }

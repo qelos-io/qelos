@@ -158,7 +158,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
     try {
       const wsConfig = await getWorkspaceConfiguration(req.headers.tenant)
       if (wsConfig.isActive) {
-        workspace = await getWorkspaceForUser(req.headers.tenant, user._id, user.tokens?.at(-1)?.metadata?.workspace);
+        workspace = await getWorkspaceForUser(req.headers.tenant, user._id, user.lastLogin?.workspace || user.tokens?.at(-1)?.metadata?.workspace);
       }
     } catch {
       logger.log('Error getting workspace in linkedin login');

@@ -13,7 +13,7 @@ import ObjectId = Types.ObjectId
 import { getValidMetadata } from '../services/users';
 import Workspace from '../models/workspace';
 
-const privilegedUserFields = 'username phone fullName firstName lastName birthDate roles profileImage socialLogins emailVerified';
+const privilegedUserFields = 'username phone fullName firstName lastName birthDate roles profileImage socialLogins emailVerified lastLogin';
 
 function getUserIdIfExists(_id, tenant) {
   return User.findOne({ _id, tenant }).select('_id').lean().exec();

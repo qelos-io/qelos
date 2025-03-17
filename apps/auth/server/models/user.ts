@@ -1,4 +1,4 @@
-import mongoose, { ObjectId, Document, Model } from 'mongoose';
+import mongoose, { ObjectId, Document, Model, Schema } from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { getSignedToken, getUniqueId } from '../services/tokens';
@@ -29,6 +29,10 @@ export interface IUser {
   metadata: any;
   emailVerified?: boolean;
   socialLogins?: string[],
+  lastLogin: {
+    created: Date,
+    workspace: ObjectId | string
+  }
   created: Date;
 }
 
@@ -108,6 +112,10 @@ const UserSchema = new mongoose.Schema<UserDocument, UserModel>({
   },
   metadata: mongoose.Schema.Types.Mixed,
   tokens: [TokenSchema],
+  lastLogin: {
+    created: Date,
+    workspace: { type: Schema.Types.ObjectId, ref: 'Workspace' }
+  },
   created: {
     type: Date,
     default: Date.now,
@@ -145,6 +153,10 @@ UserSchema.methods.getToken = function getToken({ authType, expiresIn, workspace
       tokenIdentifier,
     });
     this.markModified('tokens');
+  }
+  this.lastLogin = {
+    created: new Date(),
+    workspace: workspace?._id
   }
   return getSignedToken(this, workspace, tokenIdentifier, expiresIn).token;
 };
@@ -187,7 +199,10 @@ UserSchema.methods.updateToken = function updateToken(
     (token as any).metadata = { relatedToken, workspace: currentPayload.workspace?._id };
   }
   this.tokens.push(token);
-
+  this.lastLogin = {
+    created: new Date(),
+    workspace: currentPayload.workspace?._id
+  }
   return this.save();
 };
 
