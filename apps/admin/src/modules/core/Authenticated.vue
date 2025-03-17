@@ -17,11 +17,11 @@
 
 <script lang="ts" setup>
 import { onBeforeMount, ref, toRef, watch } from 'vue'
+import { onBeforeRouteUpdate, useRouter } from 'vue-router'
 import { useAuth, useAuthenticatedIntercept } from './compositions/authentication'
 import Header from './components/layout/Header.vue'
 import Navigation from './components/layout/Navigation.vue'
 import AssetsDetailsPanel from '@/modules/assets/components/AssetsDetailsPanel/AssetsDetailsPanel.vue'
-import { onBeforeRouteUpdate, useRouter } from 'vue-router'
 import { authStore, isEditingEnabled, isManagingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.vue';
@@ -47,7 +47,7 @@ onBeforeRouteUpdate(async (to, from) => {
   if (to.name === 'createMyWorkspace' || to.name === 'workspaces' || isPrivilegedUser.value) {
     return;
   }
-  if (wsConfig.isActive && !user.value.workspace) {
+  if (!wsConfig.metadata.allowNonWorkspaceUsers && wsConfig.isActive && !user.value.workspace) {
     await invitesStore.promise;
     if (invitesStore.invites.length) {
       return { name: 'workspaces' }
@@ -56,6 +56,7 @@ onBeforeRouteUpdate(async (to, from) => {
   }
   return;
 })
+
 onBeforeMount(async () => {
   await wsConfig.promise;
   await authStore.userPromise;
@@ -63,7 +64,7 @@ onBeforeMount(async () => {
     await workspacesStore.promise;
     if (workspacesStore.workspaces.length) {
       await workspacesStore.activateSilently(workspacesStore.workspaces[0])
-    } else {
+    } else if (!wsConfig.metadata.allowNonWorkspaceUsers) {
       await invitesStore.promise;
       await router.push({ name: invitesStore.invites.length ? 'workspaces' : 'createMyWorkspace' });
     }

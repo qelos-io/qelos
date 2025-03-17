@@ -10,9 +10,9 @@ export interface WorkspaceConfigurationMetadata {
   creationPrivilegedRoles: string[],
   viewMembersPrivilegedWsRoles: string[],
   labels: WorkspaceLabelDefinition[],
-  allowNonLabeledWorkspaces: true,
+  allowNonLabeledWorkspaces: boolean,
+  allowNonWorkspaceUsers: boolean,
   allowLogo?: boolean,
   createWorkspacePageTitle?: string,
   labelsSelectorTitle?: string,
-
 }

@@ -39,6 +39,9 @@
         </el-form-item>
 
       </FormRowGroup>
+      <FormRowGroup>
+        <FormInput v-model="edited.allowNonWorkspaceUsers" title="Allow users to navigate without workspace" type="switch"/>
+      </FormRowGroup>
       <h3>{{ $t('Labels') }}</h3>
       <FormInput v-model="edited.allowNonLabeledWorkspaces" title="Allow to create workspaces without any labels"
                  type="switch"/>
