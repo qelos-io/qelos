@@ -111,6 +111,6 @@ export interface IHttpSource extends IIntegrationSource {
   metadata: {
     baseUrl: string;
     headers: Record<string, string>;
-    queryParams: Record<string, string>;
+    query: Record<string, string>;
   };
 }

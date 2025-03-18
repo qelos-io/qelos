@@ -6,6 +6,7 @@ import OpenAIForm from './components/forms/OpenAIForm.vue';
 import SupabaseForm from './components/forms/SupabaseForm.vue';
 import N8nForm from './components/forms/N8nForm.vue';
 import EmailForm from './components/forms/EmailForm.vue';
+import HttpForm from './components/forms/HttpForm.vue';
 
 const props = defineProps({
   modelValue: Object,
@@ -22,6 +23,7 @@ const formComponentMap = {
   supabase: SupabaseForm,
   n8n: N8nForm,
   email: EmailForm,
+  http: HttpForm,
 };
 
 const SelectedFormComponent = computed(() => formComponentMap[props.kind.toLowerCase()] || null);
