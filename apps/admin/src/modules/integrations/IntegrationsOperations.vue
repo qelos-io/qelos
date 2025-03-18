@@ -139,6 +139,12 @@ const getTargetOperations = (source: string) => {
       { value: 'trigger', label: 'Trigger' },
       { value: 'execute', label: 'Execute' },
     ],
+    http: [
+      { value: 'get', label: 'GET Request' },
+      { value: 'post', label: 'POST Request' },
+      { value: 'put', label: 'PUT Request' },
+      { value: 'delete', label: 'DELETE Request' },
+    ],
   };
   return targetOperationsMap[source] || [];
 };
@@ -165,6 +171,12 @@ const getTriggerOperations = (source: string) => {
     email: [
       { value: 'trigger', label: 'Trigger' },
       { value: 'execute', label: 'Execute' },
+    ],
+    http: [
+      { value: 'get', label: 'GET Request' },
+      { value: 'post', label: 'POST Request' },
+      { value: 'put', label: 'PUT Request' },
+      { value: 'delete', label: 'DELETE Request' },
     ],
   };
   return triggerOperationsMap[source] || [];

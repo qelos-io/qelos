@@ -12,29 +12,28 @@ const { loaded, result } = useIntegrations();
 
 <template>
   <div>
-    <ListPageTitle title="Integrations" :create-route-query="{ mode: $route.query.mode ? undefined : 'create' }"/>
+    <ListPageTitle title="Integrations" :create-route-query="{ mode: $route.query.mode ? undefined : 'create' }" />
     <p>{{ $t('Choose any provider to manage connections') }}:</p>
 
     <div class="blocks-list">
       <BlockItem class="source" v-for="kind in kinds" :key="kind.kind"
-                 @click="$router.push({name: 'integrations-sources', params: {kind: kind.kind}})">
+        @click="$router.push({ name: 'integrations-sources', params: { kind: kind.kind } })">
         <img v-if="kind.logo" :src="kind.logo" :alt="kind.name">
         <p centered v-else class="large">{{ kind.name }}</p>
       </BlockItem>
     </div>
 
     <EmptyState v-if="loaded && result.length === 0" description="No integrations found.">
-      <el-button type="primary" @click="$router.push({query: {mode: 'create'}})">Create new Integration</el-button>
+      <el-button type="primary" @click="$router.push({ query: { mode: 'create' } })">Create new Integration</el-button>
     </EmptyState>
     <div>
       <BlockItem class="source" v-for="integration in result" :key="integration._id">
         <img :src="kinds[integration.kind[0]]?.logo" :alt="kinds[integration.kind[0]]?.name">
-        --->
         <img :src="kinds[integration.kind[1]]?.logo" :alt="kinds[integration.kind[1]]?.name">
       </BlockItem>
     </div>
 
-    <IntegrationFormModal :visible="$route.query.mode === 'create'" @close="$router.push({query: {mode: undefined}})"/>
+    <IntegrationFormModal :visible="$route.query.mode === 'create'" @close="$router.push({ query: { mode: undefined } })" />
   </div>
 </template>
 
@@ -64,7 +63,7 @@ const { loaded, result } = useIntegrations();
   margin: 0;
 }
 
-.blocks-list > * {
+.blocks-list>* {
   width: 120px;
   margin: 10px;
 }
@@ -73,7 +72,7 @@ const { loaded, result } = useIntegrations();
   .blocks-list {
     flex-direction: column;
 
-    > * {
+    >* {
       width: 96%;
     }
   }

@@ -12,12 +12,15 @@ import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue
 import IntegrationSourceFormModal from '@/modules/integrations/components/IntegrationSourceFormModal.vue';
 import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
+import { useSecuredHeadersMasked } from './compositions/use-secured-headers-masked';
 
+const { securedHeadersMasked } = useSecuredHeadersMasked();
 const route = useRoute();
 const kind = route.params.kind.toString() as IntegrationSourceKind;
 const kindData = useIntegrationKinds()[kind];
 const store = useIntegrationSourcesStore();
 const data = computed(() => store.groupedSources[kind]);
+
 
 const filteredConnections = computed(() => data.value || []);
 const formVisible = ref(false);
@@ -26,50 +29,54 @@ const isEditing = ref(false);
 
 
 const { submit: saveConnection } = useSubmitting(
-    async (formData: any) => {
-      try {
+  async (formData: any) => {
+    try {
 
-        let savedData;
-        if (editingIntegration.value?._id) {
-          isEditing.value = true;
-          // Update an existing connection
-          savedData = await integrationSourcesService.update(editingIntegration.value._id, formData);
-        } else {
-          isEditing.value = false;
-          // Create a new connection in the database
-          savedData = await integrationSourcesService.create(formData);
-        }
-        // Update the connection list after saving
-        await store.retry();
-
-        return savedData;
-      } catch (error) {
-        throw error;
+      let savedData;
+      if (editingIntegration.value?._id) {
+        isEditing.value = true;
+        // Update an existing connection
+        savedData = await integrationSourcesService.update(editingIntegration.value._id, formData);
+      } else {
+        isEditing.value = false;
+        // Create a new connection in the database
+        savedData = await integrationSourcesService.create(formData);
       }
-    },
-    {
-      success: () => (isEditing.value ? 'Connection updated successfully' : 'Connection created successfully'),
-      error: 'Failed to save connection',
-    },
-    () => (formVisible.value = false)
+      // Update the connection list after saving
+      await store.retry();
+
+      return savedData;
+    } catch (error) {
+      throw error;
+    }
+  },
+  {
+    success: () => (isEditing.value ? 'Connection updated successfully' : 'Connection created successfully'),
+    error: 'Failed to save connection',
+  },
+  () => (formVisible.value = false)
 );
 
 const { submit: deleteConnectionBase } = useSubmitting(
-    async (_id: string) => {
-      try {
+  async (_id: string) => {
+    try {
 
-        await integrationSourcesService.remove(_id);
-        await store.retry();
-        return _id;
-
-      } catch (error) {
-        throw error;
+      await integrationSourcesService.remove(_id);
+      await store.retry();
+      // removing securitedHeader from HTTP form 
+      if (Object.keys(securedHeadersMasked.value).length > 0) {
+        securedHeadersMasked.value = {};
       }
-    },
-    {
-      success: 'Connection deleted successfully',
-      error: 'Failed to delete connection',
+
+      return _id;
+    } catch (error) {
+      throw error;
     }
+  },
+  {
+    success: 'Connection deleted successfully',
+    error: 'Failed to delete connection',
+  }
 );
 
 const deleteConnection = useConfirmAction(deleteConnectionBase, {
@@ -110,7 +117,7 @@ const closeForm = () => {
 
 <template>
   <ListPageTitle @create="openCreateForm">
-    <img v-if="kindData?.logo" class="head-logo" :alt="kindData?.name" :src="kindData?.logo"/>
+    <img v-if="kindData?.logo" class="head-logo" :alt="kindData?.name" :src="kindData?.logo" />
     <span>{{ kindData?.name }} {{ $t('Connections') }}</span>
   </ListPageTitle>
 
@@ -130,6 +137,10 @@ const closeForm = () => {
       <p v-if="connection.metadata.clientId">
         <strong>{{ $t('Client ID') }}:</strong> {{ connection.metadata.clientId }}
       </p>
+      <p v-if="connection.metadata.baseUrl" class="base-url-container">
+        <strong class="base-url-text">{{ $t('Base Url') }}:</strong>
+        <span class="base-url">{{ connection.metadata.baseUrl }}</span>
+      </p>
       <p v-if="connection.metadata.scope">
         <strong>{{ $t('Scope') }}:</strong> {{ connection.metadata.scope }}
       </p>
@@ -138,23 +149,40 @@ const closeForm = () => {
       </p>
       <template #actions>
         <el-button size="small" type="primary" @click="openEditForm(connection)">{{ $t('Edit') }}</el-button>
-        <RemoveButton wide @click="deleteConnection(connection._id)"/>
+        <RemoveButton wide @click="deleteConnection(connection._id)" />
       </template>
     </BlockItem>
   </div>
 
   <!-- If there are no connections -->
   <EmptyState v-if="store.loaded && !filteredConnections.length"
-              description="No connections found. Create one to get started.">
+    description="No connections found. Create one to get started.">
     <el-button type="primary" @click="openCreateForm">{{ $t('Create Connection') }}</el-button>
   </EmptyState>
 
   <IntegrationSourceFormModal v-model:visible="formVisible" v-model:editing-integration="editingIntegration"
-                              :kind="kind"
-                              @save="saveConnection" @close="closeForm"/>
+    :kind="kind" @save="saveConnection" @close="closeForm" />
 </template>
 
 <style scoped>
+.base-url-container {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+}
+
+.base-url-text {
+  flex-shrink: 0;
+}
+
+.base-url {
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 h1 {
   align-items: center;
   display: flex;
