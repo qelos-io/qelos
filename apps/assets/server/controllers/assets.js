@@ -99,4 +99,4 @@ function verifyIdentifier(req, res, next) {
   next();
 }
 
-module.exports = { getStorageAssets, removeStorageAsset, verifyIdentifier, uploadStorageAssets, renameStorageAssets };
+module.exports = { getService, getStorageAssets, removeStorageAsset, verifyIdentifier, uploadStorageAssets, renameStorageAssets };

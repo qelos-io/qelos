@@ -30,6 +30,7 @@ const StorageSchema = new mongoose.Schema({
       type: String,
     }
   },
+  isDefault: { type: Boolean, default: false },
   authentication: String
 })
 
