@@ -48,7 +48,7 @@ export function getApiProxyConfig(): IApiProxyConfig {
     }),
     assetsService: getServiceFromEnvVars('assets', 'ASSETS_SERVICE', {
       port: 9003,
-      proxies: ['/api/assets', '/api/storage'],
+      proxies: ['/api/assets', '/api/storage', '/api/upload'],
     }),
     noCodeService: getServiceFromEnvVars('no-code', 'NO_CODE_SERVICE', {
       port: 9004,

@@ -51,7 +51,7 @@ async function loadFiles (storage, identifier = '/') {
 async function uploadFile (storage, { identifier, file, extension, prefix }) {
   const ftp = new Ftp(storage)
   const filename = `${prefix}-${uniqid()}.${extension}`
-  const fullPath = path.join(storage.metadata.basePath || '/', identifier, filename)
+  const fullPath = path.join(storage.metadata.basePath || '/', identifier ? path.join(identifier, filename) : filename)
 
   try {
     await ftp.ready

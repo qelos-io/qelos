@@ -22,6 +22,7 @@ async function createStorage(req, res) {
     name: body.name,
     kind: body.kind,
     metadata: body.metadata,
+    isDefault: body.isDefault,
     authentication: uniqid()
   });
 
@@ -77,6 +78,9 @@ function updateStorage(req, res) {
     req.storage.kind = body.kind || req.storage.kind;
     promise = setSecret(req.storage.tenant, req.storage.authentication, getRelevantAuthenticationData(req.storage.kind, body.authentication));
   }
+  if (body.isDefault !== req.storage.isDefault) {
+    req.storage.isDefault = body.isDefault
+  }
   if (body.metadata) {
     req.storage.metadata = body.metadata;
   }
@@ -85,6 +89,7 @@ function updateStorage(req, res) {
     .then(() => res.status(200).json({
       name: req.storage.name,
       kind: req.storage.kind,
+      isDefault: req.storage.isDefault,
       metadata: req.storage.metadata
     }).end())
     .catch(() => res.status(400).json({ message: 'failed to update storage' }).end());
@@ -103,8 +108,8 @@ function getStorageById(req, res, next) {
 }
 
 function getStorage(req, res) {
-  const { _id, name, kind, metadata } = req.storage;
-  res.status(200).json({ _id, name, kind, metadata }).end();
+  const { _id, name, kind, metadata, isDefault } = req.storage;
+  res.status(200).json({ _id, name, kind, metadata, isDefault }).end();
 }
 
 module.exports = { createStorage, getStorageList, removeStorage, getStorageById, updateStorage, getStorage };

@@ -26,6 +26,10 @@
           :model-value="editedStorage.metadata.basePath"
           @input="editedStorage.metadata.basePath = $event"
       />
+      <el-checkbox
+          v-model="editedStorage.isDefault"
+          label="Set as Default Storage"
+      />
       <p>
         <label>
           {{ t('Kind') }}:

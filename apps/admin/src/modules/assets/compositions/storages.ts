@@ -26,7 +26,8 @@ export function useStorageForm(props) {
   const editedStorage = reactive({
     ...(props.value || {
       name: 'New Storage',
-      kind: 'ftp'
+      kind: 'ftp',
+      isDefault: false
     }),
     authentication: null,
     metadata: {
