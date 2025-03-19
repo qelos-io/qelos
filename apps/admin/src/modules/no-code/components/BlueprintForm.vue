@@ -142,7 +142,7 @@ function submit() {
 
       <el-tab-pane :label="$t('Properties')" name="properties">
         <el-form-item :label="$t('Identifier Mechanism for Entities')">
-          <el-select v-model="blueprint.entityIdentifierMechanism" required :placeholder="$t('Select mechanism')">
+          <el-select v-model="edit.entityIdentifierMechanism" required :placeholder="$t('Select mechanism')">
             <el-option label="Object ID" :value="EntityIdentifierMechanism.OBJECT_ID"/>
             <el-option label="GUID" :value="EntityIdentifierMechanism.GUID"/>
           </el-select>
