@@ -1,0 +1,23 @@
+{{- /* Auth Service */ -}}
+{{- include "qelos.microservice" (dict "name" "auth" "values" .Values.auth "global" .Values.global) }}
+---
+{{- /* Content Service */ -}}
+{{- include "qelos.microservice" (dict "name" "content" "values" .Values.content "global" .Values.global) }}
+---
+{{- /* Secrets Service */ -}}
+{{- include "qelos.microservice" (dict "name" "secrets" "values" .Values.secrets "global" .Values.global) }}
+---
+{{- /* No-Code Service */ -}}
+{{- include "qelos.microservice" (dict "name" "nocode" "values" .Values.nocode "global" .Values.global) }}
+---
+{{- /* Plugins Service */ -}}
+{{- include "qelos.microservice" (dict "name" "plugins" "values" .Values.plugins "global" .Values.global) }}
+---
+{{- /* Admin Service */ -}}
+{{- include "qelos.microservice" (dict "name" "admin" "values" .Values.admin "global" .Values.global) }}
+---
+{{- /* Assets Service */ -}}
+{{- include "qelos.microservice" (dict "name" "assets" "values" .Values.assets "global" .Values.global) }}
+---
+{{- /* Drafts Service */ -}}
+{{- include "qelos.microservice" (dict "name" "drafts" "values" .Values.drafts "global" .Values.global) }}
