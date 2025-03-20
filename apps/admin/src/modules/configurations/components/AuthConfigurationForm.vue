@@ -5,11 +5,15 @@
         <BlockItem>
           <FormInput v-model="edited.showLoginPage" title="Show Login Page?" type="switch"/>
 
-          <div class="flex-row">
+          <div class="flex-row positions-list">
             <div class="position-option left" @click="edited.formPosition = 'left'"
                  :class="{selected: edited.formPosition === 'left'}"/>
             <div class="position-option right" @click="edited.formPosition = 'right'"
                  :class="{selected: edited.formPosition === 'right'}"/>
+            <div class="position-option center" @click="edited.formPosition = 'center'"
+                 :class="{selected: edited.formPosition === 'center'}">
+              <div class="inner"/>
+            </div>
             <div class="position-option top" @click="edited.formPosition = 'top'"
                  :class="{selected: edited.formPosition === 'top'}"/>
             <div class="position-option bottom" @click="edited.formPosition = 'bottom'"
@@ -41,6 +45,7 @@
             <el-option label="Phone" value="phone"/>
           </template>
         </FormInput>
+        <FormInput v-model="edited.backgroundImage" title="Background Image" type="upload"/>
       </BlockItem>
       <h3>{{ $t('Additional User Fields') }}</h3>
       <FormRowGroup v-for="(row, index) in edited.additionalUserFields" :key="index">
@@ -162,7 +167,12 @@ function save() {
   zoom: 0.5;
 }
 
+.positions-list {
+  flex-wrap: wrap;
+}
+
 .position-option {
+  display: block;
   width: 36px;
   height: 36px;
   border: 1px solid #ddd;
@@ -170,23 +180,36 @@ function save() {
   cursor: pointer;
 
   &.left {
-    border-left: 4px solid #ccc;
+    border-left: 4px solid #759b7d;
   }
 
   &.right {
-    border-right: 4px solid #ccc;
+    border-right: 4px solid #759b7d;
   }
 
   &.top {
-    border-top: 4px solid #ccc;
+    border-top: 4px solid #759b7d;
   }
 
   &.bottom {
-    border-bottom: 4px solid #ccc;
+    border-bottom: 4px solid #759b7d;
+  }
+
+  &.center {
+    position: relative;
+
+    .inner {
+      position: absolute;
+      top: 15%;
+      bottom: 15%;
+      left: 15%;
+      right: 15%;
+      border: 4px solid #759b7d;
+    }
   }
 
   &.selected {
-    background: var(--main-color-light);
+    background-color: #cfcfcf;
   }
 }
 </style>

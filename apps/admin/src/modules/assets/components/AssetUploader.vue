@@ -1,32 +1,62 @@
 <template>
   <div>
-    <AssetsStorageSelector v-if="isPrivilegedUser" @change="selectedStorage = $event._id" />
+    <AssetsStorageSelector v-if="isPrivilegedUser" @change="selectedStorage = $event._id"/>
+    <div v-if="value && !showUploader" class="assets-view flex-row">
+      <el-card class="asset-view" shadow="hover" @click="showUploader = true">
+        <img :src="value" v-if="isImage" alt=""/>
+        <h3 v-else><font-awesome-icon :icon="['far', 'file-lines']" /></h3>
+        <template #footer>
+          <RemoveButton @click.stop="$emit('change', null)" />
+        </template>
+      </el-card>
+    </div>
     <BasicFileUploader
-      v-if="selectedStorage || !isPrivilegedUser"
-      :storage="selectedStorage"
-      @upload="uploadComplete"
+        v-else-if="selectedStorage || !isPrivilegedUser"
+        :storage="selectedStorage"
+        @upload="uploadComplete"
     />
   </div>
 </template>
 <script lang="ts">
-  import { ref } from 'vue'
-  import AssetsStorageSelector from './AssetsStorageSelector.vue'
-  import BasicFileUploader from './BasicFileUploader.vue'
-  import { isPrivilegedUser } from '@/modules/core/store/auth';
+import { computed, ref } from 'vue'
+import AssetsStorageSelector from './AssetsStorageSelector.vue'
+import BasicFileUploader from './BasicFileUploader.vue'
+import { isPrivilegedUser } from '@/modules/core/store/auth';
+import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 
-  export default {
-    name: 'AssetUploader',
-    components: { BasicFileUploader, AssetsStorageSelector },
-    setup(_, { emit }) {
-      const selectedStorage = ref(null)
+export default {
+  name: 'AssetUploader',
+  components: { RemoveButton, BasicFileUploader, AssetsStorageSelector },
+  props: {
+    value: {
+      default: null
+    }
+  },
+  setup(props, { emit }) {
+    const selectedStorage = ref(null)
 
-      return {
-        selectedStorage,
-        isPrivilegedUser,
-        uploadComplete({ publicUrl }) {
-          emit('change', publicUrl)
-        }
+    const isImage = computed(() => ['jpg', 'jpeg', 'png', 'gif'].includes(props.value?.split?.('.').pop().toLowerCase()))
+    const showUploader = ref(!props.value);
+
+    return {
+      selectedStorage,
+      isPrivilegedUser,
+      showUploader,
+      isImage,
+      uploadComplete({ publicUrl }) {
+        emit('change', publicUrl)
       }
     }
   }
+}
 </script>
+<style scoped>
+.assets-view {
+  padding-block: 10px;
+}
+
+.asset-view img {
+  max-height: 200px;
+  margin: 0;
+}
+</style>

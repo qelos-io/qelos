@@ -16,6 +16,7 @@ export interface IAuthConfigurationMetadata {
   loginTitle?: string,
   showLoginPage: boolean,
   showRegisterPage: boolean,
+  backgroundImage?: string,
   socialLoginsSources?: {
     linkedin?: string,
   }

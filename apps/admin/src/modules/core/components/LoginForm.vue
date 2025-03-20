@@ -1,5 +1,6 @@
 <template>
   <div class="login-container">
+    <slot/>
     <el-form class="login-form" @submit.native.prevent="submit">
       <el-form-item :label="$t('Username / Email')" class="form-item-flex">
         <el-input size="large" name="username" v-model="form.username" :type="authConfig.treatUsernameAs" required
@@ -74,6 +75,7 @@ const loginWithLinkedIn = () => {
   margin: 0 auto;
   padding: 20px;
   background: #fff;
+  border-radius: var(--border-radius);
 }
 
 form {

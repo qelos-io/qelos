@@ -104,6 +104,7 @@ export default {
 
 <style scoped>
 .asset-upload {
+  width: 100%;
   clear: both;
 }
 </style>

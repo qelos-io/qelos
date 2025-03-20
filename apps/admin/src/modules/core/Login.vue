@@ -1,12 +1,19 @@
 <template>
   <div class="login-page" v-if="loaded">
-    <aside>
-      <img :alt="appConfig?.name || 'SaaS'" :src="appConfig?.logoUrl || '../../assets/logo.png'">
-      <h1>{{ $t(config?.loginTitle || 'Welcome') }}</h1>
-    </aside>
-    <div>
-      <LoginForm :auth-config="config"/>
+    <div v-if="config.formPosition === 'center'" class="flex-container" :class="{'bg-image': !!bgImage}" centered>
+      <LoginForm :auth-config="config">
+        <h1>{{ $t(config?.loginTitle || 'Welcome') }}</h1>
+      </LoginForm>
     </div>
+    <template v-else>
+      <aside :class="{'bg-image': !!bgImage}">
+        <img :alt="appConfig?.name || 'SaaS'" :src="appConfig?.logoUrl || '../../assets/logo.png'">
+        <h1>{{ $t(config?.loginTitle || 'Welcome') }}</h1>
+      </aside>
+      <div>
+        <LoginForm :auth-config="config"/>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -20,6 +27,8 @@ import { useAuthConfiguration } from '@/modules/configurations/store/auth-config
 const props = defineProps<{ authConfig?: IAuthConfigurationMetadata }>()
 const { metadata, loaded } = toRefs(useAuthConfiguration())
 const config = computed(() => props.authConfig || metadata.value)
+
+const bgImage = computed(() => config.value.backgroundImage ? ('url(' + config.value.backgroundImage + ')') : '')
 
 const flexDirection = computed(() => {
   switch (config.value.formPosition) {
@@ -38,6 +47,7 @@ const { appConfig } = useAppConfiguration();
 </script>
 <style scoped>
 .login-page {
+  background-color: var(--body-bg);
   display: flex;
   flex-direction: v-bind(flexDirection);
   justify-content: center;
@@ -75,5 +85,9 @@ img {
   max-width: 400px;
   width: 80%;
   padding: 30px;
+}
+
+.bg-image {
+  background: v-bind(bgImage) no-repeat center;
 }
 </style>

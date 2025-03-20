@@ -1,6 +1,5 @@
 <template>
   <div class="basic-file-uploader">
-    <el-input v-model="location" placeholder="Choose Location"/>
     <el-upload
         class="uploader"
         drag
