@@ -10,6 +10,7 @@ import { setEncryptedData } from '../../services/encrypted-data';
 import { emitPlatformEvent } from '@qelos/api-kit';
 import { getWorkspaceConfiguration } from '../../services/workspace-configuration';
 import { getWorkspaceForUser } from '../../services/workspaces';
+import { uploadProfileImage } from '../../services/assets-service-api';
 import logger from '../../services/logger';
 
 const LINKEDIN_AUTH_URL = 'https://www.linkedin.com/oauth/v2/authorization'
@@ -99,7 +100,19 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
     try {
       user = await getUser({ username: userData.email, tenant: req.headers.tenant });
       user.email = userData.email;
-      user.profileImage = userData.picture || user.profileImage;
+
+      if (userData.picture) {
+        try {
+          user.profileImage = await uploadProfileImage(
+            req.headers.tenant, 
+            (user._id as string), 
+            userData.picture
+          );
+        } catch (error) {
+          user.profileImage = userData.picture; // Fallback to original URL
+        }
+      }
+
       if (!user.emailVerified) {
         user.emailVerified = true;
       }
@@ -114,6 +127,21 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
         res.redirect('/login?error=needs-registration&email=' + encodeURIComponent(userData.email));
         return;
       }
+
+      const tempUserId = `profile_${Date.now()}`;
+      let profileImage = "";
+      if (userData.picture) {
+        try {
+          profileImage = await uploadProfileImage(
+            req.headers.tenant,
+            tempUserId,
+            userData.picture
+          );
+        } catch (error) {
+          profileImage = userData.picture;
+        }
+      }
+
       user = new User({
         tenant: req.headers.tenant,
         username: userData.email,
@@ -121,7 +149,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
         fullName: userData.name || '',
         firstName: userData.given_name || '',
         lastName: userData.family_name || '',
-        profileImage: userData.picture || '',
+        profileImage,
         emailVerified: true,
         socialLogins: ['linkedin'],
       });
