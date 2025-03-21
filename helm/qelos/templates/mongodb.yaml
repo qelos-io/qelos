@@ -28,12 +28,9 @@ spec:
               mountPath: /data/db
       volumes:
         - name: mongodb-data
-          {{- if .Values.mongodb.persistence.enabled }}
-          persistentVolumeClaim:
-            claimName: mongodb-pvc
-          {{- else }}
-          emptyDir: {}
-          {{- end }}
+          hostPath:
+            path: /Users/davidmeirlevy/dev/qelos/qelos/apps/db/db-data
+            type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service

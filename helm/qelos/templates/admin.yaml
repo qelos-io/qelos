@@ -34,10 +34,10 @@ metadata:
     app: admin
 spec:
   ports:
-    - port: 80
-      targetPort: 80
+    - port: {{ .Values.admin.port }}
+      targetPort: {{ .Values.admin.port }}
       protocol: TCP
-      name: http
+      name: admin-http
   selector:
     app: admin
 ---

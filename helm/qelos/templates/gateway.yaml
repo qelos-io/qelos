@@ -21,14 +21,44 @@ spec:
             - containerPort: 3000
               name: http
           env:
-            - name: REDIS_HOST
+            - name: IP
+              value: "0.0.0.0"
+            - name: REDIS_URL
               value: {{ .Values.global.redis.host }}
-            - name: REDIS_PORT
-              value: "{{ .Values.global.redis.port }}"
-            - name: MONGODB_URI
-              value: "mongodb://mongodb-service:27017/qelos"
             - name: ADMIN_PANEL_URL
-              value: {{ .Values.global.admin.host }}
+              value: {{ .Values.admin.host }}
+            - name: ADMIN_PANEL_PORT
+              value: "{{ .Values.admin.port }}"
+            - name: CONTENT_SERVICE_URL
+              value: {{ .Values.content.host }}
+            - name: CONTENT_SERVICE_PORT
+              value: "{{ .Values.content.port }}"
+            - name: AUTH_SERVICE_URL
+              value: {{ .Values.auth.host }}
+            - name: AUTH_SERVICE_PORT
+              value: "{{ .Values.auth.port }}"
+            - name: ASSETS_SERVICE_URL
+              value: {{ .Values.assets.host }}
+            - name: ASSETS_SERVICE_PORT
+              value: "{{ .Values.assets.port }}"
+            - name: DRAFTS_SERVICE_URL
+              value: {{ .Values.drafts.host }}
+            - name: DRAFTS_SERVICE_PORT
+              value: "{{ .Values.drafts.port }}"
+            - name: PLUGINS_SERVICE_URL
+              value: {{ .Values.plugins.host }}
+            - name: PLUGINS_SERVICE_PORT
+              value: "{{ .Values.plugins.port }}"
+            - name: NO_CODE_SERVICE_URL
+              value: {{ .Values.nocode.host }}
+            - name: NO_CODE_SERVICE_PORT
+              value: "{{ .Values.nocode.port }}"
+            - name: SECRETS_SERVICE_URL
+              value: {{ .Values.secrets.host }}
+            - name: SECRETS_SERVICE_PORT
+              value: "{{ .Values.secrets.port }}"
+            - name: SHOW_LOGS
+              value: "true"
           resources:
             {{- toYaml .Values.gateway.resources | nindent 12 }}
 ---

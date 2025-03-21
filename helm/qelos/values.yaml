@@ -3,7 +3,7 @@ global:
   admin:
     host: admin-service
   redis:
-    host: redis-service
+    host: redis://redis-service
     port: 6379
   mongodb:
     # Set to false to use external MongoDB
@@ -25,40 +25,46 @@ mongodb:
   persistence:
     enabled: true
     storageClass: ""
+    accessModes:
+      - ReadWriteOnce
     size: 10Gi
   resources:
     requests:
-      memory: "256Mi"
-      cpu: "250m"
-    limits:
       memory: "1Gi"
       cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+redis:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
 
 gateway:
   image:
     repository: registry.gitlab.com/qelos/qelos/gateway
     tag: latest
   environment:
-    INTERNAL_URL: content-service
-    CONTENT_SERVICE_URL: content-service
-    AUTH_SERVICE_URL: auth-service
-    ASSETS_SERVICE_URL: assets-service
-    DRAFTS_SERVICE_URL: drafts-service
-    PLUGINS_SERVICE_URL: plugins-service
-    ADMIN_PANEL_URL: admin-service
-    NO_CODE_SERVICE_URL: no-code-service
-    REDIS_URL: redis-service
-    BASIC_TENANT: default
-    APPLICATION_URL: localhost
+    INTERNAL_URL: localhost
+    BASIC_TENANT: 0
+    APPLICATION_URL: localhost:3000
     SHOW_LOGS: true
 
 auth:
   image:
     repository: registry.gitlab.com/qelos/qelos/auth
     tag: latest
+  host: auth-service
+  port: 9000
   environment:
+    PORT: 9000
     MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis-service
+    REDIS_URL: redis://redis-service
     JWT_SECRET: ${JWT_SECRET}
     REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
     APPLICATION_URL: localhost
@@ -66,16 +72,19 @@ auth:
     SECRETS_TOKEN: ${AUTH_SERVICE_SECRET}
     PLUGINS_SERVICE_URL: plugins-service
     SECRETS_SERVICE_URL: secrets-service
-    CONTENT_SERVICE_URL: content-service
     SHOW_LOGS: true
 
 content:
   image:
     repository: registry.gitlab.com/qelos/qelos/content
     tag: latest
+  host: content-service
+  port: 9001
   environment:
+    PORT: 9001
     MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis-service
+    REDIS_URL: redis://redis-service
+    IP: 0.0.0.0
     AUTH_SERVICE_URL: auth-service
     SHOW_LOGS: true
 
@@ -83,8 +92,11 @@ secrets:
   image:
     repository: registry.gitlab.com/qelos/qelos/secrets
     tag: latest
+  host: secrets-service
+  port: 9002
   environment:
     MONGO_URI: mongodb://mongodb-service:27017/qelos
+    IP: 0.0.0.0
     PORT: 9002
     SECRET: ${SECRETS_SERVICE_SECRET}
     INTERNAL_SECRET: ${INTERNAL_SECRET}
@@ -94,9 +106,11 @@ nocode:
   image:
     repository: registry.gitlab.com/qelos/qelos/no-code
     tag: latest
+  host: nocode-service
+  port: 9004
   environment:
     MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis-service
+    REDIS_URL: redis://redis-service
     INTERNAL_SECRET: ${INTERNAL_SECRET}
     SECRETS_TOKEN: ${NOCODE_SERVICE_SECRET}
     AUTH_SERVICE_URL: auth-service
@@ -112,10 +126,12 @@ admin:
   replicas: 2
   ingress:
     enabled: false
+  host: admin-service
+  port: 3001
   environment:
-    PORT: 80
+    PORT: 3001
     MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis-service
+    REDIS_URL: redis://redis-service
     AUTH_SERVICE_URL: auth-service
     CONTENT_SERVICE_URL: content-service
     SECRETS_SERVICE_URL: secrets-service
@@ -126,14 +142,17 @@ plugins:
   image:
     repository: registry.gitlab.com/qelos/qelos/plugins
     tag: latest
+  host: plugins-service
+  port: 9003
   environment:
+    PORT: 9003
     MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis-service
+    REDIS_URL: redis://redis-service
     INTERNAL_SECRET: ${INTERNAL_SECRET}
     SECRETS_TOKEN: ${PLUGINS_SERVICE_SECRET}
     AUTH_SERVICE_URL: auth-service
     SECRETS_SERVICE_URL: secrets-service
-    NO_CODE_SERVICE_URL: no-code-service
+    NO_CODE_SERVICE_URL: nocode-service
     SHOW_LOGS: true
 
 assets:
@@ -141,9 +160,19 @@ assets:
     repository: registry.gitlab.com/qelos/qelos/assets
     tag: latest
   replicas: 1
+  host: assets-service
+  port: 9005
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
   environment:
+    PORT: 9005
     MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis-service
+    REDIS_URL: redis://redis-service
     INTERNAL_SECRET: ${INTERNAL_SECRET}
     SECRETS_TOKEN: ${ASSETS_SERVICE_SECRET}
     AUTH_SERVICE_URL: auth-service
@@ -155,9 +184,12 @@ drafts:
     repository: registry.gitlab.com/qelos/qelos/drafts
     tag: latest
   replicas: 1
+  host: drafts-service
+  port: 9006
   environment:
+    PORT: 9006
     MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis-service
+    REDIS_URL: redis://redis-service
     INTERNAL_SECRET: ${INTERNAL_SECRET}
     SECRETS_TOKEN: ${DRAFTS_SERVICE_SECRET}
     AUTH_SERVICE_URL: auth-service

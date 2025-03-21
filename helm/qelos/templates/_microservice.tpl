@@ -22,6 +22,8 @@ spec:
             - containerPort: 3000
               name: http
           env:
+            - name: IP
+              value: "0.0.0.0"
             - name: REDIS_HOST
               value: {{ .global.redis.host }}
             - name: REDIS_PORT
