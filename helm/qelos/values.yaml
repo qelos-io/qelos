@@ -1,7 +1,7 @@
 global:
   showLogs: true
   environment: development
-  internalSecret: ${INTERNAL_SECRET}
+  internalSecret: "no one can access this service without it"
   redis:
     host: redis://redis-service
     port: 6379
