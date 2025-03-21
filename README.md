@@ -87,6 +87,7 @@ brew install helm
 ```
 2. Deploy Qelos:
 ```bash
-helm install qelos ./helm/qelos
+helm upgrade --install qelos ./helm/qelos
+kubectl port-forward svc/gateway-service 3000:80
 ```
-3. Access the admin interface at http://localhost:8080
+3. Access the admin interface at http://localhost:3000

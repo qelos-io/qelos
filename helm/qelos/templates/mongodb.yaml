@@ -1,3 +1,4 @@
+{{- if .Values.global.mongodb.deployInCluster }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,10 +29,16 @@ spec:
               mountPath: /data/db
       volumes:
         - name: mongodb-data
+          {{- if .Values.mongodb.volumePath }}
           hostPath:
-            path: /Users/davidmeirlevy/dev/qelos/qelos/apps/db/db-data
+            path: {{ .Values.mongodb.volumePath }}
             type: DirectoryOrCreate
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+{{- end }}
 ---
+{{- if .Values.global.mongodb.deployInCluster }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -46,8 +53,9 @@ spec:
       name: mongodb
   selector:
     app: mongodb
+{{- end }}
 ---
-{{- if .Values.mongodb.persistence.enabled }}
+{{- if and .Values.global.mongodb.deployInCluster .Values.mongodb.persistence.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

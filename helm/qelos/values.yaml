@@ -1,15 +1,18 @@
 global:
+  showLogs: true
   environment: development
-  admin:
-    host: admin-service
+  internalSecret: ${INTERNAL_SECRET}
   redis:
     host: redis://redis-service
     port: 6379
   mongodb:
     # Set to false to use external MongoDB
     deployInCluster: true
-    # Connection string for external MongoDB (used when deployInCluster is false)
-    connectionString: ""
+    # External MongoDB configuration (used when deployInCluster is false)
+    external:
+      host: ""
+      port: 27017
+      database: qelos
     # Internal MongoDB configuration (used when deployInCluster is true)
     internal:
       host: mongodb-service
@@ -28,6 +31,7 @@ mongodb:
     accessModes:
       - ReadWriteOnce
     size: 10Gi
+  volumePath: "/Users/davidmeirlevy/dev/qelos/qelos/apps/db/db-data"
   resources:
     requests:
       memory: "1Gi"
@@ -68,7 +72,6 @@ auth:
     JWT_SECRET: ${JWT_SECRET}
     REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
     APPLICATION_URL: localhost
-    INTERNAL_SECRET: ${INTERNAL_SECRET}
     SECRETS_TOKEN: ${AUTH_SERVICE_SECRET}
     PLUGINS_SERVICE_URL: plugins-service
     SECRETS_SERVICE_URL: secrets-service
@@ -99,7 +102,6 @@ secrets:
     IP: 0.0.0.0
     PORT: 9002
     SECRET: ${SECRETS_SERVICE_SECRET}
-    INTERNAL_SECRET: ${INTERNAL_SECRET}
     SHOW_LOGS: true
 
 nocode:
@@ -111,7 +113,6 @@ nocode:
   environment:
     MONGO_URI: mongodb://mongodb-service:27017/qelos
     REDIS_URL: redis://redis-service
-    INTERNAL_SECRET: ${INTERNAL_SECRET}
     SECRETS_TOKEN: ${NOCODE_SERVICE_SECRET}
     AUTH_SERVICE_URL: auth-service
     SECRETS_SERVICE_URL: secrets-service
@@ -135,7 +136,6 @@ admin:
     AUTH_SERVICE_URL: auth-service
     CONTENT_SERVICE_URL: content-service
     SECRETS_SERVICE_URL: secrets-service
-    INTERNAL_SECRET: ${INTERNAL_SECRET}
     SHOW_LOGS: true
 
 plugins:
@@ -143,12 +143,11 @@ plugins:
     repository: registry.gitlab.com/qelos/qelos/plugins
     tag: latest
   host: plugins-service
-  port: 9003
+  port: 9006
   environment:
-    PORT: 9003
+    PORT: 9006
     MONGO_URI: mongodb://mongodb-service:27017/qelos
     REDIS_URL: redis://redis-service
-    INTERNAL_SECRET: ${INTERNAL_SECRET}
     SECRETS_TOKEN: ${PLUGINS_SERVICE_SECRET}
     AUTH_SERVICE_URL: auth-service
     SECRETS_SERVICE_URL: secrets-service
@@ -173,7 +172,6 @@ assets:
     PORT: 9005
     MONGO_URI: mongodb://mongodb-service:27017/qelos
     REDIS_URL: redis://redis-service
-    INTERNAL_SECRET: ${INTERNAL_SECRET}
     SECRETS_TOKEN: ${ASSETS_SERVICE_SECRET}
     AUTH_SERVICE_URL: auth-service
     SECRETS_SERVICE_URL: secrets-service
@@ -190,7 +188,6 @@ drafts:
     PORT: 9006
     MONGO_URI: mongodb://mongodb-service:27017/qelos
     REDIS_URL: redis://redis-service
-    INTERNAL_SECRET: ${INTERNAL_SECRET}
     SECRETS_TOKEN: ${DRAFTS_SERVICE_SECRET}
     AUTH_SERVICE_URL: auth-service
     SECRETS_SERVICE_URL: secrets-service

@@ -19,17 +19,23 @@ spec:
         - name: {{ .name }}
           image: "{{ .values.image.repository }}:{{ .values.image.tag }}"
           ports:
-            - containerPort: 3000
+            - containerPort: {{ .values.port }}
               name: http
           env:
+            - name: INTERNAL_SECRET
+              value: "{{ .global.internalSecret }}"
+            - name: SHOW_LOGS
+              value: "{{ .global.showLogs }}"
             - name: IP
               value: "0.0.0.0"
+            - name: PORT
+              value: "{{ .values.port }}"
             - name: REDIS_HOST
               value: {{ .global.redis.host }}
             - name: REDIS_PORT
               value: "{{ .global.redis.port }}"
             - name: MONGO_URI
-              value: {{ if .global.mongodb.deployInCluster }}"mongodb://{{ .global.mongodb.internal.host }}:{{ .global.mongodb.internal.port }}/{{ .global.mongodb.internal.database }}"{{ else }}"{{ .global.mongodb.connectionString }}"{{ end }}
+              value: {{ if .global.mongodb.deployInCluster }}"mongodb://{{ .global.mongodb.internal.host }}:{{ .global.mongodb.internal.port }}/{{ .global.mongodb.internal.database }}"{{ else }}"mongodb://{{ .global.mongodb.external.host }}:{{ .global.mongodb.external.port }}/{{ .global.mongodb.external.database }}"{{ end }}
           resources:
             {{- $defaultResources := dict "requests" (dict "memory" "128Mi" "cpu" "100m") "limits" (dict "memory" "256Mi" "cpu" "200m") }}
             {{- with .values.resources | default $defaultResources }}
@@ -44,10 +50,10 @@ metadata:
     app: {{ .name }}
 spec:
   ports:
-    - port: 80
-      targetPort: 3000
+    - port: {{ .values.port }}
+      targetPort: {{ .values.port }}
       protocol: TCP
-      name: http
+      name: {{ .name }}-http
   selector:
     app: {{ .name }}
 {{- end -}}
