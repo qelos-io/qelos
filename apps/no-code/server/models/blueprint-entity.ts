@@ -34,7 +34,7 @@ const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
     type: String,
     required: true,
     validate(value: string) {
-      if (!value.match(/^[a-zA-Z0-9_]+$/)) {
+      if (value.includes(' ')) {
         throw new Error('Invalid identifier');
       }
     }
