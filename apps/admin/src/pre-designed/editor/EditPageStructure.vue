@@ -27,6 +27,7 @@ const editedSettings = ref<Partial<IMicroFrontend> & { roles: string[] }>({
   roles: [],
   workspaceRoles: [],
   workspaceLabels: [],
+  route: undefined
 })
 
 const editedRequirements = ref<any[]>();
@@ -43,7 +44,7 @@ watch(() => props.mfe, (mfe) => {
   })
   editedSettings.value = {
     active: mfe.active,
-    roles: typeof mfe.roles === 'string' ? mfe.roles.split(',') : (mfe.roles || []),
+    roles: typeof mfe.roles === 'string' ? (mfe.roles as string).split(',') : (mfe.roles || []),
     workspaceRoles: mfe.workspaceRoles,
     workspaceLabels: mfe.workspaceLabels,
     route: mfe.route,
@@ -88,6 +89,11 @@ provide('editableManager', ref(false));
       <el-tab-pane name="settings" :label="$t('Settings')">
         <FormInput type="switch" v-model="editedSettings.active" :title="$t('Active?')"/>
 
+        <FormRowGroup>
+        <FormInput title="Route Name" v-model="editedSettings.route.name"/>
+        <FormInput title="Route Path" v-model="editedSettings.route.path" required/>
+        <NavigationPositionSelector v-model="editedSettings.route.navBarPosition"/>
+      </FormRowGroup>
         <FormRowGroup>
           <el-form-item>
             <template #label>

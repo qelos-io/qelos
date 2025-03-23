@@ -25,6 +25,9 @@
 .el-input__wrapper {
   --el-input-bg-color: var(--inputs-bg-color);
 }
+.el-select__wrapper {
+  --el-fill-color-blank: var(--inputs-bg-color);
+}
 
 .el-tabs {
   flex: 1;
