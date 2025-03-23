@@ -262,7 +262,7 @@ a:hover {
     bottom: 0;
     overflow: hidden;
     transition: left 0.2s ease-in-out;
-    z-index: 5;
+    z-index: 7;
 
     &.show {
       display: flex;

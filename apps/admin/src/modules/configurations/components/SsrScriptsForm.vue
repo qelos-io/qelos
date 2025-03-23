@@ -59,7 +59,9 @@ const defaultMetadata = {
 <meta property="og:image" content="{{logoUrl}}">
 <meta property="og:type" content="webapp">
 <meta property="og:site_name" content="{{name}}">
-<meta property="og:locale" content="{{language}}">`,
+<meta property="og:locale" content="{{language}}">
+<meta name="theme-color" content="#ffffff">
+`,
   body: ''
 }
 const edited = ref({
