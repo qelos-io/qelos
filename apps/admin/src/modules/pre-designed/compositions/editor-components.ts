@@ -188,9 +188,11 @@ export function useEditorComponents() {
         }).join('\n');
 
         return `<template #default="{form}">
-    <edit-header>{{form.identifier ? 'Edit' : 'Create'}} ${blueprint.name}</edit-header>
+    ${propsBuilder.hideHeader ? '' : `<edit-header>{{form.identifier ? 'Edit' : 'Create'}} ${blueprint.name}</edit-header>`}
     <div class="container">
+    ${propsBuilder.htmlBefore || ''}
     ${blueprintsInputs}
+    ${propsBuilder.htmlAfter || ''}
 </div>
 </template>`
       }

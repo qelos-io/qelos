@@ -1,0 +1,12 @@
+@media screen and (max-width: 768px) {
+  .el-dialog {
+    --el-dialog-width: 100%;
+    margin: 70px 0 0 0;
+    height: calc(100vh - 70px);
+
+    .el-dialog__body {
+      overflow: auto;
+      height: calc(100% - 70px);
+    }
+  }
+}

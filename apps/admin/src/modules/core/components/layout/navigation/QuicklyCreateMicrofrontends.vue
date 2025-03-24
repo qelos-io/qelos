@@ -43,23 +43,23 @@
 </template>
 
 <script lang="ts" setup>
-import { capitalize, ref, watch } from 'vue';
-import { IScreenRequirement } from '@qelos/global-types';
+import { ref, watch } from 'vue';
 import { usePluginsList } from '@/modules/plugins/store/plugins-list';
 import { useCreatePlugin } from '@/modules/plugins/compositions/manage-plugin';
-import pluginsService from '@/services/plugins-service';
 import { useNotifications } from '@/modules/core/compositions/notifications';
 import NavigationPositionSelector from '@/modules/plugins/components/NavigationPositionSelector.vue';
 import FormInput from '../../forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
+import { useQuickBoilerplate } from '@/modules/core/compositions/quick-boilerplate';
+import pluginsService from '@/services/plugins-service';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
-import { useEditorComponents } from '@/modules/pre-designed/compositions/editor-components';
-import { getPlural } from '@/modules/core/utils/texts';
 
-const { plugins, retry } = usePluginsList();
+const { plugins } = usePluginsList();
 const { savePlugin } = useCreatePlugin();
 const { success, error } = useNotifications();
+
+const blueprintsStore = useBlueprintsStore()
 
 const pluginList = ref('addNewPage');
 const position = ref<string | boolean>('top');
@@ -86,58 +86,11 @@ const showBoilerplating = ref(false);
 const boilerplateBlueprint = ref('');
 const boilerplateType = ref('table');
 
-const blueprintsStore = useBlueprintsStore()
-const { availableComponents, getColumnsFromBlueprint } = useEditorComponents()
-
-async function getBoilerPlate() {
-  const selectedBlueprint = showBoilerplating.value && blueprintsStore.blueprints.find(b => b.identifier === boilerplateBlueprint.value);
-  const pageTitle = capitalize(pageName.value);
-  if (!showBoilerplating.value || !selectedBlueprint) {
-    return {
-      structure: `<h1>${pageTitle}</h1>`,
-      requirements: []
-    };
-  }
-  const boilerplate: { structure: string, requirements: IScreenRequirement[] } = {
-    structure: `<list-page-title title="${pageTitle}" v-bind:create-route-query="{ mode: $route.query.mode ? undefined : 'create' }"></list-page-title>`,
-    requirements: [{
-      key: 'pageState',
-      fromData: {
-        pageTitle: pageTitle
-      }
-    }]
-  }
-
-  if (boilerplateType.value === 'table') {
-    const dataKey = getPlural(selectedBlueprint.identifier);
-    const columns = [...getColumnsFromBlueprint(selectedBlueprint.identifier), { prop: '_operations', label: ' ' }];
-    boilerplate.requirements.push({
-      key: 'tableColumns',
-      fromData: columns
-    })
-    boilerplate.requirements.push({
-      key: dataKey,
-      fromBlueprint: {
-        name: selectedBlueprint.identifier
-      }
-    })
-    boilerplate.structure += `<empty-state v-if="${dataKey}?.loaded && !${dataKey}.result.length" description="No ${getPlural(selectedBlueprint.name)} found">
-<el-button type="primary" v-on:click="$router.push({ query: { mode: 'create' } })">Create a ${selectedBlueprint.name}</el-button>
-</empty-state>
-<quick-table v-if="${dataKey}?.loaded && ${dataKey}.result?.length" :columns="tableColumns" :data="${dataKey}.result">
-${availableComponents['quick-table']?.getInnerHTML({ data: dataKey, columns: columns }, {}, boilerplate.requirements.reduce((obj, item) => ({ ...obj, [item.key]: item }), {}))}
-</quick-table>`
-    boilerplate.structure += `<remove-confirmation v-model="pageState.${dataKey}ToRemove" target="blueprint" resource="${selectedBlueprint.identifier}"></remove-confirmation>`
-  }
-
-  boilerplate.structure += `<el-dialog :model-value="$route.query.mode === 'create'" @close="$router.push({ query: {} })">
-<blueprint-entity-form :navigate-after-submit="{query: {}}" blueprint="${selectedBlueprint.identifier}" v-bind:data="pageState.${selectedBlueprint.identifier}ToEdit" v-bind:clear-after-submit="true">
-${availableComponents['blueprint-entity-form']?.getInnerHTML({ blueprint: selectedBlueprint.identifier }, {}, boilerplate.requirements.reduce((obj, item) => ({ ...obj, [item.key]: item }), {}))}
-</blueprint-entity-form></el-dialog>`
-
-  return boilerplate;
-}
-
+const { getBoilerPlate } = useQuickBoilerplate({
+  blueprintIdentifier: boilerplateBlueprint,
+  pageName,
+  boilerplateType,
+});
 
 const closeDialog = () => {
   localDialogVisible.value = false;
@@ -224,7 +177,7 @@ const addMicroFrontendToPlugin = async (pluginId: string, position: string, mfeN
 
     await pluginsService.update(selectedPlugin._id, selectedPlugin);
 
-    retry();
+    blueprintsStore.retry();
 
   } else {
     error('No plugin found with the given ID.');
@@ -261,7 +214,7 @@ const createPlugin = async (position: string, pluginName: string) => {
     };
 
     await savePlugin(newPlugin);
-    retry();
+    blueprintsStore.retry();
   }
 };
 </script>
