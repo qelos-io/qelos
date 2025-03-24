@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 import { ref, computed } from 'vue';
+import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
 
 const props = defineProps<{
   data: any[],
@@ -31,14 +32,16 @@ const paginatedData = computed(() => {
 <template>
   <div class="quick-table-wrapper">
     <EditComponentBar />
-    <el-table v-if="props.data && props.columns?.length" :data="paginatedData"
-      style="width: 100% ; max-height: 80vh; overflow: auto;" border @row-click="$emit('row-click', $event)">
+    <ErrorBoundary>
+      <el-table v-if="props.data && props.columns?.length" :data="paginatedData"
+      style="width: 100% ; max-height: 80vh; overflow: auto;" :border="true" @row-click="$emit('row-click', $event)">
       <el-table-column v-for="(col, index) in columns" :key="index" v-bind="col" :index="index" class="sticky-header">
         <template v-if="$slots[col.prop]" #default="scope">
           <slot :name="col.prop" v-bind="scope" />
         </template>
       </el-table-column>
     </el-table>
+    </ErrorBoundary>
     <!-- Pagination is only displayed if the total amount of data is greater than the page size -->
     <el-pagination 
     v-if="props.data && props.data.length > pageSize"

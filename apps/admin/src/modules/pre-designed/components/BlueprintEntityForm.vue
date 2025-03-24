@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router';
 import GeneralForm from '@/modules/pre-designed/components/GeneralForm.vue';
 import sdk from '@/services/sdk';
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
+import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
 
 const router = useRouter();
 
@@ -44,11 +45,13 @@ function afterSubmit(result: any) {
 </script>
 
 <template>
-  <GeneralForm :on-submit="onSubmit" @submitted="afterSubmit" v-bind="props">
-    <template #default="context">
-      <slot v-bind="context"/>
-    </template>
-  </GeneralForm>
+  <ErrorBoundary>
+    <GeneralForm :on-submit="onSubmit" @submitted="afterSubmit" v-bind="props">
+      <template #default="context">
+        <slot v-bind="context"/>
+      </template>
+    </GeneralForm>
+  </ErrorBoundary>
 </template>
 
 <style scoped>

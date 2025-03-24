@@ -24,6 +24,7 @@ import ContentBox from '@/modules/pre-designed/components/ContentBox.vue';
 import QRating from '@/modules/pre-designed/components/QRating.vue';
 import CopyToClipboard from '@/modules/pre-designed/components/CopyToClipboard.vue';
 import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
+import LifeCycle from '@/modules/pre-designed/components/LifeCycle.vue';
 
 export default function applyGlobalTemplatesComponents(app: App) {
   app.component('TemplatedRemoveButton', TemplatedRemoveButton)
@@ -51,4 +52,5 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('QRating', QRating)
   app.component('CopyToClipboard', CopyToClipboard)
   app.component('EmptyState', EmptyState)
+  app.component('LifeCycle', LifeCycle)
 }
