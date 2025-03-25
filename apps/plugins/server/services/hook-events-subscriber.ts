@@ -2,7 +2,7 @@ import * as jq from 'node-jq';
 
 import { IEvent } from '../models/event';
 import Plugin, { IPlugin } from '../models/plugin';
-import { getPluginToken } from './tokens-management';
+import { clearPluginAccessToken, getPluginToken } from './tokens-management';
 import { fetchPlugin } from './plugins-call';
 import logger from './logger';
 import Integration, { IIntegration } from '../models/integration';
@@ -58,15 +58,32 @@ function executePluginsSubscribedWebhooks(platformEvent: IEvent, awaitedPlugins:
 
     if (hooks.length) {
       const accessToken = await getPluginToken(plugin)
-      hooks.forEach(({ hookUrl }) => {
-        return fetchPlugin({
-          url: hookUrl,
-          method: 'POST',
-          tenant: plugin.tenant,
-          accessToken,
-          body: emittedEventContent
-        }).catch(logger.error);
-      })
+
+      async function callHooks () {
+        await Promise.all(hooks.map(({ hookUrl }) => {
+          return fetchPlugin({
+            url: hookUrl,
+            method: 'POST',
+            tenant: plugin.tenant,
+            accessToken,
+            body: emittedEventContent
+          }).then(res => {
+            if (res.status === 407) {
+              throw new Error('Invalid token')
+            }
+            return res
+          })
+        }))
+      }
+
+      try {
+        await callHooks()
+      } catch (err: any) {
+        if (err?.message === 'Invalid token') {
+          await clearPluginAccessToken(plugin.tenant, plugin.apiPath);
+          await callHooks();
+        }
+      }
     }
   })).catch(() => null);
 }
