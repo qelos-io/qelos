@@ -1,4 +1,4 @@
-import {extname} from "node:path";
+import { extname } from "node:path";
 import mime from "mime";
 
 import { getService } from "../controllers/assets";
@@ -54,67 +54,64 @@ async function handleUpload(
  */
 export async function uploadFile(req: any, res: any): Promise<any> {
   try {
-    const userId = req.user?._id;
-    const tenant = req.headers.tenant;
-    const file = req.file;
-    const urlInput = req.body?.url;
+    const { headers, body, file, user } = req;
+    const tenant = headers.tenant;
 
     if (!tenant) {
-      return res.status(400).json({ message: "Missing tenant header" }).end();
+      return res.status(400).json({ message: "Tenant header is required." }).end();
     }
 
     const storage = await Storage.findOne({ tenant, isDefault: true })
       .lean()
       .exec();
-
-    if (!storage)
+    if (!storage) {
       return res
         .status(403)
-        .json({ message: "No default storage set for tenant" })
+        .json({ message: "No default storage configured for tenant." })
         .end();
+    }
 
-    let filePath: any;
+    let filePath;
+    const urlInput = body?.url;
 
     if (urlInput) {
       try {
         const response = await fetch(urlInput);
-
         if (!response.ok)
-          throw new Error(`Failed to fetch file: ${response.statusText}`);
+          throw new Error(`URL fetch failed: ${response.statusText}`);
 
         const buffer = await response.arrayBuffer();
-
         filePath = await handleUpload(
           storage,
-          userId,
+          user._id,
           Buffer.from(buffer),
           urlInput,
           response.headers.get("content-type") || undefined
         );
       } catch (err) {
         return res.status(400).json({
-          message: "Failed to fetch file from URL",
-          error: (err as Error).message,
-        });
+          message: "Failed to fetch file from URL."
+        }).end();
       }
     } else if (file) {
       filePath = await handleUpload(
         storage,
-        userId,
+        user._id,
         file.buffer,
         file.originalname,
         file.mimetype
       );
     } else {
-      return res.status(400).json({ message: "No file or URL provided" });
+      return res.status(400).json({ message: "No file or URL provided." }).end();
     }
 
-    return res
-      .status(200)
-      .json({ message: "File uploaded successfully", ...filePath });
+    return res.status(200).json({
+      message: "File uploaded successfully.",
+      publicUrl: filePath,
+    }).end();
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "File upload failed", error: (error as Error).message });
+    return res.status(500).json({
+      message: "File upload failed. Please try again."
+    }).end();
   }
 }
