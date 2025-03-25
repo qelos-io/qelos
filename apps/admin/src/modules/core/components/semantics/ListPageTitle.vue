@@ -5,7 +5,7 @@
     <span v-else>{{ t(title) }}</span>
     <slot name="content" />
     <el-button v-if="createRoutePath || createRoute || createRouteQuery || onCreate" @click="create" class="add-button">
-      {{ t('Create') }}
+      {{ t(createText || 'Create') }}
     </el-button>
   </h1>
 </template>
