@@ -1,6 +1,6 @@
-import { ref, watch } from 'vue'
+import { ref, watch, Ref } from 'vue'
 
-export function useModelChange(modelValue: any, list, emit) {
+export function useModelChange(modelValue: Ref<any>, list: Ref<any[]>, emit: any) {
   const selected = ref(null)
   watch(
     () => modelValue,
@@ -12,7 +12,7 @@ export function useModelChange(modelValue: any, list, emit) {
     selected,
     change: (item) => {
       selected.value = item
-      emit('change', item)
+      emit('update:modelValue', item)
     }
   }
 }

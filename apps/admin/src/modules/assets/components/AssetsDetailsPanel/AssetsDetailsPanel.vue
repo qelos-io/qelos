@@ -7,7 +7,7 @@
       </el-icon>
     </a>
     <div class="content">
-      <AssetsStorageSelector @change="selectedStorage = $event._id"/>
+      <AssetsStorageSelector @update:modelValue="selectedStorage = $event._id"/>
       <template v-if="selectedStorage">
         <BasicFileUploader :storage="selectedStorage"/>
         <BasicAssetsList :storage="selectedStorage"/>

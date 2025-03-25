@@ -1,6 +1,6 @@
 <template>
   <div>
-    <AssetsStorageSelector v-if="isPrivilegedUser" @change="selectedStorage = $event._id"/>
+    <AssetsStorageSelector v-if="isPrivilegedUser" @update:modelValue="selectedStorage = $event._id"/>
     <div v-if="value && !showUploader" class="assets-view flex-row">
       <el-card class="asset-view" shadow="hover" @click="showUploader = true">
         <img :src="value" v-if="isImage" alt=""/>
