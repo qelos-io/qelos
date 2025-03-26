@@ -99,7 +99,7 @@ export default defineConfig({
         items: [
           { text: 'Blocks List', link: '/pre-designed-frontends/blocks-list' },
           { text: 'Rows List', link: '/pre-designed-frontends/rows-list' },
-          { text: 'Free HTML', link: '/pre-designed-frontends/free-html' },
+          { text: 'Plain', link: '/pre-designed-frontends/plain' },
         ]
       }
     ]
