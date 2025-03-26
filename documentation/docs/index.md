@@ -1,20 +1,127 @@
 ---
-title: Qelos Documentation
+layout: home
+title: QELOS Documentation
 editLink: true
+hero:
+  name: QELOS
+  text: Build SaaS Applications with Ease
+  tagline: A powerful platform for creating multi-tenant SaaS applications with built-in plugin system
+  image:
+    src: /qelos.svg
+    alt: QELOS
+  actions:
+    - theme: brand
+      text: Get Started
+      link: /getting-started/intro
+    - theme: alt
+      text: View on GitLab
+      link: https://gitlab.com/qelos
+features:
+  - icon: 🚀
+    title: Multi-Tenant Architecture
+    details: Built-in support for multi-tenancy with isolated workspaces and configurations
+  - icon: 🔌
+    title: Plugin System
+    details: Extend your application with plugins and micro-frontends
+  - icon: 🎨
+    title: No-Code Builder
+    details: Create and customize blueprints without writing code
+  - icon: 🔒
+    title: Built-in Security
+    details: Authentication, authorization, and secrets management out of the box
+  - icon: 📦
+    title: Modern Tech Stack
+    details: Vue 3, Node.js, MongoDB, Redis, and more
+  - icon: 🌐
+    title: API-First Design
+    details: RESTful APIs and SDK for seamless integration
 ---
 
-<div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
-  <div style="background-color: #c73758; border-radius: 50%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-    <img src="/qelos.svg" alt="Accelerated Product Development" style="width: 90px; height: 90px;">
-  </div>
-  <p><strong>Enjoy your QELOS!</strong></p>
-  
+## Quick Start
+
+Get up and running with QELOS locally:
+
+```bash
+# Clone the repository
+git clone https://gitlab.com/qelos/qelos.git
+
+# Install dependencies
+npm install
+
+# Build the packages
+npm run build
+
+# Start the development environment (includes MongoDB)
+npm run dev
+
+# Create initial data (in a new terminal)
+npm run populate-db
+```
+
+This will create your first tenant and admin user to get started.
+
+To create a new plugin:
+
+```bash
+# Create a new QELOS plugin
+npm init plauy@latest my-plugin
+```
+
+## Popular Guides
+
+<div class="vp-doc" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px;">
+
+<div class="custom-card">
+  <h3>🏗️ Installation</h3>
+  <p>Set up your development environment and install QELOS.</p>
+  <a href="/getting-started/installation">Learn more →</a>
 </div>
 
-Getting started with QELOS is simple. Follow these steps to install and set up your development environment:
+<div class="custom-card">
+  <h3>🎯 Create Blueprints</h3>
+  <p>Design and implement your application's data models.</p>
+  <a href="/getting-started/create-blueprints">Learn more →</a>
+</div>
 
-1. **[Installation](./getting-started/installation.md)**: Learn how to install QELOS on your system.
-2. **[Create Blueprints](./getting-started/create-blueprints.md)**: Discover how to create and manage your blueprints.
-3. **[Create Your First Plugin](./getting-started/create-your-first-plugin.md)**: Discover how to create and manage your first plugin.
-4. **[Design Settings](./getting-started/design-settings.md)**: Find out how to design your admin panel.
-5. **[Deployment](./getting-started/deployment.md)**: Find out how to deploy your application to a production environment.
+<div class="custom-card">
+  <h3>🔌 Build Plugins</h3>
+  <p>Extend your application with custom plugins.</p>
+  <a href="/getting-started/create-your-first-plugin">Learn more →</a>
+</div>
+
+<div class="custom-card">
+  <h3>🎨 Design Settings</h3>
+  <p>Customize your admin panel and user interface.</p>
+  <a href="/getting-started/design-settings">Learn more →</a>
+</div>
+
+</div>
+
+<style>
+.custom-card {
+  padding: 20px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg-soft);
+  transition: all 0.3s;
+}
+
+.custom-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 12px 0 var(--vp-c-divider);
+}
+
+.custom-card h3 {
+  margin-top: 0;
+}
+
+.custom-card a {
+  color: var(--vp-c-brand);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.custom-card a:hover {
+  text-decoration: underline;
+}
+</style>

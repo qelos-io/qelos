@@ -2,9 +2,39 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'QELOS',
-  description: '',
+  description: 'A powerful platform for creating multi-tenant SaaS applications',
   outDir: '../dist',
+  lastUpdated: true,
+  cleanUrls: true,
+  head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/qelos.svg' }],
+    ['meta', { name: 'theme-color', content: '#c73758' }],
+    ['meta', { name: 'og:type', content: 'website' }],
+    ['meta', { name: 'og:title', content: 'QELOS Documentation' }],
+    ['meta', { name: 'og:description', content: 'A powerful platform for creating multi-tenant SaaS applications' }],
+  ],
   themeConfig: {
+    logo: '/qelos.svg',
+    nav: [
+      { text: 'Guide', link: '/getting-started/intro' },
+      { text: 'SDK', link: '/sdk/sdk' },
+      { text: 'Plugins', link: '/plugins/create' },
+      { text: 'Deployment', link: '/deployment/' },
+    ],
+    socialLinks: [
+      { icon: 'discord', link: 'https://discord.gg/WJRswGxdHs', ariaLabel: 'Discord Server' },
+      { icon: {svg: `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+  <path d="M22.65 14.39L12 22.13L1.35 14.39a.84.84 0 0 1-.3-.94l1.22-3.78l2.44-7.51A.42.42 0 0 1 4.82 2a.43.43 0 0 1 .58 0a.42.42 0 0 1 .11.18l2.44 7.49h8.1l2.44-7.51A.42.42 0 0 1 18.6 2a.43.43 0 0 1 .58 0a.42.42 0 0 1 .11.18l2.44 7.51L23 13.45a.84.84 0 0 1-.35.94z"/>
+</svg>
+`}, link: 'https://gitlab.com/qelos/qelos', ariaLabel: 'GitLab Repository' },    ],
+    search: {
+      provider: 'local'
+    },
+    footer: {
+      message: 'Released under the Apache License 2.0.',
+      copyright: 'Copyright © 2023-present Velocitech LTD'
+    },
     sidebar: [
       {
         text: 'GETTING STARTED',
