@@ -14,7 +14,18 @@ export default defineConfig({
           { text: 'Create your first plugin', link: '/getting-started/create-your-first-plugin' },
           { text: 'Create Blueprints', link: '/getting-started/create-blueprints' },
           { text: 'Design Settings', link: '/getting-started/design-settings' },
-          { text: 'Deployment', link: '/getting-started/deployment' },
+          {
+            text: 'Deployment',
+            collapsed: true,
+            items: [
+              { text: 'Overview', link: '/deployment/' },
+              { text: 'Chart Structure', link: '/deployment/chart-structure' },
+              { text: 'Configuration', link: '/deployment/configuration' },
+              { text: 'Deployment Process', link: '/deployment/deployment-process' },
+              { text: 'Production Guide', link: '/deployment/production-guide' },
+              { text: 'Troubleshooting', link: '/deployment/troubleshooting' }
+            ]
+          },
         ]
       },
       {

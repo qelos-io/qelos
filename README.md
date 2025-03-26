@@ -65,14 +65,16 @@ $ docker-compose -f docker-compose.scaled.yml up
 ```
 If you're using a small machine, such as shared hosting packages, or low cpu or memory cloud services, you should probably use the basic environment, such as the regular compose file, or directly using Node.js.
 
-# Local Development Setup
+# Kubernetes Deployment
 
 ## Prerequisites
-- Docker Desktop
+- Docker Desktop with Kubernetes enabled
 - kubectl
-- Helm
+- Helm 3.x
 
-## Setting up a Local Kubernetes Cluster
+## Local Development Setup
+
+### Setting up a Local Kubernetes Cluster
 1. Install Docker Desktop from https://www.docker.com/products/docker-desktop
 2. Enable Kubernetes in Docker Desktop settings
 3. Verify cluster is running:
@@ -80,15 +82,31 @@ If you're using a small machine, such as shared hosting packages, or low cpu or 
 kubectl cluster-info
 ```
 
-## Deploying Qelos
-1. Install Helm:
+### Installing Dependencies
+1. Install Helm (macOS):
 ```bash
 brew install helm
 ```
-2. Deploy Qelos:
+
+### Deploying Qelos
+1. Generate Helm values from environment:
 ```bash
 node --env-file .env tools/ingest-helm-values/index.js
+```
+
+2. Deploy or upgrade Qelos using Helm:
+```bash
 helm upgrade --install qelos -f ./helm/qelos/values-env.yaml ./helm/qelos
+```
+
+3. Forward the gateway service port:
+```bash
 kubectl port-forward svc/gateway-service 3000:80
 ```
-3. Access the admin interface at http://localhost:3000
+
+4. Access the admin interface at http://localhost:3000
+
+### Configuration Options
+- MongoDB can be deployed in-cluster or connected to an external instance
+- Service secrets are managed via Helm values and environment variables
+- For production deployments, configure external dependencies in `values.yaml`
