@@ -36,6 +36,12 @@ spec:
               value: "{{ .global.redis.port }}"
             - name: MONGO_URI
               value: {{ if .global.mongodb.deployInCluster }}"mongodb://{{ .global.mongodb.internal.host }}:{{ .global.mongodb.internal.port }}/{{ .global.mongodb.internal.database }}"{{ else }}"mongodb://{{ .global.mongodb.external.host }}:{{ .global.mongodb.external.port }}/{{ .global.mongodb.external.database }}"{{ end }}
+            {{- with .values.environment }}
+            {{- range $key, $value := . }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}
+            {{- end }}
           resources:
             {{- $defaultResources := dict "requests" (dict "memory" "128Mi" "cpu" "100m") "limits" (dict "memory" "256Mi" "cpu" "200m") }}
             {{- with .values.resources | default $defaultResources }}

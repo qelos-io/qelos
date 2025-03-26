@@ -1,0 +1,10 @@
+{
+  "name": "ingest-helm-values",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Convert values.yaml to use environment variables",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  }
+}

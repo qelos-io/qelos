@@ -87,7 +87,8 @@ brew install helm
 ```
 2. Deploy Qelos:
 ```bash
-helm upgrade --install qelos ./helm/qelos
+node --env-file .env tools/ingest-helm-values/index.js
+helm upgrade --install qelos -f ./helm/qelos/values-env.yaml ./helm/qelos
 kubectl port-forward svc/gateway-service 3000:80
 ```
 3. Access the admin interface at http://localhost:3000
