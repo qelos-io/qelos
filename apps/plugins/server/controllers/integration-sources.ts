@@ -1,6 +1,7 @@
 
 import IntegrationSource from '../models/integration-source';
 import Plugin from '../models/plugin';
+import logger from '../services/logger';
 import {
   getEncryptedSourceAuthentication,
   removeEncryptedSourceAuthentication,
@@ -76,9 +77,21 @@ export async function createIntegrationSource(req, res) {
   const userId = req.user._id;
   const plugin = await Plugin.findOne({ tenant: req.headers.tenant, user: userId }).select('_id').lean().exec();
 
-  const authId = await storeEncryptedSourceAuthentication(req.headers.tenant, kind, authentication);
+  let validatedMetadata, authId;
+  try {
+    validatedMetadata = await validateSourceMetadata(kind, metadata);
+  } catch {
+    res.status(400).json({ message: 'invalid metadata' }).end();
+    return;
+  }
 
-  const validatedMetadata = await validateSourceMetadata(kind, metadata);
+  try {
+    authId = await storeEncryptedSourceAuthentication(req.headers.tenant, kind, authentication);
+  } catch {
+    res.status(400).json({ message: 'invalid authentication data for kind: ' + kind }).end();
+    return;
+  }
+
 
   const source = new IntegrationSource({
     tenant: req.headers.tenant,
@@ -95,7 +108,7 @@ export async function createIntegrationSource(req, res) {
     await source.save();
     const { authentication, ...permittedData } = source;
     res.json(permittedData).end();
-  } catch {
+  } catch (err) {
     if (authId) {
       storeEncryptedSourceAuthentication(req.headers.tenant, kind, null).catch();
     }

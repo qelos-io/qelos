@@ -79,7 +79,7 @@ export async function respondToInvite(req: AuthRequest, res: Response) {
       const member = {
         user: req.userPayload.sub,
         created: new Date(),
-        roles: ['user'],
+        roles: ['member', 'user'],
       };
 
       workspace.members.push(member);

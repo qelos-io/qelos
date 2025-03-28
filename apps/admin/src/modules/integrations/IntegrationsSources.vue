@@ -85,13 +85,21 @@ const deleteConnection = useConfirmAction(deleteConnectionBase, {
   type: 'warning'
 });
 
+function getDefaultMetadata(kind: IntegrationSourceKind) {
+  if (kind === 'linkedin') {
+    return {
+      scope: 'openid email profile',
+    };
+  }
+  return {};
+}
+
 const openCreateForm = () => {
   editingIntegration.value = {
+    kind,
     name: '',
     labels: [],
-    metadata: {
-      scope: 'openid email profile',
-    },
+    metadata: getDefaultMetadata(kind),
     authentication: {},
   };
   formVisible.value = true;
@@ -203,6 +211,7 @@ h1 {
 
 .connection-card {
   width: 28%;
+  min-width: 250px;
 }
 
 .role {

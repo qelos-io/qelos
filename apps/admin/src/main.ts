@@ -14,7 +14,7 @@ import * as Sentry from '@sentry/vue';
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
     $t: (text: string) => string,
-    $isMobile: boolean,
+    $isMobile: boolean
   }
 }
 const app = createApp(App)
