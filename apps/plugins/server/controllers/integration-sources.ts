@@ -49,7 +49,6 @@ export async function getIntegrationSource(req, res) {
   }
 }
 
-
 export async function getInternalIntegrationSource(req, res) {
   try {
     const source = await IntegrationSource
