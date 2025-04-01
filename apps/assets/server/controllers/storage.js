@@ -62,10 +62,14 @@ function getStorageList(req, res) {
     .catch(() => res.status(400).json({ message: 'error loading storage list' }).end());
 }
 
-function removeStorage(req, res) {
-  req.storage.remove()
-    .then(() => res.status(200).json({}).end())
-    .catch(() => res.status(400).json({ message: 'failed to remove storage' }).end());
+async function removeStorage(req, res) {
+  try {
+    await setSecret(req.storage.tenant, req.storage.authentication, null);
+    await Storage.deleteOne({ _id: req.storage._id, tenant: req.headers.tenant });
+    return res.status(200).json({}).end();
+  } catch (error) {
+    return res.status(400).json({ message: 'failed to remove storage' }).end();
+  }
 }
 
 function updateStorage(req, res) {
