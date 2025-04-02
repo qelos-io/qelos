@@ -109,6 +109,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
             userData.picture
           );
         } catch (error) {
+          logger.error('failed to upload profile image', error);
           user.profileImage = userData.picture; // Fallback to original URL
         }
       }
