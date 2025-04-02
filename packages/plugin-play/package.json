@@ -18,7 +18,7 @@
     "@qelos/cache-manager": "^3.8.0",
     "@qelos/sdk": "^3.8.0",
     "@qelos/web-sdk": "^3.8.0",
-    "fastify": "~4.3.0",
+    "fastify": "^4.29.0",
     "jsonwebtoken": "^9.0.2",
     "undici": "^6.20.1"
   },
