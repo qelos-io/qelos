@@ -19,8 +19,13 @@ export default class BaseSDK {
   callJsonApi<T>(relativeUrl: string, data?: RequestInit): Promise<T> {
     return this.callApi(relativeUrl, data).then(async res => {
       if (this.qlOptions.forceRefresh && res.status >= 400 && res.status < 500) {
-        const headers = await this.qlOptions.extraHeaders(relativeUrl, true);
-        if (!headers.authorization) {
+        let headers: Record<string, string> = {};
+        try {
+          headers = await this.qlOptions.extraHeaders(relativeUrl, true);
+        } catch {
+          //
+        }
+        if (!headers?.authorization) {
           if (this.qlOptions.onFailedRefreshToken) {
             try {
               await this.qlOptions.onFailedRefreshToken();
