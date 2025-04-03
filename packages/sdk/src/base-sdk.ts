@@ -25,10 +25,11 @@ export default class BaseSDK {
             try {
               await this.qlOptions.onFailedRefreshToken();
             } catch (e) {
-              throw new Error('could not able to refresh token');
+              throw new Error('could not handle failed refresh token');
             }
+          } else {
+            throw new Error('could not able to refresh token');
           }
-          throw new Error('could not able to refresh token');
         }
         res = await this.callApi(relativeUrl, data);
       }

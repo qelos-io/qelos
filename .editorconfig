@@ -2,3 +2,4 @@
 indent_size = 2
 indent_style = space
 ij_any_spaces_within_braces = true
+quote_type = single
