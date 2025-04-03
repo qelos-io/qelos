@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "rootDir": "./",
+    "rootDir": "./src",
     "module": "ESNext",
     "target": "esnext",
     "outDir": "./dist",
@@ -13,7 +13,8 @@
       "@qelos/global-types": [
         "node_modules/@qelos/global-types/index.ts"
       ]
-    },
+    }
   },
-  "exclude": ["dist", "node_modules"]
+  "include": ["src/**/*"],
+  "exclude": ["dist", "node_modules", "test/**/*"]
 }
