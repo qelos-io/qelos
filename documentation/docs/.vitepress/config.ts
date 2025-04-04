@@ -64,13 +64,24 @@ export default defineConfig({
           { text: 'Introduction to the SDK', link: '/sdk/sdk' },
           { text: 'Installation', link: '/sdk/installation' },
           { text: 'Authentication', link: '/sdk/authentication' },
+          { text: 'Token Refresh Functionality', link: '/sdk/token_refresh' },
+          { text: 'Error Handling Guide', link: '/sdk/error_handling' },
+          { text: 'TypeScript Types Reference', link: '/sdk/typescript_types' },
+          { text: 'Troubleshooting', link: '/sdk/troubleshooting' },
           { text: 'Basic Usage', link: '/sdk/basic_usage' },
           { text: 'Blueprints Operations', link: '/sdk/blueprints_operations' },
           { text: 'Managing Configurations', link: '/sdk/managing_configurations' },
           { text: 'Managing Layouts', link: '/sdk/managing_layouts' },
           { text: 'Managing Plugins', link: '/sdk/managing_plugins' },
           { text: 'Managing Users', link: '/sdk/managing_users' },
-          { text: 'Managing Workspaces', link: '/sdk/managing_workspaces' }
+          { text: 'Managing Workspaces', link: '/sdk/managing_workspaces' },
+          {
+            text: 'Tutorials',
+            collapsed: true,
+            items: [
+              { text: 'Authentication Flow', link: '/sdk/tutorials/authentication_flow' }
+            ]
+          }
         ]
       },
       {
