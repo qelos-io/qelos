@@ -2,6 +2,7 @@ import { usePluginsList } from '@/modules/plugins/store/plugins-list';
 import { ref, watch, getCurrentInstance } from 'vue';
 import * as vue from 'vue';
 import * as vueRouter from 'vue-router';
+import * as elementPlus from 'element-plus';
 import sdk from '@/services/sdk';
 import { usePluginsStore } from './pluginsStore';
 
@@ -26,6 +27,7 @@ export function usePluginsInjectables() {
 
   window['Vue'] = vue;
   window['VueRouter'] = vueRouter;
+  window['ElementPlus'] = elementPlus;
 
   let unwatch;
 
