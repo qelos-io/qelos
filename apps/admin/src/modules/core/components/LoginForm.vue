@@ -1,25 +1,27 @@
 <template>
   <div class="login-container">
-    <slot/>
-    <el-form class="login-form" @submit.native.prevent="submit">
+    <slot />
+    <el-form v-if="!props.authConfig?.disableUsernamePassword" class="login-form" @submit.native.prevent="submit">
       <el-form-item :label="$t('Username / Email')" class="form-item-flex">
         <el-input size="large" name="username" v-model="form.username" :type="authConfig.treatUsernameAs" required
-                  @focus="onFocus" dir="ltr"/>
+          @focus="onFocus" dir="ltr" />
       </el-form-item>
       <el-form-item :label="$t('Password')" class="form-item-flex">
         <el-input size="large" name="password" v-model="form.password" type="password" required @focus="onFocus"
-                  dir='ltr'/>
+          dir='ltr' />
       </el-form-item>
       <div class="form-buttons">
-        <SaveButton :submitting="submitting" :text="$t('Login')"/>
+        <SaveButton :submitting="submitting" :text="$t('Login')" />
       </div>
     </el-form>
+
     <template v-if="authConfig.socialLoginsSources?.linkedin">
-      <div class="separator">
+      <div v-if="!props.authConfig?.disableUsernamePassword" class="separator">
         <span>{{ $t('OR') }}</span>
       </div>
+
       <el-button type="primary" class="linkedin-button" @click="loginWithLinkedIn">
-        <font-awesome-icon :icon="['fab', 'linkedin']" class="linkedin-icon"/>
+        <font-awesome-icon :icon="['fab', 'linkedin']" class="linkedin-icon" />
         <span>{{ $t('Login with LinkedIn') }}</span>
       </el-button>
     </template>
@@ -27,14 +29,14 @@
 </template>
 
 <script lang="ts" setup>
-import { watch } from 'vue'
+import { watch, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLogin } from '../compositions/authentication'
 import { useSubmitting } from '../compositions/submitting'
 import { IAuthConfigurationMetadata } from '@qelos/global-types';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 
-defineProps<{ authConfig: IAuthConfigurationMetadata }>()
+const props = defineProps<{ authConfig: IAuthConfigurationMetadata }>()
 
 const { login, form, isLoggedIn } = useLogin()
 const router = useRouter()
@@ -64,7 +66,6 @@ const loginWithLinkedIn = () => {
 
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 .login-container {
   display: flex;

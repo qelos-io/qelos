@@ -1,18 +1,19 @@
 <template>
   <div class="category-page" v-if="config">
-    <PageTitle title="Edit Configuration" :item-name="$t(config.key)"/>
+    <PageTitle title="Edit Configuration" :item-name="$t(config.key)" />
     <SsrScriptsForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"
-                    v-if="config.key === 'ssr-scripts'"/>
+      v-if="config.key === 'ssr-scripts'" />
     <WorkspaceConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"
-                                v-else-if="config.key === 'workspace-configuration'"/>
+      v-else-if="config.key === 'workspace-configuration'" />
     <AuthConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"
-                           v-else-if="config.key === 'auth-configuration'"/>
+      v-else-if="config.key === 'auth-configuration' || config.kind === 'auth'" />
     <AppConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"
-                          v-else-if="config.key === 'app-configuration'"/>
+      v-else-if="config.key === 'app-configuration'" />
     <div v-else>
-      <ConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"/>
+      <ConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit" />
     </div>
   </div>
+
 </template>
 <script lang="ts" setup>
 import { useSubmitting } from '../core/compositions/submitting'
@@ -28,7 +29,6 @@ import AppConfigurationForm from '@/modules/configurations/components/AppConfigu
 const { params } = useRoute()
 const { config, updateConfiguration } = useEditConfiguration((params as any).key)
 const { submitting, submit } = useSubmitting(
-    (metadata) => updateConfiguration({ metadata }),
-    { success: 'Configurations updated successfully', error: 'Failed to updated configurations' })
+  (metadata) => updateConfiguration({ metadata }),
+  { success: 'Configurations updated successfully', error: 'Failed to updated configurations' })
 </script>
-

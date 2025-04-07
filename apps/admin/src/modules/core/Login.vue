@@ -1,5 +1,5 @@
 <template>
-  <div class="login-page" v-if="loaded">
+    <div class="login-page" v-if="authStore.loaded">
     <div v-if="config.formPosition === 'center'" class="flex-container" :class="{'bg-image': !!bgImage}" centered>
       <LoginForm :auth-config="config">
         <h1>{{ $t(config?.loginTitle || 'Welcome') }}</h1>
@@ -15,19 +15,35 @@
       </div>
     </template>
   </div>
+  <div v-else>
+      Loading configuration...
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, toRefs } from 'vue';
+import { computed, toRefs, watch, } from 'vue';
+import { useRoute } from 'vue-router';
 import LoginForm from './components/LoginForm.vue'
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
-import { IAuthConfigurationMetadata } from '@qelos/global-types';
 import { useAuthConfiguration } from '@/modules/configurations/store/auth-configuration';
 
-const props = defineProps<{ authConfig?: IAuthConfigurationMetadata }>()
-const { metadata, loaded } = toRefs(useAuthConfiguration())
-const config = computed(() => props.authConfig || metadata.value)
+const authStore = useAuthConfiguration();
 
+const { metadata, loaded } = toRefs(authStore);
+
+const route = useRoute();
+
+// Monitor the change of the 't' parameter in the URL and notify the store
+watch(
+  () => route.query.t, 
+  (newTenantId) => {
+  // Call the store action to load the configuration for this tenantId
+    authStore.loadForTenant(typeof newTenantId === 'string' ? newTenantId : null);
+  },
+  { immediate: true } 
+);
+
+const config = metadata;
 const bgImage = computed(() => config.value.backgroundImage ? ('url(' + config.value.backgroundImage + ')') : '')
 
 const flexDirection = computed(() => {
