@@ -22,4 +22,6 @@ export interface IAuthConfigurationMetadata {
   }
   allowSocialAutoRegistration?: boolean,
   additionalUserFields: Array<IUserAdditionalField>
+
+  disableUsernamePassword?: boolean; 
 }

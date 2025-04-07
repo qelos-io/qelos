@@ -1,11 +1,12 @@
 <template>
   <div class="flex-row">
     <el-form @submit.native.prevent="save" class="auth-configuration-form flex-2">
-      <div class="flex-row-column">
+        <div class="flex-row-column">
         <BlockItem>
           <FormInput v-model="edited.showLoginPage" title="Show Login Page?" type="switch"/>
 
           <div class="flex-row positions-list">
+                  <!-- Position options -->
             <div class="position-option left" @click="edited.formPosition = 'left'"
                  :class="{selected: edited.formPosition === 'left'}"/>
             <div class="position-option right" @click="edited.formPosition = 'right'"
@@ -35,6 +36,7 @@
           </FormInput>
         </BlockItem>
       </div>
+      <!-- Login Title and Background Image -->
       <BlockItem>
         <FormInput v-model="edited.loginTitle"
                    title="Title of Login Page"
@@ -47,6 +49,21 @@
         </FormInput>
         <FormInput v-model="edited.backgroundImage" title="Background Image" type="upload"/>
       </BlockItem>
+
+       <!--  Disable Username/Password Login. Adds a switch to control the 'disableUsernamePassword' flag.   -->
+      <BlockItem>
+          <FormInput
+              v-model="edited.disableUsernamePassword"
+              title="Disable Username/Password Login?"
+              label="If enabled, users can only log in via Social Logins (if configured)."
+              type="switch"
+          />
+   
+          <el-alert v-if="edited.disableUsernamePassword && !hasSocialLoginConfigured" type="warning" :closable="false" show-icon>
+              {{ $t('Warning: You are disabling username/password login, but no Social Login methods (like LinkedIn) seem to be configured in this specific configuration. Ensure users have an alternative way to log in.') }}
+          </el-alert>
+      </BlockItem>
+  <!-- Additional User Fields  -->
       <h3>{{ $t('Additional User Fields') }}</h3>
       <FormRowGroup v-for="(row, index) in edited.additionalUserFields" :key="index">
         <FormInput v-model="row.key" title="Key" type="text" required/>
@@ -125,6 +142,7 @@ import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 import Login from '@/modules/core/Login.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
+import { ElMessage } from 'element-plus';
 
 const props = defineProps({
   kind: String,
@@ -141,6 +159,7 @@ const defaultMetadata: IAuthConfigurationMetadata = {
   allowSocialAutoRegistration: true,
   additionalUserFields: [],
   socialLoginsSources: {},
+   disableUsernamePassword: false // Default to false
 }
 
 const edited = ref<IAuthConfigurationMetadata>({
@@ -156,9 +175,30 @@ const linkedInSources = computed(() => {
   return groupedSources.value[IntegrationSourceKind.LinkedIn] || []
 })
 
-function save() {
-  emit('save', edited.value)
+//  Computed property to check if any social login is configured 
+const hasSocialLoginConfigured = computed(() => {
+    // Check if the linkedin source ID is set and not null/empty
+    return !!edited.value.socialLoginsSources?.linkedin;
+
+});
+
+async function save() {
+  // VALIDATION: Prevent disabling username/password if no alternative is set
+  if (edited.value.disableUsernamePassword && !hasSocialLoginConfigured.value) {
+     ElMessage({
+       type: 'error',
+       message: 'Cannot disable Username/Password login without configuring at least one Social Login method (e.g., LinkedIn).',
+       duration: 5000 
+     });
+     return; // Stop the save process
+  }
+
+  emit('save', edited.value);
 }
+
+// function save() {
+//   emit('save', edited.value)
+// }
 </script>
 <style scoped>
 .login-demo {
