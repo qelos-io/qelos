@@ -10,6 +10,7 @@ import { translate, loadLanguageAsync } from './plugins/i18n'
 import { usePluginsInjectables } from '@/modules/plugins/store/plugins-injectables';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { usePluginsStore } from './modules/plugins/store/pluginsStore';
+import { usePubSubNotifications } from './modules/core/compositions/pubsub-notifications';
 
 const { appConfig, loaded } = useAppConfiguration()
 usePluginsMicroFrontends();
@@ -71,6 +72,8 @@ watch(() => appConfig.value.scriptUrl, () => {
   script.setAttribute('src', appConfig.value.scriptUrl);
   document.head.appendChild(script);
 })
+
+usePubSubNotifications();
 
 provide('editableManager', ref(false));
 </script>

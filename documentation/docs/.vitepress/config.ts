@@ -115,7 +115,8 @@ export default defineConfig({
             text: 'Template Ecosystem',
             collapsed: true,
             items: [
-              { text: 'PubSub Events', link: '/pre-designed-frontends/pubsub-events' }
+              { text: 'PubSub Events', link: '/pre-designed-frontends/pubsub-events' },
+              { text: 'Components', link: '/pre-designed-frontends/components/' }
             ]
           }
         ]
