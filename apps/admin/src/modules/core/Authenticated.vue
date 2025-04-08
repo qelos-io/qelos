@@ -74,6 +74,10 @@ onBeforeMount(async () => {
 watch(navigationOpened, (isOpen) => {
   document.body.style.overflow = isOpen ? 'hidden' : '';
 })
+
+watch(() => user.value.roles, () => {
+  document.querySelector('html')?.setAttribute('data-roles', user.value.roles?.join(',') || '');
+})
 </script>
 <style scoped lang="scss">
 .admin-panel {
