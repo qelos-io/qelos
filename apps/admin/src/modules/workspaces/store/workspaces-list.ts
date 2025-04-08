@@ -36,11 +36,11 @@ const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesL
   })
 
   pubsub.subscribe('workspaces:activateSilently', (workspaceId: string) => {
-    activateSilently({ _id: workspaceId } as any as IWorkspace)
+    return activateSilently({ _id: workspaceId } as any as IWorkspace)
   })
 
   pubsub.subscribe('workspaces:activate', (workspace: IWorkspace) => {
-    activate(workspace)
+    return activate(workspace)
   })
 
   return { workspaces: result, reload: retry, remove: useConfirmAction(remove), activate, activateSilently, loading, promise }

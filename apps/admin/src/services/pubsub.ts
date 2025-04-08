@@ -3,7 +3,7 @@
  * Allows components to communicate with each other through a publish-subscribe pattern
  */
 
-type Callback = (...args: any[]) => void;
+type Callback = (...args: any[]) => void | Promise<unknown>;
 
 interface Subscription {
   event: string;
@@ -67,20 +67,29 @@ class PubSubService {
    * Publish an event
    * @param event - Event name
    * @param args - Arguments to pass to the callback
+   * @returns Promise that resolves when all subscribers have completed
    */
-  publish(event: string, ...args: any[]): void {
+  async publish(event: string, ...args: any[]): Promise<any> {
     const subscriptions = this.subscriptions.filter(
       (subscription) => subscription.event === event
     );
 
-    subscriptions.forEach((subscription) => {
-      subscription.callback(...args);
-      
-      // Remove subscription if it's a one-time subscription
-      if (subscription.once) {
-        this.unsubscribe(subscription);
+    // Create an array of promises from all subscriber callbacks
+    const callbackPromises = subscriptions.map(async (subscription) => {
+      try {
+        // Execute the callback and handle both synchronous and asynchronous results
+        const result = subscription.callback(...args);
+        await result; // This will be a no-op for synchronous callbacks
+      } finally {
+        // Remove subscription if it's a one-time subscription
+        if (subscription.once) {
+          this.unsubscribe(subscription);
+        }
       }
     });
+
+    // Return a promise that resolves when all callbacks are complete
+    return Promise.all(callbackPromises).then(() => {});
   }
 
   /**
