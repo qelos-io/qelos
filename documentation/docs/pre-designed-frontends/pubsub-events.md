@@ -102,6 +102,26 @@ The following events are available for use in your custom templates:
 | `workspaces:activate` | Activates a workspace | `workspace: IWorkspace` | Promise that resolves when activation is complete |
 | `workspaces:activateSilently` | Silently activates a workspace by ID | `workspaceId: string` | Promise that resolves when activation is complete |
 
+### Notification Events
+
+| Event Name | Description | Parameters | Return Value |
+|------------|-------------|------------|-------------|
+| `notifications:success` | Shows a success notification | `msg: string` | None |
+| `notifications:error` | Shows an error notification | `msg: string` | None |
+| `notifications:warning` | Shows a warning notification | `msg: string` | None |
+| `notifications:info` | Shows an info notification | `msg: string` | None |
+| `notifications:show` | Shows a customized notification | `{ title, message, type, duration, showClose, dangerouslyUseHTMLString, position, offset }` | None |
+
+### Message Events
+
+| Event Name | Description | Parameters | Return Value |
+|------------|-------------|------------|-------------|
+| `messages:success` | Shows a success message | `msg: string` | None |
+| `messages:error` | Shows an error message | `msg: string` | None |
+| `messages:warning` | Shows a warning message | `msg: string` | None |
+| `messages:info` | Shows an info message | `msg: string` | None |
+| `messages:show` | Shows a customized message | `{ message, type, plain, showClose, center, dangerouslyUseHTMLString, grouping, duration }` | None |
+
 ## Communication Between Templates
 
 Here's how you can use PubSub to communicate between different templates in your Qelos application:
