@@ -111,6 +111,13 @@ export default defineConfig({
           { text: 'Blocks List', link: '/pre-designed-frontends/blocks-list' },
           { text: 'Rows List', link: '/pre-designed-frontends/rows-list' },
           { text: 'Plain', link: '/pre-designed-frontends/plain' },
+          {
+            text: 'Template Ecosystem',
+            collapsed: true,
+            items: [
+              { text: 'PubSub Events', link: '/pre-designed-frontends/pubsub-events' }
+            ]
+          }
         ]
       }
     ]
