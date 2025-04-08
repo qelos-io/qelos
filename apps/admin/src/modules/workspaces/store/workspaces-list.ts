@@ -5,6 +5,7 @@ import { defineStore } from 'pinia';
 import workspacesService from '@/services/workspaces-service';
 import { fetchAuthUser } from '@/modules/core/store/auth';
 import { IWorkspace } from '@qelos/sdk/dist/workspaces';
+import pubsub from '@/services/pubsub';
 
 const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesList() {
   const { result, retry, loading, promise } = useDispatcher<IWorkspace[]>(() => workspacesService.getAll(), [])
@@ -30,8 +31,16 @@ const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesL
   }
 
   const { submit: activate } = useSubmitting(activateSilently, {
-    error: 'Filed to move to workspace',
+    error: 'Failed to move to workspace',
     success: (workspace) => `You are now active on the workspace "${workspace.name}"`
+  })
+
+  pubsub.subscribe('workspaces:activateSilently', (workspaceId: string) => {
+    activateSilently({ _id: workspaceId } as any as IWorkspace)
+  })
+
+  pubsub.subscribe('workspaces:activate', (workspace: IWorkspace) => {
+    activate(workspace)
   })
 
   return { workspaces: result, reload: retry, remove: useConfirmAction(remove), activate, activateSilently, loading, promise }

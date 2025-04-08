@@ -10,11 +10,13 @@ import App from './App.vue'
 import applyGlobalTemplatesComponents from '@/modules/pre-designed/global-templates-components';
 import usePrimeVue from '@/plugins/prime';
 import * as Sentry from '@sentry/vue';
+import pubsub from './services/pubsub';
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
     $t: (text: string) => string,
-    $isMobile: boolean
+    $isMobile: boolean,
+    $pubsub: typeof pubsub
   }
 }
 const app = createApp(App)
@@ -49,3 +51,4 @@ const isMobile = (function () {
 document.querySelector('html').classList.add(isMobile ? 'mobile' : 'desktop');
 
 app.config.globalProperties.$isMobile = isMobile;
+app.config.globalProperties.$pubsub = pubsub;
