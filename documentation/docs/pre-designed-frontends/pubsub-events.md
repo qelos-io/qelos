@@ -13,7 +13,7 @@ The PubSub service is implemented as a singleton, ensuring that all components s
 
 ## Using PubSub in Vue Templates
 
-The PubSub system is available in all Vue templates through the global `pubsub` object. You don't need to import it manually in your templates.
+The PubSub system is available in all Vue templates through the global `$pubsub` object. You don't need to import it manually in your templates.
 
 ### Template Examples
 
@@ -23,18 +23,18 @@ Here are examples of how to use PubSub events in your templates:
 
 ```html
 <!-- Publishing an event on button click -->
-<el-button @click="pubsub.publish('workspaces:activateSilently', 'workspace123')">
+<el-button @click="$pubsub.publish('workspaces:activateSilently', 'workspace123')">
   Activate Workspace by ID
 </el-button>
 
 <!-- Publishing an event with object data -->
-<el-button @click="pubsub.publish('workspaces:activate', { _id: 'workspace123', name: 'My Workspace' })">
+<el-button @click="$pubsub.publish('workspaces:activate', { _id: 'workspace123', name: 'My Workspace' })">
   Activate Workspace
 </el-button>
 
 <!-- Publishing with async/await -->
 <el-button @click="async () => {
-  await pubsub.publish('workspaces:activateSilently', { _id: 'workspace123', name: 'My Workspace' });
+  await $pubsub.publish('workspaces:activateSilently', { _id: 'workspace123', name: 'My Workspace' });
   $message.success('Workspace activated!');
 }">
   Activate and Wait
@@ -65,7 +65,7 @@ Here are examples of how to use PubSub events in your templates:
   />
   
   <el-empty v-if="!currentWorkspace" description="No workspace selected">
-    <el-button @click="pubsub.publish('workspaces:showSelector', true)">
+    <el-button @click="$pubsub.publish('workspaces:showSelector', true)">
       Select Workspace
     </el-button>
   </el-empty>
@@ -83,7 +83,7 @@ Here are examples of how to use PubSub events in your templates:
    ```html
    <el-button @click="async () => {
      // Wait for all subscribers to complete
-     await pubsub.publish('data:refresh', { force: true });
+     await $pubsub.publish('data:refresh', { force: true });
      // Then proceed with next action
      showSuccessMessage();
    }">
@@ -143,7 +143,7 @@ Here's how you can use PubSub to communicate between different templates in your
   
   <el-button 
     type="primary" 
-    @click="pubsub.publish('workspaces:activate', selectedWorkspace)" 
+    @click="$pubsub.publish('workspaces:activate', selectedWorkspace)" 
     :disabled="!selectedWorkspace"
   >
     Set Active Workspace

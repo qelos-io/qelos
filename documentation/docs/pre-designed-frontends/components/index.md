@@ -13,31 +13,40 @@ All components are globally registered and can be used directly in your template
 
 ## Available Components
 
-Here's a list of all available components in the Qelos template ecosystem:
+Here's a list of available components in the Qelos template ecosystem:
+
+### Documented Components
+
+The following components have detailed documentation:
 
 - [Form Input](./form-input.md) - Input component for forms
 - [Form Row Group](./form-row-group.md) - Group form inputs in rows
 - [Save Button](./save-button.md) - Button for saving forms
-- [Edit Header](./edit-header.md) - Header for edit pages
-- [Info Icon](./info-icon.md) - Icon with tooltip information
-- [Block Item](./block-item.md) - Block container for content
 - [Monaco](./monaco.md) - Code editor component
 - [Quick Table](./quick-table.md) - Simplified table component
-- [List Page Title](./list-page-title.md) - Title component for list pages
-- [General Form](./general-form.md) - Generic form component
-- [Blueprint Entity Form](./blueprint-entity-form.md) - Form for blueprint entities
-- [Confirm Message](./confirm-message.md) - Confirmation dialog component
-- [Remove Button](./remove-button.md) - Button for deletion actions
 - [V Chart](./v-chart.md) - Chart visualization component
-- [Editable Content](./editable-content.md) - Content that can be edited inline
-- [Remove Confirmation](./remove-confirmation.md) - Confirmation dialog for delete actions
-- [Stats Card](./stats-card.md) - Card for displaying statistics
-- [Q Pre](./q-pre.md) - Pre-formatted text component
 - [Content Box](./content-box.md) - Component that loads HTML content blocks from the database
-- [Q Rating](./q-rating.md) - Rating component
 - [Copy To Clipboard](./copy-to-clipboard.md) - Button to copy content to clipboard
 - [Empty State](./empty-state.md) - Component for empty state display
 - [Life Cycle](./life-cycle.md) - Component for displaying lifecycle stages
+
+### Other Available Components
+
+The following components are also available in the Qelos template ecosystem (documentation coming soon):
+
+- Edit Header - Header for edit pages
+- Info Icon - Icon with tooltip information
+- Block Item - Block container for content
+- List Page Title - Title component for list pages
+- General Form - Generic form component
+- Blueprint Entity Form - Form for blueprint entities
+- Confirm Message - Confirmation dialog component
+- Remove Button - Button for deletion actions
+- Editable Content - Content that can be edited inline
+- Remove Confirmation - Confirmation dialog for delete actions
+- Stats Card - Card for displaying statistics
+- Q Pre - Pre-formatted text component
+- Q Rating - Rating component
 
 ## Using Components
 
