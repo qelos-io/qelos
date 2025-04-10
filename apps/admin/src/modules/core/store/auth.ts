@@ -82,3 +82,18 @@ export const login = async ({ username, password }: { username: string, password
     return user;
   });
 }
+
+watch(isManagingEnabled, (newVal: boolean) => {
+  if (newVal) {
+    document.querySelector('html').setAttribute('managing-enabled', 'true');
+  } else {
+    document.querySelector('html').removeAttribute('managing-enabled');
+  }
+})
+watch(isEditingEnabled, (newVal: boolean) => {
+  if (newVal) {
+    document.querySelector('html').setAttribute('editing-enabled', 'true');
+  } else {
+    document.querySelector('html').removeAttribute('editing-enabled');
+  }
+})

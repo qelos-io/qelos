@@ -77,7 +77,8 @@ watch(navigationOpened, (isOpen) => {
 
 watch(() => user.value.roles, () => {
   document.querySelector('html')?.setAttribute('data-roles', user.value.roles?.join(',') || '');
-})
+}, { immediate: true });
+
 </script>
 <style scoped lang="scss">
 .admin-panel {
