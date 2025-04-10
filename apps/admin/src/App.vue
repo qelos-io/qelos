@@ -11,8 +11,11 @@ import { usePluginsInjectables } from '@/modules/plugins/store/plugins-injectabl
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { usePluginsStore } from './modules/plugins/store/pluginsStore';
 import { usePubSubNotifications } from './modules/core/compositions/pubsub-notifications';
+import { useUsersHeader } from './modules/configurations/store/users-header';
 
 const { appConfig, loaded } = useAppConfiguration()
+useUsersHeader()
+
 usePluginsMicroFrontends();
 usePluginsInjectables();
 const pluginsStore = usePluginsStore(); 

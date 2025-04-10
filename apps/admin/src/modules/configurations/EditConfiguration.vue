@@ -9,6 +9,8 @@
       v-else-if="config.key === 'auth-configuration' || config.kind === 'auth'" />
     <AppConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"
       v-else-if="config.key === 'app-configuration'" />
+    <UsersHeaderForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"
+      v-else-if="config.kind === 'users-header' || config.key?.startsWith('users-header')" />
     <div v-else>
       <ConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit" />
     </div>
@@ -25,6 +27,7 @@ import { useRoute } from 'vue-router'
 import WorkspaceConfigurationForm from '@/modules/configurations/components/WorkspaceConfigurationForm.vue';
 import AuthConfigurationForm from '@/modules/configurations/components/AuthConfigurationForm.vue';
 import AppConfigurationForm from '@/modules/configurations/components/AppConfigurationForm.vue';
+import UsersHeaderForm from '@/modules/configurations/components/UsersHeaderForm.vue'
 
 const { params } = useRoute()
 const { config, updateConfiguration } = useEditConfiguration((params as any).key)

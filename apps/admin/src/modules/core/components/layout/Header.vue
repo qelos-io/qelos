@@ -1,5 +1,5 @@
 <template>
-  <header :dir="$t('appDirection')">
+  <header v-if="loaded && showStandardHeader" :dir="$t('appDirection')">
     <div class="welcome">
       <el-button class="mobile-menu-opener" v-if="$isMobile" text circle size="large" @click="open">
         <el-icon>
@@ -17,12 +17,31 @@
       <HeaderUserDropdown/>
     </div>
   </header>
+  <VRuntimeTemplate v-if="loaded && usersHeader?.active"
+                          :template="usersHeader.html"
+                          :template-props="templateProps"/>
 </template>
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, getCurrentInstance } from 'vue';
 import debounce from 'lodash.debounce';
 import { useRoute, useRouter } from 'vue-router';
 import HeaderUserDropdown from '@/modules/core/components/layout/HeaderUserDropdown.vue';
+import VRuntimeTemplate from 'vue3-runtime-template';
+import { useUsersHeader } from '@/modules/configurations/store/users-header';
+import { isPrivilegedUser } from '../../store/auth';
+import sdk from '@/services/sdk';
+import { authStore } from '../../store/auth';
+
+
+const vm = getCurrentInstance();
+
+vm.proxy.$options.components = {
+  HeaderUserDropdown
+}
+
+const { usersHeader, loaded } = useUsersHeader()
+
+const showStandardHeader = computed(() => isPrivilegedUser.value || !usersHeader.value.active)
 
 const emit = defineEmits(['open']);
 const router = useRouter()
@@ -36,6 +55,17 @@ const query = computed({
     tempQuery.value = value;
   }
 });
+
+
+const templateProps = computed(() => {
+  return {
+    user: authStore.user,
+    sdk,
+    query,
+    location,
+  };
+});
+
 
 watch(tempQuery, debounce((value: string) => {
   if (value === null) {
