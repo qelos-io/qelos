@@ -23,7 +23,6 @@ import { computed, ref, watch } from 'vue';
 import debounce from 'lodash.debounce';
 import { useRoute, useRouter } from 'vue-router';
 import HeaderUserDropdown from '@/modules/core/components/layout/HeaderUserDropdown.vue';
-import { isAdmin, isEditingEnabled } from '@/modules/core/store/auth';
 
 const emit = defineEmits(['open']);
 const router = useRouter()
