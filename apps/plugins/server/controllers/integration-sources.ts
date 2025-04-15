@@ -108,6 +108,7 @@ export async function createIntegrationSource(req, res) {
     const { authentication, ...permittedData } = source;
     res.json(permittedData).end();
   } catch (err) {
+    logger.error('could not create integration source', err);
     if (authId) {
       storeEncryptedSourceAuthentication(req.headers.tenant, kind, null).catch();
     }

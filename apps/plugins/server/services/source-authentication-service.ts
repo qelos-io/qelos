@@ -34,9 +34,9 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
     return authId;
   }
   if (kind === IntegrationSourceKind.Http) {
-    const { securedHeaders } = authentication;
-    if (!securedHeaders || Object.values(securedHeaders).find(v => typeof v !== 'string')) {
-      return;
+    const { securedHeaders = {} } = authentication;
+    if (Object.values(securedHeaders).some(v => typeof v !== 'string')) {
+      throw new Error('Invalid secured headers')
     }
     await setSecret(tenant, `integration-source-${kind}-${authId}`, { securedHeaders });
     return authId;
