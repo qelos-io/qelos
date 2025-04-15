@@ -33,7 +33,7 @@ async function handleUpload(
   file: Buffer,
   originalName: string,
   contentType?: string
-): Promise<string> {
+): Promise<{ publicUrl: string, success: boolean }> {
   const extension = getFileExtension(contentType, originalName);
   const service = getService(storage);
   if (!service) {
@@ -71,7 +71,7 @@ export async function uploadFile(req: any, res: any): Promise<any> {
         .end();
     }
 
-    let filePath;
+    let fileData: { publicUrl: string, success: boolean };
     const urlInput = body?.url;
 
     if (urlInput) {
@@ -81,7 +81,7 @@ export async function uploadFile(req: any, res: any): Promise<any> {
           throw new Error(`URL fetch failed: ${response.statusText}`);
 
         const buffer = await response.arrayBuffer();
-        filePath = await handleUpload(
+        fileData = await handleUpload(
           storage,
           user._id,
           Buffer.from(buffer),
@@ -94,7 +94,7 @@ export async function uploadFile(req: any, res: any): Promise<any> {
         }).end();
       }
     } else if (file) {
-      filePath = await handleUpload(
+      fileData = await handleUpload(
         storage,
         user._id,
         file.buffer,
@@ -107,7 +107,7 @@ export async function uploadFile(req: any, res: any): Promise<any> {
 
     return res.status(200).json({
       message: "File uploaded successfully.",
-      publicUrl: filePath,
+      publicUrl: fileData?.publicUrl,
     }).end();
   } catch (error) {
     return res.status(500).json({

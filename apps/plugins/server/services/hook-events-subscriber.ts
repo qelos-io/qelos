@@ -111,7 +111,7 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
           } else if (source === 'blueprintEntities' && blueprint) {
             data[key] = await (getBlueprintEntities(platformEvent.tenant, blueprint, data[key]))
           }
-        })  
+        })
       ]);
 
       return data
