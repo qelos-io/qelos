@@ -45,7 +45,11 @@ export default {
       },
       location,
       onSuccess(res) {
-        emit('upload', res)
+        let publicUrl = res;
+        if (typeof res === 'object') {
+          publicUrl = res.publicUrl || res.url;
+        }
+        emit('upload', publicUrl);
       }
     }
   }
