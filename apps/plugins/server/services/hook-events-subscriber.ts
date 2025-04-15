@@ -10,7 +10,7 @@ import { IntegrationSourceKind } from '@qelos/global-types';
 import { getUser, getWorkspaces } from './users';
 import { callIntegrationTarget } from './integration-target-call';
 import { hookEvents } from './hook-events';
-import { getBlueprintEntity } from './no-code-service';
+import { getBlueprintEntities, getBlueprintEntity } from './no-code-service';
 
 const ALL = '*';
 
@@ -108,8 +108,10 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
           } else if (source === 'blueprintEntity' && blueprint) {
             data[key] = await (getBlueprintEntity(platformEvent.tenant, blueprint, data[key]))
             // populate data from given object using qelos source. If blueprint is provided, it will be used to fetch the blueprint entity
+          } else if (source === 'blueprintEntities' && blueprint) {
+            data[key] = await (getBlueprintEntities(platformEvent.tenant, blueprint, data[key]))
           }
-        })
+        })  
       ]);
 
       return data
