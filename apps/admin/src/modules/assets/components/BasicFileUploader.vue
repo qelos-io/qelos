@@ -15,7 +15,8 @@
       </div>
 
       <div class="el-upload__text">
-        <p>{{ mainText }}<em>{{ secondaryText }}</em></p>
+        <p>{{ mainText }}</p>
+        <em>{{ secondaryText }}</em>
       </div>
     </el-upload>
   </div>
@@ -28,12 +29,14 @@ export default {
   name: 'BasicFileUploader',
   props: {
     storage: String,
+
+    // UI Design props
     header: String,
     subheader: String,
     iconUrl: String,
     mainText: {
       type: String,
-      default: 'Drop file here or'
+      default: 'Drop file here or '
     },
     secondaryText: {
       type: String,
