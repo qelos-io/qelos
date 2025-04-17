@@ -33,7 +33,7 @@
         </template>
         <slot name="options"/>
       </el-select>
-      <AssetUploader v-else-if="type === 'upload' || type === 'file'" v-on="listeners" :value="modelValue"
+      <AssetUploader v-else-if="type === 'upload' || type === 'file'" v-on="listeners" :value="modelValue" v-bind="uploadConfig"
                      @change="$emit('update:modelValue', $event)" class="asset-upload"/>
       <el-input v-else v-on="listeners" :model-value="modelValue as (string | number)" :placeholder="placeholder"
                 :size="size || 'large'"
@@ -81,6 +81,16 @@ export default {
       default: () => ({})
     },
     value: [String, Number, Object, Boolean],
+    uploadConfig: {
+      type: Object,
+      default: () => ({
+        header: 'header',
+        subheader: '',
+        iconUrl: '',
+        mainText: 'Drop file here or',
+        secondaryText: 'click to upload'
+      })
+    }
   },
   emits: ['input', 'change', 'update:modelValue'],
   setup(props, { emit }) {

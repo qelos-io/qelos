@@ -13,6 +13,7 @@
     <BasicFileUploader
         v-else-if="selectedStorage || !isPrivilegedUser"
         :storage="selectedStorage"
+        v-bind="uploadConfig"
         @upload="uploadComplete"
     />
   </div>
@@ -30,6 +31,16 @@ export default {
   props: {
     value: {
       default: null
+    },
+    uploadConfig: {
+      type: Object,
+      default: () => ({
+        header: '',
+        subheader: '',
+        iconUrl: '',
+        mainText: 'Drop file here or',
+        secondaryText: 'click to upload'
+      })
     }
   },
   setup(props, { emit }) {

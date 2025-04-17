@@ -1,19 +1,21 @@
 <template>
   <div class="basic-file-uploader">
-    <el-upload
-        class="uploader"
-        drag
-        :headers="headers"
-        :action="uploadUrl"
-        :with-credentials="withCredentials"
-        :on-success="onSuccess"
-        :before-upload="beforeUpload"
-    >
-      <el-icon class="upload-icon">
-        <font-awesome-icon :icon="['fas', 'cloud-arrow-up']"/>
-      </el-icon>
+    <el-upload class="uploader" drag :headers="headers" :action="uploadUrl" :with-credentials="withCredentials"
+      :on-success="onSuccess" :before-upload="beforeUpload">
+      <div v-if="header" class="uploader-header-container">
+        <h3>{{ header }}</h3>
+        <p v-if="subheader">{{ subheader }}</p>
+      </div>
+
+      <div class="uploader-icon-container">
+        <img v-if="iconUrl" :src="iconUrl" class="custom-icon" alt="Upload icon" />
+        <el-icon v-else class="default-icon">
+          <font-awesome-icon :icon="['fas', 'cloud-arrow-up']" />
+        </el-icon>
+      </div>
+
       <div class="el-upload__text">
-        Drop file here or <em>click to upload</em>
+        <p>{{ mainText }}<em>{{ secondaryText }}</em></p>
       </div>
     </el-upload>
   </div>
@@ -25,14 +27,25 @@ import { useAssetsUpload } from '../compositions/assets'
 export default {
   name: 'BasicFileUploader',
   props: {
-    storage: String
+    storage: String,
+    header: String,
+    subheader: String,
+    iconUrl: String,
+    mainText: {
+      type: String,
+      default: 'Drop file here or'
+    },
+    secondaryText: {
+      type: String,
+      default: 'click to upload'
+    }
   },
   emits: ['upload'],
   setup(props, { emit }) {
     const location = ref('')
     const { headers, uploadUrl, setUploadUrl, withCredentials } = useAssetsUpload(
-        props.storage,
-        location
+      props.storage,
+      location
     )
 
     return {
@@ -52,7 +65,7 @@ export default {
 }
 </script>
 <style scoped>
-.upload-icon {
+.default-icon {
   font-size: 400%;
 }
 
@@ -63,5 +76,12 @@ export default {
 .uploader :deep(.el-upload),
 .uploader :deep(.el-upload-dragger) {
   width: 100%;
+}
+
+.custom-icon {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  margin-bottom: 0;
 }
 </style>
