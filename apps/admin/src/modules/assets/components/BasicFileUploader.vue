@@ -3,7 +3,7 @@
     <el-upload class="uploader" drag :headers="headers" :action="uploadUrl" :with-credentials="withCredentials"
       :on-success="onSuccess" :before-upload="beforeUpload">
       <div v-if="header" class="uploader-header-container">
-        <h3>{{ header }}</h3>
+        <h4>{{ header }}</h4>
         <p v-if="subheader">{{ subheader }}</p>
       </div>
 
@@ -68,10 +68,6 @@ export default {
 }
 </script>
 <style scoped>
-.default-icon {
-  font-size: 400%;
-}
-
 .basic-file-uploader {
   padding: 0 10px;
 }
@@ -81,10 +77,32 @@ export default {
   width: 100%;
 }
 
+.uploader-header-container {
+  text-align: left;
+}
+
+.uploader-icon-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.el-upload__text {
+  text-align: center;
+}
+
+.el-upload__text em {
+  text-decoration: underline;
+}
+
 .custom-icon {
-  width: 64px;
-  height: 64px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   margin-bottom: 0;
+}
+
+.default-icon {
+  font-size: 400%;
 }
 </style>
