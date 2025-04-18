@@ -38,8 +38,8 @@ export default {
         header: '',
         subheader: '',
         iconUrl: '',
-        mainText: 'Drop file here or',
-        secondaryText: 'click to upload'
+        mainText: '',
+        secondaryText: ''
       })
     }
   },
