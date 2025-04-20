@@ -134,7 +134,7 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
 
     // trigger integration target using calculated data:
     await callIntegrationTarget(platformEvent.tenant, calculatedData, integration.target);
-  })).catch(() => null);
+  })).catch((err) => logger.error('failed to execute integration', err));
 }
 
 hookEvents.on('hook', async (platformEvent: IEvent) => {
