@@ -5,9 +5,18 @@ import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue
 import { useIntegrations } from '@/modules/integrations/compositions/integrations';
 import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
 import IntegrationFormModal from '@/modules/integrations/components/IntegrationFormModal.vue';
+import RemoveButton from '../core/components/forms/RemoveButton.vue';
+import integrationsService from '@/services/integrations-service';
+import { useConfirmAction } from '../core/compositions/confirm-action';
 
 const kinds = useIntegrationKinds();
-const { loaded, result } = useIntegrations();
+const { loaded, result, retry } = useIntegrations();
+
+const remove = useConfirmAction((id: string) => {
+  integrationsService.remove(id).then(() => {
+    retry();
+  });
+})
 </script>
 
 <template>
@@ -28,12 +37,32 @@ const { loaded, result } = useIntegrations();
     </EmptyState>
     <div>
       <BlockItem class="source" v-for="integration in result" :key="integration._id">
-        <img :src="kinds[integration.kind[0]]?.logo" :alt="kinds[integration.kind[0]]?.name">
-        <img :src="kinds[integration.kind[1]]?.logo" :alt="kinds[integration.kind[1]]?.name">
+        <div class="flex-row flex-center">
+          <div>
+            <img v-if="kinds[integration.kind[0]]?.logo" :src="kinds[integration.kind[0]]?.logo" :alt="kinds[integration.kind[0]]?.name">
+            <p centered v-else class="large">{{ kinds[integration.kind[0]]?.name }}</p>
+          </div>
+          <div centered>
+            <el-icon>
+              <icon-arrow-right />  
+            </el-icon>
+          </div>
+          <div>
+            <img v-if="kinds[integration.kind[1]]?.logo" :src="kinds[integration.kind[1]]?.logo" :alt="kinds[integration.kind[1]]?.name">
+            <p centered v-else class="large">{{ kinds[integration.kind[1]]?.name }}</p>
+          </div>
+        </div>
+        <template #footer>
+          <el-button type="primary" @click="$router.push({ query: { mode: 'edit' }, params: { id: integration._id } })">Edit</el-button>
+          <RemoveButton @click="remove(integration._id)" />
+        </template>
       </BlockItem>
     </div>
 
-    <IntegrationFormModal :visible="$route.query.mode === 'create'" @close="$router.push({ query: { mode: undefined } })" />
+    <IntegrationFormModal :visible="$route.query.mode === 'create' || $route.query.mode === 'edit'"
+      :editing-integration="($route.query.mode === 'edit' && $route.params.id) ? result.find(integration => integration._id === $route.params.id) : undefined"
+      @saved="retry"
+     @close="$router.push({ query: { mode: undefined, id: undefined } })" />
   </div>
 </template>
 

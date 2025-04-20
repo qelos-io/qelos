@@ -14,7 +14,7 @@ import {
 
 const visible = defineModel<boolean>('visible')
 const props = defineProps<{ editingIntegration?: any }>()
-defineEmits(['close', 'save'])
+const emit = defineEmits(['close', 'saved'])
 
 const kinds = useIntegrationKinds();
 const store = useIntegrationSourcesStore();
@@ -111,8 +111,17 @@ watch(visible, () => {
   }
 }, { immediate: true })
 
-const { submit, submitting } = useSubmitting(() => props.editingIntegration?._id ?
-    integrationsService.update(props.editingIntegration?._id, form) : integrationsService.create(form))
+const { submit, submitting } = useSubmitting(() => {
+  if (props.editingIntegration?._id) {
+    return integrationsService.update(props.editingIntegration?._id, form)
+  } else {
+    return integrationsService.create(form)
+  }
+}, {}, () => {
+  emit('close')
+  emit('saved', form)
+})
+
 </script>
 
 <template>
