@@ -97,19 +97,22 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
       const data = clean ? {} : previousData;
       await Promise.all([
         ...Object.entries(map || {}).map(async ([key, value]) => {
-          data[key] = await processMapRecursively(value, data);
+          data[key] = await processMapRecursively(value, previousData);
         }),
         ...Object.entries(populate || {}).map(async ([key, { source, blueprint }]) => {
+          if (typeof previousData[key] === 'undefined') {
+            return;
+          }
           if (source === 'user') {
-            data[key] = await getUser(platformEvent.tenant, data[key])
+            data[key] = await getUser(platformEvent.tenant, previousData[key])
           } else if (source === 'workspace') {
             // populate data from given object using qelos source. If blueprint is provided, it will be used to fetch the blueprint entity
-            data[key] = await getWorkspaces(platformEvent.tenant, data[key])
+            data[key] = await getWorkspaces(platformEvent.tenant, previousData[key])
           } else if (source === 'blueprintEntity' && blueprint) {
-            data[key] = await (getBlueprintEntity(platformEvent.tenant, blueprint, data[key]))
+            data[key] = await (getBlueprintEntity(platformEvent.tenant, blueprint, previousData[key]))
             // populate data from given object using qelos source. If blueprint is provided, it will be used to fetch the blueprint entity
           } else if (source === 'blueprintEntities' && blueprint) {
-            data[key] = await (getBlueprintEntities(platformEvent.tenant, blueprint, data[key]))
+            data[key] = await (getBlueprintEntities(platformEvent.tenant, blueprint, previousData[key]))
           }
         })
       ]);
