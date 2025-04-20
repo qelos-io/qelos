@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import { IIntegration } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
@@ -20,8 +20,6 @@ const kinds = useIntegrationKinds();
 const store = useIntegrationSourcesStore();
 const triggerOperations = useIntegrationKindsTriggerOperations();
 const targetOperations = useIntegrationKindsTargetOperations();
-
-const model = ref<any>();
 
 const form = reactive<Pick<IIntegration, 'trigger' | 'target' | 'dataManipulation'>>({
   trigger: {
@@ -109,17 +107,17 @@ watch(selectedTargetSource, () => {
 
 watch(visible, () => {
   if (visible.value) {
-    model.value = props.editingIntegration || {};
+    Object.assign(form, props.editingIntegration || {});
   }
-})
+}, { immediate: true })
 
 const { submit, submitting } = useSubmitting(() => props.editingIntegration?._id ?
-    integrationsService.update(props.editingIntegration?._id, model.value) : integrationsService.create(model.value))
+    integrationsService.update(props.editingIntegration?._id, form) : integrationsService.create(form))
 </script>
 
 <template>
   <el-dialog top="2vh" v-model="visible"
-             :title="$t(editingIntegration?._id ? 'Edit Integration' : 'Create Integration')"
+             :title="$t(props.editingIntegration?._id ? 'Edit Integration' : 'Create Integration')"
              width="50%"
              @close="$emit('close', $event)">
     <el-form v-if="visible" @submit.prevent="submit">
