@@ -68,7 +68,7 @@ const triggerDetails = computed({
     try {
       form.trigger.details = JSON.parse(value)
     } catch (e) {
-      console.error(e)
+      //console.error(e)
     }
   }
 });
@@ -78,7 +78,7 @@ const targetDetails = computed({
     try {
       form.target.details = JSON.parse(value)
     } catch (e) {
-      console.error(e)
+      //console.error(e)
     }
   }
 });
@@ -86,9 +86,12 @@ const dataManipulation = computed({
   get: () => JSON.stringify(form.dataManipulation, null, 2),
   set: (value) => {
     try {
-      form.dataManipulation = JSON.parse(value)
+      form.dataManipulation = (JSON.parse(value) || []).map((row: any) => {
+        delete row._id;
+        return row;
+      })
     } catch (e) {
-      console.error(e)
+      //console.error(e)
     }
   }
 });
@@ -97,17 +100,34 @@ const selectedTriggerSource = computed(() => store.result?.find(s => s._id === f
 const selectedTargetSource = computed(() => store.result?.find(s => s._id === form.target.source));
 
 watch([() => form.trigger.operation, () => form.trigger.source], () => {
+  if (props.editingIntegration?._id) {
+    if (form.trigger.operation === props.editingIntegration.trigger.operation && form.trigger.source === props.editingIntegration.trigger.source) {
+      form.trigger.details = structuredClone(props.editingIntegration.trigger.details);
+      return; // already set
+    }
+  }
   const operation = triggerOperations[selectedTriggerSource.value?.kind]?.find(o => o.name === form.trigger.operation)
   form.trigger.details = structuredClone(operation?.details || {});
 });
 watch(selectedTargetSource, () => {
-  form.target.details = structuredClone(targetOperations[form.target.operation]?.details || {})
+  if (props.editingIntegration?._id) {
+    if (form.target.operation === props.editingIntegration.target.operation && form.target.source === props.editingIntegration.target.source) {
+      form.target.details = structuredClone(props.editingIntegration.target.details);
+      return; // already set
+    }
+  }
+  const operation = targetOperations[selectedTargetSource.value?.kind]?.find(o => o.name === form.target.operation)
+  form.target.details = structuredClone(operation?.details || {})
 })
 
 
 watch(visible, () => {
   if (visible.value) {
     Object.assign(form, props.editingIntegration || {});
+    form.dataManipulation = (form.dataManipulation || []).map((row: any) => {
+      delete row._id;
+      return row;
+    })
   }
 }, { immediate: true })
 
