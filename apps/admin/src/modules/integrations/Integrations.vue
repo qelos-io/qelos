@@ -35,7 +35,7 @@ const remove = useConfirmAction((id: string) => {
     <EmptyState v-if="loaded && result.length === 0" description="No integrations found.">
       <el-button type="primary" @click="$router.push({ query: { mode: 'create' } })">Create new Integration</el-button>
     </EmptyState>
-    <div>
+    <div class="content-list">
       <BlockItem class="source" v-for="integration in result" :key="integration._id">
         <div class="flex-row flex-center">
           <div>
@@ -52,7 +52,7 @@ const remove = useConfirmAction((id: string) => {
             <p centered v-else class="large">{{ kinds[integration.kind[1]]?.name }}</p>
           </div>
         </div>
-        <template #footer>
+        <template #actions>
           <el-button type="primary" @click="$router.push({ query: { mode: 'edit' }, params: { id: integration._id } })">Edit</el-button>
           <RemoveButton @click="remove(integration._id)" />
         </template>
