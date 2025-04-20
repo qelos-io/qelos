@@ -101,7 +101,7 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
       return;
     }
     // every step in data manipulation should be executed in order, asynchronously
-    const calculatedData = integration.dataManipulation.reduce(async (acc, { map, populate, clean }) => {
+    const calculatedData = await integration.dataManipulation.reduce(async (acc, { map, populate, clean }) => {
       const previousData = await acc;
       const data = clean ? {} : previousData;
       await Promise.all([
