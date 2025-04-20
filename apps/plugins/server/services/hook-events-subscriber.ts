@@ -91,13 +91,13 @@ function executePluginsSubscribedWebhooks(platformEvent: IEvent, awaitedPlugins:
 function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegrations: IIntegration[]) {
   const event = platformEvent.toObject();
   Promise.all(awaitedIntegrations.map(async integration => {
-    if (integration.trigger.details.source !== platformEvent.source && integration.trigger.details.source !== '*') {
+    if (integration.trigger.details.source !== platformEvent.source && integration.trigger.details.source !== ALL) {
       return;
     }
-    if (integration.trigger.details.kind !== platformEvent.kind && integration.trigger.details.kind !== '*') {
+    if (integration.trigger.details.kind !== platformEvent.kind && integration.trigger.details.kind !== ALL) {
       return;
     }
-    if (integration.trigger.details.eventName !== platformEvent.eventName && integration.trigger.details.eventName !== '*') {
+    if (integration.trigger.details.eventName !== platformEvent.eventName && integration.trigger.details.eventName !== ALL) {
       return;
     }
     // every step in data manipulation should be executed in order, asynchronously
