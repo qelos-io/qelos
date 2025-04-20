@@ -96,10 +96,10 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
       const previousData = await acc;
       const data = clean ? {} : previousData;
       await Promise.all([
-        ...Object.entries(map).map(async ([key, value]) => {
+        ...Object.entries(map || {}).map(async ([key, value]) => {
           data[key] = await processMapRecursively(value, data);
         }),
-        ...Object.entries(populate).map(async ([key, { source, blueprint }]) => {
+        ...Object.entries(populate || {}).map(async ([key, { source, blueprint }]) => {
           if (source === 'user') {
             data[key] = await getUser(platformEvent.tenant, data[key])
           } else if (source === 'workspace') {
