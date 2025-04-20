@@ -177,7 +177,7 @@ const { submit, submitting } = useSubmitting(() => props.editingIntegration?._id
 
       </el-tabs>
       <el-form-item>
-        <el-button type="primary" :disabled="submitting" :loading="submitting">{{ $t('Save') }}</el-button>
+        <el-button type="primary" native-type="submit" :disabled="submitting" :loading="submitting">{{ $t('Save') }}</el-button>
         <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
       </el-form-item>
     </el-form>
