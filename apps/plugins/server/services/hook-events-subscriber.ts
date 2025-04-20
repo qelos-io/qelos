@@ -100,6 +100,7 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
     if (integration.trigger.details.eventName !== platformEvent.eventName && integration.trigger.details.eventName !== ALL) {
       return;
     }
+    logger.log('calculating integration data');
     // every step in data manipulation should be executed in order, asynchronously
     const calculatedData = await integration.dataManipulation.reduce(async (acc, { map, populate, clean }) => {
       const previousData = await acc;
@@ -128,6 +129,8 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
 
       return data
     }, event);
+
+    logger.log('calculated integration data', typeof calculatedData);
 
     // trigger integration target using calculated data:
     await callIntegrationTarget(platformEvent.tenant, calculatedData, integration.target);
