@@ -122,7 +122,7 @@ const { submit, submitting } = useSubmitting(() => props.editingIntegration?._id
              :title="$t(editingIntegration?._id ? 'Edit Integration' : 'Create Integration')"
              width="50%"
              @close="$emit('close', $event)">
-    <el-form v-if="visible" @submit="submit">
+    <el-form v-if="visible" @submit.prevent="submit">
       <el-tabs>
         <el-tab-pane :label="$t('Trigger')">
           <FormInput type="select" v-model="form.trigger.source" title="Connection"
