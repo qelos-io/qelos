@@ -23,7 +23,7 @@ async function processMapRecursively(value: any, data: any): Promise<any> {
     return result;
   } else if (typeof value === 'string') {
     // If it's a string, treat it as a JQ expression
-    return await jq.run(value, data);
+    return await jq.run(value, data, { output: 'json', input: 'json' });
   }
   return value;
 }

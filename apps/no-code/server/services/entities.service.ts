@@ -111,7 +111,7 @@ export async function updateEntityMapping(blueprint: IBlueprint, entity: IBluepr
   const entries = Object.entries(blueprint.updateMapping || {});
   await Promise.all(entries
     .map(
-      ([key, value]) => jq.run(value, entity).then(result => {
+      ([key, value]) => jq.run(value, entity, { output: 'json', input: 'json' }).then(result => {
         validateValue(key, result, blueprint.properties[key]);
         entity.metadata[key] = result;
       })
