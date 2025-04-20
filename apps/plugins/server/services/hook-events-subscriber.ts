@@ -91,6 +91,15 @@ function executePluginsSubscribedWebhooks(platformEvent: IEvent, awaitedPlugins:
 function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegrations: IIntegration[]) {
   const event = platformEvent.toObject();
   Promise.all(awaitedIntegrations.map(async integration => {
+    if (integration.trigger.details.source !== platformEvent.source && integration.trigger.details.source !== '*') {
+      return;
+    }
+    if (integration.trigger.details.kind !== platformEvent.kind && integration.trigger.details.kind !== '*') {
+      return;
+    }
+    if (integration.trigger.details.eventName !== platformEvent.eventName && integration.trigger.details.eventName !== '*') {
+      return;
+    }
     // every step in data manipulation should be executed in order, asynchronously
     const calculatedData = integration.dataManipulation.reduce(async (acc, { map, populate, clean }) => {
       const previousData = await acc;
