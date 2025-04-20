@@ -89,7 +89,7 @@ function executePluginsSubscribedWebhooks(platformEvent: IEvent, awaitedPlugins:
 }
 
 function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegrations: IIntegration[]) {
-  const event = platformEvent.toObject();
+  const event = JSON.parse(JSON.stringify(platformEvent.toObject()));
   Promise.all(awaitedIntegrations.map(async integration => {
     if (integration.trigger.details.source !== platformEvent.source && integration.trigger.details.source !== ALL) {
       return;
