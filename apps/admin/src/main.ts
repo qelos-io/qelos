@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { createApp, watch } from 'vue'
 import router from './router'
 import './style/main.scss'
 import editor from './plugins/editor'
@@ -11,6 +11,7 @@ import applyGlobalTemplatesComponents from '@/modules/pre-designed/global-templa
 import usePrimeVue from '@/plugins/prime';
 import * as Sentry from '@sentry/vue';
 import pubsub from './services/pubsub';
+import { authStore } from './modules/core/store/auth'
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
@@ -41,6 +42,15 @@ if (import.meta.env.VITE_SENTRY_DSN || window.SENTRY_DSN) {
       Sentry.browserTracingIntegration({ router })
     ],
   });
+  watch(() => authStore.user, () => {
+    if (authStore.user) {
+      Sentry.setUser({
+        id: authStore.user._id,
+        email: authStore.user.email,
+        username: authStore.user.username
+      })
+    }
+  })
 }
 
 const isMobile = (function () {
