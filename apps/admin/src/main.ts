@@ -37,7 +37,9 @@ if (import.meta.env.VITE_SENTRY_DSN || window.SENTRY_DSN) {
   Sentry.init({
     app,
     dsn: import.meta.env.VITE_SENTRY_DSN || window.SENTRY_DSN,
-    integrations: [],
+    integrations: [
+      Sentry.browserTracingIntegration({ router })
+    ],
   });
 }
 
