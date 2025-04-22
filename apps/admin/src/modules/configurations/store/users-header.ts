@@ -11,7 +11,7 @@ export const usersHeaderStore = reactive<{
   promise: null
 })
 
-const usersHeader = computed<{ html: string, active: boolean }>(() => usersHeaderStore.data);
+const usersHeader = computed<{ html: string, active: boolean }>(() => usersHeaderStore.data || { html: '', active: false });
 
 function callUsersHeader() {
   usersHeaderStore.promise = configurationsService

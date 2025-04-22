@@ -41,7 +41,7 @@ vm.proxy.$options.components = {
 
 const { usersHeader, loaded } = useUsersHeader()
 
-const showStandardHeader = computed(() => isPrivilegedUser.value || !usersHeader.value.active)
+const showStandardHeader = computed(() => isPrivilegedUser.value || !usersHeader.value?.active)
 
 const emit = defineEmits(['open']);
 const router = useRouter()
