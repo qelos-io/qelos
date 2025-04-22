@@ -251,8 +251,9 @@ export async function getSingleBlueprintEntity(req, res) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;
   }
-  const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes })
   try {
+    const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes })
+
     const entity = await BlueprintEntity.findOne(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS)
       .lean()
       .exec()
