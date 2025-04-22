@@ -27,13 +27,13 @@ entitiesRouter
   .get('/internal-api/blueprints/:blueprintIdentifier/entities/:entityIdentifier', (req, res, next) => {
     req.user = { roles: ['admin'] }
     next();
-  }, getSingleBlueprintEntity)
+  }, getBlueprintByIdentifierMiddleware, getSingleBlueprintEntity)
 
 
   entitiesRouter
   .get('/internal-api/blueprints/:blueprintIdentifier/entities', (req, res, next) => {
     req.user = { roles: ['admin'] }
     next();
-  }, getAllBlueprintEntities)
+  }, getBlueprintByIdentifierMiddleware, getAllBlueprintEntities)
 
 export default entitiesRouter;
