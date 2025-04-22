@@ -28,6 +28,9 @@ export const useToursStore = defineStore('tours', () => {
       currentTour.value = key;
       currentVersion.value = version;
       await promise.value;
+      if (!fullUser.value) {
+        return;
+      }
       if ((fullUser.value.internalMetadata?.[getTourKey()] || 0) < currentVersion.value) {
         tourOpen.value = true;
       }
