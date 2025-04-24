@@ -36,7 +36,7 @@ const remove = useConfirmAction((id: string) => {
       <el-button type="primary" @click="$router.push({ query: { mode: 'create' } })">Create new Integration</el-button>
     </EmptyState>
     <div class="content-list">
-      <BlockItem class="source" v-for="integration in result" :key="integration._id">
+      <BlockItem class="integration" v-for="integration in result" :key="integration._id">
         <div class="flex-row flex-center flex-middle">
           <div class="flex-middle">
             <img v-if="kinds[integration.kind[0]]?.logo" :src="kinds[integration.kind[0]]?.logo" :alt="kinds[integration.kind[0]]?.name">
@@ -74,11 +74,11 @@ const remove = useConfirmAction((id: string) => {
   align-content: flex-start;
 }
 
-.source {
+.source, .integration {
   cursor: pointer;
 }
 
-.source :deep(.el-card__body) {
+:is(.source, .integration) :deep(.el-card__body) {
   height: 100%;
   display: flex;
   align-items: center;
@@ -92,7 +92,14 @@ const remove = useConfirmAction((id: string) => {
   margin: 0;
 }
 
-.blocks-list>* {
+.integration img {
+  max-width: 100%;
+  max-height: 10px;
+  border-radius: 25px;
+  margin: 0;
+}
+
+:is(.source, .integration) .blocks-list>* {
   width: 120px;
   margin: 10px;
 }
@@ -101,7 +108,7 @@ const remove = useConfirmAction((id: string) => {
   .blocks-list {
     flex-direction: column;
 
-    >* {
+    :is(.source, .integration) >* {
       width: 96%;
     }
   }
