@@ -32,6 +32,8 @@ const remove = useConfirmAction((id: string) => {
       </BlockItem>
     </div>
 
+    <hr/>
+
     <EmptyState v-if="loaded && result.length === 0" description="No integrations found.">
       <el-button type="primary" @click="$router.push({ query: { mode: 'create' } })">Create new Integration</el-button>
     </EmptyState>
@@ -94,7 +96,7 @@ const remove = useConfirmAction((id: string) => {
 
 .integration img {
   max-width: 100%;
-  max-height: 10px;
+  max-height: 100px;
   border-radius: 25px;
   margin: 0;
 }
