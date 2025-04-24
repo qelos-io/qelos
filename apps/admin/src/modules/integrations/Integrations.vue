@@ -37,17 +37,17 @@ const remove = useConfirmAction((id: string) => {
     </EmptyState>
     <div class="content-list">
       <BlockItem class="source" v-for="integration in result" :key="integration._id">
-        <div class="flex-row flex-center">
-          <div>
+        <div class="flex-row flex-center flex-middle">
+          <div class="flex-middle">
             <img v-if="kinds[integration.kind[0]]?.logo" :src="kinds[integration.kind[0]]?.logo" :alt="kinds[integration.kind[0]]?.name">
             <p centered v-else class="large">{{ kinds[integration.kind[0]]?.name }}</p>
           </div>
-          <div centered>
+          <div centered class="flex-middle font-lg">
             <el-icon>
               <icon-arrow-right />  
             </el-icon>
           </div>
-          <div>
+          <div class="flex-middle">
             <img v-if="kinds[integration.kind[1]]?.logo" :src="kinds[integration.kind[1]]?.logo" :alt="kinds[integration.kind[1]]?.name">
             <p centered v-else class="large">{{ kinds[integration.kind[1]]?.name }}</p>
           </div>

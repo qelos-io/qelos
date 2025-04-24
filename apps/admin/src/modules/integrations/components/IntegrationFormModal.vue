@@ -102,22 +102,22 @@ const selectedTargetSource = computed(() => store.result?.find(s => s._id === fo
 watch([() => form.trigger.operation, () => form.trigger.source], () => {
   if (props.editingIntegration?._id) {
     if (form.trigger.operation === props.editingIntegration.trigger.operation && form.trigger.source === props.editingIntegration.trigger.source) {
-      form.trigger.details = structuredClone(toValue(props.editingIntegration.trigger.details));
+      form.trigger.details = JSON.parse(JSON.stringify(props.editingIntegration.trigger.details));
       return; // already set
     }
   }
   const operation = triggerOperations[selectedTriggerSource.value?.kind]?.find(o => o.name === form.trigger.operation)
-  form.trigger.details = structuredClone(toValue(operation?.details || {}));
+  form.trigger.details = JSON.parse(JSON.stringify(operation?.details || {}));
 });
 watch(selectedTargetSource, () => {
   if (props.editingIntegration?._id) {
     if (form.target.operation === props.editingIntegration.target.operation && form.target.source === props.editingIntegration.target.source) {
-      form.target.details = structuredClone(toValue(props.editingIntegration.target.details));
+      form.target.details = JSON.parse(JSON.stringify(props.editingIntegration.target.details));
       return; // already set
     }
   }
   const operation = targetOperations[selectedTargetSource.value?.kind]?.find(o => o.name === form.target.operation)
-  form.target.details = structuredClone(toValue(operation?.details || {}));
+  form.target.details = JSON.parse(JSON.stringify(operation?.details || {}));
 })
 
 
