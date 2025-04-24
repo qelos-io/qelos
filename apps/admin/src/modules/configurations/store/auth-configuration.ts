@@ -47,8 +47,8 @@ export const useAuthConfiguration = defineStore('auth-configuration', () => {
     disableUsernamePassword: false // Assumes IAuthConfigurationMetadata is updated
   };
 
-  // Create a reactive reference to store the current tenant ID
-  const tenantId = ref<string | null>(null);
+  // Create a reactive reference to store the current tokenId
+  const tokenId = ref<string | null>(null);
 
   //  Load the STANDARD 'auth-configuration' 
   const {
@@ -61,9 +61,9 @@ export const useAuthConfiguration = defineStore('auth-configuration', () => {
     { metadata: DEFAULT_VALUE }
   );
 
-  //  Load the SPECIFIC 'auth-configuration-tenantId' ( if tenantId is set) 
+  //  Load the SPECIFIC 'auth-configuration-tokenId' ( if tokenId is set) 
   const specificConfigKey = computed(() => {
-    return tenantId.value ? `auth-configuration-${tenantId.value}` : null;
+    return tokenId.value ? `auth-configuration-${tokenId.value}` : null;
   });
 
   const {
@@ -133,15 +133,15 @@ export const useAuthConfiguration = defineStore('auth-configuration', () => {
     return defaultInProgress || specificInProgress;
   });
 
-  // Action function to set the tenantId from outside
-  function loadForTenant(id: string | null) {
-    tenantId.value = id;
+  // Action function to set the tokenId from outside
+  function loadForToken(id: string | null) {
+    tokenId.value = id;
   }
 
   return {
     metadata,
     loaded,
     loading,
-    loadForTenant,
+    loadForToken,
   }
 });

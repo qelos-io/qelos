@@ -1,5 +1,5 @@
 <template>
-    <div class="login-page" v-if="authStore.loaded">
+    <div class="login-page" v-if="loaded">
     <div v-if="config.formPosition === 'center'" class="flex-container" :class="{'bg-image': !!bgImage}" centered>
       <LoginForm :auth-config="config">
         <h1>{{ $t(config?.loginTitle || 'Welcome') }}</h1>
@@ -26,6 +26,11 @@ import { useRoute } from 'vue-router';
 import LoginForm from './components/LoginForm.vue'
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import { useAuthConfiguration } from '@/modules/configurations/store/auth-configuration';
+import { IAuthConfigurationMetadata } from '@qelos/global-types';
+
+const props = defineProps<{
+  authConfig: IAuthConfigurationMetadata
+}>();
 
 const authStore = useAuthConfiguration();
 
@@ -36,14 +41,14 @@ const route = useRoute();
 // Monitor the change of the 't' parameter in the URL and notify the store
 watch(
   () => route.query.t, 
-  (newTenantId) => {
+  (tokenId) => {
   // Call the store action to load the configuration for this tenantId
-    authStore.loadForTenant(typeof newTenantId === 'string' ? newTenantId : null);
+    authStore.loadForToken(typeof tokenId === 'string' ? tokenId : null);
   },
   { immediate: true } 
 );
 
-const config = metadata;
+const config = computed(() => props.authConfig || metadata.value);
 const bgImage = computed(() => config.value.backgroundImage ? ('url(' + config.value.backgroundImage + ')') : '')
 
 const flexDirection = computed(() => {
