@@ -3,9 +3,10 @@ import configurationsService from '../../../services/configurations-service';
 import { resetConfiguration } from '@/modules/configurations/store/app-configuration';
 
 export function useConfigurationsList() {
-  const { result } = useDispatcher(() => configurationsService.getAll())
+  const { result, retry } = useDispatcher(() => configurationsService.getAll())
   return {
-    list: result
+    list: result,
+    retry
   }
 }
 

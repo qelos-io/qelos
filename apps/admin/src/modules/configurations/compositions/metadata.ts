@@ -44,7 +44,7 @@ function getInputType(value: any) {
 
 export function useEditMetadata<T = any>(kind: string, metadata: T) {
   const hardConfigType = kind === 'palettes' ? ['palette'] : null;
-  const keys: string[] = Object.keys(metadata);
+  const keys: string[] = Object.keys(metadata || {});
   const editedValues = reactive<T & { [key: string]: any }>(
     keys.reduce((values, key) => {
       values[key] = null;

@@ -3,8 +3,8 @@
     <div class="edit-header">
       <h2>{{ t('Create Configuration') }}</h2>
       <div class="buttons-group">
-        <el-button native-type="submit" type="primary" :loading="submitting">
-          <el-icon @click="submit">
+        <el-button type="primary" :loading="submitting" @click="submit">
+          <el-icon>
             <icon-promotion/>
           </el-icon>
         </el-button>
@@ -25,6 +25,10 @@ import configurationsService from '@/services/configurations-service';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import Monaco from '../users/components/Monaco.vue';
 import { useI18n } from 'vue-i18n';
+import type { ICustomConfiguration } from '@qelos/sdk/src/administrator/manage-configurations';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const { t } = useI18n();
 const isPublic = ref(false);
@@ -41,10 +45,13 @@ const { submitting, submit } = useSubmitting(
         public: isPublic.value,
         key: configKey.value,
         kind: configKind.value,
-        metadata: JSON.parse(metadata.value)
+        metadata: metadata.value ? JSON.parse(metadata.value) : {}
       })
     },
-    { success: 'Configurations created successfully', error: 'Failed to created configurations' })
+    { success: 'Configurations created successfully', error: 'Failed to created configurations' },
+    (config: ICustomConfiguration) => {
+      router.push({name: 'editConfiguration', params: {key: config.key}})
+    })
 </script>
 <style>
 .config-page {

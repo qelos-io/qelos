@@ -6,6 +6,7 @@ const BASIC_APP_CONFIGURATION_KEY = 'app-configuration'
 function getConfigurationByKey(req, res, next) {
   Configuration.getWithCache(req.headers.tenant, req.params.configKey, req.user && req.user.isAdmin)
     .then(configuration => {
+      console.log('get from key', configuration);
       if (!configuration) {
         return Promise.reject(null)
       }
@@ -41,7 +42,7 @@ async function createConfiguration(req, res) {
     tenant: req.headers.tenant,
     key: body.key,
     public: !!body.public,
-    metadata: body.metadata,
+    metadata: body.metadata || {},
   })
 
   configuration.save()
@@ -95,7 +96,7 @@ async function updateConfiguration(req, res) {
       delete body.metadata.websiteUrls;
     }
     configuration.metadata = {
-      ...configuration.metadata,
+      ...(configuration.metadata || {}),
       ...body.metadata
     }
     configuration.markModified('metadata');
@@ -112,6 +113,11 @@ async function updateConfiguration(req, res) {
 }
 
 async function removeConfiguration(req, res) {
+  if (req.params.configKey === BASIC_APP_CONFIGURATION_KEY) {
+    res.status(403).json({ message: 'cannot remove app configuration' }).end()
+    return;
+  }
+
   let configuration;
   try {
     configuration = await Configuration.getForEdit(req.headers.tenant, req.params.configKey).select('key').exec();
@@ -121,16 +127,11 @@ async function removeConfiguration(req, res) {
     return;
   }
 
-  if (configuration.key === BASIC_APP_CONFIGURATION_KEY) {
-    res.status(400).json({ message: 'remove configuration failed' }).end()
-    return;
-  }
-
   try {
-    await configuration.remove();
+    await Configuration.deleteOne({_id: configuration._id, tenant: req.headers.tenant })
     res.status(200).json(configuration).end()
   } catch {
-    res.status(400).json({ message: 'remove configuration failed' }).end()
+    res.status(500).json({ message: 'remove configuration failed' }).end()
   }
 }
 

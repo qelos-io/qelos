@@ -52,6 +52,7 @@ Configuration.statics.clearCache = function (tenant, key) {
 
 Configuration.statics.getWithCache = function getByKey(tenant, key, isAdmin) {
   const publicKey = cachePrefix + tenant + ':' + key;
+  console.log('get with cache', publicKey, isAdmin);
   if (isAdmin) {
     return cacheManager.wrap(cachePrefix + tenant + ':admin:' + key, () => {
       return this.getForEdit(tenant, key).lean().then(config => {
@@ -62,23 +63,23 @@ Configuration.statics.getWithCache = function getByKey(tenant, key, isAdmin) {
             metadata: config.metadata
           }, { ttl: FOREVER_TTL })).catch()
         }
-        return JSON.stringify({ tenant, key, metadata: config.metadata });
+        return JSON.stringify({ tenant, key, metadata: config.metadata || {} });
       });
     }, { ttl: FOREVER_TTL })
   }
-  return cacheManager.wrap(cachePrefix + tenant + ':' + key, () => {
+  return cacheManager.wrap(publicKey, () => {
     return this.findOne({ key, tenant, public: true })
       .select('tenant key metadata')
       .lean()
       .exec()
       .then(config => {
-        return JSON.stringify({ tenant, key, metadata: config.metadata })
+        return JSON.stringify({ tenant, key, metadata: config.metadata || {} })
       })
   }, { ttl: FOREVER_TTL })
 }
 
 Configuration.post('save', function () {
-  cacheManager.setItem(cachePrefix + this.tenant + ':' + this.key, '', { ttl: 1 })
+  cacheManager.setItem(cachePrefix + this.tenant + ':' + this.key, '', { ttl: 1 }).catch(() => null)
 })
 
 module.exports = mongoose.model('Configuration', Configuration)

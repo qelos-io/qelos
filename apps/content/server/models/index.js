@@ -18,7 +18,6 @@ module.exports.connect = (uri) => {
   // load models
   require('./configuration')
   require('./block');
-  require('./layout');
 
   return promise
 }
