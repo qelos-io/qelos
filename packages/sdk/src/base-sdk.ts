@@ -1,5 +1,11 @@
 import { FetchLike, QelosSDKOptions } from './types';
 
+const ERRORS = {
+  EXTRA_HEADERS: 'could not get extra headers',
+  FAILED_REFRESH_TOKEN: 'could not handle failed refresh token',
+  UNABLE_TO_REFRESH_TOKEN: 'could not able to refresh token'
+}
+
 export default class BaseSDK {
   #appUrl: string;
   #fetch: FetchLike;
@@ -12,43 +18,88 @@ export default class BaseSDK {
   async callApi(relativeUrl: string, data?: RequestInit) {
     data = data || {};
     data.headers = data.headers || {};
-    Object.assign(data.headers, await this.qlOptions.extraHeaders(relativeUrl));
+    
+    if (this.qlOptions.extraHeaders) {
+      try {
+        const extraHeaders = await this.qlOptions.extraHeaders(relativeUrl);
+        Object.assign(data.headers, extraHeaders);
+      } catch (e) {
+        throw new Error(ERRORS.EXTRA_HEADERS);
+      }
+    }
+    
     return this.#fetch(this.#appUrl + relativeUrl, data);
   }
 
-  callJsonApi<T>(relativeUrl: string, data?: RequestInit): Promise<T> {
-    return this.callApi(relativeUrl, data).then(async res => {
+  private async handleFailedRefreshToken(): Promise<void> {
+    if (this.qlOptions.onFailedRefreshToken) {
+      try {
+        await this.qlOptions.onFailedRefreshToken();
+      } catch (e) {
+        throw new Error(ERRORS.FAILED_REFRESH_TOKEN);
+      }
+    } else {
+      throw new Error(ERRORS.UNABLE_TO_REFRESH_TOKEN);
+    }
+  }
+
+  private getContentType(res: Response): string {
+    return res.headers.get('Content-Type') ||
+      res.headers.get('content-type') ||
+      res.headers.get('ContentType') ||
+      res.headers.get('contenttype') ||
+      res.headers.get('contentType') || 'text';
+  }
+
+  private async parseResponse<T>(res: Response): Promise<T> {
+    const contentType = this.getContentType(res);
+    const isJson = contentType.includes('json');
+    
+    const body = await (isJson ? res.json() : res.text());
+    
+    if (!res.ok) {
+      throw (typeof body === 'string' ? new Error(body) : body);
+    }
+    
+    return body;
+  }
+
+  async callJsonApi<T>(relativeUrl: string, data?: RequestInit): Promise<T> {
+    try {
+      let res = await this.callApi(relativeUrl, data);
+      
+      // Handle token refresh if needed
       if (this.qlOptions.forceRefresh && res.status >= 400 && res.status < 500) {
         let headers: Record<string, string> = {};
-        try {
-          headers = await this.qlOptions.extraHeaders(relativeUrl, true);
-        } catch {
-          //
-        }
-        if (!headers?.authorization) {
-          if (this.qlOptions.onFailedRefreshToken) {
-            try {
-              await this.qlOptions.onFailedRefreshToken();
-            } catch (e) {
-              throw new Error('could not handle failed refresh token');
-            }
-          } else {
-            throw new Error('could not able to refresh token');
+        
+        if (this.qlOptions.extraHeaders) {
+          try {
+            headers = await this.qlOptions.extraHeaders(relativeUrl, true);
+          } catch {
+            // Ignore error during refresh attempt
           }
         }
+        
+        if (!headers?.authorization) {
+          await this.handleFailedRefreshToken();
+        }
+        
         res = await this.callApi(relativeUrl, data);
       }
-      const isJson = (res.headers.get('Content-Type') ||
-        res.headers.get('content-type') ||
-        res.headers.get('ContentType') ||
-        res.headers.get('contenttype') ||
-        res.headers.get('contentType') || 'text').includes('json');
-      const body = await (isJson ? res.json() : res.text());
-      if (!res.ok) {
-        throw (typeof body === 'string' ? new Error(body) : body);
+      
+      return this.parseResponse<T>(res);
+    } catch (err: unknown) {
+      // Type guard for Error objects
+      if (err instanceof Error && err.message === ERRORS.EXTRA_HEADERS) {
+        // Handle token refresh for EXTRA_HEADERS_ERROR
+        await this.handleFailedRefreshToken();
+        
+        const res = await this.callApi(relativeUrl, data);
+        return this.parseResponse<T>(res);
       }
-      return body
-    });
+      
+      throw err;
+    }
   }
 
   getQueryParams(moreQuery?: Record<string, any>) {
