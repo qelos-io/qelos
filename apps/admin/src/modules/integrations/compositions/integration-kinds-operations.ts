@@ -37,14 +37,51 @@ export function useIntegrationKindsTargetOperations() {
   return operations
 }
 
+export interface TriggerOperation {
+  label: string;
+  name: string;
+  details?: any;
+  options?: TriggerOption[];
+}
+
+export interface TriggerOption {
+  label: string;
+  value: any;
+}
 
 export function useIntegrationKindsTriggerOperations() {
-  const operations: Record<IntegrationSourceKind, { label, name, details? }[] | undefined> = {
+  const operations: Record<IntegrationSourceKind, TriggerOperation[] | undefined> = {
     [IntegrationSourceKind.Http]: [],
     [IntegrationSourceKind.Qelos]: [
       {
         name: QelosTriggerOperation.webhook,
         label: 'Subscribe to webhook event',
+        options: [
+          {
+            label: 'User Registered',
+            value: {
+              source: 'auth',
+              kind: 'signup',
+              eventName: 'user-registered',
+            }
+          },
+          {
+            label: 'Workspace Created',
+            value: {
+              source: 'auth',
+              kind: 'workspaces',
+              eventName: 'workspace-created',
+            }
+          },
+          {
+            label: 'Blueprint Entity Created',
+            value: {
+              source: 'blueprints',
+              kind: 'YOUR_BLUEPRINT_NAME',
+              eventName: 'create',
+            }
+          }
+        ],
         details: { source: '*', kind: '*', eventName: '*' }
       },
     ],

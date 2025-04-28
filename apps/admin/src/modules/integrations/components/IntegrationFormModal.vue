@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch, toValue } from 'vue';
+import { computed, reactive, watch, toValue, ref } from 'vue';
 import { IIntegration } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
@@ -8,6 +8,7 @@ import integrationsService from '@/services/integrations-service';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import {
+  TriggerOperation,
   useIntegrationKindsTargetOperations,
   useIntegrationKindsTriggerOperations
 } from '@/modules/integrations/compositions/integration-kinds-operations';
@@ -99,6 +100,8 @@ const dataManipulation = computed({
 const selectedTriggerSource = computed(() => store.result?.find(s => s._id === form.trigger.source));
 const selectedTargetSource = computed(() => store.result?.find(s => s._id === form.target.source));
 
+const selectedTriggerOperation = ref<TriggerOperation>();
+
 watch([() => form.trigger.operation, () => form.trigger.source], () => {
   if (props.editingIntegration?._id) {
     if (form.trigger.operation === props.editingIntegration.trigger.operation && form.trigger.source === props.editingIntegration.trigger.source) {
@@ -107,6 +110,7 @@ watch([() => form.trigger.operation, () => form.trigger.source], () => {
     }
   }
   const operation = triggerOperations[selectedTriggerSource.value?.kind]?.find(o => o.name === form.trigger.operation)
+  selectedTriggerOperation.value = operation;
   form.trigger.details = JSON.parse(JSON.stringify(operation?.details || {}));
 });
 watch(selectedTargetSource, () => {
@@ -173,6 +177,11 @@ const { submit, submitting } = useSubmitting(() => {
                      option-value="name"
                      option-label="label"
                      label="Operation that will trigger this workflow"/>
+          <div v-if="selectedTriggerOperation?.options">
+            <el-tag v-for="option in selectedTriggerOperation?.options"
+             :key="option.value" class="tag"
+             @click="form.trigger.details = option.value">{{ option.label }}</el-tag>
+          </div>
           <Monaco v-model="triggerDetails"/>
         </el-tab-pane>
         <el-tab-pane :label="$t('Data Manipulation')">
@@ -212,6 +221,10 @@ const { submit, submitting } = useSubmitting(() => {
 </template>
 
 <style scoped>
+.tag {
+  margin: 5px;
+  cursor: pointer;
+}
 img {
   border-radius: 0;
   height: 20px;
