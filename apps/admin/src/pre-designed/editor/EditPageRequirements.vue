@@ -76,11 +76,21 @@ function clearIfEmpty($event: any, obj: any, key: string) {
   }
 }
 
-function getInstructionsCode(row) {
+function getBlueprintInstructionsCode(row) {
   if (row.fromBlueprint && row.fromBlueprint.name) {
     const blueprintName = capitalize(row.fromBlueprint.name);
     const texts = [
       `<strong>{{${row.key}.result}}</strong> will be ${row.fromBlueprint.identifier ? ('a ' + blueprintName + ' entity') : 'an array of ' + getPlural(blueprintName) + ' entities'}`,
+      `<strong>{{${row.key}.loading}}</strong> and <strong>{{${row.key}.loaded}}</strong> can help you distinguish rather the API call is loading or loaded.`
+    ]
+    return texts.join('<br>')
+  }
+}
+
+function getHttpInstructionsCode(row) {
+  if (row.fromHTTP) {
+    const texts = [
+      `<strong>{{${row.key}.result}}</strong> will be the response of the HTTP request`,
       `<strong>{{${row.key}.loading}}</strong> and <strong>{{${row.key}.loaded}}</strong> can help you distinguish rather the API call is loading or loaded.`
     ]
     return texts.join('<br>')
@@ -164,7 +174,7 @@ function getInstructionsCode(row) {
               <p>
                 {{ $t('You can use the following variables in your template:') }}
                 <br>
-                <i v-html="getInstructionsCode(row)"></i>
+                <i v-html="getBlueprintInstructionsCode(row)"></i>
               </p>
             </details>
           </div>
@@ -211,6 +221,16 @@ function getInstructionsCode(row) {
                       style="max-height:200px;"
                       @update:model-value="updateRowJSON(row.fromHTTP, 'query', $event);"/>
             </el-form-item>
+            <details>
+              <summary>
+                {{ $t('Usage Instructions') }}
+              </summary>
+              <p>
+                {{ $t('You can use the following variables in your template:') }}
+                <br>
+                <i v-html="getHttpInstructionsCode(row)"></i>
+              </p>
+            </details>
           </div>
         </div>
       </template>
