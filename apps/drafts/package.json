@@ -37,7 +37,7 @@
     "type": "git",
     "url": "git+ssh://git@github.com/greenpress/greenpress.git"
   },
-  "gitHead": "870f8846e1cdcc13af9327c6e70844a33a9f9cba",
+  "gitHead": "dc75ba76bdb68c07b640d4469d9dffecf61759b1",
   "bundledDependencies": [
     "@qelos/api-kit",
     "mongoose"
