@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useBlocks } from '@/modules/blocks/store/blocks';
+import VRuntimeTemplate from 'vue3-runtime-template';
 
 const props = defineProps<{ identifier: string }>()
 
@@ -11,7 +12,9 @@ const block = getBlock(props.identifier);
 </script>
 
 <template>
-  <div class="content-box" v-html="block"></div>
+  <div class="content-box">
+    <VRuntimeTemplate :template="block"/>
+  </div>
 </template>
 
 <style scoped>

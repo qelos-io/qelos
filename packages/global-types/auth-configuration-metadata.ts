@@ -14,6 +14,10 @@ export interface IAuthConfigurationMetadata {
   treatUsernameAs: 'email' | 'username' | 'phone',
   formPosition: 'left' | 'right' | 'center' | 'top' | 'bottom',
   loginTitle?: string,
+  slots?: {
+    loginHeader?: string,
+    loginFooter?: string,
+  },
   showLoginPage: boolean,
   showRegisterPage: boolean,
   backgroundImage?: string,

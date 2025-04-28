@@ -38,7 +38,12 @@
       </div>
       <!-- Login Title and Background Image -->
       <BlockItem>
+        <FormRowGroup>
+          <BlocksSelector v-model="edited.slots.loginHeader" title="Header Content Box"/>
+          <BlocksSelector v-model="edited.slots.loginFooter" title="Footer Content Box"/>
+        </FormRowGroup>
         <FormInput v-model="edited.loginTitle"
+                   :disabled="!!edited.slots?.loginHeader"
                    title="Title of Login Page"
                    :placeholder="$t('Welcome')">
           <template #options>
@@ -143,6 +148,7 @@ import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 import Login from '@/modules/core/Login.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { ElMessage } from 'element-plus';
+import BlocksSelector from '@/modules/blocks/components/BlocksSelector.vue';
 
 const props = defineProps({
   kind: String,
@@ -159,6 +165,7 @@ const defaultMetadata: IAuthConfigurationMetadata = {
   allowSocialAutoRegistration: true,
   additionalUserFields: [],
   socialLoginsSources: {},
+  slots: {},
    disableUsernamePassword: false // Default to false
 }
 

@@ -2,7 +2,13 @@
     <div class="login-page" v-if="loaded">
     <div v-if="config.formPosition === 'center'" class="flex-container" :class="{'bg-image': !!bgImage}" centered>
       <LoginForm :auth-config="config">
-        <h1>{{ $t(config?.loginTitle || 'Welcome') }}</h1>
+        <template #header>
+          <ContentBox v-if="config.slots?.loginHeader" :identifier="config.slots.loginHeader"/>
+          <h1 v-else>{{ $t(config?.loginTitle || 'Welcome') }}</h1>
+        </template>
+        <template #footer v-if="config.slots?.loginFooter">
+          <ContentBox :identifier="config.slots.loginFooter"/>
+        </template>
       </LoginForm>
     </div>
     <template v-else>
@@ -11,7 +17,14 @@
         <h1>{{ $t(config?.loginTitle || 'Welcome') }}</h1>
       </aside>
       <div>
-        <LoginForm :auth-config="config"/>
+        <LoginForm :auth-config="config">
+          <template #header v-if="config.slots?.loginHeader">
+            <ContentBox :identifier="config.slots.loginHeader"/>
+          </template>
+          <template #footer v-if="config.slots?.loginFooter">
+            <ContentBox :identifier="config.slots.loginFooter"/>
+          </template>
+        </LoginForm>
       </div>
     </template>
   </div>
@@ -21,12 +34,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, toRefs, watch, } from 'vue';
+import { computed, toRefs, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import LoginForm from './components/LoginForm.vue'
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import { useAuthConfiguration } from '@/modules/configurations/store/auth-configuration';
 import { IAuthConfigurationMetadata } from '@qelos/global-types';
+import ContentBox from '../pre-designed/components/ContentBox.vue';
 
 const props = defineProps<{
   authConfig: IAuthConfigurationMetadata

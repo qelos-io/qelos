@@ -1,6 +1,6 @@
 <template>
   <div class="login-container">
-    <slot />
+    <slot name="header" />
     <el-form v-if="!props.authConfig?.disableUsernamePassword" class="login-form" @submit.native.prevent="submit">
       <el-form-item :label="$t('Username / Email')" class="form-item-flex">
         <el-input size="large" name="username" v-model="form.username" :type="authConfig.treatUsernameAs" required
@@ -25,6 +25,8 @@
         <span>{{ $t('Login with LinkedIn') }}</span>
       </el-button>
     </template>
+
+    <slot name="footer"/>
   </div>
 </template>
 

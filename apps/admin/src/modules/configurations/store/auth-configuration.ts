@@ -42,6 +42,7 @@ export const useAuthConfiguration = defineStore('auth-configuration', () => {
     allowSocialAutoRegistration: true,
     additionalUserFields: [],
     socialLoginsSources: {},
+    slots: {},
     loginTitle: '',
     backgroundImage: undefined,
     disableUsernamePassword: false // Assumes IAuthConfigurationMetadata is updated
