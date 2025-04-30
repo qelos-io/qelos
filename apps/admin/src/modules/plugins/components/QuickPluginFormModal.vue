@@ -2,7 +2,10 @@
 import QuickReverseProxyForm from './quick-plugin/QuickReverseProxyForm.vue';
 import { ref, watch } from 'vue';
 import { useCreatePlugin } from '@/modules/plugins/compositions/manage-plugin';
+import { useRoute, useRouter } from 'vue-router';
 
+const router = useRouter();
+const route = useRoute();
 const visible = defineModel<boolean>('visible')
 const emit = defineEmits(['close', 'saved'])
 
@@ -10,7 +13,9 @@ const { savePlugin, submitting, plugin } = useCreatePlugin();
 
 const form = ref({});
 
-const selectedOption = ref()
+function selectOption(option: string) {
+  router.push({query: {...route.query, option}})
+}
 
 async function submit() {
   Object.assign(plugin, form.value)
@@ -21,35 +26,33 @@ async function submit() {
 
 watch(visible, () => {
   if (visible.value) {
-    selectedOption.value = undefined
+    router.push({query: {...route.query, option: undefined}})
   }
 })
 </script>
 
 <template>
+<el-form v-if="visible" @submit.prevent="submit">
   <el-dialog v-model="visible"
              :title="$t('Create a Plugin')"
-             width="50%"
              @close="$emit('close')">
-    <el-form v-if="visible" @submit.prevent="submit">
-
-      <div v-if="!selectedOption">
+    <div v-if="!route.query.option">
         <h3>{{ $t('What is your purpose?') }}</h3>
 
         <div class="content-list">
-          <div class="content-item" @click="selectedOption = 'reverse-proxy'">
+          <div class="content-item" @click="selectOption('reverse-proxy')">
             <font-awesome-icon :icon="['fas', 'network-wired']" />
             <span>{{ $t('Reverse Proxy') }}</span>
           </div>
-          <div class="content-item" @click="selectedOption = 'analytics'">
+          <div class="content-item" @click="selectOption('analytics')">
             <font-awesome-icon :icon="['fas', 'chart-simple']" />
             <span>{{ $t('Analytics script') }}</span>
           </div>
-          <div class="content-item" @click="selectedOption = 'subscribe'">
+          <div class="content-item" @click="selectOption('subscribe')">
             <font-awesome-icon :icon="['fas', 'right-from-bracket']" />
             <span>{{ $t('Subscribe to Events') }}</span>
           </div>
-          <div class="content-item" @click="selectedOption = 'remote'">
+          <div class="content-item" @click="selectOption('remote')">
             <font-awesome-icon :icon="['fas', 'link']" />
             <span>{{ $t('Link to Remote Plugin') }}</span>
           </div>
@@ -60,16 +63,18 @@ watch(visible, () => {
         </div>
       </div>
 
-      <div v-else-if="selectedOption === 'reverse-proxy'">
+      <div v-else-if="route.query.option === 'reverse-proxy'">
         <QuickReverseProxyForm @changed="form = $event"/>
       </div>
 
-      <el-form-item v-if="selectedOption">
-        <el-button type="primary" native-type="submit" :disabled="submitting" :loading="submitting">{{ $t('Save') }}</el-button>
-        <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
-      </el-form-item>
-    </el-form>
+      <template #footer>
+        <el-form-item>
+          <el-button v-if="route.query.option" type="primary" native-type="submit" :disabled="submitting" :loading="submitting">{{ $t('Save') }}</el-button>
+          <el-button @click="$emit('close')">{{ $t(route.query.option ? 'Cancel' : 'Close') }}</el-button>
+        </el-form-item>
+      </template>
   </el-dialog>
+</el-form>
 </template>
 
 <style scoped>
