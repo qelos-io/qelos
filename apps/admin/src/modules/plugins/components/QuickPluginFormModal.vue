@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import QuickReverseProxyForm from './quick-plugin/QuickReverseProxyForm.vue';
+import QuickInjectableForm from './quick-plugin/QuickInjectableForm.vue';
 import { ref, watch } from 'vue';
 import { useCreatePlugin } from '@/modules/plugins/compositions/manage-plugin';
 import { useRoute, useRouter } from 'vue-router';
@@ -65,6 +66,9 @@ watch(visible, () => {
 
       <div v-else-if="route.query.option === 'reverse-proxy'">
         <QuickReverseProxyForm @changed="form = $event"/>
+      </div>
+      <div v-else-if="route.query.option === 'analytics'">
+        <QuickInjectableForm @changed="form = $event"/>
       </div>
 
       <template #footer>
