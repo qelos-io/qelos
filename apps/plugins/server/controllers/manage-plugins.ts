@@ -129,6 +129,9 @@ export async function createPlugin(req, res) {
       appUrl: new URL(req.headers.tenanthost.startsWith('http') ? req.headers.tenanthost : `${protocolToUse}://${req.headers.tenanthost}`).origin
     });
     logger.log('plugin enriched', req.headers.tenanthost, plugin);
+    if (!newRefreshToken && !plugin.manifestUrl && token) {
+      plugin.token = token;
+    }
     await plugin.save();
 
     res.json(plugin).end();
