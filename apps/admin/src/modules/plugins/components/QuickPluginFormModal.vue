@@ -10,7 +10,7 @@ const route = useRoute();
 const visible = defineModel<boolean>('visible')
 const emit = defineEmits(['close', 'saved'])
 
-const { savePlugin, submitting, plugin } = useCreatePlugin();
+const { savePlugin, submitting } = useCreatePlugin();
 
 const form = ref({});
 
@@ -19,14 +19,14 @@ function selectOption(option: string) {
 }
 
 async function submit() {
-  Object.assign(plugin, form.value)
-  await savePlugin(plugin);
-  emit('saved', plugin)
+  await savePlugin(form.value);
+  emit('saved', form.value)
   emit('close')
 }
 
 watch(visible, () => {
   if (visible.value) {
+    form.value = {};
     router.push({query: {...route.query, option: undefined}})
   }
 })

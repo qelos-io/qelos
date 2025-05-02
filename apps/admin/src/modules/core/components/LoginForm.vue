@@ -11,7 +11,12 @@
           dir='ltr' />
       </el-form-item>
       <div class="form-buttons">
-        <SaveButton :submitting="submitting" :text="$t('Login')" />
+        <el-button native-type="submit" :loading="submitting">
+          <span>{{ $t('Login') }}</span>
+          <template #icon>
+            <font-awesome-icon :icon="['fas', 'arrow-right-long']" />
+          </template>
+        </el-button>
       </div>
     </el-form>
 
@@ -31,12 +36,11 @@
 </template>
 
 <script lang="ts" setup>
-import { watch, reactive } from 'vue'
+import { watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLogin } from '../compositions/authentication'
 import { useSubmitting } from '../compositions/submitting'
 import { IAuthConfigurationMetadata } from '@qelos/global-types';
-import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 
 const props = defineProps<{ authConfig: IAuthConfigurationMetadata }>()
 
@@ -92,6 +96,20 @@ form {
 
 .form-buttons {
   text-align: end;
+
+  .el-button {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+}
+
+.form-buttons :deep(.el-icon) {
+  margin-left: auto;
+  position: absolute;
+  right: 10px;
 }
 
 .linkedin-button {
@@ -139,7 +157,7 @@ form {
   padding: 20px;
   font-size: var(--base-font-size);
   border-radius: calc(var(--border-radius) * 1.2);
-  transition: background 0.3s;
+  transition: background-color 0.3s;
 }
 
 .linkedin-button:hover {
