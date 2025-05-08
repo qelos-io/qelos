@@ -23,7 +23,7 @@ const token = ref('');
 const submitForm = () => {
   if (token.value) {
     formModel.value.authentication = {
-      token: token
+      token: token.value
     }
   }
   emit('submit', formModel.value);
@@ -36,7 +36,7 @@ const submitForm = () => {
     <LabelsInput v-model="formModel.labels" :availableLabels="availableLabels" title="Labels">
       <el-option v-for="label in availableLabels" :key="label" :label="label" :value="label" />
     </LabelsInput>
-    <FormInput v-model="token" title="Token" placeholder="Leave empty to keep previous value"/>
+    <FormInput v-model="token" title="Token" placeholder="Leave empty to keep previous value" type="password"/>
     <el-form-item>
       <el-button type="primary" nativeType="submit">{{ $t('Save') }}</el-button>
       <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
