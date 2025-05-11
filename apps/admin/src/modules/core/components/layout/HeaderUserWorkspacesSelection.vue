@@ -14,7 +14,7 @@ import { useAuth } from '@/modules/core/compositions/authentication';
 
 const { user } = useAuth()
 
-const wsName = computed(() => decodeURIComponent(user.value.workspace.name || ''))
+const wsName = computed(() => decodeURIComponent(decodeURIComponent(user.value.workspace.name || '')))
 </script>
 <style scoped>
 .workspace-row {
