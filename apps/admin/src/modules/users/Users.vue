@@ -32,4 +32,15 @@ const { filteredUsers, users, removeUser } = useUsersList();
 .filter-container {
   margin: 0 20px;
 }
+
+@media (max-width: 768px) {
+  .filter-container {
+    margin: 0 5px;
+  }
+  
+  .header-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 </style>

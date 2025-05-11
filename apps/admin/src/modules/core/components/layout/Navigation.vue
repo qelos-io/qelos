@@ -260,7 +260,7 @@ a:hover {
     left: -100%;
     top: 0;
     bottom: 0;
-    overflow: hidden;
+    overflow: auto;
     transition: left 0.2s ease-in-out;
     z-index: 7;
 
