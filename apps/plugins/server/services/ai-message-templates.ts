@@ -11,157 +11,66 @@ export class AIMessageTemplates {
   static getBlueprintGenerationMessages(describedBlueprint: string): ChatCompletionMessageParam[] {
     return [{
       role: 'system',
-      content: `You are a Qelos blueprint generator for Velocitech LTD's Qelos platform. 
-A blueprint is a JSON object that defines the structure of a database model.
-The interfaces we use to describe blueprints are:
-export enum EntityIdentifierMechanism {
-  OBJECT_ID = 'objectid',
-  GUID = 'guid'
-}
+      content: `You are a Qelos blueprint generator for the Qelos platform.
+A blueprint is a JSON object that defines the structure of a database model in the Qelos multi-tenant SaaS platform.
+Qelos handles any data related time created, updated, or assigned user and/or workspace, so you don't need to define those properties.
 
-export enum BlueprintPropertyType {
-  STRING = 'string',
-  NUMBER = 'number',
-  BOOLEAN = 'boolean',
-  DATE = 'date',
-  DATETIME = 'datetime',
-  TIME = 'time',
-  OBJECT = 'object',
-  FILE = 'file'
-}
-
-export enum PermissionScope {
-  USER = 'user',
-  WORKSPACE = 'workspace',
-  TENANT = 'tenant'
-}
-
-export enum CRUDOperation {
-  CREATE = 'create',
-  READ = 'read',
-  UPDATE = 'update',
-  DELETE = 'delete'
-}
-
-export interface IPermissionsDescriptor {
-  scope: PermissionScope,
-  operation: CRUDOperation,
-  guest: boolean,
-  roleBased: string[],
-  workspaceRoleBased: string[],
-  workspaceLabelsBased: string[],
-}
-
-export interface IBlueprintPropertyDescriptor {
-  title: string,
-  type: BlueprintPropertyType,
-  description: string,
-  required: boolean,
-  enum?: string[],
-  multi?: boolean,
-  min?: number,
-  max?: number,
-  schema?: any; // when type === "object" - schema can be a valid json schema.
-}
-
-export interface IBlueprintLimitation {
-  scope: PermissionScope;
-  workspaceLabels: string[];
-  roles: string[];
-  properties?: string[];
-  value: number;
-}
-
-const blueprintJsonSchema = {
-  "type": "object",
-  "title": "Blueprint Schema",
-  "description": "Schema for defining a blueprint in the Qelos platform",
-  "required": [
-    "identifier",
-    "name",
-    "entityIdentifierMechanism",
-    "permissions",
-    "permissionScope",
-    "properties",
-    "updateMapping",
-    "relations",
-    "limitations",
-    "dispatchers"
-  ],
-  "properties": {
-    "identifier": {
-      "type": "string",
-      "description": "Unique identifier for the blueprint"
-    },
-    "name": {
-      "type": "string",
-      "description": "Display name for the blueprint"
-    },
-    "description": {
-      "type": "string",
-      "description": "Optional description of the blueprint's purpose"
-    },
-    "entityIdentifierMechanism": {
-      "type": "string",
-      "enum": ["objectid", "guid"],
-      "description": "Mechanism used to generate unique identifiers for entities"
-    },
-    "permissionScope": {
-      "type": "string",
-      "enum": ["user", "workspace", "tenant"],
-      "description": "Permission scope level"
-    },
-    "permissions": {
-      "type": "array",
-      "description": "Defines the CRUD permissions for users based on selected scope",
-      "items": {
-        "type": "object",
-        "properties": {
-          "scope": {
-            "type": "string",
-            "enum": ["user", "workspace", "tenant"],
-            "description": "Permission scope level"
-          },
-          "operation": {
-            "type": "string",
-            "enum": ["create", "read", "update", "delete"],
-            "description": "CRUD operation type"
-          },
-          "guest": {
-            "type": "boolean",
-            "description": "Whether guests are allowed this permission"
-          },
-          "roleBased": {
-            "type": "array",
-            "items": { "type": "string" },
-            "description": "Roles that have this permission"
-          },
-          "workspaceRoleBased": {
-            "type": "array",
-            "items": { "type": "string" },
-            "description": "Workspace roles that have this permission"
-          }
-        }
-      }
+Required blueprint structure:
+{
+  "identifier": string,           // Unique identifier
+  "name": string,                 // Display name
+  "description": string,          // Optional description
+  "entityIdentifierMechanism": "objectid" | "guid",
+  "permissionScope": "user" | "workspace" | "tenant",
+  "permissions": [                // Array of permission objects
+    {
+      "scope": "user" | "workspace" | "tenant",
+      "operation": "create" | "read" | "update" | "delete",
+      "guest": boolean,
+      "roleBased": string[],
+      "workspaceRoleBased": string[],
+      "workspaceLabelsBased": string[]
     }
+  ],
+  "properties": {                 // Record of property descriptors
+    "[propertyName]": {
+      "title": string,
+      "type": "string" | "number" | "boolean" | "date" | "datetime" | "time" | "object" | "file",
+      "description": string,
+      "required": boolean,
+      "enum": string[],           // Optional
+      "multi": boolean,           // Optional
+      "min": number,              // Optional
+      "max": number,              // Optional
+      "schema": any               // Optional, when type is "object"
+    }
+  },
+  "updateMapping": {              // Record<string, string>
+    "[key]": "[value]"
+  },
+  "relations": [                  // Array of relation objects
+    {
+      "key": string,
+      "target": string
+    }
+  ],
+  "limitations": [                // Optional array of limitation objects
+    {
+      "scope": "user" | "workspace" | "tenant",
+      "workspaceLabels": string[],
+      "roles": string[],
+      "properties": string[],     // Optional
+      "value": number
+    }
+  ],
+  "dispatchers": {
+    "create": boolean,
+    "update": boolean,
+    "delete": boolean
   }
 }
 
-Generate expected a blueprint based on the following prompt below and return a pure and valid JSON object that matches the blueprintJsonSchema.
-
-IMPORTANT RESPONSE FORMATTING INSTRUCTIONS:
-1. Your response MUST be a valid JSON object that can be parsed with JSON.parse()
-2. Use ONLY double quotes (") for all property names and string values, NEVER use single quotes (')
-3. Do NOT include any comments in the JSON
-4. Do NOT include any trailing commas
-5. Do NOT include the surrounding markdown code block syntax
-6. Ensure all property names follow the exact casing specified in the blueprint interface
-7. When using value form enums, always use the value and *not* the key.
-8. Expected double-quoted property names!!!!
-9. The response meant to be stores in a json file.
-10. make sure to return the full answer. this json must work or we will get fired immediately!
-
-The rules above must be followed or we consider you as a failure!`
+Return ONLY a complete, valid JSON object. No explanations, markdown formatting, or code blocks.`
     }, {
       role: 'user',
       content: `Create blueprint from the following description:

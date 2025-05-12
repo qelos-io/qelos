@@ -26,6 +26,26 @@ function validateBlueprintProperty(p: IBlueprintPropertyDescriptor): IBlueprintP
   return data;
 }
 
+/**
+ * Validates and processes blueprint properties as a Record object
+ * @param properties Record of property descriptors
+ * @returns Validated properties record
+ */
+function validateBlueprintProperties(properties?: Record<string, IBlueprintPropertyDescriptor>): Record<string, IBlueprintPropertyDescriptor> {
+  if (!properties) return {};
+  
+  const validatedProperties: Record<string, IBlueprintPropertyDescriptor> = {};
+  
+  for (const key in properties) {
+    const property = properties[key];
+    if (property && property.title && property.type) {
+      validatedProperties[key] = validateBlueprintProperty(property);
+    }
+  }
+  
+  return validatedProperties;
+}
+
 const VIEWER_FIELDS = 'tenant identifier name description properties created updated';
 
 export async function getAllBlueprints(req, res) {
@@ -57,8 +77,8 @@ export async function createBlueprint(req, res) {
     tenant: req.headers.tenant,
   });
 
-  blueprint.properties = req.body.properties.map(validateBlueprintProperty);
   try {
+    blueprint.properties = validateBlueprintProperties(req.body.properties);
     await blueprint.save();
     res.json(blueprint).end();
   } catch (err) {
@@ -91,7 +111,7 @@ export async function updateBlueprint(req, res) {
 
   // Apply validated properties if they exist in the request
   if (req.body.properties) {
-    permittedData.properties = req.body.properties.map(validateBlueprintProperty);
+    permittedData.properties = validateBlueprintProperties(req.body.properties);
   }
 
   Object.assign(blueprint, permittedData);
@@ -143,7 +163,7 @@ export async function patchBlueprint(req, res) {
     {
       properties: {
         ...blueprint.properties,
-        ...permittedData.properties,
+        ...validateBlueprintProperties(permittedData.properties),
       },
       updateMapping: {
         ...blueprint.updateMapping,

@@ -4,6 +4,7 @@ import { IntegrationSourceKind } from "@qelos/global-types";
 import { createAIService } from "../services/ai-service";
 import { AIMessageTemplates } from "../services/ai-message-templates";
 import { AIResponseParser } from "../services/ai-response-parser";
+import logger from "../services/logger";
 
 export async function getIntegrationSource(req, res, next) {
   try {
@@ -159,7 +160,7 @@ ${prompt}.`
 
     const blueprintsList = blueprintsListRes.choices[0].message.content || '';
 
-    console.log(blueprintsList);
+    logger.log(blueprintsList);
 
     const blueprints = await Promise.all(blueprintsList.split('\n').filter(line => line.trim()).map(async (blueprintDescription) => {
       // Get the blueprint generation messages from the template service
