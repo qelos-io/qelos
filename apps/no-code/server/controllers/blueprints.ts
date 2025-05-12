@@ -1,7 +1,8 @@
 import Blueprint, { IBlueprint } from '../models/blueprint';
 import BlueprintEntity from '../models/blueprint-entity';
 import { cacheManager } from '../services/cache-manager';
-
+import logger from '../services/logger';
+import { IBlueprintPropertyDescriptor } from '@qelos/global-types';
 const VIEWER_FIELDS = 'tenant identifier name description properties created updated';
 
 export async function getAllBlueprints(req, res) {
@@ -32,10 +33,31 @@ export async function createBlueprint(req, res) {
     ...req.body,
     tenant: req.headers.tenant,
   });
+
+  blueprint.properties = req.body.properties.map((p: IBlueprintPropertyDescriptor): IBlueprintPropertyDescriptor => {
+    // validate descriptor properties
+    // only allow required, multi, min, max, enum, default, description, metadata
+    const { name, type, required, multi, min, max, enum: e, default: d, description, metadata } = p;
+    
+    // return all valid properties, including null, 0, false values
+    const data = {};
+    if (name !== undefined) data.name = name;
+    if (type !== undefined) data.type = type;
+    if (required !== undefined) data.required = required;
+    if (multi !== undefined) data.multi = multi;
+    if (min !== undefined) data.min = min;
+    if (max !== undefined) data.max = max;
+    if (e !== undefined) data.enum = e;
+    if (d !== undefined) data.default = d;
+    if (description !== undefined) data.description = description;
+    if (metadata !== undefined) data.metadata = metadata;
+    return data;
+  });
   try {
     await blueprint.save();
     res.json(blueprint).end();
-  } catch {
+  } catch (err) {
+    logger.error(err);
     res.status(400).json({ message: 'failed to create a blueprint' }).end();
   }
 }

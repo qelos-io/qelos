@@ -95,5 +95,6 @@
   "Search user by email": "חפש משתמש לפי כתובת דואר אלקטרוני",
   "Workspaces": "חשבונות",
   "Create Blueprint": "צור ישות נתונים",
-  "Edit Blueprint": "ערוך ישות נתונים"
+  "Edit Blueprint": "ערוך ישות נתונים",
+  "Create {count} Blueprints": "צור {count} ישות נתונים"
 }

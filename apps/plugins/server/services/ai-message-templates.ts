@@ -73,7 +73,6 @@ export interface IBlueprintLimitation {
 }
 
 const blueprintJsonSchema = {
-  "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "Blueprint Schema",
   "description": "Schema for defining a blueprint in the Qelos platform",
@@ -106,6 +105,11 @@ const blueprintJsonSchema = {
       "type": "string",
       "enum": ["objectid", "guid"],
       "description": "Mechanism used to generate unique identifiers for entities"
+    },
+    "permissionScope": {
+      "type": "string",
+      "enum": ["user", "workspace", "tenant"],
+      "description": "Permission scope level"
     },
     "permissions": {
       "type": "array",
@@ -143,7 +147,7 @@ const blueprintJsonSchema = {
   }
 }
 
-Generate expected a blueprint based on the following prompt below and return a pure and valid JSON object of IBlueprint interface.
+Generate expected a blueprint based on the following prompt below and return a pure and valid JSON object that matches the blueprintJsonSchema.
 
 IMPORTANT RESPONSE FORMATTING INSTRUCTIONS:
 1. Your response MUST be a valid JSON object that can be parsed with JSON.parse()
@@ -155,7 +159,7 @@ IMPORTANT RESPONSE FORMATTING INSTRUCTIONS:
 7. When using value form enums, always use the value and *not* the key.
 8. Expected double-quoted property names!!!!
 9. The response meant to be stores in a json file.
-10. make sure to return the full answer. this json must work or we will get fired immedietly!
+10. make sure to return the full answer. this json must work or we will get fired immediately!
 
 The rules above must be followed or we consider you as a failure!`
     }, {
@@ -807,7 +811,7 @@ quick-table has row-click event, and template slots for customizing the table co
       }
     }
   }
-      Generate expected a blueprint based on the following prompt below and return a pure and valid JSON object of IBlueprint interface.
+      Generate expected a blueprint based on the following prompt below and return a pure and valid JSON object that matches the blueprintJsonSchema.
 
       IMPORTANT RESPONSE FORMATTING INSTRUCTIONS:
       6. Ensure all property names follow the exact casing specified in the blueprint interface

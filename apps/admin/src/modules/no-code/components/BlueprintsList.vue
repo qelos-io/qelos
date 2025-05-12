@@ -26,9 +26,9 @@
           <router-link :to="{name: 'editBlueprint', params: {blueprintIdentifier: blueprint.identifier}}">
             {{ blueprint.name }}
           </router-link>
-          <small>{{ blueprint.description }}</small>
         </template>
         <div class="metadata">
+          <p><small>{{ blueprint.description }}</small></p>
           <table>
             <tr v-for="(field, key) in blueprint.properties" :key="key">
               <td>
@@ -36,7 +36,7 @@
                 <InfoIcon v-if="field.description" :content="field.description"/>
               </td>
               <td>
-                {{ field.multi ? ($t('List of') + ' ') : '' }}{{ capitalize(field.type) }}
+                {{ field.multi ? ($t('List of') + ' ') : '' }}{{ capitalize(field?.type?.toString() || 'string') }}
                 <span v-if="field.min || field.max">{{ getMinMax(field.min, field.max) }}</span>
               </td>
             </tr>
