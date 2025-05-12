@@ -2,7 +2,30 @@ import Blueprint, { IBlueprint } from '../models/blueprint';
 import BlueprintEntity from '../models/blueprint-entity';
 import { cacheManager } from '../services/cache-manager';
 import logger from '../services/logger';
-import { IBlueprintPropertyDescriptor } from '@qelos/global-types';
+import { IBlueprintPropertyDescriptor, BlueprintPropertyType } from '@qelos/global-types';
+
+/**
+ * Validates and sanitizes a blueprint property descriptor
+ * Only allows specific properties: title, type, required, multi, min, max, enum, description
+ */
+function validateBlueprintProperty(p: IBlueprintPropertyDescriptor): IBlueprintPropertyDescriptor {
+  // validate descriptor properties
+  const { title, type, required, multi, min, max, enum: e, description } = p;
+  
+  // return all valid properties, including null, 0, false values
+  const data: IBlueprintPropertyDescriptor = {
+    title,
+    description: description || '',
+    type: typeof type === 'string' ? type : BlueprintPropertyType.STRING,
+    required: !!required,
+    multi: !!multi,
+  };
+  if (min !== undefined) data.min = min;
+  if (max !== undefined) data.max = max;
+  if (e !== undefined) data.enum = e;
+  return data;
+}
+
 const VIEWER_FIELDS = 'tenant identifier name description properties created updated';
 
 export async function getAllBlueprints(req, res) {
@@ -34,25 +57,7 @@ export async function createBlueprint(req, res) {
     tenant: req.headers.tenant,
   });
 
-  blueprint.properties = req.body.properties.map((p: IBlueprintPropertyDescriptor): IBlueprintPropertyDescriptor => {
-    // validate descriptor properties
-    // only allow required, multi, min, max, enum, default, description, metadata
-    const { name, type, required, multi, min, max, enum: e, default: d, description, metadata } = p;
-    
-    // return all valid properties, including null, 0, false values
-    const data = {};
-    if (name !== undefined) data.name = name;
-    if (type !== undefined) data.type = type;
-    if (required !== undefined) data.required = required;
-    if (multi !== undefined) data.multi = multi;
-    if (min !== undefined) data.min = min;
-    if (max !== undefined) data.max = max;
-    if (e !== undefined) data.enum = e;
-    if (d !== undefined) data.default = d;
-    if (description !== undefined) data.description = description;
-    if (metadata !== undefined) data.metadata = metadata;
-    return data;
-  });
+  blueprint.properties = req.body.properties.map(validateBlueprintProperty);
   try {
     await blueprint.save();
     res.json(blueprint).end();
@@ -83,6 +88,11 @@ export async function updateBlueprint(req, res) {
   }
 
   const { tenant, identifier, created, ...permittedData } = req.body;
+
+  // Apply validated properties if they exist in the request
+  if (req.body.properties) {
+    permittedData.properties = req.body.properties.map(validateBlueprintProperty);
+  }
 
   Object.assign(blueprint, permittedData);
   blueprint.updated = new Date();
