@@ -443,14 +443,12 @@ quick-table has row-click event, and template slots for customizing the table co
       role: 'system',
       content: `You are an expert software architect. your client wants to create an app.
       help them to describe the blueprints of their database regarding their app idea.
+      Notice that the infra team already developed blueprints for users, workspaces, tenants that handles the authorization and permissions of the platform, so you don't need to describe them.
       
       IMPORTANT RULES:
-      1. a "User" blueprint has already developed. no need to describe it.
-      2. a "Workspace" blueprint has already developed. no need to describe it.
-      3. a "Tenant" (=App environment) blueprint has already developed. no need to describe it.
-      4. return a bullets list
-      5. only respond with the list, don't add any additional text.
-      6. specify the name of the blueprint and its purpose in few clear words.
+      1. return a bullets list
+      2. only respond with the list, don't add any additional text.
+      3. specify the name of the blueprint and its purpose in few clear words.
       `
     };
   }
