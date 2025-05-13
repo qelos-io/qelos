@@ -1,24 +1,32 @@
 <template>
-  <h1 class="title-container">
-    <div class="title-section">
-      <EditComponentBar/>
-      <slot v-if="$slots.default"/>
-      <span v-else>{{ t(title) }}</span>
-    </div>
-    <div class="content-section" :class="{ 'has-content': $slots.content }">
-      <div class="content-wrapper">
+  <div class="list-page-title">
+    <div class="list-page-header">
+      <h1 class="title-section">
+        <EditComponentBar v-if="$slots.editBar" />
+        <slot v-if="$slots.default"/>
+        <span v-else>{{ t(title) }}</span>
+      </h1>
+      <div class="header-content" v-if="$slots.content">
         <slot name="content" />
       </div>
-      <el-button v-if="createRoutePath || createRoute || createRouteQuery || onCreate" @click="create" class="add-button">
+      <el-button 
+        v-if="createRoutePath || createRoute || createRouteQuery || onCreate" 
+        @click="create" 
+        class="add-button"
+        type="primary"
+        :aria-label="t(createText || 'Create')"
+      >
+        <el-icon class="el-icon--left"><Plus /></el-icon>
         {{ t(createText || 'Create') }}
       </el-button>
     </div>
-  </h1>
+  </div>
 </template>
 
 <script lang="ts" setup>
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { Plus } from '@element-plus/icons-vue';
 import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 
 const router = useRouter();
@@ -53,68 +61,98 @@ function create() {
 </script>
 
 <style scoped>
-.title-container {
+.list-page-title {
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.list-page-header {
   display: flex;
   align-items: center;
   width: 100%;
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 1rem;
+  flex-wrap: nowrap;
+}
+
+h1 {
+  font-size: var(--large-font-size);
+  margin: 0;
+  font-weight: 600;
 }
 
 .title-section {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.content-section {
+.header-content {
   display: flex;
   align-items: center;
-  flex: 1;
-  flex-wrap: wrap;
+  flex-grow: 1;
+  overflow-x: auto;
+  margin: 0 1rem;
 }
 
 .content-wrapper {
   display: flex;
   align-items: center;
-  flex-grow: 1;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
 }
 
 .add-button {
-  margin-inline-start: auto;
+  white-space: nowrap;
+  transition: transform 0.2s ease;
+  margin-left: auto;
+  margin-right: 0.5rem;
+}
+
+.add-button:hover {
+  transform: translateY(-2px);
 }
 
 @media (max-width: 768px) {
-  .title-container {
-    flex-direction: column;
-    align-items: flex-start;
+  .list-page-title {
+    padding: 0 0.5rem;
   }
   
-  .content-section.has-content {
+  .list-page-header {
+    flex-wrap: wrap;
+  }
+  
+  .header-content {
+    order: 3;
     width: 100%;
-    margin-top: 10px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    margin: 0.75rem 0 0 0;
+    padding: 0 0.5rem 0.5rem 0.5rem;
   }
-
-  .content-section.has-content .content-wrapper {
-    width: 100%;
-    overflow-x: auto;
+  
+  /* Ensure title doesn't take too much space on mobile */
+  .title-section {
+    max-width: 65%;
+    padding-left: 0.5rem;
   }
-
-  .content-section.has-content .add-button {
-    margin-inline-start: 0;
+  
+  /* Make the button more compact on mobile */
+  .add-button {
+    padding: 8px 12px;
+    margin-right: 0.5rem;
   }
+}
 
-  .content-section:not(.has-content) {
-    margin-inline-start: auto;
-    margin-top: 0;
+@media (max-width: 480px) {
+  .list-page-title {
+    margin-bottom: 1rem;
   }
-
-  .title-container:has(.content-section:not(.has-content)) {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
+  
+  .title-section {
+    font-size: 1.25rem;
   }
 }
 </style>
