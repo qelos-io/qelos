@@ -104,31 +104,38 @@ export function useEditorComponents() {
           children: [
             { prop: 'prop', label: 'Property', type: 'text' },
             { prop: 'label', label: 'Label', type: 'text' },
-            { prop: 'width', label: 'Width', type: 'text' },
             { prop: 'minWidth', label: 'Min Width', type: 'text' },
             { prop: 'fixed', label: 'Fixed', type: 'switch' },
+            { prop: 'sortable', label: 'Sortable', type: 'select', options: [{identifier: 'true', name: 'Ascending'}, {identifier: 'false', name: 'Descending'}] },
+            { prop: 'filterable', label: 'Filterable', type: 'switch' },
+            { prop: 'className', label: 'Class Name', type: 'text' },
+            { prop: 'type', label: 'Type', type: 'select', options: [
+              {identifier: 'string', name: 'String (Text)'},
+              {identifier: 'selection', name: 'Selection'},
+              {identifier: 'expand', name: 'Expand'},
+              {identifier: 'index', name: 'Index'},
+              {identifier: 'date', name: 'Date'},
+              {identifier: 'datetime', name: 'Datetime'},
+              {identifier: 'boolean', name: 'Boolean'},
+              {identifier: 'status', name: 'Status'},
+              {identifier: 'actions', name: 'Actions'},
+              {identifier: 'image', name: 'Image'},
+              {identifier: 'tags', name: 'Tags'},
+              {identifier: 'link', name: 'Link'},
+              {identifier: 'number', name: 'Number'},
+              {identifier: 'currency', name: 'Currency'},
+              {identifier: 'percent', name: 'Percent'},
+              {identifier: 'file', name: 'File'}
+            ] },
+            { prop: 'resizable', label: 'Resizable', type: 'switch' },
           ]
         }
-      ],
+      ],    
       extendRequirements: (requirements: any, props: any) => {
         requirements[props['v-bind:columns']]?.fromData.push({ prop: '_operations', label: ' ' })
       },
       getInnerHTML: (propsBuilder: any, _props, requirements = {}) => {
         let html = `<template #_operations="{row}"><remove-button @click="pageState ? (pageState.${propsBuilder.data}ToRemove = row.identifier) : null"/></template>`;
-        const blueprintId = requirements[propsBuilder.data]?.fromBlueprint?.name || propsBuilder.data;
-        const blueprint = blueprints.value.find(b => b.identifier === blueprintId);
-        if (blueprint) {
-          propsBuilder.columns?.forEach(column => {
-            const property = blueprint.properties[column.prop.split('.')[1]];
-            if (property?.type === 'file') {
-              const KEY = `row.${column.prop}`
-              html += `<template #${column.prop}="{row}">
-<img v-if="['jpg', 'png', 'jpeg', 'gif', 'svg'].includes(${KEY}?.split?.('.').pop().toLowerCase())" :src="${KEY}" style="max-width: 100px;" alt="Image"/>
-<a v-else :href="${KEY}" target="_blank">Download</a>
-</template>`;
-            }
-          })
-        }
         return html;
       }
     },
@@ -297,6 +304,7 @@ export function useEditorComponents() {
         prop: 'metadata.' + propName,
         label: prop.title,
         fixed: prop.type === 'boolean',
+        type: prop.type
       }
     })
   }

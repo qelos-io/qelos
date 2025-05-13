@@ -82,6 +82,7 @@
                            :key="child.prop"
                            :type="child.type"
                            :title="child.label"
+                           :options="child.options"
                            v-model="col[child.prop]"
                 />
                 <div class="flex-0 remove-row">
