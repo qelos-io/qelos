@@ -551,19 +551,36 @@ a:hover {
 
 @media (max-width: 600px) {
   nav {
-    position: fixed;
-    width: $nav-width;
-    left: -$nav-width;
-    top: 0;
-    bottom: 0;
-    overflow: auto;
-    transition: left 0.3s ease-in-out;
+    position: relative;
+    width: 100%;
+    min-width: 100%;
+    height: 70px;
+    overflow: hidden;
+    transition: height 0.3s ease-in-out;
     z-index: 100;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-bottom-left-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+    margin: var(--spacing);
+    margin-bottom: 0;
+    
+    .el-menu {
+      display: none;
+    }
 
     &.show {
-      display: flex;
+      position: fixed;
+      top: 0;
       left: 0;
+      right: 0;
+      height: 100vh;
+      margin: 0;
+      border-radius: 0;
+      overflow: auto;
+      
+      .el-menu {
+        display: block;
+      }
 
       .mobile-mask {
         display: block;

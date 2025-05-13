@@ -2,7 +2,7 @@
   <div class="admin-panel" v-if="isLoaded">
     <Navigation class="navigation" :opened="navigationOpened" @close="navigationOpened = false"/>
     <div class="admin-content">
-      <Header class="header" @open="navigationOpened = true"/>
+      <Header class="header" @toggle="navigationOpened = !navigationOpened" :is-navigation-opened="navigationOpened"/>
       <div class="main">
         <router-view class="main-content"/>
       </div>
@@ -115,6 +115,28 @@ watch(() => user.value?.roles, () => {
 @media (max-width: 600px) {
   .admin-panel {
     flex-direction: column;
+  }
+  
+  .admin-content {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .navigation {
+    order: 1;
+    width: 100%;
+    position: relative;
+    left: 0;
+    z-index: 90;
+  }
+  
+  .header {
+    order: 2;
+    z-index: 80;
+  }
+  
+  .main {
+    order: 3;
   }
 }
 </style>

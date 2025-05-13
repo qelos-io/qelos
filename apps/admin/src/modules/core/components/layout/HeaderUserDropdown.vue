@@ -1,6 +1,6 @@
 <template>
-  <el-dropdown class="user-dropdown">
-    <div class="el-dropdown-link user-welcome">
+  <el-dropdown class="user-dropdown" trigger="click" @click.stop>
+    <div class="el-dropdown-link user-welcome" @click.stop>
       <span>{{ user.firstName }}</span>
       <el-avatar class="avatar-img" v-if="user.workspace || user.profileImage" :src="user.profileImage">
         {{ user.workspace?.name[0].toUpperCase() }}
@@ -10,12 +10,12 @@
       </el-icon>
     </div>
     <template #dropdown>
-      <el-dropdown-menu>
-        <HeaderUserWorkspacesSelection v-if="wsConfig.isActive"/>
-        <el-dropdown-item>
-          <router-link :to="{name: 'updateProfile'}">{{ $t('Update profile') }}</router-link>
+      <el-dropdown-menu @click.stop>
+        <HeaderUserWorkspacesSelection v-if="wsConfig.isActive" @click.stop/>
+        <el-dropdown-item @click.stop>
+          <router-link :to="{name: 'updateProfile'}" @click.stop>{{ $t('Update profile') }}</router-link>
         </el-dropdown-item>
-        <el-dropdown-item v-if="isAdmin" id="edit-mode-toggle">
+        <el-dropdown-item v-if="isAdmin" id="edit-mode-toggle" @click.stop>
           <el-switch
               v-model="isManagingEnabled"
               active-text="Manager"
@@ -23,9 +23,10 @@
               style="--el-switch-on-color: #3da62d; --el-switch-off-color: #b33939;"
               size="large"
               inline-prompt
+              @click.stop
           />
         </el-dropdown-item>
-        <el-dropdown-item v-if="isAdmin" id="edit-mode-toggle">
+        <el-dropdown-item v-if="isAdmin" id="edit-mode-toggle" @click.stop>
           <el-switch
               v-model="isEditingEnabled"
               active-text="Editor"
@@ -33,20 +34,21 @@
               style="--el-switch-on-color: #3da62d; --el-switch-off-color: #b33939;"
               size="large"
               inline-prompt
+              @click.stop
           />
         </el-dropdown-item>
         <template v-for="group in customLinks" :key="group.key">
           <template v-if="group.items.length">
-            <el-dropdown-item v-for="mfe in group.items" :key="mfe.route.path">
+            <el-dropdown-item v-for="mfe in group.items" :key="mfe.route.path" @click.stop>
               <el-icon v-if="mfe.route.iconName">
                 <component :is="'icon-' + mfe.route.iconName"/>
               </el-icon>
-              <router-link :to="'/' + mfe.route.path">{{ mfe.name }}</router-link>
+              <router-link :to="'/' + mfe.route.path" @click.stop>{{ mfe.name }}</router-link>
             </el-dropdown-item>
           </template>
         </template>
 
-        <el-dropdown-item @click="logout">
+        <el-dropdown-item @click.stop="handleLogout">
           {{ $t('Logout') }}
         </el-dropdown-item>
       </el-dropdown-menu>
@@ -71,7 +73,7 @@ const wsConfig = useWsConfiguration()
 const { navBar } = storeToRefs(usePluginsMicroFrontends());
 const customLinks = computed(() => navBar.value['user-dropdown']);
 
-const logout = async () => {
+const handleLogout = async () => {
   await logoutApi()
   router.push('/login?redirect=' + location.href.replace(location.origin, ''))
 }
