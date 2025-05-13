@@ -19,6 +19,10 @@ const noCodeRoutes = {
     {
       name: 'blueprints',
       path: 'blueprints',
+      meta: {
+        searchQuery: true,
+        searchPlaceholder: 'Search blueprints',
+      },
       component: async () => (await import('./Blueprints.vue')).default
     },
   ]

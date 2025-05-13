@@ -9,6 +9,10 @@ const configurationsRoutes: RouteRecordRaw = {
     {
       path: '',
       name: 'configurations',
+      meta: {
+        searchQuery: true,
+        searchPlaceholder: 'Search Configurations',
+      },
       component: async () => (await import('./Configurations.vue')).default
     },
     {

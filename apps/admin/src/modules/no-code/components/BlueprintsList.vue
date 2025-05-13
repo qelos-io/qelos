@@ -3,7 +3,7 @@
   
     <!-- List View -->
     <div v-if="currentView === 'list'" class="blueprints-grid">
-      <div v-for="blueprint in store.blueprints"
+      <div v-for="blueprint in filteredBlueprints"
            :key="blueprint.identifier"
            :id="'blueprint-' + blueprint.identifier"
            @mouseenter="markRelationships(blueprint)"
@@ -97,13 +97,15 @@
     <!-- Graph View -->
     <div v-else-if="currentView === 'graph'" class="graph-view">
       <BlueprintsRelationGraph 
-        :blueprints="store.blueprints" 
+        :blueprints="filteredBlueprints" 
         @select="handleBlueprintSelect"
       />
     </div>
     
-    <EmptyState v-if="store.loaded && !store.blueprints?.length"
-                description="Create your first blueprint to start using the No-Code module">
+    <EmptyState v-else
+                icon="blueprint"
+                :title="props.q ? 'No Matching Blueprints' : 'No Blueprints Found'"
+                :description="props.q ? `No blueprints match your search '${props.q}'` : 'Create your first blueprint to start using the No-Code module'">
       <el-button type="primary" @click="$router.push({ name: 'createBlueprint' })">{{ $t('Create new Blueprint') }}</el-button>
     </EmptyState>
   </div>
@@ -122,6 +124,13 @@ import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
 import BlueprintsRelationGraph from './BlueprintsRelationGraph.vue';
 import { Edit, Delete, RemoveFilled, Plus } from '@element-plus/icons-vue';
 
+const props = defineProps({
+  q: {
+    type: String,
+    default: ''
+  }
+})
+
 const store = useBlueprintsStore()
 const removeWithConfirm = useConfirmAction(store.remove)
 
@@ -134,6 +143,23 @@ const markedRelationships = computed(() => ({}));
 // Get current view from route query or default to list
 const currentView = computed<'list' | 'graph'>(() => {
   return (route.query.view as 'list' | 'graph') || 'list';
+});
+
+// Filter blueprints based on search query
+const filteredBlueprints = computed(() => {
+  if (!props.q) return store.blueprints;
+  
+  const searchTerm = props.q.toLowerCase().trim();
+  return store.blueprints.filter(blueprint => 
+    blueprint.name.toLowerCase().includes(searchTerm) || 
+    blueprint.identifier.toLowerCase().includes(searchTerm) || 
+    (blueprint.description && blueprint.description.toLowerCase().includes(searchTerm)) ||
+    Object.entries(blueprint.properties || {}).some(([key, prop]) => 
+      key.toLowerCase().includes(searchTerm) || 
+      (prop.title && prop.title.toLowerCase().includes(searchTerm)) ||
+      (prop.description && prop.description.toLowerCase().includes(searchTerm))
+    )
+  );
 });
 
 function markRelationships(blueprint: IBlueprint) {

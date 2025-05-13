@@ -16,7 +16,7 @@
     </div>
       </template>
     </ListPageTitle>
-    <BlueprintsList/>
+    <BlueprintsList :q="route.query.q"/>
     <BlueprintCreateModal :visible="$route.query.mode === 'create'" @close="$router.push({query: {mode: undefined}})" />
   </div>
 </template>

@@ -1,14 +1,6 @@
 <template>
-  <div class="configurations-list">
-    <!-- Search and filter bar -->
-    <div class="search-bar">
-      <el-select v-model="filterType" placeholder="Filter by type" @change="handleSearch" clearable>
-        <el-option label="All" value=""></el-option>
-        <el-option label="Public" value="public"></el-option>
-        <el-option label="Private" value="private"></el-option>
-      </el-select>
-    </div>
-    
+  <div class="configurations-list">    
+
     <!-- Loading state -->
     <div v-if="!list" class="loading-state">
       <el-skeleton :rows="3" animated />
@@ -99,10 +91,22 @@ import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { Search, Calendar, Edit, Delete, DocumentRemove } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
-const searchQuery = ref('');
-const filterType = ref('');
+const { t } = useI18n();  
+
+// Accept filter type and search query from parent component
+const props = defineProps({
+  filterType: {
+    type: String,
+    default: ''
+  },
+  searchQuery: {
+    type: String,
+    default: ''
+  }
+});
 
 const { list, retry } = useConfigurationsList();
 
@@ -122,26 +126,24 @@ const filteredList = computed(() => {
   if (!list.value) return [];
   
   return list.value.filter(config => {
-    const matchesSearch = searchQuery.value === '' || 
-      $t(config.key).toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      (config.description && config.description.toLowerCase().includes(searchQuery.value.toLowerCase()));
+    const matchesSearch = props.searchQuery === '' || 
+      t(config.key).toLowerCase().includes(props.searchQuery.toLowerCase()) ||
+      (config.description && config.description.toLowerCase().includes(props.searchQuery.toLowerCase()));
       
-    const matchesFilter = filterType.value === '' ||
-      (filterType.value === 'public' && config.public) ||
-      (filterType.value === 'private' && !config.public);
+    const matchesFilter = props.filterType === '' ||
+      (props.filterType === 'public' && config.public) ||
+      (props.filterType === 'private' && !config.public);
       
     return matchesSearch && matchesFilter;
   });
 });
 
-const handleSearch = () => {
-  // This function is triggered on search/filter changes
-  // We could add debounce here if needed
-};
+const emit = defineEmits(['update:filterType', 'update:searchQuery']);
 
 const clearFilters = () => {
-  searchQuery.value = '';
-  filterType.value = '';
+  // Emit events to update parent's filterType and searchQuery
+  emit('update:filterType', '');
+  emit('update:searchQuery', '');
 };
 
 const navigateToEdit = (config) => {
@@ -164,13 +166,6 @@ const remove = useConfirmAction(removeFn);
   flex-direction: column;
   gap: var(--spacing);
 }
-
-.search-bar {
-  display: flex;
-  gap: var(--spacing);
-  margin-bottom: var(--spacing);
-}
-
 .configurations-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
