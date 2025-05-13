@@ -12,8 +12,9 @@ import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vu
 import EditBlueprintProperties from '@/modules/no-code/components/EditBlueprintProperties.vue';
 import { getKeyFromName } from '@/modules/core/utils/texts';
 import BlueprintLimitationsInput from '@/modules/no-code/components/blueprint-form/BlueprintLimitationsInput.vue';
-import WorkspaceLabelSelector from '@/modules/no-code/components/WorkspaceLabelSelector.vue';
-import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
+import BlueprintPermissionsTab from '@/modules/no-code/components/blueprint-form/BlueprintPermissionsTab.vue';
+import BlueprintPropertiesTab from '@/modules/no-code/components/blueprint-form/BlueprintPropertiesTab.vue';
+import BlueprintGeneralTab from '@/modules/no-code/components/blueprint-form/BlueprintGeneralTab.vue';
 
 // temporary sample
 const availableLabels = ['*', 'supplier', 'store', 'consumer'];
@@ -83,6 +84,8 @@ watch(() => edit.name, (newName) => {
   }
 })
 
+
+
 function submit() {
   const data = { ...edit };
   if (blueprintProperties.value) {
@@ -104,54 +107,15 @@ function submit() {
 
     <el-tabs model-value="general">
       <el-tab-pane :label="$t('General')" name="general">
-        <div class="input-group">
-          <FormInput v-model="edit.name" title="Name" required/>
-          <FormInput v-model="edit.identifier" title="Identifier" required/>
-
-          <FormInput v-model="edit.description" title="Description"/>
-        </div>
+        <BlueprintGeneralTab v-model="edit" />
       </el-tab-pane>
 
       <el-tab-pane :label="$t('Permissions and Roles')" name="rbac">
-        <PermissionScopeSelector v-model="edit.permissionScope"/>
-        <FormRowGroup v-for="(permission, index) in edit.permissions" :key="index"
-                      :class="{ permission: true, guest: permission.guest }">
-          <CrudOperationSelector v-model="permission.operation" class="flex-0"/>
-          <FormInput type="switch" v-model="permission.guest" title="Guest?" class="flex-0"/>
-          <template v-if="!permission.guest">
-            <PermissionScopeSelector v-model="permission.scope" class="flex-1"/>
-            <LabelsInput title="Roles" v-model="permission.roleBased" class="roles-input"/>
-            <LabelsInput title="Workspace Roles" v-model="permission.workspaceRoleBased" class="roles-input"/>
-            <WorkspaceLabelSelector class="roles-input" v-model="permission.workspaceLabelsBased"
-                                    :availableLabels="availableLabels" placeholder="Choose labels"/>
-          </template>
-          <div class="permission-description" style="min-width: 90%;">
-            A <strong>{{ permission.guest ? 'Guest' : 'User' }}</strong> will be allowed to <strong>{{ permission.operation }}</strong>
-            <span v-if="!permission.guest">
-              when their roles will be one of [<strong>{{ permission.roleBased?.join(', ') }}</strong>] and workspace roles
-              [<strong>{{ permission.workspaceRoleBased?.join(', ') }}</strong>] and their workspace has one of the labels [<strong>{{ permission.workspaceLabelsBased?.join(', ') }}</strong>].
-            </span>
-          </div>
-          <div class="flex-0 remove-row">
-            <RemoveButton @click="edit.permissions.splice(edit.permissions.indexOf(permission), 1)"/>
-          </div>
-        </FormRowGroup>
-        <AddMore
-            @click="edit.permissions.push({ workspaceRoleBased: [], roleBased: [], workspaceLabelsBased: ['*'] })"/>
+        <BlueprintPermissionsTab v-model="edit" :availableLabels="availableLabels" />
       </el-tab-pane>
 
       <el-tab-pane :label="$t('Properties')" name="properties">
-        <el-form-item :label="$t('Identifier Mechanism for Entities')">
-          <el-select v-model="edit.entityIdentifierMechanism" required :placeholder="$t('Select mechanism')">
-            <el-option label="Object ID" :value="EntityIdentifierMechanism.OBJECT_ID"/>
-            <el-option label="GUID" :value="EntityIdentifierMechanism.GUID"/>
-          </el-select>
-        </el-form-item>
-        <p>
-          {{ $t('Properties determine the structure of the blueprint.') }}<br>
-          {{ $t('Each entity will also have an identifier and a title, regardless of those custom entities.') }}
-        </p>
-        <EditBlueprintProperties @changed="blueprintProperties = $event"/>
+        <BlueprintPropertiesTab v-model="edit" />
       </el-tab-pane>
 
       <el-tab-pane :label="$t('On-Save Mapping')" name="mapping">
@@ -228,20 +192,5 @@ h3 {
   margin-bottom: 5px;
 }
 
-.permission {
-  flex-wrap: wrap;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 20px;
-}
 
-.permission.guest {
-  justify-content: flex-start;
-}
-.permission-description {
-  margin-bottom: 10px;
-}
-
-.roles-input {
-  min-width: 400px;
-}
 </style>
