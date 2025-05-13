@@ -15,10 +15,13 @@ export class AIMessageTemplates {
 A blueprint is a JSON object that defines the structure of a database model in the Qelos multi-tenant SaaS platform.
 Qelos handles any data related time created, updated, or assigned user and/or workspace, so you don't need to define those properties.
 
+IMPORTANT: Both "identifier" and "name" MUST always be in singular form, never plural.
+For example, use "user" not "users", "product" not "products", "invoice" not "invoices".
+
 Required blueprint structure:
 {
-  "identifier": string,           // Unique identifier
-  "name": string,                 // Display name
+  "identifier": string,           // Unique identifier (MUST BE SINGULAR, never plural)
+  "name": string,                 // Display name (MUST BE SINGULAR, never plural)
   "description": string,          // Optional description
   "entityIdentifierMechanism": "objectid" | "guid",
   "permissionScope": "user" | "workspace" | "tenant",
