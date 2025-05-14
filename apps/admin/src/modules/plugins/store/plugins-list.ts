@@ -5,7 +5,7 @@ import pluginsService from '@/services/plugins-service';
 import { IPlugin } from '@/services/types/plugin';
 
 export const usePluginsList = defineStore('plugins-list', function usePluginsList() {
-  const { loading, loaded, result, retry } = useDispatcher<IPlugin[]>(() => pluginsService.getAll());
+  const { loading, loaded, result, retry } = useDispatcher<IPlugin[]>(() => pluginsService.getAll().catch(() => []));
   const { submit } = useSubmitting(
     ({ _id }) =>
       pluginsService.remove(_id).then(() => {
