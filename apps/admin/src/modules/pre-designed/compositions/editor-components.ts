@@ -189,9 +189,23 @@ export function useEditorComponents() {
         const blueprintsInputs = Object.keys(blueprint.properties).map((propName: any) => {
           const prop = blueprint.properties[propName];
           const propType = prop.type;
-          const elementType = propType === 'boolean' ? 'switch' : propType;
-
-          return `<form-input title="${prop.title}" type="${elementType}" label="${prop.description}" ${prop.required ? ':required="true"' : ''} v-model="form.${propName}"></form-input>`
+          // Set element type to 'select' for string properties with enum options
+          let elementType = propType === 'boolean' ? 'switch' : propType;
+          if (propType === 'string' && Array.isArray(prop.enum) && prop.enum.length > 0) {
+            elementType = 'select';
+          }
+          
+          // Check if the property has enum options and prepare the options attribute
+          let enumOptionsAttr = '';
+          if (Array.isArray(prop.enum) && prop.enum.length > 0) {
+            // Convert the enum array to a properly formatted string for Vue template
+            const formattedOptions = prop.enum.map(opt => {
+              return typeof opt === 'string' ? `'${opt}'` : opt;
+            }).join(', ');
+            enumOptionsAttr = `:options="[${formattedOptions}]"`;
+          }
+          
+          return `<form-input title="${prop.title}" type="${elementType}" label="${prop.description}" ${prop.required ? ':required="true"' : ''} ${enumOptionsAttr} v-model="form.${propName}"></form-input>`
         }).join('\n');
 
         return `<template #default="{form}">

@@ -29,7 +29,7 @@
           <el-option v-for="(option, index) in options"
                      :key="option[optionValue] || option.identifier || option._id || index"
                      :label="option[optionLabel] || option.name || option.title || option.label || option.metadata?.title || option"
-                     :value="option[optionValue] || option.identifier || option._id"/>
+                     :value="option[optionValue] || option.identifier || option._id || option"/>
         </template>
         <slot name="options"/>
       </el-select>

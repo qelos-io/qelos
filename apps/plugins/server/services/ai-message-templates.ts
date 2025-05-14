@@ -30,9 +30,9 @@ Required blueprint structure:
       "scope": "user" | "workspace" | "tenant",
       "operation": "create" | "read" | "update" | "delete",
       "guest": boolean,
-      "roleBased": string[],
-      "workspaceRoleBased": string[],
-      "workspaceLabelsBased": string[]
+      "roleBased": string[], // optional: ["*"]
+      "workspaceRoleBased": string[], // optional: ["*"]
+      "workspaceLabelsBased": string[] // optional: ["*"]
     }
   ],
   "properties": {                 // Record of property descriptors
@@ -45,16 +45,16 @@ Required blueprint structure:
       "multi": boolean,           // Optional
       "min": number,              // Optional
       "max": number,              // Optional
-      "schema": any               // Optional, when type is "object"
+      "schema": any               // Optional, JSONSCHEMA, when type is "object"
     }
   },
   "updateMapping": {              // Record<string, string>
-    "[key]": "[value]"
+    "[key]": "[value]" // value is a JQ expression of an entity (properties are available as .metadata.propertyName)
   },
   "relations": [                  // Array of relation objects
     {
-      "key": string,
-      "target": string
+      "key": string, // the key of the relation
+      "target": string // the target blueprint name of the relation
     }
   ],
   "limitations": [                // Optional array of limitation objects
