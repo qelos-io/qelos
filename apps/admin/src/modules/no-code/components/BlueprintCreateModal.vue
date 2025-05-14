@@ -33,10 +33,10 @@ const aiSources = computed(() => {
     sources.push(...integrationSourcesStore.groupedSources[IntegrationSourceKind.OpenAI]);
   }
   
-  // In the future, when Claude is supported:
-  // if (integrationSourcesStore.groupedSources?.[IntegrationSourceKind.Claude]) {
-  //   sources.push(...integrationSourcesStore.groupedSources[IntegrationSourceKind.Claude]);
-  // }
+  // Add Claude sources
+  if (integrationSourcesStore.groupedSources?.[IntegrationSourceKind.ClaudeAi]) {
+    sources.push(...integrationSourcesStore.groupedSources[IntegrationSourceKind.ClaudeAi]);
+  }
   
   return sources;
 });

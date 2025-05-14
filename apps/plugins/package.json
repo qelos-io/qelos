@@ -18,6 +18,10 @@
   },
   "main": "index.ts",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.40.1",
+    "@qelos/api-kit": "^3.8.1",
+    "@qelos/cache-manager": "^3.8.1",
+    "@qelos/global-types": "^3.8.1",
     "@qelos/api-kit": "^3.8.2",
     "@qelos/cache-manager": "^3.8.2",
     "@qelos/global-types": "^3.8.2",

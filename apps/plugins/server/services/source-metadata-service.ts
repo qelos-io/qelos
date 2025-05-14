@@ -36,6 +36,19 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     };
   }
 
+  if (kind === IntegrationSourceKind.ClaudeAi) {
+    const { defaultModel, initialMessages } = metadata;
+    return {
+      defaultModel: typeof defaultModel === 'string' ? defaultModel : null,
+      initialMessages: initialMessages instanceof Array ? initialMessages.map(msg => {
+        return {
+          role: typeof msg.role === 'string' ? msg.role : 'system',
+          content: typeof msg.content === 'string' ? msg.content : '',
+        }
+      }).filter(msg => !!msg.content) : [],
+    };
+  }
+
   if (kind === IntegrationSourceKind.LinkedIn) {
     const { clientId, scope } = metadata;
     if (!clientId || typeof clientId !== 'string' || !scope || typeof scope !== 'string') {

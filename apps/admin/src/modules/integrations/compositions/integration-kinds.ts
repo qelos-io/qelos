@@ -12,6 +12,11 @@ export function useIntegrationKinds(): Record<IntegrationSourceKind, { logo?, na
       name: 'Open AI',
       kind: IntegrationSourceKind.OpenAI
     },
+    [IntegrationSourceKind.ClaudeAi]: {
+      logo: '/logos/claude.svg',
+      name: 'Claude Ai',
+      kind: IntegrationSourceKind.ClaudeAi
+    },
     [IntegrationSourceKind.Supabase]: {
       logo: '/logos/supabase.png',
       name: 'Supabase',

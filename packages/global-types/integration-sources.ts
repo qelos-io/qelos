@@ -6,6 +6,7 @@ export enum IntegrationSourceKind {
   Supabase = 'supabase',
   LinkedIn = 'linkedin',
   Http = 'http',
+  ClaudeAi = 'claudeai'
 }
 
 export interface IIntegrationSource {
@@ -39,6 +40,10 @@ export enum QelosTargetOperation {
 }
 
 export enum OpenAITargetOperation {
+  chatCompletion = 'chatCompletion',
+}
+
+export enum ClaudeAITargetOperation {
   chatCompletion = 'chatCompletion',
 }
 
@@ -77,6 +82,11 @@ export interface ISupabaseSource extends IIntegrationSource {
 export interface IOpenAISource extends IIntegrationSource {
   _id?: string;
   kind: IntegrationSourceKind.OpenAI;
+}
+
+export interface IClaudeAiSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.ClaudeAi;
 }
 
 export interface IN8nSource extends IIntegrationSource {

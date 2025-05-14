@@ -127,6 +127,10 @@ const getTargetOperations = (source: string) => {
       { value: 'generate-text', label: 'Generate Text' },
       { value: 'update-profile', label: 'Update Profile' },
     ],
+    claudeai: [
+      { value: 'generate-text', label: 'Generate Text' },
+      { value: 'update-profile', label: 'Update Profile' },
+    ],
     supabase: [
       { value: 'create', label: 'Create' },
       { value: 'update', label: 'Update' },
@@ -157,6 +161,10 @@ const getTriggerOperations = (source: string) => {
       { value: 'delete', label: 'Delete' },
     ],
     openai: [
+      { value: 'generate-text', label: 'Generate Text' },
+      { value: 'update-profile', label: 'Update Profile' },
+    ],
+    claudeai: [
       { value: 'generate-text', label: 'Generate Text' },
       { value: 'update-profile', label: 'Update Profile' },
     ],

@@ -7,6 +7,7 @@ import SupabaseForm from './components/forms/SupabaseForm.vue';
 import N8nForm from './components/forms/N8nForm.vue';
 import EmailForm from './components/forms/EmailForm.vue';
 import HttpForm from './components/forms/HttpForm.vue';
+import ClaudeAiForm from './components/forms/ClaudeAIForm.vue';
 
 const props = defineProps<{
   modelValue: any;
@@ -20,6 +21,7 @@ const formComponentMap = {
   linkedin: LinkedInForm,
   qelos: QelosForm,
   openai: OpenAIForm,
+  claudeai: ClaudeAiForm,
   supabase: SupabaseForm,
   n8n: N8nForm,
   email: EmailForm,

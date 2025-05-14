@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, defineProps, defineEmits } from 'vue';
-import { IOpenAiSource } from '@qelos/global-types';
+import { IClaudeAiSource } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import { ElMessage, ElLink } from 'element-plus';
@@ -8,14 +8,14 @@ import { QuestionFilled, Warning } from '@element-plus/icons-vue';
 
 const props = defineProps({
   modelValue: {
-    type: Object as () => IOpenAiSource,
+    type: Object as () => IClaudeAiSource,
   },
 });
 
 const emit = defineEmits(['update:modelValue', 'submit', 'close']);
 const formRef = ref();
 const formModel = ref({ ...props.modelValue });
-const availableLabels = ['Chatbot', 'NLP', 'AI Assistant', 'Text Generation'];
+const availableLabels = ['Chatbot', 'NLP', 'AI Assistant'];
 const tokenInput = ref('');
 const isSubmitting = ref(false);
 const showTokenHelp = ref(false);
@@ -34,8 +34,8 @@ const toggleTokenHelp = () => {
   showTokenHelp.value = !showTokenHelp.value;
 };
 
-const openOpenAIConsole = () => {
-  window.open('https://platform.openai.com/settings/organization/api-keys', '_blank');
+const openClaudeConsole = () => {
+  window.open('https://console.anthropic.com/settings/keys', '_blank');
 };
 
 const validateForm = async () => {
@@ -51,7 +51,7 @@ const validateForm = async () => {
     }
     
     if (tokenInput.value && tokenInput.value.length < 20) {
-      ElMessage.error('Please enter a valid OpenAI API token');
+      ElMessage.error('Please enter a valid Claude API token');
       return false;
     }
     
@@ -96,7 +96,7 @@ const submitForm = async () => {
       v-model="formModel.name" 
       title="Connection Name" 
       required
-      placeholder="Enter a descriptive name for this OpenAI Connection"
+      placeholder="Enter a descriptive name for this Claude AI Connection"
     />
     
     <LabelsInput 
@@ -115,7 +115,7 @@ const submitForm = async () => {
     >
       <el-input 
         v-model="tokenInput" 
-        placeholder="Enter your OpenAI API token" 
+        placeholder="Enter your Claude API token" 
         type="password" 
         show-password
         size="large"
@@ -134,17 +134,17 @@ const submitForm = async () => {
       </div>
       
       <div v-if="showTokenHelp" class="token-help-section">
-        <h4>How to get your OpenAI API token:</h4>
+        <h4>How to get your Claude API token:</h4>
         <ol>
-          <li>Go to the <el-link type="primary" @click="openOpenAIConsole" :underline="false">OpenAI API Keys page</el-link></li>
-          <li>Sign in to your OpenAI account if needed</li>
-          <li>Click "Create new secret key"</li>
+          <li>Go to the <el-link type="primary" @click="openClaudeConsole" :underline="false">Anthropic Console</el-link></li>
+          <li>Navigate to the API Keys section</li>
+          <li>Click "Create API Key"</li>
           <li>Give your key a name (e.g., "Qelos Integration")</li>
-          <li>Copy the generated token immediately (it will only be shown once)</li>
-          <li>Paste it here</li>
+          <li>Set appropriate permissions and expiration</li>
+          <li>Copy the generated token and paste it here</li>
         </ol>
         <div class="token-warning">
-          <el-icon><Warning /></el-icon> Your API token gives access to OpenAI services and will be charged according to your OpenAI account usage. Keep it secure.
+          <el-icon><Warning /></el-icon> Your API token gives access to Claude AI services and will be charged according to your Anthropic account. Keep it secure.
         </div>
       </div>
     </el-form-item>

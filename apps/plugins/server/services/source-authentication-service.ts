@@ -13,9 +13,13 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
     return authId;
   }
 
-  if (kind === IntegrationSourceKind.OpenAI) {
+  if (kind === IntegrationSourceKind.OpenAI || kind === IntegrationSourceKind.ClaudeAi) {
     const { token } = authentication;
-    await setSecret(tenant, `integration-source-${kind}-${authId}`, { token });
+    if (token !== undefined) {
+      await setSecret(tenant, `integration-source-${kind}-${authId}`, { token });
+    } else {
+      console.warn(`Token not provided for ${kind} source with authId ${authId}. Secret not stored/updated.`);
+    }
     return authId;
   }
 
