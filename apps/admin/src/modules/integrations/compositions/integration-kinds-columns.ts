@@ -10,6 +10,8 @@ export function useIntegrationKindsColumns(): Record<IntegrationSourceKind, Arra
     [IntegrationSourceKind.Supabase]: [],
     [IntegrationSourceKind.N8n]: [],
     [IntegrationSourceKind.Email]: [],
-    [IntegrationSourceKind.LinkedIn]: []
+    [IntegrationSourceKind.LinkedIn]: [],
+    [IntegrationSourceKind.ClaudeAi]: [],
+    [IntegrationSourceKind.Http]: [],
   }
 }

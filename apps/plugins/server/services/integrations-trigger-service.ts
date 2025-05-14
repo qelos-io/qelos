@@ -6,6 +6,7 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, string[] | 
   [IntegrationSourceKind.Qelos]: {
     webhook: ['source', 'kind', 'eventName']
   },
+  [IntegrationSourceKind.ClaudeAi]: null,
   [IntegrationSourceKind.OpenAI]: null,
   [IntegrationSourceKind.N8n]: null,
   [IntegrationSourceKind.Email]: null,

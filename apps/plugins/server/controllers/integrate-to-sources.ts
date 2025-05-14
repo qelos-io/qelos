@@ -11,7 +11,7 @@ export async function getIntegrationSource(req, res, next) {
     const source = await IntegrationSource
       .findOne({ _id: req.params.sourceId, tenant: req.headers.tenant })
       .lean()
-      .exec()
+      .exec();
 
     if (!source) {
       res.status(404).end();
@@ -22,33 +22,37 @@ export async function getIntegrationSource(req, res, next) {
     req.integrationSourceAuthentication = await getEncryptedSourceAuthentication(req.headers.tenant, source.kind, source.authentication);
 
     next();
-  } catch {
-    res.status(500).json({ message: 'could not get integration source' }).end();
+  } catch (e: any) { // Typed error for better access to message
+    logger.error("Error in getIntegrationSource:", e.message, e); // Use your logger
+    res.status(500).json({ message: 'Could not get integration source' }).end();
   }
 }
 
 export async function validateChatSources(req, res, next) {
-  if (req.integrationSource.kind !== IntegrationSourceKind.OpenAI) {
-    res.status(400).json({ message: 'integration source is not openai' }).end();
+  // Allow both OpenAI and ClaudeAi
+  if (req.integrationSource.kind !== IntegrationSourceKind.OpenAI &&
+    req.integrationSource.kind !== IntegrationSourceKind.ClaudeAi) {
+    res.status(400).json({ message: 'Integration source kind must be OpenAI or ClaudeAI' }).end();
     return;
   }
-
   next();
 }
 
 export async function chatCompletion(req, res) {
   try {
     const aiService = createAIService(req.integrationSource.kind, req.integrationSourceAuthentication);
-
     const { model = 'gpt-4o', messages, temperature = 0.7, top_p = 0.9, frequency_penalty = 0.2, presence_penalty = 0.2 } = req.body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({
-        message: 'messages array is required and must not be empty'
-      });
+      res.status(400).json({ message: 'messages array is required and must not be empty' });
+      return;
     }
 
-    const response = await aiService.chatCompletion({
+    // AIService's chatCompletion now returns an object like:
+    // { ...sdkResponse, responseContent: "extracted text" }
+    // or { success: false, error: "...", rawResponse: ... } if AIService itself handles its errors that way.
+    // For this example, assuming it throws on SDK error and returns augmented response on success.
+    const aiServiceResponse = await aiService.chatCompletion({
       model,
       messages,
       temperature,
@@ -57,10 +61,13 @@ export async function chatCompletion(req, res) {
       presence_penalty
     });
 
-    return res.json(response).end();
-  } catch (error: unknown) {
-    const errorObj = error as { status?: number; message?: string; response?: { data: unknown } };
+    // Decide what to send to the client: the full augmented response, or just the content?
+    // For now, sending the augmented response as per reviewer's suggestion "{ ...response, responseContent: ... }"
+    return res.json(aiServiceResponse).end();
 
+  } catch (error: unknown) {
+    const errorObj = error as { status?: number; message?: string; response?: { data: unknown } }; // Existing error handling
+    logger.error("Error in chatCompletion:", errorObj.message || error, error); // Use your logger
     return res.status(errorObj.status || 500).json({
       message: errorObj.message || 'Error processing AI chat completion',
       error: errorObj.response?.data || error
@@ -71,27 +78,18 @@ export async function chatCompletion(req, res) {
 export async function noCodeMicroFrontendsCompletion(req, res) {
   try {
     const aiService = createAIService(req.integrationSource.kind, req.integrationSourceAuthentication);
-
     const { model = 'gpt-4o', prompt, existingStructure, existingRequirements } = req.body;
 
     if (!prompt) {
-      res.status(400).json({
-        message: 'missing prompt'
-      }).end();
+      res.status(400).json({ message: 'missing prompt' });
       return;
     }
-    
-    // Determine if we should only return structure and requirements or the full schema
+
     const isPartialUpdate = existingStructure !== undefined && existingRequirements !== undefined;
-    
-    // Get the messages from the template service
     const messages = AIMessageTemplates.getNoCodeMicroFrontendsMessages({
-      prompt,
-      existingStructure,
-      existingRequirements
+      prompt, existingStructure, existingRequirements
     });
 
-    // Use streaming to ensure we get the complete response
     const stream = await aiService.streamChatCompletion({
       model,
       messages,
@@ -99,21 +97,26 @@ export async function noCodeMicroFrontendsCompletion(req, res) {
       top_p: 0.9,
       frequency_penalty: 0.2,
       presence_penalty: 0.2,
-      max_tokens: 4000, // Ensure we get a complete response
+      max_tokens: 4000,
       response_format: { type: 'json_object' }
-      // Note: OpenAI API currently only supports basic json_object type
-      // The detailed schema is defined in the system prompt and our JSON schema constants
     });
 
-    // Parse the streamed response using our response parser
-    const parsedContent = await AIResponseParser.parseStreamedResponse(stream, {
-      isPartialUpdate,
-      existingStructure,
-      existingRequirements
-    });
-    
-    // The AIResponseParser has already handled all the parsing logic
-    // and returned the appropriate response based on isPartialUpdate
+    // Pass the 'kind' to AIResponseParser
+    const parsedContent = await AIResponseParser.parseStreamedResponse(
+      stream,
+      req.integrationSource.kind, // Pass the kind
+      { isPartialUpdate, existingStructure, existingRequirements }
+    );
+
+    // Check if AIResponseParser returned an error structure
+    if (parsedContent && parsedContent.error) {
+      logger.error("[Controller] AIResponseParser returned an error:", parsedContent);
+      return res.status(500).json({
+        message: 'Failed to parse AI response from stream',
+        details: parsedContent
+      });
+    }
+
     return res.json(parsedContent).end();
   } catch (error: unknown) {
     const errorObj = error as { status?: number; message?: string; response?: { data: unknown } };
@@ -128,69 +131,76 @@ export async function noCodeMicroFrontendsCompletion(req, res) {
 export async function noCodeBlueprintsCompletion(req, res) {
   try {
     const aiService = createAIService(req.integrationSource.kind, req.integrationSourceAuthentication);
-
     const { model = 'gpt-4o', prompt } = req.body;
 
     if (!prompt) {
-      res.status(400).json({
-        message: 'missing prompt'
-      }).end();
+      res.status(400).json({ message: 'missing prompt' });
       return;
     }
 
-    // Create messages for the blueprint list request
     const messages = [
       AIMessageTemplates.getNoCodeBlueprintsSystemMessage(),
-      {
-        role: 'user',
-        content: `what blueprints do i need to have in my database according to the described app:
-${prompt}.`
-      }
+      { role: 'user', content: `what blueprints do i need to have in my database according to the described app:\n${prompt}.` }
     ];
 
     // Get the list of blueprints
-    const blueprintsListRes = await aiService.chatCompletion({
+    const blueprintsListAiResponse = await aiService.chatCompletion({
       model,
       messages,
       temperature: 0.7,
       top_p: 0.9,
       frequency_penalty: 0.2,
       presence_penalty: 0.2
+
     });
 
-    const blueprintsList = blueprintsListRes.choices[0].message.content || '';
+    // Use the unified 'responseContent' from AIService
+    const blueprintsList = blueprintsListAiResponse.responseContent || '';
+
+
+    const blueprintDescriptions = blueprintsList.split('\n').filter(line => line.trim()).map(line => line.trim());
+    if (blueprintDescriptions.length === 0) {
 
     logger.log(blueprintsList);
 
-    const blueprints = await Promise.all(blueprintsList.split('\n').filter(line => line.trim()).map(async (blueprintDescription) => {
-      // Get the blueprint generation messages from the template service
-      const blueprintMessages = AIMessageTemplates.getBlueprintGenerationMessages(blueprintDescription);
 
-      // Generate the blueprint using the AI service
-      const response = await aiService.chatCompletion({
-        model,
-        messages: blueprintMessages,
-        temperature: 0.7,
-        top_p: 0.9,
-        frequency_penalty: 0.2,
-        presence_penalty: 0.2,
-        stream: false,
-        response_format: { type: "json_object" }
-      });
-      
-      // Parse the response using the response parser
+      return res.json([]).end();
+    }
+
+    const blueprints = await Promise.all(blueprintDescriptions.map(async (blueprintDescription) => {
+      const blueprintMessages = AIMessageTemplates.getBlueprintGenerationMessages(blueprintDescription);
+      let contentToParse = '{}';
       try {
-        return JSON.parse(response.choices[0].message.content || '{}');
-      } catch (e) {
-        console.error('Error parsing blueprint JSON:', e);
+        // Request JSON for individual blueprint generation
+        const individualBlueprintAiResponse = await aiService.chatCompletion({
+          model,
+          messages: blueprintMessages,
+          temperature: 0.7,
+          top_p: 0.9,
+          frequency_penalty: 0.2,
+          presence_penalty: 0.2,
+          stream: false,
+          response_format: { type: "json_object" } // Request JSON from AIService
+        });
+
+        // Use the unified 'responseContent'
+        contentToParse = individualBlueprintAiResponse.responseContent || '{}';
+
+        const jsonMatch = contentToParse.match(/```json\s*([\s\S]*?)\s*```/s);
+        if (jsonMatch && jsonMatch[1]) {
+          contentToParse = jsonMatch[1].trim();
+        }
+
+        return JSON.parse(contentToParse);
+      } catch (e: any) { // Typed error
+        logger.error('Error parsing blueprint JSON:', e.message, { description: blueprintDescription, contentAttempted: contentToParse, originalError: e });
         return null;
       }
     }));
-    
-    // Filter out any null results
-    const validBlueprints = blueprints.filter(blueprint => blueprint !== null);
 
+    const validBlueprints = blueprints.filter(blueprint => blueprint !== null);
     return res.json(validBlueprints).end();
+
   } catch (error: unknown) {
     const errorObj = error as { status?: number; message?: string; response?: { data: unknown } };
 
@@ -204,17 +214,13 @@ ${prompt}.`
 export async function noCodeIntegrationsCompletion(req, res) {
   try {
     const aiService = createAIService(req.integrationSource.kind, req.integrationSourceAuthentication);
-
     const { model = 'gpt-4o', prompt, trigger, target, kind = [] } = req.body;
 
-    if (!(prompt && trigger && target && kind?.length === 2)) {
-      res.status(400).json({
-        message: 'missing required data'
-      }).end();
+    if (!(prompt && trigger && target && Array.isArray(kind) && kind.length === 2)) {
+      res.status(400).json({ message: 'missing required data or invalid kind format' });
       return;
     }
-    
-    // Get the messages from the template service
+
     const messages = AIMessageTemplates.getNoCodeIntegrationsMessages({
       prompt,
       trigger,
@@ -222,7 +228,7 @@ export async function noCodeIntegrationsCompletion(req, res) {
       kind
     });
 
-    const response = await aiService.chatCompletion({
+    const aiServiceResponse = await aiService.chatCompletion({
       model,
       messages,
       temperature: 0.7,
@@ -231,7 +237,9 @@ export async function noCodeIntegrationsCompletion(req, res) {
       presence_penalty: 0.2
     });
 
-    return res.json(response).end();
+    // Sending the augmented response
+    return res.json(aiServiceResponse).end();
+
   } catch (error: unknown) {
     const errorObj = error as { status?: number; message?: string; response?: { data: unknown } };
 

@@ -2,7 +2,7 @@ import {
   HttpTargetOperation,
   IntegrationSourceKind,
   OpenAITargetOperation,
-  QelosTargetOperation, QelosTriggerOperation
+  QelosTargetOperation, QelosTriggerOperation, ClaudeAITargetOperation
 } from '@qelos/global-types';
 
 export function useIntegrationKindsTargetOperations() {
@@ -30,6 +30,9 @@ export function useIntegrationKindsTargetOperations() {
     [IntegrationSourceKind.LinkedIn]: [],
     [IntegrationSourceKind.OpenAI]: [
       { name: OpenAITargetOperation.chatCompletion, label: 'Chat Completion' }
+    ],
+    [IntegrationSourceKind.ClaudeAi]: [
+      { name: ClaudeAITargetOperation.chatCompletion, label: 'Chat Completion' }
     ],
     [IntegrationSourceKind.Supabase]: [],
     [IntegrationSourceKind.Email]: [],
@@ -88,6 +91,7 @@ export function useIntegrationKindsTriggerOperations() {
     [IntegrationSourceKind.N8n]: [],
     [IntegrationSourceKind.LinkedIn]: [],
     [IntegrationSourceKind.OpenAI]: [],
+    [IntegrationSourceKind.ClaudeAi]: [],
     [IntegrationSourceKind.Supabase]: [],
     [IntegrationSourceKind.Email]: [],
   }

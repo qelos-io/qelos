@@ -4,7 +4,8 @@ import {
   HttpTargetOperation,
   IntegrationSourceKind,
   OpenAITargetOperation,
-  QelosTargetOperation
+  QelosTargetOperation,
+  ClaudeAITargetOperation
 } from '@qelos/global-types';
 
 const supportedSources = {
@@ -20,9 +21,22 @@ const supportedSources = {
       optional: ['pre_messages', 'model', 'temperature', 'max_tokens', 'top_p', 'frequency_penalty', 'presence_penalty', 'stop'],
     }
   },
+  [IntegrationSourceKind.ClaudeAi]: {
+    [ClaudeAITargetOperation.chatCompletion]: {
+      required: [],
+      optional: ['system',
+        'temperature',
+        'top_p',
+        'stop_sequences',
+        //  'top_k', // Include if you intend to support it
+        // 'tools', // Include if you intend to support tool use
+        // 'tool_choice' // Include if you intend to support tool use
+      ],
+    }
+  },
   [IntegrationSourceKind.Http]: {
     [HttpTargetOperation.makeRequest]: {
-      required: [],
+      required: ['model', 'max_tokens', 'messages'],
       optional: ['headers', 'body', 'query', 'method', 'url'],
     }
   }
