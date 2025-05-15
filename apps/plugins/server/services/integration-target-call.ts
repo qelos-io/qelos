@@ -7,6 +7,8 @@ import { getEncryptedSourceAuthentication } from './source-authentication-servic
 import httpAgent from './http-agent';
 import { emitPlatformEvent } from './hook-events';
 import PlatformEvent from '../models/event';
+import { createAIService } from '../services/ai-service';
+import { ChatMessageServiceInput } from 'openai/resources/chat';
 
 export interface HttpTargetPayload {
   method?: string;
@@ -23,9 +25,30 @@ export interface HttpTargetPayload {
   }
 }
 
+
+export interface OpenAITargetPayload {
+  messages: ChatMessageServiceInput[];
+  model?: string;
+  temperature?: number;
+  top_p?: number;
+  frequency_penalty?: number;
+  presence_penalty?: number;
+  stream?: boolean;
+  max_tokens?: number;
+  response_format?: { type: "text" | "json_object" };
+  system?: string;
+  triggerResponse?: {
+    source?: string,
+    kind?: string,
+    eventName?: string,
+    description?: string,
+    metadata?: Record<string, any>,
+  }
+}
+
 async function handleHttpTarget(
   integrationTarget: IIntegrationEntity,
-  source: IIntegrationSource,
+  source: IHttpSource,
   authentication: { securedHeaders?: Record<string, string> } = {},
   payload: HttpTargetPayload = {}) {
   const operation = integrationTarget.operation as HttpTargetOperation;
@@ -98,6 +121,91 @@ async function handleHttpTarget(
   }
 }
 
+async function handleOpenAiTarget(integrationTarget: IIntegrationEntity,
+  source: IOpenAISource,
+  authentication: { token: string } = {},
+  payload: OpenAITargetPayload = {}) {
+  const operation = integrationTarget.operation as OpenAITargetOperation;
+  
+  if (operation === OpenAITargetOperation.chatCompletion) {
+    const aiService = createAIService(source.kind, authentication);
+
+    const response = await aiService.chatCompletion({
+      messages: payload.messages,
+      model: payload.model,
+      temperature: payload.temperature,
+      top_p: payload.top_p,
+      frequency_penalty: payload.frequency_penalty,
+      presence_penalty: payload.presence_penalty,
+      stream: payload.stream,
+      max_tokens: payload.max_tokens,
+      response_format: payload.response_format,
+    })
+    const triggerResponse = payload.triggerResponse;
+    if (triggerResponse.source && triggerResponse.kind && triggerResponse.eventName) {
+      const event = new PlatformEvent({
+        tenant: source.tenant,
+        source: triggerResponse.source,
+        kind: triggerResponse.kind,
+        eventName: triggerResponse.eventName,
+        description: triggerResponse.description,
+        metadata: {
+          ...triggerResponse.metadata,
+          body: response,
+        },
+      });
+      await event.save();
+      emitPlatformEvent(event);
+    }
+  }
+}
+
+async function handleQelosTarget(integrationTarget: IIntegrationEntity,
+  source: IQelosSource,
+  authentication: any = {},
+  payload: any = {}) {
+    const operation = integrationTarget.operation as QelosTargetOperation;
+
+    if (operation === QelosTargetOperation.webhook) {
+      const event = new PlatformEvent({
+        tenant: source.tenant,
+        source: integrationTarget.source,
+        kind: integrationTarget.kind,
+        eventName: integrationTarget.eventName,
+        description: integrationTarget.description,
+        metadata: {
+          ...integrationTarget.metadata,
+          body: payload,
+        },
+      });
+      await event.save();
+      emitPlatformEvent(event);
+    } else if (operation === QelosTargetOperation.createUser) {
+      await createUser(source.tenant, { 
+        username: payload.username,
+        password: payload.password,
+        roles: payload.roles || ['user'],
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+       })
+    } else if (operation === QelosTargetOperation.updateUser) {
+      await updateUser(source.tenant, payload.userId, {
+        password: payload.password || undefined,
+        roles: payload.roles || undefined,
+        firstName: payload.firstName || undefined,
+        lastName: payload.lastName || undefined,
+      })
+    } else if (operation === QelosTargetOperation.setUserRoles) {
+      await updateUser(source.tenant, payload.userId, {
+        roles: payload.roles || undefined,
+      })
+    } else if (operation === QelosTargetOperation.setWorkspaceLabels) {
+      logger.log('operation not supported yet.')
+    } else {
+      logger.log('operation not supported yet.')
+    }
+}
+
 export async function callIntegrationTarget(tenant: string, payload: any, integrationTarget: IIntegrationEntity) {
   // load integration source data
   const source = await IntegrationSource.findOne({ tenant, _id: integrationTarget.source }).lean().exec();
@@ -108,5 +216,9 @@ export async function callIntegrationTarget(tenant: string, payload: any, integr
 
   if (source.kind === IntegrationSourceKind.Http) {
     await handleHttpTarget(integrationTarget, source, authentication || {}, payload)
+  } else if (source.kind === IntegrationSourceKind.OpenAI) {
+    await handleOpenAiTarget(integrationTarget, source, authentication || {}, payload);
+  } else if (source.kind === IntegrationSourceKind.Qelos) {
+    await handleQelosTarget(integrationTarget, source, authentication || {}, payload);
   }
 }

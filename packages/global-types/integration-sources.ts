@@ -82,6 +82,9 @@ export interface ISupabaseSource extends IIntegrationSource {
 export interface IOpenAISource extends IIntegrationSource {
   _id?: string;
   kind: IntegrationSourceKind.OpenAI;
+  authentication: {
+    token: string;
+  }
 }
 
 export interface IClaudeAiSource extends IIntegrationSource {

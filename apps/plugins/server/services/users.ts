@@ -20,13 +20,13 @@ export function getUsers(tenant: string, { username, exact = false }) {
   }).then(JSON.parse);
 }
 
-export function createUser(tenant: string, { username, password, roles, firstName }) {
-  return callAuthService('/internal-api/users', 'POST', tenant, { username, password, roles, firstName });
+export function createUser(tenant: string, { username, password, roles, firstName, lastName }) {
+  return callAuthService('/internal-api/users', 'POST', tenant, { username, password, roles, firstName, lastName });
 }
 
-export function updateUser(tenant: string, userId: string, { password, roles, firstName }) {
+export function updateUser(tenant: string, userId: string, { password, roles, firstName, lastName }) {
   cacheManager.setItem(`plugins:user:${tenant}:${userId}`, '{}', { ttl: 1 }).catch();
-  return callAuthService('/internal-api/users/' + userId, 'PUT', tenant, { password, roles, firstName });
+  return callAuthService('/internal-api/users/' + userId, 'PUT', tenant, { password, roles, firstName, lastName });
 }
 
 export function removeUser(tenant: string, userId: string) {
