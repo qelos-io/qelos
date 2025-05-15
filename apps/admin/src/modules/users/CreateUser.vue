@@ -1,6 +1,6 @@
 <template>
   <div>
-    <UserForm :user="{}" @submitted="save" :as-admin="true">
+    <UserForm v-if="!submitting" :user="{}" @submitted="save" :as-admin="true">
       {{ $t('Create User') }}
     </UserForm>
   </div>
@@ -12,7 +12,7 @@ import UserForm from './components/UserForm.vue'
 
 const router = useRouter()
 
-const { createUser } = useCreateUser()
+const { createUser, submitting } = useCreateUser()
 
 const save = async user => {
   const { _id } = await createUser(user)
