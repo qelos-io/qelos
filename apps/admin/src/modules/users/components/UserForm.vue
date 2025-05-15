@@ -190,7 +190,6 @@ function submit() {
       editedData.internalMetadata = JSON.parse(editedData.internalMetadata);
     }
     emit('submitted', clearNulls(editedData));
-    ElMessage.success('User information saved successfully');
   } catch (error) {
     ElMessage.error('Error in metadata format. Please check the JSON syntax.');
   }
