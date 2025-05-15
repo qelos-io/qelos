@@ -177,7 +177,7 @@ async function validateAndSubmit() {
   if (!formRef.value) return;
   
   try {
-    await formRef.value.validate();
+    await formRef.value?.validate();
     submit();
   } catch (error) {
     ElMessage.error('Please correct the form errors before submitting');

@@ -137,7 +137,7 @@ const pluginJson = computed({
     try {
       Object.assign(edit, JSON.parse(value));
     } catch (err) {
-      console.log(err)
+      // console.log(err)
     }
   }
 });

@@ -13,6 +13,18 @@ const supportedSources = {
     [QelosTargetOperation.webhook]: {
       required: ['source', 'kind', 'eventName'],
       optional: [],
+    },
+    [QelosTargetOperation.createUser]: {
+      required: [],
+      optional: ['password', 'roles']
+    },
+    [QelosTargetOperation.updateUser]: {
+      required: [],
+      optional: ['userId', 'password', 'roles']
+    },
+    [QelosTargetOperation.setUserRoles]: {
+      required: [],
+      optional: ['userId', 'roles']
     }
   },
   [IntegrationSourceKind.OpenAI]: {
@@ -72,14 +84,16 @@ export async function validateIntegrationTarget(tenant: string, target: IIntegra
     throw new Error(`operation ${target.operation} must contain relevant details: ${params.required.join(',')}`)
   }
 
+  // Filter out invalid parameters instead of throwing an error
+  const validParams = [...params.required, ...params.optional, ...COMMON_OPTIONAL_PARAMS];
   const invalidParams = Object.keys(target.details)
-    .filter(key =>
-      !params.required.includes(key) &&
-      !params.optional.includes(key) &&
-      !COMMON_OPTIONAL_PARAMS.includes(key)
-    );
+    .filter(key => !validParams.includes(key));
+  
   if (invalidParams.length) {
-    throw new Error(`operation ${target.operation} contains invalid details: ${invalidParams.join(',')}`)
+    // Remove invalid parameters from the details object
+    invalidParams.forEach(key => {
+      delete target.details[key];
+    });
   }
 
   return source;

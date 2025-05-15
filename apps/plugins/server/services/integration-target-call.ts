@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fetch from 'node-fetch';
-import { HttpTargetOperation, IntegrationSourceKind } from '@qelos/global-types';
+import { HttpTargetOperation, IntegrationSourceKind, QelosTargetOperation } from '@qelos/global-types';
 import { IIntegrationEntity } from '../models/integration';
 import IntegrationSource, { IIntegrationSource } from '../models/integration-source';
 import { getEncryptedSourceAuthentication } from './source-authentication-service';
@@ -9,6 +9,7 @@ import { emitPlatformEvent } from './hook-events';
 import PlatformEvent from '../models/event';
 import { createAIService } from '../services/ai-service';
 import { ChatMessageServiceInput } from 'openai/resources/chat';
+import { createUser, updateUser } from './users';
 
 export interface HttpTargetPayload {
   method?: string;
@@ -165,17 +166,17 @@ async function handleQelosTarget(integrationTarget: IIntegrationEntity,
   authentication: any = {},
   payload: any = {}) {
     const operation = integrationTarget.operation as QelosTargetOperation;
+    const details = integrationTarget.details || {};
 
     if (operation === QelosTargetOperation.webhook) {
       const event = new PlatformEvent({
         tenant: source.tenant,
-        source: integrationTarget.source,
-        kind: integrationTarget.kind,
-        eventName: integrationTarget.eventName,
-        description: integrationTarget.description,
+        source: details.source,
+        kind: details.kind,
+        eventName: details.eventName,
+        description: details.description,
         metadata: {
-          ...integrationTarget.metadata,
-          body: payload,
+          ...payload,
         },
       });
       await event.save();
@@ -183,21 +184,21 @@ async function handleQelosTarget(integrationTarget: IIntegrationEntity,
     } else if (operation === QelosTargetOperation.createUser) {
       await createUser(source.tenant, { 
         username: payload.username,
-        password: payload.password,
-        roles: payload.roles || ['user'],
+        password: payload.password || details.password,
+        roles: payload.roles || details.roles || ['user'],
         firstName: payload.firstName,
         lastName: payload.lastName,
        })
     } else if (operation === QelosTargetOperation.updateUser) {
-      await updateUser(source.tenant, payload.userId, {
-        password: payload.password || undefined,
-        roles: payload.roles || undefined,
+      await updateUser(source.tenant, payload.userId || details.userId, {
+        password: payload.password || details.password || undefined,
+        roles: payload.roles || details.roles || undefined,
         firstName: payload.firstName || undefined,
         lastName: payload.lastName || undefined,
       })
     } else if (operation === QelosTargetOperation.setUserRoles) {
-      await updateUser(source.tenant, payload.userId, {
-        roles: payload.roles || undefined,
+      await updateUser(source.tenant, payload.userId || details.userId, {
+        roles: payload.roles || details.roles || undefined,
       })
     } else if (operation === QelosTargetOperation.setWorkspaceLabels) {
       logger.log('operation not supported yet.')

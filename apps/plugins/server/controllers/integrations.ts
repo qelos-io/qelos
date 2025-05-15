@@ -2,6 +2,7 @@ import Integration from '../models/integration';
 import Plugin from '../models/plugin';
 import { validateIntegrationTarget } from '../services/integrations-target-service';
 import { validateIntegrationTrigger } from '../services/integrations-trigger-service';
+import logger from '../services/logger';
 
 export async function getAllIntegrations(req, res) {
   const query: any = { tenant: req.headers.tenant };
@@ -71,7 +72,8 @@ export async function createIntegration(req, res) {
 
     await integration.save();
     res.json(integration).end();
-  } catch {
+  } catch (err) {
+    logger.log('error creating integration', err);
     res.status(500).json({ message: 'could not create integration' }).end();
   }
 }
