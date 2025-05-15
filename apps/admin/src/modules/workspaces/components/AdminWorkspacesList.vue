@@ -115,10 +115,6 @@ const confirmRemove = (workspaceId, workspaceName) => {
               <el-icon><i class="el-icon-time"></i></el-icon>
               <span>{{ $t('Created') }}: {{ formatDate(workspace.createdAt) }}</span>
             </div>
-            <div class="workspace-card__info-item">
-              <el-icon><i class="el-icon-user"></i></el-icon>
-              <span>{{ workspace.members?.length || 0 }} {{ $t('Users') }}</span>
-            </div>
           </div>
         </div>
         

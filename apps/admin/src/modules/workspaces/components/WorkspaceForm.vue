@@ -146,7 +146,14 @@
       
       <div class="members-list">
         <el-empty v-if="!members.length" :description="$t('No members in this workspace yet')" />
-        <QuickTable v-else :data="members" :columns="membersColumns" />
+        <QuickTable v-else :data="members" :columns="membersColumns">
+          <template #lastName="{ row }">
+            {{ decodeURIComponent(row.lastName) }}
+          </template>
+          <template #firstName="{ row }">
+            {{ decodeURIComponent(row.firstName) }}
+          </template>
+        </QuickTable>
       </div>
     </el-card>
   </div>
@@ -177,7 +184,7 @@ const membersColumns = [
   { label: 'First Name', prop: 'firstName' },
   { label: 'Last Name', prop: 'lastName' },
   { label: 'Email', prop: 'email' },
-  { label: 'Roles', prop: 'roles' },
+  { label: 'Roles', prop: 'roles', type: 'tags' },
 ];
 
 const { workspace, wsConfig } = defineProps({

@@ -1,6 +1,5 @@
 <template>
   <div>
-    <PageTitle title="Workspace" :item-name="workspace?.name"/>
     <WorkspaceForm v-if="loaded" :ws-config="wsConfig.metadata" :workspace='workspace' @submitted="save"/>
   </div>
 </template>

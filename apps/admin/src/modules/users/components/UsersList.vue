@@ -168,10 +168,10 @@ function handlePageChange(page) {
 function getUserFullName(user) {
   let fullName = user.name || user.fullName;
   if (fullName) {
-    return fullName;
+    return decodeURIComponent(fullName);
   }
   if (user.firstName) {
-    return user.firstName + (user.lastName ? ' ' + user.lastName : '');
+    return decodeURIComponent(user.firstName) + (user.lastName ? ' ' + decodeURIComponent(user.lastName) : '');
   }
   return 'Unknown';
 }

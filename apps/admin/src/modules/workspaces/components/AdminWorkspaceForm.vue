@@ -23,13 +23,24 @@
 
 		<QuickTable :data="filteredMembers" :columns="membersColumns" highlight-current-row
 			@current-change="updateMemberRoles">
-			<template v-slot:roles="{ row, $index }">
+			<template #firstName="{ row }">
+				{{ decodeURIComponent(row.firstName) }}
+			</template>
+			<template #lastName="{ row }">
+				{{ decodeURIComponent(row.lastName) }}
+			</template>
+			<template #email="{ row }">
+				<router-link :to="{ name: 'editUser', params: { userId: row.user || 0 }}">
+					{{ row.email }}
+				</router-link>
+			</template>
+			<template #roles="{ row, $index }">
 				<el-select v-model="members[$index].roles" multiple clearable filterable
 					placeholder="Add or select roles" :allow-create="true" style="width: 100%;">
 					<el-option v-for="role in rolesList" :key="role.value" :label="role.label" :value="role.value" />
 				</el-select>
 			</template>
-			<template v-slot:operations="{ row, $index }">
+			<template #operations="{ row, $index }">
 				<SaveButton class="save-btn" :submitting="submitting" @click="updateMemberRoles($index)">
 					{{ $t('Save') }}
 				</SaveButton>
@@ -121,7 +132,7 @@ function getUserDisplayName(user: IUser): string {
 	const firstName = user.firstName ?? '';
 	const lastName = user.lastName ?? '';
 	if (firstName || lastName) {
-		return `${firstName} ${lastName}`.trim();
+		return `${decodeURIComponent(firstName)} ${decodeURIComponent(lastName)}`.trim();
 	}
 
 	return user.username ?? 'Unknown';

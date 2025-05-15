@@ -67,12 +67,14 @@
           </el-input>
         </el-form-item>
 
-        <el-form-item v-if="!hideRoles" label="User Roles" prop="roles" class="form-item">
+        <el-form-item v-if="!hideRoles" prop="roles" class="form-item">
           <LabelsInput 
+            style="min-width: 50%;"
             v-model="roles" 
             title="Roles" 
-            :available-options="availableRoles"
-          />
+          >
+            <el-option v-for="role in availableRoles" :key="role" :label="role" :value="role" />
+          </LabelsInput>
         </el-form-item>
 
         <el-collapse v-if="asAdmin" class="metadata-section">
@@ -145,8 +147,8 @@ const rules = reactive<FormRules>({
 });
 
 const editedData = reactive({
-  firstName: props.user?.firstName || null,
-  lastName: props.user?.lastName || null,
+  firstName: props.user?.firstName ? decodeURIComponent(  props.user?.firstName) : null,
+  lastName: props.user?.lastName ? decodeURIComponent(props.user?.lastName) : null,
   username: props.user?.username || null,
   password: null,
   roles: props.user && props.user._id ? null : ['user'],

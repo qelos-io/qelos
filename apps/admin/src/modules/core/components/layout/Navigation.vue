@@ -551,35 +551,55 @@ a:hover {
 
 @media (max-width: 600px) {
   nav {
-    position: relative;
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
     width: 100%;
     min-width: 100%;
-    height: 70px;
+    height: 0; /* Start with 0 height when closed */
+    opacity: 0; /* Start with 0 opacity when closed */
     overflow: hidden;
-    transition: height 0.3s ease-in-out;
+    transition: all 0.3s ease-in-out;
     z-index: 100;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border-bottom-left-radius: var(--border-radius);
-    border-bottom-right-radius: var(--border-radius);
-    margin: var(--spacing);
-    margin-bottom: 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin: 0;
+    transform: translateY(100%); /* Start off-screen */
+    pointer-events: none; /* Prevent interaction when hidden */
     
     .el-menu {
       display: none;
+    }
+    
+    .nav-header {
+      display: none; /* Hide nav-header in mobile view */
     }
 
     &.show {
       position: fixed;
       top: 0;
+      bottom: 0;
       left: 0;
       right: 0;
       height: 100vh;
+      opacity: 1;
       margin: 0;
       border-radius: 0;
       overflow: auto;
+      transform: translateY(0); /* Slide in from bottom */
+      pointer-events: auto; /* Re-enable interactions */
+      display: flex;
+      flex-direction: column;
       
       .el-menu {
         display: block;
+        margin-top: 10px; /* Add some space at the top */
+        animation: fadeIn 0.3s ease-in-out; /* Animate menu items */
       }
 
       .mobile-mask {
