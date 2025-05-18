@@ -595,7 +595,7 @@ a:hover {
       
       .el-menu {
         display: block;
-        padding-bottom: 10px;
+        padding-bottom: 100px;
         margin-top: 10px; /* Add some space at the top */
         animation: fadeIn 0.3s ease-in-out; /* Animate menu items */
       }
