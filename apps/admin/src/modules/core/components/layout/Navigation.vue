@@ -591,11 +591,12 @@ a:hover {
       pointer-events: auto; /* Re-enable interactions */
       display: flex;
       flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom, 80px); /* Add safe area padding for iPhone */
       
       .el-menu {
         display: block;
         margin-top: 10px; /* Add some space at the top */
-        padding-bottom: env(safe-area-inset-bottom, 100px); /* Add safe area padding for iPhone */
+        margin-bottom: 20px; /* Add additional bottom margin */
         animation: fadeIn 0.3s ease-in-out; /* Animate menu items */
       }
 
