@@ -83,10 +83,11 @@ const { submit, submitting } = useSubmitting(() => {
 <template>
   <el-dialog top="2vh" v-model="visible"
              class="integration-form-modal"
-             :title="$t(props.editingIntegration?._id ? 'Edit Integration' : 'Create Integration')"
-             width="50%"
+             :title="$t(props.editingIntegration?._id ? 'Edit Integration' : 'New Integration')"
+             :width="$isMobile ? '100%' : '70%'"
+             :fullscreen="$isMobile"
              @close="$emit('close', $event)">
-    <el-form v-if="visible" @submit.prevent="submit">
+    <el-form v-if="visible" @submit.prevent="submit" class="form-content">
       <el-tabs>
         <el-tab-pane :label="$t('Trigger')">
           <TriggerTab v-model="form.trigger" />
@@ -97,13 +98,15 @@ const { submit, submitting } = useSubmitting(() => {
         <el-tab-pane :label="$t('Target')">
           <TargetTab v-model="form.target" />
         </el-tab-pane>
-
       </el-tabs>
-      <el-form-item>
-        <el-button type="primary" native-type="submit" :disabled="submitting" :loading="submitting">{{ $t('Save') }}</el-button>
-        <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
-      </el-form-item>
     </el-form>
+    
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
+        <el-button type="primary" @click="submit" :disabled="submitting" :loading="submitting">{{ $t('Save') }}</el-button>
+      </div>
+    </template>
   </el-dialog>
 </template>
 
@@ -124,7 +127,47 @@ img, small {
   font-weight: bold;
   font-style: italic;
 }
+
+@media (min-width: 768px) {
+  .form-content {
+    max-height: calc(90vh - 240px);
+    overflow-y: auto;
+  }
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 20px;
+}
+</style>
+<style>
 .integration-form-modal {
+  max-height: 90%;
+  overflow: auto;
+}
+
+.integration-form-modal :deep(.el-dialog) {
   max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.integration-form-modal :deep(.el-dialog__body) {
+  overflow-y: auto;
+  flex: 1;
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .integration-form-modal :deep(.el-dialog) {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .integration-form-modal.el-dialog .el-dialog__body {
+    height: calc(100% - 100px);
+    overflow-y: auto;
+  }
 }
 </style>
