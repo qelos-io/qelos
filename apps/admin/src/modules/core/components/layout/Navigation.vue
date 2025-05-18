@@ -575,10 +575,6 @@ a:hover {
     .el-menu {
       display: none;
     }
-    
-    .nav-header {
-      display: none; /* Hide nav-header in mobile view */
-    }
 
     &.show {
       position: fixed;
@@ -599,6 +595,7 @@ a:hover {
       .el-menu {
         display: block;
         margin-top: 10px; /* Add some space at the top */
+        padding-bottom: env(safe-area-inset-bottom, 100px); /* Add safe area padding for iPhone */
         animation: fadeIn 0.3s ease-in-out; /* Animate menu items */
       }
 
