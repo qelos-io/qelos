@@ -23,7 +23,7 @@
           <FormInput type="select" v-model="boilerplateType">
             <template #options>
               <el-option value="table" :label="$t('Table')"/>
-              <!--              <el-option value="grid" :label="$t('Grid')"/>-->
+              <el-option value="grid" :label="$t('Grid')"/>
               <!--              <el-option value="block" :label="$t('Blocks')"/>-->
             </template>
           </FormInput>
@@ -165,8 +165,8 @@ const addMicroFrontendToPlugin = async (pluginId: string, position: string, mfeN
       use: mfeTemplate.use || 'plain',
       requirements: boilerplate.requirements || [],
       route: {
-        name: mfeName.toLowerCase().replace(/\s+/g, '-') + '-copy',
-        path: mfeName.toLowerCase().replace(/\s+/g, '-') + '-copy',
+        name: mfeName.toLowerCase().replace(/\s+/g, '-'),
+        path: mfeName.toLowerCase().replace(/\s+/g, '-'),
         roles: mfeTemplate.route?.roles || ['*'],
         navBarPosition: position as 'top' | 'bottom' | 'user-dropdown' | false,
       },

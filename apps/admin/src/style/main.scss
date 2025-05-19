@@ -255,5 +255,27 @@ p {
   position: relative;
 }
 
+.property-card {
+  min-width: 250px;
+  max-width: 350px;
+  margin: 10px;
+  overflow: hidden;
+}
+
+.property-row {
+  padding: 5px 0;
+  word-break: break-word;
+  display: flex;
+  flex-direction: column;
+}
+
+.property-row strong {
+  margin-bottom: 3px;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
 @import "content-list";
 @import "mobile";
