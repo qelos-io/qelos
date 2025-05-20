@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { capitalize, ref, watch } from 'vue';
+import { capitalize, computed, ref, watch } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
@@ -7,16 +7,76 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 import { getPlural } from '@/modules/core/utils/texts';
+import { useDispatcher } from '@/modules/core/composables/useDispatcher';
 
-const editorMode = ref(false)
+const editorMode = ref(false);
+const activeTab = ref('all');
 
 const model = defineModel<any[]>();
 
-const modelString = ref(json(model.value))
+const modelString = ref(json(model.value));
 
 watch(model.value, () => {
   modelString.value = json(model.value);
-}, { deep: true })
+}, { deep: true });
+
+// Mock function to simulate fetching results for display
+const getRequirementResult = (row) => {
+  const type = getRowType(row);
+  let mockResult;
+  
+  if (type === 'fromBlueprint') {
+    mockResult = {
+      result: row.fromBlueprint.identifier ? { id: 'entity-123', name: 'Sample Entity' } : [{ id: 'entity-123', name: 'Sample Entity 1' }, { id: 'entity-456', name: 'Sample Entity 2' }],
+      loading: false,
+      loaded: true,
+      retry: () => console.log('Retrying blueprint fetch')
+    };
+  } else if (type === 'fromCrud') {
+    mockResult = {
+      result: [{ id: 'crud-123', name: 'CRUD Item 1' }, { id: 'crud-456', name: 'CRUD Item 2' }],
+      loading: false,
+      loaded: true,
+      retry: () => console.log('Retrying CRUD fetch')
+    };
+  } else if (type === 'fromHTTP') {
+    mockResult = {
+      result: { data: { id: 'http-123', status: 'success', message: 'Data fetched successfully' } },
+      loading: false,
+      loaded: true,
+      retry: () => console.log('Retrying HTTP fetch')
+    };
+  } else if (type === 'fromData') {
+    mockResult = row.fromData;
+  }
+  
+  return mockResult;
+};
+
+const requirementTabs = computed(() => [
+  { value: 'all', label: 'All' },
+  { value: 'fromBlueprint', label: 'Blueprint' },
+  { value: 'fromCrud', label: 'CRUD' },
+  { value: 'fromData', label: 'Data' },
+  { value: 'fromHTTP', label: 'HTTP' }
+]);
+
+function getTabIcon(tabValue) {
+  switch (tabValue) {
+    case 'fromBlueprint': return ['fas', 'sitemap'];
+    case 'fromCrud': return ['fas', 'database'];
+    case 'fromData': return ['fas', 'file-alt'];
+    case 'fromHTTP': return ['fas', 'globe'];
+    default: return ['fas', 'list'];
+  }
+}
+
+const filteredRequirements = computed(() => {
+  if (activeTab.value === 'all') {
+    return model.value;
+  }
+  return model.value.filter(row => getRowType(row) === activeTab.value);
+});
 
 function toggleEditorMode() {
   editorMode.value = !editorMode.value;
@@ -28,12 +88,30 @@ function toggleEditorMode() {
 }
 
 function addRequirement() {
-  model.value.push({
-    key: '',
-    fromBlueprint: {
-      name: ''
-    },
-  })
+  const newRequirement = { key: '' };
+  
+  // Use the filtered type if it's not 'all'
+  if (activeTab.value !== 'all') {
+    switch (activeTab.value) {
+      case 'fromBlueprint':
+        newRequirement.fromBlueprint = { name: '' };
+        break;
+      case 'fromCrud':
+        newRequirement.fromCrud = { name: '' };
+        break;
+      case 'fromData':
+        newRequirement.fromData = {};
+        break;
+      case 'fromHTTP':
+        newRequirement.fromHTTP = { uri: '' };
+        break;
+    }
+  } else {
+    // Default to Blueprint if no filter is selected
+    newRequirement.fromBlueprint = { name: '' };
+  }
+  
+  model.value.push(newRequirement);
 }
 
 function getRowType(row: any) {
@@ -100,21 +178,49 @@ function getHttpInstructionsCode(row) {
 </script>
 
 <template>
-  <el-button-group>
-    <el-button @click="toggleEditorMode">
-      <el-icon>
-        <font-awesome-icon :icon="['fas', 'code']"/>
-      </el-icon>
-      <span>{{ $t('Toggle Code Editor') }}</span>
-    </el-button>
-    <el-button @click="addRequirement">{{ $t('Add Requirement') }}</el-button>
-  </el-button-group>
+  <div class="requirements-header">
+    <div class="header-actions">
+      <div class="filter-buttons">
+        <el-button-group>
+          <el-button 
+            v-for="tab in requirementTabs" 
+            :key="tab.value" 
+            :type="activeTab === tab.value ? 'primary' : 'default'"
+            @click="activeTab = tab.value"
+          >
+            <el-icon v-if="tab.value !== 'all'">
+              <font-awesome-icon :icon="getTabIcon(tab.value)" />
+            </el-icon>
+            <span>{{ $t(tab.label) }}</span>
+          </el-button>
+        </el-button-group>
+      </div>
+      
+      <div class="right-actions">
+        <el-button-group>
+          <el-button @click="toggleEditorMode">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'code']"/>
+            </el-icon>
+            <span>{{ $t('Toggle Code Editor') }}</span>
+          </el-button>
+          <el-button @click="addRequirement">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'plus']"/>
+            </el-icon>
+            <span>{{ $t('Add Requirement') }}</span>
+          </el-button>
+        </el-button-group>
+      </div>
+    </div>
+  </div>
+  
   <Monaco v-if="editorMode" ref="requirementsEditor"
           v-model="modelString"
           language="json"
-          style="min-height:65vh"/>
-  <div v-else class="flex-1">
-    <BlockItem v-for="(row, index) in model" :key="index">
+          style="min-height:65vh; margin: 0 1rem;"/>
+  <div v-else class="flex-1 requirements-container">
+    <BlockItem v-for="(row, index) in filteredRequirements" :key="index">
       <template #header>
         <el-input required v-model="row.key" :placeholder="$t('Key')"/>
       </template>
@@ -133,34 +239,26 @@ function getHttpInstructionsCode(row) {
             <FormRowGroup>
               <BlueprintSelector v-model="row.fromBlueprint.name"/>
               <FormInput v-model="row.fromBlueprint.identifier" title="Entity Identifier"
-                         label="Keep empty to load all blueprint entities"
                          placeholder="Try to use: {{identifier}} for dynamic route param"
                          @update:model-value="clearIfEmpty($event, row.fromBlueprint, 'identifier')"/>
             </FormRowGroup>
-            <div>
-              <el-checkbox v-model="row.lazy">
-                {{ $t('Lazy') }}
-              </el-checkbox>
-              <el-checkbox :model-value="row.fromBlueprint.query?.$populate"
-                           @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $populate: $event || undefined }">
-                {{ $t('Populate') }}
-              </el-checkbox>
-              <el-checkbox :model-value="!!row.fromBlueprint.query?.$outerPopulate"
-                           @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $outerPopulate: $event ? 'setKey:blueprintName:scope' : undefined }">
-                {{ $t('Outer Populate') }}
-              </el-checkbox>
-              <el-checkbox :model-value="!!row.fromBlueprint.query?.$sort"
-                           @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $sort: $event ? '{{query.sortBy}}' : undefined }">
-                {{ $t('Sort') }}
-              </el-checkbox>
-              <el-checkbox :model-value="!!row.fromBlueprint.query?.$limit"
-                           @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $limit: $event ? 100 : undefined }">
-                {{ $t('Limit # Documents') }}
-              </el-checkbox>
-              <el-checkbox :model-value="!!row.fromBlueprint.query?.$page"
-                           @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $page: $event ? '{{query.page}}' : undefined }">
-                {{ $t('Page') }}
-              </el-checkbox>
+            <div class="checkbox-group">
+              <el-switch v-model="row.lazy" :active-text="$t('Lazy')" />
+              <el-switch 
+                :model-value="row.fromBlueprint.query?.$populate"
+                :active-text="$t('Populate References')"
+                @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $populate: $event ? true : undefined }"
+              />
+              <el-switch 
+                :model-value="!!row.fromBlueprint.query?.$limit"
+                :active-text="$t('Limit # Documents')"
+                @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $limit: $event ? 100 : undefined }"
+              />
+              <el-switch 
+                :model-value="!!row.fromBlueprint.query?.$page"
+                :active-text="$t('Page')"
+                @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $page: $event ? '{{query.page}}' : undefined }"
+              />
             </div>
             <el-form-item :label="$t('Query Params')">
               <Monaco :model-value="json(row.fromBlueprint.query) || '{}'"
@@ -176,6 +274,18 @@ function getHttpInstructionsCode(row) {
                 <br>
                 <i v-html="getBlueprintInstructionsCode(row)"></i>
               </p>
+            </details>
+            
+            <details class="result-preview-details">
+              <summary>{{ $t('Result Preview') }}</summary>
+              <div class="result-preview">
+                <div class="result-preview-header">
+                  <el-button size="small" type="primary" @click="getRequirementResult(row).retry()">{{ $t('Retry') }}</el-button>
+                </div>
+                <div class="result-preview-content">
+                  <pre>{{ json(getRequirementResult(row)) }}</pre>
+                </div>
+              </div>
             </details>
           </div>
           <div v-if="row.fromCrud">
@@ -196,25 +306,46 @@ function getHttpInstructionsCode(row) {
                          placeholder="Try to use: {{identifier}} for dynamic route param"
                          @update:model-value="clearIfEmpty($event, row.fromCrud, 'identifier')"/>
             </FormRowGroup>
-            <div>
-              <el-checkbox v-model="row.lazy">
-                {{ $t('Lazy') }}
-              </el-checkbox>
+            <div class="checkbox-group">
+              <el-switch v-model="row.lazy" :active-text="$t('Lazy')" />
             </div>
+            
+            <details class="result-preview-details">
+              <summary>{{ $t('Result Preview') }}</summary>
+              <div class="result-preview">
+                <div class="result-preview-header">
+                  <el-button size="small" type="primary" @click="getRequirementResult(row).retry()">{{ $t('Retry') }}</el-button>
+                </div>
+                <div class="result-preview-content">
+                  <pre>{{ json(getRequirementResult(row)) }}</pre>
+                </div>
+              </div>
+            </details>
           </div>
-          <Monaco v-if="row.fromData" :model-value="json(row.fromData)"
-                  style="max-height:350px;"
-                  @update:model-value="updateRowJSON(row, 'fromData', $event)"/>
+          <div v-if="row.fromData">
+            <el-form-item :label="$t('Data')">
+              <Monaco :model-value="json(row.fromData) || '{}'"
+                      style="max-height:350px;"
+                      @update:model-value="updateRowJSON(row, 'fromData', $event)"/>
+            </el-form-item>
+            
+            <details class="result-preview-details">
+              <summary>{{ $t('Result Preview') }}</summary>
+              <div class="result-preview">
+                <div class="result-preview-content">
+                  <pre>{{ json(getRequirementResult(row)) }}</pre>
+                </div>
+              </div>
+            </details>
+          </div>
           <div v-if="row.fromHTTP">
             <FormRowGroup>
               <FormInput v-model="row.fromHTTP.method" title="Method" placeholder="GET"
                          @update:model-value="clearIfEmpty($event, row.fromHTTP, 'method')"/>
               <FormInput v-model="row.fromHTTP.uri" title="URL" placeholder="https://example.com/api" required/>
             </FormRowGroup>
-            <div>
-              <el-checkbox v-model="row.lazy">
-                {{ $t('Lazy') }}
-              </el-checkbox>
+            <div class="checkbox-group">
+              <el-switch v-model="row.lazy" :active-text="$t('Lazy')" />
             </div>
             <el-form-item :label="$t('Query Params')">
               <Monaco :model-value="json(row.fromHTTP.query) || '{}'"
@@ -231,6 +362,18 @@ function getHttpInstructionsCode(row) {
                 <i v-html="getHttpInstructionsCode(row)"></i>
               </p>
             </details>
+            
+            <details class="result-preview-details">
+              <summary>{{ $t('Result Preview') }}</summary>
+              <div class="result-preview">
+                <div class="result-preview-header">
+                  <el-button size="small" type="primary" @click="getRequirementResult(row).retry()">{{ $t('Retry') }}</el-button>
+                </div>
+                <div class="result-preview-content">
+                  <pre>{{ json(getRequirementResult(row)) }}</pre>
+                </div>
+              </div>
+            </details>
           </div>
         </div>
       </template>
@@ -241,6 +384,79 @@ function getHttpInstructionsCode(row) {
   </div>
 </template>
 <style scoped>
+.requirements-header {
+  margin-bottom: 1rem;
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.right-actions {
+  display: flex;
+  align-items: center;
+}
+
+.filter-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.filter-buttons .el-button:not(.el-button--primary):hover {
+  color: var(--el-color-primary);
+  border-color: var(--el-color-primary-light-7);
+  background-color: var(--el-color-primary-light-9);
+}
+
+.requirements-container {
+  margin: 0 1rem;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.result-preview-details {
+  margin-top: 1rem;
+  margin-inline-start: 0;
+}
+
+.result-preview-details > summary {
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.5rem 0;
+}
+
+.result-preview {
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+  margin-top: 0.5rem;
+}
+
+.result-preview-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.result-preview-content {
+  max-height: 200px;
+  overflow: auto;
+}
+
 details {
   margin-inline-start: 20px;
 
