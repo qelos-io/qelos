@@ -1,8 +1,8 @@
 <template>
   <div v-if="loaded" class="assets-list">
     <div v-for="asset in assets" :key="asset.identifier" class="asset-box">
-      <img v-if="asset.type === 'image'" :src="asset.publicUrl"/>
-      <icon-warning-outline v-else/>
+      <img v-if="asset.type === 'image'" :src="asset.publicUrl" loading="lazy" />
+      <font-awesome-icon v-else icon="fa-solid fa-file"/>
     </div>
   </div>
 </template>
