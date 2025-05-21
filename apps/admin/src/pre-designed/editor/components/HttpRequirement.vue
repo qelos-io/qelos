@@ -3,18 +3,34 @@ import { computed } from 'vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
+import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 
 const props = defineProps<{
   modelValue: any;
   json: (obj: any) => string;
   getRequirementResult: (row: any) => any;
-  'update-row-JSON': (row: any, key: string, value: string) => void;
+  updateRowJson: (row: any, key: string, value: string) => void;
   clearIfEmpty: (event: any, obj: any, key: string) => void;
   getHttpInstructionsCode: (row: any) => string;
 }>();
 
 // Since we're not using v-model anymore, we'll work directly with the modelValue prop
 const requirement = computed(() => props.modelValue);
+
+const query = computed(() => requirement.value.fromHTTP.query);
+
+const { result, loading, loaded, error, retry } = useDispatcher(async () => {
+  const url = new URL(requirement.value.fromHTTP.uri, location.origin);
+  url.search = new URLSearchParams(query.value).toString();
+    
+  const response = await fetch(url, {
+    method: requirement.value.fromHTTP.method,  
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  });
+  return response.json();
+}, null, true);
 </script>
 
 <template>
@@ -30,7 +46,7 @@ const requirement = computed(() => props.modelValue);
     <el-form-item :label="$t('Query Params')">
       <Monaco :model-value="json(requirement.fromHTTP.query) || '{}'"
               style="max-height:200px;"
-              @update:model-value="props['update-row-JSON'](requirement.fromHTTP, 'query', $event);"/>
+              @update:model-value="props.updateRowJson(requirement.fromHTTP, 'query', $event);"/>
     </el-form-item>
     <details>
       <summary>
@@ -47,10 +63,10 @@ const requirement = computed(() => props.modelValue);
       <summary>{{ $t('Result Preview') }}</summary>
       <div class="result-preview">
         <div class="result-preview-header">
-          <el-button size="small" type="primary" @click="getRequirementResult(requirement).retry()">{{ $t('Retry') }}</el-button>
+          <el-button size="small" type="primary" @click="retry()">{{ $t('Retry') }}</el-button>
         </div>
         <div class="result-preview-content">
-          <pre>{{ json(getRequirementResult(requirement)) }}</pre>
+          <pre class="result-json">{{ json({loading, loaded, error, retry, result}) }}</pre>
         </div>
       </div>
     </details>
@@ -65,9 +81,9 @@ const requirement = computed(() => props.modelValue);
   margin-bottom: 1rem;
 }
 
-.result-preview-details {
+.result-preview-details { 
   margin-top: 1rem;
-  margin-inline-start: 0;
+  margin-inline-start: 20px;
 }
 
 .result-preview-details > summary {
@@ -94,6 +110,14 @@ const requirement = computed(() => props.modelValue);
 .result-preview-content {
   max-height: 200px;
   overflow: auto;
+}
+
+.result-json {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  margin: 0;
 }
 
 details {

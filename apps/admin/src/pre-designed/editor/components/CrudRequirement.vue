@@ -44,7 +44,7 @@ const requirement = computed(() => props.modelValue);
           <el-button size="small" type="primary" @click="getRequirementResult(requirement).retry()">{{ $t('Retry') }}</el-button>
         </div>
         <div class="result-preview-content">
-          <pre>{{ json(getRequirementResult(requirement)) }}</pre>
+          <pre class="result-json">{{ json(getRequirementResult(requirement)) }}</pre>
         </div>
       </div>
     </details>
@@ -61,7 +61,7 @@ const requirement = computed(() => props.modelValue);
 
 .result-preview-details {
   margin-top: 1rem;
-  margin-inline-start: 0;
+  margin-inline-start: 20px;
 }
 
 .result-preview-details > summary {
@@ -88,5 +88,13 @@ const requirement = computed(() => props.modelValue);
 .result-preview-content {
   max-height: 200px;
   overflow: auto;
+}
+
+.result-json {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  margin: 0;
 }
 </style>

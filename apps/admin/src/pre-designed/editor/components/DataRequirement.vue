@@ -6,7 +6,7 @@ const props = defineProps<{
   modelValue: any;
   json: (obj: any) => string;
   getRequirementResult: (row: any) => any;
-  'update-row-JSON': (row: any, key: string, value: string) => void;
+  updateRowJson: (row: any, key: string, value: string) => void;
 }>();
 
 // Since we're not using v-model anymore, we'll work directly with the modelValue prop
@@ -18,14 +18,14 @@ const requirement = computed(() => props.modelValue);
     <el-form-item :label="$t('Data')">
       <Monaco :model-value="json(requirement.fromData) || '{}'"
               style="max-height:350px;"
-              @update:model-value="props['update-row-JSON'](requirement, 'fromData', $event)"/>
+              @update:model-value="props.updateRowJson(requirement, 'fromData', $event)"/>
     </el-form-item>
     
     <details class="result-preview-details">
       <summary>{{ $t('Result Preview') }}</summary>
       <div class="result-preview">
         <div class="result-preview-content">
-          <pre>{{ json(getRequirementResult(requirement)) }}</pre>
+          <pre class="result-json">{{ json(getRequirementResult(requirement)) }}</pre>
         </div>
       </div>
     </details>
@@ -35,7 +35,7 @@ const requirement = computed(() => props.modelValue);
 <style scoped>
 .result-preview-details {
   margin-top: 1rem;
-  margin-inline-start: 0;
+  margin-inline-start: 20px;
 }
 
 .result-preview-details > summary {
@@ -56,5 +56,13 @@ const requirement = computed(() => props.modelValue);
 .result-preview-content {
   max-height: 200px;
   overflow: auto;
+}
+
+.result-json {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  margin: 0;
 }
 </style>

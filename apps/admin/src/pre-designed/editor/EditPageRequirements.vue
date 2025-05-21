@@ -199,7 +199,7 @@ function getHttpInstructionsCode(row) {
 <template>
   <div class="requirements-header">
     <div class="header-actions">
-      <div class="filter-buttons">
+      <div v-if="!editorMode" class="filter-buttons">
         <el-button-group>
           <el-button 
             v-for="tab in requirementTabs" 
@@ -246,22 +246,50 @@ function getHttpInstructionsCode(row) {
         <el-input required v-model="row.key" :placeholder="$t('Key')"/>
       </template>
       <template #default>
-        <FormInput type="select" title="Requirement Type" :model-value="getRowType(row)"
-                   @update:model-value="updateRowType(row, $event)">
-          <template #options>
-            <el-option value="fromBlueprint" :label="$t('Blueprint')"/>
-            <el-option value="fromCrud" :label="$t('CRUD')"/>
-            <el-option value="fromData" :label="$t('Data')"/>
-            <el-option value="fromHTTP" :label="$t('HTTP')"/>
-          </template>
-        </FormInput>
+        <div class="requirement-type-select">
+          <div class="form-label">{{ $t('Requirement Type') }}</div>
+          <el-select :model-value="getRowType(row)" @change="updateRowType(row, $event)" class="w-full">
+            <el-option value="fromBlueprint" :label="$t('Blueprint')">
+              <div class="select-option-with-icon">
+                <el-icon>
+                  <font-awesome-icon :icon="getTabIcon('fromBlueprint')" />
+                </el-icon>
+                <span>{{ $t('Blueprint') }}</span>
+              </div>
+            </el-option>
+            <el-option value="fromCrud" :label="$t('CRUD')">
+              <div class="select-option-with-icon">
+                <el-icon>
+                  <font-awesome-icon :icon="getTabIcon('fromCrud')" />
+                </el-icon>
+                <span>{{ $t('CRUD') }}</span>
+              </div>
+            </el-option>
+            <el-option value="fromData" :label="$t('Data')">
+              <div class="select-option-with-icon">
+                <el-icon>
+                  <font-awesome-icon :icon="getTabIcon('fromData')" />
+                </el-icon>
+                <span>{{ $t('Data') }}</span>
+              </div>
+            </el-option>
+            <el-option value="fromHTTP" :label="$t('HTTP')">
+              <div class="select-option-with-icon">
+                <el-icon>
+                  <font-awesome-icon :icon="getTabIcon('fromHTTP')" />
+                </el-icon>
+                <span>{{ $t('HTTP') }}</span>
+              </div>
+            </el-option>
+          </el-select>
+        </div>
         <div>
           <BlueprintRequirement 
             v-if="row.fromBlueprint" 
             :model-value="row" 
             :json="json" 
             :get-requirement-result="getRequirementResult" 
-            :update-row-JSON="updateRowJSON" 
+            :update-row-json="updateRowJSON" 
             :clear-if-empty="clearIfEmpty" 
             :get-blueprint-instructions-code="getBlueprintInstructionsCode"
           />
@@ -279,7 +307,7 @@ function getHttpInstructionsCode(row) {
             :model-value="row" 
             :json="json" 
             :get-requirement-result="getRequirementResult" 
-            :update-row-JSON="updateRowJSON"
+            :update-row-json="updateRowJSON"
           />
           
           <HttpRequirement 
@@ -287,7 +315,7 @@ function getHttpInstructionsCode(row) {
             :model-value="row" 
             :json="json" 
             :get-requirement-result="getRequirementResult" 
-            :update-row-JSON="updateRowJSON" 
+            :update-row-json="updateRowJSON" 
             :clear-if-empty="clearIfEmpty" 
             :get-http-instructions-code="getHttpInstructionsCode"
           />
@@ -313,6 +341,17 @@ function getHttpInstructionsCode(row) {
   margin-bottom: 1rem;
   flex-wrap: wrap;
   gap: 1rem;
+  width: 100%;
+}
+
+.filter-buttons {
+  flex-grow: 1;
+}
+
+.right-actions {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
 }
 
 .right-actions {
@@ -361,6 +400,32 @@ function getHttpInstructionsCode(row) {
 
 .requirements-container {
   margin: 0 1rem;
+}
+
+.requirement-type-select {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  font-size: 14px;
+  color: var(--el-text-color-regular);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.select-option-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.select-option-with-icon .el-icon {
+  font-size: 14px;
+  color: var(--el-text-color-secondary);
 }
 
 .checkbox-group {
