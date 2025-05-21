@@ -30,7 +30,7 @@ const requirement = computed(() => props.modelValue);
 const query = computed(() => requirement.value.fromHTTP.query);
 
 const { result, loading, loaded, error, retry } = useDispatcher(async () => {
-  const url = new URL(requirement.value.fromHTTP.uri, location.origin);
+  const url = requirement.value.fromHTTP.uri?.startsWith('http') ? requirement.value.fromHTTP.uri : new URL(requirement.value.fromHTTP.uri, location.origin);
   url.search = new URLSearchParams(query.value).toString();
     
   const response = await fetch(url, {
@@ -46,8 +46,17 @@ const { result, loading, loaded, error, retry } = useDispatcher(async () => {
 <template>
   <div>
     <FormRowGroup>
-      <FormInput v-model="requirement.fromHTTP.method" title="Method" placeholder="GET"
-                 @update:model-value="clearIfEmpty($event, requirement.fromHTTP, 'method')"/>
+      <el-form-item :label="$t('Method')">
+        <el-select v-model="requirement.fromHTTP.method" size="small" class="w-full">
+          <el-option value="GET" label="GET" />
+          <el-option value="POST" label="POST" />
+          <el-option value="PUT" label="PUT" />
+          <el-option value="PATCH" label="PATCH" />
+          <el-option value="DELETE" label="DELETE" />
+          <el-option value="HEAD" label="HEAD" />
+          <el-option value="OPTIONS" label="OPTIONS" />
+        </el-select>
+      </el-form-item>
       <FormInput v-model="requirement.fromHTTP.uri" title="URL" placeholder="https://example.com/api" required/>
     </FormRowGroup>
     <div class="checkbox-group">
