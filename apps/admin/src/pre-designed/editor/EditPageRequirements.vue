@@ -173,27 +173,6 @@ function clearIfEmpty($event: any, obj: any, key: string) {
   }
 }
 
-function getBlueprintInstructionsCode(row) {
-  if (row.fromBlueprint && row.fromBlueprint.name) {
-    const blueprintName = capitalize(row.fromBlueprint.name);
-    const texts = [
-      `<strong>{{${row.key}.result}}</strong> will be ${row.fromBlueprint.identifier ? ('a ' + blueprintName + ' entity') : 'an array of ' + getPlural(blueprintName) + ' entities'}`,
-      `<strong>{{${row.key}.loading}}</strong> and <strong>{{${row.key}.loaded}}</strong> can help you distinguish rather the API call is loading or loaded.`
-    ]
-    return texts.join('<br>')
-  }
-}
-
-function getHttpInstructionsCode(row) {
-  if (row.fromHTTP) {
-    const texts = [
-      `<strong>{{${row.key}.result}}</strong> will be the response of the HTTP request`,
-      `<strong>{{${row.key}.loading}}</strong> and <strong>{{${row.key}.loaded}}</strong> can help you distinguish rather the API call is loading or loaded.`
-    ]
-    return texts.join('<br>')
-  }
-}
-
 </script>
 
 <template>
@@ -291,7 +270,6 @@ function getHttpInstructionsCode(row) {
             :get-requirement-result="getRequirementResult" 
             :update-row-json="updateRowJSON" 
             :clear-if-empty="clearIfEmpty" 
-            :get-blueprint-instructions-code="getBlueprintInstructionsCode"
           />
           
           <CrudRequirement 
@@ -317,7 +295,6 @@ function getHttpInstructionsCode(row) {
             :get-requirement-result="getRequirementResult" 
             :update-row-json="updateRowJSON" 
             :clear-if-empty="clearIfEmpty" 
-            :get-http-instructions-code="getHttpInstructionsCode"
           />
         </div>
       </template>

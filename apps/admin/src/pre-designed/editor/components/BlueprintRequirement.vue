@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, capitalize } from 'vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
+import { getPlural } from '@/modules/core/utils/texts';
 
 const props = defineProps<{
   modelValue: any;
@@ -11,8 +12,19 @@ const props = defineProps<{
   getRequirementResult: (row: any) => any;
   updateRowJson: (row: any, key: string, value: string) => void;
   clearIfEmpty: (event: any, obj: any, key: string) => void;
-  getBlueprintInstructionsCode: (row: any) => string;
 }>();
+
+
+function getBlueprintInstructionsCode(row) {
+  if (row.fromBlueprint && row.fromBlueprint.name) {
+    const blueprintName = capitalize(row.fromBlueprint.name);
+    const texts = [
+      `<strong>{{${row.key}.result}}</strong> will be ${row.fromBlueprint.identifier ? ('a ' + blueprintName + ' entity') : 'an array of ' + getPlural(blueprintName) + ' entities'}`,
+      `<strong>{{${row.key}.loading}}</strong> and <strong>{{${row.key}.loaded}}</strong> can help you distinguish rather the API call is loading or loaded.`
+    ]
+    return texts.join('<br>')
+  }
+}
 
 // Since we're not using v-model anymore, we don't need to emit update events
 // We'll work directly with the modelValue prop

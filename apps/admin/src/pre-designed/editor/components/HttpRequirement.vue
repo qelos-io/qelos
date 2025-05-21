@@ -11,8 +11,18 @@ const props = defineProps<{
   getRequirementResult: (row: any) => any;
   updateRowJson: (row: any, key: string, value: string) => void;
   clearIfEmpty: (event: any, obj: any, key: string) => void;
-  getHttpInstructionsCode: (row: any) => string;
 }>();
+
+
+function getHttpInstructionsCode(row) {
+  if (row.fromHTTP) {
+    const texts = [
+      `<strong>{{${row.key}.result}}</strong> will be the response of the HTTP request`,
+      `<strong>{{${row.key}.loading}}</strong> and <strong>{{${row.key}.loaded}}</strong> can help you distinguish rather the API call is loading or loaded.`
+    ]
+    return texts.join('<br>')
+  }
+}
 
 // Since we're not using v-model anymore, we'll work directly with the modelValue prop
 const requirement = computed(() => props.modelValue);
