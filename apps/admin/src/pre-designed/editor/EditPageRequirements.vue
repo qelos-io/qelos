@@ -234,10 +234,12 @@ function getHttpInstructionsCode(row) {
     </div>
   </div>
   
-  <Monaco v-if="editorMode" ref="requirementsEditor"
-          v-model="modelString"
-          language="json"
-          style="min-height:65vh; margin: 0 1rem;"/>
+  <div v-if="editorMode" class="editor-container">
+    <Monaco ref="requirementsEditor"
+            v-model="modelString"
+            language="json"
+            style="min-height:65vh; width:100%;"/>
+  </div>
   <div v-else class="flex-1 requirements-container">
     <BlockItem v-for="(row, index) in filteredRequirements" :key="index">
       <template #header>
@@ -348,6 +350,13 @@ function getHttpInstructionsCode(row) {
 .el-button--primary .counter-badge {
   background-color: rgba(255, 255, 255, 0.2);
   color: #ffffff;
+}
+
+.editor-container {
+  margin: 0 1rem;
+  width: auto;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .requirements-container {
