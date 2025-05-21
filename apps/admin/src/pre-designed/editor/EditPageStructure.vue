@@ -141,13 +141,6 @@ provide('editableManager', ref(false));
             </div>
           </template>
           <div class="tab-content">
-            <div class="editor-toolbar">
-              <el-tooltip content="Format code" placement="top">
-                <el-button size="small" circle>
-                  <el-icon><font-awesome-icon :icon="['fas', 'align-left']" /></el-icon>
-                </el-button>
-              </el-tooltip>
-            </div>
             <Monaco 
               ref="htmlEditor"
               v-model="mfe.structure"
