@@ -2,12 +2,15 @@
 import { capitalize, computed, ref, watch } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
-import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 import { getPlural } from '@/modules/core/utils/texts';
 import { useDispatcher } from '@/modules/core/composables/useDispatcher';
+
+// Import requirement type components
+import BlueprintRequirement from './components/BlueprintRequirement.vue';
+import CrudRequirement from './components/CrudRequirement.vue';
+import DataRequirement from './components/DataRequirement.vue';
+import HttpRequirement from './components/HttpRequirement.vue';
 
 const editorMode = ref(false);
 const activeTab = ref('all');
@@ -53,18 +56,34 @@ const getRequirementResult = (row) => {
   return mockResult;
 };
 
+const typeCounts = computed(() => {
+  const counts = {
+    fromBlueprint: 0,
+    fromCrud: 0,
+    fromData: 0,
+    fromHTTP: 0
+  };
+  
+  model.value.forEach(row => {
+    const type = getRowType(row);
+    if (type) counts[type]++;
+  });
+  
+  return counts;
+});
+
 const requirementTabs = computed(() => [
-  { value: 'all', label: 'All' },
-  { value: 'fromBlueprint', label: 'Blueprint' },
-  { value: 'fromCrud', label: 'CRUD' },
-  { value: 'fromData', label: 'Data' },
-  { value: 'fromHTTP', label: 'HTTP' }
+  { value: 'all', label: 'All', count: model.value.length },
+  { value: 'fromBlueprint', label: 'Blueprint', count: typeCounts.value.fromBlueprint },
+  { value: 'fromCrud', label: 'CRUD', count: typeCounts.value.fromCrud },
+  { value: 'fromData', label: 'Data', count: typeCounts.value.fromData },
+  { value: 'fromHTTP', label: 'HTTP', count: typeCounts.value.fromHTTP }
 ]);
 
 function getTabIcon(tabValue) {
   switch (tabValue) {
-    case 'fromBlueprint': return ['fas', 'sitemap'];
-    case 'fromCrud': return ['fas', 'database'];
+    case 'fromBlueprint': return ['fas', 'database'];
+    case 'fromCrud': return ['fas', 'sitemap'];
     case 'fromData': return ['fas', 'file-alt'];
     case 'fromHTTP': return ['fas', 'globe'];
     default: return ['fas', 'list'];
@@ -191,7 +210,7 @@ function getHttpInstructionsCode(row) {
             <el-icon v-if="tab.value !== 'all'">
               <font-awesome-icon :icon="getTabIcon(tab.value)" />
             </el-icon>
-            <span>{{ $t(tab.label) }}</span>
+            <span>{{ $t(tab.label) }} <span class="counter-badge">{{ tab.count }}</span></span>
           </el-button>
         </el-button-group>
       </div>
@@ -235,146 +254,41 @@ function getHttpInstructionsCode(row) {
           </template>
         </FormInput>
         <div>
-          <div v-if="row.fromBlueprint">
-            <FormRowGroup>
-              <BlueprintSelector v-model="row.fromBlueprint.name"/>
-              <FormInput v-model="row.fromBlueprint.identifier" title="Entity Identifier"
-                         placeholder="Try to use: {{identifier}} for dynamic route param"
-                         @update:model-value="clearIfEmpty($event, row.fromBlueprint, 'identifier')"/>
-            </FormRowGroup>
-            <div class="checkbox-group">
-              <el-switch v-model="row.lazy" :active-text="$t('Lazy')" />
-              <el-switch 
-                :model-value="row.fromBlueprint.query?.$populate"
-                :active-text="$t('Populate References')"
-                @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $populate: $event ? true : undefined }"
-              />
-              <el-switch 
-                :model-value="!!row.fromBlueprint.query?.$limit"
-                :active-text="$t('Limit # Documents')"
-                @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $limit: $event ? 100 : undefined }"
-              />
-              <el-switch 
-                :model-value="!!row.fromBlueprint.query?.$page"
-                :active-text="$t('Page')"
-                @update:model-value="row.fromBlueprint.query = { ...row.fromBlueprint.query, $page: $event ? '{{query.page}}' : undefined }"
-              />
-            </div>
-            <el-form-item :label="$t('Query Params')">
-              <Monaco :model-value="json(row.fromBlueprint.query) || '{}'"
-                      style="max-height:200px;"
-                      @update:model-value="updateRowJSON(row.fromBlueprint, 'query', $event);"/>
-            </el-form-item>
-            <details>
-              <summary>
-                {{ $t('Usage Instructions') }}
-              </summary>
-              <p>
-                {{ $t('You can use the following variables in your template:') }}
-                <br>
-                <i v-html="getBlueprintInstructionsCode(row)"></i>
-              </p>
-            </details>
-            
-            <details class="result-preview-details">
-              <summary>{{ $t('Result Preview') }}</summary>
-              <div class="result-preview">
-                <div class="result-preview-header">
-                  <el-button size="small" type="primary" @click="getRequirementResult(row).retry()">{{ $t('Retry') }}</el-button>
-                </div>
-                <div class="result-preview-content">
-                  <pre>{{ json(getRequirementResult(row)) }}</pre>
-                </div>
-              </div>
-            </details>
-          </div>
-          <div v-if="row.fromCrud">
-            <FormRowGroup>
-              <el-form-item :label="$t('CRUD Name')" required>
-                <el-select v-model="row.fromCrud.name">
-                  <el-option :label="$t('Configurations')" value="configurations"/>
-                  <el-option :label="$t('Blocks')" value="blocks"/>
-                  <el-option :label="$t('Blueprints')" value="blueprints"/>
-                  <el-option :label="$t('Invites')" value="invites"/>
-                  <el-option :label="$t('Plugins')" value="plugins"/>
-                  <el-option :label="$t('Storages')" value="storages"/>
-                  <el-option :label="$t('Users')" value="users"/>
-                  <el-option :label="$t('Workspaces')" value="workspaces"/>
-                </el-select>
-              </el-form-item>
-              <FormInput v-model="row.fromCrud.identifier" title="Identifier"
-                         placeholder="Try to use: {{identifier}} for dynamic route param"
-                         @update:model-value="clearIfEmpty($event, row.fromCrud, 'identifier')"/>
-            </FormRowGroup>
-            <div class="checkbox-group">
-              <el-switch v-model="row.lazy" :active-text="$t('Lazy')" />
-            </div>
-            
-            <details class="result-preview-details">
-              <summary>{{ $t('Result Preview') }}</summary>
-              <div class="result-preview">
-                <div class="result-preview-header">
-                  <el-button size="small" type="primary" @click="getRequirementResult(row).retry()">{{ $t('Retry') }}</el-button>
-                </div>
-                <div class="result-preview-content">
-                  <pre>{{ json(getRequirementResult(row)) }}</pre>
-                </div>
-              </div>
-            </details>
-          </div>
-          <div v-if="row.fromData">
-            <el-form-item :label="$t('Data')">
-              <Monaco :model-value="json(row.fromData) || '{}'"
-                      style="max-height:350px;"
-                      @update:model-value="updateRowJSON(row, 'fromData', $event)"/>
-            </el-form-item>
-            
-            <details class="result-preview-details">
-              <summary>{{ $t('Result Preview') }}</summary>
-              <div class="result-preview">
-                <div class="result-preview-content">
-                  <pre>{{ json(getRequirementResult(row)) }}</pre>
-                </div>
-              </div>
-            </details>
-          </div>
-          <div v-if="row.fromHTTP">
-            <FormRowGroup>
-              <FormInput v-model="row.fromHTTP.method" title="Method" placeholder="GET"
-                         @update:model-value="clearIfEmpty($event, row.fromHTTP, 'method')"/>
-              <FormInput v-model="row.fromHTTP.uri" title="URL" placeholder="https://example.com/api" required/>
-            </FormRowGroup>
-            <div class="checkbox-group">
-              <el-switch v-model="row.lazy" :active-text="$t('Lazy')" />
-            </div>
-            <el-form-item :label="$t('Query Params')">
-              <Monaco :model-value="json(row.fromHTTP.query) || '{}'"
-                      style="max-height:200px;"
-                      @update:model-value="updateRowJSON(row.fromHTTP, 'query', $event);"/>
-            </el-form-item>
-            <details>
-              <summary>
-                {{ $t('Usage Instructions') }}
-              </summary>
-              <p>
-                {{ $t('You can use the following variables in your template:') }}
-                <br>
-                <i v-html="getHttpInstructionsCode(row)"></i>
-              </p>
-            </details>
-            
-            <details class="result-preview-details">
-              <summary>{{ $t('Result Preview') }}</summary>
-              <div class="result-preview">
-                <div class="result-preview-header">
-                  <el-button size="small" type="primary" @click="getRequirementResult(row).retry()">{{ $t('Retry') }}</el-button>
-                </div>
-                <div class="result-preview-content">
-                  <pre>{{ json(getRequirementResult(row)) }}</pre>
-                </div>
-              </div>
-            </details>
-          </div>
+          <BlueprintRequirement 
+            v-if="row.fromBlueprint" 
+            :model-value="row" 
+            :json="json" 
+            :get-requirement-result="getRequirementResult" 
+            :update-row-JSON="updateRowJSON" 
+            :clear-if-empty="clearIfEmpty" 
+            :get-blueprint-instructions-code="getBlueprintInstructionsCode"
+          />
+          
+          <CrudRequirement 
+            v-if="row.fromCrud" 
+            :model-value="row" 
+            :json="json" 
+            :get-requirement-result="getRequirementResult" 
+            :clear-if-empty="clearIfEmpty"
+          />
+          
+          <DataRequirement 
+            v-if="row.fromData" 
+            :model-value="row" 
+            :json="json" 
+            :get-requirement-result="getRequirementResult" 
+            :update-row-JSON="updateRowJSON"
+          />
+          
+          <HttpRequirement 
+            v-if="row.fromHTTP" 
+            :model-value="row" 
+            :json="json" 
+            :get-requirement-result="getRequirementResult" 
+            :update-row-JSON="updateRowJSON" 
+            :clear-if-empty="clearIfEmpty" 
+            :get-http-instructions-code="getHttpInstructionsCode"
+          />
         </div>
       </template>
       <template #actions>
@@ -413,6 +327,27 @@ function getHttpInstructionsCode(row) {
   color: var(--el-color-primary);
   border-color: var(--el-color-primary-light-7);
   background-color: var(--el-color-primary-light-9);
+}
+
+.counter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-left: 6px;
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 10px;
+  background-color: var(--el-color-info-light-9);
+  color: var(--el-color-info-dark-2);
+  font-weight: 600;
+}
+
+.el-button--primary .counter-badge {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 .requirements-container {
