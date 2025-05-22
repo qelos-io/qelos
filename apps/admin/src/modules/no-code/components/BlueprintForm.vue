@@ -90,96 +90,448 @@ function submit() {
 </script>
 
 <template>
-  <el-form @submit.native.prevent="submit">
-    <EditHeader>
-      {{ $t(blueprint._id ? 'Edit Blueprint' : 'Create Blueprint') }}
-      <strong v-if="blueprint?.name">{{ blueprint.name }}</strong>
-    </EditHeader>
+  <el-form @submit.native.prevent="submit" class="blueprint-form">
+    <header class="page-header">
+      <div class="page-title">
+        <el-icon class="title-icon"><font-awesome-icon :icon="['fas', 'cube']" /></el-icon>
+        <span>{{ $t(blueprint._id ? 'Edit Blueprint' : 'Create Blueprint') }}:</span>
+        <strong v-if="blueprint?.name">{{ blueprint.name }}</strong>
+      </div>
+      <div class="header-actions">
+        <el-button type="primary" native-type="submit" :loading="props.submitting" :disabled="props.submitting">
+          <el-icon><font-awesome-icon :icon="['fas', 'save']" /></el-icon>
+          <span>{{ $t('Save') }}</span>
+        </el-button>
+      </div>
+    </header>
 
-    <el-tabs model-value="general">
-      <el-tab-pane :label="$t('General')" name="general">
-        <BlueprintGeneralTab v-model="edit" />
-      </el-tab-pane>
-
-      <el-tab-pane :label="$t('Permissions and Roles')" name="rbac">
-        <BlueprintPermissionsTab v-model="edit" :availableLabels="availableLabels" />
-      </el-tab-pane>
-
-      <el-tab-pane :label="$t('Properties')" name="properties">
-        <BlueprintPropertiesTab v-model:properties="edit.properties" v-model:entityIdentifierMechanism="edit.entityIdentifierMechanism" />
-      </el-tab-pane>
-
-      <el-tab-pane :label="$t('On-Save Mapping')" name="mapping">
-        <p>
-          {{ $t('Properties can be calculated on save.') }}<br>
-          {{ $t('Each property key can have JQ calculation for its final data.') }}<br>
-          {{ $t('Those calculations will run on our backend, before save for each entity.') }}
-        </p>
-        <div v-for="(entry, index) in blueprintMapping" :key="index" class="property">
-          <FormRowGroup>
-            <FormInput v-model="entry.key" title="Key"/>
-            <FormInput v-model="entry.value" title="JQ Calculation"/>
-            <div class="flex-0 remove-row">
-              <RemoveButton @click="blueprintMapping.splice(blueprintMapping.indexOf(entry), 1)"/>
-            </div>
-          </FormRowGroup>
+    <div class="main-content">
+      <el-tabs 
+        model-value="general" 
+        class="editor-tabs"
+        type="border-card">
+      <el-tab-pane name="general" lazy>
+        <template #label>
+          <div class="tab-label">
+            <el-icon><font-awesome-icon :icon="['fas', 'info-circle']" /></el-icon>
+            <span>{{ $t('General') }}</span>
+          </div>
+        </template>
+        <div class="tab-content">
+          <el-card class="settings-card">
+            <template #header>
+              <div class="card-header">
+                <el-icon><font-awesome-icon :icon="['fas', 'info-circle']" /></el-icon>
+                <span>{{ $t('General Information') }}</span>
+              </div>
+            </template>
+            <BlueprintGeneralTab v-model="edit" />
+          </el-card>
         </div>
-        <AddMore @click="blueprintMapping.push({ key: '', value: '' })"/>
       </el-tab-pane>
 
-      <el-tab-pane :label="$t('Properties Relations')" name="relations">
-        <p>
-          {{ $t('Relations are the logical connection between two or more entities.') }}<br>
-          {{ $t('Each relation will have a key and a target.') }}<br>
-          {{ $t('The target is the entity that will be connected to the current entity.') }}
-        </p>
-        <div v-for="(entry, index) in edit.relations" :key="index" class="property">
-          <FormRowGroup>
-            <FormInput v-model="entry.key" title="Key"/>
-            <BlueprintSelector title="Target Blueprint" v-model="entry.target"/>
-            <div class="flex-0 remove-row">
-              <RemoveButton @click="edit.relations.splice(edit.relations.indexOf(entry), 1)"/>
-            </div>
-          </FormRowGroup>
+      <el-tab-pane name="rbac" lazy>
+        <template #label>
+          <div class="tab-label">
+            <el-icon><font-awesome-icon :icon="['fas', 'user-shield']" /></el-icon>
+            <span>{{ $t('Permissions and Roles') }}</span>
+          </div>
+        </template>
+        <div class="tab-content">
+          <el-card class="settings-card">
+            <template #header>
+              <div class="card-header">
+                <el-icon><font-awesome-icon :icon="['fas', 'user-shield']" /></el-icon>
+                <span>{{ $t('Permissions and Roles') }}</span>
+              </div>
+            </template>
+            <BlueprintPermissionsTab v-model="edit" :availableLabels="availableLabels" />
+          </el-card>
         </div>
-        <AddMore @click="edit.relations.push({ key: '', target: '' })"/>
       </el-tab-pane>
 
-      <el-tab-pane :label="$t('Events Emitting')" name="events">
-        <p>
-          {{
-            $t('Applying this feature will allow you to create webhooks and subscribe to changes made on entities.')
-          }}
-        </p>
-        <FormRowGroup align-start>
-          <FormInput v-model="edit.dispatchers.create" title="Create" type="switch" class="flex-0"/>
-          <FormInput v-model="edit.dispatchers.update" title="Update" type="switch" class="flex-0"/>
-          <FormInput v-model="edit.dispatchers.delete" title="Delete" type="switch" class="flex-0"/>
-        </FormRowGroup>
+      <el-tab-pane name="properties" lazy>
+        <template #label>
+          <div class="tab-label">
+            <el-icon><font-awesome-icon :icon="['fas', 'list-ul']" /></el-icon>
+            <span>{{ $t('Properties') }}</span>
+          </div>
+        </template>
+        <div class="tab-content">
+          <el-card class="settings-card">
+            <template #header>
+              <div class="card-header">
+                <el-icon><font-awesome-icon :icon="['fas', 'list-ul']" /></el-icon>
+                <span>{{ $t('Blueprint Properties') }}</span>
+              </div>
+            </template>
+            <BlueprintPropertiesTab 
+              v-model:properties="edit.properties" 
+              v-model:entityIdentifierMechanism="edit.entityIdentifierMechanism" 
+            />
+          </el-card>
+        </div>
       </el-tab-pane>
-      <el-tab-pane :label="$t('Limitations')" name="limitations">
-        <p>
-          {{
-            $t('Limit users to create new entities according to specific rules.')
-          }}
-        </p>
-        <BlueprintLimitationsInput :permission-scope="edit.permissionScope" :properties="edit.properties"
-                                   v-model="edit.limitations"/>
+
+      <el-tab-pane name="mapping" lazy>
+        <template #label>
+          <div class="tab-label">
+            <el-icon><font-awesome-icon :icon="['fas', 'calculator']" /></el-icon>
+            <span>{{ $t('On-Save Mapping') }}</span>
+          </div>
+        </template>
+        <div class="tab-content">
+          <el-card class="settings-card">
+            <template #header>
+              <div class="card-header">
+                <el-icon><font-awesome-icon :icon="['fas', 'calculator']" /></el-icon>
+                <span>{{ $t('On-Save Mapping') }}</span>
+              </div>
+            </template>
+            <div class="card-description">
+              <p>
+                {{ $t('Properties can be calculated on save.') }}<br>
+                {{ $t('Each property key can have JQ calculation for its final data.') }}<br>
+                {{ $t('Those calculations will run on our backend, before save for each entity.') }}
+              </p>
+            </div>
+            <div class="mapping-list">
+              <div v-for="(entry, index) in blueprintMapping" :key="index" class="property-item">
+                <FormRowGroup>
+                  <FormInput v-model="entry.key" title="Key"/>
+                  <FormInput v-model="entry.value" title="JQ Calculation"/>
+                  <div class="flex-0 remove-row">
+                    <RemoveButton @click="blueprintMapping.splice(blueprintMapping.indexOf(entry), 1)"/>
+                  </div>
+                </FormRowGroup>
+              </div>
+              <AddMore @click="blueprintMapping.push({ key: '', value: '' })" class="add-more-button"/>
+            </div>
+          </el-card>
+        </div>
       </el-tab-pane>
-      <el-tab-pane :label="$t('Summary')">
-        <Monaco ref="editor" :model-value="blueprintJson" @change="blueprintJson = editor.getMonaco().getValue()"
-                language="json"/>
+
+      <el-tab-pane name="relations" lazy>
+        <template #label>
+          <div class="tab-label">
+            <el-icon><font-awesome-icon :icon="['fas', 'link']" /></el-icon>
+            <span>{{ $t('Properties Relations') }}</span>
+          </div>
+        </template>
+        <div class="tab-content">
+          <el-card class="settings-card">
+            <template #header>
+              <div class="card-header">
+                <el-icon><font-awesome-icon :icon="['fas', 'link']" /></el-icon>
+                <span>{{ $t('Properties Relations') }}</span>
+              </div>
+            </template>
+            <div class="card-description">
+              <p>
+                {{ $t('Relations are the logical connection between two or more entities.') }}<br>
+                {{ $t('Each relation will have a key and a target.') }}<br>
+                {{ $t('The target is the entity that will be connected to the current entity.') }}
+              </p>
+            </div>
+            <div class="relations-list">
+              <div v-for="(entry, index) in edit.relations" :key="index" class="property-item">
+                <FormRowGroup>
+                  <FormInput v-model="entry.key" title="Key"/>
+                  <BlueprintSelector title="Target Blueprint" v-model="entry.target"/>
+                  <div class="flex-0 remove-row">
+                    <RemoveButton @click="edit.relations.splice(edit.relations.indexOf(entry), 1)"/>
+                  </div>
+                </FormRowGroup>
+              </div>
+              <AddMore @click="edit.relations.push({ key: '', target: '' })" class="add-more-button"/>
+            </div>
+          </el-card>
+        </div>
+      </el-tab-pane>
+
+      <el-tab-pane name="events" lazy>
+        <template #label>
+          <div class="tab-label">
+            <el-icon><font-awesome-icon :icon="['fas', 'bell']" /></el-icon>
+            <span>{{ $t('Events Emitting') }}</span>
+          </div>
+        </template>
+        <div class="tab-content">
+          <el-card class="settings-card">
+            <template #header>
+              <div class="card-header">
+                <el-icon><font-awesome-icon :icon="['fas', 'bell']" /></el-icon>
+                <span>{{ $t('Events Emitting') }}</span>
+              </div>
+            </template>
+            <div class="card-description">
+              <p>
+                {{
+                  $t('Applying this feature will allow you to create webhooks and subscribe to changes made on entities.')
+                }}
+              </p>
+            </div>
+            <div class="events-container">
+              <FormRowGroup align-start>
+                <FormInput v-model="edit.dispatchers.create" title="Create" type="switch" class="flex-0"/>
+                <FormInput v-model="edit.dispatchers.update" title="Update" type="switch" class="flex-0"/>
+                <FormInput v-model="edit.dispatchers.delete" title="Delete" type="switch" class="flex-0"/>
+              </FormRowGroup>
+            </div>
+          </el-card>
+        </div>
+      </el-tab-pane>
+      <el-tab-pane name="limitations" lazy>
+        <template #label>
+          <div class="tab-label">
+            <el-icon><font-awesome-icon :icon="['fas', 'lock']" /></el-icon>
+            <span>{{ $t('Limitations') }}</span>
+          </div>
+        </template>
+        <div class="tab-content">
+          <el-card class="settings-card">
+            <template #header>
+              <div class="card-header">
+                <el-icon><font-awesome-icon :icon="['fas', 'lock']" /></el-icon>
+                <span>{{ $t('Limitations') }}</span>
+              </div>
+            </template>
+            <div class="card-description">
+              <p>
+                {{
+                  $t('Limit users to create new entities according to specific rules.')
+                }}
+              </p>
+            </div>
+            <div class="limitations-container">
+              <BlueprintLimitationsInput 
+                :permission-scope="edit.permissionScope" 
+                :properties="edit.properties"
+                v-model="edit.limitations"
+              />
+            </div>
+          </el-card>
+        </div>
+      </el-tab-pane>
+      <el-tab-pane name="summary" lazy>
+        <template #label>
+          <div class="tab-label">
+            <el-icon><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
+            <span>{{ $t('Summary') }}</span>
+          </div>
+        </template>
+        <div class="tab-content">
+          <el-card class="settings-card">
+            <template #header>
+              <div class="card-header">
+                <el-icon><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
+                <span>{{ $t('Blueprint JSON') }}</span>
+              </div>
+            </template>
+            <div class="monaco-container">
+              <Monaco 
+                ref="editor" 
+                :model-value="blueprintJson" 
+                @change="blueprintJson = editor.getMonaco().getValue()"
+                language="json"
+                class="monaco-editor"
+              />
+            </div>
+          </el-card>
+        </div>
       </el-tab-pane>
 
     </el-tabs>
+    
+    <div class="footer-actions">
+      <el-button type="primary" @click="submit" :loading="props.submitting" :disabled="props.submitting">
+        {{ $t('Save Changes') }}
+      </el-button>
+    </div>
+  </div>
   </el-form>
 </template>
+
 <style scoped>
+.blueprint-form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--el-border-color);
+  padding: 1rem;
+  background-color: var(--el-fill-color-light);
+  border-radius: 4px 4px 0 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.page-title {
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--el-text-color-primary);
+}
+
+.page-title strong {
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
+
+.title-icon {
+  font-size: 1.25rem;
+  color: var(--el-color-primary);
+  margin-right: 0.25rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 120px);
+}
+
+.editor-tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tab-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tab-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.settings-card {
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.settings-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.card-description {
+  margin-bottom: 1.5rem;
+}
+
+.property-item {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: var(--el-fill-color-light);
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.property-item:hover {
+  background-color: var(--el-fill-color);
+}
+
+.add-more-button {
+  margin-top: 0.5rem;
+}
+
+.monaco-container {
+  height: 400px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.monaco-editor {
+  height: 100%;
+}
+
+.footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem;
+  border-top: 1px solid var(--el-border-color);
+  margin-top: 1rem;
+  background-color: var(--el-fill-color-light);
+}
+
+:deep(.el-tabs__content) {
+  flex: 1;
+  overflow: auto;
+}
+
+:deep(.el-tabs__nav) {
+  background-color: var(--el-fill-color-light);
+}
+
+:deep(.el-tabs__item.is-active) {
+  font-weight: 600;
+}
+
+:deep(.el-card__body) {
+  padding: 1rem;
+}
+
 h3 {
   margin-block: 10px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+p {
+  color: var(--el-text-color-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.5;
 }
 
 .remove-row {
   margin-bottom: 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .tab-content {
+    padding: 0.5rem;
+  }
 }
 </style>
