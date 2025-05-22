@@ -10,23 +10,12 @@ import { getKeyFromName } from '@/modules/core/utils/texts';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import { Plus, Delete, EditPen, Document } from '@element-plus/icons-vue';
 
-const props = defineProps({
-  modelValue: {
-    type: Object,
-    required: true
-  }
-});
-
-const emit = defineEmits(['update:modelValue']);
-
-const edit = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-});
+const entityIdentifierMechanism = defineModel('entityIdentifierMechanism');
+const properties = defineModel('properties');
 
 const blueprintProperties = ref(
   Object
-    .entries(edit.value.properties || {})
+    .entries(properties.value || {})
     .map(([key, value]) => ({ key, ...value }))
 );
 
@@ -126,12 +115,9 @@ function getPropertySummary(property) {
 
 // Watch for changes and update the parent component
 watch(blueprintProperties, () => {
-  const updatedEdit = { ...edit.value };
-  updatedEdit.properties = blueprintProperties.value.reduce((acc, { key, ...rest }) => {
+  properties.value = blueprintProperties.value.reduce((acc, { key, ...rest }) => {
     return { ...acc, [key]: rest };
   }, {});
-  
-  emit('update:modelValue', updatedEdit);
 }, { deep: true });
 </script>
 
@@ -145,7 +131,7 @@ watch(blueprintProperties, () => {
       </p>
       
       <el-form-item :label="$t('Identifier Mechanism for Entities')">
-        <el-select v-model="edit.entityIdentifierMechanism" required :placeholder="$t('Select mechanism')">
+        <el-select v-model="entityIdentifierMechanism" required :placeholder="$t('Select mechanism')">
           <el-option label="Object ID" :value="EntityIdentifierMechanism.OBJECT_ID"/>
           <el-option label="GUID" :value="EntityIdentifierMechanism.GUID"/>
         </el-select>

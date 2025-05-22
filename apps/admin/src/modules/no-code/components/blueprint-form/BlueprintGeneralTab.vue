@@ -22,9 +22,7 @@ const edit = computed({
 // Auto-generate identifier from name
 function updateIdentifier(name) {
   if (name && name.trim()) {
-    const updatedEdit = { ...edit.value };
-    updatedEdit.identifier = getKeyFromName(name);
-    emit('update:modelValue', updatedEdit);
+    edit.value.identifier = getKeyFromName(name);
   }
 }
 
@@ -72,7 +70,7 @@ const showApiExamples = ref(false);
               <el-input 
                 v-model="edit.name" 
                 :placeholder="$t('Enter blueprint name')" 
-                @input="updateIdentifier"
+                @update:modelValue="updateIdentifier"
                 required
               />
             </el-form-item>

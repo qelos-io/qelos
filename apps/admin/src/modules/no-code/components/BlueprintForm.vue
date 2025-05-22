@@ -48,7 +48,6 @@ const blueprintJson = computed({
   get: () => JSON.stringify(
       {
         ...edit,
-        properties: blueprintProperties.value,
         updateMapping: blueprintMapping.value.reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {})
       },
       null,
@@ -58,9 +57,6 @@ const blueprintJson = computed({
     try {
       const parsed = JSON.parse(value);
       Object.assign(edit, parsed);
-      blueprintProperties.value = Object.entries(parsed.properties || {}).map(([key, value]) => ({
-        key, ...(value as Record<string, any>)
-      }));
       blueprintMapping.value = Object.entries(parsed.updateMapping || {}).map(([key, value]) => ({
         key,
         value: String(value)
@@ -84,13 +80,8 @@ watch(() => edit.name, (newName) => {
   }
 })
 
-
-
 function submit() {
   const data = { ...edit };
-  if (blueprintProperties.value) {
-    data.properties = blueprintProperties.value.reduce((acc, { key, ...rest }) => ({ ...acc, [key]: rest }), {});
-  }
   if (blueprintMapping.value) {
     data.updateMapping = blueprintMapping.value.reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {});
   }
@@ -115,7 +106,7 @@ function submit() {
       </el-tab-pane>
 
       <el-tab-pane :label="$t('Properties')" name="properties">
-        <BlueprintPropertiesTab v-model="edit" />
+        <BlueprintPropertiesTab v-model:properties="edit.properties" v-model:entityIdentifierMechanism="edit.entityIdentifierMechanism" />
       </el-tab-pane>
 
       <el-tab-pane :label="$t('On-Save Mapping')" name="mapping">
@@ -191,6 +182,4 @@ h3 {
 .remove-row {
   margin-bottom: 5px;
 }
-
-
 </style>
