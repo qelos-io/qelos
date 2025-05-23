@@ -1,5 +1,5 @@
 <template>
-  <header v-if="loaded && showStandardHeader" :dir="$t('appDirection')" :class="{ 'searching': isSearching }">
+  <header v-if="loaded && showStandardHeader" :dir="$t('appDirection')" :class="{ 'searching': isSearching, header: true }">
     <div class="header-left">
       <el-button class="mobile-menu-opener" v-if="$isMobile" text circle size="large" @click="toggle">
         <el-icon>
@@ -45,9 +45,9 @@
       <HeaderUserDropdown/>
     </div>
   </header>
-  <VRuntimeTemplate v-if="loaded && usersHeader?.active"
-                          :template="usersHeader.html"
-                          :template-props="templateProps"/>
+  <VRuntimeTemplate v-if="loaded && usersHeader?.active" class="header"
+                    :template="usersHeader.html"
+                    :template-props="templateProps"/>
 </template>
 <script lang="ts" setup>
 import { computed, ref, watch, getCurrentInstance, onMounted, onUnmounted } from 'vue';
@@ -328,6 +328,8 @@ kbd {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     height: 55px;
+    order: 2;
+    z-index: 80;
   }
   
   .mobile-menu-opener {

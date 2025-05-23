@@ -96,5 +96,31 @@
   "Workspaces": "Workspaces",
   "Create Blueprint": "Create Blueprint",
   "Edit Blueprint": "Edit Blueprint",
-  "Create {count} Blueprints": "Create {count} Blueprints"
+  "Create {count} Blueprints": "Create {count} Blueprints",
+  
+  "No limitations defined yet. Add your first limitation below.": "No limitations defined yet. Add your first limitation below.",
+  "Limitation": "Limitation",
+  "Remove this limitation": "Remove this limitation",
+  "Scope": "Scope",
+  "Properties": "Properties",
+  "Select properties this limitation applies to. Leave empty to apply to all properties.": "Select properties this limitation applies to. Leave empty to apply to all properties.",
+  "Select properties or leave empty for all": "Select properties or leave empty for all",
+  "Limit Amount": "Limit Amount",
+  "Enter limit value": "Enter limit value",
+  "User Roles": "User Roles",
+  "Limit will apply only to users with these roles. Leave empty to apply to all roles.": "Limit will apply only to users with these roles. Leave empty to apply to all roles.",
+  "Select roles or leave empty for all": "Select roles or leave empty for all",
+  "Workspace Labels": "Workspace Labels",
+  "Limit will apply only to workspaces with these labels. Leave empty to apply to all workspaces.": "Limit will apply only to workspaces with these labels. Leave empty to apply to all workspaces.",
+  "Select workspace labels or leave empty for all": "Select workspace labels or leave empty for all",
+  "Add limitation": "Add limitation",
+  "Add another limitation": "Add another limitation",
+  
+  "each user": "each user",
+  "each workspace": "each workspace",
+  "the entire application": "the entire application",
+  "For {0} there can only be {1} entities": "For {0} there can only be {1} entities",
+  " that have the same values for [{0}]": " that have the same values for [{0}]",
+  " where the user has roles [{0}]": " where the user has roles [{0}]",
+  " and when the workspace has labels [{0}]": " and when the workspace has labels [{0}]"
 }

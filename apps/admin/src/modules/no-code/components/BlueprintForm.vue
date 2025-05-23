@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, provide, reactive, ref, toRef, watch } from 'vue';
-import { EntityIdentifierMechanism, IBlueprint, PermissionScope } from '@qelos/global-types';
-import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
+import { useRoute, useRouter } from 'vue-router';
+import { IBlueprint, PermissionScope } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import PermissionScopeSelector from '@/modules/no-code/components/PermissionScopeSelector.vue';
-import CrudOperationSelector from '@/modules/no-code/components/CrudOperationSelector.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
@@ -19,6 +18,8 @@ import BlueprintGeneralTab from '@/modules/no-code/components/blueprint-form/Blu
 // temporary sample
 const availableLabels = ['*', 'supplier', 'store', 'consumer'];
 const editor = ref()
+const route = useRoute();
+const router = useRouter();
 const props = withDefaults(defineProps<{
   submitting: boolean;
   blueprint: Partial<IBlueprint>;
@@ -80,6 +81,16 @@ watch(() => edit.name, (newName) => {
   }
 })
 
+// Handle tab management with route query
+const activeTab = computed({
+  get: () => route.query.tab?.toString() || 'general',
+  set: (tabName: string) => {
+    router.replace({ query: { ...route.query, tab: tabName } }).catch(error => {
+      console.error('Failed to update route:', error);
+    });
+  }
+})
+
 function submit() {
   const data = { ...edit };
   if (blueprintMapping.value) {
@@ -107,7 +118,7 @@ function submit() {
 
     <div class="main-content">
       <el-tabs 
-        model-value="general" 
+        v-model="activeTab"
         class="editor-tabs"
         type="border-card">
       <el-tab-pane name="general" lazy>

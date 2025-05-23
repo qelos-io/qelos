@@ -11,7 +11,7 @@
     </div>
     <template #dropdown>
       <el-dropdown-menu @click.stop>
-        <HeaderUserWorkspacesSelection v-if="wsConfig.isActive" @click.stop/>
+        <HeaderUserWorkspacesSelection v-if="wsConfig.isActive"/>
         <el-dropdown-item @click.stop>
           <router-link :to="{name: 'updateProfile'}" @click.stop>{{ $t('Update profile') }}</router-link>
         </el-dropdown-item>

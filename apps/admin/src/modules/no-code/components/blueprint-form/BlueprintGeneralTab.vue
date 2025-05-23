@@ -119,7 +119,7 @@ const showApiExamples = ref(false);
       <div class="blueprint-api-section">
         <div class="api-section-header" @click="showApiExamples = !showApiExamples">
           <h3>{{ $t('API Reference') }}</h3>
-          <el-button type="text">
+          <el-button text>
             {{ showApiExamples ? $t('Hide Examples') : $t('Show Examples') }}
           </el-button>
         </div>

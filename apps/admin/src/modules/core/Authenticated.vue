@@ -2,7 +2,7 @@
   <div class="admin-panel" v-if="isLoaded">
     <Navigation class="navigation" :opened="navigationOpened" @close="navigationOpened = false"/>
     <div class="admin-content">
-      <Header class="header" @toggle="navigationOpened = !navigationOpened" :is-navigation-opened="navigationOpened"/>
+      <Header @toggle="navigationOpened = !navigationOpened" :is-navigation-opened="navigationOpened"/>
       <div class="main">
         <router-view class="main-content"/>
       </div>
