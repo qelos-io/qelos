@@ -136,7 +136,7 @@ function submit() {
                 <span>{{ $t('General Information') }}</span>
               </div>
             </template>
-            <BlueprintGeneralTab v-model="edit" />
+            <BlueprintGeneralTab :modelValue="edit" @update:modelValue="(val) => Object.assign(edit, val)" />
           </el-card>
         </div>
       </el-tab-pane>
