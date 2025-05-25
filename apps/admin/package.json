@@ -74,8 +74,5 @@
   ],
   "bundleDependencies": [
     "express"
-  ],
-  "resolutions": {
-    "esbuild": "0.21.5"
-  }
+  ]
 }
