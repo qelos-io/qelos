@@ -10,5 +10,8 @@ export enum ColorName {
   inputsBgColor = 'Inputs Background',
   bordersColor = 'Borders Color',
   linksColor = 'Links Color',
-  navigationBgColor = 'Navigation Background Color'
+  navigationBgColor = 'Navigation Background Color',
+  buttonTextColor = 'Button Text Color',
+  buttonBgColor = 'Button Background Color',
+  focusColor = 'Focus Outline Color'
 }
