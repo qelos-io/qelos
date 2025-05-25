@@ -19,9 +19,6 @@
   "main": "index.ts",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",
-    "@qelos/api-kit": "^3.8.1",
-    "@qelos/cache-manager": "^3.8.1",
-    "@qelos/global-types": "^3.8.1",
     "@qelos/api-kit": "^3.8.2",
     "@qelos/cache-manager": "^3.8.2",
     "@qelos/global-types": "^3.8.2",
@@ -43,11 +40,11 @@
   },
   "gitHead": "dc75ba76bdb68c07b640d4469d9dffecf61759b1",
   "bundledDependencies": [
+    "@anthropic-ai/sdk",
     "@qelos/api-kit",
     "@qelos/cache-manager",
     "@qelos/global-types",
     "http-proxy-middleware",
-    "@anthropic-ai/sdk",
     "mongoose",
     "node-fetch",
     "node-jq",

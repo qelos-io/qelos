@@ -44,8 +44,10 @@
     "cloudinary",
     "datauri",
     "ftp",
+    "mime",
     "mongoose",
     "multer",
+    "tsx",
     "uniqid"
   ]
 }

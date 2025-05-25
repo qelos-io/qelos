@@ -12,14 +12,61 @@ import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
 import Color from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
+import TextStyle from '@tiptap/extension-text-style'
 import { ElMessage } from 'element-plus'
 import AssetUploader from '@/modules/assets/components/AssetUploader.vue'
+import Monaco from '@/modules/users/components/Monaco.vue'
 
 const model = defineModel<string>();
 const props = defineProps<{ language?: string, placeholder?: string, readonly?: boolean }>();
 
 const editor = ref<Editor | null>(null)
 const isEditorReady = ref(false)
+const isHtmlMode = ref(false)
+
+// Monaco editor reference
+const monacoEditor = ref(null)
+
+// Setup Monaco editor change event
+const setupMonacoChangeEvent = () => {
+  setTimeout(() => {
+    const monacoInstance = monacoEditor.value?.getMonaco()
+    if (monacoInstance) {
+      // Add change event listener to Monaco editor
+      monacoInstance.onDidChangeModelContent(() => {
+        // Update model directly from Monaco editor
+        model.value = monacoInstance.getValue() || ''
+      })
+    }
+  }, 100)
+}
+
+// Toggle between WYSIWYG and HTML source code modes
+const toggleHtmlMode = () => {
+  if (isHtmlMode.value) {
+    // Switch from HTML to WYSIWYG mode
+    if (editor.value) {
+      try {
+        // The model value is already updated by Monaco's change event
+        editor.value.commands.setContent(model.value || '')
+      } catch (error) {
+        ElMessage.error('Invalid HTML. Please check your code.')
+        return // Don't toggle if HTML is invalid
+      }
+    }
+  } else {
+    // Switch from WYSIWYG to HTML mode
+    // Need to wait for Monaco to be mounted before setting value
+    setTimeout(() => {
+      if (monacoEditor.value) {
+        monacoEditor.value.updateValue(model.value || '')
+        // Setup Monaco change event after switching to HTML mode
+        setupMonacoChangeEvent()
+      }
+    }, 100)
+  }
+  isHtmlMode.value = !isHtmlMode.value
+}
 
 // Initialize the editor with the model value
 onMounted(() => {
@@ -48,6 +95,7 @@ onMounted(() => {
       Underline,
       Color,
       Highlight,
+      TextStyle,
     ],
     content: model.value || '',
     editable: !props.readonly,
@@ -85,6 +133,7 @@ onBeforeUnmount(() => {
 const showLinkDialog = ref(false)
 const showImageDialog = ref(false)
 const showTableDialog = ref(false)
+// No inline styles feature
 
 // Form models
 const linkForm = ref({
@@ -173,6 +222,8 @@ const applyColor = () => {
   showColorPicker.value = false
 }
 
+// Inline styles feature has been removed
+
 const addImage = () => {
   imageForm.value = {
     url: '',
@@ -239,183 +290,208 @@ const handleDrop = (event: DragEvent) => {
 
 <template>
   <div class="wysiwyg-editor" :class="{ 'readonly': props.readonly }">
-    <!-- Editor Toolbar -->
-    <div v-if="isEditorReady && !props.readonly" class="wysiwyg-toolbar">
-      <div class="toolbar-group">
-        <button 
-          type="button"
-          @click="editor?.chain().focus().toggleHeading({ level: 1 }).run()"
-          :class="{ 'is-active': editor?.isActive('heading', { level: 1 }) }"
-          title="Heading 1"
-        >
-          H1
-        </button>
-        <button 
-          type="button"
-          @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()"
-          :class="{ 'is-active': editor?.isActive('heading', { level: 2 }) }"
-          title="Heading 2"
-        >
-          H2
-        </button>
-        <button 
-          type="button"
-          @click="editor?.chain().focus().toggleHeading({ level: 3 }).run()"
-          :class="{ 'is-active': editor?.isActive('heading', { level: 3 }) }"
-          title="Heading 3"
-        >
-          H3
-        </button>
-        <button 
-          type="button"
-          @click="editor?.chain().focus().setParagraph().run()"
-          :class="{ 'is-active': editor?.isActive('paragraph') }"
-          title="Paragraph"
-        >
-          P
-        </button>
-      </div>
-
-      <div class="toolbar-group">
-        <button 
-          type="button"
-          @click="editor?.chain().focus().toggleBold().run()"
-          :class="{ 'is-active': editor?.isActive('bold') }"
-          title="Bold"
-        >
-          <i class="el-icon-bold">B</i>
-        </button>
-        <button 
-          type="button"
-          @click="editor?.chain().focus().toggleItalic().run()"
-          :class="{ 'is-active': editor?.isActive('italic') }"
-          title="Italic"
-        >
-          <i class="el-icon-italic">I</i>
-        </button>
-        <button 
-          type="button"
-          @click="editor?.chain().focus().toggleUnderline().run()"
-          :class="{ 'is-active': editor?.isActive('underline') }"
-          title="Underline"
-        >
-          <i class="el-icon-underline">U</i>
-        </button>
-        <button     
-          type="button"
-          @click="editor?.chain().focus().toggleStrike().run()"
-          :class="{ 'is-active': editor?.isActive('strike') }"
-          title="Strike"
-        >
-          <i class="el-icon-strikethrough">S</i>
-        </button>
-        <button
-          type="button"
-          @click="setTextColor"
-          title="Text Color"
-        >
-          <i class="el-icon-brush" style="color: #409eff;">A</i>
-        </button>
-        <button
-          type="button"
-          @click="setHighlightColor"
-          title="Highlight Color"
-        >
-          <i class="el-icon-brush" style="background-color: #FFFF00; padding: 0 2px;">H</i>
-        </button>
-      </div>
-
-      <div class="toolbar-group">
-        <button 
-          type="button"
-          @click="editor?.chain().focus().toggleBulletList().run()"
-          :class="{ 'is-active': editor?.isActive('bulletList') }"
-          title="Bullet List"
-        >
-          <i class="el-icon-list-ul">•</i>
-        </button>
-        <button 
-          type="button"
-          @click="editor?.chain().focus().toggleOrderedList().run()"
-          :class="{ 'is-active': editor?.isActive('orderedList') }"
-          title="Ordered List"
-        >
-          <i class="el-icon-list-ol">1.</i>
-        </button>
-        <button 
-          type="button"
-          @click="editor?.chain().focus().toggleCodeBlock().run()"
-          :class="{ 'is-active': editor?.isActive('codeBlock') }"
-          title="Code Block"
-        >
-          <i class="el-icon-code">{}</i>
-        </button>
-        <button 
-          type="button"
-          @click="editor?.chain().focus().toggleBlockquote().run()"
-          :class="{ 'is-active': editor?.isActive('blockquote') }"
-          title="Blockquote"
-        >
-          <i class="el-icon-quote-right">"</i>
-        </button>
-      </div>
-
-      <div class="toolbar-group">
-        <button 
-          type="button"
-          @click="setLink"
-          :class="{ 'is-active': editor?.isActive('link') }"
-          title="Link"
-        >
-          <i class="el-icon-link">🔗</i>
-        </button>
-        <button 
-          type="button"
-          @click="addImage"
-          title="Image"
-        >
-          <i class="el-icon-picture">🖼️</i>
-        </button>
-        <button 
-          type="button"
-          @click="addTable"
-          title="Table"
-        >
-          <i class="el-icon-table">📊</i>
-        </button>
-      </div>
-
-      <div class="toolbar-group">
-        <button 
-          type="button"
-          @click="editor?.chain().focus().setTextAlign('left').run()"
-          :class="{ 'is-active': editor?.isActive({ textAlign: 'left' }) }"
-          title="Align Left"
-        >
-          <i class="el-icon-align-left">⬅️</i>
-        </button>
-        <button 
-          type="button"
-          @click="editor?.chain().focus().setTextAlign('center').run()"
-          :class="{ 'is-active': editor?.isActive({ textAlign: 'center' }) }"
-          title="Align Center"
-        >
-          <i class="el-icon-align-center">⬆️</i>
-        </button>
-        <button 
-          type="button"
-          @click="editor?.chain().focus().setTextAlign('right').run()"
-          :class="{ 'is-active': editor?.isActive({ textAlign: 'right' }) }"
-          title="Align Right"
-        >
-          <i class="el-icon-align-right">➡️</i>
-        </button>
-      </div>
+    <!-- Toggle HTML/WYSIWYG Button -->
+    <div v-if="isEditorReady && !props.readonly" class="mode-toggle-container">
+      <el-button 
+        type="primary" 
+        size="small" 
+        @click="toggleHtmlMode"
+        :icon="isHtmlMode ? 'View' : 'Edit'"
+      >
+        {{ isHtmlMode ? 'Visual Editor' : 'HTML Source' }}
+      </el-button>
     </div>
+    
+    <!-- HTML Source Editor (Monaco) -->
+    <div v-if="isHtmlMode" class="html-source-editor">
+      <Monaco
+        ref="monacoEditor"
+        v-model="model"
+        language="html"
+      />
+    </div>
+    
+    <!-- WYSIWYG Editor with Toolbar -->
+    <div v-if="!isHtmlMode" class="wysiwyg-container">
+      <!-- Editor Toolbar -->
+      <div v-if="isEditorReady && !props.readonly" class="wysiwyg-toolbar">
+        <div class="toolbar-group">
+          <button 
+            type="button"
+            @click="editor?.chain().focus().toggleHeading({ level: 1 }).run()"
+            :class="{ 'is-active': editor?.isActive('heading', { level: 1 }) }"
+            title="Heading 1"
+          >
+            H1
+          </button>
+          <button 
+            type="button"
+            @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()"
+            :class="{ 'is-active': editor?.isActive('heading', { level: 2 }) }"
+            title="Heading 2"
+          >
+            H2
+          </button>
+          <button 
+            type="button"
+            @click="editor?.chain().focus().toggleHeading({ level: 3 }).run()"
+            :class="{ 'is-active': editor?.isActive('heading', { level: 3 }) }"
+            title="Heading 3"
+          >
+            H3
+          </button>
+          <button 
+            type="button"
+            @click="editor?.chain().focus().setParagraph().run()"
+            :class="{ 'is-active': editor?.isActive('paragraph') }"
+            title="Paragraph"
+          >
+            P
+          </button>
+        </div>
 
-    <!-- Editor Content -->
-    <div class="editor-container" @drop="handleDrop" @dragover.prevent>
-      <editor-content v-if="editor" :editor="editor" />
+        <div class="toolbar-group">
+          <button 
+            type="button"
+            @click="editor?.chain().focus().toggleBold().run()"
+            :class="{ 'is-active': editor?.isActive('bold') }"
+            title="Bold"
+          >
+            <i class="el-icon-bold">B</i>
+          </button>
+          <button 
+            type="button"
+            @click="editor?.chain().focus().toggleItalic().run()"
+            :class="{ 'is-active': editor?.isActive('italic') }"
+            title="Italic"
+          >
+            <i class="el-icon-italic">I</i>
+          </button>
+          <button 
+            type="button"
+            @click="editor?.chain().focus().toggleUnderline().run()"
+            :class="{ 'is-active': editor?.isActive('underline') }"
+            title="Underline"
+          >
+            <i class="el-icon-underline">U</i>
+          </button>
+          <button     
+            type="button"
+            @click="editor?.chain().focus().toggleStrike().run()"
+            :class="{ 'is-active': editor?.isActive('strike') }"
+            title="Strike"
+          >
+            <i class="el-icon-strikethrough">S</i>
+          </button>
+          <button
+            type="button"
+            @click="setTextColor"
+            title="Text Color"
+          >
+            <i class="el-icon-brush" style="color: #409eff;">A</i>
+          </button>
+          <button
+            type="button"
+            @click="setHighlightColor"
+            title="Highlight Color"
+          >
+            <i class="el-icon-brush" style="background-color: #FFFF00; padding: 0 2px;">H</i>
+          </button>
+        </div>
+
+        <div class="toolbar-group">
+          <button 
+            type="button"
+            @click="editor?.chain().focus().toggleBulletList().run()"
+            :class="{ 'is-active': editor?.isActive('bulletList') }"
+            title="Bullet List"
+          >
+            <i class="el-icon-list-ul">•</i>
+          </button>
+          <button 
+            type="button"
+            @click="editor?.chain().focus().toggleOrderedList().run()"
+            :class="{ 'is-active': editor?.isActive('orderedList') }"
+            title="Ordered List"
+          >
+            <i class="el-icon-list-ol">1.</i>
+          </button>
+          <button 
+            type="button"
+            @click="editor?.chain().focus().toggleCodeBlock().run()"
+            :class="{ 'is-active': editor?.isActive('codeBlock') }"
+            title="Code Block"
+          >
+            <i class="el-icon-code">{}</i>
+          </button>
+          <button 
+            type="button"
+            @click="editor?.chain().focus().toggleBlockquote().run()"
+            :class="{ 'is-active': editor?.isActive('blockquote') }"
+            title="Blockquote"
+          >
+            <i class="el-icon-quote-right">"</i>
+          </button>
+        </div>
+
+        <div class="toolbar-group">
+          <button 
+            type="button"
+            @click="setLink"
+            :class="{ 'is-active': editor?.isActive('link') }"
+            title="Link"
+          >
+            <i class="el-icon-link">🔗</i>
+          </button>
+          <button 
+            type="button"
+            @click="addImage"
+            title="Image"
+          >
+            <i class="el-icon-picture">🖼️</i>
+          </button>
+          <button 
+            type="button"
+            @click="addTable"
+            title="Table"
+          >
+            <i class="el-icon-table">📊</i>
+          </button>
+          <!-- Inline styles button removed -->
+        </div>
+
+        <div class="toolbar-group">
+          <button 
+            type="button"
+            @click="editor?.chain().focus().setTextAlign('left').run()"
+            :class="{ 'is-active': editor?.isActive({ textAlign: 'left' }) }"
+            title="Align Left"
+          >
+            <i class="el-icon-align-left">⬅️</i>
+          </button>
+          <button 
+            type="button"
+            @click="editor?.chain().focus().setTextAlign('center').run()"
+            :class="{ 'is-active': editor?.isActive({ textAlign: 'center' }) }"
+            title="Align Center"
+          >
+            <i class="el-icon-align-center">⬆️</i>
+          </button>
+          <button 
+            type="button"
+            @click="editor?.chain().focus().setTextAlign('right').run()"
+            :class="{ 'is-active': editor?.isActive({ textAlign: 'right' }) }"
+            title="Align Right"
+          >
+            <i class="el-icon-align-right">➡️</i>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Editor Content -->
+      <div class="editor-container" @drop="handleDrop" @dragover.prevent>
+        <editor-content v-if="editor" :editor="editor" />
+      </div>
     </div>
     
     <!-- Link Dialog -->
@@ -516,6 +592,8 @@ const handleDrop = (event: DragEvent) => {
       </template>
     </el-dialog>
     
+    <!-- Inline Style Dialog removed -->
+    
     <!-- Table Dialog -->
     <el-dialog
       v-model="showTableDialog"
@@ -600,11 +678,37 @@ const handleDrop = (event: DragEvent) => {
   color: #409eff;
 }
 
+.mode-toggle-container {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 16px;
+  border-bottom: 1px solid #dcdfe6;
+  background-color: #f5f7fa;
+}
+
+.wysiwyg-container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
 .editor-container {
   padding: 16px;
   flex-grow: 1;
   min-height: 200px;
   overflow-y: auto;
+}
+
+.html-source-editor {
+  height: 100%;
+  min-height: 400px;
+  border-top: 1px solid #dcdfe6;
+}
+
+.html-source-editor :deep(.monaco) {
+  height: 100%;
+  min-height: 400px;
+  margin-bottom: 0;
 }
 
 /* Image upload container styles */
