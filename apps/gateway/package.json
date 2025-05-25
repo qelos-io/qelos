@@ -23,7 +23,7 @@
     "@qelos/api-kit": "^3.8.2",
     "@qelos/api-proxy-middleware": "^3.8.2",
     "@qelos/cache-manager": "^3.8.2",
-    "tsx": "^3.12.7"
+    "tsx": "^4.19.4"
   },
   "publishConfig": {
     "access": "public"

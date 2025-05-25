@@ -28,7 +28,7 @@
     "kill-port": "github:davidmeirlevy/kill-port#3c286412b896f9979febaf0d2987a771c6b8083e",
     "lerna": "^6.6.2",
     "ts-node": "^10.2.1",
-    "tsx": "^3.12.7"
+    "tsx": "^4.19.4"
   },
   "resolutions": {
     "esbuild": "0.21.5"
