@@ -1,32 +1,102 @@
 <template>
   <el-form class="block-form" @submit.native.prevent="submit">
-    <div>
-      <FormInput
-        title="Name"
-        v-model="name"
-      />
-      <FormInput
-        title="Description"
-        v-model="description"
-      />
-      <el-form-item label="Content" class="form-item-flex">
-        <div>
-          <gp-editor :model-value="content" @input="content = $event" :config="editorConfig"/>
+    <div class="form-header">
+      <div class="tabs-container">
+        <div class="tab-button" :class="{ active: activeTab === 'basic' }" @click="activeTab = 'basic'">
+          Basic Information
         </div>
-      </el-form-item>
-      <SaveButton :submitting="submitting"/>
+        <div class="tab-button" :class="{ active: activeTab === 'content' }" @click="activeTab = 'content'">
+          Content
+        </div>
+      </div>
+      
+      <div class="form-actions">
+        <el-tooltip content="Toggle preview mode" placement="top">
+          <el-button 
+            type="primary" 
+            :icon="showPreview ? 'icon-view' : 'icon-hide'" 
+            @click="togglePreviewMode" 
+            size="small"
+            circle
+          />
+        </el-tooltip>
+        <SaveButton :submitting="submitting" />
+      </div>
+    </div>
+    
+    <!-- Basic Information Tab -->
+    <div v-if="activeTab === 'basic'" class="tab-content">
+      <div class="form-section">
+        <FormInput
+          title="Name"
+          v-model="name"
+          placeholder="Enter a name for this block"
+          required
+        />
+        <FormInput
+          title="Description"
+          v-model="description"
+          type="textarea"
+          :rows="3"
+          placeholder="Enter a description for this block"
+        />
+      </div>
+    </div>
+    
+    <!-- Content Tab -->
+    <div v-if="activeTab === 'content'" class="tab-content">
+      <div class="content-container" :class="{ 'split-mode': splitView }">
+        <div class="editor-container" :class="{ 'full-width': !showPreview }">
+          <div class="editor-toolbar">
+            <el-tooltip content="Toggle split view" placement="top">
+              <el-button 
+                :icon="splitView ? 'icon-fold' : 'icon-expand'" 
+                @click="splitView = !splitView" 
+                size="small"
+                circle
+              />
+            </el-tooltip>
+          </div>
+          <gp-editor 
+            :model-value="content" 
+            @input="content = $event" 
+            :config="editorConfig"
+          />
+        </div>
+        
+        <div class="preview-container" :class="{ 'full-width': splitView, 'hidden': !showPreview }">
+          <div class="preview-header">
+            <span>Preview</span>
+            <el-tooltip content="Refresh preview" placement="top">
+              <el-button 
+                icon="icon-refresh-right" 
+                @click="refreshPreview" 
+                size="small"
+                circle
+              />
+            </el-tooltip>
+          </div>
+          <div class="preview-content">
+            <ErrorBoundary>
+              <RuntimeTemplate :template="content" :key="previewKey"/>
+            </ErrorBoundary>
+          </div>
+        </div>
+      </div>
     </div>
   </el-form>
 </template>
 <script lang="ts" setup>
-import {computed} from 'vue'
+import { computed, ref, watch } from 'vue'
 import FormInput from '../../core/components/forms/FormInput.vue'
-import {clearNulls} from '../../core/utils/clear-nulls'
-import {useBlockForm} from '../compositions/blocks'
-import {useEditorConfig} from '../../core/compositions/gp-editor'
-import {useUnsavedChanges} from '../../drafts/compositions/unsaved-changes'
-import {IBlock} from '../../../services/types/block';
+import { clearNulls } from '../../core/utils/clear-nulls'
+import { useBlockForm } from '../compositions/blocks'
+import { useEditorConfig } from '../../core/compositions/gp-editor'
+import { useUnsavedChanges } from '../../drafts/compositions/unsaved-changes'
+import { IBlock } from '../../../services/types/block';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
+import RuntimeTemplate from '@/modules/core/components/layout/RuntimeTemplate.vue';
+import ErrorBoundary from '@/modules/core/components/ErrorBoundary.vue';
 
 const props = defineProps({
   block: Object as () => IBlock,
@@ -35,19 +105,184 @@ const props = defineProps({
 
 const emit = defineEmits(['submitted'])
 
-const {editedBlock, name, content, description} = useBlockForm(props)
-const {editorConfig} = useEditorConfig()
+const { editedBlock, name, content, description } = useBlockForm(props)
+const { editorConfig } = useEditorConfig()
 
-useUnsavedChanges('block', props.block._id, computed(() => props.block.name), editedBlock)
+useUnsavedChanges('block', props.block?._id, computed(() => props.block?.name), editedBlock)
 
-const submit = () => emit('submitted', clearNulls(editedBlock))
+// UI state management
+const activeTab = ref('basic')
+const splitView = ref(false)
+const showPreview = ref(true)
+const previewKey = ref(0)
+
+// Refresh preview to update content
+const refreshPreview = () => {
+  previewKey.value++
+}
+
+// Toggle between edit and preview modes
+const togglePreviewMode = () => {
+  showPreview.value = !showPreview.value
+  if (showPreview.value) {
+    refreshPreview()
+  }
+}
+
+// Auto-refresh preview when content changes
+watch(content, () => {
+  if (activeTab.value === 'content' && showPreview.value) {
+    // Use setTimeout to avoid too frequent refreshes during typing
+    setTimeout(() => refreshPreview(), 500)
+  }
+}, { deep: true })
+
+const submit = () => {
+  if (!name.value) {
+    activeTab.value = 'basic'
+    return
+  }
+  emit('submitted', clearNulls(editedBlock))
+}
 </script>
 <style scoped>
 .block-form {
-  padding: 0 10px;
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.block-form >>> .ck-editor .ck-editor__editable {
-  min-height: 48vh;
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--el-border-color);
+}
+
+.tabs-container {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-button {
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--el-text-color-secondary);
+  transition: all 0.3s;
+}
+
+.tab-button.active {
+  border-bottom: 2px solid var(--el-color-primary);
+  color: var(--el-color-primary);
+  font-weight: 500;
+}
+
+.tab-button:hover:not(.active) {
+  color: var(--el-text-color-primary);
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-content {
+  padding: 16px 0;
+}
+
+.form-section {
+  max-width: 800px;
+}
+
+.content-container {
+  display: flex;
+  height: calc(100vh - 250px);
+  min-height: 400px;
+  gap: 16px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+}
+
+.editor-container.full-width {
+  width: 100%;
+}
+
+.editor-container.hidden {
+  display: none;
+}
+
+.editor-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px;
+  border-bottom: 1px solid var(--el-border-color);
+  background-color: var(--el-fill-color-light);
+}
+
+.preview-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: white;
+}
+
+.preview-container.full-width {
+  flex: 1;
+}
+
+.preview-container.hidden {
+  display: none;
+}
+
+.split-mode .editor-container,
+.split-mode .preview-container {
+  flex: 1;
+  max-width: 50%;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: var(--el-fill-color-light);
+  border-bottom: 1px solid var(--el-border-color);
+  font-weight: 500;
+}
+
+.preview-content {
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+}
+
+:deep(.ck-editor) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+:deep(.ck-editor__main) {
+  flex: 1;
+  overflow: auto;
+}
+
+:deep(.ck-editor .ck-editor__editable) {
+  min-height: 100%;
+  height: 100%;
 }
 </style>

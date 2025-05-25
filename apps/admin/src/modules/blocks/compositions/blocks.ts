@@ -7,16 +7,17 @@ import {useEditedInputModels} from '../../core/compositions/edited-inputs';
 import {IBlock} from '@/services/types/block';
 
 export function useReadableBlock(blockId: string) {
-  const {result: block} = useDispatcher<IBlock>(() => blocksService.getOne(blockId))
+  const {result: block, loading} = useDispatcher<IBlock>(() => blocksService.getOne(blockId))
 
   return {
     block,
+    loading
   }
 }
 
 
 export function useEditBlock(blockId: string) {
-  const {block} = useReadableBlock(blockId)
+  const {block, loading} = useReadableBlock(blockId)
 
   const {submit, submitting} = useSubmitting(
     (payload) => blocksService.update(blockId, payload).then((newBlock) => {
@@ -32,7 +33,8 @@ export function useEditBlock(blockId: string) {
   return {
     block,
     updateBlock: submit,
-    submitting
+    submitting,
+    loading
   }
 }
 

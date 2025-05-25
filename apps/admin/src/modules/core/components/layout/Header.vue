@@ -45,29 +45,23 @@
       <HeaderUserDropdown/>
     </div>
   </header>
-  <VRuntimeTemplate v-if="loaded && usersHeader?.active" class="header"
+  <RuntimeTemplate v-if="loaded && usersHeader?.active" class="header"
                     :template="usersHeader.html"
-                    :template-props="templateProps"/>
+                    :template-props="templateProps" :components="{HeaderUserDropdown}"/>
 </template>
 <script lang="ts" setup>
-import { computed, ref, watch, getCurrentInstance, onMounted, onUnmounted } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import debounce from 'lodash.debounce';
 import { useRoute, useRouter } from 'vue-router';
 import HeaderUserDropdown from '@/modules/core/components/layout/HeaderUserDropdown.vue';
-import VRuntimeTemplate from 'vue3-runtime-template';
+import RuntimeTemplate from '@/modules/core/components/layout/RuntimeTemplate.vue';
 import { useUsersHeader } from '@/modules/configurations/store/users-header';
 import { isPrivilegedUser } from '../../store/auth';
 import sdk from '@/services/sdk';
 import { authStore } from '../../store/auth';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 
-const vm = getCurrentInstance();
-
 const { appConfig } = useAppConfiguration()
-
-vm.proxy.$options.components = {
-  HeaderUserDropdown
-}
 
 const { usersHeader, loaded } = useUsersHeader()
 
@@ -98,11 +92,7 @@ const query = computed({
 
 const templateProps = computed(() => {
   return {
-    // user: authStore.user,
-    sdk,
-    query,
-    location,
-    appConfig,
+    query
   };
 });
 
