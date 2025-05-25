@@ -14,8 +14,8 @@ $ docker run -p 3001:3001 qelos/secrets
 ```
 ### As Node package
 ```sh
-$ npm i @greenpress/secrets
-$ npx greenpress-secrets
+$ npm i @qelos/secrets
+$ npx qelos-secrets
 ```
 
 ## Development and Independent Usage

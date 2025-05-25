@@ -13,12 +13,6 @@ export function useEditorConfig() {
 		return lang
 	})
 
-	watch(language, async language => {
-		await import(`../../../../node_modules/@greenpress/gp-editor/translations/${language}.js`).catch(() => {
-		})
-		editorConfig.value = { language }
-	}, { immediate: true })
-
 	return {
 		editorConfig
 	}

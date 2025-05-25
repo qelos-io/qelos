@@ -4,4 +4,4 @@ import { execSync } from 'child_process';
 
 const [ , , ...argv ] = process.argv;
 
-execSync('npx @greenpress/cli create ' + argv.join(' '), { stdio: 'inherit' });
+execSync('npx @qelos/cli create ' + argv.join(' '), { stdio: 'inherit' });

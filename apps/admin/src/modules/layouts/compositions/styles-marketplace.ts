@@ -17,7 +17,6 @@ export function useStylesMarketplace() {
     retry
   } = useDispatcher<IStyleProduct[]>(() => [], [])
 
-  // () => fetch('https://marketplace.greenpress.app/styles.json').then(res => res.json()).catch(() => []
   return {
     styles,
     retry,

@@ -8,7 +8,7 @@
 - Node.js
 - npm OR yarn
 - MongoDB
-- [Authentication-service](https://github.com/greenpress/authentication-service)
+- [Authentication-service](https://gitlab.com/qelos/qelos)
 
 ## Usage
 

@@ -16,13 +16,13 @@ A content service for qelos platform
 - Node.js
 - npm OR yarn
 - MongoDB
-- [Authentication-service](https://github.com/greenpress/authentication-service)
+- [Authentication-service](https://gitlab.com/qelos/qelos)
 
 
 ## Usage
 ### As a Docker container
 ```sh
-$ docker run -p 3001:3001 greenpress/content
+$ docker run -p 3001:3001 qelos/content
 ```
 
 ## Development and Independent Usage

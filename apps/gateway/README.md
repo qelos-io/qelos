@@ -6,13 +6,13 @@ An HTTP server to manage 3rd-party plugins for any system, combining frontend an
 - Node.js
 - npm OR yarn
 - MongoDB
-- [Authentication-service](https://github.com/greenpress/authentication-service)
-- [Secrets-service](https://github.com/greenpress/secrets-service)
+- [Authentication-service](https://gitlab.com/qelos/qelos)
+- [Secrets-service](https://gitlab.com/qelos/qelos)
 
 ## Usage
 ### As a Docker container
 ```sh
-$ docker run -p 3001:3001 qelos/plugins
+$ docker run -p 3001:3001 qelos/gateway
 ```
 
 ## Development and Independent Usage

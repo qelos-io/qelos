@@ -6,12 +6,12 @@ Written in Vue.js.
 ## Usage
 ### As a Docker container
 ```
-$ docker run -p 3001:3001 greenpress/admin-panel
+$ docker run -p 3001:3001 qelos/admin-panel
 ```
 ### As Node package
 ```
-$ npm i @greenpress/admin
-$ npx greenpress-admin
+$ npm i @qelos/admin
+$ npx qelos-admin
 ```
 
 ## Development and Independent Usage

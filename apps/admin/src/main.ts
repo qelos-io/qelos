@@ -1,7 +1,6 @@
 import { createApp, watch } from 'vue'
 import router from './router'
 import './style/main.scss'
-import editor from './plugins/editor'
 import elements from './plugins/element'
 import { i18n } from './plugins/i18n'
 import fontAwesome from './plugins/font-awesome';
@@ -24,7 +23,6 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(i18n)
-app.use(editor)
 usePrimeVue(app);
 fontAwesome(app)
 applyGlobalTemplatesComponents(app);

@@ -20,7 +20,7 @@ function initializeApp(mode, exclude) {
     stdio: 'pipe',
   };
 
-  console.log(blue('Initializing Greenpress..\n'));
+  console.log(blue('Initializing Qelos..\n'));
   console.log(blue('Doing our magic, might take a few minutes. Please wait.\n'));
 
   return getProcessHandler(spawn('npm', startCmd), childArgs);

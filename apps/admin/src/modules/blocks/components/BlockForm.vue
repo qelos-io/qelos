@@ -57,10 +57,9 @@
               />
             </el-tooltip>
           </div>
-          <gp-editor 
-            :model-value="content" 
-            @input="content = $event" 
-            :config="editorConfig"
+          <WysiwygEditor 
+            v-model="content"
+            :language="editorConfig.language"
           />
         </div>
         
@@ -91,12 +90,13 @@ import { computed, ref, watch } from 'vue'
 import FormInput from '../../core/components/forms/FormInput.vue'
 import { clearNulls } from '../../core/utils/clear-nulls'
 import { useBlockForm } from '../compositions/blocks'
-import { useEditorConfig } from '../../core/compositions/gp-editor'
+import { useEditorConfig } from '../compositions/editor-config'
 import { useUnsavedChanges } from '../../drafts/compositions/unsaved-changes'
 import { IBlock } from '../../../services/types/block';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import RuntimeTemplate from '@/modules/core/components/layout/RuntimeTemplate.vue';
 import ErrorBoundary from '@/modules/core/components/ErrorBoundary.vue';
+import WysiwygEditor from './WysiwygEditor.vue';
 
 const props = defineProps({
   block: Object as () => IBlock,

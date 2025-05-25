@@ -35,7 +35,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/greenpress/greenpress.git"
+    "url": "git+ssh://git@gitlab.com/qelos/qelos.git"
   },
   "gitHead": "dc75ba76bdb68c07b640d4469d9dffecf61759b1",
   "bundledDependencies": [

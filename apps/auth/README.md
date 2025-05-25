@@ -5,7 +5,7 @@ An HTTP server (back end only) with DB support & auth features
 ## Usage
 ### As a Docker container
 ```
-$ docker run -p 3001:3001 greenpress/auth
+$ docker run -p 3001:3001 qelos/auth
 ```
 
 ## Development and Independent Usage
