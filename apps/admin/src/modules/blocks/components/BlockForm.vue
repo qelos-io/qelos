@@ -111,7 +111,7 @@ const { editorConfig } = useEditorConfig()
 useUnsavedChanges('block', props.block?._id, computed(() => props.block?.name), editedBlock)
 
 // UI state management
-const activeTab = ref('basic')
+const activeTab = ref(props.block?._id ? 'content' : 'basic')
 const splitView = ref(false)
 const showPreview = ref(true)
 const previewKey = ref(0)
