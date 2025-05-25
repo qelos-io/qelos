@@ -74,5 +74,8 @@
   ],
   "bundleDependencies": [
     "express"
-  ]
+  ],
+  "overrides": {
+    "esbuild": "0.21.5"
+  }
 }
