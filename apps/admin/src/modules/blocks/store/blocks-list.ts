@@ -5,7 +5,7 @@ import blocksService from '@/services/blocks-service';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 
 export const useBlocksList = defineStore('blocks-list', function useBlocksList() {
-  const { loading, result } = useDispatcher<IBlock[]>(() => blocksService.getAll());
+  const { loading, result, retry } = useDispatcher<IBlock[]>(() => blocksService.getAll());
 
   const { submit } = useSubmitting(
     ({ _id }) =>
@@ -21,6 +21,7 @@ export const useBlocksList = defineStore('blocks-list', function useBlocksList()
   return {
     loading,
     blocks: result,
-    removeBlock: submit
+    removeBlock: submit,
+    retry
   }
 })

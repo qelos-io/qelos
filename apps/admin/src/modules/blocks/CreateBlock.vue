@@ -22,6 +22,9 @@ import BlockForm from './components/BlockForm.vue'
 import { removeUnsavedChanges } from '../drafts/compositions/unsaved-changes'
 import blocksService from '../../services/blocks-service'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useBlocksList } from './store/blocks-list'
+
+const {retry} = useBlocksList()
 
 const router = useRouter()
 const submitting = ref(false)
@@ -37,6 +40,8 @@ async function submit(data) {
     const { _id } = await blocksService.create(data)
     removeUnsavedChanges('block')
     ElMessage.success('Block created successfully')
+
+    retry();
     
     // Ask if user wants to continue editing or go back to list
     await ElMessageBox.confirm(

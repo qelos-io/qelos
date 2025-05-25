@@ -91,7 +91,7 @@ function updateBlock(req, res) {
 function deleteBlock(req, res) {
   const { block: deletedBlock } = req;
 
-  deletedBlock.remove()
+  Block.deleteOne({ _id: deletedBlock._id, tenant: deletedBlock.tenant })
     .then((block) => {
       res.status(200).json(block).end();
     })
