@@ -9,6 +9,7 @@ import storagesService from '@/services/storages-service';
 import usersService from '@/services/users-service';
 import workspacesService from '@/services/workspaces-service';
 import integrationSourcesService from '@/services/integration-sources-service';
+import eventsService from '@/services/events-service';
 
 function getMetaCrud(api: ReturnType<typeof getCrud>, editRouteName?: string, paramIdentifierName?: string): IMetaCrud {
   return {
@@ -33,6 +34,7 @@ export function getAllStandardMetaCruds(): Record<string, IMetaCrud> {
     storages: getMetaCrud(storagesService, 'editStorage', 'storageId'),
     users: getMetaCrud(usersService, 'editUser', 'userId'),
     workspaces: getMetaCrud(workspacesService, 'workspaces'),
-    integrationSources: getMetaCrud(integrationSourcesService, 'editIntegrationSource', 'sourceId')
+    integrationSources: getMetaCrud(integrationSourcesService, 'editIntegrationSource', 'sourceId'),
+    events: getMetaCrud(eventsService, null, 'eventId'),
   }
 }

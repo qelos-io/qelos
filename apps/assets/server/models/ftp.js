@@ -1,5 +1,6 @@
 const Client = require('ftp')
 const { getSecret } = require('../services/secrets-management')
+const { emitPlatformEvent } = require('@qelos/api-kit')
 
 class Ftp {
   constructor (storage) {
@@ -15,7 +16,23 @@ class Ftp {
             password: auth.password
           })
           this._client.on('ready', resolve)
-          this._client.on('error', (err) => reject({ message: 'could not connect to FTP server: ' + auth.host, err }))
+          this._client.on('error', (err) => {
+            reject({ message: 'could not connect to FTP server: ' + auth.host, err })
+            emitPlatformEvent({
+              tenant: storage.tenant,
+              source: 'assets',
+              kind: 'storage-connection-error',
+              eventName: 'ftp-connection-error',
+              description: `FTP connection error: ${auth.host}`,
+              metadata: {
+                storage: {
+                  _id: storage._id,
+                  kind: storage.kind,
+                  name: storage.name
+                }
+              }
+            }).catch(() => null)
+          })
         })
       }, () => {
         throw new Error('could not read FTP credentials')

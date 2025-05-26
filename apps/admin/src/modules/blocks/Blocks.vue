@@ -1,6 +1,6 @@
 <template>
   <div class="blocks-page">
-    <ListPageTitle title="Blocks" create-route="createBlock"/>
+    <ListPageTitle title="Content Boxes" create-route="createBlock"/>
     <BlocksList/>
   </div>
 </template>

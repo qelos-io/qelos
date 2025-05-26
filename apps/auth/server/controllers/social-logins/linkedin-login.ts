@@ -41,6 +41,20 @@ function getLinkedInRedirectUri(tenantHost: string): string {
   return `${fullTenantHost}/api/auth/linkedin/callback`;
 }
 
+function emitFailedSocialLogin(tenant: string, error: any) {
+  emitPlatformEvent({
+    tenant,
+    user: null,
+    source: 'auth',
+    kind: 'failed-social-login',
+    eventName: 'failed-linkedin-login',
+    description: 'Failed to login via LinkedIn',
+    metadata: {
+      error,
+    },
+  });
+}
+
 export async function loginWithLinkedIn(req: AuthWithLinkedinRequest, res) {
   const { clientId, scope } = req.source.metadata;
   const redirectUri = getLinkedInRedirectUri(req.headers.tenanthost);
@@ -55,6 +69,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
   const authCode = Array.isArray(req.query.code) ? req.query.code[0] : req.query.code;
 
   if (!authCode || typeof authCode !== 'string') {
+    emitFailedSocialLogin(req.headers.tenant, 'Invalid authorization code');
     return res.status(400).json({ message: 'Invalid authorization code' });
   }
 
@@ -77,11 +92,13 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
     const tokenData = await tokenResponse.json();
 
     if (!tokenResponse.ok) {
+      emitFailedSocialLogin(req.headers.tenant, tokenData);
       res.status(tokenResponse.status).json({ message: 'Failed to get access token', details: tokenData }).end();
       return;
     }
 
     if (!tokenData.access_token) {
+      emitFailedSocialLogin(req.headers.tenant, tokenData);
       res.status(400).json({ message: 'Failed to get access token' }).end();
       return;
     }

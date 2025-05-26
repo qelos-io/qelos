@@ -5,6 +5,7 @@ const ASSET_TYPES = require('../utils/asset-types.json');
 
 class Gcs {
   constructor(storage) {
+    this.storage = storage;
     this.name = storage.name;
     this.ready = getSecret(storage.tenant, storage.authentication).then(
       (decrypted) => {
@@ -77,6 +78,20 @@ class Gcs {
         remoteWriteStream.end();
       });
     } catch (error) {
+      emitPlatformEvent({
+        tenant: this.storage.tenant,
+        source: 'assets',
+        kind: 'storage-connection-error',
+        eventName: 'gcs-connection-error',
+        description: `GCS connection error`,
+        metadata: {
+          storage: {
+            _id: this.storage._id,
+            kind: this.storage.kind,
+            name: this.storage.name
+          }
+        }
+      }).catch(() => null)
       throw { message: 'could not upload asset to storage: ' + this.name };
     }
   }

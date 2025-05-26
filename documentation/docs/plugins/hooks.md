@@ -19,13 +19,21 @@ registerToHook({source: 'auth', kind: 'signup', eventName: 'user-registered'}, (
 
 ## List of existing event
 
-| source | kind            | eventName        |
-|--------|-----------------|------------------|
-| auth   | signup          | user-registered  |
-| auth   | users           | user-created     |
-| auth   | users           | user-updated     |
-| auth   | users           | user-removed     |
-| assets | asset-operation | asset-uploaded   |
+| source | kind                     | eventName                    |
+|--------|--------------------------|------------------------------|
+| auth   | signup                   | user-registered              |
+| auth   | users                    | user-created                 |
+| auth   | users                    | user-updated                 |
+| auth   | users                    | user-removed                 |
+| auth   | failed-social-login      | failed-linkedin-login        |
+| auth   | failed-social-login      | failed-facebook-login        |
+| auth   | failed-social-login      | failed-google-login          |
+| auth   | failed-social-login      | failed-twitter-login         |
+| assets | asset-operation          | asset-uploaded               |
+| assets | storage-connection-error | s3-connection-error          |
+| assets | storage-connection-error | gcs-connection-error         |
+| assets | storage-connection-error | ftp-connection-error         |
+| assets | storage-connection-error | cloudinary-connection-error  |
 
 ## Custom Plugins' events
 
