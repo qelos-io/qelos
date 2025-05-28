@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, reactive, watch, toValue, ref, onMounted } from 'vue';
-import { IIntegration } from '@qelos/global-types';
+import { computed, reactive, watch, toValue, ref, onMounted, nextTick } from 'vue';
+import { IIntegration, IntegrationSourceKind } from '@qelos/global-types';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import integrationsService from '@/services/integrations-service';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
@@ -57,6 +57,13 @@ const form = reactive<Pick<IIntegration, 'trigger' | 'target' | 'dataManipulatio
   ]
 })
 
+// Find Qelos integration source for default target
+const findQelosSource = () => {
+  if (!store.result?.length) return '';
+  const qelosSource = store.result.find(source => source.kind === IntegrationSourceKind.Qelos);
+  return qelosSource?._id || '';
+}
+
 watch(visible, () => {
   if (visible.value) {
     Object.assign(form, props.editingIntegration || {});
@@ -64,6 +71,21 @@ watch(visible, () => {
       delete row._id;
       return row;
     })
+    
+    // For new integrations, set default target as Qelos with webhook operation
+    if (!props.editingIntegration?._id) {
+      // Wait for store to be populated
+      nextTick(() => {
+        if (store.result?.length) {
+          const qelosSourceId = findQelosSource();
+          if (qelosSourceId) {
+            form.target.source = qelosSourceId;
+            form.target.operation = 'webhook';
+            form.target.details = {};
+          }
+        }
+      });
+    }
   }
 }, { immediate: true })
 

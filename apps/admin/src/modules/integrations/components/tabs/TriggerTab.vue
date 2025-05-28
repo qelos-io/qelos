@@ -5,6 +5,7 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { TriggerOperation, useIntegrationKindsTriggerOperations } from '@/modules/integrations/compositions/integration-kinds-operations';
+import { OpenAITargetOperation, IntegrationSourceKind } from '@qelos/global-types';
 
 const props = defineProps<{
   modelValue: any;
@@ -23,6 +24,55 @@ const selectedTriggerSource = computed(() => store.result?.find(s => s._id === p
 
 // Use a ref for the trigger details JSON instead of a computed property
 const triggerDetailsText = ref(JSON.stringify(props.modelValue.details || {}, null, 2));
+
+// UI state variables for OpenAI chat completion form
+const showAdvancedOptions = ref(false);
+const showRawJson = ref(false);
+const systemMessage = ref('');
+
+// OpenAI model options
+const openAiModelOptions = [
+  { label: 'GPT-4o', value: 'gpt-4o' },
+  { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' },
+  { label: 'GPT-4', value: 'gpt-4' },
+  { label: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo' },
+  { label: 'GPT-3.5 Turbo 16k', value: 'gpt-3.5-turbo-16k' },
+  { label: 'GPT-4 Vision', value: 'gpt-4-vision-preview' },
+  { label: 'GPT-4 32k', value: 'gpt-4-32k' }
+];
+
+// Initialize system message from pre_messages when component mounts or details change
+const initializeSystemMessage = () => {
+  if (selectedTriggerSource.value?.kind === IntegrationSourceKind.OpenAI && 
+      props.modelValue.operation === OpenAITargetOperation.chatCompletion && 
+      props.modelValue.details?.pre_messages?.length) {
+    const systemMsg = props.modelValue.details.pre_messages.find(msg => msg.role === 'system');
+    systemMessage.value = systemMsg?.content || '';
+  } else {
+    systemMessage.value = '';
+  }
+};
+
+// Update system message in pre_messages array
+const updateSystemMessage = () => {
+  if (!props.modelValue.details.pre_messages) {
+    props.modelValue.details.pre_messages = [];
+  }
+  
+  const newModelValue = { ...props.modelValue };
+  const systemMsgIndex = newModelValue.details.pre_messages.findIndex(msg => msg.role === 'system');
+  
+  if (systemMsgIndex >= 0) {
+    newModelValue.details.pre_messages[systemMsgIndex].content = systemMessage.value;
+  } else {
+    newModelValue.details.pre_messages.push({
+      role: 'system',
+      content: systemMessage.value
+    });
+  }
+  
+  emit('update:modelValue', newModelValue);
+};
 
 // Update trigger details from JSON text
 const updateTriggerDetails = (value: string) => {
@@ -76,11 +126,13 @@ watch([() => props.modelValue.operation, () => props.modelValue.source], () => {
   
   const operation = triggerOperations[selectedTriggerSource.value?.kind]?.find(o => o.name === props.modelValue.operation);
   selectedTriggerOperation.value = operation;
+  initializeSystemMessage();
 });
 
 // Watch for changes in trigger details
 watch(() => props.modelValue.details, (newDetails) => {
   triggerDetailsText.value = JSON.stringify(newDetails || {}, null, 2);
+  initializeSystemMessage();
 }, { deep: true });
 
 // Initialize the UI when the component is mounted
@@ -88,6 +140,7 @@ onMounted(() => {
   if (selectedTriggerSource.value && props.modelValue.operation) {
     const operation = triggerOperations[selectedTriggerSource.value?.kind]?.find(o => o.name === props.modelValue.operation);
     selectedTriggerOperation.value = operation;
+    initializeSystemMessage();
   }
 });
 </script>
@@ -164,10 +217,128 @@ onMounted(() => {
       </div>
     </div>
     
-    <!-- Trigger Details JSON -->
+    <!-- Trigger Details Configuration -->
     <div v-if="modelValue.operation" class="section-container">
       <h4>{{ $t('Configuration') }}</h4>
-      <Monaco :modelValue="triggerDetailsText" @update:modelValue="updateTriggerDetails" height="300px" language="json" />
+      
+      <!-- OpenAI Chat Completion Form -->
+      <div v-if="selectedTriggerSource?.kind === 'openai' && modelValue.operation === 'chatCompletion'" class="chat-completion-form">
+        <!-- Model Selection -->
+        <FormInput
+          v-model="modelValue.details.model"
+          type="select"
+          :options="openAiModelOptions"
+          label="Model"
+          help-text="Select the OpenAI model to use for chat completion"
+        />
+        
+        <!-- Max Tokens -->
+        <FormInput
+          v-model="modelValue.details.max_tokens"
+          type="number"
+          label="Max Tokens"
+          help-text="Maximum number of tokens to generate (1-4000)"
+          :min="1"
+          :max="4000"
+        />
+        
+        <!-- Temperature Slider -->
+        <div class="slider-container">
+          <label>Temperature: {{ modelValue.details.temperature }}</label>
+          <el-slider
+            v-model="modelValue.details.temperature"
+            :min="0"
+            :max="1"
+            :step="0.1"
+            show-stops
+          />
+          <div class="slider-description">
+            <span>More precise</span>
+            <span>More creative</span>
+          </div>
+        </div>
+        
+        <!-- System Message -->
+        <div class="system-message-container">
+          <label>System Message</label>
+          <p class="help-text">Define the AI assistant's behavior and role</p>
+          <el-input
+            v-model="systemMessage"
+            type="textarea"
+            :rows="4"
+            placeholder="You are a helpful assistant..."
+            @input="updateSystemMessage"
+          />
+        </div>
+        
+        <!-- Advanced Options Toggle -->
+        <div class="advanced-options">
+          <el-divider content-position="center">
+            <el-button type="text" @click="showAdvancedOptions = !showAdvancedOptions">
+              {{ showAdvancedOptions ? 'Hide' : 'Show' }} Advanced Options
+              <i :class="showAdvancedOptions ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
+            </el-button>
+          </el-divider>
+          
+          <!-- Advanced Options Content -->
+          <div v-if="showAdvancedOptions" class="advanced-options-content">
+            <!-- Top P Slider -->
+            <div class="slider-container">
+              <label>Top P: {{ modelValue.details.top_p }}</label>
+              <el-slider
+                v-model="modelValue.details.top_p"
+                :min="0"
+                :max="1"
+                :step="0.1"
+                show-stops
+              />
+            </div>
+            
+            <!-- Frequency Penalty Slider -->
+            <div class="slider-container">
+              <label>Frequency Penalty: {{ modelValue.details.frequency_penalty }}</label>
+              <el-slider
+                v-model="modelValue.details.frequency_penalty"
+                :min="0"
+                :max="2"
+                :step="0.1"
+                show-stops
+              />
+            </div>
+            
+            <!-- Presence Penalty Slider -->
+            <div class="slider-container">
+              <label>Presence Penalty: {{ modelValue.details.presence_penalty }}</label>
+              <el-slider
+                v-model="modelValue.details.presence_penalty"
+                :min="0"
+                :max="2"
+                :step="0.1"
+                show-stops
+              />
+            </div>
+            
+            <!-- Raw JSON Editor Toggle -->
+            <el-button type="primary" plain @click="showRawJson = !showRawJson" class="mt-3">
+              {{ showRawJson ? 'Hide' : 'Show' }} Raw JSON
+            </el-button>
+            
+            <!-- Raw JSON Editor -->
+            <div v-if="showRawJson" class="mt-3">
+              <Monaco :modelValue="triggerDetailsText" @update:modelValue="updateTriggerDetails" height="300px" language="json" />
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Default JSON Editor for other operations -->
+      <Monaco 
+        v-else 
+        :modelValue="triggerDetailsText" 
+        @update:modelValue="updateTriggerDetails" 
+        height="300px" 
+        language="json" 
+      />
     </div>
   </div>
 </template>
@@ -206,5 +377,59 @@ onMounted(() => {
   margin-bottom: 15px;
 }
 
-/* Local styles only */
+.mt-3 {
+  margin-top: 15px;
+}
+
+/* Chat Completion Form Styles */
+.chat-completion-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.slider-container {
+  margin-bottom: 15px;
+}
+
+.slider-container label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.slider-description {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 0.8em;
+  color: var(--el-text-color-secondary);
+}
+
+.system-message-container {
+  margin-bottom: 15px;
+}
+
+.system-message-container label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.help-text {
+  margin: 0 0 8px 0;
+  font-size: 0.8em;
+  color: var(--el-text-color-secondary);
+}
+
+.advanced-options {
+  margin-top: 10px;
+}
+
+.advanced-options-content {
+  padding: 15px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 4px;
+  margin-top: 10px;
+}
 </style>

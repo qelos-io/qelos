@@ -102,8 +102,21 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
     }
     logger.log('calculating integration data');
     // every step in data manipulation should be executed in order, asynchronously
-    const calculatedData = await integration.dataManipulation.reduce(async (acc, { map, populate, clean }) => {
+    const calculatedData = await integration.dataManipulation.reduce(async (acc, { map, populate, clean, abort }) => {
+      if (typeof abort === 'boolean' && abort) {
+        return { abort };
+      }        
       const previousData = await acc;
+      if (typeof abort === 'string') {
+        try {
+          const abortValue = abort === 'true' || await processMapRecursively(abort, previousData);
+          if (abortValue) {
+            return { abort: true };
+          }
+        } catch (err) {
+          logger.error('failed to evaluate abort condition', err);
+        }
+      }
       const data = clean ? {} : previousData;
       await Promise.all([
         ...Object.entries(map || {}).map(async ([key, value]) => {
@@ -131,6 +144,10 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
     }, event);
 
     logger.log('calculated integration data', typeof calculatedData);
+
+    if (calculatedData.abort) {
+      return;
+    }
 
     // trigger integration target using calculated data:
     await callIntegrationTarget(platformEvent.tenant, calculatedData, integration.target);

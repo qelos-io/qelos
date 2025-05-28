@@ -15,6 +15,9 @@ const emit = defineEmits(['update:modelValue']);
 const steps = ref<any[]>([]);
 const mapEntries = ref<Record<number, Array<{key: string, value: string}>>>({});
 const populateEntries = ref<Record<number, Array<{key: string, source: string, blueprint?: string}>>>({});
+const clearFlags = ref<Record<number, boolean>>({});
+const abortValues = ref<Record<number, string | boolean>>({});
+const abortTypes = ref<Record<number, 'none' | 'boolean' | 'expression'>>({});
 
 // JSON representation for each step
 const stepJsons = ref<Record<number, string>>({});
@@ -61,6 +64,21 @@ const initialize = () => {
       populateEntries.value[stepIndex] = [];
     }
     
+    // Initialize clear flag
+    clearFlags.value[stepIndex] = step.clear === true;
+    
+    // Initialize abort value and type
+    if (step.abort === undefined) {
+      abortValues.value[stepIndex] = '';
+      abortTypes.value[stepIndex] = 'none';
+    } else if (typeof step.abort === 'boolean') {
+      abortValues.value[stepIndex] = step.abort;
+      abortTypes.value[stepIndex] = 'boolean';
+    } else {
+      abortValues.value[stepIndex] = step.abort as string;
+      abortTypes.value[stepIndex] = 'expression';
+    }
+    
     // Initialize JSON representations
     stepJsons.value[stepIndex] = JSON.stringify(step, null, 2);
   });
@@ -98,6 +116,22 @@ const syncToModel = () => {
       });
     }
     
+    // Add clear flag if true
+    if (clearFlags.value[stepIndex]) {
+      newStep.clear = true;
+    } else {
+      delete newStep.clear;
+    }
+    
+    // Add abort property based on type
+    if (abortTypes.value[stepIndex] === 'boolean' && abortValues.value[stepIndex] === true) {
+      newStep.abort = true;
+    } else if (abortTypes.value[stepIndex] === 'expression' && abortValues.value[stepIndex]) {
+      newStep.abort = abortValues.value[stepIndex] as string;
+    } else {
+      delete newStep.abort;
+    }
+    
     return newStep;
   });
   
@@ -123,6 +157,9 @@ const addStep = () => {
   const newIndex = steps.value.length - 1;
   mapEntries.value[newIndex] = [];
   populateEntries.value[newIndex] = [];
+  clearFlags.value[newIndex] = false;
+  abortValues.value[newIndex] = '';
+  abortTypes.value[newIndex] = 'none';
   
   // Update JSON and emit changes
   syncToModel();
@@ -300,6 +337,21 @@ const updateStepJson = (stepIndex: number, json: string) => {
       populateEntries.value[stepIndex] = [];
     }
     
+    // Update clear flag
+    clearFlags.value[stepIndex] = parsedJson.clear === true;
+    
+    // Update abort value and type
+    if (parsedJson.abort === undefined) {
+      abortValues.value[stepIndex] = '';
+      abortTypes.value[stepIndex] = 'none';
+    } else if (typeof parsedJson.abort === 'boolean') {
+      abortValues.value[stepIndex] = parsedJson.abort;
+      abortTypes.value[stepIndex] = 'boolean';
+    } else {
+      abortValues.value[stepIndex] = parsedJson.abort as string;
+      abortTypes.value[stepIndex] = 'expression';
+    }
+    
     // Update JSON representations
     stepJsons.value[stepIndex] = json;
     completeJsonText.value = JSON.stringify(steps.value, null, 2);
@@ -343,6 +395,21 @@ const updateCompleteJson = (json: string) => {
       } else {
         populateEntries.value[stepIndex] = [];
       }
+      
+      // Update clear flag
+      clearFlags.value[stepIndex] = step.clear === true;
+      
+      // Update abort value and type
+      if (step.abort === undefined) {
+        abortValues.value[stepIndex] = '';
+        abortTypes.value[stepIndex] = 'none';
+      } else if (typeof step.abort === 'boolean') {
+        abortValues.value[stepIndex] = step.abort;
+        abortTypes.value[stepIndex] = 'boolean';
+      } else {
+        abortValues.value[stepIndex] = step.abort as string;
+        abortTypes.value[stepIndex] = 'expression';
+      }
     });
     
     // Update JSON representations
@@ -359,10 +426,23 @@ const updateCompleteJson = (json: string) => {
   }
 };
 
+// Handle abort type change
+const handleAbortTypeChange = (stepIndex: number) => {
+  if (abortTypes.value[stepIndex] === 'boolean') {
+    abortValues.value[stepIndex] = true;
+  } else if (abortTypes.value[stepIndex] === 'expression') {
+    abortValues.value[stepIndex] = '';
+  } else {
+    abortValues.value[stepIndex] = '';
+  }
+  syncToModel();
+};
+
 // Initialize on mount
 onMounted(() => {
   initialize();
 });
+
 </script>
 
 <template>
@@ -444,6 +524,45 @@ onMounted(() => {
             language="json"
             @update:modelValue="(value) => updateStepJson(i, value)" 
           />
+        </el-tab-pane>
+        <!-- Options Tab -->
+        <el-tab-pane :label="$t('Options')">
+          <p class="step-description">{{ $t('Configure additional options for this step') }}</p>
+          <div class="step-options">
+            <div class="option-item">
+              <el-switch
+                v-model="clearFlags[i]"
+                :active-text="$t('Clear previous data')"
+                @update:model-value="syncToModel"
+              />
+              <div class="option-description">
+                {{ $t('When enabled, only data from this step will pass to the next step') }}
+              </div>
+            </div>
+            
+            <div class="option-item">
+              <div class="abort-option">
+                <el-select
+                  v-model="abortTypes[i]"
+                  @update:model-value="handleAbortTypeChange(i)"
+                >
+                  <el-option value="none" :label="$t('No abort')" />
+                  <el-option value="boolean" :label="$t('Abort operation')" />
+                  <el-option value="expression" :label="$t('Abort with condition')" />
+                </el-select>
+                
+                <el-input
+                  v-if="abortTypes[i] === 'expression'"
+                  v-model="abortValues[i]"
+                  placeholder="JQ Expression"
+                  @update:model-value="syncToModel"
+                />
+              </div>
+              <div class="option-description">
+                {{ $t('Abort will prevent the target from being called') }}
+              </div>
+            </div>
+          </div>
         </el-tab-pane>
       </el-tabs>
     </div>
@@ -553,5 +672,30 @@ onMounted(() => {
   font-size: 0.8em;
   margin-right: 8px;
   color: var(--el-text-color-secondary);
+}
+
+/* Options tab styling */
+.step-options {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.option-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.option-description {
+  font-size: 0.8em;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+}
+
+.abort-option {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 </style>

@@ -2,18 +2,28 @@ import { IntegrationSourceKind } from '@qelos/global-types';
 import IntegrationSource from '../models/integration-source';
 import { IIntegrationEntity } from '../models/integration';
 
-const supportedSources: Record<IntegrationSourceKind, Record<string, string[] | undefined> | null> = {
+const supportedSources: Record<IntegrationSourceKind, Record<string, { required: string[], optional: string[] }> | null> = {
   [IntegrationSourceKind.Qelos]: {
-    webhook: ['source', 'kind', 'eventName']
+    webhook: {
+      required: ['source', 'kind', 'eventName'],
+      optional: []
+    }
   },
   [IntegrationSourceKind.ClaudeAi]: null,
-  [IntegrationSourceKind.OpenAI]: null,
+  [IntegrationSourceKind.OpenAI]: {
+    chatCompletion: {
+      required: ['max_tokens'],
+      optional: ['model', 'pre_messages', 'temperature', 'top_p', 'frequency_penalty', 'presence_penalty', 'stop']
+    }
+  },
   [IntegrationSourceKind.N8n]: null,
   [IntegrationSourceKind.Email]: null,
   [IntegrationSourceKind.Supabase]: null,
   [IntegrationSourceKind.LinkedIn]: null,
   [IntegrationSourceKind.Http]: null,
 }
+
+const COMMON_OPTIONAL_PARAMS = ['roles', 'workspaceRoles', 'workspaceLabels'];
 
 export async function validateIntegrationTrigger(tenant: string, trigger: IIntegrationEntity) {
   if (!trigger || !trigger.source || !trigger.operation) {
@@ -25,22 +35,37 @@ export async function validateIntegrationTrigger(tenant: string, trigger: IInteg
     throw new Error('target source not found');
   }
 
-  const supportedOperations = supportedSources[source.kind];
+  const supportedOperations: Record<string, { required: string[], optional: string[] }> = supportedSources[source.kind];
 
   if (!supportedOperations) {
     throw new Error('unsupported trigger source kind');
   }
 
-  const mandatoryParams = supportedOperations[trigger.operation];
-  if (!mandatoryParams) {
+  const params = supportedOperations[trigger.operation];
+  if (!params?.required) {
     throw new Error(`operation ${trigger.operation} does not exist on source of kind ${source.kind}`)
   }
-  const hasMissingParams = mandatoryParams
-    .map(prop => typeof trigger.details[prop] === 'string')
+  const hasMissingParams = params.required
+    .map(prop => { 
+      const type =  typeof trigger.details[prop]
+      return type === 'string' || type === 'number' || type === 'boolean'
+    })
     .some(isValid => !isValid)
 
   if (hasMissingParams) {
-    throw new Error(`operation ${trigger.operation} must contain relevant details: ${mandatoryParams.join(',')}`)
+    throw new Error(`operation ${trigger.operation} must contain relevant details: ${params.required.join(',')}`)
+  }
+
+  // Filter out invalid parameters instead of throwing an error
+  const validParams = [...params.required, ...params.optional, ...COMMON_OPTIONAL_PARAMS];
+  const invalidParams = Object.keys(trigger.details)
+    .filter(key => !validParams.includes(key));
+  
+  if (invalidParams.length) {
+    // Remove invalid parameters from the details object
+    invalidParams.forEach(key => {
+      delete trigger.details[key];
+    });
   }
 
   return source;
