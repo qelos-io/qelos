@@ -7,7 +7,7 @@
           <div class="status-overview">
             <h2 class="section-title">{{ $t('System Status') }}</h2>
             <el-row :gutter="20">
-              <el-col :span="6" v-for="(status, index) in systemStatus" :key="index">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="(status, index) in systemStatus" :key="index" class="status-col">
                 <el-card shadow="hover" class="status-card" :class="status.status">
                   <div class="status-icon">
                     <font-awesome-icon :icon="status.icon" size="2x" />
@@ -78,7 +78,7 @@
               {{ $t('Quick Actions') }}
             </template>
             <el-row :gutter="20" class="quick-actions">
-              <el-col :span="8" v-for="(action, index) in quickActions" :key="index">
+              <el-col :xs="12" :sm="12" :md="8" :lg="8" v-for="(action, index) in quickActions" :key="index" class="action-col">
                 <router-link :to="action.route" class="quick-action-link">
                   <el-card shadow="hover" class="quick-action-card">
                     <div class="action-icon">
@@ -170,44 +170,6 @@
               </router-link>
             </el-card>
           </div>
-          
-          <!-- UI Customization Section -->
-          <h2 class="section-title">{{ $t('UI Customization') }}</h2>
-          <el-card shadow="hover" class="ui-preview-card">
-            <div class="ui-preview-header">
-              <h3>{{ $t('Input Field Appearance') }}</h3>
-              <p>{{ $t('Preview and customize how input fields appear across your application') }}</p>
-            </div>
-            <div class="ui-preview-content">
-              <div class="ui-preview-example">
-                <h4>{{ $t('Live Preview') }}</h4>
-                <FormInput v-model="exampleText" placeholder="Type something..."/>
-              </div>
-              <div class="ui-customization-options">
-                <h4>{{ $t('Customize') }}</h4>
-                <el-row :gutter="20">
-                  <el-col :xs="24" :sm="12">
-                    <div class="color-option">
-                      <div class="color-option-label">
-                        <font-awesome-icon :icon="['fas', 'fill-drip']"/>
-                        <span>{{ $t('Background Color') }}</span>
-                      </div>
-                      <LiveEditColorOpener color="inputsBgColor"/>
-                    </div>
-                  </el-col>
-                  <el-col :xs="24" :sm="12">
-                    <div class="color-option">
-                      <div class="color-option-label">
-                        <font-awesome-icon :icon="['fas', 'font']"/>
-                        <span>{{ $t('Text Color') }}</span>
-                      </div>
-                      <LiveEditColorOpener color="inputsTextColor"/>
-                    </div>
-                  </el-col>
-                </el-row>
-              </div>
-            </div>
-          </el-card>
         </div>
       </el-tab-pane>
 
@@ -277,8 +239,6 @@ const { loading: loadingBlocks, blocks } = toRefs(useBlocksList());
 const { loading: loadingStats, stats } = useUsersStats();
 const { systemStatus, activityChartOption, activityTimeframe } = toRefs(useAdminEvents());
 const { t } = useI18n();
-const exampleText = ref(t('Example text'));
-
 
 // Load plugins data
 const pluginsStore = usePluginsList();
@@ -463,63 +423,6 @@ function getPreviewStyles(palette: DesignPalette['palette']) {
   text-align: right;
 }
 
-/* UI Preview Card Styles */
-.ui-preview-card {
-  margin-bottom: 30px;
-}
-
-.ui-preview-header {
-  margin-bottom: 20px;
-}
-
-.ui-preview-header h3 {
-  margin: 0 0 5px;
-  padding: 0;
-  font-size: 18px;
-  font-weight: 500;
-}
-
-.ui-preview-header p {
-  margin: 0;
-  color: var(--el-text-color-secondary);
-  font-size: 14px;
-}
-
-.ui-preview-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 30px;
-}
-
-.ui-preview-example,
-.ui-customization-options {
-  flex: 1;
-  min-width: 300px;
-}
-
-.ui-preview-example h4,
-.ui-customization-options h4 {
-  margin: 0 0 15px;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.color-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 15px;
-  padding: 10px;
-  border-radius: var(--el-border-radius-base);
-  background-color: var(--el-fill-color-light);
-}
-
-.color-option-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 @media screen and (max-width: 768px) {
   .config-cards-grid {
     grid-template-columns: 1fr;
@@ -552,12 +455,12 @@ function getPreviewStyles(palette: DesignPalette['palette']) {
 }
 
 .status-card {
+  height: 100%;
   display: flex;
   align-items: center;
   padding: 15px;
-  border-radius: var(--border-radius);
-  margin-bottom: 20px;
   transition: all 0.3s ease;
+  border-radius: var(--border-radius);
 }
 
 .status-card:hover {
@@ -808,6 +711,26 @@ function getPreviewStyles(palette: DesignPalette['palette']) {
   
   .quick-actions .el-col {
     width: 100%;
+    margin-bottom: 15px;
+  }
+  
+  .status-info h3 {
+    font-size: 14px;
+  }
+  
+  .status-badge {
+    font-size: 11px;
+  }
+  
+  .status-icon {
+    margin-right: 10px;
+  }
+  
+  .status-col {
+    margin-bottom: 20px;
+  }
+  
+  .action-col {
     margin-bottom: 15px;
   }
 }
