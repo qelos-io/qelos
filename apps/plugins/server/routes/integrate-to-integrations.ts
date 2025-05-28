@@ -10,7 +10,8 @@ export function integrateToIntegrationsRouter() {
 
   router
     .post('/api/integrate/:integrationId/chat-completion',
-       AUTHENTICATION_MIDDLEWARES.concat(forceTriggerIntegrationKind([IntegrationSourceKind.OpenAI])),
+       AUTHENTICATION_MIDDLEWARES,
+       forceTriggerIntegrationKind([IntegrationSourceKind.OpenAI, IntegrationSourceKind.ClaudeAi]),
        getIntegrationToIntegrate,
        chatCompletion
     )

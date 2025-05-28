@@ -64,27 +64,106 @@ export async function getIntegrationToIntegrate(req, res, next) {
 export async function chatCompletion(req, res) {
   const { integration } = req;
   const { source } = integration.trigger;
-
   const { messages } = req.body;
+  const useSSE = req.query.stream === 'true';
 
   const aiService = createAIService(integration.kind[0], req.integrationSourceAuthentication);
 
+  // Prepare the messages array
+  const preparedMessages = [
+    ...(source.metadata.initialMessages || []), 
+    ...(integration.trigger.details.pre_messages || []), 
+    ...messages.filter(msg => msg && msg.role === 'user').map(msg => ({ role: 'user', content: msg.content }))
+  ];
+
+  // Common options for both streaming and non-streaming requests
+  const options = {
+    messages: preparedMessages,
+    model: integration.trigger.details.model || source.metadata.defaultModel,
+    temperature: integration.trigger.details.temperature,
+    top_p: integration.trigger.details.top_p,
+    frequency_penalty: integration.trigger.details.frequency_penalty,
+    presence_penalty: integration.trigger.details.presence_penalty,
+    stop: integration.trigger.details.stop,
+  };
+
   try {
-    const response = await aiService.chatCompletion({
-      messages: [...(source.metadata.initialMessages || []), 
-      ...(integration.trigger.details.pre_messages || []), 
-      ...messages.filter(msg => msg.role === 'user')  .map(msg => ({ role: 'user', content: msg.content }))
-      ],
-      model: integration.trigger.details.model || source.metadata.defaultModel,
-      temperature: integration.trigger.details.temperature,
-      top_p: integration.trigger.details.top_p,
-      frequency_penalty: integration.trigger.details.frequency_penalty,
-      presence_penalty: integration.trigger.details.presence_penalty,
-      stop: integration.trigger.details.stop, 
-    });
-    res.json(response).end();
+    if (useSSE) {
+      // Set up SSE response headers
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no'); // Prevents Nginx from buffering the response
+
+      // Create a function to send SSE data
+      const sendSSE = (data: any) => {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+      };
+
+      // Send initial event to establish connection
+      sendSSE({ type: 'connection_established' });
+
+      // Get the stream from the AI service
+      const stream = await aiService.streamChatCompletion(options);
+
+      // Handle different AI service providers
+      if (integration.kind[0] === IntegrationSourceKind.OpenAI) {
+        // For OpenAI
+        let fullContent = '';
+        
+        for await (const chunk of stream) {
+          const content = chunk.choices[0]?.delta?.content || '';
+          fullContent += content;
+          
+          sendSSE({
+            type: 'chunk',
+            content,
+            fullContent,
+            chunk: chunk
+          });
+        }
+        
+        // Send completion event
+        sendSSE({ type: 'done', content: fullContent });
+      } else if (integration.kind[0] === IntegrationSourceKind.ClaudeAi) {
+        // For Claude AI
+        let fullContent = '';
+        
+        for await (const chunk of stream) {
+          if (chunk.type === 'content_block_delta' && chunk.delta?.type === 'text') {
+            const content = chunk.delta.text || '';
+            fullContent += content;
+            
+            sendSSE({
+              type: 'chunk',
+              content,
+              fullContent,
+              chunk: chunk
+            });
+          }
+        }
+        
+        // Send completion event
+        sendSSE({ type: 'done', content: fullContent });
+      }
+      
+      // End the response
+      res.end();
+    } else {
+      // Non-streaming response (original behavior)
+      const response = await aiService.chatCompletion(options);
+      res.json(response).end();
+    }
   } catch (error) {
-    logger.error("Error in chatCompletion:", error.message, error); // Use your logger
-    res.status(500).json({ message: 'Error processing AI chat completion' }).end();
+    logger.error("Error in chatCompletion:", error.message, error);
+    
+    if (useSSE) {
+      // Send error through SSE if we're in streaming mode
+      res.write(`data: ${JSON.stringify({ type: 'error', message: 'Error processing AI chat completion' })}\n\n`);
+      res.end();
+    } else {
+      // Regular error response
+      res.status(500).json({ message: 'Error processing AI chat completion' }).end();
+    }
   }
 }

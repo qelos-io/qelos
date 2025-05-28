@@ -50,6 +50,100 @@ export class AIService {
     }
   }
 
+  /**
+   * Prepares OpenAI parameters for chat completion
+   */
+  private prepareOpenAIParams(options: AIServiceChatCompletionOptions, streaming: boolean): any {
+    const { system, ...openaiSpecificOptions } = options;
+    const openaiParams = {
+      ...openaiSpecificOptions,
+      messages: options.messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+      stream: streaming,
+      model: options.model || 'gpt-3.5-turbo'
+    };
+    
+    // Remove undefined values
+    Object.keys(openaiParams).forEach(key => openaiParams[key] === undefined && delete openaiParams[key]);
+    return openaiParams;
+  }
+
+  /**
+   * Prepares Claude AI parameters for chat completion
+   */
+  private prepareClaudeParams(options: AIServiceChatCompletionOptions, streaming: boolean): {
+    params: any,
+    claudeUserAssistantMessages: Anthropic.Messages.MessageParam[],
+    systemPrompt?: string
+  } {
+    const { model: requestedModel, messages, system, temperature, top_p, max_tokens } = options;
+    
+    // Determine the model to use
+    let finalClaudeModel: string;
+    const openAiModelPattern = /^(gpt-|text-(davinci|curie|babbage|ada)|dall-e)/i;
+    if (!requestedModel || openAiModelPattern.test(requestedModel)) {
+      finalClaudeModel = 'claude-3-7-sonnet-latest';
+    } else {
+      finalClaudeModel = requestedModel;
+    }
+
+    // Process messages and extract system prompt
+    let systemPromptForClaude: string | undefined = system;
+    const claudeUserAssistantMessages: Anthropic.Messages.MessageParam[] = [];
+    
+    messages.forEach(msg => {
+      if (msg.role === 'system' && !systemPromptForClaude) {
+        systemPromptForClaude = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+      } else if (msg.role === 'user' || msg.role === 'assistant') {
+        claudeUserAssistantMessages.push({ 
+          role: msg.role as 'user' | 'assistant', 
+          content: msg.content || "" 
+        });
+      }
+    });
+    
+    // Validate that we have either messages or a system prompt
+    if (claudeUserAssistantMessages.length === 0 && !systemPromptForClaude) {
+      throw new Error(`[AIService Claude] Requires at least one user/assistant message or a system prompt.`);
+    }
+
+    // Prepare the parameters
+    const claudeParams = {
+      model: finalClaudeModel,
+      messages: claudeUserAssistantMessages,
+      max_tokens: max_tokens || (streaming ? 1024 : 8192),
+      ...(streaming && { stream: true }),
+      ...(systemPromptForClaude && { system: systemPromptForClaude }),
+      temperature: temperature,
+      top_p: top_p,
+    };
+    
+    // Remove undefined values
+    Object.keys(claudeParams).forEach(key => claudeParams[key] === undefined && delete claudeParams[key]);
+    
+    return { 
+      params: claudeParams, 
+      claudeUserAssistantMessages,
+      systemPrompt: systemPromptForClaude 
+    };
+  }
+
+  /**
+   * Extract content from Claude AI response
+   */
+  private extractClaudeContent(sdkResponse: any): string | null {
+    let extractedContent: string | null = null;
+    if (sdkResponse.content && sdkResponse.content.length > 0) {
+      const textBlock = sdkResponse.content.find(block => block.type === 'text');
+      if (textBlock) {
+        extractedContent = textBlock.text || null;
+      }
+    }
+    return extractedContent;
+  }
+
+  /**
+   * Handles chat completion with or without streaming
+   */
   async chatCompletion(options: AIServiceChatCompletionOptions): Promise<any> {
     if (options.stream === true) {
       const { stream, ...restOptions } = options;
@@ -63,15 +157,7 @@ export class AIService {
     try {
       if (this.kind === IntegrationSourceKind.OpenAI) {
         const openaiProvider = this.provider as OpenAI;
-        const { system, ...openaiSpecificOptions } = options; 
-
-        const openaiParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
-          ...openaiSpecificOptions, // Includes options.response_format if present
-          messages: options.messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
-          stream: false,
-          model: options.model || 'gpt-3.5-turbo'
-        };
-        Object.keys(openaiParams).forEach(key => openaiParams[key] === undefined && delete openaiParams[key]);
+        const openaiParams = this.prepareOpenAIParams(options, false);
         
         const sdkResponse = await openaiProvider.chat.completions.create(openaiParams);
         const extractedContent = sdkResponse.choices?.[0]?.message?.content || null;
@@ -79,111 +165,36 @@ export class AIService {
 
       } else if (this.kind === IntegrationSourceKind.ClaudeAi) {
         const claudeProvider = this.provider as Anthropic;
-    
-        const { model: requestedModel, messages, system, temperature, top_p, max_tokens } = options;
-
-        let finalClaudeModel: string;
-        const openAiModelPattern = /^(gpt-|text-(davinci|curie|babbage|ada)|dall-e)/i;
-        if (!requestedModel || openAiModelPattern.test(requestedModel)) {
-          finalClaudeModel = 'claude-3-7-sonnet-latest'; // Use your preferred default Claude model
-        } else {
-          finalClaudeModel = requestedModel;
-        }
-
-        let systemPromptForClaude: string | undefined = system;
-        const claudeUserAssistantMessages: Anthropic.Messages.MessageParam[] = [];
-        messages.forEach(msg => {
-          if (msg.role === 'system' && !systemPromptForClaude) {
-            systemPromptForClaude = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
-          } else if (msg.role === 'user' || msg.role === 'assistant') {
-            claudeUserAssistantMessages.push({ role: msg.role as 'user' | 'assistant', content: msg.content || "" });
-          }
-        });
-        
-        if (claudeUserAssistantMessages.length === 0 && !systemPromptForClaude) {
-          throw new Error(`[AIService Claude] Requires at least one user/assistant message or a system prompt.`);
-        }
-
-        const claudeParams: Anthropic.Messages.MessageCreateParamsNonStreaming = {
-          model: finalClaudeModel,
-          messages: claudeUserAssistantMessages,
-          max_tokens: max_tokens || 8192,
-          ...(systemPromptForClaude && { system: systemPromptForClaude }),
-          temperature: temperature,
-          top_p: top_p,
-        };
-        Object.keys(claudeParams).forEach(key => claudeParams[key] === undefined && delete claudeParams[key]);
+        const { params: claudeParams } = this.prepareClaudeParams(options, false);
         
         const sdkResponse = await claudeProvider.messages.create(claudeParams);
-        let extractedContent: string | null = null;
-        if (sdkResponse.content && sdkResponse.content.length > 0) {
-            const textBlock = sdkResponse.content.find(block => block.type === 'text');
-            if (textBlock) {
-                extractedContent = textBlock.text || null;
-            }
-        }
+        const extractedContent = this.extractClaudeContent(sdkResponse);
         return { ...sdkResponse, responseContent: extractedContent };
       }
       throw new Error(`[AIService] Chat completion logic not implemented for provider: ${this.kind}`);
     } catch (error: any) {
-     
       throw error;
     }
   }
 
+  /**
+   * Handles streaming chat completion
+   */
   async streamChatCompletion(options: Omit<AIServiceChatCompletionOptions, 'stream'>): Promise<any> {
     try {
       if (this.kind === IntegrationSourceKind.OpenAI) {
         const openaiProvider = this.provider as OpenAI;
-        const { system, ...openaiSpecificOptions } = options;
-        const openaiParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming = {
-          ...openaiSpecificOptions, // Includes options.response_format if present
-          messages: options.messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
-          stream: true,
-          model: options.model || 'gpt-3.5-turbo'
-        };
-        Object.keys(openaiParams).forEach(key => openaiParams[key] === undefined && delete openaiParams[key]);
+        const openaiParams = this.prepareOpenAIParams(options, true);
         return await openaiProvider.chat.completions.create(openaiParams);
       }
 
       if (this.kind === IntegrationSourceKind.ClaudeAi) {
         const claudeProvider = this.provider as Anthropic;
-        // For Claude, response_format from options is ignored. AIMessageTemplates handles system prompt.
-        const { model: requestedModel, messages, system, temperature, top_p, max_tokens } = options;
-        
-        let finalClaudeModel: string;
-        const openAiModelPattern = /^(gpt-|text-(davinci|curie|babbage|ada)|dall-e)/i;
-        if (!requestedModel || openAiModelPattern.test(requestedModel)) {
-          finalClaudeModel = 'claude-3-7-sonnet-latest';
-        } else {
-          finalClaudeModel = requestedModel;
-        }
-
-        let systemPromptForClaude: string | undefined = system;
-        const claudeUserAssistantMessages: Anthropic.Messages.MessageParam[] = [];
-        messages.forEach(msg => {
-            if (msg.role === 'system' && !systemPromptForClaude) systemPromptForClaude = msg.content as string;
-            else if (msg.role === 'user' || msg.role === 'assistant') claudeUserAssistantMessages.push(msg as Anthropic.Messages.MessageParam);
-        });
-        if (claudeUserAssistantMessages.length === 0 && !systemPromptForClaude) {
-            throw new Error("[AIService Claude Stream] Requires messages or a system prompt for streaming.");
-        }
-      
-        const claudeParams: Anthropic.Messages.MessageCreateParamsStreaming = {
-          model: finalClaudeModel,
-          messages: claudeUserAssistantMessages,
-          max_tokens: max_tokens || 1024,
-          stream: true,
-          ...(systemPromptForClaude && { system: systemPromptForClaude }),
-          temperature: temperature,
-          top_p: top_p,
-        };
-        Object.keys(claudeParams).forEach(key => claudeParams[key] === undefined && delete claudeParams[key]);
+        const { params: claudeParams } = this.prepareClaudeParams(options, true);
         return await claudeProvider.messages.create(claudeParams);
       }
       throw new Error(`[AIService] Streaming chat completion not implemented for provider: ${this.kind}`);
     } catch (error: any) {
-     
       throw error;
     }
   }
