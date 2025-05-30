@@ -1,6 +1,5 @@
 <template>
   <div>
-    <PageTitle title="Create Your Workspace"/>
     <WorkspaceForm v-if="wsConfig.loaded" :ws-config="config" :workspace='{}' @submitted="save"/>
   </div>
 </template>
@@ -10,7 +9,6 @@ import { useRouter } from 'vue-router';
 import { WorkspaceConfigurationMetadata } from '@qelos/global-types';
 import { useCreateWorkspace } from './compositions/workspaces'
 import WorkspaceForm from './components/WorkspaceForm.vue'
-import PageTitle from '../core/components/semantics/PageTitle.vue'
 import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 

@@ -4,7 +4,7 @@
       <el-card class="workspace-card" shadow="hover">
         <template #header>
           <div class="card-header">
-            <h2>{{ workspace._id ? $t('Edit Workspace') : $t('Create New Workspace') }}</h2>
+            <h2>{{ workspace._id ? $t('Edit Workspace') : $t('Create Your Workspace') }}</h2>
             <p v-if="!workspace._id" class="subtitle">{{ $t('Set up a new workspace for your team') }}</p>
           </div>
         </template>
