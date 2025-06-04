@@ -1,6 +1,6 @@
 {
   "name": "@qelos/admin",
-  "version": "3.8.2",
+  "version": "3.8.3",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "publishConfig": {
     "access": "public"
@@ -26,11 +26,10 @@
     "@fortawesome/free-regular-svg-icons": "^6.5.2",
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
     "@fortawesome/vue-fontawesome": "^3.0.8",
-    "@tiptap/extension-text-style": "^2.12.0",
     "@primevue/themes": "^4.0.4",
-    "@qelos/global-types": "^3.8.2",
-    "@qelos/sdk": "^3.8.2",
-    "@qelos/view-builder": "^3.8.2",
+    "@qelos/global-types": "^3.8.3",
+    "@qelos/sdk": "^3.8.3",
+    "@qelos/view-builder": "^3.8.3",
     "@sentry/vue": "^9.13.0",
     "@tiptap/extension-color": "^2.12.0",
     "@tiptap/extension-highlight": "^2.12.0",
@@ -41,6 +40,7 @@
     "@tiptap/extension-table-header": "^2.12.0",
     "@tiptap/extension-table-row": "^2.12.0",
     "@tiptap/extension-text-align": "^2.12.0",
+    "@tiptap/extension-text-style": "^2.12.0",
     "@tiptap/extension-underline": "^2.12.0",
     "@tiptap/pm": "^2.12.0",
     "@tiptap/starter-kit": "^2.12.0",
