@@ -178,9 +178,34 @@ const userProfile = await sdk.authentication.getLoggedInUser();
   </div>
 </div>
 
+## SDK Documentation
+
+The Qelos SDK is organized into several modules, each providing specific functionality for your SaaS application. Below is a comprehensive list of all available SDK modules and their documentation:
+
+### Core SDK
+- [Core Functionality](./core_functionality.md) - SDK initialization, custom headers, and base features
+- [Token Refresh](./token_refresh.md) - Automatic token refresh functionality
+- [Error Handling](./error_handling.md) - Error handling patterns and best practices
+
+### User Management
+- [Authentication](./authentication.md) - User authentication and session management
+- [Managing Users](./managing_users.md) - User management APIs
+
+### Multi-tenancy
+- [Managing Workspaces](./managing_workspaces.md) - Multi-tenant workspace operations
+- [Managing Invites](./managing_invites.md) - Workspace invitation handling
+
+### Data & Content
+- [Blueprints Operations](./blueprints_operations.md) - Data model definition and entity management
+- [Managing Blocks](./managing_blocks.md) - Content block operations
+- [Managing Layouts](./managing_layouts.md) - UI layout structure and management
+- [Managing Configurations](./managing_configurations.md) - Application configuration settings
+
+### Extensions
+- [Managing Plugins](./managing_plugins.md) - Plugin integration and management
+
 ## About Qelos
 
 Qelos is a SaaS platform developed by Velocitech LTD that enables you to create your own SaaS applications with multi-tenant capabilities. The platform provides a comprehensive set of tools and APIs to build, deploy, and manage your applications efficiently.
-
 
 

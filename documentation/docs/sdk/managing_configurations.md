@@ -4,13 +4,45 @@ title: Managing Configurations
 
 # {{ $frontmatter.title }}
 
-This section provides an overview of managing configurations using the Qelos SDK. The examples demonstrate how to create, update, remove, and retrieve configuration information, enabling administrators to effectively manage configurations.
+This section provides an overview of managing configurations using the Qelos SDK. Configurations in Qelos allow you to store and retrieve application settings and metadata. The SDK provides methods for both regular users and administrators to work with configurations.
 
-## Creating a Configuration
+## App Configurations
 
-To create a new configuration, use the following code:
+The SDK provides the `appConfigurations` module for working with application configurations. This module allows you to retrieve and update application configuration metadata.
 
-```bash
+### Getting App Configuration
+
+To retrieve the current application configuration:
+
+```typescript
+const appConfig = await sdk.appConfigurations.getAppConfiguration();
+// appConfig.metadata contains the configuration data
+```
+
+### Updating App Configuration
+
+To update the application configuration:
+
+```typescript
+const updatedConfig = await sdk.appConfigurations.update({
+  theme: 'dark',
+  logo: 'https://example.com/logo.png',
+  features: {
+    enableComments: true,
+    enableSharing: false
+  }
+});
+```
+
+The `update` method accepts a partial configuration object and returns the updated configuration.
+
+## Admin Configuration Management
+
+### Creating a Configuration
+
+As an administrator, you can create new configurations using the admin SDK:
+
+```typescript
 await sdkAdmin.manageConfigurations.create({
   key: 'configKey',
   public: true,
