@@ -5,7 +5,8 @@
   "main": "./dist/index.js",
   "scripts": {
     "test": "node --import tsx --test **/**/*.test.ts",
-    "build": "tsc"
+    "type-check": "tsc --noEmit",
+    "build": "npm run type-check && tsc"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",

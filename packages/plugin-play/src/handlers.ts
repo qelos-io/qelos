@@ -15,17 +15,23 @@ export type DataWithPayload<T> = { payload: T & StandardPayload };
 
 export type FrontendAuthorizationPayload = { code: string | number, token: string }
 
+export type NewTenantParams = {
+  username: string;
+  password: string;
+  appUrl: string;
+}
+
 export type RefreshTokenHandler<T> = (tokenPayload: T & StandardPayload, request: FastifyRequest) => void | DataWithPayload<T> | Promise<void | DataWithPayload<T>>
-export type NewTenantHandler<T> = ({
-                                     username,
-                                     password,
-                                     appUrl
-                                   }, request: FastifyRequest) => void | DataWithPayload<T> | Promise<void | DataWithPayload<T>>
+export type NewTenantHandler<T> = (params: NewTenantParams, request: FastifyRequest) => void | DataWithPayload<T> | Promise<void | DataWithPayload<T>>
 
 export type FrontendAuthorizationHandler = ({
                                               returnUrl,
                                               user,
                                               tenant
+                                            }: {
+                                              returnUrl: string;
+                                              user: any;
+                                              tenant: any;
                                             }, request: FastifyRequest) => void | FrontendAuthorizationPayload | Promise<void | FrontendAuthorizationPayload>;
 export type FrontendUnAuthorizationHandler = ({ user, tenant }) => any;
 

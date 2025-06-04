@@ -28,6 +28,15 @@ async function bootstrapAuthenticate() {
   }
 }
 
+export interface GetSdkForUrlOptions {
+  appUrl: string;
+  refreshToken?: string;
+  accessToken?: string;
+  username?: string;
+  password?: string;
+  onRefresh?: ({ refreshToken, token }: { refreshToken: string, token: string }) => void
+}
+
 export function getSdkForUrl<T = any>({
   appUrl,
   refreshToken,
@@ -35,14 +44,7 @@ export function getSdkForUrl<T = any>({
   username,
   password,
   onRefresh
-}: {
-  appUrl: string;
-  refreshToken?: string;
-  accessToken?: string;
-  username?: string;
-  password?: string;
-  onRefresh?: ({ refreshToken, token }: { refreshToken: string, token: string }) => void
-}): QelosAdministratorSDK {
+}: GetSdkForUrlOptions): QelosAdministratorSDK {
   let sdk: QelosAdministratorSDK;
   const options: QelosSDKOptions = {
     appUrl,
