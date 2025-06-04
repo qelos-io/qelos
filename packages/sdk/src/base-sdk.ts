@@ -11,7 +11,7 @@ export default class BaseSDK {
   #fetch: FetchLike;
 
   constructor(private qlOptions: QelosSDKOptions) {
-    this.#appUrl = qlOptions.appUrl.endsWith('/') ? qlOptions.appUrl.slice(0, -1) : qlOptions.appUrl;
+    this.#appUrl = qlOptions.appUrl?.endsWith('/') ? qlOptions.appUrl.slice(0, -1) : qlOptions.appUrl;
     this.#fetch = qlOptions.fetch || globalThis.fetch;
   }
 

@@ -138,7 +138,10 @@ export function getRegisterRoute(): RouteOptions {
 
   if (config.qelosUrl) {
     onNewTenant(async ({ username, password, appUrl }) => {
-      const tenantSdk = getSdkForUrl(appUrl)
+      if (!appUrl) {
+        throw new ResponseError('appUrl is required');
+      }
+      const tenantSdk = getSdkForUrl({ appUrl, refreshToken: null, accessToken: null, username, password })
       const emailSplit = username.split('@');
       if (emailSplit.length === 2 && getHostname(appUrl) !== emailSplit[1].split(':')[0]) {
         throw new ResponseError('email must be provided from the same app url: ' + appUrl);
@@ -243,6 +246,8 @@ export function getRegisterRoute(): RouteOptions {
           reply.statusCode = err.status || 401;
           return { message: err.responseMessage };
         } else {
+          reply.statusCode = err.status || 401;
+          return { message: err?.message || 'internal register error' };
           logger.error('internal register error', err);
         }
       }

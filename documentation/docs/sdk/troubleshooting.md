@@ -52,7 +52,7 @@ const sdk = new QelosSDK({
 async function callApiWithAuthCheck() {
   // First check if user is authenticated
   try {
-    await sdk.authentication.getUserProfile();
+    await sdk.authentication.getLoggedInUser();
     // If we get here, authentication is valid
     return sdk.workspaces.getWorkspaces();
   } catch (error) {

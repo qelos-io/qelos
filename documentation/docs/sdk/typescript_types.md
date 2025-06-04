@@ -211,7 +211,7 @@ function isUser(obj: any): obj is User {
 
 // Usage with the SDK
 try {
-  const response = await sdk.authentication.getUserProfile();
+  const response = await sdk.authentication.getLoggedInUser();
   
   if (isUser(response)) {
     // TypeScript knows response is a User here

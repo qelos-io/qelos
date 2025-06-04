@@ -32,7 +32,7 @@ These occur when there are issues with user authentication or token validity.
 
 ```typescript
 try {
-  await sdk.authentication.getUserProfile();
+  await sdk.authentication.getLoggedInUser();
 } catch (error) {
   if (error.status === 401) {
     // Handle authentication error

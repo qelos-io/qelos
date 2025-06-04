@@ -69,7 +69,7 @@ export default class QlWorkspaces extends BaseSDK {
 
   activate(workspaceId: string): Promise<IWorkspace> {
     return this.callJsonApi<IWorkspace>(
-      `${this.relativePath}/${workspaceId}`,
+      `${this.relativePath}/${workspaceId}/activate`,
       {
         method: 'post',
         headers: {'content-type': 'application/json'},

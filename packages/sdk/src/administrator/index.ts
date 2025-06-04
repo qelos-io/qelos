@@ -9,6 +9,7 @@ import QlAdminWorkspaces from './workspaces';
 import QlManageBlueprints from './manage-blueprints';
 import { QlRoles } from './roles';
 import QlIntegrationSources from './integration-sources';
+import QlManagePlugins from './manage-plugins';
 
 export default class QelosAdministratorSDK<T = any> extends QelosSDK {
   users: QlUsers<T>;
@@ -20,6 +21,7 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
   adminWorkspaces: QlAdminWorkspaces;
   roles: QlRoles;
   integrationSources: QlIntegrationSources;
+  managePlugins: QlManagePlugins;
 
   constructor(options: QelosSDKOptions) {
     super(options);
@@ -32,6 +34,7 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
     this.adminWorkspaces = new QlAdminWorkspaces(options);
     this.roles = new QlRoles(options);
     this.integrationSources = new QlIntegrationSources(options);
+    this.managePlugins = new QlManagePlugins(options);
 
     if (!options.extraQueryParams) {
       options.extraQueryParams = () => ({

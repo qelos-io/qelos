@@ -1,0 +1,22 @@
+{
+  "name": "api-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.ts",
+  "type": "commonjs",
+  "engines": {
+    "node": ">20",
+    "npm": ">9"
+  },
+  "scripts": {
+    "dev": "tsx watch ./server.ts",
+    "start": "node --import tsx ./server.ts"
+  },
+  "dependencies": {
+    "@qelos/plugin-play": "^3.7.7",
+    "tsx": "^4.19.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7"
+  }
+}
