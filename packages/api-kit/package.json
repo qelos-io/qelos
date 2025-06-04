@@ -18,7 +18,7 @@
     "express": "4.19.2",
     "morgan": "^1.10.0"
   },
-  "gitHead": "dc75ba76bdb68c07b640d4469d9dffecf61759b1",
+  "gitHead": "4f4acba1f01d2659431e3149cc6efa927926c5f1",
   "devDependencies": {
     "@types/node": "^20.12.8",
     "typescript": "^5.4.5"

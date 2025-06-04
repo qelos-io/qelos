@@ -33,7 +33,7 @@
     "@types/node": "^16.11.22",
     "typescript": "^4.9.5"
   },
-  "gitHead": "dc75ba76bdb68c07b640d4469d9dffecf61759b1",
+  "gitHead": "4f4acba1f01d2659431e3149cc6efa927926c5f1",
   "bundledDependencies": [
     "@qelos/api-kit",
     "@qelos/api-proxy-middleware",
