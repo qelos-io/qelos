@@ -11,22 +11,9 @@ import { getUser, getWorkspaces } from './users';
 import { callIntegrationTarget } from './integration-target-call';
 import { hookEvents } from './hook-events';
 import { getBlueprintEntities, getBlueprintEntity } from './no-code-service';
+import { executeDataManipulation } from './data-manipulation-service';
 
 const ALL = '*';
-
-async function processMapRecursively(value: any, data: any): Promise<any> {
-  if (typeof value === 'object' && value !== null) {
-    const result: any = Array.isArray(value) ? [] : {};
-    for (const [k, v] of Object.entries(value)) {
-      result[k] = await processMapRecursively(v, data);
-    }
-    return result;
-  } else if (typeof value === 'string') {
-    // If it's a string, treat it as a JQ expression
-    return await jq.run(value, data, { output: 'json', input: 'json' });
-  }
-  return value;
-}
 
 function executePluginsSubscribedWebhooks(platformEvent: IEvent, awaitedPlugins: IPlugin[]) {
   const emittedEventContent = JSON.stringify(platformEvent.toObject());
@@ -102,46 +89,7 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
     }
     logger.log('calculating integration data');
     // every step in data manipulation should be executed in order, asynchronously
-    const calculatedData = await integration.dataManipulation.reduce(async (acc, { map, populate, clean, abort }) => {
-      if (typeof abort === 'boolean' && abort) {
-        return { abort };
-      }        
-      const previousData = await acc;
-      if (typeof abort === 'string') {
-        try {
-          const abortValue = abort === 'true' || await processMapRecursively(abort, previousData);
-          if (abortValue) {
-            return { abort: true };
-          }
-        } catch (err) {
-          logger.error('failed to evaluate abort condition', err);
-        }
-      }
-      const data = clean ? {} : previousData;
-      await Promise.all([
-        ...Object.entries(map || {}).map(async ([key, value]) => {
-          data[key] = await processMapRecursively(value, previousData);
-        }),
-        ...Object.entries(populate || {}).map(async ([key, { source, blueprint }]) => {
-          if (typeof previousData[key] === 'undefined') {
-            return;
-          }
-          if (source === 'user') {
-            data[key] = await getUser(platformEvent.tenant, previousData[key])
-          } else if (source === 'workspace') {
-            // populate data from given object using qelos source. If blueprint is provided, it will be used to fetch the blueprint entity
-            data[key] = await getWorkspaces(platformEvent.tenant, previousData[key])
-          } else if (source === 'blueprintEntity' && blueprint) {
-            data[key] = await (getBlueprintEntity(platformEvent.tenant, blueprint, previousData[key]))
-            // populate data from given object using qelos source. If blueprint is provided, it will be used to fetch the blueprint entity
-          } else if (source === 'blueprintEntities' && blueprint) {
-            data[key] = await (getBlueprintEntities(platformEvent.tenant, blueprint, previousData[key]))
-          }
-        })
-      ]);
-
-      return data
-    }, event);
+    const calculatedData = await executeDataManipulation(platformEvent.tenant, event, integration.dataManipulation);
 
     logger.log('calculated integration data', typeof calculatedData);
 

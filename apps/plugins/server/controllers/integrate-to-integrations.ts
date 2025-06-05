@@ -77,7 +77,8 @@ export async function chatCompletion(req, res) {
   ];
 
   // Common options for both streaming and non-streaming requests
-  const options = {
+  const options = await executeDataManipulation(integration.tenant, {
+    user: req.user,
     messages: preparedMessages,
     model: integration.trigger.details.model || source.metadata.defaultModel,
     temperature: integration.trigger.details.temperature,
@@ -85,7 +86,17 @@ export async function chatCompletion(req, res) {
     frequency_penalty: integration.trigger.details.frequency_penalty,
     presence_penalty: integration.trigger.details.presence_penalty,
     stop: integration.trigger.details.stop,
-  };
+  }, integration.dataManipulation);
+
+  const chatOptions = {
+    model: options.model,
+    messages: options.messages,
+    temperature: options.temperature,
+    top_p: options.top_p,
+    frequency_penalty: options.frequency_penalty,
+    presence_penalty: options.presence_penalty,
+    stop: options.stop,
+  }
 
   try {
     if (useSSE) {
@@ -104,7 +115,7 @@ export async function chatCompletion(req, res) {
       sendSSE({ type: 'connection_established' });
 
       // Get the stream from the AI service
-      const stream = await aiService.streamChatCompletion(options);
+      const stream = await aiService.streamChatCompletion(chatOptions);
 
       // Handle different AI service providers
       if (integration.kind[0] === IntegrationSourceKind.OpenAI) {
@@ -151,7 +162,7 @@ export async function chatCompletion(req, res) {
       res.end();
     } else {
       // Non-streaming response (original behavior)
-      const response = await aiService.chatCompletion(options);
+      const response = await aiService.chatCompletion(chatOptions);
       res.json(response).end();
     }
   } catch (error) {
