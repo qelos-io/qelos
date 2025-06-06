@@ -57,6 +57,14 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     return { clientId, scope };
   }
 
+  if (kind === IntegrationSourceKind.Facebook) {
+    const { clientId, scope } = metadata;
+    if (!clientId || typeof clientId !== 'string' || !scope || typeof scope !== 'string') {
+      throw new Error('Invalid Facebook metadata: clientId and scope are required.');
+    }
+    return { clientId, scope };
+  }
+
   if (kind === IntegrationSourceKind.N8n) {
     const { url } = metadata;
     if (typeof url !== 'string') {
