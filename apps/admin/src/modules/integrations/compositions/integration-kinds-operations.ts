@@ -7,6 +7,11 @@ import {
 
 export function useIntegrationKindsTargetOperations() {
   const operations: Record<IntegrationSourceKind, { label, name, details? }[] | undefined> = {
+    [IntegrationSourceKind.Facebook]: [
+      // { label: 'Get User Profile', name: 'getUserProfile', details: 'Get user profile information' },
+      // { label: 'Get Posts', name: 'getPosts', details: 'Get user posts' },
+      // { label: 'Post Message', name: 'postMessage', details: 'Post a message to user wall' },
+    ],
     [IntegrationSourceKind.Http]: [
       {
         label: 'Make HTTP Request', name: HttpTargetOperation.makeRequest, details: {
@@ -90,6 +95,7 @@ export function useIntegrationKindsTriggerOperations() {
     ],
     [IntegrationSourceKind.N8n]: [],
     [IntegrationSourceKind.LinkedIn]: [],
+    [IntegrationSourceKind.Facebook]: [],
     [IntegrationSourceKind.OpenAI]: [
       {
         name: 'chatCompletion',

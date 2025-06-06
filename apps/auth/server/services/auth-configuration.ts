@@ -14,7 +14,10 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
         showRegisterPage: false,
         allowSocialAutoRegistration: true,
         additionalUserFields: [],
-        socialLoginsSources: {},
+        socialLoginsSources: {
+          linkedin: null,
+          facebook: null,
+        },
       };
     } catch {
       value = {
@@ -24,7 +27,10 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
         showRegisterPage: false,
         allowSocialAutoRegistration: true,
         additionalUserFields: [],
-        socialLoginsSources: {},
+        socialLoginsSources: {
+          linkedin: null,
+          facebook: null,
+        },
       };
     }
     return JSON.stringify(value);

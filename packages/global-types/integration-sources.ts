@@ -6,7 +6,8 @@ export enum IntegrationSourceKind {
   Supabase = 'supabase',
   LinkedIn = 'linkedin',
   Http = 'http',
-  ClaudeAi = 'claudeai'
+  ClaudeAi = 'claudeai',
+  Facebook = 'facebook'
 }
 
 export interface IIntegrationSource {
@@ -112,6 +113,18 @@ export interface IEmailSource extends IIntegrationSource {
     pop3: string;
     smtp: string;
     senderName: string;
+  };
+}
+
+export interface IFacebookSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.Facebook;
+  authentication: {
+    clientSecret: string;
+  };
+  metadata: {
+    clientId: string;
+    scope: string;
   };
 }
 
