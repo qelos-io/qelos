@@ -8,6 +8,7 @@ import N8nForm from './components/forms/N8nForm.vue';
 import EmailForm from './components/forms/EmailForm.vue';
 import HttpForm from './components/forms/HttpForm.vue';
 import ClaudeAiForm from './components/forms/ClaudeAIForm.vue';
+import FacebookForm from './components/forms/FacebookForm.vue';
 
 const props = defineProps<{
   modelValue: any;
@@ -26,6 +27,7 @@ const formComponentMap = {
   n8n: N8nForm,
   email: EmailForm,
   http: HttpForm,
+  facebook: FacebookForm,
 };
 
 const SelectedFormComponent = computed(() => formComponentMap[props.kind] || null);

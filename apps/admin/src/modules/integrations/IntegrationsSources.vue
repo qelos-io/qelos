@@ -86,7 +86,7 @@ const deleteConnection = useConfirmAction(deleteConnectionBase, {
 });
 
 function getDefaultMetadata(kind: IntegrationSourceKind) {
-  if (kind === 'linkedin') {
+  if (kind === 'linkedin' || kind === 'facebook') {
     return {
       scope: 'openid email profile',
     };
