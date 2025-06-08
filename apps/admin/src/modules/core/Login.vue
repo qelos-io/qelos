@@ -43,7 +43,7 @@ import { IAuthConfigurationMetadata } from '@qelos/global-types';
 import ContentBox from '../pre-designed/components/ContentBox.vue';
 
 const props = defineProps<{
-  authConfig: IAuthConfigurationMetadata
+  authConfig?: IAuthConfigurationMetadata
 }>();
 
 const authStore = useAuthConfiguration();

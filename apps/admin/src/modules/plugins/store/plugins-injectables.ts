@@ -20,9 +20,8 @@ export function usePluginsInjectables() {
   window['getSdk'] = () => sdk;
 
   window['registerComponent'] = (name: string, component: any) => {
-    pluginsStore.incrementComponentUpdates();
+    pluginsStore.incrementComponentUpdates(name);
     appContext.app.component(name, component);
-
   }
 
   window['Vue'] = vue;

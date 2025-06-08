@@ -2,13 +2,23 @@ import { computed } from 'vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { useRoute } from 'vue-router';
 import { isEditingEnabled } from '@/modules/core/store/auth';
+import { usePluginsStore } from '@/modules/plugins/store/pluginsStore';
 
 const editableContent = document.createElement('editable-content');
-
+const selector = 'p, h1, h2, h3, h4, h5, h6, div, remove-confirmation, block-item, empty-state';
 
 export function useSingleItemCrud() {
   const mfes = usePluginsMicroFrontends();
+  const pluginsStore = usePluginsStore();
   const route = useRoute()
+
+  const editableElementsSelector = computed(() => {
+    const customComponents = pluginsStore.loadedCustomComponents;
+    if (!customComponents.length) {
+      return selector;
+    }
+    return `${selector}, ${customComponents.join(', ')}`;
+  });
 
   const crud = computed(() => {
     const crud = route.meta.crud as any || { display: {} };
@@ -36,7 +46,7 @@ export function useSingleItemCrud() {
   }
 
   function convertToEditableContent(template: HTMLTemplateElement) {
-    Array.from(template.content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, div, remove-confirmation, block-item, empty-state')).forEach((el) => {
+    Array.from(template.content.querySelectorAll(editableElementsSelector.value)).forEach((el) => {
       const newEl = editableContent.cloneNode() as HTMLElement;
       el.replaceWith(newEl);
       el.getAttributeNames().forEach((attr) => {

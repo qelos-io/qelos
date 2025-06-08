@@ -48,7 +48,9 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
     app.use(service.proxies, getProxy(getProxyTarget(service)));
   }
 
-  const indexHtmlPromise = fetch(getProxyTarget(adminPanel) + '/index.html').then(res => res.text())
+  const indexHtmlPromise = fetch(getProxyTarget(adminPanel) + '/index.html')
+    .then(res => res.text())
+    .then(str => str.replace("NODE_ENV:'development'", `NODE_ENV:'${process.env.NODE_ENV || 'development'}'`))
 
   const defaultApplicationHost = new URL(applicationUrl).host;
   const meUrl = getProxyTarget(authService) + '/api/me';
