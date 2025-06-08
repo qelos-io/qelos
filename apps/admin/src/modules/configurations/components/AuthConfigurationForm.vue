@@ -149,7 +149,7 @@
             </FormInput>
           </BlockItem>
           <BlockItem class="flex-1 social-login-container">
-            <div v-if="sourcedLoaded && !linkedInSources?.length">
+            <div v-if="sourcedLoaded && (!linkedInSources?.length)">
               <div class="social-provider-header">
                 <font-awesome-icon :icon="['fab', 'linkedin']" class="social-icon linkedin"/>
                 <span class="pad-start">{{ $t('LinkedIn') }}</span>
@@ -177,6 +177,38 @@
               </template>
               <template #help>
                 <span class="help-text">{{ $t('Select the LinkedIn integration to use for social login') }}</span>
+              </template>
+            </FormInput>
+          </BlockItem>
+          <BlockItem class="flex-1 social-login-container">
+            <div v-if="sourcedLoaded && !facebookSources?.length">
+              <div class="social-provider-header">
+                <font-awesome-icon :icon="['fab', 'facebook']" class="social-icon facebook"/>
+                <span class="pad-start">{{ $t('Facebook') }}</span>
+              </div>
+              <el-alert :closable="false" type="info">
+                {{ $t('You have not integrated any Facebook connections.') }}
+                <router-link
+                  class="primary-link"
+                  :to="{ name: 'integrations-sources', params: { kind: 'facebook' } }">
+                  {{ $t('Navigate to Facebook Connections') }}
+                </router-link>
+                {{ $t('to create one.') }}
+              </el-alert>
+            </div>
+            <FormInput v-else v-model="edited.socialLoginsSources.facebook"
+                      placeholder="Select Facebook Integration Source"
+                      type="select" class="social-input">
+              <template #pre>
+                <font-awesome-icon :icon="['fab', 'facebook']" class="social-icon facebook"/>
+                <span class="pad-start">{{ $t('Facebook') }}</span>
+              </template>
+              <template #options>
+                <el-option :label="`(${$t('none')})`" :value="null"/>
+                <el-option v-for="source in facebookSources" :key="source._id" :label="source.name" :value="source._id"/>
+              </template>
+              <template #help>
+                <span class="help-text">{{ $t('Select the Facebook integration to use for social login') }}</span>
               </template>
             </FormInput>
           </BlockItem>
@@ -281,6 +313,10 @@ const { groupedSources, loaded: sourcedLoaded } = toRefs(useIntegrationSourcesSt
 
 const linkedInSources = computed(() => {
   return groupedSources.value[IntegrationSourceKind.LinkedIn] || []
+})  
+
+const facebookSources = computed(() => {
+  return groupedSources.value[IntegrationSourceKind.Facebook] || []
 })
 
 // Computed property to check if any social login is configured 
@@ -584,6 +620,9 @@ async function save() {
   
   &.linkedin {
     color: #0077b5;
+  }
+  &.facebook {
+    color: #1877f2;
   }
 }
 
