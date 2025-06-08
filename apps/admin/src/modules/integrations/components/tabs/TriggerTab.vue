@@ -5,7 +5,8 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { TriggerOperation, useIntegrationKindsTriggerOperations } from '@/modules/integrations/compositions/integration-kinds-operations';
-import { OpenAITargetOperation, IntegrationSourceKind } from '@qelos/global-types';
+import { OpenAITargetOperation, IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
+import { ElMessage } from 'element-plus';
 
 const props = defineProps<{
   modelValue: any;
@@ -51,6 +52,17 @@ const initializeSystemMessage = () => {
   } else {
     systemMessage.value = '';
   }
+};
+
+// Copy text to clipboard
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      ElMessage.success('Copied to clipboard');
+    })
+    .catch(() => {
+      ElMessage.error('Failed to copy');
+    });
 };
 
 // Update system message in pre_messages array
@@ -221,113 +233,25 @@ onMounted(() => {
     <div v-if="modelValue.operation" class="section-container">
       <h4>{{ $t('Configuration') }}</h4>
       
-      <!-- OpenAI Chat Completion Form -->
-      <div v-if="selectedTriggerSource?.kind === 'openai' && modelValue.operation === 'chatCompletion'" class="chat-completion-form">
-        <!-- Model Selection -->
-        <FormInput
-          v-model="modelValue.details.model"
-          type="select"
-          :options="openAiModelOptions"
-          label="Model"
-          help-text="Select the OpenAI model to use for chat completion"
-        />
-        
-        <!-- Max Tokens -->
-        <FormInput
-          v-model="modelValue.details.max_tokens"
-          type="number"
-          label="Max Tokens"
-          help-text="Maximum number of tokens to generate (1-4000)"
-          :min="1"
-          :max="4000"
-        />
-        
-        <!-- Temperature Slider -->
-        <div class="slider-container">
-          <label>Temperature: {{ modelValue.details.temperature }}</label>
-          <el-slider
-            v-model="modelValue.details.temperature"
-            :min="0"
-            :max="1"
-            :step="0.1"
-            show-stops
-          />
-          <div class="slider-description">
-            <span>More precise</span>
-            <span>More creative</span>
-          </div>
-        </div>
-        
-        <!-- System Message -->
-        <div class="system-message-container">
-          <label>System Message</label>
-          <p class="help-text">Define the AI assistant's behavior and role</p>
+      <!-- Qelos Chat Completion Form -->
+      <div v-if="selectedTriggerSource?.kind === IntegrationSourceKind.Qelos && modelValue.operation === QelosTriggerOperation.chatCompletion" class="chat-completion-form">
+        <div v-if="props.modelValue._id" class="chat-completion-url">
+          <h4>Chat Completion URL</h4>
           <el-input
-            v-model="systemMessage"
-            type="textarea"
-            :rows="4"
-            placeholder="You are a helpful assistant..."
-            @input="updateSystemMessage"
-          />
+            :value="`/api/integrate/${props.modelValue._id}/chat-completion`"
+            readonly
+            class="url-display"
+          >
+            <template #append>
+              <el-button @click="copyToClipboard(`/api/integrate/${props.modelValue._id}/chat-completion`)">
+                <i class="el-icon-copy-document"></i> Copy
+              </el-button>
+            </template>
+          </el-input>
+          <p class="help-text">Use this URL to access your chat completion API endpoint</p>
         </div>
-        
-        <!-- Advanced Options Toggle -->
-        <div class="advanced-options">
-          <el-divider content-position="center">
-            <el-button type="text" @click="showAdvancedOptions = !showAdvancedOptions">
-              {{ showAdvancedOptions ? 'Hide' : 'Show' }} Advanced Options
-              <i :class="showAdvancedOptions ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
-            </el-button>
-          </el-divider>
-          
-          <!-- Advanced Options Content -->
-          <div v-if="showAdvancedOptions" class="advanced-options-content">
-            <!-- Top P Slider -->
-            <div class="slider-container">
-              <label>Top P: {{ modelValue.details.top_p }}</label>
-              <el-slider
-                v-model="modelValue.details.top_p"
-                :min="0"
-                :max="1"
-                :step="0.1"
-                show-stops
-              />
-            </div>
-            
-            <!-- Frequency Penalty Slider -->
-            <div class="slider-container">
-              <label>Frequency Penalty: {{ modelValue.details.frequency_penalty }}</label>
-              <el-slider
-                v-model="modelValue.details.frequency_penalty"
-                :min="0"
-                :max="2"
-                :step="0.1"
-                show-stops
-              />
-            </div>
-            
-            <!-- Presence Penalty Slider -->
-            <div class="slider-container">
-              <label>Presence Penalty: {{ modelValue.details.presence_penalty }}</label>
-              <el-slider
-                v-model="modelValue.details.presence_penalty"
-                :min="0"
-                :max="2"
-                :step="0.1"
-                show-stops
-              />
-            </div>
-            
-            <!-- Raw JSON Editor Toggle -->
-            <el-button type="primary" plain @click="showRawJson = !showRawJson" class="mt-3">
-              {{ showRawJson ? 'Hide' : 'Show' }} Raw JSON
-            </el-button>
-            
-            <!-- Raw JSON Editor -->
-            <div v-if="showRawJson" class="mt-3">
-              <Monaco :modelValue="triggerDetailsText" @update:modelValue="updateTriggerDetails" height="300px" language="json" />
-            </div>
-          </div>
+        <div v-else class="chat-completion-info">
+          <p class="help-text">The chat completion URL will be available after saving the integration</p>
         </div>
       </div>
       
@@ -431,5 +355,27 @@ onMounted(() => {
   border: 1px dashed var(--el-border-color);
   border-radius: 4px;
   margin-top: 10px;
+}
+
+.chat-completion-url {
+  margin-bottom: 20px;
+}
+
+.chat-completion-url h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.url-display {
+  font-family: monospace;
+  background-color: var(--el-bg-color-page);
+}
+
+.chat-completion-info {
+  padding: 15px;
+  background-color: var(--el-bg-color-page);
+  border-radius: 4px;
+  margin-bottom: 20px;
 }
 </style>

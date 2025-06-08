@@ -7,15 +7,14 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, { required:
     webhook: {
       required: ['source', 'kind', 'eventName'],
       optional: []
+    },
+    chatCompletion: {
+      required: [],
+      optional: []
     }
   },
   [IntegrationSourceKind.ClaudeAi]: null,
-  [IntegrationSourceKind.OpenAI]: {
-    chatCompletion: {
-      required: ['max_tokens'],
-      optional: ['model', 'pre_messages', 'temperature', 'top_p', 'frequency_penalty', 'presence_penalty', 'stop']
-    }
-  },
+  [IntegrationSourceKind.OpenAI]: null,
   [IntegrationSourceKind.N8n]: null,
   [IntegrationSourceKind.Email]: null,
   [IntegrationSourceKind.Supabase]: null,

@@ -33,14 +33,100 @@ const httpBodyJson = ref('{}');
 
 const openAiDetails = ref({
   model: 'gpt-4o',
-  system: '',
   temperature: 0.7,
   top_p: 1,
   frequency_penalty: 0,
   presence_penalty: 0,
   max_tokens: 1000,
-  response_format: { type: 'text' }
+  stop: undefined,
+  pre_messages: []
 });
+
+// OpenAI model options
+const openAiModelOptions = [
+  { label: 'GPT-4o', value: 'gpt-4o' },
+  { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' },
+  { label: 'GPT-4', value: 'gpt-4' },
+  { label: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo' },
+  { label: 'GPT-3.5 Turbo 16k', value: 'gpt-3.5-turbo-16k' },
+  { label: 'GPT-4 Vision', value: 'gpt-4-vision-preview' },
+  { label: 'GPT-4 32k', value: 'gpt-4-32k' }
+];
+
+// Import icons
+import {
+  Service as CustomerSupportIcon,
+  Document as DocumentIcon,
+  Cpu as SaasIcon,
+  DataAnalysis as DataAnalystIcon,
+  Operation as ConsultantIcon,
+  ChatDotRound as DefaultChatIcon
+} from '@element-plus/icons-vue';
+
+// Pre-defined chat personalities with complete configurations
+const chatPersonalities = [
+  {
+    name: 'Customer Support Agent',
+    icon: CustomerSupportIcon,
+    description: 'Friendly and helpful support agent that provides clear solutions',
+    systemMessage: 'You are a helpful customer support agent. Your goal is to assist users with their questions and concerns in a friendly, professional manner. Provide clear explanations and solutions to their problems. If you don\'t know the answer, acknowledge that and suggest where they might find more information.',
+    temperature: 0.7,
+    max_tokens: 1000,
+    top_p: 1,
+    frequency_penalty: 0,
+    presence_penalty: 0
+  },
+  {
+    name: 'Technical Documentation Writer',
+    icon: DocumentIcon,
+    description: 'Clear, precise technical explanations with structured responses',
+    systemMessage: 'You are a technical documentation writer. Your goal is to explain complex technical concepts in clear, concise language. Use examples where appropriate and structure your responses in a logical manner. Focus on accuracy and clarity above all else.',
+    temperature: 0.3,
+    max_tokens: 1500,
+    top_p: 0.9,
+    frequency_penalty: 0.1,
+    presence_penalty: 0
+  },
+  {
+    name: 'SaaS Product Expert',
+    icon: SaasIcon,
+    description: 'Specialized in multi-tenant applications and SaaS best practices',
+    systemMessage: 'You are a SaaS product expert specializing in multi-tenant applications. Your goal is to help users understand best practices for SaaS architecture, pricing models, user onboarding, and feature development. Provide practical advice based on industry standards and successful case studies.',
+    temperature: 0.6,
+    max_tokens: 1200,
+    top_p: 0.95,
+    frequency_penalty: 0,
+    presence_penalty: 0.1
+  },
+  {
+    name: 'Data Analyst',
+    icon: DataAnalystIcon,
+    description: 'Helps interpret data patterns and suggest visualization techniques',
+    systemMessage: 'You are a data analyst with expertise in interpreting and visualizing data. Your goal is to help users understand their data, identify patterns and insights, and make data-driven decisions. Suggest appropriate visualization techniques and analytical approaches based on the type of data and questions being asked.',
+    temperature: 0.4,
+    max_tokens: 1000,
+    top_p: 0.9,
+    frequency_penalty: 0.2,
+    presence_penalty: 0
+  },
+  {
+    name: 'Business Process Consultant',
+    icon: ConsultantIcon,
+    description: 'Identifies inefficiencies and suggests process improvements',
+    systemMessage: 'You are a business process consultant specializing in workflow optimization. Your goal is to help users identify inefficiencies in their current processes and suggest improvements. Focus on automation opportunities, integration points between systems, and ways to measure and track process performance.',
+    temperature: 0.5,
+    max_tokens: 1200,
+    top_p: 0.95,
+    frequency_penalty: 0.1,
+    presence_penalty: 0.1
+  }
+];
+
+// UI state variables for OpenAI chat completion form
+const showAdvancedOptions = ref(false);
+const showRawJson = ref(false);
+const systemMessage = ref('');
+const selectedPersonality = ref('');
 
 const qelosDetails = ref({
   eventName: '',
@@ -200,6 +286,25 @@ const syncHttpDetailsToTargetDetails = () => {
 const syncOpenAiDetailsToTargetDetails = () => {
   const newModelValue = { ...props.modelValue };
   newModelValue.details = { ...openAiDetails.value };
+  
+  // Ensure pre_messages array exists and contains system message
+  if (!newModelValue.details.pre_messages) {
+    newModelValue.details.pre_messages = [];
+  }
+  
+  // Update or add system message if it exists
+  if (systemMessage.value) {
+    const systemMsgIndex = newModelValue.details.pre_messages.findIndex(msg => msg.role === 'system');
+    if (systemMsgIndex >= 0) {
+      newModelValue.details.pre_messages[systemMsgIndex].content = systemMessage.value;
+    } else {
+      newModelValue.details.pre_messages.push({
+        role: 'system',
+        content: systemMessage.value
+      });
+    }
+  }
+  
   emit('update:modelValue', newModelValue);
 };
 
@@ -207,6 +312,61 @@ const syncQelosDetailsToTargetDetails = () => {
   const newModelValue = { ...props.modelValue };
   newModelValue.details = { ...qelosDetails.value };
   emit('update:modelValue', newModelValue);
+};
+
+// Initialize system message from pre_messages when component mounts or details change
+const initializeSystemMessage = () => {
+  if (selectedTargetSource.value?.kind === IntegrationSourceKind.OpenAI && 
+      props.modelValue.operation === OpenAITargetOperation.chatCompletion && 
+      props.modelValue.details?.pre_messages?.length) {
+    const systemMsg = props.modelValue.details.pre_messages.find(msg => msg.role === 'system');
+    systemMessage.value = systemMsg?.content || '';
+  } else {
+    systemMessage.value = '';
+  }
+};
+
+// Update system message in pre_messages array
+const updateSystemMessage = () => {
+  if (!props.modelValue.details.pre_messages) {
+    props.modelValue.details.pre_messages = [];
+  }
+  
+  const newModelValue = { ...props.modelValue };
+  const systemMsgIndex = newModelValue.details.pre_messages.findIndex(msg => msg.role === 'system');
+  
+  if (systemMsgIndex >= 0) {
+    newModelValue.details.pre_messages[systemMsgIndex].content = systemMessage.value;
+  } else {
+    newModelValue.details.pre_messages.push({
+      role: 'system',
+      content: systemMessage.value
+    });
+  }
+  
+  emit('update:modelValue', newModelValue);
+};
+
+// Apply selected personality template with all its properties
+const applyPersonality = () => {
+  if (!selectedPersonality.value) {
+    return;
+  }
+  
+  const personality = chatPersonalities.find(p => p.name === selectedPersonality.value);
+  if (personality) {
+    // Apply all personality properties
+    systemMessage.value = personality.systemMessage;
+    openAiDetails.value.temperature = personality.temperature;
+    openAiDetails.value.max_tokens = personality.max_tokens;
+    openAiDetails.value.top_p = personality.top_p;
+    openAiDetails.value.frequency_penalty = personality.frequency_penalty;
+    openAiDetails.value.presence_penalty = personality.presence_penalty;
+    
+    // Update the form
+    updateSystemMessage();
+    syncOpenAiDetailsToTargetDetails();
+  }
 };
 
 // Initialize target details based on selected kind and operation
@@ -239,14 +399,18 @@ const initTargetDetails = () => {
   } else if (selectedTargetSource.value.kind === IntegrationSourceKind.OpenAI) {
     openAiDetails.value = {
       model: details.model || 'gpt-4o',
-      system: details.system || '',
       temperature: details.temperature ?? 0.7,
       top_p: details.top_p ?? 1,
       frequency_penalty: details.frequency_penalty ?? 0,
       presence_penalty: details.presence_penalty ?? 0,
       max_tokens: details.max_tokens ?? 1000,
-      response_format: details.response_format || { type: 'text' }
+      stop: details.stop,
+      pre_messages: []
     };
+    if (details.pre_messages?.length) {
+      openAiDetails.value.pre_messages = [...details.pre_messages];
+      initializeSystemMessage();
+    }
   } else if (selectedTargetSource.value.kind === IntegrationSourceKind.Qelos) {
     qelosDetails.value = {
       eventName: details.eventName || '',
@@ -385,50 +549,9 @@ onMounted(() => {
         </el-tabs>
       </div>
       
-      <!-- OpenAI Target - Chat Completion -->
+      <!-- OpenAI Target - Chat Completion - This section intentionally left empty as we're using the consolidated form below -->
       <div v-else-if="selectedTargetSource.kind === IntegrationSourceKind.OpenAI && modelValue.operation === OpenAITargetOperation.chatCompletion" class="openai-target-config">
-        <el-form-item :label="$t('Model')">
-          <el-select v-model="openAiDetails.model">
-            <el-option value="gpt-4o" label="GPT-4o" />
-            <el-option value="gpt-4-turbo" label="GPT-4 Turbo" />
-            <el-option value="gpt-3.5-turbo" label="GPT-3.5 Turbo" />
-          </el-select>
-        </el-form-item>
-        
-        <el-form-item :label="$t('System Message')">
-          <el-input v-model="openAiDetails.system" type="textarea" :rows="3" placeholder="System instructions for the AI" />
-        </el-form-item>
-        
-        <el-form-item :label="$t('Temperature')">
-          <el-slider v-model="openAiDetails.temperature" :min="0" :max="2" :step="0.1" />
-        </el-form-item>
-        
-        <el-collapse>
-          <el-collapse-item :title="$t('Advanced Settings')" name="1">
-            <el-form-item :label="$t('Max Tokens')">
-              <el-input-number v-model="openAiDetails.max_tokens" :min="1" :max="4000" />
-            </el-form-item>
-            
-            <el-form-item :label="$t('Top P')">
-              <el-slider v-model="openAiDetails.top_p" :min="0" :max="1" :step="0.05" />
-            </el-form-item>
-            
-            <el-form-item :label="$t('Frequency Penalty')">
-              <el-slider v-model="openAiDetails.frequency_penalty" :min="0" :max="2" :step="0.1" />
-            </el-form-item>
-            
-            <el-form-item :label="$t('Presence Penalty')">
-              <el-slider v-model="openAiDetails.presence_penalty" :min="0" :max="2" :step="0.1" />
-            </el-form-item>
-            
-            <el-form-item :label="$t('Response Format')">
-              <el-select v-model="openAiDetails.response_format.type">
-                <el-option value="text" label="Text" />
-                <el-option value="json_object" label="JSON Object" />
-              </el-select>
-            </el-form-item>
-          </el-collapse-item>
-        </el-collapse>
+        <!-- Empty - Using consolidated form below -->
       </div>
       
       <!-- Qelos Target Operations -->
@@ -554,6 +677,155 @@ onMounted(() => {
         </div>
       </div>
       
+      <!-- OpenAI Chat Completion Form (Consolidated) -->
+      <div v-if="selectedTargetSource?.kind === IntegrationSourceKind.OpenAI && modelValue.operation === OpenAITargetOperation.chatCompletion" class="chat-completion-form">
+        <!-- Personality Selection Cards -->
+        <div class="personality-cards-section">
+          <label>Choose a Personality Template</label>
+          <p class="help-text">Select a pre-defined personality or customize your own</p>
+          
+          <div class="personality-cards">
+            <div 
+              v-for="personality in chatPersonalities" 
+              :key="personality.name"
+              class="personality-card" 
+              :class="{ 'selected': selectedPersonality === personality.name }"
+              @click="selectedPersonality = personality.name; applyPersonality()"
+            >
+              <el-icon class="personality-icon">
+                <component :is="personality.icon" />
+              </el-icon>
+              <h4>{{ personality.name }}</h4>
+              <p>{{ personality.description }}</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Model Selection -->
+        <FormInput
+          v-model="openAiDetails.model"
+          type="select"
+          :options="openAiModelOptions"
+          label="Model"
+          help-text="Select the OpenAI model to use for chat completion"
+          @change="syncOpenAiDetailsToTargetDetails"
+        />
+        
+        <!-- Temperature Slider -->
+        <div class="slider-container">
+          <label>Temperature: {{ openAiDetails.temperature }}</label>
+          <el-slider
+            v-model="openAiDetails.temperature"
+            :min="0"
+            :max="1"
+            :step="0.1"
+            show-stops
+            @change="syncOpenAiDetailsToTargetDetails"
+          />
+          <div class="slider-description">
+            <span>More precise</span>
+            <span>More creative</span>
+          </div>
+        </div>
+        
+        <!-- Max Tokens -->
+        <FormInput
+          v-model="openAiDetails.max_tokens"
+          type="number"
+          label="Max Tokens"
+          help-text="Maximum number of tokens to generate (1-4000)"
+          :min="1"
+          :max="4000"
+          @change="syncOpenAiDetailsToTargetDetails"
+        />
+        
+        <!-- System Message -->
+        <div class="system-message-container">
+          <label>System Message</label>
+          <p class="help-text">Define the AI assistant's behavior and role</p>
+          <el-input
+            v-model="systemMessage"
+            type="textarea"
+            :rows="4"
+            placeholder="You are a helpful assistant..."
+            @input="updateSystemMessage"
+          />
+        </div>
+        
+        <!-- Advanced Options Toggle -->
+        <div class="advanced-options">
+          <el-divider content-position="center">
+            <el-button type="text" @click="showAdvancedOptions = !showAdvancedOptions">
+              {{ showAdvancedOptions ? 'Hide' : 'Show' }} Advanced Options
+              <i :class="showAdvancedOptions ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
+            </el-button>
+          </el-divider>
+          
+          <!-- Advanced Options Content -->
+          <div v-if="showAdvancedOptions" class="advanced-options-content">
+            <!-- Top P Slider -->
+            <div class="slider-container">
+              <label>Top P: {{ openAiDetails.top_p }}</label>
+              <el-slider
+                v-model="openAiDetails.top_p"
+                :min="0"
+                :max="1"
+                :step="0.1"
+                show-stops
+                @change="syncOpenAiDetailsToTargetDetails"
+              />
+            </div>
+            
+            <!-- Frequency Penalty Slider -->
+            <div class="slider-container">
+              <label>Frequency Penalty: {{ openAiDetails.frequency_penalty }}</label>
+              <el-slider
+                v-model="openAiDetails.frequency_penalty"
+                :min="0"
+                :max="2"
+                :step="0.1"
+                show-stops
+                @change="syncOpenAiDetailsToTargetDetails"
+              />
+            </div>
+            
+            <!-- Presence Penalty Slider -->
+            <div class="slider-container">
+              <label>Presence Penalty: {{ openAiDetails.presence_penalty }}</label>
+              <el-slider
+                v-model="openAiDetails.presence_penalty"
+                :min="0"
+                :max="2"
+                :step="0.1"
+                show-stops
+                @change="syncOpenAiDetailsToTargetDetails"
+              />
+            </div>
+            
+            <!-- Stop Sequences -->
+            <div class="form-group">
+              <label>Stop Sequences</label>
+              <p class="help-text">Optional sequences where the API will stop generating further tokens</p>
+              <el-input
+                v-model="openAiDetails.stop"
+                placeholder="Enter stop sequences"
+                @change="syncOpenAiDetailsToTargetDetails"
+              />
+            </div>
+            
+            <!-- Raw JSON Editor Toggle -->
+            <el-button type="primary" plain @click="showRawJson = !showRawJson" class="mt-3">
+              {{ showRawJson ? 'Hide' : 'Show' }} Raw JSON
+            </el-button>
+            
+            <!-- Raw JSON Editor -->
+            <div v-if="showRawJson" class="mt-3">
+              <Monaco :modelValue="targetDetailsText" @update:modelValue="updateTargetDetails" height="300px" language="json" />
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- Generic JSON Editor for other kinds or when no specific UI is available -->
       <div v-else class="generic-config">
         <Monaco v-model="targetDetailsText" height="300px" language="json" @input="updateTargetDetails" />
@@ -596,6 +868,57 @@ onMounted(() => {
 
 .mb-3 {
   margin-bottom: 15px;
+}
+
+.personality-cards-section {
+  margin-bottom: 20px;
+}
+
+.personality-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.personality-card {
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.personality-card:hover {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.personality-card.selected {
+  border-color: var(--el-color-primary);
+  background-color: var(--el-color-primary-light-9);
+}
+
+.personality-icon {
+  font-size: 28px;
+  margin-bottom: 10px;
+  color: var(--el-color-primary);
+}
+
+.personality-card h4 {
+  margin: 5px 0;
+  font-size: 16px;
+}
+
+.personality-card p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.4;
 }
 
 /* Local styles only */

@@ -36,7 +36,8 @@ const supportedSources = {
   [IntegrationSourceKind.ClaudeAi]: {
     [ClaudeAITargetOperation.chatCompletion]: {
       required: [],
-      optional: ['system',
+      optional: [
+        'system',
         'temperature',
         'top_p',
         'stop_sequences',
@@ -77,7 +78,10 @@ export async function validateIntegrationTarget(tenant: string, target: IIntegra
     throw new Error(`operation ${target.operation} does not exist on source of kind ${source.kind}`)
   }
   const hasMissingParams = params.required
-    .map(prop => typeof target.details[prop] === 'string')
+    .map(prop => { 
+      const type = typeof target.details[prop]
+      return type === 'string' || type === 'number' || type === 'boolean'
+    })
     .some(isValid => !isValid)
 
   if (hasMissingParams) {

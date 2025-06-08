@@ -92,6 +92,11 @@ export function useIntegrationKindsTriggerOperations() {
         ],
         details: { source: '*', kind: '*', eventName: '*' }
       },
+      {
+        name: QelosTriggerOperation.chatCompletion,
+        label: 'Chat Completion',
+        details: {}
+      },
     ],
     [IntegrationSourceKind.N8n]: [],
     [IntegrationSourceKind.LinkedIn]: [],

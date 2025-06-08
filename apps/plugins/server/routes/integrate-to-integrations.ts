@@ -11,7 +11,7 @@ export function integrateToIntegrationsRouter() {
   router
     .post('/api/integrate/:integrationId/chat-completion',
        AUTHENTICATION_MIDDLEWARES,
-       forceTriggerIntegrationKind([IntegrationSourceKind.OpenAI, IntegrationSourceKind.ClaudeAi]),
+       forceTriggerIntegrationKind([IntegrationSourceKind.Qelos]),
        getIntegrationToIntegrate,
        chatCompletion
     )

@@ -29,6 +29,7 @@ export enum HttpTargetOperation {
 
 export enum QelosTriggerOperation {
   webhook = 'webhook',
+  chatCompletion = 'chatCompletion',
 }
 
 export enum QelosTargetOperation {
@@ -38,6 +39,7 @@ export enum QelosTargetOperation {
   updateUser = 'updateUser',
   setUserRoles = 'setUserRoles',
   setWorkspaceLabels = 'setWorkspaceLabels',
+  
 }
 
 export enum OpenAITargetOperation {

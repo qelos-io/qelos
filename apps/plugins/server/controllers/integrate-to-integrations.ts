@@ -6,9 +6,10 @@ import { AIMessageTemplates } from "../services/ai-message-templates";
 import { AIResponseParser } from "../services/ai-response-parser";
 import logger from "../services/logger";
 
-export function forceTriggerIntegrationKind(kinds: IntegrationSourceKind[]) {
+export function forceTriggerIntegrationKind(kinds: IntegrationSourceKind[], operations?: string[]) {
   return (req, res, next) => {
     req.integrationTriggerKinds = kinds;
+    req.integrationTriggerOperations = operations;
     next();
   }
 } 
@@ -16,7 +17,7 @@ export function forceTriggerIntegrationKind(kinds: IntegrationSourceKind[]) {
 export async function getIntegrationToIntegrate(req, res, next) {
   try {
     const integration = await Integration
-      .findOne({ _id: req.params.integrationId, tenant: req.headers.tenant, 'kind.0': { $in: req.integrationTriggerKinds } })
+      .findOne({ _id: req.params.integrationId, tenant: req.headers.tenant, 'kind.0': { $in: req.integrationTriggerKinds }, 'trigger.operation': req.integrationTriggerOperations ? { $in: req.integrationTriggerOperations } : undefined })
       .populate('trigger.source')
       .populate('target.source')
       .lean()
@@ -52,7 +53,7 @@ export async function getIntegrationToIntegrate(req, res, next) {
       }
     }
 
-    req.integrationSourceAuthentication = await getEncryptedSourceAuthentication(req.headers.tenant, source.kind, source.authentication);
+    req.integrationSourceTargetAuthentication = await getEncryptedSourceAuthentication(req.headers.tenant, integration.target.source.kind, integration.target.source.authentication);
 
     next();
   } catch (e: any) { // Typed error for better access to message
@@ -63,39 +64,36 @@ export async function getIntegrationToIntegrate(req, res, next) {
 
 export async function chatCompletion(req, res) {
   const { integration } = req;
-  const { source } = integration.trigger;
+  const { source } = integration.target;
   const { messages } = req.body;
   const useSSE = req.query.stream === 'true';
 
-  const aiService = createAIService(integration.kind[0], req.integrationSourceAuthentication);
+  const aiService = createAIService(integration.kind[1], req.integrationSourceTargetAuthentication);
 
   // Prepare the messages array
-  const preparedMessages = [
+  const initialMessages = [
     ...(source.metadata.initialMessages || []), 
-    ...(integration.trigger.details.pre_messages || []), 
-    ...messages.filter(msg => msg && msg.role === 'user').map(msg => ({ role: 'user', content: msg.content }))
+    ...(integration.target.details.pre_messages || []), 
   ];
+
+  const safeUserMessages = messages
+    .filter(msg => msg && msg.role === 'user')
+    .map(msg => ({ role: 'user', content: msg.content }));
 
   // Common options for both streaming and non-streaming requests
   const options = await executeDataManipulation(integration.tenant, {
     user: req.user,
-    messages: preparedMessages,
-    model: integration.trigger.details.model || source.metadata.defaultModel,
-    temperature: integration.trigger.details.temperature,
-    top_p: integration.trigger.details.top_p,
-    frequency_penalty: integration.trigger.details.frequency_penalty,
-    presence_penalty: integration.trigger.details.presence_penalty,
-    stop: integration.trigger.details.stop,
+    messages: safeUserMessages,
   }, integration.dataManipulation);
 
   const chatOptions = {
-    model: options.model,
-    messages: options.messages,
-    temperature: options.temperature,
-    top_p: options.top_p,
-    frequency_penalty: options.frequency_penalty,
-    presence_penalty: options.presence_penalty,
-    stop: options.stop,
+    model: options.model || integration.target.details.model || source.metadata.defaultModel,
+    temperature: options.temperature || integration.target.details.temperature,
+    top_p: options.top_p || integration.target.details.top_p,
+    frequency_penalty: options.frequency_penalty || integration.target.details.frequency_penalty,
+    presence_penalty: options.presence_penalty || integration.target.details.presence_penalty,
+    stop: options.stop || integration.target.details.stop,
+    messages: initialMessages.concat(options.messages),
   }
 
   try {
