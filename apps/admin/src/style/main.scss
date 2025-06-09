@@ -4,6 +4,19 @@
 @use "forms";
 @use "element-ui-rtl";
 
+// Fix for Element Plus 2.10 tabs position
+.el-tabs {
+  &:not([tab-position]) {
+    .el-tabs__header {
+      order: -1; // Ensure header is always at the top
+    }
+  }
+  
+  .el-tabs__header {
+    order: -1; // Force tabs to be at the top
+  }
+}
+
 html {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   font-size: var(--base-font-size);
@@ -277,5 +290,5 @@ p {
   flex-wrap: wrap;
 }
 
-@import "content-list";
-@import "mobile";
+@import "content-list.scss";
+@import "mobile.scss";
