@@ -1,10 +1,11 @@
-import IntegrationSource from "../models/integration-source";
+import Integration from "../models/integration";
 import { getEncryptedSourceAuthentication } from "../services/source-authentication-service";
 import { IntegrationSourceKind } from "@qelos/global-types";
 import { createAIService } from "../services/ai-service";
 import { AIMessageTemplates } from "../services/ai-message-templates";
 import { AIResponseParser } from "../services/ai-response-parser";
 import logger from "../services/logger";
+import { executeDataManipulation } from "../services/data-manipulation-service";
 
 export function forceTriggerIntegrationKind(kinds: IntegrationSourceKind[], operations?: string[]) {
   return (req, res, next) => {
@@ -16,8 +17,14 @@ export function forceTriggerIntegrationKind(kinds: IntegrationSourceKind[], oper
 
 export async function getIntegrationToIntegrate(req, res, next) {
   try {
+    const query = {
+      _id: req.params.integrationId, 
+      tenant: req.headers.tenant,
+      'kind.0': { $in: req.integrationTriggerKinds },
+      // ...(req.integrationTriggerOperations ? { 'trigger.operation': { $in: req.integrationTriggerOperations } } : {}),
+    };
     const integration = await Integration
-      .findOne({ _id: req.params.integrationId, tenant: req.headers.tenant, 'kind.0': { $in: req.integrationTriggerKinds }, 'trigger.operation': req.integrationTriggerOperations ? { $in: req.integrationTriggerOperations } : undefined })
+      .findOne(query)
       .populate('trigger.source')
       .populate('target.source')
       .lean()
@@ -57,8 +64,7 @@ export async function getIntegrationToIntegrate(req, res, next) {
 
     next();
   } catch (e: any) { // Typed error for better access to message
-    logger.error("Error in getIntegrationSource:", e.message, e); // Use your logger
-    res.status(500).json({ message: 'Could not get integration source' }).end();
+    res.status(500).json({ message: 'Could not get integration' }).end();
   }
 }
 
@@ -68,23 +74,36 @@ export async function chatCompletion(req, res) {
   const { messages } = req.body;
   const useSSE = req.query.stream === 'true';
 
-  const aiService = createAIService(integration.kind[1], req.integrationSourceTargetAuthentication);
+  let aiService: AIService;
+
+  try {
+    aiService = createAIService(integration.kind[1], req.integrationSourceTargetAuthentication);
+    
+  } catch (e: any) {
+    res.status(500).json({ message: 'Could not get integration' }).end();
+  }
+
 
   // Prepare the messages array
   const initialMessages = [
-    ...(source.metadata.initialMessages || []), 
-    ...(integration.target.details.pre_messages || []), 
+    ...(source.metadata?.initialMessages || []), 
+    ...(integration.target?.details?.pre_messages || []), 
   ];
 
   const safeUserMessages = messages
-    .filter(msg => msg && msg.role === 'user')
-    .map(msg => ({ role: 'user', content: msg.content }));
+    .filter(msg => msg && msg.role !== 'system')
+    .map(msg => ({ role: msg.role, content: msg.content }));
 
-  // Common options for both streaming and non-streaming requests
-  const options = await executeDataManipulation(integration.tenant, {
+  // Common options for both streaming and non-streaming requests 
+  let options;
+  try {
+    options = await executeDataManipulation(integration.tenant, {
     user: req.user,
     messages: safeUserMessages,
   }, integration.dataManipulation);
+  } catch (e: any) {
+    res.status(500).json({ message: 'Could not calculate prompt' }).end();
+  }
 
   const chatOptions = {
     model: options.model || integration.target.details.model || source.metadata.defaultModel,
@@ -116,25 +135,29 @@ export async function chatCompletion(req, res) {
       const stream = await aiService.streamChatCompletion(chatOptions);
 
       // Handle different AI service providers
-      if (integration.kind[0] === IntegrationSourceKind.OpenAI) {
+      if (integration.kind[1] === IntegrationSourceKind.OpenAI) {
         // For OpenAI
         let fullContent = '';
         
-        for await (const chunk of stream) {
-          const content = chunk.choices[0]?.delta?.content || '';
-          fullContent += content;
-          
-          sendSSE({
-            type: 'chunk',
-            content,
-            fullContent,
-            chunk: chunk
-          });
+        try {
+          for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content || '';
+            fullContent += content;
+            
+            sendSSE({
+              type: 'chunk',
+              content,
+              fullContent,
+              chunk: chunk
+            });
+          }
+        } catch (e: any) {
+          sendSSE({ type: 'error', message: 'Error processing AI chat completion' });
         }
         
         // Send completion event
         sendSSE({ type: 'done', content: fullContent });
-      } else if (integration.kind[0] === IntegrationSourceKind.ClaudeAi) {
+      } else if (integration.kind[1] === IntegrationSourceKind.ClaudeAi) {
         // For Claude AI
         let fullContent = '';
         
@@ -164,8 +187,6 @@ export async function chatCompletion(req, res) {
       res.json(response).end();
     }
   } catch (error) {
-    logger.error("Error in chatCompletion:", error.message, error);
-    
     if (useSSE) {
       // Send error through SSE if we're in streaming mode
       res.write(`data: ${JSON.stringify({ type: 'error', message: 'Error processing AI chat completion' })}\n\n`);

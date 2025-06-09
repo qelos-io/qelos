@@ -10,6 +10,7 @@ import { toRef } from 'vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
 import MockStatsCard from '@/pre-designed/editor/MockStatsCard.vue';
+import AiChat from '@/modules/pre-designed/components/AiChat.vue';
 
 export interface EditorComponent {
   component: any;
@@ -256,6 +257,14 @@ export function useEditorComponents() {
           }
         }
       }
+    },
+    'ai-chat': {
+      title: 'AI Chat',
+      description: 'A chat interface with AI assistant and file upload support.',
+      component: AiChat,
+      requiredProps: [
+        { prop: 'url', label: 'AI API URL', type: 'text', source: 'manual', placeholder: 'https://...' }
+      ]
     },
     'stats-card': {
       component: StatsCard,

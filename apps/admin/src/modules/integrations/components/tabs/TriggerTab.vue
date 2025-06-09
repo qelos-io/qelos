@@ -10,6 +10,7 @@ import { ElMessage } from 'element-plus';
 
 const props = defineProps<{
   modelValue: any;
+  integrationId?: string
 }>();
 
 const emit = defineEmits(['update:modelValue']);
@@ -235,15 +236,15 @@ onMounted(() => {
       
       <!-- Qelos Chat Completion Form -->
       <div v-if="selectedTriggerSource?.kind === IntegrationSourceKind.Qelos && modelValue.operation === QelosTriggerOperation.chatCompletion" class="chat-completion-form">
-        <div v-if="props.modelValue._id" class="chat-completion-url">
-          <h4>Chat Completion URL</h4>
+        <div v-if="props.integrationId" class="chat-completion-url">
+          <h4>{{$t('Chat Completion URL')}}</h4>
           <el-input
-            :value="`/api/integrate/${props.modelValue._id}/chat-completion`"
+            :value="`/api/integrate/${integrationId}/chat-completion`"
             readonly
             class="url-display"
           >
             <template #append>
-              <el-button @click="copyToClipboard(`/api/integrate/${props.modelValue._id}/chat-completion`)">
+              <el-button @click="copyToClipboard(`/api/integrate/${integrationId}/chat-completion`)">
                 <i class="el-icon-copy-document"></i> Copy
               </el-button>
             </template>

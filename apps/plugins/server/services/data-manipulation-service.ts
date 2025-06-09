@@ -61,4 +61,6 @@ export async function executeDataManipulation(tenant: string, initialPayload: an
 
     return data
   }, initialPayload);
+
+  return calculatedData;
 }

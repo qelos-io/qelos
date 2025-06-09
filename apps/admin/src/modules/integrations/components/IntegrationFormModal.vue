@@ -112,7 +112,7 @@ const { submit, submitting } = useSubmitting(() => {
     <el-form v-if="visible" @submit.prevent="submit" class="form-content">
       <el-tabs>
         <el-tab-pane :label="$t('Trigger')">
-          <TriggerTab v-model="form.trigger" />
+          <TriggerTab v-model="form.trigger" :integration-id="props.editingIntegration?._id" />
         </el-tab-pane>
         <el-tab-pane :label="$t('Data Manipulation')">
           <DataManipulationTab v-model="form.dataManipulation" />

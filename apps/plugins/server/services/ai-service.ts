@@ -185,7 +185,7 @@ export class AIService {
       if (this.kind === IntegrationSourceKind.OpenAI) {
         const openaiProvider = this.provider as OpenAI;
         const openaiParams = this.prepareOpenAIParams(options, true);
-        return await openaiProvider.chat.completions.create(openaiParams);
+        return openaiProvider.chat.completions.create(openaiParams);
       }
 
       if (this.kind === IntegrationSourceKind.ClaudeAi) {
