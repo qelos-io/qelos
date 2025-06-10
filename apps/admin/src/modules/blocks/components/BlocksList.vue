@@ -2,7 +2,7 @@
   <div>
     <GpItem v-for="block in state.blocks" :key="block._id">
       <template v-slot:title>
-        <router-link :to="{name: 'editBlock', params: {blockId: block._id}}">
+        <router-link :to="{name: 'editBlock', params: {blockId: block._id || 'new'}}">
           {{ block.name }}
         </router-link>
       </template>

@@ -57,5 +57,3 @@ const remove = useConfirmAction(
     {success: 'Draft deleted successfully', error: 'Failed to remove draft'}
   ).submit)
 </script>
-<style scoped lang="scss">
-</style>

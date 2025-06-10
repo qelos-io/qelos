@@ -87,11 +87,11 @@
         </div>
       </div>
       
-      <div class="blueprint-card add-blueprint-card" @click="$router.push({ name: 'createBlueprint' })">
-        <el-icon class="add-icon"><Plus /></el-icon>
-        <h3>{{ $t('Create new Blueprint') }}</h3>
-        <p>{{ $t('Add a new blueprint to your collection') }}</p>
-      </div>
+      <AddNewCard 
+        :title="$t('Create new Blueprint')"
+        :description="$t('Add a new blueprint to your collection')"
+        :to="{ name: 'createBlueprint' }"
+      />
     </div>
     
     <!-- Graph View -->
@@ -112,6 +112,7 @@
 </template>
 <script lang="ts" setup>
 import { capitalize, computed } from 'vue';
+import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { IBlueprint } from '@qelos/global-types'
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
@@ -440,37 +441,6 @@ function getMinMax(min, max) {
 .marked {
   background-color: rgba(250, 246, 212, 0.8);
   border-color: #e6a23c;
-}
-
-.add-blueprint-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  border: 2px dashed var(--el-color-primary-light-5);
-  background-color: rgba(64, 158, 255, 0.05);
-}
-
-.add-blueprint-card:hover {
-  background-color: rgba(64, 158, 255, 0.1);
-  border-color: var(--el-color-primary);
-}
-
-.add-icon {
-  font-size: 32px;
-  color: var(--el-color-primary);
-  margin-bottom: 12px;
-}
-
-.add-blueprint-card h3 {
-  margin: 0 0 8px 0;
-  color: var(--el-color-primary);
-}
-
-.add-blueprint-card p {
-  margin: 0;
-  color: #606266;
 }
 
 @media (max-width: 768px) {

@@ -119,11 +119,11 @@
             </div>
           </div>
           
-          <div class="plugin-card add-plugin-card" @click="$router.push({ name: 'createPlugin' })">
-            <el-icon class="add-icon"><icon-plus /></el-icon>
-            <h3>{{ $t('Create new Plugin') }}</h3>
-            <p>{{ $t('Add a new plugin to your collection') }}</p>
-          </div>
+          <AddNewCard 
+            :title="$t('Create new Plugin')"
+            :description="$t('Add a new plugin to your collection')"
+            :to="{ name: 'createPlugin' }"
+          />
         </div>
       </template>
     </el-skeleton>
@@ -133,6 +133,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 import { usePluginsList } from '@/modules/plugins/store/plugins-list';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { IPlugin } from '@/services/types/plugin';
@@ -342,37 +343,6 @@ const getMicroFrontendsBadgeClass = (plugin: IPlugin) => {
   justify-content: flex-end;
   padding-top: 12px;
   border-top: 1px solid #ebeef5;
-}
-
-.add-plugin-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  border: 2px dashed var(--el-color-primary-light-5);
-  background-color: rgba(64, 158, 255, 0.05);
-}
-
-.add-plugin-card:hover {
-  background-color: rgba(64, 158, 255, 0.1);
-  border-color: var(--el-color-primary);
-}
-
-.add-icon {
-  font-size: 32px;
-  color: var(--el-color-primary);
-  margin-bottom: 12px;
-}
-
-.add-plugin-card h3 {
-  margin: 0 0 8px 0;
-  color: var(--el-color-primary);
-}
-
-.add-plugin-card p {
-  margin: 0;
-  color: #606266;
 }
 
 @media (max-width: 768px) {

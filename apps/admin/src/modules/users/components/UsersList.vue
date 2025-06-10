@@ -1,17 +1,36 @@
 <template>
   <div class="users-list-container">
-    <!-- Empty state -->
-    <el-empty v-if="filteredUsers.length === 0" :description="$t('No users found')" />
+    <el-skeleton :loading="loading" :count="3" animated>
+      <template #template>
+        <div class="users-grid">
+          <div class="user-skeleton" v-for="i in 3" :key="i">
+            <el-skeleton-item variant="circle" style="width: 50px; height: 50px" />
+            <el-skeleton-item variant="h3" style="width: 40%" />
+            <el-skeleton-item variant="text" style="width: 60%" />
+            <el-skeleton-item variant="text" style="width: 50%" />
+          </div>
+        </div>
+      </template>
+      
+      <template #default>
+        <!-- Empty state -->
+        <div v-if="filteredUsers.length === 0" class="empty-state">
+          <el-empty :description="$t('No users found')">
+            <el-button type="primary" @click="$router.push({ name: 'createUser' })">
+              <el-icon><icon-plus /></el-icon>
+              {{ $t('Add User') }}
+            </el-button>
+          </el-empty>
+        </div>
 
-    <!-- Users list with cards -->
-    <div class="users-grid">
-      <el-card 
-        v-for="user in paginatedUsers" 
-        :key="user._id"
-        class="user-card"
-        :body-style="{ padding: '0px' }"
-        shadow="hover"
-      >
+        <!-- Users list with cards -->
+        <div v-else class="users-grid">
+          <div 
+            v-for="user in paginatedUsers" 
+            :key="user._id"
+            class="user-card"
+            @click="$router.push({name: 'editUser', params: {userId: user._id}})"
+          >
         <div class="user-card-header">
           <div class="user-avatar">
             <el-avatar 
@@ -57,31 +76,47 @@
           </div>
         </div>
 
-        <div class="user-card-actions">
-          <router-link :to="{ name: 'editUser', params: { userId: user._id } }">
-            <el-button class="edit-button" type="primary">
-              <el-icon><Edit /></el-icon>
-              {{ $t('Edit') }}
-            </el-button>
-          </router-link>
-          <el-button class="remove-button" type="danger" @click="remove(user)">
-            <el-icon><Delete /></el-icon>
-            {{ $t('Remove') }}
-          </el-button>
+          <div class="user-card-actions">
+            <el-tooltip :content="$t('Edit User')" placement="top">
+              <el-button 
+                type="primary" 
+                circle 
+                @click.stop="$router.push({name: 'editUser', params: {userId: user._id}})"
+              >
+                <el-icon><Edit /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip :content="$t('Remove User')" placement="top">
+              <el-button 
+                type="danger" 
+                circle 
+                @click.stop="remove(user)"
+              >
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </el-tooltip>
+          </div>
+          </div>
+          
+          <AddNewCard 
+            :title="$t('Create new User')"
+            :description="$t('Add a new user to your workspace')"
+            :to="{ name: 'createUser' }"
+          />
         </div>
-      </el-card>
-    </div>
 
-    <!-- Pagination -->
-    <div class="pagination-container" v-if="filteredUsers.length > pageSize">
-      <el-pagination
-        v-model:current-page="currentPage"
-        :page-size="pageSize"
-        :total="filteredUsers.length"
-        layout="prev, pager, next"
-        @current-change="handlePageChange"
-      />
-    </div>
+        <!-- Pagination -->
+        <div class="pagination-container" v-if="filteredUsers.length > pageSize">
+          <el-pagination
+            v-model:current-page="currentPage"
+            :page-size="pageSize"
+            :total="filteredUsers.length"
+            layout="prev, pager, next"
+            @current-change="handlePageChange"
+          />
+        </div>
+      </template>
+    </el-skeleton>
   </div>
 </template>
 
@@ -89,9 +124,11 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRemoveUser } from '../compositions/users';
 import { IUser } from '@/modules/core/store/types/user';
-import { Search, Edit, Delete, Check } from '@element-plus/icons-vue';
+import { Search, Edit, Delete, Check, Plus as IconPlus } from '@element-plus/icons-vue';
+import { ElSkeleton, ElSkeletonItem, ElEmpty, ElButton, ElTooltip } from 'element-plus';
+import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 
-const props = defineProps<{ users: IUser[] }>();
+const props = defineProps<{ users: IUser[], loading?: boolean }>();
 const emit = defineEmits(['removed']);
 
 // Search and filter state
@@ -239,9 +276,10 @@ function getRoleTagType(role) {
 
 .users-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
   margin-bottom: 24px;
+  width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -255,21 +293,46 @@ function getRoleTagType(role) {
 }
 
 .user-card {
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
   border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  transition: all 0.3s ease;
+  position: relative;
   overflow: hidden;
-  transition: transform 0.2s;
+  cursor: pointer;
+  border: 1px solid #ebeef5;
 }
 
 .user-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  border-color: var(--el-color-primary-light-5);
+}
+
+.user-skeleton {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state {
+  margin: 40px 0;
 }
 
 .user-card-header {
   display: flex;
   align-items: center;
-  padding: 16px;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #eee;
+  margin-bottom: 16px;
 }
 
 .user-avatar {
@@ -303,7 +366,8 @@ function getRoleTagType(role) {
 }
 
 .user-card-body {
-  padding: 16px;
+  flex: 1;
+  margin-bottom: 16px;
 }
 
 .social-logins {
@@ -329,9 +393,10 @@ function getRoleTagType(role) {
 
 .user-card-actions {
   display: flex;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-top: 1px solid #eee;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid #ebeef5;
 }
 
 .pagination-container {
@@ -340,29 +405,5 @@ function getRoleTagType(role) {
   margin-top: 24px;
 }
 
-.edit-button {
-  background-color: var(--el-color-primary);
-  color: white;
-  border: none;
-  font-size: 12px;
-  padding: 8px 12px;
-}
 
-.edit-button:hover {
-  background-color: var(--el-color-primary-light-3);
-  color: white;
-}
-
-.remove-button {
-  background-color: var(--el-color-danger);
-  color: white;
-  border: none;
-  font-size: 12px;
-  padding: 8px 12px;
-}
-
-.remove-button:hover {
-  background-color: var(--el-color-danger-light-3);
-  color: white;
-}
 </style>

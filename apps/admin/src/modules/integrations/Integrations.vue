@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
+import { ElSkeleton, ElSkeletonItem, ElEmpty, ElButton, ElTooltip, ElTag, ElInput, ElBadge } from 'element-plus';
+import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
 import { useIntegrations } from '@/modules/integrations/compositions/integrations';
@@ -9,10 +10,32 @@ import RemoveButton from '../core/components/forms/RemoveButton.vue';
 import integrationsService from '@/services/integrations-service';
 import { useConfirmAction } from '../core/compositions/confirm-action';
 import { ref, computed } from 'vue';
-import { ElTooltip, ElTag, ElInput } from 'element-plus';
+
+import { useIntegrationSourcesStore } from './store/integration-sources';
+import { IIntegrationSource } from '@qelos/global-types';
 
 const kinds = useIntegrationKinds();
 const { loaded, result, retry } = useIntegrations();
+const integrationSourcesStore = useIntegrationSourcesStore();
+
+// Count sources by kind
+const sourcesCount = computed(() => {
+  if (!integrationSourcesStore.groupedSources) return {};
+  const counts = {};
+  for (const [kind, sources] of Object.entries(integrationSourcesStore.groupedSources)) {
+    counts[kind] = sources?.length || 0;
+  }
+  return counts;
+});
+
+// Map source IDs to source objects
+const sourcesById = computed(() => {
+  if (!integrationSourcesStore.result) return {};
+  return integrationSourcesStore.result.reduce((acc, source) => {
+    acc[source._id] = source;
+    return acc;
+  }, {} as Record<string, IIntegrationSource>);
+});
 
 const remove = useConfirmAction((id: string) => {
   integrationsService.remove(id).then(() => {
@@ -41,6 +64,7 @@ const remove = useConfirmAction((id: string) => {
           <div class="integration-logo-container">
             <img v-if="kind.logo" :src="kind.logo" :alt="kind.name" class="integration-logo">
             <p centered v-else class="large">{{ kind.name }}</p>
+            <el-badge v-if="sourcesCount[kind.kind] && sourcesCount[kind.kind] > 0" :value="sourcesCount[kind.kind]" class="source-count-badge" type="primary" />
           </div>
           <div class="integration-name">{{ kind.name }}</div>
         </BlockItem>
@@ -52,34 +76,104 @@ const remove = useConfirmAction((id: string) => {
       <h3 class="section-title">{{ $t('Your Integrations') }}</h3>
     </div>
 
-    <EmptyState v-if="loaded && result.length === 0" description="No integrations found.">
-      <el-button type="primary" @click="$router.push({ query: { mode: 'create' } })">Create new Integration</el-button>
-    </EmptyState>
-    <div class="content-list">
-      <BlockItem class="integration-item" v-for="integration in result" :key="integration._id">
-        <div class="integration-content">
-          <div class="integration-icons">
-            <div class="integration-icon">
-              <img v-if="kinds[integration.kind[0]]?.logo" :src="kinds[integration.kind[0]]?.logo" :alt="kinds[integration.kind[0]]?.name" class="integration-logo">
-              <p centered v-else class="large">{{ kinds[integration.kind[0]]?.name }}</p>
-            </div>
-            <div class="integration-arrow">
-              <el-icon><icon-arrow-right /></el-icon>
-            </div>
-            <div class="integration-icon">
-              <img v-if="kinds[integration.kind[1]]?.logo" :src="kinds[integration.kind[1]]?.logo" :alt="kinds[integration.kind[1]]?.name" class="integration-logo">
-              <p centered v-else class="large">{{ kinds[integration.kind[1]]?.name }}</p>
-            </div>
+    
+    <el-skeleton :loading="!loaded" :count="3" animated>
+      <template #template>
+        <div class="integrations-grid">
+          <div class="integration-skeleton" v-for="i in 3" :key="i">
+            <el-skeleton-item variant="h3" style="width: 40%" />
+            <el-skeleton-item variant="text" style="width: 60%" />
+            <el-skeleton-item variant="text" style="width: 50%" />
           </div>
         </div>
-        <template #actions>
-          <div class="integration-actions">
-            <el-button type="primary" @click="$router.push({ query: { mode: 'edit' }, params: { id: integration._id } })">Edit</el-button>
-            <RemoveButton @click="remove(integration._id)" />
+      </template>
+      
+      <template #default>
+        <div v-if="loaded && result.length === 0" class="empty-state">
+          <el-empty :description="$t('No integrations found')">
+            <el-button type="primary" @click="$router.push({ query: { mode: 'create' } })">
+              <el-icon><icon-plus /></el-icon>
+              {{ $t('Add Integration') }}
+            </el-button>
+          </el-empty>
+        </div>
+        
+        <div v-else class="integrations-grid">
+          <div v-for="integration in result" 
+               :key="integration._id"
+               :id="'integration-' + integration._id"
+               class="integration-card"
+               @click="$router.push({query: { mode: 'edit' }, params: { id: integration._id }})">
+            
+            <div class="integration-header">
+              <div class="integration-title">
+                <h3>
+                  <router-link :to="{query: { mode: 'edit' }, params: { id: integration._id }}" @click.stop>
+                    {{ sourcesById[integration.trigger.source]?.name || 'Unknown' }} → {{ sourcesById[integration.target.source]?.name || 'Unknown' }}
+                  </router-link>
+                </h3>
+              </div>
+            </div>
+            
+            <div class="integration-flow">
+              <div class="integration-icon-container">
+                <div class="integration-icon">
+                  <img v-if="kinds[integration.kind[0]]?.logo" :src="kinds[integration.kind[0]]?.logo" :alt="kinds[integration.kind[0]]?.name" class="integration-logo">
+                  <p v-else class="large">{{ kinds[integration.kind[0]]?.name }}</p>
+                </div>
+                <div class="integration-details">
+                  <div class="integration-source-name">{{ sourcesById[integration.trigger.source]?.name || 'Unknown' }}</div>
+                  <div class="integration-operation">{{ integration.trigger.operation }}</div>
+                </div>
+              </div>
+              
+              <div class="integration-arrow">
+                <el-icon><icon-arrow-right /></el-icon>
+              </div>
+              
+              <div class="integration-icon-container">
+                <div class="integration-icon">
+                  <img v-if="kinds[integration.kind[1]]?.logo" :src="kinds[integration.kind[1]]?.logo" :alt="kinds[integration.kind[1]]?.name" class="integration-logo">
+                  <p v-else class="large">{{ kinds[integration.kind[1]]?.name }}</p>
+                </div>
+                <div class="integration-details">
+                  <div class="integration-source-name">{{ sourcesById[integration.target.source]?.name || 'Unknown' }}</div>
+                  <div class="integration-operation">{{ integration.target.operation }}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="integration-actions">
+              <el-tooltip :content="$t('Edit Integration')" placement="top">
+                <el-button 
+                  type="primary" 
+                  circle 
+                  @click.stop="$router.push({ query: { mode: 'edit' }, params: { id: integration._id } })"
+                >
+                  <el-icon><icon-edit /></el-icon>
+                </el-button>
+              </el-tooltip>
+              
+              <el-tooltip :content="$t('Delete Integration')" placement="top">
+                <el-button 
+                  type="danger" 
+                  circle 
+                  @click.stop="remove(integration._id)"
+                >
+                  <el-icon><icon-delete /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </div>
           </div>
-        </template>
-      </BlockItem>
-    </div>
+          
+          <AddNewCard 
+            :title="$t('Create new Integration')"
+            :description="$t('Connect your services together')"
+            :to="{ query: { mode: 'create' } }"
+          />
+        </div>
+      </template>
+    </el-skeleton>
 
     <IntegrationFormModal :visible="$route.query.mode === 'create' || $route.query.mode === 'edit'"
       :editing-integration="($route.query.mode === 'edit' && $route.params.id) ? result.find(integration => integration._id === $route.params.id) : undefined"
@@ -150,29 +244,94 @@ const remove = useConfirmAction((id: string) => {
   width: 100%;
 }
 
-.content-list {
+.integrations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+  width: 100%;
   margin-top: 20px;
 }
 
-.integration-item {
+.integration-skeleton {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  height: 300px;
+}
+
+.empty-state {
+  margin: 40px 0;
+}
+
+.integration-card {
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid #ebeef5;
+}
+
+.integration-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  border-color: var(--el-color-primary-light-5);
+}
+
+.integration-header {
   margin-bottom: 16px;
-  transition: all 0.2s ease;
 }
 
-.integration-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+.integration-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
-.integration-content {
-  padding: 8px 0;
+.integration-title h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--el-color-primary);
 }
 
-.integration-icons {
+.integration-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.integration-title a:hover {
+  text-decoration: underline;
+}
+
+.integration-flow {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 20px;
+  padding: 20px 0;
+  flex: 1;
+}
+
+.integration-icons-old {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.integration-icon-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .integration-icon {
@@ -181,6 +340,24 @@ const remove = useConfirmAction((id: string) => {
   justify-content: center;
   width: 80px;
   height: 80px;
+}
+
+.integration-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.integration-source-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--el-text-color-primary);
+}
+
+.integration-operation {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .integration-icon img {
@@ -201,9 +378,10 @@ const remove = useConfirmAction((id: string) => {
 
 .integration-actions {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   justify-content: flex-end;
-  padding: 8px 0;
+  padding-top: 12px;
+  border-top: 1px solid #ebeef5;
 }
 
 .popular {
@@ -254,9 +432,9 @@ const remove = useConfirmAction((id: string) => {
   color: var(--el-text-color-secondary);
 }
 
-@media screen and (max-width: 700px) {
-  .blocks-list {
-    justify-content: center;
+@media (max-width: 768px) {
+  .integrations-grid {
+    grid-template-columns: 1fr;
   }
   
   .integration-filters {
@@ -268,8 +446,20 @@ const remove = useConfirmAction((id: string) => {
   }
 }
 
+@media (min-width: 769px) and (max-width: 1200px) {
+  .integrations-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .large {
   font-size: 32px;
+}
+
+.source-count-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
 }
 
 .section-divider-container {
