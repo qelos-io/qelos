@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import QuickReverseProxyForm from './quick-plugin/QuickReverseProxyForm.vue';
 import QuickInjectableForm from './quick-plugin/QuickInjectableForm.vue';
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useCreatePlugin } from '@/modules/plugins/compositions/manage-plugin';
 import { useRoute, useRouter } from 'vue-router';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { IPlugin } from '@/services/types/plugin';
+import { ElNotification } from 'element-plus';
 
 const router = useRouter();
 const route = useRoute();
@@ -16,40 +17,72 @@ const emit = defineEmits(['close', 'saved'])
 const { savePlugin, submitting } = useCreatePlugin();
 
 const form = ref({});
+const activeStep = computed(() => route.query.option);
+const isLoading = ref(false);
 
 function selectOption(option: string) {
   router.push({query: {...route.query, option}})
 }
 
-async function submit() {
-  // For remote plugin, fetch the manifest and create the plugin
-  if (route.query.option === 'remote' && form.value.manifestUrl) {
-    const plugin: Partial<IPlugin & { hardReset: boolean }> = { hardReset: true, manifestUrl: form.value.manifestUrl };
-    try {
-      const res = await fetch(form.value.manifestUrl, {
-        mode: 'cors',
-      })
-      const str = await res.text();
-      const data = JSON.parse(str);
+function goBack() {
+  router.push({query: {...route.query, option: undefined}})
+}
 
-      plugin.name = data.name;
-      plugin.apiPath = data.apiPath;
-      plugin.proxyUrl = data.proxyUrl;
-      
-      await savePlugin(plugin);
-      emit('saved', plugin);
-      emit('close');
-      return;
-    } catch (error) {
-      console.error('Error loading plugin manifest:', error);
-      return;
+async function submit() {
+  isLoading.value = true;
+  try {
+    // For remote plugin, fetch the manifest and create the plugin
+    if (route.query.option === 'remote' && form.value.manifestUrl) {
+      const plugin: Partial<IPlugin & { hardReset: boolean }> = { hardReset: true, manifestUrl: form.value.manifestUrl };
+      try {
+        const res = await fetch(form.value.manifestUrl, {
+          mode: 'cors',
+        })
+        const str = await res.text();
+        const data = JSON.parse(str);
+
+        plugin.name = data.name;
+        plugin.apiPath = data.apiPath;
+        plugin.proxyUrl = data.proxyUrl;
+        
+        await savePlugin(plugin);
+        ElNotification({
+          title: 'Success',
+          message: 'Remote plugin successfully created',
+          type: 'success',
+        });
+        emit('saved', plugin);
+        emit('close');
+        return;
+      } catch (error) {
+        console.error('Error loading plugin manifest:', error);
+        ElNotification({
+          title: 'Error',
+          message: 'Failed to load plugin manifest',
+          type: 'error',
+        });
+        return;
+      }
     }
+    
+    // For other plugin types
+    await savePlugin(form.value);
+    ElNotification({
+      title: 'Success',
+      message: 'Plugin successfully created',
+      type: 'success',
+    });
+    emit('saved', form.value);
+    emit('close');
+  } catch (error) {
+    ElNotification({
+      title: 'Error',
+      message: 'Failed to create plugin',
+      type: 'error',
+    });
+  } finally {
+    isLoading.value = false;
   }
-  
-  // For other plugin types
-  await savePlugin(form.value);
-  emit('saved', form.value);
-  emit('close');
 }
 
 watch(visible, () => {
@@ -62,100 +95,296 @@ watch(visible, () => {
 
 <template>
 <el-form v-if="visible" @submit.prevent="submit">
-  <el-dialog v-model="visible"
-             :title="$t('Create a Plugin')"
-             @close="$emit('close')">
-    <div v-if="!route.query.option">
-        <h3>{{ $t('What is your purpose?') }}</h3>
-
-        <div class="content-list">
-          <div class="content-item" @click="selectOption('reverse-proxy')">
+  <el-dialog 
+    v-model="visible"
+    :title="$t('Create a Plugin')"
+    @close="$emit('close')"
+    width="650px"
+    class="plugin-creation-dialog"
+    :close-on-click-modal="false">
+    
+    <el-card v-if="!activeStep" class="plugin-selection-card">
+      <template #header>
+        <div class="card-header">
+          <h3>{{ $t('Choose a Plugin Type') }}</h3>
+          <p class="subtitle">{{ $t('Select the type of plugin you want to create') }}</p>
+        </div>
+      </template>
+      
+      <div class="plugin-options">
+        <div class="plugin-option" @click="selectOption('reverse-proxy')">
+          <div class="option-icon">
             <font-awesome-icon :icon="['fas', 'network-wired']" />
-            <span>{{ $t('Reverse Proxy') }}</span>
           </div>
-          <div class="content-item" @click="selectOption('analytics')">
+          <div class="option-content">
+            <h4>{{ $t('Reverse Proxy') }}</h4>
+            <p>{{ $t('Connect to external APIs and services') }}</p>
+          </div>
+        </div>
+        
+        <div class="plugin-option" @click="selectOption('analytics')">
+          <div class="option-icon">
             <font-awesome-icon :icon="['fas', 'chart-simple']" />
-            <span>{{ $t('Analytics script') }}</span>
           </div>
-          <div class="content-item" @click="selectOption('subscribe')">
+          <div class="option-content">
+            <h4>{{ $t('Analytics Script') }}</h4>
+            <p>{{ $t('Add tracking and analytics to your application') }}</p>
+          </div>
+        </div>
+        
+        <div class="plugin-option" @click="selectOption('subscribe')">
+          <div class="option-icon">
             <font-awesome-icon :icon="['fas', 'right-from-bracket']" />
-            <span>{{ $t('Subscribe to Events') }}</span>
           </div>
-          <div class="content-item" @click="selectOption('remote')">
+          <div class="option-content">
+            <h4>{{ $t('Event Subscription') }}</h4>
+            <p>{{ $t('Listen and respond to system events') }}</p>
+          </div>
+        </div>
+        
+        <div class="plugin-option" @click="selectOption('remote')">
+          <div class="option-icon">
             <font-awesome-icon :icon="['fas', 'link']" />
-            <span>{{ $t('Link to Remote Plugin') }}</span>
           </div>
-          <router-link is="div" class="content-item" :to="{name: 'createPlugin'}">
+          <div class="option-content">
+            <h4>{{ $t('Remote Plugin') }}</h4>
+            <p>{{ $t('Connect to an existing remote plugin via manifest') }}</p>
+          </div>
+        </div>
+        
+        <router-link is="div" class="plugin-option manual-option" :to="{name: 'createPlugin'}">
+          <div class="option-icon">
             <font-awesome-icon :icon="['fas', 'chalkboard-user']" />
-            <span>{{ $t('Manual') }}</span>
-          </router-link>
+          </div>
+          <div class="option-content">
+            <h4>{{ $t('Manual Configuration') }}</h4>
+            <p>{{ $t('Advanced setup with full configuration options') }}</p>
+          </div>
+        </router-link>
+      </div>
+    </el-card>
+
+    <el-card v-else class="plugin-form-card">
+      <template #header>
+        <div class="card-header with-back">
+          <div class="header-navigation">
+            <el-button class="back-button" type="text" @click="goBack">
+              <font-awesome-icon :icon="['fas', 'arrow-left']" />
+              {{ $t('Back to options') }}
+            </el-button>
+          </div>
+          <h3 class="step-title">
+            {{ $t({
+              'reverse-proxy': 'Configure Reverse Proxy Plugin',
+              'analytics': 'Configure Analytics Plugin',
+              'subscribe': 'Configure Event Subscription',
+              'remote': 'Link Remote Plugin'
+            }[activeStep] || 'Configure Plugin') }}
+          </h3>
+        </div>
+      </template>
+      
+      <div class="form-container">
+        <div v-if="activeStep === 'reverse-proxy'">
+          <QuickReverseProxyForm @changed="form = $event"/>
+        </div>
+        
+        <div v-else-if="activeStep === 'analytics'">
+          <QuickInjectableForm @changed="form = $event"/>
+        </div>
+        
+        <div v-else-if="activeStep === 'remote'">
+          <div class="remote-plugin-form">
+            <el-alert
+              type="info"
+              :closable="false"
+              show-icon>
+              <p>{{ $t('Enter the URL of the plugin manifest to connect to a remote plugin') }}</p>
+            </el-alert>
+            
+            <FormRowGroup class="manifest-input">
+              <FormInput 
+                title="Manifest URL" 
+                label="required" 
+                v-model="form.manifestUrl" 
+                placeholder="https://example.com/manifest.json"
+                :disabled="isLoading"/>
+            </FormRowGroup>
+          </div>
         </div>
       </div>
+    </el-card>
 
-      <div v-else-if="route.query.option === 'reverse-proxy'">
-        <QuickReverseProxyForm @changed="form = $event"/>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="$emit('close')" :disabled="isLoading || submitting">
+          {{ $t(activeStep ? 'Cancel' : 'Close') }}
+        </el-button>
+        <el-button 
+          v-if="activeStep" 
+          type="primary" 
+          native-type="submit" 
+          :disabled="isLoading || submitting" 
+          :loading="isLoading || submitting">
+          {{ $t('Create Plugin') }}
+        </el-button>
       </div>
-      <div v-else-if="route.query.option === 'analytics'">
-        <QuickInjectableForm @changed="form = $event"/>
-      </div>
-      <div v-else-if="route.query.option === 'remote'">
-        <FormRowGroup>
-          <FormInput title="Manifest URL" label="required" v-model="form.manifestUrl" placeholder="https://example.com/manifest.json"/>
-        </FormRowGroup>
-      </div>
-
-      <template #footer>
-        <el-form-item>
-          <el-button v-if="route.query.option" type="primary" native-type="submit" :disabled="submitting" :loading="submitting">{{ $t('Save') }}</el-button>
-          <el-button @click="$emit('close')">{{ $t(route.query.option ? 'Cancel' : 'Close') }}</el-button>
-        </el-form-item>
-      </template>
+    </template>
   </el-dialog>
 </el-form>
 </template>
 
 <style scoped>
-.tag {
-  margin: 5px;
-  cursor: pointer;
-}
-img {
-  border-radius: 0;
-  height: 20px;
-  margin: 0;
+.plugin-creation-dialog :deep(.el-dialog__header) {
+  padding: 20px;
+  margin-right: 0;
+  border-bottom: 1px solid var(--border-color-light, #ebeef5);
 }
 
-img, small {
-  margin-inline-end: 10px;
-  font-weight: bold;
-  font-style: italic;
+.plugin-creation-dialog :deep(.el-dialog__body) {
+  padding: 0;
 }
 
-.content-item {
-  margin: 10px;
-  padding: 10px;
-  border-radius: var(--border-radius);
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  min-width: 200px;
-  width: 30%;
-  height: 200px;
-  text-align: center;
+.plugin-creation-dialog :deep(.el-dialog__footer) {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color-light, #ebeef5);
+}
+
+.card-header {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  font-size: 18px;
-  
-  &:hover {
-    background-color: var(--third-color);
-  }
+  gap: 4px;
 }
 
-.fast-refresh-manifest {
-  border-radius: var(--border-radius);
-  border: 1px solid var(--border-color);
-  padding: 10px;
-  margin: 10px;
+.card-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #303133);
+}
+
+.card-header .subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary, #606266);
+}
+
+.card-header.with-back {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.header-navigation {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.back-button {
+  padding: 0;
+  font-size: 14px;
+  height: auto;
+  line-height: 1;
+}
+
+.step-title {
+  margin: 4px 0 0 0;
+  text-align: center;
+}
+
+.plugin-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 8px;
+}
+
+.plugin-option {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #dcdfe6);
+  transition: all 0.3s;
+  cursor: pointer;
+  background-color: var(--bg-color, #ffffff);
+}
+
+.plugin-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary-color, #409eff);
+}
+
+.option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background-color: var(--primary-color-light, #ecf5ff);
+  color: var(--primary-color, #409eff);
+  margin-right: 16px;
+  font-size: 20px;
+}
+
+.option-content {
+  flex: 1;
+}
+
+.option-content h4 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary, #303133);
+}
+
+.option-content p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary, #606266);
+  line-height: 1.4;
+}
+
+.manual-option {
+  grid-column: span 2;
+}
+
+.manual-option .option-icon {
+  background-color: var(--info-color-light, #f4f4f5);
+  color: var(--info-color, #909399);
+}
+
+.form-container {
+  padding: 16px;
+}
+
+.remote-plugin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.manifest-input {
+  margin-top: 16px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .plugin-options {
+    grid-template-columns: 1fr;
+  }
+  
+  .manual-option {
+    grid-column: span 1;
+  }
 }
 </style>
