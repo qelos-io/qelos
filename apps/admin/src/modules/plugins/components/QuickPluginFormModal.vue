@@ -4,6 +4,9 @@ import QuickInjectableForm from './quick-plugin/QuickInjectableForm.vue';
 import { ref, watch } from 'vue';
 import { useCreatePlugin } from '@/modules/plugins/compositions/manage-plugin';
 import { useRoute, useRouter } from 'vue-router';
+import FormInput from '@/modules/core/components/forms/FormInput.vue';
+import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+import { IPlugin } from '@/services/types/plugin';
 
 const router = useRouter();
 const route = useRoute();
@@ -19,9 +22,34 @@ function selectOption(option: string) {
 }
 
 async function submit() {
+  // For remote plugin, fetch the manifest and create the plugin
+  if (route.query.option === 'remote' && form.value.manifestUrl) {
+    const plugin: Partial<IPlugin & { hardReset: boolean }> = { hardReset: true, manifestUrl: form.value.manifestUrl };
+    try {
+      const res = await fetch(form.value.manifestUrl, {
+        mode: 'cors',
+      })
+      const str = await res.text();
+      const data = JSON.parse(str);
+
+      plugin.name = data.name;
+      plugin.apiPath = data.apiPath;
+      plugin.proxyUrl = data.proxyUrl;
+      
+      await savePlugin(plugin);
+      emit('saved', plugin);
+      emit('close');
+      return;
+    } catch (error) {
+      console.error('Error loading plugin manifest:', error);
+      return;
+    }
+  }
+  
+  // For other plugin types
   await savePlugin(form.value);
-  emit('saved', form.value)
-  emit('close')
+  emit('saved', form.value);
+  emit('close');
 }
 
 watch(visible, () => {
@@ -70,6 +98,11 @@ watch(visible, () => {
       <div v-else-if="route.query.option === 'analytics'">
         <QuickInjectableForm @changed="form = $event"/>
       </div>
+      <div v-else-if="route.query.option === 'remote'">
+        <FormRowGroup>
+          <FormInput title="Manifest URL" label="required" v-model="form.manifestUrl" placeholder="https://example.com/manifest.json"/>
+        </FormRowGroup>
+      </div>
 
       <template #footer>
         <el-form-item>
@@ -117,5 +150,12 @@ img, small {
   &:hover {
     background-color: var(--third-color);
   }
+}
+
+.fast-refresh-manifest {
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  padding: 10px;
+  margin: 10px;
 }
 </style>
