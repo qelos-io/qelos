@@ -215,7 +215,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
       user,
       workspace,
       getUniqueId(),
-      String(cookieTokenExpiration / 1000)
+      String(cookieTokenExpiration)
     );
 
     setCookie(res, getCookieTokenName(user.tenant), newToken, null, requestHost);

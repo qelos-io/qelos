@@ -315,7 +315,7 @@ export async function activateWorkspace(req: AuthRequest, res: Response) {
       user,
       payload.workspace,
       newCookieIdentifier,
-      String(cookieTokenExpiration / 1000)
+      String(cookieTokenExpiration)
     );
 
     setCookie(res, getCookieTokenName(tenant), newToken, null, getRequestHost(req));

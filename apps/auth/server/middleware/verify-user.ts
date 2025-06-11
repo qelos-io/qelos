@@ -40,6 +40,11 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
   const tenant = (req.headers.tenant = req.headers.tenant as string || '0');
   const token = getCookieTokenValue(req);
 
+  if (!token) {
+    next();
+    return;
+  }
+
   if (!tenant && showLogs) {
     logger.log('CookieVerify requires a tenant', {
       url: req.url,
@@ -82,7 +87,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
         user,
         payload.workspace,
         newCookieIdentifier,
-        String(cookieTokenExpiration / 1000)
+        String(cookieTokenExpiration)
       );
 
       setCookie(res, getCookieTokenName(req.headers.tenant), newToken, null, getRequestHost(req));
