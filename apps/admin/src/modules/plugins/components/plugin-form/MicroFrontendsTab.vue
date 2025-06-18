@@ -3,20 +3,25 @@
     <el-card class="settings-card">
       <template #header>
         <div class="card-header">
-          <el-icon><font-awesome-icon :icon="['fas', 'window-restore']" /></el-icon>
-          <span>{{ $t('Micro-Frontend Configuration') }}</span>
+          <div class="header-left">
+            <el-icon><font-awesome-icon :icon="['fas', 'window-restore']" /></el-icon>
+            <span>{{ $t('Micro-Frontends Configuration') }}</span>
+          </div>
+          <el-button type="primary" @click="addNewMicroFrontend" class="add-button">
+            <el-icon><font-awesome-icon :icon="['fas', 'plus']" /></el-icon>
+            <span class="button-text">Add MFE</span>
+          </el-button>
         </div>
       </template>
-      <p class="card-description">{{ $t('Configure micro-frontends that will be integrated into the platform.') }}</p>
       <div class="micro-frontends-container">
-        <EditPluginMicroFrontends v-if="plugin" />
+        <EditPluginMicroFrontends ref="mfeComponent" v-if="plugin" />
       </div>
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { provide, reactive } from 'vue';
+import { provide, reactive, ref } from 'vue';
 import EditPluginMicroFrontends from '@/modules/plugins/components/EditPluginMicroFrontends.vue';
 import { IPlugin } from '@/services/types/plugin';
 
@@ -35,6 +40,16 @@ if (!edit.microFrontends) {
 // Provide the edit object to child components
 provide('edit', edit);
 provide('plugin', edit);
+
+// Reference to the child component
+const mfeComponent = ref();
+
+// Function to add new micro frontend
+function addNewMicroFrontend() {
+  if (mfeComponent.value) {
+    mfeComponent.value.addNewMicroFrontend();
+  }
+}
 </script>
 
 <style scoped>
@@ -55,9 +70,11 @@ provide('plugin', edit);
 .card-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
   font-weight: 600;
   font-size: 1rem;
+  width: 100%;
 }
 
 .card-description {
@@ -68,5 +85,19 @@ provide('plugin', edit);
 
 .micro-frontends-container {
   width: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.add-button {
+  margin-left: auto;
+}
+
+.button-text {
+  margin-left: 0.5rem;
 }
 </style>

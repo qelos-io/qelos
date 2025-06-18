@@ -8,8 +8,8 @@ const model = defineModel()
 
 <template>
   <el-form-item>
-    <template #label>{{ $t(title) }}
-      <InfoIcon v-if="info" :content="$t(info)"/>
+    <template #label>{{ title }}
+      <InfoIcon v-if="info" :content="info"/>
     </template>
     <el-select
         v-model="model"
@@ -24,4 +24,3 @@ const model = defineModel()
     </el-select>
   </el-form-item>
 </template>
-
