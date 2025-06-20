@@ -8,10 +8,13 @@
 >
     <div class="chat-window" ref="chatWindow">
       <div v-if="messages.length === 0" class="ai-initial-message">
-        <div class="ai-initial-title">🤖 I'm your AI assistant</div>
-        <div class="ai-initial-desc">How can I help you?<br />
-          <span style="color: var(--el-color-primary);">You can also drop files anywhere in this chat.</span>
-        </div>
+        <slot v-if="$slots.message" name="message" />
+        <template v-else>
+          <div class="ai-initial-title">{{ $t(title || '🤖 I\'m your AI assistant') }}</div>
+          <div class="ai-initial-desc">{{ $t('How can I help you?') }}<br />
+            <span style="color: var(--el-color-primary);">{{ $t('You can also drop files anywhere in this chat.') }}</span>
+          </div>
+        </template>
       </div>
       <transition-group name="chat-bubble" tag="div">
         <div
@@ -27,7 +30,7 @@
             <span class="meta">{{ msg.role === 'user' ? 'You' : 'AI' }} · {{ formatTime(msg.time) }}</span>
           </div>
           <div class="bubble-content">
-            <span v-if="msg.type === 'text'">{{ msg.content }}</span>
+            <div v-if="msg.type === 'text'" v-html="renderMarkdown(msg.content)"></div>
             <div v-if="msg.type === 'file'" class="file-attachment-preview">
               <font-awesome-icon :icon="['fas', fileIconClass(msg.filename)]" />
               <span>{{ msg.filename }}</span>
@@ -36,13 +39,13 @@
         </div>
       </transition-group>
       <div v-if="loading" class="stream-indicator">
-        <el-icon class="spin"><Loading /></el-icon> AI is typing...
+        <el-icon class="spin"><Loading /></el-icon> {{ $t('AI is typing...') }}
       </div>
     </div>
     <transition name="fade">
       <div v-if="dropActive" class="drag-overlay">
         <el-icon style="font-size:2em;"><UploadFilled /></el-icon>
-        <div>Drop files to attach</div>
+        <div>{{ $t('Drop files to attach') }}</div>
       </div>
     </transition>
     <input
@@ -71,7 +74,7 @@
           v-model="input"
           type="textarea"
           :autosize="{ minRows: 2, maxRows: 6 }"
-          placeholder="Type your message..."
+          :placeholder="$t('Type your message...')"
           size="large"
           :disabled="loading"
           ref="inputRef"
@@ -101,8 +104,9 @@
 import { ref, reactive, nextTick, watch } from 'vue';
 import { ElInput, ElButton, ElTag, ElIcon, ElMessage } from 'element-plus';
 import { UploadFilled, Promotion, Document, Loading, UserFilled, Cpu } from '@element-plus/icons-vue';
+import { Remarkable } from 'remarkable';
 
-const props = defineProps<{ url: string }>();
+const props = defineProps<{ url: string, title?: string, text?: string }>();
 
 interface ChatMessage {
   id: string;
@@ -166,6 +170,20 @@ function onInputEnter(e: KeyboardEvent) {
   // Otherwise (Ctrl+Enter/Cmd+Enter), allow default (newline)
 }
 
+// Initialize markdown renderer
+const md = new Remarkable({
+  html: false, // Disable HTML for security
+  xhtmlOut: false,
+  breaks: true, // Convert '\n' in paragraphs into <br>
+  langPrefix: 'language-',
+  linkify: true, // Autoconvert URL-like text to links
+  typographer: true, // Enable some language-neutral replacement + quotes beautification
+});
+
+// Function to render markdown content
+const renderMarkdown = (content: string): string => {
+  return md.render(content);
+};
 
 function formatTime(date: string | Date) {
   const d = typeof date === 'string' ? new Date(date) : date;
@@ -462,6 +480,12 @@ async function onSend() {
   white-space: pre-wrap;
   word-break: break-word;
 }
+.bubble-content :is(ol, ul) {
+  list-style-type: auto;
+  display: flex;
+  flex-direction: column;
+}
+.bubble-content 
 .stream-indicator {
   display: flex;
   align-items: center;
@@ -630,5 +654,107 @@ async function onSend() {
   padding: 1em;
   background: var(--body-bg, #fff);
   border-top: 1px solid var(--border-color, #eee);
+}
+
+/* Markdown content styling */
+.bubble-content h1,
+.bubble-content h2,
+.bubble-content h3,
+.bubble-content h4,
+.bubble-content h5,
+.bubble-content h6 {
+  margin: 0.5em 0 0.3em 0;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.bubble-content h1 { font-size: 1.4em; }
+.bubble-content h2 { font-size: 1.3em; }
+.bubble-content h3 { font-size: 1.2em; }
+.bubble-content h4 { font-size: 1.1em; }
+.bubble-content h5 { font-size: 1.05em; }
+.bubble-content h6 { font-size: 1em; }
+
+.bubble-content p {
+  margin: 0.5em 0;
+  line-height: 1.5;
+}
+
+.bubble-content ul,
+.bubble-content ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+  display: flex;
+  flex-direction: column;
+}
+
+.bubble-content li {
+  margin: 0.2em 0;
+  line-height: 1.4;
+}
+
+.bubble-content code {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9em;
+}
+
+.bubble-content pre {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.8em;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+
+.bubble-content pre code {
+  background: none;
+  padding: 0;
+}
+
+.bubble-content blockquote {
+  border-left: 3px solid var(--el-color-primary);
+  margin: 0.5em 0;
+  padding-left: 1em;
+  color: #666;
+  font-style: italic;
+}
+
+.bubble-content a {
+  color: var(--el-color-primary);
+  text-decoration: none;
+}
+
+.bubble-content a:hover {
+  text-decoration: underline;
+}
+
+.bubble-content strong {
+  font-weight: 600;
+}
+
+.bubble-content em {
+  font-style: italic;
+}
+
+.bubble-content hr {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 1em 0;
+}
+
+/* Adjust for user bubbles */
+.bubble.user .bubble-content code {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.bubble.user .bubble-content pre {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.bubble.user .bubble-content blockquote {
+  border-left-color: var(--el-color-primary);
 }
 </style>

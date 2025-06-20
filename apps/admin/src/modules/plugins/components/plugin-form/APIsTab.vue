@@ -103,7 +103,7 @@
               </div>
             </template>
             <el-input 
-              v-model="plugin.proxyUrl" 
+              v-model="proxyUrlWithoutProtocol" 
               placeholder="api.your-plugin-domain.com" 
               clearable
               :status="!plugin.proxyUrl && !plugin.manifestUrl ? 'warning' : ''"
@@ -239,25 +239,37 @@ const formattedProxyUrl = computed(() => {
 // Extract protocol from proxy URL or default to https
 const proxyProtocol = ref('https://');
 
-// Extract protocol from existing URL if present
-watchEffect(() => {
-  if (props.plugin.proxyUrl) {
+// Computed property to get URL without protocol for display in input
+const proxyUrlWithoutProtocol = computed({
+  get() {
+    if (!props.plugin.proxyUrl) return '';
+    
+    // If URL already has protocol, extract it and return URL without protocol
     if (props.plugin.proxyUrl.startsWith('http://')) {
       proxyProtocol.value = 'http://';
-      props.plugin.proxyUrl = props.plugin.proxyUrl.replace('http://', '');
+      return props.plugin.proxyUrl.replace('http://', '');
     } else if (props.plugin.proxyUrl.startsWith('https://')) {
       proxyProtocol.value = 'https://';
-      props.plugin.proxyUrl = props.plugin.proxyUrl.replace('https://', '');
+      return props.plugin.proxyUrl.replace('https://', '');
+    }
+    
+    // URL doesn't have protocol, return as is
+    return props.plugin.proxyUrl;
+  },
+  set(value: string) {
+    // When setting, combine with protocol and update the original property
+    if (value) {
+      props.plugin.proxyUrl = `${proxyProtocol.value}${value}`;
+    } else {
+      props.plugin.proxyUrl = '';
     }
   }
 });
 
-// Watch for changes in the protocol and URL
+// Watch for protocol changes to update the full URL
 watch(proxyProtocol, (newProtocol) => {
-  // If we have a URL but no protocol, add the protocol
-  if (props.plugin.proxyUrl && !props.plugin.proxyUrl.startsWith('http')) {
-    const url = props.plugin.proxyUrl;
-    props.plugin.proxyUrl = url;
+  if (proxyUrlWithoutProtocol.value) {
+    props.plugin.proxyUrl = `${newProtocol}${proxyUrlWithoutProtocol.value}`;
   }
 });
 

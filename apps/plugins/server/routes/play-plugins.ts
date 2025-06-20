@@ -36,7 +36,8 @@ export function playPlugins() {
 
     req.plugin = plugin;
     req.apiPath = apiPath;
-    req.pluginUrl = plugin.proxyUrl;
+    req.pluginUrl = plugin.proxyUrl.startsWith('http') ? plugin.proxyUrl : `https://${plugin.proxyUrl}`;
+
     next();
   }
 
