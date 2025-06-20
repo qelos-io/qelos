@@ -103,6 +103,7 @@ export async function chatCompletion(req, res) {
   }, integration.dataManipulation);
   } catch (e: any) {
     res.status(500).json({ message: 'Could not calculate prompt' }).end();
+    return;
   }
 
   const chatOptions = {
@@ -113,6 +114,7 @@ export async function chatCompletion(req, res) {
     presence_penalty: options.presence_penalty || integration.target.details.presence_penalty,
     stop: options.stop || integration.target.details.stop,
     messages: initialMessages.concat(options.messages),
+    response_format: options.response_format || integration.target.details.response_format,
   }
 
   try {

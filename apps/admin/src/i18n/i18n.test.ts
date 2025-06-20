@@ -1,4 +1,4 @@
-import {readdirSync} from 'fs';
+import {readdirSync} from 'node:fs';
 
 describe('i18n translations files', () => {
   const translationsKeys = Object.keys(require('./en.json')).sort();

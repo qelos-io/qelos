@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
-import { Delete, Plus, ArrowUp, ArrowDown } from '@element-plus/icons-vue';
+import { Delete, Plus, ArrowUp, ArrowDown, MagicStick, Document } from '@element-plus/icons-vue';
 import BlueprintDropdown from '@/modules/integrations/components/BlueprintDropdown.vue';
+import { storeToRefs } from 'pinia';
+import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
+import { capitalize } from 'vue';
+import { getPlural } from '@/modules/core/utils/texts';
 
 // Define props and emits
 const props = defineProps<{
@@ -10,6 +14,148 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits(['update:modelValue']);
+
+// Get blueprints for template suggestions
+const { blueprints } = storeToRefs(useBlueprintsStore());
+
+// Template system
+const showTemplateDialog = ref(false);
+const selectedTemplate = ref('');
+const selectedBlueprintForTemplate = ref('');
+
+// Pre-defined templates for common chat completion scenarios
+const templates = ref([
+  {
+    id: 'workspace-blueprint-context',
+    name: 'Workspace Blueprint Context',
+    description: 'Add workspace blueprint data as context for AI chat completion',
+    icon: 'Document',
+    requiresBlueprint: true,
+    generate: (blueprintId: string) => {
+      const blueprint = blueprints.value?.find(b => b.identifier === blueprintId);
+      const blueprintName = blueprint ? capitalize(blueprint.name) : capitalize(blueprintId);
+      const blueprintNamePlural = getPlural(blueprintName.toLowerCase());
+      
+      return [
+        {
+          "map": {
+            [`${blueprintNamePlural}Data`]: `{ workspace: .user.workspace._id }`,
+            "systemPrompt": `"Here is the user's ${blueprintNamePlural} data for context: "`
+          },
+          "populate": {}
+        },
+        {
+          "map": {},
+          "populate": {
+            [`${blueprintNamePlural}Data`]: {
+              "source": "blueprintEntities",
+              "blueprint": blueprintId
+            }
+          }
+        },
+        {
+          "map": {
+            "messages": `((.systemPrompt + (.${blueprintNamePlural}Data | tostring)) + .messages)`
+          },
+          "populate": {}
+        }
+      ];
+    }
+  },
+  {
+    id: 'user-profile-context',
+    name: 'User Profile Context',
+    description: 'Add user profile information to chat context',
+    icon: 'User',
+    requiresBlueprint: false,
+    generate: () => [
+      {
+        "map": {
+          "systemPrompt": `"User context: "`,
+          "messages": "((.systemPrompt + (.user | tostring)) + .messages)"
+        },
+        "populate": {}
+      }
+    ]
+  },
+  {
+    id: 'blueprint-user-context',
+    name: 'Blueprint + User Context',
+    description: 'Combine blueprint data with user information for comprehensive context',
+    icon: 'Collection',
+    requiresBlueprint: true,
+    generate: (blueprintId: string) => {
+      const blueprint = blueprints.value?.find(b => b.identifier === blueprintId);
+      const blueprintName = blueprint ? capitalize(blueprint.name) : capitalize(blueprintId);
+      const blueprintNamePlural = getPlural(blueprintName.toLowerCase());
+      
+      return [
+        {
+          "map": {
+            [`${blueprintNamePlural}Data`]: `{ workspace: .user.workspace._id }`,
+            "systemPrompt": `"Here is your ${blueprintNamePlural} data and user context: "`
+          },
+          "populate": {}
+        },
+        {
+          "map": {},
+          "populate": {
+            [`${blueprintNamePlural}Data`]: {
+              "source": "blueprintEntities",
+              "blueprint": blueprintId
+            }
+          }
+        },
+        {
+          "map": {
+            "contextData": `{ ${blueprintNamePlural}: .${blueprintNamePlural}Data, user: .user }`,
+            "messages": "((.systemPrompt + (.contextData | tostring)) + .messages)"
+          },
+          "populate": {}
+        }
+      ];
+    }
+  },
+  {
+    id: 'conditional-context-loading',
+    name: 'Conditional Context Loading',
+    description: 'Load blueprint context only when certain conditions are met',
+    icon: 'Switch',
+    requiresBlueprint: true,
+    generate: (blueprintId: string) => {
+      const blueprint = blueprints.value?.find(b => b.identifier === blueprintId);
+      const blueprintName = blueprint ? capitalize(blueprint.name) : capitalize(blueprintId);
+      const blueprintNamePlural = getPlural(blueprintName.toLowerCase());
+      
+      return [
+        {
+          "map": {
+            "shouldLoadContext": "(.messages | length) > 3",
+            [`${blueprintNamePlural}Data`]: `if .shouldLoadContext then { workspace: .user.workspace._id } else {} end`
+          },
+          "populate": {}
+        },
+        {
+          "map": {},
+          "populate": {
+            [`${blueprintNamePlural}Data`]: {
+              "source": "blueprintEntities",
+              "blueprint": blueprintId
+            }
+          },
+          "abort": ".shouldLoadContext | not"
+        },
+        {
+          "map": {
+            "systemPrompt": `"Context: Your ${blueprintNamePlural} data is available. "`,
+            "messages": "((.systemPrompt + (.${blueprintNamePlural}Data | tostring)) + .messages)"
+          },
+          "populate": {}
+        }
+      ];
+    }
+  }
+]);
 
 // Store steps as arrays of entries for stable references
 const steps = ref<any[]>([]);
@@ -375,22 +521,15 @@ const updateCompleteJson = (json: string) => {
     // Convert all steps to arrays of entries
     parsedJson.forEach((step, stepIndex) => {
       if (step.map) {
-        mapEntries.value[stepIndex] = Object.entries(step.map).map(([key, value]) => ({
-          key,
-          value: value as string
-        }));
+        mapEntries.value[stepIndex] = Object.entries(step.map).map(([key, value]) => ({ key, value }));
       } else {
         mapEntries.value[stepIndex] = [];
       }
       
       if (step.populate) {
         populateEntries.value[stepIndex] = Object.entries(step.populate).map(([key, config]) => {
-          const populateConfig = config as any;
-          return {
-            key,
-            source: populateConfig.source || 'user',
-            blueprint: populateConfig.blueprint
-          };
+          const populateConfig = config;
+          return { key, source: populateConfig.source || 'user', blueprint: populateConfig.blueprint };
         });
       } else {
         populateEntries.value[stepIndex] = [];
@@ -407,7 +546,7 @@ const updateCompleteJson = (json: string) => {
         abortValues.value[stepIndex] = step.abort;
         abortTypes.value[stepIndex] = 'boolean';
       } else {
-        abortValues.value[stepIndex] = step.abort as string;
+        abortValues.value[stepIndex] = step.abort;
         abortTypes.value[stepIndex] = 'expression';
       }
     });
@@ -437,6 +576,98 @@ const handleAbortTypeChange = (stepIndex: number) => {
   }
   syncToModel();
 };
+
+// Template methods
+const openTemplateDialog = () => {
+  showTemplateDialog.value = true;
+  selectedTemplate.value = '';
+  selectedBlueprintForTemplate.value = '';
+};
+
+const applyTemplate = () => {
+  const template = templates.value.find(t => t.id === selectedTemplate.value);
+  if (!template) return;
+
+  let generatedSteps;
+  if (template.requiresBlueprint && selectedBlueprintForTemplate.value) {
+    generatedSteps = template.generate(selectedBlueprintForTemplate.value);
+  } else if (!template.requiresBlueprint) {
+    generatedSteps = template.generate();
+  } else {
+    return; // Blueprint required but not selected
+  }
+
+  // Replace current steps with template
+  steps.value = JSON.parse(JSON.stringify(generatedSteps));
+  
+  // Clear and reinitialize reactive arrays for the new steps
+  mapEntries.value = {};
+  populateEntries.value = {};
+  clearFlags.value = {};
+  abortValues.value = {};
+  abortTypes.value = {};
+  stepJsons.value = {};
+  
+  // Set up reactive arrays for each new step
+  steps.value.forEach((step, stepIndex) => {
+    if (step.map) {
+      mapEntries.value[stepIndex] = Object.entries(step.map).map(([key, value]) => ({ key, value }));
+    } else {
+      mapEntries.value[stepIndex] = [];
+    }
+    
+    if (step.populate) {
+      populateEntries.value[stepIndex] = Object.entries(step.populate).map(([key, config]) => {
+        const populateConfig = config;
+        return { key, source: populateConfig.source || 'user', blueprint: populateConfig.blueprint };
+      });
+    } else {
+      populateEntries.value[stepIndex] = [];
+    }
+    
+    clearFlags.value[stepIndex] = step.clear === true;
+    
+    if (step.abort === undefined) {
+      abortValues.value[stepIndex] = '';
+      abortTypes.value[stepIndex] = 'none';
+    } else if (typeof step.abort === 'boolean') {
+      abortValues.value[stepIndex] = step.abort;
+      abortTypes.value[stepIndex] = 'boolean';
+    } else {
+      abortValues.value[stepIndex] = step.abort;
+      abortTypes.value[stepIndex] = 'expression';
+    }
+    
+    stepJsons.value[stepIndex] = JSON.stringify(step, null, 2);
+  });
+  
+  completeJsonText.value = JSON.stringify(steps.value, null, 2);
+  
+  // Sync to model to emit the changes
+  syncToModel();
+  
+  showTemplateDialog.value = false;
+};
+
+const getTemplateIcon = (iconName: string) => {
+  const icons = {
+    'Document': Document,
+    'User': 'el-icon-user',
+    'Collection': 'el-icon-collection',
+    'Switch': 'el-icon-switch'
+  };
+  return icons[iconName] || Document;
+};
+
+const canApplyTemplate = computed(() => {
+  if (!selectedTemplate.value) return false;
+  const template = templates.value.find(t => t.id === selectedTemplate.value);
+  if (!template) return false;
+  if (template.requiresBlueprint) {
+    return !!selectedBlueprintForTemplate.value;
+  }
+  return true;
+});
 
 // Initialize on mount
 onMounted(() => {
@@ -570,6 +801,7 @@ onMounted(() => {
     <!-- Add Step Button -->
     <div class="add-step-container">
       <el-button type="primary" @click="addStep" :icon="Plus">{{ $t('Add Step') }}</el-button>
+      <el-button type="primary" @click="openTemplateDialog" :icon="MagicStick">{{ $t('Apply Template') }}</el-button>
     </div>
     
     <el-divider />
@@ -584,6 +816,91 @@ onMounted(() => {
         @update:modelValue="updateCompleteJson" 
       />
     </div>
+    
+    <!-- Template Dialog -->
+    <el-dialog 
+      v-model="showTemplateDialog" 
+      :title="$t('AI Chat Context Templates')" 
+      width="800px"
+      class="template-dialog"
+    >
+      <div class="template-dialog-content">
+        <el-alert type="info" :closable="false" class="mb-4">
+          {{ $t('Choose a pre-built template to quickly set up data manipulation for AI chat completion with workspace context.') }}
+        </el-alert>
+        
+        <div class="template-grid">
+          <div 
+            v-for="template in templates" 
+            :key="template.id" 
+            class="template-card"
+            :class="{ 'selected': selectedTemplate === template.id }"
+            @click="selectedTemplate = template.id"
+          >
+            <div class="template-card-header">
+              <div class="template-icon">
+                <component :is="getTemplateIcon(template.icon)" />
+              </div>
+              <div class="template-title">
+                <h4>{{ template.name }}</h4>
+                <span v-if="template.requiresBlueprint" class="blueprint-required">
+                  {{ $t('Requires Blueprint') }}
+                </span>
+              </div>
+            </div>
+            <div class="template-description">
+              <p>{{ template.description }}</p>
+            </div>
+            <div class="template-features">
+              <el-tag v-if="template.requiresBlueprint" size="small" type="warning">
+                {{ $t('Blueprint Data') }}
+              </el-tag>
+              <el-tag size="small" type="info">
+                {{ $t('Workspace Context') }}
+              </el-tag>
+              <el-tag size="small" type="success">
+                {{ $t('AI Ready') }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Blueprint Selection -->
+        <div 
+          v-if="selectedTemplate && templates.find(t => t.id === selectedTemplate)?.requiresBlueprint" 
+          class="blueprint-selection-section"
+        >
+          <el-divider />
+          <div class="blueprint-selection">
+            <div class="blueprint-selection-header">
+              <h4>{{ $t('Select Blueprint') }}</h4>
+              <p>{{ $t('Choose which blueprint data to include in the chat context') }}</p>
+            </div>
+            <div class="blueprint-dropdown-container">
+              <BlueprintDropdown 
+                v-model="selectedBlueprintForTemplate" 
+                placeholder="Select a blueprint..."
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="template-dialog-footer">
+          <el-button @click="showTemplateDialog = false">
+            {{ $t('Cancel') }}
+          </el-button>
+          <el-button 
+            type="primary" 
+            @click="applyTemplate"
+            :disabled="!canApplyTemplate"
+          >
+            {{ $t('Apply Template') }}
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -641,6 +958,7 @@ onMounted(() => {
   margin: 20px 0;
   display: flex;
   justify-content: center;
+  gap: 10px;
 }
 
 .json-preview {
@@ -697,5 +1015,158 @@ onMounted(() => {
   display: flex;
   gap: 10px;
   align-items: center;
+}
+
+.template-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.template-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+}
+
+.template-icon {
+  font-size: 24px;
+}
+
+.template-info {
+  flex-grow: 1;
+}
+
+.template-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.blueprint-selector {
+  margin-top: 20px;
+}
+
+.template-dialog-content {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.template-card {
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.template-card:hover {
+  border-color: var(--el-color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.template-card.selected {
+  border-color: var(--el-color-primary);
+  background-color: var(--el-color-primary-light-9);
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+}
+
+.template-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.template-icon {
+  font-size: 20px;
+  color: var(--el-color-primary);
+  flex-shrink: 0;
+}
+
+.template-title {
+  flex: 1;
+}
+
+.template-title h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.blueprint-required {
+  font-size: 11px;
+  color: var(--el-color-warning);
+  font-weight: 500;
+}
+
+.template-description {
+  margin-bottom: 12px;
+}
+
+.template-description p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  line-height: 1.4;
+}
+
+.template-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.blueprint-selection-section {
+  margin-top: 20px;
+  padding: 0 20px;
+}
+
+.blueprint-selection {
+  padding: 16px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  background: var(--el-bg-color-page);
+}
+
+.blueprint-selection-header {
+  margin-bottom: 12px;
+}
+
+.blueprint-selection-header h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.blueprint-selection-header p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+}
+
+.blueprint-dropdown-container {
+  margin-bottom: 12px;
+}
+
+.template-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--el-border-color);
+  background: var(--el-bg-color-page);
 }
 </style>

@@ -39,6 +39,7 @@ const openAiDetails = ref({
   presence_penalty: 0,
   max_tokens: 1000,
   stop: undefined,
+  response_format: undefined,
   pre_messages: []
 });
 
@@ -405,6 +406,7 @@ const initTargetDetails = () => {
       presence_penalty: details.presence_penalty ?? 0,
       max_tokens: details.max_tokens ?? 1000,
       stop: details.stop,
+      response_format: details.response_format,
       pre_messages: []
     };
     if (details.pre_messages?.length) {
@@ -811,6 +813,32 @@ onMounted(() => {
                 placeholder="Enter stop sequences"
                 @change="syncOpenAiDetailsToTargetDetails"
               />
+            </div>
+            
+            <!-- Response Format -->
+            <div class="form-group">
+              <label>Response Format</label>
+              <p class="help-text">Optional format for the API response</p>
+              <el-select
+                v-model="openAiDetails.response_format"
+                placeholder="Select response format"
+                clearable
+                @change="syncOpenAiDetailsToTargetDetails"
+                style="width: 100%"
+              >
+                <el-option
+                  label="Default (no format constraint)"
+                  :value="undefined"
+                />
+                <el-option
+                  label="JSON Object"
+                  :value="{ type: 'json_object' }"
+                />
+              </el-select>
+              <p class="help-text mt-2" v-if="openAiDetails.response_format?.type === 'json_object'">
+                <i class="el-icon-warning" style="color: #e6a23c;"></i>
+                When using JSON mode, you must instruct the model to produce JSON in your system message or user prompt.
+              </p>
             </div>
             
             <!-- Raw JSON Editor Toggle -->

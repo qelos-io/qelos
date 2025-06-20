@@ -30,7 +30,7 @@ const supportedSources = {
   [IntegrationSourceKind.OpenAI]: {
     [OpenAITargetOperation.chatCompletion]: {
       required: [],
-      optional: ['pre_messages', 'model', 'temperature', 'max_tokens', 'top_p', 'frequency_penalty', 'presence_penalty', 'stop'],
+      optional: ['pre_messages', 'model', 'temperature', 'max_tokens', 'top_p', 'frequency_penalty', 'presence_penalty', 'stop', 'response_format'],
     }
   },
   [IntegrationSourceKind.ClaudeAi]: {
