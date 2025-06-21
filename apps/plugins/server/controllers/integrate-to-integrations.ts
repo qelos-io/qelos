@@ -102,6 +102,7 @@ export async function chatCompletion(req, res) {
     messages: safeUserMessages,
   }, integration.dataManipulation);
   } catch (e: any) {
+    logger.error('Failed to calculate prompt', e);
     res.status(500).json({ message: 'Could not calculate prompt' }).end();
     return;
   }
