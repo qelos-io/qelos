@@ -55,7 +55,7 @@ const templates = ref([
         },
         {
           "map": {
-            "messages": `((.systemPrompt + (.${blueprintNamePlural}Data | tostring)) + .messages)`
+            "messages": `([{role: "system", content: .systemPrompt + (.${blueprintNamePlural}Data | tostring)}] + .messages)`
           },
           "populate": {}
         }
@@ -72,7 +72,7 @@ const templates = ref([
       {
         "map": {
           "systemPrompt": `"User context: "`,
-          "messages": "((.systemPrompt + (.user | tostring)) + .messages)"
+          "messages": `([{ role: "system", content: (.systemPrompt + (.user | tostring)) }] + .messages)`
         },
         "populate": {}
       }
@@ -109,7 +109,7 @@ const templates = ref([
         {
           "map": {
             "contextData": `{ ${blueprintNamePlural}: .${blueprintNamePlural}Data, user: .user }`,
-            "messages": "((.systemPrompt + (.contextData | tostring)) + .messages)"
+            "messages": `([{ role: "system", content: .systemPrompt + (.contextData | tostring) }] + .messages)`
           },
           "populate": {}
         }
@@ -148,7 +148,7 @@ const templates = ref([
         {
           "map": {
             "systemPrompt": `"Context: Your ${blueprintNamePlural} data is available. "`,
-            "messages": "((.systemPrompt + (.${blueprintNamePlural}Data | tostring)) + .messages)"
+            "messages": `([{ role: "system", content: .systemPrompt }] + .messages)`
           },
           "populate": {}
         }

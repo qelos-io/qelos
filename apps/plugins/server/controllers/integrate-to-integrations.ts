@@ -106,18 +106,17 @@ export async function chatCompletion(req, res) {
     return;
   }
 
-  const chatOptions = {
-    model: options.model || integration.target.details.model || source.metadata.defaultModel,
-    temperature: options.temperature || integration.target.details.temperature,
-    top_p: options.top_p || integration.target.details.top_p,
-    frequency_penalty: options.frequency_penalty || integration.target.details.frequency_penalty,
-    presence_penalty: options.presence_penalty || integration.target.details.presence_penalty,
-    stop: options.stop || integration.target.details.stop,
-    messages: initialMessages.concat(options.messages),
-    response_format: options.response_format || integration.target.details.response_format,
-  }
-
   try {
+    const chatOptions = {
+      model: options.model || integration.target.details.model || source.metadata.defaultModel,
+      temperature: options.temperature || integration.target.details.temperature,
+      top_p: options.top_p || integration.target.details.top_p,
+      frequency_penalty: options.frequency_penalty || integration.target.details.frequency_penalty,
+      presence_penalty: options.presence_penalty || integration.target.details.presence_penalty,
+      stop: options.stop || integration.target.details.stop,
+      messages: initialMessages.concat(options.messages).map(msg => typeof msg === 'string' ? { role: 'user', content: msg } : msg),
+      response_format: options.response_format || integration.target.details.response_format,
+    };
     if (useSSE) {
       // Set up SSE response headers
       res.setHeader('Content-Type', 'text/event-stream');
