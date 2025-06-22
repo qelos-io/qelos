@@ -344,7 +344,7 @@ export async function createBlueprintEntity(req, res) {
       logger.log('dispatch create event');
       emitPlatformEvent({
         tenant: entity.tenant,
-        user: entity.user.toString(),
+        user: entity.user?.toString(),
         source: 'blueprints',
         kind: blueprint.identifier,
         eventName: 'create',
@@ -357,7 +357,7 @@ export async function createBlueprintEntity(req, res) {
       }).catch(logger.error);
     }
 
-    const { auditInfo, ...response } = entity.toObject();
+    const { auditInfo, _id, ...response } = entity.toObject();
 
     res.status(200).json(response).end()
     return;
@@ -366,6 +366,7 @@ export async function createBlueprintEntity(req, res) {
     if (err instanceof ResponseError) {
       res.status(err.status).json({ message: err.responseMessage }).end();
     } else {
+      logger.error('failed to create blueprint entity', blueprint.identifier, entityIdentifier, query, err);
       res.status(500).json({ message: 'something went wrong with entity creation' }).end();
     }
   }
