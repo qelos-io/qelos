@@ -15,6 +15,7 @@ const props = defineProps<{
   clearAfterSubmit?: boolean;
   navigateAfterSubmit?: string | any;
   beforeSubmit?: (data: any) => Promise<unknown>;
+  afterSubmit?: (data: any) => Promise<unknown>;
   identifier?: string;
 }>()
 
@@ -31,8 +32,11 @@ const onSubmit = async (form) => {
 
 const { reloadBlueprintRequirements } = useScreenRequirementsStore();
 
-function afterSubmit(result: any) {
+async function afterSubmit(result: any) {
   reloadBlueprintRequirements(props.blueprint);
+  if (typeof props.afterSubmit === 'function') {
+    await props.afterSubmit(result);
+  }
   if (props.navigateAfterSubmit) {
     router.push(typeof props.navigateAfterSubmit === 'string' ? {
       name: props.navigateAfterSubmit,
