@@ -287,7 +287,8 @@ export async function getSingleBlueprintEntity(req, res) {
     }
 
     res.json(entity).end();
-  } catch {
+  } catch (err) {
+    logger.error('failed to load blueprint entity', blueprint.identifier, entityIdentifier, query, err);
     res.status(500).json({ message: 'something went wrong with entity' }).end();
   }
 }
