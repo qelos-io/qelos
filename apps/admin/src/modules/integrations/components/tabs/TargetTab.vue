@@ -136,7 +136,6 @@ const qelosDetails = ref({
   roles: '',
   userId: '',
   blueprint: '',
-  entityData: ''
 });
 
 // Roles tags input handling
@@ -421,7 +420,6 @@ const initTargetDetails = () => {
       roles: details.roles || '',
       userId: details.userId || '',
       blueprint: details.blueprint || '',
-      entityData: details.entityData || ''
     };
   }
 };
@@ -672,11 +670,14 @@ onMounted(() => {
           <el-form-item :label="$t('Blueprint')">
             <BlueprintDropdown v-model="qelosDetails.blueprint" />
           </el-form-item>
-          
-          <el-form-item :label="$t('Entity Data')">
-            <el-input v-model="qelosDetails.entityData" placeholder="e.g., .data" />
-          </el-form-item>
         </div>
+      </div>
+
+      <!-- Update Blueprint Entity -->
+      <div v-else-if="modelValue.operation === QelosTargetOperation.updateBlueprintEntity" class="blueprint-config">
+        <el-form-item :label="$t('Blueprint')">
+          <BlueprintDropdown v-model="qelosDetails.blueprint" />
+        </el-form-item>
       </div>
       
       <!-- OpenAI Chat Completion Form (Consolidated) -->

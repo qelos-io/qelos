@@ -36,4 +36,16 @@ entitiesRouter
     next();
   }, getBlueprintByIdentifierMiddleware, getAllBlueprintEntities)
 
+entitiesRouter
+  .post('/internal-api/blueprints/:blueprintIdentifier/entities', (req, res, next) => {
+    req.user = { roles: ['admin'] }
+    next();
+  }, getBlueprintByIdentifierMiddleware, createBlueprintEntity)
+
+entitiesRouter
+  .put('/internal-api/blueprints/:blueprintIdentifier/entities/:entityIdentifier', (req, res, next) => {
+    req.user = { roles: ['admin'] }
+    next();
+  }, getBlueprintByIdentifierMiddleware, updateBlueprintEntity)
+
 export default entitiesRouter;

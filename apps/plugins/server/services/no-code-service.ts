@@ -22,3 +22,7 @@ export function getBlueprintEntities(tenant: string, blueprintIdentifier: string
   const queryString = Object.entries(query).map(([key, value]) => `${key}=${value}`).join('&');
   return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities?${queryString}`, 'GET', tenant);
 }
+
+export function createBlueprintEntity(tenant: string, blueprintIdentifier: string, metadata: any) {
+  return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities`, 'POST', tenant, { metadata });
+}

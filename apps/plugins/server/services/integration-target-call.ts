@@ -10,6 +10,7 @@ import PlatformEvent from '../models/event';
 import { createAIService } from '../services/ai-service';
 import { ChatMessageServiceInput } from 'openai/resources/chat';
 import { createUser, updateUser } from './users';
+import { createBlueprintEntity, updateBlueprintEntity } from '../controllers/entities';
 
 export interface HttpTargetPayload {
   method?: string;
@@ -202,6 +203,10 @@ async function handleQelosTarget(integrationTarget: IIntegrationEntity,
       })
     } else if (operation === QelosTargetOperation.setWorkspaceLabels) {
       logger.log('operation not supported yet.')
+    } else if (operation === QelosTargetOperation.createBlueprintEntity) {
+      await createBlueprintEntity(source.tenant, payload.blueprint || details.blueprint, payload.metadata || details.metadata)
+    } else if (operation === QelosTargetOperation.updateBlueprintEntity) {
+      await updateBlueprintEntity(source.tenant, payload.blueprint || details.blueprint, payload.metadata || details.metadata)
     } else {
       logger.log('operation not supported yet.')
     }

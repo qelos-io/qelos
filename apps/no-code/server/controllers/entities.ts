@@ -288,7 +288,7 @@ export async function getSingleBlueprintEntity(req, res) {
 
     res.json(entity).end();
   } catch (err) {
-    logger.error('failed to load blueprint entity', blueprint.identifier, entityIdentifier, query, err);
+    logger.error('failed to load blueprint entity', blueprint.identifier, err);
     res.status(500).json({ message: 'something went wrong with entity' }).end();
   }
 }
@@ -366,7 +366,7 @@ export async function createBlueprintEntity(req, res) {
     if (err instanceof ResponseError) {
       res.status(err.status).json({ message: err.responseMessage }).end();
     } else {
-      logger.error('failed to create blueprint entity', blueprint.identifier, entityIdentifier, query, err);
+      logger.error('failed to create blueprint entity', blueprint.identifier, err);
       res.status(500).json({ message: 'something went wrong with entity creation' }).end();
     }
   }
