@@ -1,31 +1,21 @@
-# License
+Polyform Shield License 1.0.0
 
-## Community Use - Apache License 2.0
+Copyright 2025 Velocitech LTD
 
-This project is licensed under the **Apache License 2.0**. You are free to:
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to use,
+copy, modify, and distribute the Software, subject to the following conditions:
 
-- **Use** the software for personal, educational, or community purposes.
-- **Modify** the software as needed.
-- **Distribute** copies of the software or modified versions.
+The Software may not be used to provide a competing Software as a Service (SaaS)
+or managed service offering without a separate commercial license from Velocitech LTD.
 
-### Key Conditions:
-- You are not required to share modifications you make.
-- You may use this software internally, including within commercial settings, without any restrictions.
+The above copyright notice and this permission notice shall be included in all copies
+or substantial portions of the Software.
 
-For full license details, see [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-## Restriction on Managed Services - Custom Clause
-
-While the software is open and free to use for internal or personal purposes, **you are not permitted to offer this software or any derivative of it as a paid managed service** or **Software as a Service (SaaS)** without explicit permission from Velocitech LTD.
-
-### Key Restriction:
-- You **may not** sell, offer, or commercialize this software as a managed service, SaaS, or any similar hosted service.
-
-### How to Obtain Permission:
-If you wish to offer a managed or commercial version of this software, you must obtain a **commercial license** from Velocitech LTD. Please contact us at [support@qelos.io](mailto:support@qelos.io) for details.
-
-## Additional Notes
-
-This license ensures the software remains free for personal use and community development, while protecting Velocitech LTD’s right to control the commercialization of managed services based on the software.
-
-For any questions regarding the license, feel free to reach out at [support@qelos.io].
+For the full license text, see: https://polyformproject.org/licenses/shield/1.0.0/

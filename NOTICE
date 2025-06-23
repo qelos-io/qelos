@@ -1,0 +1,31 @@
+Copyright 2025 Velocitech LTD
+
+This product includes software developed by Velocitech LTD.
+
+Licensed under the Polyform Shield License 1.0.0.
+
+Use in production SaaS or managed service environments competing with Velocitech LTD
+is prohibited without a commercial license.
+
+---
+
+Definition of Competing Product:
+
+For the purpose of this license and related agreements, a "Competing Product" means any product,
+service, or platform that offers capabilities substantially similar to those provided by the "Qelos" platform,
+including but not limited to enabling users to build, manage, or deploy SaaS applications using no-code,
+low-code, and AI technologies.
+
+Specifically, a Competing Product includes any system or service that:
+
+- Utilizes the "Qelos" platform or its codebase as part of its infrastructure to provide SaaS creation capabilities;
+
+- Offers development, deployment, or managed SaaS services to third parties that directly compete
+  with the services provided by Velocitech LTD or its affiliates;
+
+- Provides a similar no-code/low-code/AI-driven SaaS creation environment aimed at commercial clients.
+
+---
+
+This definition is intended to clarify the scope of the license restrictions and
+does not limit Velocitech LTD's rights under applicable laws and agreements.
