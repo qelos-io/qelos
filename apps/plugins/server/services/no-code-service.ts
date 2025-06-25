@@ -23,6 +23,10 @@ export function getBlueprintEntities(tenant: string, blueprintIdentifier: string
   return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities?${queryString}`, 'GET', tenant);
 }
 
-export function createBlueprintEntity(tenant: string, blueprintIdentifier: string, metadata: any) {
-  return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities`, 'POST', tenant, { metadata });
+export function createBlueprintEntity(tenant: string, blueprintIdentifier: string, payload: any) {
+  return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities`, 'POST', tenant, payload);
+}
+
+export function updateBlueprintEntity(tenant: string, blueprintIdentifier: string, payload: any) {
+  return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities`, 'PUT', tenant, payload);
 }

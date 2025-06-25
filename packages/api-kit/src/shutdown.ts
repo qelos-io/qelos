@@ -6,6 +6,12 @@ let shutdown = (_code?: number) => {
 };
 
 if (process.env.NODE_ENV !== 'production') {
+
+  // catch any error and print it
+  process.on('uncaughtException', (err) => {
+    console.error(err)
+  })
+
   console.log('trying to require tmp file...')
   try {
     const cwd = process.cwd();

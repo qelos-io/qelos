@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 import { createProxyMiddleware as proxy } from 'http-proxy-middleware';
 import { IApiProxyConfig, IServiceProxyConfig } from './types';
 import { getApiProxyConfig } from './config';
+import { setTimeout } from 'timers/promises';
 
 const CSP = {
   default: `'self' 'unsafe-inline' 'unsafe-eval' https: https://*.clarity.ms https://*.qelos.io ${process.env.PRODUCTION ? '' : 'ws:'}`,
@@ -48,9 +49,22 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
     app.use(service.proxies, getProxy(getProxyTarget(service)));
   }
 
-  const indexHtmlPromise = fetch(getProxyTarget(adminPanel) + '/index.html')
-    .then(res => res.text())
-    .then(str => str.replace("NODE_ENV:'development'", `NODE_ENV:'${process.env.NODE_ENV || 'development'}'`))
+  function loadIndexHtml() {
+    let url = getProxyTarget(adminPanel) + '/index.html';
+    return fetch(url)
+      .then(res => {
+        if (res.status === 200) {
+          return res.text();
+        }
+        throw new Error('failed to load index.html');
+      })
+      .then(str => str.replace("NODE_ENV:'development'", `NODE_ENV:'${process.env.NODE_ENV || 'development'}'`))
+  }
+
+  const indexHtmlPromise = loadIndexHtml().catch(() => {
+    console.log('failed to load index.html, retrying...');
+    return setTimeout(1000).then(() => loadIndexHtml());
+  });
 
   const defaultApplicationHost = new URL(applicationUrl).host;
   const meUrl = getProxyTarget(authService) + '/api/me';

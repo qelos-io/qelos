@@ -10,7 +10,8 @@ import PlatformEvent from '../models/event';
 import { createAIService } from '../services/ai-service';
 import { ChatMessageServiceInput } from 'openai/resources/chat';
 import { createUser, updateUser } from './users';
-import { createBlueprintEntity, updateBlueprintEntity } from '../controllers/entities';
+import logger from '../services/logger';
+import { createBlueprintEntity, updateBlueprintEntity } from './no-code-service';
 
 export interface HttpTargetPayload {
   method?: string;
