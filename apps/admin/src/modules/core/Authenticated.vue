@@ -87,7 +87,7 @@ watch(() => user.value?.roles, () => {
   width: 100%;
   height: 100%;
   flex-direction: row;
-  background-color: var(--body-bg);
+  background: linear-gradient(to right bottom, var(--border-color) 20%, var(--body-bg) 80%);
 }
 
 .admin-content {
@@ -101,7 +101,6 @@ watch(() => user.value?.roles, () => {
     display: flex;
     flex-direction: column;
     overflow: auto;
-    background-color: var(--body-bg);
     padding-bottom: 0;
     position: relative;
   }

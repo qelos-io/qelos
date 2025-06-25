@@ -206,7 +206,7 @@
       </el-tab-pane>
     </el-tabs>
   </div>
-<!--  <footer><QuickStartWizard/></footer>-->
+ <footer><QuickStartWizard/></footer>
 </template>
 
 <script setup lang="ts">

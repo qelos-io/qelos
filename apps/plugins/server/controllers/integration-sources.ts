@@ -105,7 +105,7 @@ export async function createIntegrationSource(req, res) {
 
   try {
     await source.save();
-    const { authentication, ...permittedData } = source;
+    const { authentication, ...permittedData } = source.toObject();
     res.json(permittedData).end();
   } catch (err) {
     logger.error('could not create integration source', err);
@@ -165,7 +165,9 @@ export async function updateIntegrationSource(req, res) {
     if (source.isModified()) {
       await source.save();
     }
-    res.json(source).end();
+    const { authentication, ...permittedData } = source.toObject();
+
+    res.json(permittedData).end();
   } catch {
     res.status(500).json({ message: 'could not update integration source' }).end();
   }
