@@ -53,7 +53,8 @@ async function executeFunctionCall(
 
   try {
     const parsedArgs = parseFunctionArguments(functionCall.function.arguments);
-    const result = await callIntegrationTarget(tenant, parsedArgs, targetIntegration.target);
+    const args = await executeDataManipulation(tenant, parsedArgs, targetIntegration.dataManipulation);
+    const result = await callIntegrationTarget(tenant, args, targetIntegration.target);
 
     return createFunctionResult(functionCall, result);
   } catch (error) {
@@ -93,7 +94,8 @@ async function executeFunctionCalls(
         }
 
         const parsedArgs = parseFunctionArguments(functionCall.function.arguments);
-        const result = await callIntegrationTarget(tenant, parsedArgs, targetIntegration.target);
+        const args = await executeDataManipulation(tenant, parsedArgs, targetIntegration.dataManipulation);
+        const result = await callIntegrationTarget(tenant, args, targetIntegration.target);
 
         const functionResult = createFunctionResult(functionCall, result);
         functionResults.push(functionResult);
@@ -208,28 +210,31 @@ export async function chatCompletion(req, res) {
 
   // Common options for both streaming and non-streaming requests 
   let options;
+  let toolsIntegrations;
+  
   try {
-    options = await executeDataManipulation(integration.tenant, {
-    user: req.user,
-    messages: safeUserMessages,
-  }, integration.dataManipulation);
+    [options, toolsIntegrations] = await Promise.all([
+      executeDataManipulation(integration.tenant, {
+        user: req.user,
+        messages: safeUserMessages,
+      }, integration.dataManipulation),
+      Integration.find({
+        tenant: integration.tenant,
+        'kind.0': integration.target.source.kind,
+        'trigger.operation': OpenAITargetOperation.functionCalling,
+        $or: [
+          { 'trigger.details.allowedIntegrationIds': integration._id },
+          { 'trigger.details.allowedIntegrationIds': '*' },
+          { 'trigger.details.allowedIntegrationIds': { $size: 0 } },
+        ],
+        'trigger.details.blockedIntegrationIds': { $ne: integration._id },
+      }).lean().exec()
+    ]);
   } catch (e: any) {
-    logger.error('Failed to calculate prompt', e);
-    res.status(500).json({ message: 'Could not calculate prompt' }).end();
+    logger.error('Failed to calculate prompt or load tools integrations', e);
+    res.status(500).json({ message: 'Could not calculate prompt or load tools integrations' }).end();
     return;
   }
-
-  const toolsIntegrations = await Integration.find({
-    tenant: integration.tenant,
-    'kind.0': integration.target.source.kind,
-    'trigger.operation': OpenAITargetOperation.functionCalling,
-    $or: [
-      { 'trigger.details.allowedIntegrationIds': integration._id },
-      { 'trigger.details.allowedIntegrationIds': '*' },
-      { 'trigger.details.allowedIntegrationIds': { $size: 0 } },
-    ],
-    'trigger.details.blockedIntegrationIds': { $ne: integration._id },
-  }).lean().exec();
 
   const tools = toolsIntegrations.map(tool => ({
     type: 'function',
