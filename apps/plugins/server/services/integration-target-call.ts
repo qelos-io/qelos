@@ -96,15 +96,16 @@ async function handleHttpTarget(
     Object.entries(fetchData.query).forEach(([key, value]) => {
       fullPath.searchParams.append(key, value);
     });
+    console.log('fullPath', fullPath.toString());
     const res = await fetch(fullPath.toString(), {
       method: fetchData.method,
       body: fetchData.method === 'GET' ? undefined : JSON.stringify(fetchData.body),
       agent: httpAgent,
       headers: fetchData.headers,
     });
+    const resBody = await res.json();
     const triggerResponse = fetchData.triggerResponse;
     if (triggerResponse.source && triggerResponse.kind && triggerResponse.eventName) {
-      const resBody = await res.json();
       const event = new PlatformEvent({
         tenant: source.tenant,
         source: triggerResponse.source,
@@ -118,9 +119,13 @@ async function handleHttpTarget(
           body: resBody,
         },
       });
-      await event.save();
-      emitPlatformEvent(event);
+      event.save().then(event => emitPlatformEvent(event)).cache();
     }
+    return {
+      status: res.status,
+      headers: res.headers,
+      body: resBody,
+    };
   }
 }
 
@@ -145,7 +150,7 @@ async function handleOpenAiTarget(integrationTarget: IIntegrationEntity,
       response_format: payload.response_format,
     })
     const triggerResponse = payload.triggerResponse;
-    if (triggerResponse.source && triggerResponse.kind && triggerResponse.eventName) {
+    if (!payload.stream && triggerResponse.source && triggerResponse.kind && triggerResponse.eventName) {
       const event = new PlatformEvent({
         tenant: source.tenant,
         source: triggerResponse.source,
@@ -157,9 +162,9 @@ async function handleOpenAiTarget(integrationTarget: IIntegrationEntity,
           body: response,
         },
       });
-      await event.save();
-      emitPlatformEvent(event);
+      event.save().then(event => emitPlatformEvent(event)).catch();
     }
+    return response;
   }
 }
 
@@ -184,7 +189,7 @@ async function handleQelosTarget(integrationTarget: IIntegrationEntity,
       await event.save();
       emitPlatformEvent(event);
     } else if (operation === QelosTargetOperation.createUser) {
-      await createUser(source.tenant, { 
+      return createUser(source.tenant, { 
         username: payload.username,
         password: payload.password || details.password,
         roles: payload.roles || details.roles || ['user'],
@@ -192,22 +197,22 @@ async function handleQelosTarget(integrationTarget: IIntegrationEntity,
         lastName: payload.lastName,
        })
     } else if (operation === QelosTargetOperation.updateUser) {
-      await updateUser(source.tenant, payload.userId || details.userId, {
+      return updateUser(source.tenant, payload.userId || details.userId, {
         password: payload.password || details.password || undefined,
         roles: payload.roles || details.roles || undefined,
         firstName: payload.firstName || undefined,
         lastName: payload.lastName || undefined,
       })
     } else if (operation === QelosTargetOperation.setUserRoles) {
-      await updateUser(source.tenant, payload.userId || details.userId, {
+      return updateUser(source.tenant, payload.userId || details.userId, {
         roles: payload.roles || details.roles || undefined,
       })
     } else if (operation === QelosTargetOperation.setWorkspaceLabels) {
       logger.log('operation not supported yet.')
     } else if (operation === QelosTargetOperation.createBlueprintEntity) {
-      await createBlueprintEntity(source.tenant, payload.blueprint || details.blueprint, payload.metadata || details.metadata)
+      return createBlueprintEntity(source.tenant, payload.blueprint || details.blueprint, payload.metadata || details.metadata)
     } else if (operation === QelosTargetOperation.updateBlueprintEntity) {
-      await updateBlueprintEntity(source.tenant, payload.blueprint || details.blueprint, payload.metadata || details.metadata)
+      return updateBlueprintEntity(source.tenant, payload.blueprint || details.blueprint, payload.metadata || details.metadata)
     } else {
       logger.log('operation not supported yet.')
     }
@@ -222,10 +227,10 @@ export async function callIntegrationTarget(tenant: string, payload: any, integr
   const authentication = await getEncryptedSourceAuthentication(tenant, source.kind, source.authentication);
 
   if (source.kind === IntegrationSourceKind.Http) {
-    await handleHttpTarget(integrationTarget, source, authentication || {}, payload)
+    return handleHttpTarget(integrationTarget, source, authentication || {}, payload)
   } else if (source.kind === IntegrationSourceKind.OpenAI) {
-    await handleOpenAiTarget(integrationTarget, source, authentication || {}, payload);
+    return handleOpenAiTarget(integrationTarget, source, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Qelos) {
-    await handleQelosTarget(integrationTarget, source, authentication || {}, payload);
+    return handleQelosTarget(integrationTarget, source, authentication || {}, payload);
   }
 }

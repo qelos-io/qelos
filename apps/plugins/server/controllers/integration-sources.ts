@@ -165,10 +165,11 @@ export async function updateIntegrationSource(req, res) {
     if (source.isModified()) {
       await source.save();
     }
-    const { authentication, ...permittedData } = source.toObject();
+    const { authentication: _, ...permittedData } = source.toObject();
 
     res.json(permittedData).end();
-  } catch {
+  } catch (err) {
+    logger.error('could not update integration source', err);
     res.status(500).json({ message: 'could not update integration source' }).end();
   }
 }
@@ -198,7 +199,7 @@ export async function removeIntegrationSource(req, res) {
 
     await IntegrationSource.deleteOne(query).exec();
     res.json(permittedData).end();
-  } catch {
+  } catch  {
 
     res.status(500).json({ message: 'could not delete integration source' }).end();
   }

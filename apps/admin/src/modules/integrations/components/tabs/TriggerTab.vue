@@ -27,33 +27,14 @@ const selectedTriggerSource = computed(() => store.result?.find(s => s._id === p
 // Use a ref for the trigger details JSON instead of a computed property
 const triggerDetailsText = ref(JSON.stringify(props.modelValue.details || {}, null, 2));
 
-// UI state variables for OpenAI chat completion form
-const showAdvancedOptions = ref(false);
-const showRawJson = ref(false);
-const systemMessage = ref('');
-
-// OpenAI model options
-const openAiModelOptions = [
-  { label: 'GPT-4o', value: 'gpt-4o' },
-  { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' },
-  { label: 'GPT-4', value: 'gpt-4' },
-  { label: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo' },
-  { label: 'GPT-3.5 Turbo 16k', value: 'gpt-3.5-turbo-16k' },
-  { label: 'GPT-4 Vision', value: 'gpt-4-vision-preview' },
-  { label: 'GPT-4 32k', value: 'gpt-4-32k' }
-];
-
-// Initialize system message from pre_messages when component mounts or details change
-const initializeSystemMessage = () => {
-  if (selectedTriggerSource.value?.kind === IntegrationSourceKind.OpenAI && 
-      props.modelValue.operation === OpenAITargetOperation.chatCompletion && 
-      props.modelValue.details?.pre_messages?.length) {
-    const systemMsg = props.modelValue.details.pre_messages.find(msg => msg.role === 'system');
-    systemMessage.value = systemMsg?.content || '';
-  } else {
-    systemMessage.value = '';
-  }
-};
+// Reactive refs for function calling form
+const functionName = ref('');
+const functionDescription = ref('');
+const functionParameters = ref(JSON.stringify({
+  "type": "object",
+  "properties": {},
+  "required": []
+}, null, 2));
 
 // Copy text to clipboard
 const copyToClipboard = (text: string) => {
@@ -99,12 +80,30 @@ const updateTriggerDetails = (value: string) => {
   }
 };
 
-// Watch for changes in the model details
-watch(() => props.modelValue.details, (newDetails) => {
-  if (newDetails) {
-    triggerDetailsText.value = JSON.stringify(newDetails, null, 2);
+// Update function calling details
+const updateFunctionCallingDetails = () => {
+  try {
+    const parameters = JSON.parse(functionParameters.value);
+    const newModelValue = { ...props.modelValue };
+    newModelValue.details = {
+      ...newModelValue.details,
+      name: functionName.value,
+      description: functionDescription.value,
+      parameters: parameters
+    };
+    emit('update:modelValue', newModelValue);
+  } catch (e) {
+    // Still update name and description even if parameters are invalid
+    const newModelValue = { ...props.modelValue };
+    newModelValue.details = {
+      ...newModelValue.details,
+      name: functionName.value,
+      description: functionDescription.value,
+      parameters: {} // Default to empty object if JSON is invalid
+    };
+    emit('update:modelValue', newModelValue);
   }
-}, { deep: true });
+};
 
 // Handle source change
 const handleSourceChange = () => {
@@ -122,7 +121,24 @@ const handleOperationChange = () => {
   selectedTriggerOperation.value = operation;
   
   const newModelValue = { ...props.modelValue };
-  newModelValue.details = JSON.parse(JSON.stringify(operation?.details || {}));
+  
+  // Special handling for OpenAI function calling
+  if (selectedTriggerSource.value?.kind === IntegrationSourceKind.OpenAI && 
+      props.modelValue.operation === OpenAITargetOperation.functionCalling) {
+    newModelValue.details = {
+      name: '',
+      description: '',
+      parameters: {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      ...operation?.details
+    };
+  } else {
+    newModelValue.details = JSON.parse(JSON.stringify(operation?.details || {}));
+  }
+  
   emit('update:modelValue', newModelValue);
 };
 
@@ -133,27 +149,24 @@ const setTriggerDetails = (optionValue: any) => {
   emit('update:modelValue', newModelValue);
 };
 
-// Watch for changes in trigger source or operation
-watch([() => props.modelValue.operation, () => props.modelValue.source], () => {
-  if (!selectedTriggerSource.value) return;
-  
-  const operation = triggerOperations[selectedTriggerSource.value?.kind]?.find(o => o.name === props.modelValue.operation);
-  selectedTriggerOperation.value = operation;
-  initializeSystemMessage();
-});
-
-// Watch for changes in trigger details
-watch(() => props.modelValue.details, (newDetails) => {
-  triggerDetailsText.value = JSON.stringify(newDetails || {}, null, 2);
-  initializeSystemMessage();
-}, { deep: true });
-
 // Initialize the UI when the component is mounted
 onMounted(() => {
   if (selectedTriggerSource.value && props.modelValue.operation) {
     const operation = triggerOperations[selectedTriggerSource.value?.kind]?.find(o => o.name === props.modelValue.operation);
     selectedTriggerOperation.value = operation;
-    initializeSystemMessage();
+    
+    // Initialize function calling form fields if we're in functionCalling mode
+    if (selectedTriggerSource.value?.kind === IntegrationSourceKind.OpenAI && 
+        props.modelValue.operation === OpenAITargetOperation.functionCalling) {
+      const details = props.modelValue.details || {};
+      functionName.value = details.name || '';
+      functionDescription.value = details.description || '';
+      functionParameters.value = JSON.stringify(details.parameters || {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }, null, 2);
+    }
   }
 });
 </script>
@@ -254,6 +267,42 @@ onMounted(() => {
         <div v-else class="chat-completion-info">
           <p class="help-text">The chat completion URL will be available after saving the integration</p>
         </div>
+      </div>
+      
+      <!-- OpenAI Function Calling Form -->
+      <div v-else-if="selectedTriggerSource?.kind === IntegrationSourceKind.OpenAI && modelValue.operation === OpenAITargetOperation.functionCalling" class="function-calling-form">
+        <div class="function-calling-info">
+          <p class="help-text">Configure the function that OpenAI can call. The parameters should be a valid JSON schema.</p>
+        </div>
+        <el-form label-position="top">
+          <el-form-item label="Function Name" required>
+            <el-input 
+              v-model="functionName" 
+              @input="updateFunctionCallingDetails" 
+              placeholder="e.g., get_weather, send_email"
+            />
+            <small class="help-text">A unique name for the function that OpenAI will call</small>
+          </el-form-item>
+          <el-form-item label="Description" required>
+            <el-input 
+              v-model="functionDescription" 
+              @input="updateFunctionCallingDetails" 
+              type="textarea"
+              :rows="2"
+              placeholder="Describe what this function does..."
+            />
+            <small class="help-text">Clear description of what the function does and when to use it</small>
+          </el-form-item>
+          <el-form-item label="Parameters Schema" required>
+            <small class="help-text">JSON schema defining the function parameters. Example: {"type": "object", "properties": {"location": {"type": "string"}}, "required": ["location"]}</small>
+            <Monaco 
+              v-model="functionParameters"
+              @update:modelValue="updateFunctionCallingDetails"
+              height="250px" 
+              language="json" 
+            />
+          </el-form-item>
+        </el-form>
       </div>
       
       <!-- Default JSON Editor for other operations -->
@@ -378,5 +427,41 @@ onMounted(() => {
   background-color: var(--el-bg-color-page);
   border-radius: 4px;
   margin-bottom: 20px;
+}
+
+.function-calling-form {
+  padding: 15px;
+  background-color: var(--el-bg-color-page);
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.function-calling-info {
+  padding: 15px;
+  background-color: var(--el-color-info-light-9);
+  border-left: 4px solid var(--el-color-info);
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.function-calling-info .help-text {
+  margin: 0;
+  color: var(--el-color-info-dark-2);
+}
+
+.function-calling-form .el-form-item {
+  margin-bottom: 20px;
+}
+
+.function-calling-form .el-form-item__label {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.function-calling-form .help-text {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.8em;
+  color: var(--el-text-color-secondary);
 }
 </style>

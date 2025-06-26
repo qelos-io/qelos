@@ -7,7 +7,7 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { useIntegrationKindsTargetOperations } from '@/modules/integrations/compositions/integration-kinds-operations';
-import { IntegrationSourceKind, OpenAITargetOperation, QelosTargetOperation } from '@qelos/global-types';
+import { IntegrationSourceKind, OpenAITargetOperation, QelosTargetOperation, HttpTargetOperation } from '@qelos/global-types';
 
 const props = defineProps<{
   modelValue: any;
@@ -45,13 +45,14 @@ const openAiDetails = ref({
 
 // OpenAI model options
 const openAiModelOptions = [
-  { label: 'GPT-4o', value: 'gpt-4o' },
-  { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' },
-  { label: 'GPT-4', value: 'gpt-4' },
-  { label: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo' },
-  { label: 'GPT-3.5 Turbo 16k', value: 'gpt-3.5-turbo-16k' },
-  { label: 'GPT-4 Vision', value: 'gpt-4-vision-preview' },
-  { label: 'GPT-4 32k', value: 'gpt-4-32k' }
+  { label: 'GPT-4o', identifier: 'gpt-4o' },
+  { label: 'GPT-4 Turbo', identifier: 'gpt-4-turbo' },
+  { label: 'GPT-4', identifier: 'gpt-4' },
+  { label: 'GPT-3.5', identifier: 'gpt-3.5' },
+  { label: 'GPT-3.5 Turbo', identifier: 'gpt-3.5-turbo' },
+  { label: 'GPT-3.5 Turbo 16k', identifier: 'gpt-3.5-turbo-16k' },
+  { label: 'GPT-4 Vision', identifier: 'gpt-4-vision-preview' },
+  { label: 'GPT-4 32k', identifier: 'gpt-4-32k' }
 ];
 
 // Import icons
@@ -176,6 +177,7 @@ const showRoleInput = () => {
 const handleRoleRemove = (tag) => {
   const roles = rolesArray.value.filter(role => role !== tag);
   qelosDetails.value.roles = JSON.stringify(roles);
+  syncQelosDetailsToTargetDetails();
 };
 
 // Handle confirming a new role tag
@@ -186,6 +188,7 @@ const handleRoleConfirm = () => {
   }
   roleInputVisible.value = false;
   roleInputValue.value = '';
+  syncQelosDetailsToTargetDetails();
 };
 
 // Computed property for the selected source
@@ -432,23 +435,6 @@ const handleSourceChange = () => {
   emit('update:modelValue', newModelValue);
 };
 
-// Watch for changes in the UI components and sync to form.target.details
-watch(httpBodyJson, () => {
-  syncHttpDetailsToTargetDetails();
-});
-
-watch(httpDetails, () => {
-  syncHttpDetailsToTargetDetails();
-}, { deep: true });
-
-watch(openAiDetails, () => {
-  syncOpenAiDetailsToTargetDetails();
-}, { deep: true });
-
-watch(qelosDetails, () => {
-  syncQelosDetailsToTargetDetails();
-}, { deep: true });
-
 // Watch for changes in target source or operation to initialize UI
 watch([() => props.modelValue.source, () => props.modelValue.operation], () => {
   initTargetDetails();
@@ -507,11 +493,11 @@ onMounted(() => {
       <h4>{{ $t('Configuration') }}</h4>
       
       <!-- HTTP Target - Make Request -->
-      <div v-if="selectedTargetSource.kind === IntegrationSourceKind.Http" class="http-target-config">
+      <div v-if="selectedTargetSource.kind === IntegrationSourceKind.Http && modelValue.operation === HttpTargetOperation.makeRequest" class="http-target-config">
         <el-tabs>
           <el-tab-pane :label="$t('Request')">
             <el-form-item :label="$t('Method')">
-              <el-select v-model="httpDetails.method">
+              <el-select v-model="httpDetails.method" @change="syncHttpDetailsToTargetDetails">
                 <el-option value="GET" label="GET" />
                 <el-option value="POST" label="POST" />
                 <el-option value="PUT" label="PUT" />
@@ -521,14 +507,14 @@ onMounted(() => {
             </el-form-item>
             
             <el-form-item :label="$t('URL Path')">
-              <el-input v-model="httpDetails.url" placeholder="/api/endpoint" />
+              <el-input v-model="httpDetails.url" placeholder="/api/endpoint" @input="syncHttpDetailsToTargetDetails" />
             </el-form-item>
           </el-tab-pane>
           
           <el-tab-pane :label="$t('Headers')">
             <div v-for="(value, key) in httpDetails.headers" :key="key" class="key-value-row">
               <el-input v-model="httpHeaderKeys[key]" placeholder="Header Name" @change="updateHttpHeader(key, $event)" />
-              <el-input v-model="httpDetails.headers[key]" placeholder="Header Value" />
+              <el-input v-model="httpDetails.headers[key]" placeholder="Header Value" @input="syncHttpDetailsToTargetDetails" />
               <el-button type="danger" :icon="Delete" @click="removeHttpHeader(key)" circle />
             </div>
             <el-button type="primary" @click="addHttpHeader" :icon="Plus">{{ $t('Add Header') }}</el-button>
@@ -537,14 +523,14 @@ onMounted(() => {
           <el-tab-pane :label="$t('Query Parameters')">
             <div v-for="(value, key) in httpDetails.query" :key="key" class="key-value-row">
               <el-input v-model="httpQueryKeys[key]" placeholder="Parameter Name" @change="updateHttpQuery(key, $event)" />
-              <el-input v-model="httpDetails.query[key]" placeholder="Parameter Value" />
+              <el-input v-model="httpDetails.query[key]" placeholder="Parameter Value" @input="syncHttpDetailsToTargetDetails" />
               <el-button type="danger" :icon="Delete" @click="removeHttpQuery(key)" circle />
             </div>
             <el-button type="primary" @click="addHttpQuery" :icon="Plus">{{ $t('Add Parameter') }}</el-button>
           </el-tab-pane>
           
           <el-tab-pane :label="$t('Body')">
-            <Monaco v-model="httpBodyJson" height="200px" language="json" />
+            <Monaco v-model="httpBodyJson" height="200px" language="json" @update:modelValue="syncHttpDetailsToTargetDetails" />
           </el-tab-pane>
         </el-tabs>
       </div>
@@ -559,11 +545,11 @@ onMounted(() => {
         <!-- Webhook -->
         <div v-if="modelValue.operation === QelosTargetOperation.webhook" class="webhook-config">
           <el-form-item :label="$t('Event Name')">
-            <el-input v-model="qelosDetails.eventName" placeholder="e.g., user.created" />
+            <el-input v-model="qelosDetails.eventName" placeholder="e.g., user.created" @input="syncQelosDetailsToTargetDetails" />
           </el-form-item>
           
           <el-form-item :label="$t('Description')">
-            <el-input v-model="qelosDetails.description" placeholder="Event description" />
+            <el-input v-model="qelosDetails.description" placeholder="Event description" @input="syncQelosDetailsToTargetDetails" />
           </el-form-item>
         </div>
         
@@ -572,15 +558,15 @@ onMounted(() => {
           <p class="config-description">{{ $t('Map these fields from your data manipulation steps:') }}</p>
           
           <el-form-item :label="$t('Password')">
-            <el-input v-model="qelosDetails.password" placeholder="e.g., .data.password" />
+            <el-input v-model="qelosDetails.password" placeholder="e.g., .data.password" @input="syncQelosDetailsToTargetDetails" />
           </el-form-item>
           
           <el-form-item :label="$t('Roles')">
-            <el-input v-model="qelosDetails.roles" placeholder="e.g., .data.roles or ['user']" />
+            <el-input v-model="qelosDetails.roles" placeholder="e.g., .data.roles or ['user']" @input="syncQelosDetailsToTargetDetails" />
           </el-form-item>
           
           <el-form-item :label="$t('User ID')">
-            <el-input v-model="qelosDetails.userId" placeholder="e.g., .data.userId" />
+            <el-input v-model="qelosDetails.userId" placeholder="e.g., .data.userId" @input="syncQelosDetailsToTargetDetails" />
           </el-form-item>
           
           <el-form-item :label="$t('Roles')">
@@ -614,15 +600,15 @@ onMounted(() => {
           <p class="config-description">{{ $t('Map these fields from your data manipulation steps:') }}</p>
           
           <el-form-item :label="$t('User ID')">
-            <el-input v-model="qelosDetails.userId" placeholder="e.g., .data.userId" />
+            <el-input v-model="qelosDetails.userId" placeholder="e.g., .data.userId" @input="syncQelosDetailsToTargetDetails" />
           </el-form-item>
           
           <el-form-item :label="$t('Password (Optional)')">
-            <el-input v-model="qelosDetails.password" placeholder="e.g., .data.password" />
+            <el-input v-model="qelosDetails.password" placeholder="e.g., .data.password" @input="syncQelosDetailsToTargetDetails" />
           </el-form-item>
           
           <el-form-item :label="$t('Roles (Optional)')">
-            <el-input v-model="qelosDetails.roles" placeholder="e.g., .data.roles or ['user']" />
+            <el-input v-model="qelosDetails.roles" placeholder="e.g., .data.roles or ['user']" @input="syncQelosDetailsToTargetDetails" />
           </el-form-item>
         </div>
         
@@ -631,7 +617,7 @@ onMounted(() => {
           <p class="config-description">{{ $t('Map these fields from your data manipulation steps:') }}</p>
           
           <el-form-item :label="$t('User ID')">
-            <el-input v-model="qelosDetails.userId" placeholder="e.g., .data.userId" />
+            <el-input v-model="qelosDetails.userId" placeholder="e.g., .data.userId" @input="syncQelosDetailsToTargetDetails" />
           </el-form-item>
           
           <el-form-item :label="$t('Roles')">
@@ -668,7 +654,7 @@ onMounted(() => {
         <!-- Create Blueprint Entity -->
         <div v-else-if="modelValue.operation === QelosTargetOperation.createBlueprintEntity" class="blueprint-config">
           <el-form-item :label="$t('Blueprint')">
-            <BlueprintDropdown v-model="qelosDetails.blueprint" />
+            <BlueprintDropdown v-model="qelosDetails.blueprint" @change="syncQelosDetailsToTargetDetails" />
           </el-form-item>
         </div>
       </div>
@@ -676,7 +662,7 @@ onMounted(() => {
       <!-- Update Blueprint Entity -->
       <div v-else-if="modelValue.operation === QelosTargetOperation.updateBlueprintEntity" class="blueprint-config">
         <el-form-item :label="$t('Blueprint')">
-          <BlueprintDropdown v-model="qelosDetails.blueprint" />
+          <BlueprintDropdown v-model="qelosDetails.blueprint" @change="syncQelosDetailsToTargetDetails" />
         </el-form-item>
       </div>
       

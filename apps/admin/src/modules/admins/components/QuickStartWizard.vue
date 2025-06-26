@@ -572,7 +572,7 @@ function closeForm() {
         <h2>{{ $t('Generated Blueprints') }}</h2>
         <p class="step-description">{{ $t('Here are the blueprints generated based on your AI purpose. They have been automatically created in your workspace.') }}</p>
       </div>
-      <el-form @submit.prevent="saveGeneratedBlueprints">
+      <el-form>
         <div v-if="generatedBlueprints.length > 0" class="blueprints-list">
           <div class="blueprints-summary">
             <i class="el-icon-success"></i>
@@ -594,7 +594,7 @@ function closeForm() {
           <el-button @click="currentStep--" size="large">
             <i class="el-icon-arrow-left"></i> {{ $t('Back') }}
           </el-button>
-          <el-button type="primary" native-type="submit" size="large">
+          <el-button type="primary" @click="currentStep++" size="large">
             {{ $t('Continue') }} <i class="el-icon-arrow-right"></i>
           </el-button>
         </div>

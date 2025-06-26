@@ -102,7 +102,8 @@ export async function updateIntegration(req, res) {
       await integration.save();
     }
     res.json(integration).end();
-  } catch {
+  } catch (err) {
+    logger.error('could not update integration', err);
     res.status(500).json({ message: 'could not update integration' }).end();
   }
 }

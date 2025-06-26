@@ -22,6 +22,7 @@ type AIServiceChatCompletionOptions = {
   max_tokens?: number;
   response_format?: { type: "text" | "json_object" }; // Primarily for OpenAI
   system?: string; // Explicit system prompt
+  tools?: any[]; // OpenAI specific 
 };
 
 /**
@@ -59,7 +60,7 @@ export class AIService {
       ...openaiSpecificOptions,
       messages: options.messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
       stream: streaming,
-      model: options.model || 'gpt-3.5-turbo'
+      model: options.model || 'gpt-3.5-turbo',
     };
     
     // Remove undefined values
@@ -157,8 +158,7 @@ export class AIService {
     try {
       if (this.kind === IntegrationSourceKind.OpenAI) {
         const openaiProvider = this.provider as OpenAI;
-        const openaiParams = this.prepareOpenAIParams(options, false);
-        
+        const openaiParams = this.prepareOpenAIParams(options, false);        
         const sdkResponse = await openaiProvider.chat.completions.create(openaiParams);
         const extractedContent = sdkResponse.choices?.[0]?.message?.content || null;
         return { ...sdkResponse, responseContent: extractedContent };

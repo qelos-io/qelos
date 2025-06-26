@@ -14,7 +14,9 @@ export function useIntegrationKindsTargetOperations() {
     ],
     [IntegrationSourceKind.Http]: [
       {
-        label: 'Make HTTP Request', name: HttpTargetOperation.makeRequest, details: {
+        label: 'Make HTTP Request', 
+        name: HttpTargetOperation.makeRequest, 
+        details: {
           method: 'POST',
           url: '/api/users',
           headers: {},
@@ -103,62 +105,13 @@ export function useIntegrationKindsTriggerOperations() {
     [IntegrationSourceKind.Facebook]: [],
     [IntegrationSourceKind.OpenAI]: [
       {
-        name: 'chatCompletion',
-        label: 'Chat Completion',
+        name: OpenAITargetOperation.functionCalling,
+        label: 'Function Calling',
         details: {
-          max_tokens: 1000,
-          model: 'gpt-4',
-          pre_messages: [],
-          temperature: 0.7,
-          top_p: 1,
-          frequency_penalty: 0,
-          presence_penalty: 0
-        },
-        options: [
-          {
-            label: 'Vacations Manager',
-            value: {
-              max_tokens: 1000,
-              model: 'gpt-4',
-              pre_messages: [
-                { role: 'system', content: 'You are a helpful vacation planning assistant. Help users plan their perfect vacation by suggesting destinations, activities, and accommodations based on their preferences and budget.' }
-              ],
-              temperature: 0.7,
-              top_p: 1,
-              frequency_penalty: 0,
-              presence_penalty: 0
-            }
-          },
-          {
-            label: 'Private Chef',
-            value: {
-              max_tokens: 1000,
-              model: 'gpt-4',
-              pre_messages: [
-                { role: 'system', content: 'You are a professional chef assistant. Provide recipe suggestions, cooking tips, and meal planning advice based on users\'s dietary preferences, available ingredients, and cooking skill level.' }
-              ],
-              temperature: 0.7,
-              top_p: 1,
-              frequency_penalty: 0,
-              presence_penalty: 0
-            }
-          },
-          {
-            label: 'Champion Sales Manager',
-            value: {
-              max_tokens: 1000,
-              model: 'gpt-4',
-              pre_messages: [
-                { role: 'system', content: 'You are an expert sales coach. Help users improve their sales techniques, overcome objections, and close deals more effectively. Provide strategic advice tailored to their industry and target market.' }
-              ],
-              temperature: 0.8,
-              top_p: 1,
-              frequency_penalty: 0,
-              presence_penalty: 0
-            }
-          }
-        ]
-      },
+          allowedIntegrationIds: ['*'],
+          blockedIntegrationIds: []
+        }
+      }
     ],
     [IntegrationSourceKind.ClaudeAi]: [],
     [IntegrationSourceKind.Supabase]: [],

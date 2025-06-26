@@ -1,11 +1,124 @@
 import Integration from "../models/integration";
 import { getEncryptedSourceAuthentication } from "../services/source-authentication-service";
-import { IntegrationSourceKind } from "@qelos/global-types";
+import { IntegrationSourceKind, OpenAITargetOperation } from "@qelos/global-types";
 import { createAIService } from "../services/ai-service";
 import { AIMessageTemplates } from "../services/ai-message-templates";
 import { AIResponseParser } from "../services/ai-response-parser";
 import logger from "../services/logger";
 import { executeDataManipulation } from "../services/data-manipulation-service";
+import { callIntegrationTarget } from "../services/integration-target-call";
+import { safeParseJSON } from "./integrate-to-integrations-helper";
+
+// Helper function to parse function arguments safely
+function parseFunctionArguments(argumentsString: string): any {
+  if (!argumentsString) return {};
+  
+  try {
+    return JSON.parse(argumentsString);
+  } catch (e) {
+    return argumentsString || {};
+  }
+}
+
+// Helper function to find target integration by function name
+function findTargetIntegration(toolsIntegrations: any[], functionName: string) {
+  return toolsIntegrations.find(
+    tool => tool.trigger.details.name === functionName
+  );
+}
+
+// Helper function to create function result object
+function createFunctionResult(functionCall: any, content: any): any {
+  return {
+    tool_call_id: functionCall.id,
+    role: 'tool',
+    name: functionCall.function.name,
+    content: JSON.stringify(content)
+  };
+}
+
+// Helper function to execute a single function call
+async function executeFunctionCall(
+  functionCall: any,
+  toolsIntegrations: any[],
+  tenant: string
+): Promise<any> {
+  const targetIntegration = findTargetIntegration(toolsIntegrations, functionCall.function.name);
+  
+  if (!targetIntegration) {
+    return createFunctionResult(functionCall, {
+      error: `Function ${functionCall.function.name} not found`
+    });
+  }
+
+  try {
+    const parsedArgs = parseFunctionArguments(functionCall.function.arguments);
+    const result = await callIntegrationTarget(tenant, parsedArgs, targetIntegration.target);
+
+    return createFunctionResult(functionCall, result);
+  } catch (error) {
+    return createFunctionResult(functionCall, {
+      error: 'Function execution failed'
+    });
+  }
+}
+
+// Helper function to execute multiple function calls
+async function executeFunctionCalls(
+  functionCalls: any[],
+  toolsIntegrations: any[],
+  tenant: string,
+  sendSSE?: (data: any) => void,
+  eventPrefix: string = ''
+): Promise<any[]> {
+  const functionResults = [];
+  
+  if (sendSSE && functionCalls.length > 0) {
+    sendSSE({ 
+      type: `${eventPrefix}function_calls_detected`, 
+      functionCalls 
+    });
+  }
+  
+  for (const functionCall of functionCalls) {
+    try {
+      const targetIntegration = findTargetIntegration(toolsIntegrations, functionCall.function.name);
+      
+      if (targetIntegration) {
+        if (sendSSE) {
+          sendSSE({ 
+            type: `${eventPrefix}function_executing`, 
+            functionCall 
+          });
+        }
+
+        const parsedArgs = parseFunctionArguments(functionCall.function.arguments);
+        const result = await callIntegrationTarget(tenant, parsedArgs, targetIntegration.target);
+
+        const functionResult = createFunctionResult(functionCall, result);
+        functionResults.push(functionResult);
+        
+        if (sendSSE) {
+          sendSSE({ 
+            type: `${eventPrefix}function_executed`, 
+            functionCall, 
+            result 
+          });
+        }
+      } else {
+        functionResults.push(createFunctionResult(functionCall, {
+          error: `Function ${functionCall.function.name} not found`
+        }));
+      }
+    } catch (error) {
+      functionResults.push(createFunctionResult(functionCall, {
+        error: 'Invalid function arguments'
+      }));
+    }
+  }
+  
+  return functionResults;
+}
 
 export function forceTriggerIntegrationKind(kinds: IntegrationSourceKind[], operations?: string[]) {
   return (req, res, next) => {
@@ -83,7 +196,6 @@ export async function chatCompletion(req, res) {
     res.status(500).json({ message: 'Could not get integration' }).end();
   }
 
-
   // Prepare the messages array
   const initialMessages = [
     ...(source.metadata?.initialMessages || []), 
@@ -107,6 +219,29 @@ export async function chatCompletion(req, res) {
     return;
   }
 
+  const toolsIntegrations = await Integration.find({
+    tenant: integration.tenant,
+    'kind.0': integration.target.source.kind,
+    'trigger.operation': OpenAITargetOperation.functionCalling,
+    $or: [
+      { 'trigger.details.allowedIntegrationIds': integration._id },
+      { 'trigger.details.allowedIntegrationIds': '*' },
+      { 'trigger.details.allowedIntegrationIds': { $size: 0 } },
+    ],
+    'trigger.details.blockedIntegrationIds': { $ne: integration._id },
+  }).lean().exec();
+
+  const tools = toolsIntegrations.map(tool => ({
+    type: 'function',
+    description: tool.trigger.details.description,
+    parameters: tool.trigger.details.parameters,
+    function: {
+      name: tool.trigger.details.name,
+      description: tool.trigger.details.description,
+      parameters: tool.trigger.details.parameters,
+    }
+  }));
+
   try {
     const chatOptions = {
       model: options.model || integration.target.details.model || source.metadata.defaultModel,
@@ -117,6 +252,7 @@ export async function chatCompletion(req, res) {
       stop: options.stop || integration.target.details.stop,
       messages: initialMessages.concat(options.messages).map(msg => typeof msg === 'string' ? { role: 'user', content: msg } : msg),
       response_format: options.response_format || integration.target.details.response_format,
+      tools,
     };
     if (useSSE) {
       // Set up SSE response headers
@@ -140,25 +276,173 @@ export async function chatCompletion(req, res) {
       if (integration.kind[1] === IntegrationSourceKind.OpenAI) {
         // For OpenAI
         let fullContent = '';
+        let functionCalls = [];
+        let functionResults = [];
         
         try {
           for await (const chunk of stream) {
             const content = chunk.choices[0]?.delta?.content || '';
             fullContent += content;
             
+            // Check for function calls
+            const toolCalls = chunk.choices[0]?.delta?.tool_calls;
+            if (toolCalls) {
+              for (const toolCall of toolCalls) {
+                if (toolCall.function) {
+                  // Find existing function call by ID or index (streaming chunks may only have index)
+                  let existingCall = functionCalls.find(fc => 
+                    (toolCall.id && fc.id === toolCall.id) || 
+                    (toolCall.index !== undefined && fc.index === toolCall.index)
+                  );
+                  
+                  if (!existingCall) {
+                    // Create new function call entry for this unique ID/index
+                    existingCall = {
+                      id: toolCall.id || `call_${toolCall.index}`,
+                      index: toolCall.index,
+                      type: 'function',
+                      function: {
+                        name: toolCall.function.name || '',
+                        arguments: toolCall.function.arguments || ''
+                      }
+                    };
+                    functionCalls.push(existingCall);
+                  } else {
+                    // Update existing call - set function name if provided (usually only in first chunk)
+                    if (toolCall.function.name && !existingCall.function.name) {
+                      existingCall.function.name = toolCall.function.name;
+                    }
+                    // Append arguments (streamed in subsequent chunks)
+                    if (toolCall.function.arguments) {
+                      existingCall.function.arguments += toolCall.function.arguments;
+                    }
+                  }
+                }
+              }
+            }
+            
             sendSSE({
               type: 'chunk',
               content,
               fullContent,
+              functionCalls,
               chunk: chunk
             });
           }
+
+          // Process function calls if any
+          if (functionCalls.length > 0) {
+            functionResults = await executeFunctionCalls(
+              functionCalls,
+              toolsIntegrations,
+              integration.tenant,
+              sendSSE
+            );
+          }
+
+          // Continue conversation with function results
+          if (functionResults.length > 0) {
+            const followUpMessages = [
+              ...chatOptions.messages,
+              {
+                role: 'assistant',
+                content: fullContent,
+                tool_calls: functionCalls
+              },
+              ...functionResults
+            ];
+            
+            const followUpOptions = {
+              ...chatOptions,
+              messages: followUpMessages
+            };
+            
+            sendSSE({ type: 'continuing_conversation', functionResults });
+            
+            // Get follow-up response from AI
+            const followUpStream = await aiService.streamChatCompletion(followUpOptions);
+            let followUpContent = '';
+            let followUpFunctionCalls = [];
+            let followUpFunctionResults = [];
+            
+            for await (const chunk of followUpStream) {
+              const content = chunk.choices[0]?.delta?.content || '';
+              followUpContent += content;
+              
+              // Check for function calls in follow-up response
+              const toolCalls = chunk.choices[0]?.delta?.tool_calls;
+              if (toolCalls) {
+                for (const toolCall of toolCalls) {
+                  if (toolCall.function) {
+                    // Find existing function call by ID or index (streaming chunks may only have index)
+                    let existingCall = followUpFunctionCalls.find(fc => 
+                      (toolCall.id && fc.id === toolCall.id) || 
+                      (toolCall.index !== undefined && fc.index === toolCall.index)
+                    );
+                    
+                    if (!existingCall) {
+                      // Create new function call entry for this unique ID/index
+                      existingCall = {
+                        id: toolCall.id || `followup_call_${toolCall.index}`,
+                        index: toolCall.index,
+                        type: 'function',
+                        function: {
+                          name: toolCall.function.name || '',
+                          arguments: toolCall.function.arguments || ''
+                        }
+                      };
+                      followUpFunctionCalls.push(existingCall);
+                    } else {
+                      // Update existing call - set function name if provided (usually only in first chunk)
+                      if (toolCall.function.name && !existingCall.function.name) {
+                        existingCall.function.name = toolCall.function.name;
+                      }
+                      // Append arguments (streamed in subsequent chunks)
+                      if (toolCall.function.arguments) {
+                        existingCall.function.arguments += toolCall.function.arguments;
+                      }
+                    }
+                  }
+                }
+              }
+              
+              sendSSE({
+                type: 'followup_chunk',
+                content,
+                fullContent: followUpContent,
+                functionCalls: followUpFunctionCalls,
+                chunk: chunk
+              });
+            }
+            
+            // Process follow-up function calls if any
+            if (followUpFunctionCalls.length > 0) {
+              followUpFunctionResults = await executeFunctionCalls(
+                followUpFunctionCalls,
+                toolsIntegrations,
+                integration.tenant,
+                sendSSE,
+                'followup_'
+              );
+              
+              // Note: For simplicity, we're not doing another round of conversation after follow-up functions
+              // In a full implementation, you might want to continue the conversation with these results too
+              if (followUpFunctionResults.length > 0) {
+                followUpContent += '\n\n[Follow-up function calls executed]';
+              }
+            }
+            
+            fullContent += followUpContent;
+          }
+        
+          // Send completion event
+          sendSSE({ type: 'done', content: fullContent });
         } catch (e: any) {
           sendSSE({ type: 'error', message: 'Error processing AI chat completion' });
         }
         
-        // Send completion event
-        sendSSE({ type: 'done', content: fullContent });
+        // End the response
+        res.end();
       } else if (integration.kind[1] === IntegrationSourceKind.ClaudeAi) {
         // For Claude AI
         let fullContent = '';
@@ -186,11 +470,42 @@ export async function chatCompletion(req, res) {
     } else {
       // Non-streaming response (original behavior)
       const response = await aiService.chatCompletion(chatOptions);
-      res.json(response).end();
+      
+      // Check if there are function calls in the response
+      if (response.choices?.[0]?.message?.tool_calls?.length > 0) {
+        const functionCalls = response.choices[0].message.tool_calls;
+        const functionResults = await executeFunctionCalls(
+          functionCalls,
+          toolsIntegrations,
+          integration.tenant
+        );
+        
+        // Continue conversation with function results
+        if (functionResults.length > 0) {
+          const followUpMessages = [
+            ...chatOptions.messages,
+            response.choices[0].message,
+            ...functionResults
+          ];
+          
+          const followUpOptions = {
+            ...chatOptions,
+            messages: followUpMessages
+          };
+          
+          // Get follow-up response from AI
+          const followUpResponse = await aiService.chatCompletion(followUpOptions);
+          res.json(followUpResponse).end();
+        } else {
+          res.json(response).end();
+        }
+      } else {
+        res.json(response).end();
+      }
     }
   } catch (error) {
+    logger.error('Error processing AI chat completion', error);
     if (useSSE) {
-      // Send error through SSE if we're in streaming mode
       res.write(`data: ${JSON.stringify({ type: 'error', message: 'Error processing AI chat completion' })}\n\n`);
       res.end();
     } else {

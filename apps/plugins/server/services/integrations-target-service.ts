@@ -49,7 +49,7 @@ const supportedSources = {
   },
   [IntegrationSourceKind.Http]: {
     [HttpTargetOperation.makeRequest]: {
-      required: ['model', 'max_tokens', 'messages'],
+      required: [],
       optional: ['headers', 'body', 'query', 'method', 'url'],
     }
   }

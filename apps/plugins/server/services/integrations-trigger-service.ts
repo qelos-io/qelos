@@ -14,13 +14,18 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, { required:
     }
   },
   [IntegrationSourceKind.ClaudeAi]: null,
-  [IntegrationSourceKind.OpenAI]: null,
+  [IntegrationSourceKind.OpenAI]: {
+    functionCalling: {
+      required: ['name', 'description'],
+      optional: ['allowedIntegrationIds', 'blockedIntegrationIds', 'parameters']
+    }
+  },
   [IntegrationSourceKind.N8n]: null,
   [IntegrationSourceKind.Email]: null,
   [IntegrationSourceKind.Supabase]: null,
   [IntegrationSourceKind.LinkedIn]: null,
   [IntegrationSourceKind.Http]: null,
-}
+} as const;
 
 const COMMON_OPTIONAL_PARAMS = ['roles', 'workspaceRoles', 'workspaceLabels'];
 
@@ -34,7 +39,7 @@ export async function validateIntegrationTrigger(tenant: string, trigger: IInteg
     throw new Error('target source not found');
   }
 
-  const supportedOperations: Record<string, { required: string[], optional: string[] }> = supportedSources[source.kind];
+  const supportedOperations: Record<string, { required: string[], optional: string[] }> = supportedSources[source.kind] || {};
 
   if (!supportedOperations) {
     throw new Error('unsupported trigger source kind');
