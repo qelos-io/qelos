@@ -76,6 +76,28 @@ const activityTimeframe = ref('week');
     eventName: 'user-created',
     source: 'auth'
   }))
+  
+  const { result: createdWorkspacesLastDay } = useDispatcher(() => eventsService.getAll({
+    period: 'last-day',
+    kind: 'workspaces',
+    eventName: 'workspace-created',
+    source: 'auth'
+  }))
+
+  const { result: createdWorkspacesLastWeek } = useDispatcher(() => eventsService.getAll({
+    period: 'last-week',
+    kind: 'workspaces',
+    eventName: 'workspace-created',
+    source: 'auth'
+  }))
+
+  const { result: createdWorkspacesLastMonth } = useDispatcher(() => eventsService.getAll({
+    period: 'last-month',
+    kind: 'workspaces',
+    eventName: 'workspace-created',
+    source: 'auth'
+  }))
+  
 
   // System status based on events
   const systemStatus = computed(() => {
@@ -96,12 +118,13 @@ const activityTimeframe = ref('week');
   // Activity chart data based on real events
   const activityChartOption = computed(() => {
     // Process events data for different timeframes
-    const processEventsForTimeframe = (registeredUsers: IEvent[] = [], createdUsers: IEvent[] = [], timeframe: string) => {
-      if (!registeredUsers && !createdUsers) return { xAxis: [], registered: [], created: [] };
+    const processEventsForTimeframe = (registeredUsers: IEvent[] = [], createdUsers: IEvent[] = [], createdWorkspaces: IEvent[] = [], timeframe: string) => {
+      if (!registeredUsers && !createdUsers && !createdWorkspaces) return { xAxis: [], registered: [], created: [], createdWorkspaces: [] };
       
       let xAxis: string[] = [];
       let registeredCounts: number[] = [];
       let createdCounts: number[] = [];
+      let createdWorkspacesCounts: number[] = [];
       
       if (timeframe === 'day') {
         // Group by hours for 24-hour view
@@ -119,6 +142,14 @@ const activityTimeframe = ref('week');
         createdCounts = hourRanges.map(startHour => {
           const endHour = startHour + 4;
           return createdUsers?.filter(event => {
+            const hour = new Date(event.created).getHours();
+            return hour >= startHour && hour < endHour;
+          }).length || 0;
+        });
+
+        createdWorkspacesCounts = hourRanges.map(startHour => {
+          const endHour = startHour + 4;
+          return createdWorkspaces?.filter(event => {
             const hour = new Date(event.created).getHours();
             return hour >= startHour && hour < endHour;
           }).length || 0;
@@ -171,7 +202,7 @@ const activityTimeframe = ref('week');
         });
       }
       
-      return { xAxis, registered: registeredCounts, created: createdCounts };
+      return { xAxis, registered: registeredCounts, created: createdCounts, createdWorkspaces: createdWorkspacesCounts };
     };
     
     // Process data for the current timeframe
@@ -182,6 +213,9 @@ const activityTimeframe = ref('week');
       activityTimeframe.value === 'day' ? createdUsersLastDay.value : 
       activityTimeframe.value === 'week' ? createdUsersLastWeek.value : 
       createdUsersLastMonth.value,
+      activityTimeframe.value === 'day' ? createdWorkspacesLastDay.value : 
+      activityTimeframe.value === 'week' ? createdWorkspacesLastWeek.value : 
+      createdWorkspacesLastMonth.value,
       activityTimeframe.value
     );
     
@@ -194,7 +228,7 @@ const activityTimeframe = ref('week');
         }
       },
       legend: {
-        data: ['User Registrations', 'User Creations']
+        data: ['User Registrations', 'User Creations', 'Workspace Creations']
       },
       grid: {
         left: '3%',
@@ -244,6 +278,19 @@ const activityTimeframe = ref('week');
           },
           itemStyle: {
             color: '#2bcbd1'
+          }
+        },
+        {
+          name: 'Workspace Creations',
+          type: 'line',
+          data: data.createdWorkspaces,
+          smooth: true,
+          lineStyle: {
+            width: 3,
+            color: '#f56c6c'
+          },
+          itemStyle: {
+            color: '#f56c6c'
           }
         }
       ]

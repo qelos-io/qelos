@@ -1,37 +1,32 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import sdk from '@/services/sdk';
-import { authStore } from '@/modules/core/store/auth';
-import { useDispatcher } from '@/modules/core/compositions/dispatcher';
+import { useUserMetadataStore } from '@/modules/core/store/user-metadata';
 
 export const useToursStore = defineStore('tours', () => {
   const tourOpen = ref(false);
   const currentTour = ref(null);
   const currentVersion = ref(1);
+  const userMetadataStore = useUserMetadataStore();
 
   function getTourKey() {
     return `seenTour::${currentTour.value}`;
   }
 
-  const { result: fullUser, promise, retry } = useDispatcher(() => sdk.users.getUser(authStore.user._id));
   async function tourFinished() {
-    await sdk.users.update(authStore.user._id, {
-      internalMetadata: {
-        [getTourKey()]: currentVersion.value
-      }
-    })
-    await retry();
+    await userMetadataStore.updateTourStatus(getTourKey(), currentVersion.value);
   }
 
   return {
     setCurrentTour: async (key: string, version: number) => {
       currentTour.value = key;
       currentVersion.value = version;
-      await promise.value;
-      if (!fullUser.value) {
+      await userMetadataStore.promise;
+      
+      if (!userMetadataStore.fullUser) {
         return;
       }
-      if ((fullUser.value.internalMetadata?.[getTourKey()] || 0) < currentVersion.value) {
+      
+      if (!userMetadataStore.hasTourBeenSeen(getTourKey(), currentVersion.value)) {
         tourOpen.value = true;
       }
     },
