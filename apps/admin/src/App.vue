@@ -101,7 +101,7 @@ watch(() => {
     :root {
       /* Base design variables */
       --border-radius: ${typeof borderRadius === 'number' ? borderRadius : 5}px;
-      --base-font-size: ${typeof baseFontSize === 'number' ? baseFontSize : 16}px;
+      --base-font-size: ${typeof baseFontSize === 'number' && baseFontSize > 0 ? baseFontSize : 16}px;
       --button-radius: ${typeof buttonRadius === 'number' ? buttonRadius : borderRadius || 4}px;
       
       /* Typography */
