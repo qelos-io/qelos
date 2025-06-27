@@ -38,8 +38,6 @@
           </el-menu-item>
         </div>
       </template>
-
-
       <el-menu-item v-if="isPrivilegedUser" route="/admin-dashboard" index="/admin-dashboard" :data-title="$t('Admin Dashboard')">
         <el-icon>
           <font-awesome-icon :icon="['fas', 'chart-column']" />
@@ -157,8 +155,8 @@ import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microf
 import { isAdmin, isEditingEnabled, isManagingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 
 const { navBar } = storeToRefs(usePluginsMicroFrontends());
 const { appConfig } = useAppConfiguration();

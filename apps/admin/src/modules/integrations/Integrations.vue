@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { ElSkeleton, ElSkeletonItem, ElEmpty, ElButton, ElTooltip, ElTag, ElInput, ElBadge } from 'element-plus';
+
 import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
 import { useIntegrations } from '@/modules/integrations/compositions/integrations';
-import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
+
 import IntegrationFormModal from '@/modules/integrations/components/IntegrationFormModal.vue';
-import RemoveButton from '../core/components/forms/RemoveButton.vue';
+
 import integrationsService from '@/services/integrations-service';
 import { useConfirmAction } from '../core/compositions/confirm-action';
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 
 import { useIntegrationSourcesStore } from './store/integration-sources';
 import { IIntegrationSource } from '@qelos/global-types';
@@ -75,7 +75,6 @@ const remove = useConfirmAction((id: string) => {
       <div class="section-divider"></div>
       <h3 class="section-title">{{ $t('Your Integrations') }}</h3>
     </div>
-
     
     <el-skeleton :loading="!loaded" :count="3" animated>
       <template #template>

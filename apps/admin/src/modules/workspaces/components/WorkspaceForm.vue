@@ -165,18 +165,14 @@ import { useRouter } from 'vue-router';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import FormInput from '../../core/components/forms/FormInput.vue';
 import { clearNulls } from '../../core/utils/clear-nulls';
-import AddMore from '../../core/components/forms/AddMore.vue';
+
 import { IWorkspace } from '@qelos/sdk/dist/workspaces';
 import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
 import { useWorkspaceMembers } from '@/modules/workspaces/compositions/workspaces';
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+
 import { WorkspaceConfigurationMetadata, WorkspaceLabelDefinition } from '@qelos/global-types';
 import { ElNotification } from 'element-plus';
-import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
-import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 import { useAuth } from '@/modules/core/compositions/authentication';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-
 const router = useRouter();
 const formRef = ref(null);
 

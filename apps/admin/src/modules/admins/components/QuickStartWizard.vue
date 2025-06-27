@@ -4,18 +4,15 @@ import { useToursStore } from '@/modules/core/store/tours';
 import { useAppConfiguration, softResetConfiguration } from '@/modules/configurations/store/app-configuration';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
-import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import blueprintsService from '@/services/blueprints-service';
 import { useLiveEditStore } from '@/modules/layouts/store/live-edit';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
-import FormUpload from '@/modules/core/components/forms/FormUpload.vue';
 import configurationsService from '@/services/configurations-service';
 import integrationSourcesService from '@/services/integration-sources-service';
 import { ElMessage, ElLoading } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import { PALETTES } from '@/modules/core/utils/colors-palettes';
-import { IntegrationSourceKind, type WorkspaceLabelDefinition, type IOpenAISource, type IQelosSource } from '@qelos/global-types';
+import { IntegrationSourceKind } from '@qelos/global-types';
 
 const { t } = useI18n();
 const formVisible = ref(false);
@@ -33,7 +30,6 @@ const generatedBlueprints = ref([]);
 const successfullyCreated = ref([]);
 
 const liveEdit = useLiveEditStore();
-const blueprintsStore = useBlueprintsStore();
 
 // Use color palettes for themes
 const themes = PALETTES.map(palette => ({

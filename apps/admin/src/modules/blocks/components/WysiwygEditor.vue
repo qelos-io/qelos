@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
-import { Editor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/vue-3'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { Editor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Table from '@tiptap/extension-table'

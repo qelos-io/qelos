@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { BlueprintPropertyType, EntityIdentifierMechanism, IBlueprint } from '@qelos/global-types';
+import { ref, watch } from 'vue';
+import { BlueprintPropertyType, EntityIdentifierMechanism } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import BlueprintPropertyTypeSelector from '@/modules/no-code/components/BlueprintPropertyTypeSelector.vue';
-import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
-import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import { getKeyFromName } from '@/modules/core/utils/texts';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
-import { Plus, Delete, EditPen, Document } from '@element-plus/icons-vue';
+import { Plus, Delete } from '@element-plus/icons-vue';
 
 const entityIdentifierMechanism = defineModel('entityIdentifierMechanism');
 const properties = defineModel('properties');

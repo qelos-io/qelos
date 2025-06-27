@@ -131,7 +131,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+
 import { useRouter } from 'vue-router';
 import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 import { usePluginsList } from '@/modules/plugins/store/plugins-list';

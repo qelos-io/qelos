@@ -116,14 +116,14 @@ import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { IBlueprint } from '@qelos/global-types'
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
-import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import sdk from '@/services/sdk';
-import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
+
 import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
 import BlueprintsRelationGraph from './BlueprintsRelationGraph.vue';
-import { Edit, Delete, RemoveFilled, Plus } from '@element-plus/icons-vue';
+import { Edit, Delete, RemoveFilled } from '@element-plus/icons-vue';
 
 const props = defineProps({
   q: {

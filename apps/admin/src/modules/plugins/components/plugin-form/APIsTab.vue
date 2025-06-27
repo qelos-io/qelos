@@ -206,11 +206,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, watchEffect } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { ElNotification } from 'element-plus';
-import { useI18n } from 'vue-i18n';
-import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { IPlugin } from '@/services/types/plugin';
 
 const props = defineProps<{

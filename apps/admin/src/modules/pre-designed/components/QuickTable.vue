@@ -2,7 +2,7 @@
 import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessageBox } from 'element-plus';
 import type { TableColumnCtx } from 'element-plus/es/components/table/src/table-column/defaults';
 import { get, set } from 'lodash-es';
 

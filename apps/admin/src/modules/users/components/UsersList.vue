@@ -121,11 +121,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRemoveUser } from '../compositions/users';
 import { IUser } from '@/modules/core/store/types/user';
-import { Search, Edit, Delete, Check, Plus as IconPlus } from '@element-plus/icons-vue';
-import { ElSkeleton, ElSkeletonItem, ElEmpty, ElButton, ElTooltip } from 'element-plus';
+import { Search, Edit, Delete, Check } from '@element-plus/icons-vue';
+
 import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 
 const props = defineProps<{ users: IUser[], loading?: boolean }>();
@@ -404,6 +404,4 @@ function getRoleTagType(role) {
   justify-content: center;
   margin-top: 24px;
 }
-
-
 </style>

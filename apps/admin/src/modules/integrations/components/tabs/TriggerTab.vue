@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';

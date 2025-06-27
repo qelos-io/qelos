@@ -102,8 +102,8 @@
 
 <script lang="ts" setup>
 import { ref, reactive, nextTick, watch } from 'vue';
-import { ElInput, ElButton, ElTag, ElIcon, ElMessage } from 'element-plus';
-import { UploadFilled, Promotion, Document, Loading, UserFilled, Cpu } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import { UploadFilled, Document, Loading, UserFilled, Cpu } from '@element-plus/icons-vue';
 import { Remarkable } from 'remarkable';
 
 const props = defineProps<{ url: string, title?: string, text?: string }>();

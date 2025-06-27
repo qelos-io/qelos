@@ -98,7 +98,7 @@
   </el-form>
 </template>
 <script setup lang="ts">
-import { computed, provide, reactive, ref, watch } from 'vue';
+import { computed, provide, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { IPlugin } from '@/services/types/plugin';
 import {

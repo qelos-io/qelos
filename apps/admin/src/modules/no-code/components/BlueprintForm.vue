@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, provide, reactive, ref, toRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { IBlueprint, PermissionScope } from '@qelos/global-types';
+import { IBlueprint } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
-import PermissionScopeSelector from '@/modules/no-code/components/PermissionScopeSelector.vue';
+
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
-import EditBlueprintProperties from '@/modules/no-code/components/EditBlueprintProperties.vue';
+
 import { getKeyFromName } from '@/modules/core/utils/texts';
 import BlueprintLimitationsInput from '@/modules/no-code/components/blueprint-form/BlueprintLimitationsInput.vue';
 import BlueprintPermissionsTab from '@/modules/no-code/components/blueprint-form/BlueprintPermissionsTab.vue';
@@ -73,8 +73,6 @@ watch(edit, () => {
     editor.value.updateValue(blueprintJson.value)
   }
 }, { deep: true })
-
-
 watch(() => edit.name, (newName) => {
   if (newName && newName.trim()) {
     edit.identifier = getKeyFromName(newName)

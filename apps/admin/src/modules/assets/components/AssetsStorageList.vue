@@ -46,8 +46,6 @@ import { useConfirmAction } from '../../core/compositions/confirm-action'
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
 import { useI18n } from 'vue-i18n';
-import { Delete as IconDelete, Plus as IconPlus } from '@element-plus/icons-vue';
-
 const { t } = useI18n();
 const list = useStorageList();
 

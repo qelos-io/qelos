@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import { ILinkedInSource, IntegrationSourceKind } from '@qelos/global-types';
 import { watch } from 'vue';

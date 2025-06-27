@@ -7,7 +7,7 @@
 import { useRoute } from 'vue-router';
 import { useUpdateWorkspace } from './compositions/workspaces'
 import WorkspaceForm from './components/WorkspaceForm.vue'
-import PageTitle from '../core/components/semantics/PageTitle.vue'
+
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 
 const route = useRoute()

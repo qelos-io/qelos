@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { storeToRefs } from 'pinia';
+
 import { useBlocksList } from '../store/blocks-list';
 import BlockForm from './BlockForm.vue'
 import { IBlock } from '@/services/types/block';
-import { useEditBlock } from '../compositions/blocks';
+
 import blocksService from '@/services/blocks-service';
 
 const props = defineProps<{ title?: string, editable?: boolean }>()
@@ -19,8 +19,6 @@ const store = useBlocksList();
 const editableBlock = ref<IBlock | null>(null);
 const showEditDialog = ref(false);
 const submitting = ref(false);
-
-
 // Watch for changes in the selected block ID
 watch(model, async (newValue) => {
   if (newValue && props.editable) {

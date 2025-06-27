@@ -75,7 +75,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, toRef, toRefs, watch } from 'vue';
+import { computed, nextTick, ref, toRef, toRefs, watch } from 'vue';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import VRuntimeTemplate from 'vue3-runtime-template';
 import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-item-crud';
@@ -94,8 +94,6 @@ import { useGlobalStyles } from '@/modules/pre-designed/compositions/global-styl
 import EditComponentModal from '@/pre-designed/editor/EditComponentModal.vue';
 import EditorTour from '@/pre-designed/editor/EditorTour.vue';
 import { usePluginsStore } from '@/modules/plugins/store/pluginsStore';
-import { ElMessage } from 'element-plus';
-
 const pluginsStore = usePluginsStore(); 
 const route = useRoute();
 const mfes = usePluginsMicroFrontends();

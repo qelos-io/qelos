@@ -74,9 +74,9 @@
 
 import { onMounted, PropType, reactive, ref, watch, defineEmits, computed } from 'vue';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
-import FormInput from '../../core/components/forms/FormInput.vue';
+
 import { clearNulls } from '../../core/utils/clear-nulls';
-import AddMore from '../../core/components/forms/AddMore.vue';
+
 import { IWorkspace } from '@qelos/sdk/dist/workspaces';
 import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
 import {
@@ -85,7 +85,7 @@ import {
 	useUpdateWorkspaceMember, useWorkspaceMembers
 } from '@/modules/workspaces/compositions/workspaces';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+
 import { ElMessage } from 'element-plus';
 import { WorkspaceLabelDefinition } from '@qelos/global-types'
 import { useUsersList } from '@/modules/users/compositions/users';
@@ -275,8 +275,6 @@ function removeMember(userId: string) {
 }
 
 const { updateMember } = useUpdateWorkspaceMember(workspace._id);
-
-
 function updateMemberRoles(index: number) {
 	const member = members.value[index];
 

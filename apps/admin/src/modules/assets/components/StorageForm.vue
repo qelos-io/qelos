@@ -182,7 +182,7 @@ import FormInput from '../../core/components/forms/FormInput.vue'
 import { useStorageForm } from '../compositions/storages'
 import { IStorage } from '@/services/types/storage';
 import { useI18n } from 'vue-i18n';
-import { ref, h } from 'vue';
+import { h } from 'vue';
 
 const { t } = useI18n();
 

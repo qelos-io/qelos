@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import { Delete, Plus, ArrowUp, ArrowDown, MagicStick, Document } from '@element-plus/icons-vue';
 import BlueprintDropdown from '@/modules/integrations/components/BlueprintDropdown.vue';

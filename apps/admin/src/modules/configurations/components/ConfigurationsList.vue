@@ -82,15 +82,15 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useConfigurationsList } from '../compositions/configurations';
 import BlockItem from '../../core/components/layout/BlockItem.vue';
 import configurationsService from '@/services/configurations-service';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
-import { Search, Calendar, Edit, Delete, DocumentRemove } from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
+import { Calendar, Edit, Delete, DocumentRemove } from '@element-plus/icons-vue';
+
 import { useI18n } from 'vue-i18n';
 
 const router = useRouter();

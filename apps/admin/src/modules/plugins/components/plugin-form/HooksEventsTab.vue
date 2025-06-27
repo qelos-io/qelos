@@ -279,8 +279,8 @@ import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import { IPlugin } from '@/services/types/plugin';
-import { Delete, Connection, Plus, Search, Document, QuestionFilled, Close } from '@element-plus/icons-vue';
-import { watch, ref, computed, reactive } from 'vue';
+import { Delete, Connection, Plus, Search, Document, Close } from '@element-plus/icons-vue';
+import { watch, ref, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 

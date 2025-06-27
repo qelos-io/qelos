@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { getKeyFromName } from '@/modules/core/utils/texts';
-import FormInput from '@/modules/core/components/forms/FormInput.vue';
+
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
-import { Document, Edit, Key, InfoFilled } from '@element-plus/icons-vue';
+import { Document, Key, InfoFilled } from '@element-plus/icons-vue';
 
 const props = defineProps({
   modelValue: {
@@ -243,9 +243,6 @@ const showApiExamples = ref(false);
     max-width: 320px;
   }
 }
-
-
-
 .blueprint-info-section, .blueprint-api-section {
   background-color: var(--el-bg-color-page);
   border-radius: 8px;

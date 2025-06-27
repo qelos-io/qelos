@@ -98,9 +98,6 @@ import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 import { authStore } from '@/modules/core/store/auth';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-
-
 const { t } = useI18n();
 const router = useRouter();
 const store = useWorkspacesList();
@@ -134,10 +131,6 @@ const formatDate = (dateString) => {
     month: 'short', 
     day: 'numeric' 
   }).format(date);
-};
-
-const handleCreateWorkspace = () => {
-  router.push({ name: 'createWorkspace' });
 };
 
 const navigateToEdit = (workspace) => {

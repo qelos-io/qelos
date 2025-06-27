@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, defineEmits, computed, PropType } from 'vue';
+import { defineProps, defineEmits, computed } from 'vue';
 import LinkedInForm from './components/forms/LinkedInForm.vue';
 import QelosForm from './components/forms/QelosForm.vue';
 import OpenAIForm from './components/forms/OpenAIForm.vue';

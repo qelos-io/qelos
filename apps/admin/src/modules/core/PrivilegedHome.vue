@@ -118,32 +118,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toRefs, computed, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
+
 import { resetConfiguration, useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import configurationsService from '@/services/configurations-service';
-import { PALETTES, type DesignPalette } from '@/modules/core/utils/colors-palettes';
+import { DesignPalette, PALETTES } from '@/modules/core/utils/colors-palettes';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
-import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 import BlueprintsList from '@/modules/no-code/components/BlueprintsList.vue';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
 import DesignConfiguration from '@/modules/configurations/components/DesignConfiguration.vue';
 import QuickStartWizard from '@/modules/admins/components/QuickStartWizard.vue';
 import DashboardOverview from '@/modules/core/components/DashboardOverview.vue';
 
 const { appConfig, loaded: configLoaded } = useAppConfiguration();
-const { t } = useI18n();
-
-const changePalette = useConfirmAction(async function changePalette(colorsPalette) {
-  await configurationsService.update('app-configuration', {
-    metadata: {
-      ...appConfig.value,
-      colorsPalette
-    }
-  })
-  await resetConfiguration();
-});
 
 // Apply a complete design palette including typography, spacing, etc.
 const applyDesignPalette = useConfirmAction(async function applyDesignPalette(designPalette: DesignPalette) {

@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { capitalize, computed, ref, watch, nextTick } from 'vue';
+import { computed, ref, watch } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
-import { getPlural } from '@/modules/core/utils/texts';
-import { useDispatcher } from '@/modules/core/composables/useDispatcher';
 import { ElMessage } from 'element-plus';
 
 // Import requirement type components

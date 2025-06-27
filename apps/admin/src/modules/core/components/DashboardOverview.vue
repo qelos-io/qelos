@@ -213,7 +213,7 @@ import { useAdminEvents } from '@/modules/core/store/admin-events';
 import { authStore } from '@/modules/core/store/auth';
 import { api } from '@/services/api';
 import { useUserMetadataStore } from '@/modules/core/store/user-metadata';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
 import { Plus } from '@element-plus/icons-vue';
 
 const { loading: loadingBlocks, blocks } = toRefs(useBlocksList());

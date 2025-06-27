@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import PermissionScopeSelector from '@/modules/no-code/components/PermissionScopeSelector.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';

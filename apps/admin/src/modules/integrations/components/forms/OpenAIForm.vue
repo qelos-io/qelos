@@ -3,7 +3,7 @@ import { ref, computed, defineProps, defineEmits } from 'vue';
 import { IOpenAiSource } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
-import { ElMessage, ElLink } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import { QuestionFilled, Warning } from '@element-plus/icons-vue';
 
 const props = defineProps({

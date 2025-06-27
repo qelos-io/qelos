@@ -226,17 +226,15 @@
 </template>
 
 <script lang="ts" setup>
-import { capitalize, computed, nextTick, onMounted, provide, ref, watch } from 'vue';
+import { capitalize, computed, provide, ref, watch } from 'vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+
 import Monaco from '@/modules/users/components/Monaco.vue';
 
 const editorMode = ref('common');
 const dialogVisible = ref(true);
 const model = defineModel<HTMLElement>();
 const emit = defineEmits(['save']);
-
-
 // Element content and attributes
 const modelHTML = ref('');
 const textContent = ref('');
@@ -565,8 +563,6 @@ const advancedProperties = computed(() => {
     return name !== 'style' && name !== 'class';
   });
 });
-
-
 provide('editableManager', ref(false));
 
 // Update text content of the element
@@ -594,7 +590,6 @@ watch(editorMode, (newMode, oldMode) => {
     refreshProperties();
   }
   
-
 });
 
 // Apply all changes from UI to the model
@@ -674,9 +669,6 @@ function setHtmlToModel() {
     }
   });
 }
-
-
-
 // Submit changes when form is submitted
 function submit() {
   if (editorMode.value === 'common' || editorMode.value === 'advanced') {

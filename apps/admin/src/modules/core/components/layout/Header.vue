@@ -57,8 +57,6 @@ import HeaderUserDropdown from '@/modules/core/components/layout/HeaderUserDropd
 import RuntimeTemplate from '@/modules/core/components/layout/RuntimeTemplate.vue';
 import { useUsersHeader } from '@/modules/configurations/store/users-header';
 import { isPrivilegedUser } from '../../store/auth';
-import sdk from '@/services/sdk';
-import { authStore } from '../../store/auth';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 
 const { appConfig } = useAppConfiguration()

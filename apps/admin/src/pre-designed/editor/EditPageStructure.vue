@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { provide, ref, toRef, watch, computed } from 'vue';
-import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
+
 import Monaco from '@/modules/users/components/Monaco.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { IMicroFrontend } from '@/services/types/plugin';

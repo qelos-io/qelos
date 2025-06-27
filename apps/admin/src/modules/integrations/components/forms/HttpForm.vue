@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, defineProps, defineEmits, onMounted, watch, toRaw } from 'vue';
+import { ref, computed, defineProps, defineEmits, toRaw } from 'vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import KeyValueInput from '@/modules/core/components/forms/KeyValueInput.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';

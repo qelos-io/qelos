@@ -412,11 +412,11 @@
 import { inject, ref, computed } from 'vue';
 import { IPlugin } from '@/services/types/plugin';
 import { UnwrapNestedRefs } from '@vue/reactivity';
-import { MfeBaseTemplate } from '@/modules/plugins/types';
+
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
-import PreDesignedScreensSelector from '@/modules/plugins/components/PreDesignedScreensSelector.vue';
+
 import NavigationPositionSelector from '@/modules/plugins/components/NavigationPositionSelector.vue';
 
 const edit = inject<UnwrapNestedRefs<Partial<IPlugin>>>('edit');

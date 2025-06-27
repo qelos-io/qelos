@@ -36,7 +36,7 @@
 </template>
 <script lang="ts" setup>
 import { useRoute, useRouter } from 'vue-router'
-import { ref, onMounted, computed } from 'vue'
+import { computed } from 'vue'
 import { useEditBlock } from './compositions/blocks'
 import BlockForm from './components/BlockForm.vue'
 
