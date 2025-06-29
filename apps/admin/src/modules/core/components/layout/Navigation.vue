@@ -659,7 +659,7 @@ a:hover {
   
   h4 {
     color: var(--negative-color);
-    font-size: var(--base-font-size);
+    font-size: var(--base-font-size, 16px);
     font-weight: 500;
     margin: 15px 10px 10px;
     transition: all 0.3s ease;
