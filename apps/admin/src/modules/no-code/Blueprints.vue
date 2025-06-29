@@ -1,6 +1,10 @@
 <template>
   <div>
-    <ListPageTitle title="Blueprints" :create-route-query="{mode: 'create'}">
+    <ListPageTitle 
+      title="Blueprints" 
+      description="Blueprints are data structures that define the schema and behavior of your application's entities. Create and manage your data models here."
+      :create-route-query="{mode: 'create'}"
+    >
       <template #content>
         <div class="view-toggle">
       <el-radio-group :model-value="currentView" @update:model-value="changeView" size="large">

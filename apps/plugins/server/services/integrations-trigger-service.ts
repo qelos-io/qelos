@@ -1,6 +1,7 @@
 import { IntegrationSourceKind } from '@qelos/global-types';
 import IntegrationSource from '../models/integration-source';
 import { IIntegrationEntity } from '../models/integration';
+import { ResponseError } from '@qelos/api-kit';
 
 const supportedSources: Record<IntegrationSourceKind, Record<string, { required: string[], optional: string[] }> | null> = {
   [IntegrationSourceKind.Qelos]: {
@@ -31,23 +32,23 @@ const COMMON_OPTIONAL_PARAMS = ['roles', 'workspaceRoles', 'workspaceLabels'];
 
 export async function validateIntegrationTrigger(tenant: string, trigger: IIntegrationEntity) {
   if (!trigger || !trigger.source || !trigger.operation) {
-    throw new Error('missing trigger source or operation');
+    throw new ResponseError('missing trigger source or operation', 400);
   }
   const source = await IntegrationSource.findOne({ _id: trigger.source, tenant }).lean().exec();
 
   if (!source) {
-    throw new Error('target source not found');
+    throw new ResponseError('Target source not found', 400);
   }
 
   const supportedOperations: Record<string, { required: string[], optional: string[] }> = supportedSources[source.kind] || {};
 
   if (!supportedOperations) {
-    throw new Error('unsupported trigger source kind');
+    throw new ResponseError('Unsupported trigger source kind', 400);
   }
 
   const params = supportedOperations[trigger.operation];
   if (!params?.required) {
-    throw new Error(`operation ${trigger.operation} does not exist on source of kind ${source.kind}`)
+    throw new ResponseError(`Operation ${trigger.operation} does not exist on source of kind ${source.kind}`, 400)
   }
   const hasMissingParams = params.required
     .map(prop => { 
@@ -57,7 +58,7 @@ export async function validateIntegrationTrigger(tenant: string, trigger: IInteg
     .some(isValid => !isValid)
 
   if (hasMissingParams) {
-    throw new Error(`operation ${trigger.operation} must contain relevant details: ${params.required.join(',')}`)
+    throw new ResponseError(`Operation ${trigger.operation} must contain relevant details: ${params.required.join(',')}`, 400)
   }
 
   // Filter out invalid parameters instead of throwing an error

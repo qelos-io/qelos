@@ -86,7 +86,7 @@
           <span>{{ $t('Users') }}</span>
         </el-menu-item>
 
-        <el-menu-item v-if="isAdmin && isManagingEnabled" index="/admin/workspaces" :data-title="$t('Workspaces')">
+        <el-menu-item v-if="isAdmin && isManagingEnabled && isWorkspacesActive" index="/admin/workspaces" :data-title="$t('Workspaces')">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'briefcase']"/>
           </el-icon>
@@ -156,16 +156,19 @@ import { isAdmin, isEditingEnabled, isManagingEnabled, isPrivilegedUser } from '
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, toRef } from 'vue';
 
 const { navBar } = storeToRefs(usePluginsMicroFrontends());
 const { appConfig } = useAppConfiguration();
 import QuicklyCreateMicrofrontends from './navigation/QuicklyCreateMicrofrontends.vue';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 
 // Visibility state of the modal window
 const dialogVisible = ref(false);
 const isCollapsed = ref(false);
 const isMobile = ref(false);
+const isWorkspacesActive = toRef(useWsConfiguration(), 'isActive');
+
 
 // Check if the user has a preference for collapsed state in localStorage
 onMounted(() => {

@@ -1,3 +1,4 @@
+import { ResponseError } from '@qelos/api-kit';
 import { IIntegrationEntity } from '../models/integration';
 import IntegrationSource from '../models/integration-source';
 import {
@@ -59,23 +60,23 @@ const COMMON_OPTIONAL_PARAMS = ['triggerResponse'];
 
 export async function validateIntegrationTarget(tenant: string, target: IIntegrationEntity) {
   if (!target || !target.source || !target.operation) {
-    throw new Error('missing target source or operation');
+    throw new ResponseError('missing target source or operation', 400);
   }
   const source = await IntegrationSource.findOne({ _id: target.source, tenant }).lean().exec();
 
   if (!source) {
-    throw new Error('target source not found');
+    throw new ResponseError('target source not found', 400);
   }
 
   const supportedOperations: Record<string, { required: string[], optional: string[] }> = supportedSources[source.kind];
 
   if (!supportedOperations) {
-    throw new Error('unsupported target source kind');
+    throw new ResponseError('unsupported target source kind', 400);
   }
 
   const params = supportedOperations[target.operation];
   if (!params?.required) {
-    throw new Error(`operation ${target.operation} does not exist on source of kind ${source.kind}`)
+    throw new ResponseError(`operation ${target.operation} does not exist on source of kind ${source.kind}`, 400)
   }
   const hasMissingParams = params.required
     .map(prop => { 
@@ -85,7 +86,7 @@ export async function validateIntegrationTarget(tenant: string, target: IIntegra
     .some(isValid => !isValid)
 
   if (hasMissingParams) {
-    throw new Error(`operation ${target.operation} must contain relevant details: ${params.required.join(',')}`)
+    throw new ResponseError(`operation ${target.operation} must contain relevant details: ${params.required.join(',')}`, 400)
   }
 
   // Filter out invalid parameters instead of throwing an error

@@ -1,6 +1,10 @@
 <template>
   <div class="categories-page">
-    <ListPageTitle title="Configurations" create-route="createConfiguration">
+    <ListPageTitle 
+      title="Configurations" 
+      description="Configurations store key-value pairs and settings for your application. Manage environment variables, API keys, and other configuration data here."
+      create-route="createConfiguration"
+    >
       <template #content>
         <div class="search-bar">
           <el-select 
@@ -31,8 +35,8 @@
       </template>
     </ListPageTitle>
     <ConfigurationsList   
-      v-model:filter-type="filterType"
-      v-model:search-query="$route.query.q"
+      :filter-type="filterType"
+      :search-query="$route.query.q?.toString()"
     />
   </div>
 </template>

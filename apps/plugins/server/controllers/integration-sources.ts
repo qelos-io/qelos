@@ -1,4 +1,5 @@
 
+import { ResponseError } from '@qelos/api-kit';
 import IntegrationSource from '../models/integration-source';
 import Plugin from '../models/plugin';
 import logger from '../services/logger';
@@ -79,8 +80,12 @@ export async function createIntegrationSource(req, res) {
   let validatedMetadata, authId;
   try {
     validatedMetadata = await validateSourceMetadata(kind, metadata);
-  } catch {
-    res.status(400).json({ message: 'invalid metadata' }).end();
+  } catch (err) {
+    if (err instanceof ResponseError) {
+      res.status(err.status).json({ message: err.responseMessage }).end();
+    } else {
+      res.status(400).json({ message: 'invalid metadata' }).end();
+    }
     return;
   }
 

@@ -151,5 +151,8 @@
   "Abort operation": "בטל פעולה",
   "Abort with condition": "בטל עם תנאי",
   "Abort will prevent the target from being called": "ביטול ימנע מהיעד להיקרא",
-  "Complete Data Manipulation JSON": "JSON מלא של מניפולציה של נתונים"
+  "Complete Data Manipulation JSON": "JSON מלא של מניפולציה של נתונים",
+  "Show help for this page": "הצג עזרה עבור דף זה",
+  "Page Information": "מידע על הדף",
+  "Got it": "הבנתי"
 }

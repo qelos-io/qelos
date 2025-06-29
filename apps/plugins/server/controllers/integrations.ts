@@ -1,3 +1,4 @@
+import { ResponseError } from '@qelos/api-kit';
 import Integration from '../models/integration';
 import Plugin from '../models/plugin';
 import { validateIntegrationTarget } from '../services/integrations-target-service';
@@ -73,6 +74,10 @@ export async function createIntegration(req, res) {
     await integration.save();
     res.json(integration).end();
   } catch (err) {
+    if (err instanceof ResponseError) {
+      res.status(err.status).json({ message: err.responseMessage }).end();
+      return;
+    }
     logger.log('error creating integration', err);
     res.status(500).json({ message: 'could not create integration' }).end();
   }
@@ -103,6 +108,10 @@ export async function updateIntegration(req, res) {
     }
     res.json(integration).end();
   } catch (err) {
+    if (err instanceof ResponseError) {
+      res.status(err.status).json({ message: err.responseMessage }).end();
+      return;
+    }
     logger.error('could not update integration', err);
     res.status(500).json({ message: 'could not update integration' }).end();
   }

@@ -1,6 +1,10 @@
 <template>
   <div class="menus-page">
-    <ListPageTitle title="My Workspaces" :create-route="canUserCreateWorkspace ? 'createMyWorkspace' : undefined"/>
+    <ListPageTitle 
+      title="My Workspaces" 
+      description="Your personal workspaces and those you've been invited to join. Switch between workspaces to access different projects and data."
+      :create-route="canUserCreateWorkspace ? 'createMyWorkspace' : undefined"
+    />
     <InvitesList v-if="store.invites.length"/>
     <WorkspacesList/>
   </div>

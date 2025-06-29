@@ -5,6 +5,35 @@
         <EditComponentBar v-if="$slots.editBar" />
         <slot v-if="$slots.default"/>
         <span v-else>{{ t(title) }}</span>
+        <el-tooltip 
+          v-if="description && !$isMobile" 
+          :content="t(description)" 
+          placement="top"
+          effect="dark"
+          :show-after="200"
+          :hide-after="100"
+        >
+          <el-button 
+            class="help-button" 
+            size="small" 
+            circle 
+            text
+            :aria-label="t('Show help for this page')"
+          >
+            <el-icon><QuestionFilled /></el-icon>
+          </el-button>
+        </el-tooltip>
+        <el-button 
+          v-if="description && $isMobile"
+          @click="showHelpMessage"
+          class="help-button" 
+          size="small" 
+          circle 
+          text
+          :aria-label="t('Show help for this page')"
+        >
+          <el-icon><QuestionFilled /></el-icon>
+        </el-button>
       </h1>
       <div class="header-content" v-if="$slots.content">
         <slot name="content" />
@@ -26,7 +55,9 @@
 <script lang="ts" setup>
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { Plus } from '@element-plus/icons-vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { ElMessageBox } from 'element-plus';
+import { Plus, QuestionFilled } from '@element-plus/icons-vue';
 import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 
 const router = useRouter();
@@ -36,6 +67,7 @@ const emit = defineEmits(['create', 'removeComponent']);
 
 const props = defineProps({
   title: String,
+  description: String,
   createRoute: String,
   createRoutePath: String,
   createRouteQuery: Object,
@@ -58,6 +90,16 @@ function create() {
     router.push(to);
   }
 }
+
+function showHelpMessage() {
+  if (props.description) {
+    ElMessageBox.alert(t(props.description), t('Page Information'), {
+      confirmButtonText: t('Got it'),
+      type: 'info',
+      center: true,
+    });
+  }
+}
 </script>
 
 <style scoped>
@@ -72,6 +114,7 @@ function create() {
   width: 100%;
   gap: 1rem;
   flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 h1 {
@@ -86,8 +129,7 @@ h1 {
   gap: 0.5rem;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  flex: 1;
 }
 
 .header-content {
@@ -117,6 +159,23 @@ h1 {
   transform: translateY(-2px);
 }
 
+.help-button {
+  margin-left: 0.5rem;
+  color: var(--el-color-info);
+  font-size: 16px;
+  padding: 4px;
+  min-height: 24px;
+  width: 24px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.help-button:hover {
+  color: var(--el-color-primary);
+  background-color: var(--el-color-primary-light-9);
+  transform: scale(1.1);
+}
+
 @media (max-width: 768px) {
   .list-page-title {
     padding: 0 0.5rem;
@@ -133,10 +192,33 @@ h1 {
     padding: 0 0.5rem 0.5rem 0.5rem;
   }
   
-  /* Ensure title doesn't take too much space on mobile */
+  /* Ensure proper mobile layout */
+  .list-page-header {
+    gap: 0.5rem;
+  }
+  
   .title-section {
-    max-width: 65%;
     padding-left: 0.5rem;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  
+  .title-section h1,
+  .title-section span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Make help button smaller on mobile */
+  .help-button {
+    margin-left: 0.25rem;
+    min-height: 20px;
+    width: 20px;
+    font-size: 14px;
+    padding: 2px;
+    flex-shrink: 0;
   }
   
   /* Make the button more compact on mobile */
@@ -151,8 +233,24 @@ h1 {
     margin-bottom: 1rem;
   }
   
+  .list-page-header {
+    gap: 0.25rem;
+  }
+  
   .title-section {
     font-size: 1.25rem;
+    flex: 1;
+    min-width: 0;
+  }
+  
+  /* Even smaller help button on very small screens */
+  .help-button {
+    margin-left: 0.2rem;
+    min-height: 18px;
+    width: 18px;
+    font-size: 12px;
+    padding: 1px;
+    flex-shrink: 0;
   }
 }
 </style>

@@ -46,7 +46,11 @@ const remove = useConfirmAction((id: string) => {
 
 <template>
   <div>
-    <ListPageTitle title="Integrations" :create-route-query="{ mode: $route.query.mode ? undefined : 'create' }" />
+    <ListPageTitle 
+      title="Integrations" 
+      description="Integrations connect your application to external services and APIs. Set up triggers, actions, and data flows between different platforms."
+      :create-route-query="{ mode: $route.query.mode ? undefined : 'create' }" 
+    />
     <p>{{ $t('Choose any provider to manage connections') }}:</p>
     
     <div class="blocks-list">

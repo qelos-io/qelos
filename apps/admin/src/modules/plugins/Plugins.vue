@@ -1,6 +1,10 @@
 <template>
   <div class="plugins-page">
-    <ListPageTitle title="Your Plugins" :create-route-query="{mode: 'quick-create'}" />
+    <ListPageTitle 
+      title="Your Plugins" 
+      description="Plugins extend your application with custom functionality, integrations, and micro-frontends. Create and manage your plugins here."
+      :create-route-query="{mode: 'quick-create'}" 
+    />
     <YourPluginsList/>
     <QuickPluginFormModal :visible="$route.query.mode === 'quick-create'" @close="$router.push({query: {mode: undefined}})" @saved="afterSave" />
   </div>

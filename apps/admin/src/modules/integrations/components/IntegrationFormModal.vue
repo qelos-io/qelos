@@ -95,7 +95,9 @@ const { submit, submitting } = useSubmitting(() => {
   } else {
     return integrationsService.create(form)
   }
-}, {}, () => {
+}, {
+  error: (err: any) => err?.response?.data?.message || 'Failed to save integration'
+}, () => {
   emit('close')
   emit('saved', form)
 })

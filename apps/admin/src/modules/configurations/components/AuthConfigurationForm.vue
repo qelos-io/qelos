@@ -325,23 +325,6 @@ const hasSocialLoginConfigured = computed(() => {
   return !!edited.value.socialLoginsSources?.linkedin;
 });
 
-// Computed property to check if form is valid
-const formIsValid = computed(() => {
-  // If username/password is disabled, social login must be configured
-  if (edited.value.disableUsernamePassword && !hasSocialLoginConfigured.value) {
-    return false;
-  }
-  
-  // Check additional user fields validity
-  if (edited.value.additionalUserFields.length > 0) {
-    return !edited.value.additionalUserFields.some(field => {
-      return !field.key || !field.name || !field.label;
-    });
-  }
-  
-  return true;
-});
-
 // Watch for changes in social login configuration when username/password is disabled
 watch(() => edited.value.disableUsernamePassword, (newValue) => {
   if (newValue && !hasSocialLoginConfigured.value) {

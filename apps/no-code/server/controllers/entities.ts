@@ -15,8 +15,7 @@ import {
   validateEntityRelations,
 } from '../services/entities.service';
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
-import { emitPlatformEvent } from '@qelos/api-kit';
-import { ResponseError } from '../services/response-error';
+import { emitPlatformEvent, ResponseError } from '@qelos/api-kit';
 import { getUsersByIds, getWorkspaces } from '../services/users';
 import type { Request } from 'express';
 import { hasGuestReachedLimit } from '../services/guest-request-limit';

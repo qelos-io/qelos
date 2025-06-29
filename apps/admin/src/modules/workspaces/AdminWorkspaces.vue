@@ -1,7 +1,11 @@
 <template>
   <div class="menus-page">
     <div class="header-container">
-      <ListPageTitle title="Workspaces" :create-route="canUserCreateWorkspace ? 'adminCreateWorkspace' : undefined">
+      <ListPageTitle 
+        title="Workspaces" 
+        description="Workspaces are isolated environments for different teams, projects, or clients. Each workspace has its own data, users, and configurations."
+        :create-route="canUserCreateWorkspace ? 'adminCreateWorkspace' : undefined"
+      >
         <template v-slot:content>
           <div class="filter-container">
             <WorkspaceLabelFilter v-model="selectedLabels" :availableLabels="availableLabels" />
@@ -24,8 +28,10 @@ import { useRoute, useRouter } from 'vue-router';
 const route = useRoute()
 const router = useRouter()
 
+const { canUserCreateWorkspace, metadata } = useWsConfiguration();
+
 // State variables
-const availableLabels = ref<string[]>(['*', 'supplier', 'store', 'consumer']);
+const availableLabels = ref<string[]>(['*', ...metadata.labels.map(l => l.value).flat()]);
 
 const selectedLabels = computed({
   get: () => {
@@ -41,7 +47,6 @@ const selectedLabels = computed({
   },
 });
 
-const { canUserCreateWorkspace } = useWsConfiguration();
 </script>
 
 <style scoped>

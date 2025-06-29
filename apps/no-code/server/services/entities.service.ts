@@ -3,7 +3,7 @@ import { IBlueprintPropertyDescriptor, PermissionScope } from '@qelos/global-typ
 import BlueprintEntity, { IBlueprintEntity } from '../models/blueprint-entity';
 import * as jq from 'node-jq';
 import Ajv from 'ajv';
-import { ResponseError } from './response-error';
+import { ResponseError } from '@qelos/api-kit'
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
 
 const ajv = new Ajv()

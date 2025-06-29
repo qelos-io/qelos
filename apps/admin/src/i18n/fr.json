@@ -151,5 +151,8 @@
   "Abort operation": "Interrompre l'opération",
   "Abort with condition": "Interrompre avec condition",
   "Abort will prevent the target from being called": "L'interruption empêchera l'appel de la cible",
-  "Complete Data Manipulation JSON": "JSON complet de manipulation de données"
+  "Complete Data Manipulation JSON": "JSON complet de manipulation de données",
+  "Show help for this page": "Afficher l'aide pour cette page",
+  "Page Information": "Informations de la page",
+  "Got it": "Compris"
 }

@@ -1,3 +1,4 @@
+import { ResponseError } from '@qelos/api-kit';
 import { IntegrationSourceKind } from '@qelos/global-types';
 
 export async function validateSourceMetadata(kind: IntegrationSourceKind, metadata: any = {}) {
@@ -52,7 +53,7 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
   if (kind === IntegrationSourceKind.LinkedIn) {
     const { clientId, scope } = metadata;
     if (!clientId || typeof clientId !== 'string' || !scope || typeof scope !== 'string') {
-      throw new Error('Invalid LinkedIn metadata: clientId and scope are required.');
+      throw new ResponseError('Invalid LinkedIn metadata: clientId and scope are required.', 400);
     }
     return { clientId, scope };
   }
@@ -60,7 +61,7 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
   if (kind === IntegrationSourceKind.Facebook) {
     const { clientId, scope } = metadata;
     if (!clientId || typeof clientId !== 'string' || !scope || typeof scope !== 'string') {
-      throw new Error('Invalid Facebook metadata: clientId and scope are required.');
+      throw new ResponseError('Invalid Facebook metadata: clientId and scope are required.', 400);
     }
     return { clientId, scope };
   }
@@ -68,7 +69,7 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
   if (kind === IntegrationSourceKind.N8n) {
     const { url } = metadata;
     if (typeof url !== 'string') {
-      throw new Error('Invalid N8n metadata: url is required.');
+      throw new ResponseError('Invalid N8n metadata: url is required.', 400);
     }
     return {
       url
@@ -80,19 +81,19 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     try {
       new URL(baseUrl);
     } catch {
-      throw new Error('Invalid Http metadata: baseUrl is required and must be a valid URL.')
+      throw new ResponseError('Invalid Http metadata: baseUrl is required and must be a valid URL.', 400)
     }
     if (!(typeof method === 'undefined' || typeof method === 'string')) {
-      throw new Error('Invalid Http metadata: method must be a string.')
+      throw new ResponseError('Invalid Http metadata: method must be a string.', 400)
     }
     if (typeof headers !== 'object' || headers === null) {
-      throw new Error('Invalid Http metadata: headers is required.');
+      throw new ResponseError('Invalid Http metadata: headers is required.', 400);
     }
     if (headers && Object.values(headers).find(v => typeof v !== 'string')) {
-      throw new Error('Invalid Http metadata: headers must be an object of strings.');
+      throw new ResponseError('Invalid Http metadata: headers must be an object of strings.', 400);
     }
     if (query && Object.values(query).find(v => typeof v !== 'string')) {
-      throw new Error('Invalid Http metadata: headers must be an object of strings.');
+      throw new ResponseError('Invalid Http metadata: headers must be an object of strings.', 400);
     }
     return {
       method: method || 'GET',

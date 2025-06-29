@@ -151,5 +151,8 @@
   "Abort operation": "Abort operation",
   "Abort with condition": "Abort with condition",
   "Abort will prevent the target from being called": "Abort will prevent the target from being called",
-  "Complete Data Manipulation JSON": "Complete Data Manipulation JSON"
+  "Complete Data Manipulation JSON": "Complete Data Manipulation JSON",
+  "Show help for this page": "Show help for this page",
+  "Page Information": "Page Information",
+  "Got it": "Got it"
 }

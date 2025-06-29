@@ -47,7 +47,6 @@ function copyToClipboard(key: string) {
   ElMessage.info({
     message: t('Copied to clipboard'),
     type: 'info',
-    center: true,
     customClass: 'copy-to-clipboard-message'
   })
 }

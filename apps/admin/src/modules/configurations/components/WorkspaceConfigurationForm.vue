@@ -96,7 +96,8 @@ const defaultMetadata: WorkspaceConfigurationMetadata = {
   creationPrivilegedRoles: [],
   viewMembersPrivilegedWsRoles: [],
   labels: [],
-  allowNonLabeledWorkspaces: true
+  allowNonLabeledWorkspaces: true,
+  allowNonWorkspaceUsers: true
 }
 
 const edited = ref<WorkspaceConfigurationMetadata>({
