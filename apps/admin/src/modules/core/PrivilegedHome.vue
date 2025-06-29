@@ -47,7 +47,7 @@
             </div>
             
             <!-- Workspace Settings Card -->
-            <div class="unified-card">
+            <div class="unified-card" v-if="wsConfig.isActive">
               <router-link :to="{name: 'editConfiguration', params: {key: 'workspace-configuration'}}" class="config-card-link">
                 <div class="config-card-icon success">
                   <font-awesome-icon :icon="['far', 'building']" size="lg"/>
@@ -128,8 +128,11 @@ import BlueprintsList from '@/modules/no-code/components/BlueprintsList.vue';
 import DesignConfiguration from '@/modules/configurations/components/DesignConfiguration.vue';
 import QuickStartWizard from '@/modules/admins/components/QuickStartWizard.vue';
 import DashboardOverview from '@/modules/core/components/DashboardOverview.vue';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 
 const { appConfig, loaded: configLoaded } = useAppConfiguration();
+
+const wsConfig = useWsConfiguration();
 
 // Apply a complete design palette including typography, spacing, etc.
 const applyDesignPalette = useConfirmAction(async function applyDesignPalette(designPalette: DesignPalette) {

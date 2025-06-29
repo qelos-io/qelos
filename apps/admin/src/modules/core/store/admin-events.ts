@@ -248,7 +248,7 @@ const activityTimeframe = ref('week');
       yAxis: [
         {
           type: 'value',
-          name: 'Users',
+          name: 'Amount',
           nameLocation: 'middle',
           nameGap: 40
         }

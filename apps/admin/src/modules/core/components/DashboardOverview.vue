@@ -27,7 +27,7 @@
     <div class="metrics-section">
       <div class="metrics-header">
         <h2 class="section-title">{{ $t('Key Metrics') }}</h2>
-        <div class="blueprint-selector">
+        <div class="blueprint-selector" v-if="availableBlueprints.length">
           <el-popover
             placement="bottom-end"
             :width="380"
@@ -39,7 +39,6 @@
                 type="primary"
                 :icon="Plus"
                 circle
-                size="medium"
                 class="add-blueprint-btn"
                 :disabled="availableBlueprints.length === 0"
               >
@@ -109,7 +108,7 @@
             :fa-icon="['fas', 'users']"
           />
         </div>
-        <div class="unified-card" v-if="!loadingStats">
+        <div class="unified-card" v-if="!loadingStats && wsConfig.isActive">
           <StatsCard
             :value="stats.workspaces"
             color="purple"
@@ -215,11 +214,14 @@ import { api } from '@/services/api';
 import { useUserMetadataStore } from '@/modules/core/store/user-metadata';
 
 import { Plus } from '@element-plus/icons-vue';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 
 const { loading: loadingBlocks, blocks } = toRefs(useBlocksList());
 const { loading: loadingStats, stats } = useUsersStats();
 const { systemStatus, activityChartOption, activityTimeframe } = toRefs(useAdminEvents());
 const { t } = useI18n();
+
+const wsConfig = useWsConfiguration();
 
 // Load plugins data
 const pluginsStore = usePluginsList();

@@ -111,24 +111,23 @@ ${getEmptyState(dataKey, selectedBlueprint.name)}
   
   <div class="item-properties flex-container">
     ${Object.entries(selectedBlueprint?.properties)
-      .map(([key, {type, description}]) => (key === 'title' || type === 'file') ?  `` :
-      `<div class="property-row"><strong>${key}:</strong> {{item.metadata.${key}}}</div>`).join('\n')}
+      .map(([key, {title, type, description}]) => (key === 'title' || type === 'file') ?  `` :
+      `<div class="property-row"><strong>${title}:</strong> {{item.metadata.${key}}}</div>`).join('\n')}
   </div>
   
   <template #actions>
     <div class="flex-row flex-space">
       <el-button 
         type="primary" 
-        size="small" 
+        circle
         @click="pageState.${selectedBlueprint.identifier}ToEdit = item.metadata; $router.push({query: {...$route.query, mode: 'edit', identifier: item.identifier}})">
-        Edit
+        <el-icon><Edit /></el-icon>
       </el-button>
       <el-button 
         type="danger" 
-        size="small" 
-        @click="pageState ? (pageState.${dataKey}ToRemove = item.identifier) : null">
-        Remove
-      </el-button>
+        circle 
+        @click="pageState ? (pageState.${dataKey}ToRemove = item.identifier) : null"
+      ><el-icon><Delete /></el-icon></el-button>
     </div>
   </template>
 </block-item>
