@@ -5,11 +5,13 @@ import * as vueRouter from 'vue-router';
 import * as elementPlus from 'element-plus';
 import sdk from '@/services/sdk';
 import { usePluginsStore } from './pluginsStore';
+import { useStaticComponentsStore } from '@/modules/no-code/store/static-components';
 
 export function usePluginsInjectables() {
   const { appContext } = getCurrentInstance();
   const store = usePluginsList();
   const pluginsStore = usePluginsStore();
+  const staticComponentsStore = useStaticComponentsStore();
 
   window['getApp'] = () => {
     return appContext.app;
@@ -27,6 +29,8 @@ export function usePluginsInjectables() {
   window['Vue'] = vue;
   window['VueRouter'] = vueRouter;
   window['ElementPlus'] = elementPlus;
+
+  
 
   let unwatch;
 
@@ -86,5 +90,11 @@ export function usePluginsInjectables() {
 
   unwatch = watch(() => store.plugins, injectAll);
 
+  staticComponentsStore.promise.then(() => {
+    staticComponentsStore.staticComponents.forEach(component => {
+      appContext.app.component(component.name, component.component);
+    });
+  })
+  
   return { injectablesLoaded: pluginsStore.injectablesLoaded, componentUpdates: pluginsStore.componentUpdates };
 }

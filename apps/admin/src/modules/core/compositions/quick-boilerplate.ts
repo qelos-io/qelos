@@ -121,13 +121,13 @@ ${getEmptyState(dataKey, selectedBlueprint.name)}
         type="primary" 
         circle
         @click="pageState.${selectedBlueprint.identifier}ToEdit = item.metadata; $router.push({query: {...$route.query, mode: 'edit', identifier: item.identifier}})">
-        <el-icon><Edit /></el-icon>
+        <el-icon><icon-edit></icon-edit></el-icon>
       </el-button>
       <el-button 
         type="danger" 
         circle 
         @click="pageState ? (pageState.${dataKey}ToRemove = item.identifier) : null"
-      ><el-icon><Delete /></el-icon></el-button>
+      ><el-icon><icon-delete></icon-delete></el-icon></el-button>
     </div>
   </template>
 </block-item>
