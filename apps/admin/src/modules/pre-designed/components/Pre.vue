@@ -17,5 +17,7 @@ const valueAsSfeHTML = computed(() => {
 </template>
 
 <style scoped>
-
+.pre {
+  white-space: pre;
+}
 </style>

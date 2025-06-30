@@ -20,7 +20,7 @@
   },
   "gitHead": "4f4acba1f01d2659431e3149cc6efa927926c5f1",
   "devDependencies": {
-    "@types/node": "^20.12.8",
+    "@types/node": "^22.5.4",
     "typescript": "^5.4.5"
   }
 }
