@@ -14,7 +14,7 @@ input[type="url"],
 input[type="week"],
 select:focus,
 textarea {
-  font-size: var(--base-font-size);
+  font-size: var(--base-font-size, 16px);
   background-color: var(--inputs-bg-color);
   color: var(--inputs-text-color);
 }
