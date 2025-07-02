@@ -49,9 +49,16 @@ function validateBlueprintProperties(properties?: Record<string, IBlueprintPrope
 const VIEWER_FIELDS = 'tenant identifier name description properties created updated';
 
 export async function getAllBlueprints(req, res) {
-  const list = await Blueprint.find({
+  const query: Record<string, any> = {
     tenant: req.headers.tenant,
-  }, req.user?.isPrivileged ? undefined : VIEWER_FIELDS)
+  }
+  if (typeof req.query.name === 'string') {
+    query.name = { $regex: req.query.name, $options: 'i' }
+  }
+  if (typeof req.query.description === 'string') {
+    query.description = { $regex: req.query.description, $options: 'i' }
+  }
+  const list = await Blueprint.find(query, req.user?.isPrivileged ? undefined : VIEWER_FIELDS)
     .lean()
     .exec()
 

@@ -13,10 +13,18 @@ function callNoCodeService(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE
     .then((axiosRes: any) => axiosRes.data)
 }
 
+export function getAllBlueprints(tenant: string, query: any) {
+  const queryString = Object.entries(query).map(([key, value]) => `${key}=${value}`).join('&');
+  return callNoCodeService(`/internal-api/blueprints?${queryString}`, 'GET', tenant);
+}
+
+export function createBlueprint(tenant: string, payload: any) {
+  return callNoCodeService(`/internal-api/blueprints`, 'POST', tenant, payload);
+}
+
 export function getBlueprintEntity(tenant: string, blueprintIdentifier: string, entityId: string) {
   return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities/${entityId}`, 'GET', tenant);
 }
-
 
 export function getBlueprintEntities(tenant: string, blueprintIdentifier: string, query: any) {
   const queryString = Object.entries(query).map(([key, value]) => `${key}=${value}`).join('&');

@@ -2,23 +2,12 @@ import Integration from "../models/integration";
 import { getEncryptedSourceAuthentication } from "../services/source-authentication-service";
 import { IntegrationSourceKind, OpenAITargetOperation } from "@qelos/global-types";
 import { createAIService } from "../services/ai-service";
-import { AIMessageTemplates } from "../services/ai-message-templates";
-import { AIResponseParser } from "../services/ai-response-parser";
 import logger from "../services/logger";
 import { executeDataManipulation } from "../services/data-manipulation-service";
 import { callIntegrationTarget } from "../services/integration-target-call";
-import { safeParseJSON } from "./integrate-to-integrations-helper";
+import * as ChatCompletionService from "../services/chat-completion-service";
 
-// Helper function to parse function arguments safely
-function parseFunctionArguments(argumentsString: string): any {
-  if (!argumentsString) return {};
-  
-  try {
-    return JSON.parse(argumentsString);
-  } catch (e) {
-    return argumentsString || {};
-  }
-}
+// Using parseFunctionArguments from ChatCompletionService
 
 // Helper function to find target integration by function name
 function findTargetIntegration(toolsIntegrations: any[], functionName: string) {
@@ -27,15 +16,7 @@ function findTargetIntegration(toolsIntegrations: any[], functionName: string) {
   );
 }
 
-// Helper function to create function result object
-function createFunctionResult(functionCall: any, content: any): any {
-  return {
-    tool_call_id: functionCall.id,
-    role: 'tool',
-    name: functionCall.function.name,
-    content: JSON.stringify(content)
-  };
-}
+// Using createFunctionResult from ChatCompletionService
 
 // Helper function to execute a single function call
 async function executeFunctionCall(
@@ -46,19 +27,19 @@ async function executeFunctionCall(
   const targetIntegration = findTargetIntegration(toolsIntegrations, functionCall.function.name);
   
   if (!targetIntegration) {
-    return createFunctionResult(functionCall, {
+    return ChatCompletionService.createFunctionResult(functionCall, {
       error: `Function ${functionCall.function.name} not found`
     });
   }
 
   try {
-    const parsedArgs = parseFunctionArguments(functionCall.function.arguments);
+    const parsedArgs = ChatCompletionService.parseFunctionArguments(functionCall.function.arguments);
     const args = await executeDataManipulation(tenant, parsedArgs, targetIntegration.dataManipulation);
     const result = await callIntegrationTarget(tenant, args, targetIntegration.target);
 
-    return createFunctionResult(functionCall, result);
+    return ChatCompletionService.createFunctionResult(functionCall, result);
   } catch (error) {
-    return createFunctionResult(functionCall, {
+    return ChatCompletionService.createFunctionResult(functionCall, {
       error: 'Function execution failed'
     });
   }
@@ -66,13 +47,13 @@ async function executeFunctionCall(
 
 // Helper function to execute multiple function calls
 async function executeFunctionCalls(
-  functionCalls: any[],
+  functionCalls: ChatCompletionService.FunctionCall[],
   toolsIntegrations: any[],
   tenant: string,
-  sendSSE?: (data: any) => void,
+  sendSSE?: ChatCompletionService.SSEHandler,
   eventPrefix: string = ''
 ): Promise<any[]> {
-  const functionResults = [];
+  const functionResults: any[] = [];
   
   if (sendSSE && functionCalls.length > 0) {
     sendSSE({ 
@@ -93,11 +74,11 @@ async function executeFunctionCalls(
           });
         }
 
-        const parsedArgs = parseFunctionArguments(functionCall.function.arguments);
+        const parsedArgs = ChatCompletionService.parseFunctionArguments(functionCall.function.arguments);
         const args = await executeDataManipulation(tenant, parsedArgs, targetIntegration.dataManipulation);
         const result = await callIntegrationTarget(tenant, args, targetIntegration.target);
 
-        const functionResult = createFunctionResult(functionCall, result);
+        const functionResult = ChatCompletionService.createFunctionResult(functionCall, result);
         functionResults.push(functionResult);
         
         if (sendSSE) {
@@ -108,12 +89,12 @@ async function executeFunctionCalls(
           });
         }
       } else {
-        functionResults.push(createFunctionResult(functionCall, {
+        functionResults.push(ChatCompletionService.createFunctionResult(functionCall, {
           error: `Function ${functionCall.function.name} not found`
         }));
       }
     } catch (error) {
-      functionResults.push(createFunctionResult(functionCall, {
+      functionResults.push(ChatCompletionService.createFunctionResult(functionCall, {
         error: 'Invalid function arguments'
       }));
     }
@@ -175,7 +156,7 @@ export async function getIntegrationToIntegrate(req, res, next) {
       }
     }
 
-    req.integrationSourceTargetAuthentication = await getEncryptedSourceAuthentication(req.headers.tenant, integration.target.source.kind, integration.target.source.authentication);
+    req.integrationSourceTargetAuthentication = await getEncryptedSourceAuthentication(req.headers.tenant, (integration.target.source as any).kind as IntegrationSourceKind, (integration.target.source as any).authentication);
 
     next();
   } catch (e: any) { // Typed error for better access to message
@@ -189,13 +170,14 @@ export async function chatCompletion(req, res) {
   const { messages } = req.body;
   const useSSE = req.query.stream === 'true';
 
-  let aiService: AIService;
+  let aiService;
 
   try {
     aiService = createAIService(integration.kind[1], req.integrationSourceTargetAuthentication);
     
   } catch (e: any) {
     res.status(500).json({ message: 'Could not get integration' }).end();
+    return;
   }
 
   // Prepare the messages array
@@ -259,254 +241,40 @@ export async function chatCompletion(req, res) {
       response_format: options.response_format || integration.target.details.response_format,
       tools,
     };
+
+    // Custom function to execute function calls for this controller
+    const executeFunctionCallsHandler = async (
+      functionCalls: ChatCompletionService.FunctionCall[],
+      ...args: any[]
+    ) => {
+      return executeFunctionCalls(
+        functionCalls,
+        toolsIntegrations,
+        integration.tenant,
+        args[0] // sendSSE if provided
+      );
+    };
+
     if (useSSE) {
-      // Set up SSE response headers
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
-      res.setHeader('X-Accel-Buffering', 'no'); // Prevents Nginx from buffering the response
-
-      // Create a function to send SSE data
-      const sendSSE = (data: any) => {
-        res.write(`data: ${JSON.stringify(data)}\n\n`);
-      };
-
-      // Send initial event to establish connection
-      sendSSE({ type: 'connection_established' });
-
-      // Get the stream from the AI service
-      const stream = await aiService.streamChatCompletion(chatOptions);
-
-      // Handle different AI service providers
-      if (integration.kind[1] === IntegrationSourceKind.OpenAI) {
-        // For OpenAI
-        let fullContent = '';
-        let functionCalls = [];
-        let functionResults = [];
-        
-        try {
-          for await (const chunk of stream) {
-            const content = chunk.choices[0]?.delta?.content || '';
-            fullContent += content;
-            
-            // Check for function calls
-            const toolCalls = chunk.choices[0]?.delta?.tool_calls;
-            if (toolCalls) {
-              for (const toolCall of toolCalls) {
-                if (toolCall.function) {
-                  // Find existing function call by ID or index (streaming chunks may only have index)
-                  let existingCall = functionCalls.find(fc => 
-                    (toolCall.id && fc.id === toolCall.id) || 
-                    (toolCall.index !== undefined && fc.index === toolCall.index)
-                  );
-                  
-                  if (!existingCall) {
-                    // Create new function call entry for this unique ID/index
-                    existingCall = {
-                      id: toolCall.id || `call_${toolCall.index}`,
-                      index: toolCall.index,
-                      type: 'function',
-                      function: {
-                        name: toolCall.function.name || '',
-                        arguments: toolCall.function.arguments || ''
-                      }
-                    };
-                    functionCalls.push(existingCall);
-                  } else {
-                    // Update existing call - set function name if provided (usually only in first chunk)
-                    if (toolCall.function.name && !existingCall.function.name) {
-                      existingCall.function.name = toolCall.function.name;
-                    }
-                    // Append arguments (streamed in subsequent chunks)
-                    if (toolCall.function.arguments) {
-                      existingCall.function.arguments += toolCall.function.arguments;
-                    }
-                  }
-                }
-              }
-            }
-            
-            sendSSE({
-              type: 'chunk',
-              content,
-              fullContent,
-              functionCalls,
-              chunk: chunk
-            });
-          }
-
-          // Process function calls if any
-          if (functionCalls.length > 0) {
-            functionResults = await executeFunctionCalls(
-              functionCalls,
-              toolsIntegrations,
-              integration.tenant,
-              sendSSE
-            );
-          }
-
-          // Continue conversation with function results
-          if (functionResults.length > 0) {
-            const followUpMessages = [
-              ...chatOptions.messages,
-              {
-                role: 'assistant',
-                content: fullContent,
-                tool_calls: functionCalls
-              },
-              ...functionResults
-            ];
-            
-            const followUpOptions = {
-              ...chatOptions,
-              messages: followUpMessages
-            };
-            
-            sendSSE({ type: 'continuing_conversation', functionResults });
-            
-            // Get follow-up response from AI
-            const followUpStream = await aiService.streamChatCompletion(followUpOptions);
-            let followUpContent = '';
-            let followUpFunctionCalls = [];
-            let followUpFunctionResults = [];
-            
-            for await (const chunk of followUpStream) {
-              const content = chunk.choices[0]?.delta?.content || '';
-              followUpContent += content;
-              
-              // Check for function calls in follow-up response
-              const toolCalls = chunk.choices[0]?.delta?.tool_calls;
-              if (toolCalls) {
-                for (const toolCall of toolCalls) {
-                  if (toolCall.function) {
-                    // Find existing function call by ID or index (streaming chunks may only have index)
-                    let existingCall = followUpFunctionCalls.find(fc => 
-                      (toolCall.id && fc.id === toolCall.id) || 
-                      (toolCall.index !== undefined && fc.index === toolCall.index)
-                    );
-                    
-                    if (!existingCall) {
-                      // Create new function call entry for this unique ID/index
-                      existingCall = {
-                        id: toolCall.id || `followup_call_${toolCall.index}`,
-                        index: toolCall.index,
-                        type: 'function',
-                        function: {
-                          name: toolCall.function.name || '',
-                          arguments: toolCall.function.arguments || ''
-                        }
-                      };
-                      followUpFunctionCalls.push(existingCall);
-                    } else {
-                      // Update existing call - set function name if provided (usually only in first chunk)
-                      if (toolCall.function.name && !existingCall.function.name) {
-                        existingCall.function.name = toolCall.function.name;
-                      }
-                      // Append arguments (streamed in subsequent chunks)
-                      if (toolCall.function.arguments) {
-                        existingCall.function.arguments += toolCall.function.arguments;
-                      }
-                    }
-                  }
-                }
-              }
-              
-              sendSSE({
-                type: 'followup_chunk',
-                content,
-                fullContent: followUpContent,
-                functionCalls: followUpFunctionCalls,
-                chunk: chunk
-              });
-            }
-            
-            // Process follow-up function calls if any
-            if (followUpFunctionCalls.length > 0) {
-              followUpFunctionResults = await executeFunctionCalls(
-                followUpFunctionCalls,
-                toolsIntegrations,
-                integration.tenant,
-                sendSSE,
-                'followup_'
-              );
-              
-              // Note: For simplicity, we're not doing another round of conversation after follow-up functions
-              // In a full implementation, you might want to continue the conversation with these results too
-              if (followUpFunctionResults.length > 0) {
-                followUpContent += '\n\n[Follow-up function calls executed]';
-              }
-            }
-            
-            fullContent += followUpContent;
-          }
-        
-          // Send completion event
-          sendSSE({ type: 'done', content: fullContent });
-        } catch (e: any) {
-          sendSSE({ type: 'error', message: 'Error processing AI chat completion' });
-        }
-        
-        // End the response
-        res.end();
-      } else if (integration.kind[1] === IntegrationSourceKind.ClaudeAi) {
-        // For Claude AI
-        let fullContent = '';
-        
-        for await (const chunk of stream) {
-          if (chunk.type === 'content_block_delta' && chunk.delta?.type === 'text') {
-            const content = chunk.delta.text || '';
-            fullContent += content;
-            
-            sendSSE({
-              type: 'chunk',
-              content,
-              fullContent,
-              chunk: chunk
-            });
-          }
-        }
-        
-        // Send completion event
-        sendSSE({ type: 'done', content: fullContent });
-      }
-      
-      // End the response
-      res.end();
+      // Use the shared streaming chat completion handler
+      await ChatCompletionService.handleStreamingChatCompletion(
+        req,
+        res,
+        aiService,
+        chatOptions,
+        integration.kind[1],
+        executeFunctionCallsHandler,
+        []
+      );
     } else {
-      // Non-streaming response (original behavior)
-      const response = await aiService.chatCompletion(chatOptions);
-      
-      // Check if there are function calls in the response
-      if (response.choices?.[0]?.message?.tool_calls?.length > 0) {
-        const functionCalls = response.choices[0].message.tool_calls;
-        const functionResults = await executeFunctionCalls(
-          functionCalls,
-          toolsIntegrations,
-          integration.tenant
-        );
-        
-        // Continue conversation with function results
-        if (functionResults.length > 0) {
-          const followUpMessages = [
-            ...chatOptions.messages,
-            response.choices[0].message,
-            ...functionResults
-          ];
-          
-          const followUpOptions = {
-            ...chatOptions,
-            messages: followUpMessages
-          };
-          
-          // Get follow-up response from AI
-          const followUpResponse = await aiService.chatCompletion(followUpOptions);
-          res.json(followUpResponse).end();
-        } else {
-          res.json(response).end();
-        }
-      } else {
-        res.json(response).end();
-      }
+      // Use the shared non-streaming chat completion handler
+      await ChatCompletionService.handleNonStreamingChatCompletion(
+        res,
+        aiService,
+        chatOptions,
+        executeFunctionCallsHandler,
+        []
+      );
     }
   } catch (error) {
     logger.error('Error processing AI chat completion', error);

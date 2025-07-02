@@ -21,4 +21,41 @@ blueprintsRouter
   .patch('/api/blueprints/:blueprintIdentifier', AUTHENTICATION_MIDDLEWARES_FOR_ADMIN.concat(patchBlueprint))
   .delete('/api/blueprints/:blueprintIdentifier', AUTHENTICATION_MIDDLEWARES_FOR_ADMIN.concat(removeBlueprint))
 
+
+blueprintsRouter
+  .get('/internal-api/blueprints', (req, res, next) => {
+    req.user = { roles: ['admin'] }
+    next();
+  }, getAllBlueprints)
+
+blueprintsRouter
+  .get('/internal-api/blueprints/:blueprintIdentifier', (req, res, next) => {
+    req.user = { roles: ['admin'] }
+    next(); 
+  }, getSingleBlueprint)
+
+blueprintsRouter
+  .post('/internal-api/blueprints', (req, res, next) => {
+    req.user = { roles: ['admin'] }
+    next();
+  }, createBlueprint)
+
+blueprintsRouter
+  .put('/internal-api/blueprints/:blueprintIdentifier', (req, res, next) => {
+    req.user = { roles: ['admin'] }
+    next();
+  }, updateBlueprint)
+
+blueprintsRouter
+  .patch('/internal-api/blueprints/:blueprintIdentifier', (req, res, next) => {
+    req.user = { roles: ['admin'] }
+    next();
+  }, patchBlueprint)
+
+blueprintsRouter
+  .delete('/internal-api/blueprints/:blueprintIdentifier', (req, res, next) => {
+    req.user = { roles: ['admin'] }
+    next();
+  }, removeBlueprint)
+
 export default blueprintsRouter;

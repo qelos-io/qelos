@@ -5,6 +5,72 @@ import { createAIService } from "../services/ai-service";
 import { AIMessageTemplates } from "../services/ai-message-templates";
 import { AIResponseParser } from "../services/ai-response-parser";
 import logger from "../services/logger";
+import { editorsFunctionCallings } from "../services/function-callings";
+import * as ChatCompletionService from "../services/chat-completion-service";
+
+// Using parseFunctionArguments from ChatCompletionService
+
+// Using createFunctionResult from ChatCompletionService
+
+// Using FunctionCall interface from ChatCompletionService
+
+// Helper function to execute function calls specific to this controller
+async function executeFunctionCalls(
+  functionCalls: ChatCompletionService.FunctionCall[],
+  req: any,
+  sendSSE?: ChatCompletionService.SSEHandler,
+  eventPrefix: string = ''
+): Promise<any[]> {
+  const functionResults = [];
+  
+  if (sendSSE && functionCalls.length > 0) {
+    sendSSE({ 
+      type: `${eventPrefix}function_calls_detected`, 
+      functionCalls 
+    });
+  }
+  
+  for (const functionCall of functionCalls) {
+    try {
+      const functionName = functionCall.function.name;
+      const functionHandler = editorsFunctionCallings[functionName];
+      
+      if (functionHandler && typeof functionHandler.handler === 'function') {
+        if (sendSSE) {
+          sendSSE({ 
+            type: `${eventPrefix}function_executing`, 
+            functionCall 
+          });
+        }
+
+        const parsedArgs = ChatCompletionService.parseFunctionArguments(functionCall.function.arguments);
+        const result = await functionHandler.handler(req, parsedArgs);
+
+        const functionResult = ChatCompletionService.createFunctionResult(functionCall, result);
+        functionResults.push(functionResult);
+        
+        if (sendSSE) {
+          sendSSE({ 
+            type: `${eventPrefix}function_executed`, 
+            functionCall, 
+            result 
+          });
+        }
+      } else {
+        functionResults.push(ChatCompletionService.createFunctionResult(functionCall, {
+          error: `Function ${functionName} not found or has no handler`
+        }));
+      }
+    } catch (error) {
+      logger.error(`Error executing function call:`, error);
+      functionResults.push(ChatCompletionService.createFunctionResult(functionCall, {
+        error: 'Function execution failed'
+      }));
+    }
+  }
+  
+  return functionResults;
+}
 
 export async function getIntegrationSource(req, res, next) {
   try {
@@ -41,37 +107,64 @@ export async function validateChatSources(req, res, next) {
 export async function chatCompletion(req, res) {
   try {
     const aiService = createAIService(req.integrationSource.kind, req.integrationSourceAuthentication);
-    const { model = 'gpt-4o', messages, temperature = 0.7, top_p = 0.9, frequency_penalty = 0.2, presence_penalty = 0.2 } = req.body;
+    const { model = 'gpt-4o', messages, temperature = 0.7, top_p = 0.9, frequency_penalty = 0.2, presence_penalty = 0.2, stream = false } = req.body;
+    const useSSE = stream === true || req.query.stream === 'true';
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       res.status(400).json({ message: 'messages array is required and must not be empty' });
       return;
     }
 
-    // AIService's chatCompletion now returns an object like:
-    // { ...sdkResponse, responseContent: "extracted text" }
-    // or { success: false, error: "...", rawResponse: ... } if AIService itself handles its errors that way.
-    // For this example, assuming it throws on SDK error and returns augmented response on success.
-    const aiServiceResponse = await aiService.chatCompletion({
+    // Prepare tools for function calling
+    const tools = Object.values(editorsFunctionCallings).map(data => ({
+      type: data.type,
+      function: {
+        name: data.name,
+        description: data.description,
+        parameters: data.parameters
+      }
+    }));
+
+    // Prepare chat options
+    const chatOptions = {
       model,
       messages,
       temperature,
       top_p,
       frequency_penalty,
-      presence_penalty
-    });
+      presence_penalty,
+      stream: useSSE,
+      tools
+    };
 
-    // Decide what to send to the client: the full augmented response, or just the content?
-    // For now, sending the augmented response as per reviewer's suggestion "{ ...response, responseContent: ... }"
-    return res.json(aiServiceResponse).end();
-
+    if (useSSE) {
+      // Use the shared streaming chat completion handler
+      await ChatCompletionService.handleStreamingChatCompletion(
+        req,
+        res,
+        aiService,
+        chatOptions,
+        req.integrationSource.kind,
+        executeFunctionCalls,
+        [req]
+      );
+    } else {
+      // Use the shared non-streaming chat completion handler
+      await ChatCompletionService.handleNonStreamingChatCompletion(
+        res,
+        aiService,
+        chatOptions,
+        executeFunctionCalls,
+        [req]
+      );
+    }
   } catch (error: unknown) {
-    const errorObj = error as { status?: number; message?: string; response?: { data: unknown } }; // Existing error handling
-    logger.error("Error in chatCompletion:", errorObj.message || error, error); // Use your logger
-    return res.status(errorObj.status || 500).json({
+    const errorObj = error as { status?: number; message?: string; response?: { data: unknown } };
+    logger.error('Error processing AI chat completion', error);
+    res.status(500).json({ 
       message: errorObj.message || 'Error processing AI chat completion',
       error: errorObj.response?.data || error
-    });
+    }).end();
   }
 }
 
@@ -98,7 +191,15 @@ export async function noCodeMicroFrontendsCompletion(req, res) {
       frequency_penalty: 0.2,
       presence_penalty: 0.2,
       max_tokens: 4000,
-      response_format: { type: 'json_object' }
+      response_format: { type: 'json_object' },
+      tools: Object.values(editorsFunctionCallings).map(data => ({
+        type: data.type,
+        function: {
+          name: data.name,
+          description: data.description,
+          parameters: data.parameters
+        }
+      }))
     });
 
     // Pass the 'kind' to AIResponseParser
