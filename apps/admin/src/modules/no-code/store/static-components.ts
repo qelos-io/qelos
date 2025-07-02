@@ -17,7 +17,7 @@ export const useStaticComponentsStore = defineStore('static-components', () => {
     name: c.componentName,
     component: defineAsyncComponent(async () => {
       const [js] = await Promise.all([
-        import(c.js),
+        import(/* @vite-ignore */ c.js),
         loadCss(c.css),
       ])
       return js.default
