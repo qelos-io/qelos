@@ -111,6 +111,12 @@ function convertQueryToMetadata(query: any, blueprint: IBlueprint) {
   })
 }
 
+function flattenMetadata(entity: any = {}) {
+  Object.entries(entity.metadata || {}).forEach(([key, value]) => {
+    entity[key] = value;
+  });
+}
+
 export async function getAllBlueprintEntities(req, res) {
   const blueprint = req.blueprint as IBlueprint;
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin);
@@ -133,12 +139,14 @@ export async function getAllBlueprintEntities(req, res) {
     delete query.$limit;
     delete query.$page;
     delete query.$outerPopulate;
+    delete query.$flat;
     if ('bypassAdmin' in req.query) {
       delete query.bypassAdmin;
     }
     const sort = getSortQuery(req);
     const limit = req.query.$limit && (parseInt(req.query.$limit) || DEFAULT_LIMIT);
     const page = req.query.$page && (parseInt(req.query.$page) || 1);
+    const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
 
     convertQueryToMetadata(query, blueprint);
     convertQueryToIndexes(query, blueprint);
@@ -155,6 +163,9 @@ export async function getAllBlueprintEntities(req, res) {
       // @ts-ignore
       delete entity['_id'];
       entity.id = entity.identifier;
+      if (shouldFlat) {
+        flattenMetadata(entity);
+      }
     })
 
     if (req.query.$populate) {
@@ -269,6 +280,7 @@ export async function getSingleBlueprintEntity(req, res) {
   }
   try {
     const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes })
+    const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
 
     const entity = await BlueprintEntity.findOne(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS)
       .lean()
@@ -303,6 +315,9 @@ export async function getSingleBlueprintEntity(req, res) {
     }
     const { _id, ...response } = entity || {};
     response.id = response.identifier;
+    if (shouldFlat) {
+      flattenMetadata(response);
+    }
     res.json(response).end();
   } catch (err) {
     logger.error('failed to load blueprint entity', blueprint.identifier, err);
@@ -376,6 +391,10 @@ export async function createBlueprintEntity(req, res) {
 
     const { auditInfo, _id, ...response } = entity.toObject();
     response.id = response.identifier;
+    const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
+    if (shouldFlat) {
+      flattenMetadata(response);
+    }
     res.status(200).json(response).end()
     return;
   } catch (err) {
@@ -402,6 +421,7 @@ export async function updateBlueprintEntity(req, res) {
   const blueprint: IBlueprint = req.blueprint;
   const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.UPDATE, bypassAdmin);
+  const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;
@@ -460,6 +480,9 @@ export async function updateBlueprintEntity(req, res) {
 
     const { auditInfo, _id, ...response } = entity.toObject();
     response.id = response.identifier;
+    if (shouldFlat) {
+      flattenMetadata(response);
+    }
     res.status(200).json(response).end()
   } catch (err) {
     logger.error(err);
@@ -522,7 +545,13 @@ export async function removeBlueprintEntity(req, res) {
       }).catch(logger.error);
     }
 
-    res.json(entity).end();
+    const { auditInfo, _id, ...response } = entity.toObject();
+    response.id = response.identifier;
+    const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
+    if (shouldFlat) {
+      flattenMetadata(response);
+    }
+    res.json(response).end();
   } catch (err) {
     logger.error(err);
     res.status(500).json({ message: 'something went wrong with entity deletion' }).end();
