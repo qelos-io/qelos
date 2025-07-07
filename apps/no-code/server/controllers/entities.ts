@@ -102,6 +102,15 @@ function getSortQuery(req: Request) {
   return req.query.$sort;
 }
 
+function convertQueryToMetadata(query: any, blueprint: IBlueprint) {
+  Object.entries(blueprint.properties).forEach(([key, property]) => {
+    if (query[key]) {
+      query[`metadata.${key}`] = query[key];
+      delete query[key];
+    }
+  })
+}
+
 export async function getAllBlueprintEntities(req, res) {
   const blueprint = req.blueprint as IBlueprint;
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin);
@@ -130,6 +139,8 @@ export async function getAllBlueprintEntities(req, res) {
     const sort = getSortQuery(req);
     const limit = req.query.$limit && (parseInt(req.query.$limit) || DEFAULT_LIMIT);
     const page = req.query.$page && (parseInt(req.query.$page) || 1);
+
+    convertQueryToMetadata(query, blueprint);
     convertQueryToIndexes(query, blueprint);
     const entities = await BlueprintEntity
       .find(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS, {
@@ -139,6 +150,12 @@ export async function getAllBlueprintEntities(req, res) {
       })
       .lean()
       .exec()
+
+    entities.forEach(entity => {
+      // @ts-ignore
+      delete entity['_id'];
+      entity.id = entity.identifier;
+    })
 
     if (req.query.$populate) {
       const uniqueWorkspaces: string[] = Array.from(new Set(entities.map(entity => entity.workspace?.toString()).filter(Boolean)));
@@ -284,8 +301,9 @@ export async function getSingleBlueprintEntity(req, res) {
       entity.user = user;
       entity.workspace = workspace;
     }
-
-    res.json(entity).end();
+    const { _id, ...response } = entity || {};
+    response.id = response.identifier;
+    res.json(response).end();
   } catch (err) {
     logger.error('failed to load blueprint entity', blueprint.identifier, err);
     res.status(500).json({ message: 'something went wrong with entity' }).end();
@@ -357,7 +375,7 @@ export async function createBlueprintEntity(req, res) {
     }
 
     const { auditInfo, _id, ...response } = entity.toObject();
-
+    response.id = response.identifier;
     res.status(200).json(response).end()
     return;
   } catch (err) {
@@ -441,7 +459,7 @@ export async function updateBlueprintEntity(req, res) {
     }
 
     const { auditInfo, _id, ...response } = entity.toObject();
-
+    response.id = response.identifier;
     res.status(200).json(response).end()
   } catch (err) {
     logger.error(err);
