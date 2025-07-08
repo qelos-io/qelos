@@ -153,10 +153,15 @@ async function refreshPluginFromManifest() {
     
     const manifest = await response.json();
     Object.assign(edit, manifest);
+
+    if (!edit.manifestUrl.startsWith('http')) {
+      edit.manifestUrl = new URL(edit.manifestUrl, manifest.appUrl).href;
+    }
     
     if (!edit.apiPath && manifest.name) {
       edit.apiPath = manifest.name.toLowerCase().replace(/\s+/g, '-');
     }
+    submit();
   } catch (error) {
     console.error('Error fetching manifest:', error);
   }
