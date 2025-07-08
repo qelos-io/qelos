@@ -44,35 +44,21 @@ const blueprintMapping = ref(
 
 provide('submitting', toRef(props, 'submitting'));
 
-// 
-const blueprintJson = computed({
-  get: () => JSON.stringify(
-      {
-        ...edit,
-        updateMapping: blueprintMapping.value.reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {})
-      },
-      null,
-      2
-  ),
-  set: (value: string) => {
-    try {
-      const parsed = JSON.parse(value);
-      Object.assign(edit, parsed);
-      blueprintMapping.value = Object.entries(parsed.updateMapping || {}).map(([key, value]) => ({
-        key,
-        value: String(value)
-      }));
-    } catch (err) {
-      console.error('Invalid JSON:', err);
-    }
+const blueprintJson = ref('');
+
+watch(blueprintJson, (value) => {
+  try {
+    const parsed = JSON.parse(value);
+    Object.assign(edit, parsed);
+    blueprintMapping.value = Object.entries(parsed.updateMapping || {}).map(([key, value]) => ({
+      key,
+      value: String(value)
+    }));
+  } catch (error) {
+    console.error('Error parsing JSON:', error);
   }
 });
 
-watch(edit, () => {
-  if (editor.value) {
-    editor.value.updateValue(blueprintJson.value)
-  }
-}, { deep: true })
 watch(() => edit.name, (newName) => {
   if (newName && newName.trim()) {
     edit.identifier = getKeyFromName(newName)
@@ -86,6 +72,12 @@ const activeTab = computed({
     router.replace({ query: { ...route.query, tab: tabName } }).catch(error => {
       console.error('Failed to update route:', error);
     });
+  }
+})
+
+watch(() => activeTab.value === 'summary', (isSummary) => {
+  if (isSummary) {
+    blueprintJson.value = JSON.stringify(edit, null, 2);
   }
 })
 
@@ -340,8 +332,7 @@ function submit() {
             <div class="monaco-container">
               <Monaco 
                 ref="editor" 
-                :model-value="blueprintJson" 
-                @change="blueprintJson = editor.getMonaco().getValue()"
+                v-model="blueprintJson"
                 language="json"
                 class="monaco-editor"
               />

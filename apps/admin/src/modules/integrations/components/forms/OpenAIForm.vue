@@ -21,7 +21,7 @@ const isSubmitting = ref(false);
 const showTokenHelp = ref(false);
 
 // Determine if this is a new integration or an edit
-const isNewIntegration = computed(() => !props.modelValue?.id);
+const isNewIntegration = computed(() => !props.modelValue?._id);
 
 const rules = {
   name: [
@@ -119,7 +119,7 @@ const submitForm = async () => {
         type="password" 
         show-password
         size="large"
-        required
+        :required="isNewIntegration"
         :disabled="isSubmitting"
       >
           <template #append>
@@ -148,7 +148,16 @@ const submitForm = async () => {
         </div>
       </div>
     </el-form-item>
-    
+
+    <div class="endpoints-info">
+      <h4>Available Endpoints:</h4>
+      <ul>
+        <li><code>/api/integrate-source/:sourceId/chat-completion</code></li>
+        <li><code>/api/integrate-source/:sourceId/no-code-completion/blueprints</code></li>
+        <li><code>/api/integrate-source/:sourceId/no-code-completion/micro-frontends</code></li>
+        <li><code>/api/integrate-source/:sourceId/no-code-completion/integrations</code></li>
+      </ul>
+    </div>
     <el-form-item class="form-actions">
       <el-button 
         type="primary" 
