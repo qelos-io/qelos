@@ -402,6 +402,7 @@ function submit() {
   flex: 1;
   overflow: hidden;
   height: calc(100vh - 120px);
+  max-width: 100%;
 }
 
 .editor-tabs {
@@ -409,12 +410,15 @@ function submit() {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
 }
 
 .tab-label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  white-space: nowrap;
 }
 
 .tab-content {
@@ -494,6 +498,44 @@ function submit() {
 
 :deep(.el-tabs__item.is-active) {
   font-weight: 600;
+}
+
+:deep(.el-tabs) {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+:deep(.el-tabs__header) {
+  margin: 0;
+}
+
+:deep(.el-tabs__nav-wrap) {
+  position: relative;
+  overflow: hidden;
+}
+
+:deep(.el-tabs__nav-scroll) {
+  overflow: hidden;
+}
+
+:deep(.el-tabs__nav) {
+  position: relative;
+  display: flex;
+  white-space: nowrap;
+}
+
+:deep(.el-tabs__item) {
+  padding: 0 16px;
+  height: 40px;
+  box-sizing: border-box;
+  line-height: 40px;
+  flex-shrink: 0;
+}
+
+:deep(.el-tabs--border-card > .el-tabs__header) {
+  background-color: var(--el-fill-color-light);
+  border-bottom: 1px solid var(--el-border-color-light);
+  margin: 0;
 }
 
 :deep(.el-card__body) {
