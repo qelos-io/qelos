@@ -231,8 +231,8 @@ const { loading: loadingPlugins, plugins } = toRefs(pluginsStore);
 const blueprintsStore = useBlueprintsStore();
 const { loading: loadingBlueprints, blueprints } = toRefs(blueprintsStore);
 
-// Quick actions
-const quickActions = ref([
+// Quick actions - defined as array of all possible actions
+const allQuickActions = [
   { 
     text: t('Create Blueprint'), 
     icon: ['fas', 'plus-circle'], 
@@ -263,7 +263,18 @@ const quickActions = ref([
     icon: ['fas', 'cubes'], 
     route: '/blocks'
   }
-]);
+];
+
+// Computed property that filters out Manage Workspaces when wsConfig.isActive is false
+const quickActions = computed(() => {
+  return allQuickActions.filter(action => {
+    // Filter out Manage Workspaces when wsConfig.isActive is false
+    if (action.route === '/admin/workspaces' && !wsConfig.isActive) {
+      return false;
+    }
+    return true;
+  });
+});
 
 // Blueprint selection functionality
 const selectedBlueprintToAdd = ref('');

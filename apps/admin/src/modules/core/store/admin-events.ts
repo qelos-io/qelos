@@ -2,6 +2,7 @@ import eventsService from '@/services/events-service';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 
 export interface IEvent {
   _id: string;
@@ -84,19 +85,25 @@ const activityTimeframe = ref('week');
     source: 'auth'
   }))
 
-  const { result: createdWorkspacesLastWeek } = useDispatcher(() => eventsService.getAll({
+  const { result: createdWorkspacesLastWeek, retry: loadCreatedWorkspacesLastWeek } = useDispatcher(() => eventsService.getAll({
     period: 'last-week',
     kind: 'workspaces',
     eventName: 'workspace-created',
     source: 'auth'
-  }))
+  }), { immediate: false })
 
-  const { result: createdWorkspacesLastMonth } = useDispatcher(() => eventsService.getAll({
+  const { result: createdWorkspacesLastMonth, retry: loadCreatedWorkspacesLastMonth } = useDispatcher(() => eventsService.getAll({
     period: 'last-month',
     kind: 'workspaces',
     eventName: 'workspace-created',
     source: 'auth'
-  }))
+  }), { immediate: false })
+
+  const wsConfig = useWsConfiguration();
+  if (wsConfig.isActive) {
+    loadCreatedWorkspacesLastWeek();
+    loadCreatedWorkspacesLastMonth();
+  }
   
 
   // System status based on events
@@ -219,6 +226,59 @@ const activityTimeframe = ref('week');
       activityTimeframe.value
     );
     
+    // Define series based on workspace configuration
+    const seriesData = [
+      {
+        name: 'User Registrations',
+        type: 'line',
+        data: data.registered,
+        smooth: true,
+        lineStyle: {
+          width: 3,
+          color: '#5266d4'
+        },
+        itemStyle: {
+          color: '#5266d4'
+        }
+      },
+      {
+        name: 'User Creations',
+        type: 'line',
+        data: data.created,
+        smooth: true,
+        lineStyle: {
+          width: 3,
+          color: '#2bcbd1'
+        },
+        itemStyle: {
+          color: '#2bcbd1'
+        }
+      }
+    ];
+
+    // Only add workspace series if workspaces are active
+    if (wsConfig.isActive) {
+      seriesData.push({
+        name: 'Workspace Creations',
+        type: 'line',
+        data: data.createdWorkspaces,
+        smooth: true,
+        lineStyle: {
+          width: 3,
+          color: '#f56c6c'
+        },
+        itemStyle: {
+          color: '#f56c6c'
+        }
+      });
+    }
+
+    // Define legend data based on workspace configuration
+    const legendData = ['User Registrations', 'User Creations'];
+    if (wsConfig.isActive) {
+      legendData.push('Workspace Creations');
+    }
+
     // Return chart configuration that matches VChart format
     return {
       tooltip: {
@@ -228,7 +288,7 @@ const activityTimeframe = ref('week');
         }
       },
       legend: {
-        data: ['User Registrations', 'User Creations', 'Workspace Creations']
+        data: legendData
       },
       grid: {
         left: '3%',
@@ -253,47 +313,7 @@ const activityTimeframe = ref('week');
           nameGap: 40
         }
       ],
-      series: [
-        {
-          name: 'User Registrations',
-          type: 'line',
-          data: data.registered,
-          smooth: true,
-          lineStyle: {
-            width: 3,
-            color: '#5266d4'
-          },
-          itemStyle: {
-            color: '#5266d4'
-          }
-        },
-        {
-          name: 'User Creations',
-          type: 'line',
-          data: data.created,
-          smooth: true,
-          lineStyle: {
-            width: 3,
-            color: '#2bcbd1'
-          },
-          itemStyle: {
-            color: '#2bcbd1'
-          }
-        },
-        {
-          name: 'Workspace Creations',
-          type: 'line',
-          data: data.createdWorkspaces,
-          smooth: true,
-          lineStyle: {
-            width: 3,
-            color: '#f56c6c'
-          },
-          itemStyle: {
-            color: '#f56c6c'
-          }
-        }
-      ]
+      series: seriesData
     };
   })
   

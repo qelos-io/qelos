@@ -8,7 +8,7 @@
       <el-tab-pane name="metadata" :label="$t('Application Metadata')">
         <div class="metadata-dashboard">
           <!-- Configuration Cards Section -->
-          <h2 class="section-title">{{ $t('Application Configuration') }}</h2>
+          <h2 class="section-title">{{ $t('Application Metadata & Configuration') }}</h2>
           <div class="config-cards-grid">
             <!-- App Settings Card -->
             <div class="unified-card">
@@ -22,7 +22,8 @@
                 </div>
                 <div class="config-card-action">
                   <el-button type="primary" text>
-                    <font-awesome-icon :icon="['fas', 'edit']"/> {{ $t('Edit') }}
+                    <font-awesome-icon :icon="['fas', 'edit']"/> 
+                    {{ $t('Edit') }}
                   </el-button>
                 </div>
               </router-link>
@@ -47,17 +48,22 @@
             </div>
             
             <!-- Workspace Settings Card -->
-            <div class="unified-card" v-if="wsConfig.isActive">
+            <div class="unified-card">
               <router-link :to="{name: 'editConfiguration', params: {key: 'workspace-configuration'}}" class="config-card-link">
-                <div class="config-card-icon success">
+                <div class="config-card-icon" :class="wsConfig.isActive ? 'success' : 'info'">
                   <font-awesome-icon :icon="['far', 'building']" size="lg"/>
                 </div>
                 <div class="config-card-content">
-                  <h3>{{ $t('Workspace Settings') }}</h3>
+                  <div class="title-with-status">
+                    <h3>{{ $t('Workspace Settings') }}</h3>
+                    <el-tag size="small" :type="wsConfig.isActive ? 'success' : 'info'" effect="light" class="status-tag">
+                      {{ wsConfig.isActive ? $t('Active') : $t('Inactive') }}
+                    </el-tag>
+                  </div>
                   <p class="config-card-description">{{ $t('Configure workspace defaults, permissions and structure') }}</p>
                 </div>
                 <div class="config-card-action">
-                  <el-button type="success" text>
+                  <el-button :type="wsConfig.isActive ? 'success' : 'info'" text>
                     <font-awesome-icon :icon="['fas', 'edit']"/> {{ $t('Edit') }}
                   </el-button>
                 </div>
@@ -406,13 +412,28 @@ function getPreviewStyles(palette: DesignPalette['palette']) {
   flex: 1;
 }
 
-.config-card-content h3 {
-  margin: 0 0 12px;
-  padding: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #2d3748;
-  line-height: 1.4;
+.title-with-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.title-with-status h3 {
+  margin: 0;
+}
+
+.status-tag {
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 12px;
+  padding: 0 10px;
+  height: 24px;
+  line-height: 22px;
+  transition: all 0.3s ease;
 }
 
 .config-card-description {
@@ -428,19 +449,17 @@ function getPreviewStyles(palette: DesignPalette['palette']) {
 }
 
 .config-card-action .el-button {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border-radius: 50%;
+  opacity: 1; /* Always visible */
+  transition: transform 0.3s ease;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 500;
 }
 
 .config-card:hover .config-card-action .el-button {
-  opacity: 1;
+  transform: translateX(4px); /* Slight movement on hover for better UX */
 }
 
 .container {
