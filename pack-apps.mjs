@@ -7,7 +7,7 @@ const packages = getPackagesBasicInfo();
 
 await Promise.all(
   readdirSync('./apps').map((folder) => {
-    if (folder === 'db' || folder.startsWith('.')) {
+    if (folder === 'db' || folder === 'redis' || folder.startsWith('.')) {
       return;
     }
     const depsNames = bundleDependencies(folder);
