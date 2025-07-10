@@ -1,23 +1,23 @@
 global:
   showLogs: true
-  environment: development
-  internalSecret: "no-one-can-access-this-service-without-it"
+  environment: {{ .Values.ENVIRONMENT }}
+  internalSecret: {{ .Values.INTERNAL_SECRET }}
   redis:
     host: redis://redis-service
     port: 6379
   mongodb:
     # Set to false to use external MongoDB
-    deployInCluster: true
+    deployInCluster: false
     # External MongoDB configuration (used when deployInCluster is false)
     external:
-      host: ""
-      port: 27017
-      database: qelos
+      host: ${MONGODB_HOST}
+      port: ${MONGODB_PORT}
+      database: ${MONGODB_DATABASE}
     # Internal MongoDB configuration (used when deployInCluster is true)
     internal:
-      host: mongodb-service
-      port: 27017
-      database: qelos
+      host: 
+      port: 
+      database: 
 
 mongodb:
   enabled: true
@@ -31,22 +31,22 @@ mongodb:
     accessModes:
       - ReadWriteOnce
     size: 10Gi
-  volumePath: "/Users/davidmeirlevy/dev/qelos/qelos/apps/db/db-data"
+  volumePath: {{ .Values.MONGODB_VOLUME_PATH }}
   resources:
     requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
       memory: "1Gi"
       cpu: "500m"
-    limits:
-      memory: "2Gi"
-      cpu: "1000m"
 
 redis:
   resources:
     requests:
-      cpu: 100m
+      cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 200m
+      cpu: 150m
       memory: 256Mi
 
 gateway:
@@ -66,17 +66,13 @@ auth:
   host: auth-service
   port: 9000
   environment:
-    PORT: 9000
-    MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis://redis-service
-    JWT_SECRET: 
-    REFRESH_TOKEN_SECRET: 
-    SECRETS_TOKEN: auth-service-secret
+    JWT_SECRET: {{ .Values.JWT_SECRET }}
+    REFRESH_TOKEN_SECRET: {{ .Values.REFRESH_TOKEN_SECRET }}
+    SECRETS_TOKEN: {{ .Values.SECRETS_TOKEN }}
     PLUGINS_SERVICE_URL: plugins-service
     PLUGINS_SERVICE_PORT: 9003
     SECRETS_SERVICE_URL: secrets-service
     SECRETS_SERVICE_PORT: 9002
-    SHOW_LOGS: true
 
 content:
   image:
@@ -85,12 +81,9 @@ content:
   host: content-service
   port: 9001
   environment:
-    PORT: 9001
-    MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis://redis-service
     IP: 0.0.0.0
     AUTH_SERVICE_URL: auth-service
-    SHOW_LOGS: true
+    AUTH_SERVICE_PORT: 9000
 
 secrets:
   image:
@@ -99,10 +92,8 @@ secrets:
   host: secrets-service
   port: 9002
   environment:
-    MONGO_URI: mongodb://mongodb-service:27017/qelos
     IP: 0.0.0.0
-    PORT: 9002
-    SECRET: secrets-service-secret
+    SECRET: {{ .Values.SECRETS_SERVICE_SECRET }}
     SHOW_LOGS: true
 
 nocode:
@@ -112,16 +103,13 @@ nocode:
   host: nocode-service
   port: 9004
   environment:
-    MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis://redis-service
-    SECRETS_TOKEN: 
+    SECRETS_TOKEN: {{ .Values.NO_CODE_SERVICE_SECRET }}
     AUTH_SERVICE_URL: auth-service
+    AUTH_SERVICE_PORT: 9000
     SECRETS_SERVICE_URL: secrets-service
     SECRETS_SERVICE_PORT: 9002
     PLUGINS_SERVICE_URL: plugins-service
     PLUGINS_SERVICE_PORT: 9003
-    PORT: 9004
-    SHOW_LOGS: true
     
 admin:
   image:
@@ -133,15 +121,12 @@ admin:
   host: admin-service
   port: 3001
   environment:
-    PORT: 3001
-    MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis://redis-service
     AUTH_SERVICE_URL: auth-service
+    AUTH_SERVICE_PORT: 9000
     CONTENT_SERVICE_URL: content-service
     CONTENT_SERVICE_PORT: 9001
     SECRETS_SERVICE_URL: secrets-service
     SECRETS_SERVICE_PORT: 9002
-    SHOW_LOGS: true
 
 plugins:
   image:
@@ -150,16 +135,13 @@ plugins:
   host: plugins-service
   port: 9006
   environment:
-    PORT: 9006
-    MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis://redis-service
-    SECRETS_TOKEN: plugins-service-secret
     AUTH_SERVICE_URL: auth-service
+    AUTH_SERVICE_PORT: 9000
+    SECRETS_TOKEN: {{ .Values.PLUGINS_SERVICE_SECRET }}
     SECRETS_SERVICE_URL: secrets-service
     SECRETS_SERVICE_PORT: 9002
     NO_CODE_SERVICE_URL: nocode-service
     NO_CODE_SERVICE_PORT: 9004
-    SHOW_LOGS: true
 
 assets:
   image:
@@ -170,21 +152,17 @@ assets:
   port: 9005
   resources:
     requests:
-      cpu: 250m
+      cpu: 50m
       memory: 256Mi
     limits:
-      cpu: 500m
+      cpu: 150m
       memory: 512Mi
   environment:
-    PORT: 9005
-    MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis://redis-service
-    SECRETS_TOKEN: assets-service-secret
+    SECRETS_TOKEN: {{ .Values.ASSETS_SERVICE_SECRET }}
     AUTH_SERVICE_URL: auth-service
     AUTH_SERVICE_PORT: 9000
     SECRETS_SERVICE_URL: secrets-service
     SECRETS_SERVICE_PORT: 9002
-    SHOW_LOGS: true
 
 drafts:
   image:
@@ -194,21 +172,17 @@ drafts:
   host: drafts-service
   port: 9006
   environment:
-    PORT: 9006
-    MONGO_URI: mongodb://mongodb-service:27017/qelos
-    REDIS_URL: redis://redis-service
-    SECRETS_TOKEN: 
+    SECRETS_TOKEN: {{ .Values.DRAFTS_SERVICE_SECRET }}
     AUTH_SERVICE_URL: auth-service
     AUTH_SERVICE_PORT: 9000
     SECRETS_SERVICE_URL: secrets-service
     SECRETS_SERVICE_PORT: 9002
-    SHOW_LOGS: true
     
 # Default resource settings for microservices
 defaultResources: &defaultResources
   requests:
     memory: "128Mi"
-    cpu: "100m"
+    cpu: "50m"
   limits:
     memory: "256Mi"
-    cpu: "200m"
+    cpu: "150m"

@@ -35,7 +35,7 @@ spec:
             - name: REDIS_PORT
               value: "{{ .global.redis.port }}"
             - name: MONGO_URI
-              value: {{ if .global.mongodb.deployInCluster }}"mongodb://{{ .global.mongodb.internal.host }}:{{ .global.mongodb.internal.port }}/{{ .global.mongodb.internal.database }}"{{ else }}"mongodb://{{ .global.mongodb.external.host }}:{{ .global.mongodb.external.port }}/{{ .global.mongodb.external.database }}"{{ end }}
+              value: {{ .global.mongodb.url }}
             {{- with .values.environment }}
             {{- range $key, $value := . }}
             - name: {{ $key }}

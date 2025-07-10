@@ -32,10 +32,6 @@ export enum QelosTriggerOperation {
   chatCompletion = 'chatCompletion',
 }
 
-export enum OpenAITargetOperation {
-  functionCalling = 'functionCalling',
-}
-
 export enum QelosTargetOperation {
   webhook = 'webhook',
   createBlueprintEntity = 'createBlueprintEntity',
@@ -45,9 +41,10 @@ export enum QelosTargetOperation {
   setWorkspaceLabels = 'setWorkspaceLabels',
 }
 
-export enum OpenAITargetOperation {
-  chatCompletion = 'chatCompletion',
-}
+export const OpenAITargetOperation = {
+  chatCompletion: 'chatCompletion',
+  functionCalling: 'functionCalling',
+} as const;
 
 export enum ClaudeAITargetOperation {
   chatCompletion = 'chatCompletion',

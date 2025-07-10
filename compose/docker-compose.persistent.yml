@@ -5,7 +5,10 @@ services:
     volumes:
       - ../apps/db/db-data:/data/db
   redis:
-    image: redis:7.0-alpine
+    image: redis/redis-stack-server:latest
+    container_name: qelos-redis
+    ports:
+      - "6379:6379"
     restart: always
   admin:
     extends:

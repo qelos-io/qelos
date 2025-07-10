@@ -40,7 +40,9 @@ const openAiDetails = ref({
   max_tokens: 1000,
   stop: undefined,
   response_format: undefined,
-  pre_messages: []
+  pre_messages: [],
+  embeddingType: 'local',
+  maxTools: 15,
 });
 
 // OpenAI model options
@@ -401,6 +403,8 @@ const initTargetDetails = () => {
     });
   } else if (selectedTargetSource.value.kind === IntegrationSourceKind.OpenAI) {
     openAiDetails.value = {
+      embeddingType: details.embeddingType || 'local',
+      maxTools: details.maxTools || 15,
       model: details.model || 'gpt-4o',
       temperature: details.temperature ?? 0.7,
       top_p: details.top_p ?? 1,
@@ -752,90 +756,233 @@ onMounted(() => {
           
           <!-- Advanced Options Content -->
           <div v-if="showAdvancedOptions" class="advanced-options-content">
-            <!-- Top P Slider -->
-            <div class="slider-container">
-              <label>Top P: {{ openAiDetails.top_p }}</label>
-              <el-slider
-                v-model="openAiDetails.top_p"
-                :min="0"
-                :max="1"
-                :step="0.1"
-                show-stops
-                @change="syncOpenAiDetailsToTargetDetails"
-              />
+            <!-- Advanced Options Intro -->
+            <div class="advanced-options-intro">
+              <i class="el-icon-setting" style="font-size: 20px; margin-right: 8px;"></i>
+              <div>
+                <h4>Advanced Model Settings</h4>
+                <p>Fine-tune your AI model's behavior with these advanced parameters</p>
+              </div>
+            </div>
+
+            <!-- Organized into cards for better visual grouping -->
+            <div class="advanced-options-grid">
+              <!-- Generation Controls Card -->
+              <div class="advanced-options-card">
+                <h5>
+                  <i class="el-icon-magic-stick"></i>
+                  Generation Controls
+                </h5>
+                
+                <!-- Top P Slider with tooltip -->
+                <div class="slider-container">
+                  <div class="slider-header">
+                    <label>Top P: <span class="value-badge">{{ openAiDetails.top_p }}</span></label>
+                    <el-tooltip content="Controls diversity by limiting tokens to the top P% of probability mass. Lower values = more focused, higher values = more diverse." placement="top">
+                      <i class="el-icon-question"></i>
+                    </el-tooltip>
+                  </div>
+                  <el-slider
+                    v-model="openAiDetails.top_p"
+                    :min="0"
+                    :max="1"
+                    :step="0.1"
+                    show-stops
+                    @change="syncOpenAiDetailsToTargetDetails"
+                  />
+                  <div class="slider-description">
+                    <span>Focused</span>
+                    <span>Diverse</span>
+                  </div>
+                </div>
+                
+                <!-- Frequency Penalty Slider with tooltip -->
+                <div class="slider-container">
+                  <div class="slider-header">
+                    <label>Frequency Penalty: <span class="value-badge">{{ openAiDetails.frequency_penalty }}</span></label>
+                    <el-tooltip content="Reduces repetition by penalizing tokens that have already appeared in the text. Higher values produce less repetitive text." placement="top">
+                      <i class="el-icon-question"></i>
+                    </el-tooltip>
+                  </div>
+                  <el-slider
+                    v-model="openAiDetails.frequency_penalty"
+                    :min="0"
+                    :max="2"
+                    :step="0.1"
+                    show-stops
+                    @change="syncOpenAiDetailsToTargetDetails"
+                  />
+                  <div class="slider-description">
+                    <span>Allow repetition</span>
+                    <span>Avoid repetition</span>
+                  </div>
+                </div>
+                
+                <!-- Presence Penalty Slider with tooltip -->
+                <div class="slider-container">
+                  <div class="slider-header">
+                    <label>Presence Penalty: <span class="value-badge">{{ openAiDetails.presence_penalty }}</span></label>
+                    <el-tooltip content="Encourages the model to talk about new topics by penalizing tokens that have appeared at all. Higher values encourage more topic diversity." placement="top">
+                      <i class="el-icon-question"></i>
+                    </el-tooltip>
+                  </div>
+                  <el-slider
+                    v-model="openAiDetails.presence_penalty"
+                    :min="0"
+                    :max="2"
+                    :step="0.1"
+                    show-stops
+                    @change="syncOpenAiDetailsToTargetDetails"
+                  />
+                  <div class="slider-description">
+                    <span>Stay on topic</span>
+                    <span>Explore new topics</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Output Controls Card -->
+              <div class="advanced-options-card">
+                <h5>
+                  <i class="el-icon-document"></i>
+                  Output Controls
+                </h5>
+                
+                <!-- Stop Sequences with better help -->
+                <div class="form-group">
+                  <div class="form-header">
+                    <label>Stop Sequences</label>
+                    <el-tooltip content="The model will stop generating text when it encounters any of these sequences. Separate multiple sequences with commas." placement="top">
+                      <i class="el-icon-question"></i>
+                    </el-tooltip>
+                  </div>
+                  <el-input
+                    v-model="openAiDetails.stop"
+                    placeholder="E.g., ###, END, STOP"
+                    @change="syncOpenAiDetailsToTargetDetails"
+                  />
+                  <p class="help-text">Optional sequences where the API will stop generating further tokens</p>
+                </div>
+                
+                <!-- Response Format with better description -->
+                <div class="form-group">
+                  <div class="form-header">
+                    <label>Response Format</label>
+                    <el-tooltip content="Constrains the model output to a specific format. JSON mode ensures valid JSON output." placement="top">
+                      <i class="el-icon-question"></i>
+                    </el-tooltip>
+                  </div>
+                  <el-select
+                    v-model="openAiDetails.response_format"
+                    placeholder="Select response format"
+                    clearable
+                    @change="syncOpenAiDetailsToTargetDetails"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      label="Default (no format constraint)"
+                      :value="undefined"
+                    />
+                    <el-option
+                      label="JSON Object"
+                      :value="{ type: 'json_object' }"
+                    />
+                  </el-select>
+                  <div class="info-box" v-if="openAiDetails.response_format?.type === 'json_object'">
+                    <i class="el-icon-warning"></i>
+                    <span>When using JSON mode, you must instruct the model to produce JSON in your system message or user prompt.</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Tool Controls Card -->
+              <div class="advanced-options-card">
+                <h5>
+                  <i class="el-icon-connection"></i>
+                  Tool Controls
+                </h5>
+                
+                <!-- Embedding Type with better UI -->
+                <div class="form-group">
+                  <div class="form-header">
+                    <label>Embedding Type</label>
+                    <el-tooltip content="The embedding system used to filter function calls and tools. Local uses in-memory embeddings, OpenAI uses their embedding API." placement="top">
+                      <i class="el-icon-question"></i>
+                    </el-tooltip>
+                  </div>
+                  <el-select
+                    v-model="openAiDetails.embeddingType"
+                    placeholder="Select embedding type"
+                    clearable
+                    @change="syncOpenAiDetailsToTargetDetails"
+                    style="width: 100%"
+                  >
+                    <el-option label="Local" value="local">
+                      <div class="option-with-description">
+                        <span>Local</span>
+                        <small>Faster, uses in-memory embeddings</small>
+                      </div>
+                    </el-option>
+                    <el-option label="OpenAI" value="openai">
+                      <div class="option-with-description">
+                        <span>OpenAI</span>
+                        <small>More accurate, uses OpenAI's embedding API</small>
+                      </div>
+                    </el-option>
+                  </el-select>
+                  <p class="help-text">Determines how function calls and tools are filtered</p>
+                </div>
+
+                <!-- Max Tools with better visualization -->
+                <div class="form-group">
+                  <div class="form-header">
+                    <label>Max Tools: <span class="value-badge">{{ openAiDetails.maxTools }}</span></label>
+                    <el-tooltip content="Maximum number of tools to include in the API request. Higher values allow more tools but may slow down the request." placement="top">
+                      <i class="el-icon-question"></i>
+                    </el-tooltip>
+                  </div>
+                  <el-slider
+                    v-model="openAiDetails.maxTools"
+                    :min="0"
+                    :max="50"
+                    :step="1"
+                    show-stops
+                    @change="syncOpenAiDetailsToTargetDetails"
+                  >
+                    <template #button>
+                      <div class="custom-slider-button">{{ openAiDetails.maxTools }}</div>
+                    </template>
+                  </el-slider>
+                  <div class="slider-description">
+                    <span>Fewer tools</span>
+                    <span>More tools</span>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            <!-- Frequency Penalty Slider -->
-            <div class="slider-container">
-              <label>Frequency Penalty: {{ openAiDetails.frequency_penalty }}</label>
-              <el-slider
-                v-model="openAiDetails.frequency_penalty"
-                :min="0"
-                :max="2"
-                :step="0.1"
-                show-stops
-                @change="syncOpenAiDetailsToTargetDetails"
-              />
-            </div>
-            
-            <!-- Presence Penalty Slider -->
-            <div class="slider-container">
-              <label>Presence Penalty: {{ openAiDetails.presence_penalty }}</label>
-              <el-slider
-                v-model="openAiDetails.presence_penalty"
-                :min="0"
-                :max="2"
-                :step="0.1"
-                show-stops
-                @change="syncOpenAiDetailsToTargetDetails"
-              />
-            </div>
-            
-            <!-- Stop Sequences -->
-            <div class="form-group">
-              <label>Stop Sequences</label>
-              <p class="help-text">Optional sequences where the API will stop generating further tokens</p>
-              <el-input
-                v-model="openAiDetails.stop"
-                placeholder="Enter stop sequences"
-                @change="syncOpenAiDetailsToTargetDetails"
-              />
-            </div>
-            
-            <!-- Response Format -->
-            <div class="form-group">
-              <label>Response Format</label>
-              <p class="help-text">Optional format for the API response</p>
-              <el-select
-                v-model="openAiDetails.response_format"
-                placeholder="Select response format"
-                clearable
-                @change="syncOpenAiDetailsToTargetDetails"
-                style="width: 100%"
+            <!-- Raw JSON Editor Section -->
+            <div class="raw-json-section">
+              <el-divider>
+                <el-tooltip content="Edit the raw JSON configuration directly. For advanced users." placement="top">
+                  <span>Advanced JSON Configuration</span>
+                </el-tooltip>
+              </el-divider>
+              
+              <el-button 
+                type="primary" 
+                plain 
+                @click="showRawJson = !showRawJson" 
+                class="json-toggle-button"
               >
-                <el-option
-                  label="Default (no format constraint)"
-                  :value="undefined"
-                />
-                <el-option
-                  label="JSON Object"
-                  :value="{ type: 'json_object' }"
-                />
-              </el-select>
-              <p class="help-text mt-2" v-if="openAiDetails.response_format?.type === 'json_object'">
-                <i class="el-icon-warning" style="color: #e6a23c;"></i>
-                When using JSON mode, you must instruct the model to produce JSON in your system message or user prompt.
-              </p>
-            </div>
-            
-            <!-- Raw JSON Editor Toggle -->
-            <el-button type="primary" plain @click="showRawJson = !showRawJson" class="mt-3">
-              {{ showRawJson ? 'Hide' : 'Show' }} Raw JSON
-            </el-button>
-            
-            <!-- Raw JSON Editor -->
-            <div v-if="showRawJson" class="mt-3">
-              <Monaco :modelValue="targetDetailsText" @update:modelValue="updateTargetDetails" height="300px" language="json" />
+                <i :class="showRawJson ? 'el-icon-view' : 'el-icon-edit'"></i>
+                {{ showRawJson ? 'Hide Raw JSON' : 'Edit Raw JSON' }}
+              </el-button>
+              
+              <div v-if="showRawJson" class="json-editor-container">
+                <p class="json-editor-help">Edit the raw configuration JSON directly. Changes will be applied immediately.</p>
+                <Monaco :modelValue="targetDetailsText" @update:modelValue="updateTargetDetails" height="300px" language="json" />
+              </div>
             </div>
           </div>
         </div>
@@ -936,6 +1083,202 @@ onMounted(() => {
   line-height: 1.4;
 }
 
+/* Advanced Options Styles */
+.advanced-options-content {
+  padding: 16px 0;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.advanced-options-intro {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background-color: var(--el-color-primary-light-9);
+  border-radius: 8px;
+  border-left: 4px solid var(--el-color-primary);
+}
+
+.advanced-options-intro h4 {
+  margin: 0 0 4px 0;
+  font-weight: 600;
+  color: var(--el-color-primary-dark-2);
+}
+
+.advanced-options-intro p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+.advanced-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.advanced-options-card {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  padding: 16px;
+  background-color: white;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.advanced-options-card:hover {
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
+}
+
+.advanced-options-card h5 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-color-primary-dark-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.advanced-options-card h5 i {
+  color: var(--el-color-primary);
+}
+
+.slider-container {
+  margin-bottom: 20px;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.slider-header i {
+  color: var(--el-text-color-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  transition: color 0.2s;
+}
+
+.slider-header i:hover {
+  color: var(--el-color-primary);
+}
+
+.slider-description {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.form-header label {
+  font-weight: 500;
+}
+
+.help-text {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+.value-badge {
+  background-color: var(--el-color-primary-light-8);
+  color: var(--el-color-primary-dark-2);
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background-color: var(--el-color-warning-light-9);
+  border-radius: 4px;
+  border-left: 3px solid var(--el-color-warning);
+}
+
+.info-box i {
+  color: var(--el-color-warning);
+  margin-top: 2px;
+}
+
+.info-box span {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+}
+
+.raw-json-section {
+  margin-top: 24px;
+}
+
+.json-toggle-button {
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.json-editor-container {
+  margin-top: 16px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  padding: 16px;
+  background-color: var(--el-bg-color);
+}
+
+.json-editor-help {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  margin-bottom: 12px;
+}
+
+.custom-slider-button {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.option-with-description {
+  display: flex;
+  flex-direction: column;
+}
+
+.option-with-description small {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
 /* Local styles only */
 .mr-1 {
   margin-right: 0.25rem;
@@ -958,5 +1301,13 @@ onMounted(() => {
   line-height: 30px;
   padding-top: 0;
   padding-bottom: 0;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+
+.mt-3 {
+  margin-top: 12px;
 }
 </style>

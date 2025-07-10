@@ -1,12 +1,12 @@
 import Integration from "../models/integration";
 import { getEncryptedSourceAuthentication } from "../services/source-authentication-service";
-import { IntegrationSourceKind, OpenAITargetOperation } from "@qelos/global-types";
+import { IntegrationSourceKind } from "@qelos/global-types";
 import { createAIService } from "../services/ai-service";
 import logger from "../services/logger";
 import { executeDataManipulation } from "../services/data-manipulation-service";
 import { callIntegrationTarget } from "../services/integration-target-call";
 import * as ChatCompletionService from "../services/chat-completion-service";
-
+import { findSimilarTools } from "../services/vector-search-service";
 // Using parseFunctionArguments from ChatCompletionService
 
 // Helper function to find target integration by function name
@@ -14,35 +14,6 @@ function findTargetIntegration(toolsIntegrations: any[], functionName: string) {
   return toolsIntegrations.find(
     tool => tool.trigger.details.name === functionName
   );
-}
-
-// Using createFunctionResult from ChatCompletionService
-
-// Helper function to execute a single function call
-async function executeFunctionCall(
-  functionCall: any,
-  toolsIntegrations: any[],
-  tenant: string
-): Promise<any> {
-  const targetIntegration = findTargetIntegration(toolsIntegrations, functionCall.function.name);
-  
-  if (!targetIntegration) {
-    return ChatCompletionService.createFunctionResult(functionCall, {
-      error: `Function ${functionCall.function.name} not found`
-    });
-  }
-
-  try {
-    const parsedArgs = ChatCompletionService.parseFunctionArguments(functionCall.function.arguments);
-    const args = await executeDataManipulation(tenant, parsedArgs, targetIntegration.dataManipulation);
-    const result = await callIntegrationTarget(tenant, args, targetIntegration.target);
-
-    return ChatCompletionService.createFunctionResult(functionCall, result);
-  } catch (error) {
-    return ChatCompletionService.createFunctionResult(functionCall, {
-      error: 'Function execution failed'
-    });
-  }
 }
 
 // Helper function to execute multiple function calls
@@ -193,7 +164,7 @@ export async function chatCompletion(req, res) {
   // Common options for both streaming and non-streaming requests 
   let options;
   let toolsIntegrations;
-  
+
   try {
     [options, toolsIntegrations] = await Promise.all([
       executeDataManipulation(integration.tenant, {
@@ -203,7 +174,7 @@ export async function chatCompletion(req, res) {
       Integration.find({
         tenant: integration.tenant,
         'kind.0': integration.target.source.kind,
-        'trigger.operation': OpenAITargetOperation.functionCalling,
+        'trigger.operation': 'functionCalling',
         $or: [
           { 'trigger.details.allowedIntegrationIds': integration._id },
           { 'trigger.details.allowedIntegrationIds': '*' },
@@ -218,16 +189,39 @@ export async function chatCompletion(req, res) {
     return;
   }
 
-  const tools = toolsIntegrations.map(tool => ({
+  // Map all available tools
+  const allTools = toolsIntegrations.map(tool => ({
     type: 'function',
     description: tool.trigger.details.description,
-    parameters: tool.trigger.details.parameters,
     function: {
       name: tool.trigger.details.name,
       description: tool.trigger.details.description,
-      parameters: tool.trigger.details.parameters,
+      parameters: {
+        properties: {},
+        ...tool.trigger.details.parameters,
+      },
     }
   }));
+  
+  // Extract the latest user message to use for tool relevance filtering
+  const lastUserMessage = options.messages
+    .filter(msg => msg.role === 'user')
+    .pop()?.content || '';
+  
+  // Determine whether to use local embeddings or OpenAI
+  // Use local embeddings by default for better performance and privacy
+  const embeddingType = integration.target.details.embeddingType || 'local'
+  const maxTools = Number(integration.target.details.maxTools || 15);
+  
+  // Use vector search to find relevant tools based on the user's query
+  const tools = allTools.length <= maxTools ? allTools : await findSimilarTools({
+    userQuery: lastUserMessage,
+    tenant: integration.tenant,
+    allTools,
+    maxTools,
+    embeddingType,
+    authentication: req.integrationSourceTargetAuthentication
+  });
 
   try {
     const chatOptions = {

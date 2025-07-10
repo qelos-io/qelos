@@ -8,14 +8,30 @@
   script:
     - service=$SERVICE_NAME
     - if [ -z "$service" ]; then echo "SERVICE_NAME is not set"; exit 1; fi
-    - |
-      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
-        tag=""
-        echo "Running on default branch '$CI_DEFAULT_BRANCH': tag = 'latest'"
-      else
-        tag=":$CI_COMMIT_REF_SLUG"
-        echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
-      fi
     - cd apps/${service}
-    - docker build --pull -t "$CI_REGISTRY/qelos/qelos/${service}${tag}" .
-    - docker push "$CI_REGISTRY/qelos/qelos/${service}${tag}"
+    - |
+      # Build the image once
+      docker build --pull -t "$CI_REGISTRY/qelos/qelos/${service}:build" .
+      
+      # Tag and push based on conditions
+      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+        echo "Running on default branch '$CI_DEFAULT_BRANCH': pushing tags - latest, $CI_DEFAULT_BRANCH, and $CI_COMMIT_SHORT_SHA"
+        
+        # Tag with 'latest'
+        docker tag "$CI_REGISTRY/qelos/qelos/${service}:build" "$CI_REGISTRY/qelos/qelos/${service}:latest"
+        docker push "$CI_REGISTRY/qelos/qelos/${service}:latest"
+        
+        # Tag with branch name (main)
+        docker tag "$CI_REGISTRY/qelos/qelos/${service}:build" "$CI_REGISTRY/qelos/qelos/${service}:$CI_DEFAULT_BRANCH"
+        docker push "$CI_REGISTRY/qelos/qelos/${service}:$CI_DEFAULT_BRANCH"
+      else
+        echo "Running on branch '$CI_COMMIT_BRANCH': pushing tags - $CI_COMMIT_REF_SLUG and $CI_COMMIT_SHORT_SHA"
+        
+        # Tag with branch name
+        docker tag "$CI_REGISTRY/qelos/qelos/${service}:build" "$CI_REGISTRY/qelos/qelos/${service}:$CI_COMMIT_REF_SLUG"
+        docker push "$CI_REGISTRY/qelos/qelos/${service}:$CI_COMMIT_REF_SLUG"
+      fi
+      
+      # Always tag with commit hash (short SHA)
+      docker tag "$CI_REGISTRY/qelos/qelos/${service}:build" "$CI_REGISTRY/qelos/qelos/${service}:$CI_COMMIT_SHORT_SHA"
+      docker push "$CI_REGISTRY/qelos/qelos/${service}:$CI_COMMIT_SHORT_SHA"

@@ -1,7 +1,11 @@
 version: '3'
 services:
   redis:
-    image: redis:7.0-alpine
+    image: redis/redis-stack-server:latest
+    container_name: qelos-redis
+    ports:
+      - "6379:6379"
+    restart: always
   admin:
     image: registry.gitlab.com/qelos/qelos/admin:${ADMIN_PANEL_VERSION}
     restart: always

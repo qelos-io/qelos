@@ -1,0 +1,14 @@
+{
+  "name": "@qelos/redis",
+  "version": "3.8.3",
+  "scripts": {
+    "db": "docker compose up -d"
+  },
+  "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
+  "license": "Apache-2.0",
+  "gitHead": "4f4acba1f01d2659431e3149cc6efa927926c5f1",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  }
+}

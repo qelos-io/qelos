@@ -1,0 +1,9 @@
+services:
+  qelos-redis:
+    image: redis/redis-stack-server:latest
+    container_name: qelos-redis
+    ports:
+      - "6379:6379"
+    restart: always
+networks:
+  common_network:
