@@ -10,7 +10,11 @@
   ],
   "engines": {
     "npm": ">=5",
-    "node": ">=10.5"
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch ./index.ts",
+    "start": "node --import tsx --use_strict index.ts"
   },
   "main": "index.ts",
   "dependencies": {
