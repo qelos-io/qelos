@@ -14,7 +14,8 @@ RUN tar zxvf ./qelos-plugins.tgz -C ./
 WORKDIR /build/package
 
 # Rebuild Sharp for the current architecture and dynamically install esbuild for the current architecture
-RUN npm rebuild sharp && \
+RUN npm install -g prebuild-install && \
+    npm rebuild sharp && \
     ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
       npm install @esbuild/linux-x64 --no-save; \
