@@ -57,7 +57,6 @@ gateway:
     INTERNAL_URL: localhost
     BASIC_TENANT: 0
     APPLICATION_URL: localhost:3000
-    SHOW_LOGS: true
 
 auth:
   image:
@@ -70,9 +69,12 @@ auth:
     REFRESH_TOKEN_SECRET: {{ .Values.REFRESH_TOKEN_SECRET }}
     SECRETS_TOKEN: {{ .Values.SECRETS_TOKEN }}
     PLUGINS_SERVICE_URL: plugins-service
-    PLUGINS_SERVICE_PORT: 9003
+    PLUGINS_SERVICE_PORT: 9006
     SECRETS_SERVICE_URL: secrets-service
     SECRETS_SERVICE_PORT: 9002
+    CONTENT_SERVICE_URL: content-service
+    CONTENT_SERVICE_PORT: 9001
+    
 
 content:
   image:
@@ -94,7 +96,6 @@ secrets:
   environment:
     IP: 0.0.0.0
     SECRET: {{ .Values.SECRETS_SERVICE_SECRET }}
-    SHOW_LOGS: true
 
 nocode:
   image:
