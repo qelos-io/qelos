@@ -8,7 +8,6 @@ process.on('uncaughtException', (err) => {
   console.error(err)
 })
 
-// // connect to the database and load models
 connect(mongoUri)
 
 config({
