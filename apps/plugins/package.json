@@ -55,6 +55,5 @@
     "redis",
     "tsx",
     "uniqid"
-  ],
-  "bundleDependencies": []
+  ]
 }
