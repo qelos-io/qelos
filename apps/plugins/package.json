@@ -12,19 +12,11 @@
     "npm": ">=5",
     "node": ">=10.5"
   },
-  "scripts": {
-    "dev": "tsx watch ./index.ts",
-    "start": "node --import tsx --use_strict index.ts"
-  },
   "main": "index.ts",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",
-    "@langchain/community": "^0.3.48",
     "@langchain/openai": "^0.5.18",
     "@langchain/redis": "^0.1.1",
-    "@qelos/api-kit": "^3.8.3",
-    "@qelos/cache-manager": "^3.8.3",
-    "@qelos/global-types": "^3.8.3",
     "@xenova/transformers": "^2.17.2",
     "http-proxy-middleware": "^1.3.1",
     "langchain": "^0.3.29",
@@ -47,28 +39,18 @@
   "gitHead": "4f4acba1f01d2659431e3149cc6efa927926c5f1",
   "bundledDependencies": [
     "@anthropic-ai/sdk",
-    "@qelos/api-kit",
-    "@qelos/cache-manager",
-    "@qelos/global-types",
+    "@langchain/openai",
+    "@langchain/redis",
+    "@xenova/transformers",
     "http-proxy-middleware",
+    "langchain",
     "mongoose",
     "node-fetch",
     "node-jq",
     "openai",
+    "redis",
     "tsx",
     "uniqid"
   ],
-  "bundleDependencies": [
-    "@qelos/api-kit",
-    "@qelos/cache-manager",
-    "@qelos/global-types",
-    "http-proxy-middleware",
-    "@anthropic-ai/sdk",
-    "mongoose",
-    "node-fetch",
-    "node-jq",
-    "openai",
-    "tsx",
-    "uniqid"
-  ]
+  "bundleDependencies": []
 }
