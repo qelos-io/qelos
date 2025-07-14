@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, defineProps, defineEmits } from 'vue';
-import { IOpenAiSource } from '@qelos/global-types';
+import { IOpenAISource } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import { ElMessage } from 'element-plus';
@@ -8,7 +8,7 @@ import { QuestionFilled, Warning } from '@element-plus/icons-vue';
 
 const props = defineProps({
   modelValue: {
-    type: Object as () => IOpenAiSource,
+    type: Object as () => IOpenAISource,
   },
 });
 
@@ -152,10 +152,10 @@ const submitForm = async () => {
     <div class="endpoints-info">
       <h4>Available Endpoints:</h4>
       <ul>
-        <li><code>/api/integrate-source/:sourceId/chat-completion</code></li>
-        <li><code>/api/integrate-source/:sourceId/no-code-completion/blueprints</code></li>
-        <li><code>/api/integrate-source/:sourceId/no-code-completion/micro-frontends</code></li>
-        <li><code>/api/integrate-source/:sourceId/no-code-completion/integrations</code></li>
+        <li><code>/api/integrate-source/{{ modelValue?._id || 'sourceId' }}/chat-completion</code></li>
+        <li><code>/api/integrate-source/{{ modelValue?._id || 'sourceId' }}/no-code-completion/blueprints</code></li>
+        <li><code>/api/integrate-source/{{ modelValue?._id || 'sourceId' }}/no-code-completion/micro-frontends</code></li>
+        <li><code>/api/integrate-source/{{ modelValue?._id || 'sourceId' }}/no-code-completion/integrations</code></li>
       </ul>
     </div>
     <el-form-item class="form-actions">
