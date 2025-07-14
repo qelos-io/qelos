@@ -110,15 +110,13 @@ nocode:
     SECRETS_SERVICE_URL: secrets-service
     SECRETS_SERVICE_PORT: 9002
     PLUGINS_SERVICE_URL: plugins-service
-    PLUGINS_SERVICE_PORT: 9003
+    PLUGINS_SERVICE_PORT: 9006
     
 admin:
   image:
     repository: registry.gitlab.com/qelos/qelos/admin
     tag: latest
   replicas: 2
-  ingress:
-    enabled: false
   host: admin-service
   port: 3001
   environment:

@@ -129,7 +129,9 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
   }
 
   app.use(async (req, res, next) => {
-    const host = req.headers.host;
+    // Get hostname from request URL or fallback to host header
+    const originalHost = req.headers.host;
+    const host = req.hostname || originalHost;
     // disable cors when tenant defined from request headers:
     if (req.headers.tenant) {
       req.disableCors = true;

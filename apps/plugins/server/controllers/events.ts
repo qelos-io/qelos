@@ -8,7 +8,7 @@ export async function getAllEvents(req, res) {
   const {page = 0, kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week'} = req.query;
   const skip = Number(page * LIMIT);
 
-  const dbQuery = {
+  const dbQuery: any = {
     tenant: req.headers.tenant,
   }
 
