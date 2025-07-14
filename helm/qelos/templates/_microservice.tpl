@@ -14,6 +14,9 @@ spec:
     metadata:
       labels:
         app: {{ .name }}
+      annotations:
+        # This timestamp annotation forces pod recreation on helm upgrade
+        rollme: {{ randAlphaNum 10 | quote }}
     spec:
       containers:
         - name: {{ .name }}
