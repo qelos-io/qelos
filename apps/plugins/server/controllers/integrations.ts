@@ -4,6 +4,13 @@ import Plugin from '../models/plugin';
 import { validateIntegrationTarget } from '../services/integrations-target-service';
 import { validateIntegrationTrigger } from '../services/integrations-trigger-service';
 import logger from '../services/logger';
+import { cacheManager } from '../services/cache-manager';
+
+const INTEGRATION_POPULATE_FIELDS = ['trigger.source', 'target.source'];
+
+function geIntegrationCacheKey(tenant: string, integrationId: string, $populate: boolean) {
+  return `integration:${$populate ? 'populated': 'plain'}:${tenant}:${integrationId}`
+}
 
 export async function getAllIntegrations(req, res) {
   const query: any = { tenant: req.headers.tenant };
@@ -28,15 +35,24 @@ export async function getAllIntegrations(req, res) {
 }
 
 export async function getIntegration(req, res) {
+  const $populate = req.query.$populate === 'true' || req.query.$populate === '1'
   try {
-    const integration = await Integration.findOne({ _id: req.params.integrationId, tenant: req.headers.tenant }).exec();
-    if (!integration) {
-      res.status(404).json({ message: 'integration not found' }).end();
-      return;
+    const integration = await cacheManager.wrap(geIntegrationCacheKey(req.headers.tenant, req.params.integrationId, $populate), async () => {
+      const integration = await Integration
+      .findOne({ _id: req.params.integrationId, tenant: req.headers.tenant }, null, {populate: $populate ? INTEGRATION_POPULATE_FIELDS : undefined})
+      .lean()
+      .exec();
+      return integration ? JSON.stringify(integration) : '';
+    }, { ttl: 60 * 60 * 24 });
+    if (integration) {
+      res.status(200)
+        .set('Content-Type', 'application/json')
+        .end(integration);
+    } else {
+      res.status(404).json({message: 'Integration not found'}).end()
     }
-    res.json(integration).end();
   } catch {
-    res.status(500).json({ message: 'could not get integration' }).end();
+    res.status(500).json({ message: 'Could not get integration' }).end();
   }
 }
 
@@ -105,6 +121,8 @@ export async function updateIntegration(req, res) {
     }
     if (integration.isModified()) {
       await integration.save();
+      cacheManager.setItem(geIntegrationCacheKey(integration.tenant, req.params.integrationId, true), JSON.stringify(integration), { ttl: 1 }).catch();
+      cacheManager.setItem(geIntegrationCacheKey(integration.tenant, req.params.integrationId, false), JSON.stringify(integration), { ttl: 1 }).catch();
     }
     res.json(integration).end();
   } catch (err) {
@@ -126,6 +144,8 @@ export async function removeIntegration(req, res) {
       return;
     }
     await Integration.deleteOne(query).exec();
+    cacheManager.setItem(geIntegrationCacheKey(integration.tenant, req.params.integrationId, true), '', { ttl: 1 }).catch();
+    cacheManager.setItem(geIntegrationCacheKey(integration.tenant, req.params.integrationId, false), '', { ttl: 1 }).catch();
     res.json(integration).end();
   } catch {
     res.status(500).json({ message: 'could not delete integration' }).end();

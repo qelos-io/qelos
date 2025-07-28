@@ -68,6 +68,10 @@ docker-release-no-code:
   variables:
     SERVICE_NAME: no-code
 
+docker-release-ai:
+  extends: .service-release
+  variables:
+    SERVICE_NAME: ai
 
 deploy_new_managed_version:
   stage: publish

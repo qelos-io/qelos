@@ -152,10 +152,8 @@ const submitForm = async () => {
     <div class="endpoints-info">
       <h4>Available Endpoints:</h4>
       <ul>
-        <li><code>/api/integrate-source/{{ modelValue?._id || 'sourceId' }}/chat-completion</code></li>
-        <li><code>/api/integrate-source/{{ modelValue?._id || 'sourceId' }}/no-code-completion/blueprints</code></li>
-        <li><code>/api/integrate-source/{{ modelValue?._id || 'sourceId' }}/no-code-completion/micro-frontends</code></li>
-        <li><code>/api/integrate-source/{{ modelValue?._id || 'sourceId' }}/no-code-completion/integrations</code></li>
+        <li><code>/api/ai/sources/{{ modelValue?._id || 'sourceId' }}/chat-completion</code></li>
+        <li><code>/api/ai/sources/{{ modelValue?._id || 'sourceId' }}/blueprints</code></li>
       </ul>
     </div>
     <el-form-item class="form-actions">

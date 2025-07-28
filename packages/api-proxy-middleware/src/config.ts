@@ -60,5 +60,9 @@ export function getApiProxyConfig(): IApiProxyConfig {
       port: 9006,
       proxies: ['/api/plugins', '/api/on', '/api/events', '/api/integrations', '/api/integration-sources', '/api/integrate-source', '/api/integrate'],
     }),
+    aiService: getServiceFromEnvVars('ai', 'AI_SERVICE', {
+      port: 9007,
+      proxies: ['/api/ai'],
+    }),
   };
 }

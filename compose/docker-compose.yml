@@ -63,6 +63,7 @@ services:
       PLUGINS_SERVICE_URL: plugins
       ADMIN_PANEL_URL: admin
       NO_CODE_SERVICE_URL: no-code
+      AI_SERVICE_URL: ai
       SHOW_LOGS: ${SHOW_LOGS}
   content:
     image: registry.gitlab.com/qelos/qelos/content:${CONTENT_SERVICE_VERSION}
@@ -123,6 +124,24 @@ services:
       SHOW_LOGS: ${SHOW_LOGS}
     depends_on:
       - redis
-
+  ai:
+    image: registry.gitlab.com/qelos/qelos/ai:${AI_SERVICE_VERSION}
+    restart: always
+    environment:
+      MONGO_URI: ${AI_MONGODB_URI}
+      REDIS_URL: redis://redis
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      SECRETS_TOKEN: ${AI_SERVICE_SECRET}
+      AUTH_SERVICE_URL: auth
+      SECRETS_SERVICE_URL: secrets
+      PLUGINS_SERVICE_URL: plugins
+      PLUGINS_SERVICE_PORT: 9006
+      PORT: 9005
+      IP: 0.0.0.0
+      SHOW_LOGS: ${SHOW_LOGS}
+    depends_on:
+      - redis
+      - plugins
+  
 networks:
   common_network:

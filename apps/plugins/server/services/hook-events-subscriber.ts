@@ -1,5 +1,3 @@
-import * as jq from 'node-jq';
-
 import { IEvent } from '../models/event';
 import Plugin, { IPlugin } from '../models/plugin';
 import { clearPluginAccessToken, getPluginToken } from './tokens-management';
@@ -7,10 +5,8 @@ import { fetchPlugin } from './plugins-call';
 import logger from './logger';
 import Integration, { IIntegration } from '../models/integration';
 import { IntegrationSourceKind } from '@qelos/global-types';
-import { getUser, getWorkspaces } from './users';
 import { callIntegrationTarget } from './integration-target-call';
 import { hookEvents } from './hook-events';
-import { getBlueprintEntities, getBlueprintEntity } from './no-code-service';
 import { executeDataManipulation } from './data-manipulation-service';
 
 const ALL = '*';

@@ -1,5 +1,4 @@
 import type { Response, NextFunction } from 'express';
-
 import type { RequestWithUser } from './types';
 
 export function populateUser(req: RequestWithUser, res: Response, next: NextFunction): void {
@@ -20,3 +19,20 @@ export function verifyUser(req: RequestWithUser, res: Response, next: NextFuncti
   }
 }
 
+export function verifyInternalCall (req: RequestWithUser, res: Response, next: NextFunction) {
+  if (
+    !req.headers.internal_secret || 
+    req.headers.internal_secret !== process.env.INTERNAL_SECRET || 
+    !req.headers.tenant
+  ) {
+    return res.status(401).end();
+  }
+
+  req.user = {
+    type: 'internal',
+    isPrivileged: true,
+    roles: ['admin'],
+    tenant: req.headers.tenant,
+  };
+  next();
+}

@@ -1,20 +1,10 @@
-import { getRouter, verifyUser, populateUser, getBodyParser } from '@qelos/api-kit';
-import { onlyEditPrivilegedOrPlugin } from '../middlewares/privileged-check';
-import { getIntegrationToIntegrate, forceTriggerIntegrationKind, chatCompletion } from '../controllers/integrate-to-integrations';
-import { IntegrationSourceKind } from '@qelos/global-types';
+import { getRouter } from '@qelos/api-kit';
 
 export function integrateToIntegrationsRouter() {
   const router = getRouter();
 
-  const AUTHENTICATION_MIDDLEWARES = [getBodyParser(), populateUser, verifyUser];
-
-  router
-    .post('/api/integrate/:integrationId/chat-completion',
-       AUTHENTICATION_MIDDLEWARES,
-       forceTriggerIntegrationKind([IntegrationSourceKind.Qelos]),
-       getIntegrationToIntegrate,
-       chatCompletion
-    )
+  // Chat completion endpoint has been moved to AI service
+  // This router is now empty but kept for future integration endpoints
   
   return router;
 }

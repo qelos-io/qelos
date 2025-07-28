@@ -33,7 +33,7 @@ export const getBlueprintsCalling =  {
      }
   }
 
-export const createBlueprintCalling =  {
+export const createBlueprintCalling = {
     type: 'function',
     name: 'createBlueprint',
     description: 'Create a new blueprint (also known as db table) for the application. If some data is missing - keep ask the user for it. Returns the created blueprint.',

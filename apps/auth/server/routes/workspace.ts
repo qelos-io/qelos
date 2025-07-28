@@ -1,4 +1,4 @@
-import { getRouter } from '@qelos/api-kit'
+import { getRouter, verifyInternalCall } from '@qelos/api-kit'
 import {
   createWorkspace,
   updateWorkspace,
@@ -63,11 +63,5 @@ router
   .post('/api/workspaces/:workspaceId/activate', verifyUser, onlyAuthenticated, getWorkspaceByParams, activateWorkspace)
 
 router
-  .get('/internal-api/workspaces', (req, _, next) => {
-    req.user = {
-      type: 'internal',
-      isPrivileged: true,
-    };
-    next();
-  }, getEveryWorkspaces)
+  .get('/internal-api/workspaces', verifyInternalCall, getEveryWorkspaces)
 export default router;

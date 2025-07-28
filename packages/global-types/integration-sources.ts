@@ -39,6 +39,7 @@ export enum QelosTargetOperation {
   updateUser = 'updateUser',
   setUserRoles = 'setUserRoles',
   setWorkspaceLabels = 'setWorkspaceLabels',
+  updateBlueprintEntity = 'updateBlueprintEntity',
 }
 
 export const OpenAITargetOperation = {
@@ -139,6 +140,7 @@ export interface IHttpSource extends IIntegrationSource {
   metadata: {
     baseUrl: string;
     headers: Record<string, string>;
+    method: string;
     query: Record<string, string>;
   };
 }

@@ -252,7 +252,7 @@ onMounted(() => {
         <div v-if="props.integrationId" class="chat-completion-url">
           <h4>{{$t('Chat Completion URL')}}</h4>
           <el-input
-            :value="`/api/integrate/${integrationId}/chat-completion`"
+            :value="`/api/ai/${integrationId}/chat-completion`"
             readonly
             class="url-display"
           >

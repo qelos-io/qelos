@@ -1,4 +1,4 @@
-import { getRouter } from '@qelos/api-kit'
+import { getRouter, verifyInternalCall } from '@qelos/api-kit'
 import {
   getUsersForAdmin,
   getUsers,
@@ -27,17 +27,14 @@ router
   .delete('/api/users/:userId', verifyUser, onlyPrivileged, removeUser);
 
 router
-  .get('/internal-api/users', getUsersForAdmin)
-  .post('/internal-api/users', authConfigCheck, createUser)
-  .get('/internal-api/users/:userId', (req, _, next) => {
-    req.user = {
-      type: 'internal',
-      isPrivileged: true,
-    };
+  .get('/internal-api/users', verifyInternalCall, getUsersForAdmin)
+  .post('/internal-api/users', verifyInternalCall, authConfigCheck, createUser)
+  .get('/internal-api/users/:userId', verifyInternalCall, (req, _, next) => {
+   req.userPayload = req.user;
     next();
   }, getUser)
-  .put('/internal-api/users/:userId', authConfigCheck, updateUser)
-  .delete('/internal-api/users/:userId', removeUser);
+  .put('/internal-api/users/:userId', verifyInternalCall, authConfigCheck, updateUser)
+  .delete('/internal-api/users/:userId', verifyInternalCall, removeUser);
 
 
 export default router;

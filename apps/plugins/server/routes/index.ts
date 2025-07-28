@@ -4,8 +4,9 @@ import { playPlugins } from './play-plugins';
 import eventsRouter from './events';
 import { integrationsRouter } from './integrations';
 import { integrationSourcesRouter } from './integration-sources';
-import { integrateToSourcesRouter } from './integrate-to-sources';
 import { integrateToIntegrationsRouter } from './integrate-to-integrations';
+import { integrationToolsRouter } from './integration-tools';
+import { dataManipulationRouter } from './data-manipulation';
 
 export async function loadRoutes() {
   const app = getApp()
@@ -14,6 +15,7 @@ export async function loadRoutes() {
   app.use(eventsRouter);
   app.use(integrationSourcesRouter());
   app.use(integrationsRouter());
-  app.use(integrateToSourcesRouter());
   app.use(integrateToIntegrationsRouter());
+  app.use(integrationToolsRouter());
+  app.use(dataManipulationRouter());
 }
