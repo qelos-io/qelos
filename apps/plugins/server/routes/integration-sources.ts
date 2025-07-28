@@ -1,9 +1,9 @@
-import { getRouter, verifyUser, populateUser, getBodyParser } from '@qelos/api-kit';
+import { getRouter, verifyUser, populateUser, getBodyParser, verifyInternalCall } from '@qelos/api-kit';
 import { onlyEditPrivilegedOrPlugin } from '../middlewares/privileged-check';
 import {
   createIntegrationSource,
   getAllIntegrationSources,
-  getIntegrationSource, getInternalIntegrationSource, removeIntegrationSource, updateIntegrationSource
+  getIntegrationSource, getInternalIntegrationSource, removeIntegrationSource, triggerIntegrationSource, updateIntegrationSource
 } from '../controllers/integration-sources';
 
 export function integrationSourcesRouter() {
@@ -22,7 +22,8 @@ export function integrationSourcesRouter() {
 
 
   router
-    .get('/internal-api/integration-sources/:sourceId', getInternalIntegrationSource)
+    .get('/internal-api/integration-sources/:sourceId', verifyInternalCall, getInternalIntegrationSource)
+    .post('/internal-api/integration-sources/:sourceId/trigger', verifyInternalCall, getBodyParser(), triggerIntegrationSource)
 
   return router;
 }

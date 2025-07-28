@@ -1,4 +1,4 @@
-FROM node:20.12-alpine
+FROM node:22.14-slim AS builder
 ENV NODE_ENV=production
 ENV PORT=9002
 EXPOSE $PORT

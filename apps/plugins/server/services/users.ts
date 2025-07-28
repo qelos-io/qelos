@@ -14,17 +14,17 @@ function callAuthService(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     .then((axiosRes: any) => axiosRes.data)
 }
 
-export function getUsers(tenant: string, { username, exact = false }) {
+export function getUsers(tenant: string, { username, exact = false }: { username?: string, exact?: boolean }) {
   return cacheManager.wrap(`plugins:users:${tenant}:${username}:${!!exact}`, () => {
     return callAuthService(`/internal-api/users?username=${username}` + (exact ? '&exact=true' : ''), 'GET', tenant).then(JSON.stringify)
   }).then(JSON.parse);
 }
 
-export function createUser(tenant: string, { username, password, roles, firstName, lastName }) {
+export function createUser(tenant: string, { username, password, roles, firstName, lastName }: { username: string, password?: string, roles?: string[], firstName?: string, lastName?: string }) {
   return callAuthService('/internal-api/users', 'POST', tenant, { username, password, roles, firstName, lastName });
 }
 
-export function updateUser(tenant: string, userId: string, { password, roles, firstName, lastName }) {
+export function updateUser(tenant: string, userId: string, { password, roles, firstName, lastName }: { password?: string, roles?: string[], firstName?: string, lastName?: string }) {
   cacheManager.setItem(`plugins:user:${tenant}:${userId}`, '{}', { ttl: 1 }).catch();
   return callAuthService('/internal-api/users/' + userId, 'PUT', tenant, { password, roles, firstName, lastName });
 }
@@ -33,13 +33,13 @@ export function removeUser(tenant: string, userId: string) {
   return callAuthService('/internal-api/users/' + userId, 'DELETE', tenant)
 }
 
-export function getUser(tenant: string, userId: string) {
+export function getUser(tenant: string, userId: string): Promise<any> {
   return cacheManager.wrap(`plugins:user:${tenant}:${userId}`, () => {
     return callAuthService('/internal-api/users/' + userId, 'GET', tenant).then(JSON.stringify)
   }).then(JSON.parse);
 }
 
-export function getWorkspaces(tenant: string, workspaceIds: string | string[]) {
+export function getWorkspaces(tenant: string, workspaceIds: string | string[]): Promise<any[]> {
   const ids = typeof workspaceIds === 'string' ? workspaceIds : workspaceIds.join(',');
   return cacheManager.wrap(`plugins:ws:${tenant}:${ids}`, () => {
     return callAuthService(`/internal-api/workspaces?_id=${ids}&select=_id,name,logo,members,labels)}`, 'GET', tenant).then(JSON.stringify)

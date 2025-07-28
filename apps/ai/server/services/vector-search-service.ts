@@ -14,13 +14,14 @@ type AIAuthentication = {
 // Interface for tool representation
 export interface Tool {
   type: string;
+  name?: string;
   description: string;
-  parameters: any;
+  parameters?: any;
   function: {
-    name: string;
+    name?: string;
     description: string;
-    parameters: any;
   };
+  handler?: (req: any, payload: any) => Promise<any>;
 }
 
 // Redis client singleton

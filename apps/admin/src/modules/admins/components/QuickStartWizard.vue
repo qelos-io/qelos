@@ -278,7 +278,7 @@ async function saveAiPurpose() {
 
     try {
       // Generate blueprints using the AI purpose as prompt
-      const response = await fetch(`/api/integrate-source/${selectedSourceId}/no-code-completion/blueprints`, {
+      const response = await fetch(`/api/ai/sources/${selectedSourceId}/blueprints`, {
         method: 'post',
         headers: {'content-type': 'application/json'},
         body: JSON.stringify({

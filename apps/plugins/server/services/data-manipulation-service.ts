@@ -1,7 +1,7 @@
 import * as jq from 'node-jq';
 
 import logger from './logger';
-import { IntegrationSourceKind, IDataManipulationStep } from '@qelos/global-types';
+import { IDataManipulationStep } from '@qelos/global-types';
 import { getUser, getWorkspaces } from './users';
 import { getBlueprintEntities, getBlueprintEntity } from './no-code-service';
 

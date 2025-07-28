@@ -309,7 +309,6 @@ main {
   }
   
   .action-buttons {
-    flex-direction: column;
     gap: 6px;
   }
 }

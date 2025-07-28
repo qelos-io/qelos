@@ -9,6 +9,8 @@ import {
   storeEncryptedSourceAuthentication
 } from '../services/source-authentication-service';
 import { validateSourceMetadata } from '../services/source-metadata-service';
+import { callIntegrationTarget } from '../services/integration-target-call';
+import { isValidObjectId, Types } from 'mongoose';
 
 const PUBLIC_FIELDS = '-authentication';
 
@@ -207,5 +209,42 @@ export async function removeIntegrationSource(req, res) {
   } catch  {
 
     res.status(500).json({ message: 'could not delete integration source' }).end();
+  }
+}
+
+export async function triggerIntegrationSource(req, res) {
+  try {
+    const sourceId: string = req.params.sourceId;
+    const { payload, operation, details } = req.body as { payload: any, operation: string, details: any };
+    const tenant = req.headers.tenant as string;
+
+    if (!isValidObjectId(sourceId)) {
+      res.status(400).json({ message: 'invalid source id' }).end();
+      return;
+    }
+    if (!operation || typeof operation !== 'string') {
+      res.status(400).json({ message: 'operation is required' }).end();
+      return;
+    }
+    if (!details || typeof details !== 'object') {
+      res.status(400).json({ message: 'details is required' }).end();
+      return;
+    }
+    if (!payload || typeof payload !== 'object') {
+      res.status(400).json({ message: 'payload is required' }).end();
+      return;
+    }
+
+    const target = {
+      source: new Types.ObjectId(sourceId),
+      operation,
+      details,
+    }
+    
+    const result = await callIntegrationTarget(tenant, payload, target as any);
+    res.json(result).end();
+  } catch (error) {
+    logger.error('Error calling integration target', error);
+    res.status(500).json({ message: 'Error calling integration target' }).end();
   }
 }

@@ -1,4 +1,4 @@
-import { getRouter, verifyUser, populateUser, getBodyParser } from '@qelos/api-kit';
+import { getRouter, verifyUser, populateUser, getBodyParser, verifyInternalCall } from '@qelos/api-kit';
 import { onlyEditPrivilegedOrPlugin } from '../middlewares/privileged-check';
 import {
   createIntegration,
@@ -22,5 +22,6 @@ export function integrationsRouter() {
     .put('/api/integrations/:integrationId', AUTHENTICATION_MIDDLEWARES.concat(updateIntegration))
     .delete('/api/integrations/:integrationId', AUTHENTICATION_MIDDLEWARES.concat(removeIntegration))
 
+  router.get('/internal-api/integrations/:integrationId', getBodyParser(), verifyInternalCall, getIntegration)
   return router;
 }

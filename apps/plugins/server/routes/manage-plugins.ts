@@ -1,4 +1,4 @@
-import { getRouter, verifyUser, populateUser, getBodyParser } from '@qelos/api-kit';
+import { getRouter, verifyUser, populateUser, getBodyParser, verifyInternalCall } from '@qelos/api-kit';
 import {
   createPlugin,
   getAllPlugins,
@@ -29,5 +29,7 @@ export function managePlugins() {
     .put('/api/plugins/:pluginId', AUTHENTICATION_MIDDLEWARES.concat(onlyEditPrivileged, updatePlugin))
     .delete('/api/plugins/:pluginId', AUTHENTICATION_MIDDLEWARES.concat(onlyEditPrivileged, removePlugin))
 
+  router.post('/internal-api/plugins', getBodyParser(), verifyInternalCall, createPlugin)
+  
   return router;
 }

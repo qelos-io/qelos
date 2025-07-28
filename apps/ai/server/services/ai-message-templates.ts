@@ -8,7 +8,7 @@ export class AIMessageTemplates {
   /**
    * Generate messages for blueprint generation
    */
-  static getBlueprintGenerationMessages(describedBlueprint: string): ChatCompletionMessageParam[] {
+  static getBlueprintGenerationMessages(describedBlueprint: string, allBlueprintsDescriptions: string, appIdea: string): ChatCompletionMessageParam[] {
     return [{
       role: 'system',
       content: `You are a Qelos blueprint generator for the Qelos platform.
@@ -74,11 +74,23 @@ Required blueprint structure:
 }
 
 Return ONLY a complete, valid JSON object. No explanations, markdown formatting, or code blocks.`
-    }, {
+    },
+    {
+      role: 'user',
+      content: `Here is the app idea for context:
+      ${appIdea}`
+    },
+    {
+      role: 'user',
+      content: `Here is the description of the all the blueprints in my system for reference:
+      ${allBlueprintsDescriptions}`
+    },
+    {
       role: 'user',
       content: `Create blueprint from the following description:
-${describedBlueprint}`
-    }];
+      ${describedBlueprint}`
+    }
+  ];
   }
 
   /**

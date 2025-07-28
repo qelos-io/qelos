@@ -157,7 +157,7 @@ function handleDrop() {
 }
 
 function addRequirement() {
-  const newRequirement = { key: '' };
+  const newRequirement: any = { key: '' };
   
   // Use the filtered type if it's not 'all'
   if (activeTab.value !== 'all') {
@@ -196,6 +196,7 @@ function getRowType(row: any) {
   if (row.fromHTTP) {
     return 'fromHTTP';
   }
+  return ''
 }
 
 function updateRowType(row: any, type: string) {
