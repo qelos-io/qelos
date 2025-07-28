@@ -53,6 +53,7 @@ gateway:
   image:
     repository: registry.gitlab.com/qelos/qelos/gateway
     tag: latest
+  replicas: 2
   environment:
     INTERNAL_URL: localhost
     BASIC_TENANT: 0
@@ -64,6 +65,7 @@ auth:
     tag: latest
   host: auth-service
   port: 9000
+  replicas: 2
   environment:
     JWT_SECRET: {{ .Values.JWT_SECRET }}
     REFRESH_TOKEN_SECRET: {{ .Values.REFRESH_TOKEN_SECRET }}
@@ -82,6 +84,7 @@ content:
     tag: latest
   host: content-service
   port: 9001
+  replicas: 2
   environment:
     IP: 0.0.0.0
     AUTH_SERVICE_URL: auth-service
@@ -93,6 +96,7 @@ secrets:
     tag: latest
   host: secrets-service
   port: 9002
+  replicas: 2
   environment:
     IP: 0.0.0.0
     SECRET: {{ .Values.SECRETS_SERVICE_SECRET }}
@@ -101,6 +105,7 @@ nocode:
   image:
     repository: registry.gitlab.com/qelos/qelos/no-code
     tag: latest
+  replicas: 2
   host: nocode-service
   port: 9004
   environment:
@@ -131,6 +136,7 @@ plugins:
   image:
     repository: registry.gitlab.com/qelos/qelos/plugins
     tag: latest
+  replicas: 2
   host: plugins-service
   port: 9006
   environment:
@@ -146,7 +152,7 @@ assets:
   image:
     repository: registry.gitlab.com/qelos/qelos/assets
     tag: latest
-  replicas: 1
+  replicas: 2
   host: assets-service
   port: 9005
   resources:
@@ -176,7 +182,26 @@ drafts:
     AUTH_SERVICE_PORT: 9000
     SECRETS_SERVICE_URL: secrets-service
     SECRETS_SERVICE_PORT: 9002
+  
+ai:
+  image:
+    repository: registry.gitlab.com/qelos/qelos/ai
+    tag: latest
+  replicas: 2
+  host: ai-service
+  port: 9007
+  environment:
+    SECRETS_TOKEN: {{ .Values.AI_SERVICE_SECRET }}
+    AUTH_SERVICE_URL: auth-service
+    AUTH_SERVICE_PORT: 9000
+    SECRETS_SERVICE_URL: secrets-service
+    SECRETS_SERVICE_PORT: 9002
+    PLUGINS_SERVICE_URL: plugins-service
+    PLUGINS_SERVICE_PORT: 9006
+    NO_CODE_SERVICE_URL: nocode-service
+    NO_CODE_SERVICE_PORT: 9004
     
+
 # Default resource settings for microservices
 defaultResources: &defaultResources
   requests:

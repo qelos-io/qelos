@@ -21,3 +21,6 @@
 ---
 {{- /* Drafts Service */ -}}
 {{- include "qelos.microservice" (dict "name" "drafts" "values" .Values.drafts "global" .Values.global) }}
+---
+{{- /* AI Service */ -}}
+{{- include "qelos.microservice" (dict "name" "ai" "values" .Values.ai "global" .Values.global) }}
