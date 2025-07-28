@@ -26,6 +26,7 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, { required:
   [IntegrationSourceKind.Supabase]: null,
   [IntegrationSourceKind.LinkedIn]: null,
   [IntegrationSourceKind.Http]: null,
+  [IntegrationSourceKind.Facebook]: null,
 } as const;
 
 const COMMON_OPTIONAL_PARAMS = ['roles', 'workspaceRoles', 'workspaceLabels'];
