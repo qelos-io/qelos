@@ -72,7 +72,7 @@
               :description="$t('No invites added yet')"
               :image-size="100"
             >
-              <template #extra>
+              <template #default>
                 <el-button type="primary" @click="addItem">
                   <font-awesome-icon :icon="['fas', 'user-plus']" class="icon-left" />
                   {{ $t('Add First Member') }}
