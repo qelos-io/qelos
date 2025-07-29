@@ -7,7 +7,7 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { useIntegrationKindsTargetOperations } from '@/modules/integrations/compositions/integration-kinds-operations';
-import { IntegrationSourceKind, OpenAITargetOperation, QelosTargetOperation, HttpTargetOperation } from '@qelos/global-types';
+import { IntegrationSourceKind, OpenAITargetOperation, QelosTargetOperation, HttpTargetOperation, EmailTargetOperation } from '@qelos/global-types';
 
 const props = defineProps<{
   modelValue: any;
@@ -139,6 +139,14 @@ const qelosDetails = ref({
   roles: '',
   userId: '',
   blueprint: '',
+});
+
+const emailDetails = ref({
+  to: '',
+  subject: '',
+  body: '',
+  cc: '',
+  bcc: ''
 });
 
 // Roles tags input handling
@@ -319,6 +327,12 @@ const syncQelosDetailsToTargetDetails = () => {
   emit('update:modelValue', newModelValue);
 };
 
+const syncEmailDetailsToTargetDetails = () => {
+  const newModelValue = { ...props.modelValue };
+  newModelValue.details = { ...emailDetails.value };
+  emit('update:modelValue', newModelValue);
+};
+
 // Initialize system message from pre_messages when component mounts or details change
 const initializeSystemMessage = () => {
   if (selectedTargetSource.value?.kind === IntegrationSourceKind.OpenAI && 
@@ -376,59 +390,81 @@ const applyPersonality = () => {
 
 // Initialize target details based on selected kind and operation
 const initTargetDetails = () => {
-  if (!selectedTargetSource.value || !props.modelValue.operation) return;
-  
-  const details = props.modelValue.details || {};
-  
-  if (selectedTargetSource.value.kind === 'http') {
+  if (!props.modelValue || !props.modelValue.source || !props.modelValue.operation) {
+    return;
+  }
+
+  const source = store.result?.find(s => s._id === props.modelValue.source);
+  if (!source) {
+    return;
+  }
+
+  // Initialize UI state based on target kind and operation
+  if (source.kind === IntegrationSourceKind.Http && props.modelValue.operation === HttpTargetOperation.makeRequest) {
+    // Initialize HTTP details
     httpDetails.value = {
-      method: details.method || 'GET',
-      url: details.url || '',
-      headers: details.headers || {},
-      query: details.query || {},
-      body: details.body || {}
+      method: props.modelValue.details?.method || 'GET',
+      url: props.modelValue.details?.url || '',
+      headers: props.modelValue.details?.headers || {},
+      query: props.modelValue.details?.query || {},
+      body: props.modelValue.details?.body || {}
     };
-    httpBodyJson.value = JSON.stringify(httpDetails.value.body || {}, null, 2);
     
     // Initialize header keys
     httpHeaderKeys.value = {};
-    Object.keys(httpDetails.value.headers || {}).forEach(key => {
+    Object.keys(httpDetails.value.headers).forEach(key => {
       httpHeaderKeys.value[key] = key;
     });
     
     // Initialize query keys
     httpQueryKeys.value = {};
-    Object.keys(httpDetails.value.query || {}).forEach(key => {
+    Object.keys(httpDetails.value.query).forEach(key => {
       httpQueryKeys.value[key] = key;
     });
-  } else if (selectedTargetSource.value.kind === IntegrationSourceKind.OpenAI) {
+    
+    // Initialize body JSON
+    httpBodyJson.value = JSON.stringify(httpDetails.value.body || {}, null, 2);
+  } else if (source.kind === IntegrationSourceKind.OpenAI && props.modelValue.operation === OpenAITargetOperation.chatCompletion) {
+    // Initialize OpenAI details
     openAiDetails.value = {
-      embeddingType: details.embeddingType || 'local',
-      maxTools: details.maxTools || 15,
-      model: details.model || 'gpt-4o',
-      temperature: details.temperature ?? 0.7,
-      top_p: details.top_p ?? 1,
-      frequency_penalty: details.frequency_penalty ?? 0,
-      presence_penalty: details.presence_penalty ?? 0,
-      max_tokens: details.max_tokens ?? 1000,
-      stop: details.stop,
-      response_format: details.response_format,
-      pre_messages: []
+      model: props.modelValue.details?.model || 'gpt-4o',
+      temperature: props.modelValue.details?.temperature ?? 0.7,
+      top_p: props.modelValue.details?.top_p ?? 1,
+      frequency_penalty: props.modelValue.details?.frequency_penalty ?? 0,
+      presence_penalty: props.modelValue.details?.presence_penalty ?? 0,
+      max_tokens: props.modelValue.details?.max_tokens ?? 1000,
+      stop: props.modelValue.details?.stop,
+      response_format: props.modelValue.details?.response_format,
+      pre_messages: props.modelValue.details?.pre_messages || [],
+      embeddingType: props.modelValue.details?.embeddingType || 'local',
+      maxTools: props.modelValue.details?.maxTools ?? 15,
     };
-    if (details.pre_messages?.length) {
-      openAiDetails.value.pre_messages = [...details.pre_messages];
-      initializeSystemMessage();
-    }
-  } else if (selectedTargetSource.value.kind === IntegrationSourceKind.Qelos) {
+    
+    // Initialize system message from pre_messages
+    initializeSystemMessage();
+  } else if (source.kind === IntegrationSourceKind.Qelos) {
+    // Initialize Qelos details
     qelosDetails.value = {
-      eventName: details.eventName || '',
-      description: details.description || '',
-      password: details.password || '',
-      roles: details.roles || '',
-      userId: details.userId || '',
-      blueprint: details.blueprint || '',
+      eventName: props.modelValue.details?.eventName || '',
+      description: props.modelValue.details?.description || '',
+      password: props.modelValue.details?.password || '',
+      roles: props.modelValue.details?.roles || '',
+      userId: props.modelValue.details?.userId || '',
+      blueprint: props.modelValue.details?.blueprint || '',
+    };
+  } else if (source.kind === IntegrationSourceKind.Email && props.modelValue.operation === EmailTargetOperation.sendEmail) {
+    // Initialize Email details
+    emailDetails.value = {
+      to: props.modelValue.details?.to || '',
+      subject: props.modelValue.details?.subject || '',
+      body: props.modelValue.details?.body || '',
+      cc: props.modelValue.details?.cc || '',
+      bcc: props.modelValue.details?.bcc || ''
     };
   }
+  
+  // Update the target details text
+  targetDetailsText.value = JSON.stringify(props.modelValue.details || {}, null, 2);
 };
 
 // Handle source change
@@ -986,6 +1022,33 @@ onMounted(() => {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Email Target - Send Email -->
+      <div v-else-if="selectedTargetSource.kind === IntegrationSourceKind.Email && modelValue.operation === EmailTargetOperation.sendEmail" class="email-target-config">
+        <el-form-item :label="$t('To')">
+          <el-input v-model="emailDetails.to" placeholder="recipient@example.com" @input="syncEmailDetailsToTargetDetails" />
+          <small class="form-text text-muted">Email address of the recipient. For multiple recipients, separate with commas.</small>
+        </el-form-item>
+        
+        <el-form-item :label="$t('Subject')">
+          <el-input v-model="emailDetails.subject" placeholder="Email subject" @input="syncEmailDetailsToTargetDetails" />
+        </el-form-item>
+        
+        <el-form-item :label="$t('Body')">
+          <el-input v-model="emailDetails.body" type="textarea" :rows="6" placeholder="Email body content" @input="syncEmailDetailsToTargetDetails" />
+          <small class="form-text text-muted">The content of the email. HTML is supported.</small>
+        </el-form-item>
+        
+        <el-form-item :label="$t('CC')">
+          <el-input v-model="emailDetails.cc" placeholder="cc@example.com" @input="syncEmailDetailsToTargetDetails" />
+          <small class="form-text text-muted">Carbon copy recipients. Separate multiple addresses with commas.</small>
+        </el-form-item>
+        
+        <el-form-item :label="$t('BCC')">
+          <el-input v-model="emailDetails.bcc" placeholder="bcc@example.com" @input="syncEmailDetailsToTargetDetails" />
+          <small class="form-text text-muted">Blind carbon copy recipients. Separate multiple addresses with commas.</small>
+        </el-form-item>
       </div>
       
       <!-- Generic JSON Editor for other kinds or when no specific UI is available -->

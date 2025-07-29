@@ -55,6 +55,13 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
     await setSecret(tenant, `integration-source-${kind}-${authId}`, { securedHeaders });
     return authId;
   }
+
+  if (kind === IntegrationSourceKind.Email) {
+    const { password } = authentication;
+    await setSecret(tenant, `integration-source-${kind}-${authId}`, { password });
+    return authId;
+  }
+
   return;
 }
 

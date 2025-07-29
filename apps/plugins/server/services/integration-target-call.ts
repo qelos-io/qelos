@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fetch from 'node-fetch';
-import { HttpTargetOperation, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation } from '@qelos/global-types';
+import { EmailTargetOperation, HttpTargetOperation, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation } from '@qelos/global-types';
 import { IIntegrationEntity } from '../models/integration';
 import IntegrationSource from '../models/integration-source';
 import { getEncryptedSourceAuthentication } from './source-authentication-service';
@@ -12,6 +12,7 @@ import logger from '../services/logger';
 import { createBlueprintEntity, updateBlueprintEntity } from './no-code-service';
 import { HttpTargetPayload } from '@qelos/global-types';
 import { chatCompletion } from './ai-service';
+import { sendEmail } from './email-service';
 
 async function handleHttpTarget(
   integrationTarget: IIntegrationEntity,
@@ -177,6 +178,78 @@ async function handleQelosTarget(integrationTarget: IIntegrationEntity,
     }
 }
 
+
+/**
+ * Handle email target operations
+ * 
+ * @param integrationTarget Integration target entity
+ * @param source Email source configuration
+ * @param authentication Authentication details
+ * @param payload Optional payload with data for the email
+ * @returns Promise with operation result
+ */
+async function handleEmailTarget(
+  integrationTarget: IIntegrationEntity,
+  source: IEmailSource,
+  authentication: Record<string, any>,
+  payload?: Record<string, any>
+): Promise<any> {
+  logger.log('Handling email target', { operation: integrationTarget.operation });
+  
+  if (integrationTarget.operation === EmailTargetOperation.sendEmail) {
+    // Extract email details from target details or payload
+    const to = payload?.to || integrationTarget.details?.to;
+    const subject = payload?.subject || integrationTarget.details?.subject;
+    const body = payload?.body || integrationTarget.details?.body;
+    const cc = payload?.cc || integrationTarget.details?.cc;
+    const bcc = payload?.bcc || integrationTarget.details?.bcc;
+    
+    // Validate required fields
+    if (!to) {
+      throw new Error('Email recipient (to) is required');
+    }
+    
+    if (!subject) {
+      throw new Error('Email subject is required');
+    }
+    
+    if (!body) {
+      throw new Error('Email body is required');
+    }
+    
+    // Send the email
+    const result = await sendEmail(
+      source,
+      authentication as { password: string },
+      to,
+      subject,
+      body,
+      cc,
+      bcc
+    );
+
+    const triggerResponse = payload?.triggerResponse;
+    if (!payload?.stream && triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+      const event = new PlatformEvent({
+        tenant: source.tenant,
+        source: triggerResponse.source,
+        kind: triggerResponse.kind,
+        eventName: triggerResponse.eventName,
+        description: triggerResponse.description,
+        metadata: {
+          ...triggerResponse.metadata,
+          result,
+        },
+      });
+      event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+    }
+    
+    return result;
+  }
+  
+  throw new Error(`Unsupported email operation: ${integrationTarget.operation}`);
+}
+
 export async function callIntegrationTarget(tenant: string, payload: any, integrationTarget: IIntegrationEntity) {
   // load integration source data
   const source = await IntegrationSource.findOne({ tenant, _id: integrationTarget.source }).lean().exec();
@@ -191,5 +264,7 @@ export async function callIntegrationTarget(tenant: string, payload: any, integr
     return handleOpenAiTarget(integrationTarget, source as IOpenAISource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Qelos) {
     return handleQelosTarget(integrationTarget, source as IQelosSource, authentication || {}, payload);
+  } else if (source.kind === IntegrationSourceKind.Email) {
+    return handleEmailTarget(integrationTarget, source as IEmailSource, authentication || {}, payload);
   }
 }

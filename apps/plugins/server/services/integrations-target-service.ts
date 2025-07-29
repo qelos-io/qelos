@@ -6,7 +6,8 @@ import {
   IntegrationSourceKind,
   OpenAITargetOperation,
   QelosTargetOperation,
-  ClaudeAITargetOperation
+  ClaudeAITargetOperation,
+  EmailTargetOperation
 } from '@qelos/global-types';
 
 const supportedSources = {
@@ -52,6 +53,12 @@ const supportedSources = {
     [HttpTargetOperation.makeRequest]: {
       required: [],
       optional: ['headers', 'body', 'query', 'method', 'url'],
+    }
+  },
+  [IntegrationSourceKind.Email]: {
+    [EmailTargetOperation.sendEmail]: {
+      required: [],
+      optional: ['to', 'subject', 'body', 'cc', 'bcc'],
     }
   }
 }

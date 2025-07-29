@@ -47,6 +47,10 @@ export const OpenAITargetOperation = {
   functionCalling: 'functionCalling',
 } as const;
 
+export const EmailTargetOperation = {
+  sendEmail: 'sendEmail',
+} as const;
+
 export enum ClaudeAITargetOperation {
   chatCompletion = 'chatCompletion',
 }

@@ -103,5 +103,19 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     }
   }
 
+  if (kind === IntegrationSourceKind.Email) {
+    const { email, pop3, senderName, smtp, username } = metadata;
+    if (!email || typeof email !== 'string' || !pop3 || typeof pop3 !== 'string' || !senderName || typeof senderName !== 'string' || !smtp || typeof smtp !== 'string' || !username || typeof username !== 'string') {
+      throw new ResponseError('Invalid Email metadata: email, pop3, senderName, smtp, and username are required.', 400)
+    }
+    return {
+      email,
+      pop3,
+      senderName,
+      smtp,
+      username
+    }
+  }
+
   return {};
 }
