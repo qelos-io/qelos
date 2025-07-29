@@ -37,10 +37,9 @@ export interface GlobalMicroFrontend {
     iconName?: string;
     iconSvg?: string;
   };
-  component?: {
-    page: string;
-    position: 'top' | 'left' | 'right' | 'bottom';
-  },
+  global?: {
+    position: string;
+  }
   modal?: {
     name: string;
     params: string[] | Record<string, string>; // schema / hints for props

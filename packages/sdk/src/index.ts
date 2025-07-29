@@ -2,7 +2,6 @@ import { QelosSDKOptions } from './types';
 import BaseSDK from './base-sdk';
 import QlAppConfigurations from './configurations';
 import QlBlocks from './blocks';
-import QlLayouts from './administrator/layouts';
 import QlAuthentication from './authentication';
 import QlWorkspaces from './workspaces';
 import QlInvites from './invites';
@@ -14,7 +13,6 @@ export default class QelosSDK extends BaseSDK {
   #customHeaders = {}
 
   blocks: QlBlocks;
-  layouts: QlLayouts;
   appConfigurations: QlAppConfigurations;
   authentication: QlAuthentication;
   workspaces: QlWorkspaces;
@@ -24,7 +22,6 @@ export default class QelosSDK extends BaseSDK {
   constructor(private options: QelosSDKOptions) {
     super(options);
     this.blocks = new QlBlocks(this.options);
-    this.layouts = new QlLayouts(this.options);
     this.appConfigurations = new QlAppConfigurations(this.options);
     this.authentication = new QlAuthentication(this.options);
     this.workspaces = new QlWorkspaces(this.options);

@@ -20,9 +20,9 @@
             <div class="col-status">Status</div>
             <div class="col-name">Name</div>
             <div class="col-type">Type</div>
-            <div class="col-implementation">Implementation</div>
+            <div class="col-implementation" :class="{ 'hidden': showSidePanel }">Implementation</div>
             <div class="col-route">Route/Target</div>
-            <div class="col-permissions">Permissions</div>
+            <div class="col-permissions" :class="{ 'hidden': showSidePanel }">Permissions</div>
             <div class="col-actions">Actions</div>
           </div>
           <div 
@@ -54,20 +54,20 @@
               </el-tag>
             </div>
             
-            <div class="col-implementation">
-              <el-tag size="small" :type="getMfeImplementation(mfe) === 'No-Code' ? 'info' : ''">
+            <div class="col-implementation" :class="{ 'hidden': showSidePanel }">
+              <el-tag size="small" :type="getMfeImplementation(mfe) === 'No-Code' ? 'info' : 'info'">
                 {{ getMfeImplementation(mfe) }}
               </el-tag>
             </div>
             
             <div class="col-route">
               <span v-if="mfe.route">{{ mfe.route.path || mfe.route.name || 'Not set' }}</span>
-              <span v-else-if="mfe.component">{{ mfe.component.page || 'Not set' }}</span>
+              <span v-else-if="mfe.global">{{ mfe.global.position || 'Not set' }}</span>
               <span v-else-if="mfe.modal">{{ mfe.modal.name || 'Not set' }}</span>
               <span v-else>-</span>
             </div>
             
-            <div class="col-permissions">
+            <div class="col-permissions" :class="{ 'hidden': showSidePanel }">
               <el-tag v-if="mfe.guest" size="small" type="warning">Guest</el-tag>
               <el-tag v-else size="small">{{ mfe.roles?.includes('*') ? 'All Users' : 'Restricted' }}</el-tag>
             </div>
@@ -112,7 +112,7 @@
                   <el-tag size="small" :type="getMfeTypeDisplay(mfe) === 'Page' ? 'primary' : getMfeTypeDisplay(mfe) === 'Component' ? 'success' : 'warning'">
                     {{ getMfeTypeDisplay(mfe) }}
                   </el-tag>
-                  <el-tag size="small" :type="getMfeImplementation(mfe) === 'No-Code' ? 'info' : ''">
+                  <el-tag size="small" :type="getMfeImplementation(mfe) === 'No-Code' ? 'info' : 'info'">
                     {{ getMfeImplementation(mfe) }}
                   </el-tag>
                 </div>
@@ -496,25 +496,25 @@ function toggleMfeType(mfe: any, type: string) {
   switch (type) {
     case 'page':
       mfe.route = { name: mfe.name.replaceAll(' ', '-'), path: '', roles: ['*'], navBarPosition: false };
-      mfe.component = {};
       mfe.modal = {};
+      mfe.global = {};
       break;
-    case 'component':
-      mfe.component = { page: 'admin-dashboard', position: 'top' };
+    case 'global':
+      mfe.global = { position: 'top' };
       mfe.route = {};
       mfe.modal = {};
       break;
     case 'modal':
       mfe.modal = { name: mfe.name.replaceAll(' ', '-'), params: [], size: 'md' };
       mfe.route = {};
-      mfe.component = {};
+      mfe.global = {};
       break;
   }
 }
 
 function getCurrentMfeType(mfe: any) {
   if (mfe.route?.path) return 'page';
-  if (mfe.component?.page) return 'component';
+  if (mfe.global?.position) return 'global';
   if (mfe.modal?.name) return 'modal';
   return 'page';
 }
@@ -523,7 +523,7 @@ function getTypeDescription(type: string) {
   switch (type) {
     case 'page':
       return 'A full-page micro frontend';
-    case 'component':
+    case 'global':
       return 'A reusable component micro frontend';
     case 'modal':
       return 'A modal window micro frontend';
@@ -622,6 +622,17 @@ defineExpose({
   color: var(--el-text-color-primary);
 }
 
+.mfe-content.with-panel .table-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 80px 140px 80px;
+  gap: 1rem;
+}
+
+.with-panel .col-implementation,
+.with-panel .col-permissions {
+  display: none;
+}
+
 .table-row {
   display: grid;
   grid-template-columns: 80px 1fr 100px 120px 150px 120px 100px;
@@ -630,6 +641,12 @@ defineExpose({
   border-bottom: 1px solid var(--el-border-color-lighter);
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.mfe-content.with-panel .table-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 80px 140px 80px;
+  gap: 1rem;
 }
 
 .table-row:hover {
@@ -780,7 +797,7 @@ defineExpose({
 
 /* Side Panel */
 .side-panel {
-  width: 500px;
+  width: 520px;
   min-width: 38%;
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
@@ -1298,6 +1315,11 @@ defineExpose({
   to {
     transform: translateX(0);
   }
+}
+
+/* Hidden columns when side panel is shown */
+.hidden {
+  display: none !important;
 }
 
 /* Touch optimizations */

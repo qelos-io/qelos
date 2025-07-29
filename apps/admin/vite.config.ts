@@ -26,7 +26,6 @@ export default defineConfig({
     vue({
       template: {
         compilerOptions: {
-          isCustomElement: (tag) => ['view-builder'].includes(tag)
         }
       }
     }),

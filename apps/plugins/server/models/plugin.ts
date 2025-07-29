@@ -81,12 +81,8 @@ const MicroFrontendSchema = new mongoose.Schema<IMicroFrontend>({
     },
     group: String,
   },
-  component: {
-    page: String,
-    position: {
-      type: String,
-      enum: ['top', 'left', 'right', 'bottom']
-    }
+  global: {
+    position: String,
   },
   modal: {
     name: String,

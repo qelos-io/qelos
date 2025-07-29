@@ -27,7 +27,6 @@ test('QelosSDK', async (t) => {
     setup();
     assert.ok(sdk);
     assert.ok(sdk.blocks);
-    assert.ok(sdk.layouts);
     assert.ok(sdk.appConfigurations);
     assert.ok(sdk.authentication);
     assert.ok(sdk.workspaces);
