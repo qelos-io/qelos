@@ -10,10 +10,12 @@ import IntegrationFormModal from '@/modules/integrations/components/IntegrationF
 import integrationsService from '@/services/integrations-service';
 import { useConfirmAction } from '../core/compositions/confirm-action';
 import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { useIntegrationSourcesStore } from './store/integration-sources';
 import { IIntegrationSource } from '@qelos/global-types';
 
+const route = useRoute();
 const kinds = useIntegrationKinds();
 const { loaded, result, retry } = useIntegrations();
 const integrationSourcesStore = useIntegrationSourcesStore();
@@ -41,6 +43,14 @@ const remove = useConfirmAction((id: string) => {
   integrationsService.remove(id).then(() => {
     retry();
   });
+})
+
+const editingIntegration = computed(() => {
+  if (route.query.mode === 'create') return undefined;
+  if (route.query.mode === 'edit' && route.query.id) {
+    return result.value?.find(integration => integration._id === route.query.id);
+  }
+  return undefined;
 })
 </script>
 
@@ -106,12 +116,12 @@ const remove = useConfirmAction((id: string) => {
                :key="integration._id"
                :id="'integration-' + integration._id"
                class="integration-card"
-               @click="$router.push({query: { mode: 'edit' }, params: { id: integration._id }})">
+               @click="$router.push({query: { mode: 'edit', id: integration._id }})">
             
             <div class="integration-header">
               <div class="integration-title">
                 <h3>
-                  <router-link :to="{query: { mode: 'edit' }, params: { id: integration._id }}" @click.stop>
+                  <router-link :to="{query: { mode: 'edit', id: integration._id }}" @click.stop>
                     {{ sourcesById[integration.trigger.source]?.name || 'Unknown' }} → {{ sourcesById[integration.target.source]?.name || 'Unknown' }}
                   </router-link>
                 </h3>
@@ -151,7 +161,7 @@ const remove = useConfirmAction((id: string) => {
                 <el-button 
                   type="primary" 
                   circle 
-                  @click.stop="$router.push({ query: { mode: 'edit' }, params: { id: integration._id } })"
+                  @click.stop="$router.push({ query: { mode: 'edit', id: integration._id } })"
                 >
                   <el-icon><icon-edit /></el-icon>
                 </el-button>
@@ -178,10 +188,10 @@ const remove = useConfirmAction((id: string) => {
       </template>
     </el-skeleton>
 
-    <IntegrationFormModal :visible="$route.query.mode === 'create' || $route.query.mode === 'edit'"
-      :editing-integration="($route.query.mode === 'edit' && $route.params.id) ? result.find(integration => integration._id === $route.params.id) : undefined"
+    <IntegrationFormModal :visible="$route.query.mode === 'create' || ($route.query.mode === 'edit' && !!editingIntegration)"
+      :editing-integration="editingIntegration"
       @saved="retry"
-     @close="$router.push({ query: { mode: undefined, id: undefined } })" />
+      @close="$router.push({ query: { mode: undefined, id: undefined } })" />
   </div>
 </template>
 
