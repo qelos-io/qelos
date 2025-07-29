@@ -32,11 +32,6 @@ a, button {
   cursor: revert;
 }
 
-/* Remove list styles (bullets/numbers) */
-ol, ul, menu, summary {
-  list-style: none;
-}
-
 /* For images to not be able to exceed their container */
 img {
   max-inline-size: 100%;

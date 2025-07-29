@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import { Editor } from '@tiptap/vue-3'
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
+import { Editor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Table from '@tiptap/extension-table'
@@ -20,7 +20,7 @@ import Monaco from '@/modules/users/components/Monaco.vue'
 const model = defineModel<string>();
 const props = defineProps<{ language?: string, placeholder?: string, readonly?: boolean }>();
 
-const editor = ref<Editor | null>(null)
+const editor = ref<Editor>()
 const isEditorReady = ref(false)
 const isHtmlMode = ref(false)
 
@@ -147,8 +147,6 @@ const imageForm = ref({
   alt: '',
   title: ''
 })
-
-const uploadLoading = ref(false)
 
 const tableForm = ref({
   rows: 3,
@@ -490,7 +488,10 @@ const handleDrop = (event: DragEvent) => {
       
       <!-- Editor Content -->
       <div class="editor-container" @drop="handleDrop" @dragover.prevent>
-        <editor-content v-if="editor" :editor="editor" />
+        <EditorContent 
+          v-if="editor" 
+          :editor="editor" 
+        />
       </div>
     </div>
     
@@ -739,10 +740,6 @@ const handleDrop = (event: DragEvent) => {
 /* Editor content styles */
 .wysiwyg-editor-content {
   outline: none;
-}
-
-.wysiwyg-editor-content p {
-  margin: 0.75em 0;
 }
 
 .wysiwyg-editor-content h1,
