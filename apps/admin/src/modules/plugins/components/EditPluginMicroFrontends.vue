@@ -61,9 +61,9 @@
             </div>
             
             <div class="col-route">
-              <span v-if="mfe.route">{{ mfe.route.path || mfe.route.name || 'Not set' }}</span>
-              <span v-else-if="mfe.global">{{ mfe.global.position || 'Not set' }}</span>
-              <span v-else-if="mfe.modal">{{ mfe.modal.name || 'Not set' }}</span>
+              <span v-if="getCurrentMfeType(mfe) === 'page'">{{ mfe.route.path || mfe.route.name || 'Not set' }}</span>
+              <span v-else-if="getCurrentMfeType(mfe) === 'global'">{{ mfe.global.position || 'Not set' }}</span>
+              <span v-else-if="getCurrentMfeType(mfe) === 'modal'">{{ mfe.modal.name || 'Not set' }}</span>
               <span v-else>-</span>
             </div>
             
@@ -141,7 +141,7 @@
                   <span class="info-label">Route/Target:</span>
                   <span class="info-value">
                     <span v-if="mfe.route">{{ mfe.route.path || mfe.route.name || 'Not set' }}</span>
-                    <span v-else-if="mfe.component">{{ mfe.component.page || 'Not set' }}</span>
+                    <span v-else-if="mfe.global">{{ mfe.global.position || 'Not set' }}</span>
                     <span v-else-if="mfe.modal">{{ mfe.modal.name || 'Not set' }}</span>
                     <span v-else>-</span>
                   </span>
@@ -285,7 +285,7 @@
           </div>
 
           <!-- Type-specific Configuration Cards -->
-          <div class="form-card" v-if="currentMfe.route">
+          <div class="form-card" v-if="getCurrentMfeType(currentMfe) === 'page'">
             <div class="card-header">
               <div class="card-icon">
                 <font-awesome-icon :icon="['fas', 'route']" />
@@ -306,25 +306,17 @@
             </div>
           </div>
 
-          <div class="form-card" v-if="currentMfe.component?.page">
+          <div class="form-card" v-if="getCurrentMfeType(currentMfe) === 'global'">
             <div class="card-header">
               <div class="card-icon">
                 <font-awesome-icon :icon="['fas', 'puzzle-piece']" />
               </div>
-              <h5>Component Configuration</h5>
+              <h5>Global Template Configuration</h5>
             </div>
             <div class="card-content">
-              <div class="form-grid">
-                <FormInput title="Page" v-model="currentMfe.component.page" class="form-field" />
-                <div class="form-field">
-                  <label class="field-label">Position</label>
-                  <el-select v-model="currentMfe.component.position" size="large">
-                    <el-option value="top" label="Top" />
-                    <el-option value="left" label="Left" />
-                    <el-option value="right" label="Right" />
-                    <el-option value="bottom" label="Bottom" />
-                  </el-select>
-                </div>
+              <div class="form-field">
+                <label class="field-label">Position</label>
+                <el-input v-model="currentMfe.global.position" size="large" />
               </div>
             </div>
           </div>
@@ -426,7 +418,7 @@ const showSidePanel = ref(false);
 
 const mfeTypes = [
   { value: 'page', label: 'Page', icon: ['fas', 'window-maximize'] },
-  { value: 'component', label: 'Component', icon: ['fas', 'puzzle-piece'] },
+  { value: 'global', label: 'Global', icon: ['fas', 'puzzle-piece'] },
   { value: 'modal', label: 'Modal', icon: ['fas', 'window-restore'] }
 ];
 
@@ -478,15 +470,16 @@ function closeSidePanel() {
 }
 
 function getMfeTypeDisplay(mfe: any) {
-  if (mfe.route) return 'Page';
-  if (mfe.component) return 'Component';
-  if (mfe.modal) return 'Modal';
+  const type = getCurrentMfeType(mfe);
+  if (type === 'page') return 'Page';
+  if (type === 'global') return 'Global';
+  if (type === 'modal') return 'Modal';
   return 'Page';
 }
 
 function getMfeImplementation(mfe: any) {
   if (mfe.use) return 'No-Code';
-  return 'iFrame';
+  return 'IFrame';
 }
 
 function toggleMfeType(mfe: any, type: string) {  
@@ -524,7 +517,7 @@ function getTypeDescription(type: string) {
     case 'page':
       return 'A full-page micro frontend';
     case 'global':
-      return 'A reusable component micro frontend';
+      return 'A shared template micro frontend that will be inserted into all pages';
     case 'modal':
       return 'A modal window micro frontend';
     default:
