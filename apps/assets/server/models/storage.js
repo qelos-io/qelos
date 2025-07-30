@@ -28,7 +28,13 @@ const StorageSchema = new mongoose.Schema({
     },
     bucketName: {
       type: String,
-    }
+    },
+    bucketUrl: {
+      type: String,
+    },
+    signatureVersion: {
+      type: String,
+    },
   },
   isDefault: { type: Boolean, default: false },
   authentication: String

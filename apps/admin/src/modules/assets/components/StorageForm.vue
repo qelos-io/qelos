@@ -80,51 +80,39 @@
           <el-col :span="24" :md="12">
             <FormInput
               title="Public URL"
-              :model-value="editedStorage.metadata.publicUrl"
-              @input="editedStorage.metadata.publicUrl = $event"
+              v-model="editedStorage.metadata.publicUrl"
               placeholder="https://your-public-url.com"
-            >
-              <template #prefix>
-                <el-icon><StorageIcons name="icon-link" /></el-icon>
-              </template>
-              <template #help>
-                <span class="help-text">The public URL where your assets will be accessible</span>
-              </template>
-            </FormInput>
+            />
           </el-col>
           
           <el-col :span="24" :md="12">
             <FormInput
               title="Base Storage Path"
-              :model-value="editedStorage.metadata.basePath"
-              @input="editedStorage.metadata.basePath = $event"
+              v-model="editedStorage.metadata.basePath"
               placeholder="/"
-            >
-              <template #prefix>
-                <el-icon><StorageIcons name="icon-folder" /></el-icon>
-              </template>
-              <template #help>
-                <span class="help-text">Base path for storing assets (e.g., /uploads)</span>
-              </template>
-            </FormInput>
+            />
           </el-col>
           
           <el-col :span="24" v-if="editedStorage.kind !== 'ftp'">
             <FormInput
               :title="editedStorage.kind === 'cloudinary' ? 'Cloud Name' : 'Bucket Name'"
-              :model-value="editedStorage.metadata.bucketName"
-              @input="editedStorage.metadata.bucketName = $event"
+              v-model="editedStorage.metadata.bucketName"
               :placeholder="editedStorage.kind === 'cloudinary' ? 'your-cloud-name' : 'your-bucket-name'"
-            >
-              <template #prefix>
-                <el-icon><StorageIcons name="icon-box" /></el-icon>
-              </template>
-              <template #help>
-                <span class="help-text">
-                  {{ editedStorage.kind === 'cloudinary' ? 'Your Cloudinary cloud name' : 'Your storage bucket name' }}
-                </span>
-              </template>
-            </FormInput>
+            />
+          </el-col>
+          <el-col :span="24" v-if="editedStorage.kind === 's3'">
+            <FormInput
+              title="Bucket URL"
+              label="The URL of your storage bucket. Optional"
+              v-model="editedStorage.metadata.bucketUrl"
+              placeholder="https://your-bucket-url.com"
+            />
+            <FormInput
+              title="Signature Version"
+              label="The signature version of your storage bucket. Optional"
+              v-model="editedStorage.metadata.signatureVersion"
+              placeholder="v4"
+            />
           </el-col>
         </el-row>
       </div>

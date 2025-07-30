@@ -10,9 +10,17 @@ class S3 {
       (decrypted) => {
         const { accessKeyId, secretAccessKey } = decrypted.value;
 
+        let endpoint;
+        if (storage.metadata.bucketUrl) {
+          endpoint = new AWS.Endpoint(storage.metadata.bucketUrl);
+        }
+
         this._client = new AWS.S3({
+          endpoint,
+          region: storage.metadata.region,
           accessKeyId,
           secretAccessKey,
+          signatureVersion: storage.metadata.signatureVersion || (storage.metadata.bucketUrl.includes('digitaloceanspaces.com') ? 'v4' : undefined),
         });
         this.bucket = { name: storage.metadata.bucketName };
 
@@ -29,7 +37,7 @@ class S3 {
         .listObjectsV2({
           Bucket: this.bucket.name,
           Prefix: path.slice(1),
-          Delimiter: "/"
+          Delimiter: "/",
         })
 
       const files = listedObjects.Contents.map(content => ({
