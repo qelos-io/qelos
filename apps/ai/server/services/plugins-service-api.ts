@@ -1,4 +1,4 @@
-import { IDataManipulationStep } from '@qelos/global-types';
+import { IDataManipulationStep, IIntegration } from '@qelos/global-types';
 import { internalServicesSecret } from '../../config';
 import { service } from '@qelos/api-kit';
 
@@ -14,7 +14,7 @@ export function callPluginsService(url: string, tenant: string, data?: any, meth
     .then((axiosRes: any) => axiosRes.data)
 }
 
-export function getIntegration(tenant: string, integrationId: string, populate: boolean = false) {
+export function getIntegration(tenant: string, integrationId: string, populate: boolean = false): Promise<IIntegration> {
   return callPluginsService(`/internal-api/integrations/${integrationId}?$populate=${populate}`, tenant);
 }
 

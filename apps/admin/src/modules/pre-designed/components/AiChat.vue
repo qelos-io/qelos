@@ -101,12 +101,42 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, nextTick, watch } from 'vue';
+import { ref, reactive, nextTick, watch, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import { UploadFilled, Document, Loading, UserFilled, Cpu } from '@element-plus/icons-vue';
 import { Remarkable } from 'remarkable';
+import threadsService from '@/services/threads-service';
 
-const props = defineProps<{ url: string, title?: string, text?: string }>();
+const props = defineProps<{ url: string, title?: string, text?: string, recordThread?: boolean, threadId?: string, integrationId?: string }>();
+
+const emit = defineEmits(['update:threadId']);
+
+const localThreadId = ref(props.threadId);
+
+const shouldRecordThread = computed(() => props.recordThread || props.threadId);
+
+const chatCompletionUrl = computed(() => {
+  if (shouldRecordThread.value) {
+    const threadId = props.threadId || localThreadId.value;
+    return props.url.includes('{threadId}') ? props.url.replace('{threadId}', threadId) : (props.url.includes(threadId) ? props.url : (props.url + '/' + threadId));
+  }
+  return props.url;
+});
+
+function getIntegrationIdFromUrl() {
+  return props.url?.split('/api/ai/')[1]?.split('/')[0] || undefined;
+}
+
+async function createThread() {
+  const newThread = await threadsService.create({
+    integration: props.integrationId || getIntegrationIdFromUrl(),
+  })
+
+  emit('update:threadId', newThread._id);
+  localThreadId.value = newThread._id;
+
+  return newThread
+}
 
 interface ChatMessage {
   id: string;
@@ -254,8 +284,11 @@ async function onSend() {
   let aiMsg: ChatMessage = { id: aiMsgId, role: 'assistant', content: '', time: new Date().toISOString(), type: 'text' };
   messages.push(aiMsg);
   try {
+    if (shouldRecordThread.value && !localThreadId.value) {
+      await createThread();
+    }
     // Streaming with fetch (SSE-style JSON lines)
-    const res = await fetch(props.url + '?stream=true', {
+    const res = await fetch(chatCompletionUrl.value + '?stream=true', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

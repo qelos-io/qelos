@@ -20,6 +20,21 @@ const kinds = useIntegrationKinds();
 const triggerOperations = useIntegrationKindsTriggerOperations();
 
 const selectedTriggerOperation = ref<TriggerOperation>();
+const recordThread = ref(false);
+
+// Computed property for the chat completion URL
+const getCompletionUrl = computed(() => {
+  const baseUrl = `/api/ai/${props.integrationId}/chat-completion`;
+  return recordThread.value ? `${baseUrl}/{threadId}` : baseUrl;
+});
+
+// Computed property for URL help text
+const urlHelpText = computed(() => {
+  if (!recordThread.value) {
+    return "Use this URL to access your chat completion API endpoint";
+  }
+  return "Use this URL to access your chat completion API endpoint. Replace {threadId} with an existing thread ID or remove the threadId path segment to create a new thread automatically.";
+});
 
 // Computed property for the selected source
 const selectedTriggerSource = computed(() => store.result?.find(s => s._id === props.modelValue.source));
@@ -149,6 +164,19 @@ const setTriggerDetails = (optionValue: any) => {
   emit('update:modelValue', newModelValue);
 };
 
+// Update recordThread setting in the model details
+const updateRecordThreadSetting = () => {
+  const newModelValue = { ...props.modelValue };
+  if (!newModelValue.details) {
+    newModelValue.details = {};
+  }
+  
+  // Set recordThread in the details
+  newModelValue.details.recordThread = recordThread.value;
+  
+  emit('update:modelValue', newModelValue);
+};
+
 // Initialize the UI when the component is mounted
 onMounted(() => {
   if (selectedTriggerSource.value && props.modelValue.operation) {
@@ -166,6 +194,13 @@ onMounted(() => {
         "properties": {},
         "required": []
       }, null, 2);
+    }
+    
+    // Initialize recordThread value from model details if available
+    if (selectedTriggerSource.value?.kind === IntegrationSourceKind.Qelos && 
+        props.modelValue.operation === QelosTriggerOperation.chatCompletion) {
+      const details = props.modelValue.details || {};
+      recordThread.value = !!details.recordThread;
     }
   }
 });
@@ -252,17 +287,30 @@ onMounted(() => {
         <div v-if="props.integrationId" class="chat-completion-url">
           <h4>{{$t('Chat Completion URL')}}</h4>
           <el-input
-            :value="`/api/ai/${integrationId}/chat-completion`"
+            :value="getCompletionUrl"
             readonly
             class="url-display"
           >
             <template #append>
-              <el-button @click="copyToClipboard(`/api/integrate/${integrationId}/chat-completion`)">
+              <el-button @click="copyToClipboard(getCompletionUrl)">
                 <i class="el-icon-copy-document"></i> Copy
               </el-button>
             </template>
           </el-input>
-          <p class="help-text">Use this URL to access your chat completion API endpoint</p>
+          <p class="help-text">{{ urlHelpText }}</p>
+          
+          <div class="thread-options mt-3">
+            <el-checkbox 
+              v-model="recordThread" 
+              @change="updateRecordThreadSetting"
+            >
+              Record conversation thread
+            </el-checkbox>
+            <p class="help-text">
+              When enabled, conversations will be stored as threads. 
+              <span v-if="recordThread">The URL includes a threadId path parameter which can be used to continue existing conversations.</span>
+            </p>
+          </div>
         </div>
         <div v-else class="chat-completion-info">
           <p class="help-text">The chat completion URL will be available after saving the integration</p>

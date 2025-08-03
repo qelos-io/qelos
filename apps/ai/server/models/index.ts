@@ -1,5 +1,8 @@
 import mongoose from 'mongoose'
 
+// Import models
+import './thread'
+
 export const connect = (uri: string) => {
   mongoose.connect(uri, {})
   // plug in the promise library:
@@ -10,5 +13,5 @@ export const connect = (uri: string) => {
     process.exit(1)
   })
 
-  // load models
+  // models are loaded via imports above
 }

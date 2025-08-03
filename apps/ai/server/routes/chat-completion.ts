@@ -9,6 +9,12 @@ export function chatCompletionRouter() {
   const AUTHENTICATION_MIDDLEWARES = [populateUser, verifyUser];
 
   router
+    .post('/api/ai/:integrationId/chat-completion/:threadId',
+       AUTHENTICATION_MIDDLEWARES,
+       forceTriggerIntegrationKind([IntegrationSourceKind.Qelos]),
+       getIntegrationToIntegrate,
+       chatCompletion
+    )
     .post('/api/ai/:integrationId/chat-completion',
        AUTHENTICATION_MIDDLEWARES,
        forceTriggerIntegrationKind([IntegrationSourceKind.Qelos]),

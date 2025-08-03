@@ -6,6 +6,7 @@ import { executeDataManipulation, getIntegration, getSourceAuthentication, getTo
 import { findSimilarTools } from "../services/vector-search-service";
 import { executeFunctionCalls } from "../services/execute-function-calls";
 import { verifyUserPermissions } from "../services/source-service";
+import { Thread } from "../models/thread";
 
 export async function getIntegrationToIntegrate(req, res, next) {
   try {
@@ -15,6 +16,32 @@ export async function getIntegrationToIntegrate(req, res, next) {
     if (!integration) {
       res.status(404).json({ message: 'integration not found' }).end();
       return;
+    }
+
+
+    // check if we must have thread id and "record" the thread
+    if (integration.trigger.details.recordThread) {
+      if (!req.params.threadId) {
+        res.status(400).json({ message: 'thread id is required' }).end();
+        return;
+      }
+
+      const filters: any = {
+        _id: req.params.threadId,
+        user: req.user._id // Ensure user can only access their own threads
+      };
+
+      if (req.workspace) {
+        filters.workspace = req.workspace._id;
+      }
+
+      const thread = await Thread.findOne(filters).lean().exec();
+      if (!thread) {
+        res.status(404).json({ message: 'thread not found' }).end();
+        return;
+      }
+
+      req.thread = thread;
     }
 
     // Verify integration kind matches required kinds
@@ -31,7 +58,7 @@ export async function getIntegrationToIntegrate(req, res, next) {
       return;
     }
 
-    const source = integration.target.source;
+    const source = integration.target.source as any;
     
     // Get authentication from plugins service
     const sourceData = await getSourceAuthentication(req.headers.tenant, source._id);
@@ -51,7 +78,7 @@ export async function chatCompletion(req, res) {
   const source = integration.target.source;
   let options = req.body;
   const useSSE = req.headers.accept?.includes('text/event-stream') || req.query.stream === 'true';
-
+  
   if (useSSE) {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -67,6 +94,30 @@ export async function chatCompletion(req, res) {
   const safeUserMessages = options.messages.filter(msg => 
     msg.role === 'user' || msg.role === 'assistant' || msg.role === 'tool'
   );
+
+  if (req.thread && req.thread.messages && req.thread.messages.length > 0) {
+    // Get the timestamp of the last message in the thread
+    const lastThreadMessage = req.thread.messages[req.thread.messages.length - 1];
+    const lastThreadTimestamp = lastThreadMessage.timestamp || new Date(0);
+    
+    // Filter out user messages that were sent before the last thread message
+    const newUserMessages = safeUserMessages.filter(msg => {
+      // Only keep user messages
+      if (msg.role !== 'user') return false;
+      
+      // If the message has a timestamp, check if it's after the last thread message
+      if (msg.timestamp) {
+        const msgTimestamp = new Date(msg.timestamp);
+        return msgTimestamp > lastThreadTimestamp;
+      }
+      
+      // If no timestamp, assume it's a new message
+      return true;
+    });
+    
+    // Combine thread messages with new user messages
+    options.messages = [...req.thread.messages, ...newUserMessages];
+  }
 
   let toolsIntegrations;
   try {

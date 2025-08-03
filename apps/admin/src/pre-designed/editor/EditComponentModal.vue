@@ -239,7 +239,7 @@ const emit = defineEmits(['save']);
 const modelHTML = ref('');
 const textContent = ref('');
 const idAttribute = ref('');
-const classAttribute = ref('');
+const classAttribute = ref([]);
 const styleAttribute = ref('');
 const styleProperties = ref([]);
 const customClasses = ref([]);
@@ -379,7 +379,7 @@ const commonPropertyNames = [
 ];
 
 // Function to determine property type based on attribute name and value
-function determinePropertyType(propName: string, value: string) {
+function determinePropertyType(propName: string, value: string): "number" | "color" | {type: "select", options: any[]} | "url" | "switch" | "text" | "button" | "textarea" | "upload" | "email" | "password" | "checkbox" | "file" | "radio" | "hidden" {
   // Handle boolean values
   if (typeof value === 'boolean' || value === 'true' || value === 'false') {
     return 'switch';
@@ -406,7 +406,7 @@ function determinePropertyType(propName: string, value: string) {
   }
   
   if (name === 'src' || name === 'href' || name === 'url') {
-    return 'url';
+    return 'text'; // Using text type instead of url to support relative URLs
   }
   
   if (name === 'height' || name === 'width' || name === 'max-height' || name === 'max-width' || 

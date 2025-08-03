@@ -2,19 +2,20 @@
   <div>
     <!-- Storage Items List -->
     <div v-if="items.length > 0">
-      <BlockItem v-for="item in items" :key="item._id">
+      <BlockItem v-for="item in items" :key="item._id" class="relative">
         <template v-slot:title>
           <router-link :to="{ name: 'editStorage', params: { storageId: item._id } }">
             {{ item.name }}
           </router-link>
         </template>
         <template v-slot:actions>
-          <a @click.prevent="remove(item)">
-            <el-icon>
-              <IconDelete/>
-            </el-icon>
-            {{ t('Remove') }}
-          </a>
+          <el-button 
+            type="danger" 
+            circle 
+            @click="remove(item)"
+            size="small">
+            <font-awesome-icon :icon="['fas', 'trash']" />
+          </el-button>
           <img :src="`logos/storage-${item.kind}.png`">
         </template>
       </BlockItem>
@@ -53,10 +54,14 @@ const items = list.items;
 const remove = useConfirmAction(list.remove)
 </script>
 <style scoped>
+.relative {
+  position: relative;
+}
 img {
   max-width: 50px;
   position: absolute;
-  right: 30px;
+  right: 10px;
+  bottom: 10px;
 }
 
 /* Loading State */

@@ -1,5 +1,5 @@
 import { ICache } from "./cache-type";
-import { promisify } from "util";
+import { promisify } from "node:util";
 import { createClient } from 'redis';
 import { CacheManagerOptions } from "./cache-manager-options";
 
