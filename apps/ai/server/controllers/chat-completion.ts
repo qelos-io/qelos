@@ -20,7 +20,7 @@ export async function getIntegrationToIntegrate(req, res, next) {
 
 
     // check if we must have thread id and "record" the thread
-    if (integration.trigger.details.recordThread) {
+    if (integration.trigger.details?.recordThread) {
       if (!req.params.threadId) {
         res.status(400).json({ message: 'thread id is required' }).end();
         return;
