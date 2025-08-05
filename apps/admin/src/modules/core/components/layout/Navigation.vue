@@ -55,17 +55,38 @@
             </el-icon>
             <span>{{ $t('Content Boxes') }}</span>
           </template>
-          <el-menu-item :route="{ name: 'blocks' }" index="/blocks" :data-title="$t('Boxes List')">
+          <el-menu-item :route="{ name: 'blocks' }" index="/admin/blocks" :data-title="$t('Boxes List')">
             <el-icon>
               <font-awesome-icon :icon="['fas', 'list']"/>
             </el-icon>
             <span>{{ $t('Boxes List') }}</span>
           </el-menu-item>
-          <el-menu-item :route="{ name: 'createBlock' }" index="/blocks/new" :data-title="$t('Create Content Box')">
+          <el-menu-item :route="{ name: 'createBlock' }" index="/admin/blocks/new" :data-title="$t('Create Content Box')">
             <el-icon>
               <font-awesome-icon :icon="['fas', 'plus']"/>
             </el-icon>
             <span>{{ $t('Create Content Box') }}</span>
+          </el-menu-item>
+        </el-sub-menu>
+
+      <el-sub-menu index="4" :data-title="$t('Vue Components')">
+          <template #title>
+            <el-icon>
+              <font-awesome-icon icon="fa-brands fa-web-awesome" />
+            </el-icon>
+            <span>{{ $t('Vue Components') }}</span>
+          </template>
+          <el-menu-item :route="{ name: 'components' }" index="/admin/components" :data-title="$t('Components List')">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'list']"/>
+            </el-icon>
+            <span>{{ $t('Components List') }}</span>
+          </el-menu-item>
+          <el-menu-item :route="{ name: 'createComponent' }" index="/admin/components/new" :data-title="$t('Create Vue Component')">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'plus']"/>
+            </el-icon>
+            <span>{{ $t('Create Vue Component') }}</span>
           </el-menu-item>
         </el-sub-menu>
       </div>
@@ -213,15 +234,14 @@ const close = () => emit('close')
 
 </script>
 <style scoped lang="scss">
-$nav-width: 240px;
-
 nav {
+  --nav-width: 240px;
+
   display: flex;
   flex-direction: column;
   background-color: var(--nav-bg-color);
   transition: width .3s ease, min-width .3s ease;
-  width: $nav-width;
-  min-width: $nav-width;
+  min-width: var(--nav-width);
   overflow-y: auto;
   position: relative;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -632,11 +652,11 @@ a:hover {
   nav {
     margin: var(--spacing);
     border-radius: var(--border-radius);
-    width: $nav-width;
   }
 
   nav .home-logo {
-    width: $nav-width;
+    margin: 0 auto;
+    width: var(--nav-width);
   }
 
   nav .home-logo img {

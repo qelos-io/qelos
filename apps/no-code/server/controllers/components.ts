@@ -89,7 +89,7 @@ export const getSingleComponent = async (req, res) => {
     const component = await Component.findOne({
       _id: req.params.componentId,
       tenant: req.headers.tenant,
-    }).select('-compiledContent -content').exec();
+    }).select('-compiledContent').lean().exec();
     res.json(component).end();
   } catch (err) {
     logger.error(err);
