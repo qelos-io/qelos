@@ -76,7 +76,6 @@ export async function loginWithFacebook(req: AuthWithFacebookRequest, res) {
     finalScope = 'email,public_profile';
   }
   
-  console.log('Using Facebook scope:', finalScope);
   
   const redirectUri = getFacebookRedirectUri(req.headers.tenanthost);
   // Add auth_type=rerequest to prompt user for email permission again
@@ -147,8 +146,8 @@ export async function authCallbackFromFacebook(req: AuthWithFacebookRequest, res
               userData.email = decodedToken.email;
             }
           }
-        } catch (error) {
-          console.error('Error decoding id_token:', error);
+        } catch {
+          // ignore
         }
         
         if (!userData.email && userData.id) {
@@ -156,8 +155,6 @@ export async function authCallbackFromFacebook(req: AuthWithFacebookRequest, res
         }
       }
     }
-
-    console.log('userData!!!!', userData);
 
     let user: UserDocument;
     try {
