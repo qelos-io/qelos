@@ -29,16 +29,7 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
     return authId;
   }
 
-  if (kind === IntegrationSourceKind.LinkedIn) {
-    const { clientSecret } = authentication;
-    if (!clientSecret) {
-      return; // No secret to store
-    }
-    await setSecret(tenant, `integration-source-${kind}-${authId}`, { clientSecret });
-    return authId;
-  }
-
-  if (kind === IntegrationSourceKind.Facebook) {
+  if (kind === IntegrationSourceKind.LinkedIn || kind === IntegrationSourceKind.Facebook) {
     const { clientSecret } = authentication;
     if (!clientSecret) {
       return; // No secret to store

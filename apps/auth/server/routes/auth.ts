@@ -11,6 +11,11 @@ import {
   getLinkedinSource,
   loginWithLinkedIn
 } from '../controllers/social-logins/linkedin-login';
+import {
+  authCallbackFromFacebook,
+  getFacebookSource,
+  loginWithFacebook
+} from '../controllers/social-logins/facebook-login';
 import { authConfigCheck } from '../middleware/auth-config-check';
 
 const router = getRouter()
@@ -23,5 +28,7 @@ router
   .post('/api/auth/callback', authCallback)
   .get('/api/auth/linkedin', authConfigCheck, getLinkedinSource, loginWithLinkedIn)
   .get('/api/auth/linkedin/callback', authConfigCheck, getLinkedinSource, authCallbackFromLinkedIn)
+  .get('/api/auth/facebook', authConfigCheck, getFacebookSource, loginWithFacebook)
+  .use('/api/auth/facebook/callback', authConfigCheck, getFacebookSource, authCallbackFromFacebook)
 
 export default router;

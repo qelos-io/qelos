@@ -20,14 +20,18 @@
       </div>
     </el-form>
 
-    <template v-if="authConfig.socialLoginsSources?.linkedin">
+    <template v-if="authConfig.socialLoginsSources?.linkedin || authConfig.socialLoginsSources?.facebook">
       <div v-if="!props.authConfig?.disableUsernamePassword" class="separator">
         <span>{{ $t('OR') }}</span>
       </div>
 
-      <el-button type="primary" class="linkedin-button" @click="loginWithLinkedIn">
+      <el-button v-if="authConfig.socialLoginsSources?.linkedin" type="primary" class="linkedin-button" @click="loginWithLinkedIn">
         <font-awesome-icon :icon="['fab', 'linkedin']" class="linkedin-icon" />
         <span>{{ $t('Login with LinkedIn') }}</span>
+      </el-button>
+      <el-button v-if="authConfig.socialLoginsSources?.facebook" type="primary" class="facebook-button" @click="loginWithFacebook">
+        <font-awesome-icon :icon="['fab', 'facebook']" class="facebook-icon" />
+        <span>{{ $t('Login with Facebook') }}</span>
       </el-button>
     </template>
 
@@ -68,6 +72,10 @@ const onFocus = () => {
 
 const loginWithLinkedIn = () => {
   window.location.href = '/api/auth/linkedin';
+}
+
+const loginWithFacebook = () => {
+  window.location.href = '/api/auth/facebook';
 }
 
 </script>
@@ -122,10 +130,6 @@ form {
   gap: 8px;
 }
 
-.linkedin-icon {
-  font-size: calc(var(--base-font-size) * 1.1);
-}
-
 .separator {
   display: flex;
   align-items: center;
@@ -160,11 +164,34 @@ form {
   transition: background-color 0.3s;
 }
 
+
+.facebook-button {
+  width: 90%;
+  background-color: #1877f2;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-size: var(--base-font-size);
+  border-radius: calc(var(--border-radius) * 1.2);
+  transition: background-color 0.3s;
+}
+
 .linkedin-button:hover {
   background-color: #005f91;
 }
 
+.facebook-button:hover {
+  background-color: #1565c0;
+}
+
 .linkedin-icon {
+  font-size: var(--large-font-size);
+  margin-right: 18px;
+}
+
+.facebook-icon {
   font-size: var(--large-font-size);
   margin-right: 18px;
 }

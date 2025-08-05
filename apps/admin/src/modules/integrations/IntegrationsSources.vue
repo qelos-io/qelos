@@ -86,9 +86,14 @@ const deleteConnection = useConfirmAction(deleteConnectionBase, {
 });
 
 function getDefaultMetadata(kind: IntegrationSourceKind) {
-  if (kind === 'linkedin' || kind === 'facebook') {
+  if (kind === 'linkedin') {
     return {
       scope: 'openid email profile',
+    };
+  }
+  if (kind === 'facebook') {
+    return {
+      scope: 'openid email public_profile',
     };
   }
   return {};
