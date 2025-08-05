@@ -82,7 +82,7 @@ function updateStorage(req, res) {
     req.storage.kind = body.kind || req.storage.kind;
     promise = setSecret(req.storage.tenant, req.storage.authentication, getRelevantAuthenticationData(req.storage.kind, body.authentication));
   }
-  if (body.isDefault !== req.storage.isDefault) {
+  if (typeof body.isDefault === 'boolean' && body.isDefault !== req.storage.isDefault) {
     req.storage.isDefault = body.isDefault
   }
   if (body.metadata) {

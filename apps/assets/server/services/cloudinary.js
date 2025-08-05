@@ -30,7 +30,7 @@ async function loadFiles(storage, identifier = '/') {
       name: asset.public_id,
       identifier: path.join(identifier, asset.public_id),
       type: cloudinaryAssetTypeToQelosAssetType(asset.resource_type),
-      publicUrl: joinUrl(storage.metadata.publicUrl, fileIdentifier),
+      publicUrl: storage.metadata.publicUrl ? joinUrl(storage.metadata.publicUrl, fileIdentifier) : null,
       updated: asset.created_at,
     });
   });

@@ -6,6 +6,7 @@ const { getAssetType } = require('./get-asset-type');
 const { joinUrl } = require('./url');
 
 async function uploadFile(storage, { identifier, file, extension, prefix, type }) {
+  console.log('logging storage', storage);
   const s3 = new S3(storage);
   const filename = `${prefix}-${uniqid()}.${extension}`;
   const fullPath = path.join(storage.metadata.basePath || '/', identifier, filename);
@@ -17,7 +18,7 @@ async function uploadFile(storage, { identifier, file, extension, prefix, type }
     throw new Error(e.message || 'failed to upload asset to: ' + fullPath);
   }
 
-  return { success: true, publicUrl: joinUrl(storage.metadata.publicUrl, path.join(identifier, filename)) };
+  return { success: true, publicUrl: storage.metadata.publicUrl ? joinUrl(storage.metadata.publicUrl, path.join(identifier, filename)) : null };
 }
 
 async function loadFiles(storage, identifier = '/') {
@@ -41,7 +42,7 @@ async function loadFiles(storage, identifier = '/') {
       identifier: fileIdentifier,
       updated: asset.LastModified,
       type: getAssetType(asset.metadata),
-      publicUrl: joinUrl(storage.metadata.publicUrl, fileIdentifier)
+      publicUrl: storage.metadata.publicUrl ? joinUrl(storage.metadata.publicUrl, fileIdentifier) : null,
     };
   });
 }

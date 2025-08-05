@@ -19,7 +19,7 @@ const StorageSchema = new mongoose.Schema({
   metadata: {
     publicUrl: {
       type: String,
-      required: true
+      required: false
     },
     basePath: {
       type: String,

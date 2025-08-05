@@ -26,10 +26,14 @@ function getStorageAssets(req, res) {
 }
 
 function uploadStorageAssets(req, res) {
+
+  console.log('logging req.files');
   const file = req.files[0].buffer;
   const type = req.files[0].mimetype;
   const { identifier, extension, prefix } = req.query || {};
   const service = getService(req.storage);
+
+  console.log('logging service', service);
 
   if (!service) {
     return res.end();

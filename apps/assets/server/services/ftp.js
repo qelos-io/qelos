@@ -43,7 +43,7 @@ async function loadFiles (storage, identifier = '/') {
       identifier: fileIdentifier,
       updated: asset.date,
       type: getAssetType(asset),
-      publicUrl: joinUrl(storage.metadata.publicUrl, fileIdentifier)
+      publicUrl: storage.metadata.publicUrl ? joinUrl(storage.metadata.publicUrl, fileIdentifier) : null,
     }
   })
 }
@@ -64,7 +64,7 @@ async function uploadFile (storage, { identifier, file, extension, prefix }) {
     ftp.destroy()
   }
 
-  return { success: true, publicUrl: joinUrl(storage.metadata.publicUrl, path.join(identifier, filename)) }
+  return { success: true, publicUrl: storage.metadata.publicUrl ? joinUrl(storage.metadata.publicUrl, path.join(identifier, filename)) : null }
 }
 
 async function removeFile (storage, identifier) {
