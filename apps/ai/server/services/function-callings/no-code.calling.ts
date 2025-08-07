@@ -1,5 +1,5 @@
 import { createAIService } from "../ai-service";
-import { createComponent } from "../no-code-service";
+import { createComponent, getComponents } from "../no-code-service";
 
 export const createComponentCalling = {
     type: 'function',
@@ -21,7 +21,7 @@ export const createComponentCalling = {
     },
     handler: async (req, payload = { name: '', props: {}, purpose: '', uxAndDesign: '' }) => {
         const { name, props, purpose, uxAndDesign } = payload;
-        const { source, sourceAuthentication } = req;
+        const { source, sourceAuthentication } = req;        
 
         if (!source || !sourceAuthentication) {
           throw new Error('Could not create component');
@@ -33,8 +33,10 @@ export const createComponentCalling = {
           messages: [
             {
               role: 'system',
-              content: `You are a Vue.js developer. Create a new Vue.js component for the application. Return the created component.
-              Use Composition API and script setup. Make the best UX and design possible.`,
+              content: `You are a Vue.js developer. Your task is to create a Vue.js component based on the provided specifications.
+              Use Composition API with <script setup>. Make the best UX and design possible.
+              Use Element-Plus components for consistent UI.
+              Return an object with the component code and the component name. e.g. { name: 'MyComponent', code: '...' }`,
             },
             {
               role: 'user',
@@ -51,18 +53,35 @@ export const createComponentCalling = {
           presence_penalty: source.metadata.defaultPresencePenalty,
           stream: false,
           max_tokens: source.metadata.defaultMaxTokens,
-          response_format: source.metadata.defaultResponseFormat,
+          response_format: { type: 'json_object' },
         });
         
         const component = await createComponent(req.headers.tenant as string, {
           identifier: name,
           name,
           description: purpose,
-          content: response.choices[0].message.content,
+          content: JSON.parse(response.choices[0].message.content).code,
         });
 
         return {
           name: component.name,
         }
+    }
+}
+
+export const getComponentsCalling = {
+    type: 'function',
+    name: 'getComponents',
+    description: 'Get list of components for the application. Returns an array of components.',
+    parameters: {},
+    function: {
+      name: 'getComponents',
+      description: 'Get list of components for the application. Returns an array of components.',
+     }, 
+    handler: async (req) => {
+      const tenant = req.headers.tenant;
+      const list = await getComponents(tenant);
+
+      return list;
     }
 }

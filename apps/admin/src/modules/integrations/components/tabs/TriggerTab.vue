@@ -62,27 +62,6 @@ const copyToClipboard = (text: string) => {
     });
 };
 
-// Update system message in pre_messages array
-const updateSystemMessage = () => {
-  if (!props.modelValue.details.pre_messages) {
-    props.modelValue.details.pre_messages = [];
-  }
-  
-  const newModelValue = { ...props.modelValue };
-  const systemMsgIndex = newModelValue.details.pre_messages.findIndex(msg => msg.role === 'system');
-  
-  if (systemMsgIndex >= 0) {
-    newModelValue.details.pre_messages[systemMsgIndex].content = systemMessage.value;
-  } else {
-    newModelValue.details.pre_messages.push({
-      role: 'system',
-      content: systemMessage.value
-    });
-  }
-  
-  emit('update:modelValue', newModelValue);
-};
-
 // Update trigger details from JSON text
 const updateTriggerDetails = (value: string) => {
   try {
@@ -161,6 +140,7 @@ const handleOperationChange = () => {
 const setTriggerDetails = (optionValue: any) => {
   const newModelValue = { ...props.modelValue };
   newModelValue.details = optionValue;
+  triggerDetailsText.value = JSON.stringify(optionValue, null, 2);
   emit('update:modelValue', newModelValue);
 };
 

@@ -1,6 +1,6 @@
 import { getBlueprintsCalling, createBlueprintCalling } from "./blueprints.calling";
 import { createPageCalling, getHTTPRequirementForPageCalling } from "./plugins.calling";
-import { createComponentCalling } from "./no-code.calling";
+import { createComponentCalling, getComponentsCalling } from "./no-code.calling";
 
 export const editorsFunctionCallings = {
   [getBlueprintsCalling.name]: getBlueprintsCalling,
@@ -8,4 +8,5 @@ export const editorsFunctionCallings = {
   [createPageCalling.name]: createPageCalling,
   [getHTTPRequirementForPageCalling.name]: getHTTPRequirementForPageCalling,
   [createComponentCalling.name]: createComponentCalling,
+  [getComponentsCalling.name]: getComponentsCalling,
 }

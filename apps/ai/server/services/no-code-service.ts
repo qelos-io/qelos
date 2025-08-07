@@ -47,3 +47,7 @@ export function createComponent(tenant: string, payload: {
 }) {
   return callNoCodeService(`/internal-api/components`, 'POST', tenant, payload);
 }
+
+export function getComponents(tenant: string) {
+  return callNoCodeService(`/internal-api/components`, 'GET', tenant);
+}

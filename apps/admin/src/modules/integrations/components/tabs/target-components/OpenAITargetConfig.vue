@@ -22,13 +22,23 @@ const emit = defineEmits(['update:modelValue']);
 // OpenAI model options
 const openAiModelOptions = [
   { label: 'GPT-4o', identifier: 'gpt-4o' },
+  { label: 'GPT-4o Mini', identifier: 'gpt-4o-mini' },
+  { label: 'GPT-4o 16k', identifier: 'gpt-4o-16k' },
+  { label: 'GPT-4o 32k', identifier: 'gpt-4o-32k' },
+  { label: 'GPT-4o 64k', identifier: 'gpt-4o-64k' },
+  { label: 'GPT-4o 128k', identifier: 'gpt-4o-128k' },
+  { label: 'GPT-4o 256k', identifier: 'gpt-4o-256k' },
+  { label: 'GPT-4o 512k', identifier: 'gpt-4o-512k' },
+  { label: 'GPT-4o 1024k', identifier: 'gpt-4o-1024k' },
   { label: 'GPT-4 Turbo', identifier: 'gpt-4-turbo' },
   { label: 'GPT-4', identifier: 'gpt-4' },
   { label: 'GPT-3.5', identifier: 'gpt-3.5' },
   { label: 'GPT-3.5 Turbo', identifier: 'gpt-3.5-turbo' },
   { label: 'GPT-3.5 Turbo 16k', identifier: 'gpt-3.5-turbo-16k' },
   { label: 'GPT-4 Vision', identifier: 'gpt-4-vision-preview' },
-  { label: 'GPT-4 32k', identifier: 'gpt-4-32k' }
+  { label: 'GPT-4 32k', identifier: 'gpt-4-32k' },
+  { label: 'GPT-4.1', identifier: 'gpt-4-1' },
+
 ];
 
 // Pre-defined chat personalities with complete configurations
