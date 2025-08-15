@@ -54,6 +54,13 @@ gateway:
     repository: registry.gitlab.com/qelos/qelos/gateway
     tag: latest
   replicas: 2
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
   environment:
     INTERNAL_URL: localhost
     BASIC_TENANT: 0
