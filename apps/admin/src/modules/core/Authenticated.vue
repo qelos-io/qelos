@@ -12,7 +12,6 @@
   <template v-if="openModals?.length">
     <MicroFrontendModal v-for="{mfe, props} in openModals" :key="mfe.name" :mfe="mfe" :props="props"/>
   </template>
-  <LiveEditManager/>
 </template>
 
 <script lang="ts" setup>
@@ -25,7 +24,6 @@ import AssetsDetailsPanel from '@/modules/assets/components/AssetsDetailsPanel/A
 import { authStore, isEditingEnabled, isManagingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.vue';
-import LiveEditManager from '@/modules/layouts/components/live-edit/LiveEditManager.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 import useInvitesList from '@/modules/workspaces/store/invites-list';

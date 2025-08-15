@@ -165,7 +165,6 @@
           </el-menu-item>
         </div>
       </template>
-      <LiveEditColorOpener color="navigationBgColor"/>
     </el-menu>
   </nav>
 </template>
@@ -175,7 +174,6 @@ import { storeToRefs } from 'pinia';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { isAdmin, isEditingEnabled, isManagingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
-import LiveEditColorOpener from '@/modules/layouts/components/live-edit/LiveEditColorOpener.vue';
 
 import { ref, onMounted, onBeforeUnmount, toRef } from 'vue';
 
