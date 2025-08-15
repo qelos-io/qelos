@@ -50,7 +50,7 @@ export const PALETTES: DesignPalette[] = [
       mainColor: '#2563eb',
       mainColorLight: '#3b82f6',
       textColor: '#0f172a',
-      secondaryColor: '#64748b',
+      secondaryColor: '#f8fafc',
       thirdColor: '#93c5fd',
       bgColor: '#f8fafc',
       bordersColor: '#e2e8f0',
@@ -58,7 +58,7 @@ export const PALETTES: DesignPalette[] = [
       inputsBgColor: '#ffffff',
       linksColor: '#2563eb',
       navigationBgColor: '#1e3a8a',
-      negativeColor: '#ef4444',
+      negativeColor: '#29dfff',
       buttonTextColor: '#ffffff',
       buttonBgColor: '#2563eb',
       focusColor: '#3b82f6',
@@ -113,26 +113,27 @@ export const PALETTES: DesignPalette[] = [
     name: 'Minimal Light',
     description: 'Clean, minimal design with subtle shadows',
     colors: [
-      '#6366f1', // Main color (indigo)
+      '#8389f7', // Main color (indigo)
       '#818cf8', // Light indigo
       '#4f46e5', // Dark indigo
-      '#ffffff', // Background
+      '#160461', // Third color
+      '#dcdcfa', // Background
       '#f9fafb', // Secondary background
       '#111827', // Text
     ],
     palette: {
-      mainColor: '#6366f1',
+      mainColor: '#8389f7',
       mainColorLight: '#818cf8',
       textColor: '#111827',
       secondaryColor: '#4f46e5',
-      thirdColor: '#c7d2fe',
-      bgColor: '#ffffff',
+      thirdColor: '#160461',
+      bgColor: '#dcdcfa',
       bordersColor: '#e5e7eb',
       inputsTextColor: '#111827',
       inputsBgColor: '#f9fafb',
       linksColor: '#4f46e5',
-      navigationBgColor: '#ffffff',
-      negativeColor: '#ef4444',
+      navigationBgColor: '#cdd1fa',
+      negativeColor: '#ebf2ce',
       buttonTextColor: '#ffffff',
       buttonBgColor: '#6366f1',
       focusColor: '#818cf8',
@@ -190,6 +191,7 @@ export const PALETTES: DesignPalette[] = [
       '#06b6d4', // Main color (cyan)
       '#22d3ee', // Light cyan
       '#0891b2', // Dark cyan
+      '#0b4f57', // Third color
       '#f0fdfa', // Background
       '#ccfbf1', // Secondary background
       '#134e4a', // Text
@@ -199,14 +201,14 @@ export const PALETTES: DesignPalette[] = [
       mainColorLight: '#22d3ee',
       textColor: '#134e4a',
       secondaryColor: '#0891b2',
-      thirdColor: '#a5f3fc',
+      thirdColor: '#0b4f57',
       bgColor: '#f0fdfa',
       bordersColor: '#99f6e4',
       inputsTextColor: '#134e4a',
       inputsBgColor: '#ffffff',
       linksColor: '#0891b2',
       navigationBgColor: '#ecfeff',
-      negativeColor: '#f43f5e',
+      negativeColor: '#e7f598',
       buttonTextColor: '#ffffff',
       buttonBgColor: '#06b6d4',
       focusColor: '#22d3ee',
@@ -224,7 +226,7 @@ export const PALETTES: DesignPalette[] = [
     name: 'Corporate Green',
     description: 'Professional green palette with clean typography',
     colors: [
-      '#10b981', // Main color (emerald)
+      '#3ba884', // Main color (emerald)
       '#34d399', // Light emerald
       '#059669', // Dark emerald
       '#f9fafb', // Background
@@ -232,18 +234,18 @@ export const PALETTES: DesignPalette[] = [
       '#064e3b', // Text
     ],
     palette: {
-      mainColor: '#10b981',
+      mainColor: '#3ba884',
       mainColorLight: '#34d399',
       textColor: '#064e3b',
       secondaryColor: '#059669',
-      thirdColor: '#a7f3d0',
-      bgColor: '#f9fafb',
+      thirdColor: '#082b1b',
+      bgColor: '#e9f0ce',
       bordersColor: '#d1d5db',
       inputsTextColor: '#064e3b',
       inputsBgColor: '#ffffff',
       linksColor: '#059669',
       navigationBgColor: '#ecfdf5',
-      negativeColor: '#ef4444',
+      negativeColor: '#ebebeb',
       buttonTextColor: '#ffffff',
       buttonBgColor: '#10b981',
       focusColor: '#34d399',
@@ -264,7 +266,7 @@ export const PALETTES: DesignPalette[] = [
       '#f97316', // Main color (orange)
       '#fb923c', // Light orange
       '#ea580c', // Dark orange
-      '#fff7ed', // Background
+      '#c26e08', // Background
       '#ffedd5', // Secondary background
       '#7c2d12', // Text
     ],
@@ -273,14 +275,14 @@ export const PALETTES: DesignPalette[] = [
       mainColorLight: '#fb923c',
       textColor: '#7c2d12',
       secondaryColor: '#ea580c',
-      thirdColor: '#fed7aa',
-      bgColor: '#fff7ed',
+      thirdColor: '#7c2d12',
+      bgColor: '#c26e08',
       bordersColor: '#fed7aa',
       inputsTextColor: '#7c2d12',
       inputsBgColor: '#ffffff',
       linksColor: '#ea580c',
       navigationBgColor: '#ffedd5',
-      negativeColor: '#dc2626',
+      negativeColor: '#f8fae8',
       buttonTextColor: '#ffffff',
       buttonBgColor: '#f97316',
       focusColor: '#fb923c',
@@ -310,14 +312,14 @@ export const PALETTES: DesignPalette[] = [
       mainColorLight: '#a855f7',
       textColor: '#581c87',
       secondaryColor: '#7e22ce',
-      thirdColor: '#d8b4fe',
+      thirdColor: '#581c87',
       bgColor: '#faf5ff',
       bordersColor: '#e9d5ff',
       inputsTextColor: '#581c87',
       inputsBgColor: '#ffffff',
       linksColor: '#7e22ce',
       navigationBgColor: '#f3e8ff',
-      negativeColor: '#e11d48',
+      negativeColor: '#fcf2b3',
       buttonTextColor: '#ffffff',
       buttonBgColor: '#9333ea',
       focusColor: '#a855f7',

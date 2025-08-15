@@ -394,6 +394,10 @@ nav {
   border: 0;
 }
 
+.el-menu-item.is-active:hover {
+  color: var(--negative-color);
+}
+
 .el-menu-item {
   padding: 0 20px;
   margin: 5px;
