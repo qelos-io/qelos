@@ -50,7 +50,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
     app.use(service.proxies, getProxy(getProxyTarget(service)));
   }
 
-  function loadIndexHtml() {
+  function loadIndexHtml(retry = 0) {
     let url = getProxyTarget(adminPanel) + '/index.html';
     return fetch(url)
       .then(res => {
@@ -60,12 +60,20 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
         throw new Error('failed to load index.html');
       })
       .then(str => str.replace("NODE_ENV:'development'", `NODE_ENV:'${process.env.NODE_ENV || 'development'}'`))
+      .catch(() => {
+        if (retry > 5) {
+          throw new Error('failed to load index.html');
+        }
+        console.log('failed to load index.html, retrying...');
+        return setTimeout(1000).then(() => loadIndexHtml(retry + 1));
+      })
   }
 
-  const indexHtmlPromise = loadIndexHtml().catch(() => {
-    console.log('failed to load index.html, retrying...');
-    return setTimeout(1000).then(() => loadIndexHtml());
-  });
+  let indexHtmlPromise = loadIndexHtml();
+
+  setInterval(() => {
+    indexHtmlPromise = loadIndexHtml();
+  }, 1000 * 60 * 10); //every 10 minutes
 
   const defaultApplicationHost = new URL(applicationUrl).host;
   const meUrl = getProxyTarget(authService) + '/api/me';

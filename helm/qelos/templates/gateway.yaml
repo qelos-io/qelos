@@ -14,6 +14,16 @@ spec:
       labels:
         app: gateway
       annotations:
+        # Service dependency checksums to force gateway restart when services change
+        checksum/admin-config: {{ include (print $.Template.BasePath "/admin.yaml") . | sha256sum }}
+        checksum/content-config: {{ include (print $.Template.BasePath "/content.yaml") . | sha256sum }}
+        checksum/auth-config: {{ include (print $.Template.BasePath "/auth.yaml") . | sha256sum }}
+        checksum/assets-config: {{ include (print $.Template.BasePath "/assets.yaml") . | sha256sum }}
+        checksum/drafts-config: {{ include (print $.Template.BasePath "/drafts.yaml") . | sha256sum }}
+        checksum/plugins-config: {{ include (print $.Template.BasePath "/plugins.yaml") . | sha256sum }}
+        checksum/nocode-config: {{ include (print $.Template.BasePath "/nocode.yaml") . | sha256sum }}
+        checksum/secrets-config: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        checksum/ai-config: {{ include (print $.Template.BasePath "/ai.yaml") . | sha256sum }}
         # This timestamp annotation forces pod recreation on helm upgrade
         rollme: {{ randAlphaNum 10 | quote }}
     spec:
