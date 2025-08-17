@@ -15,6 +15,11 @@ module.exports.connect = (uri) => {
   // plug in the promise library:
   mongoose.Promise = global.Promise
 
+  // disconnect on exit
+  process.on('exit', () => {
+    mongoose.connection.close()
+  })
+
   // load models
   require('./configuration')
   require('./block');

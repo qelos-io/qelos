@@ -13,5 +13,10 @@ export const connect = (uri: string) => {
     process.exit(1)
   })
 
+  // disconnect on exit
+  process.on('exit', () => {
+    mongoose.connection.close()
+  })
+
   // models are loaded via imports above
 }

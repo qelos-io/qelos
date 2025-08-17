@@ -13,6 +13,11 @@ module.exports = (uri: string) => {
 		process.exit(1)
 	})
 
+	// disconnect on exit
+	process.on('exit', () => {
+		mongoose.connection.close()
+	})
+
 	// load models
 	require('./models/draft')
 }

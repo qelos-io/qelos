@@ -11,6 +11,11 @@ module.exports.connect = (uri) => {
     process.exit(1);
   });
 
+  // disconnect on exit
+  process.on('exit', () => {
+    mongoose.connection.close();
+  });
+
   // load models
   require('./storage');
 };
