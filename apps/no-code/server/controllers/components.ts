@@ -10,9 +10,9 @@ export const createComponent = async (req, res) => {
   try {
      // Compile the Vue component
      compiledContent = await compileVueComponent(req.body.content);
-  } catch (err) {
-    logger.error(err);
-    res.status(400).json({ message: 'failed to compile a component' }).end();
+  } catch (err: any | Error) {
+    logger.log('failed to compile a component', err?.message);
+    res.status(400).json({ message: 'failed to compile a component', reason: err?.message }).end();
     return;
   }
 
@@ -28,9 +28,9 @@ export const createComponent = async (req, res) => {
 
     await component.save();
     res.json(component).end();
-  } catch (err) {
-    logger.error(err);
-    res.status(400).json({ message: 'failed to create a component' }).end();
+  } catch (err: any) {
+    const reason = err?.message?.includes('E11000') ? 'component identifier already exists' : 'unknown error';
+    res.status(400).json({ message: 'failed to create a component', reason }).end();
   }
 };
 
@@ -55,9 +55,9 @@ export const updateComponent = async (req, res) => {
       { new: true }
     );
     res.json(component).end();
-  } catch (err) {
-    logger.error(err);
-    res.status(400).json({ message: 'failed to update a component' }).end();
+  } catch (err: any) {
+    const reason = err?.message?.includes('E11000') ? 'component identifier already exists' : 'unknown error';
+    res.status(400).json({ message: 'failed to update a component', reason }).end();
   }
 };
 
@@ -68,8 +68,7 @@ export const removeComponent = async (req, res) => {
       tenant: req.headers.tenant,
     });
     res.json(component).end();
-  } catch (err) {
-    logger.error(err);
+  } catch (err: any) {
     res.status(400).json({ message: 'failed to remove a component' }).end();
   }
 };
@@ -78,8 +77,7 @@ export const getAllComponents = async (req, res) => {
   try {
     const components = await Component.find({ tenant: req.headers.tenant }).select('-compiledContent -content').exec();
     res.json(components).end();
-  } catch (err) {
-    logger.error(err);
+  } catch (err: any) {
     res.status(400).json({ message: 'failed to get all components' }).end();
   }
 };
@@ -91,8 +89,7 @@ export const getSingleComponent = async (req, res) => {
       tenant: req.headers.tenant,
     }).select('-compiledContent').lean().exec();
     res.json(component).end();
-  } catch (err) {
-    logger.error(err);
+  } catch (err: any) {
     res.status(400).json({ message: 'failed to get a component' }).end();
   }
 };
@@ -129,8 +126,7 @@ export const getCompiledComponent = async (req, res) => {
       .set('Content-Type', contentType)
       .send(value)
       .end();
-  } catch (err) {
-    logger.error(err);
+  } catch (err: any) {
     res.status(400).json({ message: 'failed to get a component' }).end();
   }
 };
@@ -145,8 +141,7 @@ export const getComponentsList = async (req, res) => {
         css: `/api/static/${component.identifier}.${Number(component.updated).toString()}.css`,
       }))
     }).end();
-  } catch (err) {
-    logger.error(err);
+  } catch (err: any) {
     res.status(400).json({ message: 'failed to get components lazy loader' }).end();
   }
 };

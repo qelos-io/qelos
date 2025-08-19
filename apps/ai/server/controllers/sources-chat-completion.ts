@@ -4,7 +4,7 @@ import { createAIService } from "../services/ai-service";
 import * as ChatCompletionService from "../services/chat-completion-service";
 import { findSimilarTools } from "../services/vector-search-service";
 import { executeFunctionCalls } from "../services/execute-function-calls";
-import { editorsFunctionCallings } from "../services/function-callings";
+import { editorsFunctionCallings, editPagesFunctionCallings } from "../services/function-callings";
 import { getSourceById } from "../services/source-service";
 
 const SAAS_BUILDER_SYSTEM_PROMPT = {
@@ -19,12 +19,13 @@ const SAAS_BUILDER_SYSTEM_PROMPT_PAGES = {
   content: `You are an expert Vue.js developer specializing in SaaS UI creation. Your task is to create beautiful, functional pages and components for a SaaS application using Qelos AI.
 
   CAPABILITIES:
-  - Create reusable components with "createComponent" function
-  - Build complete pages with "createPage" function
-  - Set up data requirements with "getHTTPRequirementForPage" function
+  - Create reusable components with "createComponent" tool
+  - Build complete pages with "createPage" tool
+  - Get list of blueprints (existing data models in your SaaS application) with "getBlueprints" tool
+  - Set up data requirements for pages with "getHTTPRequirementForPage" or "getBlueprintRequirementForPage" tool
   
   COMPONENT CREATION:
-  - Use "createComponent" with these parameters:
+  - Use "createComponent" tool with these parameters:
     * name: PascalCase component name (e.g., "DataTable")
     * props: Object defining component properties
     * purpose: Clear description of component's function
@@ -32,7 +33,7 @@ const SAAS_BUILDER_SYSTEM_PROMPT_PAGES = {
   - Components will be available in pages using kebab-case with closing tags (e.g., <data-table></data-table>)
   
   PAGE CREATION:
-  - Use "createPage" with these parameters:
+  - Use "createPage" tool with these parameters:
     * title: User-friendly page title
     * description: Brief page description
     * targetAudience: "guest", "user", or "admin"
@@ -45,17 +46,21 @@ const SAAS_BUILDER_SYSTEM_PROMPT_PAGES = {
   - Follow Vue 3 Composition API patterns
   - Use Element-Plus components for consistent UI
   - Implement responsive design for all screen sizes
-  - Consider user experience and accessibility
+  
+  COMMUNICATION STYLE:
+  - Be direct and concise in your responses
+  - When you understand the requirements, proceed directly to implementation
+  - Minimize unnecessary explanations between function calls when the intent is clear
+  - Provide brief confirmations when components or pages are successfully created
+  - Only ask for clarification when truly necessary
   
   WORKFLOW:
-  1. Understand the page requirements
-  2. Plan necessary components
-  3. Create each component with "createComponent"
-  4. Design the page layout
-  5. Implement data requirements
-  6. Create the page with "createPage". Use the components created in step 3.
+  1. Quickly assess page requirements
+  2. Create necessary components with "createComponent" tool
+  3. Implement data requirements
+  4. Create the page with "createPage" tool
   
-  Begin by asking clarifying questions about the page's purpose, then create a step-by-step plan before implementing components and the final page.`
+  If you understand the user's request clearly, proceed directly to implementation without asking unnecessary clarifying questions.`
 }
 
 /**
@@ -237,13 +242,7 @@ async function getGeneralChatTools(req, safeUserMessages, sourceDetails, sourceA
  * Gets tools for pages chat completion
  */
 function getPagesTools() {
-  return [
-    editorsFunctionCallings.createComponent,
-    editorsFunctionCallings.createPage,
-    editorsFunctionCallings.createBlueprint,
-    editorsFunctionCallings.getBlueprints,
-    editorsFunctionCallings.getHTTPRequirementForPage,
-  ];
+  return editPagesFunctionCallings;
 }
 
 export async function chatCompletion(req, res) {

@@ -4,6 +4,16 @@ import { service } from '@qelos/api-kit';
 
 const pluginsService = service('PLUGINS', { port: process.env.PLUGINS_SERVICE_PORT || 9006 });
 
+export function calPublicPluginsService(url: string, {tenant, user}: {tenant: string, user: any}, {data, method = 'GET'}: {data?: any, method: string}) {
+  return pluginsService({
+    headers: { internal_secret: internalServicesSecret, tenant, user },
+    method,
+    data,
+    url
+  })
+    .then((axiosRes: any) => axiosRes.data)
+}
+
 export function callPluginsService(url: string, tenant: string, data?: any, method: string = 'GET') {
   return pluginsService({
     headers: { internal_secret: internalServicesSecret, tenant },

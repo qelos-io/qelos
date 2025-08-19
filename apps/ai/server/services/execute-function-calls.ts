@@ -1,4 +1,3 @@
-import { FunctionCall } from "./chat-completion-service";
 import * as ChatCompletionService from "./chat-completion-service";
 import { executeDataManipulation, triggerIntegrationSource } from "./plugins-service-api";
 import logger from "./logger";
@@ -39,43 +38,66 @@ export async function executeFunctionCalls(
           });
         }
 
-        let args = ChatCompletionService.parseFunctionArguments(functionCall.function.arguments);
-        let result: any;
-        if (targetIntegration.dataManipulation) {
-          args = await executeDataManipulation(tenant, args, targetIntegration.dataManipulation);
+        // Parse all JSON objects from the function arguments
+        const argsIterator = ChatCompletionService.parseFunctionArguments(functionCall.function.arguments);
+        let results: any[] = [];
+        
+        // Process each JSON object from the arguments
+        for (let args of argsIterator) {
+          let result: any;
+          
+          // Apply data manipulation if configured
+          if (targetIntegration.dataManipulation) {
+            args = await executeDataManipulation(tenant, args, targetIntegration.dataManipulation);
+          }
+          
+          // Execute the integration
+          if (targetIntegration.handler) {
+            result = await targetIntegration.handler(req, args);
+          } else {
+            result = await triggerIntegrationSource(tenant, targetIntegration.target.source, {
+              payload: args,
+              operation: targetIntegration.target.operation,
+              details: targetIntegration.target.details
+            });
+          }
+          
+          // Add to results array
+          results.push(result);
         }
-        if (targetIntegration.handler) {
-          result = await targetIntegration.handler(req, args);
-          const functionResult = ChatCompletionService.createFunctionResult(functionCall, result);
-          functionResults.push(functionResult);
-        } else {
-          result = await triggerIntegrationSource(tenant, targetIntegration.target.source, {
-            payload: args,
-            operation: targetIntegration.target.operation,
-            details: targetIntegration.target.details
-          });
 
-          const functionResult = ChatCompletionService.createFunctionResult(functionCall, result);
-          functionResults.push(functionResult);
-        }
+        const functionResult = ChatCompletionService.createFunctionResult(functionCall, results);
+        functionResults.push(functionResult);
         
         if (sendSSE) {
           sendSSE({ 
             type: `${eventPrefix}function_executed`, 
             functionCall, 
-            result 
+            result: results,
           });
         }
       } else {
-        functionResults.push(ChatCompletionService.createFunctionResult(functionCall, {
+        functionResults.push(ChatCompletionService.createFunctionResult(functionCall, [{
           error: `Function ${functionCall.function.name} not found`
-        }));
+        }]));
       }
     } catch (error) {
       logger.error('error', error);
-      functionResults.push(ChatCompletionService.createFunctionResult(functionCall, {
-        error: 'Invalid function arguments'
-      }));
+      const errorMessage = error instanceof Error ? error.message : 'Invalid function arguments';
+      const functionResult = ChatCompletionService.createFunctionResult(functionCall, [{
+        error: errorMessage
+      }]);
+      
+      functionResults.push(functionResult);
+      
+      // Send SSE event for function execution failure
+      if (sendSSE) {
+        sendSSE({ 
+          type: `${eventPrefix}function_failed`, 
+          functionCall, 
+          error: errorMessage
+        });
+      }
     }
   }
   

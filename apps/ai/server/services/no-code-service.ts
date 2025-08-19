@@ -22,6 +22,10 @@ export function createBlueprint(tenant: string, payload: any) {
   return callNoCodeService(`/internal-api/blueprints`, 'POST', tenant, payload);
 }
 
+export function getBlueprint(tenant: string, blueprintIdentifier: string) {
+  return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}`, 'GET', tenant);
+}
+
 export function getBlueprintEntity(tenant: string, blueprintIdentifier: string, entityId: string) {
   return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities/${entityId}`, 'GET', tenant);
 }
@@ -41,7 +45,7 @@ export function updateBlueprintEntity(tenant: string, blueprintIdentifier: strin
 
 export function createComponent(tenant: string, payload: {
   identifier: string;
-  name: string;
+  componentName: string;
   description?: string;
   content: string;
 }) {

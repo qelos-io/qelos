@@ -112,6 +112,9 @@ export async function updateEntityMapping(blueprint: IBlueprint, entity: IBluepr
   await Promise.all(entries
     .map(
       ([key, value]) => jq.run(value, entity, { output: 'json', input: 'json' }).then(result => {
+        if (!blueprint.properties[key]) {
+          throw new ResponseError(`Property ${key} not found in blueprint ${blueprint.identifier}`, 400);
+        }
         validateValue(key, result, blueprint.properties[key]);
         entity.metadata[key] = result;
       })

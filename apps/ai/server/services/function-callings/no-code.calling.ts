@@ -1,4 +1,5 @@
 import { createAIService } from "../ai-service";
+import logger from "../logger";
 import { createComponent, getComponents } from "../no-code-service";
 
 export const createComponentCalling = {
@@ -29,42 +30,52 @@ export const createComponentCalling = {
 
         const aiService = createAIService(source, sourceAuthentication);
 
-        const response = await aiService.createChatCompletion({
-          messages: [
-            {
-              role: 'system',
-              content: `You are a Vue.js developer. Your task is to create a Vue.js component based on the provided specifications.
-              Use Composition API with <script setup>. Make the best UX and design possible.
-              Use Element-Plus components for consistent UI.
-              Return an object with the component code and the component name. e.g. { name: 'MyComponent', code: '...' }`,
-            },
-            {
-              role: 'user',
-              content: `Create a component named ${name}. 
-              Props: ${JSON.stringify(props)}.
-              Purpose: ${purpose}.
-              UX and design notes: ${uxAndDesign || 'Make the best UX and design possible'}.`,
-            },
-          ],
-          model: source.metadata.defaultModel,
-          temperature: source.metadata.defaultTemperature,
-          top_p: source.metadata.defaultTopP,
-          frequency_penalty: source.metadata.defaultFrequencyPenalty,
-          presence_penalty: source.metadata.defaultPresencePenalty,
-          stream: false,
-          max_tokens: source.metadata.defaultMaxTokens,
-          response_format: { type: 'json_object' },
-        });
-        
-        const component = await createComponent(req.headers.tenant as string, {
-          identifier: name,
-          name,
-          description: purpose,
-          content: JSON.parse(response.choices[0].message.content).code,
-        });
+        try {
+          const response = await aiService.createChatCompletion({
+            messages: [
+              {
+                role: 'system',
+                content: `You are a Vue.js developer. Your task is to create a Vue.js component based on the provided specifications.
+                Use Composition API with <script setup>. Make the best UX and design possible.
+                Use Element-Plus components for consistent UI.
+                Use the best practices for Vue.js development.
+                Always use closing tags for custom components. e.g. <my-component></my-component>.
+                Use v-slot only on template tags.
+                Return a json object with the component code and the component name. e.g. { name: 'MyComponent', code: '...' }`,
+              },
+              {
+                role: 'user',
+                content: `Create a component named ${name}. 
+                Props: ${JSON.stringify(props)}.
+                Purpose: ${purpose}.
+                UX and design notes: ${uxAndDesign || 'Make the best UX and design possible'}.`,
+              },
+            ],
+            model: source.metadata.defaultModel,
+            temperature: source.metadata.defaultTemperature,
+            top_p: source.metadata.defaultTopP,
+            frequency_penalty: source.metadata.defaultFrequencyPenalty,
+            presence_penalty: source.metadata.defaultPresencePenalty,
+            stream: false,
+            max_tokens: source.metadata.defaultMaxTokens,
+            response_format: { type: 'json_object' },
+          });
+          const component = await createComponent(req.headers.tenant as string, {
+            identifier: name,
+            componentName: name,
+            description: purpose,
+            content: JSON.parse(response.choices[0].message.content).code,
+          });
 
-        return {
-          name: component.name,
+          return {
+            componentName: component.componentName,
+          }
+        } catch (err: any) {
+          logger.log('failed to create component', err?.response?.data || err?.message || 'unknown error');
+          return {
+            message: 'failed to create component',
+            error: err?.response?.data || err?.message || 'unknown error',
+          }
         }
     }
 }
@@ -84,4 +95,4 @@ export const getComponentsCalling = {
 
       return list;
     }
-}
+} 

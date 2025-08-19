@@ -65,7 +65,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
     async createChatCompletion(options: AIServiceOptions) {
       try {
         const response = await openai.chat.completions.create({
-          model: options.model || source.metadata.defaultModel || 'gpt-4',
+          model: options.model || source.metadata.defaultModel || 'gpt-4.1',
           messages: options.messages,
           temperature: options.temperature,
           top_p: options.top_p,
