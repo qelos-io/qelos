@@ -40,13 +40,6 @@ Welcome to the Qelos SDK documentation. This section provides an overview of the
   </div>
   <div class="vp-feature">
     <div class="icon-container">
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M3 9h4V5H3v4zm0 5h4v-4H3v4zm5 0h4v-4H8v4zm5 0h4v-4h-4v4zM8 9h4V5H8v4zm5-4v4h4V5h-4zm5 9h4v-4h-4v4zm0 5h4v-4h-4v4zm-5 0h4v-4h-4v4zm-5 0h4v-4H8v4zm-5 0h4v-4H3v4z"/></svg>
-    </div>
-    <h3><a href="/sdk/managing_layouts">Layouts</a></h3>
-    <p>Create and customize UI layouts for your Qelos-powered applications.</p>
-  </div>
-  <div class="vp-feature">
-    <div class="icon-container">
       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M20.5 11H19V7c0-1.1-.9-2-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4c-1.1 0-1.99.9-1.99 2v3.8H3.5c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-1.5c0-1.49 1.21-2.7 2.7-2.7s2.7 1.21 2.7 2.7V22H17c1.1 0 2-.9 2-2v-4h1.5a2.5 2.5 0 0 0 0-5z"/></svg>
     </div>
     <h3><a href="/sdk/managing_plugins">Plugins</a></h3>
@@ -198,7 +191,6 @@ The Qelos SDK is organized into several modules, each providing specific functio
 ### Data & Content
 - [Blueprints Operations](./blueprints_operations.md) - Data model definition and entity management
 - [Managing Blocks](./managing_blocks.md) - Content block operations
-- [Managing Layouts](./managing_layouts.md) - UI layout structure and management
 - [Managing Configurations](./managing_configurations.md) - Application configuration settings
 
 ### Extensions
