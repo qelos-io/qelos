@@ -56,5 +56,6 @@
     "redis",
     "tsx",
     "uniqid"
-  ]
+  ],
+  "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8"
 }
