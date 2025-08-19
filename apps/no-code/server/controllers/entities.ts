@@ -117,6 +117,35 @@ function flattenMetadata(entity: any = {}) {
   });
 }
 
+/**
+ * Converts query values to appropriate types based on blueprint property type
+ * @param value - The value to convert
+ * @param propertyType - The blueprint property type
+ * @returns The converted value
+ */
+const convertPropertyValueByType = (value: any, propertyType: string): any => {
+  if (propertyType === 'boolean') {
+    return value === 'true' || value === '1';
+  } else if (propertyType === 'number' || propertyType === 'datetime') {
+    const conversionFn = propertyType === 'number' ? parseInt : (val: string) => new Date(val);
+    
+    if (typeof value === 'string') {
+      return conversionFn(value);
+    } else if (typeof value === 'object' && (value.$eq || value.$ne || value.$gt || value.$gte || value.$lt || value.$lte)) {
+      return Object.entries(value).reduce((acc, [key, val]) => {
+        if (val && typeof val === 'string') {
+          acc[key] = conversionFn(val as string);
+        } else if (val && typeof val === 'number') {
+          acc[key] = val;
+        }
+        return acc;
+      }, {});
+    }
+  }
+  
+  return value;
+};
+
 export async function getAllBlueprintEntities(req, res) {
   const blueprint = req.blueprint as IBlueprint;
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin);
@@ -131,7 +160,7 @@ export async function getAllBlueprintEntities(req, res) {
       return;
     }
     const query = {
-      ...qs.parse(req._parsedUrl.query, { depth: 3 }),
+      ...qs.parse(req._parsedUrl.query, { depth: 3, duplicates: 'combine' }),
       ...getEntityQuery({ blueprint, req, permittedScopes })
     }
     delete query.$populate;
@@ -150,6 +179,13 @@ export async function getAllBlueprintEntities(req, res) {
 
     convertQueryToMetadata(query, blueprint);
     convertQueryToIndexes(query, blueprint);
+    // if the blueprint properties in the query are boolean or numbers, convert them to numbers or booleans
+    Object.entries(blueprint.properties).forEach(([key, property]) => {
+      const fullKey = `metadata.${key}`;
+      if (query[fullKey]) {
+        query[fullKey] = convertPropertyValueByType(query[fullKey], property.type);
+      }
+    });
     const entities = await BlueprintEntity
       .find(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS, {
         sort,

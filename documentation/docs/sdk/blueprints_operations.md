@@ -50,10 +50,14 @@ You can also pass query parameters to filter, sort, or paginate the results:
 
 ```typescript
 const filteredProducts = await productEntities.getList({
-  limit: 10,
-  skip: 0,
-  sort: { createdAt: -1 },
-  filter: { category: 'electronics' }
+  $limit: 10,
+  $skip: 0,
+  $sort: 'created',
+  $flat: true,
+  $populate: true,
+  my_custom_property: 'value',
+  "my_custom_numeric_property[$lt]": 10,
+  "my_custom_numeric_property[$gt]": 5,
 });
 ```
 
