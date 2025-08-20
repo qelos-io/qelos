@@ -15,10 +15,17 @@ module.exports.connect = (uri) => {
   // plug in the promise library:
   mongoose.Promise = global.Promise
 
+  
+  async function disconnect() {
+    await mongoose.connection.close()
+  }
+
   // disconnect on exit
-  process.on('exit', () => {
-    mongoose.connection.close()
-  })
+  process.on('exit', disconnect)
+  // disconnect on kill from k8s pod
+  process.on('SIGTERM', disconnect)
+  // disconnect on ctrl+c
+  process.on('SIGINT', disconnect)
 
   // load models
   require('./configuration')
