@@ -199,9 +199,9 @@ main {
 }
 
 .edit-bar-container {
-  position: fixed;
+  position: absolute;
   z-index: 999;
-  top: 70px;
+  top: 10px;
   right: 40px;
   display: flex;
   align-items: center;

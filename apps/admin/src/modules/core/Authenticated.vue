@@ -6,8 +6,8 @@
       <div class="main">
         <router-view class="main-content"/>
       </div>
-      <AssetsDetailsPanel v-if="isPrivilegedUser && (isManagingEnabled || isEditingEnabled)"/>
     </div>
+    <PrivilegedAddons/>
   </div>
   <template v-if="openModals?.length">
     <MicroFrontendModal v-for="{mfe, props} in openModals" :key="mfe.name" :mfe="mfe" :props="props"/>
@@ -20,13 +20,13 @@ import { onBeforeRouteUpdate, useRouter } from 'vue-router'
 import { useAuth, useAuthenticatedIntercept } from './compositions/authentication'
 import Header from './components/layout/Header.vue'
 import Navigation from './components/layout/Navigation.vue'
-import AssetsDetailsPanel from '@/modules/assets/components/AssetsDetailsPanel/AssetsDetailsPanel.vue'
-import { authStore, isEditingEnabled, isManagingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
+import { authStore, isPrivilegedUser } from '@/modules/core/store/auth';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 import useInvitesList from '@/modules/workspaces/store/invites-list';
+import PrivilegedAddons from '@/modules/admins/components/PrivilegedAddons.vue';
 
 const router = useRouter()
 const wsConfig = useWsConfiguration()

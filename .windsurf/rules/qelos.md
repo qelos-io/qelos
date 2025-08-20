@@ -13,6 +13,7 @@ the /apps/gateway is the source to all requests.
 /apps/content is the content service (drafts, configurations)
 /apps/secrets is the secrets service (secrets)
 /apps/no-code is the no-code service (no-code, creating blueprints)
+/apps/ai is the ai service. it handles chat completion and ai integration with any ai provider.
 /apps/admin is the frontend admin service
 /apps/plugins is the plugins service to allow other micro-saas platforms to connect to qelos, and to create interations between them.
 

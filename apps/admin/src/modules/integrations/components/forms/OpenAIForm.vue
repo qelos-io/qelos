@@ -153,6 +153,7 @@ const submitForm = async () => {
       <h4>Available Endpoints:</h4>
       <ul>
         <li><code>/api/ai/sources/{{ modelValue?._id || 'sourceId' }}/chat-completion</code></li>
+        <li><code>/api/ai/sources/{{ modelValue?._id || 'sourceId' }}/chat-completion/pages</code></li>
         <li><code>/api/ai/sources/{{ modelValue?._id || 'sourceId' }}/blueprints</code></li>
       </ul>
     </div>

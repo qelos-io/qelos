@@ -3,6 +3,7 @@ import mime from "mime";
 
 import { getService } from "../controllers/assets";
 import Storage from "../models/storage";
+import { emitPlatformEvent } from "@qelos/api-kit";
 
 // Default file extension for unknown types
 const DEFAULT_EXTENSION = "jpg";
@@ -73,6 +74,7 @@ export async function uploadFile(req: any, res: any): Promise<any> {
 
     let fileData: { publicUrl: string, success: boolean };
     const urlInput = body?.url;
+    let mimeType: string | undefined;
 
     if (urlInput) {
       try {
@@ -81,12 +83,13 @@ export async function uploadFile(req: any, res: any): Promise<any> {
           throw new Error(`URL fetch failed: ${response.statusText}`);
 
         const buffer = await response.arrayBuffer();
+        mimeType = response.headers.get("content-type") || undefined;
         fileData = await handleUpload(
           storage,
           user._id,
           Buffer.from(buffer),
           urlInput,
-          response.headers.get("content-type") || undefined
+          mimeType
         );
       } catch (err) {
         return res.status(400).json({
@@ -101,14 +104,33 @@ export async function uploadFile(req: any, res: any): Promise<any> {
         file.originalname,
         file.mimetype
       );
+      mimeType = file.mimetype;
     } else {
       return res.status(400).json({ message: "No file or URL provided." }).end();
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       message: "File uploaded successfully.",
       publicUrl: fileData?.publicUrl,
     }).end();
+
+    emitPlatformEvent({
+            tenant: req.headers.tenant,
+            user: user._id,
+            source: 'assets',
+            kind: 'asset-operation',
+            eventName: 'asset-uploaded',
+            description: `asset updated by user`,
+            metadata: {
+              prefix: `upload_${user._id}`,
+              type: mimeType,
+              storage: {
+                _id: storage._id,
+                kind: storage.kind,
+                name: storage.name
+              }
+            }
+          }).catch(() => null)
   } catch (error) {
     return res.status(500).json({
       message: "File upload failed. Please try again."

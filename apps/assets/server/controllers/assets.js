@@ -26,14 +26,10 @@ function getStorageAssets(req, res) {
 }
 
 function uploadStorageAssets(req, res) {
-
-  console.log('logging req.files');
   const file = req.files[0].buffer;
   const type = req.files[0].mimetype;
   const { identifier, extension, prefix } = req.query || {};
   const service = getService(req.storage);
-
-  console.log('logging service', service);
 
   if (!service) {
     return res.end();
@@ -44,7 +40,7 @@ function uploadStorageAssets(req, res) {
       res.status(200).json(result).end();
       emitPlatformEvent({
         tenant: req.headers.tenant,
-        user: req.headers.user._id,
+        user: req.user._id,
         source: 'assets',
         kind: 'asset-operation',
         eventName: 'asset-uploaded',

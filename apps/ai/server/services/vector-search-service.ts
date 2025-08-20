@@ -223,7 +223,10 @@ export async function findSimilarTools({
     
     // If we found relevant tools, return them
     if (relevantTools.length > 0) {
-      return relevantTools;
+      return relevantTools.map(t => ({
+        ...t,
+        handler: allTools.find(tool => tool.name === t.function.name)?.handler
+      }));
     }
     
     // Fallback to all tools if no results

@@ -225,10 +225,10 @@ async function getGeneralChatTools(req, safeUserMessages, sourceDetails, sourceA
   
   // Determine whether to use local embeddings or OpenAI
   const embeddingType = sourceDetails.embeddingType || 'local';
-  const maxTools = Number(sourceDetails.maxTools || 15);
+  const maxTools = Number(sourceDetails.maxTools || 4);
   
   // Use vector search to find relevant tools based on the user's query
-  return allTools.length <= maxTools ? allTools : await findSimilarTools({
+  const tools = allTools.length <= maxTools ? allTools : await findSimilarTools({
     userQuery: lastUserMessage,
     tenant: req.headers.tenant,
     allTools,
@@ -236,6 +236,8 @@ async function getGeneralChatTools(req, safeUserMessages, sourceDetails, sourceA
     embeddingType,
     authentication: sourceAuthentication
   });
+
+  return tools;
 }
 
 /**

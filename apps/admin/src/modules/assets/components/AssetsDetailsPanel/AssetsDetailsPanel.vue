@@ -32,7 +32,7 @@ const togglePanel = () => isOpen.value = !isOpen.value
 <style scoped lang="scss">
 .panel {
   position: fixed;
-  z-index: 1;
+  z-index: 2;
   top: 130px;
   right: -400px;
   width: 400px;
