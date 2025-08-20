@@ -25,11 +25,13 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
     if (isNaN(value)) {
       throw new ResponseError(`Property ${key} must be a number`, 406);
     }
+    value = Number(value);
   }
   if (property.type === 'boolean') {
     if (typeof value !== 'boolean') {
       throw new ResponseError(`Property ${key} must be a boolean`, 406);
     }
+    value = Boolean(value);
   }
   if (property.type === 'object') {
     const validate = property.schema ? ajv.compile(property.schema) : defaultValidate;
@@ -42,27 +44,32 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
     if (typeof value !== 'string') {
       throw new ResponseError(`Property ${key} must be a string`, 406);
     }
+    value = String(value);
   }
   if (property.type === 'file') {
     if (!value?.startsWith?.('http')) {
       throw new ResponseError(`Property ${key} must be a valid file`, 406);
     }
+    value = String(value);
   }
-  if (property.type === 'date') {
+  if (property.type === 'date') { // string representation of date YYYY-MM-DD or actual date
     if (new Date(value).toString() === 'Invalid Date') {
       throw new ResponseError(`Property ${key} must be a date`, 406);
     }
+    value = value.toString();
   }
-  if (property.type === 'datetime') {
+  if (property.type === 'datetime') { // actual date
     if (new Date(value).toString() === 'Invalid Date') {
       throw new ResponseError(`Property ${key} must be a datetime`, 406);
     }
+    value = new Date(value);
   }
-  if (property.type === 'time') {
+  if (property.type === 'time') { // string representation of time HH:MM
     const [hours, minutes] = value?.split(':');
     if (isNaN(parseInt(hours)) || isNaN(parseInt(minutes))) {
       throw new ResponseError(`Property ${key} must be a time`, 406);
     }
+    value = `${hours}:${minutes}`;
   }
   if (property.enum && property.enum.length && !property.enum.includes(value)) {
     throw new ResponseError(`Property ${key} must be one of ${property.enum.join(', ')}`, 406);
@@ -76,6 +83,8 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
   if (property.required && typeof value === 'undefined') {
     throw new ResponseError(`Property ${key} is required`, 406);
   }
+
+  return value;
 }
 
 export function getValidBlueprintMetadata(metadata: any, blueprint: IBlueprint) {
@@ -92,13 +101,12 @@ export function getValidBlueprintMetadata(metadata: any, blueprint: IBlueprint) 
         }
         if (isArray) {
           for (const val of value) {
-            validateValue(key, val, property);
+            validData[key] = validateValue(key, val, property);
           }
         }
       } else {
-        validateValue(key, value, property);
+        validData[key] = validateValue(key, value, property);
       }
-      validData[key] = value;
     }
   }
   return validData;
@@ -115,8 +123,7 @@ export async function updateEntityMapping(blueprint: IBlueprint, entity: IBluepr
         if (!blueprint.properties[key]) {
           throw new ResponseError(`Property ${key} not found in blueprint ${blueprint.identifier}`, 400);
         }
-        validateValue(key, result, blueprint.properties[key]);
-        entity.metadata[key] = result;
+        entity.metadata[key] = validateValue(key, result, blueprint.properties[key]);
       })
     )
   );
