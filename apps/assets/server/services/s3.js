@@ -1,13 +1,12 @@
-const S3 = require('../models/s3');
 const uniqid = require('uniqid');
-const path = require('path');
+const path = require('node:path');
 const { generateIdentifier } = require('./identifier');
 const { getAssetType } = require('./get-asset-type');
 const { joinUrl } = require('./url');
+const { s3Cache } = require('./s3-cache');
 
 async function uploadFile(storage, { identifier, file, extension, prefix, type }) {
-  console.log('logging storage', storage);
-  const s3 = new S3(storage);
+  const s3 = s3Cache.get(storage);
   const filename = `${prefix}-${uniqid()}.${extension}`;
   const fullPath = path.join(storage.metadata.basePath || '/', identifier, filename);
 
@@ -23,7 +22,7 @@ async function uploadFile(storage, { identifier, file, extension, prefix, type }
 
 async function loadFiles(storage, identifier = '/') {
 
-  const s3 = new S3(storage);
+  const s3 = s3Cache.get(storage);
   const fullPath = path.join(storage.metadata.basePath || '/', identifier);
 
   let list;
@@ -48,7 +47,7 @@ async function loadFiles(storage, identifier = '/') {
 }
 
 async function removeFile(storage, identifier) {
-  const s3 = new S3(storage);
+  const s3 = s3Cache.get(storage);
   const fullPath = path.join(storage.metadata.basePath || '/', identifier);
 
   try {
@@ -62,7 +61,7 @@ async function removeFile(storage, identifier) {
 }
 
 async function renameFile(storage, oldIdentifier, newFileName) {
-  const s3 = new S3(storage);
+  const s3 = s3Cache.get(storage);
   const extension = oldIdentifier.split('.').pop();
   const newIdentifier = generateIdentifier(newFileName, extension);
   const oldFullPath = path.join(storage.metadata.basePath || '/', oldIdentifier);

@@ -168,6 +168,10 @@ class S3 {
       throw { message: 'could not rename asset: ' + oldFullPath };
     }
   }
+
+  async disconnect() {
+    this._client.destroy();
+  }
 }
 
 module.exports = S3;
