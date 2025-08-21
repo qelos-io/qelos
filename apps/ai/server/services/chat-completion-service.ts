@@ -328,7 +328,6 @@ async function processStreamingCompletion(
 
 // Handle non-streaming chat completion with function calling support
 export async function handleNonStreamingChatCompletion(
-  res: any,
   aiService: any,
   chatOptions: any,
   executeFunctionCallsHandler: Function,
@@ -362,17 +361,17 @@ export async function handleNonStreamingChatCompletion(
       });
       
       // Return the final result
-      res.json({
+      return {  
         ...followUpCompletion,
         function_calls: message.tool_calls,
         function_results: functionResults
-      });
+      };
     } else {
       // No function calls, return the initial completion
-      res.json(completion);
+      return completion;
     }
   } catch (error) {
     logger.error('Error in non-streaming chat completion', error);
-    res.status(500).json({ message: 'Error processing chat completion' });
+    throw error;
   }
 }

@@ -207,13 +207,13 @@ export async function chatCompletion(req, res) {
       );
     } else {
       // Use the shared non-streaming chat completion handler
-      await ChatCompletionService.handleNonStreamingChatCompletion(
-        res,
+      const result = await ChatCompletionService.handleNonStreamingChatCompletion(
         aiService,
         chatOptions,
         executeFunctionCallsHandler,
         []
       );
+      res.status(200).json(result).end();
     }
   } catch (error) {
     logger.error('Error processing AI chat completion', error);

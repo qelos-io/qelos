@@ -11,24 +11,16 @@ import {
   addFormToPageCalling
 } from "./plugins.calling";
 import { createComponentCalling, getComponentsCalling } from "./no-code.calling";
+import { callPagesAgentCalling } from "./pages-agent.calling";
 
 export const editorsFunctionCallings = {
   [getBlueprintsCalling.name]: getBlueprintsCalling,
   [createBlueprintCalling.name]: createBlueprintCalling,
-  [createPageCalling.name]: createPageCalling,
-  [editPageCalling.name]: editPageCalling,
-  [getHTTPRequirementForPageCalling.name]: getHTTPRequirementForPageCalling,
-  [createComponentCalling.name]: createComponentCalling,
-  [getComponentsCalling.name]: getComponentsCalling,
-  [getBlueprintRequirementForPageCalling.name]: getBlueprintRequirementForPageCalling,
-  [getPagesCalling.name]: getPagesCalling,
-  [addFreeTextToPageCalling.name]: addFreeTextToPageCalling,
-  [addGridToPageCalling.name]: addGridToPageCalling,
-  [addTableToPageCalling.name]: addTableToPageCalling,
-  [addFormToPageCalling.name]: addFormToPageCalling,
+  [callPagesAgentCalling.name]: callPagesAgentCalling,
 }
 
 export const editPagesFunctionCallings = [
+  getComponentsCalling,
   createComponentCalling,
   createPageCalling,
   editPageCalling,
