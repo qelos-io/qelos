@@ -50,14 +50,44 @@ class StreamingAdapter {
    * Upload using native streaming support in the service
    */
   async uploadWithNativeStreaming(storage, { identifier, file, extension, prefix, type }) {
-    // Create a combined stream from all chunk streams with highWaterMark to control buffering
-    const combinedStream = new PassThrough({ 
-      // Lower highWaterMark to reduce memory buffering (default is 16KB)
-      highWaterMark: 64 * 1024 // 64KB
+    // Create a combined stream with a smaller buffer to reduce memory usage
+    const combinedStream = new PassThrough({
+      highWaterMark: 32 * 1024 // 32KB buffer size to reduce memory usage (reduced from 64KB)
     });
     
-    // Track memory usage
+    // Track if the upload has been aborted
+    let uploadAborted = false;
     let totalBytesProcessed = 0;
+    
+    // Handle connection termination
+    const handleAbort = (reason) => {
+      if (!uploadAborted) {
+        uploadAborted = true;
+        
+        // Destroy the combined stream
+        if (combinedStream && typeof combinedStream.destroy === 'function') {
+          combinedStream.destroy(new Error(reason || 'Upload aborted'));
+        }
+        
+        // Clean up file streams
+        if (file.streams) {
+          file.streams.forEach(s => s && typeof s.destroy === 'function' && s.destroy());
+          file.streams = null;
+        }
+        
+        // Force garbage collection
+        if (global.gc) global.gc();
+      }
+    };
+    
+    // Set up connection termination handlers if request object is available
+    if (file.req) {
+      file.req.on('close', () => handleAbort('Connection closed'));
+      file.req.on('error', () => handleAbort('Connection error'));
+      if (file.req.socket) {
+        file.req.socket.on('close', () => handleAbort('Socket closed'));
+      }
+    }
     
     // Process streams in background
     const streamProcessing = (async () => {
@@ -68,81 +98,101 @@ class StreamingAdapter {
           
           // Use pipeline with backpressure handling instead of direct pipe
           await new Promise((resolve, reject) => {
-            // Set lower highWaterMark on the read stream if possible
-            if (stream.readableHighWaterMark > 64 * 1024 && typeof stream.setHighWaterMark === 'function') {
-              stream.setHighWaterMark(64 * 1024);
+            // Skip if already aborted
+            if (uploadAborted) {
+              resolve();
+              return;
             }
             
-            // Handle backpressure by pausing if needed
-            stream.on('data', (chunk) => {
+            const onData = (chunk) => {
+              // Skip if aborted
+              if (uploadAborted) return;
+              
               totalBytesProcessed += chunk.length;
               
               // Handle backpressure
               if (!combinedStream.write(chunk)) {
                 stream.pause();
               }
-            });
+            };
             
-            combinedStream.on('drain', () => {
-              stream.resume();
-            });
-            
-            stream.on('end', () => {
-              // Clear references to help garbage collection
-              stream.removeAllListeners();
-              stream = null;
-              
-              // Try to force garbage collection if available
-              if (global.gc) {
-                global.gc();
-              }
-              
+            const onEnd = () => {
+              stream.removeListener('data', onData);
+              stream.removeListener('error', onError);
+              combinedStream.removeListener('drain', onDrain);
               resolve();
-            });
+            };
             
-            stream.on('error', (err) => {
-              stream.removeAllListeners();
+            const onError = (err) => {
+              stream.removeListener('data', onData);
+              stream.removeListener('end', onEnd);
+              combinedStream.removeListener('drain', onDrain);
               reject(err);
-            });
+            };
+            
+            const onDrain = () => {
+              if (!uploadAborted && stream.isPaused && stream.isPaused()) {
+                stream.resume();
+              }
+            };
+            
+            // Set up event listeners
+            stream.on('data', onData);
+            stream.on('end', onEnd);
+            stream.on('error', onError);
+            combinedStream.on('drain', onDrain);
           });
           
-          // Clear file.streams[streamIndex-1] reference to help GC
-          if (file.streams && file.streams[streamIndex-1]) {
-            file.streams[streamIndex-1] = null;
+          // Clear reference to processed stream
+          if (file.streams && file.streams[streamIndex]) {
+            file.streams[streamIndex] = null;
+          }
+          streamIndex++;
+          
+          // Force garbage collection periodically for very large files
+          if (global.gc && totalBytesProcessed > 500 * 1024 * 1024 && totalBytesProcessed % (100 * 1024 * 1024) < 1024 * 1024) {
+            global.gc();
           }
         }
         
-        // End the combined stream when all chunks are processed
-        combinedStream.end();
+        // Only end the stream if we haven't aborted
+        if (!uploadAborted) {
+          combinedStream.end();
+        }
         
         // Clear streams array to help garbage collection
         if (file.streams) {
-          file.streams.length = 0;
+          file.streams.forEach(s => s && typeof s.destroy === 'function' && s.destroy());
           file.streams = null;
         }
       } catch (err) {
-        combinedStream.destroy(err);
+        if (!uploadAborted) {
+          combinedStream.destroy(err);
+        }
       }
     })();
     
     try {
-      // Call the service's native streaming method
-      const result = await this.service.uploadFileStream(storage, {
-        identifier,
+      // Create a file object with the combined stream
+      const processedFile = {
         fileStream: combinedStream,
-        extension,
-        prefix,
-        type
-      });
+        type: type || 'application/octet-stream',
+        req: file.req // Pass the request object for connection tracking
+      };
+      
+      // Upload the combined stream
+      const result = await storage.uploadStream(
+        `/${prefix || 'uploads'}/${identifier}.${extension || 'bin'}`,
+        processedFile
+      );
       
       // Wait for stream processing to complete
       await streamProcessing;
       
-      // Final cleanup
       return result;
     } catch (error) {
       // Ensure we clean up on error
-      combinedStream.destroy();
+      handleAbort('Upload error');
       throw error;
     }
   }
@@ -151,21 +201,56 @@ class StreamingAdapter {
    * Upload using chunked approach for services without native streaming
    */
   async uploadWithChunkedStreaming(storage, { identifier, file, extension, prefix, type }) {
+    // Track upload status
+    let uploadAborted = false;
     
     // Create a buffer accumulator with a smaller maximum size
-    const MAX_BUFFER_SIZE = 2 * 1024 * 1024; // 2MB max buffer size (reduced from 5MB)
+    const MAX_BUFFER_SIZE = 2 * 1024 * 1024; // 2MB max buffer size
     let buffers = [];
     let currentSize = 0;
     let totalProcessed = 0;
     
+    // Handle connection termination
+    const handleAbort = (reason) => {
+      if (!uploadAborted) {
+        uploadAborted = true;
+        
+        // Clean up buffers to free memory immediately
+        if (buffers && buffers.length > 0) {
+          buffers = null;
+        }
+        
+        // Clean up file streams
+        if (file.streams) {
+          file.streams.forEach(s => s && typeof s.destroy === 'function' && s.destroy());
+          file.streams = null;
+        }
+        
+        // Force garbage collection
+        if (global.gc) global.gc();
+      }
+    };
+    
+    // Set up connection termination handlers if request object is available
+    if (file.req) {
+      file.req.on('close', () => handleAbort('Connection closed'));
+      file.req.on('error', () => handleAbort('Connection error'));
+      if (file.req.socket) {
+        file.req.socket.on('close', () => handleAbort('Socket closed'));
+      }
+    }
+    
     try {
-      // Process each stream sequentially
       let stream;
       let streamIndex = 0;
       
-      while ((stream = file.getNextStream()) !== null) {        
+      // Process each stream until complete or aborted
+      while (!uploadAborted && (stream = file.getNextStream()) !== null) {
         // Process this stream chunk by chunk
         for await (const chunk of stream) {
+          // Skip if upload was aborted
+          if (uploadAborted) break;
+          
           buffers.push(chunk);
           currentSize += chunk.length;
           totalProcessed += chunk.length;
@@ -175,26 +260,29 @@ class StreamingAdapter {
             // Clear references to processed chunks to help garbage collection
             // Instead of keeping a concatenated buffer, we'll just keep the last chunk
             // This reduces memory usage by not keeping large concatenated buffers
-            const lastChunk = buffers[buffers.length - 1];
-            buffers = [lastChunk];
-            currentSize = lastChunk.length;
+            buffers = [Buffer.concat(buffers)];
+            currentSize = buffers[0].length;
             
-            // Try to force garbage collection if available
-            if (global.gc) {
+            // Force garbage collection periodically for very large files
+            if (global.gc && totalProcessed > 500 * 1024 * 1024 && totalProcessed % (100 * 1024 * 1024) < MAX_BUFFER_SIZE) {
               global.gc();
-              logger.log('Garbage collection triggered');
             }
           }
         }
         
-        // Clear the stream reference to help garbage collection
-        stream.removeAllListeners?.();
-        stream = null;
+        // Skip further processing if aborted
+        if (uploadAborted) break;
         
-        // Clear file.streams[streamIndex-1] reference to help GC
-        if (file.streams && file.streams[streamIndex-1]) {
-          file.streams[streamIndex-1] = null;
+        // Clear reference to processed stream
+        if (file.streams && file.streams[streamIndex]) {
+          file.streams[streamIndex] = null;
         }
+        streamIndex++;
+      }
+      
+      // Skip upload if aborted
+      if (uploadAborted) {
+        throw new Error('Upload aborted due to connection termination');
       }
       
       // Create the final buffer from all accumulated chunks
@@ -203,26 +291,28 @@ class StreamingAdapter {
       // Clear references to help garbage collection
       buffers = null;
       
-      // Clear streams array to help garbage collection
-      if (file.streams) {
-        file.streams.length = 0;
-        file.streams = null;
+      // Force garbage collection if available
+      if (global.gc) {
+        global.gc();
       }
       
-      // Call the original service with the final buffer
-      const result = await this.service.uploadFile(storage, {
+      // Upload the final buffer
+      const result = await storage.upload({
+        buffer: finalBuffer,
         identifier,
-        file: finalBuffer,
         extension,
         prefix,
         type
       });
       return result;
-    } catch (error) {      
+    } catch (error) {
+      // Ensure we abort if not already aborted
+      handleAbort('Upload error');
+      
       // Clean up resources on error
       buffers = null;
       if (file.streams) {
-        file.streams.forEach(stream => stream?.removeAllListeners?.());
+        file.streams.forEach(s => s && typeof s.destroy === 'function' && s.destroy());
         file.streams = null;
       }
       

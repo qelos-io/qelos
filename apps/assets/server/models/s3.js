@@ -2,6 +2,7 @@ const { S3Client, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand, U
 const { getSecret } = require('../services/secrets-management');
 const ASSET_TYPES = require('../utils/asset-types.json');
 const logger = require('../services/logger');
+const { emitPlatformEvent } = require("@qelos/api-kit");
 
 class S3 {
   constructor(storage) {
@@ -176,54 +177,117 @@ class S3 {
    * @returns {Promise<Object>} - Upload result
    */
   async uploadStream(fullPath, file) {
+    // Track upload for potential cleanup
+    let uploadAborted = false;
+    let uploadObj = null;
+    let abortController = new AbortController();
+    
     try {
-      logger.log(`S3 streaming upload started for ${fullPath}`);
+      // Set smaller part size for better memory management with large files
+      const partSize = 2 * 1024 * 1024; // 2MB parts (reduced from 5MB)
       
-      // Create upload parameters
+      // Add event listeners to detect connection close
+      if (file.req && file.req.socket) {
+        const cleanup = () => {
+          if (!uploadAborted) {
+            uploadAborted = true;
+            if (uploadObj && typeof uploadObj.abort === 'function') {
+              uploadObj.abort();
+            }
+            if (file.fileStream && typeof file.fileStream.destroy === 'function') {
+              file.fileStream.destroy(new Error('Connection closed'));
+            }
+            // Force garbage collection
+            if (global.gc) global.gc();
+          }
+        };
+        
+        // Listen for connection close events
+        file.req.socket.on('close', cleanup);
+        file.req.on('close', cleanup);
+        file.req.on('end', cleanup);
+        file.req.on('error', cleanup);
+      }
+      
+      // Create upload parameters with optimized settings for large files
       const params = {
         Bucket: this.bucket.name,
         Key: fullPath.slice(1),
         Body: file.fileStream,
         ContentType: file.type,
         ACL: this.shouldUploadAsPublic ? 'public-read' : undefined,
-        // Set a reasonable part size to control memory usage
-        partSize: 5 * 1024 * 1024, // 5MB parts
-        queueSize: 1 // Process one part at a time to reduce memory usage
+        // Optimized settings for large files
+        partSize: partSize,
+        queueSize: 2, // Allow 2 concurrent parts for better throughput while controlling memory
+        leavePartsOnError: false // Ensure parts are cleaned up on error
       };
       
-      // Use the Upload utility which handles multipart uploads
-      const upload = new Upload({
+      // Use the Upload utility with abort controller
+      uploadObj = new Upload({
         client: this._client,
-        params
+        params,
+        abortSignal: abortController.signal
       });
 
-      // Monitor progress to help with garbage collection
-      upload.on('httpUploadProgress', (progress) => {
-        // Log progress occasionally to avoid excessive logging
-        if (progress.loaded % (10 * 1024 * 1024) < 5 * 1024 * 1024) { // Log roughly every 10MB          
-          // Force garbage collection if available (only works with --expose-gc flag)
+      // Set up progress monitoring with more frequent garbage collection for large files
+      let lastGcTime = Date.now();
+      uploadObj.on('httpUploadProgress', (progress) => {
+        // More aggressive garbage collection for very large files
+        const now = Date.now();
+        if (now - lastGcTime > 30000) { // Every 30 seconds
           if (global.gc) {
             global.gc();
-            logger.log('Garbage collection triggered');
+            lastGcTime = now;
           }
         }
       });
 
-      // Start the upload and wait for it to complete
-      const result = await upload.done();
+      // Start the upload with timeout protection
+      const uploadPromise = uploadObj.done();
+      
+      // Set up a timeout for very large uploads to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        // 30 minutes timeout for very large files
+        const timeoutId = setTimeout(() => {
+          abortController.abort();
+          reject(new Error('Upload timeout exceeded'));
+        }, 30 * 60 * 1000); // 30 minutes
+        
+        // Clear timeout if upload completes
+        uploadPromise.then(() => clearTimeout(timeoutId)).catch(() => clearTimeout(timeoutId));
+      });
+      
+      // Wait for upload to complete or timeout
+      const result = await Promise.race([uploadPromise, timeoutPromise]);
       
       // Explicitly clear references to help garbage collection
       file.fileStream = null;
+      uploadObj = null;
       
       return result;
     } catch (error) {
-      // Ensure we clean up the stream on error
+      // Ensure we clean up the stream and abort upload on error
+      if (!uploadAborted) {
+        uploadAborted = true;
+        if (uploadObj && typeof uploadObj.abort === 'function') {
+          try {
+            uploadObj.abort();
+          } catch (abortError) {
+            // Ignore abort errors
+          }
+        }
+      }
+      
       if (file.fileStream && typeof file.fileStream.destroy === 'function') {
         file.fileStream.destroy();
       }
       file.fileStream = null;
+      uploadObj = null;
       
-      throw { message: 'could not upload asset stream to storage: ' + this.name };
+      // Force garbage collection after error
+      if (global.gc) global.gc();
+      
+      throw { message: 'could not upload asset stream to storage: ' + this.name, originalError: error };
     }
   }
   

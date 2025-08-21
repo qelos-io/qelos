@@ -37,13 +37,52 @@ function uploadStorageAssets(req, res) {
   const tenant = req.headers.tenant;
   const service = getService(req.storage);
   const storage = req.storage;
+  let uploadAborted = false;
 
   if (!service) {
     return res.end();
   }
+  
+  // Handle connection termination events
+  const handleConnectionTermination = () => {
+    uploadAborted = true;
+    logger.warn(`Upload connection terminated for ${identifier}`);
+    
+    // Clean up any resources that might be in memory
+    if (file && file.streams) {
+      logger.info('Cleaning up file streams due to connection termination');
+      file.streams.forEach(stream => {
+        if (stream && typeof stream.destroy === 'function') {
+          stream.destroy();
+        }
+      });
+    }
+    
+    // Force garbage collection if available
+    if (global.gc) {
+      global.gc();
+      logger.info('Garbage collection triggered after connection termination');
+    }
+  };
+  
+  // Listen for connection close events
+  req.on('close', handleConnectionTermination);
+  req.on('end', () => req.removeListener('close', handleConnectionTermination));
+  req.on('error', handleConnectionTermination);
+  
+  if (req.socket) {
+    req.socket.on('close', handleConnectionTermination);
+    req.socket.on('error', handleConnectionTermination);
+  }
 
   service.uploadFile(req.storage, { identifier, file, extension, prefix, type })
     .then((result) => {
+      // Don't try to send a response if the connection was aborted
+      if (uploadAborted) {
+        logger.info('Upload completed but connection was already closed');
+        return;
+      }
+      
       res.status(200).json(result).end();
       emitPlatformEvent({
         tenant,
@@ -67,7 +106,23 @@ function uploadStorageAssets(req, res) {
       }).catch(() => logger.error('could not emit platform event'))
     })
     .catch((error) => {
+      // Don't try to send a response if the connection was aborted
+      if (uploadAborted) {
+        logger.error(`Upload error after connection terminated: ${error.message}`);
+        return;
+      }
+      
       res.status(500).json({ message: error.message || 'could not upload asset' }).end();
+    })
+    .finally(() => {
+      // Clean up event listeners
+      req.removeListener('close', handleConnectionTermination);
+      req.removeListener('error', handleConnectionTermination);
+      
+      if (req.socket) {
+        req.socket.removeListener('close', handleConnectionTermination);
+        req.socket.removeListener('error', handleConnectionTermination);
+      }
     });
 }
 

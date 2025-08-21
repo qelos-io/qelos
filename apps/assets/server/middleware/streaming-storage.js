@@ -15,13 +15,52 @@ class StreamingMemoryStorage {
   }
 
   _handleFile(req, file, cb) {
+    // Store the request object for connection tracking
+    file.req = req;
+    
     // Create a PassThrough stream that we'll use to collect chunks
     const chunks = [];
     let fileSize = 0;
     let chunkCount = 0;
     
+    // Track if the connection has been closed
+    let connectionClosed = false;
+    
+    // Handle connection close events
+    const handleConnectionClose = () => {
+      connectionClosed = true;
+      
+      // Clean up chunks to free memory immediately
+      if (chunks.length > 0) {
+        chunks.length = 0;
+      }
+      
+      // Clean up any streams we've created
+      if (file.streams) {
+        file.streams.forEach(stream => {
+          if (stream && typeof stream.destroy === 'function') {
+            stream.destroy();
+          }
+        });
+      }
+      
+      // Force garbage collection
+      if (global.gc) global.gc();
+    };
+    
+    // Listen for connection close events
+    req.on('close', handleConnectionClose);
+    req.on('end', handleConnectionClose);
+    req.on('error', handleConnectionClose);
+    if (req.socket) {
+      req.socket.on('close', handleConnectionClose);
+    }
+    
     // Process the file in chunks
     file.stream.on('data', (chunk) => {
+      // Skip processing if connection is already closed
+      if (connectionClosed) return;
+      
       chunks.push(chunk);
       fileSize += chunk.length;
       chunkCount++;
@@ -29,15 +68,14 @@ class StreamingMemoryStorage {
       // If we've accumulated enough chunks, create a readable stream
       // This allows us to start processing earlier chunks while later ones are still being received
       if (chunks.length >= this.options.chunkSize) {
-        // We keep the last chunk to ensure we don't create too many small streams
-        const processChunks = chunks.slice(0, -1);
-        chunks.splice(0, chunks.length - 1); // Keep only the last chunk
+        // Create a readable stream from the chunks we've collected
+        const stream = Readable.from(Buffer.concat(chunks));
         
-        // Add the stream to the file object for later processing
-        if (!file.streams) file.streams = [];
-        
-        // Create a stream from the chunks
-        const stream = Readable.from(Buffer.concat(processChunks));
+        // Initialize streams array if it doesn't exist
+        if (!file.streams) {
+          file.streams = [];
+          file.isStreaming = true;
+        }
         
         // Add the stream to our collection
         file.streams.push(stream);
@@ -47,15 +85,30 @@ class StreamingMemoryStorage {
           global.gc();
           logger.log('Garbage collection triggered during streaming');
         }
+        
+        // Clear the chunks array to free memory
+        chunks.length = 0;
       }
     });
 
     file.stream.on('end', () => {
+      // Skip processing if connection is already closed
+      if (connectionClosed) return;
+      
       // Handle any remaining chunks
       if (chunks.length > 0) {
-        if (!file.streams) file.streams = [];
         const stream = Readable.from(Buffer.concat(chunks));
+        
+        // Initialize streams array if it doesn't exist
+        if (!file.streams) {
+          file.streams = [];
+          file.isStreaming = true;
+        }
+        
         file.streams.push(stream);
+        
+        // Clear chunks to free memory
+        chunks.length = 0;
       }
       // Create a method to get the next stream
       let streamIndex = 0;

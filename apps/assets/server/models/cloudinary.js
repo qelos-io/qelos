@@ -1,6 +1,6 @@
 const { getSecret } = require("../services/secrets-management");
 const cloudinary = require('cloudinary').v2;
-
+const { emitPlatformEvent } = require("@qelos/api-kit");
 class Cloudinary {
   constructor(storage) {
     this.storage = storage;

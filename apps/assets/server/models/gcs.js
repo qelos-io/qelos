@@ -1,7 +1,7 @@
 const { Storage } = require('@google-cloud/storage');
 const { getSecret } = require('../services/secrets-management');
 const ASSET_TYPES = require('../utils/asset-types.json');
-
+const { emitPlatformEvent } = require("@qelos/api-kit");
 
 class Gcs {
   constructor(storage) {
