@@ -6,7 +6,7 @@
         <img :alt="appConfig.name" :src="appConfig.logoUrl" class="logo-image">
         <img v-if="appConfig.smallLogoUrl" :src="appConfig.smallLogoUrl" class="small-logo-image" :alt="appConfig.name">
       </router-link>
-      <button class="collapse-toggle" @click="toggleCollapse" v-if="!isMobile" :title="isCollapsed ? $t('Expand menu') : $t('Collapse menu')">
+      <button class="collapse-toggle" @click="toggleCollapse" v-if="!$isMobile" :title="isCollapsed ? $t('Expand menu') : $t('Collapse menu')">
         <el-icon>
           <font-awesome-icon :icon="['fas', isCollapsed ? 'angle-right' : 'angle-left']"/>
         </el-icon>
@@ -175,7 +175,7 @@ import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microf
 import { isAdmin, isEditingEnabled, isManagingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 
-import { ref, onMounted, onBeforeUnmount, toRef } from 'vue';
+import { ref, onMounted, toRef } from 'vue';
 
 const { navBar } = storeToRefs(usePluginsMicroFrontends());
 const { appConfig } = useAppConfiguration();
@@ -185,7 +185,6 @@ import { useWsConfiguration } from '@/modules/configurations/store/ws-configurat
 // Visibility state of the modal window
 const dialogVisible = ref(false);
 const isCollapsed = ref(false);
-const isMobile = ref(false);
 const isWorkspacesActive = toRef(useWsConfiguration(), 'isActive');
 
 
@@ -194,22 +193,8 @@ onMounted(() => {
   const savedState = localStorage.getItem('qelos-nav-collapsed');
   if (savedState) {
     isCollapsed.value = savedState === 'true';
-  }
-  
-  checkMobileView();
-  window.addEventListener('resize', checkMobileView);
+  }  
 });
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', checkMobileView);
-});
-
-const checkMobileView = () => {
-  isMobile.value = window.innerWidth <= 600;
-  if (isMobile.value) {
-    isCollapsed.value = false;
-  }
-};
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value;

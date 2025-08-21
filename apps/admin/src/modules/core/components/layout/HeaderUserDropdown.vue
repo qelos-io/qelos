@@ -26,17 +26,6 @@
               @click.stop
           />
         </el-dropdown-item>
-        <el-dropdown-item v-if="isAdmin" id="edit-mode-toggle" @click.stop>
-          <el-switch
-              v-model="isEditingEnabled"
-              active-text="Editor"
-              inactive-text="Editor"
-              style="--el-switch-on-color: #3da62d; --el-switch-off-color: #b33939;"
-              size="large"
-              inline-prompt
-              @click.stop
-          />
-        </el-dropdown-item>
         <template v-for="group in customLinks" :key="group.key">
           <template v-if="group.items.length">
             <el-dropdown-item v-for="mfe in group.items" :key="mfe.route.path" @click.stop>

@@ -6,16 +6,16 @@
                      @save="saveCodeEditor"
                      @close="closeCodeEditor"/>
   <main v-else>
-    <div v-if="isEditingEnabled" class="edit-bar-container" :class="{ 'collapsed': isEditBarCollapsed }">
-      <el-tooltip :content="isEditBarCollapsed ? $t('Expand editor tools') : $t('Collapse editor tools')" placement="left" effect="light">
+    <div v-if="isPrivilegedUser" class="edit-bar-container" :class="{ 'collapsed': isEditingEnabled }">
+      <el-tooltip :content="!isEditingEnabled ? $t('Expand editor tools') : $t('Collapse editor tools')" placement="left" effect="light">
         <div class="edit-mode-indicator" @click="toggleEditBar" tabindex="0" role="button" aria-label="Toggle editor tools" @keydown.enter="toggleEditBar">
-          <el-icon v-if="isEditBarCollapsed"><font-awesome-icon :icon="['fas', 'chevron-right']"/></el-icon>
+          <el-icon v-if="isEditingEnabled"><font-awesome-icon :icon="['fas', 'chevron-right']"/></el-icon>
           <el-icon v-else><font-awesome-icon :icon="['fas', 'pencil-alt']"/></el-icon>
         </div>
       </el-tooltip>
       
       <transition name="slide-fade">
-        <div v-show="!isEditBarCollapsed" class="edit-bar">
+        <div v-show="isEditingEnabled" class="edit-bar">
           <!-- Create group -->
           <el-button-group class="edit-group">
             <el-tooltip :content="$t('Add components with wizard')" placement="top" effect="light">
@@ -101,7 +101,6 @@ const item = ref();
 const cruds = toRef(mfes, 'cruds')
 
 const updates = ref(0)
-const isEditBarCollapsed = ref(localStorage.getItem('qelos-edit-bar-collapsed') === 'true')
 
 async function reRenderAfterError() {
   if (updates.value > 5) {
@@ -112,8 +111,7 @@ async function reRenderAfterError() {
 }
 
 function toggleEditBar() {
-  isEditBarCollapsed.value = !isEditBarCollapsed.value;
-  localStorage.setItem('qelos-edit-bar-collapsed', isEditBarCollapsed.value.toString());
+  isEditingEnabled.value = !isEditingEnabled.value;
 }
 
 fetchAuthUser(false, true);
@@ -199,14 +197,22 @@ main {
 }
 
 .edit-bar-container {
-  position: absolute;
+  position: fixed;
   z-index: 999;
-  top: 10px;
-  right: 40px;
+  bottom: 10px;
+  left: 250px;
   display: flex;
   align-items: center;
   gap: 10px;
   transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .edit-bar-container {
+    left: 0;
+    bottom: 0;
+    width: 100%;
+  }
 }
 
 .edit-bar-container.collapsed {
@@ -287,11 +293,6 @@ main {
 
 /* Responsive styles */
 @media (max-width: 768px) {
-  .edit-bar-container {
-    top: 60px;
-    right: 20px;
-  }
-  
   .hide-on-small {
     display: none;
   }
