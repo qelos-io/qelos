@@ -1,4 +1,5 @@
 const { Readable } = require('node:stream');
+const logger = require('../services/logger');
 
 /**
  * Custom streaming storage engine for Multer
@@ -8,6 +9,7 @@ class StreamingMemoryStorage {
   constructor(options = {}) {
     this.options = {
       chunkSize: 1024 * 1024, // Default 1MB chunks
+      maxChunksInMemory: 5,  // Maximum number of chunks to keep in memory at once
       ...options
     };
   }
@@ -16,11 +18,13 @@ class StreamingMemoryStorage {
     // Create a PassThrough stream that we'll use to collect chunks
     const chunks = [];
     let fileSize = 0;
+    let chunkCount = 0;
     
     // Process the file in chunks
     file.stream.on('data', (chunk) => {
       chunks.push(chunk);
       fileSize += chunk.length;
+      chunkCount++;
       
       // If we've accumulated enough chunks, create a readable stream
       // This allows us to start processing earlier chunks while later ones are still being received
@@ -31,8 +35,18 @@ class StreamingMemoryStorage {
         
         // Add the stream to the file object for later processing
         if (!file.streams) file.streams = [];
+        
+        // Create a stream from the chunks
         const stream = Readable.from(Buffer.concat(processChunks));
+        
+        // Add the stream to our collection
         file.streams.push(stream);
+        
+        // Try to force garbage collection if available
+        if (global.gc && fileSize > 50 * 1024 * 1024) { // Only for files > 50MB
+          global.gc();
+          logger.log('Garbage collection triggered during streaming');
+        }
       }
     });
 
@@ -43,12 +57,18 @@ class StreamingMemoryStorage {
         const stream = Readable.from(Buffer.concat(chunks));
         file.streams.push(stream);
       }
-      
       // Create a method to get the next stream
       let streamIndex = 0;
       file.getNextStream = () => {
         if (streamIndex < file.streams.length) {
-          return file.streams[streamIndex++];
+          const stream = file.streams[streamIndex];
+          
+          // Clear the reference to the stream after it's retrieved
+          // This helps with garbage collection for large files
+          file.streams[streamIndex] = null;
+          
+          streamIndex++;
+          return stream;
         }
         return null;
       };
@@ -56,8 +76,7 @@ class StreamingMemoryStorage {
       // Also provide a buffer for backward compatibility
       // This is a reference to the first chunk only, to minimize memory usage
       // Services should use getNextStream() instead when possible
-      file.buffer = file.streams.length > 0 ? 
-        Buffer.concat([Buffer.from('STREAMING_MODE')]) : Buffer.alloc(0);
+      file.buffer = Buffer.from('STREAMING_MODE');
       
       file.size = fileSize;
       
@@ -70,7 +89,19 @@ class StreamingMemoryStorage {
       });
     });
 
-    file.stream.on('error', cb);
+    file.stream.on('error', (err) => {      
+      // Clean up resources on error
+      if (file.streams) {
+        file.streams.forEach(stream => {
+          if (stream && typeof stream.destroy === 'function') {
+            stream.destroy();
+          }
+        });
+        file.streams = null;
+      }
+      
+      cb(err);
+    });
   }
 
   _removeFile(req, file, cb) {

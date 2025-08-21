@@ -1,5 +1,4 @@
 const { S3Client, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand, Upload } = require('@aws-sdk/client-s3');
-const { Readable } = require('node:stream');
 const { getSecret } = require('../services/secrets-management');
 const ASSET_TYPES = require('../utils/asset-types.json');
 const logger = require('../services/logger');
@@ -186,7 +185,10 @@ class S3 {
         Key: fullPath.slice(1),
         Body: file.fileStream,
         ContentType: file.type,
-        ACL: this.shouldUploadAsPublic ? 'public-read' : undefined
+        ACL: this.shouldUploadAsPublic ? 'public-read' : undefined,
+        // Set a reasonable part size to control memory usage
+        partSize: 5 * 1024 * 1024, // 5MB parts
+        queueSize: 1 // Process one part at a time to reduce memory usage
       };
       
       // Use the Upload utility which handles multipart uploads
@@ -195,13 +197,32 @@ class S3 {
         params
       });
 
+      // Monitor progress to help with garbage collection
+      upload.on('httpUploadProgress', (progress) => {
+        // Log progress occasionally to avoid excessive logging
+        if (progress.loaded % (10 * 1024 * 1024) < 5 * 1024 * 1024) { // Log roughly every 10MB          
+          // Force garbage collection if available (only works with --expose-gc flag)
+          if (global.gc) {
+            global.gc();
+            logger.log('Garbage collection triggered');
+          }
+        }
+      });
+
       // Start the upload and wait for it to complete
       const result = await upload.done();
-      logger.log(`S3 streaming upload completed for ${fullPath}`);
+      
+      // Explicitly clear references to help garbage collection
+      file.fileStream = null;
       
       return result;
     } catch (error) {
-      logger.error('S3 streaming upload error:', error);
+      // Ensure we clean up the stream on error
+      if (file.fileStream && typeof file.fileStream.destroy === 'function') {
+        file.fileStream.destroy();
+      }
+      file.fileStream = null;
+      
       throw { message: 'could not upload asset stream to storage: ' + this.name };
     }
   }

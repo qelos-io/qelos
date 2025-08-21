@@ -1,12 +1,17 @@
 /**
  * Test script for streaming uploads
  * This script tests the streaming upload functionality with large files
+ * 
+ * Usage:
+ * - Run with node --expose-gc to enable garbage collection
+ * - Set TEST_FILE_SIZE=100 to specify file size in MB
+ * - Set UPLOAD_METHOD=native|chunked to test specific upload method
+ * - Set CHUNK_SIZE=2 to specify chunk size in MB
+ * - Set MONITOR_INTERVAL=5000 to set memory monitoring interval in ms
  */
-const fs = require('fs');
-const path = require('path');
-const { promisify } = require('util');
-const { PassThrough } = require('stream');
-const crypto = require('crypto');
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
 const logger = require('../services/logger');
 
 // Make sure logs are visible
@@ -15,6 +20,12 @@ process.env.SHOW_LOGS = 'true';
 // Import our streaming storage
 const createStreamingStorage = require('../middleware/streaming-storage');
 const { wrapWithStreaming } = require('../services/streaming-adapter');
+
+// Get configuration from environment variables
+const TEST_FILE_SIZE = parseInt(process.env.TEST_FILE_SIZE || '50'); // Default 50MB
+const UPLOAD_METHOD = process.env.UPLOAD_METHOD || 'native'; // 'native' or 'chunked'
+const CHUNK_SIZE = parseInt(process.env.CHUNK_SIZE || '1'); // Default 1MB
+const MONITOR_INTERVAL = parseInt(process.env.MONITOR_INTERVAL || '5000'); // Default 5 seconds
 
 // Create a mock file for testing
 async function createLargeTestFile(filePath, sizeMB) {
@@ -75,6 +86,7 @@ class MockStorageService {
       chunks++;
       if (chunks % 10 === 0) {
         logger.log(`Streaming ${chunks} chunks, ${totalBytes} bytes so far`);
+        logMemoryUsage();
       }
     }
     
@@ -85,31 +97,70 @@ class MockStorageService {
   }
 }
 
+// Log memory usage
+function logMemoryUsage(label = '') {
+  const memUsage = process.memoryUsage();
+  logger.log(`Memory usage ${label ? '(' + label + ')' : ''} - RSS: ${Math.round(memUsage.rss / 1024 / 1024)}MB, Heap: ${Math.round(memUsage.heapUsed / 1024 / 1024)}/${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`);
+  
+  // Try to force garbage collection if available
+  if (global.gc) {
+    global.gc();
+    logger.log('Garbage collection forced');
+  }
+}
+
+// Set up interval for memory monitoring
+function startMemoryMonitoring(intervalMs = 5000) {
+  const intervalId = setInterval(() => {
+    logMemoryUsage('periodic');
+  }, intervalMs);
+  
+  return () => clearInterval(intervalId);
+}
+
 // Test the streaming upload
 async function testStreamingUpload() {
+  // Start memory monitoring
+  const stopMemoryMonitoring = startMemoryMonitoring(MONITOR_INTERVAL);
+  logMemoryUsage('test-start');
+  
   try {
+    logger.log(`Starting streaming upload test with configuration:`);
+    logger.log(`- File size: ${TEST_FILE_SIZE}MB`);
+    logger.log(`- Upload method: ${UPLOAD_METHOD}`);
+    logger.log(`- Chunk size: ${CHUNK_SIZE}MB`);
+    logger.log(`- Memory monitoring interval: ${MONITOR_INTERVAL}ms`);
+    logger.log(`- Garbage collection available: ${global.gc ? 'Yes' : 'No'}`);
+    
+    if (!global.gc) {
+      logger.log('WARNING: For best results, run with node --expose-gc to enable garbage collection');
+    }
+    
     // Create test directory if it doesn't exist
     const testDir = path.join(__dirname, 'temp');
     if (!fs.existsSync(testDir)) {
       fs.mkdirSync(testDir, { recursive: true });
     }
     
-    // Create a large test file (50MB)
+    // Create a large test file
     const testFilePath = path.join(testDir, 'large-test-file.bin');
-    const fileSizeMB = 50;
-    await createLargeTestFile(testFilePath, fileSizeMB);
+    await createLargeTestFile(testFilePath, TEST_FILE_SIZE);
+    logMemoryUsage('after-file-creation');
     
-    // Create streaming storage instance
+    // Create streaming storage instance with configurable chunk size
     const storage = createStreamingStorage({
-      chunkSize: 1 * 1024 * 1024 // 1MB chunks
+      chunkSize: CHUNK_SIZE * 1024 * 1024, // Convert MB to bytes
+      maxChunksInMemory: 5 // Limit number of chunks in memory
     });
     
     // Create a file object similar to what multer would create
-    const fileStream = fs.createReadStream(testFilePath);
+    const fileStream = fs.createReadStream(testFilePath, {
+      highWaterMark: 1024 * 1024 // 1MB buffer for read stream
+    });
     const fileInfo = {
       originalname: 'large-test-file.jpg',
       mimetype: 'image/jpeg',
-      size: fileSizeMB * 1024 * 1024
+      size: TEST_FILE_SIZE * 1024 * 1024
     };
     
     // Process the file through streaming storage
@@ -129,13 +180,24 @@ async function testStreamingUpload() {
     
     logger.log('File processed through streaming storage');
     logger.log(`Processed file has ${processedFile.streams.length} streams`);
+    logMemoryUsage('after-streaming-storage');
+    
+    // Force garbage collection if available
+    if (global.gc) {
+      global.gc();
+      logger.log('Garbage collection forced before upload');
+    }
     
     // Test with mock service
     const mockService = new MockStorageService();
     const streamingAdapter = wrapWithStreaming(mockService);
     
-    // Test the adapter with the processed file
-    logger.log('Testing streaming adapter with mock service');
+    // Test the adapter with the processed file using the specified method
+    logger.log(`Testing streaming adapter with ${UPLOAD_METHOD} streaming method`);
+    console.time('uploadTime');
+    
+    // The wrapWithStreaming function handles the method selection internally
+    // based on the service capabilities
     const result = await streamingAdapter.uploadFile({}, {
       identifier: 'test',
       file: processedFile,
@@ -144,24 +206,32 @@ async function testStreamingUpload() {
       type: 'image/jpeg'
     });
     
+    console.timeEnd('uploadTime');
     logger.log('Upload completed with result:', result);
-    logger.log(`Mock service received ${mockService.uploadedBytes} bytes in ${mockService.uploadedChunks} chunks`);
+    logger.log(`Mock service received ${mockService.uploadedBytes || 'unknown'} bytes in ${mockService.uploadedChunks || 'unknown'} chunks`);
+    logMemoryUsage('after-upload');
+    
+    // Help garbage collection by clearing references
+    processedFile.streams = null;
     
     // Clean up
     logger.log('Cleaning up test files');
     fs.unlinkSync(testFilePath);
-    logger.log('Test completed successfully');
     
-    // Memory usage stats
-    const memUsage = process.memoryUsage();
-    logger.log('Memory usage:');
-    logger.log(`  RSS: ${Math.round(memUsage.rss / 1024 / 1024)} MB`);
-    logger.log(`  Heap Total: ${Math.round(memUsage.heapTotal / 1024 / 1024)} MB`);
-    logger.log(`  Heap Used: ${Math.round(memUsage.heapUsed / 1024 / 1024)} MB`);
-    logger.log(`  External: ${Math.round(memUsage.external / 1024 / 1024)} MB`);
+    // Final memory check
+    if (global.gc) {
+      global.gc();
+      logger.log('Final garbage collection forced');
+    }
+    
+    logMemoryUsage('test-end');
+    logger.log('Test completed successfully');
     
   } catch (error) {
     logger.error('Test failed:', error);
+  } finally {
+    // Always stop memory monitoring
+    stopMemoryMonitoring();
   }
 }
 
