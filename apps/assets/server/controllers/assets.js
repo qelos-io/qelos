@@ -29,7 +29,9 @@ function uploadStorageAssets(req, res) {
   const file = req.files[0].buffer;
   const type = req.files[0].mimetype;
   const { identifier, extension, prefix } = req.query || {};
+  const tenant = req.headers.tenant;
   const service = getService(req.storage);
+  const storage = req.storage;
 
   if (!service) {
     return res.end();
@@ -39,7 +41,7 @@ function uploadStorageAssets(req, res) {
     .then((result) => {
       res.status(200).json(result).end();
       emitPlatformEvent({
-        tenant: req.headers.tenant,
+        tenant,
         user: req.user._id,
         source: 'assets',
         kind: 'asset-operation',
@@ -51,12 +53,12 @@ function uploadStorageAssets(req, res) {
           prefix,
           type,
           storage: {
-            _id: req.storage._id,
-            kind: req.storage.kind,
-            name: req.storage.name
+            _id: storage._id,
+            kind: storage.kind,
+            name: storage.name
           }
         }
-      }).catch(() => null)
+      }).catch(() => logger.error('could not emit platform event'))
     })
     .catch((error) => {
       res.status(500).json({ message: error.message || 'could not upload asset' }).end();

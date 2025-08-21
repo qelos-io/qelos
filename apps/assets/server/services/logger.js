@@ -1,8 +1,8 @@
 const {showLogs} = require('../../config');
 
 const logger = {
-  log: (() => undefined),
-  error: (() => undefined)
+  log: ((...args) => undefined),
+  error: ((...args) => undefined)
 }
 
 if (showLogs) {

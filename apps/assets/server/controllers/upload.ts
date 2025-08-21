@@ -4,6 +4,7 @@ import mime from "mime";
 import { getService } from "../controllers/assets";
 import Storage from "../models/storage";
 import { emitPlatformEvent } from "@qelos/api-kit";
+import logger from "../services/logger";
 
 // Default file extension for unknown types
 const DEFAULT_EXTENSION = "jpg";
@@ -115,22 +116,22 @@ export async function uploadFile(req: any, res: any): Promise<any> {
     }).end();
 
     emitPlatformEvent({
-            tenant: req.headers.tenant,
-            user: user._id,
-            source: 'assets',
-            kind: 'asset-operation',
-            eventName: 'asset-uploaded',
-            description: `asset updated by user`,
-            metadata: {
-              prefix: `upload_${user._id}`,
-              type: mimeType,
-              storage: {
-                _id: storage._id,
-                kind: storage.kind,
-                name: storage.name
-              }
-            }
-          }).catch(() => null)
+      tenant,
+      user: user._id,
+      source: 'assets',
+      kind: 'asset-operation',
+      eventName: 'asset-uploaded',
+      description: `asset updated by user`,
+      metadata: {
+        prefix: `upload_${user._id}`,
+        type: mimeType,
+        storage: {
+          _id: storage._id,
+          kind: storage.kind,
+          name: storage.name
+        }
+      }
+    }).catch(() => logger.error('could not emit platform event'))
   } catch (error) {
     return res.status(500).json({
       message: "File upload failed. Please try again."
