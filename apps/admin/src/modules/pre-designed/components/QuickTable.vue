@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
-import { ref, computed, watch, nextTick, onMounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, VNode } from 'vue';
 import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
 import { ElMessageBox } from 'element-plus';
 import type { TableColumnCtx } from 'element-plus/es/components/table/src/table-column/defaults';
@@ -18,6 +18,7 @@ const props = defineProps<{
     fixed?: boolean | string,
     sortable?: boolean | string,
     filterable?: boolean,
+    editable?: boolean,
     filters?: Array<{ text: string, value: any }>,
     filterMethod?: (value: any, row: any) => boolean,
     formatter?: (row: any, column: TableColumnCtx<any>, cellValue: any, index: number) => string | VNode,
@@ -500,10 +501,10 @@ const formatPercent = (value: number, decimals = 2) => {
               </span>
               
               <!-- Boolean type - shows as toggle/checkbox -->
-              <el-switch 
-                v-else-if="col.type === 'boolean'"
+              <template v-else-if="col.type === 'boolean'">
+                <el-switch 
                 :model-value="get(scope.row, col.prop)"
-                :disabled="!col.editable"
+                v-if="col.editable"
                 @change="(val) => {
                   const updatedRow = { ...scope.row };
                   set(updatedRow, col.prop, val);
@@ -511,7 +512,8 @@ const formatPercent = (value: number, decimals = 2) => {
                 }"
                 class="column-boolean"
               />
-              
+              <span v-else><font-awesome-icon icon="fa-regular fa-circle-check" /></span>
+              </template>              
               <!-- Status type - shows as badge/tag -->
               <el-tag 
                 v-else-if="col.type === 'status'"

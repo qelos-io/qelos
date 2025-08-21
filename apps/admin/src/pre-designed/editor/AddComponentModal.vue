@@ -76,7 +76,7 @@
               </el-form-item>
             </FormRowGroup>
             <div v-else-if="prop.type === 'array'">
-              <FormRowGroup v-for="(col, index) in propsBuilder.columns" :key="index">
+              <FormRowGroup v-for="(col, index) in propsBuilder[prop.prop]" :key="index">
                 <FormInput v-for="child in prop.children"
                            :class="child.type === 'switch' ? 'flex-0' : ''"
                            :key="child.prop"
@@ -86,10 +86,10 @@
                            v-model="col[child.prop]"
                 />
                 <div class="flex-0 remove-row">
-                  <RemoveButton @click="propsBuilder.columns.splice(index, 1)"/>
+                  <RemoveButton @click="propsBuilder[prop.prop].splice(index, 1)"/>
                 </div>
               </FormRowGroup>
-              <AddMore @click="propsBuilder.columns.push({})"/>
+              <AddMore @click="propsBuilder[prop.prop].push({})"/>
             </div>
             <FormInput v-else
                        :type="prop.type"
@@ -144,7 +144,7 @@ function selectComponent(key: string) {
   selectedComponent.value = key;
   propsBuilder.value = {
     data: '',
-    columns: [{}]
+    columns: [{}],
   };
 
   propsBuilder.value = availableComponents[key].requiredProps.reduce((acc, prop) => {

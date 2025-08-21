@@ -3,11 +3,13 @@
     <Navigation class="navigation" :opened="navigationOpened" @close="navigationOpened = false"/>
     <div class="admin-content">
       <Header @toggle="navigationOpened = !navigationOpened" :is-navigation-opened="navigationOpened"/>
-      <div class="main">
-        <router-view class="main-content"/>
+      <div class="main-wrapper">
+        <div class="main">
+          <router-view class="main-content"/>
+        </div>
+        <PrivilegedAddons/>
       </div>
     </div>
-    <PrivilegedAddons/>
   </div>
   <template v-if="openModals?.length">
     <MicroFrontendModal v-for="{mfe, props} in openModals" :key="mfe.name" :mfe="mfe" :props="props"/>
@@ -86,6 +88,15 @@ watch(() => user.value?.roles, () => {
   height: 100%;
   flex-direction: row;
   background: linear-gradient(to right bottom, var(--border-color) 20%, var(--body-bg) 80%);
+}
+
+.main-wrapper {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  height: calc(100% - 60px);
+  overflow: auto;
+  order: 2;
 }
 
 .admin-content {

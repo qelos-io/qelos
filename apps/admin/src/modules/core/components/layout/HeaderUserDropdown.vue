@@ -3,7 +3,7 @@
     <div class="el-dropdown-link user-welcome" @click.stop>
       <span>{{ user.firstName }}</span>
       <el-avatar class="avatar-img" v-if="user.workspace || user.profileImage" :src="user.profileImage">
-        {{ user.workspace?.name[0].toUpperCase() }}
+        {{ workspaceName }}
       </el-avatar>
       <el-icon>
         <icon-arrow-down/>

@@ -263,7 +263,15 @@ export function useEditorComponents() {
       description: 'A chat interface with AI assistant and file upload support.',
       component: AiChat,
       requiredProps: [
-        { prop: 'url', label: 'AI API URL', type: 'text', source: 'manual', placeholder: 'https://...' }
+        { prop: 'url', label: 'AI API URL', type: 'text', source: 'manual', placeholder: 'https://...' },
+        { prop: 'title', label: 'Title', type: 'text', source: 'manual', placeholder: 'Enter the card title' },
+        { prop: 'suggestions', label: 'Suggestions', type: 'array', source: 'manual', 
+          children: [
+            { prop: 'label', label: 'Label', type: 'text', placeholder: 'Enter the label' },
+            { prop: 'icon', label: 'Icon', type: 'text', placeholder: 'Enter the icon' },
+            { prop: 'text', label: 'Text', type: 'text', placeholder: 'Enter the text' },
+          ]
+        },
       ]
     },
     'stats-card': {

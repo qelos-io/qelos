@@ -14,6 +14,18 @@
           <div class="ai-initial-desc">{{ $t('How can I help you?') }}<br />
             <span style="color: var(--el-color-primary);">{{ $t('You can also drop files anywhere in this chat.') }}</span>
           </div>
+          <div v-if="suggestions?.length" class="ai-suggestions">
+            <el-button
+              v-for="(suggestion, idx) in suggestions"
+              :key="idx"
+              type="default"
+              size="small"
+              @click="onSuggestionClick(suggestion)"
+            >
+            <el-icon v-if="(suggestion as any).icon"><font-awesome-icon :icon="['fas', (suggestion as any).icon]" /></el-icon>
+            {{ typeof suggestion === 'string' ? suggestion : ((suggestion as any).label || (suggestion as any).text) }}
+            </el-button>
+          </div>
         </template>
       </div>
       <transition-group name="chat-bubble" tag="div">
@@ -107,7 +119,14 @@ import { UploadFilled, Document, Loading, UserFilled, Cpu } from '@element-plus/
 import { Remarkable } from 'remarkable';
 import threadsService from '@/services/threads-service';
 
-const props = defineProps<{ url: string, title?: string, text?: string, recordThread?: boolean, threadId?: string, integrationId?: string }>();
+const props = defineProps<{ url: string,
+  title?: string,
+  text?: string,
+  recordThread?: boolean,
+  threadId?: string,
+  integrationId?: string,
+  suggestions?: Array<string | { label: string, text?: string, icon?: string }>
+}>();
 
 const emit = defineEmits(['update:threadId']);
 
@@ -270,6 +289,14 @@ async function handleFiles(files: File[]) {
   }
 }
 
+function onSuggestionClick(suggestion: string | { label: string, text?: string, icon?: string }) {
+  if (typeof suggestion === 'string') {
+    input.value = suggestion;
+  } else {
+    input.value = suggestion.text || suggestion.label;
+  }
+}
+
 async function onSend() {
   if (!canSend()) return;
   for (const file of attachedFiles) {
@@ -415,7 +442,7 @@ async function onSend() {
   position: relative;
 }
 
-.ai-textarea .el-textarea__inner {
+.ai-textarea :deep(.el-textarea__inner) {
   width: 100%;
   min-height: 44px !important;
   border-radius: var(--border-radius, 16px) !important;
@@ -432,7 +459,7 @@ async function onSend() {
   align-items: center;
 }
 
-.ai-textarea .el-textarea__inner:focus {
+.ai-textarea :deep(.el-textarea__inner:focus) {
   background: var(--inputs-bg-color, #f0f7ff) !important;
   box-shadow: 0 2px 16px 0 var(--focus-color, rgba(64,158,255,0.10)) !important;
   border: 1.5px solid var(--focus-color, #409eff) !important;
@@ -711,5 +738,17 @@ async function onSend() {
 
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+.ai-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.ai-suggestions .el-button :deep(i) {
+  margin-inline-end: 0.5em;
 }
 </style>

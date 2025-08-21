@@ -395,6 +395,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
   display: flex;
   align-items: center;
   padding: 20px;
+  min-width: 240px;
   gap: 16px;
 }
 
