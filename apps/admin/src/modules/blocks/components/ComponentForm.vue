@@ -1,5 +1,17 @@
 <template>
   <div class="component-form">
+    <div class="mode-toggle-container">
+      <el-switch
+        v-model="fileUploaded"
+        class="toggle-switch"
+        active-text="Editor Mode"
+        inactive-text="Upload Mode"
+        inline-prompt
+        :active-icon="Edit"
+        :inactive-icon="Upload"
+      />
+    </div>
+
     <div v-if="!fileUploaded">
       <div 
         class="file-drop-zone" 
@@ -33,7 +45,10 @@
         </el-button>
       </div>
       <div class="uploaded-file-content">
-        <pre><code>{{ uploadedFileContent }}</code></pre>
+        <Monaco
+          v-model="uploadedFileContent"
+          language="html"
+        />
       </div>
     </div>
     
@@ -88,7 +103,9 @@
 <script setup lang="ts">
 import { ref, reactive, watch, capitalize } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Upload, RefreshRight } from '@element-plus/icons-vue';
+import { Upload, RefreshRight, Edit } from '@element-plus/icons-vue';
+import Monaco from '@/modules/users/components/Monaco.vue'
+import { useVueFileTemplate } from '../compositions/vue-file-template';
 
 const props = defineProps({
   initialData: {
@@ -103,12 +120,14 @@ const props = defineProps({
 
 const emit = defineEmits(['submitted', 'cancel']);
 
+const { defaultVueTemplate } = useVueFileTemplate();
+
 const formRef = ref();
 const fileInput = ref<HTMLInputElement | null>(null);
 const isDragging = ref(false);
 const fileUploaded = ref(false);
 const uploadedFileName = ref('');
-const uploadedFileContent = ref('');
+const uploadedFileContent = ref(defaultVueTemplate);
 
 const form = reactive({
   componentName: '',
@@ -135,7 +154,7 @@ watch(() => props.initialData, (newVal) => {
     form.componentName = newVal.componentName || '';
     form.identifier = newVal.identifier || '';
     form.description = newVal.description || '';
-    uploadedFileContent.value = newVal.content;
+    uploadedFileContent.value = newVal.content || defaultVueTemplate;
     uploadedFileName.value = newVal.componentName;
     if (newVal.content) {
       fileUploaded.value = true;
@@ -230,15 +249,12 @@ const triggerFileInput = () => {
 };
 
 const handleReupload = () => {
-  // Reset the uploaded file state
   fileUploaded.value = false;
   uploadedFileName.value = '';
   uploadedFileContent.value = '';
-  
-  // Trigger the file input after a short delay to ensure the UI updates
-  setTimeout(() => {
-    triggerFileInput();
-  }, 100);
+  form.componentName = '';
+  form.description = '';
+  form.identifier = '';
 };
 
 const handleFileSelect = (event: Event) => {
@@ -291,6 +307,16 @@ const extractComponentInfo = (content: string, fileName: string) => {
 <style scoped>
 .component-form {
   max-width: 100%;
+}
+
+.mode-toggle-container {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.toggle-switch :deep(.el-switch__label) {
+  font-size: 14px;
 }
 
 .editor-container {
@@ -348,18 +374,10 @@ const extractComponentInfo = (content: string, fileName: string) => {
 }
 
 .uploaded-file-content {
-  max-height: 300px;
+  max-height: 350px;
   overflow: auto;
   padding: 10px;
   background-color: #f8f9fa;
-}
-
-.uploaded-file-content pre {
-  margin: 0;
-  white-space: pre-wrap;
-  font-family: monospace;
-  font-size: 13px;
-  line-height: 1.5;
 }
 
 .file-drop-zone .el-icon {

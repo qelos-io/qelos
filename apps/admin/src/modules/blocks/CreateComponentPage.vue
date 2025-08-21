@@ -7,7 +7,7 @@
     
     <el-card class="component-form-card">
       <ComponentForm
-        :loading="loading"
+        :loading="submitting"
         @submitted="submit"
       />
     </el-card>
@@ -15,18 +15,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 import PageTitle from '../core/components/semantics/PageTitle.vue';
 import ComponentForm from './components/ComponentForm.vue';
 import componentsService from '@/services/components-service';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
+import { useComponentsList } from './store/components-list';
 
-const loading = ref(false);
+const componentsStore = useComponentsList();
+
 const { submit, submitting } = useSubmitting(
   ({ componentName, identifier, description, content }) => componentsService.create({ componentName, identifier, description, content }),
   {
     success: 'Component created successfully',
     error: 'Failed to create component'
+  }, () => {
+    componentsStore.retry();
   }
 )
 </script>
