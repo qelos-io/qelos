@@ -125,6 +125,7 @@ export async function uploadFile(req: any, res: any): Promise<any> {
       metadata: {
         prefix: `upload_${user._id}`,
         type: mimeType,
+        ...fileData,
         storage: {
           _id: storage._id,
           kind: storage.kind,

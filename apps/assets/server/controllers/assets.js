@@ -52,6 +52,7 @@ function uploadStorageAssets(req, res) {
           extension,
           prefix,
           type,
+          ...result,
           storage: {
             _id: storage._id,
             kind: storage.kind,
