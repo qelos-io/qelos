@@ -175,6 +175,8 @@ assets:
     AUTH_SERVICE_PORT: 9000
     SECRETS_SERVICE_URL: secrets-service
     SECRETS_SERVICE_PORT: 9002
+    PLUGINS_SERVICE_URL: plugins-service
+    PLUGINS_SERVICE_PORT: 9006
 
 drafts:
   image:

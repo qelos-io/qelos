@@ -45,7 +45,7 @@ async function loadFiles(storage, identifier = '/') {
       publicUrl: storage.metadata.publicUrl ? joinUrl(storage.metadata.publicUrl, fileIdentifier) : null,
     };
   });
-}
+
 
 async function removeFile(storage, identifier) {
   const s3 = new S3(storage);

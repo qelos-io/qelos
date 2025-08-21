@@ -538,40 +538,40 @@ export default component;
     let minifiedJs = jsOutput;
     let minifiedCss = cssOutput;
 
-    try {
-      // Validate the generated JavaScript before minification
-      new Function(jsOutput);
+    // try {
+    //   // Validate the generated JavaScript before minification
+    //   new Function(jsOutput);
       
-      // Minify JavaScript
-      // Dynamically import terser (ESM module)  
-      const { minify: terserMinify } = await import('terser');
-      const terserResult = await terserMinify(jsOutput, {
-        compress: {
-          pure_funcs: [],
-          pure_getters: true,
-          unsafe_arrows: false,
-          drop_console: false,
-          passes: 2
-        },
-        mangle: {
-          keep_fnames: true,
-          keep_classnames: true
-        },
-        format: {
-          comments: false
-        },
-        keep_fnames: true,
-        keep_classnames: true
-      });
+    //   // Minify JavaScript
+    //   // Dynamically import terser (ESM module)  
+    //   const { minify: terserMinify } = await import('terser');
+    //   const terserResult = await terserMinify(jsOutput, {
+    //     compress: {
+    //       pure_funcs: [],
+    //       pure_getters: true,
+    //       unsafe_arrows: false,
+    //       drop_console: false,
+    //       passes: 2
+    //     },
+    //     mangle: {
+    //       keep_fnames: true,
+    //       keep_classnames: true
+    //     },
+    //     format: {
+    //       comments: false
+    //     },
+    //     keep_fnames: true,
+    //     keep_classnames: true
+    //   });
       
-      if (terserResult.code) {
-        minifiedJs = terserResult.code;
-      }
-    } catch (error) {
-      logger.log('Error minifying JavaScript:', error);
-      // Fall back to unminified output
-      minifiedJs = jsOutput; // Explicit fallback to unminified output
-    }
+    //   if (terserResult.code) {
+    //     minifiedJs = terserResult.code;
+    //   }
+    // } catch (error) {
+    //   logger.log('Error minifying JavaScript:', error);
+    //   // Fall back to unminified output
+    //   minifiedJs = jsOutput; // Explicit fallback to unminified output
+    // }
     
     try {
       // Minify CSS with settings to preserve important properties
