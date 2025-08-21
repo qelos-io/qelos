@@ -28,10 +28,7 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
     value = Number(value);
   }
   if (property.type === 'boolean') {
-    if (typeof value !== 'boolean') {
-      throw new ResponseError(`Property ${key} must be a boolean`, 406);
-    }
-    value = Boolean(value);
+    value = !!value;
   }
   if (property.type === 'object') {
     const validate = property.schema ? ajv.compile(property.schema) : defaultValidate;
@@ -100,9 +97,11 @@ export function getValidBlueprintMetadata(metadata: any, blueprint: IBlueprint) 
           throw new ResponseError(`Property ${key} must be an array`, 406);
         }
         if (isArray) {
+          const arr: any[] = [];
           for (const val of value) {
-            validData[key] = validateValue(key, val, property);
+            arr.push(validateValue(key, val, property));
           }
+          validData[key] = arr;
         }
       } else {
         validData[key] = validateValue(key, value, property);

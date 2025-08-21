@@ -33,7 +33,7 @@ async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBluepri
   const { _id, ...body } = req.body || {}
 
   // validate the metadata
-  entity.metadata = getValidBlueprintMetadata(body.metadata, blueprint);
+  entity.metadata = getValidBlueprintMetadata({...body.metadata, ...body.metadata}, blueprint);
 
   // run the update mapping pre-save
   await updateEntityMapping(blueprint, entity);
