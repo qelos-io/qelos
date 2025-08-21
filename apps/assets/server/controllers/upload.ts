@@ -32,7 +32,7 @@ function getFileExtension(contentType?: string, url?: string): string {
 async function handleUpload(
   storage: any,
   userId: string,
-  file: Buffer,
+  file: Buffer | any, // Accept either Buffer or streaming file object
   originalName: string,
   contentType?: string
 ): Promise<{ publicUrl: string, success: boolean }> {
@@ -98,10 +98,12 @@ export async function uploadFile(req: any, res: any): Promise<any> {
         }).end();
       }
     } else if (file) {
+      // Check if file is using our streaming storage
+      const fileObj = file.isStreaming ? file : file.buffer;
       fileData = await handleUpload(
         storage,
         user._id,
-        file.buffer,
+        fileObj,
         file.originalname,
         file.mimetype
       );

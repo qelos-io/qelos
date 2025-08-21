@@ -164,11 +164,11 @@ assets:
   port: 9005
   resources:
     requests:
-      cpu: 50m
-      memory: 256Mi
+      cpu: 200m
+      memory: 1Gi
     limits:
-      cpu: 150m
-      memory: 512Mi
+      cpu: 500m
+      memory: 4Gi
   environment:
     SECRETS_TOKEN: {{ .Values.ASSETS_SERVICE_SECRET }}
     AUTH_SERVICE_URL: auth-service

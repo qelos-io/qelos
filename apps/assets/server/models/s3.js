@@ -1,4 +1,5 @@
-const { S3Client, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand, Upload } = require('@aws-sdk/client-s3');
+const { Readable } = require('node:stream');
 const { getSecret } = require('../services/secrets-management');
 const ASSET_TYPES = require('../utils/asset-types.json');
 const logger = require('../services/logger');
@@ -169,6 +170,42 @@ class S3 {
     }
   }
 
+  /**
+   * Upload a file using streaming to reduce memory usage
+   * @param {string} fullPath - Full path to upload to
+   * @param {Object} file - File object with stream
+   * @returns {Promise<Object>} - Upload result
+   */
+  async uploadStream(fullPath, file) {
+    try {
+      logger.log(`S3 streaming upload started for ${fullPath}`);
+      
+      // Create upload parameters
+      const params = {
+        Bucket: this.bucket.name,
+        Key: fullPath.slice(1),
+        Body: file.fileStream,
+        ContentType: file.type,
+        ACL: this.shouldUploadAsPublic ? 'public-read' : undefined
+      };
+      
+      // Use the Upload utility which handles multipart uploads
+      const upload = new Upload({
+        client: this._client,
+        params
+      });
+
+      // Start the upload and wait for it to complete
+      const result = await upload.done();
+      logger.log(`S3 streaming upload completed for ${fullPath}`);
+      
+      return result;
+    } catch (error) {
+      logger.error('S3 streaming upload error:', error);
+      throw { message: 'could not upload asset stream to storage: ' + this.name };
+    }
+  }
+  
   async disconnect() {
     this._client.destroy();
   }

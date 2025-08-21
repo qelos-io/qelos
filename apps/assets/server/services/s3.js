@@ -77,8 +77,35 @@ async function renameFile(storage, oldIdentifier, newFileName) {
   return { success: true };
 }
 
+/**
+ * Upload a file using streaming to reduce memory usage
+ * @param {Object} storage - Storage configuration
+ * @param {Object} options - Upload options
+ * @param {string} options.identifier - File identifier
+ * @param {Object} options.fileStream - File stream
+ * @param {string} options.extension - File extension
+ * @param {string} options.prefix - File prefix
+ * @param {string} options.type - File MIME type
+ * @returns {Promise<Object>} - Upload result
+ */
+async function uploadFileStream(storage, { identifier, fileStream, extension, prefix, type }) {
+  const s3 = s3Cache.get(storage);
+  const filename = `${prefix}-${uniqid()}.${extension}`;
+  const fullPath = path.join(storage.metadata.basePath || '/', identifier, filename);
+
+  try {
+    await s3.ready;
+    await s3.uploadStream(fullPath, { fileStream, type });
+  } catch (e) {
+    throw new Error(e.message || 'failed to upload asset stream to: ' + fullPath);
+  }
+
+  return { success: true, publicUrl: storage.metadata.publicUrl ? joinUrl(storage.metadata.publicUrl, path.join(identifier, filename)) : null };
+}
+
 module.exports = {
   uploadFile,
+  uploadFileStream,
   loadFiles,
   removeFile,
   renameFile

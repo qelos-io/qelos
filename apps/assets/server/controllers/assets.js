@@ -2,14 +2,19 @@ const ftpService = require('../services/ftp');
 const gcsService = require('../services/gcs');
 const s3Service = require('../services/s3');
 const cloudinaryService = require('../services/cloudinary');
-const {emitPlatformEvent} = require("@qelos/api-kit");
+const { wrapWithStreaming } = require('../services/streaming-adapter');
+const { emitPlatformEvent } = require("@qelos/api-kit");
+const logger = require('../services/logger');
 
-const getService = ({ kind }) => ({
-  gcs: gcsService,
-  ftp: ftpService,
-  s3: s3Service,
-  cloudinary: cloudinaryService
-})[kind];
+// Wrap all services with streaming adapter
+const wrappedServices = {
+  gcs: wrapWithStreaming(gcsService),
+  ftp: wrapWithStreaming(ftpService),
+  s3: wrapWithStreaming(s3Service),
+  cloudinary: wrapWithStreaming(cloudinaryService)
+};
+
+const getService = ({ kind }) => wrappedServices[kind] || null;
 
 function getStorageAssets(req, res) {
   const identifier = req.query.identifier;
