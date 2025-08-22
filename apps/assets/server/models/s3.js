@@ -3,6 +3,7 @@ const { getSecret } = require('../services/secrets-management');
 const ASSET_TYPES = require('../utils/asset-types.json');
 const logger = require('../services/logger');
 const { emitPlatformEvent } = require("@qelos/api-kit");
+const { createResettableStream } = require('../controllers/stream-reset');
 
 class S3 {
   constructor(storage) {
@@ -44,6 +45,14 @@ class S3 {
             secretAccessKey: secretKey
           },
           forcePathStyle: isDigitalOcean ? false : undefined,
+          // Add configuration to help with XAmzContentSHA256Mismatch errors
+          computeChecksums: true,
+          checksumAlgorithm: 'SHA256',
+          // Increase timeouts for large file uploads
+          requestHandler: {
+            connectionTimeout: 60000, // 60 seconds
+            socketTimeout: 300000 // 5 minutes
+          }
         };
         
         this._client = new S3Client(clientConfig);
@@ -182,97 +191,166 @@ class S3 {
     // Track upload for potential cleanup
     let uploadAborted = false;
     let uploadObj = null;
-    let abortController = new AbortController();
+    let abortController = null;
+    let retryCount = 0;
+    const maxRetries = 2; // Maximum number of retries for checksum errors
     
     try {
-      // Set smaller part size for better memory management with large files
-      const partSize = 2 * 1024 * 1024; // 2MB parts (reduced from 5MB)
-      
-      // Add event listeners to detect connection close
-      if (file.req && file.req.socket) {
-        const cleanup = () => {
-          if (!uploadAborted) {
-            uploadAborted = true;
-            if (uploadObj && typeof uploadObj.abort === 'function') {
-              uploadObj.abort();
+      // Set up cleanup function for connection termination
+      const setupCleanup = () => {
+        if (file.req && file.req.socket) {
+          const cleanup = () => {
+            if (!uploadAborted) {
+              uploadAborted = true;
+              logger.log('Connection terminated during upload, cleaning up resources');
+              
+              if (uploadObj && typeof uploadObj.abort === 'function') {
+                try {
+                  uploadObj.abort();
+                } catch (abortError) {
+                  // Ignore abort errors
+                }
+              }
+              
+              if (file.fileStream && typeof file.fileStream.destroy === 'function') {
+                file.fileStream.destroy(new Error('Connection closed'));
+              }
+              
+              // Force garbage collection
+              if (global.gc) global.gc();
             }
-            if (file.fileStream && typeof file.fileStream.destroy === 'function') {
-              file.fileStream.destroy(new Error('Connection closed'));
-            }
-            // Force garbage collection
-            if (global.gc) global.gc();
-          }
-        };
-        
-        // Listen for connection close events
-        file.req.socket.on('close', cleanup);
-        file.req.on('close', cleanup);
-        file.req.on('end', cleanup);
-        file.req.on('error', cleanup);
-      }
-      
-      // Create upload parameters with optimized settings for large files
-      const params = {
-        Bucket: this.bucket.name,
-        Key: fullPath.slice(1),
-        Body: file.fileStream,
-        ContentType: file.type,
-        ACL: this.shouldUploadAsPublic ? 'public-read' : undefined,
-        // Fix for XAmzContentSHA256Mismatch error
-        ChecksumAlgorithm: 'SHA256',
-        // Optimized settings for large files
-        partSize: partSize,
-        queueSize: 2, // Allow 2 concurrent parts for better throughput while controlling memory
-        leavePartsOnError: false // Ensure parts are cleaned up on error
+          };
+          
+          // Listen for connection close events
+          file.req.socket.on('close', cleanup);
+          file.req.on('close', cleanup);
+          file.req.on('end', cleanup);
+          file.req.on('error', cleanup);
+          
+          return () => {
+            // Remove event listeners
+            file.req.socket.removeListener('close', cleanup);
+            file.req.removeListener('close', cleanup);
+            file.req.removeListener('end', cleanup);
+            file.req.removeListener('error', cleanup);
+          };
+        }
+        return () => {}; // No-op if no req/socket
       };
       
-      // Use the Upload utility with abort controller
-      uploadObj = new Upload({
-        client: this._client,
-        params,
-        abortSignal: abortController.signal
-      });
-
-      // Set up progress monitoring with more frequent garbage collection for large files
-      let lastGcTime = Date.now();
-      uploadObj.on('httpUploadProgress', (progress) => {
-        // More aggressive garbage collection for very large files
-        const now = Date.now();
-        if (now - lastGcTime > 30000) { // Every 30 seconds
-          if (global.gc) {
-            global.gc();
-            lastGcTime = now;
-          }
-        }
-      });
-
-      // Start the upload with timeout protection
-      const uploadPromise = uploadObj.done();
-      
-      // Set up a timeout for very large uploads to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        // 30 minutes timeout for very large files
-        const timeoutId = setTimeout(() => {
-          abortController.abort();
-          reject(new Error('Upload timeout exceeded'));
-        }, 30 * 60 * 1000); // 30 minutes
+      // Retry loop for handling checksum errors
+      while (retryCount <= maxRetries) {
+        // Create a new abort controller for each attempt
+        abortController = new AbortController();
         
-        // Clear timeout if upload completes
-        uploadPromise.then(() => clearTimeout(timeoutId)).catch(() => clearTimeout(timeoutId));
-      });
+        try {
+          // Set up cleanup handlers for this attempt
+          const removeListeners = setupCleanup();
+          
+          // Set smaller part size for better memory management with large files
+          const partSize = 2 * 1024 * 1024; // 2MB parts
+          
+          // Create upload parameters with optimized settings for large files
+          const params = {
+            Bucket: this.bucket.name,
+            Key: fullPath.slice(1),
+            Body: file.fileStream,
+            ContentType: file.type,
+            ACL: this.shouldUploadAsPublic ? 'public-read' : undefined,
+            // Fix for XAmzContentSHA256Mismatch error
+            ChecksumAlgorithm: 'SHA256',
+            // Optimized settings for large files
+            partSize: partSize,
+            queueSize: 1, // Reduce to 1 for more reliable uploads
+            leavePartsOnError: false, // Clean up parts on error
+            maxAttempts: 3 // Retry failed parts up to 3 times
+          };
+          
+          // Use the Upload utility with abort controller
+          uploadObj = new Upload({
+            client: this._client,
+            params,
+            abortSignal: abortController.signal
+          });
+
+          // Set up progress monitoring with garbage collection
+          let lastGcTime = Date.now();
+          uploadObj.on('httpUploadProgress', (progress) => {
+            // Periodic garbage collection for large files
+            const now = Date.now();
+            if (now - lastGcTime > 30000) { // Every 30 seconds
+              if (global.gc) {
+                global.gc();
+                lastGcTime = now;
+              }
+            }
+          });
+
+          // Start the upload with timeout protection
+          const uploadPromise = uploadObj.done();
+          
+          // Set up a timeout for very large uploads
+          const timeoutPromise = new Promise((_, reject) => {
+            const timeoutId = setTimeout(() => {
+              abortController.abort();
+              reject(new Error('Upload timeout exceeded'));
+            }, 30 * 60 * 1000); // 30 minutes
+            
+            // Clear timeout if upload completes
+            uploadPromise.then(() => clearTimeout(timeoutId)).catch(() => clearTimeout(timeoutId));
+          });
+          
+          // Wait for upload to complete or timeout
+          const result = await Promise.race([uploadPromise, timeoutPromise]);
+          
+          // Clean up event listeners
+          removeListeners();
+          
+          // Explicitly clear references to help garbage collection
+          file.fileStream = null;
+          uploadObj = null;
+          
+          return result;
+          
+        } catch (error) {
+          // Clean up the current attempt
+          if (uploadObj && typeof uploadObj.abort === 'function') {
+            try {
+              uploadObj.abort();
+            } catch (abortError) {
+              // Ignore abort errors
+            }
+          }
+          
+          // Check if we should retry based on error type
+          if (error.Code === 'XAmzContentSHA256Mismatch' && retryCount < maxRetries) {
+            retryCount++;
+            logger.log(`S3 upload failed with checksum mismatch. Retrying (${retryCount}/${maxRetries})...`);
+            
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            
+            // Reset file stream if possible
+            if (file.resetStream && typeof file.resetStream === 'function') {
+              await file.resetStream();
+            } else {
+              // If we can't reset the stream, we can't retry
+              throw error;
+            }
+            
+            continue; // Try again
+          }
+          
+          // If we get here, either it's not a retryable error or we've exhausted retries
+          throw error;
+        }
+      }
       
-      // Wait for upload to complete or timeout
-      const result = await Promise.race([uploadPromise, timeoutPromise]);
-      
-      // Explicitly clear references to help garbage collection
-      file.fileStream = null;
-      uploadObj = null;
-      
-      return result;
     } catch (error) {
-      // Ensure we clean up the stream and abort upload on error
+      // Final error handling
       if (!uploadAborted) {
         uploadAborted = true;
+        
         if (uploadObj && typeof uploadObj.abort === 'function') {
           try {
             uploadObj.abort();
@@ -285,13 +363,23 @@ class S3 {
       if (file.fileStream && typeof file.fileStream.destroy === 'function') {
         file.fileStream.destroy();
       }
+      
+      // Clear references
       file.fileStream = null;
       uploadObj = null;
       
-      // Force garbage collection after error
+      // Force garbage collection
       if (global.gc) global.gc();
       
-      throw { message: 'could not upload asset stream to storage: ' + this.name, originalError: error };
+      // Log detailed error information
+      logger.error('S3 upload error:', error);
+      
+      // Throw standardized error
+      throw { 
+        message: 'could not upload asset stream to storage: ' + this.name, 
+        originalError: error,
+        code: error.Code || error.code
+      };
     }
   }
   

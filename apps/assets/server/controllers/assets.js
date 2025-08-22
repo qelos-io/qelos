@@ -5,6 +5,7 @@ const cloudinaryService = require('../services/cloudinary');
 const { wrapWithStreaming } = require('../services/streaming-adapter');
 const { emitPlatformEvent } = require("@qelos/api-kit");
 const logger = require('../services/logger');
+const { createResettableStream } = require('./stream-reset');
 
 // Wrap all services with streaming adapter
 const wrappedServices = {
@@ -30,17 +31,43 @@ function getStorageAssets(req, res) {
     });
 }
 
-function uploadStorageAssets(req, res) {
-  const file = req.files[0].buffer;
-  const type = req.files[0].mimetype;
+async function uploadStorageAssets(req, res) {
+  const fileData = req.files[0];
+  const type = fileData.mimetype;
   const { identifier, extension, prefix } = req.query || {};
   const tenant = req.headers.tenant;
   const service = getService(req.storage);
   const storage = req.storage;
   let uploadAborted = false;
+  let enhancedFile = null;
 
   if (!service) {
     return res.end();
+  }
+  
+  // Check if this is a streaming upload (has fileStream) or buffer upload
+  const isStreamingUpload = fileData.fileStream !== undefined;
+  
+  // For streaming uploads, create a resettable stream to support retries
+  if (isStreamingUpload && storage.kind === 's3') {
+    try {
+      // Create a resettable stream that can be reset on retry attempts
+      enhancedFile = await createResettableStream({
+        fileStream: fileData.fileStream,
+        type,
+        req
+      });
+      
+      // Replace the original file data with our enhanced version
+      fileData.fileStream = enhancedFile.fileStream;
+      fileData.resetStream = enhancedFile.resetStream;
+      fileData.cleanup = enhancedFile.cleanup;
+      
+      logger.info('Created resettable stream for S3 upload to handle potential retries');
+    } catch (err) {
+      logger.error('Failed to create resettable stream:', err);
+      // Continue with original stream if resettable stream creation fails
+    }
   }
   
   // Handle connection termination events
@@ -48,12 +75,25 @@ function uploadStorageAssets(req, res) {
     uploadAborted = true;
     
     // Clean up any resources that might be in memory
-    if (file && file.streams) {
-      file.streams.forEach(stream => {
-        if (stream && typeof stream.destroy === 'function') {
-          stream.destroy();
-        }
-      });
+    if (fileData) {
+      // Clean up resettable stream if it exists
+      if (fileData.cleanup && typeof fileData.cleanup === 'function') {
+        fileData.cleanup();
+      }
+      
+      // Clean up fileStream if it exists
+      if (fileData.fileStream && typeof fileData.fileStream.destroy === 'function') {
+        fileData.fileStream.destroy();
+      }
+      
+      // Clean up any other streams
+      if (fileData.streams) {
+        fileData.streams.forEach(stream => {
+          if (stream && typeof stream.destroy === 'function') {
+            stream.destroy();
+          }
+        });
+      }
     }
     
     // Force garbage collection if available
@@ -72,8 +112,18 @@ function uploadStorageAssets(req, res) {
     req.socket.on('error', handleConnectionTermination);
   }
 
-  service.uploadFile(req.storage, { identifier, file, extension, prefix, type })
+  // Prepare the file object for the service call
+  const fileForUpload = isStreamingUpload ? fileData : fileData.buffer;
+  
+  service.uploadFile(req.storage, { identifier, file: fileForUpload, extension, prefix, type })
     .then((result) => {
+      // Clean up resettable stream if it exists
+      if (enhancedFile && enhancedFile.cleanup) {
+        enhancedFile.cleanup().catch(err => {
+          logger.warn('Error cleaning up temporary file:', err);
+        });
+      }
+      
       // Don't try to send a response if the connection was aborted
       if (uploadAborted) {
         logger.info('Upload completed but connection was already closed');
@@ -103,10 +153,27 @@ function uploadStorageAssets(req, res) {
       }).catch(() => logger.error('could not emit platform event'))
     })
     .catch((error) => {
+      // Clean up resettable stream if it exists
+      if (enhancedFile && enhancedFile.cleanup) {
+        enhancedFile.cleanup().catch(err => {
+          logger.warn('Error cleaning up temporary file after error:', err);
+        });
+      }
+      
       // Don't try to send a response if the connection was aborted
       if (uploadAborted) {
         logger.error(`Upload error after connection terminated: ${error.message}`);
         return;
+      }
+      
+      // Log detailed error information for S3 uploads with SHA256 issues
+      if (storage.kind === 's3' && error.code === 'XAmzContentSHA256Mismatch') {
+        logger.error('S3 SHA256 mismatch error details:', {
+          errorCode: error.code,
+          errorMessage: error.message,
+          storageType: storage.kind,
+          isDigitalOcean: storage.metadata?.bucketUrl?.includes('digitaloceanspaces.com') || false
+        });
       }
       
       res.status(500).json({ message: error.message || 'could not upload asset' }).end();
