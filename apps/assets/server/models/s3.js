@@ -103,9 +103,7 @@ class S3 {
         Key: fullPath.slice(1),
         Body: file.buffer,
         ContentType: file.type,
-        ACL: this.shouldUploadAsPublic ? 'public-read' : undefined,
-        // Fix for XAmzContentSHA256Mismatch error
-        ChecksumAlgorithm: 'SHA256'
+        ACL: this.shouldUploadAsPublic ? 'public-read' : undefined
       });
       
       return await this._client.send(command);
