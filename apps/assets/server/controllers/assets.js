@@ -46,11 +46,9 @@ function uploadStorageAssets(req, res) {
   // Handle connection termination events
   const handleConnectionTermination = () => {
     uploadAborted = true;
-    logger.warn(`Upload connection terminated for ${identifier}`);
     
     // Clean up any resources that might be in memory
     if (file && file.streams) {
-      logger.info('Cleaning up file streams due to connection termination');
       file.streams.forEach(stream => {
         if (stream && typeof stream.destroy === 'function') {
           stream.destroy();
@@ -61,7 +59,6 @@ function uploadStorageAssets(req, res) {
     // Force garbage collection if available
     if (global.gc) {
       global.gc();
-      logger.info('Garbage collection triggered after connection termination');
     }
   };
   
