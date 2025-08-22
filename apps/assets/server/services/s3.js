@@ -12,17 +12,7 @@ async function uploadFile(storage, { identifier, file, extension, prefix, type }
 
   try {
     await s3.ready;
-    
-    // Check if this is a streaming upload (has fileStream) or buffer upload
-    const isStreamingUpload = file.fileStream !== undefined;
-    
-    if (isStreamingUpload) {
-      // Use streaming upload for fileStream objects
-      await s3.uploadStream(fullPath, file);
-    } else {
-      // Use regular upload for buffer objects
-      await s3.upload(fullPath, { buffer: file, type });
-    }
+    await s3.upload(fullPath, { buffer: file, type });
   } catch (e) {
     throw new Error(e.message || 'failed to upload asset to: ' + fullPath);
   }
@@ -87,7 +77,6 @@ async function renameFile(storage, oldIdentifier, newFileName) {
   return { success: true };
 }
 
-// Note: uploadFileStream is now integrated into the uploadFile function
 
 module.exports = {
   uploadFile,

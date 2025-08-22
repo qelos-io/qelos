@@ -8,8 +8,8 @@ const logger = require('./logger');
 class StreamingAdapter {
   constructor(service) {
     this.service = service;
-    // Check if the service has native streaming support for S3
-    this.hasNativeStreaming = this.service.name === 's3';
+    // No native streaming support in the reverted approach
+    this.hasNativeStreaming = false;
   }
 
   /**
