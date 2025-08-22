@@ -8,8 +8,8 @@ const logger = require('./logger');
 class StreamingAdapter {
   constructor(service) {
     this.service = service;
-    // Check if the service has native streaming support
-    this.hasNativeStreaming = typeof this.service.uploadFileStream === 'function';
+    // Check if the service has native streaming support for S3
+    this.hasNativeStreaming = this.service.name === 's3';
   }
 
   /**
@@ -180,11 +180,14 @@ class StreamingAdapter {
         req: file.req // Pass the request object for connection tracking
       };
       
-      // Upload the combined stream
-      const result = await storage.uploadStream(
-        `/${prefix || 'uploads'}/${identifier}.${extension || 'bin'}`,
-        processedFile
-      );
+      // Upload the combined stream using the integrated uploadFile function
+      const result = await this.service.uploadFile(storage, {
+        identifier,
+        file: processedFile,
+        extension: extension || 'bin',
+        prefix: prefix || 'uploads',
+        type: type || 'application/octet-stream'
+      });
       
       // Wait for stream processing to complete
       await streamProcessing;
@@ -296,10 +299,10 @@ class StreamingAdapter {
         global.gc();
       }
       
-      // Upload the final buffer
-      const result = await storage.upload({
-        buffer: finalBuffer,
+      // Upload the final buffer using the integrated uploadFile function
+      const result = await this.service.uploadFile(storage, {
         identifier,
+        file: finalBuffer,
         extension,
         prefix,
         type
