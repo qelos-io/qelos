@@ -15,7 +15,7 @@
   "scripts": {
     "dev": "npx tsx watch ./index.ts",
     "prepublishOnly": "tsc",
-    "build": "tsc --noEmit",
+    "build": "tsc --noEmit --skipLibCheck",
     "test": "node --test --import tsx **/*.test.ts",
     "start": "node --use_strict --import tsx index.ts"
   },
@@ -26,20 +26,28 @@
     "@qelos/global-types": "^3.9.0",
     "@vue/compiler-sfc": "^3.5.16",
     "ajv": "^8.17.1",
-    "clean-css": "^5.3.3",
     "mongoose": "^8.6.1",
     "node-jq": "^4.4.0",
     "qs": "^6.12.1",
-    "terser": "^5.43.1",
     "tsx": "^4.19.4",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "date-fns": "^4.1.0",
+    "element-plus": "~2.10.1",
+    "vue": "^3.5.16",
+    "vue-router": "^4.5.1",
+    "@tsconfig/node22": "^22.0.0",
+    "@types/node": "^22.10.2",
+    "@vitejs/plugin-vue": "^6.0.0-beta.2",
+    "@vue/tsconfig": "^0.7.0",
+    "typescript": "~5.6.3",
+    "vite": "^7.0.6",
+    "vue-tsc": "^2.1.10"
   },
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
     "@types/express": "^4.17.8",
-    "@types/node": "^22.5.4",
     "typescript": "^4.9.5"
   },
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
@@ -53,7 +61,18 @@
     "node-jq",
     "qs",
     "tsx",
-    "uuid"
+    "uuid",
+    "date-fns",
+    "element-plus",
+    "vue",
+    "vue-router",
+    "@tsconfig/node22",
+    "@types/node",
+    "@vitejs/plugin-vue",
+    "@vue/tsconfig",
+    "typescript",
+    "vite",
+    "vue-tsc"
   ],
   "bundleDependencies": [
     "@qelos/api-kit",
@@ -65,6 +84,17 @@
     "tsx",
     "uuid",
     "qs",
-    "@vue/compiler-sfc"
+    "@vue/compiler-sfc",
+    "date-fns", 
+    "element-plus",
+    "vue",
+    "vue-router",
+    "@tsconfig/node22",
+    "@types/node",
+    "@vitejs/plugin-vue",
+    "@vue/tsconfig",
+    "typescript",
+    "vite",
+    "vue-tsc"
   ]
 }
