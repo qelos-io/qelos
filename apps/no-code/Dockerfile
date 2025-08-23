@@ -5,5 +5,5 @@ EXPOSE $PORT
 COPY qelos-no-code.tgz .
 RUN tar zxvf ./qelos-no-code.tgz -C ./
 WORKDIR /package
-RUN npm i @esbuild/linux-x64
+RUN npm i -g vite
 CMD npm start
