@@ -11,6 +11,8 @@ const { reloadBlueprintRequirements } = useScreenRequirementsStore();
 
 const props = defineProps<{
   target: 'crud' | 'blueprint',
+  role?: string,
+  queryParams?: Record<string, string>,
   resource: string,
 }>();
 
@@ -21,7 +23,11 @@ async function remove(itemId: string) {
     if (props.target === 'crud') {
       await cruds.value[props.resource].api.remove(itemId);
     } else {
-      await sdk.blueprints.entitiesOf(props.resource).remove(itemId);
+      const query = {...props.queryParams};
+      if (props.role === 'admin') {
+          query.bypassAdmin = '';
+      }
+      await sdk.blueprints.entitiesOf(props.resource).remove(itemId, query);
       reloadBlueprintRequirements(props.resource);
     }
     emit('removed');
