@@ -7,7 +7,7 @@
         <div class="main">
           <router-view class="main-content"/>
         </div>
-        <PrivilegedAddons/>
+        <PrivilegedAddons v-if="isPrivilegedUser"/>
       </div>
     </div>
   </div>

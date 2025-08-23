@@ -42,7 +42,7 @@
     </div>
     
     <div class="header-right">
-      <AssistantOpener v-if="isPrivilegedUser && (isManagingEnabled || isEditingEnabled)"/>
+      <AssistantOpener v-if="isPrivilegedUser"/>
       <HeaderUserDropdown/>
     </div>
   </header>
@@ -57,7 +57,7 @@ import { useRoute, useRouter } from 'vue-router';
 import HeaderUserDropdown from '@/modules/core/components/layout/HeaderUserDropdown.vue';
 import RuntimeTemplate from '@/modules/core/components/layout/RuntimeTemplate.vue';
 import { useUsersHeader } from '@/modules/configurations/store/users-header';
-import { isPrivilegedUser, isEditingEnabled, isManagingEnabled } from '@/modules/core/store/auth';
+import { isPrivilegedUser } from '@/modules/core/store/auth';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import AssistantOpener from '@/modules/admins/components/AssistantOpener.vue';
 
