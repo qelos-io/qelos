@@ -71,7 +71,6 @@
     "@vitejs/plugin-vue",
     "@vue/tsconfig",
     "typescript",
-    "vite",
     "vue-tsc"
   ],
   "bundleDependencies": [
@@ -94,7 +93,6 @@
     "@vitejs/plugin-vue",
     "@vue/tsconfig",
     "typescript",
-    "vite",
     "vue-tsc"
   ]
 }
