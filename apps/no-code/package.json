@@ -92,5 +92,8 @@
     "typescript",
     "vite",
     "vue-tsc"
-  ]
+  ],
+  "overrides": {
+    "esbuild": "0.25.4"
+  }
 }

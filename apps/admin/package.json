@@ -75,6 +75,6 @@
     "express"
   ],
   "overrides": {
-    "esbuild": "0.25.9"
+    "esbuild": "0.25.4"
   }
 }
