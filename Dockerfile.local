@@ -1,4 +1,4 @@
-FROM node:20.6
+FROM node:22.14
 COPY . .
 ENV NODE_ENV=development
 RUN npm install --unsafe-perm
