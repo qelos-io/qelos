@@ -28,7 +28,10 @@
     "kill-port": "github:davidmeirlevy/kill-port#3c286412b896f9979febaf0d2987a771c6b8083e",
     "lerna": "^6.6.2",
     "ts-node": "^10.2.1",
-    "tsx": "^4.19.4"
+    "tsx": "^4.20.4"
+  },
+  "overrides": {
+    "esbuild": "0.25.4"
   },
   "packageManager": "pnpm@10.12.4+sha512.5ea8b0deed94ed68691c9bad4c955492705c5eeb8a87ef86bc62c74a26b037b08ff9570f108b2e4dbd1dd1a9186fea925e527f141c648e85af45631074680184"
 }
