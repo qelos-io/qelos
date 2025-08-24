@@ -118,6 +118,8 @@ import { ElMessage } from 'element-plus';
 import { UploadFilled, Document, Loading, UserFilled, Cpu } from '@element-plus/icons-vue';
 import { Remarkable } from 'remarkable';
 import threadsService from '@/services/threads-service';
+import { linkify } from 'remarkable/linkify';
+
 
 const props = defineProps<{ url: string,
   title?: string,
@@ -225,9 +227,10 @@ const md = new Remarkable({
   xhtmlOut: false,
   breaks: true, // Convert '\n' in paragraphs into <br>
   langPrefix: 'language-',
-  linkify: true, // Autoconvert URL-like text to links
   typographer: true, // Enable some language-neutral replacement + quotes beautification
 });
+
+md.use(linkify);
 
 // Function to render markdown content
 const renderMarkdown = (content: string): string => {

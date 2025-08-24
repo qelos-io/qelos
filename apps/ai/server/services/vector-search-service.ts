@@ -171,9 +171,9 @@ export async function indexTools(
  * @param userQuery User query text
  * @param tenant Tenant ID
  * @param allTools All available tools (fallback)
- * @param threshold Similarity threshold (0-1)
  * @param maxTools Maximum number of tools to return
  * @param embeddingType Type of embeddings to use ('openai' or 'local')
+ * @param authentication Authentication details
  */
 export async function findSimilarTools({
   userQuery,
