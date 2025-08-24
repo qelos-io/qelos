@@ -11,12 +11,12 @@ import {
   addFormToPageCalling
 } from "./plugins.calling";
 import { createComponentCalling, getComponentsCalling } from "./no-code.calling";
-import { callPagesAgentCalling } from "./pages-agent.calling";
+import { callPagesEditorAgentCalling } from "./pages-agent.calling";
 
 export const editorsFunctionCallings = {
   [getBlueprintsCalling.name]: getBlueprintsCalling,
   [createBlueprintCalling.name]: createBlueprintCalling,
-  [callPagesAgentCalling.name]: callPagesAgentCalling,
+  [callPagesEditorAgentCalling.name]: callPagesEditorAgentCalling,
 }
 
 export const editPagesFunctionCallings = [
