@@ -27,7 +27,7 @@ async function remove(itemId: string) {
       if (props.role === 'admin') {
           query.bypassAdmin = '';
       }
-      await sdk.blueprints.entitiesOf(props.resource).remove(itemId, query);
+      await sdk.blueprints.entitiesOf(props.resource).remove(itemId, {query});
       reloadBlueprintRequirements(props.resource);
     }
     emit('removed');
