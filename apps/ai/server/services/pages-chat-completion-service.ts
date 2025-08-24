@@ -177,7 +177,7 @@ function handleChatCompletionError(error, res, useSSE) {
  */
 export async function processChatCompletion(req: any, res: any, systemPrompt: any, getToolsFn: any) {
   const { source, sourceAuthentication } = req;
-  let options = req.body;
+  let options = req.aiOptions || req.body;
   const useSSE = res && (req.headers.accept?.includes('text/event-stream') || req.query.stream === 'true');
 
   if (useSSE) {
