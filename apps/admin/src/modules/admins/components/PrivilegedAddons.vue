@@ -1,8 +1,6 @@
 <template>
-    <template>
-        <AssetsDetailsPanel v-if="isEditingEnabled || isManagingEnabled" />
-        <AdminAiDrawer/>  
-    </template>
+  <AssetsDetailsPanel v-if="isEditingEnabled || isManagingEnabled" />
+  <AdminAiDrawer/>
 </template>
 <script setup lang="ts">
 import { isEditingEnabled, isManagingEnabled } from '@/modules/core/store/auth';
