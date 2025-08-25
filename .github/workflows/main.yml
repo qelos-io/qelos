@@ -1,0 +1,40 @@
+name: Qelos CI/CD
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**', 'release/**', 'hotfix/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-monorepo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm i -g lerna@6.1.0
+          npm install
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Pack apps
+        run: node pack-apps.mjs
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            node_modules/
+            apps/
+            packages/
+          retention-days: 1

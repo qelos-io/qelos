@@ -1,0 +1,97 @@
+name: Deploy with Helm
+
+on:
+  workflow_run:
+    workflows: ["Docker Release"]
+    types:
+      - completed
+    branches: [ main ]
+  # Add manual trigger capability
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+      namespace:
+        description: 'Kubernetes namespace to deploy to'
+        required: false
+        default: 'default'
+        type: string
+
+jobs:
+  # Check if required secrets exist before proceeding
+  check-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      secrets-exist: ${{ steps.check-secrets.outputs.defined }}
+    steps:
+      - name: Check if secrets exist
+        id: check-secrets
+        run: |
+          if [ -n "${{ secrets.KUBE_CONFIG }}" ] && [ -n "${{ secrets.HELM_VALUES_YAML }}" ]; then
+            echo "defined=true" >> $GITHUB_OUTPUT
+          else
+            echo "defined=false" >> $GITHUB_OUTPUT
+            echo "::error::Required secrets KUBE_CONFIG and/or HELM_VALUES_YAML are not set. Deployment cannot proceed."
+          fi
+        # Prevent command output from being displayed in logs
+        shell: bash {0}
+        env:
+          # Use empty env vars to check existence without exposing values
+          KUBE_CONFIG_EXISTS: ${{ secrets.KUBE_CONFIG != '' }}
+          HELM_VALUES_EXISTS: ${{ secrets.HELM_VALUES_YAML != '' }}
+
+  deploy:
+    needs: check-secrets
+    # Only run if secrets exist and (workflow was successful or manually triggered)
+    if: |
+      needs.check-secrets.outputs.secrets-exist == 'true' && 
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    # Set environment to enable protection rules if needed
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+          
+      - name: Set up kubeconfig
+        run: |
+          set +x  # Disable command echoing
+          umask 077  # Set strict permissions
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+        # Prevent command output from being displayed in logs
+        shell: bash {0}
+          
+      - name: Create values.yaml from secret
+        run: |
+          set +x  # Disable command echoing
+          umask 077  # Set strict permissions
+          echo "${{ secrets.HELM_VALUES_YAML }}" > ./helm/qelos/values.yaml
+          chmod 600 ./helm/qelos/values.yaml
+        # Prevent command output from being displayed in logs
+        shell: bash {0}
+          
+      - name: Deploy with Helm
+        run: |
+          set +x  # Disable command echoing
+          helm upgrade --install qelos ./helm/qelos \
+            --namespace ${{ github.event.inputs.namespace || 'default' }} \
+            --create-namespace \
+            --atomic \
+            --timeout 10m \
+            --debug=false
+        # Prevent command output from being displayed in logs
+        shell: bash {0}

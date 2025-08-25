@@ -72,14 +72,3 @@ docker-release-ai:
   extends: .service-release
   variables:
     SERVICE_NAME: ai
-
-deploy_new_managed_version:
-  stage: publish
-  only:
-    - main
-  script:
-    - >
-      curl -H "paunel-user: 63ea478007fe3e002c12649f"
-      -H "paunel-script: 64399bc5fef202eb824459b5"
-      -H "paunel-token: $PAUNEL_TOKEN"
-      -H "paunel-envs: {}" -X GET https://app.paunel.com/api/on/manage-apps/execute
