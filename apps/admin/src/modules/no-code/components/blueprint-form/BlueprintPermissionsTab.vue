@@ -1,30 +1,21 @@
 <script setup lang="ts">
 import { Delete, Plus } from '@element-plus/icons-vue';
-import { computed } from 'vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import PermissionScopeSelector from '@/modules/no-code/components/PermissionScopeSelector.vue';
 import CrudOperationSelector from '@/modules/no-code/components/CrudOperationSelector.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import WorkspaceLabelSelector from '@/modules/no-code/components/WorkspaceLabelSelector.vue';
+import { IBlueprint } from '@qelos/global-types';
 
 const props = defineProps({
-  modelValue: {
-    type: Object,
-    required: true
-  },
   availableLabels: {
     type: Array,
     default: () => ['*', 'supplier', 'store', 'consumer']
   }
 });
 
-const emit = defineEmits(['update:modelValue']);
-
-const edit = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-});
+const permissions = defineModel<IBlueprint['permissions']>();
 
 function getSummaryTitle(permission) {
   return permission.guest 
@@ -59,29 +50,26 @@ function getSummaryDescription(permission) {
 }
 
 function addNewPermission() {
-  const updatedEdit = { ...edit.value };
-  if (!updatedEdit.permissions) {
-    updatedEdit.permissions = [];
-  }
+  const updatedPermissions = [...permissions.value];
   
-  updatedEdit.permissions.push({ 
-    operation: '', 
+  updatedPermissions.push({ 
+    operation: '' as any, 
     guest: false, 
     workspaceRoleBased: [], 
     roleBased: [], 
     workspaceLabelsBased: ['*'] 
   });
   
-  emit('update:modelValue', updatedEdit);
+  permissions.value = updatedPermissions;
 }
 
 function removePermission(permission) {
-  const updatedEdit = { ...edit.value };
-  const index = updatedEdit.permissions.indexOf(permission);
+  const updatedPermissions = [...permissions.value];
+  const index = updatedPermissions.indexOf(permission);
   
   if (index !== -1) {
-    updatedEdit.permissions.splice(index, 1);
-    emit('update:modelValue', updatedEdit);
+    updatedPermissions.splice(index, 1);
+    permissions.value = updatedPermissions;
   }
 }
 </script>

@@ -33,7 +33,6 @@ const edit = reactive<Partial<IBlueprint>>({
   name: '',
   dispatchers: { create: false, delete: false, update: false }, ...props.blueprint
 });
-const blueprintProperties = ref()
 provide('edit', edit);
 
 const blueprintMapping = ref(
@@ -146,7 +145,7 @@ function submit() {
                 <span>{{ $t('Permissions and Roles') }}</span>
               </div>
             </template>
-            <BlueprintPermissionsTab v-model="edit" :availableLabels="availableLabels" />
+            <BlueprintPermissionsTab v-model="edit.permissions" :availableLabels="availableLabels" />
           </el-card>
         </div>
       </el-tab-pane>

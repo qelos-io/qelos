@@ -25,7 +25,7 @@ export async function compileVueComponent(fileContent: string, tenanthost: strin
       fs.writeFile(path.join(SRC_DIR, hash + '.vue'), fileContent),
     ]);
 
-    const { stderr } = await execPromise(`../../../node_modules/.bin/vite build`, { 
+    const { stderr ,stdout } = await execPromise(`../../../node_modules/.bin/vite build`, { 
       cwd: path.join(__dirname, './components-compiler'), 
       env: {
         // Pass all environment variables needed for node execution
@@ -49,9 +49,16 @@ export async function compileVueComponent(fileContent: string, tenanthost: strin
       },
     });
 
-    if (stderr) {
-      logger.error('failed to compile component', stderr);
-      throw new Error('failed to compile component');
+    if (stderr || !stdout.includes('built in')) {
+      // Check if the output files actually exist to determine if compilation succeeded
+      const jsFileExists = await fs.access(path.join(DIST_DIR, hash + '.umd.js'))
+        .then(() => true)
+        .catch(() => false);
+        
+      if (!jsFileExists) {
+        logger.error('Failed to compile component: output files not found');
+        throw new Error('failed to compile component');
+      }
     }
 
     const [jsContent, cssContent] = await Promise.all([
