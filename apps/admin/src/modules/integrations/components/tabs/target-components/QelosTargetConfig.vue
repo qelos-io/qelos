@@ -18,7 +18,9 @@ const qelosDetails = ref({
   roles: '',
   userId: '',
   blueprint: '',
-  metadata: {}
+  metadata: {},
+  source: '',
+  kind: ''
 });
 
 // Roles input UI state
@@ -45,7 +47,9 @@ const initQelosDetails = () => {
       roles: props.modelValue.details.roles || '',
       userId: props.modelValue.details.userId || '',
       blueprint: props.modelValue.details.blueprint || '',
-      metadata: props.modelValue.details.metadata || {}
+      metadata: props.modelValue.details.metadata || {},
+      source: props.modelValue.source,
+      kind: props.modelValue.kind
     };
   }
 };
@@ -77,7 +81,48 @@ const handleRoleConfirm = () => {
 // Sync UI state to form.target.details
 const syncQelosDetailsToTargetDetails = () => {
   const newModelValue = { ...props.modelValue };
-  newModelValue.details = { ...qelosDetails.value };
+  
+  // Set details based on operation type
+  if (props.operation === QelosTargetOperation.createBlueprintEntity || 
+      props.operation === QelosTargetOperation.updateBlueprintEntity) {
+    // For blueprint operations, only include blueprint and metadata
+    newModelValue.details = {
+      blueprint: qelosDetails.value.blueprint,
+      metadata: qelosDetails.value.metadata
+    };
+  } else if (props.operation === QelosTargetOperation.webhook) {
+    // For webhook, only include eventName and description
+    newModelValue.details = {
+      eventName: qelosDetails.value.eventName,
+      description: qelosDetails.value.description,
+      source: qelosDetails.value.source,
+      kind: qelosDetails.value.kind,
+    };
+  } else if (props.operation === QelosTargetOperation.createUser) {
+    // For createUser, include password, roles, and userId
+    newModelValue.details = {
+      password: qelosDetails.value.password,
+      roles: qelosDetails.value.roles,
+      userId: qelosDetails.value.userId
+    };
+  } else if (props.operation === QelosTargetOperation.updateUser) {
+    // For updateUser, include userId, password, and roles
+    newModelValue.details = {
+      userId: qelosDetails.value.userId,
+      password: qelosDetails.value.password,
+      roles: qelosDetails.value.roles
+    };
+  } else if (props.operation === QelosTargetOperation.setUserRoles) {
+    // For setUserRoles, include userId and roles
+    newModelValue.details = {
+      userId: qelosDetails.value.userId,
+      roles: qelosDetails.value.roles
+    };
+  } else {
+    // Default fallback for other operations
+    newModelValue.details = { ...qelosDetails.value };
+  }
+  
   emit('update:modelValue', newModelValue);
 };
 
