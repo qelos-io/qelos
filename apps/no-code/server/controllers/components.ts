@@ -9,7 +9,7 @@ export const createComponent = async (req, res) => {
   let compiledContent;
   try {
      // Compile the Vue component
-     compiledContent = await compileVueComponent(req.body.content);
+     compiledContent = await compileVueComponent(req.body.content, req.headers.tenanthost);
   } catch (err: any | Error) {
     logger.log('failed to compile a component', err?.message);
     res.status(400).json({ message: 'failed to compile a component', reason: err?.message }).end();
@@ -46,7 +46,7 @@ export const updateComponent = async (req, res) => {
     // If content is updated, recompile the component
     if (req.body.content) {
       $set.content = req.body.content;
-      $set.compiledContent = await compileVueComponent(req.body.content);
+      $set.compiledContent = await compileVueComponent(req.body.content, req.headers.tenanthost);
     }
 
     const component = await Component.findOneAndUpdate(

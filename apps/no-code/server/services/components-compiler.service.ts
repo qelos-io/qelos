@@ -3,6 +3,7 @@ import { promisify } from 'node:util';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import logger from './logger';
 
 const execPromise = promisify(exec);
 
@@ -14,7 +15,7 @@ const SRC_DIR = path.join(__dirname, './components-compiler/src/components');
  * @param fileContent The Vue component content as a string
  * @returns An object with compiled js and css strings
  */
-export async function compileVueComponent(fileContent: string): Promise<{js: string, css: string}> {
+export async function compileVueComponent(fileContent: string, tenanthost: string = 'http://localhost'): Promise<{js: string, css: string}> {
   const hash = 'Comp' + crypto.createHash('sha256').update(fileContent).digest('hex').substring(0, 8);
   const libJs = `import Component from './${hash}.vue';
   window['components:${hash}'] = Component;`;
@@ -27,13 +28,21 @@ export async function compileVueComponent(fileContent: string): Promise<{js: str
     const { stderr } = await execPromise(`../../../node_modules/.bin/vite build`, { 
       cwd: path.join(__dirname, './components-compiler'), 
       env: {
-        // expose only neccesary variables for vite
-        ...process.env,
+        // Only pass specific variables needed for Vite build
+        NODE_ENV: 'production',
+        VITE_USER_NODE_ENV: 'production',
+        // Standard Vite environment variables
+        BASE_URL: tenanthost,
+        MODE: 'production',
+        DEV: 'false',
+        PROD: 'true',
+        // Custom variables
         COMPONENT_HASH: hash,
       },
     });
 
     if (stderr) {
+      logger.error('failed to compile component', stderr);
       throw new Error('failed to compile component');
     }
 
@@ -50,7 +59,7 @@ export async function compileVueComponent(fileContent: string): Promise<{js: str
       css: cssContent
     };
   } catch (err: any) {
-    console.error(err.message);
+    logger.error('failed to compile component', err);
     throw new Error('failed to compile component');
   } finally {
     // remove files

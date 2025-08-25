@@ -7,12 +7,10 @@
                      @close="closeCodeEditor"/>
   <main v-else>
     <div v-if="isPrivilegedUser" class="edit-bar-container" :class="{ 'collapsed': isEditingEnabled }">
-      <el-tooltip :content="!isEditingEnabled ? $t('Expand editor tools') : $t('Collapse editor tools')" placement="left" effect="light">
-        <div class="edit-mode-indicator" @click="toggleEditBar" tabindex="0" role="button" aria-label="Toggle editor tools" @keydown.enter="toggleEditBar">
-          <el-icon v-if="isEditingEnabled"><font-awesome-icon :icon="['fas', 'chevron-right']"/></el-icon>
-          <el-icon v-else><font-awesome-icon :icon="['fas', 'pencil-alt']"/></el-icon>
-        </div>
-      </el-tooltip>
+      <div class="edit-mode-indicator" @click="toggleEditBar" tabindex="0" role="button" aria-label="Toggle editor tools" @keydown.enter="toggleEditBar">
+        <el-icon v-if="isEditingEnabled"><font-awesome-icon :icon="['fas', 'chevron-right']"/></el-icon>
+        <el-icon v-else><font-awesome-icon :icon="['fas', 'pencil-alt']"/></el-icon>
+      </div>
       
       <transition name="slide-fade">
         <div v-show="isEditingEnabled" class="edit-bar">
