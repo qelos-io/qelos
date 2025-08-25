@@ -7,6 +7,11 @@ on:
       - completed
     branches: [ main, develop, 'feature/**', 'release/**', 'hotfix/**' ]
 
+# Add permissions needed for GitHub Container Registry
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   setup:
     runs-on: ubuntu-latest
