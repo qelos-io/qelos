@@ -27,7 +27,19 @@ const supportedSources = {
     [QelosTargetOperation.setUserRoles]: {
       required: [],
       optional: ['userId', 'roles']
-    }
+    },
+    [QelosTargetOperation.setWorkspaceLabels]: {
+      required: [],
+      optional: ['workspaceId', 'labels']
+    },
+    [QelosTargetOperation.createBlueprintEntity]: {
+      required: [],
+      optional: ['blueprint', 'metadata']
+    },
+    [QelosTargetOperation.updateBlueprintEntity]: {
+      required: [],
+      optional: ['blueprint', 'metadata']
+    },
   },
   [IntegrationSourceKind.OpenAI]: {
     [OpenAITargetOperation.chatCompletion]: {

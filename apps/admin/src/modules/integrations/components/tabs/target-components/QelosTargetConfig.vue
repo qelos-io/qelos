@@ -17,7 +17,8 @@ const qelosDetails = ref({
   password: '',
   roles: '',
   userId: '',
-  blueprint: ''
+  blueprint: '',
+  metadata: {}
 });
 
 // Roles input UI state
@@ -43,7 +44,8 @@ const initQelosDetails = () => {
       password: props.modelValue.details.password || '',
       roles: props.modelValue.details.roles || '',
       userId: props.modelValue.details.userId || '',
-      blueprint: props.modelValue.details.blueprint || ''
+      blueprint: props.modelValue.details.blueprint || '',
+      metadata: props.modelValue.details.metadata || {}
     };
   }
 };
