@@ -28,6 +28,14 @@ export async function compileVueComponent(fileContent: string, tenanthost: strin
     const { stderr } = await execPromise(`../../../node_modules/.bin/vite build`, { 
       cwd: path.join(__dirname, './components-compiler'), 
       env: {
+        // Pass all environment variables needed for node execution
+        PATH: process.env.PATH,
+        HOME: process.env.HOME,
+        USER: process.env.USER,
+        SHELL: process.env.SHELL,
+        NVM_DIR: process.env.NVM_DIR,
+        NVM_PATH: process.env.NVM_PATH,
+        NVM_BIN: process.env.NVM_BIN,
         // Only pass specific variables needed for Vite build
         NODE_ENV: 'production',
         VITE_USER_NODE_ENV: 'production',
