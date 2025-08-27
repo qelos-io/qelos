@@ -41,6 +41,10 @@ const IntegrationSchema = new Schema<IIntegration>({
     required: true,
   },
   kind: [String],
+  active: {
+    type: Boolean,
+    default: false,
+  },
   trigger: IntegrationEntitySchema,
   target: IntegrationEntitySchema,
   dataManipulation: {

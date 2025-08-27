@@ -22,7 +22,7 @@ export const createThread = async (req: RequestWithUser, res: Response) => {
     }
 
     const integration = await getIntegration(req.headers.tenant, req.body.integration)
-    if (!integration) {
+    if (!integration || !integration.active) {
       return res.status(404).json({ error: 'Integration not found' })
     }
 

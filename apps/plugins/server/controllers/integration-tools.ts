@@ -9,6 +9,7 @@ export async function getIntegrationTools(req, res) {
 
     const tools = await cacheManager.wrap(`integration-tools:${tenant}:${sourceKind}:${integrationId}`, async () => {
       const toolsIntegrations = await Integration.find({
+        active: true,
         tenant,
         'kind.0': sourceKind,
         'trigger.operation': 'functionCalling',

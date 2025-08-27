@@ -114,6 +114,7 @@ hookEvents.on('hook', async (platformEvent: IEvent) => {
       ]
     }).lean(),
     Integration.find({
+      active: true,
       $and: [
         {
           tenant: platformEvent.tenant,

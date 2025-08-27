@@ -10,6 +10,7 @@ export interface IIntegration {
   _id: string;
   tenant: string;
   plugin?: string;
+  active?: boolean;
   user: string;
   kind: string[];
   trigger: IIntegrationEntity;

@@ -26,6 +26,9 @@ export async function getAllIntegrations(req, res) {
   if (req.query.source) {
     query.$or = [{ 'trigger.source': req.query.source }, { 'target.source': req.query.source }];
   }
+  if (req.query.active) {
+    query.active = !!req.query.active;
+  }
   try {
     const list = await Integration.find(query).exec();
     res.json(list).end();
@@ -57,7 +60,7 @@ export async function getIntegration(req, res) {
 }
 
 export async function createIntegration(req, res) {
-  const { trigger, target, dataManipulation } = req.body || {}
+  const { trigger, target, dataManipulation, active } = req.body || {}
 
   if (!trigger || !target) {
     res.status(400).json({ message: 'trigger and target are required' }).end();
@@ -73,7 +76,8 @@ export async function createIntegration(req, res) {
     plugin: plugin?._id,
     dataManipulation,
     trigger,
-    target
+    target,
+    active
   });
 
 
@@ -105,6 +109,9 @@ export async function updateIntegration(req, res) {
     if (!integration) {
       res.status(404).json({ message: 'integration not found' }).end();
       return;
+    }
+    if (req.body?.active !== undefined) {
+      integration.active = req.body.active;
     }
     if (req.body?.trigger) {
       integration.trigger = req.body.trigger;
