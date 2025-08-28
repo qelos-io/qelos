@@ -34,10 +34,10 @@
   overflow: auto;
   display: flex;
   flex-direction: column;
-}
 
-.el-tabs__content {
-  overflow: auto;
+  .el-tabs__content {
+    overflow: auto;
+  }
 }
 
 .el-statistic {
