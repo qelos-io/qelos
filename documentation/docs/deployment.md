@@ -70,7 +70,7 @@ Each microservice can be configured independently:
 ```yaml
 serviceName:
   image:
-    repository: registry.gitlab.com/qelos/qelos/service-name
+    repository: registry.github.com/qelos-io/qelos/service-name
     tag: latest
   host: service-name-service
   port: 9000

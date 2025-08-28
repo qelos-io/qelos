@@ -51,7 +51,7 @@ redis:
 
 gateway:
   image:
-    repository: registry.gitlab.com/qelos/qelos/gateway
+    repository: registry.github.com/qelos-io/qelos/gateway
     tag: latest
   replicas: 2
   resources:
@@ -68,7 +68,7 @@ gateway:
 
 auth:
   image:
-    repository: registry.gitlab.com/qelos/qelos/auth
+    repository: registry.github.com/qelos-io/qelos/auth
     tag: latest
   host: auth-service
   port: 9000
@@ -87,7 +87,7 @@ auth:
 
 content:
   image:
-    repository: registry.gitlab.com/qelos/qelos/content
+    repository: registry.github.com/qelos-io/qelos/content
     tag: latest
   host: content-service
   port: 9001
@@ -99,7 +99,7 @@ content:
 
 secrets:
   image:
-    repository: registry.gitlab.com/qelos/qelos/secrets
+    repository: registry.github.com/qelos-io/qelos/secrets
     tag: latest
   host: secrets-service
   port: 9002
@@ -110,7 +110,7 @@ secrets:
 
 nocode:
   image:
-    repository: registry.gitlab.com/qelos/qelos/no-code
+    repository: registry.github.com/qelos-io/qelos/no-code
     tag: latest
   replicas: 2
   host: nocode-service
@@ -126,7 +126,7 @@ nocode:
     
 admin:
   image:
-    repository: registry.gitlab.com/qelos/qelos/admin
+    repository: registry.github.com/qelos-io/qelos/admin
     tag: latest
   replicas: 2
   host: admin-service
@@ -141,7 +141,7 @@ admin:
 
 plugins:
   image:
-    repository: registry.gitlab.com/qelos/qelos/plugins
+    repository: registry.github.com/qelos-io/qelos/plugins
     tag: latest
   replicas: 2
   host: plugins-service
@@ -157,7 +157,7 @@ plugins:
 
 assets:
   image:
-    repository: registry.gitlab.com/qelos/qelos/assets
+    repository: registry.github.com/qelos-io/qelos/assets
     tag: latest
   replicas: 2
   host: assets-service
@@ -180,7 +180,7 @@ assets:
 
 drafts:
   image:
-    repository: registry.gitlab.com/qelos/qelos/drafts
+    repository: registry.github.com/qelos-io/qelos/drafts
     tag: latest
   replicas: 1
   host: drafts-service
@@ -194,7 +194,7 @@ drafts:
   
 ai:
   image:
-    repository: registry.gitlab.com/qelos/qelos/ai
+    repository: registry.github.com/qelos-io/qelos/ai
     tag: latest
   replicas: 2
   host: ai-service

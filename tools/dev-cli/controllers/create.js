@@ -5,7 +5,7 @@ const { red, green, blue } = require("../utils/colors");
 module.exports = function createController({ name, mode }) {
   try {
     execute(
-      `git clone https://gitlab.com/qelos/qelos.git ${name}`,
+      `git clone https://github.com/qelos-io/qelos.git ${name}`,
       "clone qelos"
     );
   } catch {

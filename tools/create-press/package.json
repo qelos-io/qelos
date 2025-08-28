@@ -7,14 +7,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://gitlab.com/qelos/qelos.git"
+    "url": "git+https://github.com/qelos-io/qelos.git"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://gitlab.com/qelos/qelos/issues"
+    "url": "https://github.com/qelos-io/qelos/issues"
   },
-  "homepage": "https://gitlab.com/qelos/qelos#readme",
+  "homepage": "https://github.com/qelos-io/qelos#readme",
   "publishConfig": {
     "access": "public"
   },

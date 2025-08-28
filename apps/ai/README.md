@@ -6,8 +6,8 @@ An HTTP server to manage AI system.
 - Node.js
 - npm OR yarn
 - MongoDB
-- [Secrets-service](https://gitlab.com/qelos/qelos)
-- [Plugins-service](https://gitlab.com/qelos/qelos)
+- [Secrets-service](https://github.com/qelos-io/qelos)
+- [Plugins-service](https://github.com/qelos-io/qelos)
 
 ## Usage
 ### As a Docker container

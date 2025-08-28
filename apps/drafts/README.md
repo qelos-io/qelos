@@ -8,7 +8,7 @@
 - Node.js
 - npm OR yarn
 - MongoDB
-- [Authentication-service](https://gitlab.com/qelos/qelos)
+- [Authentication-service](https://github.com/qelos-io/qelos)
 
 ## Usage
 

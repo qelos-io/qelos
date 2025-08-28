@@ -14,8 +14,8 @@ hero:
       text: Get Started
       link: /getting-started/intro
     - theme: alt
-      text: View on GitLab
-      link: https://gitlab.com/qelos
+      text: View on GitHub
+      link: https://github.com/qelos-io/qelos
 features:
   - icon: 🚀
     title: Multi-Tenant Architecture
@@ -43,7 +43,7 @@ Get up and running with QELOS locally:
 
 ```bash
 # Clone the repository
-git clone https://gitlab.com/qelos/qelos.git
+git clone https://github.com/qelos-io/qelos.git
 
 # Install dependencies
 npm install

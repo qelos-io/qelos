@@ -6,8 +6,8 @@ An HTTP server to manage 3rd-party plugins for any system, combining frontend an
 - Node.js
 - npm OR yarn
 - MongoDB
-- [Authentication-service](https://gitlab.com/qelos/qelos)
-- [Secrets-service](https://gitlab.com/qelos/qelos)
+- [Authentication-service](https://github.com/qelos-io/qelos)
+- [Secrets-service](https://github.com/qelos-io/qelos)
 
 ## Usage
 ### As a Docker container

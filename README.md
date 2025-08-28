@@ -159,5 +159,5 @@ For comprehensive documentation, visit [docs.qelos.io](https://docs.qelos.io):
 
 - [Official Website](https://qelos.io)
 - [Documentation](https://docs.qelos.io)
-- [GitLab Repository](https://gitlab.com/qelos/qelos)
+- [GitHub Repository](https://github.com/qelos-io/qelos)
 - [LinkedIn](https://www.linkedin.com/company/qelos/about/)

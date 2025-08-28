@@ -7,10 +7,10 @@ services:
       - "6379:6379"
     restart: always
   admin:
-    image: registry.gitlab.com/qelos/qelos/admin:${ADMIN_PANEL_VERSION}
+    image: registry.github.com/qelos-io/qelos/admin:${ADMIN_PANEL_VERSION}
     restart: always
   assets:
-    image: registry.gitlab.com/qelos/qelos/assets:${ASSETS_SERVICE_VERSION}
+    image: registry.github.com/qelos-io/qelos/assets:${ASSETS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${ASSETS_MONGODB_URI}
@@ -27,7 +27,7 @@ services:
       - redis
       - secrets
   auth:
-    image: registry.gitlab.com/qelos/qelos/auth:${AUTH_SERVICE_VERSION}
+    image: registry.github.com/qelos-io/qelos/auth:${AUTH_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${AUTH_MONGODB_URI}
@@ -46,7 +46,7 @@ services:
       - secrets
       - redis
   gateway:
-    image: registry.gitlab.com/qelos/qelos/gateway:${GATEWAY_VERSION}
+    image: registry.github.com/qelos-io/qelos/gateway:${GATEWAY_VERSION}
     restart: always
     ports:
       - ${PORT}:3000
@@ -66,7 +66,7 @@ services:
       AI_SERVICE_URL: ai
       SHOW_LOGS: ${SHOW_LOGS}
   content:
-    image: registry.gitlab.com/qelos/qelos/content:${CONTENT_SERVICE_VERSION}
+    image: registry.github.com/qelos-io/qelos/content:${CONTENT_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${CONTENT_MONGODB_URI}
@@ -77,7 +77,7 @@ services:
     depends_on:
       - redis
   secrets:
-    image: registry.gitlab.com/qelos/qelos/secrets:${SECRETS_SERVICE_VERSION}
+    image: registry.github.com/qelos-io/qelos/secrets:${SECRETS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${SECRETS_MONGODB_URI}
@@ -87,14 +87,14 @@ services:
       INTERNAL_SECRET: ${INTERNAL_SECRET}
       SHOW_LOGS: ${SHOW_LOGS}
   drafts:
-    image: registry.gitlab.com/qelos/qelos/drafts:${DRAFTS_SERVICE_VERSION}
+    image: registry.github.com/qelos-io/qelos/drafts:${DRAFTS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${DRAFTS_MONGODB_URI}
       IP: 0.0.0.0
       SHOW_LOGS: ${SHOW_LOGS}
   plugins:
-    image: registry.gitlab.com/qelos/qelos/plugins:${PLUGINS_SERVICE_VERSION}
+    image: registry.github.com/qelos-io/qelos/plugins:${PLUGINS_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${PLUGINS_MONGODB_URI}
@@ -109,7 +109,7 @@ services:
     depends_on:
       - redis
   no-code:
-    image: registry.gitlab.com/qelos/qelos/no-code:${NOCODE_SERVICE_VERSION}
+    image: registry.github.com/qelos-io/qelos/no-code:${NOCODE_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${NOCODE_MONGODB_URI}
@@ -125,7 +125,7 @@ services:
     depends_on:
       - redis
   ai:
-    image: registry.gitlab.com/qelos/qelos/ai:${AI_SERVICE_VERSION}
+    image: registry.github.com/qelos-io/qelos/ai:${AI_SERVICE_VERSION}
     restart: always
     environment:
       MONGO_URI: ${AI_MONGODB_URI}

@@ -5,7 +5,7 @@ const { getRandomHash } = require('../../services/hashing');
 const { green } = require('../../utils/colors');
 
 module.exports = function ({ tag, branch, mongo }) {
-	execute(`git clone --branch ${branch} https://gitlab.com/qelos/qelos.git`);
+	execute(`git clone --branch ${branch} https://github.com/qelos-io/qelos.git`);
 
 	if (!tag) {
 		tag = 'v' + require(join(process.cwd(), 'qelos', 'package.json')).version;

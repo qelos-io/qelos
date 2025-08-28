@@ -401,7 +401,7 @@ If you've tried the troubleshooting steps above and are still experiencing issue
 
 1. **Check the Documentation**: Make sure you've reviewed all relevant documentation sections.
 
-2. **Search for Known Issues**: Check the Qelos GitLab repository for similar issues that may have been reported.
+2. **Search for Known Issues**: Check the Qelos GitHub repository for similar issues that may have been reported.
 
 3. **Contact Support**: Reach out to Velocitech LTD support team with details about your issue, including:
    - SDK version

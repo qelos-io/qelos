@@ -112,4 +112,4 @@ Explore more about QELOS through these resources:
 
 - [Official Website](https://qelos.io/)
 - [Follow Us on LinkedIn](https://www.linkedin.com/company/qelos/about/)
-- [GitLab Repository](https://gitlab.com/qelos/qelos)
+- [GitHub Repository](https://github.com/qelos-io/qelos)

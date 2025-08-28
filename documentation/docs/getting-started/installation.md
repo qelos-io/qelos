@@ -63,10 +63,10 @@ Follow these steps to set up QELOS on your local machine:
 
 ### 1. Clone the Repository
 
-Download the QELOS repository from GitLab and navigate into the project directory:
+Download the QELOS repository from GitHub and navigate into the project directory:
 
 ```bash
-git clone https://gitlab.com/qelos/qelos
+git clone https://github.com/qelos-io/qelos
 ```
 
 ### 2. Install Dependencies to the root directory of the project:
