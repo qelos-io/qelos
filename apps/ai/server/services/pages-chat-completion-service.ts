@@ -1,9 +1,10 @@
 import * as ChatCompletionService from "./chat-completion-service";
 import { executeFunctionCalls } from "./execute-function-calls";
-import { editorsFunctionCallings, editPagesFunctionCallings } from "./function-callings";
+import { editIntegrationsFunctionCallings, editorsFunctionCallings, editPagesFunctionCallings } from "./function-callings";
 import { createAIService } from "./ai-service";
 import logger from "./logger";
 import { findSimilarTools } from "./vector-search-service";
+import { IntegrationSourceKind } from "@qelos/global-types";
 
 /**
  * System prompt for general SaaS builder functionality
@@ -13,7 +14,17 @@ export const SAAS_BUILDER_SYSTEM_PROMPT = {
   content: `You are a SaaS builder. You are using Qelos AI to build your SaaS application.
   Blueprints are the data model of your SaaS application, kind like your database schema and permissions.
   Blocks are the content of your SaaS application, kind like your UI and business logic.
-  Pages are the UI of your SaaS application, kind like your UI and business logic. You can use Vue.js template syntax.`
+  Pages are the UI of your SaaS application, kind like your UI and business logic. You can use Vue.js template syntax.
+  Components are reusable UI elements that can be used in pages.
+  
+  IMPORTANT: For any questions or tasks related to integrations or connections with external services, DO NOT handle them yourself. Instead, ALWAYS use the call_integration_manager_agent tool.
+  
+  Integrations are completely separate from components or pages. Integrations connect your SaaS application with external services and APIs.
+  
+  When the user mentions any of these terms: "integrations", "connections", "integration sources", "webhooks", "API connections", "external services", "OpenAI integration", "function calling", or asks about connecting to external services - ALWAYS use the call_integration_manager_agent tool.
+  
+  DO NOT confuse integrations (external service connections) with components (UI elements).
+  `
 }
 
 /**
@@ -69,10 +80,40 @@ export const SAAS_BUILDER_SYSTEM_PROMPT_PAGES = {
 };
 
 /**
+ * System prompt for SaaS builder integrations functionality
+ */
+export const SAAS_BUILDER_SYSTEM_PROMPT_INTEGRATIONS = {
+  role: 'system',
+  content: `You are an integrations manager. You are using Qelos AI to manage your integrations and connections.
+  Integrations are the connections between your SaaS application and external services and APIs.
+  The main resources yu manage are connections (a.k.a integration sources) and integrations.
+  every integration define 3 major parts: trigger, data manipulation and target.
+  the trigger is a description of the event that will trigger the integration, that will come from one of the connections.
+  the data manipulation is a description of the data that will be manipulated, that will come from one of the trigger.
+  the target is a description of the target connection that will receive the data, after manipulation.
+
+  existing connections kinds are: ${Object.values(IntegrationSourceKind).join(', ')}
+  popular integrations triggers are:
+  - { kind: 'qelos', operation: 'webhook' } // ability to subscribe to any event in qelos, such as user-registered, asset-uploaded, etc.
+  - { kind: 'qelos', operation: 'chatCompletion' } // create chat completion endpoint
+  - { kind: 'openai', operation: 'functionCalling' } // trigger when openai function calling is running, to target a function call.
+  
+  when the user asks for integrations, use the "get_integrations_list" tool to retrieve them.
+  `
+}
+
+/**
  * Gets tools for pages chat completion
  */
 export function getPagesTools() {
   return editPagesFunctionCallings;
+}
+
+/**
+ * Gets tools for integrations chat completion
+ */
+export function getIntegrationTools() {
+  return editIntegrationsFunctionCallings;
 }
 
 /**
@@ -246,4 +287,12 @@ export function processGeneralChatCompletion(req: any, res: any) {
  */
 export function processPagesChatCompletion(req: any, res: any) {
   return processChatCompletion(req, res, SAAS_BUILDER_SYSTEM_PROMPT_PAGES, getPagesTools);
+}
+
+
+/**
+ * Processes a integrations chat completion request
+ */
+export function processIntegrationsChatCompletion(req: any, res: any) {
+  return processChatCompletion(req, res, SAAS_BUILDER_SYSTEM_PROMPT_INTEGRATIONS, getIntegrationTools);
 }

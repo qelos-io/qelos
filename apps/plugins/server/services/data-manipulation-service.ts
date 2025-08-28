@@ -50,11 +50,21 @@ export async function executeDataManipulation(tenant: string, initialPayload: an
         } else if (source === 'workspace') {
           // populate data from given object using qelos source. If blueprint is provided, it will be used to fetch the blueprint entity
           data[key] = await getWorkspaces(tenant, previousData[key])
-        } else if (source === 'blueprintEntity' && blueprint) {
-          data[key] = await (getBlueprintEntity(tenant, blueprint, previousData[key]))
+        } else if (source === 'blueprintEntity') {
+          const data = previousData[key];
+          if (typeof data !== 'object' && data.entity && data.blueprint) {
+            data[key] = await (getBlueprintEntity(tenant, data.blueprint, data.entity))
+          } else if (blueprint && typeof data === 'string') {
+            data[key] = await (getBlueprintEntity(tenant, blueprint, data))
+          }
           // populate data from given object using qelos source. If blueprint is provided, it will be used to fetch the blueprint entity
-        } else if (source === 'blueprintEntities' && blueprint) {
-          data[key] = await (getBlueprintEntities(tenant, blueprint, previousData[key]))
+        } else if (source === 'blueprintEntities') {
+          const data = previousData[key];
+          if (typeof data !== 'object' && data.blueprint) {
+            data[key] = await (getBlueprintEntities(tenant, data.blueprint, data))
+          } else if (blueprint && typeof data === 'string') {
+            data[key] = await (getBlueprintEntities(tenant, blueprint, data))
+          }
         }
       })
     ]);

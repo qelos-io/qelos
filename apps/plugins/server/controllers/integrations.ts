@@ -26,11 +26,11 @@ export async function getAllIntegrations(req, res) {
   if (req.query.source) {
     query.$or = [{ 'trigger.source': req.query.source }, { 'target.source': req.query.source }];
   }
-  if (req.query.active) {
-    query.active = !!req.query.active;
+  if (typeof req.query.active === 'string') {
+    query.active = req.query.active === 'true' || req.query.active === '1';
   }
   try {
-    const list = await Integration.find(query).exec();
+    const list = await Integration.find(query).lean().exec();
     res.json(list).end();
   } catch {
     res.status(500).json({ message: 'could not get integrations' }).end();

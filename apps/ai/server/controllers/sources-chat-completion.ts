@@ -40,6 +40,10 @@ export async function chatCompletionPages(req, res) {
   await processPagesChatCompletion(req, res);
 }
 
+export async function chatCompletionIntegrations(req, res) {
+  await processPagesChatCompletion(req, res);
+}
+
 export async function internalChatCompletion(req, res) {
   const { source, authentication, payload } = req.body as { source: IOpenAISource, authentication: any, payload: OpenAITargetPayload };
   const aiService = createAIService(source, authentication);

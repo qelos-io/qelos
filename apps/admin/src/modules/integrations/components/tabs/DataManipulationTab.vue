@@ -255,7 +255,7 @@ const syncToModel = () => {
           newStep.populate[entry.key] = {
             source: entry.source || 'user'
           };
-          if (entry.source === 'blueprintEntities' && entry.blueprint) {
+          if ((entry.source === 'blueprintEntities' || entry.source === 'blueprintEntity') && entry.blueprint) {
             newStep.populate[entry.key].blueprint = entry.blueprint;
           }
         }
@@ -737,7 +737,7 @@ onMounted(() => {
                 <el-option value="blueprintEntity" label="Blueprint Entity" />
               </el-select>
               <BlueprintDropdown 
-                v-if="entry.source === 'blueprintEntities'" 
+                v-if="entry.source === 'blueprintEntities' || entry.source === 'blueprintEntity'" 
                 v-model="entry.blueprint" 
                 @update:model-value="syncToModel" 
               />

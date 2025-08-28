@@ -66,7 +66,7 @@ export const removeComponent = async (req, res) => {
     const component = await Component.findOneAndDelete({
       _id: req.params.componentId,
       tenant: req.headers.tenant,
-    });
+    }).lean().exec();
     res.json(component).end();
   } catch (err: any) {
     res.status(400).json({ message: 'failed to remove a component' }).end();
@@ -75,7 +75,7 @@ export const removeComponent = async (req, res) => {
 
 export const getAllComponents = async (req, res) => {
   try {
-    const components = await Component.find({ tenant: req.headers.tenant }).select('-compiledContent -content').exec();
+    const components = await Component.find({ tenant: req.headers.tenant }).select('-compiledContent -content').lean().exec();
     res.json(components).end();
   } catch (err: any) {
     res.status(400).json({ message: 'failed to get all components' }).end();

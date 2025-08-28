@@ -13,6 +13,7 @@ componentsRouter
   .put('/api/components/:componentId', AUTHENTICATION_MIDDLEWARES.concat(updateComponent))
   .delete('/api/components/:componentId', AUTHENTICATION_MIDDLEWARES.concat(removeComponent))
 
+componentsRouter.get('/internal-api/components', verifyInternalCall, getAllComponents);
 componentsRouter.post('/internal-api/components', verifyInternalCall, createComponent);
 
 componentsRouter.get('/api/static', getComponentsList);

@@ -21,6 +21,13 @@ export function sourcesChatCompletionRouter() {
        getSourceToIntegrate,
        chatCompletionPages  
     )
+  
+  router
+    .post('/api/ai/sources/:sourceId/chat-completion/integrations',
+       AUTHENTICATION_MIDDLEWARES,
+       getSourceToIntegrate,
+       chatCompletionPages  
+    )
 
   router
     .post('/api/ai/sources/:sourceId/blueprints',
