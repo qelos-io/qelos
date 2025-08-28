@@ -27,7 +27,6 @@ export const callIntegrationManagerAgentCalling = {
         ...req.body,
         messages: payload.messages || []
       }
-      console.log('integrations agent req.aiOptions', req.aiOptions.messages);
       const result = await processIntegrationsChatCompletion(req, null);
   
       return result;

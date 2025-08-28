@@ -58,10 +58,8 @@ async function removeIntegrationSource(tenant: string, user: any, sourceId: stri
 
 async function getIntegrations(tenant: string, user: any, query: Record<string, any> = { kind: undefined, active: undefined }) {
   try {
-    console.log('query', query);
     const url = `/api/integrations?${Object.entries(query).map(([key, value]) => `${key}=${value}`).join('&')}`;
     const integrations = await calPublicPluginsService(url, { tenant, user }, { method: 'GET' });
-    console.log('integrations', integrations);
     return integrations;
   } catch (error: any) {
     logger.error('Error getting integrations:', error);

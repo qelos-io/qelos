@@ -24,7 +24,6 @@ export const callPagesEditorAgentCalling = {
       ...req.body,
       messages: payload.messages || []
     }
-    console.log('pages agent req.aiOptions', req.aiOptions.messages);
     const result = await processPagesChatCompletion(req, null);
 
     return result;
