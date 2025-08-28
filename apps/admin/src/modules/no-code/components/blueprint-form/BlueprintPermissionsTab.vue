@@ -10,12 +10,13 @@ import { IBlueprint } from '@qelos/global-types';
 
 const props = defineProps({
   availableLabels: {
-    type: Array,
+    type: Array as () => string[],
     default: () => ['*', 'supplier', 'store', 'consumer']
   }
 });
 
-const permissions = defineModel<IBlueprint['permissions']>();
+const permissions = defineModel<IBlueprint['permissions']>('permissions');
+const permissionScope = defineModel<IBlueprint['permissionScope']>('scope');
 
 function getSummaryTitle(permission) {
   return permission.guest 
@@ -53,7 +54,7 @@ function addNewPermission() {
   const updatedPermissions = [...permissions.value];
   
   updatedPermissions.push({ 
-    operation: '' as any, 
+    operation: '' as IBlueprint['permissions'][number]['operation'], 
     guest: false, 
     workspaceRoleBased: [], 
     roleBased: [], 
@@ -82,7 +83,7 @@ function removePermission(permission) {
         {{ $t('This determines the overall permission scope for the blueprint.') }}
         <InfoIcon content="The permission scope defines the level at which permissions are applied by default for this blueprint."/>
       </p>
-      <PermissionScopeSelector v-model="edit.permissionScope"/>
+      <PermissionScopeSelector v-model="permissionScope"/>
     </div>
     
     <div class="rbac-rules-container">
@@ -91,7 +92,7 @@ function removePermission(permission) {
         {{ $t('Define who can perform specific operations on entities of this blueprint.') }}
       </p>
       
-      <el-card v-for="(permission, index) in edit.permissions" :key="index"
+      <el-card v-for="(permission, index) in permissions" :key="index"
               class="permission-card" :class="{ 'guest-permission': permission.guest }">
         <template #header>
           <div class="permission-card-header">

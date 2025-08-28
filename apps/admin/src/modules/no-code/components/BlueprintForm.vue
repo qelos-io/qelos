@@ -145,7 +145,10 @@ function submit() {
                 <span>{{ $t('Permissions and Roles') }}</span>
               </div>
             </template>
-            <BlueprintPermissionsTab v-model="edit.permissions" :availableLabels="availableLabels" />
+            <BlueprintPermissionsTab 
+            v-model:permissions="edit.permissions" 
+            v-model:scope="edit.permissionScope" 
+            :availableLabels="availableLabels" />
           </el-card>
         </div>
       </el-tab-pane>
