@@ -58,6 +58,9 @@ export async function getAllBlueprints(req, res) {
   if (typeof req.query.description === 'string') {
     query.description = { $regex: req.query.description, $options: 'i' }
   }
+  if (typeof req.query.identifier === 'string') {
+    query.identifier = { $in: req.query.identifier.split(',') }
+  }
   const list = await Blueprint.find(query, req.user?.isPrivileged ? undefined : VIEWER_FIELDS)
     .lean()
     .exec()

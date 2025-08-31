@@ -1,4 +1,4 @@
-import { getRouter, verifyUser, populateUser } from '@qelos/api-kit';
+import { getRouter, verifyUser, populateUser, verifyInternalCall } from '@qelos/api-kit';
 import { checkAllPrivileges, onlyEditPrivileged } from '../middlewares/privileged-check';
 import {
   createBlueprint,
@@ -23,39 +23,21 @@ blueprintsRouter
 
 
 blueprintsRouter
-  .get('/internal-api/blueprints', (req, res, next) => {
-    req.user = { roles: ['admin'] }
-    next();
-  }, getAllBlueprints)
+  .get('/internal-api/blueprints', verifyInternalCall, getAllBlueprints)
 
 blueprintsRouter
-  .get('/internal-api/blueprints/:blueprintIdentifier', (req, res, next) => {
-    req.user = { roles: ['admin'] }
-    next(); 
-  }, getSingleBlueprint)
+  .get('/internal-api/blueprints/:blueprintIdentifier', verifyInternalCall, getSingleBlueprint)
 
 blueprintsRouter
-  .post('/internal-api/blueprints', (req, res, next) => {
-    req.user = { roles: ['admin'] }
-    next();
-  }, createBlueprint)
+  .post('/internal-api/blueprints', verifyInternalCall, createBlueprint)
 
 blueprintsRouter
-  .put('/internal-api/blueprints/:blueprintIdentifier', (req, res, next) => {
-    req.user = { roles: ['admin'] }
-    next();
-  }, updateBlueprint)
+  .put('/internal-api/blueprints/:blueprintIdentifier', verifyInternalCall, updateBlueprint)
 
 blueprintsRouter
-  .patch('/internal-api/blueprints/:blueprintIdentifier', (req, res, next) => {
-    req.user = { roles: ['admin'] }
-    next();
-  }, patchBlueprint)
+  .delete('/internal-api/blueprints/:blueprintIdentifier', verifyInternalCall, removeBlueprint)
 
 blueprintsRouter
-  .delete('/internal-api/blueprints/:blueprintIdentifier', (req, res, next) => {
-    req.user = { roles: ['admin'] }
-    next();
-  }, removeBlueprint)
+  .patch('/internal-api/blueprints/:blueprintIdentifier', verifyInternalCall, patchBlueprint)
 
 export default blueprintsRouter;

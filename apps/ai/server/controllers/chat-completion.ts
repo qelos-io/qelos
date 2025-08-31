@@ -1,4 +1,4 @@
-import { IOpenAISource, OpenAITargetPayload } from "@qelos/global-types";
+import { IBlueprint, IOpenAISource, OpenAITargetPayload } from "@qelos/global-types";
 import logger from "../services/logger";
 import { createAIService } from "../services/ai-service";
 import * as ChatCompletionService from "../services/chat-completion-service";
@@ -7,6 +7,7 @@ import { findSimilarTools } from "../services/vector-search-service";
 import { executeFunctionCalls } from "../services/execute-function-calls";
 import { verifyUserPermissions } from "../services/source-service";
 import { Thread } from "../models/thread";
+import { getAllBlueprints } from "../services/no-code-service";
 
 export async function getIntegrationToIntegrate(req, res, next) {
   try {
@@ -120,13 +121,15 @@ export async function chatCompletion(req, res) {
   }
 
   let toolsIntegrations;
+  let ingestedBlueprints: IBlueprint[];
   try {
-    [options, toolsIntegrations] = await Promise.all([
+    [options, toolsIntegrations, ingestedBlueprints] = await Promise.all([
       executeDataManipulation(integration.tenant, {
         user: req.user,
         messages: safeUserMessages,
       }, integration.dataManipulation),
-      getToolsIntegrations(integration.tenant, integration.target.source.kind, integration._id)
+      getToolsIntegrations(integration.tenant, integration.target.source.kind, integration._id),
+      integration.target.details.ingestedBlueprints && integration.target.details.ingestedBlueprints.length > 0 ? getAllBlueprints(integration.tenant, { identifier: integration.target.details.ingestedBlueprints }) : Promise.resolve([]),
     ]);
   } catch (e: any) {
     logger.error('Failed to calculate prompt or load tools integrations', e);
@@ -149,6 +152,160 @@ export async function chatCompletion(req, res) {
       },
     }
   }));
+
+  // Add blueprint tools for CRUD operations
+  if (ingestedBlueprints && ingestedBlueprints.length > 0) {
+    const blueprintTools = ingestedBlueprints.flatMap(blueprint => {
+      // Helper function to convert blueprint property type to JSON Schema type
+      const getJsonSchemaType = (blueprintType: string): { type: string, format?: string } => {
+        switch (blueprintType.toLowerCase()) {
+          case 'string':
+            return { type: 'string' };
+          case 'number':
+            return { type: 'number' };
+          case 'boolean':
+            return { type: 'boolean' };
+          case 'date':
+            return { type: 'string', format: 'date' };
+          case 'datetime':
+            return { type: 'string', format: 'date-time' };
+          case 'time':
+            return { type: 'string', format: 'time' };
+          case 'object':
+            return { type: 'object' };
+          case 'file':
+            return { type: 'string', format: 'uri' }; // File is represented as a URL
+          default:
+            return { type: 'string' }; // Default to string for unknown types
+        }
+      };
+
+      // Create JSON schema for blueprint properties
+      const propertiesSchema = Object.entries(blueprint.properties).reduce((schema, [propName, propDesc]) => {
+        const typeInfo = getJsonSchemaType(propDesc.type);
+        
+        let propSchema: any = {
+          ...typeInfo,
+          description: propDesc.description || propDesc.title
+        };
+
+        // Handle enum values
+        if (propDesc.enum && propDesc.enum.length > 0) {
+          propSchema.enum = propDesc.enum;
+        }
+
+        // Handle min/max for numbers
+        if (propDesc.type.toLowerCase() === 'number') {
+          if (propDesc.min !== undefined) propSchema.minimum = propDesc.min;
+          if (propDesc.max !== undefined) propSchema.maximum = propDesc.max;
+        }
+
+        schema[propName] = propSchema;
+        return schema;
+      }, {});
+
+      // Generate CRUD function tools for this blueprint
+      return [
+        // Create entity function
+        {
+          type: 'function',
+          description: `Create a new ${blueprint.name} entity`,
+          function: {
+            name: `create_${blueprint.identifier}`,
+            description: `Create a new ${blueprint.name} entity. ${blueprint.description || ''}`,
+            parameters: {
+              type: 'object',
+              properties: propertiesSchema,
+              required: Object.entries(blueprint.properties)
+                .filter(([_, prop]) => prop.required)
+                .map(([name, _]) => name)
+            }
+          }
+        },
+        // Get entity function
+        {
+          type: 'function',
+          description: `Get a specific ${blueprint.name} entity by ID`,
+          function: {
+            name: `get_${blueprint.identifier}`,
+            description: `Retrieve a specific ${blueprint.name} entity by its ID`,
+            parameters: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  description: `The ID of the ${blueprint.name} entity to retrieve`
+                }
+              },
+              required: ['id']
+            }
+          }
+        },
+        // Update entity function
+        {
+          type: 'function',
+          description: `Update an existing ${blueprint.name} entity`,
+          function: {
+            name: `update_${blueprint.identifier}`,
+            description: `Update an existing ${blueprint.name} entity with new values`,
+            parameters: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  description: `The ID of the ${blueprint.name} entity to update`
+                },
+                ...propertiesSchema
+              },
+              required: ['id']
+            }
+          }
+        },
+        // Delete entity function
+        {
+          type: 'function',
+          description: `Delete a ${blueprint.name} entity`,
+          function: {
+            name: `delete_${blueprint.identifier}`,
+            description: `Delete a ${blueprint.name} entity by its ID`,
+            parameters: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  description: `The ID of the ${blueprint.name} entity to delete`
+                }
+              },
+              required: ['id']
+            }
+          }
+        },
+        // List entities function
+        {
+          type: 'function',
+          description: `List ${blueprint.name} entities`,
+          function: {
+            name: `list_${blueprint.identifier}`,
+            description: `Retrieve a list of ${blueprint.name} entities, optionally filtered by query parameters`,
+            parameters: {
+              type: 'object',
+              properties: {
+                query: {
+                  type: 'object',
+                  description: `Query parameters to filter ${blueprint.name} entities`,
+                  additionalProperties: true
+                }
+              },
+              required: []
+            }
+          }
+        }
+      ];
+    });
+
+    // Add blueprint tools to allTools array
+    allTools.push(...blueprintTools);
+  }
   
   // Extract the latest user message to use for tool relevance filtering
   const lastUserMessage = options.messages

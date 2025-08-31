@@ -2,6 +2,9 @@
 import { ref, watch, computed } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
+import BlueprintDropdown from '@/modules/integrations/components/BlueprintDropdown.vue';
+import { storeToRefs } from 'pinia';
+import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import { OpenAITargetOperation } from '@qelos/global-types';
 import {
   Service as CustomerSupportIcon,
@@ -113,7 +116,11 @@ const openAiDetails = ref({
   pre_messages: [],
   embeddingType: 'local',
   maxTools: 15,
+  ingestedBlueprints: [],
 });
+
+// Get blueprints for selection
+const { blueprints } = storeToRefs(useBlueprintsStore());
 
 const systemMessage = ref('');
 const selectedPersonality = ref('');
@@ -127,7 +134,7 @@ const targetDetailsText = computed(() => {
 
 // Initialize component with existing data if available
 const initOpenAiDetails = () => {
-  if (props.modelValue?.details) {
+  if (props.modelValue.details) {
     openAiDetails.value = {
       model: props.modelValue.details.model || 'gpt-4o',
       temperature: props.modelValue.details.temperature ?? 0.7,
@@ -140,8 +147,10 @@ const initOpenAiDetails = () => {
       pre_messages: props.modelValue.details.pre_messages || [],
       embeddingType: props.modelValue.details.embeddingType || 'local',
       maxTools: props.modelValue.details.maxTools ?? 15,
+      ingestedBlueprints: props.modelValue.details.ingestedBlueprints || [],
     };
-    initializeSystemMessage();
+    systemMessage.value = props.modelValue.details.system_message || '';
+    selectedPersonality.value = props.modelValue.details.personality || '';
   }
 };
 
@@ -221,6 +230,8 @@ const syncOpenAiDetailsToTargetDetails = () => {
       });
     }
   }
+  // Ensure ingestedBlueprints is included in the model value
+  newModelValue.details.ingestedBlueprints = openAiDetails.value.ingestedBlueprints || [];
   emit('update:modelValue', newModelValue);
 };
 
@@ -230,6 +241,29 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
 
 <template>
   <div v-if="operation === OpenAITargetOperation.chatCompletion" class="chat-completion-form">
+    
+    <!-- Blueprint Selection -->
+    <div class="blueprint-selection-section">
+      <label>{{ $t('Ingest Blueprints') }}</label>
+      <p class="help-text">Select blueprints to be ingested as function tools for the AI</p>
+      <el-select
+        v-model="openAiDetails.ingestedBlueprints"
+        multiple
+        filterable
+        collapse-tags-tooltip
+        placeholder="Select blueprints to ingest"
+        @change="syncOpenAiDetailsToTargetDetails"
+        class="blueprint-select"
+      >
+        <el-option
+          v-for="blueprint in blueprints"
+          :key="blueprint.identifier"
+          :label="blueprint.name"
+          :value="blueprint.identifier"
+        />
+      </el-select>
+    </div>
+    
     <!-- Personality Selection Cards -->
     <div class="personality-cards-section">
       <label>Choose a Personality Template</label>
@@ -730,6 +764,28 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
 
 .option-with-description small {
   color: var(--el-text-color-secondary);
+}
+
+.blueprint-selection-section {
+  margin-bottom: 25px;
+}
+
+.blueprint-selection-section label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: var(--el-text-color-primary);
+}
+
+.blueprint-selection-section .help-text {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.blueprint-select {
+  width: 100%;
 }
 
 .json-toggle-button {

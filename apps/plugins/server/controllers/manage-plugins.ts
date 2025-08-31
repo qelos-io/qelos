@@ -10,7 +10,9 @@ const protocol = isDev ? 'http://' : 'https://';
 
 export function getAllPlugins(req, res) {
   const select = req.user?.hasPluginPrivileges ? '-token -auth' : 'name description apiPath callbackUrl microFrontends injectables navBarGroups cruds'
-  Plugin.find({ tenant: req.headers.tenant }).select(select).lean().exec()
+  Plugin
+    .find({ tenant: req.headers.tenant })
+    .select(select).lean().exec()
     .then(list => {
       res.json(list).end();
     })

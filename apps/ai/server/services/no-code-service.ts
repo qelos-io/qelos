@@ -1,10 +1,10 @@
 import { internalServicesSecret } from '../../config';
 import { service } from '@qelos/api-kit';
 
-const authService = service('NO_CODE', { port: process.env.NO_CODE_SERVICE_PORT || 9004 });
+const noCodeService = service('NO_CODE', { port: process.env.NO_CODE_SERVICE_PORT || 9004 });
 
 function callNoCodeService(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE', tenant: string, data?: any) {
-  return authService({
+  return noCodeService({
     headers: { internal_secret: internalServicesSecret, tenant },
     method,
     data,
@@ -13,8 +13,19 @@ function callNoCodeService(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE
     .then((axiosRes: any) => axiosRes.data)
 }
 
-export function getAllBlueprints(tenant: string, query: any) {
-  const queryString = Object.entries(query).map(([key, value]) => `${key}=${value}`).join('&');
+
+export function callPublicNoCodeService(url: string, {tenant, user}: {tenant: string, user: string}, {data, method = 'GET'}: {data?: any, method: string}) {
+  return noCodeService({
+    headers: { internal_secret: internalServicesSecret, tenant, user },
+    method,
+    data,
+    url
+  })
+    .then((axiosRes: any) => axiosRes.data)
+}
+
+export async function getAllBlueprints(tenant: string, query: any) {
+  const queryString = Object.entries(query).map(([key, value]) => `${key}=${value instanceof Array ? value.join(',') : value}`).join('&');
   return callNoCodeService(`/internal-api/blueprints?${queryString}`, 'GET', tenant);
 }
 
@@ -41,6 +52,10 @@ export function createBlueprintEntity(tenant: string, blueprintIdentifier: strin
 
 export function updateBlueprintEntity(tenant: string, blueprintIdentifier: string, payload: any) {
   return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities`, 'PUT', tenant, payload);
+}
+
+export function deleteBlueprintEntity(tenant: string, blueprintIdentifier: string, entityId: string) {
+  return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities/${entityId}`, 'DELETE', tenant);
 }
 
 export function createComponent(tenant: string, payload: {
