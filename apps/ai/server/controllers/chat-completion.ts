@@ -243,16 +243,16 @@ export async function chatCompletion(req, res) {
         // Get entity function
         {
           type: 'function',
-          description: `Get a specific ${blueprint.name} entity by ID`,
+          description: `Get a specific ${blueprint.name} entity by identifier`,
           function: {
             name: `get_${blueprint.identifier}`,
-            description: `Retrieve a specific ${blueprint.name} entity by its ID`,
+            description: `Retrieve a specific ${blueprint.name} entity by its identifier`,
             parameters: {
               type: 'object',
               properties: {
                 id: {
                   type: 'string',
-                  description: `The ID of the ${blueprint.name} entity to retrieve`
+                  description: `The identifier of the ${blueprint.name} entity to retrieve`
                 }
               },
               required: ['id']
@@ -262,7 +262,7 @@ export async function chatCompletion(req, res) {
         // Update entity function
         {
           type: 'function',
-          description: `Update an existing ${blueprint.name} entity`,
+          description: `Update an existing ${blueprint.name} entity by identifier`,
           function: {
             name: `update_${blueprint.identifier}`,
             description: `Update an existing ${blueprint.name} entity with new values`,
@@ -271,7 +271,7 @@ export async function chatCompletion(req, res) {
               properties: {
                 id: {
                   type: 'string',
-                  description: `The ID of the ${blueprint.name} entity to update`
+                  description: `The identifier of the ${blueprint.name} entity to update`
                 },
                 ...propertiesSchema
               },
@@ -282,16 +282,16 @@ export async function chatCompletion(req, res) {
         // Delete entity function
         {
           type: 'function',
-          description: `Delete a ${blueprint.name} entity`,
+          description: `Delete a ${blueprint.name} entity by identifier`,
           function: {
             name: `delete_${blueprint.identifier}`,
-            description: `Delete a ${blueprint.name} entity by its ID`,
+            description: `Delete a ${blueprint.name} entity by its identifier`,
             parameters: {
               type: 'object',
               properties: {
                 id: {
                   type: 'string',
-                  description: `The ID of the ${blueprint.name} entity to delete`
+                  description: `The identifier of the ${blueprint.name} entity to delete`
                 }
               },
               required: ['id']
@@ -308,11 +308,30 @@ export async function chatCompletion(req, res) {
             parameters: {
               type: 'object',
               properties: {
-                query: {
-                  type: 'object',
-                  description: `Query parameters to filter ${blueprint.name} entities`,
-                  additionalProperties: true
-                }
+                $sort: {
+                  type: 'string',
+                  description: 'Sort the results by this field. add "minus" to sort in descending order (e.g. "-rank"). default: "-created"',
+                  enum: ['created', 'updated', ...Object.keys(blueprint.properties).map(prop => [prop, '-' + prop]).flat()]
+                },
+                $page: {
+                  type: 'number',
+                  description: 'the page number to return. default: 1'
+                },
+                $limit: {
+                  type: 'number',
+                  description: 'Limit the number of results. default: 100'
+                },
+                $populate: {
+                  type: 'boolean',
+                  description: 'Populate the results. default: false. if true, the results will be populated with the blueprint relations.'
+                },
+                ...Object.keys(blueprint.properties).reduce((acc, prop) => {
+                  acc[prop] = {
+                    ...propertiesSchema[prop],
+                    description: `Filter by ${prop}. ${blueprint.properties[prop].description || ''}`
+                  }
+                  return acc;
+                }, {} as any)
               },
               required: []
             }
