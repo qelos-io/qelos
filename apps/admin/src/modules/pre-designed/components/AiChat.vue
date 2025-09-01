@@ -115,7 +115,7 @@
 <script lang="ts" setup>
 import { ref, reactive, nextTick, watch, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { UploadFilled, Document, Loading, UserFilled, Cpu } from '@element-plus/icons-vue';
+import { UploadFilled, Document, Loading, UserFilled, Cpu, DocumentCopy } from '@element-plus/icons-vue';
 import { Remarkable } from 'remarkable';
 import threadsService from '@/services/threads-service';
 import { linkify } from 'remarkable/linkify';
@@ -139,7 +139,7 @@ const shouldRecordThread = computed(() => props.recordThread || props.threadId);
 const chatCompletionUrl = computed(() => {
   if (shouldRecordThread.value) {
     const threadId = props.threadId || localThreadId.value;
-    return props.url.includes('{threadId}') ? props.url.replace('{threadId}', threadId) : (props.url.includes(threadId) ? props.url : (props.url + '/' + threadId));
+    return props.url.includes('[threadId]') ? props.url.replace('[threadId]', threadId) : (props.url.includes(threadId) ? props.url : (props.url + '/' + threadId));
   }
   return props.url;
 });
@@ -305,7 +305,7 @@ async function onSend() {
   for (const file of attachedFiles) {
     addMessage({ role: 'user', content: file.content, type: 'file', filename: file.name });
   }
-  addMessage({ role: 'user', content: input.value, type: 'text' });
+  addMessage({ role: 'user', content: input.value.trim(), type: 'text' });
   const payload = {
     messages: messages.map(m => ({ role: m.role, content: m.content, type: m.type, filename: m.filename })),
   };

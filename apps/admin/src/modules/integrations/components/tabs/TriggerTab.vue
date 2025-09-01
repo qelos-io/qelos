@@ -25,7 +25,7 @@ const recordThread = ref(false);
 // Computed property for the chat completion URL
 const getCompletionUrl = computed(() => {
   const baseUrl = `/api/ai/${props.integrationId}/chat-completion`;
-  return recordThread.value ? `${baseUrl}/{threadId}` : baseUrl;
+  return recordThread.value ? `${baseUrl}/[threadId]` : baseUrl;
 });
 
 // Computed property for URL help text
@@ -33,7 +33,7 @@ const urlHelpText = computed(() => {
   if (!recordThread.value) {
     return "Use this URL to access your chat completion API endpoint";
   }
-  return "Use this URL to access your chat completion API endpoint. Replace {threadId} with an existing thread ID or remove the threadId path segment to create a new thread automatically.";
+  return "Use this URL to access your chat completion API endpoint. Replace [threadId] with an existing thread ID or remove the threadId path segment to create a new thread automatically.";
 });
 
 // Computed property for the selected source

@@ -6,8 +6,9 @@ import { executeDataManipulation, getIntegration, getSourceAuthentication, getTo
 import { findSimilarTools } from "../services/vector-search-service";
 import { executeFunctionCalls } from "../services/execute-function-calls";
 import { verifyUserPermissions } from "../services/source-service";
-import { Thread } from "../models/thread";
+import { IThread, Thread } from "../models/thread";
 import { getAllBlueprints } from "../services/no-code-service";
+import { FunctionCall } from "../services/chat-completion-service";
 
 export async function getIntegrationToIntegrate(req, res, next) {
   try {
@@ -36,7 +37,7 @@ export async function getIntegrationToIntegrate(req, res, next) {
         filters.workspace = req.workspace._id;
       }
 
-      const thread = await Thread.findOne(filters).lean().exec();
+      const thread = await Thread.findOne(filters).exec();
       if (!thread) {
         res.status(404).json({ message: 'thread not found' }).end();
         return;
@@ -60,7 +61,7 @@ export async function getIntegrationToIntegrate(req, res, next) {
     }
 
     const source = integration.target.source as any;
-    
+
     // Get authentication from plugins service
     const sourceData = await getSourceAuthentication(req.headers.tenant, source._id);
     req.source = source;
@@ -79,7 +80,9 @@ export async function chatCompletion(req, res) {
   const source = integration.target.source;
   let options = req.body;
   const useSSE = req.headers.accept?.includes('text/event-stream') || req.query.stream === 'true';
-  
+
+  const thread: IThread | undefined = req.thread;
+
   if (useSSE) {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -92,32 +95,47 @@ export async function chatCompletion(req, res) {
 
   const aiService = createAIService(integration.target.source, integrationSourceTargetAuthentication);
 
-  const safeUserMessages = options.messages.filter(msg => 
+  const safeUserMessages = options.messages.filter(msg =>
     msg.role === 'user' || msg.role === 'assistant' || msg.role === 'tool'
   );
 
-  if (req.thread && req.thread.messages && req.thread.messages.length > 0) {
-    // Get the timestamp of the last message in the thread
-    const lastThreadMessage = req.thread.messages[req.thread.messages.length - 1];
-    const lastThreadTimestamp = lastThreadMessage.timestamp || new Date(0);
-    
-    // Filter out user messages that were sent before the last thread message
-    const newUserMessages = safeUserMessages.filter(msg => {
-      // Only keep user messages
-      if (msg.role !== 'user') return false;
-      
-      // If the message has a timestamp, check if it's after the last thread message
-      if (msg.timestamp) {
-        const msgTimestamp = new Date(msg.timestamp);
-        return msgTimestamp > lastThreadTimestamp;
-      }
-      
-      // If no timestamp, assume it's a new message
-      return true;
-    });
-    
-    // Combine thread messages with new user messages
-    options.messages = [...req.thread.messages, ...newUserMessages];
+  if (thread) {
+
+    if (thread.messages && thread.messages.length > 0) {
+      // Get the timestamp of the last message in the thread
+      const lastThreadMessage = thread.messages[thread.messages.length - 1];
+      const lastThreadTimestamp = lastThreadMessage.timestamp || new Date(0);
+
+      // Filter out user messages that were sent before the last thread message
+      const newUserMessages = safeUserMessages.filter(msg => {
+        // Only keep user messages
+        if (msg.role !== 'user') return false;
+
+        // If the message has a timestamp, check if it's after the last thread message
+        if (msg.timestamp) {
+          const msgTimestamp = new Date(msg.timestamp);
+          return msgTimestamp > lastThreadTimestamp;
+        }
+
+        // If no timestamp, assume it's a new message
+        return true;
+      });
+
+      // Combine thread messages with new user messages
+      options.messages = [...thread.messages, ...newUserMessages];
+
+      //newUserMessages should be stored in the thread
+      thread.messages = [...thread.messages, ...newUserMessages];
+
+    } else {
+      thread.messages = safeUserMessages
+        .filter(msg => msg.role === 'user')
+        .map(msg => ({
+          ...msg,
+          timestamp: new Date()
+        }));
+    }
+    await thread.save();
   }
 
   let toolsIntegrations;
@@ -183,7 +201,7 @@ export async function chatCompletion(req, res) {
       // Create JSON schema for blueprint properties
       const propertiesSchema = Object.entries(blueprint.properties).reduce((schema, [propName, propDesc]) => {
         const typeInfo = getJsonSchemaType(propDesc.type);
-        
+
         let propSchema: any = {
           ...typeInfo,
           description: propDesc.description || propDesc.title
@@ -306,16 +324,16 @@ export async function chatCompletion(req, res) {
     // Add blueprint tools to allTools array
     allTools.push(...blueprintTools);
   }
-  
+
   // Extract the latest user message to use for tool relevance filtering
   const lastUserMessage = options.messages
     .filter(msg => msg.role === 'user')
     .pop()?.content || '';
-  
+
   // Determine whether to use local embeddings or OpenAI
   const embeddingType = integration.target.details.embeddingType || 'local'
   const maxTools = Number(integration.target.details.maxTools || 15);
-  
+
   // Use vector search to find relevant tools based on the user's query
   const tools = allTools.length <= maxTools ? allTools : await findSimilarTools({
     userQuery: lastUserMessage,
@@ -334,7 +352,7 @@ export async function chatCompletion(req, res) {
       frequency_penalty: options.frequency_penalty || integration.target.details.frequency_penalty,
       presence_penalty: options.presence_penalty || integration.target.details.presence_penalty,
       stop: options.stop || integration.target.details.stop,
-      messages: initialMessages.concat(options.messages).map(msg => typeof msg === 'string' ? { role: 'user', content: msg } : msg),
+      messages: initialMessages.map(msg => typeof msg === 'string' ? { role: 'user', content: msg } : msg),
       response_format: options.response_format || integration.target.details.response_format,
       tools,
     };
@@ -353,6 +371,34 @@ export async function chatCompletion(req, res) {
       );
     };
 
+    const onNewMessage = thread ? (message: { type: 'function_calls_detected' | 'function_calls_executed' | 'assistant_last_content', content?: string, functionCalls?: FunctionCall[], functionResults?: any }) => {
+      if (message.type === 'function_calls_detected') {
+        thread.messages.push({
+          role: 'assistant',
+          content: '',
+          tool_calls: message.functionCalls,
+          timestamp: new Date()
+        });
+
+      } else if (message.type === 'function_calls_executed') {
+        thread.messages.push({
+          role: 'function',
+          content: '',
+          tool_calls: message.functionResults,
+          timestamp: new Date()
+        });
+
+      } else if (message.type === 'assistant_last_content') {
+        thread.messages.push({
+          role: 'assistant',
+          content: message.content || '',
+          timestamp: new Date()
+        });
+      }
+
+      thread.save().catch(() => { });
+    } : undefined;
+
     if (useSSE) {
       // Use the shared streaming chat completion handler
       await ChatCompletionService.handleStreamingChatCompletion(
@@ -360,7 +406,8 @@ export async function chatCompletion(req, res) {
         aiService,
         chatOptions,
         executeFunctionCallsHandler,
-        []
+        [],
+        onNewMessage
       );
     } else {
       // Use the shared non-streaming chat completion handler
@@ -368,7 +415,8 @@ export async function chatCompletion(req, res) {
         aiService,
         chatOptions,
         executeFunctionCallsHandler,
-        []
+        [],
+        onNewMessage
       );
       res.status(200).json(result).end();
     }
@@ -400,6 +448,6 @@ export async function internalChatCompletion(req, res) {
     })
     res.json(response).end();
   } catch {
-    res.json({message: 'failed to execute chat completion'}).end();
+    res.json({ message: 'failed to execute chat completion' }).end();
   }
 }

@@ -581,7 +581,7 @@ export async function removeBlueprintEntity(req, res) {
       }).catch(logger.error);
     }
 
-    const { auditInfo, _id, ...response } = entity.toObject();
+    const { auditInfo, _id, ...response } = entity;
     response.id = response.identifier;
     const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
     if (shouldFlat) {

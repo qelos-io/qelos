@@ -142,7 +142,8 @@ export async function handleStreamingChatCompletion(
   aiService: any,
   chatOptions: any,
   executeFunctionCallsHandler: Function,
-  additionalArgs: any[] = []
+  additionalArgs: any[] = [],
+  onNewMessage?: Function,
 ) {
   const sendSSE = (data: any) => {
     res.write(`data: ${JSON.stringify(data)}\n\n`);
@@ -156,7 +157,8 @@ export async function handleStreamingChatCompletion(
       executeFunctionCallsHandler,
       sendSSE,
       additionalArgs,
-      false // isFollowUp
+      false, // isFollowUp
+      onNewMessage
     );
     
     // End the response
@@ -177,13 +179,15 @@ async function processStreamingCompletion(
   executeFunctionCallsHandler: Function,
   sendSSE: Function,
   additionalArgs: any[] = [],
-  isFollowUp: boolean = false
+  isFollowUp: boolean = false,
+  onNewMessage?: Function,
 ) {
   let currentFunctionCalls: FunctionCall[] = [];
   let isCollectingFunctionCall = false;
   let currentFunctionCall: Partial<FunctionCall> = {};
   let functionCallBuffer = '';
   let hasContent = false;
+  let assistantLastContent = '';
 
   const stream = await aiService.createChatCompletionStream(chatOptions);
   
@@ -235,6 +239,7 @@ async function processStreamingCompletion(
     } else if (delta?.content) {
       // Regular content chunk
       hasContent = true;
+      assistantLastContent += delta.content;
       sendSSE({ 
         type: isFollowUp ? 'followup_chunk' : 'chunk', 
         content: delta.content 
@@ -247,6 +252,13 @@ async function processStreamingCompletion(
       sendSSE({ 
         type: isFollowUp ? 'followup_function_calls_detected' : 'function_calls_detected' 
       });
+
+      if (onNewMessage) {
+        onNewMessage({
+          type: 'function_calls_detected',
+          functionCalls: currentFunctionCalls
+        });
+      }
       
       // Execute all collected function calls
       const functionResults = await executeFunctionCallsHandler(
@@ -254,6 +266,13 @@ async function processStreamingCompletion(
         sendSSE,
         ...additionalArgs
       );
+
+      if (onNewMessage) {
+        onNewMessage({
+          type: 'function_calls_executed',
+          functionResults: functionResults
+        });
+      }
       
       // Continue the conversation with function results
       sendSSE({ 
@@ -266,7 +285,7 @@ async function processStreamingCompletion(
         { role: 'assistant', tool_calls: currentFunctionCalls },
         ...functionResults
       ];
-      
+
       // Recursively process the next completion with updated messages
       await processStreamingCompletion(
         res,
@@ -283,9 +302,24 @@ async function processStreamingCompletion(
     }
   }
 
+  if (onNewMessage && hasContent && assistantLastContent) {
+    onNewMessage({
+      type: 'assistant_last_content',
+      content: assistantLastContent
+    });
+    assistantLastContent = '';
+  }
+
   // Handle any remaining incomplete function call
   if (isCollectingFunctionCall && currentFunctionCall.id) {
     currentFunctionCalls.push(currentFunctionCall as FunctionCall);
+
+    if (onNewMessage) {
+      onNewMessage({
+        type: 'function_calls_detected',
+        functionCalls: currentFunctionCalls
+      });
+    }
     
     // Send appropriate event based on whether this is a follow-up or initial call
     sendSSE({ 
@@ -297,6 +331,13 @@ async function processStreamingCompletion(
       sendSSE,
       ...additionalArgs
     );
+
+    if (onNewMessage) {
+      onNewMessage({
+        type: 'function_calls_executed',
+        functionResults: functionResults
+      });
+    }
     
     // Continue the conversation with function results
     sendSSE({ 
@@ -318,7 +359,8 @@ async function processStreamingCompletion(
       executeFunctionCallsHandler,
       sendSSE,
       additionalArgs,
-      true // isFollowUp
+      true, // isFollowUp
+      onNewMessage
     );
   }
   
@@ -331,7 +373,8 @@ export async function handleNonStreamingChatCompletion(
   aiService: any,
   chatOptions: any,
   executeFunctionCallsHandler: Function,
-  additionalArgs: any[] = []
+  additionalArgs: any[] = [],
+  onNewMessage?: Function,
 ) {
   try {
     // Get initial completion
@@ -340,12 +383,25 @@ export async function handleNonStreamingChatCompletion(
     
     // Check for function calls
     if (message.tool_calls && message.tool_calls.length > 0) {
+      if (onNewMessage) {
+        onNewMessage({
+          type: 'function_calls_detected',
+          functionCalls: message.tool_calls
+        });
+      }
       // Execute all function calls
       const functionResults = await executeFunctionCallsHandler(
         message.tool_calls,
         null, // No SSE for non-streaming
         ...additionalArgs
       );
+      
+      if (onNewMessage) {
+        onNewMessage({
+          type: 'function_calls_executed',
+          functionResults: functionResults
+        });
+      }
       
       // Create follow-up messages with function results
       const followUpMessages = [
@@ -360,6 +416,13 @@ export async function handleNonStreamingChatCompletion(
         messages: followUpMessages
       });
       
+      if (onNewMessage) {
+        onNewMessage({
+          type: 'assistant_last_content',
+          content: followUpCompletion.choices[0].message.content
+        });
+      }
+      
       // Return the final result
       return {  
         ...followUpCompletion,
@@ -367,6 +430,12 @@ export async function handleNonStreamingChatCompletion(
         function_results: functionResults
       };
     } else {
+      if (onNewMessage) {
+        onNewMessage({
+          type: 'assistant_last_content',
+          content: completion.choices[0].message.content
+        });
+      }
       // No function calls, return the initial completion
       return completion;
     }

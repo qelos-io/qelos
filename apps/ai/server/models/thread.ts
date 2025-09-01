@@ -5,6 +5,11 @@ interface IMessage {
   role: string;
   content: string;
   timestamp: Date;
+  tool_calls?: any[];
+  name?: string;
+  tool_call_id?: string;
+  function_call?: any;
+  message_id?: string; // Unique identifier for message correlation
 }
 
 interface IMessageSummary {
@@ -27,11 +32,16 @@ export interface IThread extends Document {
 // Define the message schema
 const MessageSchema = new Schema<IMessage>(
   {
-    role: { type: String, required: true }, // 'user', 'assistant', 'system', etc.
-    content: { type: String, required: true },
-    timestamp: { type: Date, default: Date.now }
+    role: { type: String, required: true }, // 'user', 'assistant', 'system', 'tool', etc.
+    content: { type: String, required: false }, // Content can be empty for function calls
+    timestamp: { type: Date, default: Date.now },
+    tool_calls: { type: Schema.Types.Mixed, required: false }, // For function calling
+    name: { type: String, required: false }, // For tool messages
+    tool_call_id: { type: String, required: false }, // For tool messages
+    function_call: { type: Schema.Types.Mixed, required: false }, // For legacy function calling
+    message_id: { type: String, required: false } // Unique identifier for message correlation
   },
-  { _id: false } // Don't create _id for subdocuments
+  { _id: false, strict: false } // Don't create _id for subdocuments and allow additional fields
 );
 
 // Define the message summary schema
