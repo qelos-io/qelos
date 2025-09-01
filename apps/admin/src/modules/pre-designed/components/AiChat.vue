@@ -1,18 +1,23 @@
 <template>
   <div
-  class="ai-chat"
-  @dragover.prevent="onDragOver"
-  @drop.prevent="onFileDrop"
-  @dragenter.prevent="onDragEnter"
-  @dragleave.prevent="onDragLeave"
->
+    class="ai-chat"
+    @dragover.prevent="onDragOver"
+    @drop.prevent="onFileDrop"
+    @dragenter.prevent="onDragEnter"
+    @dragleave.prevent="onDragLeave"
+  >
     <div class="chat-window" ref="chatWindow">
       <div v-if="messages.length === 0" class="ai-initial-message">
         <slot v-if="$slots.message" name="message" />
         <template v-else>
-          <div class="ai-initial-title">{{ $t(title || '🤖 I\'m your AI assistant') }}</div>
-          <div class="ai-initial-desc">{{ $t('How can I help you?') }}<br />
-            <span style="color: var(--el-color-primary);">{{ $t('You can also drop files anywhere in this chat.') }}</span>
+          <div class="ai-initial-title">
+            {{ $t(title || "🤖 I'm your AI assistant") }}
+          </div>
+          <div class="ai-initial-desc">
+            {{ $t("How can I help you?") }}<br />
+            <span style="color: var(--el-color-primary)">{{
+              $t("You can also drop files anywhere in this chat.")
+            }}</span>
           </div>
           <div v-if="suggestions?.length" class="ai-suggestions">
             <el-button
@@ -22,8 +27,14 @@
               size="small"
               @click="onSuggestionClick(suggestion)"
             >
-            <el-icon v-if="(suggestion as any).icon"><font-awesome-icon :icon="['fas', (suggestion as any).icon]" /></el-icon>
-            {{ typeof suggestion === 'string' ? suggestion : ((suggestion as any).label || (suggestion as any).text) }}
+              <el-icon v-if="(suggestion as any).icon"
+                ><font-awesome-icon :icon="['fas', (suggestion as any).icon]"
+              /></el-icon>
+              {{
+                typeof suggestion === "string"
+                  ? suggestion
+                  : (suggestion as any).label || (suggestion as any).text
+              }}
             </el-button>
           </div>
         </template>
@@ -32,17 +43,42 @@
         <div
           v-for="(msg, idx) in messages"
           :key="msg.id"
-          :class="['bubble', msg.role]"
+          :class="[
+            'bubble',
+            msg.role,
+            {
+              message: true,
+              streaming:
+                loading &&
+                msg.role === 'assistant' &&
+                idx === messages.length - 1,
+            },
+          ]"
         >
           <div class="bubble-header">
             <span class="avatar">
               <el-icon v-if="msg.role === 'user'"><UserFilled /></el-icon>
               <el-icon v-else><Cpu /></el-icon>
             </span>
-            <span class="meta">{{ msg.role === 'user' ? 'You' : 'AI' }} · {{ formatTime(msg.time) }}</span>
+            <span class="meta"
+              >{{ msg.role === "user" ? "You" : "AI" }} ·
+              {{ formatTime(msg.time) }}</span
+            >
+            <div
+              class="copy-button"
+              @click="copyMessage(msg)"
+              v-if="msg.type === 'text'"
+            >
+              <el-icon v-if="copiedMessageId === msg.id"><Check /></el-icon>
+              <el-icon v-else><DocumentCopy /></el-icon>
+            </div>
           </div>
           <div class="bubble-content">
-            <div v-if="msg.type === 'text'" v-html="renderMarkdown(msg.content)"></div>
+            <div
+              v-if="msg.type === 'text'"
+              v-html="renderMarkdown(msg.content)"
+              ref="markdownContent"
+            ></div>
             <div v-if="msg.type === 'file'" class="file-attachment-preview">
               <font-awesome-icon :icon="['fas', fileIconClass(msg.filename)]" />
               <span>{{ msg.filename }}</span>
@@ -51,13 +87,13 @@
         </div>
       </transition-group>
       <div v-if="loading" class="stream-indicator">
-        <el-icon class="spin"><Loading /></el-icon> {{ $t('AI is typing...') }}
+        <el-icon class="spin"><Loading /></el-icon> {{ $t("AI is typing...") }}
       </div>
     </div>
     <transition name="fade">
       <div v-if="dropActive" class="drag-overlay">
-        <el-icon style="font-size:2em;"><UploadFilled /></el-icon>
-        <div>{{ $t('Drop files to attach') }}</div>
+        <el-icon style="font-size: 2em"><UploadFilled /></el-icon>
+        <div>{{ $t("Drop files to attach") }}</div>
       </div>
     </transition>
     <input
@@ -67,7 +103,7 @@
       multiple
       accept=".txt,.csv,.json,.md"
       @change="onFileChange"
-      style="display: none;"
+      style="display: none"
     />
     <div class="attached-files" v-if="attachedFiles.length">
       <el-tag
@@ -94,16 +130,31 @@
           aria-label="Message input"
           @keydown.enter="onInputEnter"
           class="ai-textarea"
-          style="flex: 1; min-width: 0;"
+          style="flex: 1; min-width: 0"
         />
         <button
           class="ai-send-btn"
           :disabled="!canSend || loading"
           type="submit"
           aria-label="Send"
-          style="margin-left: 0.5em; flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;"
+          style="
+            margin-left: 0.5em;
+            flex-shrink: 0;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
         >
-          <svg class="send-icon" viewBox="0 0 24 24" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            class="send-icon"
+            viewBox="0 0 24 24"
+            width="26"
+            height="26"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <path d="M3 21L21 12L3 3V10L17 12L3 14V21Z" fill="currentColor" />
           </svg>
         </button>
@@ -113,24 +164,46 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, nextTick, watch, computed } from 'vue';
-import { ElMessage } from 'element-plus';
-import { UploadFilled, Document, Loading, UserFilled, Cpu, DocumentCopy } from '@element-plus/icons-vue';
-import { Remarkable } from 'remarkable';
-import threadsService from '@/services/threads-service';
-import { linkify } from 'remarkable/linkify';
+import {
+  ref,
+  reactive,
+  nextTick,
+  watch,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+} from "vue";
+import { ElMessage } from "element-plus";
+import {
+  UploadFilled,
+  Document,
+  Loading,
+  UserFilled,
+  Cpu,
+  DocumentCopy,
+  Check,
+} from "@element-plus/icons-vue";
+import { Remarkable } from "remarkable";
+import threadsService from "@/services/threads-service";
+import { linkify } from "remarkable/linkify";
 
-
-const props = defineProps<{ url: string,
-  title?: string,
-  text?: string,
-  recordThread?: boolean,
-  threadId?: string,
-  integrationId?: string,
-  suggestions?: Array<string | { label: string, text?: string, icon?: string }>
+const props = defineProps<{
+  url: string;
+  title?: string;
+  text?: string;
+  recordThread?: boolean;
+  threadId?: string;
+  integrationId?: string;
+  suggestions?: Array<string | { label: string; text?: string; icon?: string }>;
 }>();
 
-const emit = defineEmits(['update:threadId']);
+const emit = defineEmits([
+  "thread-created",
+  "thread-updated",
+  "message-sent",
+  "message-received",
+  "update:threadId",
+]);
 
 const localThreadId = ref(props.threadId);
 
@@ -139,32 +212,36 @@ const shouldRecordThread = computed(() => props.recordThread || props.threadId);
 const chatCompletionUrl = computed(() => {
   if (shouldRecordThread.value) {
     const threadId = props.threadId || localThreadId.value;
-    return props.url.includes('[threadId]') ? props.url.replace('[threadId]', threadId) : (props.url.includes(threadId) ? props.url : (props.url + '/' + threadId));
+    return props.url.includes("[threadId]")
+      ? props.url.replace("[threadId]", threadId)
+      : props.url.includes(threadId)
+      ? props.url
+      : props.url + "/" + threadId;
   }
   return props.url;
 });
 
 function getIntegrationIdFromUrl() {
-  return props.url?.split('/api/ai/')[1]?.split('/')[0] || undefined;
+  return props.url?.split("/api/ai/")[1]?.split("/")[0] || undefined;
 }
 
 async function createThread() {
   const newThread = await threadsService.create({
     integration: props.integrationId || getIntegrationIdFromUrl(),
-  })
+  });
 
-  emit('update:threadId', newThread._id);
+  emit("update:threadId", newThread._id);
   localThreadId.value = newThread._id;
 
-  return newThread
+  return newThread;
 }
 
 interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   time: string;
-  type: 'text' | 'file';
+  type: "text" | "file";
   filename?: string;
 }
 
@@ -175,7 +252,7 @@ interface AttachedFile {
   content: string;
 }
 
-const input = ref('');
+const input = ref("");
 const inputRef = ref();
 const chatWindow = ref();
 const fileInputRef = ref<HTMLInputElement>();
@@ -200,21 +277,90 @@ function onDragLeave(e: DragEvent) {
 const loading = ref(false);
 const attachedFiles = reactive<AttachedFile[]>([]);
 const messages = reactive<ChatMessage[]>([]);
+const copiedMessageId = ref<string | null>(null);
+const copiedTableId = ref<string | null>(null);
+
+// Reference to markdown content elements
+const markdownContent = ref<HTMLElement[]>([]);
+
+// Function to add copy buttons to tables
+function addTableCopyButtons() {
+  nextTick(() => {
+    // Handle case when markdownContent is an array (multiple refs)
+    const elements = Array.isArray(markdownContent.value)
+      ? markdownContent.value.filter((el) => el)
+      : [markdownContent.value].filter((el) => el);
+
+    elements.forEach((el) => {
+      if (!el) return;
+
+      // Find the message element this content belongs to
+      const messageEl = el.closest(".message");
+      // Only add copy buttons if this is not a currently streaming message
+      const isStreaming = messageEl?.classList.contains("streaming");
+      if (isStreaming) return;
+
+      const tables = el.querySelectorAll("table");
+      tables.forEach((table, index) => {
+        // Skip tables that already have copy buttons
+        if (table.parentElement?.classList.contains("table-wrapper")) return;
+
+        // Create wrapper div
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("table-wrapper");
+        table.parentNode?.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+
+        // Create copy button
+        const copyButton = document.createElement("div");
+        copyButton.classList.add("table-copy-button");
+        copyButton.dataset.tableId = `table-${index}`;
+        copyButton.innerHTML =
+          '<svg class="icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M768 832a128 128 0 0 1-128 128H192A128 128 0 0 1 64 832V384a128 128 0 0 1 128-128v64a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64h64z"></path><path fill="currentColor" d="M384 128a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64V192a64 64 0 0 0-64-64H384zm0-64h448a128 128 0 0 1 128 128v448a128 128 0 0 1-128 128H384a128 128 0 0 1-128-128V192A128 128 0 0 1 384 64z"></path></svg>';
+        wrapper.appendChild(copyButton);
+
+        // Add click event listener
+        copyButton.addEventListener("click", () => {
+          copyTableToClipboard(table)
+            .then(() => {
+              // Visual feedback
+              copyButton.classList.add("copied");
+              copyButton.innerHTML =
+                '<svg class="icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M406.656 706.944 195.84 496.256a32 32 0 1 0-45.248 45.248l256 256 512-512a32 32 0 0 0-45.248-45.248L406.592 706.944z"></path></svg>';
+              setTimeout(() => {
+                copyButton.classList.remove("copied");
+                copyButton.innerHTML =
+                  '<svg class="icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M768 832a128 128 0 0 1-128 128H192A128 128 0 0 1 64 832V384a128 128 0 0 1 128-128v64a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64h64z"></path><path fill="currentColor" d="M384 128a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64V192a64 64 0 0 0-64-64H384zm0-64h448a128 128 0 0 1 128 128v448a128 128 0 0 1-128 128H384a128 128 0 0 1-128-128V192A128 128 0 0 1 384 64z"></path></svg>';
+              }, 5000);
+            })
+            .catch((err) => {
+              console.error("Failed to copy table:", err);
+            });
+        });
+      });
+    });
+  });
+}
 
 function fileIconClass(filename: string) {
-  const ext = filename.split('.').pop()?.toLowerCase();
+  const ext = filename.split(".").pop()?.toLowerCase();
   switch (ext) {
-    case 'txt': return 'file-lines'; // fa-file-alt in v5, fa-file-lines in v6
-    case 'csv': return 'file-csv';
-    case 'json': return 'brackets-curly'; // fa-file-code or fa-brackets-curly
-    case 'md': return 'markdown'; // fa-markdown in pro, fallback to fa-file-lines
-    default: return 'file';
+    case "txt":
+      return "file-lines"; // fa-file-alt in v5, fa-file-lines in v6
+    case "csv":
+      return "file-csv";
+    case "json":
+      return "brackets-curly"; // fa-file-code or fa-brackets-curly
+    case "md":
+      return "markdown"; // fa-markdown in pro, fallback to fa-file-lines
+    default:
+      return "file";
   }
 }
 
 function onInputEnter(e: KeyboardEvent) {
   // Enter (no Ctrl/Cmd): send. Ctrl+Enter or Cmd+Enter: newline
-  if (e.key === 'Enter' && !e.shiftKey && !(e.ctrlKey || e.metaKey)) {
+  if (e.key === "Enter" && !e.shiftKey && !(e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     onSend();
   }
@@ -226,7 +372,7 @@ const md = new Remarkable({
   html: false, // Disable HTML for security
   xhtmlOut: false,
   breaks: true, // Convert '\n' in paragraphs into <br>
-  langPrefix: 'language-',
+  langPrefix: "language-",
   typographer: true, // Enable some language-neutral replacement + quotes beautification
 });
 
@@ -237,9 +383,72 @@ const renderMarkdown = (content: string): string => {
   return md.render(content);
 };
 
+// Function to copy table data in a format suitable for spreadsheets
+function copyTableToClipboard(table: HTMLTableElement): Promise<void> {
+  if (!table) return Promise.reject("No table element found");
+
+  // Extract table data into a TSV format (tab-separated values)
+  let tsvContent = "";
+
+  // Process header row if exists
+  const headerRows = table.querySelectorAll("thead tr");
+  if (headerRows.length > 0) {
+    headerRows.forEach((row) => {
+      const headerCells = row.querySelectorAll("th");
+      const headerTexts = Array.from(headerCells).map(
+        (cell) => cell.textContent?.trim() || ""
+      );
+      tsvContent += headerTexts.join("\t") + "\n";
+    });
+  }
+
+  // Process body rows
+  const bodyRows = table.querySelectorAll("tbody tr");
+  bodyRows.forEach((row) => {
+    const cells = row.querySelectorAll("td");
+    const cellTexts = Array.from(cells).map(
+      (cell) => cell.textContent?.trim() || ""
+    );
+    tsvContent += cellTexts.join("\t") + "\n";
+  });
+
+  // If no thead/tbody structure, process all rows directly
+  if (headerRows.length === 0 && bodyRows.length === 0) {
+    const rows = table.querySelectorAll("tr");
+    rows.forEach((row) => {
+      // Get all cells (th or td)
+      const cells = row.querySelectorAll("th, td");
+      const cellTexts = Array.from(cells).map(
+        (cell) => cell.textContent?.trim() || ""
+      );
+      tsvContent += cellTexts.join("\t") + "\n";
+    });
+  }
+
+  // Copy to clipboard
+  return navigator.clipboard.writeText(tsvContent);
+}
+
 function formatTime(date: string | Date) {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function copyMessage(msg: ChatMessage) {
+  if (msg.content) {
+    navigator.clipboard
+      .writeText(msg.content)
+      .then(() => {
+        copiedMessageId.value = msg.id;
+        setTimeout(() => {
+          copiedMessageId.value = null;
+        }, 5000);
+      })
+      .catch((err) => {
+        ElMessage.error("Failed to copy message");
+        console.error("Failed to copy message:", err);
+      });
+  }
 }
 
 function scrollToBottom() {
@@ -250,14 +459,27 @@ function scrollToBottom() {
   });
 }
 
-watch(messages, scrollToBottom, { deep: true });
+// Watch for changes in messages to scroll to bottom and add table copy buttons
+watch(
+  messages,
+  () => {
+    scrollToBottom();
+    // Add slight delay to ensure markdown is rendered
+    setTimeout(addTableCopyButtons, 100);
+  },
+  { deep: true }
+);
 
 function canSend() {
   return input.value.trim() || attachedFiles.length;
 }
 
-function addMessage(msg: Omit<ChatMessage, 'id' | 'time'>) {
-  messages.push({ ...msg, id: Math.random().toString(36).slice(2), time: new Date().toISOString() });
+function addMessage(msg: Omit<ChatMessage, "id" | "time">) {
+  messages.push({
+    ...msg,
+    id: Math.random().toString(36).slice(2),
+    time: new Date().toISOString(),
+  });
 }
 
 function onFileDrop(e: DragEvent) {
@@ -269,7 +491,7 @@ function onFileDrop(e: DragEvent) {
 function onFileChange(e: Event) {
   const files = Array.from((e.target as HTMLInputElement).files || []);
   handleFiles(files);
-  if (fileInputRef.value) fileInputRef.value.value = '';
+  if (fileInputRef.value) fileInputRef.value.value = "";
 }
 
 function removeFile(idx: number) {
@@ -278,8 +500,13 @@ function removeFile(idx: number) {
 
 async function handleFiles(files: File[]) {
   for (const file of files) {
-    if (!['text/plain', 'text/csv', 'application/json', 'text/markdown'].includes(file.type) && !/\.(txt|csv|json|md)$/i.test(file.name)) {
-      ElMessage.error('Only txt, csv, json, md files allowed');
+    if (
+      !["text/plain", "text/csv", "application/json", "text/markdown"].includes(
+        file.type
+      ) &&
+      !/\.(txt|csv|json|md)$/i.test(file.name)
+    ) {
+      ElMessage.error("Only txt, csv, json, md files allowed");
       continue;
     }
     const content = await file.text();
@@ -292,41 +519,60 @@ async function handleFiles(files: File[]) {
   }
 }
 
-function onSuggestionClick(suggestion: string | { label: string, text?: string, icon?: string }) {
-  if (typeof suggestion === 'string') {
+function onSuggestionClick(
+  suggestion: string | { label: string; text?: string; icon?: string }
+) {
+  if (typeof suggestion === "string") {
     input.value = suggestion;
   } else {
     input.value = suggestion.text || suggestion.label;
   }
+  setTimeout(addTableCopyButtons, 100);
 }
 
 async function onSend() {
   if (!canSend()) return;
   for (const file of attachedFiles) {
-    addMessage({ role: 'user', content: file.content, type: 'file', filename: file.name });
+    addMessage({
+      role: "user",
+      content: file.content,
+      type: "file",
+      filename: file.name,
+    });
   }
-  addMessage({ role: 'user', content: input.value.trim(), type: 'text' });
+  addMessage({ role: "user", content: input.value.trim(), type: "text" });
   const payload = {
-    messages: messages.map(m => ({ role: m.role, content: m.content, type: m.type, filename: m.filename })),
+    messages: messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+      type: m.type,
+      filename: m.filename,
+    })),
   };
   loading.value = true;
   let aiMsgId = Math.random().toString(36).slice(2);
-  let aiMsg: ChatMessage = { id: aiMsgId, role: 'assistant', content: '', time: new Date().toISOString(), type: 'text' };
+  let aiMsg: ChatMessage = {
+    id: aiMsgId,
+    role: "assistant",
+    content: "",
+    time: new Date().toISOString(),
+    type: "text",
+  };
   messages.push(aiMsg);
   try {
     if (shouldRecordThread.value && !localThreadId.value) {
       await createThread();
     }
     // Streaming with fetch (SSE-style JSON lines)
-    const res = await fetch(chatCompletionUrl.value + '?stream=true', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch(chatCompletionUrl.value + "?stream=true", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!res.body) throw new Error('No response body');
+    if (!res.body) throw new Error("No response body");
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let buffer = '';
+    let buffer = "";
     let done = false;
     let finished = false;
     while (!done && !finished) {
@@ -336,9 +582,9 @@ async function onSend() {
         buffer += decoder.decode(value, { stream: true });
         let lines = buffer.split(/\r?\n/);
         // Keep the last line in buffer if it's incomplete
-        buffer = lines.pop() || '';
+        buffer = lines.pop() || "";
         for (const line of lines) {
-          if (!line.trim() || !line.startsWith('data: ')) continue;
+          if (!line.trim() || !line.startsWith("data: ")) continue;
           const jsonStr = line.slice(6);
           if (!jsonStr) continue;
           let data;
@@ -347,33 +593,33 @@ async function onSend() {
           } catch (e) {
             continue; // skip malformed lines
           }
-          if (data.type === 'connection_established') {
+          if (data.type === "connection_established") {
             // Optionally handle connection established
             continue;
           }
-          if (data.type === 'chunk') {
+          if (data.type === "chunk") {
             if (data.content) {
               aiMsg.content += data.content;
               // Force Vue reactivity for live updates
-              const idx = messages.findIndex(m => m.id === aiMsg.id);
+              const idx = messages.findIndex((m) => m.id === aiMsg.id);
               if (idx !== -1) messages[idx] = { ...aiMsg };
               scrollToBottom();
             }
             // If finish_reason is stop, mark as finished
-            if (data.chunk?.choices?.[0]?.finish_reason === 'stop') {
+            if (data.chunk?.choices?.[0]?.finish_reason === "stop") {
               finished = true;
               break;
             }
-          } else if (data.type === 'followup_chunk') {
+          } else if (data.type === "followup_chunk") {
             // Handle followup chunks from function calling
             if (data.content) {
               aiMsg.content += data.content;
               // Force Vue reactivity for live updates
-              const idx = messages.findIndex(m => m.id === aiMsg.id);
+              const idx = messages.findIndex((m) => m.id === aiMsg.id);
               if (idx !== -1) messages[idx] = { ...aiMsg };
               scrollToBottom();
             }
-          } else if (data.type === 'done') {
+          } else if (data.type === "done") {
             finished = true;
             break;
           }
@@ -381,25 +627,43 @@ async function onSend() {
       }
     }
     loading.value = false;
+    // Only add table copy buttons after the assistant has finished typing
+    nextTick(() => {
+      setTimeout(addTableCopyButtons, 100);
+    });
   } catch (err) {
     // Fallback to HTTP
     try {
-      const res = await fetch(props.url + '?stream=false', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(props.url + "?stream=false", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      aiMsg.content = data.content || '[No response]';
+      aiMsg.content = data.content || "[No response]";
     } catch (err) {
-      aiMsg.content = '[Error: failed to fetch AI response]';
+      aiMsg.content = "[Error: failed to fetch AI response]";
     }
     loading.value = false;
+    // Only add table copy buttons after the assistant has finished typing
+    nextTick(() => {
+      setTimeout(addTableCopyButtons, 100);
+    });
   }
-  input.value = '';
+  input.value = "";
   attachedFiles.splice(0);
-  nextTick(() => inputRef.value?.focus());
+  nextTick(() => {
+    inputRef.value?.focus();
+  });
 }
+
+onMounted(() => {
+  if (props.text) {
+    input.value = props.text;
+  }
+  // Initialize table copy buttons for any existing content
+  setTimeout(addTableCopyButtons, 100);
+});
 </script>
 
 <style scoped>
@@ -410,7 +674,7 @@ async function onSend() {
   width: 100%;
   background: var(--body-bg, #fff);
   border-radius: var(--border-radius, 18px);
-  box-shadow: var(--box-shadow, 0 4px 32px 0 rgba(0,0,0,0.07));
+  box-shadow: var(--box-shadow, 0 4px 32px 0 rgba(0, 0, 0, 0.07));
   border: 1.5px solid var(--border-color, #e3e7ee);
   overflow: hidden;
   padding: 0;
@@ -464,7 +728,7 @@ async function onSend() {
 
 .ai-textarea :deep(.el-textarea__inner:focus) {
   background: var(--inputs-bg-color, #f0f7ff) !important;
-  box-shadow: 0 2px 16px 0 var(--focus-color, rgba(64,158,255,0.10)) !important;
+  box-shadow: 0 2px 16px 0 var(--focus-color, rgba(64, 158, 255, 0.1)) !important;
   border: 1.5px solid var(--focus-color, #409eff) !important;
   outline: none !important;
 }
@@ -482,11 +746,15 @@ async function onSend() {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--box-shadow, 0 2px 12px 0 rgba(64,158,255,0.11));
-  background: var(--button-bg-color, linear-gradient(135deg, #409eff 65%, #6ebfff 100%));
+  box-shadow: var(--box-shadow, 0 2px 12px 0 rgba(64, 158, 255, 0.11));
+  background: var(
+    --button-bg-color,
+    linear-gradient(135deg, #409eff 65%, #6ebfff 100%)
+  );
   color: var(--button-text-color, #fff);
   border: none;
-  transition: box-shadow var(--transition-speed, 0.18s), background var(--transition-speed, 0.18s), transform 0.12s;
+  transition: box-shadow var(--transition-speed, 0.18s),
+    background var(--transition-speed, 0.18s), transform 0.12s;
   font-size: 1.3em;
   cursor: pointer;
 }
@@ -502,8 +770,11 @@ async function onSend() {
 
 .ai-send-btn:hover:not(:disabled),
 .ai-send-btn:focus:not(:disabled) {
-  background: var(--focus-color, linear-gradient(135deg, #156fd1 60%, #6ebfff 100%));
-  box-shadow: 0 4px 18px 0 var(--focus-color, rgba(64,158,255,0.18));
+  background: var(
+    --focus-color,
+    linear-gradient(135deg, #156fd1 60%, #6ebfff 100%)
+  );
+  box-shadow: 0 4px 18px 0 var(--focus-color, rgba(64, 158, 255, 0.18));
 }
 
 .send-icon {
@@ -522,7 +793,7 @@ async function onSend() {
   padding: 0.75rem 1rem;
   border-radius: 16px;
   background: #fff;
-  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.02);
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.02);
   max-width: 80%;
   transition: box-shadow 0.2s, background 0.2s;
   animation: pop-in 0.2s;
@@ -543,6 +814,7 @@ async function onSend() {
   display: flex;
   align-items: center;
   margin-bottom: 0.25rem;
+  position: relative;
 }
 
 .avatar {
@@ -574,12 +846,20 @@ async function onSend() {
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pop-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .attached-files {
@@ -607,12 +887,12 @@ async function onSend() {
   justify-content: center;
   text-align: center;
   color: #888;
-  background: rgba(255,255,255,0.7);
+  background: rgba(255, 255, 255, 0.7);
   border-radius: 14px;
   margin: 2.5em auto 1.5em auto;
   padding: 2.2em 1.5em 1.7em 1.5em;
   max-width: 90%;
-  box-shadow: 0 2px 14px 0 rgba(64,158,255,0.07);
+  box-shadow: 0 2px 14px 0 rgba(64, 158, 255, 0.07);
 }
 
 .ai-initial-title {
@@ -639,12 +919,24 @@ async function onSend() {
   line-height: 1.3;
 }
 
-.bubble-content h1 { font-size: 1.4em; }
-.bubble-content h2 { font-size: 1.3em; }
-.bubble-content h3 { font-size: 1.2em; }
-.bubble-content h4 { font-size: 1.1em; }
-.bubble-content h5 { font-size: 1.05em; }
-.bubble-content h6 { font-size: 1em; }
+.bubble-content h1 {
+  font-size: 1.4em;
+}
+.bubble-content h2 {
+  font-size: 1.3em;
+}
+.bubble-content h3 {
+  font-size: 1.2em;
+}
+.bubble-content h4 {
+  font-size: 1.1em;
+}
+.bubble-content h5 {
+  font-size: 1.05em;
+}
+.bubble-content h6 {
+  font-size: 1em;
+}
 
 .bubble-content p {
   margin: 0.5em 0;
@@ -668,7 +960,7 @@ async function onSend() {
   background: rgba(0, 0, 0, 0.05);
   padding: 0.1em 0.3em;
   border-radius: 3px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   font-size: 0.9em;
 }
 
@@ -683,6 +975,58 @@ async function onSend() {
 .bubble-content pre code {
   background: none;
   padding: 0;
+}
+
+/* Table wrapper and copy button styles */
+:deep(.table-wrapper) {
+  position: relative;
+  margin: 1em 0;
+  overflow-x: auto;
+}
+
+:deep(.table-copy-button) {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+:deep(.table-copy-button .icon) {
+  width: 16px;
+  height: 16px;
+}
+
+:deep(.table-copy-button:hover) {
+  opacity: 1;
+  background: var(--el-color-primary-light-8);
+}
+
+:deep(.table-wrapper:hover .table-copy-button) {
+  opacity: 0.8;
+}
+
+:deep(.table-copy-button.copied) {
+  background: var(--el-color-success-light-8);
+  border-color: var(--el-color-success-light-5);
+  color: var(--el-color-success);
+}
+
+/* Always show table copy button on mobile */
+@media (max-width: 768px) {
+  :deep(.table-copy-button) {
+    opacity: 0.8;
+  }
 }
 
 .bubble-content blockquote {
@@ -706,6 +1050,38 @@ async function onSend() {
   font-weight: 600;
 }
 
+.copy-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+  opacity: 1;
+  background: var(--el-color-primary-light-8);
+}
+
+.bubble:hover .copy-button {
+  opacity: 0.8;
+}
+
+/* Always show copy button on mobile devices */
+@media (max-width: 768px) {
+  .copy-button {
+    opacity: 0.6;
+  }
+}
+
 .bubble-content em {
   font-style: italic;
 }
@@ -722,7 +1098,10 @@ async function onSend() {
 
 .drag-overlay {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(64, 158, 255, 0.12);
   z-index: 10;
   display: flex;
@@ -735,11 +1114,13 @@ async function onSend() {
   transition: background 0.2s;
 }
 
-.fade-enter-active, .fade-leave-active {
+.fade-enter-active,
+.fade-leave-active {
   transition: opacity 0.2s;
 }
 
-.fade-enter-from, .fade-leave-to {
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
 
