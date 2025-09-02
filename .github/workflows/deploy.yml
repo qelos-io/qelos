@@ -70,7 +70,7 @@ jobs:
           set +x  # Disable command echoing
           umask 077  # Set strict permissions
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
           chmod 600 $HOME/.kube/config
         # Prevent command output from being displayed in logs
         shell: bash {0}
