@@ -41,8 +41,7 @@ jobs:
             echo "defined=false" >> $GITHUB_OUTPUT
             echo "::error::Required secrets are not set. You need HELM_VALUES_YAML and either KUBE_CONFIG or DIGITALOCEAN_ACCESS_TOKEN."
           fi
-        # Prevent command output from being displayed in logs
-        shell: bash {0}
+        shell: bash
         env:
           # Pass secrets as environment variables
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
@@ -90,7 +89,8 @@ jobs:
         id: verify-doctl
         run: |
           echo "Verifying DigitalOcean authentication..."
-          doctl account get --output json
+          # Use kubernetes command since the token has kubernetes permissions
+          doctl kubernetes options regions
           if [ $? -ne 0 ]; then
             echo "::error::Failed to authenticate with DigitalOcean. Please check your access token."
             echo "doctl_auth_success=false" >> $GITHUB_OUTPUT
@@ -123,44 +123,49 @@ jobs:
           mkdir -p $HOME/.kube
           
           # Check if we have DigitalOcean credentials
-          if [ -n "$DO_TOKEN" ] && [ -n "$DO_CLUSTER_ID" ]; then
+          if [ -n "$DO_TOKEN" ]; then
             echo "Using DigitalOcean credentials to access Kubernetes cluster"
-            # First verify the cluster exists - with verbose output for debugging
-            echo "Verifying DigitalOcean cluster existence..."
-            echo "Cluster ID length: ${#DO_CLUSTER_ID}"
-            echo "Cluster ID (first 5 chars): ${DO_CLUSTER_ID:0:5}..."
             
-            # List all available clusters
-            echo "Available clusters:"
-            doctl kubernetes cluster list --output json
+            # List all clusters
+            echo "Listing all available clusters:"
+            CLUSTERS_JSON=$(doctl kubernetes cluster list --output json)
+            if [ $? -ne 0 ]; then
+              echo "::error::Failed to list Kubernetes clusters. Check token permissions."
+              exit 1
+            fi
             
-            # Try to get the specific cluster
-            echo "Trying to get specific cluster with ID: $DO_CLUSTER_ID"
-            doctl kubernetes cluster get "$DO_CLUSTER_ID" --output json || echo "Failed to get cluster with ID: $DO_CLUSTER_ID"
+            # Check if we have any clusters
+            CLUSTER_COUNT=$(echo "$CLUSTERS_JSON" | jq length)
+            if [ "$CLUSTER_COUNT" -eq 0 ]; then
+              echo "::error::No Kubernetes clusters found in your DigitalOcean account"
+              exit 1
+            fi
             
-            # Now save the kubeconfig with verbose output
-            echo "Saving kubeconfig from DigitalOcean..."
-            if doctl kubernetes cluster kubeconfig save "$DO_CLUSTER_ID" --set-current-context --verbose; then
-              echo "Successfully saved kubeconfig from DigitalOcean"
-              kubectl config current-context
-            else
-              echo "Warning: Failed to get kubeconfig from DigitalOcean using cluster ID"
-              
-              # Try alternative approach - get the cluster name and use that
-              echo "Trying alternative approach using cluster name..."
-              CLUSTER_NAME=$(doctl kubernetes cluster list --output json | jq -r '.[0].name')
-              
-              if [ -n "$CLUSTER_NAME" ]; then
-                echo "Found cluster name: $CLUSTER_NAME. Trying to use this instead."
-                if doctl kubernetes cluster kubeconfig save "$CLUSTER_NAME" --set-current-context; then
-                  echo "Successfully saved kubeconfig using cluster name"
-                  kubectl config current-context
+            # Try to use the provided cluster ID if available
+            if [ -n "$DO_CLUSTER_ID" ]; then
+              echo "Attempting to use provided cluster ID"
+              if doctl kubernetes cluster kubeconfig save "$DO_CLUSTER_ID" 2>/dev/null; then
+                echo "Successfully saved kubeconfig using provided cluster ID"
+              else
+                echo "Could not find cluster with provided ID, falling back to first available cluster"
+                # Get the ID of the first cluster
+                FIRST_CLUSTER_ID=$(echo "$CLUSTERS_JSON" | jq -r '.[0].id')
+                echo "Using first available cluster with ID: $FIRST_CLUSTER_ID"
+                if doctl kubernetes cluster kubeconfig save "$FIRST_CLUSTER_ID"; then
+                  echo "Successfully saved kubeconfig using first available cluster"
                 else
-                  echo "::error::Failed to get kubeconfig using both cluster ID and name"
+                  echo "::error::Failed to save kubeconfig for any cluster"
                   exit 1
                 fi
+              fi
+            else
+              # No cluster ID provided, use the first available cluster
+              FIRST_CLUSTER_ID=$(echo "$CLUSTERS_JSON" | jq -r '.[0].id')
+              echo "No cluster ID provided. Using first available cluster with ID: $FIRST_CLUSTER_ID"
+              if doctl kubernetes cluster kubeconfig save "$FIRST_CLUSTER_ID"; then
+                echo "Successfully saved kubeconfig using first available cluster"
               else
-                echo "::error::No clusters found in DigitalOcean account"
+                echo "::error::Failed to save kubeconfig for first available cluster"
                 exit 1
               fi
             fi
@@ -186,8 +191,7 @@ jobs:
             echo "::error::Failed to create kubeconfig file"
             exit 1
           fi
-        # Prevent command output from being displayed in logs
-        shell: bash {0}
+        shell: bash
           
       - name: Create values.yaml from secret
         run: |
@@ -202,8 +206,7 @@ jobs:
             echo "::error::Failed to create values.yaml file"
             exit 1
           fi
-        # Prevent command output from being displayed in logs
-        shell: bash {0}
+        shell: bash
           
       - name: Deploy with Helm
         run: |
@@ -231,5 +234,4 @@ jobs:
             echo "::error::Helm deployment failed"
             exit 1
           fi
-        # Prevent command output from being displayed in logs
-        shell: bash {0}
+        shell: bash
