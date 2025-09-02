@@ -28,7 +28,7 @@ function migrate() {
       name: 'QELOS',
       language: 'en',
       direction: 'ltr',
-      logoUrl: "https://subscribe.qelos.io/qelos.svg",
+      logoUrl: "https://qelos.io/_nuxt/qelos_logo.WhVlx9V7.jpg",
       description: 'building SaaS products',
       slogan: 'building platforms with ease',
       keywords: 'saas, platform, micro-frontends, vue',

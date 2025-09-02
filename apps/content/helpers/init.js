@@ -26,7 +26,7 @@ const configuration = new Configuration({
     name: TENANT !== "0" ? HOST : TENANT,
     language: "en",
     direction: "ltr",
-    logoUrl: LOGO_URL || "https://subscribe.qelos.io/qelos.svg",
+    logoUrl: LOGO_URL || "https://qelos.io/_nuxt/qelos_logo.WhVlx9V7.jpg",
     description: "Software as a Service",
     slogan: SLOGAN || "Amazing SaaS platform",
     keywords: "saas, platform, node, vue, fastify",
