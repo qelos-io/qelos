@@ -34,17 +34,19 @@ jobs:
       - name: Check if secrets exist
         id: check-secrets
         run: |
-          if [ -n "${{ secrets.KUBE_CONFIG }}" ] && [ -n "${{ secrets.HELM_VALUES_YAML }}" ]; then
+          # Use environment variables to check existence without exposing values
+          if [[ "$HELM_VALUES_EXISTS" == "true" ]] && ([[ "$KUBE_CONFIG_EXISTS" == "true" ]] || [[ "$DO_TOKEN_EXISTS" == "true" ]]); then
             echo "defined=true" >> $GITHUB_OUTPUT
           else
             echo "defined=false" >> $GITHUB_OUTPUT
-            echo "::error::Required secrets KUBE_CONFIG and/or HELM_VALUES_YAML are not set. Deployment cannot proceed."
+            echo "::error::Required secrets are not set. You need HELM_VALUES_YAML and either KUBE_CONFIG or DIGITALOCEAN_ACCESS_TOKEN."
           fi
         # Prevent command output from being displayed in logs
         shell: bash {0}
         env:
           # Use empty env vars to check existence without exposing values
           KUBE_CONFIG_EXISTS: ${{ secrets.KUBE_CONFIG != '' }}
+          DO_TOKEN_EXISTS: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN != '' }}
           HELM_VALUES_EXISTS: ${{ secrets.HELM_VALUES_YAML != '' }}
 
   deploy:
@@ -65,18 +67,55 @@ jobs:
         with:
           version: 'latest'
           
+      - name: Install doctl
+        if: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN != '' }}
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          
       - name: Set up kubeconfig
         run: |
           set +x  # Disable command echoing
           umask 077  # Set strict permissions
           mkdir -p $HOME/.kube
-          # Try to decode if it's base64, otherwise use as-is
-          if echo "${{ secrets.KUBE_CONFIG }}" | base64 -d 2>/dev/null | grep -q "apiVersion:"; then
-            echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
-          else
-            echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          
+          # Check if we have DigitalOcean credentials
+          if [[ "${{ secrets.DIGITALOCEAN_ACCESS_TOKEN != '' }}" == "true" && "${{ secrets.DIGITALOCEAN_CLUSTER_ID != '' }}" == "true" ]]; then
+            echo "Using DigitalOcean credentials to access Kubernetes cluster"
+            # Redirect any potential error output to prevent leaking sensitive info
+            doctl kubernetes cluster kubeconfig save "${{ secrets.DIGITALOCEAN_CLUSTER_ID }}" 2>/dev/null
+            if [ $? -ne 0 ]; then
+              echo "::error::Failed to get kubeconfig from DigitalOcean"
+              exit 1
+            fi
+          # Otherwise use provided kubeconfig
+          elif [[ "${{ secrets.KUBE_CONFIG != '' }}" == "true" ]]; then
+            echo "Using provided kubeconfig"
+            # Try to decode if it's base64, otherwise use as-is
+            # Process in memory without echoing to pipes when possible
+            if [[ "${{ secrets.KUBE_CONFIG }}" == *"apiVersion:"* ]]; then
+              # Plain text config
+              cat > $HOME/.kube/config << 'EOL'
+              ${{ secrets.KUBE_CONFIG }}
+              EOL
+            else
+              # Likely base64 encoded
+              # Use heredoc to avoid exposing in process list or pipes
+              cat > $HOME/.kube/config.b64 << 'EOL'
+              ${{ secrets.KUBE_CONFIG }}
+              EOL
+              base64 -d $HOME/.kube/config.b64 > $HOME/.kube/config 2>/dev/null || cat $HOME/.kube/config.b64 > $HOME/.kube/config
+              rm -f $HOME/.kube/config.b64
+            fi
           fi
-          chmod 600 $HOME/.kube/config
+          
+          # Ensure config exists before setting permissions
+          if [ -f "$HOME/.kube/config" ]; then
+            chmod 600 $HOME/.kube/config
+          else
+            echo "::error::Failed to create kubeconfig file"
+            exit 1
+          fi
         # Prevent command output from being displayed in logs
         shell: bash {0}
           
@@ -84,19 +123,44 @@ jobs:
         run: |
           set +x  # Disable command echoing
           umask 077  # Set strict permissions
-          echo "${{ secrets.HELM_VALUES_YAML }}" > ./helm/qelos/values.yaml
+          # Use heredoc to avoid exposing in process list
+          cat > ./helm/qelos/values.yaml << 'EOL'
+          ${{ secrets.HELM_VALUES_YAML }}
+          EOL
           chmod 600 ./helm/qelos/values.yaml
+          # Verify file was created successfully
+          if [ ! -s "./helm/qelos/values.yaml" ]; then
+            echo "::error::Failed to create values.yaml file"
+            exit 1
+          fi
         # Prevent command output from being displayed in logs
         shell: bash {0}
           
       - name: Deploy with Helm
         run: |
           set +x  # Disable command echoing
+          # Verify kubeconfig and values.yaml exist before deployment
+          if [ ! -f "$HOME/.kube/config" ] || [ ! -s "./helm/qelos/values.yaml" ]; then
+            echo "::error::Missing required configuration files"
+            exit 1
+          fi
+          
+          # Sanitize namespace input
+          NAMESPACE="${{ github.event.inputs.namespace || 'default' }}"
+          NAMESPACE="${NAMESPACE//[^a-zA-Z0-9-]/-}"
+          
           helm upgrade --install qelos ./helm/qelos \
-            --namespace ${{ github.event.inputs.namespace || 'default' }} \
+            --namespace "$NAMESPACE" \
             --create-namespace \
             --atomic \
             --timeout 10m \
-            --debug=false
+            --debug=false \
+            --history-max 10
+          
+          # Don't show detailed error output that might contain secrets
+          if [ $? -ne 0 ]; then
+            echo "::error::Helm deployment failed"
+            exit 1
+          fi
         # Prevent command output from being displayed in logs
         shell: bash {0}
