@@ -82,11 +82,28 @@ jobs:
 
       - name: Install doctl
         if: steps.check-do-token.outputs.has_token == 'true'
+        id: install-doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           
+      - name: Verify doctl authentication
+        if: steps.check-do-token.outputs.has_token == 'true'
+        id: verify-doctl
+        run: |
+          echo "Verifying DigitalOcean authentication..."
+          doctl account get --output json
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to authenticate with DigitalOcean. Please check your access token."
+            echo "doctl_auth_success=false" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "DigitalOcean authentication successful."
+            echo "doctl_auth_success=true" >> $GITHUB_OUTPUT
+          fi
+          
       - name: Set up kubeconfig
+        if: (steps.check-do-token.outputs.has_token == 'true' && steps.verify-doctl.outputs.doctl_auth_success == 'true') || secrets.KUBE_CONFIG != ''
         env:
           DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           DO_CLUSTER_ID: ${{ secrets.DIGITALOCEAN_CLUSTER_ID }}
@@ -99,11 +116,44 @@ jobs:
           # Check if we have DigitalOcean credentials
           if [ -n "$DO_TOKEN" ] && [ -n "$DO_CLUSTER_ID" ]; then
             echo "Using DigitalOcean credentials to access Kubernetes cluster"
-            # Redirect any potential error output to prevent leaking sensitive info
-            doctl kubernetes cluster kubeconfig save "$DO_CLUSTER_ID" 2>/dev/null
-            if [ $? -ne 0 ]; then
-              echo "::error::Failed to get kubeconfig from DigitalOcean"
-              exit 1
+            # First verify the cluster exists - with verbose output for debugging
+            echo "Verifying DigitalOcean cluster existence..."
+            echo "Cluster ID length: ${#DO_CLUSTER_ID}"
+            echo "Cluster ID (first 5 chars): ${DO_CLUSTER_ID:0:5}..."
+            
+            # List all available clusters
+            echo "Available clusters:"
+            doctl kubernetes cluster list --output json
+            
+            # Try to get the specific cluster
+            echo "Trying to get specific cluster with ID: $DO_CLUSTER_ID"
+            doctl kubernetes cluster get "$DO_CLUSTER_ID" --output json || echo "Failed to get cluster with ID: $DO_CLUSTER_ID"
+            
+            # Now save the kubeconfig with verbose output
+            echo "Saving kubeconfig from DigitalOcean..."
+            if doctl kubernetes cluster kubeconfig save "$DO_CLUSTER_ID" --set-current-context --verbose; then
+              echo "Successfully saved kubeconfig from DigitalOcean"
+              kubectl config current-context
+            else
+              echo "Warning: Failed to get kubeconfig from DigitalOcean using cluster ID"
+              
+              # Try alternative approach - get the cluster name and use that
+              echo "Trying alternative approach using cluster name..."
+              CLUSTER_NAME=$(doctl kubernetes cluster list --output json | jq -r '.[0].name')
+              
+              if [ -n "$CLUSTER_NAME" ]; then
+                echo "Found cluster name: $CLUSTER_NAME. Trying to use this instead."
+                if doctl kubernetes cluster kubeconfig save "$CLUSTER_NAME" --set-current-context; then
+                  echo "Successfully saved kubeconfig using cluster name"
+                  kubectl config current-context
+                else
+                  echo "::error::Failed to get kubeconfig using both cluster ID and name"
+                  exit 1
+                fi
+              else
+                echo "::error::No clusters found in DigitalOcean account"
+                exit 1
+              fi
             fi
           # Otherwise use provided kubeconfig
           elif [ -n "$KUBE_CONFIG_EXISTS" ]; then
