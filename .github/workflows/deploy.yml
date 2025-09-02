@@ -34,8 +34,8 @@ jobs:
       - name: Check if secrets exist
         id: check-secrets
         run: |
-          # Use environment variables to check existence without exposing values
-          if [ "$HELM_VALUES_EXISTS" = "true" ] && ([ "$KUBE_CONFIG_EXISTS" = "true" ] || [ "$DO_TOKEN_EXISTS" = "true" ]); then
+          # Check if required secrets exist
+          if [ -n "$HELM_VALUES" ] && ([ -n "$KUBE_CONFIG" ] || [ -n "$DO_TOKEN" ]); then
             echo "defined=true" >> $GITHUB_OUTPUT
           else
             echo "defined=false" >> $GITHUB_OUTPUT
@@ -44,10 +44,10 @@ jobs:
         # Prevent command output from being displayed in logs
         shell: bash {0}
         env:
-          # Use empty env vars to check existence without exposing values
-          KUBE_CONFIG_EXISTS: ${{ secrets.KUBE_CONFIG != '' }}
-          DO_TOKEN_EXISTS: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN != '' }}
-          HELM_VALUES_EXISTS: ${{ secrets.HELM_VALUES_YAML != '' }}
+          # Pass secrets as environment variables
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+          DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          HELM_VALUES: ${{ secrets.HELM_VALUES_YAML }}
 
   deploy:
     needs: check-secrets
@@ -58,8 +58,6 @@ jobs:
     runs-on: ubuntu-latest
     # Set environment to enable protection rules if needed
     environment: ${{ github.event.inputs.environment || 'production' }}
-    env:
-      DO_TOKEN_EXISTS: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -102,12 +100,23 @@ jobs:
             echo "doctl_auth_success=true" >> $GITHUB_OUTPUT
           fi
           
+      - name: Check for KUBE_CONFIG
+        id: check-kube-config
+        run: |
+          if [ -n "$KUBE_CONFIG" ]; then
+            echo "has_config=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_config=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+          
       - name: Set up kubeconfig
-        if: (steps.check-do-token.outputs.has_token == 'true' && steps.verify-doctl.outputs.doctl_auth_success == 'true') || secrets.KUBE_CONFIG != ''
+        if: (steps.check-do-token.outputs.has_token == 'true' && steps.verify-doctl.outputs.doctl_auth_success == 'true') || steps.check-kube-config.outputs.has_config == 'true'
         env:
           DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           DO_CLUSTER_ID: ${{ secrets.DIGITALOCEAN_CLUSTER_ID }}
-          KUBE_CONFIG_EXISTS: ${{ secrets.KUBE_CONFIG != '' }}
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         run: |
           set +x  # Disable command echoing
           umask 077  # Set strict permissions
@@ -156,11 +165,9 @@ jobs:
               fi
             fi
           # Otherwise use provided kubeconfig
-          elif [ -n "$KUBE_CONFIG_EXISTS" ]; then
+          elif [ -n "$KUBE_CONFIG" ]; then
             echo "Using provided kubeconfig"
             # Process in memory without echoing to pipes when possible
-            # Store KUBE_CONFIG in a variable to check content
-            KUBE_CONFIG="${{ secrets.KUBE_CONFIG }}"
             if [[ "$KUBE_CONFIG" == *"apiVersion:"* ]]; then
               # Plain text config
               echo "$KUBE_CONFIG" > $HOME/.kube/config
