@@ -221,7 +221,7 @@ jobs:
           NAMESPACE="${{ github.event.inputs.namespace || 'default' }}"
           NAMESPACE="${NAMESPACE//[^a-zA-Z0-9-]/-}"
           
-          helm upgrade --install qelos ./helm/qelos \
+          helm upgrade --install qelos-release ./helm/qelos \
             --namespace "$NAMESPACE" \
             --create-namespace \
             --atomic \
