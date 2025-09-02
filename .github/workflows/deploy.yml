@@ -108,21 +108,15 @@ jobs:
           # Otherwise use provided kubeconfig
           elif [ -n "$KUBE_CONFIG_EXISTS" ]; then
             echo "Using provided kubeconfig"
-            # Try to decode if it's base64, otherwise use as-is
             # Process in memory without echoing to pipes when possible
             # Store KUBE_CONFIG in a variable to check content
             KUBE_CONFIG="${{ secrets.KUBE_CONFIG }}"
             if [[ "$KUBE_CONFIG" == *"apiVersion:"* ]]; then
               # Plain text config
-              cat > $HOME/.kube/config << "EOF"
-              $KUBE_CONFIG
-              EOF
+              echo "$KUBE_CONFIG" > $HOME/.kube/config
             else
               # Likely base64 encoded
-              # Use heredoc to avoid exposing in process list or pipes
-              cat > $HOME/.kube/config.b64 << "EOF"
-              $KUBE_CONFIG
-              EOF
+              echo "$KUBE_CONFIG" > $HOME/.kube/config.b64
               base64 -d $HOME/.kube/config.b64 > $HOME/.kube/config 2>/dev/null || cat $HOME/.kube/config.b64 > $HOME/.kube/config
               rm -f $HOME/.kube/config.b64
             fi
@@ -142,11 +136,9 @@ jobs:
         run: |
           set +x  # Disable command echoing
           umask 077  # Set strict permissions
-          # Use heredoc to avoid exposing in process list
+          # Write directly to file to avoid heredoc issues
           HELM_VALUES="${{ secrets.HELM_VALUES_YAML }}"
-          cat > ./helm/qelos/values.yaml << "EOF"
-          $HELM_VALUES
-          EOF
+          echo "$HELM_VALUES" > ./helm/qelos/values.yaml
           chmod 600 ./helm/qelos/values.yaml
           # Verify file was created successfully
           if [ ! -s "./helm/qelos/values.yaml" ]; then
