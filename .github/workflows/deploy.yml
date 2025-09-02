@@ -45,9 +45,9 @@ jobs:
         shell: bash {0}
         env:
           # Use empty env vars to check existence without exposing values
-          KUBE_CONFIG_EXISTS: ${{ secrets.KUBE_CONFIG != '' && secrets.KUBE_CONFIG != null }}
-          DO_TOKEN_EXISTS: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN != '' && secrets.DIGITALOCEAN_ACCESS_TOKEN != null }}
-          HELM_VALUES_EXISTS: ${{ secrets.HELM_VALUES_YAML != '' && secrets.HELM_VALUES_YAML != null }}
+          KUBE_CONFIG_EXISTS: ${{ secrets.KUBE_CONFIG && true }}
+          DO_TOKEN_EXISTS: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN && true }}
+          HELM_VALUES_EXISTS: ${{ secrets.HELM_VALUES_YAML && true }}
 
   deploy:
     needs: check-secrets
@@ -58,6 +58,8 @@ jobs:
     runs-on: ubuntu-latest
     # Set environment to enable protection rules if needed
     environment: ${{ github.event.inputs.environment || 'production' }}
+    env:
+      DO_TOKEN_EXISTS: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -68,7 +70,7 @@ jobs:
           version: 'latest'
           
       - name: Install doctl
-        if: secrets.DIGITALOCEAN_ACCESS_TOKEN != ''
+        if: secrets.DIGITALOCEAN_ACCESS_TOKEN
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
@@ -77,7 +79,7 @@ jobs:
         env:
           DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           DO_CLUSTER_ID: ${{ secrets.DIGITALOCEAN_CLUSTER_ID }}
-          KUBE_CONFIG_EXISTS: ${{ secrets.KUBE_CONFIG != '' && secrets.KUBE_CONFIG != null }}
+          KUBE_CONFIG_EXISTS: ${{ secrets.KUBE_CONFIG && true }}
         run: |
           set +x  # Disable command echoing
           umask 077  # Set strict permissions
