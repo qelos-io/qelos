@@ -45,9 +45,9 @@ jobs:
         shell: bash {0}
         env:
           # Use empty env vars to check existence without exposing values
-          KUBE_CONFIG_EXISTS: ${{ secrets.KUBE_CONFIG && true }}
-          DO_TOKEN_EXISTS: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN && true }}
-          HELM_VALUES_EXISTS: ${{ secrets.HELM_VALUES_YAML && true }}
+          KUBE_CONFIG_EXISTS: ${{ secrets.KUBE_CONFIG != '' }}
+          DO_TOKEN_EXISTS: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN != '' }}
+          HELM_VALUES_EXISTS: ${{ secrets.HELM_VALUES_YAML != '' }}
 
   deploy:
     needs: check-secrets
@@ -69,8 +69,19 @@ jobs:
         with:
           version: 'latest'
           
+      - name: Check for DigitalOcean token
+        id: check-do-token
+        run: |
+          if [ -n "$DO_TOKEN" ]; then
+            echo "has_token=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_token=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
       - name: Install doctl
-        if: secrets.DIGITALOCEAN_ACCESS_TOKEN
+        if: steps.check-do-token.outputs.has_token == 'true'
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
@@ -79,7 +90,7 @@ jobs:
         env:
           DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           DO_CLUSTER_ID: ${{ secrets.DIGITALOCEAN_CLUSTER_ID }}
-          KUBE_CONFIG_EXISTS: ${{ secrets.KUBE_CONFIG && true }}
+          KUBE_CONFIG_EXISTS: ${{ secrets.KUBE_CONFIG != '' }}
         run: |
           set +x  # Disable command echoing
           umask 077  # Set strict permissions
