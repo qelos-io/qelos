@@ -199,10 +199,10 @@ jobs:
           umask 077  # Set strict permissions
           # Write directly to file to avoid heredoc issues
           HELM_VALUES="${{ secrets.HELM_VALUES_YAML }}"
-          echo "$HELM_VALUES" > ./helm/qelos/values.yaml
-          chmod 600 ./helm/qelos/values.yaml
+          echo "$HELM_VALUES" > ./helm/values.yaml
+          chmod 600 ./helm/values.yaml
           # Verify file was created successfully
-          if [ ! -s "./helm/qelos/values.yaml" ]; then
+          if [ ! -s "./helm/values.yaml" ]; then
             echo "::error::Failed to create values.yaml file"
             exit 1
           fi
@@ -212,7 +212,7 @@ jobs:
         run: |
           set +x  # Disable command echoing
           # Verify kubeconfig and values.yaml exist before deployment
-          if [ ! -f "$HOME/.kube/config" ] || [ ! -s "./helm/qelos/values.yaml" ]; then
+          if [ ! -f "$HOME/.kube/config" ] || [ ! -s "./helm/values.yaml" ]; then
             echo "::error::Missing required configuration files"
             exit 1
           fi
@@ -221,7 +221,10 @@ jobs:
           NAMESPACE="${{ github.event.inputs.namespace || 'default' }}"
           NAMESPACE="${NAMESPACE//[^a-zA-Z0-9-]/-}"
           
-          helm upgrade --install qelos-release ./helm/qelos \
+          cd helm
+          
+          helm upgrade --install qelos-release qelos \
+            -f values.yaml \
             --namespace "$NAMESPACE" \
             --create-namespace \
             --atomic \
