@@ -1,4 +1,4 @@
-{{- if .Values.global.mongodb.deployInCluster }}
+{{- if and .Values.global.mongodb.deployInCluster (default false .Values.mongodb.enabled) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -38,7 +38,7 @@ spec:
           {{- end }}
 {{- end }}
 ---
-{{- if .Values.global.mongodb.deployInCluster }}
+{{- if and .Values.global.mongodb.deployInCluster (default false .Values.mongodb.enabled) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -55,7 +55,7 @@ spec:
     app: mongodb
 {{- end }}
 ---
-{{- if and .Values.global.mongodb.deployInCluster .Values.mongodb.persistence.enabled }}
+{{- if and .Values.global.mongodb.deployInCluster (default false .Values.mongodb.enabled) (hasKey .Values.mongodb "persistence") (default false .Values.mongodb.persistence.enabled) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -63,10 +63,10 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  {{- if .Values.mongodb.persistence.storageClass }}
+  {{- if and (hasKey .Values.mongodb.persistence "storageClass") .Values.mongodb.persistence.storageClass }}
   storageClassName: {{ .Values.mongodb.persistence.storageClass }}
   {{- end }}
   resources:
     requests:
-      storage: {{ .Values.mongodb.persistence.size }}
+      storage: {{ default "10Gi" .Values.mongodb.persistence.size }}
 {{- end }}
