@@ -26,8 +26,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       
-      - name: Build
-        run: pnpm build
+      - name: Build packages
+        run: pnpm --filter "./packages/**" build
+        
+      - name: Build apps
+        run: pnpm --filter "./apps/**" build
       
       - name: Pack apps
         run: node pack-apps.mjs
