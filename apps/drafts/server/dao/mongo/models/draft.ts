@@ -1,6 +1,6 @@
-import mongoose, {Document} from 'mongoose';
+import mongoose from 'mongoose';
 
-export interface IDraft extends Document {
+export interface IDraft {
   user: string;
   tenant: string;
   contextId: string | null;

@@ -7,10 +7,10 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "npm start",
-    "prepublishOnly": "tsc",
-    "build": "tsc",
-    "start": "node --use_strict dist/index.js"
+    "dev": "node --import tsx --watch index.ts",
+    "prepublishOnly": "pnpm build",
+    "build": "tsc --noEmit --skipLibCheck",
+    "start": "node --import tsx index.ts"
   },
   "keywords": [
     "post",
@@ -21,7 +21,9 @@
   "license": "MIT",
   "dependencies": {
     "@qelos/api-kit": "^3.9.0",
-    "mongoose": "^8.6.1"
+    "mongoose": "^8.6.1",
+    "axios": "^1.9.0",
+    "tsx": "^4.20.4"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",

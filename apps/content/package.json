@@ -21,8 +21,8 @@
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@qelos/api-kit": "^3.9.0",
-    "@qelos/cache-manager": "^3.9.0",
+    "@qelos/api-kit": "workspace:^",
+    "@qelos/cache-manager": "workspace:^",
     "mongoose": "^8.6.1",
     "node-fetch": "^2.6.1",
     "shortid": "^2.2.14"

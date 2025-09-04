@@ -156,7 +156,7 @@ export async function authCallbackFromFacebook(req: AuthWithFacebookRequest, res
       }
     }
 
-    let user: UserDocument;
+    let user: any;
     try {
       user = await getUser({ username: userData.email, tenant: req.headers.tenant });
       user.email = userData.email;
@@ -207,7 +207,7 @@ export async function authCallbackFromFacebook(req: AuthWithFacebookRequest, res
       const firstName = fullName.split(' ')[0] || '';
       const lastName = fullName.split(' ').slice(1).join(' ') || '';
 
-      user = new User({
+      const newUser = new User({
         tenant: req.headers.tenant,
         username: userData.email,
         email: userData.email,
@@ -218,7 +218,8 @@ export async function authCallbackFromFacebook(req: AuthWithFacebookRequest, res
         emailVerified: true,
         socialLogins: ['facebook'],
       });
-      await user.save();
+      await newUser.save();
+      user = newUser as any;
 
       emitPlatformEvent({
         tenant: req.headers.tenant,

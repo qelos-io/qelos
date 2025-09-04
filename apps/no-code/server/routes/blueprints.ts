@@ -14,30 +14,32 @@ const AUTHENTICATION_MIDDLEWARES = [populateUser, checkAllPrivileges, verifyUser
 const AUTHENTICATION_MIDDLEWARES_FOR_ADMIN = [populateUser, verifyUser, onlyEditPrivileged]
 
 blueprintsRouter
-  .get('/api/blueprints', AUTHENTICATION_MIDDLEWARES.concat(getAllBlueprints))
-  .get('/api/blueprints/:blueprintIdentifier', AUTHENTICATION_MIDDLEWARES.concat(getSingleBlueprint))
-  .post('/api/blueprints', AUTHENTICATION_MIDDLEWARES_FOR_ADMIN.concat(createBlueprint))
-  .put('/api/blueprints/:blueprintIdentifier', AUTHENTICATION_MIDDLEWARES_FOR_ADMIN.concat(updateBlueprint))
-  .patch('/api/blueprints/:blueprintIdentifier', AUTHENTICATION_MIDDLEWARES_FOR_ADMIN.concat(patchBlueprint))
-  .delete('/api/blueprints/:blueprintIdentifier', AUTHENTICATION_MIDDLEWARES_FOR_ADMIN.concat(removeBlueprint))
+  .get('/api/blueprints', AUTHENTICATION_MIDDLEWARES.concat(getAllBlueprints) as any[])
+  .get('/api/blueprints/:blueprintIdentifier', AUTHENTICATION_MIDDLEWARES.concat(getSingleBlueprint) as any[])
+  .post('/api/blueprints', AUTHENTICATION_MIDDLEWARES_FOR_ADMIN.concat(createBlueprint) as any[])
+  .put('/api/blueprints/:blueprintIdentifier', AUTHENTICATION_MIDDLEWARES_FOR_ADMIN.concat(updateBlueprint) as any[])
+  .patch('/api/blueprints/:blueprintIdentifier', AUTHENTICATION_MIDDLEWARES_FOR_ADMIN.concat(patchBlueprint) as any[])
+  .delete('/api/blueprints/:blueprintIdentifier', AUTHENTICATION_MIDDLEWARES_FOR_ADMIN.concat(removeBlueprint) as any[])
 
 
-blueprintsRouter
-  .get('/internal-api/blueprints', verifyInternalCall, getAllBlueprints)
-
-blueprintsRouter
-  .get('/internal-api/blueprints/:blueprintIdentifier', verifyInternalCall, getSingleBlueprint)
+const internalVerify: any = verifyInternalCall;
 
 blueprintsRouter
-  .post('/internal-api/blueprints', verifyInternalCall, createBlueprint)
+  .get('/internal-api/blueprints', internalVerify, getAllBlueprints )
 
 blueprintsRouter
-  .put('/internal-api/blueprints/:blueprintIdentifier', verifyInternalCall, updateBlueprint)
+  .get('/internal-api/blueprints/:blueprintIdentifier', internalVerify, getSingleBlueprint)
 
 blueprintsRouter
-  .delete('/internal-api/blueprints/:blueprintIdentifier', verifyInternalCall, removeBlueprint)
+  .post('/internal-api/blueprints', internalVerify, createBlueprint)
 
 blueprintsRouter
-  .patch('/internal-api/blueprints/:blueprintIdentifier', verifyInternalCall, patchBlueprint)
+  .put('/internal-api/blueprints/:blueprintIdentifier', internalVerify, updateBlueprint)
+
+blueprintsRouter
+  .delete('/internal-api/blueprints/:blueprintIdentifier', internalVerify, removeBlueprint)
+
+blueprintsRouter
+  .patch('/internal-api/blueprints/:blueprintIdentifier', internalVerify, patchBlueprint)
 
 export default blueprintsRouter;

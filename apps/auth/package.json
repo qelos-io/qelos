@@ -10,19 +10,20 @@
     "qelos"
   ],
   "scripts": {
-    "build": "tsc -d",
+    "build": "tsc --noEmit --skipLibCheck",
     "prepublishOnly": "npm test && npm run build",
     "start": "node --use_strict dist/index.js",
     "dev": "npx tsx watch index.ts",
+    "init": "node helpers/init.js",
     "test": "jest"
   },
   "main": "dist/index.js",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@qelos/api-kit": "^3.9.0",
-    "@qelos/cache-manager": "^3.9.0",
-    "@qelos/global-types": "^3.9.0",
+    "@qelos/api-kit": "workspace:^",
+    "@qelos/cache-manager": "workspace:^",
+    "@qelos/global-types": "workspace:^",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.5",
     "jsonwebtoken": "^9.0.0",

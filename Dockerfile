@@ -1,9 +1,9 @@
 FROM node:22.14
 COPY . .
 ENV NODE_ENV=development
-RUN npm install --unsafe-perm
-RUN npm run build
+RUN pnpm install --unsafe-perm
+RUN pnpm run build
 
-RUN npm run clean
+RUN pnpm run clean
 ENV NODE_ENV=production
-RUN npm run install:prod-only
+RUN pnpm run install:prod-only

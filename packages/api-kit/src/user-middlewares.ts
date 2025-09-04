@@ -19,7 +19,7 @@ export function verifyUser(req: RequestWithUser, res: Response, next: NextFuncti
   }
 }
 
-export function verifyInternalCall (req: RequestWithUser, res: Response, next: NextFunction) {
+export function verifyInternalCall(req, res: Response, next: NextFunction): void {
   if (
     !req.headers.internal_secret || 
     req.headers.internal_secret !== process.env.INTERNAL_SECRET || 

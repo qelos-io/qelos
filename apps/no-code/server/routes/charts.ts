@@ -7,8 +7,8 @@ const chartsRouter = getRouter();
 const AUTHENTICATION_MIDDLEWARES = [populateUser, verifyUser, checkAllPrivileges, getBlueprintByIdentifierMiddleware, checkChartPermissions]
 
 chartsRouter
-  .get('/api/blueprints/:blueprintIdentifier/charts/pie', AUTHENTICATION_MIDDLEWARES.concat(getPieChart))
-  .get('/api/blueprints/:blueprintIdentifier/charts/count', AUTHENTICATION_MIDDLEWARES.concat(getCountCard))
-  .get('/api/blueprints/:blueprintIdentifier/charts/:chartType', AUTHENTICATION_MIDDLEWARES.concat(getStandardChart))
+  .get('/api/blueprints/:blueprintIdentifier/charts/pie', AUTHENTICATION_MIDDLEWARES.concat(getPieChart) as any[])
+  .get('/api/blueprints/:blueprintIdentifier/charts/count', AUTHENTICATION_MIDDLEWARES.concat(getCountCard) as any[])
+  .get('/api/blueprints/:blueprintIdentifier/charts/:chartType', AUTHENTICATION_MIDDLEWARES.concat(getStandardChart) as any[])
 
 export default chartsRouter;

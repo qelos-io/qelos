@@ -1,7 +1,0 @@
-{
-  "packages": [
-    "apps/*",
-    "packages/*"
-  ],
-  "version": "3.9.0"
-}

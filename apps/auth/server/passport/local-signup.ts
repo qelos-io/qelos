@@ -29,7 +29,7 @@ module.exports = new Strategy(
     });
     const authType = req.body.authType || defaultAuthType;
 
-    setToken({ user: newUser }, authType)
+    setToken({ user: newUser as any }, authType)
       .then(({
                user,
                token,

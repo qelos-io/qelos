@@ -16,7 +16,8 @@ import Workspace from '../models/workspace';
 const privilegedUserFields = 'username phone fullName firstName lastName birthDate roles profileImage socialLogins emailVerified lastLogin';
 
 function getUserIdIfExists(_id, tenant) {
-  return User.findOne({ _id, tenant }).select('_id').lean().exec();
+  // Use type assertion to avoid complex union type error
+  return (User as any).findOne({ _id, tenant }).select('_id').lean().exec();
 }
 
 export function getUsersForAdmin(req: AuthRequest, res: Response): void {
@@ -41,14 +42,15 @@ export function getUsersForAdmin(req: AuthRequest, res: Response): void {
       delete query.username;
     }
 
-    logger.log('admin db query', query)
+    logger.log('admin db query', query);
 
-    User
+    // Use type assertion to avoid complex union type error
+    (User as any)
       .find(query)
       .select(req.query.select ? req.query.select.toString().replace(/,/g, ' ') : privilegedUserFields)
       .lean()
       .exec()
-      .then((users = []) => {
+      .then((users: any[] = []) => {
         res.json(users).end();
       })
       .catch((err) => {
@@ -101,12 +103,14 @@ export function getUser(req: AuthRequest, res: Response): RequestHandler {
   const isPrivileged = !!(req.userPayload && req.userPayload.isPrivileged)
 
   const promises: Array<Promise<any>> = [
-    User.findOne({ _id: req.params.userId, tenant: req.headers.tenant })
+    // Use type assertion to avoid complex union type error
+    (User as any).findOne({ _id: req.params.userId, tenant: req.headers.tenant })
       .select(isPrivileged ? privilegedUserFields : 'fullName')
       .lean().exec()
   ]
   if (isPrivileged) {
-    promises.push(UserInternalMetadata.findOne({
+    // Use type assertion to avoid complex union type error
+    promises.push((UserInternalMetadata as any).findOne({
       user: req.params.userId,
       tenant: req.headers.tenant
     }).lean().exec().catch(() => null))
@@ -251,13 +255,14 @@ export async function updateUser(req: AuthRequest, res: Response) {
       req.authConfig
     )
     if (internalMetadata) {
-      const userInternalMetadata = (await UserInternalMetadata.findOne({
+      // Use type assertion to avoid complex union type error
+      const userInternalMetadata = (await (UserInternalMetadata as any).findOne({
         user: req.params.userId,
         tenant: req.headers.tenant
-      }).exec()) || new UserInternalMetadata({
+      }).exec()) || (new (UserInternalMetadata as any)({
         user: req.params.userId,
         tenant: req.headers.tenant
-      })
+      }) as any)
       newInternalMetadata = userInternalMetadata.metadata = Object.assign(userInternalMetadata.metadata || {}, internalMetadata);
       userInternalMetadata.markModified('metadata')
       await userInternalMetadata.save();

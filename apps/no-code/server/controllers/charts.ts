@@ -1,13 +1,24 @@
 import { Response } from 'express';
 import qs from 'qs'
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
-import { BlueprintPropertyType, CRUDOperation } from '@qelos/global-types';
+import { BlueprintPropertyType, CRUDOperation, PermissionScope } from '@qelos/global-types';
 import { IBlueprint } from '../models/blueprint';
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
 import BlueprintEntity from '../models/blueprint-entity';
-import { Full, getEntityQuery } from '../services/entities.service';
+import { getEntityQuery } from '../services/entities.service';
 
-export function checkChartPermissions(req, res: Response, next: Function) {
+interface RequestWithBlueprint extends RequestWithUser {
+  _parsedUrl: {
+    query: string;
+  } & any;
+  blueprint: IBlueprint;
+  query: {
+    bypassAdmin?: boolean;
+  } & RequestWithUser['query'];
+  permittedScopes: PermissionScope[] | true;
+}
+
+export function checkChartPermissions(req: RequestWithBlueprint, res: Response, next: Function) {
   const blueprint: IBlueprint = req.blueprint;
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin);
 
@@ -23,10 +34,10 @@ export async function getStandardChart(req, res: Response) {
   const blueprint: IBlueprint = req.blueprint;
   const chartType = req.params.chartType;
 
-  const propToAggregate = req.query.x;
-  const propType = blueprint.properties[propToAggregate].type;
+  const propToAggregate: string = req.query.x?.toString() || '';
+  const propType = blueprint.properties[propToAggregate]?.type;
 
-  if (!propToAggregate) {
+  if (!propToAggregate || !propType) {
     res.status(400).json({ message: 'xAxis is required' }).end();
     return;
   }
@@ -105,14 +116,14 @@ export async function getStandardChart(req, res: Response) {
   }).end();
 }
 
-export async function getPieChart(req: RequestWithUser, res: Response) {
+export async function getPieChart(req: RequestWithBlueprint, res: Response) {
   const blueprint: IBlueprint = req.blueprint;
 
   // return this kind of object: https://echarts.apache.org/examples/en/editor.html?c=pie-simple
   res.json({ type: 'line', data: [] }).end();
 }
 
-export async function getCountCard(req: Full<RequestWithUser>, res: Response) {
+export async function getCountCard(req, res: Response) {
   const blueprint: IBlueprint = req.blueprint;
 
   const query = {

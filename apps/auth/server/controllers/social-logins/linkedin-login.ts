@@ -113,7 +113,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
       userData = jwt.decode(tokenData.id_token);
     }
 
-    let user: UserDocument;
+    let user: any;
     try {
       user = await getUser({ username: userData.email, tenant: req.headers.tenant });
       user.email = userData.email;
@@ -160,7 +160,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
         }
       }
 
-      user = new User({
+      const newUser = new User({
         tenant: req.headers.tenant,
         username: userData.email,
         email: userData.email,
@@ -171,7 +171,8 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
         emailVerified: true,
         socialLogins: ['linkedin'],
       });
-      await user.save();
+      await newUser.save();
+      user = newUser as any;
 
       emitPlatformEvent({
         tenant: req.headers.tenant,
