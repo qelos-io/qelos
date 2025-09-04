@@ -21,10 +21,13 @@ jobs:
         uses: pnpm/action-setup@v2
         with:
           version: latest
-          run_install: true
+          run_install: false
+      
+      - name: Install dependencies
+        run: pnpm install
       
       - name: Build
-        run: pnpm run build
+        run: pnpm build
       
       - name: Pack apps
         run: node pack-apps.mjs
