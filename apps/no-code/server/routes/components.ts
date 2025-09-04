@@ -7,14 +7,16 @@ const componentsRouter = getRouter();
 const AUTHENTICATION_MIDDLEWARES = [populateUser, verifyUser, onlyEditPrivileged]
 
 componentsRouter
-  .get('/api/components/:componentId', AUTHENTICATION_MIDDLEWARES.concat(getSingleComponent))
-  .get('/api/components', AUTHENTICATION_MIDDLEWARES.concat(getAllComponents))
-  .post('/api/components', AUTHENTICATION_MIDDLEWARES.concat(createComponent))
-  .put('/api/components/:componentId', AUTHENTICATION_MIDDLEWARES.concat(updateComponent))
-  .delete('/api/components/:componentId', AUTHENTICATION_MIDDLEWARES.concat(removeComponent))
+  .get('/api/components/:componentId', AUTHENTICATION_MIDDLEWARES.concat(getSingleComponent as any) as any[])
+  .get('/api/components', AUTHENTICATION_MIDDLEWARES.concat(getAllComponents as any) as any[])
+  .post('/api/components', AUTHENTICATION_MIDDLEWARES.concat(createComponent as any) as any[])
+  .put('/api/components/:componentId', AUTHENTICATION_MIDDLEWARES.concat(updateComponent as any) as any[])
+  .delete('/api/components/:componentId', AUTHENTICATION_MIDDLEWARES.concat(removeComponent as any) as any[])
 
-componentsRouter.get('/internal-api/components', verifyInternalCall, getAllComponents);
-componentsRouter.post('/internal-api/components', verifyInternalCall, createComponent);
+const verifyInternal: any = verifyInternalCall
+
+componentsRouter.get('/internal-api/components', verifyInternal, getAllComponents);
+componentsRouter.post('/internal-api/components', verifyInternal, createComponent);
 
 componentsRouter.get('/api/static', getComponentsList);
 componentsRouter.get('/api/static/:componentKey', getCompiledComponent);

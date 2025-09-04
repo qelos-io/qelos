@@ -31,7 +31,8 @@ export async function getInvites(req: AuthRequest, res: Response) {
   }
 
   try {
-    const invites = await Workspace.find(query)
+    // Use type assertion to avoid complex union type error
+    const invites = await (Workspace as any).find(query)
       .select('_id name logo')
       .lean()
       .exec();
@@ -59,7 +60,8 @@ export async function respondToInvite(req: AuthRequest, res: Response) {
   }
 
   try {
-    const workspace = await Workspace.findOne({
+    // Use type assertion to avoid complex union type error
+    const workspace = await (Workspace as any).findOne({
       tenant,
       _id: workspaceId,
       'invites.email': email,

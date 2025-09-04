@@ -18,20 +18,22 @@ async function getImpersonate(req: AuthRequest, res: Response) {
     return res.status(403).json({ message: 'workspace not exist' }).end()
   }
 
-  const firstName = user.firstName;
-  const lastName = user.lastName;
-  const fullName = user.fullName || `${firstName} ${lastName}`;
+  // Use type assertion to access user properties
+  const userObj = user as any;
+  const firstName = userObj.firstName;
+  const lastName = userObj.lastName;
+  const fullName = userObj.fullName || `${firstName} ${lastName}`;
   res.status(200).json({
-    _id: user._id,
-    username: user.username,
-    email: user.email,
+    _id: userObj._id,
+    username: userObj.username,
+    email: userObj.email,
     name: fullName,
     firstName,
     lastName,
     fullName,
-    roles: user.roles,
-    profileImage: user.profileImage,
-    metadata: user.metadata,
+    roles: userObj.roles,
+    profileImage: userObj.profileImage,
+    metadata: userObj.metadata,
     workspace
   }).end();
 }

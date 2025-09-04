@@ -21,9 +21,9 @@
   },
   "main": "dist/index.js",
   "dependencies": {
-    "@qelos/api-kit": "^3.9.0",
-    "@qelos/cache-manager": "^3.9.0",
-    "@qelos/global-types": "^3.9.0",
+    "@qelos/api-kit": "workspace:^",
+    "@qelos/cache-manager": "workspace:^",
+    "@qelos/global-types": "workspace:^",
     "@vue/compiler-sfc": "^3.5.16",
     "ajv": "^8.17.1",
     "mongoose": "^8.6.1",

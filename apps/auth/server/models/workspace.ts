@@ -12,7 +12,8 @@ export interface IWorkspace extends Document {
   created?: Date;
 }
 
-export const WorkspaceSchema = new mongoose.Schema<IWorkspace>({
+// Use a type assertion to avoid complex union type error
+export const WorkspaceSchema = new mongoose.Schema<any, any>({
   name: {
     type: String,
     required: true
@@ -41,5 +42,6 @@ export const WorkspaceSchema = new mongoose.Schema<IWorkspace>({
   created: { type: Date, default: Date.now }
 });
 
-const Workspace = mongoose.model<IWorkspace>('Workspace', WorkspaceSchema);
+// Use a more robust type assertion to avoid complex union type error
+const Workspace = mongoose.model('Workspace', WorkspaceSchema) as unknown as mongoose.Model<IWorkspace>;
 export default Workspace
