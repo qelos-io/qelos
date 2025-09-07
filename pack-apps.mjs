@@ -41,10 +41,11 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
       .then(() => {
         return new Promise((resolve, reject) => {
           // First run npm pack
-          exec(`cd apps/${folder} && npm pack`, { maxBuffer: 10 * 1024 * 1024 }, (err) => {
+          exec(`cd apps/${folder} && npm pack`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
             if (err) {
               console.log(folder + ' npm pack failed');
               console.log(err.message);
+              console.log(stdout.substring(-10000))
               reject();
               return;
             }
