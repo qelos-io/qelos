@@ -41,21 +41,21 @@
     "@types/node": "^22.5.4",
     "typescript": "^4.9.5"
   },
-  "bundledDependencies": [
+  "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
+  "bundleDependencies": [
     "@anthropic-ai/sdk",
     "@langchain/openai",
     "@langchain/redis",
+    "@qelos/api-kit",
+    "@qelos/cache-manager",
+    "@qelos/global-types",
     "@xenova/transformers",
     "http-proxy-middleware",
-    "@qelos/api-kit",
-    "@qelos/global-types",
-    "@qelos/cache-manager",
     "langchain",
     "mongoose",
     "openai",
     "redis",
     "tsx",
     "uniqid"
-  ],
-  "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8"
+  ]
 }

@@ -13,8 +13,6 @@
     "predev": "kill-port 3000 3001 9000 9001 9002 9003 9004 9005 9006 9007 && docker rm -f qelos-db qelos-redis",
     "postdev": "pnpm run predev",
     "populate-db": "pnpm -F @qelos/auth run init",
-    "pack-package": "pnpm -r exec -- npm pack",
-    "rename-pack": "pnpm -r exec -- node ../../tools/bundler/rename-pack.js",
     "test": "pnpm -r run test"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",

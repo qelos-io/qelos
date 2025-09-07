@@ -40,31 +40,21 @@
     "typescript": "^4.9.5"
   },
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
-  "bundledDependencies": [
-    "http-proxy-middleware",
-    "@qelos/api-kit",
-    "@qelos/global-types",
-    "@qelos/cache-manager",
-    "mongoose",
-    "node-fetch",
-    "node-jq",
-    "redis",
-    "tsx",
-    "uniqid"
-  ],
-  "bundleDependencies": [
-    "http-proxy-middleware",
-    "@qelos/api-kit",
-    "@qelos/global-types",
-    "@qelos/cache-manager",
-    "mongoose",
-    "node-fetch",
-    "node-jq",
-    "redis",
-    "tsx",
-    "uniqid"
-  ],
   "overrides": {
     "esbuild": "0.25.4"
-  }
+  },
+  "bundleDependencies": [
+    "@qelos/api-kit",
+    "@qelos/cache-manager",
+    "@qelos/global-types",
+    "@types/nodemailer",
+    "http-proxy-middleware",
+    "mongoose",
+    "node-fetch",
+    "node-jq",
+    "nodemailer",
+    "redis",
+    "tsx",
+    "uniqid"
+  ]
 }

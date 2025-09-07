@@ -40,8 +40,10 @@
     "url": "git+ssh://git@github.com/qelos-io/qelos.git"
   },
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
-  "bundledDependencies": [
+  "bundleDependencies": [
     "@qelos/api-kit",
-    "mongoose"
+    "mongoose",
+    "axios",
+    "tsx"
   ]
 }

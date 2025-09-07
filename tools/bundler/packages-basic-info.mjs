@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execSync } from "node:child_process";
 
 export function getPackagesBasicInfo() {
   const packagesJson = execSync('pnpm ls -r --json', { cwd: process.cwd() }).toString();

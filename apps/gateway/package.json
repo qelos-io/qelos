@@ -34,7 +34,7 @@
     "typescript": "^4.9.5"
   },
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
-  "bundledDependencies": [
+  "bundleDependencies": [
     "@qelos/api-kit",
     "@qelos/api-proxy-middleware",
     "@qelos/cache-manager",

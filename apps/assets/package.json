@@ -37,7 +37,7 @@
     "access": "public"
   },
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
-  "bundledDependencies": [
+  "bundleDependencies": [
     "@aws-sdk/client-s3",
     "@google-cloud/storage",
     "@qelos/api-kit",

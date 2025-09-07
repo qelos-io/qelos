@@ -1,5 +1,5 @@
-import { readdirSync } from "fs";
-import { exec } from "child_process";
+import { readdirSync } from "node:fs";
+import { exec } from "node:child_process";
 import { getPackagesBasicInfo } from "./tools/bundler/packages-basic-info.mjs";
 import { bundleDependencies } from "./tools/bundle-dependencies-polyfix/index.js";
 
@@ -40,10 +40,12 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
       })
       .then(() => {
         return new Promise((resolve, reject) => {
-          exec(`npm run pack-package --- --scope=@qelos/${folder} && \
-npm run rename-pack --- --scope=@qelos/${folder}`, (err) => {
+          exec(`cd apps/${folder} && \
+            npm pack && \
+            node ../../tools/bundler/rename-pack.js`, { maxBuffer: 10 * 1024 * 1024 }, (err) => {
             console.log(folder + ' packing ' + (err ? 'failed' : 'succeeded'))
             if (err) {
+              console.log(err.message);
               reject();
             }
             resolve();

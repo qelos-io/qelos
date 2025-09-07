@@ -1,5 +1,5 @@
-const { join } = require('path');
-const { renameSync } = require('fs');
+const { join } = require('node:path');
+const { renameSync } = require('node:fs');
 const folderPath = process.cwd();
 const pkg = require(join(folderPath, 'package.json'));
 
