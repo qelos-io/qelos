@@ -40,19 +40,29 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
       })
       .then(() => {
         return new Promise((resolve, reject) => {
-          exec(`cd apps/${folder} && \
-            npm pack && \
-            node ../../tools/bundler/rename-pack.js`, { maxBuffer: 10 * 1024 * 1024 }, (err) => {
-            console.log(folder + ' packing ' + (err ? 'failed' : 'succeeded'))
+          // First run npm pack
+          exec(`cd apps/${folder} && npm pack`, { maxBuffer: 10 * 1024 * 1024 }, (err) => {
             if (err) {
+              console.log(folder + ' npm pack failed');
               console.log(err.message);
               reject();
+              return;
             }
-            resolve();
+            
+            // Then run rename-pack.js
+            exec(`cd apps/${folder} && node ../../tools/bundler/rename-pack.js`, { maxBuffer: 1024 * 1024 }, (err) => {
+              console.log(folder + ' packing ' + (err ? 'failed' : 'succeeded'))
+              if (err) {
+                console.log(err.message);
+                reject();
+              }
+              resolve();
+            })
           })
         })
       })
-  }))
+  })
+)
   .catch(() => {
     process.exit(1)
   })
