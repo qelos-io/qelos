@@ -190,14 +190,14 @@ importers:
         specifier: ^0.1.1
         version: 0.1.2(@langchain/core@0.3.73(openai@4.104.0(zod@3.25.76)))
       '@qelos/api-kit':
-        specifier: workspace:^
-        version: link:../../packages/api-kit
+        specifier: '*'
+        version: 3.9.0
       '@qelos/cache-manager':
-        specifier: workspace:^
-        version: link:../../packages/cache-manager
+        specifier: '*'
+        version: 3.9.0
       '@qelos/global-types':
-        specifier: workspace:^
-        version: link:../../packages/global-types
+        specifier: '*'
+        version: 3.9.0
       '@xenova/transformers':
         specifier: ^2.17.2
         version: 2.17.2
@@ -242,8 +242,8 @@ importers:
         specifier: ^7.12.1
         version: 7.17.0
       '@qelos/api-kit':
-        specifier: workspace:^
-        version: link:../../packages/api-kit
+        specifier: '*'
+        version: 3.9.0
       cloudinary:
         specifier: ^1.27.1
         version: 1.41.3
@@ -272,14 +272,14 @@ importers:
   apps/auth:
     dependencies:
       '@qelos/api-kit':
-        specifier: workspace:^
-        version: link:../../packages/api-kit
+        specifier: '*'
+        version: 3.9.0
       '@qelos/cache-manager':
-        specifier: workspace:^
-        version: link:../../packages/cache-manager
+        specifier: '*'
+        version: 3.9.0
       '@qelos/global-types':
-        specifier: workspace:^
-        version: link:../../packages/global-types
+        specifier: '*'
+        version: 3.9.0
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
@@ -336,11 +336,11 @@ importers:
   apps/content:
     dependencies:
       '@qelos/api-kit':
-        specifier: workspace:^
-        version: link:../../packages/api-kit
+        specifier: '*'
+        version: 3.9.0
       '@qelos/cache-manager':
-        specifier: workspace:^
-        version: link:../../packages/cache-manager
+        specifier: '*'
+        version: 3.9.0
       mongoose:
         specifier: ^8.6.1
         version: 8.18.0
@@ -413,14 +413,14 @@ importers:
   apps/no-code:
     dependencies:
       '@qelos/api-kit':
-        specifier: workspace:^
-        version: link:../../packages/api-kit
+        specifier: '*'
+        version: 3.9.0
       '@qelos/cache-manager':
-        specifier: workspace:^
-        version: link:../../packages/cache-manager
+        specifier: '*'
+        version: 3.9.0
       '@qelos/global-types':
-        specifier: workspace:^
-        version: link:../../packages/global-types
+        specifier: '*'
+        version: 3.9.0
       '@tsconfig/node22':
         specifier: ^22.0.0
         version: 22.0.2
@@ -480,14 +480,14 @@ importers:
   apps/plugins:
     dependencies:
       '@qelos/api-kit':
-        specifier: workspace:^
-        version: link:../../packages/api-kit
+        specifier: '*'
+        version: 3.9.0
       '@qelos/cache-manager':
-        specifier: workspace:^
-        version: link:../../packages/cache-manager
+        specifier: '*'
+        version: 3.9.0
       '@qelos/global-types':
-        specifier: workspace:^
-        version: link:../../packages/global-types
+        specifier: '*'
+        version: 3.9.0
       '@types/nodemailer':
         specifier: ^6.4.17
         version: 6.4.19
@@ -531,8 +531,8 @@ importers:
   apps/secrets:
     dependencies:
       '@qelos/api-kit':
-        specifier: workspace:^
-        version: link:../../packages/api-kit
+        specifier: '*'
+        version: 3.9.0
       mongoose:
         specifier: ^8.6.1
         version: 8.18.0

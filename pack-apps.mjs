@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { exec } from "node:child_process";
 import { getPackagesBasicInfo } from "./tools/bundler/packages-basic-info.mjs";
 import { bundleDependencies } from "./tools/bundle-dependencies-polyfix/index.js";
@@ -40,9 +40,24 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
       })
       .then(() => {
         return new Promise((resolve, reject) => {
-          // First run npm pack
-          // First resolve workspace dependencies before running npm pack
-          exec(`cd apps/${folder} && pnpm install --no-frozen-lockfile && npm pack`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
+          // Modify package.json to replace workspace dependencies before packing
+          const pkgPath = `apps/${folder}/package.json`;
+          const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+          
+          // Replace workspace dependencies with wildcard versions
+          if (pkg.dependencies) {
+            Object.keys(pkg.dependencies).forEach(dep => {
+              if (pkg.dependencies[dep] === 'workspace:^') {
+                pkg.dependencies[dep] = '*';
+              }
+            });
+          }
+          
+          // Write the modified package.json back
+          writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+          
+          // Run npm pack with the modified package.json
+          exec(`cd apps/${folder} && pnpm install && npm pack`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
             if (err) {
               console.log(folder + ' npm pack failed');
               console.log(err.message);

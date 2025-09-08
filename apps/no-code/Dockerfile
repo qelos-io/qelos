@@ -6,8 +6,13 @@ ENV NODE_ENV=production
 ENV PORT=9004
 EXPOSE $PORT
 COPY qelos-no-code.tgz .
-RUN mkdir -p /app
-RUN tar zxvf ./qelos-no-code.tgz -C /app
-WORKDIR /app/package
+# Extract the tarball directly to root with special flags to handle paths with '..' safely
+RUN cd / && tar --absolute-names --no-same-owner --no-same-permissions -xzf qelos-no-code.tgz
+
+# Set working directory to the package directory
+WORKDIR /package
+
+# Install dependencies
+RUN pnpm install --no-frozen-lockfile
 RUN pnpm i @esbuild/linux-x64
 CMD pnpm start

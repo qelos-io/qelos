@@ -4,7 +4,6 @@
   "main": "index.js",
   "scripts": {
     "install:prod-only": "pnpm install --prod",
-    "stam": "env-cmd node -e \"console.log(process.env.MONGO_URI)\"",
     "prebuild": "pnpm -r run prebuild",
     "build": "pnpm run prebuild && pnpm -r --parallel --stream run build",
     "clean": "pnpm -r exec -- rm -rf node_modules",
