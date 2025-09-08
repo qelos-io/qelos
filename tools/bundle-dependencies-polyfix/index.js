@@ -1,9 +1,9 @@
-const fs = require("fs");
-const { join } = require('path');
+const fs = require("node:fs");
+const { join } = require('node:path');
 
 function rewriteJSON(path, pkg) {
   const deps = Object.keys(pkg.dependencies);
-  pkg.bundledDependencies = deps;
+  pkg.bundleDependencies = deps;
   fs.writeFileSync(path, JSON.stringify(pkg, null, 2));
   return deps;
 }

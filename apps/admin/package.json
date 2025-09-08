@@ -27,8 +27,8 @@
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
     "@fortawesome/vue-fontawesome": "^3.0.8",
     "@primevue/themes": "^4.0.4",
-    "@qelos/global-types": "^3.9.0",
-    "@qelos/sdk": "^3.9.0",
+    "@qelos/global-types": "workspace:^",
+    "@qelos/sdk": "workspace:^",
     "@sentry/vue": "^9.13.0",
     "@tiptap/extension-color": "^2.12.0",
     "@tiptap/extension-highlight": "^2.12.0",
@@ -50,6 +50,8 @@
     "echarts": "^5.6.0",
     "element-plus": "~2.10.1",
     "lodash.debounce": "^4.0.8",
+    "lodash.kebabcase": "^4.1.1",
+    "lodash-es": "^4.17.21",
     "monaco-editor": "^0.52.2",
     "pinia": "^2.3.1",
     "primevue": "^4.3.5",
@@ -68,13 +70,10 @@
   },
   "license": "MIT",
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
-  "bundledDependencies": [
-    "express"
-  ],
-  "bundleDependencies": [
-    "express"
-  ],
   "overrides": {
     "esbuild": "0.25.4"
-  }
+  },
+  "bundleDependencies": [
+    "express"
+  ]
 }

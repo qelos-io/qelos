@@ -23,7 +23,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.420.0",
     "@google-cloud/storage": "^7.12.1",
-    "@qelos/api-kit": "^3.9.0",
+    "@qelos/api-kit": "workspace:^",
     "cloudinary": "^1.27.1",
     "datauri": "^4.1.0",
     "ftp": "^0.3.10",
@@ -37,7 +37,7 @@
     "access": "public"
   },
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
-  "bundledDependencies": [
+  "bundleDependencies": [
     "@aws-sdk/client-s3",
     "@google-cloud/storage",
     "@qelos/api-kit",

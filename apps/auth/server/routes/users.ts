@@ -26,15 +26,17 @@ router
   .put('/api/users/:userId', verifyUser, onlyPrivileged, authConfigCheck, updateUser)
   .delete('/api/users/:userId', verifyUser, onlyPrivileged, removeUser);
 
+const internalVerify: any = verifyInternalCall;
+
 router
-  .get('/internal-api/users', verifyInternalCall, getUsersForAdmin)
-  .post('/internal-api/users', verifyInternalCall, authConfigCheck, createUser)
-  .get('/internal-api/users/:userId', verifyInternalCall, (req, _, next) => {
-   req.userPayload = req.user;
+  .get('/internal-api/users', internalVerify, getUsersForAdmin)
+  .post('/internal-api/users', internalVerify, authConfigCheck, createUser)
+  .get('/internal-api/users/:userId', internalVerify, (req: any, _, next) => {
+    req.userPayload = req.user;
     next();
   }, getUser)
-  .put('/internal-api/users/:userId', verifyInternalCall, authConfigCheck, updateUser)
-  .delete('/internal-api/users/:userId', verifyInternalCall, removeUser);
+  .put('/internal-api/users/:userId', internalVerify, authConfigCheck, updateUser)
+  .delete('/internal-api/users/:userId', internalVerify, removeUser);
 
 
 export default router;

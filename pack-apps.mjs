@@ -1,5 +1,5 @@
-import { readdirSync } from "fs";
-import { exec } from "child_process";
+import { readdirSync } from "node:fs";
+import { exec } from "node:child_process";
 import { getPackagesBasicInfo } from "./tools/bundler/packages-basic-info.mjs";
 import { bundleDependencies } from "./tools/bundle-dependencies-polyfix/index.js";
 
@@ -40,17 +40,31 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
       })
       .then(() => {
         return new Promise((resolve, reject) => {
-          exec(`npm run pack-package --- --scope=@qelos/${folder} && \
-npm run rename-pack --- --scope=@qelos/${folder}`, (err) => {
-            console.log(folder + ' packing ' + (err ? 'failed' : 'succeeded'))
+          // First run npm pack
+          // First resolve workspace dependencies before running npm pack
+          exec(`cd apps/${folder} && pnpm install --no-frozen-lockfile && npm pack`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
             if (err) {
+              console.log(folder + ' npm pack failed');
+              console.log(err.message);
+              console.log(stdout.toString().slice(-10000));
               reject();
+              return;
             }
-            resolve();
+            
+            // Then run rename-pack.js
+            exec(`cd apps/${folder} && node ../../tools/bundler/rename-pack.js`, { maxBuffer: 1024 * 1024 }, (err) => {
+              console.log(folder + ' packing ' + (err ? 'failed' : 'succeeded'))
+              if (err) {
+                console.log(err.message);
+                reject();
+              }
+              resolve();
+            })
           })
         })
       })
-  }))
+  })
+)
   .catch(() => {
     process.exit(1)
   })

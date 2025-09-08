@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import logger from '../services/logger';
 import {
   convertQueryToIndexes,
+  Full,
   getEntityIndexes,
   getEntityQuery,
   getValidBlueprintMetadata,
@@ -29,7 +30,7 @@ function getAuditItem(req: Request): IAuditItem {
   }
 }
 
-async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBlueprint, entity: IBlueprintEntity) {
+async function updateAllEntityMetadata(req: Full<RequestWithUser>, blueprint: IBlueprint, entity: IBlueprintEntity) {
   const { _id, ...body } = req.body || {}
 
   // validate the metadata
@@ -44,7 +45,7 @@ async function updateAllEntityMetadata(req: RequestWithUser, blueprint: IBluepri
   entity.indexes = getEntityIndexes(blueprint, entity);
 }
 
-async function hasReachedLimitations(req: RequestWithUser, blueprint: IBlueprint, entity: any) {
+async function hasReachedLimitations(req: Full<RequestWithUser>, blueprint: IBlueprint, entity: any) {
   if (!blueprint.limitations?.length) {
     return false;
   }

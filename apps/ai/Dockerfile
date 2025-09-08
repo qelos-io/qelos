@@ -1,4 +1,9 @@
-FROM node:22.14-slim AS builder
+FROM node:22.14-slim AS base 
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+FROM base AS builder
 WORKDIR /build
 
 # Install only the necessary build dependencies
@@ -14,20 +19,20 @@ RUN tar zxvf ./qelos-ai.tgz -C ./
 WORKDIR /build/package
 
 # Rebuild Sharp for the current architecture and dynamically install esbuild for the current architecture
-RUN npm install -g prebuild-install && \
-    npm rebuild sharp && \
+RUN pnpm install -g prebuild-install && \
+    pnpm rebuild sharp && \
     ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
-      npm install @esbuild/linux-x64 --no-save; \
+      pnpm install @esbuild/linux-x64 --no-save; \
     elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
-      npm install @esbuild/linux-arm64 --no-save; \
+      pnpm install @esbuild/linux-arm64 --no-save; \
     else \
       echo "Unsupported architecture: $ARCH"; \
       exit 1; \
     fi
 
 # Production image
-FROM node:22.14-slim
+FROM base
 ENV NODE_ENV=production
 ENV PORT=9007
 EXPOSE $PORT
@@ -44,4 +49,4 @@ WORKDIR /app
 # Copy only the necessary files from the builder stage
 COPY --from=builder /build/package /app
 
-CMD npm start
+CMD pnpm start

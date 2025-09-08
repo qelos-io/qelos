@@ -14,6 +14,7 @@ export function getAllPlugins(req, res) {
     .find({ tenant: req.headers.tenant })
     .select(select).lean().exec()
     .then(list => {
+      console.log('get plugins for', req.headers.tenant, list)
       res.json(list).end();
     })
     .catch(() => {

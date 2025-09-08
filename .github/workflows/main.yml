@@ -16,15 +16,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+          run_install: false
       
       - name: Install dependencies
-        run: |
-          npm i -g lerna@6.1.0
-          npm install
+        run: pnpm install
       
-      - name: Build
-        run: npm run build
+      - name: Build packages
+        run: pnpm --filter "./packages/**" build
+        
+      - name: Build apps
+        run: pnpm --filter "./apps/**" build
       
       - name: Pack apps
         run: node pack-apps.mjs

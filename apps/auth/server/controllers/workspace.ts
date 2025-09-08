@@ -16,7 +16,8 @@ const ObjectId = Types.ObjectId;
 
 
 function getWorkspaceIdIfExists(_id: string, tenant: string) {
-  return Workspace.findOne({ _id, tenant }).select('_id').lean().exec();
+  // Use type assertion to avoid complex union type error
+  return (Workspace as any).findOne({ _id, tenant }).select('_id').lean().exec();
 }
 
 export async function getWorkspace(req: AuthRequest, res: Response) {
@@ -25,7 +26,8 @@ export async function getWorkspace(req: AuthRequest, res: Response) {
     return;
   }
   try {
-    const { members, invites } = await Workspace.findOne({ _id: req.workspace._id }, 'members invites').lean().exec();
+    // Use type assertion to avoid complex union type error
+    const { members, invites } = await (Workspace as any).findOne({ _id: req.workspace._id }, 'members invites').lean().exec();
     res.status(200).json({
       ...req.workspace.toJSON(),
       members,
@@ -40,7 +42,8 @@ export async function getWorkspaces(req: AuthRequest, res: Response) {
   const { tenant } = req.headers || {};
   const userId = req.userPayload.sub;
   try {
-    const workspaces = await Workspace.find({
+    // Use type assertion to avoid complex union type error
+    const workspaces = await (Workspace as any).find({
       tenant,
       'members.user': new ObjectId(userId),
     })
@@ -77,7 +80,8 @@ export async function getEveryWorkspaces(req: AuthRequest, res: Response) {
     ]
   }
   try {
-    const workspaces = await Workspace.find(dbQuery)
+    // Use type assertion to avoid complex union type error
+    const workspaces = await (Workspace as any).find(dbQuery)
       .select(req.query.select?.toString().trim().replace(/,/, ' ') || 'name logo tenant labels').lean().exec();
     res.status(200).json(workspaces).end()
   } catch (err) {
@@ -340,13 +344,15 @@ export async function getWorkspaceMembers(req: AuthRequest, res: Response) {
     if (req.userPayload.isPrivileged) {
       delete query['members.user'];
     }
-    const workspace = await Workspace.findOne(query).select('members').lean().exec();
+    // Use type assertion to avoid complex union type error
+    const workspace = await (Workspace as any).findOne(query).select('members').lean().exec();
     if (!workspace) {
       res.status(404).json({ message: 'workspace not found', from: 'get-members' }).end();
       return;
     }
 
-    let users = await User.find({
+    // Use type assertion to avoid complex union type error
+    let users = await (User as any).find({
       tenant,
       _id: workspace.members.map(member => member.user)
     }).select('_id email fullName firstName lastName').lean().exec();

@@ -1,20 +1,19 @@
 {
   "name": "@qelos/monorepo",
-  "version": "2.0.21",
+  "version": "3.9.0",
   "main": "index.js",
   "scripts": {
-    "postinstall": "lerna bootstrap",
-    "install:prod-only": "lerna bootstrap -- --production",
-    "prebuild": "lerna run prebuild --parallel",
-    "build": "npm run prebuild && lerna run build",
-    "clean": "lerna clean --yes",
-    "dev": "lerna run db && env-cmd lerna run dev --parallel",
+    "install:prod-only": "pnpm install --prod",
+    "stam": "env-cmd node -e \"console.log(process.env.MONGO_URI)\"",
+    "prebuild": "pnpm -r run prebuild",
+    "build": "pnpm run prebuild && pnpm -r --parallel --stream run build",
+    "clean": "pnpm -r exec -- rm -rf node_modules",
+    "dev:run": "pnpm -r run db && pnpm -r --parallel --stream run dev",
+    "dev": "env-cmd pnpm run dev:run",
     "predev": "kill-port 3000 3001 9000 9001 9002 9003 9004 9005 9006 9007 && docker rm -f qelos-db qelos-redis",
-    "postdev": "npm run predev",
-    "populate-db": "cd apps/auth && node helpers/init.js",
-    "pack-package": "lerna exec npm pack",
-    "rename-pack": "lerna exec node ../../tools/bundler/rename-pack.js",
-    "test": "lerna run test --parallel"
+    "postdev": "pnpm run predev",
+    "populate-db": "pnpm -F @qelos/auth run init",
+    "test": "pnpm -r run test"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "engines": {
@@ -26,7 +25,6 @@
     "env-cmd": "^10.1.0",
     "jest": "^29.7.0",
     "kill-port": "github:davidmeirlevy/kill-port#3c286412b896f9979febaf0d2987a771c6b8083e",
-    "lerna": "^6.6.2",
     "ts-node": "^10.2.1",
     "tsx": "^4.20.4"
   },
