@@ -15,8 +15,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy and extract the package
 COPY qelos-ai.tgz .
-RUN tar zxvf ./qelos-ai.tgz -C ./
-WORKDIR /build/package
+RUN mkdir -p /app
+RUN tar zxvf ./qelos-ai.tgz -C /app
+WORKDIR /app/package
 
 # Rebuild Sharp for the current architecture and dynamically install esbuild for the current architecture
 RUN pnpm install -g prebuild-install && \
@@ -47,6 +48,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy only the necessary files from the builder stage
-COPY --from=builder /build/package /app
+COPY --from=builder /app/package /app
 
 CMD pnpm start

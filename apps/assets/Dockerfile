@@ -6,6 +6,7 @@ ENV PORT=9003
 ENV NODE_ENV=production
 EXPOSE $PORT
 COPY qelos-assets.tgz .
-RUN tar zxvf ./qelos-assets.tgz -C ./
+RUN mkdir -p /app
+RUN tar zxvf ./qelos-assets.tgz -C /app
 WORKDIR /package
 CMD pnpm start

@@ -6,7 +6,8 @@ ENV NODE_ENV=production
 ENV PORT=9004
 EXPOSE $PORT
 COPY qelos-no-code.tgz .
-RUN tar zxvf ./qelos-no-code.tgz -C ./
-WORKDIR /package
+RUN mkdir -p /app
+RUN tar zxvf ./qelos-no-code.tgz -C /app
+WORKDIR /app/package
 RUN pnpm i @esbuild/linux-x64
 CMD pnpm start

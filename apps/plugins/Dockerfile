@@ -6,6 +6,7 @@ ENV NODE_ENV=production
 ENV PORT=9006
 EXPOSE $PORT
 COPY qelos-plugins.tgz .
-RUN tar zxvf ./qelos-plugins.tgz -C ./
-WORKDIR /package
+RUN mkdir -p /app
+RUN tar zxvf ./qelos-plugins.tgz -C /app
+WORKDIR /app/package
 CMD pnpm start

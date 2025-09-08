@@ -6,6 +6,7 @@ ENV PORT=9000
 ENV NODE_ENV=production
 EXPOSE $PORT
 COPY qelos-auth.tgz .
-RUN tar zxvf ./qelos-auth.tgz -C ./
-WORKDIR /package
+RUN mkdir -p /app
+RUN tar zxvf ./qelos-auth.tgz -C /app
+WORKDIR /app/package
 CMD pnpm start
