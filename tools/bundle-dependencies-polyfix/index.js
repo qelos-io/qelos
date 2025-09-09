@@ -3,7 +3,7 @@ const { join } = require('node:path');
 
 function rewriteJSON(path, pkg) {
   const deps = Object.keys(pkg.dependencies);
-  pkg.bundleDependencies = deps;
+  pkg.bundleDependencies = deps.filter(dep => dep.startsWith('@qelos/'));
   fs.writeFileSync(path, JSON.stringify(pkg, null, 2));
   return deps;
 }
