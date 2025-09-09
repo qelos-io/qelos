@@ -64,7 +64,7 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
           writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
           
           // Run npm pack with the modified package.json
-          exec(`cd apps/${folder} && npm install && npm pack`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
+          exec(`cd apps/${folder} && npm install --omit=dev --no-package-lock && npm pack`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
             if (err) {
               console.log(folder + ' npm pack failed');
               console.log(err.message);
