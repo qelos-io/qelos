@@ -10,7 +10,7 @@
     "qelos"
   ],
   "scripts": {
-    "build": "tsc --noEmit --skipLibCheck",
+    "build": "tsc --skipLibCheck",
     "prepublishOnly": "npm test && npm run build",
     "start": "node --use_strict dist/index.js",
     "dev": "npx tsx watch index.ts",
