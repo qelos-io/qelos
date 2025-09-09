@@ -360,8 +360,8 @@ importers:
   apps/drafts:
     dependencies:
       '@qelos/api-kit':
-        specifier: ^3.9.0
-        version: 3.9.0
+        specifier: workspace:^
+        version: link:../../packages/api-kit
       axios:
         specifier: ^1.9.0
         version: 1.11.0
@@ -372,9 +372,6 @@ importers:
         specifier: ^4.20.4
         version: 4.20.5
     devDependencies:
-      '@types/axios':
-        specifier: ^0.14.0
-        version: 0.14.4
       '@types/express':
         specifier: ^4.17.8
         version: 4.17.23
@@ -2470,10 +2467,6 @@ packages:
 
   '@tsconfig/node22@22.0.2':
     resolution: {integrity: sha512-Kmwj4u8sDRDrMYRoN9FDEcXD8UpBSaPQQ24Gz+Gamqfm7xxn+GBR7ge/Z7pK8OXNGyUzbSwJj+TH6B+DS/epyA==}
-
-  '@types/axios@0.14.4':
-    resolution: {integrity: sha512-9JgOaunvQdsQ/qW2OPmE5+hCeUB52lQSolecrFrthct55QekhmXEwT203s20RL+UHtCQc15y3VXpby9E7Kkh/g==}
-    deprecated: This is a stub types definition. axios provides its own type definitions, so you do not need this installed.
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -8357,12 +8350,6 @@ snapshots:
   '@tsconfig/node16@1.0.4': {}
 
   '@tsconfig/node22@22.0.2': {}
-
-  '@types/axios@0.14.4':
-    dependencies:
-      axios: 1.11.0
-    transitivePeerDependencies:
-      - debug
 
   '@types/babel__core@7.20.5':
     dependencies:
