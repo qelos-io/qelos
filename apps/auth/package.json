@@ -21,9 +21,9 @@
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@qelos/api-kit": "*",
-    "@qelos/cache-manager": "*",
-    "@qelos/global-types": "*",
+    "@qelos/api-kit": "workspace:^",
+    "@qelos/cache-manager": "workspace:^",
+    "@qelos/global-types": "workspace:^",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.5",
     "jsonwebtoken": "^9.0.0",
