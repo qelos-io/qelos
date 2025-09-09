@@ -16,10 +16,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy and extract the package
 COPY qelos-ai.tgz .
 # Extract the tarball directly to root with special flags to handle paths with '..' safely
-RUN cd / && tar --absolute-names --no-same-owner --no-same-permissions -xzf qelos-ai.tgz
+RUN cd /build && tar --absolute-names --no-same-owner --no-same-permissions -xzf qelos-ai.tgz
 
 # Set working directory to the package directory
-WORKDIR /package
+WORKDIR /build/package
 
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
@@ -53,6 +53,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /
 
 # Copy only the necessary files from the builder stage
-COPY --from=builder /package /package
+COPY --from=builder /build/package /
 
 CMD pnpm start
