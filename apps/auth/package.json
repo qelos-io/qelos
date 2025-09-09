@@ -21,9 +21,9 @@
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@qelos/api-kit": "workspace:^",
-    "@qelos/cache-manager": "workspace:^",
-    "@qelos/global-types": "workspace:^",
+    "@qelos/api-kit": "*",
+    "@qelos/cache-manager": "*",
+    "@qelos/global-types": "*",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.5",
     "jsonwebtoken": "^9.0.0",
@@ -49,15 +49,6 @@
   },
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
   "bundleDependencies": [
-    "@qelos/api-kit",
-    "@qelos/cache-manager",
-    "@qelos/global-types",
-    "bcryptjs",
-    "cookie-parser",
-    "jsonwebtoken",
-    "mongoose",
-    "passport",
-    "passport-local",
-    "validator"
+    "@qelos/api-kit"
   ]
 }
