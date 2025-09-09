@@ -25,13 +25,13 @@ WORKDIR /build/package
 RUN pnpm install --no-frozen-lockfile
 
 # Rebuild Sharp for the current architecture and dynamically install esbuild for the current architecture
-RUN pnpm install -g prebuild-install && \
-    pnpm rebuild sharp && \
+RUN npm install -g prebuild-install && \
+    npm rebuild sharp && \
     ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
-      pnpm add @esbuild/linux-x64; \
+      npm install @esbuild/linux-x64; \
     elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
-      pnpm add @esbuild/linux-arm64; \
+      npm install @esbuild/linux-arm64; \
     else \
       echo "Unsupported architecture: $ARCH"; \
       exit 1; \
