@@ -2,9 +2,16 @@ const fs = require("node:fs");
 const { join } = require('node:path');
 
 function rewriteJSON(path, pkg) {
-  const deps = Object.keys(pkg.dependencies);
-  pkg.bundleDependencies = deps.filter(dep => dep.startsWith('@qelos/'));
+  const deps = Object.keys(pkg.dependencies || {});
+  const qelosDeps = deps.filter(dep => dep.startsWith('@qelos/'));
+  
+  // Ensure bundleDependencies exists and contains all @qelos dependencies
+  pkg.bundleDependencies = qelosDeps;
+  
+  // Write the updated package.json
   fs.writeFileSync(path, JSON.stringify(pkg, null, 2));
+  
+  console.log(`Added ${qelosDeps.length} @qelos dependencies to bundleDependencies:`, qelosDeps);
   return deps;
 }
 

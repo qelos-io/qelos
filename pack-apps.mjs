@@ -60,7 +60,7 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
           writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
           
           // Run npm pack with the modified package.json
-          exec(`cd apps/${folder} && npm install --ignore-scripts --omit=dev && npm pack  --ignore-scripts`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
+          exec(`cd apps/${folder} && npm install --ignore-scripts --omit=dev && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
             if (err) {
               console.log(folder + ' npm pack failed');
               console.log(err.message);
