@@ -53,18 +53,14 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
             });
           }
           if (pkg.devDependencies) {
-            Object.keys(pkg.devDependencies).forEach(dep => {
-              if (pkg.devDependencies[dep] === 'workspace:^') {
-                pkg.devDependencies[dep] = '*';
-              }
-            });
+            delete pkg.devDependencies;
           }
           
           // Write the modified package.json back
           writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
           
           // Run npm pack with the modified package.json
-          exec(`cd apps/${folder} && npm install --ignore-scripts --omit=dev && npm pack`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
+          exec(`cd apps/${folder} && npm install --ignore-scripts --omit=dev && npm pack  --ignore-scripts`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
             if (err) {
               console.log(folder + ' npm pack failed');
               console.log(err.message);
