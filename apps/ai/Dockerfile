@@ -29,9 +29,9 @@ RUN pnpm install -g prebuild-install && \
     pnpm rebuild sharp && \
     ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
-      pnpm install @esbuild/linux-x64 --no-save; \
+      pnpm add @esbuild/linux-x64; \
     elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
-      pnpm install @esbuild/linux-arm64 --no-save; \
+      pnpm add @esbuild/linux-arm64; \
     else \
       echo "Unsupported architecture: $ARCH"; \
       exit 1; \
