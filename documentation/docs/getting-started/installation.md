@@ -74,7 +74,7 @@ git clone https://github.com/qelos-io/qelos
 Install the necessary npm packages:
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 3. Build the Project
@@ -82,7 +82,7 @@ npm install
 Compile the project with the build command:
 
 ```bash
-npm run build
+pnpm build
 ```
 
 ### 4. Start the Development Server
@@ -90,7 +90,7 @@ npm run build
 Run the development server to start the application:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ### 5. Populate the Database with Initial Data
@@ -98,12 +98,12 @@ npm run dev
 For macOS or Linux users: Run the command:
 
 ```bash
-npm run populate-db
+pnpm run populate-db
 ```
 For Windows users: Run the command:
 
 ```bash
-USERNAME=test@test.com npm run populate-db
+USERNAME=test@test.com pnpm run populate-db
 ```
 
 ### 6. Access the Application

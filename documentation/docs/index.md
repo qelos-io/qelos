@@ -46,16 +46,16 @@ Get up and running with QELOS locally:
 git clone https://github.com/qelos-io/qelos.git
 
 # Install dependencies
-npm install
+pnpm install
 
 # Build the packages
-npm run build
+pnpm build
 
 # Start the development environment (includes MongoDB)
-npm run dev
+pnpm dev
 
 # Create initial data (in a new terminal)
-npm run populate-db
+pnpm populate-db
 ```
 
 This will create your first tenant and admin user to get started.
@@ -64,7 +64,7 @@ To create a new plugin:
 
 ```bash
 # Create a new QELOS plugin
-npm init plauy@latest my-plugin
+pnpm init play@latest my-plugin
 ```
 
 ## Popular Guides

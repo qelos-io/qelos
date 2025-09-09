@@ -14,7 +14,7 @@ A content service for qelos platform
 
 ## Dependencies
 - Node.js
-- npm OR yarn
+- pnpm
 - MongoDB
 - [Authentication-service](https://github.com/qelos-io/qelos)
 
@@ -30,10 +30,10 @@ In case you would like to run this project manually, for any reason, there are s
 
 ### Install
 ```sh
-$ npm install
+$ pnpm install
 ```
 
 ### Launch
 ```sh
-$ npm start
+$ pnpm start
 ```

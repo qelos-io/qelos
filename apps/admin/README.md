@@ -8,33 +8,28 @@ Written in Vue.js.
 ```
 $ docker run -p 3001:3001 qelos/admin-panel
 ```
-### As Node package
-```
-$ npm i @qelos/admin
-$ npx qelos-admin
-```
 
 ## Development and Independent Usage
 In case you would like to run this project manually, for any reason, there are several commands you need to acknowledge:
 
 ### Project setup
 ```
-npm install
+pnpm install
 ```
 
 #### Compiles and hot-reloads for development
 ```
-npm run serve
+pnpm run serve
 ```
 
 #### Compiles and minifies for production
 ```
-npm run build
+pnpm run build
 ```
 
 #### Lints and fixes files
 ```
-npm run lint
+pnpm run lint
 ```
 
 ### Vue.js Customize configuration

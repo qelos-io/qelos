@@ -33,7 +33,7 @@ The Qelos SDK provides a powerful way to work with blueprint entities through th
 To access the entities of a specific blueprint:
 
 ```typescript
-const productEntities = sdk.blueprints.entitiesOf('products');
+const productEntities = sdk.blueprints.entitiesOf('product');
 ```
 
 The `entitiesOf` method returns a `QlBlueprintEntities` instance that provides the following methods:
@@ -113,7 +113,7 @@ interface Product {
   inStock: boolean;
 }
 
-const productEntities = sdk.blueprints.entitiesOf<Product>('products');
+const productEntities = sdk.blueprints.entitiesOf<Product>('product');
 
 // Now all operations will be type-safe
 const products = await productEntities.getList();

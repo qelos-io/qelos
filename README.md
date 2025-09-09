@@ -38,26 +38,26 @@ QELOS is a platform to create SaaS products with a set of tools for developers a
 git clone https://github.com/qelos-io/qelos.git
 
 # Install dependencies
-npm install
+pnpm install
 
 # Build the packages
-npm run build
+pnpm build
 ```
 
 ### Development Mode
 
 ```bash
 # With local MongoDB instance
-npm run dev
+pnpm dev
 
 # Create initial data (in a new terminal)
-npm run populate-db
+pnpm populate-db
 ```
 
 ### Production Mode
 
 ```bash
-npm start
+pnpm start
 ```
 
 ### Default Login Credentials
@@ -78,7 +78,7 @@ cd compose
 cp .env.example .env
 
 # For all operating systems
-npm run create-env
+pnpm run create-env
 ```
 
 ### Run with Docker Compose
@@ -139,9 +139,20 @@ docker-compose -f docker-compose.scaled.yml up
   - `/auth` - Authentication service
   - `/content` - Content management service
   - `/plugins` - Plugin management service
+  - `/redis` - Redis service
+  - `/db` - Database service
+  - `/gateway` - Gateway service
+  - `/secrets` - Secrets management service
+  - `/drafts` - Drafts management service
+  - `/no-code` - No-code management service
+  
 - `/packages` - Shared libraries and utilities
   - `/api-kit` - API utilities for backend services
   - `/global-types` - Shared TypeScript types
+  - `/cache-manager` - Cache management service
+  - `sdk` - SDK for frontend applications
+  - `plugin-player` - Plugin sdk tool for plugin services
+  - `web-sdk` - Web sdk tool for web micro-frontends and communication with qelos client side
 - `/documentation` - Project documentation
 - `/compose` - Docker Compose configuration
 - `/helm` - Kubernetes Helm charts
