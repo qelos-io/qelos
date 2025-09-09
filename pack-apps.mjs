@@ -52,6 +52,13 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
               }
             });
           }
+          if (pkg.devDependencies) {
+            Object.keys(pkg.devDependencies).forEach(dep => {
+              if (pkg.devDependencies[dep] === 'workspace:^') {
+                pkg.devDependencies[dep] = '*';
+              }
+            });
+          }
           
           // Write the modified package.json back
           writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
