@@ -155,7 +155,30 @@ export async function chatCompletion(req, res) {
     return;
   }
 
-  const initialMessages = [...integration.target.details.pre_messages || [], ...options.messages];
+  // the variables will be: {{userId}} {{userEmail}} {{userFirstName}} {{userLastName}} {{workspaceId}} {{currentDate}} {{currentDateTime}} {{userRoles}}
+  const variables = {
+    userId: req.user._id,
+    userEmail: req.user.email,
+    userFirstName: req.user.firstName,
+    userLastName: req.user.lastName,
+    workspaceId: req.workspace._id,
+    workspaceName: req.workspace.name,
+    workspaceLabels: req.workspace.labels.join(','),
+    currentDate: new Date().toISOString().split('T')[0],
+    currentDateTime: new Date().toISOString(),
+    userRoles: req.user.roles.join(','),
+  };
+
+  function ingestMessageWithContext(message: any) {
+    if (message.content) {
+      message.content = message.content.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (match, key) => {
+        return variables[key?.trim()];
+      });
+    }
+    return message;
+  }
+
+  const initialMessages = [...integration.target.details.pre_messages || [], ...options.messages].map(ingestMessageWithContext);
 
   // Map all available tools
   const allTools = toolsIntegrations.map(tool => ({

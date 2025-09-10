@@ -1,6 +1,6 @@
 <template>
   <el-form @submit.native.prevent="save" class="ssr-scripts-form">
-    <p>Feel free to use the following variables:<br>
+    <p>{{ $t('Feel free to use the following variables') }}:<br>
       <el-tag class="tag" v-for="key in keys" :key="key" v-html="getKeyTemplate(key)" @click="copyToClipboard(key)"/>
     </p>
     <el-form-item label="Enter head">

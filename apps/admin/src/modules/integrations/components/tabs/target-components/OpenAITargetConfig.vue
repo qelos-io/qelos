@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { ElMessage } from 'element-plus';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import BlueprintDropdown from '@/modules/integrations/components/BlueprintDropdown.vue';
@@ -123,6 +125,20 @@ const openAiDetails = ref({
 const { blueprints } = storeToRefs(useBlueprintsStore());
 
 const systemMessage = ref('');
+const systemMessageVariables = [
+'currentDate', 
+'currentDateTime',   
+'userId', 
+'userEmail', 
+'userFirstName', 
+'userLastName', 
+'userRoles', 
+
+'workspaceId', 
+'workspaceName', 
+'workspaceLabels'
+];
+const { t } = useI18n();
 const selectedPersonality = ref('');
 const showAdvancedOptions = ref(false);
 const showRawJson = ref(false);
@@ -149,15 +165,9 @@ const initOpenAiDetails = () => {
       maxTools: props.modelValue.details.maxTools ?? 15,
       ingestedBlueprints: props.modelValue.details.ingestedBlueprints || [],
     };
-    systemMessage.value = props.modelValue.details.system_message || '';
+    systemMessage.value = props.modelValue.details.system_message  || props.modelValue.details.pre_messages?.find(msg => msg.role === 'system')?.content || '';
     selectedPersonality.value = props.modelValue.details.personality || '';
   }
-};
-
-// Initialize system message from pre_messages when component mounts or details change
-const initializeSystemMessage = () => {
-  const systemMsg = openAiDetails.value.pre_messages?.find(msg => msg.role === 'system');
-  systemMessage.value = systemMsg?.content || '';
 };
 
 // Update system message in pre_messages array
@@ -183,6 +193,21 @@ const updateSystemMessage = () => {
   
   syncOpenAiDetailsToTargetDetails();
 };
+
+// Get variable template in the format {{variableName}}
+function getVariableTemplate(key: string) {
+  return `{{${key}}}`
+}
+
+// Copy variable to clipboard
+function copyVariableToClipboard(key: string) {
+  navigator.clipboard.writeText(getVariableTemplate(key));
+  ElMessage.info({
+    message: t('Copied to clipboard'),
+    type: 'info',
+    customClass: 'copy-to-clipboard-message'
+  })
+}
 
 // Apply selected personality template with all its properties
 const applyPersonality = () => {
@@ -326,14 +351,17 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
     
     <!-- System Message -->
     <div class="system-message-container">
-      <label>System Message</label>
-      <p class="help-text">Define the AI assistant's behavior and role</p>
+      <label>{{ $t('System Message') }}</label>
+      <p class="help-text">{{ $t('Define the AI assistant\'s behavior and role') }}</p>
+      <p>{{ $t('Feel free to use the following variables') }}:<br>
+        <el-tag class="tag" v-for="key in systemMessageVariables" :key="key" v-html="getVariableTemplate(key)" @click="copyVariableToClipboard(key)"/>
+      </p>
       <el-input
         v-model="systemMessage"
         type="textarea"
         :rows="4"
-        placeholder="You are a helpful assistant..."
-        @input="updateSystemMessage"
+        :placeholder="$t('You are a helpful assistant...')"
+        @change="updateSystemMessage"
       />
     </div>
     
@@ -651,6 +679,12 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
 
 .system-message-container {
   margin-bottom: 20px;
+}
+
+.tag {
+  margin-inline: 5px;
+  margin-bottom: 8px;
+  cursor: pointer;
 }
 
 .help-text {
