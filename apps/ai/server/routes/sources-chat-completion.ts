@@ -1,6 +1,6 @@
 import { getRouter, verifyUser, populateUser, verifyInternalCall } from '@qelos/api-kit';
 import { onlyEditPrivileged } from '../middlewares/privileged-check';
-import { getSourceToIntegrate, chatCompletion, internalChatCompletion, chatCompletionPages } from '../controllers/sources-chat-completion';
+import { getSourceToIntegrate, chatCompletion, internalChatCompletion, chatCompletionPages, chatCompletionIntegrations } from '../controllers/sources-chat-completion';
 import { createBlueprintUsingAI } from '../controllers/ai-blueprints';
 
 export function sourcesChatCompletionRouter() {
@@ -26,7 +26,7 @@ export function sourcesChatCompletionRouter() {
     .post('/api/ai/sources/:sourceId/chat-completion/integrations',
        AUTHENTICATION_MIDDLEWARES,
        getSourceToIntegrate,
-       chatCompletionPages  
+       chatCompletionIntegrations  
     )
 
   router

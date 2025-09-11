@@ -40,6 +40,10 @@ const supportedSources = {
       required: [],
       optional: ['blueprint', 'metadata']
     },
+    [QelosTargetOperation.chatCompletion]: {
+      required: ['integrationId'],
+      optional: []
+    },
   },
   [IntegrationSourceKind.OpenAI]: {
     [OpenAITargetOperation.chatCompletion]: {

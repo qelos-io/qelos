@@ -348,6 +348,26 @@ export async function chatCompletion(req, res) {
                   type: 'boolean',
                   description: 'Populate the results. default: false. if true, the results will be populated with the blueprint relations.'
                 },
+                createdFrom: {
+                  type: 'string',
+                  format: 'date-time',
+                  description: 'Filter by created date from. default: null'
+                },
+                createdTo: {
+                  type: 'string',
+                  format: 'date-time',
+                  description: 'Filter by created date to. default: null'
+                },
+                updatedFrom: {
+                  type: 'string',
+                  format: 'date-time',
+                  description: 'Filter by updated date from. default: null'
+                },
+                updatedTo: {
+                  type: 'string',
+                  format: 'date-time',
+                  description: 'Filter by updated date to. default: null'
+                },
                 ...Object.keys(blueprint.properties).reduce((acc, prop) => {
                   acc[prop] = {
                     ...propertiesSchema[prop],

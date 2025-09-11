@@ -40,6 +40,7 @@ export enum QelosTargetOperation {
   setUserRoles = 'setUserRoles',
   setWorkspaceLabels = 'setWorkspaceLabels',
   updateBlueprintEntity = 'updateBlueprintEntity',
+  chatCompletion = 'chatCompletion',
 }
 
 export const OpenAITargetOperation = {

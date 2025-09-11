@@ -96,6 +96,18 @@ async function executeBlueprintOperation(
     case 'list':
       // Use query if provided, otherwise empty object
       const query = args?.query || {};
+      if (query.createdFrom) {
+        query[`metadata.created[$gte]`] = new Date(query.createdFrom).toJSON();
+      }
+      if (query.createdTo) {
+        query[`metadata.created[$lte]`] = new Date(query.createdTo).toJSON();
+      }
+      if (query.updatedFrom) {
+        query[`metadata.updated[$gte]`] = new Date(query.updatedFrom).toJSON();
+      }
+      if (query.updatedTo) {
+        query[`metadata.updated[$lte]`] = new Date(query.updatedTo).toJSON();
+      }
       return getBlueprintEntitiesForUser(tenant, user, blueprintIdentifier, query);
     
     default:

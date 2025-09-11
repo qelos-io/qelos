@@ -13,7 +13,6 @@ function callNoCodeService(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE
     .then((axiosRes: any) => axiosRes.data)
 }
 
-
 export function callPublicNoCodeService(url: string, {tenant, user}: {tenant: string, user: string}, {data, method = 'GET'}: {data?: any, method: string}) {
   return noCodeService({
     headers: { internal_secret: internalServicesSecret, tenant, user },

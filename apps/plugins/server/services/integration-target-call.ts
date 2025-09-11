@@ -11,7 +11,7 @@ import { createUser, updateUser } from './users';
 import logger from '../services/logger';
 import { createBlueprintEntity, updateBlueprintEntity } from './no-code-service';
 import { HttpTargetPayload } from '@qelos/global-types';
-import { chatCompletion } from './ai-service';
+import { chatCompletion, chatCompletionForUserByIntegration } from './ai-service';
 import { sendEmail } from './email-service';
 
 async function handleHttpTarget(
@@ -173,6 +173,12 @@ async function handleQelosTarget(integrationTarget: IIntegrationEntity,
       return createBlueprintEntity(source.tenant, payload.blueprint || details.blueprint, payload.metadata || details.metadata)
     } else if (operation === QelosTargetOperation.updateBlueprintEntity) {
       return updateBlueprintEntity(source.tenant, payload.blueprint || details.blueprint, payload.metadata || details.metadata)
+    } else if (operation === QelosTargetOperation.chatCompletion) {
+      return chatCompletionForUserByIntegration(source.tenant, source.user, {
+        integrationId: payload.integrationId,
+        threadId: payload.threadId,
+        messages: payload.messages,
+      })
     } else {
       logger.log('operation not supported yet.')
     }

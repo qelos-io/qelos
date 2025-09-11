@@ -2,7 +2,7 @@ import { IOpenAISource, OpenAITargetPayload } from "@qelos/global-types";
 import logger from "../services/logger";
 import { createAIService } from "../services/ai-service";
 import { getSourceById } from "../services/source-service";
-import { processGeneralChatCompletion, processPagesChatCompletion } from "../services/pages-chat-completion-service";
+import { processGeneralChatCompletion, processIntegrationsChatCompletion, processPagesChatCompletion } from "../services/pages-chat-completion-service";
 
 // System prompts are now imported from the service
 
@@ -41,7 +41,7 @@ export async function chatCompletionPages(req, res) {
 }
 
 export async function chatCompletionIntegrations(req, res) {
-  await processPagesChatCompletion(req, res);
+  await processIntegrationsChatCompletion(req, res);
 }
 
 export async function internalChatCompletion(req, res) {
