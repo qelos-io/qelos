@@ -264,7 +264,6 @@ onMounted(() => {
       
       <!-- Qelos Chat Completion Form -->
       <div v-if="selectedTriggerSource?.kind === IntegrationSourceKind.Qelos && modelValue.operation === QelosTriggerOperation.chatCompletion" class="chat-completion-form">
-        <!-- TODO: agent name and description -->
         <el-form label-position="top"> 
           <el-form-item>
             <h4>{{ $t('Agent Name') }}</h4>

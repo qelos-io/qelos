@@ -11,7 +11,16 @@
     },
     "types": [
       "vitest/globals",
-      "element-plus/global"
-    ]
-  }
+      "element-plus/global",
+      "vue"
+    ],
+    "lib": ["ESNext", "DOM"],
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue"
+  ]
 }

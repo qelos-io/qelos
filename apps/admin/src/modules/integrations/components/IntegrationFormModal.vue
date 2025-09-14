@@ -74,17 +74,20 @@ const findQelosSource = () => {
 watch(visible, () => {
   if (visible.value) {
     Object.assign(form, {
+      ...(props.editingIntegration || {}),
       trigger: {
         source: '',
         operation: '',
-        details: {}
+        details: {},
+        ...(props.editingIntegration?.trigger || {})
       },
       target: {
         source: '',
         operation: '',
-        details: {}
+        details: {},
+        ...(props.editingIntegration?.target || {})
       },
-      dataManipulation: [
+      dataManipulation: props.editingIntegration?.dataManipulation || [
         {
           'map': {},
           'populate': {
@@ -112,8 +115,8 @@ watch(visible, () => {
           }
         }
       ],
-      active: false
-    }, props.editingIntegration || {});
+      active: props.editingIntegration?.active || false,
+    });
     form.dataManipulation = (form.dataManipulation || []).map((row: any) => {
       delete row._id;
       return row;

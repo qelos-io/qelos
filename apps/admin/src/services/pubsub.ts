@@ -17,7 +17,7 @@ let instance: PubSubService | null = null;
 /**
  * PubSub service class
  */
-class PubSubService {
+export class PubSubService {
   private subscriptions: Subscription[] = [];
 
   /**
