@@ -22,6 +22,7 @@ export function integrationsRouter() {
     .put('/api/integrations/:integrationId', AUTHENTICATION_MIDDLEWARES.concat(updateIntegration))
     .delete('/api/integrations/:integrationId', AUTHENTICATION_MIDDLEWARES.concat(removeIntegration))
 
+  router.get('/internal-api/integrations', getBodyParser(), verifyInternalCall, getAllIntegrations)
   router.get('/internal-api/integrations/:integrationId', getBodyParser(), verifyInternalCall, getIntegration)
   return router;
 }

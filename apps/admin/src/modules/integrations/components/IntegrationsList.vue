@@ -88,9 +88,13 @@ const toggleActive = async (integration: IIntegration) => {
                     {{ sourcesById[integration.trigger.source]?.name || 'Unknown' }} → {{ sourcesById[integration.target.source]?.name || 'Unknown' }}
                   </router-link>
                 </h3>
+                <div class="integration-subtitle" v-if="integration.trigger.details.name">
+                  {{ integration.trigger.details.name }}
+                </div>
               </div>
+              <p class="integration-description" v-if="integration.trigger.details.description">{{ integration.trigger.details.description }}</p>
             </div>
-            
+
             <div class="integration-flow">
               <div class="integration-icon-container">
                 <div class="integration-icon">
@@ -214,8 +218,7 @@ const toggleActive = async (integration: IIntegration) => {
 
 .integration-title {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   margin-bottom: 8px;
 }
 
@@ -335,5 +338,33 @@ const toggleActive = async (integration: IIntegration) => {
   .integrations-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+.integration-header {
+  background-color: var(--el-color-primary-light-9);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  position: relative;
+  border-left: 4px solid var(--el-color-primary);
+}
+
+.integration-subtitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--el-color-primary-dark-2);
+  margin-top: 4px;
+}
+
+.integration-description {
+  margin: 0;
+  font-size: 14px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

@@ -34,7 +34,7 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
     const validate = property.schema ? ajv.compile(property.schema) : defaultValidate;
     const isValid = validate(value);
     if (!isValid) {
-      throw new ResponseError(`Property ${key} must be a valid object`, 406);
+      throw new ResponseError(`Property ${key} must be a valid according to schema: ${property.schema?.type || 'object'}`, 406);
     }
   }
   if (property.type === 'string') {

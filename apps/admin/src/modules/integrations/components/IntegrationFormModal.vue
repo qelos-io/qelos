@@ -73,6 +73,7 @@ const findQelosSource = () => {
 
 watch(visible, () => {
   if (visible.value) {
+    alert('clear')
     Object.assign(form, props.editingIntegration || {});
     form.dataManipulation = (form.dataManipulation || []).map((row: any) => {
       delete row._id;
@@ -183,7 +184,7 @@ const applyPastedIntegration = () => {
           <DataManipulationTab v-model="form.dataManipulation" />
         </el-tab-pane>
         <el-tab-pane :label="$t('Target')">
-          <TargetTab v-model="form.target" />
+          <TargetTab v-model="form.target" :integration-id="props.editingIntegration?._id" />
         </el-tab-pane>
       </el-tabs>
     </el-form>

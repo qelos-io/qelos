@@ -11,7 +11,7 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, { required:
     },
     chatCompletion: {
       required: [],
-      optional: ['recordThread']
+      optional: ['recordThread', 'name', 'description']
     }
   },
   [IntegrationSourceKind.ClaudeAi]: null,

@@ -24,6 +24,14 @@ export function callPluginsService(url: string, tenant: string, data?: any, meth
     .then((axiosRes: any) => axiosRes.data)
 }
 
+export function getIntegrations(tenant: string, params: Record<string, string | boolean>): Promise<IIntegration[]> {
+  const qs = new URLSearchParams({});
+  Object.entries(params).forEach(([key, value]) => {
+    qs.set(key, value.toString());
+  });
+  return callPluginsService(`/internal-api/integrations?${qs.toString()}`, tenant);
+}
+
 export function getIntegration(tenant: string, integrationId: string, populate: boolean = false): Promise<IIntegration> {
   return callPluginsService(`/internal-api/integrations/${integrationId}?$populate=${populate}`, tenant);
 }

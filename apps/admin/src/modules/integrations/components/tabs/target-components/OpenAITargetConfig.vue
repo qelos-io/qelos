@@ -4,20 +4,20 @@ import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import BlueprintDropdown from '@/modules/integrations/components/BlueprintDropdown.vue';
 import { storeToRefs } from 'pinia';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
-import { OpenAITargetOperation } from '@qelos/global-types';
+import { IntegrationSourceKind, OpenAITargetOperation, QelosTriggerOperation } from '@qelos/global-types';
 import {
   Service as CustomerSupportIcon,
   Document as DocumentIcon,
   Cpu as SaasIcon,
   DataAnalysis as DataAnalystIcon,
   Operation as ConsultantIcon,
-  ChatDotRound as DefaultChatIcon
 } from '@element-plus/icons-vue';
+import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 
 const props = defineProps<{
+  integrationId?: string;
   modelValue: any;
   operation: string;
 }>();
@@ -119,10 +119,14 @@ const openAiDetails = ref({
   embeddingType: 'local',
   maxTools: 15,
   ingestedBlueprints: [],
+  ingestedAgents: [],
 });
 
 // Get blueprints for selection
 const { blueprints } = storeToRefs(useBlueprintsStore());
+const integrationsStore = useIntegrationsStore();
+
+const agents = computed(() => integrationsStore.integrations?.filter(integration => integration._id !== props.integrationId && integration.kind[0] === IntegrationSourceKind.Qelos && integration.trigger.operation === QelosTriggerOperation.chatCompletion));
 
 const systemMessage = ref('');
 const systemMessageVariables = [
@@ -133,7 +137,6 @@ const systemMessageVariables = [
 'userFirstName', 
 'userLastName', 
 'userRoles', 
-
 'workspaceId', 
 'workspaceName', 
 'workspaceLabels'
@@ -164,6 +167,7 @@ const initOpenAiDetails = () => {
       embeddingType: props.modelValue.details.embeddingType || 'local',
       maxTools: props.modelValue.details.maxTools ?? 15,
       ingestedBlueprints: props.modelValue.details.ingestedBlueprints || [],
+      ingestedAgents: props.modelValue.details.ingestedAgents || [],
     };
     systemMessage.value = props.modelValue.details.system_message  || props.modelValue.details.pre_messages?.find(msg => msg.role === 'system')?.content || '';
     selectedPersonality.value = props.modelValue.details.personality || '';
@@ -257,6 +261,7 @@ const syncOpenAiDetailsToTargetDetails = () => {
   }
   // Ensure ingestedBlueprints is included in the model value
   newModelValue.details.ingestedBlueprints = openAiDetails.value.ingestedBlueprints || [];
+  newModelValue.details.ingestedAgents = openAiDetails.value.ingestedAgents || [];
   emit('update:modelValue', newModelValue);
 };
 
@@ -285,6 +290,29 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
           :key="blueprint.identifier"
           :label="blueprint.name"
           :value="blueprint.identifier"
+        />
+      </el-select>
+    </div>
+
+    <!-- Agent Selection -->
+    <div class="agent-selection-section">
+      <label>{{ $t('Ingest Agents') }}</label>
+      <p class="help-text">{{ $t('Select agents to be ingested as function tools for the AI') }}</p>
+      <el-select
+        v-model="openAiDetails.ingestedAgents"
+        multiple
+        filterable
+        collapse-tags-tooltip
+        placeholder="Select agents to ingest"
+        @change="syncOpenAiDetailsToTargetDetails"
+        class="agent-select"
+      >
+        <el-option
+          v-for="agent in agents"
+          :key="agent._id"
+          :label="agent.trigger.details.name || 'No name'"
+          :tooltip="agent.trigger.details.description || agent.target.details.pre_messages?.[0].content || 'No description'"
+          :value="agent._id"
         />
       </el-select>
     </div>
@@ -800,25 +828,25 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
   color: var(--el-text-color-secondary);
 }
 
-.blueprint-selection-section {
+.blueprint-selection-section, .agent-selection-section {
   margin-bottom: 25px;
 }
 
-.blueprint-selection-section label {
+.blueprint-selection-section label, .agent-selection-section label {
   display: block;
   font-weight: 600;
   margin-bottom: 5px;
   color: var(--el-text-color-primary);
 }
 
-.blueprint-selection-section .help-text {
+.blueprint-selection-section .help-text, .agent-selection-section .help-text {
   color: var(--el-text-color-secondary);
   font-size: 13px;
   margin-top: 0;
   margin-bottom: 10px;
 }
 
-.blueprint-select {
+.blueprint-select, .agent-select {
   width: 100%;
 }
 

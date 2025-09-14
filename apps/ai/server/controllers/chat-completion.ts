@@ -1,8 +1,8 @@
-import { IBlueprint, IOpenAISource, OpenAITargetPayload } from "@qelos/global-types";
+import { IBlueprint, IIntegration, IOpenAISource, OpenAITargetPayload } from "@qelos/global-types";
 import logger from "../services/logger";
 import { createAIService } from "../services/ai-service";
 import * as ChatCompletionService from "../services/chat-completion-service";
-import { executeDataManipulation, getIntegration, getSourceAuthentication, getToolsIntegrations } from "../services/plugins-service-api";
+import { executeDataManipulation, getIntegration, getIntegrations, getSourceAuthentication, getToolsIntegrations } from "../services/plugins-service-api";
 import { findSimilarTools } from "../services/vector-search-service";
 import { executeFunctionCalls } from "../services/execute-function-calls";
 import { verifyUserPermissions } from "../services/source-service";
@@ -75,11 +75,11 @@ export async function getIntegrationToIntegrate(req, res, next) {
   }
 }
 
-export async function chatCompletion(req, res) {
+export async function chatCompletion(req: any, res: any | null) {
   const { integration, integrationSourceTargetAuthentication } = req;
   const source = integration.target.source;
-  let options = req.body;
-  const useSSE = req.headers.accept?.includes('text/event-stream') || req.query.stream === 'true';
+  let options = req.body || {};
+  const useSSE = req.headers.accept?.includes('text/event-stream') || req.query?.stream === 'true';
 
   const thread: IThread | undefined = req.thread;
 
@@ -100,7 +100,6 @@ export async function chatCompletion(req, res) {
   );
 
   if (thread) {
-
     if (thread.messages && thread.messages.length > 0) {
       // Get the timestamp of the last message in the thread
       const lastThreadMessage = thread.messages[thread.messages.length - 1];
@@ -140,14 +139,16 @@ export async function chatCompletion(req, res) {
 
   let toolsIntegrations;
   let ingestedBlueprints: IBlueprint[];
+  let ingestedAgents: IIntegration[];
   try {
-    [options, toolsIntegrations, ingestedBlueprints] = await Promise.all([
+    [options, toolsIntegrations, ingestedBlueprints, ingestedAgents] = await Promise.all([
       executeDataManipulation(integration.tenant, {
         user: req.user,
         messages: safeUserMessages,
       }, integration.dataManipulation),
       getToolsIntegrations(integration.tenant, integration.target.source.kind, integration._id),
       integration.target.details.ingestedBlueprints && integration.target.details.ingestedBlueprints.length > 0 ? getAllBlueprints(integration.tenant, { identifier: integration.target.details.ingestedBlueprints }) : Promise.resolve([]),
+      integration.target.details.ingestedAgents && integration.target.details.ingestedAgents.length > 0 ? getIntegrations(integration.tenant, {active: true, kind: integration.trigger.source.kind, _id: integration.target.details.ingestedAgents.join(',')}) : Promise.resolve([]),
     ]);
   } catch (e: any) {
     logger.error('Failed to calculate prompt or load tools integrations', e);
@@ -161,9 +162,9 @@ export async function chatCompletion(req, res) {
     userEmail: req.user.email,
     userFirstName: req.user.firstName,
     userLastName: req.user.lastName,
-    workspaceId: req.workspace._id,
-    workspaceName: req.workspace.name,
-    workspaceLabels: req.workspace.labels.join(','),
+    workspaceId: req.workspace?._id,
+    workspaceName: req.workspace?.name,
+    workspaceLabels: req.workspace?.labels.join(','),
     currentDate: new Date().toISOString().split('T')[0],
     currentDateTime: new Date().toISOString(),
     userRoles: req.user.roles.join(','),
@@ -233,6 +234,19 @@ export async function chatCompletion(req, res) {
         // Handle enum values
         if (propDesc.enum && propDesc.enum.length > 0) {
           propSchema.enum = propDesc.enum;
+        }
+
+        if (typeInfo.type === 'object') {
+          propSchema = propDesc.schema;
+          propSchema.description ||= propDesc.description;
+        }
+
+        if (propDesc.multi) {
+          propSchema.type = 'array';
+          propSchema.items = {
+            ...typeInfo,
+            description: propDesc.description || propDesc.title
+          };
         }
 
         // Handle min/max for numbers
@@ -385,6 +399,46 @@ export async function chatCompletion(req, res) {
 
     // Add blueprint tools to allTools array
     allTools.push(...blueprintTools);
+  }
+
+  if (ingestedAgents && ingestedAgents.length > 0) {
+    // Create tools for each ingested agent
+    const agentTools = ingestedAgents.map(agent => ({
+      type: 'function',
+      description: agent.trigger.details.description || `AI agent integration`,
+      function: {
+        name: `call_agent_${agent.trigger.details.name.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, '')}`,
+        description: agent.trigger.details.description || `Execute AI agent to handle specific tasks`,
+        parameters: {
+          type: 'object',
+          properties: {
+            messages: {
+              type: 'array',
+              items: { type: 'object', properties: { role: { type: 'string' }, content: { type: 'string' } }, required: ['role', 'content'] },
+              description: 'User messages to pass to the agent'
+            }
+          },
+          required: ['messages']
+        }
+      },
+      handler: async (req: any, args: any) => {
+        return chatCompletion({
+          headers: {...req.headers, tenant: req.headers.tenant},
+          aiOptions: req.aiOptions,
+          body: {
+            messages: args.messages
+          },
+          user: req.user,
+          tenant: req.headers.tenant,
+          workspace: req.workspace,
+          integration: req.agent,
+          integrationSourceTargetAuthentication: (await getSourceAuthentication(req.headers.tenant, req.agent.target.source._id))?.authentication
+        }, null);
+      }
+    }));
+    
+    // Add agent tools to allTools array
+    allTools.push(...agentTools);
   }
 
   // Extract the latest user message to use for tool relevance filtering

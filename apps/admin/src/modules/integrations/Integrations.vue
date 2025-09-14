@@ -3,20 +3,26 @@ import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue
 import IntegrationFormModal from '@/modules/integrations/components/IntegrationFormModal.vue';
 import ConnectionsList from '@/modules/integrations/components/ConnectionsList.vue';
 import IntegrationsList from '@/modules/integrations/components/IntegrationsList.vue';
-import { useIntegrations } from '@/modules/integrations/compositions/integrations';
+import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
-const { result, retry } = useIntegrations();
+const integrationsStore = useIntegrationsStore();
+const router = useRouter();
 
 const editingIntegration = computed(() => {
   if (route.query.mode === 'create') return undefined;
   if (route.query.mode === 'edit' && route.query.id) {
-    return result.value?.find(integration => integration._id === route.query.id);
+    return integrationsStore.integrations?.find(integration => integration._id === route.query.id);
   }
   return undefined;
 })
+
+const closeIntegrationFormModal = () => {
+  integrationsStore.retry();
+  router.push({ query: { mode: undefined, id: undefined } });
+}
 </script>
 
 <template>
@@ -29,12 +35,12 @@ const editingIntegration = computed(() => {
     
     <ConnectionsList />
     
-    <IntegrationsList @retry="retry" />
+    <IntegrationsList @retry="integrationsStore.retry" />
 
     <IntegrationFormModal :visible="$route.query.mode === 'create' || ($route.query.mode === 'edit' && !!editingIntegration)"
       :editing-integration="editingIntegration"
-      @saved="retry"
-      @close="$router.push({ query: { mode: undefined, id: undefined } })" />
+      @saved="integrationsStore.retry"
+      @close="closeIntegrationFormModal" />
   </div>
 </template>
 

@@ -15,6 +15,7 @@ import EmailTargetConfig from './target-components/EmailTargetConfig.vue';
 
 const props = defineProps<{
   modelValue: any;
+  integrationId?: string;
 }>();
 
 const emit = defineEmits(['update:modelValue']);
@@ -261,6 +262,7 @@ onMounted(() => {
       <OpenAITargetConfig
         v-if="selectedTargetSource?.kind === IntegrationSourceKind.OpenAI && modelValue.operation === OpenAITargetOperation.chatCompletion"
         :modelValue="modelValue"
+        :integrationId="props.integrationId"
         :operation="modelValue.operation"
         @update:modelValue="emit('update:modelValue', $event)"
       />

@@ -48,10 +48,10 @@ export function findTargetIntegration(toolsIntegrations: any[], functionName: st
   return null;
 }
 
+const blueprintOperations = ['create', 'get', 'update', 'delete', 'list'];
+
 // Helper function to check if a function name is a blueprint operation
 export function isBlueprintOperation(functionName: string): { isBlueprint: boolean, operation: string, blueprintIdentifier: string } {
-  const blueprintOperations = ['create', 'get', 'update', 'delete', 'list'];
-  
   for (const operation of blueprintOperations) {
     if (functionName.startsWith(`${operation}_`)) {
       const blueprintIdentifier = functionName.substring(operation.length + 1);

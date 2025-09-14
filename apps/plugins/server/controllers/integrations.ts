@@ -20,6 +20,18 @@ export async function getAllIntegrations(req, res) {
   if (req.query.user) {
     query.user = req.query.user;
   }
+  if (req.query['trigger.source']) {
+    query['trigger.source'] = req.query['trigger.source'];
+  }
+  if (req.query['target.source']) {
+    query['target.source'] = req.query['target.source'];
+  }
+  if (req.query['trigger.kind']) {
+    query['trigger.kind'] = req.query['trigger.kind'];
+  }
+  if (req.query['target.kind']) {
+    query['target.kind'] = req.query['target.kind'];
+  }
   if (req.query.kind) {
     query.kind = req.query.kind;
   }
@@ -28,6 +40,15 @@ export async function getAllIntegrations(req, res) {
   }
   if (typeof req.query.active === 'string') {
     query.active = req.query.active === 'true' || req.query.active === '1';
+  }
+  if (req.query.id || req.query._id) {
+    const strId = req.query.id || req.query._id;
+    const ids = strId instanceof Array ? strId : strId.split(',');
+    if (ids.length === 1) {
+      query._id = ids[0];
+    } else {
+      query._id = { $in: ids }
+    }
   }
   try {
     const list = await Integration.find(query).lean().exec();
