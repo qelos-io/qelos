@@ -88,11 +88,11 @@ const toggleActive = async (integration: IIntegration) => {
                     {{ sourcesById[integration.trigger.source]?.name || 'Unknown' }} → {{ sourcesById[integration.target.source]?.name || 'Unknown' }}
                   </router-link>
                 </h3>
-                <div class="integration-subtitle" v-if="integration.trigger.details.name">
+                <div class="integration-subtitle" v-if="integration.trigger.details?.name">
                   {{ integration.trigger.details.name }}
                 </div>
               </div>
-              <p class="integration-description" v-if="integration.trigger.details.description">{{ integration.trigger.details.description }}</p>
+              <p class="integration-description" v-if="integration.trigger.details?.description">{{ integration.trigger.details.description }}</p>
             </div>
 
             <div class="integration-flow">

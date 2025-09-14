@@ -310,8 +310,8 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
         <el-option
           v-for="agent in agents"
           :key="agent._id"
-          :label="agent.trigger.details.name || 'No name'"
-          :tooltip="agent.trigger.details.description || agent.target.details.pre_messages?.[0].content || 'No description'"
+          :label="agent.trigger.details?.name || 'No name'"
+          :tooltip="agent.trigger.details?.description || agent.target.details?.pre_messages?.[0].content || 'No description'"
           :value="agent._id"
         />
       </el-select>

@@ -407,7 +407,7 @@ export async function chatCompletion(req: any, res: any | null) {
       type: 'function',
       description: agent.trigger.details.description || `AI agent integration`,
       function: {
-        name: `call_agent_${agent.trigger.details.name.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, '')}`,
+        name: `call_agent_${agent.trigger.details?.name.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, '') || agent._id}`,
         description: agent.trigger.details.description || `Execute AI agent to handle specific tasks`,
         parameters: {
           type: 'object',
