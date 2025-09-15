@@ -18,6 +18,6 @@ const valueAsSfeHTML = computed(() => {
 
 <style scoped>
 .pre {
-  white-space: pre;
+  white-space: pre-wrap;
 }
 </style>
