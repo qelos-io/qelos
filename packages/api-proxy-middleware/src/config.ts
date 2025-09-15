@@ -29,7 +29,7 @@ export function getApiProxyConfig(): IApiProxyConfig {
       proxies: [
         '/api/blocks',
         '/api/configurations',
-        '/api/layouts',
+        '/api/tenants-configurations',
       ],
     }),
     authService: getServiceFromEnvVars('auth', 'AUTH_SERVICE', {
@@ -58,7 +58,7 @@ export function getApiProxyConfig(): IApiProxyConfig {
     draftsService: getServiceFromEnvVars('drafts', 'DRAFTS_SERVICE', { port: 9005, proxies: ['/api/drafts'] }),
     pluginsService: getServiceFromEnvVars('plugins', 'PLUGINS_SERVICE', {
       port: 9006,
-      proxies: ['/api/plugins', '/api/on', '/api/events', '/api/integrations', '/api/integration-sources', '/api/integrate-source', '/api/integrate'],
+      proxies: ['/api/plugins', '/api/on', '/api/events', '/api/integrations', '/api/integration-sources'],
     }),
     aiService: getServiceFromEnvVars('ai', 'AI_SERVICE', {
       port: 9007,

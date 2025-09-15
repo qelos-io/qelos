@@ -385,14 +385,14 @@ importers:
   apps/gateway:
     dependencies:
       '@qelos/api-kit':
-        specifier: ^3.9.0
-        version: 3.9.0
+        specifier: workspace:^
+        version: link:../../packages/api-kit
       '@qelos/api-proxy-middleware':
-        specifier: ^3.9.0
-        version: 3.9.0(@types/express@4.17.23)
+        specifier: workspace:^
+        version: link:../../packages/api-proxy-middleware
       '@qelos/cache-manager':
-        specifier: ^3.9.0
-        version: 3.9.0
+        specifier: workspace:^
+        version: link:../../packages/cache-manager
       tsx:
         specifier: ^4.20.4
         version: 4.20.5
@@ -1803,12 +1803,6 @@ packages:
 
   '@protobufjs/utf8@1.1.0':
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
-
-  '@qelos/api-kit@3.9.0':
-    resolution: {integrity: sha512-dMfiOpDF0ERSCvldRkr6dghce2LtenozKJ0gNPy19FN6bS29M1g1NCB7q3YD0PYSmRnSvp7BMzQwrrk+mSJJGw==}
-
-  '@qelos/api-proxy-middleware@3.9.0':
-    resolution: {integrity: sha512-pS1UsFV6ThXibibQoIPMdArr8kK89ikZt7phE+R8nETEnd2zW+bdZi7zwfyehnayxU+/ymUqaaNS0MO90YKFYA==}
 
   '@qelos/cache-manager@3.9.0':
     resolution: {integrity: sha512-HVKEYUztj8D/tWJwZMqApZy4le4xT4tGkYu/hmMksSqsW2Xp8NZJRnV1+cVlnuR6mhJbGsB5TFm8vqYg6/DdpQ==}
@@ -7599,26 +7593,6 @@ snapshots:
   '@protobufjs/pool@1.1.0': {}
 
   '@protobufjs/utf8@1.1.0': {}
-
-  '@qelos/api-kit@3.9.0':
-    dependencies:
-      axios: 1.11.0
-      cors: 2.8.5
-      express: 4.19.2
-      morgan: 1.10.1
-    transitivePeerDependencies:
-      - debug
-      - supports-color
-
-  '@qelos/api-proxy-middleware@3.9.0(@types/express@4.17.23)':
-    dependencies:
-      cors: 2.8.5
-      http-proxy-middleware: 2.0.9(@types/express@4.17.23)
-      node-fetch: 2.7.0
-    transitivePeerDependencies:
-      - '@types/express'
-      - debug
-      - encoding
 
   '@qelos/cache-manager@3.9.0':
     dependencies:

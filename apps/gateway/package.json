@@ -20,9 +20,9 @@
   },
   "main": "dist/index.js",
   "dependencies": {
-    "@qelos/api-kit": "^3.9.0",
-    "@qelos/api-proxy-middleware": "^3.9.0",
-    "@qelos/cache-manager": "^3.9.0",
+    "@qelos/api-kit": "workspace:^",
+    "@qelos/api-proxy-middleware": "workspace:^",
+    "@qelos/cache-manager": "workspace:^",
     "tsx": "^4.20.4"
   },
   "publishConfig": {
@@ -37,7 +37,6 @@
   "bundleDependencies": [
     "@qelos/api-kit",
     "@qelos/api-proxy-middleware",
-    "@qelos/cache-manager",
-    "tsx"
+    "@qelos/cache-manager"
   ]
 }

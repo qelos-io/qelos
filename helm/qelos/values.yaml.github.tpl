@@ -84,7 +84,6 @@ auth:
     CONTENT_SERVICE_URL: content-service
     CONTENT_SERVICE_PORT: 9001
     
-
 content:
   image:
     repository: ghcr.io/{{ .Values.GITHUB_USERNAME }}/qelos/content
@@ -96,6 +95,7 @@ content:
     IP: 0.0.0.0
     AUTH_SERVICE_URL: auth-service
     AUTH_SERVICE_PORT: 9000
+    BASIC_TENANT: 0
 
 secrets:
   image:
