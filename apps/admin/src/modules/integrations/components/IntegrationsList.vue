@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
-import { useIntegrations } from '@/modules/integrations/compositions/integrations';
 import integrationsService from '@/services/integrations-service';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { computed } from 'vue';
@@ -9,11 +8,12 @@ import { Check as IconCheck, Close as IconClose } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { IIntegrationSource, IIntegration } from '@qelos/global-types';
+import { useIntegrationsStore } from '../store/integrations';
 
 const emit = defineEmits(['retry']);
 
 const kinds = useIntegrationKinds();
-const { loaded, result, retry } = useIntegrations();
+const integrationsStore = useIntegrationsStore();
 const integrationSourcesStore = useIntegrationSourcesStore();
 
 // Map source IDs to source objects
@@ -27,7 +27,7 @@ const sourcesById = computed(() => {
 
 const remove = useConfirmAction((id: string) => {
   integrationsService.remove(id).then(() => {
-    retry();
+    integrationsStore.retry();
     emit('retry');
   });
 });
@@ -52,7 +52,7 @@ const toggleActive = async (integration: IIntegration) => {
       <h3 class="section-title">{{ $t('Your Integrations') }}</h3>
     </div>
     
-    <el-skeleton :loading="!loaded" :count="3" animated>
+    <el-skeleton :loading="!integrationsStore.loaded" :count="3" animated>
       <template #template>
         <div class="integrations-grid">
           <div class="integration-skeleton" v-for="i in 3" :key="i">
@@ -64,7 +64,7 @@ const toggleActive = async (integration: IIntegration) => {
       </template>
       
       <template #default>
-        <div v-if="loaded && result.length === 0" class="empty-state">
+        <div v-if="integrationsStore.loaded && integrationsStore.integrations.length === 0" class="empty-state">
           <el-empty :description="$t('No integrations found')">
             <el-button type="primary" @click="$router.push({ query: { mode: 'create' } })">
               <el-icon><icon-plus /></el-icon>
@@ -74,7 +74,7 @@ const toggleActive = async (integration: IIntegration) => {
         </div>
         
         <div v-else class="integrations-grid">
-          <div v-for="integration in result" 
+          <div v-for="integration in integrationsStore.integrations" 
                :key="integration._id"
                :id="'integration-' + integration._id"
                class="integration-card"

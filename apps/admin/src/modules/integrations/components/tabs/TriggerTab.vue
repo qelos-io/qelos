@@ -7,6 +7,7 @@ import { useIntegrationKinds } from '@/modules/integrations/compositions/integra
 import { TriggerOperation, useIntegrationKindsTriggerOperations } from '@/modules/integrations/compositions/integration-kinds-operations';
 import { OpenAITargetOperation, IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
 import { ElMessage } from 'element-plus';
+import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 
 const props = defineProps<{
   modelValue: any;
@@ -18,6 +19,7 @@ const emit = defineEmits(['update:modelValue']);
 const store = useIntegrationSourcesStore();
 const kinds = useIntegrationKinds();
 const triggerOperations = useIntegrationKindsTriggerOperations();
+const integrationsStore = useIntegrationsStore();
 
 const selectedTriggerOperation = ref<TriggerOperation>();
 const recordThread = ref(false);
@@ -50,6 +52,8 @@ const functionParameters = ref(JSON.stringify({
   "properties": {},
   "required": []
 }, null, 2));
+const allowedIntegrationIds = ref([]);
+const blockedIntegrationIds = ref([]);
 
 // Copy text to clipboard
 const copyToClipboard = (text: string) => {
@@ -83,7 +87,9 @@ const updateFunctionCallingDetails = () => {
       ...newModelValue.details,
       name: functionName.value,
       description: functionDescription.value,
-      parameters: parameters
+      parameters: parameters,
+      allowedIntegrationIds: allowedIntegrationIds.value,
+      blockedIntegrationIds: blockedIntegrationIds.value
     };
     emit('update:modelValue', newModelValue);
   } catch (e) {
@@ -93,7 +99,9 @@ const updateFunctionCallingDetails = () => {
       ...newModelValue.details,
       name: functionName.value,
       description: functionDescription.value,
-      parameters: {} // Default to empty object if JSON is invalid
+      parameters: {}, // Default to empty object if JSON is invalid
+      allowedIntegrationIds: allowedIntegrationIds.value,
+      blockedIntegrationIds: blockedIntegrationIds.value
     };
     emit('update:modelValue', newModelValue);
   }
@@ -174,6 +182,8 @@ onMounted(() => {
         "properties": {},
         "required": []
       }, null, 2);
+      allowedIntegrationIds.value = details.allowedIntegrationIds || [];
+      blockedIntegrationIds.value = details.blockedIntegrationIds || [];
     }
     
     // Initialize recordThread value from model details if available
@@ -342,6 +352,51 @@ onMounted(() => {
               language="json" 
             />
           </el-form-item>
+          
+          <!-- Allowed Integrations Selection -->
+          <el-form-item label="Allowed Integrations">
+            <small class="help-text">Select integrations that are allowed to use this function</small>
+            <el-select
+              v-model="allowedIntegrationIds"
+              multiple
+              filterable
+              collapse-tags-tooltip
+              placeholder="Select allowed integrations"
+              @change="updateFunctionCallingDetails"
+              class="integration-select"
+            >
+              <el-option
+                v-for="integration in integrationsStore.integrations?.filter(i => i.kind[0] === IntegrationSourceKind.Qelos && i.trigger.operation === QelosTriggerOperation.chatCompletion)"
+                :key="integration._id"
+                :label="integration.trigger.details?.name || 'No name'"
+                :tooltip="integration.trigger.details?.description || 'No description'"
+                :value="integration._id"
+              />
+            </el-select>
+            <small class="help-text">If none selected, all integrations are allowed</small>
+          </el-form-item>
+          
+          <!-- Blocked Integrations Selection -->
+          <el-form-item label="Blocked Integrations">
+            <small class="help-text">Select integrations that are blocked from using this function</small>
+            <el-select
+              v-model="blockedIntegrationIds"
+              multiple
+              filterable
+              collapse-tags-tooltip
+              placeholder="Select blocked integrations"
+              @change="updateFunctionCallingDetails"
+              class="integration-select"
+            >
+              <el-option
+                v-for="integration in integrationsStore.integrations?.filter(i => i.kind[0] === IntegrationSourceKind.Qelos && i.trigger.operation === QelosTriggerOperation.chatCompletion)"
+                :key="integration._id"
+                :label="integration.trigger.details?.name || 'No name'"
+                :tooltip="integration.trigger.details?.description || 'No description'"
+                :value="integration._id"
+              />
+            </el-select>
+          </el-form-item>
         </el-form>
       </div>
       
@@ -503,5 +558,9 @@ onMounted(() => {
   margin-top: 5px;
   font-size: 0.8em;
   color: var(--el-text-color-secondary);
+}
+
+.integration-select {
+  width: 100%;
 }
 </style>

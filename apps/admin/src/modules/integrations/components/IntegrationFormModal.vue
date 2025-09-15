@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { reactive, watch, nextTick, ref } from 'vue';
-import { IIntegration, IntegrationSourceKind } from '@qelos/global-types';
+import { reactive, watch, nextTick, ref, computed } from 'vue';
+import { IIntegration, IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import integrationsService from '@/services/integrations-service';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
@@ -10,6 +10,7 @@ import { ElMessage } from 'element-plus';
 import TriggerTab from '@/modules/integrations/components/tabs/TriggerTab.vue';
 import DataManipulationTab from '@/modules/integrations/components/tabs/DataManipulationTab.vue';
 import TargetTab from '@/modules/integrations/components/tabs/TargetTab.vue';
+import FunctionToolsTab from '@/modules/integrations/components/tabs/FunctionToolsTab.vue';
 import { DocumentCopy } from '@element-plus/icons-vue';
 
 const visible = defineModel<boolean>('visible')
@@ -21,6 +22,12 @@ const pasteContent = ref('')
 const pasteError = ref('')
 
 const store = useIntegrationSourcesStore();
+
+// Computed property to check if the integration is a chat completion integration
+const isChatCompletionIntegration = computed(() => {
+  return form.trigger?.source && 
+         form.trigger?.operation === QelosTriggerOperation.chatCompletion;
+});
 
 const form = reactive<Pick<IIntegration, 'trigger' | 'target' | 'dataManipulation' | 'active'>>({
   trigger: {
@@ -227,6 +234,10 @@ const applyPastedIntegration = () => {
         </el-tab-pane>
         <el-tab-pane :label="$t('Target')">
           <TargetTab v-model="form.target" :integration-id="props.editingIntegration?._id" />
+        </el-tab-pane>
+        <el-tab-pane v-if="isChatCompletionIntegration" :label="$t('Function Tools')">
+          <FunctionToolsTab v-if="props.editingIntegration?._id" :integration-id="props.editingIntegration?._id" />
+          <el-alert v-else :title="$t('Please save the integration first')" type="warning" show-icon />
         </el-tab-pane>
       </el-tabs>
     </el-form>

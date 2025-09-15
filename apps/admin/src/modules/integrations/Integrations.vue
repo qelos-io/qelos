@@ -39,7 +39,6 @@ const closeIntegrationFormModal = () => {
 
     <IntegrationFormModal :visible="$route.query.mode === 'create' || ($route.query.mode === 'edit' && !!editingIntegration)"
       :editing-integration="editingIntegration"
-      @saved="integrationsStore.retry"
       @close="closeIntegrationFormModal" />
   </div>
 </template>
