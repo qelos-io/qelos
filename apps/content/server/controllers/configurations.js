@@ -41,6 +41,7 @@ async function createConfiguration(req, res) {
     tenant: req.headers.tenant,
     key: body.key,
     public: !!body.public,
+    kind: body.kind,
     metadata: body.metadata || {},
   })
 

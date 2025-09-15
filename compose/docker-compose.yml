@@ -74,6 +74,7 @@ services:
       IP: 0.0.0.0
       AUTH_SERVICE_URL: auth
       SHOW_LOGS: ${SHOW_LOGS}
+      BASIC_TENANT: ${BASIC_TENANT}
     depends_on:
       - redis
   secrets:

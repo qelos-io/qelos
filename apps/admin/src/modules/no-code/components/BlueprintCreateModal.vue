@@ -85,7 +85,7 @@ async function generateBlueprints() {
   });
   
   try {
-    const response = await fetch(`/api/integrate-source/${selectedSourceId.value}/no-code-completion/blueprints`, {
+    const response = await fetch(`/api/ai/sources/${selectedSourceId.value}/blueprints`, {
       method: 'post',
       headers: {'content-type': 'application/json'},
       body: JSON.stringify({
