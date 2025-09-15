@@ -25,4 +25,3 @@ module.exports = function (app) {
   app.get('/internal-api/host-tenant', getTenantByHost)
   app.get('/internal-api/configurations/:configKey', verifyInternalCall, getConfigurationByKey, getConfiguration)
 }
-1

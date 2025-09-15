@@ -106,7 +106,7 @@ async function removeConfiguration(req, res) {
   }
 
   try {
-    await Configuration.deleteOne({_id: configuration._id, tenant: req.headers.tenant })
+    await Configuration.deleteOne({_id: configuration._id, tenant })
     res.status(200).json(configuration).end()
   } catch {
     res.status(500).json({ message: 'remove configuration failed' }).end()
