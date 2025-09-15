@@ -6,7 +6,6 @@ const BASIC_APP_CONFIGURATION_KEY = 'app-configuration'
 function getConfigurationByKey(req, res, next) {
   Configuration.getWithCache(req.headers.tenant, req.params.configKey, req.user && req.user.isAdmin)
     .then(configuration => {
-      console.log('get from key', configuration);
       if (!configuration) {
         return Promise.reject(null)
       }

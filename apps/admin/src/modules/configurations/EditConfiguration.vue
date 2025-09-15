@@ -6,7 +6,7 @@
     <WorkspaceConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"
       v-else-if="config.key === 'workspace-configuration'" />
     <AuthConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"
-      v-else-if="config.key === 'auth-configuration' || config.kind === 'auth'" />
+      v-else-if="config.key.startsWith('auth-configuration') || config.kind === 'auth'" />
     <AppConfigurationForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"
       v-else-if="config.key === 'app-configuration'" />
     <UsersHeaderForm :kind="config.kind" :metadata="config.metadata" :submitting="submitting" @save="submit"

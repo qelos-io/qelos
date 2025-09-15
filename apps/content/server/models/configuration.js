@@ -52,18 +52,18 @@ Configuration.statics.clearCache = function (tenant, key) {
 
 Configuration.statics.getWithCache = function getByKey(tenant, key, isAdmin) {
   const publicKey = cachePrefix + tenant + ':' + key;
-  console.log('get with cache', publicKey, isAdmin);
   if (isAdmin) {
     return cacheManager.wrap(cachePrefix + tenant + ':admin:' + key, () => {
       return this.getForEdit(tenant, key).lean().then(config => {
         if (config.public) {
           cacheManager.setItem(publicKey, JSON.stringify({
+            kind: config.kind,
             tenant,
             key,
             metadata: config.metadata
           }, { ttl: FOREVER_TTL })).catch()
         }
-        return JSON.stringify({ tenant, key, metadata: config.metadata || {} });
+        return JSON.stringify({ kind: config.kind, tenant, key, metadata: config.metadata || {} });
       });
     }, { ttl: FOREVER_TTL })
   }
