@@ -1,6 +1,6 @@
 export const isDev = process.env.NODE_ENV !== 'production';
 export const mongoUri = process.env.MONGO_URI || 'mongodb://localhost/ai-service'
-export const redisUrl = process.env.REDIS_URL;
+export const redisUrl = process.env.REDIS_URL || (process.env.REDIS_HOST ? `${process.env.REDIS_HOST}:${process.env.REDIS_PORT}` : undefined);
 export const generalOpenAiToken = process.env.OPEN_AI_TOKEN;
 export const generalClaudeAiToken = process.env.CLAUDE_AI_TOKEN; // doesn't exist yet
 export const internalServicesSecret = process.env.INTERNAL_SECRET

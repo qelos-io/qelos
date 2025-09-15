@@ -20,7 +20,7 @@ export const processedCookieExpiration = Number(process.env.PROCESSED_COOKIE_EXP
 export const cookieTokenExpiration = Number(process.env.COOKIE_TOKEN_EXPIRATION || THIRTY_DAYS); // in ms
 export const defaultRole = process.env.DEFAULT_ROLE ? process.env.DEFAULT_ROLE : roles[0];
 export const defaultAuthType = process.env.DEFAULT_AUTH_TYPE || 'cookie';
-export const redisUrl = process.env.REDIS_URL;
+export const redisUrl = process.env.REDIS_URL || (process.env.REDIS_HOST ? `${process.env.REDIS_HOST}:${process.env.REDIS_PORT}` : undefined);
 export const internalServicesSecret = process.env.INTERNAL_SECRET;
 export const secretsToken = process.env.SECRETS_TOKEN || process.env.AUTH_SERVICE_SECRET;
 export const showLogs = process.env.NODE_ENV !== 'production' || process.env.SHOW_LOGS;

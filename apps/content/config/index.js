@@ -16,5 +16,5 @@ module.exports = {
   workspaceConfiguration:
     process.env.WORKSPACE_CONFIGURATION || "workspace-configuration",
   ssrScriptsConfiguration: process.env.SSR_SCRIPTS || "ssr-scripts",
-  redisUrl: process.env.REDIS_URL,
+  redisUrl: process.env.REDIS_URL || (process.env.REDIS_HOST ? `${process.env.REDIS_HOST}:${process.env.REDIS_PORT}` : undefined),
 };
