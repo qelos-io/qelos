@@ -91,6 +91,8 @@
               <span class="help-text">{{ $t('Add a background image to enhance your login page') }}</span>
             </template>
           </FormInput>
+          <div>{{ $t('-- OR --') }}</div>
+          <FormInput v-model="edited.backgroundImage" title="Background Image URL" type="url"/>
           
           <FormInput v-model="edited.loginTitle"
                     :disabled="!!edited.slots?.loginHeader"
