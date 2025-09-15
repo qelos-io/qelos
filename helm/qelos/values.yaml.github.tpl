@@ -83,6 +83,7 @@ auth:
     SECRETS_SERVICE_PORT: 9002
     CONTENT_SERVICE_URL: content-service
     CONTENT_SERVICE_PORT: 9001
+    BASIC_TENANT: 0
     
 content:
   image:
