@@ -42,7 +42,7 @@ const openAiModelOptions = [
   { label: 'GPT-3.5 Turbo 16k', identifier: 'gpt-3.5-turbo-16k' },
   { label: 'GPT-4 Vision', identifier: 'gpt-4-vision-preview' },
   { label: 'GPT-4 32k', identifier: 'gpt-4-32k' },
-  { label: 'GPT-4.1', identifier: 'gpt-4-1' },
+  { label: 'GPT-4.1', identifier: 'gpt-4.1' },
 
 ];
 
