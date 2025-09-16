@@ -46,7 +46,6 @@ const IntegrationSourceSchema = new mongoose.Schema<IIntegrationSource>({
   }
 });
 
-IntegrationSourceSchema.index({ tenant: 1 });
 IntegrationSourceSchema.index({ tenant: 1, kind: 1 });
 const IntegrationSource = mongoose.model<IIntegrationSource>('IntegrationSource', IntegrationSourceSchema);
 

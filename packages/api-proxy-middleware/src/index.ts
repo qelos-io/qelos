@@ -47,6 +47,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
       console.log('excluding proxy to ' + service.name);
       return;
     }
+    console.log(`Proxy ${service.name} to: `, service.proxies);
     app.use(service.proxies, getProxy(getProxyTarget(service)));
   }
 

@@ -66,7 +66,6 @@ const IntegrationSchema = new Schema<IIntegration>({
   },
 });
 
-IntegrationSchema.index({ tenant: 1 });
 IntegrationSchema.index({ tenant: 1, kind: 1 });
 const Integration = mongoose.model<IIntegration>('Integration', IntegrationSchema);
 

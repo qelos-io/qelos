@@ -9,8 +9,10 @@
     "clean": "pnpm -r exec -- rm -rf node_modules",
     "dev:run": "pnpm -r run db && pnpm -r --parallel --stream run dev",
     "dev": "env-cmd pnpm run dev:run",
-    "predev": "kill-port 3000 3001 9000 9001 9002 9003 9004 9005 9006 9007 && docker rm -f qelos-db qelos-redis",
-    "postdev": "pnpm run predev",
+    "predev": "pnpm stop && pnpm check-and-build",
+    "check-and-build": "if [ ! -d \"apps/admin/dist\" ]; then pnpm install; fi && pnpm build",
+    "postdev": "pnpm stop",
+    "stop": "kill-port 3000 3001 9000 9001 9002 9003 9004 9005 9006 9007 && docker rm -f qelos-db qelos-redis",
     "populate-db": "pnpm -F @qelos/auth run init",
     "test": "pnpm -r run test"
   },
