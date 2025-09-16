@@ -1,6 +1,6 @@
 import { start, config, app as getApp } from "@qelos/api-kit";
 import cacheManager from "./cache-manager";
-import apiProxy from "@qelos/api-proxy-middleware";
+import apiProxy from "./server/services/proxy-middleware";
 
 config({ cors: false, bodyParser: false });
 

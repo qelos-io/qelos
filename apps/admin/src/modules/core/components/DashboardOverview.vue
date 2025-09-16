@@ -91,7 +91,7 @@
         <div class="unified-card" v-if="!loadingBlocks">
           <StatsCard
             color="cyan"
-            :value="blocks.length"
+            :value="blocks?.length"
             title="Total Content Boxes"
             actionText="View Content Boxes"
             actionRoute="/blocks"

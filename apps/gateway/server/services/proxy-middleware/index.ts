@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import { createProxyMiddleware as proxy } from 'http-proxy-middleware';
 import { IApiProxyConfig, IServiceProxyConfig } from './types';
 import { getApiProxyConfig } from './config';
@@ -196,23 +195,30 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
         cookie: req.headers.cookie,
         tenanthost: req.headers.host,
         authorization: req.headers.authorization,
+        'x-impersonate-tenant': req.headers['x-impersonate-tenant'] || req.query.impersonateTenant?.toString() || '',
+        'x-impersonate-user': req.headers['x-impersonate-user'] || req.query.impersonateUser?.toString() || '',
+        'x-impersonate-workspace': req.headers['x-impersonate-workspace'] || req.query.impersonateWorkspace?.toString() || '',
       },
     })
       .then((response) => {
-        const setCookie = response.headers.raw()['set-cookie'];
+        const setCookie = response.headers.get('set-cookie');
+        const setTenant = req.headers.tenant === defaultTenant && response.headers.get('x-qelos-tenant');
         if (setCookie) {
           res.set('set-cookie', setCookie);
         }
+        if (setTenant) {
+          req.headers.tenant = setTenant;
+        }
+
         if (response.status === 200) {
           return response.text();
         }
       })
       .then((user = '') => {
         req.headers.user = user;
-
         next();
       })
-      .catch(() => {
+      .catch((err) => {
         next();
       });
   });

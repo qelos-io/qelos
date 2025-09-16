@@ -2,6 +2,7 @@ import { getUser, getUserMetadata, updateUser } from '../services/users'
 import { Response } from 'express'
 import { AuthRequest } from '../../types'
 import { getWorkspaceForUser } from '../services/workspaces';
+import { basicTenant } from '../../config';
 
 async function getImpersonate(req: AuthRequest, res: Response) {
   const userId = req.headers['x-impersonate-user'] as string;
@@ -39,7 +40,11 @@ async function getImpersonate(req: AuthRequest, res: Response) {
 }
 
 export async function getMe(req: AuthRequest, res: Response) {
+  if (req.headers.tenant === basicTenant && req.userPayload.isPrivileged && (req.headers['x-impersonate-tenant'] || req.query.impersonateTenant)) {
+    res.set('x-qelos-tenant', req.headers['x-impersonate-tenant'] || req.query.impersonateTenant);
+  }
   if (req.userPayload.isPrivileged && req.headers['x-impersonate-user']) {
+    console.log('impersonate user: ' + req.headers['x-impersonate-user'])
     return getImpersonate(req, res)
   }
 

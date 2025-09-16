@@ -15,12 +15,14 @@
   "scripts": {
     "dev": "node --import tsx --watch index.ts",
     "prepublishOnly": "tsc",
-    "build": "tsc",
+    "build": "tsc --noEmit --skipLibCheck",
     "start": "node --import tsx index.ts"
   },
   "main": "index.ts",
   "dependencies": {
-    "@qelos/api-proxy-middleware": "workspace:^",
+    "cors": "^2.8.5",
+    "http-proxy-middleware": "^2.0.2",
+    "node-fetch": "^2.6.7",
     "@qelos/api-kit": "workspace:^",
     "@qelos/cache-manager": "workspace:^",
     "tsx": "^4.20.4"
@@ -35,7 +37,6 @@
   },
   "bundleDependencies": [
     "@qelos/api-kit",
-    "@qelos/api-proxy-middleware",
     "@qelos/cache-manager"
   ]
 }

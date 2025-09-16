@@ -13,7 +13,7 @@ function getServiceFromEnvVars(
     name,
     protocol: process.env[`${prefix}_PROTOCOL`] || 'http',
     url: process.env[`${prefix}_URL`] || '127.0.0.1',
-    port: process.env[`${prefix}_PORT`] || port,
+    port: process.env[`${prefix}_PORT`] || port as string,
     proxies: getProxies(process.env[`${prefix}_PROXIES`], proxies),
   };
 }

@@ -16,8 +16,18 @@ function getConfigurationByKey(req, res, next) {
 }
 
 function getConfigurationsList(req, res) {
-  Configuration.find({ tenant: req.headers.tenant })
-    .select('key public description created')
+  const query = { tenant: req.headers.tenant };
+  if (req.query?.key) {
+    query.key = new RegExp(req.query.key, 'i');
+  }
+  if (req.query?.public) {
+    query.public = req.query.public === 'true' || req.query.public === '1';
+  }
+  if (req.query?.kind) {
+    query.kind = req.query.kind;
+  }
+  Configuration.find(query)
+    .select('key tenant public kind description created')
     .lean()
     .exec()
     .then(list => {

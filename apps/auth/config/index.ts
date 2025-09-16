@@ -24,3 +24,4 @@ export const redisUrl = process.env.REDIS_URL || (process.env.REDIS_HOST ? `${pr
 export const internalServicesSecret = process.env.INTERNAL_SECRET;
 export const secretsToken = process.env.SECRETS_TOKEN || process.env.AUTH_SERVICE_SECRET;
 export const showLogs = process.env.NODE_ENV !== 'production' || process.env.SHOW_LOGS;
+export const basicTenant = process.env.BASIC_TENANT || "0";
