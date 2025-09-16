@@ -1,6 +1,6 @@
 {
   "name": "@qelos/plugin-play",
-  "version": "3.9.0",
+  "version": "3.10.0",
   "description": "Play a plugin for Qelos!",
   "main": "./dist/index.js",
   "scripts": {
