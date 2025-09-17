@@ -13,7 +13,7 @@ import {
 export function findTargetIntegration(toolsIntegrations: any[], functionName: string) {
   // First check if it's a regular integration
   const integration = toolsIntegrations.find(
-    tool => (tool.trigger?.details?.name || tool.name) === functionName
+    tool => (tool.trigger?.details?.name || tool.name || tool.function?.name) === functionName
   );
   
   if (integration) {

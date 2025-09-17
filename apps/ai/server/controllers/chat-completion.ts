@@ -422,23 +422,24 @@ export async function chatCompletion(req: any, res: any | null) {
         }
       },
       handler: async (req: any, args: any) => {
+        const fullAgent = await getIntegration(req.headers.tenant, agent._id, true);
         return chatCompletion({
-          headers: {...req.headers, tenant: req.headers.tenant},
-          aiOptions: req.aiOptions,
+          headers: {...req.headers, tenant: req.headers.tenant, user: req.headers.user},
           body: {
             messages: args.messages
           },
           user: req.user,
           tenant: req.headers.tenant,
           workspace: req.workspace,
-          integration: req.agent,
-          integrationSourceTargetAuthentication: (await getSourceAuthentication(req.headers.tenant, req.agent.target.source._id))?.authentication
+          integration: fullAgent,
+          integrationSourceTargetAuthentication: (await getSourceAuthentication(req.headers.tenant, fullAgent.target.source?._id || fullAgent.target.source))?.authentication
         }, null);
       }
     }));
     
     // Add agent tools to allTools array
     allTools.push(...agentTools);
+    toolsIntegrations.push(...agentTools);
   }
 
   // Extract the latest user message to use for tool relevance filtering
@@ -534,15 +535,21 @@ export async function chatCompletion(req: any, res: any | null) {
         [],
         onNewMessage
       );
-      res.status(200).json(result).end();
+      if (res) {
+        res.status(200).json(result).end();
+      } else {
+        return result;
+      }
     }
   } catch (error) {
     logger.error('Error processing AI chat completion', error);
     if (useSSE) {
       res.write(`data: ${JSON.stringify({ type: 'error', message: 'Error processing AI chat completion' })}\n\n`);
       res.end();
-    } else {
+    } else if (res) {
       res.status(500).json({ message: 'Error processing AI chat completion' }).end();
+    } else {
+      throw { message: 'Error processing AI chat completion' };
     }
   }
 }
