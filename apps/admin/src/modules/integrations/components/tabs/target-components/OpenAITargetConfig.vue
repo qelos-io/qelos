@@ -25,7 +25,7 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue']);
 
 // OpenAI model options
-const openAiModelOptions = [
+const openAiModelOptions = [  
   { label: 'GPT-4o', identifier: 'gpt-4o' },
   { label: 'GPT-4o Mini', identifier: 'gpt-4o-mini' },
   { label: 'GPT-4o 16k', identifier: 'gpt-4o-16k' },
@@ -43,7 +43,10 @@ const openAiModelOptions = [
   { label: 'GPT-4 Vision', identifier: 'gpt-4-vision-preview' },
   { label: 'GPT-4 32k', identifier: 'gpt-4-32k' },
   { label: 'GPT-4.1', identifier: 'gpt-4.1' },
-
+  { label: 'GPT-4.1 Nano', identifier: 'gpt-4.1-nano' },
+  { label: 'GPT-4.1 Mini', identifier: 'gpt-4.1-mini' },
+  { label: 'GPT-5', identifier: 'gpt-5' },
+  { label: 'GPT-5 Mini', identifier: 'gpt-5-mini' },
 ];
 
 // Pre-defined chat personalities with complete configurations
@@ -275,13 +278,13 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
     <!-- Blueprint Selection -->
     <div class="blueprint-selection-section">
       <label>{{ $t('Ingest Blueprints') }}</label>
-      <p class="help-text">Select blueprints to be ingested as function tools for the AI</p>
+      <p class="help-text">{{ $t('Select blueprints to be ingested as function tools for the AI') }}</p>
       <el-select
         v-model="openAiDetails.ingestedBlueprints"
         multiple
         filterable
         collapse-tags-tooltip
-        placeholder="Select blueprints to ingest"
+        :placeholder="$t('Select blueprints to ingest')"
         @change="syncOpenAiDetailsToTargetDetails"
         class="blueprint-select"
       >
@@ -303,7 +306,7 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
         multiple
         filterable
         collapse-tags-tooltip
-        placeholder="Select agents to ingest"
+        :placeholder="$t('Select agents to ingest')"
         @change="syncOpenAiDetailsToTargetDetails"
         class="agent-select"
       >
@@ -319,8 +322,8 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
     
     <!-- Personality Selection Cards -->
     <div class="personality-cards-section">
-      <label>Choose a Personality Template</label>
-      <p class="help-text">Select a pre-defined personality or customize your own</p>
+      <label>{{ $t('Choose a Personality Template') }}</label>
+      <p class="help-text">{{ $t('Select a pre-defined personality or customize your own') }}</p>
       
       <div class="personality-cards">
         <div 
@@ -351,7 +354,7 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
     
     <!-- Temperature Slider -->
     <div class="slider-container">
-      <label>Temperature: {{ openAiDetails.temperature }}</label>
+      <label>{{ $t('Temperature') }}: {{ openAiDetails.temperature }}</label>
       <el-slider
         v-model="openAiDetails.temperature"
         :min="0"
@@ -361,8 +364,8 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
         @change="syncOpenAiDetailsToTargetDetails"
       />
       <div class="slider-description">
-        <span>More precise</span>
-        <span>More creative</span>
+        <span>{{ $t('More precise') }}</span>
+        <span>{{ $t('More creative') }}</span>
       </div>
     </div>
     
@@ -370,8 +373,8 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
     <FormInput
       v-model="openAiDetails.max_tokens"
       type="number"
-      label="Max Tokens"
-      help-text="Maximum number of tokens to generate (1-4000)"
+      label="{{ $t('Max Tokens') }}"
+      help-text="{{ $t('Maximum number of tokens to generate (1-4000)') }}"
       :min="1"
       :max="4000"
       @change="syncOpenAiDetailsToTargetDetails"
@@ -408,8 +411,8 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
         <div class="advanced-options-intro">
           <i class="el-icon-setting" style="font-size: 20px; margin-right: 8px;"></i>
           <div>
-            <h4>Advanced Model Settings</h4>
-            <p>Fine-tune your AI model's behavior with these advanced parameters</p>
+            <h4>{{ $t('Advanced Model Settings') }}</h4>
+            <p>{{ $t('Fine-tune your AI model\'s behavior with these advanced parameters') }}</p>
           </div>
         </div>
 
@@ -419,14 +422,14 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
           <div class="advanced-options-card">
             <h5>
               <i class="el-icon-magic-stick"></i>
-              Generation Controls
+              {{ $t('Generation Controls') }}
             </h5>
             
             <!-- Top P Slider with tooltip -->
             <div class="slider-container">
               <div class="slider-header">
-                <label>Top P: <span class="value-badge">{{ openAiDetails.top_p }}</span></label>
-                <el-tooltip content="Controls diversity by limiting tokens to the top P% of probability mass. Lower values = more focused, higher values = more diverse." placement="top">
+                <label>{{ $t('Top P') }}: <span class="value-badge">{{ openAiDetails.top_p }}</span></label>
+                <el-tooltip :content="$t('Controls diversity by limiting tokens to the top P% of probability mass. Lower values = more focused, higher values = more diverse.')" placement="top">
                   <i class="el-icon-question"></i>
                 </el-tooltip>
               </div>
@@ -439,16 +442,16 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
                 @change="syncOpenAiDetailsToTargetDetails"
               />
               <div class="slider-description">
-                <span>Focused</span>
-                <span>Diverse</span>
+                <span>{{ $t('Focused') }}</span>
+                <span>{{ $t('Diverse') }}</span>
               </div>
             </div>
             
             <!-- Frequency Penalty Slider with tooltip -->
             <div class="slider-container">
               <div class="slider-header">
-                <label>Frequency Penalty: <span class="value-badge">{{ openAiDetails.frequency_penalty }}</span></label>
-                <el-tooltip content="Reduces repetition by penalizing tokens that have already appeared in the text. Higher values produce less repetitive text." placement="top">
+                <label>{{ $t('Frequency Penalty') }}: <span class="value-badge">{{ openAiDetails.frequency_penalty }}</span></label>
+                <el-tooltip :content="$t('Reduces repetition by penalizing tokens that have already appeared in the text. Higher values produce less repetitive text.')" placement="top">
                   <i class="el-icon-question"></i>
                 </el-tooltip>
               </div>
@@ -461,16 +464,16 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
                 @change="syncOpenAiDetailsToTargetDetails"
               />
               <div class="slider-description">
-                <span>Allow repetition</span>
-                <span>Avoid repetition</span>
+                <span>{{ $t('Allow repetition') }}</span>
+                <span>{{ $t('Avoid repetition') }}</span>
               </div>
             </div>
             
             <!-- Presence Penalty Slider with tooltip -->
             <div class="slider-container">
               <div class="slider-header">
-                <label>Presence Penalty: <span class="value-badge">{{ openAiDetails.presence_penalty }}</span></label>
-                <el-tooltip content="Encourages the model to talk about new topics by penalizing tokens that have appeared at all. Higher values encourage more topic diversity." placement="top">
+                <label>{{ $t('Presence Penalty') }}: <span class="value-badge">{{ openAiDetails.presence_penalty }}</span></label>
+                <el-tooltip :content="$t('Encourages the model to talk about new topics by penalizing tokens that have appeared at all. Higher values encourage more topic diversity.')" placement="top">
                   <i class="el-icon-question"></i>
                 </el-tooltip>
               </div>
@@ -483,8 +486,8 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
                 @change="syncOpenAiDetailsToTargetDetails"
               />
               <div class="slider-description">
-                <span>Stay on topic</span>
-                <span>Explore new topics</span>
+                <span>{{ $t('Stay on topic') }}</span>
+                <span>{{ $t('Explore new topics') }}</span>
               </div>
             </div>
           </div>
@@ -493,36 +496,36 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
           <div class="advanced-options-card">
             <h5>
               <i class="el-icon-document"></i>
-              Output Controls
+              {{ $t('Output Controls') }}
             </h5>
             
             <!-- Stop Sequences with better help -->
             <div class="form-group">
               <div class="form-header">
-                <label>Stop Sequences</label>
-                <el-tooltip content="The model will stop generating text when it encounters any of these sequences. Separate multiple sequences with commas." placement="top">
+                <label>{{ $t('Stop Sequences') }}</label>
+                <el-tooltip :content="$t('The model will stop generating text when it encounters any of these sequences. Separate multiple sequences with commas.')" placement="top">
                   <i class="el-icon-question"></i>
                 </el-tooltip>
               </div>
               <el-input
                 v-model="openAiDetails.stop"
-                placeholder="E.g., ###, END, STOP"
+                :placeholder="$t('E.g., ###, END, STOP')"
                 @change="syncOpenAiDetailsToTargetDetails"
               />
-              <p class="help-text">Optional sequences where the API will stop generating further tokens</p>
+              <p class="help-text">{{ $t('Optional sequences where the API will stop generating further tokens') }}</p>
             </div>
             
             <!-- Response Format with better description -->
             <div class="form-group">
               <div class="form-header">
-                <label>Response Format</label>
-                <el-tooltip content="Constrains the model output to a specific format. JSON mode ensures valid JSON output." placement="top">
+                <label>{{ $t('Response Format') }}</label>
+                <el-tooltip :content="$t('Constrains the model output to a specific format. JSON mode ensures valid JSON output.')" placement="top">
                   <i class="el-icon-question"></i>
                 </el-tooltip>
               </div>
               <el-select
                 v-model="openAiDetails.response_format"
-                placeholder="Select response format"
+                :placeholder="$t('Select response format')"
                 clearable
                 @change="syncOpenAiDetailsToTargetDetails"
                 style="width: 100%"
@@ -538,7 +541,7 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
               </el-select>
               <div class="info-box" v-if="openAiDetails.response_format?.type === 'json_object'">
                 <i class="el-icon-warning"></i>
-                <span>When using JSON mode, you must instruct the model to produce JSON in your system message or user prompt.</span>
+                <span>{{ $t('When using JSON mode, you must instruct the model to produce JSON in your system message or user prompt.') }}</span>
               </div>
             </div>
           </div>
@@ -547,45 +550,45 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
           <div class="advanced-options-card">
             <h5>
               <i class="el-icon-connection"></i>
-              Tool Controls
+              {{ $t('Tool Controls') }}
             </h5>
             
             <!-- Embedding Type with better UI -->
             <div class="form-group">
               <div class="form-header">
-                <label>Embedding Type</label>
-                <el-tooltip content="The embedding system used to filter function calls and tools. Local uses in-memory embeddings, OpenAI uses their embedding API." placement="top">
+                <label>{{ $t('Embedding Type') }}</label>
+                <el-tooltip :content="$t('The embedding system used to filter function calls and tools. Local uses in-memory embeddings, OpenAI uses their embedding API.')" placement="top">
                   <i class="el-icon-question"></i>
                 </el-tooltip>
               </div>
               <el-select
                 v-model="openAiDetails.embeddingType"
-                placeholder="Select embedding type"
+                placeholder="{{ $t('Select embedding type') }}"
                 clearable
                 @change="syncOpenAiDetailsToTargetDetails"
                 style="width: 100%"
               >
                 <el-option label="Local" value="local">
                   <div class="option-with-description">
-                    <span>Local</span>
-                    <small>Faster, uses in-memory embeddings</small>
+                    <span>{{ $t('Local') }}</span>
+                    <small>{{ $t('Faster, uses in-memory embeddings') }}</small>
                   </div>
                 </el-option>
                 <el-option label="OpenAI" value="openai">
                   <div class="option-with-description">
-                    <span>OpenAI</span>
-                    <small>More accurate, uses OpenAI's embedding API</small>
+                    <span>{{ $t('OpenAI') }}</span>
+                    <small>{{ $t('More accurate, uses OpenAI\'s embedding API') }}</small>
                   </div>
                 </el-option>
               </el-select>
-              <p class="help-text">Determines how function calls and tools are filtered</p>
+              <p class="help-text">{{ $t('Determines how function calls and tools are filtered') }}</p>
             </div>
 
             <!-- Max Tools with better visualization -->
             <div class="form-group">
               <div class="form-header">
-                <label>Max Tools: <span class="value-badge">{{ openAiDetails.maxTools }}</span></label>
-                <el-tooltip content="Maximum number of tools to include in the API request. Higher values allow more tools but may slow down the request." placement="top">
+                <label>{{ $t('Max Tools') }}: <span class="value-badge">{{ openAiDetails.maxTools }}</span></label>
+                <el-tooltip :content="$t('Maximum number of tools to include in the API request. Higher values allow more tools but may slow down the request.')" placement="top">
                   <i class="el-icon-question"></i>
                 </el-tooltip>
               </div>
@@ -602,8 +605,8 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
                 </template>
               </el-slider>
               <div class="slider-description">
-                <span>Fewer tools</span>
-                <span>More tools</span>
+                <span>{{ $t('Fewer tools') }}</span>
+                <span>{{ $t('More tools') }}</span>
               </div>
             </div>
           </div>
@@ -612,8 +615,8 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
         <!-- Raw JSON Editor Section -->
         <div class="raw-json-section">
           <el-divider>
-            <el-tooltip content="Edit the raw JSON configuration directly. For advanced users." placement="top">
-              <span>Advanced JSON Configuration</span>
+            <el-tooltip :content="$t('Edit the raw JSON configuration directly. For advanced users.')" placement="top">
+              <span>{{ $t('Advanced JSON Configuration') }}</span>
             </el-tooltip>
           </el-divider>
           
@@ -624,11 +627,11 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
             class="json-toggle-button"
           >
             <i :class="showRawJson ? 'el-icon-view' : 'el-icon-edit'"></i>
-            {{ showRawJson ? 'Hide Raw JSON' : 'Edit Raw JSON' }}
+            {{ $t(showRawJson ? 'Hide Raw JSON' : 'Edit Raw JSON') }}
           </el-button>
           
           <div v-if="showRawJson" class="json-editor-container">
-            <p class="json-editor-help">Edit the raw configuration JSON directly. Changes will be applied immediately.</p>
+            <p class="json-editor-help">{{ $t('Edit the raw configuration JSON directly. Changes will be applied immediately.') }}</p>
             <Monaco :modelValue="targetDetailsText" @update:modelValue="updateTargetDetails" height="300px" language="json" />
           </div>
         </div>
