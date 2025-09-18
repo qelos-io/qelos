@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, toRefs, watch } from 'vue';
+import { computed, toRefs, watch, ref, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import LoginForm from './components/LoginForm.vue'
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
@@ -63,7 +63,41 @@ watch(
 );
 
 const config = computed(() => props.authConfig || metadata.value);
-const bgImage = computed(() => config.value.backgroundImage ? ('url(' + config.value.backgroundImage + ')') : '')
+// Composition function for responsive orientation detection
+const useOrientation = () => {
+  const isVertical = ref(false)
+  
+  const updateOrientation = () => {
+    isVertical.value = window.innerWidth <= 768
+  }
+  
+  onMounted(() => {
+    // Set initial value
+    updateOrientation()
+    // Add event listener for window resize
+    window.addEventListener('resize', updateOrientation)
+  })
+  
+  onUnmounted(() => {
+    window.removeEventListener('resize', updateOrientation)
+  })
+  
+  return { isVertical }
+}
+
+// Use the composition function
+const { isVertical } = useOrientation()
+
+const isMobile = computed(() => window.innerWidth <= 768)
+
+const bgImage = computed(() => {
+  // Use vertical background image for mobile if available
+  if (isVertical.value && config.value.verticalBackgroundImage) {
+    return 'url(' + config.value.verticalBackgroundImage + ')'
+  }
+  // Otherwise use standard background image
+  return config.value.backgroundImage ? ('url(' + config.value.backgroundImage + ')') : ''
+})
 
 const flexDirection = computed(() => {
   switch (config.value.formPosition) {
@@ -124,5 +158,11 @@ img {
 
 .bg-image {
   background: v-bind(bgImage) no-repeat center;
+  background-size: cover;
+}
+
+.vertical-bg {
+  background-position: center;
+  background-size: cover;
 }
 </style>

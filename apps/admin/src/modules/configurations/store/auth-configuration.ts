@@ -45,6 +45,7 @@ export const useAuthConfiguration = defineStore('auth-configuration', () => {
     slots: {},
     loginTitle: '',
     backgroundImage: undefined,
+    verticalBackgroundImage: undefined,
     disableUsernamePassword: false // Assumes IAuthConfigurationMetadata is updated
   };
 
