@@ -10,7 +10,7 @@
     "dev:run": "pnpm -r run db && pnpm -r --parallel --stream run dev",
     "dev": "env-cmd pnpm run dev:run",
     "predev": "pnpm stop && pnpm check-and-build",
-    "check-and-build": "if [ ! -d \"apps/admin/dist\" ]; then pnpm install; fi && pnpm build",
+    "check-and-build": "node -e \"if (!require('fs').existsSync('apps/admin/dist')) { require('child_process').execSync('pnpm build', {stdio: 'inherit'}) }\"",
     "postdev": "pnpm stop",
     "stop": "kill-port 3000 3001 9000 9001 9002 9003 9004 9005 9006 9007 && docker rm -f qelos-db qelos-redis",
     "populate-db": "pnpm -F @qelos/auth run init",
