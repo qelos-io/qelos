@@ -55,12 +55,12 @@ const navigateToOpenAIIntegration = () => {
 </script>
 <style scoped>
 .ai-panel-content {
-  flex: 1;
   overflow-y: auto;
   padding: 0;
   position: relative;
   height: calc(100% - var(--header-height));
-  width: 400px;
+  width: 35%;
+  min-width: 500px;
   background-color: var(--el-bg-color);
 }
 

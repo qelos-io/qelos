@@ -1,6 +1,7 @@
 <template>
   <div
     class="ai-chat"
+    :class="{ 'empty-chat': messages.length === 0 }"
     @dragover.prevent="onDragOver"
     @drop.prevent="onFileDrop"
     @dragenter.prevent="onDragEnter"
@@ -20,22 +21,33 @@
             }}</span>
           </div>
           <div v-if="suggestions?.length" class="ai-suggestions">
-            <el-button
-              v-for="(suggestion, idx) in suggestions"
-              :key="idx"
-              type="default"
-              size="small"
-              @click="onSuggestionClick(suggestion)"
-            >
-              <el-icon v-if="(suggestion as any).icon"
-                ><font-awesome-icon :icon="['fas', (suggestion as any).icon]"
-              /></el-icon>
-              {{
-                typeof suggestion === "string"
-                  ? suggestion
-                  : (suggestion as any).label || (suggestion as any).text
-              }}
-            </el-button>
+            <TransitionGroup name="suggestion-fade" tag="div" class="suggestions-container">
+              <div
+                v-for="(suggestion, idx) in suggestions"
+                :key="idx"
+                class="suggestion-item"
+                :class="{ 'with-icon': (suggestion as any).icon }"
+                @click="onSuggestionClick(suggestion)"
+                @mouseenter="hoveredSuggestion = idx"
+                @mouseleave="hoveredSuggestion = null"
+              >
+                <div class="suggestion-content">
+                  <el-icon v-if="(suggestion as any).icon" class="suggestion-icon">
+                    <font-awesome-icon :icon="['fas', (suggestion as any).icon]"/>
+                  </el-icon>
+                  <span class="suggestion-text">
+                    {{
+                      typeof suggestion === "string"
+                        ? suggestion
+                        : (suggestion as any).label || (suggestion as any).text
+                    }}
+                  </span>
+                </div>
+                <el-icon class="suggestion-arrow" :class="{ 'visible': hoveredSuggestion === idx }">
+                  <ArrowRight />
+                </el-icon>
+              </div>
+            </TransitionGroup>
           </div>
         </template>
       </div>
@@ -182,6 +194,7 @@ import {
   Cpu,
   DocumentCopy,
   Check,
+  ArrowRight,
 } from "@element-plus/icons-vue";
 import { Remarkable } from "remarkable";
 import threadsService from "@/services/threads-service";
@@ -279,6 +292,7 @@ const attachedFiles = reactive<AttachedFile[]>([]);
 const messages = reactive<ChatMessage[]>([]);
 const copiedMessageId = ref<string | null>(null);
 const copiedTableId = ref<string | null>(null);
+const hoveredSuggestion = ref<number | null>(null);
 
 // Reference to markdown content elements
 const markdownContent = ref<HTMLElement[]>([]);
@@ -680,8 +694,10 @@ onMounted(() => {
   padding: 0;
   position: relative;
   min-height: 400px;
+  max-height: calc(100vh - var(--header-height));
   font-family: var(--font-family, inherit);
 }
+
 
 .chat-window {
   flex: 1;
@@ -689,8 +705,27 @@ onMounted(() => {
   padding: 1.25rem;
   background: #f9f9fb;
   min-height: 320px;
-  max-height: 50vh;
+  max-height: 100%;
   transition: background 0.2s;
+  position: relative;
+}
+
+
+@media (max-width: 768px) {
+  .ai-chat {
+    height: calc(100vh - var(--header-height));
+  }
+
+  .chat-window {
+    flex: 1;
+    max-height: 100%;
+  }
+}
+
+.empty-chat .chat-window {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 80px);
   position: relative;
 }
 
@@ -700,6 +735,26 @@ onMounted(() => {
   padding: 1em;
   background: var(--body-bg, #fff);
   border-top: 1px solid var(--border-color, #eee);
+  transition: transform 0.3s ease, margin-top 0.3s ease;
+}
+
+.empty-chat .ai-chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.empty-chat .input-row {
+  transform: translateY(-50%);
+  border-top: none;
+  padding: 1.5em;
+  z-index: 5;
+}
+
+.empty-chat .ai-initial-message {
+  margin-top: 8%;
+  margin-bottom: 0;
+  z-index: 1;
 }
 
 .input-group {
@@ -1125,14 +1180,153 @@ onMounted(() => {
 }
 
 .ai-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5em;
+  margin-top: 1.5em;
 }
 
-.ai-suggestions .el-button :deep(i) {
-  margin-inline-end: 0.5em;
+.suggestions-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75em;
+  max-width: 90%;
+  margin: 0 auto;
+  justify-content: center;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65em 1em;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  min-width: 120px;
+  max-width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.suggestion-item:hover {
+  background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary-light-5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
+}
+
+.suggestion-item:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(64, 158, 255, 0.1);
+}
+
+.suggestion-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-icon {
+  color: var(--el-color-primary);
+  font-size: 1em;
+  flex-shrink: 0;
+}
+
+.suggestion-text {
+  font-size: 0.95em;
+  color: var(--el-text-color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-arrow {
+  margin-left: 0.5em;
+  color: var(--el-color-primary);
+  opacity: 0;
+  transform: translateX(-5px);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.suggestion-arrow.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Animation for suggestions */
+.suggestion-fade-enter-active,
+.suggestion-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.suggestion-fade-enter-from,
+.suggestion-fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+/* Staggered animation for multiple suggestions */
+.suggestion-item {
+  animation: suggestion-pop-in 0.4s ease forwards;
+  opacity: 0;
+}
+
+@keyframes suggestion-pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply staggered delay to suggestions */
+.suggestion-item:nth-child(1) { animation-delay: 0.1s; }
+.suggestion-item:nth-child(2) { animation-delay: 0.2s; }
+.suggestion-item:nth-child(3) { animation-delay: 0.3s; }
+.suggestion-item:nth-child(4) { animation-delay: 0.4s; }
+.suggestion-item:nth-child(5) { animation-delay: 0.5s; }
+.suggestion-item:nth-child(6) { animation-delay: 0.6s; }
+
+.empty-chat .ai-suggestions {
+  margin-top: 1.5em;
+  margin-bottom: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 20%;
+  z-index: 1;
+}
+
+/* Empty chat specific styles */
+.empty-chat .suggestion-item {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .suggestions-container {
+    max-width: 100%;
+    gap: 0.5em;
+  }
+  
+  .suggestion-item {
+    flex: 1 1 calc(50% - 0.75em);
+    min-width: 0;
+    padding: 0.5em 0.75em;
+    font-size: 0.9em;
+  }
+  
+  .empty-chat .ai-suggestions {
+    bottom: 25%;
+  }
 }
 </style>

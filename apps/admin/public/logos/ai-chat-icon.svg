@@ -1,0 +1,103 @@
+<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Main button gradient -->
+    <linearGradient id="buttonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#764ba2;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#f093fb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff6b9d;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Inner glow gradient -->
+    <radialGradient id="innerGlow" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0" />
+    </radialGradient>
+    
+    <!-- AI neural gradient -->
+    <linearGradient id="aiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00f5ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0099ff;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Button shadow -->
+    <filter id="buttonShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.25" flood-color="#000"/>
+    </filter>
+    
+    <!-- Glow effect -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Hover state (brighter) -->
+    <linearGradient id="buttonHoverGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c8cff;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#8b5fbf;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#ffa3ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff7fb3;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main button circle -->
+  <circle cx="40" cy="40" r="35" fill="url(#buttonGradient)" filter="url(#buttonShadow)" 
+          style="cursor: pointer; transition: all 0.3s ease;">
+    <animate attributeName="r" values="35;36;35" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Inner highlight for 3D effect -->
+  <circle cx="40" cy="40" r="35" fill="url(#innerGlow)" opacity="0.6"/>
+  
+  <!-- Chat bubble icon -->
+  <g transform="translate(40, 40)">
+    <!-- Main bubble -->
+    <path d="M-12 -8 Q-12 -12 -8 -12 L8 -12 Q12 -12 12 -8 L12 4 Q12 8 8 8 L-2 8 L-8 14 L-8 8 L-8 8 Q-12 8 -12 4 Z" 
+          fill="white" 
+          opacity="0.95"
+          filter="url(#glow)"/>
+    
+    <!-- AI dots pattern -->
+    <g opacity="0.8">
+      <circle cx="-4" cy="-2" r="2" fill="url(#aiGradient)">
+        <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="0" cy="-2" r="2" fill="url(#aiGradient)">
+        <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" begin="0.3s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="4" cy="-2" r="2" fill="url(#aiGradient)">
+        <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" begin="0.6s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+  </g>
+  
+  <!-- Outer pulse ring -->
+  <circle cx="40" cy="40" r="38" fill="none" stroke="white" stroke-width="1" opacity="0.4">
+    <animate attributeName="r" values="38;45;38" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.4;0;0.4" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Sparkle effects around button -->
+  <g opacity="0.6">
+    <circle cx="65" cy="35" r="1" fill="white">
+      <animate attributeName="opacity" values="0.6;0.1;0.6" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="25" cy="60" r="0.8" fill="white">
+      <animate attributeName="opacity" values="0.4;0.1;0.4" dur="1.8s" begin="0.5s" repeatCount="indefinite"/>
+    </circle>
+    <path d="M15 25 L16 26 L15 27 L14 26 Z" fill="white">
+      <animateTransform attributeName="transform" type="rotate" values="0 15 26;360 15 26" dur="8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.5;0.1;0.5" dur="3s" repeatCount="indefinite"/>
+    </path>
+  </g>
+  
+  <!-- Hover interaction hint -->
+  <circle cx="40" cy="40" r="35" fill="transparent" stroke="transparent" stroke-width="2" 
+          style="cursor: pointer;">
+    <animate attributeName="stroke" values="transparent;rgba(255,255,255,0.3);transparent" 
+             dur="0.3s" begin="indefinite" id="hoverAnim"/>
+  </circle>
+</svg>

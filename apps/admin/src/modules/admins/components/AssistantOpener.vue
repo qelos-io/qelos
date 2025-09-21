@@ -1,21 +1,32 @@
 <template>
-    <el-button class="assistant-button" type="primary" size="large" circle @click="toggle" :icon="ChatDotRound" />
+    <el-button class="assistant-button" size="large" circle @click="toggle">
+      <img src="/logos/ai-chat-icon.svg" alt="AI Chat" />
+    </el-button>
 </template>
 <script lang="ts" setup>
 import { useAdminAssistantStore } from "../store/admin-assistant";
-import { ChatDotRound } from "@element-plus/icons-vue";
 
 const { toggle } = useAdminAssistantStore();
 </script>
 
 <style scoped>
-.assistant-button {
+.assistant-button.is-circle {
   margin-inline: var(--spacing);
-  transition: all 0.3s ease;
-  background: linear-gradient(135deg, var(--main-color), var(--secondary-color));
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
 }
 
 .assistant-button:hover {
-  background: linear-gradient(135deg, var(--secondary-color), var(--main-color));
+  box-shadow: 0 2px 8px rgba(10, 10, 10, 0.2);
+  cursor: pointer;
+}
+
+img {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 </style>
