@@ -162,9 +162,9 @@ export async function enrichPluginWithManifest(plugin: IPlugin, {
 
   if (hardReset) {
     plugin.apiPath = apiPath || manifest.apiPath;
-    plugin.proxyUrl = manifest.proxyUrl;
-    plugin.callbackUrl = manifest.callbackUrl;
-    plugin.registerUrl = manifest.registerUrl;
+    plugin.proxyUrl = manifest.proxyUrl?.startsWith('http') ? manifest.proxyUrl : manifest.proxyUrl ? new URL(manifest.proxyUrl, manifest.appUrl).href : '';
+    plugin.callbackUrl = manifest.callbackUrl?.startsWith('http') ? manifest.callbackUrl : manifest.callbackUrl ? new URL(manifest.callbackUrl, manifest.appUrl).href : '';
+    plugin.registerUrl = manifest.registerUrl?.startsWith('http') ? manifest.registerUrl : manifest.registerUrl ? new URL(manifest.registerUrl, manifest.appUrl).href : '';
     plugin.subscribedEvents = manifest.subscribedEvents;
     plugin.cruds = manifest.cruds;
     if (manifest.registerUrl) {

@@ -16,7 +16,7 @@ const emit = defineEmits(['close', 'saved'])
 
 const { savePlugin, submitting } = useCreatePlugin();
 
-const form = ref({});
+const form = ref<any>({});
 const activeStep = computed(() => route.query.option);
 const isLoading = ref(false);
 
@@ -43,7 +43,9 @@ async function submit() {
 
         plugin.name = data.name;
         plugin.apiPath = data.apiPath;
-        plugin.proxyUrl = data.proxyUrl;
+        plugin.proxyUrl = data.proxyUrl?.startsWith('http') ? data.proxyUrl : data.proxyUrl ? new URL(data.proxyUrl, data.appUrl).href : '';
+        plugin.callbackUrl = data.callbackUrl?.startsWith('http') ? data.callbackUrl : data.callbackUrl ? new URL(data.callbackUrl, data.appUrl).href : '';
+        plugin.registerUrl = data.registerUrl?.startsWith('http') ? data.registerUrl : data.registerUrl ? new URL(data.registerUrl, data.appUrl).href : '';
         
         await savePlugin(plugin);
         ElNotification({
