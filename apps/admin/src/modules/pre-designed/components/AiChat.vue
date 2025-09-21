@@ -541,7 +541,7 @@ function onSuggestionClick(
   } else {
     input.value = suggestion.text || suggestion.label;
   }
-  setTimeout(addTableCopyButtons, 100);
+  inputRef.value?.focus();
 }
 
 async function onSend() {
@@ -1193,10 +1193,11 @@ onMounted(() => {
 }
 
 .suggestion-item {
+  font-size: 80%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.65em 1em;
+  padding: 0.3em 0.5em;
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--el-border-color-light);
   border-radius: 12px;
