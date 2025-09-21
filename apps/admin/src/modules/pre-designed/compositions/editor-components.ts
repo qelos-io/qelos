@@ -12,6 +12,7 @@ import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
 import MockStatsCard from '@/pre-designed/editor/MockStatsCard.vue';
 import AiChat from '@/modules/pre-designed/components/AiChat.vue';
 import { useComponentsList } from '@/modules/blocks/store/components-list';
+import kebabCase from 'lodash.kebabcase';
 
 
 export interface EditorComponent {
@@ -333,11 +334,11 @@ export function useEditorComponents() {
       ...staticComponents,
     }
     Object.entries(customComponents.value).forEach(([key, value]) => {
-      components[key] = {
+      components[kebabCase(value.componentName)] = {
         ...value,
         title: value.name || value.componentName || key,
         description: value.description,
-        component: value.component,
+        component: 'div',
         mock: value.mock,
         requiredProps: value.requiredProps || [],
         extendProps: value.extendProps || (() => {}),
