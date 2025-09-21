@@ -124,6 +124,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         if (mfe.url) {
           route.meta = {
             name: mfe.name,
+            iconName: mfe.route?.iconName,
             roles,
             workspaceRoles,
             workspaceLabels,
@@ -134,6 +135,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         } else {
           route.meta = {
             name: mfe.name,
+            iconName: mfe.route?.iconName,
             roles,
             workspaceRoles,
             workspaceLabels,

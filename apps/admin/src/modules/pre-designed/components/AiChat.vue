@@ -134,7 +134,7 @@
           v-model="input"
           type="textarea"
           :autosize="{ minRows: 2, maxRows: 6 }"
-          :placeholder="$t('Type your message...')"
+          :placeholder="$t('How can we help you today?')"
           size="large"
           :disabled="loading"
           ref="inputRef"
@@ -146,29 +146,10 @@
         />
         <button
           class="ai-send-btn"
-          :disabled="!canSend || loading"
+          :disabled="!canSend || loading || !input.trim()"
           type="submit"
-          aria-label="Send"
-          style="
-            margin-left: 0.5em;
-            flex-shrink: 0;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          "
-        >
-          <svg
-            class="send-icon"
-            viewBox="0 0 24 24"
-            width="26"
-            height="26"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path d="M3 21L21 12L3 3V10L17 12L3 14V21Z" fill="currentColor" />
-          </svg>
+          aria-label="Send">
+          <el-icon><icon-arrow-up /></el-icon>
         </button>
       </div>
     </form>
@@ -534,12 +515,12 @@ async function handleFiles(files: File[]) {
 }
 
 function onSuggestionClick(
-  suggestion: string | { label: string; text?: string; icon?: string }
+  suggestion: string | { label: string; text?: string; value?: string; icon?: string }
 ) {
   if (typeof suggestion === "string") {
     input.value = suggestion;
   } else {
-    input.value = suggestion.text || suggestion.label;
+    input.value = (suggestion.text || suggestion.value || suggestion.label) + ' ';
   }
   inputRef.value?.focus();
 }
@@ -752,7 +733,7 @@ onMounted(() => {
 }
 
 .empty-chat .ai-initial-message {
-  margin-top: 8%;
+  margin-top: 5%;
   margin-bottom: 0;
   z-index: 1;
 }
@@ -783,8 +764,8 @@ onMounted(() => {
 
 .ai-textarea :deep(.el-textarea__inner:focus) {
   background: var(--inputs-bg-color, #f0f7ff) !important;
-  box-shadow: 0 2px 16px 0 var(--focus-color, rgba(64, 158, 255, 0.1)) !important;
-  border: 1.5px solid var(--focus-color, #409eff) !important;
+  box-shadow: 0 2px 4px 0 var(--focus-color, rgba(108, 178, 248, 0.1)) !important;
+  border: 0.5px solid var(--focus-color, #6ebfff) !important;
   outline: none !important;
 }
 
@@ -793,15 +774,12 @@ onMounted(() => {
   right: 0.55em;
   bottom: 0.55em;
   z-index: 2;
-  border-radius: var(--button-radius, 50%);
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--box-shadow, 0 2px 12px 0 rgba(64, 158, 255, 0.11));
+  border-radius: var(--border-radius, 50%);
+  margin-inline-end: 2px;
+  margin-block-end: 2px;
+  width: 22px;
+  height: 22px;
+  box-shadow: var(--box-shadow, 0 2px 2px 0 rgba(64, 158, 255, 0.11));
   background: var(
     --button-bg-color,
     linear-gradient(135deg, #409eff 65%, #6ebfff 100%)
@@ -812,6 +790,11 @@ onMounted(() => {
     background var(--transition-speed, 0.18s), transform 0.12s;
   font-size: 1.3em;
   cursor: pointer;
+  margin-left: 0.5em;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ai-send-btn:active {

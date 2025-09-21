@@ -71,6 +71,7 @@ const MicroFrontendSchema = new mongoose.Schema<IMicroFrontend>({
   workspaceRoles: [String],
   workspaceLabels: [String],
   route: {
+    iconName: String,
     name: String,
     path: String,
     navBarPosition: {

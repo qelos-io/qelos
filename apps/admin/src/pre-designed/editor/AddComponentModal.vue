@@ -147,7 +147,7 @@ function selectComponent(key: string) {
     columns: [{}],
   };
 
-  propsBuilder.value = availableComponents[key].requiredProps.reduce((acc, prop) => {
+  propsBuilder.value = availableComponents.value[key].requiredProps.reduce((acc, prop) => {
     if (prop.source === 'requirements') {
       acc[prop.prop] = prop.value || '';
     } else if (prop.type === 'array') {
@@ -169,7 +169,7 @@ function refillColumnsFromBlueprint(blueprintId: string) {
 }
 
 function submit() {
-  const descriptor = availableComponents[selectedComponent.value];
+  const descriptor = availableComponents.value[selectedComponent.value];
   const requiredProps = descriptor.requiredProps;
   const props = {}
   const customData = {};
@@ -211,8 +211,8 @@ function submit() {
     component: descriptor.tag || selectedComponent.value,
     requirements,
     props,
-    classes: availableComponents[selectedComponent.value].classes,
-    innerHTML: availableComponents[selectedComponent.value].getInnerHTML?.(propsBuilder.value, props, requirements) || null
+    classes: availableComponents.value[selectedComponent.value].classes,
+    innerHTML: availableComponents.value[selectedComponent.value].getInnerHTML?.(propsBuilder.value, props, requirements) || null
   });
   dialogVisible.value = false;
 }

@@ -29,7 +29,7 @@
                 <el-icon>
                   <font-awesome-icon :icon="['fas', 'code']"/>
                 </el-icon>
-                <span>{{ $t('Code') }}</span>
+                <span>{{ $t('Advanced') }}</span>
               </el-button>
             </el-tooltip>
           </el-button-group>

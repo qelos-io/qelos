@@ -6,11 +6,13 @@ import BlueprintEntityForm from '@/modules/pre-designed/components/BlueprintEnti
 import VChart from '@/modules/pre-designed/components/VChart.vue';
 import MockVChart from '@/pre-designed/editor/MockVChart.vue';
 import RemoveConfirmation from '@/modules/pre-designed/components/RemoveConfirmation.vue';
-import { toRef } from 'vue';
+import { computed, toRef } from 'vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
 import MockStatsCard from '@/pre-designed/editor/MockStatsCard.vue';
 import AiChat from '@/modules/pre-designed/components/AiChat.vue';
+import { useComponentsList } from '@/modules/blocks/store/components-list';
+
 
 export interface EditorComponent {
   component: any;
@@ -39,8 +41,10 @@ export interface EditorComponent {
 
 export function useEditorComponents() {
   const blueprints = toRef(useBlueprintsStore(), 'blueprints');
+  const customComponents = toRef(useComponentsList(), 'components');
 
-  const availableComponents: Record<string, EditorComponent> = {
+
+  const staticComponents: Record<string, EditorComponent> = {
     'list-page-title': {
       title: 'List Page Title',
       description: 'A title and a button to create a new item.',
@@ -68,7 +72,7 @@ export function useEditorComponents() {
         <template #header><h3>Column ${index + 1}</h3></template>
         <div>any content</div>
         <template #actions>
-<div><el-button text>Remove</el-button><el-button text>Update</el-button></div>
+  <div><el-button text>Remove</el-button><el-button text>Update</el-button></div>
         </template>
     </block-item>`).join('\n');
         }
@@ -215,8 +219,8 @@ export function useEditorComponents() {
     ${propsBuilder.htmlBefore || ''}
     ${blueprintsInputs}
     ${propsBuilder.htmlAfter || ''}
-</div>
-</template>`
+  </div>
+  </template>`
       }
     },
     'v-chart': {
@@ -323,6 +327,26 @@ export function useEditorComponents() {
       ],
     }
   }
+
+  const availableComponents = computed(() => {
+    const components = {
+      ...staticComponents,
+    }
+    Object.entries(customComponents.value).forEach(([key, value]) => {
+      components[key] = {
+        ...value,
+        title: value.name || value.componentName || key,
+        description: value.description,
+        component: value.component,
+        mock: value.mock,
+        requiredProps: value.requiredProps || [],
+        extendProps: value.extendProps || (() => {}),
+        extendRequirements: value.extendRequirements || (() => {}),
+      };
+    })
+    return components;  
+  })
+
 
   function getColumnsFromBlueprint(blueprintId: string) {
     const blueprint = blueprints.value.find(b => b.identifier === blueprintId);

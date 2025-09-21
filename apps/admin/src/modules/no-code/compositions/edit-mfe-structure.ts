@@ -42,6 +42,7 @@ export function useEditMfeStructure() {
     route.meta.roles = pluginMfe.roles;
     route.meta.workspaceRoles = pluginMfe.workspaceRoles;
     route.meta.workspaceLabels = pluginMfe.workspaceLabels;
+    route.meta.iconName = pluginMfe.route.iconName;
     reloadRequirements();
   }
 

@@ -8,6 +8,7 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import EditPageRequirements from '@/pre-designed/editor/EditPageRequirements.vue';
+import IconSelector from '@/modules/core/components/forms/IconSelector.vue';
 
 const emit = defineEmits(['save', 'close'])
 
@@ -29,7 +30,13 @@ const editedSettings = ref<Partial<IMicroFrontend> & { roles: string[] }>({
   roles: [],
   workspaceRoles: [],
   workspaceLabels: [],
-  route: undefined
+  route: {
+    iconName: '',
+    name: '',
+    path: '',
+    roles: [],
+    navBarPosition: 'top',
+  }
 })
 
 const editedRequirements = ref<any[]>();
@@ -180,6 +187,8 @@ provide('editableManager', ref(false));
                 </div>
               </template>
               <FormInput type="switch" v-model="editedSettings.active" :title="$t('Active?')" class="switch-input" />
+
+              <IconSelector v-model="editedSettings.route.iconName" :title="$t('Icon')" />
             </el-card>
             
             <el-card class="settings-card">
