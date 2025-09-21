@@ -33,6 +33,7 @@
     "uuid": "^10.0.0",
     "date-fns": "^4.1.0",
     "element-plus": "~2.10.1",
+    "@element-plus/icons-vue": "^2.3.1",
     "vue": "^3.5.16",
     "vue-router": "^4.5.1",
     "@tsconfig/node22": "^22.0.0",
@@ -48,30 +49,12 @@
   "devDependencies": {
     "@types/express": "^4.17.8"
   },
-  "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
   "overrides": {
     "esbuild": "0.25.4"
   },
   "bundleDependencies": [
     "@qelos/api-kit",
     "@qelos/cache-manager",
-    "@qelos/global-types",
-    "@vue/compiler-sfc",
-    "ajv",
-    "mongoose",
-    "node-jq",
-    "qs",
-    "tsx",
-    "uuid",
-    "date-fns",
-    "element-plus",
-    "vue",
-    "vue-router",
-    "@tsconfig/node22",
-    "@types/node",
-    "@vitejs/plugin-vue",
-    "typescript",
-    "vite",
-    "vue-tsc"
+    "@qelos/global-types"
   ]
 }
