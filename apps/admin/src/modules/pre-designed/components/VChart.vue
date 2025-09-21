@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onBeforeMount, shallowRef } from 'vue';
+import { onBeforeMount, onMounted, onBeforeUnmount, shallowRef, ref } from 'vue';
 import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 
 export default {
@@ -9,9 +9,16 @@ export default {
       type: String,
       default: '400px'
     },
+    autoresize: {
+      type: Boolean,
+      default: true
+    }
   },
-  setup() {
+  setup(props) {
     const EChart = shallowRef();
+    const wrapperRef = ref(null);
+    const chartRef = ref(null);
+
     onBeforeMount(async () => {
       if (!window.ECharts) {
         await import('echarts');
@@ -21,15 +28,17 @@ export default {
 
     return {
       EChart,
+      wrapperRef,
+      chartRef
     }
   }
 }
 </script>
 
 <template>
-  <div class="wrapper">
+  <div class="wrapper" ref="wrapperRef">
     <EditComponentBar/>
-    <component v-if="EChart" :is="EChart" v-bind="$attrs"></component>
+    <component v-if="EChart" :is="EChart" v-bind="$attrs" :autoresize="autoresize" ref="chartRef"></component>
   </div>
 </template>
 

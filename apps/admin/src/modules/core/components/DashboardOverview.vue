@@ -6,7 +6,7 @@
       <div class="status-row-container">
         <el-row :gutter="20" justify="center">
           <!-- System Status Cards -->
-          <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="(status, index) in systemStatus" :key="index" class="status-col">
+          <el-col :xs="24" :sm="12" :md="8" :lg="8" v-for="(status, index) in systemStatus" :key="index" class="status-col">
             <div class="unified-card" :class="status.status">
               <div class="status-content">
                 <div class="status-icon">
@@ -596,6 +596,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  width: 100%;
   max-width: 1400px;
   margin: 20px auto 30px auto;
   gap: 24px;
@@ -802,6 +803,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  min-width: 240px;
 }
 
 .unified-card::before {

@@ -142,6 +142,7 @@ header {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   padding: 0 16px;
   transition: all 0.3s ease;
+  max-width: calc(100vw - 50px);
   
   &.searching {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
