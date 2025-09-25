@@ -134,7 +134,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
         // error in parse ssr-scripts
       }
       return html;
-    }, { ttl: 60 }).catch(() => '')
+    }, { ttl: 60 }).catch(() => indexHtmlPromise)
   }
 
   app.use(async (req, res, next) => {
