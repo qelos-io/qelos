@@ -12,18 +12,21 @@ const configurationsRoutes: RouteRecordRaw = {
       meta: {
         searchQuery: true,
         searchPlaceholder: 'Search Configurations',
+        roles: ['admin']
       },
       component: async () => (await import('./Configurations.vue')).default
     },
     {
       path: 'new',
       name: 'createConfiguration',
-      component: async () => (await import('./CreateConfiguration.vue')).default
+      component: async () => (await import('./CreateConfiguration.vue')).default,
+      meta: { roles: ['admin'] },
     },
     {
       path: ':key',
       name: 'editConfiguration',
-      component: async () => (await import('./EditConfiguration.vue')).default
+      component: async () => (await import('./EditConfiguration.vue')).default,
+      meta: { roles: ['admin'] },
     }
   ]
 }

@@ -28,7 +28,8 @@ const usersRoutes = {
     {
       path: ':userId',
       name: 'editUser',
-      component: async () => (await import('./EditUser.vue')).default
+      component: async () => (await import('./EditUser.vue')).default,
+      meta: { roles: ['admin'] },
     }
   ]
 }

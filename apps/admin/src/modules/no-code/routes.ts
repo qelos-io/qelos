@@ -9,12 +9,14 @@ const noCodeRoutes = {
     {
       name: 'createBlueprint',
       path: 'create-blueprint',
-      component: async () => (await import('./CreateBlueprint.vue')).default
+      component: async () => (await import('./CreateBlueprint.vue')).default,
+      meta: { roles: ['admin'] },
     },
     {
       name: 'editBlueprint',
       path: 'edit-blueprint/:blueprintIdentifier',
-      component: async () => (await import('./EditBlueprint.vue')).default
+      component: async () => (await import('./EditBlueprint.vue')).default,
+      meta: { roles: ['admin'] },
     },
     {
       name: 'blueprints',
@@ -22,8 +24,9 @@ const noCodeRoutes = {
       meta: {
         searchQuery: true,
         searchPlaceholder: 'Search blueprints',
+        roles: ['admin']
       },
-      component: async () => (await import('./Blueprints.vue')).default
+      component: async () => (await import('./Blueprints.vue')).default,
     },
   ]
 }

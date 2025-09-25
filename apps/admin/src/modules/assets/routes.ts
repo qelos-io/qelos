@@ -9,17 +9,20 @@ const assetsRoutes: RouteRecordRaw = {
     {
       path: '',
       name: 'storageList',
-      component: async () => (await import('./StorageList.vue')).default
+      component: async () => (await import('./StorageList.vue')).default,
+      meta: { roles: ['admin'] },
     },
     {
       path: 'new',
       name: 'addStorage',
-      component: async () => (await import('./AddStorage.vue')).default
+      component: async () => (await import('./AddStorage.vue')).default,
+      meta: { roles: ['admin'] },
     },
     {
       path: ':storageId',
       name: 'editStorage',
-      component: async () => (await import('./EditStorage.vue')).default
+      component: async () => (await import('./EditStorage.vue')).default,
+      meta: { roles: ['admin'] },
     }
   ]
 }

@@ -5,21 +5,25 @@ export const managePluginsRoutes = {
   path: 'plugins',
   component: EmptyRoute,
   redirect: { name: 'plugins' },
+  meta: { roles: ['admin'] },
   children: [
     {
       path: '',
       name: 'plugins',
-      component: async () => (await import('./Plugins.vue')).default
+      component: async () => (await import('./Plugins.vue')).default,
+      meta: { roles: ['admin'] },
     },
     {
       path: 'new',
       name: 'createPlugin',
-      component: async () => (await import('./CreatePlugin.vue')).default
+      component: async () => (await import('./CreatePlugin.vue')).default,
+      meta: { roles: ['admin'] },
     },
     {
       path: ':pluginId',
       name: 'editPlugin',
-      component: async () => (await import('./EditPlugin.vue')).default
+      component: async () => (await import('./EditPlugin.vue')).default,
+      meta: { roles: ['admin'] },
     }
   ]
 };
@@ -43,14 +47,17 @@ export const adminRoutesScreenEditor = {
   path: 'screen-editor',
   name: 'screenEditor',
   component: EmptyRoute,
+  meta: { roles: ['admin'] },
   children: [{
     name: 'defaultAdminPluginPlaceholder',
     path: ':allGuest',
     component: EmptyRoute,
+    meta: { roles: ['admin'] },
   }, {
     name: 'defaultAdminPluginPlaceholderSecond',
     path: ':allGuest/:other',
     component: EmptyRoute,
+    meta: { roles: ['admin'] },
   }]
 }
 

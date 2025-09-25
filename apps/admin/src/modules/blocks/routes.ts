@@ -9,17 +9,20 @@ export const blocksRoutes: RouteRecordRaw = {
     {
       path: '',
       name: 'blocks',
-      component: async () => (await import('./Blocks.vue')).default
+      component: async () => (await import('./Blocks.vue')).default,
+      meta: { roles: ['admin'] },
     },
     {
       path: 'new',
       name: 'createBlock',
-      component: async () => (await import('./CreateBlock.vue')).default
+      component: async () => (await import('./CreateBlock.vue')).default,
+      meta: { roles: ['admin'] },
     },
     {
       path: ':blockId',
       name: 'editBlock',
-      component: async () => (await import('./EditBlock.vue')).default
+      component: async () => (await import('./EditBlock.vue')).default,
+      meta: { roles: ['admin'] },
     }
   ]
 }
@@ -32,17 +35,20 @@ export const componentsRoutes: RouteRecordRaw = {
     {
       path: '',
       name: 'components',
-      component: async () => (await import('./ComponentsPage.vue')).default
+      component: async () => (await import('./ComponentsPage.vue')).default,
+      meta: { roles: ['admin'] },
     },
     {
       path: 'new',
       name: 'createComponent',
-      component: async () => (await import('./CreateComponentPage.vue')).default
+      component: async () => (await import('./CreateComponentPage.vue')).default,
+      meta: { roles: ['admin'] },
     },
     {
       path: ':componentId',
       name: 'editComponent',
-      component: async () => (await import('./EditComponentPage.vue')).default
+      component: async () => (await import('./EditComponentPage.vue')).default,
+      meta: { roles: ['admin'] },
     }
   ]
 }
