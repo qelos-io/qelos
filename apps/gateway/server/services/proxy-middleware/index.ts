@@ -1,6 +1,6 @@
 import { createProxyMiddleware as proxy } from 'http-proxy-middleware';
 import { IApiProxyConfig, IServiceProxyConfig } from './types';
-import { getApiProxyConfig } from './config';
+import { getApiProxyConfig, internalServicesSecret } from './config';
 import { setTimeout } from 'timers/promises';
 
 const CSP = {
@@ -52,7 +52,11 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
 
   function loadIndexHtml(retry = 0) {
     let url = getProxyTarget(adminPanel) + '/index.html';
-    return fetch(url)
+    return fetch(url, {
+      headers: {
+        internal_secret: internalServicesSecret
+      }
+    })
       .then(res => {
         if (res.status === 200) {
           return res.text();
@@ -83,7 +87,11 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
 
   function getTenantByHost(hostUrl: string) {
     return cacheManager.wrap(':' + hostUrl, () => {
-      return fetch(hostTenantUrl + '?host=' + hostUrl)
+      return fetch(hostTenantUrl + '?host=' + hostUrl, {
+        headers: {
+          internal_secret: internalServicesSecret
+        }
+      })
         .then((res) => res.json())
         .then((data) => data.tenant);
     });
@@ -91,7 +99,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
 
   function getTenantSsrScripts(tenant: string) {
     return cacheManager.wrap('ssr-scripts:' + tenant, () => {
-      return fetch(ssrScriptsUrl + '?tenant=' + tenant)
+      return fetch(ssrScriptsUrl + '?tenant=' + tenant, { headers: { internal_secret: internalServicesSecret } })
         .then((res) => res.json())
         .then((data) => data.metadata || {})
         .catch(() => ({}))
@@ -101,7 +109,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
 
   function getAppConfig(tenant: string) {
     return cacheManager.wrap('app-configuration:' + tenant, () => {
-      return fetch(appConfigUrl + '?tenant=' + tenant)
+      return fetch(appConfigUrl + '?tenant=' + tenant, { headers: { internal_secret: internalServicesSecret } })
         .then((res) => res.json())
         .then((data) => data.metadata || {})
         .catch(() => ({}))

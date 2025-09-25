@@ -66,3 +66,5 @@ export function getApiProxyConfig(): IApiProxyConfig {
     }),
   };
 }
+
+export const internalServicesSecret = process.env.INTERNAL_SECRET || ''

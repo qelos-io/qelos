@@ -30,6 +30,8 @@ spec:
           env:
             - name: IP
               value: "0.0.0.0"
+            - name: INTERNAL_SECRET
+              value: "{{ .global.internalSecret }}"
             - name: REDIS_URL
               value: {{ .Values.global.redis.host }}
             - name: ADMIN_PANEL_URL
