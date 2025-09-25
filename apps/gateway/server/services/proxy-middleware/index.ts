@@ -99,7 +99,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
 
   function getTenantSsrScripts(tenant: string) {
     return cacheManager.wrap('ssr-scripts:' + tenant, () => {
-      return fetch(ssrScriptsUrl + '?tenant=' + tenant, { headers: { internal_secret: internalServicesSecret } })
+      return fetch(ssrScriptsUrl, { headers: { internal_secret: internalServicesSecret, tenant } })
         .then((res) => res.json())
         .then((data) => data.metadata || {})
         .catch(() => ({}))
@@ -109,7 +109,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
 
   function getAppConfig(tenant: string) {
     return cacheManager.wrap('app-configuration:' + tenant, () => {
-      return fetch(appConfigUrl + '?tenant=' + tenant, { headers: { internal_secret: internalServicesSecret } })
+      return fetch(appConfigUrl, { headers: { internal_secret: internalServicesSecret, tenant } })
         .then((res) => res.json())
         .then((data) => data.metadata || {})
         .catch(() => ({}))
