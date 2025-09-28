@@ -10,7 +10,7 @@ import { IBlueprintPropertyDescriptor, BlueprintPropertyType } from '@qelos/glob
  */
 function validateBlueprintProperty(p: IBlueprintPropertyDescriptor): IBlueprintPropertyDescriptor {
   // validate descriptor properties
-  const { title, type, required, multi, min, max, enum: e, description } = p;
+  const { title, type, required, multi, min, max, enum: e, description, schema } = p;
   
   // return all valid properties, including null, 0, false values
   const data: IBlueprintPropertyDescriptor = {
@@ -23,6 +23,7 @@ function validateBlueprintProperty(p: IBlueprintPropertyDescriptor): IBlueprintP
   if (min !== undefined) data.min = min;
   if (max !== undefined) data.max = max;
   if (e !== undefined) data.enum = e;
+  if (type === BlueprintPropertyType.OBJECT && schema !== undefined) data.schema = schema;
   return data;
 }
 

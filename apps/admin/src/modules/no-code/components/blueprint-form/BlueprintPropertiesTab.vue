@@ -7,6 +7,7 @@ import BlueprintPropertyTypeSelector from '@/modules/no-code/components/Blueprin
 import { getKeyFromName } from '@/modules/core/utils/texts';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import { Plus, Delete } from '@element-plus/icons-vue';
+import Monaco from '@/modules/users/components/Monaco.vue';
 
 const entityIdentifierMechanism = defineModel('entityIdentifierMechanism');
 const properties = defineModel('properties');
@@ -114,7 +115,10 @@ function getPropertySummary(property) {
 // Watch for changes and update the parent component
 watch(blueprintProperties, () => {
   properties.value = blueprintProperties.value.reduce((acc, { key, ...rest }) => {
-    return { ...acc, [key]: rest };
+    return { ...acc, [key]: {
+      ...rest,
+      schema: rest.type === BlueprintPropertyType.OBJECT && rest.schema ? rest.schema : undefined,
+    } };
   }, {});
 }, { deep: true });
 </script>
@@ -240,6 +244,12 @@ watch(blueprintProperties, () => {
               <small>{{ $t('If specified, only these values will be allowed for this property') }}</small>
             </div>
           </el-form-item>
+
+          <div v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.OBJECT">
+            <el-form-item :label="$t('Schema')">
+              <Monaco v-model="blueprintProperties[selectedPropertyIndex].schema" language="json"/>
+            </el-form-item>
+          </div>
           
           <FormRowGroup v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.NUMBER">
             <FormInput v-model="blueprintProperties[selectedPropertyIndex].min" type="number" title="Min Value"/>
