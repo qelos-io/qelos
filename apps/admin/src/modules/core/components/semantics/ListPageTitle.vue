@@ -38,7 +38,9 @@
       <div class="header-content" v-if="$slots.content">
         <slot name="content" />
       </div>
-      <el-button 
+      
+      <el-dropdown v-if="options">
+        <el-button 
         v-if="createRoutePath || createRoute || createRouteQuery || onCreate" 
         @click="create" 
         class="add-button"
@@ -47,7 +49,37 @@
       >
         <el-icon class="el-icon--left"><Plus /></el-icon>
         {{ t(createText || 'Create') }}
-      </el-button>
+       </el-button>
+       <el-button 
+        v-else
+        class="add-button"
+        type="primary"
+        :aria-label="t(createText || 'Create')"
+      >
+        <el-icon class="el-icon--left"><Plus /></el-icon>
+        {{ t(createText || 'Create') }}
+       </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item v-for="option in options" :key="option.value" @click="select(option)">
+              <el-icon v-if="option.icon" class="el-icon--left"><component :is="option.icon" /></el-icon>
+              <el-icon v-if="option.faIcon" class="el-icon--left"><font-awesome-icon :icon="option.faIcon" /></el-icon>
+              {{ t(option.label) }}
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+      <template v-else-if="createRoutePath || createRoute || createRouteQuery || onCreate">
+        <el-button 
+          @click="create" 
+          class="add-button"
+          type="primary"
+          :aria-label="t(createText || 'Create')"
+        >
+          <el-icon class="el-icon--left"><Plus /></el-icon>
+          {{ t(createText || 'Create') }}
+        </el-button>
+      </template>
     </div>
   </div>
 </template>
@@ -55,7 +87,6 @@
 <script lang="ts" setup>
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { ElMessageBox } from 'element-plus';
 import { Plus, QuestionFilled } from '@element-plus/icons-vue';
 import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
@@ -63,17 +94,18 @@ import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue'
 const router = useRouter();
 const { t } = useI18n();
 
-const emit = defineEmits(['create', 'removeComponent']);
+const emit = defineEmits(['create', 'removeComponent', 'selected']);
 
-const props = defineProps({
-  title: String,
-  description: String,
-  createRoute: String,
-  createRoutePath: String,
-  createRouteQuery: Object,
-  onCreate: Function,
-  createText: String,
-});
+const props = defineProps<{
+  title?: string,
+  description?: string,
+  createRoute?: string,
+  createRoutePath?: string,
+  createRouteQuery?: any,
+  onCreate?: Function,
+  createText?: string,
+  options?: Array<{ label: string, value: string, icon?: string, faIcon?: string, callback?: Function, data?: any }>,
+}>();
 
 function create() {
   if (props.onCreate) {
@@ -89,6 +121,14 @@ function create() {
     }
     router.push(to);
   }
+}
+
+function select(option: { label: string, value: string, icon?: string, faIcon?: string, callback?: Function, data?: any }) {
+  if (option.callback) {
+    option.callback();
+    return;
+  }
+  emit('selected', option.value);
 }
 
 function showHelpMessage() {
@@ -148,15 +188,12 @@ h1 {
   width: 100%;
 }
 
-.add-button {
+.add-button.add-button {
   white-space: nowrap;
   transition: transform 0.2s ease;
   margin-left: auto;
   margin-right: 0.5rem;
-}
-
-.add-button:hover {
-  transform: translateY(-2px);
+  outline: none;
 }
 
 .help-button {

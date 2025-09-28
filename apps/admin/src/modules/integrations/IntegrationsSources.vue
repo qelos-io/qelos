@@ -13,6 +13,7 @@ import IntegrationSourceFormModal from '@/modules/integrations/components/Integr
 import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useSecuredHeadersMasked } from './compositions/use-secured-headers-masked';
+import { useConnectionOptions } from './compositions/connection-options';
 
 const { securedHeadersMasked } = useSecuredHeadersMasked();
 const route = useRoute();
@@ -21,6 +22,7 @@ const kindData = useIntegrationKinds()[kind];
 const store = useIntegrationSourcesStore();
 const data = computed(() => store.groupedSources[kind]);
 
+const suggestedOptions = useConnectionOptions(kind);
 
 const filteredConnections = computed(() => data.value || []);
 const formVisible = ref(false);
@@ -123,13 +125,33 @@ const openEditForm = (connection) => {
   formVisible.value = true;
 };
 
+const createOptionalConnection = (value: string) => {
+  const option = suggestedOptions.find((option) => option.value === value);
+  if (!option) {
+    return;
+  }
+  openEditForm({
+    ...option.data,
+    authentication: {
+      ...option.data.authentication,
+    },
+    name: option.label,
+    kind,
+    labels: [],
+    metadata: {
+      ...getDefaultMetadata(kind),
+      ...option.data.metadata,
+    },
+  });
+};
+
 const closeForm = () => {
   formVisible.value = null;
 };
 </script>
 
 <template>
-  <ListPageTitle @create="openCreateForm">
+  <ListPageTitle @create="openCreateForm" :options="suggestedOptions" @selected="createOptionalConnection($event)">
     <img v-if="kindData?.logo" class="head-logo" :alt="kindData?.name" :src="kindData?.logo" />
     <span>{{ kindData?.name }} {{ $t('Connections') }}</span>
   </ListPageTitle>

@@ -29,6 +29,7 @@ if (Object.keys(securedHeadersOriginal.value).length === 0) {
 const formModel = ref<IHttpSource>({
   ...props.modelValue,
   metadata: {
+    method: props.modelValue?.metadata?.method || 'GET',
     baseUrl: props.modelValue?.metadata?.baseUrl || '',
     headers: props.modelValue?.metadata?.headers || {},
     query: props.modelValue?.metadata?.query || {},
