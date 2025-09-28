@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { BlueprintPropertyType, EntityIdentifierMechanism } from '@qelos/global-types';
+import { BlueprintPropertyType, EntityIdentifierMechanism, IBlueprintPropertyDescriptor } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import BlueprintPropertyTypeSelector from '@/modules/no-code/components/BlueprintPropertyTypeSelector.vue';
@@ -12,10 +12,21 @@ import Monaco from '@/modules/users/components/Monaco.vue';
 const entityIdentifierMechanism = defineModel('entityIdentifierMechanism');
 const properties = defineModel('properties');
 
+function getSchema(property: IBlueprintPropertyDescriptor) {
+  if (property.type === BlueprintPropertyType.OBJECT && property.schema) {
+    try {
+      return JSON.parse(property.schema)
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
 const blueprintProperties = ref(
   Object
     .entries(properties.value || {})
-    .map(([key, value]) => ({ key, ...value }))
+    .map(([key, value]) => ({ key, ...value, schema: value.type === BlueprintPropertyType.OBJECT && value.schema ? getSchema(value) : undefined }))
 );
 
 // Track the currently selected property for detailed view
@@ -117,7 +128,7 @@ watch(blueprintProperties, () => {
   properties.value = blueprintProperties.value.reduce((acc, { key, ...rest }) => {
     return { ...acc, [key]: {
       ...rest,
-      schema: rest.type === BlueprintPropertyType.OBJECT && rest.schema ? rest.schema : undefined,
+      schema: rest.type === BlueprintPropertyType.OBJECT && rest.schema ? getSchema(rest) : undefined,
     } };
   }, {});
 }, { deep: true });
