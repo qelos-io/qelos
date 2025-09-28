@@ -179,6 +179,9 @@ function updatePluginJson(value: string) {
 
 // Submit the form
 function submit() {
+  if (!edit) return;
+  // @ts-ignore
+  delete edit.__v; // Remove the __v property before submitting
   emit('submitted', edit);
 }
 </script>
