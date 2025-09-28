@@ -26,7 +26,7 @@ function getSchema(property: IBlueprintPropertyDescriptor) {
 const blueprintProperties = ref(
   Object
     .entries(properties.value || {})
-    .map(([key, value]) => ({ key, ...value, schema: value.type === BlueprintPropertyType.OBJECT && value.schema ? getSchema(value) : undefined }))
+    .map(([key, value]) => ({ key, ...value, schema: value.schema ? JSON.stringify(value.schema, null, 2) : undefined }))
 );
 
 // Track the currently selected property for detailed view
