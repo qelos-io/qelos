@@ -1,5 +1,5 @@
 <template>
-  <el-form @submit.native.prevent="submit" class="plugin-form">
+  <el-form @submit.native.prevent="submit" :model="edit" class="plugin-form">
     <header class="page-header">
       <div class="page-title">
         <el-icon class="title-icon"><font-awesome-icon :icon="['fas', 'puzzle-piece']" /></el-icon>
@@ -7,7 +7,12 @@
         <strong v-if="edit?.name">{{ edit.name }}</strong>
       </div>
       <div class="header-actions">
-        <el-button type="primary" native-type="submit" :loading="props.submitting" :disabled="props.submitting">
+        <el-button
+          type="primary"
+          native-type="submit"
+          :loading="props.submitting"
+          :disabled="isSaveDisabled"
+        >
           <el-icon><font-awesome-icon :icon="['fas', 'save']" /></el-icon>
           <span>{{ $t('Save') }}</span>
         </el-button>
@@ -25,7 +30,11 @@
               <span>{{ $t('Basic Information') }}</span>
             </div>
           </template>
-          <BasicInfoTab :plugin="edit" @refresh-manifest="refreshPluginFromManifest" />
+          <BasicInfoTab
+            :plugin="edit"
+            :manifest-error="manifestUrlDisplayError"
+            @refresh-manifest="refreshPluginFromManifest"
+          />
         </el-tab-pane>
         
         <el-tab-pane name="apis" lazy>
@@ -90,7 +99,12 @@
       </el-tabs>
       
       <div class="footer-actions">
-        <el-button type="primary" @click="submit" :loading="props.submitting" :disabled="props.submitting">
+        <el-button
+          type="primary"
+          @click="submit"
+          :loading="props.submitting"
+          :disabled="isSaveDisabled"
+        >
           {{ $t('Save Changes') }}
         </el-button>
       </div>
@@ -98,8 +112,9 @@
   </el-form>
 </template>
 <script setup lang="ts">
-import { computed, provide, reactive } from 'vue';
+import { computed, provide, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { IPlugin } from '@/services/types/plugin';
 import {
   BasicInfoTab,
@@ -122,6 +137,7 @@ const emit = defineEmits<{
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const edit = reactive<Partial<IPlugin>>({
   name: '',
@@ -129,6 +145,34 @@ const edit = reactive<Partial<IPlugin>>({
   injectables: [],
   ...props.plugin as Partial<IPlugin>
 });
+
+const manifestTouched = ref(false);
+const manifestSubmitAttempted = ref(false);
+
+const manifestValidationError = computed(() => {
+  const rawValue = typeof edit.manifestUrl === 'string' ? edit.manifestUrl.trim() : '';
+  if (!rawValue) {
+    return t('Manifest URL is required');
+  }
+
+  try {
+    const url = new URL(rawValue);
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      return t('Manifest URL must start with http:// or https://');
+    }
+  } catch (error) {
+    return t('Manifest URL must be a valid URL');
+  }
+
+  return '';
+});
+
+const manifestUrlDisplayError = computed(() =>
+  (manifestTouched.value || manifestSubmitAttempted.value) ? manifestValidationError.value : ''
+);
+
+const isManifestValid = computed(() => manifestValidationError.value === '');
+const isSaveDisabled = computed(() => !!props.submitting || !isManifestValid.value);
 
 const activeTab = computed({
   get: () => route.query.tab?.toString() || 'basic',
@@ -141,12 +185,42 @@ const activeTab = computed({
 
 provide('plugin', edit);
 
+watch(
+  () => props.plugin,
+  () => {
+    manifestTouched.value = false;
+    manifestSubmitAttempted.value = false;
+  }
+);
+
+watch(
+  () => edit.manifestUrl,
+  (newValue, oldValue) => {
+    if (newValue !== oldValue) {
+      manifestTouched.value = true;
+    }
+  }
+);
+
+function ensureManifestIsValid() {
+  manifestTouched.value = true;
+  manifestSubmitAttempted.value = true;
+
+  if (typeof edit.manifestUrl === 'string') {
+    edit.manifestUrl = edit.manifestUrl.trim();
+  }
+
+  return isManifestValid.value;
+}
+
 // Refresh plugin from manifest
 async function refreshPluginFromManifest() {
-  if (!edit.manifestUrl) return;
+  if (!ensureManifestIsValid()) {
+    return;
+  }
   
   try {
-    const response = await fetch(edit.manifestUrl);
+    const response = await fetch(edit.manifestUrl as string);
     if (!response.ok) {
       throw new Error(`Failed to fetch manifest: ${response.status}`);
     }
@@ -180,6 +254,9 @@ function updatePluginJson(value: string) {
 // Submit the form
 function submit() {
   if (!edit) return;
+  if (!ensureManifestIsValid()) {
+    return;
+  }
   // @ts-ignore
   delete edit.__v; // Remove the __v property before submitting
   emit('submitted', edit);

@@ -21,7 +21,14 @@
         </div>
       </template>
       <FormRowGroup>
-        <FormInput title="Manifest URL" label="required" v-model="plugin.manifestUrl"/>
+        <FormInput
+          title="Manifest URL"
+          label="required"
+          required
+          prop="manifestUrl"
+          :error="manifestError"
+          v-model="plugin.manifestUrl"
+        />
         <FormInput title="Plugin API Path" label="Leave empty to auto-set" v-model="plugin.apiPath"/>
       </FormRowGroup>
       <div class="refresh-button-container">
@@ -43,6 +50,7 @@ import { IPlugin } from '@/services/types/plugin';
 
 const props = defineProps<{
   plugin: Partial<IPlugin>;
+  manifestError?: string;
 }>();
 
 const emit = defineEmits<{
