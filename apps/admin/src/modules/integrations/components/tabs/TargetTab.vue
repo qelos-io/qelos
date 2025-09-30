@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, nextTick } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { useIntegrationKindsTargetOperations } from '@/modules/integrations/compositions/integration-kinds-operations';
-import { IntegrationSourceKind, OpenAITargetOperation, QelosTargetOperation, HttpTargetOperation, EmailTargetOperation } from '@qelos/global-types';
+import { IntegrationSourceKind, OpenAITargetOperation, HttpTargetOperation, EmailTargetOperation } from '@qelos/global-types';
 
 // Import target configuration components
 import HttpTargetConfig from './target-components/HttpTargetConfig.vue';

@@ -4,7 +4,6 @@ import { useIntegrationKinds } from '@/modules/integrations/compositions/integra
 import integrationsService from '@/services/integrations-service';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { computed } from 'vue';
-import { Check as IconCheck, Close as IconClose } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { IIntegrationSource, IIntegration } from '@qelos/global-types';

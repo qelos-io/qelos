@@ -161,6 +161,8 @@ function isImportUsed(importName: string, content: string, importInfo: ImportInf
     return usagePatterns.some(pattern => pattern.test(searchContent));
   }
   
+  try {
+
   // Check if import is used in template or script
   const usagePatterns = [
     new RegExp(`\\b${importName}\\b`, 'g'),  // Direct usage
@@ -173,6 +175,12 @@ function isImportUsed(importName: string, content: string, importInfo: ImportInf
     const matches = searchContent.match(pattern);
     return matches && matches.length > 0;
   });
+  } catch (error) {
+    if (importName.startsWith('* as') && searchContent.includes(importName.split(' ').pop())) {
+      return true;
+    }
+    return false;
+  }
 }
 
 /**
