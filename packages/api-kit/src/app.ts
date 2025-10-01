@@ -2,6 +2,7 @@ import express, { Express } from 'express';
 
 import type { ApiConfig, BodyParserType } from './types';
 import shutdown from './shutdown';
+import { healthCheckMiddleware } from './health';
 
 export const config = (updatedConfig: any = _config): ApiConfig => {
   _config = { ..._config, ...updatedConfig };
@@ -42,6 +43,7 @@ function configureApp(app: Express) {
   if (_config.bodyParser) {
     app.use(express[_config.bodyParser]())
   }
+    app.use(healthCheckMiddleware);
 }
 
 export function getBodyParser() {
