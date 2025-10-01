@@ -1,15 +1,15 @@
 <template>
-  <div class="tab-content">
+  <div class="tab-content" role="region" :aria-label="$t('CRUD operations configuration')">
     <el-card class="settings-card">
       <template #header>
-        <div class="card-header">
-          <el-icon><font-awesome-icon :icon="['fas', 'database']" /></el-icon>
+        <div class="card-header" id="crud-operations-section">
+          <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'database']" /></el-icon>
           <span>{{ $t('CRUD Operations') }}</span>
         </div>
       </template>
       <p class="card-description">{{ $t('Coming soon - Configure CRUD operations for this plugin.') }}</p>
-      <div class="coming-soon-placeholder">
-        <el-icon class="coming-soon-icon"><font-awesome-icon :icon="['fas', 'clock']" /></el-icon>
+      <div class="coming-soon-placeholder" role="status" aria-live="polite">
+        <el-icon class="coming-soon-icon" aria-hidden="true"><font-awesome-icon :icon="['fas', 'clock']" /></el-icon>
         <span>{{ $t('Feature coming soon') }}</span>
       </div>
     </el-card>
@@ -68,5 +68,18 @@ defineProps<{
   font-size: 3rem;
   margin-bottom: 1rem;
   color: var(--el-color-info);
+}
+
+/* Focus states for accessibility */
+:deep(.el-card:focus-within) {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Ensure interactive elements have visible focus */
+:deep(*:focus-visible) {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
 }
 </style>
