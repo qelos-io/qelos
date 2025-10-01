@@ -1,14 +1,26 @@
 <template>
-  <el-form @submit.native.prevent="submit" class="plugin-form">
+  <el-form 
+    @submit.native.prevent="submit" 
+    class="plugin-form"
+    role="form"
+    :aria-label="$t(plugin?._id ? 'Edit Plugin' : 'Create Plugin')">
     <header class="page-header">
       <div class="page-title">
-        <el-icon class="title-icon"><font-awesome-icon :icon="['fas', 'puzzle-piece']" /></el-icon>
-        <span>{{ $t(plugin?._id ? 'Edit Plugin' : 'Create Plugin') }}:</span>
-        <strong v-if="edit?.name">{{ edit.name }}</strong>
+        <el-icon class="title-icon" aria-hidden="true"><font-awesome-icon :icon="['fas', 'puzzle-piece']" /></el-icon>
+        <h1 class="page-title-text">
+          <span>{{ $t(plugin?._id ? 'Edit Plugin' : 'Create Plugin') }}:</span>
+          <strong v-if="edit?.name">{{ edit.name }}</strong>
+        </h1>
       </div>
       <div class="header-actions">
-        <el-button type="primary" native-type="submit" :loading="props.submitting" :disabled="props.submitting">
-          <el-icon><font-awesome-icon :icon="['fas', 'save']" /></el-icon>
+        <el-button 
+          type="primary" 
+          native-type="submit" 
+          :loading="props.submitting" 
+          :disabled="props.submitting"
+          :aria-label="$t('Save plugin changes')"
+          :aria-busy="props.submitting">
+          <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'save']" /></el-icon>
           <span>{{ $t('Save') }}</span>
         </el-button>
       </div>
@@ -17,11 +29,12 @@
       <el-tabs 
         v-model="activeTab"
         class="editor-tabs"
-        type="border-card">
+        type="border-card"
+        :aria-label="$t('Plugin configuration sections')">
         <el-tab-pane name="basic" lazy>
           <template #label>
             <div class="tab-label">
-              <el-icon><font-awesome-icon :icon="['fas', 'info-circle']" /></el-icon>
+              <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'info-circle']" /></el-icon>
               <span>{{ $t('Basic Information') }}</span>
             </div>
           </template>
@@ -31,7 +44,7 @@
         <el-tab-pane name="apis" lazy>
           <template #label>
             <div class="tab-label">
-              <el-icon><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
+              <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
               <span>{{ $t('APIs') }}</span>
             </div>
           </template>
@@ -41,7 +54,7 @@
         <el-tab-pane name="hooks" lazy>
           <template #label>
             <div class="tab-label">
-              <el-icon><font-awesome-icon :icon="['fas', 'bell']" /></el-icon>
+              <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'bell']" /></el-icon>
               <span>{{ $t('Hooks & Events') }}</span>
             </div>
           </template>
@@ -51,7 +64,7 @@
         <el-tab-pane name="cruds" lazy>
           <template #label>
             <div class="tab-label">
-              <el-icon><font-awesome-icon :icon="['fas', 'database']" /></el-icon>
+              <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'database']" /></el-icon>
               <span>{{ $t('CRUDs') }}</span>
             </div>
           </template>
@@ -61,7 +74,7 @@
         <el-tab-pane name="microfrontends" lazy>
           <template #label>
             <div class="tab-label">
-              <el-icon><font-awesome-icon :icon="['fas', 'window-restore']" /></el-icon>
+              <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'window-restore']" /></el-icon>
               <span>{{ $t('Micro-Frontends') }}</span>
             </div>
           </template>
@@ -71,7 +84,7 @@
         <el-tab-pane name="injectables" lazy>
           <template #label>
             <div class="tab-label">
-              <el-icon><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
+              <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
               <span>{{ $t('Injectables') }}</span>
             </div>
           </template>
@@ -81,7 +94,7 @@
         <el-tab-pane name="summary" lazy>
           <template #label>
             <div class="tab-label">
-              <el-icon><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
+              <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
               <span>{{ $t('Summary') }}</span>
             </div>
           </template>
@@ -89,8 +102,14 @@
         </el-tab-pane>
       </el-tabs>
       
-      <div class="footer-actions">
-        <el-button type="primary" @click="submit" :loading="props.submitting" :disabled="props.submitting">
+      <div class="footer-actions" role="group" :aria-label="$t('Form actions')">
+        <el-button 
+          type="primary" 
+          @click="submit" 
+          :loading="props.submitting" 
+          :disabled="props.submitting"
+          :aria-label="$t('Save plugin changes')"
+          :aria-busy="props.submitting">
           {{ $t('Save Changes') }}
         </el-button>
       </div>
@@ -206,14 +225,22 @@ function submit() {
 }
 
 .page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-title-text {
   font-size: 1.25rem;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   color: var(--el-text-color-primary);
+  font-weight: 400;
 }
 
-.page-title strong {
+.page-title-text strong {
   color: var(--el-color-primary);
   font-weight: 600;
 }
@@ -372,6 +399,17 @@ function submit() {
 
 :deep(.el-tabs__item.is-active) {
   font-weight: 600;
+}
+
+:deep(.el-tabs__item:focus-visible) {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+:deep(.el-button:focus-visible) {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
 }
 
 :deep(.el-card__body) {
