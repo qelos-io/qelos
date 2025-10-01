@@ -1,19 +1,33 @@
 <template>
-  <div class="tab-content">
+  <div class="tab-content" role="region" :aria-label="$t('Micro-frontends configuration')">
     <el-card class="settings-card">
       <template #header>
-        <div class="card-header">
+        <div class="card-header" id="micro-frontends-section">
           <div class="header-left">
-            <el-icon><font-awesome-icon :icon="['fas', 'window-restore']" /></el-icon>
+            <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'window-restore']" /></el-icon>
             <span>{{ $t('Micro-Frontends Configuration') }}</span>
           </div>
-          <el-button type="primary" @click="addNewMicroFrontend" class="add-button">
-            <el-icon><font-awesome-icon :icon="['fas', 'plus']" /></el-icon>
+          <el-button 
+            type="primary" 
+            @click="addNewMicroFrontend" 
+            class="add-button"
+            :aria-label="$t('Add new micro-frontend')">
+            <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'plus']" /></el-icon>
             <span class="button-text">Add MFE</span>
           </el-button>
         </div>
       </template>
-      <div class="micro-frontends-container">
+      <div 
+        class="micro-frontends-container" 
+        role="group" 
+        :aria-labelledby="'micro-frontends-section'"
+        :aria-describedby="plugin && plugin.microFrontends && plugin.microFrontends.length > 0 ? 'mfe-count' : 'mfe-empty'">
+        <span id="mfe-count" class="sr-only" v-if="plugin && plugin.microFrontends && plugin.microFrontends.length > 0">
+          {{ $t('{count} micro-frontend(s) configured', { count: plugin.microFrontends.length }) }}
+        </span>
+        <span id="mfe-empty" class="sr-only" v-else>
+          {{ $t('No micro-frontends configured yet') }}
+        </span>
         <EditPluginMicroFrontends ref="mfeComponent" v-if="plugin" />
       </div>
     </el-card>
@@ -99,5 +113,42 @@ function addNewMicroFrontend() {
 
 .button-text {
   margin-left: 0.5rem;
+}
+
+/* Screen reader only class for assistive text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus states for accessibility */
+:deep(.el-button:focus-visible) {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+}
+
+:deep(.el-input:focus-within),
+:deep(.el-select:focus-within),
+:deep(.el-textarea:focus-within) {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+:deep(.el-card:focus-within) {
+  outline: none;
+}
+
+/* Ensure all interactive elements have visible focus */
+:deep(*:focus-visible) {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
 }
 </style>
