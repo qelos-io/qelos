@@ -77,6 +77,7 @@
           type="primary" 
           class="refresh-button" 
           @click="refreshPluginFromManifest"
+          @keydown.enter.prevent="refreshPluginFromManifest"
           :aria-label="$t('Load plugin configuration from manifest URL')">
           <el-icon aria-hidden="true">
             <font-awesome-icon :icon="['fas', 'sync']" />

@@ -10,6 +10,7 @@
           <el-button 
             type="primary" 
             @click="addNewMicroFrontend" 
+            @keydown.enter.prevent="addNewMicroFrontend"
             class="add-button"
             :aria-label="$t('Add new micro-frontend')">
             <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'plus']" /></el-icon>

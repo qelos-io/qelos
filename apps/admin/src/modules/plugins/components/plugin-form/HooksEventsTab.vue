@@ -233,6 +233,7 @@
                 plain 
                 class="test-webhook-button"
                 @click="testWebhook(event)"
+                @keydown.enter.prevent="testWebhook(event)"
                 :disabled="!event.hookUrl"
                 :aria-label="t('Test webhook')"
                 :aria-disabled="!event.hookUrl"
@@ -248,6 +249,7 @@
                 plain 
                 class="format-webhook-button"
                 @click="showWebhookFormat(event)"
+                @keydown.enter.prevent="showWebhookFormat(event)"
                 :aria-label="t('View webhook format')"
                 :aria-expanded="activeHelpIndex === index"
               >
@@ -262,6 +264,7 @@
           <el-button 
             type="danger" 
             @click="removeEvent(filteredEvents.indexOf(event))"
+            @keydown.enter.prevent="removeEvent(filteredEvents.indexOf(event))"
             size="small"
             class="remove-event-button"
             :aria-label="t('Remove {0}', [getEventTitle(event, index)])"
@@ -279,6 +282,7 @@
                 <el-button 
                   type="text" 
                   @click="activeHelpIndex = -1"
+                  @keydown.enter.prevent="activeHelpIndex = -1"
                   size="small"
                   :aria-label="t('Close webhook format')"
                 >
@@ -304,6 +308,7 @@
             <el-button 
               type="primary" 
               @click="addEvent" 
+              @keydown.enter.prevent="addEvent"
               class="add-event-button"
               icon="Plus"
               :aria-label="t('Add new event subscription')"

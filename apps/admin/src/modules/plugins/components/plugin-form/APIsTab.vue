@@ -88,6 +88,7 @@
               <template #append v-if="!plugin.manifestUrl">
                 <el-button 
                   @click="suggestApiPath" 
+                  @keydown.enter.prevent="suggestApiPath"
                   :disabled="!!plugin.apiPath"
                   :aria-label="$t('Suggest API path based on plugin name')"
                 >
@@ -138,6 +139,7 @@
               <template #append>
                 <el-button 
                   @click="testConnection" 
+                  @keydown.enter.prevent="testConnection"
                   :disabled="!plugin.proxyUrl"
                   :aria-label="$t('Test connection to proxy URL')"
                 >
@@ -210,6 +212,7 @@
               <template #append>
                 <el-button 
                   @click="generateToken" 
+                  @keydown.enter.prevent="generateToken"
                   :disabled="!!plugin.token"
                   :aria-label="$t('Generate secure API token')"
                 >

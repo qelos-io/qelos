@@ -1,6 +1,8 @@
 <template>
   <el-form 
     @submit.native.prevent="submit" 
+    @keydown.ctrl.s.prevent="submit"
+    @keydown.meta.s.prevent="submit"
     class="plugin-form"
     role="form"
     :aria-label="$t(plugin?._id ? 'Edit Plugin' : 'Create Plugin')">
@@ -30,6 +32,7 @@
         v-model="activeTab"
         class="editor-tabs"
         type="border-card"
+        @keydown.enter.prevent="focusFirstInput"
         :aria-label="$t('Plugin configuration sections')">
         <el-tab-pane name="basic" lazy>
           <template #label>
@@ -117,7 +120,7 @@
   </el-form>
 </template>
 <script setup lang="ts">
-import { computed, provide, reactive } from 'vue';
+import { computed, provide, reactive, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { IPlugin } from '@/services/types/plugin';
 import {
@@ -159,6 +162,16 @@ const activeTab = computed({
 });
 
 provide('plugin', edit);
+
+// Focus first input in active tab
+function focusFirstInput() {
+  nextTick(() => {
+    const firstInput = document.querySelector('.tab-content input:not([type="hidden"]), .tab-content textarea, .tab-content select');
+    if (firstInput instanceof HTMLElement) {
+      firstInput.focus();
+    }
+  });
+}
 
 // Refresh plugin from manifest
 async function refreshPluginFromManifest() {
