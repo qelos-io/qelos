@@ -200,7 +200,7 @@
               </template>
               <el-input 
                 :id="'plugin-name-' + index"
-                v-model="event.pluginName" 
+                v-model="(event as any).pluginName" 
                 :placeholder="$t('Plugin name')"
                 :aria-label="t('Plugin name')"/>
             </el-form-item>
@@ -388,9 +388,8 @@ function addEvent() {
     source: '',
     kind: '',
     eventName: '',
-    pluginName: '',
     hookUrl: ''
-  });
+  } as any);
   
   // Focus on the newly added item by opening its accordion
   setTimeout(() => {
@@ -497,8 +496,8 @@ function getEventTitle(event: any, index: number): string {
   } else if (event.source === 'blueprints') {
     title = t('Blueprints');
   } else if (event.source === 'plugin') {
-    title = event.pluginName ? 
-      t('Plugin: {0}', [event.pluginName]) : 
+    title = (event as any).pluginName ? 
+      t('Plugin: {0}', [(event as any).pluginName]) : 
       t('Plugin Events');
   } else {
     title = event.source;
@@ -607,8 +606,8 @@ watch(() => props.plugin.subscribedEvents, (events) => {
   
   events.forEach(event => {
     // When source changes, reset kind and eventName if needed
-    if (event.source === 'plugin' && !event.pluginName) {
-      event.pluginName = '';
+    if (event.source === 'plugin' && !(event as any).pluginName) {
+      (event as any).pluginName = '';
     }
   });
 }, { deep: true });
