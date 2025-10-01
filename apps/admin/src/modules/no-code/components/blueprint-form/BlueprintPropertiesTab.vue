@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { BlueprintPropertyType, EntityIdentifierMechanism, IBlueprintPropertyDescriptor } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
@@ -11,6 +11,11 @@ import Monaco from '@/modules/users/components/Monaco.vue';
 
 const entityIdentifierMechanism = defineModel('entityIdentifierMechanism');
 const properties = defineModel('properties');
+
+// Loading states
+const isLoading = ref(true);
+const isPropertiesLoading = ref(true);
+const isIdentifierLoading = ref(true);
 
 function getSchema(property: IBlueprintPropertyDescriptor) {
   if (property.type === BlueprintPropertyType.OBJECT && property.schema) {
@@ -123,6 +128,19 @@ function getPropertySummary(property) {
   return parts.join(' • ');
 }
 
+// Simulate loading states
+onMounted(() => {
+  // Simulate async data loading
+  setTimeout(() => {
+    isIdentifierLoading.value = false;
+  }, 800);
+  
+  setTimeout(() => {
+    isPropertiesLoading.value = false;
+    isLoading.value = false;
+  }, 1200);
+});
+
 // Watch for changes and update the parent component
 watch(blueprintProperties, () => {
   properties.value = blueprintProperties.value.reduce((acc, { key, ...rest }) => {
@@ -137,165 +155,239 @@ watch(blueprintProperties, () => {
 <template>
   <div class="blueprint-properties-container">
     <div class="properties-header">
-      <h3>{{ $t('Blueprint Properties') }}</h3>
-      <p class="properties-description">
-        {{ $t('Properties determine the structure of the blueprint.') }}
-        <InfoIcon content="Each entity will also have an identifier and a title, regardless of those custom properties."/>
-      </p>
+      <template v-if="isIdentifierLoading">
+        <el-skeleton animated>
+          <template #template>
+            <el-skeleton-item variant="h3" style="width: 40%; margin-bottom: 1rem;" />
+            <el-skeleton-item variant="text" style="width: 80%; margin-bottom: 0.5rem;" />
+            <el-skeleton-item variant="text" style="width: 60%; margin-bottom: 1.5rem;" />
+            <el-skeleton-item variant="text" style="width: 30%; margin-bottom: 0.5rem;" />
+            <el-skeleton-item variant="rect" style="width: 100%; height: 32px; margin-bottom: 0.5rem;" />
+            <el-skeleton-item variant="text" style="width: 70%;" />
+          </template>
+        </el-skeleton>
+      </template>
       
-      <el-form-item :label="$t('Identifier Mechanism for Entities')">
-        <el-select v-model="entityIdentifierMechanism" required :placeholder="$t('Select mechanism')">
-          <el-option label="Object ID" :value="EntityIdentifierMechanism.OBJECT_ID"/>
-          <el-option label="GUID" :value="EntityIdentifierMechanism.GUID"/>
-        </el-select>
-        <div class="mechanism-description">
-          <small>{{ $t('This determines how entity IDs are generated. Object ID uses MongoDB\'s ObjectId, while GUID uses globally unique identifiers.') }}</small>
+      <template v-else>
+        <div class="content-fade-in">
+          <h3>{{ $t('Blueprint Properties') }}</h3>
+          <p class="properties-description">
+            {{ $t('Properties determine the structure of the blueprint.') }}
+            <InfoIcon content="Each entity will also have an identifier and a title, regardless of those custom properties."/>
+          </p>
+          
+          <el-form-item :label="$t('Identifier Mechanism for Entities')">
+            <el-select v-model="entityIdentifierMechanism" required :placeholder="$t('Select mechanism')">
+              <el-option label="Object ID" :value="EntityIdentifierMechanism.OBJECT_ID"/>
+              <el-option label="GUID" :value="EntityIdentifierMechanism.GUID"/>
+            </el-select>
+            <div class="mechanism-description">
+              <small>{{ $t('This determines how entity IDs are generated. Object ID uses MongoDB\'s ObjectId, while GUID uses globally unique identifiers.') }}</small>
+            </div>
+          </el-form-item>
         </div>
-      </el-form-item>
+      </template>
     </div>
     
     <div class="properties-content">
       <div class="properties-list">
-        <div class="properties-list-header">
-          <h4>{{ $t('Properties') }}</h4>
-          <el-button type="primary" size="small" @click="addProperty">
-            <el-icon><Plus /></el-icon>
-            {{ $t('Add Property') }}
-          </el-button>
-        </div>
+        <template v-if="isPropertiesLoading">
+          <el-skeleton animated>
+            <template #template>
+              <div class="properties-list-header">
+                <el-skeleton-item variant="h1" style="width: 30%;" />
+                <el-skeleton-item variant="button" style="width: 120px; height: 28px;" />
+              </div>
+              <div class="properties-list-content">
+                <div v-for="i in 3" :key="i" class="property-card-skeleton">
+                  <el-skeleton-item variant="rect" style="width: 100%; height: 120px; margin-bottom: 1rem; border-radius: 8px;" />
+                </div>
+              </div>
+            </template>
+          </el-skeleton>
+        </template>
         
-        <div class="properties-list-content">
-          <el-empty v-if="blueprintProperties.length === 0" :description="$t('No properties defined yet')">
-            <el-button type="primary" @click="addProperty">{{ $t('Add First Property') }}</el-button>
-          </el-empty>
+        <template v-else>
+          <div class="properties-list-header">
+            <h4>{{ $t('Properties') }}</h4>
+            <el-button type="primary" size="small" @click="addProperty">
+              <el-icon><Plus /></el-icon>
+              {{ $t('Add Property') }}
+            </el-button>
+          </div>
           
-          <el-card 
-            v-for="(property, index) in blueprintProperties" 
-            :key="index"
-            class="property-card"
-            :class="{ 'selected': selectedPropertyIndex === index }"
-            @click="selectProperty(index)"
-            shadow="hover"
-          >
-            <div class="property-card-content">
-              <div class="property-info">
-                <div class="property-title">
-                  <strong>{{ property.title || property.key }}</strong>
-                  <span class="property-key">({{ property.key }})</span>
+          <div class="properties-list-content content-fade-in">
+            <el-empty v-if="blueprintProperties.length === 0" :description="$t('No properties defined yet')">
+              <el-button type="primary" @click="addProperty">{{ $t('Add First Property') }}</el-button>
+            </el-empty>
+            
+            <el-card 
+              v-for="(property, index) in blueprintProperties" 
+              :key="index"
+              class="property-card"
+              :class="{ 'selected': selectedPropertyIndex === index }"
+              @click="selectProperty(index)"
+              shadow="hover"
+            >
+              <div class="property-card-content">
+                <div class="property-info">
+                  <div class="property-title">
+                    <strong>{{ property.title || property.key }}</strong>
+                    <span class="property-key">({{ property.key }})</span>
+                  </div>
+                  <div class="property-type">
+                    <el-tag size="small" :type="property.required ? 'danger' : 'info'">
+                      {{ getPropertyTypeLabel(property.type) }}
+                    </el-tag>
+                    <el-tag v-if="property.multi" size="small" type="warning" class="multi-tag">Multiple</el-tag>
+                  </div>
+                  <div class="property-description" v-if="property.description">
+                    {{ property.description }}
+                  </div>
+                  <div class="property-summary" v-if="getPropertySummary(property)">
+                    {{ getPropertySummary(property) }}
+                  </div>
                 </div>
-                <div class="property-type">
-                  <el-tag size="small" :type="property.required ? 'danger' : 'info'">
-                    {{ getPropertyTypeLabel(property.type) }}
-                  </el-tag>
-                  <el-tag v-if="property.multi" size="small" type="warning" class="multi-tag">Multiple</el-tag>
-                </div>
-                <div class="property-description" v-if="property.description">
-                  {{ property.description }}
-                </div>
-                <div class="property-summary" v-if="getPropertySummary(property)">
-                  {{ getPropertySummary(property) }}
+                
+                <div class="property-actions">
+                  <el-button 
+                    type="danger" 
+                    circle 
+                    size="small" 
+                    @click.stop="removeProperty(index)"
+                  >
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
                 </div>
               </div>
-              
-              <div class="property-actions">
-                <el-button 
-                  type="danger" 
-                  circle 
-                  size="small" 
-                  @click.stop="removeProperty(index)"
-                >
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </div>
-            </div>
-          </el-card>
-        </div>
+            </el-card>
+          </div>
+        </template>
       </div>
       
-      <div class="property-details" v-if="selectedPropertyIndex >= 0">
-        <div class="property-details-header">
-          <h4>{{ $t('Property Details') }}</h4>
-        </div>
+      <div class="property-details" v-if="isPropertiesLoading || selectedPropertyIndex >= 0">
+        <template v-if="isPropertiesLoading">
+          <el-skeleton animated>
+            <template #template>
+              <div class="property-details-header">
+                <el-skeleton-item variant="h1" style="width: 40%; margin-bottom: 1.5rem;" />
+              </div>
+              <div class="property-details-content">
+                <div class="mobile-form-group">
+                  <div style="flex: 1;">
+                    <el-skeleton-item variant="text" style="width: 20%; margin-bottom: 0.5rem;" />
+                    <el-skeleton-item variant="rect" style="width: 100%; height: 32px; margin-bottom: 1rem;" />
+                  </div>
+                  <div style="flex: 1;">
+                    <el-skeleton-item variant="text" style="width: 25%; margin-bottom: 0.5rem;" />
+                    <el-skeleton-item variant="rect" style="width: 100%; height: 32px; margin-bottom: 1rem;" />
+                  </div>
+                </div>
+                <div>
+                  <el-skeleton-item variant="text" style="width: 30%; margin-bottom: 0.5rem;" />
+                  <el-skeleton-item variant="rect" style="width: 100%; height: 32px; margin-bottom: 1rem;" />
+                </div>
+                <div>
+                  <el-skeleton-item variant="text" style="width: 35%; margin-bottom: 0.5rem;" />
+                  <el-skeleton-item variant="rect" style="width: 100%; height: 32px; margin-bottom: 1rem;" />
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: end;">
+                  <el-skeleton-item variant="rect" style="width: 60px; height: 24px;" />
+                  <el-skeleton-item variant="rect" style="width: 60px; height: 24px;" />
+                  <el-skeleton-item variant="rect" style="width: 60px; height: 24px;" />
+                </div>
+              </div>
+            </template>
+          </el-skeleton>
+        </template>
         
-        <div class="property-details-content">
-          <div class="mobile-form-group">
-            <FormInput v-model="blueprintProperties[selectedPropertyIndex].key" title="Key" required/>
-            <FormInput 
-              v-model="blueprintProperties[selectedPropertyIndex].title" 
-              @input="blueprintProperties[selectedPropertyIndex].key = getKeyFromName($event)" 
-              title="Title" 
-              required
-            />
+        <template v-else-if="selectedPropertyIndex >= 0">
+          <div class="property-details-header">
+            <h4>{{ $t('Property Details') }}</h4>
           </div>
           
-          <FormInput v-model="blueprintProperties[selectedPropertyIndex].description" title="Description"/>
-          
-          <BlueprintPropertyTypeSelector v-model="blueprintProperties[selectedPropertyIndex].type"/>
-          
-          <el-form-item 
-            v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.STRING" 
-            :label="$t('Valid Options (Enum)')">
-            <el-select
-              v-model="blueprintProperties[selectedPropertyIndex].enum"
-              multiple
-              filterable
-              allow-create
-              default-first-option
-              :reserve-keyword="false"
-              :placeholder="$t('Enter valid options')"
-            >
-              <el-option 
-                v-for="item in blueprintProperties[selectedPropertyIndex].enum" 
-                :key="item" 
-                :label="item" 
-                :value="item"
-              />
-            </el-select>
-            <div class="field-help">
-              <small>{{ $t('If specified, only these values will be allowed for this property') }}</small>
-            </div>
-          </el-form-item>
-
-          <div v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.OBJECT">
-            <el-form-item :label="$t('Schema')">
-              <Monaco v-model="blueprintProperties[selectedPropertyIndex].schema" language="json"/>
-            </el-form-item>
-          </div>
-          
-          <FormRowGroup v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.NUMBER">
-            <FormInput v-model="blueprintProperties[selectedPropertyIndex].min" type="number" title="Min Value"/>
-            <FormInput v-model="blueprintProperties[selectedPropertyIndex].max" type="number" title="Max Value"/>
-          </FormRowGroup>
-          
-          <FormRowGroup>
-            <FormInput 
-              v-model="blueprintProperties[selectedPropertyIndex].required" 
-              title="Required" 
-              type="switch" 
-              class="flex-0"
-            />
-            <FormInput 
-              v-model="blueprintProperties[selectedPropertyIndex].multi" 
-              title="Allow Multiple Values" 
-              type="switch" 
-              class="flex-0"
-            />
-            <template v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.STRING">
+          <div class="property-details-content content-fade-in">
+            <div class="mobile-form-group">
+              <FormInput v-model="blueprintProperties[selectedPropertyIndex].key" title="Key" required/>
               <FormInput 
-                v-model="blueprintProperties[selectedPropertyIndex].max" 
-                title="Max Length" 
-                type="number" 
+                v-model="blueprintProperties[selectedPropertyIndex].title" 
+                @input="blueprintProperties[selectedPropertyIndex].key = getKeyFromName($event)" 
+                title="Title" 
+                required
+              />
+            </div>
+            
+            <FormInput v-model="blueprintProperties[selectedPropertyIndex].description" title="Description"/>
+            
+            <BlueprintPropertyTypeSelector v-model="blueprintProperties[selectedPropertyIndex].type"/>
+            
+            <el-form-item 
+              v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.STRING" 
+              :label="$t('Valid Options (Enum)')">
+              <el-select
+                v-model="blueprintProperties[selectedPropertyIndex].enum"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                :reserve-keyword="false"
+                :placeholder="$t('Enter valid options')"
+              >
+                <el-option 
+                  v-for="item in blueprintProperties[selectedPropertyIndex].enum" 
+                  :key="item" 
+                  :label="item" 
+                  :value="item"
+                />
+              </el-select>
+              <div class="field-help">
+                <small>{{ $t('If specified, only these values will be allowed for this property') }}</small>
+              </div>
+            </el-form-item>
+
+            <div v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.OBJECT">
+              <el-form-item :label="$t('Schema')">
+                <Monaco v-model="blueprintProperties[selectedPropertyIndex].schema" language="json"/>
+              </el-form-item>
+            </div>
+            
+            <FormRowGroup v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.NUMBER">
+              <FormInput v-model="blueprintProperties[selectedPropertyIndex].min" type="number" title="Min Value"/>
+              <FormInput v-model="blueprintProperties[selectedPropertyIndex].max" type="number" title="Max Value"/>
+            </FormRowGroup>
+            
+            <FormRowGroup>
+              <FormInput 
+                v-model="blueprintProperties[selectedPropertyIndex].required" 
+                title="Required" 
+                type="switch" 
                 class="flex-0"
               />
-            </template>
-          </FormRowGroup>
-        </div>
+              <FormInput 
+                v-model="blueprintProperties[selectedPropertyIndex].multi" 
+                title="Allow Multiple Values" 
+                type="switch" 
+                class="flex-0"
+              />
+              <template v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.STRING">
+                <FormInput 
+                  v-model="blueprintProperties[selectedPropertyIndex].max" 
+                  title="Max Length" 
+                  type="number" 
+                  class="flex-0"
+                />
+              </template>
+            </FormRowGroup>
+          </div>
+        </template>
       </div>
       
-      <div class="property-details-empty" v-else>
-        <el-empty :description="$t('Select a property to edit its details')">
-          <el-button type="primary" @click="addProperty">{{ $t('Add New Property') }}</el-button>
-        </el-empty>
+      <div class="property-details-empty" v-else-if="!isPropertiesLoading && selectedPropertyIndex < 0">
+        <div class="content-fade-in">
+          <el-empty :description="$t('Select a property to edit its details')">
+            <el-button type="primary" @click="addProperty">{{ $t('Add New Property') }}</el-button>
+          </el-empty>
+        </div>
       </div>
     </div>
   </div>
@@ -469,5 +561,117 @@ watch(blueprintProperties, () => {
 h3, h4 {
   margin-top: 0;
   margin-bottom: 0.5rem;
+}
+
+/* Loading and transition animations */
+.content-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.property-card-skeleton {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Smooth transitions for content changes */
+.properties-header,
+.properties-list,
+.property-details,
+.property-details-empty {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Skeleton specific styling */
+.properties-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+/* Enhanced loading state styling */
+.blueprint-properties-container {
+  position: relative;
+}
+
+.blueprint-properties-container .el-skeleton {
+  width: 100%;
+}
+
+.blueprint-properties-container .el-skeleton__item {
+  background: linear-gradient(90deg, var(--el-skeleton-color) 25%, var(--el-skeleton-to-color) 37%, var(--el-skeleton-color) 63%);
+  background-size: 400% 100%;
+  animation: el-skeleton-loading 1.4s ease infinite;
+}
+
+/* Prevent layout shifts */
+.properties-list,
+.property-details,
+.property-details-empty {
+  min-height: 400px;
+}
+
+.properties-header {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Mobile responsive skeleton adjustments */
+@media (max-width: 991px) {
+  .properties-list,
+  .property-details,
+  .property-details-empty {
+    min-height: 300px;
+  }
+  
+  .properties-header {
+    min-height: 180px;
+  }
+}
+
+/* Skeleton animation improvements */
+.property-card-skeleton {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mobile-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .mobile-form-group {
+    flex-direction: row;
+  }
+  
+  .mobile-form-group > * {
+    flex: 1;
+  }
 }
 </style>
