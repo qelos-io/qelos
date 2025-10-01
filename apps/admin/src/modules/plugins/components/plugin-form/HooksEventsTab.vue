@@ -1,5 +1,5 @@
 <template>
-  <div class="tab-content">
+  <div class="tab-content" role="region" :aria-label="$t('Hooks and events config')">
     <el-card class="settings-card">
       <template #header>
         <div class="card-header" id="event-subscriptions-section">
@@ -7,7 +7,7 @@
           <span>{{ $t('Event Subscriptions') }}</span>
         </div>
       </template>
-      <p class="card-description">{{$t('The ability to subscribe to system and custom events using web hooks.')}}</p>
+      <p class="card-description" id="event-subscription-description">{{$t('The ability to subscribe to system and custom events using web hooks.')}}</p>
       
       <div class="hooks-header">
         <el-row :gutter="20" align="middle" justify="space-between">
@@ -614,17 +614,48 @@ watch(() => props.plugin.subscribedEvents, (events) => {
 </script>
 
 <style scoped>
+.tab-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.settings-card {
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.card-description {
+  margin-bottom: 1rem;
+  padding: 0 0rem;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+  font-size: 0.875rem;
+}
 .event-item {
   margin-bottom: 20px;
 }
 
 .event-form-group {
   margin-bottom: 15px;
+  padding-left: 5px;
 }
 
 .webhook-url-group {
   display: flex;
   align-items: flex-end;
+  padding-left: 5px;
 }
 
 .webhook-actions {

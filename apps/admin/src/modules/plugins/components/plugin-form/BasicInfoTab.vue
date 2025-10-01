@@ -169,7 +169,7 @@ function refreshPluginFromManifest() {
 :deep(.el-select:focus-within),
 :deep(.el-textarea:focus-within) {
   outline: 2px solid var(--el-color-primary);
-  outline-offset: 2px;
+  outline-offset: 4px;
   border-radius: 4px;
 }
 
@@ -188,14 +188,5 @@ function refreshPluginFromManifest() {
   outline-offset: 2px;
 }
 
-/* Form item focus state */
-:deep(.el-form-item:focus-within) {
-  position: relative;
-}
 
-/* Ensure all interactive elements have visible focus */
-:deep(*:focus-visible) {
-  outline: 2px solid var(--el-color-primary);
-  outline-offset: 2px;
-}
 </style>
