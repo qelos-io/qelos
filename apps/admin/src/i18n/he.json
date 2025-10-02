@@ -155,4 +155,26 @@
   "Show help for this page": "הצג עזרה עבור דף זה",
   "Page Information": "מידע על הדף",
   "Got it": "הבנתי"
+,
+  "plugins": {
+    "form": {
+      "title": {
+        "create": "יצירת תוסף",
+        "edit": "עריכת תוסף"
+      },
+      "actions": {
+        "save": "שמירה",
+        "saveChanges": "שמירת שינויים"
+      },
+      "tabs": {
+        "basic": "מידע בסיסי",
+        "apis": "ממשקי API",
+        "hooks": "Hooks ואירועים",
+        "cruds": "CRUDs",
+        "microfrontends": "מיקרו-פרונטאנדס",
+        "injectables": "תלויות מוזרקות",
+        "summary": "סיכום"
+      }
+    }
+  }
 }

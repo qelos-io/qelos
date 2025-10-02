@@ -155,4 +155,26 @@
   "Show help for this page": "Show help for this page",
   "Page Information": "Page Information",
   "Got it": "Got it"
+,
+  "plugins": {
+    "form": {
+      "title": {
+        "create": "Create Plugin",
+        "edit": "Edit Plugin"
+      },
+      "actions": {
+        "save": "Save",
+        "saveChanges": "Save Changes"
+      },
+      "tabs": {
+        "basic": "Basic Information",
+        "apis": "APIs",
+        "hooks": "Hooks & Events",
+        "cruds": "CRUDs",
+        "microfrontends": "Micro-Frontends",
+        "injectables": "Injectables",
+        "summary": "Summary"
+      }
+    }
+  }
 }
