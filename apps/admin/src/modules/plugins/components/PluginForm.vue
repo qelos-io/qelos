@@ -3,13 +3,13 @@
     <header class="page-header">
       <div class="page-title">
         <el-icon class="title-icon"><font-awesome-icon :icon="['fas', 'puzzle-piece']" /></el-icon>
-        <span>{{ $t(plugin?._id ? 'Edit Plugin' : 'Create Plugin') }}:</span>
+  <span>{{ $t(plugin?._id ? 'plugins.form.title.edit' : 'plugins.form.title.create') }}:</span>
         <strong v-if="edit?.name">{{ edit.name }}</strong>
       </div>
       <div class="header-actions">
         <el-button type="primary" native-type="submit" :loading="props.submitting" :disabled="props.submitting">
           <el-icon><font-awesome-icon :icon="['fas', 'save']" /></el-icon>
-          <span>{{ $t('Save') }}</span>
+          <span>{{ $t('plugins.form.actions.save') }}</span>
         </el-button>
       </div>
     </header>
@@ -22,7 +22,7 @@
           <template #label>
             <div class="tab-label">
               <el-icon><font-awesome-icon :icon="['fas', 'info-circle']" /></el-icon>
-              <span>{{ $t('Basic Information') }}</span>
+              <span>{{ $t('plugins.form.tabs.basic') }}</span>
             </div>
           </template>
           <BasicInfoTab :plugin="edit" @refresh-manifest="refreshPluginFromManifest" />
@@ -32,7 +32,7 @@
           <template #label>
             <div class="tab-label">
               <el-icon><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
-              <span>{{ $t('APIs') }}</span>
+              <span>{{ $t('plugins.form.tabs.apis') }}</span>
             </div>
           </template>
           <APIsTab :plugin="edit" />
@@ -42,7 +42,7 @@
           <template #label>
             <div class="tab-label">
               <el-icon><font-awesome-icon :icon="['fas', 'bell']" /></el-icon>
-              <span>{{ $t('Hooks & Events') }}</span>
+              <span>{{ $t('plugins.form.tabs.hooks') }}</span>
             </div>
           </template>
           <HooksEventsTab :plugin="edit" />
@@ -52,7 +52,7 @@
           <template #label>
             <div class="tab-label">
               <el-icon><font-awesome-icon :icon="['fas', 'database']" /></el-icon>
-              <span>{{ $t('CRUDs') }}</span>
+              <span>{{ $t('plugins.form.tabs.cruds') }}</span>
             </div>
           </template>
           <CRUDsTab :plugin="edit" />
@@ -62,7 +62,7 @@
           <template #label>
             <div class="tab-label">
               <el-icon><font-awesome-icon :icon="['fas', 'window-restore']" /></el-icon>
-              <span>{{ $t('Micro-Frontends') }}</span>
+              <span>{{ $t('plugins.form.tabs.microfrontends') }}</span>
             </div>
           </template>
           <MicroFrontendsTab :plugin="edit" />
@@ -72,7 +72,7 @@
           <template #label>
             <div class="tab-label">
               <el-icon><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
-              <span>{{ $t('Injectables') }}</span>
+              <span>{{ $t('plugins.form.tabs.injectables') }}</span>
             </div>
           </template>
           <InjectablesTab :plugin="edit" />
@@ -82,7 +82,7 @@
           <template #label>
             <div class="tab-label">
               <el-icon><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
-              <span>{{ $t('Summary') }}</span>
+              <span>{{ $t('plugins.form.tabs.summary') }}</span>
             </div>
           </template>
           <SummaryTab :plugin="edit" @update-json="updatePluginJson" />
@@ -91,7 +91,7 @@
       
       <div class="footer-actions">
         <el-button type="primary" @click="submit" :loading="props.submitting" :disabled="props.submitting">
-          {{ $t('Save Changes') }}
+          {{ $t('plugins.form.actions.saveChanges') }}
         </el-button>
       </div>
     </div>

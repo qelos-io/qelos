@@ -155,4 +155,26 @@
   "Show help for this page": "Afficher l'aide pour cette page",
   "Page Information": "Informations de la page",
   "Got it": "Compris"
+,
+  "plugins": {
+    "form": {
+      "title": {
+        "create": "Créer un plugin",
+        "edit": "Modifier le plugin"
+      },
+      "actions": {
+        "save": "Enregistrer",
+        "saveChanges": "Enregistrer les modifications"
+      },
+      "tabs": {
+        "basic": "Informations de base",
+        "apis": "API",
+        "hooks": "Hooks et événements",
+        "cruds": "CRUD",
+        "microfrontends": "Micro-frontends",
+        "injectables": "Injectables",
+        "summary": "Résumé"
+      }
+    }
+  }
 }
