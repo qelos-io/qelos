@@ -1,5 +1,9 @@
 <template>
-  <div class="tab-content" role="region" :aria-label="$t('Micro-frontends configuration')">
+  <div 
+    class="tab-content" 
+    role="region" 
+    tabindex="-1"
+    :aria-label="$t('Micro-frontends configuration')">
     <el-card class="settings-card">
       <template #header>
         <div class="card-header" id="micro-frontends-section">

@@ -1,5 +1,9 @@
 <template>
-  <div class="tab-content" role="region" :aria-label="$t('Hooks and events config')">
+  <div 
+    class="tab-content" 
+    role="region" 
+    tabindex="-1"
+    :aria-label="$t('Hooks and events config')">
     <el-card class="settings-card">
       <template #header>
         <div class="card-header" id="event-subscriptions-section">

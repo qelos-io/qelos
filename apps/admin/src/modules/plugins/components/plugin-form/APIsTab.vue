@@ -1,5 +1,9 @@
 <template>
-  <div class="tab-content" role="region" :aria-label="$t('Plugin basic information')">
+  <div 
+    class="tab-content" 
+    role="region" 
+    tabindex="-1"
+    :aria-label="$t('Plugin basic information')">
     <el-card class="settings-card">
       <template #header>
         <div class="card-header" id="plugin-api-section">
