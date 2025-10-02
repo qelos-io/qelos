@@ -52,7 +52,7 @@ import { storeToRefs } from 'pinia';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import HeaderUserWorkspacesSelection from '@/modules/core/components/layout/HeaderUserWorkspacesSelection.vue';
-import { isAdmin, isEditingEnabled, isManagingEnabled } from '@/modules/core/store/auth';
+import { isAdmin, isManagingEnabled } from '@/modules/core/store/auth';
 
 const emit = defineEmits(['open']);
 const { user, logout: logoutApi } = useAuth()

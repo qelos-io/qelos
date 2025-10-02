@@ -11,7 +11,6 @@ import TriggerTab from '@/modules/integrations/components/tabs/TriggerTab.vue';
 import DataManipulationTab from '@/modules/integrations/components/tabs/DataManipulationTab.vue';
 import TargetTab from '@/modules/integrations/components/tabs/TargetTab.vue';
 import FunctionToolsTab from '@/modules/integrations/components/tabs/FunctionToolsTab.vue';
-import { DocumentCopy } from '@element-plus/icons-vue';
 
 const visible = defineModel<boolean>('visible')
 const props = defineProps<{ editingIntegration?: any }>()

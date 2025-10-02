@@ -72,6 +72,8 @@ spec:
               value: "{{ .Values.ai.port }}"
             - name: SHOW_LOGS
               value: "true"
+            - name: BASIC_TENANT
+              value: "{{ .Values.gateway.environment.BASIC_TENANT }}"
           resources:
             {{- toYaml .Values.gateway.resources | nindent 12 }}
 ---

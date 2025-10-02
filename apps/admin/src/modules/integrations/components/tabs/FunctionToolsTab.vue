@@ -4,7 +4,7 @@ import { useIntegrationsStore } from '@/modules/integrations/store/integrations'
 import { IIntegration, OpenAITargetOperation } from '@qelos/global-types';
 import { ElMessage } from 'element-plus';
 import integrationsService from '@/services/integrations-service';
-import { Check as IconCheck, Close as IconClose, ArrowDown } from '@element-plus/icons-vue';
+import { Check as IconCheck } from '@element-plus/icons-vue';
 
 const props = defineProps<{
   integrationId: string;
