@@ -1,7 +1,7 @@
 <template>
   <div v-if="type !== 'hidden'">
     <EditComponentBar v-if="isEditingEnabled"/>
-    <el-form-item :label="title ? $t(title) : null" :required="required">
+  <el-form-item :label="title ? $t(title) : null" :required="required" :prop="prop" :error="error">
       <small v-if="label"> ({{ $t(label) }})</small>
       <small v-else-if="gap">&nbsp;</small>
       <slot name="pre"/>
@@ -80,6 +80,8 @@ export default {
       type: Object,
       default: () => ({})
     },
+    prop: String,
+    error: String,
     value: [String, Number, Object, Boolean],
     uploadConfig: {
       type: Object,
