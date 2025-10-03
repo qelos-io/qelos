@@ -184,6 +184,11 @@ function removeInjectable(index: number) {
   outline-offset: 2px;
 }
 
+:deep(input:focus-visible),
+:deep(textarea:focus-visible) {
+  outline: none;
+}
+
 :deep(.el-input:focus-within),
 :deep(.el-select:focus-within),
 :deep(.el-textarea:focus-within) {
@@ -208,11 +213,5 @@ function removeInjectable(index: number) {
   outline: 2px solid var(--el-color-primary);
   outline-offset: 2px;
   border-radius: 4px;
-}
-
-/* Ensure all interactive elements have visible focus */
-:deep(*:focus-visible) {
-  outline: 2px solid var(--el-color-primary);
-  outline-offset: 2px;
 }
 </style>
