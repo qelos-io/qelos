@@ -23,23 +23,48 @@ const router = useRouter();
 const props = withDefaults(defineProps<{
   submitting: boolean;
   blueprint: Partial<IBlueprint>;
+  loading?: boolean;
+  propertiesLoading?: boolean;
+  identifierLoading?: boolean;
 }>(), {
   submitting: false,
-  blueprint: () => ({} as any & Partial<IBlueprint>)
+  blueprint: () => ({} as any & Partial<IBlueprint>),
+  loading: false,
+  propertiesLoading: undefined,
+  identifierLoading: undefined,
 });
 const emit = defineEmits(['submitted']);
 
-const edit = reactive<Partial<IBlueprint>>({
-  name: '',
-  dispatchers: { create: false, delete: false, update: false }, ...props.blueprint
-});
+const edit = reactive<Partial<IBlueprint>>({});
 provide('edit', edit);
 
-const blueprintMapping = ref(
-    Object
-        .entries(edit.updateMapping || {})
-        .map(([key, value]) => ({ key, value }))
-);
+const blueprintMapping = ref<{ key: string; value: string }[]>([]);
+
+function resetEditState() {
+  Object.keys(edit).forEach((key) => {
+    delete (edit as any)[key];
+  });
+}
+
+function applyBlueprintState(blueprint: Partial<IBlueprint> = {}) {
+  resetEditState();
+  Object.assign(edit, {
+    name: '',
+    dispatchers: { create: false, delete: false, update: false },
+    ...blueprint,
+  });
+
+  blueprintMapping.value = Object.entries(blueprint.updateMapping || {}).map(([key, value]) => ({
+    key,
+    value: String(value),
+  }));
+}
+
+applyBlueprintState(props.blueprint);
+
+watch(() => props.blueprint, (value) => {
+  applyBlueprintState(value);
+});
 
 provide('submitting', toRef(props, 'submitting'));
 
@@ -63,6 +88,9 @@ watch(() => edit.name, (newName) => {
     edit.identifier = getKeyFromName(newName)
   }
 })
+
+const propertiesLoadingState = computed(() => props.propertiesLoading ?? props.loading ?? false);
+const identifierLoadingState = computed(() => props.identifierLoading ?? props.loading ?? false);
 
 // Handle tab management with route query
 const activeTab = computed({
@@ -171,6 +199,9 @@ function submit() {
             <BlueprintPropertiesTab 
               v-model:properties="edit.properties" 
               v-model:entityIdentifierMechanism="edit.entityIdentifierMechanism" 
+              :loading="props.loading"
+              :properties-loading="propertiesLoadingState"
+              :identifier-loading="identifierLoadingState"
             />
           </el-card>
         </div>

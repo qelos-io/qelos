@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { BlueprintPropertyType, EntityIdentifierMechanism, IBlueprintPropertyDescriptor } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
@@ -12,10 +12,16 @@ import Monaco from '@/modules/users/components/Monaco.vue';
 const entityIdentifierMechanism = defineModel('entityIdentifierMechanism');
 const properties = defineModel('properties');
 
-// Loading states
-const isLoading = ref(true);
-const isPropertiesLoading = ref(true);
-const isIdentifierLoading = ref(true);
+const props = withDefaults(defineProps<{
+  loading?: boolean;
+  propertiesLoading?: boolean;
+  identifierLoading?: boolean;
+}>(), {
+  loading: false,
+});
+
+const isPropertiesLoading = computed(() => props.propertiesLoading ?? props.loading ?? false);
+const isIdentifierLoading = computed(() => props.identifierLoading ?? props.loading ?? false);
 
 function getSchema(property: IBlueprintPropertyDescriptor) {
   if (property.type === BlueprintPropertyType.OBJECT && property.schema) {
@@ -28,14 +34,39 @@ function getSchema(property: IBlueprintPropertyDescriptor) {
   return undefined;
 }
 
-const blueprintProperties = ref(
-  Object
-    .entries(properties.value || {})
-    .map(([key, value]) => ({ key, ...value, schema: value.schema ? JSON.stringify(value.schema, null, 2) : undefined }))
-);
+type BlueprintPropertyFormState = IBlueprintPropertyDescriptor & { key: string; schema?: string };
+
+const blueprintProperties = ref<BlueprintPropertyFormState[]>([]);
+
+let syncingFromParent = false;
+
+function normalizeProperties(raw: Record<string, IBlueprintPropertyDescriptor> | undefined): BlueprintPropertyFormState[] {
+  return Object.entries(raw || {}).map(([key, value]) => ({
+    key,
+    ...value,
+    schema: value.schema ? JSON.stringify(value.schema, null, 2) : undefined,
+  }));
+}
 
 // Track the currently selected property for detailed view
 const selectedPropertyIndex = ref(-1);
+
+watch(() => properties.value, (newProperties) => {
+  syncingFromParent = true;
+  const currentSelectionKey = selectedPropertyIndex.value >= 0
+    ? blueprintProperties.value[selectedPropertyIndex.value]?.key
+    : null;
+  const normalized = normalizeProperties(newProperties as Record<string, IBlueprintPropertyDescriptor> | undefined);
+  blueprintProperties.value = normalized;
+
+  if (currentSelectionKey) {
+    const nextIndex = normalized.findIndex((item) => item.key === currentSelectionKey);
+    selectedPropertyIndex.value = nextIndex;
+  } else {
+    selectedPropertyIndex.value = -1;
+  }
+  syncingFromParent = false;
+}, { immediate: true });
 
 function addProperty() {
   const newProperty = {
@@ -128,21 +159,11 @@ function getPropertySummary(property) {
   return parts.join(' • ');
 }
 
-// Simulate loading states
-onMounted(() => {
-  // Simulate async data loading
-  setTimeout(() => {
-    isIdentifierLoading.value = false;
-  }, 800);
-  
-  setTimeout(() => {
-    isPropertiesLoading.value = false;
-    isLoading.value = false;
-  }, 1200);
-});
-
 // Watch for changes and update the parent component
 watch(blueprintProperties, () => {
+  if (syncingFromParent) {
+    return;
+  }
   properties.value = blueprintProperties.value.reduce((acc, { key, ...rest }) => {
     return { ...acc, [key]: {
       ...rest,
@@ -158,12 +179,12 @@ watch(blueprintProperties, () => {
       <template v-if="isIdentifierLoading">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item variant="h3" style="width: 40%; margin-bottom: 1rem;" />
-            <el-skeleton-item variant="text" style="width: 80%; margin-bottom: 0.5rem;" />
-            <el-skeleton-item variant="text" style="width: 60%; margin-bottom: 1.5rem;" />
-            <el-skeleton-item variant="text" style="width: 30%; margin-bottom: 0.5rem;" />
-            <el-skeleton-item variant="rect" style="width: 100%; height: 32px; margin-bottom: 0.5rem;" />
-            <el-skeleton-item variant="text" style="width: 70%;" />
+            <el-skeleton-item variant="h3" class="skeleton-w-40 skeleton-mb-md" />
+            <el-skeleton-item variant="text" class="skeleton-w-80 skeleton-mb-sm" />
+            <el-skeleton-item variant="text" class="skeleton-w-60 skeleton-mb-lg" />
+            <el-skeleton-item variant="text" class="skeleton-w-30 skeleton-mb-sm" />
+            <el-skeleton-item variant="rect" class="skeleton-full-width skeleton-height-32 skeleton-mb-sm" />
+            <el-skeleton-item variant="text" class="skeleton-w-70" />
           </template>
         </el-skeleton>
       </template>
@@ -195,12 +216,12 @@ watch(blueprintProperties, () => {
           <el-skeleton animated>
             <template #template>
               <div class="properties-list-header">
-                <el-skeleton-item variant="h1" style="width: 30%;" />
-                <el-skeleton-item variant="button" style="width: 120px; height: 28px;" />
+                <el-skeleton-item variant="h1" class="skeleton-w-30" />
+                <el-skeleton-item variant="button" class="skeleton-w-px-120 skeleton-height-28" />
               </div>
               <div class="properties-list-content">
                 <div v-for="i in 3" :key="i" class="property-card-skeleton">
-                  <el-skeleton-item variant="rect" style="width: 100%; height: 120px; margin-bottom: 1rem; border-radius: 8px;" />
+                  <el-skeleton-item variant="rect" class="skeleton-full-width skeleton-height-120 skeleton-mb-md skeleton-rounded" />
                 </div>
               </div>
             </template>
@@ -270,31 +291,31 @@ watch(blueprintProperties, () => {
           <el-skeleton animated>
             <template #template>
               <div class="property-details-header">
-                <el-skeleton-item variant="h1" style="width: 40%; margin-bottom: 1.5rem;" />
+                <el-skeleton-item variant="h1" class="skeleton-w-40 skeleton-mb-lg" />
               </div>
               <div class="property-details-content">
                 <div class="mobile-form-group">
-                  <div style="flex: 1;">
-                    <el-skeleton-item variant="text" style="width: 20%; margin-bottom: 0.5rem;" />
-                    <el-skeleton-item variant="rect" style="width: 100%; height: 32px; margin-bottom: 1rem;" />
+                  <div class="skeleton-flex-1">
+                    <el-skeleton-item variant="text" class="skeleton-w-20 skeleton-mb-sm" />
+                    <el-skeleton-item variant="rect" class="skeleton-full-width skeleton-height-32 skeleton-mb-md" />
                   </div>
-                  <div style="flex: 1;">
-                    <el-skeleton-item variant="text" style="width: 25%; margin-bottom: 0.5rem;" />
-                    <el-skeleton-item variant="rect" style="width: 100%; height: 32px; margin-bottom: 1rem;" />
+                  <div class="skeleton-flex-1">
+                    <el-skeleton-item variant="text" class="skeleton-w-25 skeleton-mb-sm" />
+                    <el-skeleton-item variant="rect" class="skeleton-full-width skeleton-height-32 skeleton-mb-md" />
                   </div>
                 </div>
                 <div>
-                  <el-skeleton-item variant="text" style="width: 30%; margin-bottom: 0.5rem;" />
-                  <el-skeleton-item variant="rect" style="width: 100%; height: 32px; margin-bottom: 1rem;" />
+                  <el-skeleton-item variant="text" class="skeleton-w-30 skeleton-mb-sm" />
+                  <el-skeleton-item variant="rect" class="skeleton-full-width skeleton-height-32 skeleton-mb-md" />
                 </div>
                 <div>
-                  <el-skeleton-item variant="text" style="width: 35%; margin-bottom: 0.5rem;" />
-                  <el-skeleton-item variant="rect" style="width: 100%; height: 32px; margin-bottom: 1rem;" />
+                  <el-skeleton-item variant="text" class="skeleton-w-35 skeleton-mb-sm" />
+                  <el-skeleton-item variant="rect" class="skeleton-full-width skeleton-height-32 skeleton-mb-md" />
                 </div>
-                <div style="display: flex; gap: 1rem; align-items: end;">
-                  <el-skeleton-item variant="rect" style="width: 60px; height: 24px;" />
-                  <el-skeleton-item variant="rect" style="width: 60px; height: 24px;" />
-                  <el-skeleton-item variant="rect" style="width: 60px; height: 24px;" />
+                <div class="skeleton-switch-row">
+                  <el-skeleton-item variant="rect" class="skeleton-w-px-60 skeleton-height-24" />
+                  <el-skeleton-item variant="rect" class="skeleton-w-px-60 skeleton-height-24" />
+                  <el-skeleton-item variant="rect" class="skeleton-w-px-60 skeleton-height-24" />
                 </div>
               </div>
             </template>
@@ -609,6 +630,93 @@ h3, h4 {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+}
+
+/* Skeleton utility classes */
+.skeleton-full-width {
+  width: 100%;
+}
+
+.skeleton-w-20 {
+  width: 20%;
+}
+
+.skeleton-w-25 {
+  width: 25%;
+}
+
+.skeleton-w-30 {
+  width: 30%;
+}
+
+.skeleton-w-35 {
+  width: 35%;
+}
+
+.skeleton-w-40 {
+  width: 40%;
+}
+
+.skeleton-w-60 {
+  width: 60%;
+}
+
+.skeleton-w-70 {
+  width: 70%;
+}
+
+.skeleton-w-80 {
+  width: 80%;
+}
+
+.skeleton-w-px-60 {
+  width: 60px;
+}
+
+.skeleton-w-px-120 {
+  width: 120px;
+}
+
+.skeleton-height-24 {
+  height: 24px;
+}
+
+.skeleton-height-28 {
+  height: 28px;
+}
+
+.skeleton-height-32 {
+  height: 32px;
+}
+
+.skeleton-height-120 {
+  height: 120px;
+}
+
+.skeleton-rounded {
+  border-radius: 8px;
+}
+
+.skeleton-mb-sm {
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-mb-md {
+  margin-bottom: 1rem;
+}
+
+.skeleton-mb-lg {
+  margin-bottom: 1.5rem;
+}
+
+.skeleton-flex-1 {
+  flex: 1;
+}
+
+.skeleton-switch-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
 }
 
 /* Enhanced loading state styling */
