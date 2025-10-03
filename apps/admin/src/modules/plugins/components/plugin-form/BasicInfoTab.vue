@@ -25,6 +25,7 @@
           title="Manifest URL"
           label="required"
           required
+          type="url"
           prop="manifestUrl"
           :error="manifestError"
           v-model="plugin.manifestUrl"

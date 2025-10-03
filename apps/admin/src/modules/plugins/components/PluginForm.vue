@@ -149,18 +149,37 @@ const edit = reactive<Partial<IPlugin>>({
 const manifestTouched = ref(false);
 const manifestSubmitAttempted = ref(false);
 
+const protocolPattern = /^https?:\/\//i;
+const html5UrlValidator = typeof window !== 'undefined'
+  ? (() => {
+      const input = document.createElement('input');
+      input.type = 'url';
+      input.required = true;
+      return input;
+    })()
+  : null;
+
 const manifestValidationError = computed(() => {
-  const rawValue = typeof edit.manifestUrl === 'string' ? edit.manifestUrl.trim() : '';
-  if (!rawValue) {
+  const rawValue = typeof edit.manifestUrl === 'string' ? edit.manifestUrl : '';
+  const trimmedValue = rawValue.trim();
+
+  if (!trimmedValue) {
     return t('Manifest URL is required');
   }
 
-  try {
-    const url = new URL(rawValue);
-    if (!['http:', 'https:'].includes(url.protocol)) {
-      return t('Manifest URL must start with http:// or https://');
+  if (!protocolPattern.test(trimmedValue)) {
+    return t('Manifest URL must start with http:// or https://');
+  }
+
+  if (!html5UrlValidator) {
+    if (!/^(https?:\/\/)[^\s]+$/i.test(trimmedValue)) {
+      return t('Manifest URL must be a valid URL');
     }
-  } catch (error) {
+    return '';
+  }
+
+  html5UrlValidator.value = trimmedValue;
+  if (!html5UrlValidator.checkValidity()) {
     return t('Manifest URL must be a valid URL');
   }
 
