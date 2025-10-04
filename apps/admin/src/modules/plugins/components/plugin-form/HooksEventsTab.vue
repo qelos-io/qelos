@@ -1,13 +1,17 @@
 <template>
-  <div class="tab-content">
+  <div 
+    class="tab-content" 
+    role="region" 
+    tabindex="-1"
+    :aria-label="$t('Hooks and events config')">
     <el-card class="settings-card">
       <template #header>
-        <div class="card-header">
-          <el-icon><font-awesome-icon :icon="['fas', 'bell']" /></el-icon>
+        <div class="card-header" id="event-subscriptions-section">
+          <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'bell']" /></el-icon>
           <span>{{ $t('Event Subscriptions') }}</span>
         </div>
       </template>
-      <p class="card-description">{{$t('The ability to subscribe to system and custom events using web hooks.')}}</p>
+      <p class="card-description" id="event-subscription-description">{{$t('The ability to subscribe to system and custom events using web hooks.')}}</p>
       
       <div class="hooks-header">
         <el-row :gutter="20" align="middle" justify="space-between">
@@ -17,6 +21,8 @@
               type="info"
               :closable="false"
               show-icon
+              role="status"
+              aria-live="polite"
             >
               <template #title>
                 <span>{{ $t('No event subscriptions configured') }}</span>
@@ -35,21 +41,30 @@
           
           <el-col :span="8" v-if="plugin.subscribedEvents && plugin.subscribedEvents.length > 0">
             <el-input
+              id="event-search-input"
               v-model="searchQuery"
               :placeholder="t('Search events...')"
               clearable
               prefix-icon="Search"
+              :aria-label="t('Search event subscriptions')"
+              role="searchbox"
             />
           </el-col>
         </el-row>
       </div>
       
-      <el-collapse v-if="filteredEvents.length > 0" v-model="activeNames" accordion>
+      <el-collapse 
+        v-if="filteredEvents.length > 0" 
+        v-model="activeNames" 
+        accordion
+        role="region"
+        :aria-label="t('Event subscription list')">
         <el-collapse-item 
           v-for="(event, index) in filteredEvents" 
           :key="index"
           :name="index"
           :title="getEventTitle(event, index)"
+          :aria-label="getEventTitle(event, index)"
         >
           <template #header>
             <el-button 
@@ -59,24 +74,27 @@
               plain 
               @click.stop="removeEvent(filteredEvents.indexOf(event))"
               :title="t('Remove event subscription')"
+              :aria-label="t('Remove {0}', [getEventTitle(event, index)])"
             >
-              <el-icon><Delete /></el-icon>
+              <el-icon aria-hidden="true"><Delete /></el-icon>
             </el-button>
           </template>
           
-          <FormRowGroup class="event-form-group">
+          <FormRowGroup class="event-form-group" role="group" :aria-label="t('Event configuration')">
           <el-form-item>
             <template #label>
-              {{ $t('Source') }}
+              <label :for="'event-source-' + index">{{ $t('Source') }}</label>
               <InfoIcon content="Plugin events will have a prefix of 'plugin:' before their custom event names"/>
             </template>
             <el-select
+                :id="'event-source-' + index"
                 v-model="event.source"
                 filterable
                 allow-create
                 default-first-option
                 :reserve-keyword="false"
                 :placeholder="$t('*')"
+                :aria-label="t('Event source')"
             >
               <el-option :label="$t('(*) All')" value="*"/>
               <el-option :label="$t('Authentication')" value="auth"/>
@@ -86,9 +104,12 @@
             </el-select>
           </el-form-item>
           <template v-if="event.source === 'blueprints'">
-            <BlueprintSelector title="Kind" v-model="event.kind"/>
+            <BlueprintSelector title="Kind" v-model="event.kind" :aria-label="t('Blueprint kind')"/>
             <el-form-item :label="$t('Event Name')">
-              <el-select v-model="event.eventName">
+              <el-select 
+                :id="'event-name-' + index"
+                v-model="event.eventName"
+                :aria-label="t('Event name')">
                 <el-option :label="$t('Create')" value="create"/>
                 <el-option :label="$t('Update')" value="update"/>
                 <el-option :label="$t('Delete')" value="delete"/>
@@ -97,7 +118,14 @@
           </template>
           <template v-else-if="event.source === 'auth'">
             <el-form-item :label="$t('Kind')">
-              <el-select v-model="event.kind" filterable allow-create default-first-option :placeholder="$t('(*) All')">
+              <el-select 
+                :id="'event-kind-' + index"
+                v-model="event.kind" 
+                filterable 
+                allow-create 
+                default-first-option 
+                :placeholder="$t('(*) All')"
+                :aria-label="t('Event kind')">
                 <el-option :label="$t('(*) All')" value="*"/>
                 <el-option :label="$t('Signup')" value="signup"/>
                 <el-option :label="$t('Users')" value="users"/>
@@ -105,7 +133,14 @@
               </el-select>
             </el-form-item>
             <el-form-item :label="$t('Event Name')">
-              <el-select v-model="event.eventName" filterable allow-create default-first-option :placeholder="$t('(*) All')">
+              <el-select 
+                :id="'event-name-' + index"
+                v-model="event.eventName" 
+                filterable 
+                allow-create 
+                default-first-option 
+                :placeholder="$t('(*) All')"
+                :aria-label="t('Event name')">
                 <el-option :label="$t('(*) All')" value="*"/>
                 <template v-if="event.kind === 'signup'">
                   <el-option :label="$t('User Registered')" value="user-registered"/>
@@ -126,14 +161,28 @@
           </template>
           <template v-else-if="event.source === 'assets'">
             <el-form-item :label="$t('Kind')">
-              <el-select v-model="event.kind" filterable allow-create default-first-option :placeholder="$t('(*) All')">
+              <el-select 
+                :id="'event-kind-' + index"
+                v-model="event.kind" 
+                filterable 
+                allow-create 
+                default-first-option 
+                :placeholder="$t('(*) All')"
+                :aria-label="t('Event kind')">
                 <el-option :label="$t('(*) All')" value="*"/>
                 <el-option :label="$t('Asset Operation')" value="asset-operation"/>
                 <el-option :label="$t('Storage Connection Error')" value="storage-connection-error"/>
               </el-select>
             </el-form-item>
             <el-form-item :label="$t('Event Name')">
-              <el-select v-model="event.eventName" filterable allow-create default-first-option :placeholder="$t('(*) All')">
+              <el-select 
+                :id="'event-name-' + index"
+                v-model="event.eventName" 
+                filterable 
+                allow-create 
+                default-first-option 
+                :placeholder="$t('(*) All')"
+                :aria-label="t('Event name')">
                 <el-option :label="$t('(*) All')" value="*"/>
                 <template v-if="event.kind === 'asset-operation'">
                   <el-option :label="$t('Asset Uploaded')" value="asset-uploaded"/>
@@ -150,26 +199,34 @@
           <template v-else-if="event.source === 'plugin'">
             <el-form-item>
               <template #label>
-                {{ $t('Plugin Name') }}
+                <label :for="'plugin-name-' + index">{{ $t('Plugin Name') }}</label>
                 <InfoIcon content="The name of the plugin that dispatches the event. Will be prefixed with 'plugin:' automatically."/>
               </template>
-              <el-input v-model="event.pluginName" :placeholder="$t('Plugin name')"/>
+              <el-input 
+                :id="'plugin-name-' + index"
+                v-model="(event as any).pluginName" 
+                :placeholder="$t('Plugin name')"
+                :aria-label="t('Plugin name')"/>
             </el-form-item>
-            <FormInput title="Kind" v-model="event.kind" :placeholder="$t('(*) All')"/>
-            <FormInput title="Event Name" v-model="event.eventName" :placeholder="$t('(*) All')"/>
+            <FormInput title="Kind" v-model="event.kind" :placeholder="$t('(*) All')" :aria-label="t('Event kind')"/>
+            <FormInput title="Event Name" v-model="event.eventName" :placeholder="$t('(*) All')" :aria-label="t('Event name')"/>
           </template>
           <template v-else>
-            <FormInput title="Kind" v-model="event.kind" :placeholder="$t('(*) All')"/>
-            <FormInput title="Event Name" v-model="event.eventName" :placeholder="$t('(*) All')"/>
+            <FormInput title="Kind" v-model="event.kind" :placeholder="$t('(*) All')" :aria-label="t('Event kind')"/>
+            <FormInput title="Event Name" v-model="event.eventName" :placeholder="$t('(*) All')" :aria-label="t('Event name')"/>
           </template>
         </FormRowGroup>
-        <FormRowGroup class="webhook-url-group">
+        <FormRowGroup class="webhook-url-group" role="group" :aria-label="t('Webhook configuration')">
           <FormInput 
+            :id="'webhook-url-' + index"
             title="Webhook URL" 
             type="url" 
             v-model="event.hookUrl" 
             required 
             placeholder="https://..."
+            :aria-label="t('Webhook URL')"
+            :aria-required="true"
+            :aria-describedby="'webhook-url-help-' + index"
           />
           <div class="webhook-actions">
             <el-tooltip content="Test this webhook" placement="top">
@@ -180,9 +237,12 @@
                 plain 
                 class="test-webhook-button"
                 @click="testWebhook(event)"
+                @keydown.enter.prevent="testWebhook(event)"
                 :disabled="!event.hookUrl"
+                :aria-label="t('Test webhook')"
+                :aria-disabled="!event.hookUrl"
               >
-                <el-icon><Connection /></el-icon>
+                <el-icon aria-hidden="true"><Connection /></el-icon>
               </el-button>
             </el-tooltip>
             <el-tooltip content="View webhook format" placement="top">
@@ -193,43 +253,51 @@
                 plain 
                 class="format-webhook-button"
                 @click="showWebhookFormat(event)"
+                @keydown.enter.prevent="showWebhookFormat(event)"
+                :aria-label="t('View webhook format')"
+                :aria-expanded="activeHelpIndex === index"
               >
-                <el-icon><Document /></el-icon>
+                <el-icon aria-hidden="true"><Document /></el-icon>
               </el-button>
             </el-tooltip>
           </div>
         </FormRowGroup>
+        <span :id="'webhook-url-help-' + index" class="sr-only">{{ $t('Enter the HTTPS URL where webhook notifications will be sent') }}</span>
         
         <div class="remove-event-section">
           <el-button 
             type="danger" 
             @click="removeEvent(filteredEvents.indexOf(event))"
+            @keydown.enter.prevent="removeEvent(filteredEvents.indexOf(event))"
             size="small"
             class="remove-event-button"
+            :aria-label="t('Remove {0}', [getEventTitle(event, index)])"
           >
-            <el-icon><Delete /></el-icon>
+            <el-icon aria-hidden="true"><Delete /></el-icon>
             {{ t('Remove Event Subscription') }}
           </el-button>
         </div>
         
-        <div class="event-help" v-if="activeHelpIndex === index">
+        <div class="event-help" v-if="activeHelpIndex === index" role="region" :aria-label="t('Webhook format information')">
           <el-card shadow="hover" class="webhook-format-card">
             <template #header>
               <div class="webhook-format-header">
-                <span>{{ $t('Webhook Format') }}</span>
+                <span id="webhook-format-title">{{ $t('Webhook Format') }}</span>
                 <el-button 
                   type="text" 
                   @click="activeHelpIndex = -1"
+                  @keydown.enter.prevent="activeHelpIndex = -1"
                   size="small"
+                  :aria-label="t('Close webhook format')"
                 >
-                  <el-icon><Close /></el-icon>
+                  <el-icon aria-hidden="true"><Close /></el-icon>
                 </el-button>
               </div>
             </template>
-            <div class="webhook-format-content">
+            <div class="webhook-format-content" aria-labelledby="webhook-format-title">
               <p>{{ $t('Your webhook will receive a POST request with the following payload:') }}</p>
               <el-divider></el-divider>
-              <pre class="webhook-payload">{{ getWebhookPayloadExample(event) }}</pre>
+              <pre class="webhook-payload" role="code" :aria-label="t('Example webhook payload')">{{ getWebhookPayloadExample(event) }}</pre>
               <el-divider></el-divider>
               <p class="webhook-tip">{{ $t('Your endpoint should return a 2xx status code to acknowledge receipt.') }}</p>
             </div>
@@ -244,25 +312,32 @@
             <el-button 
               type="primary" 
               @click="addEvent" 
+              @keydown.enter.prevent="addEvent"
               class="add-event-button"
               icon="Plus"
+              :aria-label="t('Add new event subscription')"
             >
               {{ $t('Add Event Subscription') }}
             </el-button>
           </el-col>
           <el-col :span="12" :sm="24" :md="12">
-            <el-dropdown @command="addTemplateEvent" trigger="click" class="template-dropdown">
-              <el-button type="success" plain class="template-button">
-                <el-icon><Document /></el-icon>
+            <el-dropdown 
+              @command="addTemplateEvent" 
+              trigger="click" 
+              class="template-dropdown"
+              role="menu"
+              :aria-label="t('Event subscription templates')">
+              <el-button type="success" plain class="template-button" :aria-haspopup="true">
+                <el-icon aria-hidden="true"><Document /></el-icon>
                 {{ $t('Use Template') }}
-                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                <el-icon class="el-icon--right" aria-hidden="true"><arrow-down /></el-icon>
               </el-button>
               <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="user-registered">{{ $t('User Registration') }}</el-dropdown-item>
-                  <el-dropdown-item command="asset-uploaded">{{ $t('Asset Uploaded') }}</el-dropdown-item>
-                  <el-dropdown-item command="blueprint-entity">{{ $t('Blueprint Entity Changes') }}</el-dropdown-item>
-                  <el-dropdown-item command="custom-plugin">{{ $t('Custom Plugin Event') }}</el-dropdown-item>
+                <el-dropdown-menu role="menu">
+                  <el-dropdown-item command="user-registered" role="menuitem">{{ $t('User Registration') }}</el-dropdown-item>
+                  <el-dropdown-item command="asset-uploaded" role="menuitem">{{ $t('Asset Uploaded') }}</el-dropdown-item>
+                  <el-dropdown-item command="blueprint-entity" role="menuitem">{{ $t('Blueprint Entity Changes') }}</el-dropdown-item>
+                  <el-dropdown-item command="custom-plugin" role="menuitem">{{ $t('Custom Plugin Event') }}</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -322,9 +397,8 @@ function addEvent() {
     source: '',
     kind: '',
     eventName: '',
-    pluginName: '',
     hookUrl: ''
-  });
+  } as any);
   
   // Focus on the newly added item by opening its accordion
   setTimeout(() => {
@@ -431,8 +505,8 @@ function getEventTitle(event: any, index: number): string {
   } else if (event.source === 'blueprints') {
     title = t('Blueprints');
   } else if (event.source === 'plugin') {
-    title = event.pluginName ? 
-      t('Plugin: {0}', [event.pluginName]) : 
+    title = (event as any).pluginName ? 
+      t('Plugin: {0}', [(event as any).pluginName]) : 
       t('Plugin Events');
   } else {
     title = event.source;
@@ -541,25 +615,56 @@ watch(() => props.plugin.subscribedEvents, (events) => {
   
   events.forEach(event => {
     // When source changes, reset kind and eventName if needed
-    if (event.source === 'plugin' && !event.pluginName) {
-      event.pluginName = '';
+    if (event.source === 'plugin' && !(event as any).pluginName) {
+      (event as any).pluginName = '';
     }
   });
 }, { deep: true });
 </script>
 
 <style scoped>
+.tab-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.settings-card {
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.card-description {
+  margin-bottom: 1rem;
+  padding: 0 0rem;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+  font-size: 0.875rem;
+}
 .event-item {
   margin-bottom: 20px;
 }
 
 .event-form-group {
   margin-bottom: 15px;
+  padding-left: 5px;
 }
 
 .webhook-url-group {
   display: flex;
   align-items: flex-end;
+  padding-left: 5px;
 }
 
 .webhook-actions {
@@ -658,5 +763,54 @@ watch(() => props.plugin.subscribedEvents, (events) => {
 .statistic-title {
   font-size: 14px;
   color: var(--el-text-color-secondary);
+}
+
+/* Screen reader only class for assistive text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus states for accessibility */
+:deep(.el-input:focus-within),
+:deep(.el-select:focus-within),
+:deep(.el-textarea:focus-within) {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+:deep(.el-button:focus-visible) {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+}
+
+:deep(.el-collapse-item__header:focus-visible) {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: -2px;
+}
+
+/* Enhanced focus for search input */
+#event-search-input:focus-within {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+}
+
+/* Focus state for dropdown */
+:deep(.el-dropdown__popper) {
+  outline: none;
+}
+
+:deep(.el-dropdown-menu__item:focus) {
+  background-color: var(--el-dropdown-menuItem-hover-fill);
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: -2px;
 }
 </style>

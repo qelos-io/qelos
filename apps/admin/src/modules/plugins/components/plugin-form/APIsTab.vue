@@ -1,38 +1,47 @@
 <template>
-  <div class="tab-content">
+  <div 
+    class="tab-content" 
+    role="region" 
+    tabindex="-1"
+    :aria-label="$t('Plugin basic information')">
     <el-card class="settings-card">
       <template #header>
-        <div class="card-header">
-          <el-icon><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
+        <div class="card-header" id="plugin-api-section">
+          <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
           <span>{{ $t('API Configuration') }}</span>
         </div>
       </template>
-      <p class="card-description">{{ $t('Configure how the plugin integrates with the Qelos API system.') }}</p>
+      <p class="card-description" id="plugin-api-description">{{ $t('Configure how the plugin integrates with the Qelos API system.') }}</p>
       
       <!-- Visual API Path Representation -->
-      <div v-if="plugin.apiPath || plugin.manifestUrl" class="api-path-visualization">
-        <div class="visualization-header">
-          <el-icon><font-awesome-icon :icon="['fas', 'diagram-project']" /></el-icon>
+      <div 
+        v-if="plugin.apiPath || plugin.manifestUrl" 
+        class="api-path-visualization"
+        role="region"
+        aria-labelledby="api-integration-header"
+      >
+        <div class="visualization-header" id="api-integration-header">
+          <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'diagram-project']" /></el-icon>
           <span>{{ $t('API Integration') }}</span>
         </div>
-        <div class="api-flow-diagram">
+        <div class="api-flow-diagram" role="img" :aria-label="$t('API flow from client through Qelos to plugin')">
           <div class="flow-node client">
-            <el-icon><font-awesome-icon :icon="['fas', 'laptop']" /></el-icon>
+            <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'laptop']" /></el-icon>
             <span>{{ $t('Client') }}</span>
           </div>
-          <div class="flow-arrow">
+          <div class="flow-arrow" aria-hidden="true">
             <el-icon><font-awesome-icon :icon="['fas', 'arrow-right']" /></el-icon>
           </div>
           <div class="flow-node qelos">
-            <el-icon><font-awesome-icon :icon="['fas', 'server']" /></el-icon>
+            <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'server']" /></el-icon>
             <span>{{ $t('Qelos') }}</span>
             <div class="endpoint">{{ baseUrl }}{{ plugin.apiPath || '...' }}</div>
           </div>
-          <div class="flow-arrow">
+          <div class="flow-arrow" aria-hidden="true">
             <el-icon><font-awesome-icon :icon="['fas', 'arrow-right']" /></el-icon>
           </div>
           <div class="flow-node plugin">
-            <el-icon><font-awesome-icon :icon="['fas', 'puzzle-piece']" /></el-icon>
+            <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'puzzle-piece']" /></el-icon>
             <span>{{ $t('Plugin API') }}</span>
             <div class="endpoint">{{ formattedProxyUrl || '...' }}</div>
           </div>
@@ -41,7 +50,7 @@
       
       <!-- API Path Configuration -->
       <div class="config-section">
-        <h4 class="section-title">
+        <h4 class="section-title" id="api-endpoint-section">
           <el-icon><font-awesome-icon :icon="['fas', 'link']" /></el-icon>
           {{ $t('API Endpoint') }}
           <el-tag size="small" effect="plain" type="success" v-if="plugin.apiPath">{{ $t('Configured') }}</el-tag>
@@ -54,35 +63,45 @@
           >
             <template #label>
               <div class="form-label">
-                <span>{{ $t('API Path') }}</span>
+                <label for="api-path-input">{{ $t('API Path') }}</label>
                 <el-tooltip 
                   effect="dark" 
                   :content="$t('The path where this plugin\'s API will be accessible (e.g., /api/my-plugin)')" 
                   placement="top"
                 >
-                  <el-icon class="info-icon"><font-awesome-icon :icon="['fas', 'circle-info']" /></el-icon>
+                  <el-icon class="info-icon" aria-hidden="true"><font-awesome-icon :icon="['fas', 'circle-info']" /></el-icon>
                 </el-tooltip>
                 <el-tag v-if="plugin.manifestUrl" size="small" type="info" class="auto-tag">{{ $t('Auto') }}</el-tag>
               </div>
             </template>
             <el-input 
+              id="api-path-input"
               v-model="plugin.apiPath" 
               :placeholder="plugin.manifestUrl ? 'Will be auto-set from manifest' : '/api/your-plugin-path'" 
               clearable
               :disabled="!!plugin.manifestUrl"
               :status="!plugin.apiPath && !plugin.manifestUrl ? 'error' : ''"
+              :aria-label="$t('API Path')"
+              :aria-describedby="(!plugin.manifestUrl && !plugin.apiPath) ? 'api-path-helper' : undefined"
+              :aria-invalid="!plugin.apiPath && !plugin.manifestUrl"
+              :aria-required="!plugin.manifestUrl"
             >
               <template #prefix>
-                <span class="input-prefix">{{ baseUrl }}</span>
+                <span class="input-prefix" aria-hidden="true">{{ baseUrl }}</span>
               </template>
               <template #append v-if="!plugin.manifestUrl">
-                <el-button @click="suggestApiPath" :disabled="!!plugin.apiPath">
-                  <el-icon><font-awesome-icon :icon="['fas', 'magic']" /></el-icon>
+                <el-button 
+                  @click="suggestApiPath" 
+                  @keydown.enter.prevent="suggestApiPath"
+                  :disabled="!!plugin.apiPath"
+                  :aria-label="$t('Suggest API path based on plugin name')"
+                >
+                  <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'magic']" /></el-icon>
                   {{ $t('Suggest') }}
                 </el-button>
               </template>
             </el-input>
-            <div class="form-helper-text" v-if="!plugin.manifestUrl && !plugin.apiPath">
+            <div class="form-helper-text" id="api-path-helper" v-if="!plugin.manifestUrl && !plugin.apiPath">
               {{ $t('Recommended format: /api/[plugin-name]') }}
             </div>
           </el-form-item>
@@ -91,39 +110,51 @@
           <el-form-item prop="proxyUrl">
             <template #label>
               <div class="form-label">
-                <span>{{ $t('Proxy URL') }}</span>
+                <label for="proxy-url-input">{{ $t('Proxy URL') }}</label>
                 <el-tooltip 
                   effect="dark" 
                   :content="$t('The URL where API requests will be forwarded to')" 
                   placement="top"
                 >
-                  <el-icon class="info-icon"><font-awesome-icon :icon="['fas', 'circle-info']" /></el-icon>
+                  <el-icon class="info-icon" aria-hidden="true"><font-awesome-icon :icon="['fas', 'circle-info']" /></el-icon>
                 </el-tooltip>
                 <el-tag v-if="plugin.manifestUrl && !plugin.proxyUrl" size="small" type="info" class="auto-tag">{{ $t('From Manifest') }}</el-tag>
               </div>
             </template>
             <el-input 
+              id="proxy-url-input"
               v-model="proxyUrlWithoutProtocol" 
               placeholder="api.your-plugin-domain.com" 
               clearable
               :status="!plugin.proxyUrl && !plugin.manifestUrl ? 'warning' : ''"
+              :aria-label="$t('Proxy URL')"
+              :aria-describedby="(plugin.manifestUrl || !plugin.proxyUrl) ? 'proxy-url-helper' : undefined"
             >
               <template #prepend>
-                <el-select v-model="proxyProtocol" style="width: 90px">
+                <el-select 
+                  v-model="proxyProtocol" 
+                  style="width: 90px"
+                  :aria-label="$t('Protocol')"
+                >
                   <el-option label="http://" value="http://" />
                   <el-option label="https://" value="https://" />
                 </el-select>
               </template>
               <template #append>
-                <el-button @click="testConnection" :disabled="!plugin.proxyUrl">
-                  <el-icon><font-awesome-icon :icon="['fas', 'vial']" /></el-icon>
+                <el-button 
+                  @click="testConnection" 
+                  @keydown.enter.prevent="testConnection"
+                  :disabled="!plugin.proxyUrl"
+                  :aria-label="$t('Test connection to proxy URL')"
+                >
+                  <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'vial']" /></el-icon>
                 </el-button>
               </template>
             </el-input>
-            <div class="form-helper-text" v-if="plugin.manifestUrl">
+            <div class="form-helper-text" id="proxy-url-helper" v-if="plugin.manifestUrl">
               {{ $t('Leave empty to use manifest URL') }}
             </div>
-            <div class="form-helper-text" v-else-if="!plugin.proxyUrl">
+            <div class="form-helper-text" id="proxy-url-helper" v-else-if="!plugin.proxyUrl">
               {{ $t('Specify the URL where your plugin API is hosted') }}
             </div>
           </el-form-item>
@@ -132,7 +163,7 @@
       
       <!-- Authentication Configuration -->
       <div class="config-section">
-        <h4 class="section-title">
+        <h4 class="section-title" id="authentication-section">
           <el-icon><font-awesome-icon :icon="['fas', 'key']" /></el-icon>
           {{ $t('Authentication') }}
           <el-tag size="small" effect="plain" type="success" v-if="plugin.token">{{ $t('Configured') }}</el-tag>
@@ -145,6 +176,8 @@
             type="info" 
             :closable="false" 
             show-icon
+            role="status"
+            aria-live="polite"
           >
             <template #title>
               <span>{{ $t('Authentication Method') }}: <strong>Bearer Token</strong></span>
@@ -157,36 +190,44 @@
           <el-form-item prop="token">
             <template #label>
               <div class="form-label">
-                <span>{{ $t('API Token') }}</span>
+                <label for="api-token-input">{{ $t('API Token') }}</label>
                 <el-tooltip 
                   effect="dark" 
                   :content="$t('Qelos will use this token as Bearer token for authentication')" 
                   placement="top"
                 >
-                  <el-icon class="info-icon"><font-awesome-icon :icon="['fas', 'circle-info']" /></el-icon>
+                  <el-icon class="info-icon" aria-hidden="true"><font-awesome-icon :icon="['fas', 'circle-info']" /></el-icon>
                 </el-tooltip>
               </div>
             </template>
             <el-input 
+              id="api-token-input"
               v-model="plugin.token" 
               placeholder="Enter API token" 
               clearable 
               show-password
               type="password"
+              :aria-label="$t('API Token')"
+              :aria-describedby="(plugin._id && !plugin.token) || !plugin.token ? 'token-helper' : undefined"
             >
               <template #prepend>
-                <span>Bearer</span>
+                <span aria-hidden="true">Bearer</span>
               </template>
               <template #append>
-                <el-button @click="generateToken" :disabled="!!plugin.token">
-                  <el-icon><font-awesome-icon :icon="['fas', 'wand-magic-sparkles']" /></el-icon>
+                <el-button 
+                  @click="generateToken" 
+                  @keydown.enter.prevent="generateToken"
+                  :disabled="!!plugin.token"
+                  :aria-label="$t('Generate secure API token')"
+                >
+                  <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'wand-magic-sparkles']" /></el-icon>
                 </el-button>
               </template>
             </el-input>
-            <div class="form-helper-text" v-if="plugin._id && !plugin.token">
+            <div class="form-helper-text" id="token-helper" v-if="plugin._id && !plugin.token">
               {{ $t('Leave empty to keep existing token') }}
             </div>
-            <div class="form-helper-text" v-else-if="!plugin.token">
+            <div class="form-helper-text" id="token-helper" v-else-if="!plugin.token">
               {{ $t('You can generate a secure token or provide your own') }}
             </div>
           </el-form-item>
@@ -195,9 +236,14 @@
       
       <!-- Connection Status -->
       <div class="connection-status-container" v-if="connectionStatus">
-        <div :class="['connection-status', connectionStatus.type]">
-          <el-icon v-if="connectionStatus.type === 'success'"><font-awesome-icon :icon="['fas', 'check-circle']" /></el-icon>
-          <el-icon v-else-if="connectionStatus.type === 'error'"><font-awesome-icon :icon="['fas', 'exclamation-circle']" /></el-icon>
+        <div 
+          :class="['connection-status', connectionStatus.type]"
+          role="status"
+          aria-live="polite"
+          :aria-label="connectionStatus.type === 'success' ? $t('Connection successful') : $t('Connection failed')"
+        >
+          <el-icon v-if="connectionStatus.type === 'success'" aria-hidden="true"><font-awesome-icon :icon="['fas', 'check-circle']" /></el-icon>
+          <el-icon v-else-if="connectionStatus.type === 'error'" aria-hidden="true"><font-awesome-icon :icon="['fas', 'exclamation-circle']" /></el-icon>
           <span>{{ connectionStatus.message }}</span>
         </div>
       </div>
@@ -396,6 +442,35 @@ const testConnection = async () => {
 </script>
 
 <style scoped>
+.tab-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.settings-card {
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.card-description {
+  margin-bottom: 1rem;
+  padding: 0 0rem;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+  font-size: 0.875rem;
+}
 .config-section {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
@@ -473,6 +548,19 @@ const testConnection = async () => {
   background-color: var(--el-color-danger-light-9);
   color: var(--el-color-danger);
   border-left: 4px solid var(--el-color-danger);
+}
+
+/* Focus states for accessibility */
+.el-input:focus-within,
+.el-select:focus-within {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.el-button:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
 }
 
 /* API Flow Diagram */
