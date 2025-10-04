@@ -25,11 +25,17 @@
         <FormInput title="Plugin API Path" label="Leave empty to auto-set" v-model="plugin.apiPath"/>
       </FormRowGroup>
       <div class="refresh-button-container">
-        <el-button type="primary" class="refresh-button" @click="refreshPluginFromManifest">
-          <el-icon>
+        <!-- Single button handling all states -->
+        <el-button type="primary" class="refresh-button" :loading="props.isRefreshing" :disabled="props.isRefreshing" @click="props.lastError ? retryRefresh() : refreshPluginFromManifest()">
+          <!-- Only show sync icon if not in loading state -->
+          <el-icon v-if="!props.isRefreshing">
             <font-awesome-icon :icon="['fas', 'sync']" />
           </el-icon>
-          <span>{{ $t('Refresh from Manifest') }}</span>
+          <span><!-- Span by state -->
+            <template v-if="props.isRefreshing">Loading…</template>
+            <template v-else-if="props.lastError">Retry</template>
+            <template v-else>Refresh from Manifest</template>
+          </span>
         </el-button>
       </div>
     </el-card>
@@ -41,15 +47,23 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { IPlugin } from '@/services/types/plugin';
 
+//added props to receive UX state
 const props = defineProps<{
-  plugin: Partial<IPlugin>;
+  plugin: Partial<IPlugin>,
+  isRefreshing?: boolean,
+  lastError?: string | null
 }>();
 
 const emit = defineEmits<{
-  (e: 'refreshManifest'): void;
+  (e: 'refresh-manifest'): void
+  (e: 'retry'): void
 }>();
 
 function refreshPluginFromManifest() {
-  emit('refreshManifest');
+  emit('refresh-manifest');
+}
+
+function retryRefresh(){
+  emit('retry');
 }
 </script>
