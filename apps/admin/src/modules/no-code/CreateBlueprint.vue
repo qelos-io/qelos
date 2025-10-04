@@ -1,7 +1,12 @@
 <template>
-  <div v-if="wsConfig.loaded">
-    <BlueprintForm :blueprint="emptyBlueprint" :submitting="store.submittingNewItem" @submitted="submit"/>
-  </div>
+  <BlueprintForm
+    :blueprint="emptyBlueprint"
+    :submitting="store.submittingNewItem"
+    :loading="!wsConfig.loaded"
+    :identifier-loading="!wsConfig.loaded"
+    :properties-loading="!wsConfig.loaded"
+    @submitted="submit"
+  />
 </template>
 <script lang="ts" setup>
 import { ref, watch } from 'vue';
@@ -20,7 +25,7 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 const store = useBlueprintsStore();
 const wsConfig = useWsConfiguration();
-const emptyBlueprint = ref<Partial<IBlueprint>>()
+const emptyBlueprint = ref<Partial<IBlueprint>>({})
 
 async function submit(payload: Partial<IBlueprint>) {
   const data = await store.create(payload);
