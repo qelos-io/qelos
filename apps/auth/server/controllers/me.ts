@@ -3,6 +3,7 @@ import { Response } from 'express'
 import { AuthRequest } from '../../types'
 import { getWorkspaceForUser } from '../services/workspaces';
 import { basicTenant } from '../../config';
+import logger from '../services/logger';
 
 async function getImpersonate(req: AuthRequest, res: Response) {
   const userId = req.get('x-impersonate-user')?.toString() as string;
@@ -42,6 +43,7 @@ async function getImpersonate(req: AuthRequest, res: Response) {
 export async function getMe(req: AuthRequest, res: Response) {
   if (req.headers.tenant === basicTenant && req.userPayload.isPrivileged && (req.get('x-impersonate-tenant') || req.query.impersonateTenant)) {
     const impersonatedTenant = req.get('x-impersonate-tenant') || req.query.impersonateTenant?.toString()
+    logger.log('impersonating tenant', impersonatedTenant);
     res.set('x-qelos-tenant', impersonatedTenant);
     req.headers.tenant = impersonatedTenant;
   }
