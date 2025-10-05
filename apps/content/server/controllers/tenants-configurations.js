@@ -91,10 +91,6 @@ async function updateConfiguration(req, res) {
 }
 
 async function removeConfiguration(req, res) {
-  if (req.params.configKey === BASIC_APP_CONFIGURATION_KEY) {
-    res.status(403).json({ message: 'cannot remove root app configuration' }).end()
-    return;
-  }
   const tenant = req.params.tenant;
   let configuration;
   try {
