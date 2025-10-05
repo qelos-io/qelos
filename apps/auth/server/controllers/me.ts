@@ -5,10 +5,10 @@ import { getWorkspaceForUser } from '../services/workspaces';
 import { basicTenant } from '../../config';
 
 async function getImpersonate(req: AuthRequest, res: Response) {
-  const userId = req.headers['x-impersonate-user'] as string;
-  const workspaceId = req.headers['x-impersonate-workspace'] as string;
+  const userId = req.get('x-impersonate-user')?.toString() as string;
+  const workspaceId = req.get('x-impersonate-workspace')?.toString() as string;
   const [user, workspace] = await Promise.all([
-    getUser({ username: req.headers['x-impersonate-user'] as string, tenant: req.userPayload.tenant }).catch(),
+    getUser({ username: req.get('x-impersonate-user')?.toString() as string, tenant: req.userPayload.tenant }).catch(),
     workspaceId ? getWorkspaceForUser(req.headers.tenant, userId, workspaceId).catch() : Promise.resolve()
   ])
 
@@ -40,10 +40,12 @@ async function getImpersonate(req: AuthRequest, res: Response) {
 }
 
 export async function getMe(req: AuthRequest, res: Response) {
-  if (req.headers.tenant === basicTenant && req.userPayload.isPrivileged && (req.headers['x-impersonate-tenant'] || req.query.impersonateTenant)) {
-    res.set('x-qelos-tenant', req.headers['x-impersonate-tenant'] || req.query.impersonateTenant);
+  if (req.headers.tenant === basicTenant && req.userPayload.isPrivileged && (req.get('x-impersonate-tenant') || req.query.impersonateTenant)) {
+    const impersonatedTenant = req.get('x-impersonate-tenant') || req.query.impersonateTenant?.toString()
+    res.set('x-qelos-tenant', impersonatedTenant);
+    req.headers.tenant = impersonatedTenant;
   }
-  if (req.userPayload.isPrivileged && req.headers['x-impersonate-user']) {
+  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
     return getImpersonate(req, res)
   }
 
