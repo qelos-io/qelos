@@ -568,7 +568,7 @@ export default {
         const caretPosition = inputElement.selectionStart;
         
         // Apply mask to the current input value
-        const maskedValue = applyMask(event);
+        const maskedValue = applyMask(event.target.value);
         displayValue.value = maskedValue;
         
         // Extract raw value and emit it
