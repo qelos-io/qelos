@@ -9,7 +9,8 @@ import {
   cookieTokenExpiration,
   privilegedRoles,
   cookieTokenVerificationTime,
-  processedCookieExpiration, showLogs
+  processedCookieExpiration, showLogs,
+  basicTenant
 } from '../../config';
 import { NextFunction, RequestHandler, Response } from 'express';
 import { AuthRequest } from '../../types';
@@ -25,7 +26,7 @@ function oAuthVerify(req: AuthRequest, res: Response, next: NextFunction): Promi
   const tenant = (req.headers.tenant = req.headers.tenant as string || '0');
 
   return verifyToken(token, tenant)
-    .then((payload) => setUserPayload(payload, req, next))
+    .then((payload) => setUserPayload(payload, req, res, next))
     .catch(() => {
       if (token && tenant) {
         res.status(401).json({ message: 'authorization token is not valid.' }).end();
@@ -56,7 +57,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
     const payload: any = await verifyToken(token, tenant);
     const created = Number(payload.tokenIdentifier?.split(':')[0]);
     if ((Date.now() - created < cookieTokenVerificationTime) || await isCookieProcessed(payload.tokenIdentifier)) {
-      setUserPayload(payload, req, next);
+      setUserPayload(payload, req, res, next);
       return;
     }
     const newCookieIdentifier = getUniqueId();
@@ -69,7 +70,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       )
     } catch (e) {
       if (await isCookieProcessed(payload.tokenIdentifier)) {
-        setUserPayload(payload, req, next);
+        setUserPayload(payload, req, res, next);
         return;
       } else {
         throw e;
@@ -91,10 +92,10 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       );
 
       setCookie(res, getCookieTokenName(req.headers.tenant), newToken, null, getRequestHost(req));
-      setUserPayload(newPayload, req, next);
+      setUserPayload(newPayload, req, res, next);
     } catch (e) {
       if (await isCookieProcessed(payload.tokenIdentifier)) {
-        setUserPayload(payload, req, next);
+        setUserPayload(payload, req, res, next);
         return;
       } else {
         throw e;
@@ -120,12 +121,20 @@ async function isCookieProcessed(tokenIdentifier: string) {
   }
 }
 
-function setUserPayload(payload: any, req: AuthRequest, next: NextFunction) {
+function setUserPayload(payload: any, req: AuthRequest, res: Response, next: NextFunction) {
   req.userPayload = payload;
   req.userPayload.isPrivileged = payload.roles.some((role: string) => {
     return privilegedRoles.includes(role)
   });
   req.activeWorkspace = payload.workspace;
+
+  if (req.headers.tenant === basicTenant && req.userPayload.isPrivileged &&(req.get('x-impersonate-tenant') || req.query.impersonateTenant)) {
+    const impersonatedTenant = req.get('x-impersonate-tenant') || req.query.impersonateTenant?.toString();
+    logger.log('impersonating tenant', impersonatedTenant);
+    req.headers.tenant = impersonatedTenant;
+    res.set('x-qelos-tenant', impersonatedTenant);
+  }
+
   next();
 }
 
