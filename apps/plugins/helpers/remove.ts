@@ -12,12 +12,16 @@ if (!TENANT) {
 
 const Plugin = mongoose.model('Plugin');
 const Event = mongoose.model('Event');
+const IntegrationSource = mongoose.model('IntegrationSource');
+const Integration = mongoose.model('Integration');
 
 console.log('initiate remove tenant');
 
 Promise.all([
   Plugin.deleteMany({ tenant: TENANT }),
   Event.deleteMany({ tenant: TENANT }),
+  IntegrationSource.deleteMany({ tenant: TENANT }),
+  Integration.deleteMany({ tenant: TENANT }),
 ])
   .then(() => {
     console.log('tenant deleted successfully');

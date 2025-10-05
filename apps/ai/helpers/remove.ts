@@ -5,6 +5,8 @@ require('../server/models').connect(mongoUri);
 
 const TENANT = process.env.TENANT;
 
+const Thread = mongoose.model('Thread');
+
 if (!TENANT) {
   console.log('you must specify the tenant you want to be removed');
   process.exit(0);
@@ -13,6 +15,7 @@ if (!TENANT) {
 console.log('initiate remove tenant');
 
 Promise.all([
+  Thread.deleteMany({ tenant: TENANT }),
 ])
   .then(() => {
     console.log('tenant deleted successfully');
