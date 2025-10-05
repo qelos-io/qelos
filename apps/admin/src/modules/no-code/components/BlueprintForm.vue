@@ -14,6 +14,7 @@ import BlueprintLimitationsInput from '@/modules/no-code/components/blueprint-fo
 import BlueprintPermissionsTab from '@/modules/no-code/components/blueprint-form/BlueprintPermissionsTab.vue';
 import BlueprintPropertiesTab from '@/modules/no-code/components/blueprint-form/BlueprintPropertiesTab.vue';
 import BlueprintGeneralTab from '@/modules/no-code/components/blueprint-form/BlueprintGeneralTab.vue';
+import BlueprintEventsTab from '@/modules/no-code/components/blueprint-form/BlueprintEventsTab.vue';
 
 // temporary sample
 const availableLabels = ['*', 'supplier', 'store', 'consumer'];
@@ -267,20 +268,7 @@ function submit() {
                 <span>{{ $t('Events Emitting') }}</span>
               </div>
             </template>
-            <div class="card-description">
-              <p>
-                {{
-                  $t('Applying this feature will allow you to create webhooks and subscribe to changes made on entities.')
-                }}
-              </p>
-            </div>
-            <div class="events-container">
-              <FormRowGroup align-start>
-                <FormInput v-model="edit.dispatchers.create" title="Create" type="switch" class="flex-0"/>
-                <FormInput v-model="edit.dispatchers.update" title="Update" type="switch" class="flex-0"/>
-                <FormInput v-model="edit.dispatchers.delete" title="Delete" type="switch" class="flex-0"/>
-              </FormRowGroup>
-            </div>
+            <BlueprintEventsTab v-model="edit.dispatchers" />
           </el-card>
         </div>
       </el-tab-pane>
