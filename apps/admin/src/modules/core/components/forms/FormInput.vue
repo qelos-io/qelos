@@ -699,9 +699,7 @@ export default {
     
     // Validate on mount if requested
     if (props.validateOnMount) {
-      setTimeout(() => {
-        validate();
-      }, 0);
+      nextTick(validate);
     }
     
     return {
