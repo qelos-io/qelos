@@ -11,14 +11,12 @@ if (!TENANT) {
 
 const Configuration = mongoose.model("Configuration");
 const Block = mongoose.model("Block");
-const Layout = mongoose.model("Layout");
 
 console.log("initiate remove tenant");
 
 Promise.all([
   Configuration.deleteMany({ tenant: TENANT }),
   Block.deleteMany({ tenant: TENANT }),
-  Layout.deleteMany({ tenant: TENANT }),
 ])
   .then(() => {
     console.log("tenant deleted successfully");
