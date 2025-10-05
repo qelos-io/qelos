@@ -40,10 +40,10 @@ async function getImpersonate(req: AuthRequest, res: Response) {
 }
 
 export async function getMe(req: AuthRequest, res: Response) {
-  if (req.headers.tenant === basicTenant && req.userPayload.isPrivileged && (req.headers['x-impersonate-tenant'] || req.query.impersonateTenant)) {
-    res.set('x-qelos-tenant', req.headers['x-impersonate-tenant'] || req.query.impersonateTenant);
+  if (req.headers.tenant === basicTenant && req.userPayload.isPrivileged && (req.get('x-impersonate-tenant') || req.query.impersonateTenant)) {
+    res.set('x-qelos-tenant', req.get('x-impersonate-tenant') || req.query.impersonateTenant?.toString());
   }
-  if (req.userPayload.isPrivileged && req.headers['x-impersonate-user']) {
+  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
     return getImpersonate(req, res)
   }
 

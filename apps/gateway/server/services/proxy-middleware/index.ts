@@ -203,9 +203,9 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
         cookie: req.headers.cookie,
         tenanthost: req.headers.host,
         authorization: req.headers.authorization,
-        'x-impersonate-tenant': req.headers['x-impersonate-tenant'] || req.query.impersonateTenant?.toString() || '',
-        'x-impersonate-user': req.headers['x-impersonate-user'] || req.query.impersonateUser?.toString() || '',
-        'x-impersonate-workspace': req.headers['x-impersonate-workspace'] || req.query.impersonateWorkspace?.toString() || '',
+        'x-impersonate-tenant': req.get('x-impersonate-tenant') || req.query.impersonateTenant?.toString() || '',
+        'x-impersonate-user': req.get('x-impersonate-user') || req.query.impersonateUser?.toString() || '',
+        'x-impersonate-workspace': req.get('x-impersonate-workspace') || req.query.impersonateWorkspace?.toString() || '',
       },
     })
       .then((response) => {
