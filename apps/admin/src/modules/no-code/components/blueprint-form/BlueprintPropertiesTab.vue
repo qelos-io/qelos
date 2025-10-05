@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { BlueprintPropertyType, EntityIdentifierMechanism, IBlueprintPropertyDescriptor } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
@@ -51,7 +51,7 @@ function normalizeProperties(raw: Record<string, IBlueprintPropertyDescriptor> |
 // Track the currently selected property for detailed view
 const selectedPropertyIndex = ref(-1);
 
-watch(() => properties.value, (newProperties) => {
+watch(() => properties.value, async (newProperties) => {
   syncingFromParent = true;
   const currentSelectionKey = selectedPropertyIndex.value >= 0
     ? blueprintProperties.value[selectedPropertyIndex.value]?.key
@@ -65,6 +65,8 @@ watch(() => properties.value, (newProperties) => {
   } else {
     selectedPropertyIndex.value = -1;
   }
+
+  await nextTick();
   syncingFromParent = false;
 }, { immediate: true });
 
