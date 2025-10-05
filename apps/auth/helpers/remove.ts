@@ -11,11 +11,15 @@ if (!TENANT) {
 }
 
 const User = mongoose.model('User');
+const Workspace = mongoose.model('Workspace');
+const UserInternalMetadata = mongoose.model('UserInternalMetadata');
 
 console.log('initiate remove tenant');
 
 Promise.all([
   User.deleteMany({ tenant: TENANT }),
+  Workspace.deleteMany({ tenant: TENANT }),
+  UserInternalMetadata.deleteMany({ tenant: TENANT }),
 ])
   .then(() => {
     console.log('tenant deleted successfully');

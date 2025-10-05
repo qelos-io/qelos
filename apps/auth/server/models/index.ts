@@ -25,4 +25,6 @@ export const connect = (uri:string) => {
 
 	// load models
 	require('./user');
+	require('./user-internal-metadata');
+  require('./workspace');
 };
