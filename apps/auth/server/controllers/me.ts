@@ -44,7 +44,6 @@ export async function getMe(req: AuthRequest, res: Response) {
     res.set('x-qelos-tenant', req.headers['x-impersonate-tenant'] || req.query.impersonateTenant);
   }
   if (req.userPayload.isPrivileged && req.headers['x-impersonate-user']) {
-    console.log('impersonate user: ' + req.headers['x-impersonate-user'])
     return getImpersonate(req, res)
   }
 
