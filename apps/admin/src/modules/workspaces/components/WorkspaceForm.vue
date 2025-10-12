@@ -55,9 +55,6 @@
                 <h4>{{ option.title }}</h4>
                 <p v-if="option.description">{{ option.description }}</p>
               </div>
-              <div class="type-check">
-                <el-radio :model-value="selectedLabels === option ? true : false" :label="true" />
-              </div>
             </div>
           </div>
         </div>
