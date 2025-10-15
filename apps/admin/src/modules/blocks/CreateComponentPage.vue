@@ -24,8 +24,7 @@ import { useComponentsList } from './store/components-list';
 const componentsStore = useComponentsList();
 
 const { submit, submitting } = useSubmitting(
-  ({ componentName, identifier, description, content }) => {
-    return componentsService.create({ componentName, identifier, description, content }),
+  ({ componentName, identifier, description, content }) => componentsService.create({ componentName, identifier, description, content }),
   {
     success: 'Component created successfully',
     error: 'Failed to create component'
