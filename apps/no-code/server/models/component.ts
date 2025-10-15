@@ -5,6 +5,10 @@ export type IComponent = {
   componentName: string;
   description: string;
   content: string;
+  requiredProps: {
+    prop: string;
+    type: string;
+  }[];
   compiledContent: {
     js: string;
     css: string;
@@ -38,6 +42,7 @@ const ComponentSchema = new mongoose.Schema<IComponent>({
     js: String,
     css: String,
   },
+  requiredProps: [mongoose.Schema.Types.Mixed],
   created: {
     type: Date,
     default: Date.now,

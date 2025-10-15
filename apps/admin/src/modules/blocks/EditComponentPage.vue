@@ -22,13 +22,21 @@ import PageTitle from '../core/components/semantics/PageTitle.vue';
 import ComponentForm from './components/ComponentForm.vue';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { ref } from 'vue';
+import { useComponentsList } from '@/modules/blocks/store/components-list';
+
+const componentsStore = useComponentsList();
 
 const route = useRoute();
 const { submit, submitting } = useSubmitting(
-  ({ componentName, identifier, description, content }) => componentsService.update(route.params.componentId as string, { componentName, identifier, description, content }),
+  ({ componentName, identifier, description, content }) => {
+    return componentsService.update(route.params.componentId as string, { componentName, identifier, description, content })
+  },
   {
     success: 'Component updated successfully',
     error: 'Failed to update component'
+  },
+  () => {
+    componentsStore.retry();
   }
 )
 
