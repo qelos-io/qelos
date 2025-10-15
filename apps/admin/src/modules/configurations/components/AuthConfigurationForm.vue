@@ -353,6 +353,38 @@
               </template>
             </FormInput>
           </BlockItem>
+          <BlockItem class="flex-1 social-login-container">
+            <div v-if="sourcedLoaded && !githubSources?.length">
+              <div class="social-provider-header">
+                <font-awesome-icon :icon="['fab', 'github']" class="social-icon github"/>
+                <span class="pad-start">{{ $t('GitHub') }}</span>
+              </div>
+              <el-alert :closable="false" type="info">
+                {{ $t('You have not integrated any GitHub connections.') }}
+                <router-link
+                  class="primary-link"
+                  :to="{ name: 'integrations-sources', params: { kind: 'github' } }">
+                  {{ $t('Navigate to GitHub Connections') }}
+                </router-link>
+                {{ $t('to create one.') }}
+              </el-alert>
+            </div>
+            <FormInput v-else v-model="edited.socialLoginsSources.github"
+                      placeholder="Select GitHub Integration Source"
+                      type="select" class="social-input">
+              <template #pre>
+                <font-awesome-icon :icon="['fab', 'github']" class="social-icon github"/>
+                <span class="pad-start">{{ $t('GitHub') }}</span>
+              </template>
+              <template #options>
+                <el-option :label="`(${$t('none')})`" :value="null"/>
+                <el-option v-for="source in githubSources" :key="source._id" :label="source.name" :value="source._id"/>
+              </template>
+              <template #help>
+                <span class="help-text">{{ $t('Select the GitHub integration to use for social login') }}</span>
+              </template>
+            </FormInput>
+          </BlockItem>
         </div>
       </div>
 
@@ -467,11 +499,15 @@ const googleSources = computed(() => {
   return groupedSources.value[IntegrationSourceKind.Google] || []
 })
 
+const githubSources = computed(() => {
+  return groupedSources.value[IntegrationSourceKind.GitHub] || []
+});
+
 // Computed property to check if any social login is configured 
 const hasSocialLoginConfigured = computed(() => {
   // Check if the linkedin source ID is set and not null/empty
   const sources = edited.value.socialLoginsSources;
-  return !!sources?.linkedin || !!sources?.google;
+  return !!sources?.linkedin || !!sources?.google || !!sources?.github;
 });
 
 // Watch for changes in social login configuration when username/password is disabled
@@ -521,6 +557,7 @@ function ensureSocialLoginsSources(metadata: Partial<IAuthConfigurationMetadata>
     google: metadata.socialLoginsSources?.google ?? null,
     linkedin: metadata.socialLoginsSources?.linkedin ?? null,
     facebook: metadata.socialLoginsSources?.facebook ?? null,
+    github: metadata.socialLoginsSources?.github ?? null, 
   };
 }
 
@@ -1010,5 +1047,9 @@ function ensureSocialLoginsSources(metadata: Partial<IAuthConfigurationMetadata>
 
 .footer-slot {
   margin-top: 0.5rem;
+}
+
+.github {
+  color: #24292e;
 }
 </style>

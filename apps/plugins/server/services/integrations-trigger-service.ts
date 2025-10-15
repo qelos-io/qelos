@@ -28,6 +28,7 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, { required:
   [IntegrationSourceKind.Http]: null,
   [IntegrationSourceKind.Facebook]: null,
   [IntegrationSourceKind.Google]: null,
+  [IntegrationSourceKind.GitHub]: null,
 } as const;
 
 const COMMON_OPTIONAL_PARAMS = ['roles', 'workspaceRoles', 'workspaceLabels'];

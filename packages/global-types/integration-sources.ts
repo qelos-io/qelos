@@ -8,7 +8,8 @@ export enum IntegrationSourceKind {
   Http = 'http',
   ClaudeAi = 'claudeai',
   Facebook = 'facebook',
-  Google = 'google'
+  Google = 'google',
+  GitHub = 'github'
 }
 
 export interface IIntegrationSource {
@@ -154,6 +155,18 @@ export interface IHttpSource extends IIntegrationSource {
 export interface IGoogleSource extends IIntegrationSource {
   _id?: string;
   kind: IntegrationSourceKind.Google;
+  authentication: {
+    clientSecret: string;
+  };
+  metadata: {
+    clientId: string;
+    scope: string;
+  };
+}
+
+export interface IGithubSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.GitHub;
   authentication: {
     clientSecret: string;
   };

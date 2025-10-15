@@ -15,5 +15,6 @@ export function useIntegrationKindsColumns(): Record<IntegrationSourceKind, Arra
     [IntegrationSourceKind.ClaudeAi]: [],
     [IntegrationSourceKind.Http]: [],
     [IntegrationSourceKind.Google]: [],
+    [IntegrationSourceKind.GitHub]: [],    
   }
 }

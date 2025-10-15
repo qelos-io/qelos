@@ -103,6 +103,11 @@ function getDefaultMetadata(kind: IntegrationSourceKind) {
       scope: 'openid email public_profile',
     };
   }
+  if (kind === 'github') {
+    return {
+      scope: 'openid email public_profile',
+    };
+  }
   return {};
 }
 

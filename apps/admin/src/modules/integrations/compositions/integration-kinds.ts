@@ -7,7 +7,8 @@ type OptionalKind = IntegrationSourceKind.ClaudeAi |
   IntegrationSourceKind.LinkedIn |
   IntegrationSourceKind.OpenAI |
   IntegrationSourceKind.Qelos |
-  IntegrationSourceKind.Google;
+  IntegrationSourceKind.Google |
+  IntegrationSourceKind.GitHub;
 
 export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind }> {
   return {
@@ -58,6 +59,11 @@ export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind 
       logo: '/logos/google.svg',
       name: 'Google',
       kind: IntegrationSourceKind.Google
+    },
+    [IntegrationSourceKind.GitHub]: {
+      logo: '/logos/github.svg',
+      name: 'Github',
+      kind: IntegrationSourceKind.GitHub
     }
   }
 }

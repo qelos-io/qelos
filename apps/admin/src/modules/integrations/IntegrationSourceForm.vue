@@ -10,6 +10,7 @@ import HttpForm from './components/forms/HttpForm.vue';
 import ClaudeAiForm from './components/forms/ClaudeAIForm.vue';
 import FacebookForm from './components/forms/FacebookForm.vue';
 import GoogleForm from './components/forms/GoogleForm.vue';
+import GitHubForm from './components/forms/GitHubForm.vue';
 
 const props = defineProps<{
   modelValue: any;
@@ -30,6 +31,7 @@ const formComponentMap = {
   http: HttpForm,
   facebook: FacebookForm,
   google: GoogleForm,
+  github: GitHubForm
 };
 
 const SelectedFormComponent = computed(() => formComponentMap[props.kind] || null);
