@@ -6,10 +6,10 @@ import { cacheManager } from '../services/cache-manager';
 const LONG_TTL = 60 * 60 * 24;
 
 export const createComponent = async (req, res) => {
-  let compiledContent;
+  let js, css, props;
   try {
      // Compile the Vue component
-     compiledContent = await compileVueComponent(req.body.content, req.headers.tenanthost);
+    ({ js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost));
   } catch (err: any | Error) {
     logger.log('failed to compile a component', err?.message);
     res.status(400).json({ message: 'failed to compile a component', reason: err?.message }).end();
@@ -22,7 +22,8 @@ export const createComponent = async (req, res) => {
       componentName: req.body.componentName,
       description: req.body.description,
       content: req.body.content,
-      compiledContent,
+      requiredProps: props,
+      compiledContent: { js, css },
       tenant: req.headers.tenant,
     });
 
@@ -46,7 +47,9 @@ export const updateComponent = async (req, res) => {
     // If content is updated, recompile the component
     if (req.body.content) {
       $set.content = req.body.content;
-      $set.compiledContent = await compileVueComponent(req.body.content, req.headers.tenanthost);
+      const { js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost);
+      $set.compiledContent = { js, css };
+      $set.requiredProps = props;
     }
 
     const component = await Component.findOneAndUpdate(

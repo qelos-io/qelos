@@ -340,7 +340,15 @@ export function useEditorComponents() {
         description: value.description,
         component: 'div',
         mock: value.mock,
-        requiredProps: value.requiredProps || [],
+        requiredProps: (value.requiredProps || []).map((prop: any) => ({
+          prop: prop.prop,
+          type: prop.type,
+          label: prop.label || prop.prop,
+          source: prop.source || 'manual',
+          placeholder: prop.placeholder || '',
+          bind: prop.bind || false,
+          enum: prop.enum || [],
+        })),
         extendProps: value.extendProps || (() => {}),
         extendRequirements: value.extendRequirements || (() => {}),
       };
