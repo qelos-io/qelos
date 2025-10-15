@@ -11,7 +11,9 @@ export function useIntegrationKindsColumns(): Record<IntegrationSourceKind, Arra
     [IntegrationSourceKind.N8n]: [],
     [IntegrationSourceKind.Email]: [],
     [IntegrationSourceKind.LinkedIn]: [],
+    [IntegrationSourceKind.Facebook]: [], 
     [IntegrationSourceKind.ClaudeAi]: [],
     [IntegrationSourceKind.Http]: [],
+    [IntegrationSourceKind.Google]: [],
   }
 }

@@ -98,6 +98,11 @@ function getDefaultMetadata(kind: IntegrationSourceKind) {
       scope: 'openid email public_profile',
     };
   }
+  if (kind === 'google') {
+    return {
+      scope: 'openid email public_profile',
+    };
+  }
   return {};
 }
 

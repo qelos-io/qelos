@@ -66,6 +66,14 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     return { clientId, scope };
   }
 
+  if (kind === IntegrationSourceKind.Google) {
+    const { clientId, scope } = metadata;
+    if (!clientId || typeof clientId !== 'string' || !scope || typeof scope !== 'string') {
+      throw new ResponseError('Invalid Google metadata: clientId and scope are required.', 400);
+    }
+    return { clientId, scope };
+  }
+  
   if (kind === IntegrationSourceKind.N8n) {
     const { url } = metadata;
     if (typeof url !== 'string') {
