@@ -522,10 +522,10 @@ export async function updateBlueprintEntity(req, res) {
     }
     res.status(200).json(response).end()
   } catch (err) {
-    logger.error(err);
     if (err instanceof ResponseError) {
       res.status(err.status).json({ message: err.responseMessage }).end();
     } else {
+      logger.error('error updating entity', { tenant: req.headers.tenant, blueprint: blueprint.identifier, entityIdentifier }, err);
       res.status(500).json({ message: 'something went wrong with entity' }).end();
     }
   }
