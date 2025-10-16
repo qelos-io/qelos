@@ -393,7 +393,7 @@ export async function createBlueprintEntity(req, res) {
     const entity = new BlueprintEntity({
       tenant: req.headers.tenant,
       blueprint: blueprint.identifier,
-      identifier: blueprint.entityIdentifierMechanism === 'objectid' ? new mongoose.Types.ObjectId() : uuidv4().toString(),
+      identifier: blueprint.entityIdentifierMechanism === 'objectid' ? new mongoose.Types.ObjectId().toString() : uuidv4().toString(),
       user,
       workspace,
       metadata: {},
