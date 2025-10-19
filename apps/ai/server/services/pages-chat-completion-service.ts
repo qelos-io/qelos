@@ -182,6 +182,7 @@ function createChatOptions(options, sourceDetails, source, initialMessages, safe
     ),
     response_format: options.response_format || sourceDetails.response_format,
     tools,
+    unsafeUserContext: options.context,
   };
 }
 
