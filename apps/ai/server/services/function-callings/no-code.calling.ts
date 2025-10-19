@@ -101,7 +101,7 @@ export const editComponentCalling = {
     const { source, sourceAuthentication } = req;        
 
     if (!source || !sourceAuthentication) {
-      throw new Error('Could not create component');
+      throw new Error('Could not edit component');
     }
 
     const aiService = createAIService(source, sourceAuthentication);
