@@ -39,7 +39,7 @@ function getMessagesWithUserContext(messages: any[], unsafeUserContext: Record<s
     messages = [
       ...messages.slice(0, firstUserMessageIndex),
       { role: 'user', content: `Context given by user to this chat: ${JSON.stringify(unsafeUserContext)}` },
-      ...messages.slice(firstUserMessageIndex + 1)
+      ...messages.slice(firstUserMessageIndex)
     ];
   }
   return messages;
