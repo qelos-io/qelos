@@ -10,7 +10,7 @@ import {
   addTableToPageCalling,
   addFormToPageCalling
 } from "./plugins.calling";
-import { createComponentCalling, getComponentsCalling } from "./no-code.calling";
+import { createComponentCalling, editComponentCalling, getComponentsCalling } from "./no-code.calling";
 import { callPagesEditorAgentCalling } from "./pages-agent.calling";
 import { callIntegrationManagerAgentCalling } from "./integrations-agent.calling";
 import {
@@ -38,6 +38,7 @@ export const editorsFunctionCallings = {
 export const editPagesFunctionCallings = [
   getComponentsCalling,
   createComponentCalling,
+  editComponentCalling, 
   createPageCalling,
   editPageCalling,
   createBlueprintCalling,

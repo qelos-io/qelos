@@ -2,7 +2,7 @@
   <Transition name="slide-fade">
     <div class="ai-panel-content" v-if="visible">
       <Transition name="fade" mode="out-in">
-        <AiChat v-if="sourceId" :url="url" class="ai-chat" key="chat" :suggestions="suggestions" />
+        <AiChat v-if="sourceId" :chat-context="chatContext" :url="url" class="ai-chat" key="chat" :suggestions="suggestions" />
         <div v-else class="no-source-container" key="empty">
           <el-empty description="No OpenAI integration source found">
             <template #default>
@@ -16,7 +16,7 @@
 </template>
 <script setup lang="ts">
 import { computed, toRef } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useAdminAssistantStore } from "../store/admin-assistant";
 import AiChat from "@/modules/pre-designed/components/AiChat.vue";
 import { useIntegrationSourcesStore } from "@/modules/integrations/store/integration-sources";
@@ -35,6 +35,7 @@ const suggestions = [
 ];
 
 const router = useRouter();
+const route = useRoute();
 const store = useAdminAssistantStore();
 const visible = toRef(store, "isOpen");
 
@@ -46,6 +47,19 @@ const sourceId = computed(() => {
 
 const url = computed(() => {
   return `/api/ai/sources/${sourceId.value}/chat-completion`;
+});
+
+const chatContext = computed(() => {
+  const mfe: any = route.meta?.mfe || {}
+  return {
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    currentPage: route.path,
+    pluginId: route.params.pluginId || route.meta?.pluginId,
+    pagePluginId: mfe.pluginId,
+    pageId: mfe._id,
+    pageName: mfe._id,
+    componentId: route.params.componentId,
+  }
 });
 
 const navigateToOpenAIIntegration = () => {
