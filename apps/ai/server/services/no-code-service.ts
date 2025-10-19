@@ -69,3 +69,11 @@ export function createComponent(tenant: string, payload: {
 export function getComponents(tenant: string) {
   return callNoCodeService(`/internal-api/components`, 'GET', tenant);
 }
+
+export function getComponent(tenant: string, componentIdentifier: string) {
+  return callNoCodeService(`/internal-api/components/${componentIdentifier}`, 'GET', tenant);
+}
+
+export function updateComponent(tenant: string, componentIdentifier: string, payload: any) {
+  return callNoCodeService(`/internal-api/components/${componentIdentifier}`, 'PUT', tenant, payload);
+}

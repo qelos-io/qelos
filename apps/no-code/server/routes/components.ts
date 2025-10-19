@@ -17,6 +17,8 @@ const verifyInternal: any = verifyInternalCall
 
 componentsRouter.get('/internal-api/components', verifyInternal, getAllComponents);
 componentsRouter.post('/internal-api/components', verifyInternal, createComponent);
+componentsRouter.get('/internal-api/components/:componentId', verifyInternal, getSingleComponent);
+componentsRouter.put('/internal-api/components/:componentId', verifyInternal, updateComponent);
 
 componentsRouter.get('/api/static', getComponentsList);
 componentsRouter.get('/api/static/:componentKey', getCompiledComponent);

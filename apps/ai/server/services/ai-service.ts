@@ -14,6 +14,7 @@ interface AIServiceOptions {
   max_tokens?: number;
   tools?: any[];
   response_format?: any;
+  unsafeUserContext?: Record<string, string>;
   stream?: boolean;
 }
 
@@ -31,6 +32,19 @@ interface AIServiceSource {
 interface AIServiceAuthentication {
   token?: string;
 }
+
+function getMessagesWithUserContext(messages: any[], unsafeUserContext: Record<string, string>) {
+  const firstUserMessageIndex = messages.findIndex(msg => msg.role === 'user');
+  if (firstUserMessageIndex > -1) {
+    messages = [
+      ...messages.slice(0, firstUserMessageIndex),
+      { role: 'user', content: `Context given by user to this chat: ${JSON.stringify(unsafeUserContext)}` },
+      ...messages.slice(firstUserMessageIndex + 1)
+    ];
+  }
+  return messages;
+}
+    
 
 export function createAIService(source: AIServiceSource, authentication: AIServiceAuthentication) {
   // Determine which AI provider to use based on source.kind
@@ -64,9 +78,10 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
   return {
     async createChatCompletion(options: AIServiceOptions) {
       try {
+        const messages = options.unsafeUserContext ? getMessagesWithUserContext(options.messages, options.unsafeUserContext) : options.messages;
         const response = await openai.chat.completions.create({
           model: options.model || source.metadata.defaultModel || 'gpt-4.1',
-          messages: options.messages,
+          messages,
           temperature: options.temperature,
           top_p: options.top_p,
           frequency_penalty: options.frequency_penalty,
@@ -87,9 +102,10 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
     
     async createChatCompletionStream(options: AIServiceOptions) {
       try {
+        const messages = options.unsafeUserContext ? getMessagesWithUserContext(options.messages, options.unsafeUserContext) : options.messages;
         const stream = await openai.chat.completions.create({
           model: options.model || source.metadata.defaultModel || 'gpt-4.1',
-          messages: options.messages,
+          messages,
           temperature: options.temperature,
           top_p: options.top_p,
           frequency_penalty: options.frequency_penalty,
@@ -132,7 +148,7 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
         
         const response = await anthropic.messages.create({
           model: options.model || source.metadata.defaultModel || 'claude-3-opus-20240229',
-          messages,
+          messages: options.unsafeUserContext ? getMessagesWithUserContext(messages, options.unsafeUserContext) : messages,
           temperature: options.temperature,
           top_p: options.top_p,
           max_tokens: options.max_tokens || 4000,
@@ -154,7 +170,7 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
         
         const stream = await anthropic.messages.create({
           model: options.model || source.metadata.defaultModel || 'claude-3-opus-20240229',
-          messages,
+          messages: options.unsafeUserContext ? getMessagesWithUserContext(messages, options.unsafeUserContext) : messages,
           temperature: options.temperature,
           top_p: options.top_p,
           max_tokens: options.max_tokens || 4000,
@@ -201,73 +217,6 @@ function transformAnthropicResponseToOpenAI(response: any) {
     ],
     usage: response.usage
   };
-}
-
-// Create an async generator for Anthropic streaming responses (for direct API calls)
-async function* createAnthropicStreamGenerator(stream: any) {
-  const decoder = new TextDecoder('utf-8');
-  let buffer = '';
-  let contentBuffer = '';
-  
-  for await (const chunk of stream) {
-    buffer += decoder.decode(chunk, { stream: true });
-    
-    // Process complete events from the buffer
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || ''; // Keep the last incomplete line in the buffer
-    
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        try {
-          const data = JSON.parse(line.substring(6));
-          
-          // Transform Anthropic event to OpenAI format
-          if (data.type === 'content_block_delta' && data.delta.type === 'text') {
-            contentBuffer += data.delta.text;
-            
-            // Create OpenAI-like delta format
-            const openAIFormat = {
-              id: data.message_id,
-              object: 'chat.completion.chunk',
-              created: Math.floor(Date.now() / 1000),
-              model: data.model,
-              choices: [
-                {
-                  index: 0,
-                  delta: {
-                    content: data.delta.text
-                  },
-                  finish_reason: null
-                }
-              ]
-            };
-            
-            yield openAIFormat;
-          } else if (data.type === 'message_stop') {
-            // Final chunk with finish reason
-            const openAIFormat = {
-              id: data.message_id,
-              object: 'chat.completion.chunk',
-              created: Math.floor(Date.now() / 1000),
-              model: data.model,
-              choices: [
-                {
-                  index: 0,
-                  delta: {},
-                  finish_reason: 'stop'
-                }
-              ]
-            };
-            
-            yield openAIFormat;
-          }
-        } catch (error) {
-          logger.error('Error parsing Anthropic stream chunk', error);
-          // Continue processing other chunks
-        }
-      }
-    }
-  }
 }
 
 // Create an async generator for Anthropic SDK streaming responses
