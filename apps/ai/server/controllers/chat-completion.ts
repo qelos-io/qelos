@@ -485,7 +485,7 @@ export async function chatCompletion(req: any, res: any | null) {
       presence_penalty: options.presence_penalty || integration.target.details.presence_penalty,
       stop: options.stop || integration.target.details.stop,
       messages: initialMessages.map(msg => typeof msg === 'string' ? { role: 'user', content: msg } : msg),
-      unsafeUserContext: Object.keys(options.context).length > 0 ? options.context : undefined,
+      unsafeUserContext: Object.keys(options.context || {}).length > 0 ? options.context : undefined,
       response_format: options.response_format || integration.target.details.response_format,
       tools,
     };
