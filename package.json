@@ -30,7 +30,8 @@
     "tsx": "^4.20.4"
   },
   "overrides": {
-    "esbuild": "0.25.4"
+    "esbuild": "0.25.4",
+    "@langchain/core": "0.3.58"
   },
-  "packageManager": "pnpm@10.16.1"
+  "packageManager": "pnpm@10.18.3"
 }

@@ -164,7 +164,6 @@ import {
   watch,
   computed,
   onMounted,
-  onBeforeUnmount,
 } from "vue";
 import { ElMessage } from "element-plus";
 import {
@@ -185,6 +184,7 @@ const props = defineProps<{
   url: string;
   title?: string;
   text?: string;
+  chatContext?: Record<string, string>;
   recordThread?: boolean;
   threadId?: string;
   integrationId?: string;
@@ -272,7 +272,6 @@ const loading = ref(false);
 const attachedFiles = reactive<AttachedFile[]>([]);
 const messages = reactive<ChatMessage[]>([]);
 const copiedMessageId = ref<string | null>(null);
-const copiedTableId = ref<string | null>(null);
 const hoveredSuggestion = ref<number | null>(null);
 
 // Reference to markdown content elements
@@ -543,6 +542,7 @@ async function onSend() {
       type: m.type,
       filename: m.filename,
     })),
+    context: props.chatContext,
   };
   loading.value = true;
   let aiMsgId = Math.random().toString(36).slice(2);

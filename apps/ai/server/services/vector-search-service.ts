@@ -4,7 +4,6 @@ import { OpenAIEmbeddings } from '@langchain/openai';
 import { RedisVectorStore } from '@langchain/redis';
 import { Document } from 'langchain/document';
 import { createClient } from 'redis';
-import { Embeddings } from '@langchain/core/embeddings';
 import { pipeline } from '@xenova/transformers';
 
 type AIAuthentication = {
@@ -53,7 +52,7 @@ async function getRedisClient() {
  * @param embeddingType Type of embeddings to use ('openai' or 'local')
  * @returns Embeddings instance
  */
-async function getEmbeddings(embeddingType: 'openai' | 'local' = 'openai', authentication: AIAuthentication): Promise<Embeddings> {
+async function getEmbeddings(embeddingType: 'openai' | 'local' = 'openai', authentication: AIAuthentication): Promise<any> {
   if (embeddingType === 'local') {
     // Use local Xenova Transformers embeddings
     return {
@@ -84,7 +83,7 @@ async function getEmbeddings(embeddingType: 'openai' | 'local' = 'openai', authe
           throw error;
         }
       }
-    } as Embeddings;
+    } as any;
   } else {
     // Use OpenAI embeddings
     return new OpenAIEmbeddings({

@@ -19,6 +19,7 @@
   "main": "index.ts",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",
+    "@langchain/core": "0.3.58",
     "@langchain/openai": "^0.5.18",
     "@langchain/redis": "^0.1.1",
     "@qelos/api-kit": "workspace:^",
@@ -46,5 +47,8 @@
     "@qelos/api-kit",
     "@qelos/cache-manager",
     "@qelos/global-types"
-  ]
+  ],
+  "resolutions": {
+    "@langchain/core": "0.3.58"
+  }
 }

@@ -78,10 +78,25 @@ export async function getIntegrationToIntegrate(req, res, next) {
 export async function chatCompletion(req: any, res: any | null) {
   const { integration, integrationSourceTargetAuthentication } = req;
   const source = integration.target.source;
-  let options = req.body || {};
   const useSSE = req.headers.accept?.includes('text/event-stream') || req.query?.stream === 'true';
 
   const thread: IThread | undefined = req.thread;
+  let options = req.body || {};
+  options.messages = options.messages instanceof Array ? options.messages : [];
+  options.context = (options.context && typeof options.context === 'object') ? options.context : {};
+  Object.keys(options.context).forEach(key => {
+    const value = options.context[key];
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return;
+    }
+    if (typeof value === 'string') {
+      if (value.length > 512) {
+        options.context[key] = value.substring(0, 512);
+      }
+    } else {
+      delete options.context[key];
+    }
+  });
 
   if (useSSE) {
     res.writeHead(200, {
@@ -145,6 +160,7 @@ export async function chatCompletion(req: any, res: any | null) {
       executeDataManipulation(integration.tenant, {
         user: req.user,
         messages: safeUserMessages,
+        context: options.context,
       }, integration.dataManipulation),
       getToolsIntegrations(integration.tenant, integration.target.source.kind, integration._id),
       integration.target.details.ingestedBlueprints && integration.target.details.ingestedBlueprints.length > 0 ? getAllBlueprints(integration.tenant, { identifier: integration.target.details.ingestedBlueprints }) : Promise.resolve([]),
@@ -470,6 +486,7 @@ export async function chatCompletion(req: any, res: any | null) {
       presence_penalty: options.presence_penalty || integration.target.details.presence_penalty,
       stop: options.stop || integration.target.details.stop,
       messages: initialMessages.map(msg => typeof msg === 'string' ? { role: 'user', content: msg } : msg),
+      unsafeUserContext: Object.keys(options?.context || {}).length > 0 ? options.context : undefined,
       response_format: options.response_format || integration.target.details.response_format,
       tools,
     };
