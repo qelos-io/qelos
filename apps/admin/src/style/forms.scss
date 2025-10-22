@@ -34,6 +34,7 @@ textarea {
 }
 
 .el-button {
+  border-radius: var(--button-radius, var(--el-border-radius-base));
   &.el-button--default {
     background-color: var(--negative-color);
     color: var(--main-color);
