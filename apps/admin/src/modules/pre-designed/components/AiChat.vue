@@ -184,7 +184,7 @@ const props = defineProps<{
   url: string;
   title?: string;
   text?: string;
-  chatContext?: Record<string, string>;
+  chatContext?: Record<string, string | number | boolean | undefined>;
   recordThread?: boolean;
   threadId?: string;
   integrationId?: string;
@@ -196,6 +196,7 @@ const emit = defineEmits([
   "thread-updated",
   "message-sent",
   "message-received",
+  "function-executed",
   "update:threadId",
 ]);
 
@@ -614,6 +615,17 @@ async function onSend() {
               if (idx !== -1) messages[idx] = { ...aiMsg };
               scrollToBottom();
             }
+          } else if (data.type === 'function_executed') {
+            let args = {}
+            try {
+              args = JSON.parse(data.functionCall?.arguments || '{}');
+            } catch (e) {
+              // ignore
+            }
+            emit('function-executed',{
+              name: data.functionCall?.function?.name,
+              arguments: args,
+            });
           } else if (data.type === "done") {
             finished = true;
             break;
