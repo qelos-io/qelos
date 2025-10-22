@@ -30,7 +30,7 @@ const save = async (data) => {
   const navigateHome = store.workspaces.length === 0;
 
   if (navigateHome) {
-    await router.push({ name: 'home' });
+    await router.push({ name: 'qelos-home' });
   } else {
     await router.push({ name: 'editMyWorkspace', params: { id: newWorkspace._id } });
   }

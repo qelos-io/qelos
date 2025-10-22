@@ -32,7 +32,7 @@ const router = createRouter({
       children: [
         {
           path: '/',
-          name: 'home',
+          name: 'qelos-home',
           component: Home
         },
         {
