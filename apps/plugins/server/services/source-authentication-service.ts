@@ -29,7 +29,7 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
     return authId;
   }
 
-  if (kind === IntegrationSourceKind.LinkedIn || kind === IntegrationSourceKind.Facebook) {
+  if (kind === IntegrationSourceKind.LinkedIn || kind === IntegrationSourceKind.Facebook || kind === IntegrationSourceKind.Google || kind === IntegrationSourceKind.GitHub) {
     const { clientSecret } = authentication;
     if (!clientSecret) {
       return; // No secret to store

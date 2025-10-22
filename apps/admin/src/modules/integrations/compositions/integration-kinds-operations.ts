@@ -36,6 +36,8 @@ export function useIntegrationKindsTargetOperations() {
     ],
     [IntegrationSourceKind.N8n]: [],
     [IntegrationSourceKind.LinkedIn]: [],
+    [IntegrationSourceKind.Google]: [], 
+    [IntegrationSourceKind.GitHub]: [], 
     [IntegrationSourceKind.OpenAI]: [
       { name: OpenAITargetOperation.chatCompletion, label: 'Chat Completion' }
     ],
@@ -106,6 +108,8 @@ export function useIntegrationKindsTriggerOperations() {
     [IntegrationSourceKind.N8n]: [],
     [IntegrationSourceKind.LinkedIn]: [],
     [IntegrationSourceKind.Facebook]: [],
+    [IntegrationSourceKind.Google]: [], 
+    [IntegrationSourceKind.GitHub]: [], 
     [IntegrationSourceKind.OpenAI]: [
       {
         name: OpenAITargetOperation.functionCalling,

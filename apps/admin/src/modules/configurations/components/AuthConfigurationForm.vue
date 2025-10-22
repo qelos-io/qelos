@@ -321,6 +321,70 @@
               </template>
             </FormInput>
           </BlockItem>
+          <BlockItem class="flex-1 social-login-container">
+            <div v-if="sourcedLoaded && !googleSources?.length">
+              <div class="social-provider-header">
+                <font-awesome-icon :icon="['fab', 'google']" class="social-icon google"/>
+                <span class="pad-start">{{ $t('Google') }}</span>
+              </div>
+              <el-alert :closable="false" type="info">
+                {{ $t('You have not integrated any Google connections.') }}
+                <router-link
+                  class="primary-link"
+                  :to="{ name: 'integrations-sources', params: { kind: 'google' } }">
+                  {{ $t('Navigate to Google Connections') }}
+                </router-link>
+                {{ $t('to create one.') }}
+              </el-alert>
+            </div>
+            <FormInput v-else v-model="edited.socialLoginsSources.google"
+                      placeholder="Select Google Integration Source"
+                      type="select" class="social-input">
+              <template #pre>
+                <font-awesome-icon :icon="['fab', 'google']" class="social-icon google"/>
+                <span class="pad-start">{{ $t('Google') }}</span>
+              </template>
+              <template #options>
+                <el-option :label="`(${$t('none')})`" :value="null"/>
+                <el-option v-for="source in googleSources" :key="source._id" :label="source.name" :value="source._id"/>
+              </template>
+              <template #help>
+                <span class="help-text">{{ $t('Select the Google integration to use for social login') }}</span>
+              </template>
+            </FormInput>
+          </BlockItem>
+          <BlockItem class="flex-1 social-login-container">
+            <div v-if="sourcedLoaded && !githubSources?.length">
+              <div class="social-provider-header">
+                <font-awesome-icon :icon="['fab', 'github']" class="social-icon github"/>
+                <span class="pad-start">{{ $t('GitHub') }}</span>
+              </div>
+              <el-alert :closable="false" type="info">
+                {{ $t('You have not integrated any GitHub connections.') }}
+                <router-link
+                  class="primary-link"
+                  :to="{ name: 'integrations-sources', params: { kind: 'github' } }">
+                  {{ $t('Navigate to GitHub Connections') }}
+                </router-link>
+                {{ $t('to create one.') }}
+              </el-alert>
+            </div>
+            <FormInput v-else v-model="edited.socialLoginsSources.github"
+                      placeholder="Select GitHub Integration Source"
+                      type="select" class="social-input">
+              <template #pre>
+                <font-awesome-icon :icon="['fab', 'github']" class="social-icon github"/>
+                <span class="pad-start">{{ $t('GitHub') }}</span>
+              </template>
+              <template #options>
+                <el-option :label="`(${$t('none')})`" :value="null"/>
+                <el-option v-for="source in githubSources" :key="source._id" :label="source.name" :value="source._id"/>
+              </template>
+              <template #help>
+                <span class="help-text">{{ $t('Select the GitHub integration to use for social login') }}</span>
+              </template>
+            </FormInput>
+          </BlockItem>
         </div>
       </div>
 
@@ -413,7 +477,8 @@ const defaultMetadata: IAuthConfigurationMetadata = {
 
 const edited = ref<IAuthConfigurationMetadata>({
   ...defaultMetadata,
-  ...(props.metadata || {})
+  ...(props.metadata || {}),
+  socialLoginsSources: ensureSocialLoginsSources(props.metadata || defaultMetadata)
 })
 
 const activeImageTab = ref<'horizontal' | 'vertical' | 'content'>('horizontal')
@@ -430,10 +495,19 @@ const facebookSources = computed(() => {
   return groupedSources.value[IntegrationSourceKind.Facebook] || []
 })
 
+const googleSources = computed(() => {
+  return groupedSources.value[IntegrationSourceKind.Google] || []
+})
+
+const githubSources = computed(() => {
+  return groupedSources.value[IntegrationSourceKind.GitHub] || []
+});
+
 // Computed property to check if any social login is configured 
 const hasSocialLoginConfigured = computed(() => {
   // Check if the linkedin source ID is set and not null/empty
-  return !!edited.value.socialLoginsSources?.linkedin;
+  const sources = edited.value.socialLoginsSources;
+  return !!sources?.linkedin || !!sources?.google || !!sources?.github;
 });
 
 // Watch for changes in social login configuration when username/password is disabled
@@ -476,6 +550,17 @@ async function save() {
 
   emit('save', edited.value);
 }
+
+function ensureSocialLoginsSources(metadata: Partial<IAuthConfigurationMetadata>) {
+  return {
+    ...metadata.socialLoginsSources,
+    google: metadata.socialLoginsSources?.google ?? null,
+    linkedin: metadata.socialLoginsSources?.linkedin ?? null,
+    facebook: metadata.socialLoginsSources?.facebook ?? null,
+    github: metadata.socialLoginsSources?.github ?? null, 
+  };
+}
+
 </script>
 <style scoped>
 /* Section containers and layout */
@@ -962,5 +1047,9 @@ async function save() {
 
 .footer-slot {
   margin-top: 0.5rem;
+}
+
+.github {
+  color: #24292e;
 }
 </style>

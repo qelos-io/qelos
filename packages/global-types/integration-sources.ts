@@ -7,7 +7,9 @@ export enum IntegrationSourceKind {
   LinkedIn = 'linkedin',
   Http = 'http',
   ClaudeAi = 'claudeai',
-  Facebook = 'facebook'
+  Facebook = 'facebook',
+  Google = 'google',
+  GitHub = 'github'
 }
 
 export interface IIntegrationSource {
@@ -147,5 +149,29 @@ export interface IHttpSource extends IIntegrationSource {
     headers: Record<string, string>;
     method: string;
     query: Record<string, string>;
+  };
+}
+
+export interface IGoogleSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.Google;
+  authentication: {
+    clientSecret: string;
+  };
+  metadata: {
+    clientId: string;
+    scope: string;
+  };
+}
+
+export interface IGithubSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.GitHub;
+  authentication: {
+    clientSecret: string;
+  };
+  metadata: {
+    clientId: string;
+    scope: string;
   };
 }
