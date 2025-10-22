@@ -9,25 +9,15 @@ import { watchEffect, reactive, ref } from 'vue'
 const props = defineProps({value: Object})
 const emit = defineEmits(['update:modelValue'])
 
-const form = reactive({
-	projectId: '',
-	clientEmail: '',
-	privateKey: '',
-})
+const form = ref(props.value || null)
 
 const file = ref(null)
 
-if (props.value) {
-	form.projectId = props.value.projectId
-	form.clientEmail = props.value.clientEmail
-	form.privateKey = props.value.privateKey
+function getFormInputs() {
+	return form.value;
 }
 
-function getFormInputs({ projectId, clientEmail, privateKey }) {
-	return { projectId, clientEmail, privateKey };
-}
-
-watchEffect(() => emit('update:modelValue', getFormInputs(form)))
+watchEffect(() => emit('update:modelValue', getFormInputs()))
 
 function readFile(file: File): Promise<string> {
 	return new Promise((resolve, reject) => {
@@ -41,17 +31,11 @@ function readFile(file: File): Promise<string> {
 		}
 	})
 }
-async function setFileData($event) {
+async function setFileData($event: any) {
 	if ($event.target.files && $event.target.files[0]) {
-		const {
-			project_id: projectId,
-			private_key: privateKey,
-			client_email: clientEmail
-		} = JSON.parse(await readFile($event.target.files[0]))
+		const credentials = JSON.parse(await readFile($event.target.files[0]))
 
-		form.projectId = projectId
-		form.privateKey = privateKey
-		form.clientEmail = clientEmail
+		form.value = credentials || null;
 	}
 }
 </script>
