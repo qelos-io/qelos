@@ -154,5 +154,8 @@
   "Complete Data Manipulation JSON": "JSON מלא של מניפולציה של נתונים",
   "Show help for this page": "הצג עזרה עבור דף זה",
   "Page Information": "מידע על הדף",
-  "Got it": "הבנתי"
+  "Got it": "הבנתי",
+  "{count} blueprints generated": "{count} ישויות נתונים נוצרו",
+  "Select All": "בחר הכל",
+  "Selected": "נבחרו"
 }

@@ -17,6 +17,7 @@ const errorMessage = ref('');
 const selectedSourceId = ref('');
 const generatedBlueprints = ref<IBlueprint[]>([]);
 const creatingBlueprints = ref(false);
+const selectedBlueprintIds = ref<string[]>([]);
 
 // Get blueprints store for creating blueprints
 const blueprintsStore = useBlueprintsStore();
@@ -100,6 +101,9 @@ async function generateBlueprints() {
     const result = await response.json();
     generatedBlueprints.value = result;
     
+    // By default, select all blueprints
+    selectedBlueprintIds.value = result.map((_, index) => index.toString());
+    
     // Move to the review step
     router.push({query: {...route.query, step: 'review'}});
     
@@ -117,12 +121,17 @@ async function createBlueprints() {
   creatingBlueprints.value = true;
   
   try {
-    // Create each blueprint using the store
-    for (const blueprint of generatedBlueprints.value) {
+    // Get only selected blueprints
+    const blueprintsToCreate = generatedBlueprints.value.filter((_, index) => 
+      selectedBlueprintIds.value.includes(index.toString())
+    );
+    
+    // Create each selected blueprint using the store
+    for (const blueprint of blueprintsToCreate) {
       await blueprintsStore.create(blueprint);
     }
     
-    ElMessage.success(`${generatedBlueprints.value.length} blueprints created successfully!`);
+    ElMessage.success(`${blueprintsToCreate.length} blueprints created successfully!`);
     emit('close');
     // Refresh the blueprints list
     router.push({ name: 'blueprints' });
@@ -139,6 +148,7 @@ watch(visible, () => {
     prompt.value = '';
     errorMessage.value = '';
     generatedBlueprints.value = [];
+    selectedBlueprintIds.value = [];
     // Set default source if available
     if (aiSources.value?.length) {
       selectedSourceId.value = aiSources.value[0]._id;
@@ -232,10 +242,37 @@ watch(visible, () => {
           </div>
           
           <div v-else class="blueprints-list">
+            <div class="blueprint-selection-header">
+              <el-checkbox 
+                :indeterminate="selectedBlueprintIds.length > 0 && selectedBlueprintIds.length < generatedBlueprints.length"
+                :checked="selectedBlueprintIds.length === generatedBlueprints.length"
+                @change="(val) => val ? selectedBlueprintIds = generatedBlueprints.map((_, i) => i.toString()) : selectedBlueprintIds = []"
+              >
+                {{ $t('Select All') }}
+              </el-checkbox>
+              <span class="selected-count text-center">{{ $t('Selected') }}: {{ selectedBlueprintIds.length }} / {{ generatedBlueprints.length }}</span>
+            </div>
             <p class="blueprints-count">{{ $t('{count} blueprints generated', { count: generatedBlueprints.length }) }}</p>
             
             <el-collapse>
-              <el-collapse-item v-for="(blueprint, index) in generatedBlueprints" :key="index" :title="blueprint.name">
+              <el-collapse-item v-for="(blueprint, index) in generatedBlueprints" :key="index">
+                <template #title>
+                  <div class="blueprint-title-container">
+                    <el-checkbox 
+                      :checked="selectedBlueprintIds.includes(index.toString())"
+                      @change="(val) => {
+                        if (val) {
+                          selectedBlueprintIds.push(index.toString());
+                        } else {
+                          const idx = selectedBlueprintIds.indexOf(index.toString());
+                          if (idx > -1) selectedBlueprintIds.splice(idx, 1);
+                        }
+                      }"
+                      @click.stop
+                    ></el-checkbox>
+                    <span class="blueprint-title">{{ blueprint.name }}</span>
+                  </div>
+                </template>
                 <div class="blueprint-details">
                   <p><strong>{{ $t('Description') }}:</strong> {{ blueprint.description }}</p>
                   
@@ -272,7 +309,7 @@ watch(visible, () => {
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="$emit('close')">{{ $t('Close') }}</el-button>
-          
+         
           <!-- Buttons for AI option - Input step -->
           <div v-if="route.query.option === 'ai' && !route.query.step" class="operation-buttons">
             <el-button @click="router.push({query: {...route.query, option: undefined}})">
@@ -288,8 +325,8 @@ watch(visible, () => {
             <el-button @click="router.push({query: {...route.query, step: undefined}})">
               {{ $t('Back to Prompt') }}
             </el-button>
-            <el-button type="primary" @click="createBlueprints" :loading="creatingBlueprints" :disabled="creatingBlueprints || generatedBlueprints.length === 0">
-              {{ $t('Create {count} Blueprints', { count: generatedBlueprints.length }) }}
+            <el-button type="primary" @click="createBlueprints" :loading="creatingBlueprints" :disabled="creatingBlueprints || selectedBlueprintIds.length === 0">
+              {{ $t('Create {count} Blueprints', { count: selectedBlueprintIds.length }) }}
             </el-button>
           </div>
         </div>
@@ -440,6 +477,30 @@ watch(visible, () => {
 
 .no-blueprints p {
   margin-bottom: 15px;
+}
+
+.blueprint-selection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 10px;
+}
+
+.selected-count {
+  color: var(--text-color-secondary);
+  font-size: 14px;
+}
+
+.blueprint-title-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.blueprint-title {
+  font-weight: bold;
 }
 
 .dialog-footer {
