@@ -8,7 +8,8 @@ import {
   addFreeTextToPageCalling,
   addGridToPageCalling,
   addTableToPageCalling,
-  addFormToPageCalling
+  addFormToPageCalling,
+  getPageCalling
 } from "./plugins.calling";
 import { createComponentCalling, editComponentCalling, getComponentsCalling } from "./no-code.calling";
 import { callPagesEditorAgentCalling } from "./pages-agent.calling";
@@ -41,6 +42,7 @@ export const editPagesFunctionCallings = [
   editComponentCalling, 
   createPageCalling,
   editPageCalling,
+  getPageCalling,
   createBlueprintCalling,
   getBlueprintsCalling,
   getHTTPRequirementForPageCalling,

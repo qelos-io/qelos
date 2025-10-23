@@ -21,7 +21,7 @@ import componentsService from '@/services/components-service';
 import PageTitle from '../core/components/semantics/PageTitle.vue';
 import ComponentForm from './components/ComponentForm.vue';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useComponentsList } from '@/modules/blocks/store/components-list';
 
 const componentsStore = useComponentsList();
@@ -42,9 +42,15 @@ const { submit, submitting } = useSubmitting(
 
 const component = ref<any>(null);
 
-componentsService.getOne(route.params.componentId as string).then((data) => {
-  component.value = data;
-});
+function loadComponent() {
+  componentsService.getOne(route.params.componentId as string).then((data) => {
+    component.value = data;
+  });
+}
+
+watch(() => componentsStore.components, loadComponent);
+
+loadComponent();
 </script>
 
 <style scoped>

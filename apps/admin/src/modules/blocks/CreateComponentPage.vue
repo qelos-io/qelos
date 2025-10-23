@@ -20,7 +20,9 @@ import ComponentForm from './components/ComponentForm.vue';
 import componentsService from '@/services/components-service';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { useComponentsList } from './store/components-list';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const componentsStore = useComponentsList();
 
 const { submit, submitting } = useSubmitting(
@@ -28,8 +30,9 @@ const { submit, submitting } = useSubmitting(
   {
     success: 'Component created successfully',
     error: 'Failed to create component'
-  }, () => {
+  }, (comp) => {
     componentsStore.retry();
+    router.push({ name: 'editComponent', params: { componentId: comp._id } });
   }
 )
 </script>

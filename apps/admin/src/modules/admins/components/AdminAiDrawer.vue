@@ -28,9 +28,11 @@ import AiChat from "@/modules/pre-designed/components/AiChat.vue";
 import { useIntegrationSourcesStore } from "@/modules/integrations/store/integration-sources";
 import { usePluginsList } from "@/modules/plugins/store/plugins-list";
 import { usePluginsStore } from "@/modules/plugins/store/pluginsStore";
+import { useComponentsList } from "@/modules/blocks/store/components-list";
 
 const pluginsListStore = usePluginsList();
 const pluginsStore = usePluginsStore();
+const componentsStore = useComponentsList();
 
 const suggestions = [
   { label: 'Create Blueprint (Data Model)', value: 'create a new blueprint', icon: 'fa-database' },
@@ -46,10 +48,11 @@ const suggestions = [
 
 const router = useRouter();
 const route = useRoute();
-const store = useAdminAssistantStore();
+const store = useAdminAssistantStore()
 const visible = toRef(store, "isOpen");
 
 const sources = useIntegrationSourcesStore();
+
 
 const sourceId = computed(() => {
   return sources.groupedSources.openai[0]?._id;
@@ -82,7 +85,11 @@ async function handleFunctionExecuted(func: {name: string, arguments: any}) {
   if (func.name === "callPagesEditorAgent") {
     await pluginsListStore.retry();
     pluginsStore.incrementUpdates();
-    router.push(location.pathname);
+    if (route.meta?.mfe) {
+      router.push(location.pathname);
+    } else if (route.path.startsWith('/admin/components')) {
+      componentsStore.retry();
+    }
   }
 }
 </script>
