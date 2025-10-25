@@ -54,7 +54,7 @@
               <span>{{ $t('Basic Information') }}</span>
             </div>
           </template>
-          <BasicInfoTab :plugin="edit" @refresh-manifest="refreshPluginFromManifest" />
+          <BasicInfoTab :plugin="edit" :is-refreshing="isRefreshing" :last-error="lastError" @refresh-manifest="refreshPluginFromManifest" @retry="retryRefresh"/>
         </el-tab-pane>
         
         <el-tab-pane 
@@ -215,6 +215,7 @@
 import { computed, provide, reactive, nextTick, ref, watch, type ComponentPublicInstance } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { IPlugin } from '@/services/types/plugin';
+import { ElMessage } from 'element-plus';
 import {
   BasicInfoTab,
   APIsTab,
@@ -233,6 +234,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'submitted', plugin: Partial<IPlugin>): void;
 }>();
+
+//flags
+const isRefreshing = ref(false) // control spinner/ disable button on refresh
+const lastError = ref<string | null>(null) //stores the last refresh error
 
 const route = useRoute();
 const router = useRouter();
@@ -396,8 +401,10 @@ function focusFirstInput(tabName?: TabName) {
 
 // Refresh plugin from manifest
 async function refreshPluginFromManifest() {
-  if (!edit.manifestUrl) return;
+  if (!edit.manifestUrl || isRefreshing.value) return;
   
+  isRefreshing.value = true; // turn the spinner on and disable button
+  lastError.value = null // clear previous error state
   try {
     const response = await fetch(edit.manifestUrl);
     if (!response.ok) {
@@ -415,9 +422,21 @@ async function refreshPluginFromManifest() {
       edit.apiPath = manifest.name.toLowerCase().replace(/\s+/g, '-');
     }
     submit();
-  } catch (error) {
-    console.error('Error fetching manifest:', error);
+  } catch (e: any) {
+    //visible, dismissible error message
+    lastError.value = e?.message || 'Refresh failed'
+    ElMessage.error({
+      message: lastError.value,
+      showClose: true,      
+      duration: 5000        // time until dissapears
+    })
+  }finally {
+    isRefreshing.value = false;     // stop spinner (success or error)
   }
+}
+
+function retryRefresh() {
+  refreshPluginFromManifest()
 }
 
 // Update plugin JSON from the Summary tab
