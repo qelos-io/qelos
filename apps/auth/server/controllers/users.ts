@@ -87,16 +87,40 @@ export function getUsers(req: AuthRequest, res: Response): RequestHandler {
       .set('Content-Type', 'application/json').end('[]')
     return;
   }
-
-  User
-    .getUsersList(req.headers.tenant, users.filter(Boolean) as any as Schema.Types.ObjectId[], privilegedUserFields)
-    .then(list => {
-      res.status(200)
-        .setHeader('x-tenant', req.headers.tenant)
-        .setHeader('x-user', 'p-' + req.userPayload.sub)
-        .set('Content-Type', 'application/json').end(list)
-    })
-    .catch(() => res.status(404).json({ message: 'could not load users' }).end())
+  
+  // If there are too many users, batch them to avoid large queries
+  const BATCH_SIZE = 100;
+  if (users.length > BATCH_SIZE) {
+    const batches = [];
+    for (let i = 0; i < users.length; i += BATCH_SIZE) {
+      const batch = users.slice(i, i + BATCH_SIZE);
+      batches.push(User.getUsersList(req.headers.tenant, batch as any as Schema.Types.ObjectId[], privilegedUserFields));
+    }
+    
+    Promise.all(batches)
+      .then(results => {
+        // Combine the results from all batches
+        const combinedUsers = results.map(result => JSON.parse(result)).flat();
+        const combinedResult = JSON.stringify(combinedUsers);
+        
+        res.status(200)
+          .setHeader('x-tenant', req.headers.tenant)
+          .setHeader('x-user', 'p-' + req.userPayload.sub)
+          .set('Content-Type', 'application/json').end(combinedResult);
+      })
+      .catch(() => res.status(404).json({ message: 'could not load users' }).end());
+  } else {
+    // For smaller batches, use the original approach
+    User
+      .getUsersList(req.headers.tenant, users as any as Schema.Types.ObjectId[], privilegedUserFields)
+      .then(list => {
+        res.status(200)
+          .setHeader('x-tenant', req.headers.tenant)
+          .setHeader('x-user', 'p-' + req.userPayload.sub)
+          .set('Content-Type', 'application/json').end(list)
+      })
+      .catch(() => res.status(404).json({ message: 'could not load users' }).end());
+  }
 }
 
 export function getUser(req: AuthRequest, res: Response): RequestHandler {
