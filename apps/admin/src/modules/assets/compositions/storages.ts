@@ -5,7 +5,7 @@ import { useSubmitting } from '../../core/compositions/submitting'
 import { IStorage } from '../../../services/types/storage'
 
 export function useStorageList() {
-  fetchStorages()
+  const promise = fetchStorages()
 
   const { submit: remove } = useSubmitting(
     ({ _id }) => removeStorage(_id),
@@ -18,7 +18,8 @@ export function useStorageList() {
   return {
     items: computed(() => storagesStore.storages),
     loaded: computed(() => storagesStore.loaded),
-    remove
+    remove,
+    promise
   }
 }
 

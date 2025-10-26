@@ -52,7 +52,31 @@ class Ftp {
 
   upload (path, file) {
     return new Promise((resolve, reject) => {
-      this._client.append(file, path, false, (err) => {
+      // FTP client expects: ReadableStream with pipe/resume methods, Buffer, or string (path to local file)
+      let fileInput;
+      
+      if (Buffer.isBuffer(file)) {
+        // If it's already a Buffer, use it directly
+        fileInput = file;
+      } else if (file.buffer && Buffer.isBuffer(file.buffer)) {
+        // If it has a buffer property that's a Buffer, use that
+        fileInput = file.buffer;
+      } else if (typeof file === 'string') {
+        // If it's a string (file path), use it directly
+        fileInput = file;
+      } else if (file.pipe && typeof file.pipe === 'function' && file.resume && typeof file.resume === 'function') {
+        // If it has pipe and resume methods, it's a readable stream
+        fileInput = file;
+      } else {
+        // Convert to Buffer as a last resort
+        try {
+          fileInput = Buffer.from(file);
+        } catch (e) {
+          return reject({ message: 'Invalid file format for FTP upload: ' + this.name });
+        }
+      }
+      
+      this._client.append(fileInput, path, (err) => {
         if (err) {
           return reject({ message: 'could not upload asset to storage: ' + this.name })
         }
