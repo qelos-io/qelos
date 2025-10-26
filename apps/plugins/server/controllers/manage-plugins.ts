@@ -5,20 +5,24 @@ import { removeUser } from '../services/users';
 import { fetchPlugin } from '../services/plugins-call';
 import logger from '../services/logger';
 import { isDev } from '../../config';
+import { cacheManager } from '../services/cache-manager';
 
 const protocol = isDev ? 'http://' : 'https://';
 
-export function getAllPlugins(req, res) {
-  const select = req.user?.hasPluginPrivileges ? '-token -auth' : 'name description apiPath callbackUrl microFrontends injectables navBarGroups cruds'
-  Plugin
-    .find({ tenant: req.headers.tenant })
-    .select(select).lean().exec()
-    .then(list => {
-      res.json(list).end();
-    })
-    .catch(() => {
-      res.status(500).json({ message: 'could not get plugins' }).end();
-    })
+function clearPlugins(tenant) {
+  cacheManager.setItem(`plugins:${tenant}`, '', {ttl: 1}).catch();  
+}
+
+export async function getAllPlugins(req, res) {
+  const select = req.user?.hasPluginPrivileges ? '-token -auth' : 'name description apiPath callbackUrl microFrontends injectables navBarGroups cruds';
+
+  const plugins = await cacheManager.wrap(`plugins:${req.headers.tenant}:${req.user?.hasPluginPrivileges ? 'full' : 'limited'}`, async () => {
+    const list = await Plugin
+      .find({ tenant: req.headers.tenant })
+      .select(select).lean().exec()
+    return JSON.stringify(list);
+  });
+  res.set('content-type', 'application/json').send(plugins).end();
 }
 
 async function fetchPluginCallback({ headers, plugin, callbackUrl, hard = false }) {
@@ -97,7 +101,6 @@ export function redirectToPluginMfe(req, res) {
     })
 }
 
-
 export function getPlugin(req, res) {
   const query = { tenant: req.headers.tenant, _id: req.params.pluginId };
   logger.log('get plugin endpoint', query);
@@ -135,6 +138,7 @@ export async function createPlugin(req, res) {
       plugin.token = token;
     }
     await plugin.save();
+    clearPlugins(tenant);
 
     res.json(plugin).end();
     if (newRefreshToken) {
@@ -184,6 +188,7 @@ export async function updatePlugin(req, res) {
 
     await plugin.save();
     res.json(plugin).end();
+    clearPlugins(tenant);
   } catch (err: any) {
     res.status(500).json({ message: err?.responseError || 'could not update plugin' }).end();
     logger.log('error while edit plugin', new Error((err as any)?.message || err));
@@ -204,10 +209,26 @@ export async function removePlugin(req, res) {
         plugin.deleteOne()
       ]);
       res.json(plugin).end();
+      clearPlugins(tenant);
     } else {
       res.status(404).json({ message: 'could not find plugin' }).end();
     }
   } catch {
     res.status(500).json({ message: 'could not remove plugin' }).end();
   }
+}
+
+export async function getPluginMfe(req, res) {
+  const query = { tenant: req.headers.tenant, _id: req.params.pluginId, microFrontends: { $elemMatch: { _id: req.params.mfeId } } };
+
+  const mfe = await cacheManager.wrap(`plugins:${req.headers.tenant}:${req.params.pluginId}:${req.params.mfeId}`, async () => {
+    const plugin = await Plugin.findOne(query).select('microFrontends.$').lean().exec()
+    const mfe = plugin?.microFrontends?.[0];
+    return mfe ? JSON.stringify(mfe) : '';
+  });
+  if (!mfe) {
+    res.status(404).json({ message: 'could not find micro frontend' }).end();
+    return;
+  }
+  res.set('content-type', 'application/json').send(mfe).end();
 }

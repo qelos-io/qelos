@@ -3,6 +3,7 @@ import {
   createPlugin,
   getAllPlugins,
   getPlugin,
+  getPluginMfe,
   redirectToPluginMfe,
   removePlugin,
   updatePlugin
@@ -25,6 +26,7 @@ export function managePlugins() {
 
   router
     .get('/api/plugins/:pluginId', AUTHENTICATION_MIDDLEWARES.concat(onlyViewPrivileged, getPlugin))
+    .get('/api/plugins/:pluginId/frontends/:mfeId', AUTHENTICATION_MIDDLEWARES.concat(onlyViewPrivileged, getPluginMfe))
     .get('/api/plugins/:pluginId/callback', populateUser, redirectToPluginMfe)
     .put('/api/plugins/:pluginId', AUTHENTICATION_MIDDLEWARES.concat(onlyEditPrivileged, updatePlugin))
     .delete('/api/plugins/:pluginId', AUTHENTICATION_MIDDLEWARES.concat(onlyEditPrivileged, removePlugin))
