@@ -154,7 +154,7 @@ export async function executeFunctionCalls(
           
           // Apply data manipulation if configured
           if (targetIntegration.dataManipulation) {
-            args = await executeDataManipulation(tenant, args, targetIntegration.dataManipulation);
+            args = (await executeDataManipulation(tenant, {arguments: args, user: req.user, workspace: req.user?.workspace}, targetIntegration.dataManipulation)).arguments;
           }
           
           // Check if this is a blueprint operation
