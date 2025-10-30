@@ -29,6 +29,7 @@ const store = useIntegrationSourcesStore();
 
 // View mode state
 const selectedViewMode = ref<IntegrationType>(IntegrationType.Standard);
+const showModeSelection = ref(false);
 
 // AI Agent wizard step state
 const aiAgentCurrentStep = ref(0);
@@ -151,8 +152,10 @@ watch(visible, () => {
     if (props.editingIntegration?._id && store.result?.length) {
       const detectedType = detectIntegrationType(form, store.result);
       selectedViewMode.value = detectedType;
+      showModeSelection.value = false;
     } else {
       selectedViewMode.value = IntegrationType.Standard;
+      showModeSelection.value = true; // Show mode selection for new integrations
     }
     form.dataManipulation = (form.dataManipulation || []).map((row: any) => {
       delete row._id;
@@ -247,6 +250,11 @@ const canGoNext = computed(() => isAIAgentView.value && aiAgentCurrentStep.value
 const canGoPrevious = computed(() => isAIAgentView.value && aiAgentCurrentStep.value > 0);
 const isLastStep = computed(() => isAIAgentView.value && aiAgentCurrentStep.value === totalAIAgentSteps - 1);
 
+const selectMode = (mode: IntegrationType) => {
+  selectedViewMode.value = mode;
+  showModeSelection.value = false;
+};
+
 </script>
 
 <template>
@@ -256,45 +264,85 @@ const isLastStep = computed(() => isAIAgentView.value && aiAgentCurrentStep.valu
              :width="$isMobile ? '100%' : '70%'"
              :fullscreen="$isMobile"
              @close="$emit('close', $event)">
-    <IntegrationFormModalHeader
-      v-model:active="form.active"
-      v-model:view-mode="selectedViewMode"
-      :integration-form="form"
-      :sources="store.result || []"
-      @paste="openPasteDialog"
-    />
-    <el-form v-if="visible" @submit.prevent="submit" class="form-content">
-      <!-- AI Agent Form View -->
-      <div v-if="selectedViewMode === IntegrationType.AIAgent" class="ai-agent-view">
-        <AIAgentForm
-          v-model="form"
-          v-model:current-step="aiAgentCurrentStep"
-          :integration-id="props.editingIntegration?._id"
-        />
+    <!-- Mode Selection View for New Integrations -->
+    <el-card v-if="showModeSelection" class="mode-selection-card">
+      <template #header>
+        <div class="card-header">
+          <h3>{{ $t('Choose Integration Mode') }}</h3>
+          <p class="subtitle">{{ $t('Select how you want to build your integration') }}</p>
+        </div>
+      </template>
+      
+      <div class="mode-options">
+        <div class="mode-option" @click="selectMode(IntegrationType.Standard)">
+          <div class="option-icon">
+            <el-icon :size="24"><icon-setting /></el-icon>
+          </div>
+          <div class="option-content">
+            <h4>{{ $t('Standard Mode') }}</h4>
+            <p>{{ $t('Full control with trigger, data manipulation, and target configuration') }}</p>
+          </div>
+        </div>
+        
+        <div class="mode-option" @click="selectMode(IntegrationType.AIAgent)">
+          <div class="option-icon ai-icon">
+            <el-icon :size="24"><icon-magic-stick /></el-icon>
+          </div>
+          <div class="option-content">
+            <h4>{{ $t('AI Agent Mode') }}</h4>
+            <p>{{ $t('Create an intelligent agent with tools and conversational capabilities') }}</p>
+          </div>
+        </div>
       </div>
+    </el-card>
 
-      <!-- Standard Integration Form View -->
-      <el-tabs v-else>
-        <el-tab-pane :label="$t('Trigger')">
-          <TriggerTab v-model="form.trigger" :integration-id="props.editingIntegration?._id" />
-        </el-tab-pane>
-        <el-tab-pane :label="$t('Data Manipulation')">
-          <DataManipulationTab v-model="form.dataManipulation" />
-        </el-tab-pane>
-        <el-tab-pane :label="$t('Target')">
-          <TargetTab v-model="form.target" :integration-id="props.editingIntegration?._id" />
-        </el-tab-pane>
-        <el-tab-pane v-if="isChatCompletionIntegration" :label="$t('Function Tools')">
-          <FunctionToolsTab v-if="props.editingIntegration?._id" :integration-id="props.editingIntegration?._id" />
-          <el-alert v-else :title="$t('Please save the integration first')" type="warning" show-icon />
-        </el-tab-pane>
-      </el-tabs>
-    </el-form>
+    <!-- Integration Form -->
+    <template v-else>
+      <IntegrationFormModalHeader
+        v-model:active="form.active"
+        v-model:view-mode="selectedViewMode"
+        :integration-form="form"
+        :sources="store.result || []"
+        @paste="openPasteDialog"
+      />
+      <el-form v-if="visible" @submit.prevent="submit" class="form-content">
+        <!-- AI Agent Form View -->
+        <div v-if="selectedViewMode === IntegrationType.AIAgent" class="ai-agent-view">
+          <AIAgentForm
+            v-model="form"
+            v-model:current-step="aiAgentCurrentStep"
+            :integration-id="props.editingIntegration?._id"
+          />
+        </div>
+
+        <!-- Standard Integration Form View -->
+        <el-tabs v-else>
+          <el-tab-pane :label="$t('Trigger')">
+            <TriggerTab v-model="form.trigger" :integration-id="props.editingIntegration?._id" />
+          </el-tab-pane>
+          <el-tab-pane :label="$t('Data Manipulation')">
+            <DataManipulationTab v-model="form.dataManipulation" />
+          </el-tab-pane>
+          <el-tab-pane :label="$t('Target')">
+            <TargetTab v-model="form.target" :integration-id="props.editingIntegration?._id" />
+          </el-tab-pane>
+          <el-tab-pane v-if="isChatCompletionIntegration" :label="$t('Function Tools')">
+            <FunctionToolsTab v-if="props.editingIntegration?._id" :integration-id="props.editingIntegration?._id" />
+            <el-alert v-else :title="$t('Please save the integration first')" type="warning" show-icon />
+          </el-tab-pane>
+        </el-tabs>
+      </el-form>
+    </template>
     
     <template #footer>
       <div class="dialog-footer">
+        <!-- Mode Selection Footer -->
+        <template v-if="showModeSelection">
+          <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
+        </template>
+        
         <!-- AI Agent Mode Footer -->
-        <template v-if="isAIAgentView">
+        <template v-else-if="isAIAgentView">
           <div class="ai-agent-footer">
             <div class="step-info">
               <span class="step-text">{{ $t('Step') }} {{ aiAgentCurrentStep + 1 }} {{ $t('of') }} {{ totalAIAgentSteps }}</span>
@@ -392,6 +440,124 @@ img, small {
 
 .mb-3 {
   margin-bottom: 12px;
+}
+
+/* Mode Selection Card Styles */
+.mode-selection-card {
+  border: none;
+  box-shadow: none;
+}
+
+.mode-selection-card :deep(.el-card__header) {
+  padding: 24px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.mode-selection-card :deep(.el-card__body) {
+  padding: 24px;
+}
+
+.card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.card-header .subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--el-text-color-secondary);
+}
+
+.mode-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.mode-option {
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  border-radius: 8px;
+  border: 2px solid var(--el-border-color);
+  transition: all 0.3s;
+  cursor: pointer;
+  background-color: var(--el-bg-color);
+}
+
+.mode-option:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border-color: var(--el-color-primary);
+}
+
+.option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background-color: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  margin-right: 20px;
+  flex-shrink: 0;
+}
+
+.option-icon.ai-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.option-content {
+  flex: 1;
+}
+
+.option-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.option-content p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .mode-options {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .mode-option {
+    padding: 20px;
+  }
+  
+  .option-icon {
+    width: 48px;
+    height: 48px;
+    margin-right: 16px;
+  }
+  
+  .option-content h4 {
+    font-size: 16px;
+  }
+  
+  .option-content p {
+    font-size: 13px;
+  }
 }
 
 @media (min-width: 768px) {
