@@ -5,12 +5,17 @@ import { useSubmitting } from '@/modules/core/compositions/submitting';
 import integrationsService from '@/services/integrations-service';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { ElMessage } from 'element-plus';
+import { detectIntegrationType, IntegrationType } from '@/modules/integrations/utils/integration-type-detector';
 
 // Import tab components
 import TriggerTab from '@/modules/integrations/components/tabs/TriggerTab.vue';
 import DataManipulationTab from '@/modules/integrations/components/tabs/DataManipulationTab.vue';
 import TargetTab from '@/modules/integrations/components/tabs/TargetTab.vue';
 import FunctionToolsTab from '@/modules/integrations/components/tabs/FunctionToolsTab.vue';
+
+// Import specialized form components
+import AIAgentForm from '@/modules/integrations/components/forms/AIAgentForm.vue';
+import IntegrationFormModalHeader from '@/modules/integrations/components/IntegrationFormModalHeader.vue';
 
 const visible = defineModel<boolean>('visible')
 const props = defineProps<{ editingIntegration?: any }>()
@@ -22,11 +27,12 @@ const pasteError = ref('')
 
 const store = useIntegrationSourcesStore();
 
-// Computed property to check if the integration is a chat completion integration
-const isChatCompletionIntegration = computed(() => {
-  return form.trigger?.source && 
-         form.trigger?.operation === QelosTriggerOperation.chatCompletion;
-});
+// View mode state
+const selectedViewMode = ref<IntegrationType>(IntegrationType.Standard);
+
+// AI Agent wizard step state
+const aiAgentCurrentStep = ref(0);
+const totalAIAgentSteps = 4;
 
 const form = reactive<Pick<IIntegration, 'trigger' | 'target' | 'dataManipulation' | 'active'>>({
   trigger: {
@@ -70,6 +76,22 @@ const form = reactive<Pick<IIntegration, 'trigger' | 'target' | 'dataManipulatio
   active: false
 })
 
+// Computed property to check if the integration is a chat completion integration
+const isChatCompletionIntegration = computed(() => {
+  return form.trigger?.source && 
+         form.trigger?.operation === QelosTriggerOperation.chatCompletion;
+});
+
+// Update selected view mode when form changes (for auto-detection)
+watch(() => [form.trigger, form.target, store.result], () => {
+  if (!props.editingIntegration?._id && store.result?.length) {
+    const detectedType = detectIntegrationType(form, store.result);
+    if (detectedType === IntegrationType.AIAgent) {
+      selectedViewMode.value = IntegrationType.AIAgent;
+    }
+  }
+}, { immediate: true, deep: true });
+
 // Find Qelos integration source for default target
 const findQelosSource = () => {
   if (!store.result?.length) return '';
@@ -79,6 +101,7 @@ const findQelosSource = () => {
 
 watch(visible, () => {
   if (visible.value) {
+    aiAgentCurrentStep.value = 0;
     Object.assign(form, {
       ...(props.editingIntegration || {}),
       trigger: {
@@ -123,6 +146,14 @@ watch(visible, () => {
       ],
       active: props.editingIntegration?.active || false,
     });
+    
+    // Set view mode based on editing integration
+    if (props.editingIntegration?._id && store.result?.length) {
+      const detectedType = detectIntegrationType(form, store.result);
+      selectedViewMode.value = detectedType;
+    } else {
+      selectedViewMode.value = IntegrationType.Standard;
+    }
     form.dataManipulation = (form.dataManipulation || []).map((row: any) => {
       delete row._id;
       return row;
@@ -198,6 +229,24 @@ const applyPastedIntegration = () => {
   }
 }
 
+// AI Agent navigation functions
+const goToNextStep = () => {
+  if (aiAgentCurrentStep.value < totalAIAgentSteps - 1) {
+    aiAgentCurrentStep.value++;
+  }
+};
+
+const goToPreviousStep = () => {
+  if (aiAgentCurrentStep.value > 0) {
+    aiAgentCurrentStep.value--;
+  }
+};
+
+const isAIAgentView = computed(() => selectedViewMode.value === IntegrationType.AIAgent);
+const canGoNext = computed(() => isAIAgentView.value && aiAgentCurrentStep.value < totalAIAgentSteps - 1);
+const canGoPrevious = computed(() => isAIAgentView.value && aiAgentCurrentStep.value > 0);
+const isLastStep = computed(() => isAIAgentView.value && aiAgentCurrentStep.value === totalAIAgentSteps - 1);
+
 </script>
 
 <template>
@@ -207,24 +256,25 @@ const applyPastedIntegration = () => {
              :width="$isMobile ? '100%' : '70%'"
              :fullscreen="$isMobile"
              @close="$emit('close', $event)">
-    <div class="dialog-actions-row">
-      <div class="compact-status-toggle">
-        <span class="status-indicator" :class="{ 'active': form.active }" />
-        <el-switch
-          v-model="form.active"
-          class="status-switch"
-          :inactive-color="'#909399'"
-          size="small"
-        />
-        <span class="toggle-label">{{ form.active ? $t('Active') : $t('Inactive') }}</span>
-      </div>
-      <el-button size="small" @click="openPasteDialog" type="primary" plain>
-        <el-icon><document-copy /></el-icon>
-        {{ $t('Paste Integration') }}
-      </el-button>
-    </div>
+    <IntegrationFormModalHeader
+      v-model:active="form.active"
+      v-model:view-mode="selectedViewMode"
+      :integration-form="form"
+      :sources="store.result || []"
+      @paste="openPasteDialog"
+    />
     <el-form v-if="visible" @submit.prevent="submit" class="form-content">
-      <el-tabs>
+      <!-- AI Agent Form View -->
+      <div v-if="selectedViewMode === IntegrationType.AIAgent" class="ai-agent-view">
+        <AIAgentForm
+          v-model="form"
+          v-model:current-step="aiAgentCurrentStep"
+          :integration-id="props.editingIntegration?._id"
+        />
+      </div>
+
+      <!-- Standard Integration Form View -->
+      <el-tabs v-else>
         <el-tab-pane :label="$t('Trigger')">
           <TriggerTab v-model="form.trigger" :integration-id="props.editingIntegration?._id" />
         </el-tab-pane>
@@ -243,8 +293,45 @@ const applyPastedIntegration = () => {
     
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
-        <el-button type="primary" @click="submit" :disabled="submitting" :loading="submitting">{{ $t('Save') }}</el-button>
+        <!-- AI Agent Mode Footer -->
+        <template v-if="isAIAgentView">
+          <div class="ai-agent-footer">
+            <div class="step-info">
+              <span class="step-text">{{ $t('Step') }} {{ aiAgentCurrentStep + 1 }} {{ $t('of') }} {{ totalAIAgentSteps }}</span>
+            </div>
+            <div class="footer-actions">
+              <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
+              <el-button 
+                v-if="canGoPrevious"
+                @click="goToPreviousStep"
+              >
+                {{ $t('Previous') }}
+              </el-button>
+              <el-button 
+                v-if="canGoNext"
+                type="primary"
+                @click="goToNextStep"
+              >
+                {{ $t('Next') }}
+              </el-button>
+              <el-button 
+                v-if="isLastStep"
+                type="success"
+                @click="submit" 
+                :disabled="submitting" 
+                :loading="submitting"
+              >
+                {{ $t('Save Agent') }}
+              </el-button>
+            </div>
+          </div>
+        </template>
+        
+        <!-- Standard Mode Footer -->
+        <template v-else>
+          <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
+          <el-button type="primary" @click="submit" :disabled="submitting" :loading="submitting">{{ $t('Save') }}</el-button>
+        </template>
       </div>
     </template>
   </el-dialog>
@@ -298,62 +385,6 @@ img, small {
   font-style: italic;
 }
 
-.dialog-actions-row {
-  position: absolute;
-  top: 5px;
-  right: 55px;
-  z-index: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-@media (max-width: 768px) {
-  .dialog-actions-row {
-    position: inherit;
-    margin-bottom: 10px;
-  }
-}
-
-.compact-status-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 16px;
-  background-color: var(--el-fill-color-light);
-  transition: all 0.2s ease;
-  border: 1px solid var(--el-border-color-lighter);
-}
-
-.compact-status-toggle .status-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: var(--el-color-danger);
-  transition: background-color 0.3s ease;
-}
-
-.compact-status-toggle .status-indicator.active {
-  background-color: var(--el-color-success);
-}
-
-.compact-status-toggle .toggle-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--el-text-color-secondary);
-  white-space: nowrap;
-}
-
-@media (max-width: 768px) {
-  .dialog-actions-row {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-}
-
 .paste-instructions {
   margin-bottom: 10px;
   color: var(--el-text-color-secondary);
@@ -374,6 +405,47 @@ img, small {
   display: flex;
   justify-content: flex-end;
   padding: 10px 20px;
+}
+
+.ai-agent-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.step-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+}
+
+.footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .ai-agent-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .step-info {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .footer-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 
 </style>

@@ -8,6 +8,8 @@ the tech stack is: node.js, express, mongodb, redis, mongoose.
 the frontend tech stack is: vue 3.5 with composition api, pinia, element-plus, vue-i18n, vue-router, vue-echarts, monaco-editor, primevue
 the /apps/gateway is the source to all requests.
 /packages/api-kit is the api kit for all backend services. it uses express.js, node, axios, morgan for logs.
+in vue.js components, prefer composition api, prefer to use defineModel() when possible instead of defineProps() + defineEmits() for "update:modelValue".
+
 /apps/db is a mongodb configuration for dev environment
 /apps/auth is the authentication service (users, workspaces)
 /apps/content is the content service (drafts, configurations)
@@ -21,3 +23,5 @@ effeciency is the most important aspect of the code.
 
 prefer typescript when possible.
 prefer using esmodules instead of commonjs.
+
+a folder named "utils" is not a good practice, consider to have better patterns, such as services, models, store, compositions, etc.
