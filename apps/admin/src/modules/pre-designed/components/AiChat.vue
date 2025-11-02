@@ -2,6 +2,7 @@
   <div
     class="ai-chat"
     :class="{ 'empty-chat': messages.length === 0 }"
+    :full-screen.attr="fullScreen"
     @dragover.prevent="onDragOver"
     @drop.prevent="onFileDrop"
     @dragenter.prevent="onDragEnter"
@@ -189,6 +190,7 @@ const props = defineProps<{
   threadId?: string;
   integrationId?: string;
   suggestions?: Array<string | { label: string; text?: string; icon?: string }>;
+  fullScreen?: boolean;
 }>();
 
 const emit = defineEmits([
@@ -691,6 +693,9 @@ onMounted(() => {
   font-family: var(--font-family, inherit);
 }
 
+.ai-chat[full] {
+  height: 100%;
+}
 
 .chat-window {
   flex: 1;
@@ -1325,4 +1330,9 @@ onMounted(() => {
     bottom: 25%;
   }
 }
+</style>
+<style>
+:is(main, .template-content):has(.ai-chat[full-screen]) {
+  height: 100%;
+} 
 </style>

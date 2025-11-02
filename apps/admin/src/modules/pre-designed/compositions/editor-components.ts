@@ -270,6 +270,7 @@ export function useEditorComponents() {
       requiredProps: [
         { prop: 'url', label: 'AI API URL', type: 'text', source: 'manual', placeholder: 'https://...' },
         { prop: 'title', label: 'Title', type: 'text', source: 'manual', placeholder: 'Enter the card title' },
+        { prop: 'full-screen', label: 'Full Screen', type: 'switch', source: 'manual', bind: true, value: true },
         { prop: 'suggestions', label: 'Suggestions', type: 'array', source: 'manual', 
           children: [
             { prop: 'label', label: 'Label', type: 'text', placeholder: 'Enter the label' },

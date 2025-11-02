@@ -9,8 +9,10 @@ import { cacheManager } from '../services/cache-manager';
 
 const protocol = isDev ? 'http://' : 'https://';
 
-function clearPlugins(tenant) {
+function clearPlugins(tenant: string) {
   cacheManager.setItem(`plugins:${tenant}`, '', {ttl: 1}).catch();  
+  cacheManager.setItem(`plugins:${tenant}:full`, '', {ttl: 1}).catch();
+  cacheManager.setItem(`plugins:${tenant}:limited`, '', {ttl: 1}).catch();
 }
 
 export async function getAllPlugins(req, res) {
@@ -117,7 +119,7 @@ export function getPlugin(req, res) {
 
 export async function createPlugin(req, res) {
   logger.log('request to create plugin', req.headers.tenanthost, req.body);
-  const { tenant, token, auth, hardReset = true, ...allowedChanges } = req.body;
+  const { tenant: _, token, auth, hardReset = true, ...allowedChanges } = req.body;
   const plugin = new Plugin(allowedChanges);
   plugin.tenant = req.headers.tenant;
 
@@ -139,11 +141,11 @@ export async function createPlugin(req, res) {
       plugin.token = token;
     }
     await plugin.save();
-    clearPlugins(tenant);
+    clearPlugins(req.headers.tenant);
 
     res.json(plugin).end();
     if (newRefreshToken) {
-      setRefreshSecret(tenant, plugin.apiPath, newRefreshToken).catch();
+      setRefreshSecret(req.headers.tenant, plugin.apiPath, newRefreshToken).catch();
     }
   } catch (e) {
     logger.error(e);
