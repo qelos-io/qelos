@@ -100,7 +100,7 @@
         </div>
       </transition-group>
       <div v-if="loading" class="stream-indicator">
-        <el-icon class="spin"><Loading /></el-icon> {{ $t("AI is typing...") }}
+        <el-icon class="spin"><Loading /></el-icon> {{ $t(typingText || "AI is typing...") }}
       </div>
     </div>
     <transition name="fade">
@@ -191,6 +191,7 @@ const props = defineProps<{
   integrationId?: string;
   suggestions?: Array<string | { label: string; text?: string; icon?: string }>;
   fullScreen?: boolean;
+  typingText?: string;
 }>();
 
 const emit = defineEmits([

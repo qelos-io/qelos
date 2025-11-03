@@ -157,5 +157,6 @@
   "Got it": "Got it",
   "{count} blueprints generated": "{count} blueprints generated",
   "Select All": "Select All",
-  "Selected": "Selected"
+  "Selected": "Selected",
+  "AI is typing...": "AI is typing..."
 }

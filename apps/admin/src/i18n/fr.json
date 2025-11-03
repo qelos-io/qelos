@@ -157,5 +157,6 @@
   "Got it": "Compris",
   "{count} blueprints generated": "{count} modèles générés",
   "Select All": "Tout sélectionner",
-  "Selected": "Sélectionnés"
+  "Selected": "Sélectionnés",
+  "AI is typing...": "L'IA est en train d'écrire..."
 }
