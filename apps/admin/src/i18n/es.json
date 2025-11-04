@@ -181,5 +181,8 @@
   "Please correct the form errors before submitting": "Por favor, corrija los errores del formulario antes de enviar",
   "Error in metadata format. Please check the JSON syntax.": "Error en el formato de metadatos. Por favor, verifique la sintaxis JSON.",
   "Form has been reset": "El formulario ha sido restablecido",
-  "Admin Dashboard": "Panel de administración"
+  "Admin Dashboard": "Panel de administración",
+  "Wizard": "Guía",
+  "Advanced": "Avanzado",
+  "Clone": "Clonar"
 }

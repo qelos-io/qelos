@@ -181,5 +181,8 @@
   "Please correct the form errors before submitting": "Please correct the form errors before submitting",
   "Error in metadata format. Please check the JSON syntax.": "Error in metadata format. Please check the JSON syntax.",
   "Form has been reset": "Form has been reset",
-  "Admin Dashboard": "Admin Dashboard"
+  "Admin Dashboard": "Admin Dashboard",
+  "Wizard": "Wizard",
+  "Advanced": "Advanced",
+  "Clone": "Clone"
 }

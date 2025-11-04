@@ -181,5 +181,8 @@
   "Please correct the form errors before submitting": "אנא תקן את שגיאות הטופס לפני השליחה",
   "Error in metadata format. Please check the JSON syntax.": "שגיאה בפורמט המטא-דאטה. אנא בדוק את תחביר ה-JSON.",
   "Form has been reset": "הטופס אופס",
-  "Admin Dashboard": "לוח בקרה למנהלים"
+  "Admin Dashboard": "לוח בקרה למנהלים",
+  "Wizard": "אשף",
+  "Advanced": "מתקדם",
+  "Clone": "שכפל"
 }
