@@ -18,8 +18,8 @@
         <el-dropdown-item v-if="isAdmin" id="edit-mode-toggle" @click.stop>
           <el-switch
               v-model="isManagingEnabled"
-              active-text="Manager"
-              inactive-text="Manager"
+              :active-text="$t('Manager')"
+              :inactive-text="$t('Manager')"
               style="--el-switch-on-color: #3da62d; --el-switch-off-color: #b33939;"
               size="large"
               inline-prompt

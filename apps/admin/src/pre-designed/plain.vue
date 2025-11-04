@@ -198,7 +198,7 @@ main {
   position: fixed;
   z-index: 999;
   bottom: 10px;
-  left: 250px;
+  inset-inline-start: 250px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -207,14 +207,14 @@ main {
 
 @media (max-width: 768px) {
   .edit-bar-container {
-    left: 0;
+    inset-inline-start: 0;
     bottom: 0;
     width: 100%;
   }
 }
 
 .edit-bar-container.collapsed {
-  right: 20px;
+  inset-inline-end: 20px;
 }
 
 .edit-bar {
@@ -256,7 +256,7 @@ main {
 }
 
 .edit-group {
-  margin-right: 8px;
+  margin-inline-end: 8px;
 }
 
 .action-buttons {
@@ -303,7 +303,7 @@ main {
   }
   
   .edit-group {
-    margin-right: 0;
+    margin-inline-start: 0;
     margin-bottom: 6px;
   }
   

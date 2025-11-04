@@ -16,51 +16,51 @@
       <template #header>
         <div class="card-header">
           <el-icon><User /></el-icon>
-          <span>User Information</span>
+          <span>{{$t('User Information')}}</span>
         </div>
       </template>
 
       <div class="form-section">
         <div class="form-row">
-          <el-form-item label="First Name" prop="firstName" class="form-item">
+          <el-form-item :label="$t('First Name')" prop="firstName" class="form-item">
             <el-input 
               v-model="editedData.firstName" 
-              placeholder="Enter first name"
+              :placeholder="$t('Enter first name')"
               :prefix-icon="UserFilled"
               clearable
             />
           </el-form-item>
 
-          <el-form-item label="Last Name" prop="lastName" class="form-item">
+          <el-form-item :label="$t('Last Name')" prop="lastName" class="form-item">
             <el-input 
               v-model="editedData.lastName" 
-              placeholder="Enter last name"
+              :placeholder="$t('Enter last name')"
               :prefix-icon="UserFilled"
               clearable
             />
           </el-form-item>
         </div>
 
-        <el-form-item label="Username / Email" prop="username" class="form-item">
+        <el-form-item :label="$t('Username / Email')" prop="username" class="form-item">
           <el-input 
             v-model="editedData.username" 
-            placeholder="Enter email address"
+            :placeholder="$t('Enter email address')"
             :disabled="!asAdmin"
             :prefix-icon="Message"
             clearable
           />
         </el-form-item>
 
-        <el-form-item label="Password" prop="password" class="form-item">
+        <el-form-item :label="$t('Password')" prop="password" class="form-item">
           <el-input 
             v-model="editedData.password" 
             type="password"
-            placeholder="Enter new password"
+            :placeholder="$t('Enter new password')"
             :prefix-icon="Lock"
             show-password
           >
             <template #append>
-              <el-tooltip content="Leave empty to keep current password" placement="top">
+              <el-tooltip :content="$t('Leave empty to keep current password')" placement="top">
                 <el-icon><InfoFilled /></el-icon>
               </el-tooltip>
             </template>
@@ -78,7 +78,7 @@
         </el-form-item>
 
         <el-collapse v-if="asAdmin" class="metadata-section">
-          <el-collapse-item title="Advanced: Metadata" name="metadata">
+          <el-collapse-item :title="$t('Advanced: Metadata')" name="metadata">
             <el-form-item prop="internalMetadata" class="form-item">
               <Monaco 
                 :model-value="internalMetadata" 
@@ -91,7 +91,7 @@
 
         <div class="form-actions">
           <el-button @click="resetForm" :disabled="submitting">
-            Reset
+            {{ $t('Reset') }}
           </el-button>
           <el-button 
             type="primary" 
@@ -99,7 +99,7 @@
             :loading="submitting"
             :icon="Check"
           >
-            Save Changes
+            {{ $t('Save Changes') }}
           </el-button>
         </div>
       </div>
@@ -116,8 +116,10 @@ import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import { ElMessage, FormInstance, FormRules } from 'element-plus';
 import { User, UserFilled, Message, Lock, Check, InfoFilled } from '@element-plus/icons-vue';
+import { useI18n } from 'vue-i18n';
 
 const formRef = ref<FormInstance>();
+const { t } = useI18n()
 
 const props = defineProps({
   user: Object as () => IUser,
@@ -130,19 +132,19 @@ const emit = defineEmits(['submitted']);
 // Form validation rules
 const rules = reactive<FormRules>({
   firstName: [
-    { required: true, message: 'First name is required', trigger: 'blur' },
-    { min: 2, max: 50, message: 'Length should be 2 to 50 characters', trigger: 'blur' }
+    { required: true, message: t('First name is required'), trigger: 'blur' },
+    { min: 2, max: 50, message: t('Length should be 2 to 50 characters'), trigger: 'blur' }
   ],
   lastName: [
-    { required: true, message: 'Last name is required', trigger: 'blur' },
-    { min: 2, max: 50, message: 'Length should be 2 to 50 characters', trigger: 'blur' }
+    { required: true, message: t('Last name is required'), trigger: 'blur' },
+    { min: 2, max: 50, message: t('Length should be 2 to 50 characters'), trigger: 'blur' }
   ],
   username: [
-    { required: true, message: 'Email is required', trigger: 'blur' },
-    { type: 'email', message: 'Please enter a valid email address', trigger: 'blur' }
+    { required: true, message: t('Email is required'), trigger: 'blur' },
+    { type: 'email', message: t('Please enter a valid email address'), trigger: 'blur' }
   ],
   password: [
-    { min: 8, message: 'Password must be at least 8 characters', trigger: 'blur' }
+    { min: 8, message: t('Password must be at least 8 characters'), trigger: 'blur' }
   ]
 });
 
@@ -180,7 +182,7 @@ async function validateAndSubmit() {
     await formRef.value?.validate();
     submit();
   } catch (error) {
-    ElMessage.error('Please correct the form errors before submitting');
+    ElMessage.error(t('Please correct the form errors before submitting'));
   }
 }
 
@@ -191,13 +193,13 @@ function submit() {
     }
     emit('submitted', clearNulls(editedData));
   } catch (error) {
-    ElMessage.error('Error in metadata format. Please check the JSON syntax.');
+    ElMessage.error(t('Error in metadata format. Please check the JSON syntax.'));
   }
 }
 
 function resetForm() {
   formRef.value?.resetFields();
-  ElMessage.info('Form has been reset');
+  ElMessage.info(t('Form has been reset'));
 }
 </script>
 

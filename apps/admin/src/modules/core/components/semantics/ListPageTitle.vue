@@ -191,13 +191,13 @@ h1 {
 .add-button.add-button {
   white-space: nowrap;
   transition: transform 0.2s ease;
-  margin-left: auto;
-  margin-right: 0.5rem;
+  margin-inline-end: auto;
+  margin-inline-start: 0.5rem;
   outline: none;
 }
 
 .help-button {
-  margin-left: 0.5rem;
+  margin-inline-start: 0.5rem;
   color: var(--el-color-info);
   font-size: 16px;
   padding: 4px;
@@ -235,7 +235,7 @@ h1 {
   }
   
   .title-section {
-    padding-left: 0.5rem;
+    padding-inline-start: 0.5rem;
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -250,7 +250,7 @@ h1 {
   
   /* Make help button smaller on mobile */
   .help-button {
-    margin-left: 0.25rem;
+    margin-inline-start: 0.25rem;
     min-height: 20px;
     width: 20px;
     font-size: 14px;
@@ -261,7 +261,7 @@ h1 {
   /* Make the button more compact on mobile */
   .add-button {
     padding: 8px 12px;
-    margin-right: 0.5rem;
+    margin-inline-start: 0.5rem;
   }
 }
 
@@ -282,7 +282,7 @@ h1 {
   
   /* Even smaller help button on very small screens */
   .help-button {
-    margin-left: 0.2rem;
+    margin-inline-start: 0.2rem;
     min-height: 18px;
     width: 18px;
     font-size: 12px;

@@ -45,7 +45,8 @@
                   </span>
                 </div>
                 <el-icon class="suggestion-arrow" :class="{ 'visible': hoveredSuggestion === idx }">
-                  <ArrowRight />
+                  <ArrowRight v-if="$t('appDirection') === 'ltr'" />
+                  <ArrowLeft v-else />
                 </el-icon>
               </div>
             </TransitionGroup>
@@ -176,6 +177,7 @@ import {
   DocumentCopy,
   Check,
   ArrowRight,
+  ArrowLeft,
 } from "@element-plus/icons-vue";
 import { Remarkable } from "remarkable";
 import threadsService from "@/services/threads-service";
@@ -789,8 +791,8 @@ onMounted(() => {
 
 .ai-send-btn {
   position: absolute;
-  right: 0.55em;
-  bottom: 0.55em;
+  inset-inline-end: 0.55em;
+  inset-block-end: 0.55em;
   z-index: 2;
   border-radius: var(--border-radius, 50%);
   margin-inline-end: 2px;
@@ -808,7 +810,7 @@ onMounted(() => {
     background var(--transition-speed, 0.18s), transform 0.12s;
   font-size: 1.3em;
   cursor: pointer;
-  margin-left: 0.5em;
+  margin-inline-start: 0.5em;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -875,7 +877,7 @@ onMounted(() => {
 
 .avatar {
   font-size: 1.25em;
-  margin-right: 0.5em;
+  margin-inline-end: 0.5em;
 }
 
 .meta {
@@ -893,11 +895,11 @@ onMounted(() => {
   align-items: center;
   color: var(--el-color-primary);
   font-size: 0.95em;
-  margin-top: 1em;
+  margin-block-start: 1em;
 }
 
 .stream-indicator .spin {
-  margin-right: 0.5em;
+  margin-inline-end: 0.5em;
   animation: spin 1s linear infinite;
 }
 
@@ -1002,7 +1004,7 @@ onMounted(() => {
 .bubble-content ul,
 .bubble-content ol {
   margin: 0.5em 0;
-  padding-left: 1.5em;
+  padding-inline-start: 1.5em;
   display: flex;
   flex-direction: column;
 }
@@ -1042,8 +1044,8 @@ onMounted(() => {
 
 :deep(.table-copy-button) {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  inset-block-start: 4px;
+  inset-inline-end: 4px;
   width: 28px;
   height: 28px;
   display: flex;
@@ -1086,9 +1088,9 @@ onMounted(() => {
 }
 
 .bubble-content blockquote {
-  border-left: 3px solid var(--el-color-primary);
+  border-inline-start: 3px solid var(--el-color-primary);
   margin: 0.5em 0;
-  padding-left: 1em;
+  padding-inline-start: 1em;
   color: #666;
   font-style: italic;
 }
@@ -1108,8 +1110,8 @@ onMounted(() => {
 
 .copy-button {
   position: absolute;
-  right: 0;
-  top: 0;
+  inset-inline-end: 0;
+  inset-block-start: 0;
   width: 24px;
   height: 24px;
   display: flex;
@@ -1149,7 +1151,7 @@ onMounted(() => {
 }
 
 .bubble.user .bubble-content blockquote {
-  border-left-color: var(--el-color-primary);
+  border-inline-start-color: var(--el-color-primary);
 }
 
 .drag-overlay {
@@ -1248,7 +1250,7 @@ onMounted(() => {
 }
 
 .suggestion-arrow {
-  margin-left: 0.5em;
+  margin-inline-start: 0.5em;
   color: var(--el-color-primary);
   opacity: 0;
   transform: translateX(-5px);
@@ -1302,9 +1304,8 @@ onMounted(() => {
   margin-top: 1.5em;
   margin-bottom: 0;
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 20%;
+  inset-inline: 0;
+  inset-block-end: 20%;
   z-index: 1;
 }
 
@@ -1328,7 +1329,7 @@ onMounted(() => {
   }
   
   .empty-chat .ai-suggestions {
-    bottom: 25%;
+    inset-block-end: 25%;
   }
 }
 </style>
