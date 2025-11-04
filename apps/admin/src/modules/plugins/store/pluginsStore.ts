@@ -10,9 +10,13 @@ export const usePluginsStore = defineStore('plugins', () => {
   const loadedCustomComponents = ref<string[]>([]);
 
   function incrementComponentUpdates(componentName: string) {
-    componentUpdates.value++;
+    incrementUpdates();
     loadedCustomComponents.value.push(kebabCase(componentName));
   }
+
+  function incrementUpdates() {
+    componentUpdates.value++;
+  }
   
-  return { componentUpdates, injectablesLoaded, incrementComponentUpdates, loadedCustomComponents };
+  return { componentUpdates, injectablesLoaded, incrementComponentUpdates, incrementUpdates, loadedCustomComponents };
 });

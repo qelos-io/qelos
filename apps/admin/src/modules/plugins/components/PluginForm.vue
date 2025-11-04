@@ -410,6 +410,12 @@ async function refreshPluginFromManifest() {
     if (!edit.manifestUrl.startsWith('http')) {
       edit.manifestUrl = new URL(edit.manifestUrl, manifest.appUrl).href;
     }
+    if (edit.callbackUrl && !edit.callbackUrl.startsWith('http')) {
+      edit.callbackUrl = new URL(edit.callbackUrl, manifest.appUrl).href;
+    }
+    if (edit.registerUrl && !edit.registerUrl.startsWith('http')) {
+      edit.registerUrl = new URL(edit.registerUrl, manifest.appUrl).href;
+    }
     
     if (!edit.apiPath && manifest.name) {
       edit.apiPath = manifest.name.toLowerCase().replace(/\s+/g, '-');

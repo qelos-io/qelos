@@ -154,5 +154,9 @@
   "Complete Data Manipulation JSON": "Complete Data Manipulation JSON",
   "Show help for this page": "Show help for this page",
   "Page Information": "Page Information",
-  "Got it": "Got it"
+  "Got it": "Got it",
+  "{count} blueprints generated": "{count} blueprints generated",
+  "Select All": "Select All",
+  "Selected": "Selected",
+  "AI is typing...": "AI is typing..."
 }

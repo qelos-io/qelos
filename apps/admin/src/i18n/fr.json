@@ -154,5 +154,9 @@
   "Complete Data Manipulation JSON": "JSON complet de manipulation de données",
   "Show help for this page": "Afficher l'aide pour cette page",
   "Page Information": "Informations de la page",
-  "Got it": "Compris"
+  "Got it": "Compris",
+  "{count} blueprints generated": "{count} modèles générés",
+  "Select All": "Tout sélectionner",
+  "Selected": "Sélectionnés",
+  "AI is typing...": "L'IA est en train d'écrire..."
 }

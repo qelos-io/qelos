@@ -75,6 +75,11 @@ export const SAAS_BUILDER_SYSTEM_PROMPT_PAGES = {
   2. Create necessary components with "createComponent" tool
   3. Implement data requirements
   4. Create the page with "createPage" tool
+
+  PAGE EDITING:
+  1. Use "getPage" tool to retrieve the page
+  2. Use existing structure and requirements as a starting point.
+  3. Use "editPage" tool to edit the page
   
   If you understand the user's request clearly, proceed directly to implementation without asking unnecessary clarifying questions.`
 };

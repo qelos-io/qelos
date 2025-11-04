@@ -146,8 +146,9 @@ async function removeConfiguration(req, res) {
 }
 
 function getTenantByHost(req, res) {
+  // Optimized query using the compound index on key and metadata.websiteUrls
   Configuration.findOne({ key: 'app-configuration', 'metadata.websiteUrls': req.query.host })
-    .select('tenant metadata.websiteUrls')
+    .select({ tenant: 1, 'metadata.websiteUrls': 1 }) // Explicit projection format
     .lean()
     .exec()
     .then(appConfig => {

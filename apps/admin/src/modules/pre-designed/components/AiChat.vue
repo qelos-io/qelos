@@ -2,6 +2,7 @@
   <div
     class="ai-chat"
     :class="{ 'empty-chat': messages.length === 0 }"
+    :full-screen.attr="fullScreen"
     @dragover.prevent="onDragOver"
     @drop.prevent="onFileDrop"
     @dragenter.prevent="onDragEnter"
@@ -99,7 +100,7 @@
         </div>
       </transition-group>
       <div v-if="loading" class="stream-indicator">
-        <el-icon class="spin"><Loading /></el-icon> {{ $t("AI is typing...") }}
+        <el-icon class="spin"><Loading /></el-icon> {{ $t(typingText || "AI is typing...") }}
       </div>
     </div>
     <transition name="fade">
@@ -184,11 +185,13 @@ const props = defineProps<{
   url: string;
   title?: string;
   text?: string;
-  chatContext?: Record<string, string>;
+  chatContext?: Record<string, string | number | boolean | undefined>;
   recordThread?: boolean;
   threadId?: string;
   integrationId?: string;
   suggestions?: Array<string | { label: string; text?: string; icon?: string }>;
+  fullScreen?: boolean;
+  typingText?: string;
 }>();
 
 const emit = defineEmits([
@@ -196,6 +199,7 @@ const emit = defineEmits([
   "thread-updated",
   "message-sent",
   "message-received",
+  "function-executed",
   "update:threadId",
 ]);
 
@@ -614,6 +618,17 @@ async function onSend() {
               if (idx !== -1) messages[idx] = { ...aiMsg };
               scrollToBottom();
             }
+          } else if (data.type === 'function_executed') {
+            let args = {}
+            try {
+              args = JSON.parse(data.functionCall?.arguments || '{}');
+            } catch (e) {
+              // ignore
+            }
+            emit('function-executed',{
+              name: data.functionCall?.function?.name,
+              arguments: args,
+            });
           } else if (data.type === "done") {
             finished = true;
             break;
@@ -679,6 +694,9 @@ onMounted(() => {
   font-family: var(--font-family, inherit);
 }
 
+.ai-chat[full] {
+  height: 100%;
+}
 
 .chat-window {
   flex: 1;
@@ -1313,4 +1331,9 @@ onMounted(() => {
     bottom: 25%;
   }
 }
+</style>
+<style>
+:is(main, .template-content):has(.ai-chat[full-screen]) {
+  height: 100%;
+} 
 </style>

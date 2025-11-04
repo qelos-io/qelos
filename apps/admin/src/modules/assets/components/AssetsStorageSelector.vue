@@ -1,37 +1,30 @@
 <template>
   <div class="select-storage">
     <label>{{ t('Storage') }}:</label>
-    <el-select @update:model-value="change" :model-value="selected" class="storage-selection">
+    <el-select v-model="model" class="storage-selection">
       <el-option
           v-for="item in items"
           :key="item._id"
-          :value="item"
+          :value="item._id"
           :label="item.name"
       />
     </el-select>
   </div>
 </template>
 <script lang="ts" setup>
-import { nextTick, watch, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStorageList } from '../compositions/storages'
-import { useModelChange } from '../../core/compositions/model-change'
 
 const { t } = useI18n();
-const props = defineProps<{ modelValue?: string }>()
-const emit = defineEmits(['update:modelValue']);
+const model = defineModel();
 
-const { items, loaded } = useStorageList()
-const { selected, change } = useModelChange(ref(props.modelValue), items, emit);
+const { items, promise } = useStorageList()
 
-const unwatch = watch(loaded, () => {
-  if (loaded.value) {
-    if (items.value.length === 1) {
-      change(items.value[0])
-    }
-    nextTick(() => unwatch())
+promise.then(() => {
+  if (items.value.length === 1) {
+    model.value = items.value[0]._id
   }
-}, { immediate: true });
+})
 </script>
 <style scoped>
 .select-storage {

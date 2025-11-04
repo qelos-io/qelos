@@ -1,6 +1,6 @@
 import { calPublicPluginsService, createPlugin } from "../plugins-service-api";
 import logger from "../logger";
-import { IScreenRequirement } from "@qelos/global-types";
+import { IPlugin, IScreenRequirement } from "@qelos/global-types";
 import { getBlueprint } from "../no-code-service";
 
 // Helper functions for plugin and page operations
@@ -304,6 +304,28 @@ export const getPagesCalling = {
       }
     }
 }
+
+export const getPageCalling = {
+    type: 'function',
+    name: 'getPage',
+    description: 'Get page by pluginId and pageId. Returns the page object.',
+    function: {
+        name: 'getPage',
+        description: 'Get page by pluginId and pageId. Returns the page object.',
+        parameters: {
+            type: 'object',
+            properties: {
+                pluginId: { type: 'string', description: 'Plugin ID of the page' },
+                pageId: { type: 'string', description: 'Page ID of the page' },
+            },
+            required: ['pluginId', 'pageId']
+        },
+    },
+    handler: async (req, payload = { pluginId: '', pageId: '' }) => {
+      return getPluginAndPage(payload.pluginId, payload.pageId, req.headers);
+    }
+}
+
 
 export const editPageCalling = {
   type: 'function',

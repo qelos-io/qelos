@@ -501,13 +501,13 @@ export async function updateBlueprintEntity(req, res) {
     if (blueprint.dispatchers?.update) {
       emitPlatformEvent({
         tenant: entity.tenant,
-        user: entity.user.toString(),
+        user: entity.user?.toString(),
         source: 'blueprints',
         kind: blueprint.identifier,
         eventName: 'update',
         description: `${blueprint.name} updated`,
         metadata: {
-          workspace: entity.workspace.toString(),
+          workspace: entity.workspace?.toString(),
           entity: entity.identifier,
           blueprint: blueprint.identifier,
           modifiedFields,
@@ -566,16 +566,16 @@ export async function removeBlueprintEntity(req, res) {
     }
     await BlueprintEntity.deleteOne(query).exec();
 
-    if (blueprint.dispatchers?.update) {
+    if (blueprint.dispatchers?.delete) {
       emitPlatformEvent({
         tenant: entity.tenant,
-        user: entity.user.toString(),
+        user: entity.user?.toString(),
         source: 'blueprints',
         kind: blueprint.identifier,
         eventName: 'delete',
         description: `${blueprint.name} deleted`,
         metadata: {
-          workspace: entity.workspace.toString(),
+          workspace: entity.workspace?.toString(),
           entity: entity.identifier,
           blueprint: blueprint.identifier,
         },

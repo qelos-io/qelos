@@ -10,6 +10,7 @@ import {
   refreshTokenExpiration,
   refreshTokenSecret
 } from '../../config';
+import logger from '../services/logger';
 
 export interface IUser {
   _id?: any;
@@ -145,6 +146,7 @@ const UserSchema = new mongoose.Schema<any, any>({
 });
 
 UserSchema.index({ tenant: 1, username: 1 }, { unique: true });
+UserSchema.index({ _id: 1, tenant: 1 });
 
 /**
  * Compare the passed password with the value in the database. A model method.
@@ -261,18 +263,25 @@ UserSchema.statics.getUsersList = function getUsersList(tenant: string, usersIds
       .exec()
       .then(users => JSON.stringify(users));
   }
-  return cacheManager.wrap(`usersList.${tenant}.${usersIds.map(id => id.toString()).join(',')}`,
+  
+  // Create a hash of the IDs for a shorter cache key
+  const idsHash = require('crypto')
+    .createHash('md5')
+    .update(usersIds.map(id => id.toString()).join(','))
+    .digest('hex');
+    
+  return cacheManager.wrap(`usersList.${tenant}.${idsHash}`,
     async () => {
-      const query: Record<string, any> = { _id: { $in: usersIds } }
-      query.tenant = tenant;
-
       try {
-        const users = await this.find(query)
+        // Use the compound index we created on _id and tenant
+        const users = await this.find({ _id: { $in: usersIds }, tenant })
           .select(privilegedUserFields)
           .lean()
+          .hint({ _id: 1, tenant: 1 }) // Force using the compound index
           .exec();
         return JSON.stringify(users);
-      } catch {
+      } catch (err) {
+        logger.error('Error fetching users list:', err);
         return '[]';
       }
     });

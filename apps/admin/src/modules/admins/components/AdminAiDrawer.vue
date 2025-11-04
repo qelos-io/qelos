@@ -2,7 +2,13 @@
   <Transition name="slide-fade">
     <div class="ai-panel-content" v-if="visible">
       <Transition name="fade" mode="out-in">
-        <AiChat v-if="sourceId" :chat-context="chatContext" :url="url" class="ai-chat" key="chat" :suggestions="suggestions" />
+        <AiChat 
+        v-if="sourceId"
+        :chat-context="chatContext"
+        :url="url" class="ai-chat"
+        @function-executed="handleFunctionExecuted"
+        key="chat"
+        :suggestions="suggestions" />
         <div v-else class="no-source-container" key="empty">
           <el-empty description="No OpenAI integration source found">
             <template #default>
@@ -20,7 +26,13 @@ import { useRouter, useRoute } from "vue-router";
 import { useAdminAssistantStore } from "../store/admin-assistant";
 import AiChat from "@/modules/pre-designed/components/AiChat.vue";
 import { useIntegrationSourcesStore } from "@/modules/integrations/store/integration-sources";
+import { usePluginsList } from "@/modules/plugins/store/plugins-list";
+import { usePluginsStore } from "@/modules/plugins/store/pluginsStore";
+import { useComponentsList } from "@/modules/blocks/store/components-list";
 
+const pluginsListStore = usePluginsList();
+const pluginsStore = usePluginsStore();
+const componentsStore = useComponentsList();
 
 const suggestions = [
   { label: 'Create Blueprint (Data Model)', value: 'create a new blueprint', icon: 'fa-database' },
@@ -36,10 +48,11 @@ const suggestions = [
 
 const router = useRouter();
 const route = useRoute();
-const store = useAdminAssistantStore();
+const store = useAdminAssistantStore()
 const visible = toRef(store, "isOpen");
 
 const sources = useIntegrationSourcesStore();
+
 
 const sourceId = computed(() => {
   return sources.groupedSources.openai[0]?._id;
@@ -54,11 +67,11 @@ const chatContext = computed(() => {
   return {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     currentPage: route.path,
-    pluginId: route.params.pluginId || route.meta?.pluginId,
-    pagePluginId: mfe.pluginId,
-    pageId: mfe._id,
-    pageName: mfe._id,
-    componentId: route.params.componentId,
+    pluginId: route.params.pluginId as string || route.meta?.pluginId as string,
+    pagePluginId: mfe.pluginId as string,
+    pageId: mfe._id as string,
+    pageName: mfe._id as string,
+    componentId: route.params.componentId as string,
   }
 });
 
@@ -66,6 +79,19 @@ const navigateToOpenAIIntegration = () => {
   store.toggle(); // Close the panel
   router.push({ name: "integrations-sources", params: { kind: "openai" } });
 };
+
+
+async function handleFunctionExecuted(func: {name: string, arguments: any}) {
+  if (func.name === "callPagesEditorAgent") {
+    await pluginsListStore.retry();
+    pluginsStore.incrementUpdates();
+    if (route.meta?.mfe) {
+      router.push(location.pathname);
+    } else if (route.path.startsWith('/admin/components')) {
+      componentsStore.retry();
+    }
+  }
+}
 </script>
 <style scoped>
 .ai-panel-content {

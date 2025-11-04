@@ -32,7 +32,7 @@
         
         <el-table-column prop="updated" label="Last Updated" min-width="150">
           <template #default="{ row }">
-            <span>{{ row.updated }}</span>
+            <span>{{ displayDate(row.updated) }}</span>
           </template>
         </el-table-column>
         
@@ -89,6 +89,10 @@ const handleEdit = (row: INoCodeComponent) => {
 const createComponent = () => {
   router.push({ name: 'createComponent' });
 };
+
+function displayDate(date: string) {
+  return new Date(date).toLocaleString();
+}
 </script>
 
 <style scoped>

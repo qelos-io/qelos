@@ -60,7 +60,7 @@ watch(isLoggedIn, (is) => {
       router.push(redirect);
       return
     } else {
-      router.push({ name: 'home' })
+      router.push({ name: 'qelos-home' })
     }
   }
 })

@@ -529,6 +529,7 @@ a:hover {
     max-width: 80%;
     max-height: 100%;
     transition: opacity 0.3s ease;
+    margin-bottom: 0;
   }
   
   .small-logo-image {
