@@ -14,7 +14,9 @@ type OptionalKind = IntegrationSourceKind.ClaudeAi |
   IntegrationSourceKind.Http |
   IntegrationSourceKind.LinkedIn |
   IntegrationSourceKind.OpenAI |
-  IntegrationSourceKind.Qelos;
+  IntegrationSourceKind.Qelos |
+  IntegrationSourceKind.Google |
+  IntegrationSourceKind.GitHub;
 export function useConnectionOptions(kind: OptionalKind | string): HttpOption[] {
 
   const httpOptions: HttpOption[] = [
@@ -125,6 +127,8 @@ export function useConnectionOptions(kind: OptionalKind | string): HttpOption[] 
     [IntegrationSourceKind.Facebook]: [],
     [IntegrationSourceKind.LinkedIn]: [],
     [IntegrationSourceKind.Qelos]: [],
+    [IntegrationSourceKind.Google]: [],
+    [IntegrationSourceKind.GitHub]: [],
   }
   return options[kind];
 }

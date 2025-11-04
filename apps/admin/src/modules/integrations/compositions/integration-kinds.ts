@@ -6,7 +6,9 @@ type OptionalKind = IntegrationSourceKind.ClaudeAi |
   IntegrationSourceKind.Http |
   IntegrationSourceKind.LinkedIn |
   IntegrationSourceKind.OpenAI |
-  IntegrationSourceKind.Qelos;
+  IntegrationSourceKind.Qelos |
+  IntegrationSourceKind.Google |
+  IntegrationSourceKind.GitHub;
 
 export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind }> {
   return {
@@ -52,6 +54,16 @@ export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind 
     [IntegrationSourceKind.Http]: {
       name: 'HTTP',
       kind: IntegrationSourceKind.Http
+    },
+    [IntegrationSourceKind.Google]: {
+      logo: '/logos/google.svg',
+      name: 'Google',
+      kind: IntegrationSourceKind.Google
+    },
+    [IntegrationSourceKind.GitHub]: {
+      logo: '/logos/github.svg',
+      name: 'Github',
+      kind: IntegrationSourceKind.GitHub
     }
   }
 }
