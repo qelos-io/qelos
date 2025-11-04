@@ -16,6 +16,16 @@ import {
   getFacebookSource,
   loginWithFacebook
 } from '../controllers/social-logins/facebook-login';
+import {
+  authCallbackFromGoogle,
+  getGoogleSource,
+  loginWithGoogle
+} from '../controllers/social-logins/google-login';
+import {
+  authCallbackFromGithub,
+  getGithubSource,
+  loginWithGithub
+} from '../controllers/social-logins/github-login';
 import { authConfigCheck } from '../middleware/auth-config-check';
 
 const router = getRouter()
@@ -30,5 +40,9 @@ router
   .get('/api/auth/linkedin/callback', authConfigCheck, getLinkedinSource, authCallbackFromLinkedIn)
   .get('/api/auth/facebook', authConfigCheck, getFacebookSource, loginWithFacebook)
   .use('/api/auth/facebook/callback', authConfigCheck, getFacebookSource, authCallbackFromFacebook)
+  .get('/api/auth/google', authConfigCheck, getGoogleSource, loginWithGoogle)
+  .get('/api/auth/google/callback', authConfigCheck, getGoogleSource, authCallbackFromGoogle)
+  .get('/api/auth/github', authConfigCheck, getGithubSource, loginWithGithub)
+  .get('/api/auth/github/callback', authConfigCheck, getGithubSource, authCallbackFromGithub)
 
 export default router;

@@ -17,6 +17,8 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
         socialLoginsSources: {
           linkedin: null,
           facebook: null,
+          google: null,
+          github: null,
         },
       };
     } catch {
@@ -30,6 +32,8 @@ export async function getAuthConfiguration(tenant: string): Promise<IAuthConfigu
         socialLoginsSources: {
           linkedin: null,
           facebook: null,
+          google: null,
+          github: null,
         },
       };
     }
