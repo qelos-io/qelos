@@ -25,13 +25,21 @@
         <span>{{ $t('OR') }}</span>
       </div>
 
-      <el-button v-if="authConfig.socialLoginsSources?.linkedin" type="primary" class="linkedin-button" @click="loginWithLinkedIn">
-        <font-awesome-icon :icon="['fab', 'linkedin']" class="linkedin-icon" />
+      <el-button v-if="authConfig.socialLoginsSources?.linkedin" type="primary" class="social-btn linkedin-button" @click="loginWith('linkedin')">
+        <font-awesome-icon :icon="['fab', 'linkedin']" class="social-icon" />
         <span>{{ $t('Login with LinkedIn') }}</span>
       </el-button>
-      <el-button v-if="authConfig.socialLoginsSources?.facebook" type="primary" class="facebook-button" @click="loginWithFacebook">
-        <font-awesome-icon :icon="['fab', 'facebook']" class="facebook-icon" />
+      <el-button v-if="authConfig.socialLoginsSources?.facebook" type="primary" class="social-btn facebook-button" @click="loginWith('facebook')">
+        <font-awesome-icon :icon="['fab', 'facebook']" class="social-icon" />
         <span>{{ $t('Login with Facebook') }}</span>
+      </el-button>
+      <el-button v-if="authConfig.socialLoginsSources?.google" type="primary" class="social-btn google-button" @click="loginWith('google')">
+        <font-awesome-icon :icon="['fab', 'google']" class="social-icon" />
+        <span>{{ $t('Login with Google') }}</span>
+      </el-button>
+      <el-button v-if="authConfig.socialLoginsSources?.github" type="primary" class="social-btn github-button" @click="loginWith('github')">
+        <font-awesome-icon :icon="['fab', 'github']" class="social-icon" />
+        <span>{{ $t('Login with GitHub') }}</span>
       </el-button>
     </template>
 
@@ -70,14 +78,9 @@ const onFocus = () => {
   document.body.scrollTop = 0
 }
 
-const loginWithLinkedIn = () => {
-  window.location.href = '/api/auth/linkedin';
+const loginWith = (provider: 'linkedin' | 'facebook' | 'google' | 'github') => {
+  window.location.href = `/api/auth/${provider}`;
 }
-
-const loginWithFacebook = () => {
-  window.location.href = '/api/auth/facebook';
-}
-
 </script>
 
 <style scoped>
@@ -115,9 +118,9 @@ form {
 }
 
 .form-buttons :deep(.el-icon) {
-  margin-left: auto;
+  margin-inline-start: auto;
   position: absolute;
-  right: 10px;
+  inset-inline-end: 10px;
 }
 
 .linkedin-button {
@@ -151,48 +154,52 @@ form {
   white-space: nowrap;
 }
 
-.linkedin-button {
+.social-btn {
   width: 90%;
-  background-color: #0077b5;
-  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-inline: 0;
+  margin-block: 5px;
+  gap: 8px;
   padding: 20px;
   font-size: var(--base-font-size);
   border-radius: calc(var(--border-radius) * 1.2);
   transition: background-color 0.3s;
+  color: white;
 }
 
+.linkedin-button {
+  background-color: #0077b5;
+}
 
 .facebook-button {
-  width: 90%;
   background-color: #1877f2;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  font-size: var(--base-font-size);
-  border-radius: calc(var(--border-radius) * 1.2);
-  transition: background-color 0.3s;
+}
+
+.google-button {
+  background-color: #db4437;
+}
+
+.github-button {
+  background-color: #24292e;
 }
 
 .linkedin-button:hover {
   background-color: #005f91;
 }
-
 .facebook-button:hover {
   background-color: #1565c0;
 }
-
-.linkedin-icon {
-  font-size: var(--large-font-size);
-  margin-right: 18px;
+.google-button:hover {
+  background-color: #db4437;
+}
+.github-button:hover {
+  background-color: #24292e;
 }
 
-.facebook-icon {
+.social-icon {
   font-size: var(--large-font-size);
-  margin-right: 18px;
+  margin-inline-end: 18px;
 }
 </style>
