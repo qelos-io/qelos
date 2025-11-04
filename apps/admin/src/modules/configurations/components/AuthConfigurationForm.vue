@@ -164,6 +164,16 @@ function ensureSocialLoginsSources(metadata: Partial<IAuthConfigurationMetadata>
 
 </script>
 <style scoped>
+.flex-row {
+  gap: 0;
+}
+
+@media (max-width: 768px) {
+  .flex-row {
+    flex-direction: column;
+  }
+}
+
 .form-wrapper {
   display: flex;
   flex-direction: column;
@@ -247,5 +257,25 @@ function ensureSocialLoginsSources(metadata: Partial<IAuthConfigurationMetadata>
   transform-origin: top center;
   height: 100%;
   overflow: auto;
+}
+
+@media (max-width: 768px) {
+  .form-wrapper {
+    height: auto;
+    min-height: auto;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .form-content {
+    padding-right: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  .form-actions {
+    padding: 1rem;
+    margin: 0 -1rem;
+  }
 }
 </style>

@@ -1,4 +1,23 @@
 @media screen and (max-width: 768px) {
+  body, html, #app {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
+  * {
+    max-width: 100%;
+  }
+  
+  .container {
+    margin: 5px 0;
+    max-width: 100%;
+  }
+  
+  .el-card {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
   .el-dialog {
     --el-dialog-width: 100%;
     margin: 70px 0 0 0;

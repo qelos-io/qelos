@@ -429,4 +429,33 @@ const formPosition = defineModel<string>('formPosition', { required: true });
 .selector-help svg {
   flex-shrink: 0;
 }
+
+@media (max-width: 768px) {
+  .section-container {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  .positions-list {
+    gap: 0.5rem;
+  }
+  
+  .position-option {
+    width: 36px;
+    height: 36px;
+    margin: 4px;
+  }
+  
+  .username-option {
+    padding: 0.75rem;
+  }
+  
+  .option-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+}
 </style>

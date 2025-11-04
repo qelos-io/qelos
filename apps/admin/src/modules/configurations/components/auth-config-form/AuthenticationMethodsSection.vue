@@ -236,7 +236,7 @@ const hasSocialLoginConfigured = computed(() => {
 
 .social-logins-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 1rem;
   margin-top: 1rem;
 }
@@ -323,8 +323,21 @@ const hasSocialLoginConfigured = computed(() => {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .section-container {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
   .social-logins-grid {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .social-login-card {
+    padding: 0.75rem;
+    min-height: auto;
   }
 }
 

@@ -98,10 +98,18 @@ function updateColor(key: string, value: string) {
 @media (max-width: 480px) {
   .palette {
     flex-direction: row;
+    gap: 8px;
   }
 
   .color-wrapper {
     width: auto;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  
+  .color-wrapper :deep(input) {
+    width: 40px;
+    height: 40px;
   }
 }
 </style>
