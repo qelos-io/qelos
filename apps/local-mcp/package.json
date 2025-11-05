@@ -5,8 +5,6 @@
   "main": "index.ts",
   "scripts": {
     "mcp": "node --import tsx index.ts",
-    "build": "tsc",
-    "type-check": "tsc --noEmit",
     "inspect": "npx @modelcontextprotocol/inspector /Users/davidmeirlevy/dev/qelos/qelos/apps/local-mcp/node_modules/.bin/tsx index.ts"
   },
   "keywords": [
