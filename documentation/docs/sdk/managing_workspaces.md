@@ -114,15 +114,7 @@ interface IInvite {
 
 ## Admin Workspaces
 
-For administrative operations on workspaces, you can use the admin SDK:
-
-### Calling an API Endpoint
-
-To call a specific API endpoint for workspace-related operations:
-
-```typescript
-const response = await sdkAdmin.adminWorkspaces.callApi('/endpoint', { method: 'GET' });
-```
+For administrative operations on workspaces, you can use the admin SDK. **Note**: These operations are only available through the administrator SDK (`QelosAdminSDK`).
 
 ### Getting List of All Workspaces (Admin)
 
@@ -130,4 +122,61 @@ To retrieve a list of all workspaces as an administrator:
 
 ```typescript
 const workspaces = await sdkAdmin.adminWorkspaces.getList();
+```
+
+### Working with Encrypted Workspace Data
+
+The admin SDK provides methods to store and retrieve encrypted data for workspaces:
+
+#### Getting Encrypted Data
+
+To retrieve encrypted data for a workspace:
+
+```typescript
+const encryptedData = await sdkAdmin.adminWorkspaces.getEncryptedData('workspaceId', 'encryptedId');
+```
+
+#### Setting Encrypted Data
+
+To store encrypted data for a workspace:
+
+```typescript
+await sdkAdmin.adminWorkspaces.setEncryptedData('workspaceId', 'encryptedId', {
+  apiKey: 'secret-key',
+  webhookSecret: 'webhook-secret'
+});
+```
+
+## Complete Admin Example
+
+Here's a complete example of managing workspaces as an administrator:
+
+```typescript
+import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+
+// Initialize the admin SDK
+const sdkAdmin = new QelosAdminSDK({
+  appUrl: 'https://your-qelos-app.com',
+  fetch: globalThis.fetch
+});
+
+// Authenticate as admin
+await sdkAdmin.authentication.oAuthSignin({
+  username: 'admin@example.com',
+  password: 'password'
+});
+
+// Get all workspaces (admin only)
+const allWorkspaces = await sdkAdmin.adminWorkspaces.getList();
+console.log(`Found ${allWorkspaces.length} workspaces across all tenants`);
+
+// Store encrypted data for a workspace
+await sdkAdmin.adminWorkspaces.setEncryptedData('workspaceId', 'api-credentials', {
+  stripeApiKey: 'sk_test_xxx',
+  stripeWebhookSecret: 'whsec_xxx'
+});
+
+// Retrieve encrypted data
+const credentials = await sdkAdmin.adminWorkspaces.getEncryptedData('workspaceId', 'api-credentials');
+console.log('Retrieved encrypted credentials');
 ```

@@ -38,6 +38,24 @@ The `update` method accepts a partial configuration object and returns the updat
 
 ## Admin Configuration Management
 
+**Note**: Administrative configuration management is only available through the administrator SDK (`QelosAdminSDK`).
+
+### Getting List of Configurations
+
+To get a list of all configurations:
+
+```typescript
+const configurations = await sdkAdmin.manageConfigurations.getList();
+```
+
+### Getting a Specific Configuration
+
+To retrieve a specific configuration by its key:
+
+```typescript
+const config = await sdkAdmin.manageConfigurations.getConfiguration('configKey');
+```
+
 ### Creating a Configuration
 
 As an administrator, you can create new configurations using the admin SDK:
@@ -51,53 +69,88 @@ await sdkAdmin.manageConfigurations.create({
 });
 ```
 
-## Updating a Configuration
+### Updating a Configuration
 
-To update an existing configuration's information, use the following code:
+To update an existing configuration:
 
-```bash
-await sdkAdmin.manageConfigurations.update('configKey', { public: false });
-```
-
-## Removing a Configuration
-
-To remove a configuration, use the following code:
-
-```bash
-await sdkAdmin.manageConfigurations.remove('configKey');
-```
-
-## Getting List of Configurations
-
-To get a list of all configurations, use the following code:
-
-```bash
-const configurations = await sdkAdmin.manageConfigurations.getList('configKey');
-```
-
-***
-
-# Management of Custom Configurations
-
-The Qelos SDK also allows managing custom configurations. Here are examples demonstrating how to get, create, update, and remove custom configurations.
-
-## Creating of Custom Configurations
-
-To create a new configuration, use the following code:
-
-```bash
-await sdkAdmin.manageConfigurations.create({
-  key: 'configKey',
-  public: true,
-  metadata: { some: 'data' }
+```typescript
+await sdkAdmin.manageConfigurations.update('configKey', { 
+  public: false,
+  metadata: { setting: 'newValue' }
 });
 ```
 
-## Other Operations with Custom Configurations
+### Removing a Configuration
 
-For updating, removing, and retrieving custom configurations, refer to the regular configuration management methods as they follow the same process:
+To remove a configuration:
 
-- **Updating a Custom Configuration:** Use the same code as updating a regular configuration.
-- **Removing a Custom Configuration:** Use the same code as removing a regular configuration.
-- **Getting List of Custom Configurations:** Use the same code as getting a list of regular configurations.
-- **Getting a Specific Custom Configuration:** Use the same code as getting a specific regular configuration.
+```typescript
+await sdkAdmin.manageConfigurations.remove('configKey');
+```
+
+## Configuration Interface
+
+### ICustomConfiguration Interface
+
+```typescript
+interface ICustomConfiguration<T = any> {
+  key: string;
+  public: boolean;
+  kind?: string;
+  description?: string;
+  metadata: T;
+}
+```
+
+## Usage Example
+
+Here's a complete example of managing configurations:
+
+```typescript
+import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+
+// Initialize the admin SDK
+const sdkAdmin = new QelosAdminSDK({
+  appUrl: 'https://your-qelos-app.com',
+  fetch: globalThis.fetch
+});
+
+// Authenticate as admin
+await sdkAdmin.authentication.oAuthSignin({
+  username: 'admin@example.com',
+  password: 'password'
+});
+
+// Get all configurations
+const configurations = await sdkAdmin.manageConfigurations.getList();
+console.log(`Found ${configurations.length} configurations`);
+
+// Create a new configuration
+await sdkAdmin.manageConfigurations.create({
+  key: 'email-settings',
+  public: false,
+  description: 'Email service configuration',
+  metadata: {
+    smtpHost: 'smtp.example.com',
+    smtpPort: 587,
+    fromEmail: 'noreply@example.com'
+  }
+});
+
+// Get specific configuration
+const emailConfig = await sdkAdmin.manageConfigurations.getConfiguration('email-settings');
+console.log('Email config:', emailConfig.metadata);
+
+// Update configuration
+await sdkAdmin.manageConfigurations.update('email-settings', {
+  metadata: {
+    smtpHost: 'smtp.newprovider.com',
+    smtpPort: 465,
+    fromEmail: 'noreply@example.com'
+  }
+});
+
+// Remove configuration
+await sdkAdmin.manageConfigurations.remove('email-settings');
+console.log('Configuration removed');
+```

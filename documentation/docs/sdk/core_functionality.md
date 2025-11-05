@@ -11,10 +11,11 @@ This section covers the core functionality of the Qelos SDK, including initializ
 To use the Qelos SDK, you first need to initialize it with the appropriate options:
 
 ```typescript
-import { QelosSDK } from '@qelos/sdk';
+import QelosSDK from '@qelos/sdk';
 
 const sdk = new QelosSDK({
   appUrl: 'https://your-qelos-app.com',
+  fetch: globalThis.fetch, // Required: provide fetch implementation
   forceRefresh: true, // Enable automatic token refresh
   // Optional: provide initial tokens if available
   accessToken: 'existing-access-token',
@@ -27,11 +28,14 @@ const sdk = new QelosSDK({
 The `QelosSDKOptions` interface supports the following properties:
 
 - **appUrl**: The base URL of your Qelos application (required)
-- **forceRefresh**: Whether to automatically refresh tokens when needed
+- **fetch**: Fetch implementation to use for API requests (required)
+- **forceRefresh**: Whether to automatically refresh tokens when needed (optional)
 - **accessToken**: An initial access token (optional)
 - **refreshToken**: An initial refresh token (optional)
 - **getAccessToken**: A function that returns the current access token (optional)
 - **extraHeaders**: A function that returns additional headers for API requests (optional)
+- **onFailedRefreshToken**: Callback function when token refresh fails (optional)
+- **extraQueryParams**: Function that returns additional query parameters for requests (optional)
 
 ## Managing Custom Headers
 
@@ -86,7 +90,6 @@ The Qelos SDK provides several modules for interacting with different aspects of
 - **invites**: Workspace invitation management
 - **blueprints**: Data model definition and entity management
 - **blocks**: Content block management
-- **layouts**: UI layout management
 - **appConfigurations**: Application configuration management
 
 Each module provides specific methods for interacting with its respective functionality. Refer to the dedicated documentation pages for each module for more details.
@@ -96,11 +99,12 @@ Each module provides specific methods for interacting with its respective functi
 Here's a complete example of initializing the SDK and setting up custom headers:
 
 ```typescript
-import { QelosSDK } from '@qelos/sdk';
+import QelosSDK from '@qelos/sdk';
 
 // Initialize the SDK
 const sdk = new QelosSDK({
   appUrl: 'https://your-qelos-app.com',
+  fetch: globalThis.fetch,
   forceRefresh: true,
 });
 

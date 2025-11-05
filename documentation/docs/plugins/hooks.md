@@ -17,7 +17,7 @@ registerToHook({source: 'auth', kind: 'signup', eventName: 'user-registered'}, (
 })
 ```
 
-## List of existing event
+## List of existing events
 
 | source | kind                     | eventName                    |
 |--------|--------------------------|------------------------------|

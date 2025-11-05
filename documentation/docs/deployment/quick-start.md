@@ -39,9 +39,14 @@ openssl rand -base64 32  # Run this for each secret needed
 ```
 
 Edit `helm/qelos/values.yaml` and replace:
+
+<div v-pre>
+
 - All `{{ .Values.* }}` placeholders with actual values
 - All `${MONGODB_*}` with your MongoDB connection details
 - Your GitHub username in image paths
+
+</div>
 
 ### Add Secrets to GitHub
 

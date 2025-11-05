@@ -82,6 +82,9 @@ Complete Helm values configuration for your deployment.
    ```
 
 2. Edit `helm/qelos/values.yaml` and replace all placeholders:
+
+<div v-pre>
+
    - `{{ .Values.ENVIRONMENT }}` → `production` or `staging`
    - `{{ .Values.INTERNAL_SECRET }}` → Generate a strong random secret
    - `{{ .Values.GITHUB_USERNAME }}` → Your GitHub username
@@ -98,6 +101,8 @@ Complete Helm values configuration for your deployment.
    - `${MONGODB_PORT}` → Your MongoDB port (default: 27017)
    - `${MONGODB_DATABASE}` → Your MongoDB database name
    - `{{ .Values.MONGODB_VOLUME_PATH }}` → Path for MongoDB volume
+
+</div>
 
 3. Generate secrets using:
    ```bash

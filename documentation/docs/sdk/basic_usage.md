@@ -8,96 +8,78 @@ Welcome to the Basic Usage section of the Qelos SDK documentation. This section 
 
 ## Usage for Frontend
 
-### Fetching Plugins in a React Application
+### Fetching Blocks in a React Application
 
-In a frontend React application, you can fetch and display a list of plugins as follows:
+In a frontend React application, you can fetch and display a list of blocks as follows:
 
-```bash
-/// MyPluginsList.tsx
+```typescript
+// MyBlocksList.tsx
 import React, { useState, useEffect } from 'react';
 import sdk from './my-sdk';
 
-function MyPluginsList() {
-  const [plugins, setPlugins] = useState([]);
-  const [querySearch, setQuery] = useState('');
+function MyBlocksList() {
+  const [blocks, setBlocks] = useState([]);
 
   useEffect(() => {
-    sdk.plugins.getList({ q: querySearch, limit: 50 }).then(setPlugins);
-  }, [querySearch]);
+    sdk.blocks.getList().then(setBlocks);
+  }, []);
 
   return (
     <div>
-      <input type="text" placeholder="Search plugins" onChange={e => setQuery(e.target.value)} />
-      {plugins.map(plugin => <PluginItem plugin={plugin} key={plugin._id} />)}
+      {blocks.map(block => <BlockItem block={block} key={block._id} />)}
     </div>
   );
 }
 
-export default MyPluginsList;
+export default MyBlocksList;
 ```
 
-**Explanation: Fetching Plugins in a React Application**
+**Explanation: Fetching Blocks in a React Application**
 
 - **Import SDK**: Import the SDK module.
-- **State Management**: Use React hooks to manage the state of plugins and the search query.
-- **Effect Hook**: Fetch the list of plugins whenever the search query changes.
-- **Rendering**: Render an input field for search and display the list of plugins using the `PluginItem` component.
+- **State Management**: Use React hooks to manage the state of blocks.
+- **Effect Hook**: Fetch the list of blocks when the component mounts.
+- **Rendering**: Display the list of blocks using the `BlockItem` component.
 
 ---
 
-### Fetching Plugins in a Vue.js 3 application
+### Fetching Blocks in a Vue.js 3 Application
 
-In a frontend Vue.js 3 application, you can fetch and display a list of plugins as follows:
+In a frontend Vue.js 3 application, you can fetch and display a list of blocks as follows:
 
-```bash
-<!-- MyPluginsList.vue -->
+```vue
+<!-- MyBlocksList.vue -->
 <template>
   <div>
-    <input type="text" placeholder="Search plugins" v-model="querySearch" @input="fetchPlugins" />
-    <div v-for="plugin in plugins" :key="plugin._id">
-      <PluginItem :plugin="plugin" />
+    <div v-for="block in blocks" :key="block._id">
+      <BlockItem :block="block" />
     </div>
   </div>
 </template>
 
-<script>
-import { ref, onMounted, watch } from 'vue';
+<script setup>
+import { ref, onMounted } from 'vue';
 import sdk from './my-sdk';
-import PluginItem from './PluginItem.vue';
+import BlockItem from './BlockItem.vue';
 
-export default {
-  components: {
-    PluginItem
-  },
-  setup() {
-    const plugins = ref([]);
-    const querySearch = ref('');
+const blocks = ref([]);
 
-    const fetchPlugins = async () => {
-      plugins.value = await sdk.plugins.getList({ q: querySearch.value, limit: 50 });
-    };
-
-    onMounted(fetchPlugins);
-    watch(querySearch, fetchPlugins);
-
-    return {
-      plugins,
-      querySearch,
-      fetchPlugins
-    };
-  }
+const fetchBlocks = async () => {
+  blocks.value = await sdk.blocks.getList();
 };
+
+onMounted(fetchBlocks);
 </script>
 ```
 
-**Explanation: Fetching Plugins in a Vue.js 3 Application**
+**Explanation: Fetching Blocks in a Vue.js 3 Application**
 
 - **Import SDK**: Import the SDK module.
-- **Template**: Includes an input field bound to `querySearch` and a loop to render each plugin using the PluginItem component.
-- **Reactive References**: Uses Vue's `ref` to create reactive state for plugins and search query.
-- **Setup Function**: Defines the component's logic using the Composition API.
-- **Fetch Plugins**: The `fetchPlugins` method retrieves the plugin list from the SDK. It is called initially when the component mounts and whenever the search query changes.
-- **Lifecycle Hooks**: `onMounted` is used to fetch plugins when the component first loads, and watch monitors changes to the search query to re-fetch plugins.
+- **Template**: Loops through blocks and renders each using the BlockItem component.
+- **Reactive References**: Uses Vue's `ref` to create reactive state for blocks.
+- **Setup Function**: Uses the Composition API with `<script setup>` syntax.
+- **Fetch Blocks**: The `fetchBlocks` method retrieves the block list from the SDK.
+- **Lifecycle Hooks**: `onMounted` is used to fetch blocks when the component first loads.
 
 ## Usage For Backend
 
@@ -105,52 +87,51 @@ export default {
 
 This section demonstrates how to create an instance of the Qelos SDK for regular users in different environments.
 
-```
+```typescript
 // Import the regular version of the Qelos SDK
 import QelosSDK from '@qelos/sdk';
 
 // Create an instance of QelosSDK
 const sdk = new QelosSDK({
-  appUrl: 'https://yourdomain.com', // Change to 'https://localhost:3000' if running locally
-  fetch: window.fetch // Use globalThis.fetch if using Node.js or node-fetch if installed
+  appUrl: 'https://yourdomain.com', // Change to 'http://localhost:3000' if running locally
+  fetch: globalThis.fetch // Use globalThis.fetch in Node.js 18+ or window.fetch in browser
 });
 
 export default sdk;
 
-// Example of fetching plugins
-async function fetchPlugins() {
+// Example of fetching blocks
+async function fetchBlocks() {
   try {
-    const plugins = await sdk.plugins.getList({ q: '', limit: 50 });
-    console.log(plugins);
+    const blocks = await sdk.blocks.getList();
+    console.log(blocks);
   } catch (error) {
-    console.error('Error fetching plugins:', error);
+    console.error('Error fetching blocks:', error);
   }
 }
 
-fetchPlugins();
+fetchBlocks();
 ```
 
 ### Usage For Backend Administrator
 
-This section demonstrates how to create an instance of the Qelos SDK for administrators and provides an example of fetching plugins.
+This section demonstrates how to create an instance of the Qelos SDK for administrators and provides an example of managing plugins.
 
-```
-// Import the administrator version of the Qelos SDK and node-fetch
+```typescript
+// Import the administrator version of the Qelos SDK
 import QelosAdminSDK from '@qelos/sdk/dist/administrator';
-import nodeFetch from 'node-fetch';
 
 // Create an instance of QelosAdminSDK
 const sdkAdmin = new QelosAdminSDK({
-  appUrl: 'https://yourdomain.com', // Change to 'https://localhost:3000' if running locally
-  fetch: nodeFetch // Use globalThis.fetch if using Node.js without node-fetch
+  appUrl: 'https://yourdomain.com', // Change to 'http://localhost:3000' if running locally
+  fetch: globalThis.fetch // Use globalThis.fetch in Node.js 18+
 });
 
 export default sdkAdmin;
 
-// Example of fetching plugins
+// Example of fetching plugins (admin only)
 async function fetchPlugins() {
   try {
-    const plugins = await sdkAdmin.plugins.getList({ q: '', limit: 50 });
+    const plugins = await sdkAdmin.managePlugins.getList();
     console.log(plugins);
   } catch (error) {
     console.error('Error fetching plugins:', error);
@@ -164,8 +145,6 @@ fetchPlugins();
 
 - **Import SDK**: Import the administrator version of the Qelos SDK.
 - **Initialize SDK**: Create an instance of the SDK for administrative tasks, specifying the application URL and fetch method.
-- **Fetch Plugins**: Define a function to fetch the list of plugins and log them to the console.
-- **appUrl**: Set to `'https://localhost:3000'` for local development; use the production URL otherwise.
-- **fetch**:
-- Use `node-fetch` in Node.js environments.
-- Use `globalThis.fetch` if node-fetch is not installed.
+- **Fetch Plugins**: Define a function to fetch the list of plugins using the admin SDK's `managePlugins` module.
+- **appUrl**: Set to `'http://localhost:3000'` for local development; use the production URL otherwise.
+- **fetch**: Use `globalThis.fetch` in Node.js 18+ or later. For older versions, you may need to use a polyfill like `node-fetch`.

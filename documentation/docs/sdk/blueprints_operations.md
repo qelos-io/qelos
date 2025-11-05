@@ -130,34 +130,7 @@ const newProduct = await productEntities.create({
 
 ## Managing Blueprints as an Administrator
 
-### Creating a Blueprint
-
-To create a new blueprint:
-
-```typescript
-await sdkAdmin.manageBlueprints.create({ 
-  name: 'New Blueprint', 
-  description: 'Description of the blueprint' 
-});
-```
-
-### Updating a Blueprint
-
-To update an existing blueprint's information:
-
-```typescript
-await sdkAdmin.manageBlueprints.update('blueprintId', { 
-  name: 'Updated Name' 
-});
-```
-
-### Removing a Blueprint
-
-To remove a blueprint:
-
-```typescript
-await sdkAdmin.manageBlueprints.remove('blueprintId');
-```
+**Note**: Administrative blueprint management is only available through the administrator SDK (`QelosAdminSDK`).
 
 ### Getting List of Blueprints
 
@@ -169,8 +142,115 @@ const blueprints = await sdkAdmin.manageBlueprints.getList();
 
 ### Getting a Specific Blueprint
 
-To get a specific blueprint by its ID as an administrator:
+To get a specific blueprint by its key as an administrator:
 
 ```typescript
-const blueprint = await sdkAdmin.manageBlueprints.getBlueprint('blueprintId');
+const blueprint = await sdkAdmin.manageBlueprints.getBlueprint('blueprintKey');
+```
+
+### Creating a Blueprint
+
+To create a new blueprint:
+
+```typescript
+const newBlueprint = await sdkAdmin.manageBlueprints.create({ 
+  key: 'product',
+  name: 'Product',
+  description: 'Product catalog blueprint',
+  fields: [
+    {
+      key: 'name',
+      type: 'string',
+      required: true
+    },
+    {
+      key: 'price',
+      type: 'number',
+      required: true
+    },
+    {
+      key: 'category',
+      type: 'string',
+      required: false
+    }
+  ]
+});
+```
+
+### Updating a Blueprint
+
+To update an existing blueprint's information:
+
+```typescript
+await sdkAdmin.manageBlueprints.update('blueprintKey', { 
+  name: 'Updated Product',
+  description: 'Updated product catalog blueprint'
+});
+```
+
+### Removing a Blueprint
+
+To remove a blueprint:
+
+```typescript
+await sdkAdmin.manageBlueprints.remove('blueprintKey');
+```
+
+## Complete Admin Example
+
+Here's a complete example of managing blueprints as an administrator:
+
+```typescript
+import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+
+// Initialize the admin SDK
+const sdkAdmin = new QelosAdminSDK({
+  appUrl: 'https://your-qelos-app.com',
+  fetch: globalThis.fetch
+});
+
+// Authenticate as admin
+await sdkAdmin.authentication.oAuthSignin({
+  username: 'admin@example.com',
+  password: 'password'
+});
+
+// Get all blueprints
+const blueprints = await sdkAdmin.manageBlueprints.getList();
+console.log(`Found ${blueprints.length} blueprints`);
+
+// Create a new blueprint
+const newBlueprint = await sdkAdmin.manageBlueprints.create({
+  key: 'article',
+  name: 'Article',
+  description: 'Blog article blueprint',
+  fields: [
+    { key: 'title', type: 'string', required: true },
+    { key: 'content', type: 'text', required: true },
+    { key: 'author', type: 'string', required: true },
+    { key: 'publishedAt', type: 'date', required: false }
+  ]
+});
+
+console.log(`Created blueprint: ${newBlueprint.key}`);
+
+// Update the blueprint
+await sdkAdmin.manageBlueprints.update('article', {
+  description: 'Enhanced blog article blueprint with tags',
+  fields: [
+    { key: 'title', type: 'string', required: true },
+    { key: 'content', type: 'text', required: true },
+    { key: 'author', type: 'string', required: true },
+    { key: 'publishedAt', type: 'date', required: false },
+    { key: 'tags', type: 'array', required: false }
+  ]
+});
+
+// Get specific blueprint
+const blueprint = await sdkAdmin.manageBlueprints.getBlueprint('article');
+console.log(`Blueprint: ${blueprint.name}`);
+
+// Remove the blueprint
+await sdkAdmin.manageBlueprints.remove('article');
+console.log('Blueprint removed');
 ```

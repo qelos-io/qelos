@@ -135,11 +135,12 @@ pnpm add @qelos/sdk
 ### Basic Setup
 
 ```typescript
-import { QelosSDK } from '@qelos/sdk';
+import QelosSDK from '@qelos/sdk';
 
 // Initialize the SDK
 const sdk = new QelosSDK({
   appUrl: 'https://your-qelos-app.com',
+  fetch: globalThis.fetch, // Required: provide fetch implementation
   forceRefresh: true, // Enable automatic token refresh
 });
 
