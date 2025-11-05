@@ -5,9 +5,11 @@ import { bundleDependencies } from "./tools/bundle-dependencies-polyfix/index.js
 
 const packages = getPackagesBasicInfo();
 
+const ignoredApps = ['db', 'redis', 'local-mcp'];
+
 await Promise.all(
   readdirSync('./apps').map((folder) => {
-    if (folder === 'db' || folder === 'redis' || folder.startsWith('.')) {
+    if (ignoredApps.includes(folder) || folder.startsWith('.')) {
       return;
     }
     const depsNames = bundleDependencies(folder);
