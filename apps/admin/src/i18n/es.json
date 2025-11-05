@@ -73,6 +73,7 @@
   "Would you like to restore unsaved changes?": "¿Desea restaurar los cambios no guardados?",
   "You have unsaved changes": "Tiene cambios sin guardar",
   "Cancel": "Cancelar",
+  "Confirm": "Confirmar",
   "OK": "Aceptar",
   "Tags": "Etiquetas",
   "leave empty to auto-generate": "Dejar vacío para generar automáticamente",
@@ -184,5 +185,16 @@
   "Admin Dashboard": "Panel de administración",
   "Wizard": "Guía",
   "Advanced": "Avanzado",
-  "Clone": "Clonar"
+  "Clone": "Clonar",
+  "Create New Plugin": "Crear nuevo plugin",
+  "Create New Page": "Crear nueva página",
+  "Select Plugin": "Seleccionar plugin",
+  "Select Position": "Seleccionar posición",
+  "Enter Page Name": "Ingrese el nombre de la página",
+  "Boilerplate ?": "Boilerplate ?",
+  "Navigation Link Position": "Posición del enlace de navegación",
+  "-- No Link --": "-- Sin enlace --",
+  "Top area of Navbar": "Área superior de la barra de navegación",
+  "Bottom area of Navbar": "Área inferior de la barra de navegación",
+  "User Dropdown": "Menú desplegable de usuario"
 }

@@ -73,6 +73,7 @@
   "Would you like to restore unsaved changes?": "Would you like to restore unsaved changes?",
   "You have unsaved changes": "You have unsaved changes",
   "Cancel": "Cancel",
+  "Confirm": "Confirm",
   "OK": "OK",
   "Tags": "Tags",
   "leave empty to auto-generate": "Leave empty to auto-generate",
@@ -184,5 +185,16 @@
   "Admin Dashboard": "Admin Dashboard",
   "Wizard": "Wizard",
   "Advanced": "Advanced",
-  "Clone": "Clone"
+  "Clone": "Clone",
+  "Create New Plugin": "Create New Plugin",
+  "Create New Page": "Create New Page",
+  "Select Plugin": "Select Plugin",
+  "Select Position": "Select Position",
+  "Enter Page Name": "Enter Page Name",
+  "Boilerplate ?": "Boilerplate ?",
+  "Navigation Link Position": "Navigation Link Position",
+  "-- No Link --": "-- No Link --",
+  "Top area of Navbar": "Top area of Navbar",
+  "Bottom area of Navbar": "Bottom area of Navbar",
+  "User Dropdown": "User Dropdown"
 }

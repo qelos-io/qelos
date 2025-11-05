@@ -1,10 +1,10 @@
 <template>
   <el-form @submit.prevent="submit">
-    <el-drawer v-model="localDialogVisible" title="Create New Plugin" size="40%" class="create-plugin-drawer"
+    <el-drawer v-model="localDialogVisible" :title="$t('Create New Page')" size="40%" class="create-plugin-drawer"
                direction="btt">
       <FormRowGroup>
-        <el-form-item label="Select Plugin">
-          <el-select v-model="pluginList" placeholder="Select Plugin" clearable
+        <el-form-item :label="$t('Select Plugin')">
+          <el-select v-model="pluginList" :placeholder="$t('Select Plugin')" clearable
                      @change="handleMenuCommand" placement="top-start" teleported>
             <el-option v-for="plugin in plugins" :key="plugin._id" :label="plugin.name" :value="plugin._id">
               {{ plugin.name }}
@@ -12,12 +12,12 @@
             <el-option label="Add New Page" value="addNewPage">-- {{ $t('Add New Plugin') }} --</el-option>
           </el-select>
         </el-form-item>
-        <NavigationPositionSelector v-model="position" class="full-width-input"/>
-        <FormInput v-model="pageName" placeholder="Enter Page Name" required size="large" class="full-width-input"
+        <NavigationPositionSelector v-model="position" :placeholder="$t('Select Position')" class="full-width-input"/>
+        <FormInput v-model="pageName" :placeholder="$t('Enter Page Name')" required size="large" class="full-width-input"
                    title="Page Name"/>
       </FormRowGroup>
       <FormRowGroup>
-        <FormInput type="switch" v-model="showBoilerplating" title="Boilerplate ?" class="flex-0"/>
+        <FormInput type="switch" v-model="showBoilerplating" :title="$t('Boilerplate ?')" class="flex-0"/>
         <template v-if="showBoilerplating">
           <BlueprintSelector v-model="boilerplateBlueprint"/>
           <FormInput type="select" v-model="boilerplateType">

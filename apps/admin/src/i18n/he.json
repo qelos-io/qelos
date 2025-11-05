@@ -73,6 +73,7 @@
   "Would you like to restore unsaved changes?": "האם תרצו לשחזר את השינויים שלא נשמרו?",
   "You have unsaved changes": "קיימים לך שינויים לא שמורים",
   "Cancel": "ביטול",
+  "Confirm": "אישור",
   "OK": "אישור",
   "Tags": "תגיות",
   "leave empty to auto-generate": "השאר ריק בכדי שיווצר אוטומטית",
@@ -184,5 +185,16 @@
   "Admin Dashboard": "לוח בקרה למנהלים",
   "Wizard": "אשף",
   "Advanced": "מתקדם",
-  "Clone": "שכפל"
+  "Clone": "שכפל",
+  "Create New Plugin": "צור פלאגין חדש",
+  "Create New Page": "צור דף חדש",
+  "Select Plugin": "בחר פלאגין",
+  "Select Position": "בחר מיקום",
+  "Enter Page Name": "הזן שם דף",
+  "Boilerplate ?": "תבנית ?",
+  "Navigation Link Position": "מיקום קישור הניווט",
+  "-- No Link --": "-- ללא קישור --",
+  "Top area of Navbar": "אזור עליון של סרגל הניווט",
+  "Bottom area of Navbar": "אזור תחתון של סרגל הניווט",
+  "User Dropdown": "תפריט נפתח של משתמש"
 }
