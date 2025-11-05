@@ -85,7 +85,8 @@ export default defineConfig({
         ]
       },
       {
-        text: 'PLUGINS',
+        text: 'PLUGIN-PLAY',
+        collapsed: true,
         items: [
           { text: 'Create a Plugin Page', link: '/plugins/create-page' },
           { text: 'Create a Plugin', link: '/plugins/create' },
@@ -100,13 +101,15 @@ export default defineConfig({
         ]
       },
       {
-        text: 'MICRO-FRONTENDS',
+        text: 'WEB-SDK',
+        collapsed: true,
         items: [
           { text: 'Cross-Domain Authorization', link: '/mfe/cross-domain-authorization' },
         ]
       },
       {
         text: 'PRE-DESIGNED FRONTENDS',
+        collapsed: true,
         items: [
           { text: 'Blocks List', link: '/pre-designed-frontends/blocks-list' },
           { text: 'Rows List', link: '/pre-designed-frontends/rows-list' },
