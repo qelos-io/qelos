@@ -218,8 +218,6 @@ const close = () => emit('close')
 </script>
 <style scoped lang="scss">
 nav {
-  --nav-width: 240px;
-
   display: flex;
   flex-direction: column;
   background-color: var(--nav-bg-color);
@@ -230,8 +228,7 @@ nav {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   
   &.collapsed {
-    width: 64px;
-    min-width: 64px;
+    width: var(--nav-width);
     
     .home-logo {
       .logo-image {
@@ -472,9 +469,9 @@ nav {
   ::v-deep(.el-menu) {
     background-color: var(--nav-bg-color);
     --el-menu-text-color: var(--secondary-color);
-    padding-left: 5px;
-    border-left: 1px dashed rgba(255, 255, 255, 0.1);
-    margin-left: 10px;
+    padding-inline-start: 5px;
+    border-inline-start: 1px dashed rgba(255, 255, 255, 0.1);
+    margin-inline-start: 10px;
   }
   
   &.is-active {
@@ -482,8 +479,8 @@ nav {
       &::before {
         content: '';
         position: absolute;
-        left: 0;
-        top: 0;
+        inset-inline-start: 0;
+        inset-block-start: 0;
         height: 100%;
         width: 3px;
         background-color: var(--el-menu-active-color);

@@ -514,7 +514,7 @@ const testConnection = async () => {
   font-size: 0.8rem;
   color: var(--el-text-color-secondary);
   margin-top: 0.3rem;
-  padding-left: 0.2rem;
+  padding-inline-start: 0.2rem;
 }
 
 .input-prefix {
@@ -541,13 +541,13 @@ const testConnection = async () => {
 .connection-status.success {
   background-color: var(--el-color-success-light-9);
   color: var(--el-color-success);
-  border-left: 4px solid var(--el-color-success);
+  border-inline-start: 4px solid var(--el-color-success);
 }
 
 .connection-status.error {
   background-color: var(--el-color-danger-light-9);
   color: var(--el-color-danger);
-  border-left: 4px solid var(--el-color-danger);
+  border-inline-start: 4px solid var(--el-color-danger);
 }
 
 /* Focus states for accessibility */
@@ -565,7 +565,7 @@ const testConnection = async () => {
 
 /* API Flow Diagram */
 .api-path-visualization {
-  margin-bottom: 2rem;
+  margin-block-end: 2rem;
   padding: 1rem;
   background-color: var(--el-fill-color-light);
   border-radius: 4px;
@@ -576,7 +576,7 @@ const testConnection = async () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-block-end: 1rem;
   font-weight: 500;
   color: var(--el-text-color-primary);
 }

@@ -326,15 +326,15 @@ const colorStyleProps = [
 
 const spacingStyleProps = [
   { value: 'margin', label: 'margin' },
-  { value: 'margin-top', label: 'margin-top' },
-  { value: 'margin-right', label: 'margin-right' },
-  { value: 'margin-bottom', label: 'margin-bottom' },
-  { value: 'margin-left', label: 'margin-left' },
+  { value: 'margin-block-start', label: 'margin-block-start' },
+  { value: 'margin-inline-start', label: 'margin-inline-start' },
+  { value: 'margin-block-end', label: 'margin-block-end' },
+  { value: 'margin-inline-end', label: 'margin-inline-end' },
   { value: 'padding', label: 'padding' },
-  { value: 'padding-top', label: 'padding-top' },
-  { value: 'padding-right', label: 'padding-right' },
-  { value: 'padding-bottom', label: 'padding-bottom' },
-  { value: 'padding-left', label: 'padding-left' },
+  { value: 'padding-block-start', label: 'padding-block-start' },
+  { value: 'padding-inline-start', label: 'padding-inline-start' },
+  { value: 'padding-block-end', label: 'padding-block-end' },
+  { value: 'padding-inline-end', label: 'padding-inline-end' },
   { value: 'gap', label: 'gap' }
 ];
 

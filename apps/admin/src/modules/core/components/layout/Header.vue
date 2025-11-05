@@ -142,7 +142,7 @@ header {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   padding: 0 16px;
   transition: all 0.3s ease;
-  max-width: calc(100vw - 50px);
+  max-width: calc(100vw - var(--nav-width));
   
   &.searching {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -204,7 +204,7 @@ header {
   :deep(.el-input__wrapper) {
     border-radius: 8px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    padding-left: 12px;
+    padding-inline-start: 12px;
     transition: all 0.3s ease;
     
     &.is-focus {

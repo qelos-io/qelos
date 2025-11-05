@@ -251,7 +251,7 @@ const showApiExamples = ref(false);
 
 .section-description {
   color: var(--el-text-color-secondary);
-  margin-bottom: 1.5rem;
+  margin-block-end: 1.5rem;
 }
 
 .blueprint-form-grid {
@@ -296,7 +296,7 @@ const showApiExamples = ref(false);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-block-end: 1rem;
   cursor: pointer;
 }
 
@@ -304,7 +304,7 @@ const showApiExamples = ref(false);
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
-  margin-top: 1rem;
+  margin-block-start: 1rem;
 }
 
 @media (min-width: 768px) {
@@ -314,14 +314,14 @@ const showApiExamples = ref(false);
 }
 
 .api-example h4 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
+  margin-block-start: 0;
+  margin-block-end: 0.5rem;
 }
 
 .code-block {
   background-color: var(--el-fill-color);
   font-family: monospace;
-  margin-bottom: 1rem;
+  margin-block-end: 1rem;
   overflow-x: auto;
 }
 
@@ -370,28 +370,28 @@ const showApiExamples = ref(false);
 }
 
 .blueprint-tips {
-  margin-top: 0.5rem;
+  margin-block-start: 0.5rem;
 }
 
 .blueprint-tips h4 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
+  margin-block-start: 0;
+  margin-block-end: 0.5rem;
   font-size: 1em;
 }
 
 .blueprint-tips ul {
-  padding-left: 1.5rem;
+  padding-inline-start: 1.5rem;
   margin: 0.5rem 0;
 }
 
 .blueprint-tips li {
-  margin-bottom: 0.5rem;
+  margin-block-end: 0.5rem;
   font-size: 0.9em;
   color: var(--el-text-color-regular);
 }
 
 h3, h4 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
+  margin-block-start: 0;
+  margin-block-end: 0.5rem;
 }
 </style>

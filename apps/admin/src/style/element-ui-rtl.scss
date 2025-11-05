@@ -1,13 +1,10 @@
 [dir="rtl"] {
-
   .el-checkbox {
-	margin-left: 30px;
-	margin-right: 0;
+  margin-inline: 0 30px;
   }
 
   .el-checkbox__label {
-	padding-right: 10px;
-	padding-left: 0;
+	padding-inline: 10px 0;
   }
 
   .el-message-box {
@@ -15,13 +12,11 @@
   }
 
   .el-message-box__headerbtn {
-	left: 15px;
-	right: auto;
+	inset-inline: auto 15px;
   }
 
   .el-message-box__message {
-	padding-right: 36px;
-	padding-left: 12px;
+	padding-inline: 36px 12px;
   }
 
   .el-message-box__btns {
@@ -29,7 +24,10 @@
   }
 
   .el-button + .el-button {
-	margin-right: 10px;
-	margin-left: 0;
+	margin-inline: 10px 0;
+  }
+
+  .el-button [class*=el-icon] + span {
+	margin-inline: 6px 0;
   }
 }

@@ -17,7 +17,7 @@
           </div>
           <div class="ai-initial-desc">
             {{ $t("How can I help you?") }}<br />
-            <span style="color: var(--el-color-primary)">{{
+            <span style="color: var(--main-color)">{{
               $t("You can also drop files anywhere in this chat.")
             }}</span>
           </div>

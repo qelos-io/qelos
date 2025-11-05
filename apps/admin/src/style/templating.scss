@@ -21,6 +21,15 @@
   --large-font-size: calc(var(--base-font-size) * 1.4);
   --el-text-color-placeholder: var(--main-color-light);
   --header-height: 55px;
+  --collapsed-nav-width: 64px;
+  --nav-width: 240px;
+}
+
+body:has(nav.collapsed) {
+  --nav-width: var(--collapsed-nav-width);
+}
+html.mobile body {
+  --nav-width: 0;
 }
 
 .el-input__wrapper {

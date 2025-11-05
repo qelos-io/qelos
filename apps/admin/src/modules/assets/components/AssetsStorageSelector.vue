@@ -35,7 +35,7 @@ promise.then(() => {
 }
 
 .storage-selection {
-  padding-left: 10px;
+  padding-inline-start: 10px;
   flex: 1;
 }
 </style>

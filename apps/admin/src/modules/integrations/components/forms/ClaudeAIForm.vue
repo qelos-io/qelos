@@ -196,34 +196,34 @@ const submitForm = async () => {
 .token-hint {
   font-size: 12px;
   color: #909399;
-  margin-top: 4px;
+  margin-block-start: 4px;
 }
 
 .token-help-section {
   background-color: #f5f7fa;
   border-radius: 4px;
   padding: 12px 16px;
-  margin-top: 12px;
-  border-left: 4px solid #409eff;
+  margin-block-start: 12px;
+  border-inline-start: 4px solid #409eff;
 }
 
 .token-help-section h4 {
-  margin-top: 0;
-  margin-bottom: 8px;
+  margin-block-start: 0;
+  margin-block-end: 8px;
   font-weight: 500;
 }
 
 .token-help-section ol {
   margin: 0;
-  padding-left: 20px;
+  padding-inline-start: 20px;
 }
 
 .token-help-section li {
-  margin-bottom: 6px;
+  margin-block-end: 6px;
 }
 
 .token-warning {
-  margin-top: 12px;
+  margin-block-start: 12px;
   color: #e6a23c;
   display: flex;
   align-items: flex-start;
@@ -231,6 +231,6 @@ const submitForm = async () => {
 }
 
 .form-actions {
-  margin-top: 24px;
+  margin-block-start: 24px;
 }
 </style>

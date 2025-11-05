@@ -658,20 +658,20 @@ watch(() => props.plugin.subscribedEvents, (events) => {
 
 .event-form-group {
   margin-bottom: 15px;
-  padding-left: 5px;
+  padding-inline-start: 5px;
 }
 
 .webhook-url-group {
   display: flex;
   align-items: flex-end;
-  padding-left: 5px;
+  padding-inline-start: 5px;
 }
 
 .webhook-actions {
   display: flex;
   gap: 8px;
-  margin-left: 10px;
-  margin-bottom: 5px;
+  margin-inline-start: 10px;
+  margin-block-end: 5px;
 }
 
 .webhook-format-card {
@@ -699,15 +699,15 @@ watch(() => props.plugin.subscribedEvents, (events) => {
 .webhook-tip {
   font-size: 12px;
   color: var(--el-text-color-secondary);
-  margin-top: 10px;
+  margin-block-start: 10px;
 }
 
 .remove-event-section {
   display: flex;
   justify-content: flex-end;
-  margin-top: 15px;
-  border-top: 1px solid var(--el-border-color-lighter);
-  padding-top: 15px;
+  margin-block-start: 15px;
+  border-block-start: 1px solid var(--el-border-color-lighter);
+  padding-block-start: 15px;
 }
 
 .remove-event-button {
@@ -715,11 +715,11 @@ watch(() => props.plugin.subscribedEvents, (events) => {
 }
 
 .event-help {
-  margin-top: 15px;
+  margin-block-start: 15px;
 }
 
 .add-event-section {
-  margin-top: 20px;
+  margin-block-start: 20px;
   display: flex;
   justify-content: center;
 }
@@ -744,16 +744,16 @@ watch(() => props.plugin.subscribedEvents, (events) => {
 
 @media (max-width: 768px) {
   .add-event-section .el-col {
-    margin-bottom: 10px;
+    margin-block-end: 10px;
   }
 }
 
 .card-description {
-  margin-bottom: 20px;
+  margin-block-end: 20px;
 }
 
 .hooks-header {
-  margin-bottom: 20px;
+  margin-block-end: 20px;
 }
 
 .subscription-summary {

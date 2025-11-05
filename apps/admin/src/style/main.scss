@@ -68,19 +68,19 @@ a:hover, a.primary-link {
 
 /* Lists */
 ul, ol {
-  margin-bottom: 15px;
-  padding-left: 30px;
+  margin-block-end: 15px;
+  padding-inline-start: 30px;
 }
 
 li {
-  margin-bottom: 5px;
+  margin-block-end: 5px;
 }
 
 /* Blockquotes */
 blockquote {
   font-style: italic;
   border-left: 4px solid var(--border-color);
-  padding-left: 20px;
+  padding-inline-start: 20px;
   margin: 20px 0;
   color: var(--text-color);
 }
@@ -92,7 +92,7 @@ pre {
   border-radius: var(--border-radius);
   padding: 15px;
   overflow-x: auto;
-  margin-bottom: 15px;
+  margin-block-end: 15px;
 }
 
 code {
@@ -104,7 +104,7 @@ code {
 img {
   max-width: 100%;
   height: auto;
-  margin-bottom: 15px;
+  margin-block-end: 15px;
   border-radius: var(--border-radius);
 }
 

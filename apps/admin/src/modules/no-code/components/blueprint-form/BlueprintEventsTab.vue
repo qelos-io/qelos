@@ -279,12 +279,12 @@ h5 {
 
 .subscribed-events ul {
   list-style: none;
-  padding-left: 0.5rem;
+  padding-inline-start: 0.5rem;
   margin: 0.5rem 0;
 }
 
 .subscribed-events li {
-  margin-bottom: 0.5rem;
+  margin-block-end: 0.5rem;
   padding: 0.5rem;
   background-color: var(--el-fill-color-light);
   border-radius: 4px;
@@ -294,7 +294,7 @@ h5 {
   display: block;
   font-size: 0.8rem;
   color: var(--el-text-color-secondary);
-  margin-top: 0.25rem;
+  margin-block-start: 0.25rem;
   word-break: break-all;
 }
 
@@ -311,7 +311,7 @@ h5 {
   border-radius: 4px;
   color: var(--el-text-color-secondary);
   font-size: 0.9rem;
-  margin-bottom: 1.5rem;
+  margin-block-end: 1.5rem;
 }
 
 .compact-empty-state .el-icon {
@@ -325,8 +325,8 @@ h5 {
 
 .subscribed-plugins-section,
 .related-integrations-section {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
+  margin-block-start: 2rem;
+  padding-block-start: 1.5rem;
   border-top: 1px solid var(--el-border-color-light);
 }
 
@@ -334,30 +334,30 @@ h5 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-block-end: 1rem;
 }
 
 .integrations-container {
-  margin-top: 1.5rem;
+  margin-block-start: 1.5rem;
 }
 
 .trigger-details {
   background-color: var(--el-fill-color-light);
   padding: 0.75rem;
   border-radius: 4px;
-  margin-top: 0.5rem;
+  margin-block-start: 0.5rem;
 }
 
 .trigger-source,
 .trigger-operation,
 .trigger-kind > div {
-  margin-bottom: 0.5rem;
+  margin-block-end: 0.5rem;
 }
 
 .trigger-description {
   font-size: 0.85rem;
   color: var(--el-text-color-secondary);
-  margin-top: 0.5rem;
+  margin-block-start: 0.5rem;
   line-height: 1.4;
 }
 
@@ -401,12 +401,12 @@ h5 {
 
 .integration-triggers ul {
   list-style: none;
-  padding-left: 0.5rem;
+  padding-inline-start: 0.5rem;
   margin: 0.5rem 0;
 }
 
 .integration-triggers li {
-  margin-bottom: 0.5rem;
+  margin-block-end: 0.5rem;
   padding: 0.5rem;
   background-color: var(--el-fill-color-light);
   border-radius: 4px;

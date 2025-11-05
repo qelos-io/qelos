@@ -82,7 +82,7 @@ const openPasteDialog = () => {
 
 .ai-mode-switch {
   border-left: 1px solid var(--el-border-color-lighter);
-  padding-left: 10px;
+  padding-inline-start: 10px;
 }
 
 @media (max-width: 768px) {
@@ -94,7 +94,7 @@ const openPasteDialog = () => {
   
   .ai-mode-switch {
     border-left: none;
-    padding-left: 0;
+    padding-inline-start: 0;
   }
 }
 </style>

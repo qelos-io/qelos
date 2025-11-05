@@ -766,12 +766,12 @@ const handleDrop = (event: DragEvent) => {
 
 .wysiwyg-editor-content ul,
 .wysiwyg-editor-content ol {
-  padding-left: 2em;
+  padding-inline-start: 2em;
 }
 
 .wysiwyg-editor-content blockquote {
   border-left: 3px solid #dcdfe6;
-  padding-left: 1em;
+  padding-inline-start: 1em;
   margin-left: 0;
   color: #606266;
   background-color: #f8f8f8;

@@ -91,6 +91,7 @@ watch(() => user.value?.roles, () => {
 }
 
 .main-wrapper {
+  max-width: calc(100vw - var(--nav-width));
   display: flex;
   flex-direction: row;
   flex: 1;

@@ -405,11 +405,11 @@ watch(visible, () => {
 }
 
 .examples ul {
-  padding-left: 20px;
+  padding-inline-start: 20px;
 }
 
 .examples li {
-  margin-bottom: 8px;
+  margin-block-end: 8px;
   color: var(--text-color-secondary);
   font-size: 14px;
 }
@@ -437,7 +437,7 @@ watch(visible, () => {
 
 .source-warning {
   display: block;
-  margin-top: 5px;
+  margin-block-start: 5px;
   color: var(--color-warning);
   font-style: italic;
 }
@@ -448,7 +448,7 @@ watch(visible, () => {
 }
 
 .blueprints-count {
-  margin-bottom: 15px;
+  margin-block-end: 15px;
   font-weight: bold;
   text-align: center;
 }
@@ -459,12 +459,12 @@ watch(visible, () => {
 
 .properties-list,
 .relations-list {
-  margin-top: 15px;
+  margin-block-start: 15px;
 }
 
 .properties-list h4,
 .relations-list h4 {
-  margin-bottom: 10px;
+  margin-block-end: 10px;
   font-size: 16px;
 }
 
@@ -476,7 +476,7 @@ watch(visible, () => {
 }
 
 .no-blueprints p {
-  margin-bottom: 15px;
+  margin-block-end: 15px;
 }
 
 .blueprint-selection-header {
@@ -484,8 +484,8 @@ watch(visible, () => {
   justify-content: space-between;
   align-items: center;
   padding: 10px;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 10px;
+  border-inline-end: 1px solid var(--border-color);
+  margin-block-end: 10px;
 }
 
 .selected-count {
@@ -525,7 +525,7 @@ watch(visible, () => {
   }
   
   .examples ul {
-    padding-left: 15px;
+    padding-inline-start: 15px;
   }
   
   .dialog-footer {
