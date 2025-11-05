@@ -2,6 +2,14 @@
 
 This guide explains how to deploy Qelos using Helm charts, covering both local development and production deployments.
 
+## Quick Links
+
+- **Want to get started fast?** Follow the [Quick Start Guide](./deployment/quick-start.md) (~35 minutes)
+- **New to Qelos?** Start with [GitHub Fork Setup](./deployment/github-fork-setup.md) to fork the repository
+- **Setting up infrastructure?** See [Kubernetes Cluster Management](./deployment/kubernetes-cluster-management.md)
+- **Ready to deploy?** Follow the [Deployment Process](./deployment/deployment-process.md)
+- **Going to production?** Check the [Production Guide](./deployment/production-guide.md)
+
 ## Helm Chart Structure
 
 The Qelos Helm chart is organized as follows:

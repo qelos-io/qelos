@@ -46,6 +46,9 @@ export default defineConfig({
             collapsed: true,
             items: [
               { text: 'Overview', link: '/deployment/' },
+              { text: 'Quick Start', link: '/deployment/quick-start' },
+              { text: 'GitHub Fork Setup', link: '/deployment/github-fork-setup' },
+              { text: 'Kubernetes Cluster Management', link: '/deployment/kubernetes-cluster-management' },
               { text: 'Chart Structure', link: '/deployment/chart-structure' },
               { text: 'Configuration', link: '/deployment/configuration' },
               { text: 'Deployment Process', link: '/deployment/deployment-process' },
