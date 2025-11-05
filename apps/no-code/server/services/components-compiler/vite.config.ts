@@ -28,13 +28,14 @@ export default defineConfig({
     },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
-      external: ['vue', 'vue-router', 'element-plus'],
+      external: ['vue', 'vue-router', 'element-plus', 'vue-i18n'],
       output: {
         // Provide global variables to use in the UMD build
         globals: {
           vue: 'Vue',
           'vue-router': 'VueRouter',
           'element-plus': 'ElementPlus',
+          'vue-i18n': 'VueI18n',
         },
       },
     },

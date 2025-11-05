@@ -1,11 +1,13 @@
 import { usePluginsList } from '@/modules/plugins/store/plugins-list';
-import { ref, watch, getCurrentInstance } from 'vue';
+import { watch, getCurrentInstance } from 'vue';
 import * as vue from 'vue';
 import * as vueRouter from 'vue-router';
 import * as elementPlus from 'element-plus';
+import * as vueI18n from 'vue-i18n';
 import sdk from '@/services/sdk';
 import { usePluginsStore } from './pluginsStore';
 import { useStaticComponentsStore } from '@/modules/no-code/store/static-components';
+import { i18n } from '@/plugins/i18n';
 
 export function usePluginsInjectables() {
   const { appContext } = getCurrentInstance();
@@ -20,6 +22,7 @@ export function usePluginsInjectables() {
     return appContext.app.config.globalProperties.$router;
   }
   window['getSdk'] = () => sdk;
+  window['getI18n'] = () => i18n;
 
   window['registerComponent'] = (name: string, component: any) => {
     pluginsStore.incrementComponentUpdates(name);
@@ -29,7 +32,7 @@ export function usePluginsInjectables() {
   window['Vue'] = vue;
   window['VueRouter'] = vueRouter;
   window['ElementPlus'] = elementPlus;
-
+  window['VueI18n'] = vueI18n;
   
 
   let unwatch;
