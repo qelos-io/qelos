@@ -8,7 +8,6 @@ import { executeFunctionCalls } from "../services/execute-function-calls";
 import { verifyUserPermissions } from "../services/source-service";
 import { IThread, Thread } from "../models/thread";
 import { getAllBlueprints } from "../services/no-code-service";
-import { FunctionCall } from "../services/chat-completion-service";
 
 export async function getIntegrationToIntegrate(req, res, next) {
   try {
@@ -505,7 +504,7 @@ export async function chatCompletion(req: any, res: any | null) {
       );
     };
 
-    const onNewMessage = thread ? (message: { type: 'function_calls_detected' | 'function_calls_executed' | 'assistant_last_content', content?: string, functionCalls?: FunctionCall[], functionResults?: any }) => {
+    const onNewMessage = thread ? (message: { type: 'function_calls_detected' | 'function_calls_executed' | 'assistant_last_content', content?: string, functionCalls?: ChatCompletionService.FunctionCall[], functionResults?: any }) => {
       if (message.type === 'function_calls_detected') {
         thread.messages.push({
           role: 'assistant',

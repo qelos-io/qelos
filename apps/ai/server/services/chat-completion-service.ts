@@ -1,5 +1,4 @@
 import logger from './logger';
-import { callPluginsService, executeDataManipulation } from './plugins-service-api';
 
 // Define types for function calls
 export interface FunctionCall {

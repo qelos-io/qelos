@@ -2,7 +2,9 @@ import { IOpenAISource, OpenAITargetPayload } from "@qelos/global-types";
 import logger from "../services/logger";
 import { createAIService } from "../services/ai-service";
 import { getSourceById } from "../services/source-service";
-import { processGeneralChatCompletion, processIntegrationsChatCompletion, processPagesChatCompletion } from "../services/pages-chat-completion-service";
+import { processGeneralChatCompletion } from "../services/system-agents/general-agent";
+import { processPagesChatCompletion } from "../services/system-agents/pages-agent";
+import { processIntegrationsChatCompletion } from "../services/system-agents/integrations-agent";
 
 // System prompts are now imported from the service
 

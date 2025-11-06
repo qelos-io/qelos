@@ -35,36 +35,3 @@ export const editorsFunctionCallings = {
   [callPagesEditorAgentCalling.name]: callPagesEditorAgentCalling,
   [callIntegrationManagerAgentCalling.name]: callIntegrationManagerAgentCalling,
 }
-
-export const editPagesFunctionCallings = [
-  getComponentsCalling,
-  createComponentCalling,
-  editComponentCalling, 
-  createPageCalling,
-  editPageCalling,
-  getPageCalling,
-  createBlueprintCalling,
-  getBlueprintsCalling,
-  getHTTPRequirementForPageCalling,
-  getBlueprintRequirementForPageCalling,
-  getPagesCalling,
-  addFreeTextToPageCalling,
-  addGridToPageCalling,
-  addTableToPageCalling,
-  addFormToPageCalling,
-];
-
-export const editIntegrationsFunctionCallings = [
-  createConnectionCalling,
-  getConnectionCalling,
-  updateConnectionCalling,
-  removeConnectionCalling,
-  listConnectionsCalling,
-  createIntegrationCalling,
-  updateIntegrationCalling,
-  toggleIntegrationStatusCalling,
-  removeIntegrationCalling,
-  listIntegrationsCalling,
-  getWebhookSampleCalling,
-  buildDataManipulationCalling
-];

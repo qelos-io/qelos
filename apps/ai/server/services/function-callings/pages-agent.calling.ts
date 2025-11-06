@@ -1,4 +1,4 @@
-import { processPagesChatCompletion } from "../pages-chat-completion-service";
+import { processPagesChatCompletion } from "../system-agents/pages-agent";
 
 export const callPagesEditorAgentCalling = {
   type: 'function',
