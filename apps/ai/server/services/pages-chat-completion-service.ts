@@ -5,6 +5,7 @@ import { createAIService } from "./ai-service";
 import logger from "./logger";
 import { findSimilarTools } from "./vector-search-service";
 import { IntegrationSourceKind } from "@qelos/global-types";
+import { getComponents } from "./no-code-service";
 
 /**
  * System prompt for general SaaS builder functionality
@@ -291,8 +292,15 @@ export function processGeneralChatCompletion(req: any, res: any) {
 /**
  * Processes a pages chat completion request
  */
-export function processPagesChatCompletion(req: any, res: any) {
-  return processChatCompletion(req, res, SAAS_BUILDER_SYSTEM_PROMPT_PAGES, getPagesTools);
+export async function processPagesChatCompletion(req: any, res: any) {
+  const tenant = req.headers.tenant;
+  const list = await getComponents(tenant);
+  const prompt = {
+    role: SAAS_BUILDER_SYSTEM_PROMPT_PAGES.role,
+    content: SAAS_BUILDER_SYSTEM_PROMPT_PAGES.content + 
+    `\n\nExisting components: ${JSON.stringify(list.map(c => ({_id: c._id, componentName: c.componentName, description: c.description})))}`,
+  };
+  return processChatCompletion(req, res, prompt, getPagesTools);
 }
 
 
