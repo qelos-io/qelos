@@ -1,0 +1,99 @@
+{
+  "_id": "68b97d4008fbffd1ba1a9e1b",
+  "tenant": "68650f4b114188ae3e825788",
+  "identifier": "strategic_video",
+  "name": "Strategic Video",
+  "description": "a video concept to create a video strategy for future recorded videos.",
+  "entityIdentifierMechanism": "objectid",
+  "limitations": [],
+  "permissions": [
+    {
+      "scope": "user",
+      "operation": "create",
+      "guest": false,
+      "roleBased": [
+        "admin"
+      ],
+      "workspaceRoleBased": [
+        "admin"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68b97d4008fbffd1ba1a9e1c"
+    },
+    {
+      "scope": "user",
+      "operation": "update",
+      "guest": false,
+      "roleBased": [
+        "admin"
+      ],
+      "workspaceRoleBased": [
+        "admin"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68b97d4008fbffd1ba1a9e1d"
+    },
+    {
+      "scope": "user",
+      "operation": "delete",
+      "guest": false,
+      "roleBased": [
+        "admin"
+      ],
+      "workspaceRoleBased": [
+        "admin"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68b97d4008fbffd1ba1a9e1e"
+    }
+  ],
+  "permissionScope": "tenant",
+  "properties": {
+    "video_type": {
+      "title": "Video Type",
+      "description": "The type of the video",
+      "type": "string",
+      "required": true,
+      "multi": false
+    },
+    "intro": {
+      "title": "Intro",
+      "description": "a text prompt to intro of the recording. should include purpose, questions, emotion, language and voices.",
+      "type": "string",
+      "required": true,
+      "multi": false,
+      "enum": []
+    },
+    "video_body": {
+      "title": "Video Body",
+      "description": "a text prompt to body of the recording. should include purpose, questions, emotion, language and voices.",
+      "type": "string",
+      "required": true,
+      "multi": false,
+      "enum": []
+    },
+    "outro": {
+      "title": "Outro",
+      "description": "a text prompt to outro of the recording. should include purpose, questions, emotion, language and voices.",
+      "type": "string",
+      "required": true,
+      "multi": false,
+      "enum": []
+    }
+  },
+  "relations": [],
+  "dispatchers": {
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "created": "2025-09-04T11:51:28.402Z",
+  "updated": "2025-09-14T13:42:52.580Z",
+  "__v": 1
+}

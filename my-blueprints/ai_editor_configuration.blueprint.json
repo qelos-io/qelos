@@ -1,0 +1,208 @@
+{
+  "_id": "68a48851e358f50513405e43",
+  "tenant": "68650f4b114188ae3e825788",
+  "identifier": "ai_editor_configuration",
+  "name": "AI Editor Configuration",
+  "description": "",
+  "entityIdentifierMechanism": "objectid",
+  "limitations": [],
+  "permissions": [
+    {
+      "scope": "tenant",
+      "operation": "create",
+      "guest": false,
+      "roleBased": [
+        "admin"
+      ],
+      "workspaceRoleBased": [],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68a48851e358f50513405e44"
+    },
+    {
+      "scope": "tenant",
+      "operation": "read",
+      "guest": false,
+      "roleBased": [
+        "admin"
+      ],
+      "workspaceRoleBased": [],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68a48851e358f50513405e45"
+    },
+    {
+      "scope": "tenant",
+      "operation": "update",
+      "guest": false,
+      "roleBased": [
+        "admin"
+      ],
+      "workspaceRoleBased": [],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68a48851e358f50513405e46"
+    },
+    {
+      "scope": "tenant",
+      "operation": "delete",
+      "guest": false,
+      "roleBased": [
+        "admin"
+      ],
+      "workspaceRoleBased": [],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68a49195e358f50513405f1c"
+    }
+  ],
+  "permissionScope": "tenant",
+  "properties": {
+    "rank": {
+      "title": "Rank",
+      "description": "",
+      "type": "number",
+      "required": true,
+      "multi": false,
+      "min": 0,
+      "max": 100,
+      "enum": []
+    },
+    "model": {
+      "title": "Model",
+      "description": "",
+      "type": "string",
+      "required": true,
+      "multi": false,
+      "enum": [
+        "gpt-3.5-turbo",
+        "gpt-4o",
+        "gpt-5",
+        "gpt-4-turbo"
+      ]
+    },
+    "instructions_to_extract_sentences": {
+      "title": "Instructions to Extract Sentences",
+      "description": "This will used as system prompt to extract important sentences from the video",
+      "type": "string",
+      "required": false,
+      "multi": false,
+      "enum": []
+    },
+    "temperature": {
+      "title": "Temperature",
+      "description": "Divided by 10. Lower values - focused results, higher values - random and creative output.",
+      "type": "number",
+      "required": false,
+      "multi": false,
+      "min": 0,
+      "max": 20,
+      "enum": []
+    },
+    "longPause": {
+      "title": "Softer Cuts?",
+      "description": "true = less seconds will be removed from every silence",
+      "type": "boolean",
+      "required": false,
+      "multi": false,
+      "enum": []
+    },
+    "fontName": {
+      "title": "Font Name",
+      "description": "",
+      "type": "string",
+      "required": false,
+      "multi": false,
+      "enum": [
+        "Heebo",
+        "Noto Sans Hebrew"
+      ]
+    },
+    "fontSize": {
+      "title": "Font Size",
+      "description": "",
+      "type": "number",
+      "required": false,
+      "multi": false,
+      "min": 12,
+      "max": 100,
+      "enum": []
+    },
+    "musicId": {
+      "title": "Background Music",
+      "description": "",
+      "type": "string",
+      "required": false,
+      "multi": false,
+      "enum": [
+        "easy-1",
+        "aurahook-1",
+        "buildup-1"
+      ]
+    },
+    "toRemoveSilence": {
+      "title": "Remove Silence?",
+      "description": "remove parts without words",
+      "type": "boolean",
+      "required": false,
+      "multi": false,
+      "enum": []
+    },
+    "toRemoveDuplicates": {
+      "title": "Remove Duplicates?",
+      "description": "remove irrelevant or repeated sentences, and leave the best of them",
+      "type": "boolean",
+      "required": false,
+      "multi": false,
+      "enum": []
+    },
+    "addCaptions": {
+      "title": "Add Subtitles?",
+      "description": "",
+      "type": "boolean",
+      "required": false,
+      "multi": false,
+      "enum": []
+    },
+    "addBackgroundMusic": {
+      "title": "Add Background Music?",
+      "description": "",
+      "type": "boolean",
+      "required": false,
+      "multi": false,
+      "enum": []
+    },
+    "videoIds": {
+      "title": "Video IDs",
+      "description": "the videos associated to this editor",
+      "type": "string",
+      "required": false,
+      "multi": true,
+      "enum": []
+    },
+    "transcriptionModel": {
+      "title": "Transcription Model",
+      "description": "Choose the model that transcribe the audio to text",
+      "type": "string",
+      "required": true,
+      "multi": false,
+      "enum": [
+        "assemblyai",
+        "openai"
+      ]
+    }
+  },
+  "relations": [],
+  "dispatchers": {
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "created": "2025-08-19T14:21:05.005Z",
+  "updated": "2025-09-17T17:11:06.627Z",
+  "__v": 1
+}

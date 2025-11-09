@@ -1,43 +1,48 @@
-import fs from 'node:fs'
-import path from 'node:path'
-import {createJiti} from 'jiti';
-
-const jiti = createJiti(import.meta.url);
+import { initializeSdk } from '../services/sdk.mjs';
+import { pullComponents } from '../services/components.mjs';
+import { pullBlueprints } from '../services/blueprints.mjs';
+import { pullConfigurations } from '../services/configurations.mjs';
+import { logger } from '../services/logger.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export default async function pullController({ type, path: targetPath }) {
-
-  const QelosAdministratorSDK = await jiti('@qelos/sdk/src/administrator/index.ts');
-
-  const sdk = new QelosAdministratorSDK.default({
-    appUrl: process.env.QELOS_URL || "http://localhost:3000",
-  })
-
-  await sdk.authentication.oAuthSignin({
-    username: process.env.QELOS_USERNAME || 'test@test.com',
-    password: process.env.QELOS_PASSWORD || 'admin',
-  })
-
-  // if type === 'components' - fetch all components and save them as vue files
-  if (type === 'components') {
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(targetPath)) {
-      fs.mkdirSync(targetPath, { recursive: true })
-      console.log('Created directory:', targetPath)
+  try {
+    // Validate parent directory exists
+    const parentDir = path.dirname(targetPath);
+    if (!fs.existsSync(parentDir)) {
+      logger.error(`Parent directory does not exist: ${parentDir}`);
+      logger.info('Please ensure the parent directory exists');
+      process.exit(1);
     }
 
-    const components = await sdk.components.getList()
-    console.log(`Found ${components.length} components to pull`)
+    // Warn if target path exists and is not a directory
+    if (fs.existsSync(targetPath) && !fs.statSync(targetPath).isDirectory()) {
+      logger.error(`Path exists but is not a directory: ${targetPath}`);
+      logger.info('Please provide a directory path, not a file');
+      process.exit(1);
+    }
 
-    await Promise.all(components.map(async (component) => {
-      const fileName = `${component.identifier}.vue`
-      const filePath = path.join(targetPath, fileName)
+    const sdk = await initializeSdk();
 
-      const {content} = await sdk.components.getComponent(component._id);
-      
-      fs.writeFileSync(filePath, content, 'utf-8')
-      console.log('Pulled component:', component.identifier)
-    }))
+    logger.section(`Pulling ${type} to ${targetPath}`);
 
-    console.log(`All ${components.length} components pulled to ${targetPath}`)
+    if (type === 'components') {
+      await pullComponents(sdk, targetPath);
+    } else if (type === 'blueprints') {
+      await pullBlueprints(sdk, targetPath);
+    } else if (type === 'config' || type === 'configs' || type === 'configuration') {
+      await pullConfigurations(sdk, targetPath);
+    } else {
+      logger.error(`Unknown type: ${type}`);
+      logger.info('Supported types: components, blueprints, config, configs, configuration');
+      process.exit(1);
+    }
+
+    logger.success(`Successfully pulled ${type} to ${targetPath}`);
+
+  } catch (error) {
+    logger.error(`Failed to pull ${type}`, error);
+    process.exit(1);
   }
 }

@@ -2,16 +2,17 @@ import pushController from "../controllers/push.mjs";
 
 export default function createCommand(program) {
   program
-    .command('push [type] [path]', 'push to qelos app. Ability to push components, plugins, integrations, blueprints, and more.',
+    .command('push [type] [path]', 'push to qelos app. Ability to push components, blueprints, configurations, and more.',
       (yargs) => {
         return yargs
           .positional('type', {
-            describe: 'Type of the plugin to push. Can be components, plugins, integrations, blueprints, or more.',
+            describe: 'Type of the resource to push. Can be components, blueprints, configurations, or more.',
             type: 'string',
+            choices: ['components', 'blueprints', 'configs'],
             required: true
           })
           .positional('path', {
-            describe: 'Path to the context file to push.',
+            describe: 'Path to the resource to push.',
             type: 'string',
             required: true
           })

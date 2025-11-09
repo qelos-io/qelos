@@ -1,0 +1,151 @@
+{
+  "_id": "68beec5808fbffd1ba1aad6c",
+  "tenant": "68650f4b114188ae3e825788",
+  "identifier": "editedVideo",
+  "name": "Edited Video",
+  "description": "Represents a video that has been edited (e.g., transcription/caption changes) and is linked back to an original video.",
+  "permissions": [
+    {
+      "scope": "user",
+      "operation": "create",
+      "guest": false,
+      "roleBased": [],
+      "workspaceRoleBased": [],
+      "workspaceLabelsBased": [],
+      "_id": "68beec5808fbffd1ba1aad6d"
+    },
+    {
+      "scope": "user",
+      "operation": "read",
+      "guest": false,
+      "roleBased": [],
+      "workspaceRoleBased": [],
+      "workspaceLabelsBased": [],
+      "_id": "68beec5808fbffd1ba1aad6e"
+    },
+    {
+      "scope": "user",
+      "operation": "update",
+      "guest": false,
+      "roleBased": [
+        "user",
+        "admin"
+      ],
+      "workspaceRoleBased": [
+        "admin"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68beec5808fbffd1ba1aad6f"
+    },
+    {
+      "scope": "user",
+      "operation": "delete",
+      "guest": false,
+      "roleBased": [],
+      "workspaceRoleBased": [],
+      "workspaceLabelsBased": [],
+      "_id": "68beec5808fbffd1ba1aad70"
+    }
+  ],
+  "permissionScope": "user",
+  "properties": {
+    "originalVideoId": {
+      "title": "Original Video ID",
+      "description": "ID of the original video this edited version is based on.",
+      "type": "string",
+      "required": true,
+      "multi": false
+    },
+    "status": {
+      "title": "Status",
+      "description": "Processing status for this edited video.",
+      "type": "string",
+      "required": true,
+      "multi": false
+    },
+    "editedBy": {
+      "title": "Edited By",
+      "description": "User ID of who edited and generated this version.",
+      "type": "string",
+      "required": false,
+      "multi": false
+    },
+    "finalText": {
+      "title": "Final Text",
+      "description": "The (edited) transcription text for this edited video version.",
+      "type": "string",
+      "required": false,
+      "multi": false
+    },
+    "transcriptionWithTiming": {
+      "title": "Transcription With Timing",
+      "description": "The transcription text and timing information for captions (words array etc).",
+      "type": "string",
+      "required": false,
+      "multi": false
+    },
+    "captionStyleOptions": {
+      "title": "Caption Style Options",
+      "description": "Caption styling as chosen by the user (font, color, etc).",
+      "type": "string",
+      "required": false,
+      "multi": false
+    },
+    "originalVideoUrl": {
+      "title": "Original Video URL",
+      "description": "The URL of the original (un-edited) video.",
+      "type": "string",
+      "required": false,
+      "multi": false
+    },
+    "videoWithoutCaptions": {
+      "title": "Video Without Captions",
+      "description": "URL or path to the video asset without any captions.",
+      "type": "string",
+      "required": false,
+      "multi": false
+    },
+    "finalVideoUrl": {
+      "title": "Final Edited Video URL",
+      "description": "URL where the final, edited video with new captions can be found.",
+      "type": "string",
+      "required": false,
+      "multi": false
+    },
+    "localVideoPath": {
+      "title": "Local Video Path",
+      "description": "Local file path for the processed video on server (if applicable).",
+      "type": "string",
+      "required": false,
+      "multi": false
+    },
+    "error": {
+      "title": "Error",
+      "description": "Error message or details if processing failed.",
+      "type": "string",
+      "required": false,
+      "multi": false
+    },
+    "processed_at": {
+      "title": "processed At",
+      "description": "the time which the video was processed for transcription editing",
+      "type": "date",
+      "required": false,
+      "multi": false,
+      "enum": []
+    }
+  },
+  "relations": [],
+  "dispatchers": {
+    "create": true,
+    "update": false,
+    "delete": false
+  },
+  "entityIdentifierMechanism": "objectid",
+  "limitations": [],
+  "created": "2025-09-08T14:46:48.811Z",
+  "updated": "2025-10-21T10:08:19.881Z",
+  "__v": 3
+}

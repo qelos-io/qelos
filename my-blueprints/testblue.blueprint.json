@@ -1,0 +1,130 @@
+{
+  "_id": "68a07df4b12116c9e7a9eafd",
+  "tenant": "68650f4b114188ae3e825788",
+  "identifier": "testblue",
+  "name": "testBlue",
+  "description": "",
+  "entityIdentifierMechanism": "objectid",
+  "limitations": [],
+  "permissions": [
+    {
+      "scope": "user",
+      "operation": "create",
+      "roleBased": [
+        "admin",
+        "user"
+      ],
+      "workspaceRoleBased": [
+        "admin",
+        "member"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68a07df4b12116c9e7a9eafe",
+      "guest": false
+    },
+    {
+      "scope": "user",
+      "operation": "read",
+      "roleBased": [
+        "admin",
+        "user"
+      ],
+      "workspaceRoleBased": [
+        "admin",
+        "member"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68a07df4b12116c9e7a9eaff",
+      "guest": false
+    },
+    {
+      "scope": "user",
+      "operation": "update",
+      "roleBased": [
+        "admin",
+        "user"
+      ],
+      "workspaceRoleBased": [
+        "admin",
+        "member"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68a07df4b12116c9e7a9eb00",
+      "guest": false
+    },
+    {
+      "scope": "workspace",
+      "operation": "update",
+      "roleBased": [
+        "admin",
+        "user"
+      ],
+      "workspaceRoleBased": [
+        "admin"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68a07df4b12116c9e7a9eb01",
+      "guest": false
+    },
+    {
+      "scope": "user",
+      "operation": "delete",
+      "roleBased": [
+        "admin",
+        "user"
+      ],
+      "workspaceRoleBased": [
+        "admin",
+        "member"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68a07df4b12116c9e7a9eb02",
+      "guest": false
+    },
+    {
+      "scope": "workspace",
+      "operation": "delete",
+      "roleBased": [
+        "admin",
+        "user"
+      ],
+      "workspaceRoleBased": [
+        "admin"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68a07df4b12116c9e7a9eb03",
+      "guest": false
+    }
+  ],
+  "permissionScope": "user",
+  "properties": {
+    "title": {
+      "title": "Title",
+      "description": "The title of the entity",
+      "type": "string",
+      "required": true,
+      "multi": false
+    }
+  },
+  "relations": [],
+  "dispatchers": {
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "created": "2025-08-16T12:47:48.753Z",
+  "updated": "2025-08-16T12:47:48.753Z",
+  "__v": 0
+}

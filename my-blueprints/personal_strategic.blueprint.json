@@ -1,0 +1,170 @@
+{
+  "_id": "68c6c80af3718be5993a5e48",
+  "tenant": "68650f4b114188ae3e825788",
+  "identifier": "personal_strategic",
+  "name": "Personal Strategic",
+  "description": "",
+  "entityIdentifierMechanism": "objectid",
+  "limitations": [],
+  "permissions": [
+    {
+      "scope": "user",
+      "operation": "create",
+      "roleBased": [
+        "admin",
+        "user"
+      ],
+      "workspaceRoleBased": [
+        "admin",
+        "member"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68c6c80af3718be5993a5e49",
+      "guest": false
+    },
+    {
+      "scope": "user",
+      "operation": "read",
+      "roleBased": [
+        "admin",
+        "user"
+      ],
+      "workspaceRoleBased": [
+        "admin",
+        "member"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68c6c80af3718be5993a5e4a",
+      "guest": false
+    },
+    {
+      "scope": "user",
+      "operation": "update",
+      "roleBased": [
+        "admin",
+        "user"
+      ],
+      "workspaceRoleBased": [
+        "admin",
+        "member"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68c6c80af3718be5993a5e4b",
+      "guest": false
+    },
+    {
+      "scope": "workspace",
+      "operation": "update",
+      "roleBased": [
+        "admin",
+        "user"
+      ],
+      "workspaceRoleBased": [
+        "admin"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68c6c80af3718be5993a5e4c",
+      "guest": false
+    },
+    {
+      "scope": "user",
+      "operation": "delete",
+      "roleBased": [
+        "admin",
+        "user"
+      ],
+      "workspaceRoleBased": [
+        "admin",
+        "member"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68c6c80af3718be5993a5e4d",
+      "guest": false
+    },
+    {
+      "scope": "workspace",
+      "operation": "delete",
+      "roleBased": [
+        "admin",
+        "user"
+      ],
+      "workspaceRoleBased": [
+        "admin"
+      ],
+      "workspaceLabelsBased": [
+        "*"
+      ],
+      "_id": "68c6c80af3718be5993a5e4e",
+      "guest": false
+    }
+  ],
+  "permissionScope": "user",
+  "properties": {
+    "title": {
+      "title": "Title",
+      "description": "The concept title of the strategic",
+      "type": "string",
+      "required": true,
+      "multi": false
+    },
+    "video_type": {
+      "title": "Video Type",
+      "description": "The type of the video",
+      "type": "string",
+      "required": false,
+      "multi": false,
+      "enum": [
+        "סרטון גאונות",
+        "טיפול בהתנגדות",
+        "בפעולה בעל פה",
+        "בפעולה עם הדגמה",
+        "החלום ושברו",
+        "למה ללכת לבעל מקצוע?",
+        "הבעת דעה על האופציה ההפוכה"
+      ]
+    },
+    "background": {
+      "title": "Background",
+      "description": "a text prompt to the background of the video",
+      "type": "string",
+      "required": true,
+      "multi": false,
+      "enum": []
+    },
+    "challenge": {
+      "title": "Challenge",
+      "description": "a text prompt to challenge of the video.",
+      "type": "string",
+      "required": true,
+      "multi": false,
+      "enum": []
+    },
+    "purpose": {
+      "title": "Purpose",
+      "description": "a text prompt to purpose of the video.",
+      "type": "string",
+      "required": true,
+      "multi": false,
+      "enum": []
+    }
+  },
+  "relations": [],
+  "dispatchers": {
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "created": "2025-09-14T13:50:02.428Z",
+  "updated": "2025-09-14T13:50:02.428Z",
+  "__v": 0
+}
