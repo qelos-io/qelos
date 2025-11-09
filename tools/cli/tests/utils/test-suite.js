@@ -1,10 +1,10 @@
-const { rmdirSync, mkdirSync } = require('fs');
-const { execSync } = require('child_process');
+const { rmSync, mkdirSync } = require('node:fs');
+const { execSync } = require('node:child_process');
 
 function initTestSuite() {
   beforeEach(() => {
     try {
-      rmdirSync("tmp", { recursive: true });
+      rmSync("tmp", { recursive: true });
     } catch {
       //
     }
@@ -17,7 +17,7 @@ function initTestSuite() {
   });
 
   afterAll(() => {
-    rmdirSync("tmp", { recursive: true });
+    rmSync("tmp", { recursive: true });
   });
 }
 

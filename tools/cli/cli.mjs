@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 import 'zx/globals';
 
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import yargs from 'yargs'
 import {hideBin} from 'yargs/helpers';
 import process from 'node:process';
 import createCommand from './commands/create.mjs';
-
+import pushCommand from './commands/push.mjs';
+import pullCommand from './commands/pull.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const program = yargs(hideBin(process.argv));
@@ -21,5 +22,7 @@ program.option('verbose', {
 });
 
 createCommand(program)
+pushCommand(program)
+pullCommand(program)
 
 program.help().argv;

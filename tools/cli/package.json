@@ -14,13 +14,14 @@
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "cli-progress": "^3.11.2",
+    "@qelos/sdk": "^3.10.0",
+    "cli-progress": "^3.12.0",
     "cli-select": "^1.1.2",
     "decompress-zip": "^0.3.3",
-    "follow-redirects": "^1.15.2",
-    "rimraf": "^4.1.2",
-    "yargs": "^17.2.0",
-    "zx": "^7.1.1"
+    "follow-redirects": "^1.15.11",
+    "rimraf": "^6.0.1",
+    "yargs": "^18.0.0",
+    "zx": "^8.8.5"
   },
   "publishConfig": {
     "access": "public"
