@@ -13,7 +13,7 @@ The CLI provides powerful commands to:
 - **Create** new plugin projects with scaffolding
 - **Pull** resources from your Qelos instance to work locally
 - **Push** local changes back to your Qelos instance
-- Manage components, plugins, integrations, and blueprints
+- Manage components, blueprints, and configurations
 
 ## Installation
 
@@ -64,10 +64,18 @@ qplay create my-plugin
 # Pull components from your Qelos instance
 qelos pull components ./my-components
 
-# Make changes to your components locally
+# Pull blueprints
+qelos pull blueprints ./my-blueprints
+
+# Pull configurations
+qelos pull config ./my-configs
+
+# Make changes locally
 
 # Push changes back to Qelos
 qelos push components ./my-components
+qelos push blueprints ./my-blueprints
+qelos push config ./my-configs
 ```
 
 ## Commands
@@ -135,12 +143,16 @@ The CLI enables you to:
 ### Backup and Migration
 
 ```bash
-# Backup components from production
+# Backup all resources from production
 qelos pull components ./backups/components-$(date +%Y%m%d)
+qelos pull blueprints ./backups/blueprints-$(date +%Y%m%d)
+qelos pull config ./backups/configs-$(date +%Y%m%d)
 
-# Migrate components to a new instance
+# Migrate to a new instance
 export QELOS_URL=https://new-instance.com
 qelos push components ./backups/components-20241109
+qelos push blueprints ./backups/blueprints-20241109
+qelos push config ./backups/configs-20241109
 ```
 
 ## Help

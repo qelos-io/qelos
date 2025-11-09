@@ -5,7 +5,7 @@ editLink: true
 
 # {{ $frontmatter.title }}
 
-The `pull` command downloads resources from your Qelos instance to your local filesystem, allowing you to work on components, plugins, integrations, and blueprints locally.
+The `pull` command downloads resources from your Qelos instance to your local filesystem, allowing you to work on components, blueprints, and configurations locally.
 
 ## Usage
 
@@ -25,9 +25,8 @@ qelos pull <type> <path>
 Currently supported resource types:
 
 - **components** - Vue components from your Qelos instance
-- **plugins** - Plugin configurations and code
-- **integrations** - Integration configurations
-- **blueprints** - Data model blueprints
+- **blueprints** - Data model blueprints and entity schemas
+- **config** / **configs** / **configuration** - Custom configuration objects
 
 ## How It Works
 
@@ -66,7 +65,56 @@ my-components/
 ├── footer-component.vue
 ├── sidebar-component.vue
 ├── card-component.vue
-└── modal-component.vue
+├── modal-component.vue
+└── components.json
+```
+
+### Pull Blueprints
+
+```bash
+qelos pull blueprints ./my-blueprints
+```
+
+**Output:**
+```
+Created directory: ./my-blueprints
+Found 3 blueprint(s) to pull
+→ Pulled: user
+→ Pulled: product
+→ Pulled: order
+ℹ Pulled 3 blueprint(s)
+✓ Successfully pulled blueprints to ./my-blueprints
+```
+
+**Result:**
+```
+my-blueprints/
+├── user.blueprint.json
+├── product.blueprint.json
+└── order.blueprint.json
+```
+
+### Pull Configurations
+
+```bash
+qelos pull config ./my-configs
+```
+
+**Output:**
+```
+Created directory: ./my-configs
+Found 2 configuration(s) to pull
+→ Pulled: app-settings
+→ Pulled: feature-flags
+ℹ Pulled 2 configuration(s)
+✓ Successfully pulled config to ./my-configs
+```
+
+**Result:**
+```
+my-configs/
+├── app-settings.config.json
+└── feature-flags.config.json
 ```
 
 ### Pull to Specific Directory
@@ -169,6 +217,59 @@ Components are saved as `.vue` files with the component's identifier as the file
 <style scoped>
 /* Component styles */
 </style>
+```
+
+A `components.json` metadata file is also created with component information.
+
+### Blueprints
+
+Blueprints are saved as `.blueprint.json` files:
+
+```json
+{
+  "identifier": "user",
+  "name": "User",
+  "description": "User entity blueprint",
+  "entityIdentifierMechanism": "objectid",
+  "properties": {
+    "email": {
+      "title": "Email",
+      "type": "string",
+      "required": true
+    },
+    "name": {
+      "title": "Name",
+      "type": "string",
+      "required": true
+    }
+  },
+  "permissions": [],
+  "permissionScope": "workspace",
+  "relations": [],
+  "dispatchers": {
+    "create": true,
+    "update": true,
+    "delete": true
+  }
+}
+```
+
+### Configurations
+
+Configurations are saved as `.config.json` files:
+
+```json
+{
+  "key": "app-settings",
+  "public": true,
+  "kind": "settings",
+  "description": "Application settings",
+  "metadata": {
+    "theme": "dark",
+    "language": "en",
+    "notifications": true
+  }
+}
 ```
 
 ## Options

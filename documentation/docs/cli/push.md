@@ -25,9 +25,8 @@ qelos push <type> <path>
 Currently supported resource types:
 
 - **components** - Vue components to push to your Qelos instance
-- **plugins** - Plugin configurations and code
-- **integrations** - Integration configurations
-- **blueprints** - Data model blueprints
+- **blueprints** - Data model blueprints and entity schemas
+- **config** / **configs** / **configuration** - Custom configuration objects
 
 ## How It Works
 
@@ -49,13 +48,54 @@ qelos push components ./my-components
 
 **Output:**
 ```
-Pushing component: header-component
-Component updated: header-component
-Pushing component: footer-component
-Component updated: footer-component
-Pushing component: new-component
-Component pushed: new-component
-All components pushed
+Pushing components from ./my-components
+ℹ Found 3 component(s) to push
+→ Pushing component: header-component
+✓ Updated: header-component
+→ Pushing component: footer-component
+✓ Updated: footer-component
+→ Pushing component: new-component
+✓ Created: new-component
+ℹ Pushed 3 component(s)
+✓ Successfully pushed components
+```
+
+### Push Blueprints
+
+```bash
+qelos push blueprints ./my-blueprints
+```
+
+**Output:**
+```
+Pushing blueprints from ./my-blueprints
+ℹ Found 3 blueprint(s) to push
+→ Pushing blueprint: user
+✓ Updated: user
+→ Pushing blueprint: product
+✓ Updated: product
+→ Pushing blueprint: order
+✓ Created: order
+ℹ Pushed 3 blueprint(s)
+✓ Successfully pushed blueprints
+```
+
+### Push Configurations
+
+```bash
+qelos push config ./my-configs
+```
+
+**Output:**
+```
+Pushing config from ./my-configs
+ℹ Found 2 configuration(s) to push
+→ Pushing configuration: app-settings
+✓ Updated: app-settings
+→ Pushing configuration: feature-flags
+✓ Created: feature-flags
+ℹ Pushed 2 configuration(s)
+✓ Successfully pushed config
 ```
 
 ### Push from Specific Directory
@@ -196,6 +236,82 @@ const title = ref('My App')
 </style>
 ```
 
+### Blueprints
+
+Blueprints must be `.blueprint.json` files. The filename must match the pattern `{identifier}.blueprint.json`:
+
+```
+user.blueprint.json     →  identifier: "user"
+product.blueprint.json  →  identifier: "product"
+```
+
+**Example blueprint:**
+```json
+{
+  "identifier": "user",
+  "name": "User",
+  "description": "User entity blueprint",
+  "entityIdentifierMechanism": "objectid",
+  "properties": {
+    "email": {
+      "title": "Email",
+      "type": "string",
+      "required": true,
+      "description": "User email address"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string",
+      "required": true
+    },
+    "role": {
+      "title": "Role",
+      "type": "string",
+      "enum": ["admin", "user", "guest"]
+    }
+  },
+  "permissions": [],
+  "permissionScope": "workspace",
+  "relations": [],
+  "dispatchers": {
+    "create": true,
+    "update": true,
+    "delete": true
+  }
+}
+```
+
+### Configurations
+
+Configurations must be `.config.json` files. The filename must match the pattern `{key}.config.json`:
+
+```
+app-settings.config.json    →  key: "app-settings"
+feature-flags.config.json   →  key: "feature-flags"
+```
+
+**Example configuration:**
+```json
+{
+  "key": "app-settings",
+  "public": true,
+  "kind": "settings",
+  "description": "Application settings",
+  "metadata": {
+    "theme": "dark",
+    "language": "en",
+    "notifications": {
+      "email": true,
+      "push": false
+    },
+    "features": {
+      "darkMode": true,
+      "betaFeatures": false
+    }
+  }
+}
+```
+
 ## Options
 
 View all available options:
@@ -327,9 +443,16 @@ git commit -m "Update changelog"
 
 Before pushing, ensure:
 
-- ✅ Files are in the correct format (`.vue` for components)
-- ✅ File names are valid identifiers (no spaces, special characters)
-- ✅ Component syntax is valid
+- ✅ Files are in the correct format:
+  - `.vue` for components
+  - `.blueprint.json` for blueprints
+  - `.config.json` for configurations
+- ✅ File names match the required pattern:
+  - Components: `{identifier}.vue`
+  - Blueprints: `{identifier}.blueprint.json`
+  - Configurations: `{key}.config.json`
+- ✅ JSON files are valid and properly formatted
+- ✅ Required fields are present (identifier, key, etc.)
 - ✅ You're connected to the correct Qelos instance
 - ✅ You have proper permissions
 
