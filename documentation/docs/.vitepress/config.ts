@@ -18,6 +18,7 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/getting-started/intro' },
       { text: 'SDK', link: '/sdk/sdk' },
+      { text: 'CLI', link: '/cli/' },
       { text: 'Plugins', link: '/plugins/create' },
       { text: 'Deployment', link: '/deployment/' },
     ],
@@ -82,6 +83,15 @@ export default defineConfig({
               { text: 'Authentication Flow', link: '/sdk/tutorials/authentication_flow' }
             ]
           }
+        ]
+      },
+      {
+        text: 'CLI',
+        items: [
+          { text: 'Introduction', link: '/cli/' },
+          { text: 'Create Command', link: '/cli/create' },
+          { text: 'Pull Command', link: '/cli/pull' },
+          { text: 'Push Command', link: '/cli/push' }
         ]
       },
       {

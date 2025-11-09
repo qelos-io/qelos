@@ -95,6 +95,18 @@ pnpm init play@latest my-plugin
   <a href="/getting-started/design-settings">Learn more →</a>
 </div>
 
+<div class="custom-card">
+  <h3>⚡ CLI Tool</h3>
+  <p>Manage and sync resources between local and remote instances.</p>
+  <a href="/cli/">Learn more →</a>
+</div>
+
+<div class="custom-card">
+  <h3>📚 SDK Reference</h3>
+  <p>Integrate QELOS into your applications programmatically.</p>
+  <a href="/sdk/sdk">Learn more →</a>
+</div>
+
 </div>
 
 <style>
