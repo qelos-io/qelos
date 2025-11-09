@@ -1,6 +1,6 @@
 {
   "name": "@qelos/plugins-cli",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "CLI to manage QELOS plugins",
   "main": "cli.mjs",
   "bin": {
@@ -19,6 +19,7 @@
     "cli-select": "^1.1.2",
     "decompress-zip": "^0.3.3",
     "follow-redirects": "^1.15.11",
+    "jiti": "^2.6.1",
     "rimraf": "^6.0.1",
     "yargs": "^18.0.0",
     "zx": "^8.8.5"

@@ -1,10 +1,14 @@
-import QelosAdministratorSDK from "@qelos/sdk/src/administrator";
 import fs from 'node:fs'
 import path from 'node:path'
+import {createJiti} from 'jiti';
+
+const jiti = createJiti(import.meta.url);
 
 export default async function pullController({ type, path: targetPath }) {
 
-  const sdk = new QelosAdministratorSDK({
+  const QelosAdministratorSDK = await jiti('@qelos/sdk/src/administrator/index.ts');
+
+  const sdk = new QelosAdministratorSDK.default({
     appUrl: process.env.QELOS_URL || "http://localhost:3000",
   })
 
@@ -27,8 +31,10 @@ export default async function pullController({ type, path: targetPath }) {
     await Promise.all(components.map(async (component) => {
       const fileName = `${component.identifier}.vue`
       const filePath = path.join(targetPath, fileName)
+
+      const {content} = await sdk.components.getComponent(component._id);
       
-      fs.writeFileSync(filePath, component.content, 'utf-8')
+      fs.writeFileSync(filePath, content, 'utf-8')
       console.log('Pulled component:', component.identifier)
     }))
 

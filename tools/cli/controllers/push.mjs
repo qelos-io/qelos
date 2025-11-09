@@ -1,9 +1,13 @@
-import QelosAdministratorSDK from "@qelos/sdk/src/administrator";
 import fs from 'node:fs'
+import {createJiti} from 'jiti';
 
-export default async  function pushController({ type, path }) {
+const jiti = createJiti(import.meta.url);
 
-  const sdk = new QelosAdministratorSDK({
+export default async function pushController({ type, path }) {
+
+  const QelosAdministratorSDK = await jiti('@qelos/sdk/src/administrator/index.ts');
+
+  const sdk = new QelosAdministratorSDK.default({
     appUrl: process.env.QELOS_URL || "http://localhost:3000",
   })
 
