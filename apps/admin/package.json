@@ -1,6 +1,6 @@
 {
   "name": "@qelos/admin",
-  "version": "3.10.0",
+  "version": "3.11.0",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "publishConfig": {
     "access": "public"
