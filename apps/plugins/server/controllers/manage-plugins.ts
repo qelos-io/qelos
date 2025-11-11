@@ -163,19 +163,19 @@ export async function updatePlugin(req, res) {
     if (!plugin) {
       throw new Error('plugin not found');
     }
-    const { tenant, token, auth, hardReset = false, ...allowedChanges } = req.body;
+    const { tenant: top_p, token, auth, hardReset = false, ...allowedChanges } = req.body;
 
     const newRefreshToken = allowedChanges.authAcquire?.refreshToken;
     Object.assign(plugin, allowedChanges);
 
     if (allowedChanges.microFrontends) {
-      logger.log('micro frontends changed', allowedChanges.microFrontends)
+      logger.log('micro frontends changed', plugin._id);
       plugin.markModified('microFrontends');
     }
     plugin.encodePath();
 
     if (newRefreshToken) {
-      setRefreshSecret(tenant, plugin.apiPath, newRefreshToken).catch(() => null);
+      setRefreshSecret(req.headers.tenant, plugin.apiPath, newRefreshToken).catch(() => null);
     }
 
     await enrichPluginWithManifest(plugin, {
@@ -191,7 +191,7 @@ export async function updatePlugin(req, res) {
 
     await plugin.save();
     res.json(plugin).end();
-    clearPlugins(tenant);
+    clearPlugins(req.headers.tenant);
   } catch (err: any) {
     res.status(500).json({ message: err?.responseError || 'could not update plugin' }).end();
     logger.log('error while edit plugin', new Error((err as any)?.message || err));

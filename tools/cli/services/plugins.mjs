@@ -1,6 +1,8 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import { join } from 'node:path';
 import { logger } from './logger.mjs';
+import { extractMicroFrontendStructures, resolveMicroFrontendStructures } from './micro-frontends.mjs';
 
 /**
  * Push plugins from local directory to remote
@@ -37,6 +39,19 @@ export async function pushPlugins(sdk, path) {
       }
       
       logger.step(`Pushing plugin: ${apiPath}`);
+      
+      // Resolve micro-frontend structures from $ref references
+      if (pluginData.microFrontends && pluginData.microFrontends.length > 0) {
+        try {
+          pluginData.microFrontends = await resolveMicroFrontendStructures(
+            pluginData.microFrontends,
+            path
+          );
+        } catch (error) {
+          logger.error(`Failed to resolve micro-frontend structures for ${apiPath}`, error);
+          throw new Error(`Failed to resolve structures for ${apiPath}: ${error.message}`);
+        }
+      }
       
       const existingPlugin = existingPlugins.find(
         plugin => plugin.apiPath === apiPath
@@ -126,6 +141,7 @@ export async function pullPlugins(sdk, targetPath) {
   await Promise.all(plugins.map(async (plugin) => {
     const fileName = `${plugin.apiPath}.plugin.json`;
     const filePath = join(targetPath, fileName);
+    const pluginDir = join(targetPath, plugin.apiPath);
 
     // Fetch full plugin details
     const fullPlugin = await sdk.managePlugins.getById(plugin._id);
@@ -134,6 +150,12 @@ export async function pullPlugins(sdk, targetPath) {
       const { _id, ...rest } = obj;
       return rest;
     }
+
+    // Extract micro-frontend structures to separate files
+    const processedMicroFrontends = extractMicroFrontendStructures(
+      (fullPlugin.microFrontends || []).map(removeIdFromObject),
+      targetPath
+    );
 
     const relevantFields = {
       name: fullPlugin.name,
@@ -145,7 +167,7 @@ export async function pullPlugins(sdk, targetPath) {
       authAcquire: fullPlugin.authAcquire,
       proxyUrl: fullPlugin.proxyUrl,
       subscribedEvents: (fullPlugin.subscribedEvents || []).map(removeIdFromObject),
-      microFrontends: (fullPlugin.microFrontends || []).map(removeIdFromObject),
+      microFrontends: processedMicroFrontends,
       injectables: (fullPlugin.injectables || []).map(removeIdFromObject),
       navBarGroups: (fullPlugin.navBarGroups || []).map(removeIdFromObject),
       cruds: (fullPlugin.cruds || []).map(removeIdFromObject),
