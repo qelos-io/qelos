@@ -5,7 +5,7 @@ editLink: true
 
 # {{ $frontmatter.title }}
 
-The `pull` command downloads resources from your Qelos instance to your local filesystem, allowing you to work on components, blueprints, and configurations locally.
+The `pull` command downloads resources from your Qelos instance to your local filesystem, allowing you to work on components, blueprints, configurations, plugins, blocks, and more locally.
 
 ## Usage
 
@@ -27,6 +27,9 @@ Currently supported resource types:
 - **components** - Vue components from your Qelos instance
 - **blueprints** - Data model blueprints and entity schemas
 - **config** / **configs** / **configuration** - Custom configuration objects
+- **plugins** - Plugin configurations and code
+- **blocks** - Pre-designed frontend blocks
+- **all** / **\*** - Pull all resource types into organized subdirectories
 
 ## How It Works
 
@@ -115,6 +118,141 @@ Found 2 configuration(s) to pull
 my-configs/
 ├── app-settings.config.json
 └── feature-flags.config.json
+```
+
+### Pull Plugins
+
+```bash
+qelos pull plugins ./my-plugins
+```
+
+**Output:**
+```
+Created directory: ./my-plugins
+Found 3 plugin(s) to pull
+→ Pulled: payment-gateway
+→ Pulled: analytics-tracker
+→ Pulled: email-service
+ℹ Pulled 3 plugin(s)
+✓ Successfully pulled plugins to ./my-plugins
+```
+
+**Result:**
+```
+my-plugins/
+├── payment-gateway/
+├── analytics-tracker/
+└── email-service/
+```
+
+### Pull Blocks
+
+```bash
+qelos pull blocks ./my-blocks
+```
+
+**Output:**
+```
+Created directory: ./my-blocks
+Found 3 block(s) to pull
+→ Pulled: hero-section
+→ Pulled: contact-form
+→ Pulled: testimonials
+ℹ Saved blocks.json with metadata
+ℹ Pulled 3 block(s)
+✓ Successfully pulled blocks to ./my-blocks
+```
+
+**Result:**
+```
+my-blocks/
+├── hero-section.vue
+├── contact-form.vue
+├── testimonials.vue
+└── blocks.json
+```
+
+### Pull All Resources
+
+```bash
+qelos pull all ./my-resources
+# Or using the wildcard
+qelos pull * ./my-resources
+```
+
+**Output:**
+```
+Pulling all resources to ./my-resources
+
+Pulling components to ./my-resources/components
+ℹ Created directory: ./my-resources/components
+ℹ Found 5 component(s) to pull
+→ Pulled: user-profile
+→ Pulled: navigation-menu
+→ Pulled: data-table
+...
+✓ Successfully pulled components
+
+Pulling blueprints to ./my-resources/blueprints
+ℹ Created directory: ./my-resources/blueprints
+ℹ Found 3 blueprint(s) to pull
+→ Pulled: user
+→ Pulled: product
+→ Pulled: order
+...
+✓ Successfully pulled blueprints
+
+Pulling configs to ./my-resources/configs
+ℹ Created directory: ./my-resources/configs
+ℹ Found 2 configuration(s) to pull
+→ Pulled: app-settings
+→ Pulled: feature-flags
+...
+✓ Successfully pulled configs
+
+Pulling plugins to ./my-resources/plugins
+ℹ Created directory: ./my-resources/plugins
+ℹ Found 2 plugin(s) to pull
+→ Pulled: payment-gateway
+→ Pulled: analytics-tracker
+...
+✓ Successfully pulled plugins
+
+Pulling blocks to ./my-resources/blocks
+ℹ Created directory: ./my-resources/blocks
+ℹ Found 3 block(s) to pull
+→ Pulled: hero-section
+→ Pulled: contact-form
+→ Pulled: testimonials
+...
+✓ Successfully pulled blocks
+
+✓ Successfully pulled all resources to ./my-resources
+```
+
+**Result:**
+```
+my-resources/
+├── components/
+│   ├── user-profile.vue
+│   ├── navigation-menu.vue
+│   ├── data-table.vue
+│   └── components.json
+├── blueprints/
+│   ├── user.blueprint.json
+│   ├── product.blueprint.json
+│   └── order.blueprint.json
+├── configs/
+│   ├── app-settings.config.json
+│   └── feature-flags.config.json
+├── plugins/
+│   ├── payment-gateway/
+│   └── analytics-tracker/
+└── blocks/
+    ├── hero-section.vue
+    ├── contact-form.vue
+    ├── testimonials.vue
+    └── blocks.json
 ```
 
 ### Pull to Specific Directory
@@ -366,6 +504,12 @@ Keep different resource types in separate directories:
 qelos pull components ./resources/components
 qelos pull plugins ./resources/plugins
 qelos pull blueprints ./resources/blueprints
+```
+
+Or use the `all` option to automatically organize them:
+
+```bash
+qelos pull all ./resources
 ```
 
 ### 4. Document Changes

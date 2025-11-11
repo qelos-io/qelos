@@ -196,5 +196,18 @@
   "-- No Link --": "-- Aucun lien --",
   "Top area of Navbar": "Zone supérieure de la barre de navigation",
   "Bottom area of Navbar": "Zone inférieure de la barre de navigation",
-  "User Dropdown": "Menu déroulant utilisateur"
+  "User Dropdown": "Menu déroulant utilisateur",
+  "Expand menu": "Développer le menu",
+  "Collapse menu": "Réduire le menu",
+  "COMPONENTS": "COMPOSANTS",
+  "Content Boxes": "Boîtes de contenu",
+  "Boxes List": "Liste des boîtes",
+  "Vue Components": "Composants Vue",
+  "Components List": "Liste des composants",
+  "Create Vue Component": "Créer un composant Vue",
+  "MANAGE": "GÉRER",
+  "Blueprints": "Modèles",
+  "PLUGINS": "PLUGINS",
+  "Plugins List": "Liste des plugins",
+  "Integrations": "Intégrations"
 }

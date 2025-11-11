@@ -196,5 +196,18 @@
   "-- No Link --": "-- ללא קישור --",
   "Top area of Navbar": "אזור עליון של סרגל הניווט",
   "Bottom area of Navbar": "אזור תחתון של סרגל הניווט",
-  "User Dropdown": "תפריט נפתח של משתמש"
+  "User Dropdown": "תפריט נפתח של משתמש",
+  "Expand menu": "הרחב תפריט",
+  "Collapse menu": "כווץ תפריט",
+  "COMPONENTS": "קומפוננטות",
+  "Content Boxes": "קוביות תוכן",
+  "Boxes List": "רשימת קוביות",
+  "Vue Components": "קומפוננטות Vue",
+  "Components List": "רשימת קומפוננטות",
+  "Create Vue Component": "צור קומפוננת Vue",
+  "MANAGE": "ניהול",
+  "Blueprints": "ישויות נתונים",
+  "PLUGINS": "תוספים",
+  "Plugins List": "רשימת תוספים",
+  "Integrations": "אינטגרציות"
 }

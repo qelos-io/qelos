@@ -5,7 +5,7 @@ editLink: true
 
 # {{ $frontmatter.title }}
 
-The `push` command uploads local resources to your Qelos instance, allowing you to update existing resources or create new ones from your local filesystem.
+The `push` command uploads local resources to your Qelos instance, allowing you to update existing resources or create new ones from your local filesystem. Supports components, blueprints, configurations, plugins, blocks, and more.
 
 ## Usage
 
@@ -27,6 +27,9 @@ Currently supported resource types:
 - **components** - Vue components to push to your Qelos instance
 - **blueprints** - Data model blueprints and entity schemas
 - **config** / **configs** / **configuration** - Custom configuration objects
+- **plugins** - Plugin configurations and code
+- **blocks** - Pre-designed frontend blocks
+- **all** / **\*** - Push all resource types from organized subdirectories
 
 ## How It Works
 
@@ -97,6 +100,114 @@ Pushing config from ./my-configs
 ℹ Pushed 2 configuration(s)
 ✓ Successfully pushed config
 ```
+
+### Push Plugins
+
+```bash
+qelos push plugins ./my-plugins
+```
+
+**Output:**
+```
+Pushing plugins from ./my-plugins
+ℹ Found 3 plugin(s) to push
+→ Pushing plugin: payment-gateway
+✓ Updated: payment-gateway
+→ Pushing plugin: analytics-tracker
+✓ Updated: analytics-tracker
+→ Pushing plugin: email-service
+✓ Created: email-service
+ℹ Pushed 3 plugin(s)
+✓ Successfully pushed plugins
+```
+
+### Push Blocks
+
+```bash
+qelos push blocks ./my-blocks
+```
+
+**Output:**
+```
+Pushing blocks from ./my-blocks
+ℹ Found 3 block(s) to push
+→ Pushing block: hero-section
+✓ Updated: hero-section
+→ Pushing block: contact-form
+✓ Updated: contact-form
+→ Pushing block: testimonials
+✓ Created: testimonials
+ℹ Pushed 3 block(s)
+✓ Successfully pushed blocks
+```
+
+### Push All Resources
+
+```bash
+qelos push all ./my-resources
+# Or using the wildcard
+qelos push * ./my-resources
+```
+
+**Output:**
+```
+Pushing all resources from ./my-resources
+
+Pushing components from ./my-resources/components
+ℹ Found 3 component(s) to push
+→ Pushing component: user-profile
+✓ Updated: user-profile
+→ Pushing component: navigation-menu
+✓ Updated: navigation-menu
+→ Pushing component: data-table
+✓ Created: data-table
+...
+✓ Successfully pushed components
+
+Pushing blueprints from ./my-resources/blueprints
+ℹ Found 3 blueprint(s) to push
+→ Pushing blueprint: user
+✓ Updated: user
+→ Pushing blueprint: product
+✓ Updated: product
+→ Pushing blueprint: order
+✓ Created: order
+...
+✓ Successfully pushed blueprints
+
+Pushing configs from ./my-resources/configs
+ℹ Found 2 configuration(s) to push
+→ Pushing configuration: app-settings
+✓ Updated: app-settings
+→ Pushing configuration: feature-flags
+✓ Updated: feature-flags
+...
+✓ Successfully pushed configs
+
+Pushing plugins from ./my-resources/plugins
+ℹ Found 2 plugin(s) to push
+→ Pushing plugin: payment-gateway
+✓ Updated: payment-gateway
+→ Pushing plugin: analytics-tracker
+✓ Updated: analytics-tracker
+...
+✓ Successfully pushed plugins
+
+Pushing blocks from ./my-resources/blocks
+ℹ Found 3 block(s) to push
+→ Pushing block: hero-section
+✓ Updated: hero-section
+→ Pushing block: contact-form
+✓ Updated: contact-form
+→ Pushing block: testimonials
+✓ Created: testimonials
+...
+✓ Successfully pushed blocks
+
+✓ Successfully pushed all resources from ./my-resources
+```
+
+**Note:** When using `all` or `*`, the command expects subdirectories named `components`, `blueprints`, `configs`, `plugins`, and `blocks`. If a subdirectory doesn't exist, it will be skipped.
 
 ### Push from Specific Directory
 
@@ -312,6 +423,55 @@ feature-flags.config.json   →  key: "feature-flags"
 }
 ```
 
+### Plugins
+
+Plugins are organized in directories. Each plugin directory should contain the plugin's configuration and code files.
+
+```
+my-plugins/
+├── payment-gateway/
+│   ├── plugin.json
+│   └── index.js
+└── analytics-tracker/
+    ├── plugin.json
+    └── index.js
+```
+
+### Blocks
+
+Blocks must be `.vue` files. The filename (without extension) becomes the block identifier:
+
+```
+hero-section.vue   →  identifier: "hero-section"
+contact-form.vue   →  identifier: "contact-form"
+testimonials.vue   →  identifier: "testimonials"
+```
+
+**Example block:**
+```vue
+<!-- hero-section.vue -->
+<template>
+  <div class="hero-section">
+    <h1>Welcome to Our Platform</h1>
+    <p>Build amazing applications with ease</p>
+    <button>Get Started</button>
+  </div>
+</template>
+
+<script setup>
+// Block logic
+</script>
+
+<style scoped>
+.hero-section {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+</style>
+```
+
 ## Options
 
 View all available options:
@@ -444,13 +604,16 @@ git commit -m "Update changelog"
 Before pushing, ensure:
 
 - ✅ Files are in the correct format:
-  - `.vue` for components
+  - `.vue` for components and blocks
   - `.blueprint.json` for blueprints
   - `.config.json` for configurations
+  - Plugin directories with proper structure
 - ✅ File names match the required pattern:
   - Components: `{identifier}.vue`
   - Blueprints: `{identifier}.blueprint.json`
   - Configurations: `{key}.config.json`
+  - Blocks: `{identifier}.vue`
+  - Plugins: Directory structure with `plugin.json`
 - ✅ JSON files are valid and properly formatted
 - ✅ Required fields are present (identifier, key, etc.)
 - ✅ You're connected to the correct Qelos instance

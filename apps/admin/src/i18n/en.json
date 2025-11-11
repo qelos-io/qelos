@@ -196,5 +196,18 @@
   "-- No Link --": "-- No Link --",
   "Top area of Navbar": "Top area of Navbar",
   "Bottom area of Navbar": "Bottom area of Navbar",
-  "User Dropdown": "User Dropdown"
+  "User Dropdown": "User Dropdown",
+  "Expand menu": "Expand menu",
+  "Collapse menu": "Collapse menu",
+  "COMPONENTS": "COMPONENTS",
+  "Content Boxes": "Content Boxes",
+  "Boxes List": "Boxes List",
+  "Vue Components": "Vue Components",
+  "Components List": "Components List",
+  "Create Vue Component": "Create Vue Component",
+  "MANAGE": "MANAGE",
+  "Blueprints": "Blueprints",
+  "PLUGINS": "PLUGINS",
+  "Plugins List": "Plugins List",
+  "Integrations": "Integrations"
 }
