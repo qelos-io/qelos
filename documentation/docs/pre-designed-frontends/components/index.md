@@ -19,6 +19,7 @@ Here's a list of available components in the Qelos template ecosystem:
 
 The following components have detailed documentation:
 
+- [AI Chat](./ai-chat.md) - Complete AI chat interface with streaming, file attachments, and customizable UI
 - [Form Input](./form-input.md) - Input component for forms
 - [Form Row Group](./form-row-group.md) - Group form inputs in rows
 - [Save Button](./save-button.md) - Button for saving forms

@@ -10,7 +10,7 @@
   >
     <div class="chat-window" ref="chatWindow">
       <div v-if="messages.length === 0" class="ai-initial-message">
-        <slot v-if="$slots.message" name="message" />
+        <slot v-if="$slots.initialMessage" name="initialMessage" />
         <template v-else>
           <div class="ai-initial-title">
             {{ $t(title || "🤖 I'm your AI assistant") }}
@@ -54,51 +54,72 @@
         </template>
       </div>
       <transition-group name="chat-bubble" tag="div">
-        <div
-          v-for="(msg, idx) in messages"
-          :key="msg.id"
-          :class="[
-            'bubble',
-            msg.role,
-            {
-              message: true,
-              streaming:
-                loading &&
-                msg.role === 'assistant' &&
-                idx === messages.length - 1,
-            },
-          ]"
-        >
-          <div class="bubble-header">
-            <span class="avatar">
-              <el-icon v-if="msg.role === 'user'"><UserFilled /></el-icon>
-              <el-icon v-else><Cpu /></el-icon>
-            </span>
-            <span class="meta"
-              >{{ msg.role === "user" ? "You" : "AI" }} ·
-              {{ formatTime(msg.time) }}</span
-            >
-            <div
-              class="copy-button"
-              @click="copyMessage(msg)"
-              v-if="msg.type === 'text'"
-            >
-              <el-icon v-if="copiedMessageId === msg.id"><Check /></el-icon>
-              <el-icon v-else><DocumentCopy /></el-icon>
+        <template v-if="$slots.message">
+          <div
+            v-for="(msg, idx) in messages"
+            :key="msg.id"
+          >
+            <slot
+              name="message"
+              :message="msg"
+              :index="idx"
+              :is-streaming="loading && msg.role === 'assistant' && idx === messages.length - 1"
+              :format-time="formatTime"
+              :copy-message="copyMessage"
+              :render-markdown="renderMarkdown"
+              :file-icon-class="fileIconClass"
+              :copied-message-id="copiedMessageId"
+              :loading="loading"
+            />
+          </div>
+        </template>
+        <template v-else>
+          <div
+            v-for="(msg, idx) in messages"
+            :key="msg.id"
+            :class="[
+              'bubble',
+              msg.role,
+              {
+                message: true,
+                streaming:
+                  loading &&
+                  msg.role === 'assistant' &&
+                  idx === messages.length - 1,
+              },
+            ]"
+          >
+            <div class="bubble-header">
+              <span class="avatar">
+                <el-icon v-if="msg.role === 'user'"><UserFilled /></el-icon>
+                <el-icon v-else><Cpu /></el-icon>
+              </span>
+              <span class="meta"
+                >{{ msg.role === "user" ? "You" : "AI" }} ·
+                {{ formatTime(msg.time) }}</span
+              >
+              <div
+                class="copy-button"
+                @click="copyMessage(msg)"
+                v-if="msg.type === 'text'"
+              >
+                <el-icon v-if="copiedMessageId === msg.id"><Check /></el-icon>
+                <el-icon v-else><DocumentCopy /></el-icon>
+              </div>
+            </div>
+            <div class="bubble-content">
+              <div
+                v-if="msg.type === 'text'"
+                v-html="renderMarkdown(msg.content)"
+                ref="markdownContent"
+              ></div>
+              <div v-if="msg.type === 'file'" class="file-attachment-preview">
+                <font-awesome-icon :icon="['fas', fileIconClass(msg.filename)]" />
+                <span>{{ msg.filename }}</span>
+              </div>
             </div>
           </div>
-          <div class="bubble-content">
-            <div
-              v-if="msg.type === 'text'"
-              v-html="renderMarkdown(msg.content)"
-              ref="markdownContent"
-            ></div>
-            <div v-if="msg.type === 'file'" class="file-attachment-preview">
-              <font-awesome-icon :icon="['fas', fileIconClass(msg.filename)]" />
-              <span>{{ msg.filename }}</span>
-            </div>
-          </div>
-        </div>
+        </template>
       </transition-group>
       <div v-if="loading" class="stream-indicator">
         <el-icon class="spin"><Loading /></el-icon> {{ $t(typingText || "AI is typing...") }}
@@ -130,7 +151,20 @@
         <el-icon><Document /></el-icon> {{ file.name }}
       </el-tag>
     </div>
-    <form class="input-row" @submit.prevent="onSend">
+    <slot
+      v-if="$slots['user-input']"
+      name="user-input"
+      :send="onSend"
+      :input="input"
+      :update-input="(value: string) => input = value"
+      :loading="loading"
+      :can-send="canSend()"
+      :attached-files="attachedFiles"
+      :remove-file="removeFile"
+      :input-ref="inputRef"
+      :on-input-enter="onInputEnter"
+    />
+    <form v-else class="input-row" @submit.prevent="onSend">
       <div class="input-group">
         <el-input
           v-model="input"

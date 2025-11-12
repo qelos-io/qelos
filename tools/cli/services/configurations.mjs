@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { join } from 'node:path';
 import { logger } from './logger.mjs';
+import { appUrl } from './sdk.mjs';
 
 /**
  * Push configurations from local directory to remote
@@ -37,6 +38,25 @@ export async function pushConfigurations(sdk, path) {
       }
       
       logger.step(`Pushing configuration: ${key}`);
+      
+      // Special handling for app-configuration: ensure QELOS_URL hostname is in websiteUrls
+      if (key === 'app-configuration') {
+        try {
+          const qelosUrl = new URL(appUrl);
+          const hostname = qelosUrl.hostname;
+          
+          if (!configData.metadata.websiteUrls) {
+            configData.metadata.websiteUrls = [];
+          }
+          
+          if (!configData.metadata.websiteUrls.includes(hostname)) {
+            configData.metadata.websiteUrls.push(hostname);
+            logger.info(`Added ${hostname} to websiteUrls`);
+          }
+        } catch (error) {
+          logger.warning(`Failed to parse QELOS_URL: ${error.message}`);
+        }
+      }
       
       const existingConfig = existingConfigurations.find(
         config => config.key === key
