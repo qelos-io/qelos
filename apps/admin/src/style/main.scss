@@ -296,3 +296,40 @@ p {
 
 @import "content-list.scss";
 @import "mobile.scss";
+
+/* Compilation Error Notification Styles */
+.compilation-error-notification {
+  min-width: 500px;
+  max-width: 700px;
+  
+  @media (max-width: 768px) {
+    min-width: 90vw;
+    max-width: 90vw;
+  }
+}
+
+.el-notification {
+  .compilation-error {
+    .error-message {
+      margin-bottom: 12px;
+      font-weight: 500;
+      color: var(--el-color-danger);
+    }
+    
+    .code-snippet {
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      border-radius: 4px;
+      padding: 12px;
+      margin: 0;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      overflow-x: auto;
+      white-space: pre;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-height: 300px;
+      overflow-y: auto;
+    }
+  }
+}

@@ -20,6 +20,8 @@ const SAAS_BUILDER_SYSTEM_PROMPT = {
   When the user mentions any of these terms: "integrations", "connections", "integration sources", "webhooks", "API connections", "external services", "OpenAI integration", "function calling", or asks about connecting to external services - ALWAYS use the call_integration_manager_agent tool.
   
   DO NOT confuse integrations (external service connections) with components (UI elements).
+
+  when creating anything regarding blueprints, check if the blueprints already exist before creating new ones. If they do, use the existing blueprint instead of creating a new one.
   `
 }
 

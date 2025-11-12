@@ -156,8 +156,8 @@ export async function compileVueComponent(fileContent: string, tenanthost: strin
       props: getProps(jsContent)
     };
   } catch (err: any) {
-    logger.error('failed to compile component', err);
-    throw new Error('failed to compile component');
+    // Re-throw the original error to preserve stderr and other details
+    throw err;
   } finally {
     // remove files
     await Promise.all([

@@ -172,10 +172,6 @@ watch(() => form.componentName, (newVal) => {
   }
 });
 
-const handleCancel = () => {
-  emit('cancel');
-};
-
 const handleSubmit = async () => {
   if (!formRef.value) return;
   

@@ -3,6 +3,24 @@ import { service } from '@qelos/api-kit';
 
 const noCodeService = service('NO_CODE', { port: process.env.NO_CODE_SERVICE_PORT || 9004 });
 
+function flattenObject(obj: any, prefix = ''): Record<string, string> {
+  const flattened: Record<string, string> = {};
+  
+  for (const [key, value] of Object.entries(obj)) {
+    const newKey = prefix ? `${prefix}.${key}` : key;
+    
+    if (value instanceof Array) {
+      flattened[newKey] = value.join(',');
+    } else if (value !== null && typeof value === 'object' && !(value instanceof Date)) {
+      Object.assign(flattened, flattenObject(value, newKey));
+    } else {
+      flattened[newKey] = String(value);
+    }
+  }
+  
+  return flattened;
+}
+
 function callNoCodeService(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE', tenant: string, data?: any) {
   return noCodeService({
     headers: { internal_secret: internalServicesSecret, tenant },
@@ -24,12 +42,18 @@ export function callPublicNoCodeService(url: string, {tenant, user}: {tenant: st
 }
 
 export async function getAllBlueprints(tenant: string, query: any) {
-  const queryString = Object.entries(query).map(([key, value]) => `${key}=${value instanceof Array ? value.join(',') : value}`).join('&');
+  const flattened = flattenObject(query);
+  const queryString = Object.entries(flattened)
+    .map(([key, value]) => `${key}=${value}`).join('&');
   return callNoCodeService(`/internal-api/blueprints?${queryString}`, 'GET', tenant);
 }
 
 export function createBlueprint(tenant: string, payload: any) {
   return callNoCodeService(`/internal-api/blueprints`, 'POST', tenant, payload);
+}
+
+export function updateBlueprint(tenant: string, blueprintIdentifier: string, payload: any) {
+  return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}`, 'PUT', tenant, payload);
 }
 
 export function getBlueprint(tenant: string, blueprintIdentifier: string) {
@@ -41,7 +65,8 @@ export function getBlueprintEntity(tenant: string, blueprintIdentifier: string, 
 }
 
 export function getBlueprintEntities(tenant: string, blueprintIdentifier: string, query: any) {
-  const queryString = Object.entries(query).map(([key, value]) => `${key}=${value}`).join('&');
+  const flattened = flattenObject(query);
+  const queryString = Object.entries(flattened).map(([key, value]) => `${key}=${value}`).join('&');
   return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities?${queryString}`, 'GET', tenant);
 }
 

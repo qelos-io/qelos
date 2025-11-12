@@ -33,7 +33,7 @@ const { submit, submitting } = useSubmitting(
   },
   {
     success: 'Component updated successfully',
-    error: 'Failed to update component'
+    error: (error: any) => error?.response?.data?.reason || `Failed to update component`
   },
   () => {
     componentsStore.retry();

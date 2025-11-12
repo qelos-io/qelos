@@ -1,9 +1,8 @@
 import { processChatCompletion } from "../chat-completion-system-agents-service";
-import { createBlueprintCalling, getBlueprintsCalling } from "../function-callings/blueprints.calling";
+import { getBlueprintsCalling } from "../function-callings/blueprints.calling";
 import { createComponentCalling, editComponentCalling, getComponentsCalling } from "../function-callings/no-code.calling";
 import { addFormToPageCalling, addFreeTextToPageCalling, addGridToPageCalling, addTableToPageCalling, createPageCalling, editPageCalling, getBlueprintRequirementForPageCalling, getHTTPRequirementForPageCalling, getPageCalling, getPagesCalling } from "../function-callings/plugins.calling";
 import { getComponents } from "../no-code-service";
-
 
 
 /**
@@ -71,7 +70,6 @@ export const pagesAgentTools = [
   createPageCalling,
   editPageCalling,
   getPageCalling,
-  createBlueprintCalling,
   getBlueprintsCalling,
   getHTTPRequirementForPageCalling,
   getBlueprintRequirementForPageCalling,

@@ -5,6 +5,44 @@ import { cacheManager } from '../services/cache-manager';
 
 const LONG_TTL = 60 * 60 * 24;
 
+/**
+ * Sanitizes compilation errors to extract only relevant error information
+ * without exposing internal server paths or sensitive data
+ */
+const sanitizeCompilationError = (error: any): string => {
+  const stderr = error?.stderr || error?.message || '';
+  
+  // Extract the Vue/Vite compilation error message
+  // Pattern: [vite:vue] [vue/compiler-sfc] Error message
+  const errorMatch = stderr.match(/\[vite:vue\]\s*\[[@\w\/\-]+\]\s*(.+?)(?=\n|$)/);
+  let errorMessage = errorMatch ? errorMatch[1].trim() : 'Compilation failed';
+  
+  // Extract the code snippet with line numbers
+  const codeLines: string[] = [];
+  const lines = stderr.split('\n');
+  
+  let inCodeBlock = false;
+  for (const line of lines) {
+    // Match lines like "68 |  const props = defineProps();" or "   |        ^"
+    if (/^\s*\d+\s*\|/.test(line)) {
+      inCodeBlock = true;
+      codeLines.push(line);
+    } else if (inCodeBlock && /^\s*\|/.test(line)) {
+      codeLines.push(line);
+    } else if (inCodeBlock && line.trim() !== '' && !line.includes('file:')) {
+      // Stop when we hit a non-empty line that's not part of the code block
+      break;
+    }
+  }
+  
+  // Combine error message with code snippet
+  if (codeLines.length > 0) {
+    return `${errorMessage}\n\n${codeLines.join('\n')}`;
+  }
+  
+  return errorMessage;
+};
+
 export const createComponent = async (req, res) => {
   let js, css, props;
   try {
@@ -12,7 +50,8 @@ export const createComponent = async (req, res) => {
     ({ js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost));
   } catch (err: any | Error) {
     logger.log('failed to compile a component', err?.message);
-    res.status(400).json({ message: 'failed to compile a component', reason: err?.message }).end();
+    const sanitizedError = sanitizeCompilationError(err);
+    res.status(400).json({ message: 'failed to compile a component', reason: sanitizedError }).end();
     return;
   }
 
@@ -47,9 +86,16 @@ export const updateComponent = async (req, res) => {
     // If content is updated, recompile the component
     if (req.body.content) {
       $set.content = req.body.content;
-      const { js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost);
-      $set.compiledContent = { js, css };
-      $set.requiredProps = props;
+      try {
+        const { js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost);
+        $set.compiledContent = { js, css };
+        $set.requiredProps = props;
+      } catch (compileErr: any) {
+        logger.log('failed to compile a component during update', compileErr?.message);
+        const sanitizedError = sanitizeCompilationError(compileErr);
+        res.status(400).json({ message: 'failed to compile a component', reason: sanitizedError }).end();
+        return;
+      }
     }
 
     const component = await Component.findOneAndUpdate(
