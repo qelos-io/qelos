@@ -159,6 +159,9 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         }
         const routerPath = '/' + mfe.route.path;
         if (allRoutes[routerPath]) {
+          if (allRoutes[routerPath].mfe) {
+            return;
+          }
           router.removeRoute(allRoutes[routerPath].name);
         }
         if (mfe.guest) {
@@ -171,7 +174,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         } else {
           router.addRoute('playPlugin', route)
         }
-        allRoutes[routerPath] = route;
+        allRoutes[routerPath] = {mfe: true};
       })
 
     if (plugins.value) {
