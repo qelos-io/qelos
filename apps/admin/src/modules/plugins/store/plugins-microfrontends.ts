@@ -171,6 +171,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         } else {
           router.addRoute('playPlugin', route)
         }
+        allRoutes[routerPath] = route;
       })
 
     if (plugins.value) {
