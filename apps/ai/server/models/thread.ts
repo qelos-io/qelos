@@ -61,7 +61,7 @@ const ThreadSchema = new Schema<IThread>(
     messages: { type: [MessageSchema], default: [] },
     messageSummaries: { type: [MessageSummarySchema], default: [] },
     user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
-    workspace: { type: Schema.Types.ObjectId, required: true, ref: 'Workspace' },
+    workspace: { type: Schema.Types.ObjectId, ref: 'Workspace' },
     created: { type: Date, default: Date.now },
     updated: { type: Date, default: Date.now }
   },
