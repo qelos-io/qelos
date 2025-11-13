@@ -105,6 +105,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
       map[route.path] = route;
       return map;
     }, {});
+    const addedRoutes = {}
     const allPluginsRoutes = Object.values(navBar)
       .map((area: { items: IMicroFrontend[] }[]) => area.map(group => group.items).flat())
       .flat()
@@ -158,10 +159,10 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
           }
         }
         const routerPath = '/' + mfe.route.path;
+        if (addedRoutes[routerPath]) {
+          return;
+        }
         if (allRoutes[routerPath]) {
-          if (allRoutes[routerPath].mfe) {
-            return;
-          }
           router.removeRoute(allRoutes[routerPath].name);
         }
         if (mfe.guest) {
@@ -174,7 +175,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         } else {
           router.addRoute('playPlugin', route)
         }
-        allRoutes[routerPath] = {mfe: true};
+        addedRoutes[routerPath] = true;
       })
 
     if (plugins.value) {
