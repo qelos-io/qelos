@@ -69,7 +69,7 @@ export async function getIntegrationToIntegrate(req, res, next) {
     next();
   } catch (e: any) {
     logger.error('Failed to get integration to integrate', e);
-    res.status(500).json({ message: 'Could not get integration to integrate' }).end();
+    res.status(400).json({ message: 'Could not get integration to integrate' }).end();
     return;
   }
 }
