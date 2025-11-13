@@ -2,8 +2,8 @@ import { ref } from 'vue'
 import { useNotifications } from './notifications'
 
 export interface IErrorMessages {
-  error?: string | ((err: Error) => string),
-  success?: string | ((data: any) => string),
+  error?: string | ((err: Error) => string | any),
+  success?: string | ((data: any) => string | any),
 }
 
 export function useSubmitting(submitFn, messages: IErrorMessages = {}, afterSuccess?: Function) {
