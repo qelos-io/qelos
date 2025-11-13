@@ -30,6 +30,7 @@ The following components have detailed documentation:
 - [Copy To Clipboard](./copy-to-clipboard.md) - Button to copy content to clipboard
 - [Empty State](./empty-state.md) - Component for empty state display
 - [Life Cycle](./life-cycle.md) - Component for displaying lifecycle stages
+- [Q Pre](./q-pre.md) - Pre-formatted text component with HTML escaping and line break handling
 
 ### Other Available Components
 
@@ -46,7 +47,6 @@ The following components are also available in the Qelos template ecosystem (doc
 - Editable Content - Content that can be edited inline
 - Remove Confirmation - Confirmation dialog for delete actions
 - Stats Card - Card for displaying statistics
-- Q Pre - Pre-formatted text component
 - Q Rating - Rating component
 
 ## Using Components

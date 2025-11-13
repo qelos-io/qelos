@@ -63,17 +63,28 @@ export const getThreads = async (req: RequestWithUser, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' })
     }
     
-    const filter: any = { user: req.user._id };
+    const filter: any = {};
+    const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
 
-    if (req.workspace) {
-      filter.workspace = req.workspace._id;
+    if (req.user.isPrivileged && !bypassAdmin) {
+      if (req.query.user) {
+        filter.user = req.query.user;
+      }
+      if (req.query.workspace) {
+        filter.workspace = req.query.workspace;
+      }
+    } else {
+      filter.user = req.user._id;
+      if (req.workspace) {
+        filter.workspace = req.workspace._id;
+      }
     }
 
     if (integration) {
       filter.integration = integration;
     }
     
-    const threads = await Thread.find(filter).sort({ updated: -1 }).lean().exec();
+    const threads = await Thread.find(filter).select('-messages').sort({ updated: -1 }).lean().exec();
     
     return res.json(threads).end();
   } catch (error) {
@@ -86,20 +97,18 @@ export const getThreads = async (req: RequestWithUser, res: Response) => {
  * Get a single thread by ID
  */
 export const getThread = async (req: RequestWithUser, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+  const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
+
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
     const { threadId } = req.params
     
     if (!threadId || !mongoose.Types.ObjectId.isValid(threadId)) {
       return res.status(400).json({ error: 'Valid thread ID is required' })
     }
     
-    if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' })
-    }
-
     const filters: any = {
       _id: threadId,
       user: req.user._id // Ensure user can only access their own threads
@@ -107,6 +116,12 @@ export const getThread = async (req: RequestWithUser, res: Response) => {
 
     if (req.workspace) {
       filters.workspace = req.workspace._id;
+    }
+
+    if (req.user.isPrivileged && !bypassAdmin) {
+      // Admin can access any thread
+      delete filters.user;
+      delete filters.workspace;
     }
     
     const thread = await Thread.findOne(filters).lean().exec();
@@ -126,6 +141,12 @@ export const getThread = async (req: RequestWithUser, res: Response) => {
  * Delete a thread
  */
 export const deleteThread = async (req: RequestWithUser, res: Response) => {
+  const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
+
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' })
+  }
+
   try {
     const { threadId } = req.params
     
@@ -133,10 +154,6 @@ export const deleteThread = async (req: RequestWithUser, res: Response) => {
       return res.status(400).json({ error: 'Valid thread ID is required' })
     }
     
-    if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' })
-    }
-
     const filters: any = {
       _id: threadId,
       user: req.user._id // Ensure user can only delete their own threads
@@ -144,6 +161,12 @@ export const deleteThread = async (req: RequestWithUser, res: Response) => {
 
     if (req.workspace) {
       filters.workspace = req.workspace._id;
+    }
+    
+    if (req.user.isPrivileged && !bypassAdmin) {
+      // Admin can delete any thread
+      delete filters.user;
+      delete filters.workspace;
     }
     
     const thread = await Thread.findOneAndDelete(filters).lean().exec();

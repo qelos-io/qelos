@@ -1,5 +1,6 @@
-import { createThread, getThreads, getThread, deleteThread } from '../controllers/thread'
+import { createThread, getThreads, getThread, deleteThread } from '../controllers/threads'
 import { getRouter, populateUser, verifyUser } from '@qelos/api-kit';
+import { checkEditPrivileged } from '../middlewares/privileged-check';
 
 export const threadsRouter = () => {
   const router = getRouter()
@@ -10,13 +11,13 @@ export const threadsRouter = () => {
   router.post('/api/ai/threads', AUTHENTICATION_MIDDLEWARES, createThread)
   
   // Get all threads (optionally filtered by integration)
-  router.get('/api/ai/threads', AUTHENTICATION_MIDDLEWARES, getThreads)
+  router.get('/api/ai/threads', AUTHENTICATION_MIDDLEWARES, checkEditPrivileged, getThreads)
   
   // Get a specific thread
-  router.get('/api/ai/threads/:threadId', AUTHENTICATION_MIDDLEWARES, getThread)
+  router.get('/api/ai/threads/:threadId', AUTHENTICATION_MIDDLEWARES, checkEditPrivileged, getThread)
   
   // Delete a thread
-  router.delete('/api/ai/threads/:threadId', AUTHENTICATION_MIDDLEWARES, deleteThread)
+  router.delete('/api/ai/threads/:threadId', AUTHENTICATION_MIDDLEWARES, checkEditPrivileged, deleteThread)
 
   return router
 }
