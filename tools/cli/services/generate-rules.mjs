@@ -3,6 +3,68 @@ import path from 'node:path';
 import { logger } from './logger.mjs';
 
 /**
+ * Fetch Qelos global components from documentation
+ * @returns {Promise<Object>} Object with components and directives
+ */
+async function fetchQelosGlobalComponents() {
+  try {
+    const response = await fetch('https://docs.qelos.io/pre-designed-frontends/components/');
+    if (!response.ok) {
+      logger.debug('Failed to fetch Qelos components documentation');
+      return null;
+    }
+    
+    const html = await response.text();
+    
+    // Extract component names and descriptions from the HTML
+    const components = [];
+    const directives = [];
+    
+    // Documented components with links and descriptions
+    const documentedComponents = [
+      { name: 'ai-chat', description: 'Complete AI chat interface with streaming, file attachments, and customizable UI' },
+      { name: 'form-input', description: 'Input component for forms' },
+      { name: 'form-row-group', description: 'Group form inputs in rows' },
+      { name: 'save-button', description: 'Button for saving forms' },
+      { name: 'monaco', description: 'Code editor component' },
+      { name: 'quick-table', description: 'Simplified table component' },
+      { name: 'v-chart', description: 'Chart visualization component' },
+      { name: 'content-box', description: 'Component that loads HTML content blocks from the database' },
+      { name: 'copy-to-clipboard', description: 'Button to copy content to clipboard' },
+      { name: 'empty-state', description: 'Component for empty state display' },
+      { name: 'life-cycle', description: 'Component for displaying lifecycle stages' },
+      { name: 'q-pre', description: 'Pre-formatted text component with HTML escaping and line break handling' }
+    ];
+    
+    // Other available components
+    const otherComponents = [
+      { name: 'edit-header', description: 'Header for edit pages' },
+      { name: 'info-icon', description: 'Icon with tooltip information' },
+      { name: 'block-item', description: 'Block container for content' },
+      { name: 'list-page-title', description: 'Title component for list pages' },
+      { name: 'general-form', description: 'Generic form component' },
+      { name: 'blueprint-entity-form', description: 'Form for blueprint entities' },
+      { name: 'confirm-message', description: 'Confirmation dialog component' },
+      { name: 'remove-button', description: 'Button for deletion actions' },
+      { name: 'editable-content', description: 'Content that can be edited inline' },
+      { name: 'remove-confirmation', description: 'Confirmation dialog for delete actions' },
+      { name: 'stats-card', description: 'Card for displaying statistics' },
+      { name: 'q-rating', description: 'Rating component' }
+    ];
+    
+    components.push(...documentedComponents, ...otherComponents);
+    
+    // Directives
+    directives.push({ name: 'v-loading', description: 'Adds loading state to an element' });
+    
+    return { components, directives };
+  } catch (error) {
+    logger.debug(`Failed to fetch Qelos components: ${error.message}`);
+    return null;
+  }
+}
+
+/**
  * Scan directory for pulled resources
  * @param {string} basePath - Base path to scan
  * @returns {Object} Object containing found resources
@@ -116,9 +178,10 @@ function scanPulledResources(basePath) {
  * Generate rules content based on scanned resources
  * @param {Object} resources - Scanned resources
  * @param {string} ideType - Type of IDE (windsurf, cursor, claude)
+ * @param {Object} qelosComponents - Qelos global components from docs
  * @returns {string} Generated rules content
  */
-function generateRulesContent(resources, ideType) {
+function generateRulesContent(resources, ideType, qelosComponents) {
   const sections = [];
 
   // Header
@@ -145,6 +208,59 @@ function generateRulesContent(resources, ideType) {
     sections.push('- **Vue I18n**: https://vue-i18n.intlify.dev/api/general.html');
     sections.push('- **Pinia**: https://pinia.vuejs.org/api/');
     sections.push('');
+    sections.push('### Qelos SDK Access');
+    sections.push('Components have access to the Qelos SDK instance via the `@sdk` alias:');
+    sections.push('```javascript');
+    sections.push('import sdk from "@sdk";');
+    sections.push('');
+    sections.push('// sdk is an instance of QelosAdministratorSDK');
+    sections.push('// Available methods include:');
+    sections.push('// - sdk.manageComponents');
+    sections.push('// - sdk.manageBlueprints');
+    sections.push('// - sdk.managePlugins');
+    sections.push('// - sdk.manageConfigurations');
+    sections.push('// - And more...');
+    sections.push('```');
+    sections.push('');
+    sections.push('**SDK Documentation**: https://docs.qelos.io/sdk/sdk');
+    sections.push('');
+    sections.push('### Qelos Global Components');
+    sections.push('All components and HTML templates can use Qelos pre-designed components **without importing them**.');
+    sections.push('These components are globally registered and available everywhere in kebab-case format.');
+    sections.push('');
+    sections.push('**Documentation**: https://docs.qelos.io/pre-designed-frontends/components/');
+    sections.push('');
+    
+    if (qelosComponents && qelosComponents.components && qelosComponents.components.length > 0) {
+      sections.push('**Available Components:**');
+      qelosComponents.components.forEach(comp => {
+        sections.push(`- \`<${comp.name}>\` - ${comp.description}`);
+      });
+      sections.push('');
+      
+      if (qelosComponents.directives && qelosComponents.directives.length > 0) {
+        sections.push('**Available Directives:**');
+        qelosComponents.directives.forEach(dir => {
+          sections.push(`- \`${dir.name}\` - ${dir.description}`);
+        });
+        sections.push('');
+      }
+    } else {
+      // Fallback if fetch failed
+      sections.push('**Note**: Visit the documentation link above for the complete list of available components.');
+      sections.push('');
+    }
+    
+    sections.push('**Usage Example:**');
+    sections.push('```html');
+    sections.push('<form-input label="Name" v-model="name"></form-input>');
+    sections.push('<save-button @click="saveData"></save-button>');
+    sections.push('<content-box title="User Information">Content goes here</content-box>');
+    sections.push('<div v-loading="isLoading">Loading content...</div>');
+    sections.push('```');
+    sections.push('');
+    sections.push('**Important**: All components must use kebab-case and have closing tags.');
+    sections.push('');
     sections.push('### Component Metadata Mapping');
     sections.push('The `components.json` file maps component names to their metadata:');
     sections.push('```json');
@@ -166,19 +282,20 @@ function generateRulesContent(resources, ideType) {
     sections.push('');
     sections.push('### Component Naming Convention');
     sections.push('Components follow Vue naming conventions:');
-    sections.push('- **File names**: PascalCase (e.g., `PersonalStrategicTable.vue`, `VideoPlayer.vue`)');
-    sections.push('- **Template usage**: kebab-case (e.g., `<personal-strategic-table>`, `<video-player>`)');
+    sections.push('- **File names**: PascalCase (e.g., `ProductCard.vue`, `VideoPlayer.vue`)');
+    sections.push('- **Template usage**: kebab-case (e.g., `<product-card>`, `<video-player>`)');
     sections.push('- **Conversion**: PascalCase file names are automatically converted to kebab-case in templates');
     sections.push('');
     sections.push('**Example mapping:**');
     sections.push('```');
-    sections.push('PersonalStrategicTable.vue  →  <personal-strategic-table>');
-    sections.push('VideoPlayer.vue             →  <video-player>');
-    sections.push('UserProfile.vue             →  <user-profile>');
+    sections.push('ProductCard.vue       →  <product-card>');
+    sections.push('VideoPlayer.vue       →  <video-player>');
+    sections.push('UserProfile.vue       →  <user-profile>');
+    sections.push('DataTable.vue         →  <data-table>');
     sections.push('```');
     sections.push('');
-    sections.push('When you see a component used in HTML/templates like `<personal-strategic-table>`,');
-    sections.push('the actual component file is `PersonalStrategicTable.vue` in the components directory.');
+    sections.push('When you see a component used in HTML/templates like `<product-card>`,');
+    sections.push('the actual component file is `ProductCard.vue` in the components directory.');
     sections.push('');
     sections.push('### Working with Components');
     sections.push('- When modifying a component, update both the `.vue` file and its entry in `components.json`');
@@ -196,6 +313,34 @@ function generateRulesContent(resources, ideType) {
     sections.push('- Blocks are HTML template files (.html files)');
     sections.push('- Each block has metadata stored in `blocks.json`');
     sections.push('- Blocks are used as reusable HTML templates in the Qelos platform');
+    sections.push('');
+    sections.push('### IMPORTANT: Block Limitations');
+    sections.push('**Blocks CANNOT contain `<script>` tags or JavaScript code.**');
+    sections.push('');
+    sections.push('To add JavaScript functionality to a block:');
+    sections.push('1. Create a new Vue component in the `components/` folder');
+    sections.push('2. Implement your JavaScript logic in the component');
+    sections.push('3. Use the component in your block HTML using kebab-case with closing tags');
+    sections.push('4. No import statement is needed - components are globally available');
+    sections.push('');
+    sections.push('**Example:**');
+    sections.push('```html');
+    sections.push('<!-- ❌ WRONG: Do not add <script> tags in blocks -->');
+    sections.push('<div id="my-element"></div>');
+    sections.push('<script>');
+    sections.push('  document.getElementById("my-element").addEventListener("click", ...);');
+    sections.push('</script>');
+    sections.push('');
+    sections.push('<!-- ✅ CORRECT: Create a component and use it -->');
+    sections.push('<!-- First create components/InteractiveButton.vue with your logic -->');
+    sections.push('<interactive-button></interactive-button>');
+    sections.push('```');
+    sections.push('');
+    sections.push('Blocks can contain:');
+    sections.push('- HTML markup');
+    sections.push('- CSS in `<style>` tags');
+    sections.push('- Vue components (kebab-case, with closing tags)');
+    sections.push('- Qelos global components (ai-chat, form-input, etc.)');
     sections.push('');
     sections.push('### Block Metadata Mapping');
     sections.push('The `blocks.json` file maps block filenames (kebab-case) to their metadata:');
@@ -254,34 +399,48 @@ function generateRulesContent(resources, ideType) {
     sections.push('### Blueprint Example');
     sections.push('```json');
     sections.push('{');
-    sections.push('  "identifier": "user_profile",');
-    sections.push('  "name": "User Profile",');
-    sections.push('  "description": "User profile data model",');
-    sections.push('  "properties": [');
-    sections.push('    {');
-    sections.push('      "key": "firstName",');
+    sections.push('  "identifier": "product",');
+    sections.push('  "name": "Product",');
+    sections.push('  "description": "Product catalog item",');
+    sections.push('  "entityIdentifierMechanism": "objectid",');
+    sections.push('  "permissionScope": "workspace",');
+    sections.push('  "properties": {');
+    sections.push('    "name": {');
+    sections.push('      "title": "Product Name",');
     sections.push('      "type": "string",');
-    sections.push('      "label": "First Name",');
+    sections.push('      "description": "Name of the product",');
     sections.push('      "required": true');
     sections.push('    },');
-    sections.push('    {');
-    sections.push('      "key": "email",');
-    sections.push('      "type": "email",');
-    sections.push('      "label": "Email Address",');
-    sections.push('      "required": true');
+    sections.push('    "price": {');
+    sections.push('      "title": "Price",');
+    sections.push('      "type": "number",');
+    sections.push('      "description": "Product price",');
+    sections.push('      "required": true,');
+    sections.push('      "min": 0');
+    sections.push('    },');
+    sections.push('    "inStock": {');
+    sections.push('      "title": "In Stock",');
+    sections.push('      "type": "boolean",');
+    sections.push('      "description": "Whether product is in stock",');
+    sections.push('      "required": false');
     sections.push('    }');
-    sections.push('  ],');
+    sections.push('  },');
     sections.push('  "relations": [');
     sections.push('    {');
-    sections.push('      "key": "posts",');
-    sections.push('      "type": "hasMany",');
-    sections.push('      "blueprint": "blog_post"');
+    sections.push('      "key": "category",');
+    sections.push('      "target": "product_category"');
     sections.push('    }');
     sections.push('  ],');
-    sections.push('  "dispatchers": [');
+    sections.push('  "dispatchers": {');
+    sections.push('    "create": true,');
+    sections.push('    "update": true,');
+    sections.push('    "delete": false');
+    sections.push('  },');
+    sections.push('  "permissions": [');
     sections.push('    {');
-    sections.push('      "eventName": "user.created",');
-    sections.push('      "description": "Triggered when a new user is created"');
+    sections.push('      "scope": "workspace",');
+    sections.push('      "operation": "create",');
+    sections.push('      "roleBased": ["admin", "editor"]');
     sections.push('    }');
     sections.push('  ]');
     sections.push('}');
@@ -290,11 +449,17 @@ function generateRulesContent(resources, ideType) {
     sections.push('### Blueprint to Entity Mapping');
     sections.push('When working with blueprint entities:');
     sections.push('- **Properties** define the fields available on each entity instance');
-    sections.push('  - Example: A `user_profile` entity will have `firstName` and `email` fields');
+    sections.push('  - Properties is a Record (object) where keys are field names');
+    sections.push('  - Example: A `product` entity will have `name`, `price`, and `inStock` fields');
     sections.push('- **Relations** define how entities connect to other blueprint entities');
-    sections.push('  - Example: `hasMany` relation to `blog_post` means you can fetch related posts');
-    sections.push('- **Dispatchers** define events that trigger when entity actions occur');
-    sections.push('  - Example: `user.created` event fires when a new user entity is created');
+    sections.push('  - Each relation has a `key` (field name) and `target` (blueprint identifier)');
+    sections.push('  - Example: `category` relation to `product_category` blueprint');
+    sections.push('- **Dispatchers** define which CRUD operations trigger events');
+    sections.push('  - Boolean flags for `create`, `update`, and `delete` operations');
+    sections.push('  - Example: Product creation and updates trigger events, but deletion does not');
+    sections.push('- **Permissions** control who can perform operations on entities');
+    sections.push('  - Scoped at user, workspace, or tenant level');
+    sections.push('  - Can be role-based or label-based');
     sections.push('- Use the blueprint structure to understand what data is available when building components');
     sections.push('');
     sections.push('### Working with Blueprints');
@@ -325,28 +490,28 @@ function generateRulesContent(resources, ideType) {
     sections.push('### Plugin Example');
     sections.push('```json');
     sections.push('{');
-    sections.push('  "name": "Video Editor Plugin",');
-    sections.push('  "apiPath": "video-editor",');
-    sections.push('  "description": "Plugin for video editing functionality",');
+    sections.push('  "name": "Agent Editor Plugin",');
+    sections.push('  "apiPath": "agent-editor",');
+    sections.push('  "description": "Plugin for agent editing functionality",');
     sections.push('  "microFrontends": [');
     sections.push('    {');
-    sections.push('      "name": "Video Editor",');
+    sections.push('      "name": "Agent Editor",');
     sections.push('      "route": {');
-    sections.push('        "name": "video-editor",');
-    sections.push('        "path": "/editor/:videoId",');
+    sections.push('        "name": "agent-editor",');
+    sections.push('        "path": "/editor/:agentId",');
     sections.push('        "requirements": {');
-    sections.push('          "permissions": ["video.edit"],');
-    sections.push('          "blueprints": ["video"]');
+    sections.push('          "permissions": ["agent.edit"],');
+    sections.push('          "blueprints": ["agent"]');
     sections.push('        }');
     sections.push('      },');
     sections.push('      "structure": {');
-    sections.push('        "$ref": "./micro-frontends/video-editor.html"');
+    sections.push('        "$ref": "./micro-frontends/agent-editor.html"');
     sections.push('      }');
     sections.push('    }');
     sections.push('  ],');
     sections.push('  "navBarGroups": [');
     sections.push('    {');
-    sections.push('      "label": "Video Tools",');
+    sections.push('      "label": "Agent Tools",');
     sections.push('      "items": [...]');
     sections.push('    }');
     sections.push('  ],');
@@ -363,20 +528,28 @@ function generateRulesContent(resources, ideType) {
     sections.push('  - `blueprints`: Required blueprint entities');
     sections.push('- **Structure file**: HTML template referenced via `$ref`');
     sections.push('');
+    sections.push('### IMPORTANT: Micro-frontend HTML Limitations');
+    sections.push('**Micro-frontend HTML files CANNOT contain `<script>` tags or JavaScript code.**');
+    sections.push('');
+    sections.push('Just like blocks, to add JavaScript functionality:');
+    sections.push('1. Create a Vue component in `components/` folder with your logic');
+    sections.push('2. Use the component in your micro-frontend HTML (kebab-case, with closing tags)');
+    sections.push('3. No import needed - all components are globally available');
+    sections.push('');
     sections.push('### Using Components in Micro-frontends');
     sections.push('Micro-frontend HTML files can use components from the `components/` directory:');
     sections.push('```html');
-    sections.push('<!-- In micro-frontends/video-editor.html -->');
-    sections.push('<video-player');
-    sections.push('  :video-id="currentVideo.id"');
+    sections.push('<!-- In micro-frontends/agent-editor.html -->');
+    sections.push('<agent-editor');
+    sections.push('  :agent-id="currentAgent.id"');
     sections.push('  :autoplay="true"');
-    sections.push('  @ended="handleVideoEnd"');
+    sections.push('  @ended="handleAgentEnd"');
     sections.push('/>');
     sections.push('```');
     sections.push('');
-    sections.push('This `<video-player>` component maps to:');
-    sections.push('- **Component file**: `components/VideoPlayer.vue`');
-    sections.push('- **Metadata entry**: `components.json["VideoPlayer"]`');
+    sections.push('This `<agent-editor>` component maps to:');
+    sections.push('- **Component file**: `components/AgentEditor.vue`');
+    sections.push('- **Metadata entry**: `components.json["AgentEditor"]`');
     sections.push('');
     sections.push('Remember: kebab-case in templates = PascalCase component file name.');
     sections.push('');
@@ -461,8 +634,15 @@ export async function generateRules(ideType, basePath) {
       };
     }
 
+    // Fetch Qelos global components from documentation
+    logger.debug('Fetching Qelos global components from documentation...');
+    const qelosComponents = await fetchQelosGlobalComponents();
+    if (qelosComponents) {
+      logger.debug(`Fetched ${qelosComponents.components.length} components and ${qelosComponents.directives.length} directives`);
+    }
+
     // Generate rules content
-    const content = generateRulesContent(resources, ideType);
+    const content = generateRulesContent(resources, ideType, qelosComponents);
 
     // Get file path and ensure directory exists
     const filePath = getRulesFilePath(ideType, basePath);

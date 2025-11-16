@@ -36,6 +36,7 @@ export default defineConfig({
           'vue-router': 'VueRouter',
           'element-plus': 'ElementPlus',
           'vue-i18n': 'VueI18n',
+          '@sdk': 'QelosSDK',
         },
       },
     },

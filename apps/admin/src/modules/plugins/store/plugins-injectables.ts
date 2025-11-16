@@ -33,6 +33,7 @@ export function usePluginsInjectables() {
   window['VueRouter'] = vueRouter;
   window['ElementPlus'] = elementPlus;
   window['VueI18n'] = vueI18n;
+  window['QelosSDK'] = sdk;
   
 
   let unwatch;

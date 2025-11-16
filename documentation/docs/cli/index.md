@@ -13,6 +13,7 @@ The CLI provides powerful commands to:
 - **Create** new plugin projects with scaffolding
 - **Pull** resources from your Qelos instance to work locally
 - **Push** local changes back to your Qelos instance
+- **Generate** IDE-specific rules files for better AI assistance
 - Manage components, blueprints, and configurations
 
 ## Installation
@@ -70,6 +71,9 @@ qelos pull blueprints ./my-blueprints
 # Pull configurations
 qelos pull config ./my-configs
 
+# Generate IDE rules for better AI assistance
+qelos generate rules all
+
 # Make changes locally
 
 # Push changes back to Qelos
@@ -92,6 +96,10 @@ qelos push config ./my-configs
   <div class="vp-feature">
     <h3><a href="/cli/push">Push</a></h3>
     <p>Push local resources back to your Qelos instance to update or create new items.</p>
+  </div>
+  <div class="vp-feature">
+    <h3><a href="/cli/generate">Generate Rules</a></h3>
+    <p>Generate IDE-specific rules files to help AI assistants understand your Qelos project structure.</p>
   </div>
 </div>
 
@@ -170,6 +178,7 @@ View help for a specific command:
 qelos create --help
 qelos pull --help
 qelos push --help
+qelos generate --help
 ```
 
 ## Troubleshooting
