@@ -67,6 +67,15 @@ async function getIntegrations(tenant: string, user: any, query: Record<string, 
   }
 }
 
+async function getIntegration(tenant: string, user: any, integrationId: string) {
+  try {
+    return await calPublicPluginsService(`/api/integrations/${integrationId}`, { tenant, user }, { method: 'GET' });
+  } catch (error: any) {
+    logger.error('Error getting integration:', error);
+    throw new Error(`Failed to get integration: ${error?.message || 'Unknown error'}`);
+  }
+}
+
 async function createIntegration(tenant: string, user: string, integration: Partial<IIntegration>) {
   try {
     return await calPublicPluginsService('/api/integrations', { tenant, user }, {
@@ -76,6 +85,42 @@ async function createIntegration(tenant: string, user: string, integration: Part
   } catch (error: any) {
     logger.error('Error creating integration:', error);
     throw new Error(`Failed to create integration: ${error?.message || 'Unknown error'}`);
+  }
+}
+
+export const getIntegrationCalling = {
+  type: 'function',
+  name: 'get_integration',
+  description: 'Get details of a specific integration by ID',
+  function: {
+    name: 'get_integration',
+    description: 'Get details of a specific integration by ID',
+    parameters: {
+      type: 'object',
+      properties: {
+        integrationId: {
+          type: 'string',
+          description: 'ID of the integration to retrieve'
+        }
+      },
+      required: ['integrationId']
+    },
+  },
+  handler: async (req, payload = { integrationId: '' }) => {
+    const tenant = req.headers.tenant;
+    const user = req.headers.user;
+
+    if (!payload.integrationId) {
+      return { error: 'Integration ID is required' };
+    }
+
+    try {
+      const integration = await getIntegration(tenant, user, payload.integrationId);
+      return integration;
+    } catch (error: any) {
+      logger.error('Error in getIntegrationCalling:', error);
+      return { error: error.message || 'Failed to get integration' };
+    }
   }
 }
 

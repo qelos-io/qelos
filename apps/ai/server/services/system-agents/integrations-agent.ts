@@ -1,6 +1,6 @@
 import { IntegrationSourceKind } from "@qelos/global-types";
 import { processChatCompletion } from "../chat-completion-system-agents-service";
-import { createConnectionCalling, createIntegrationCalling, getConnectionCalling, listConnectionsCalling, removeConnectionCalling, updateConnectionCalling } from "../function-callings/integrations.calling";
+import { createConnectionCalling, createIntegrationCalling, getConnectionCalling, listConnectionsCalling, removeConnectionCalling, updateConnectionCalling, getIntegrationCalling } from "../function-callings/integrations.calling";
 import { toggleIntegrationStatusCalling } from "../function-callings/integrations.calling";
 import { removeIntegrationCalling } from "../function-callings/integrations.calling";
 import { listIntegrationsCalling } from "../function-callings/integrations.calling";
@@ -20,6 +20,7 @@ async function getIntegrationAgentTools(tenant: string, safeUserMessages: any[],
     removeConnectionCalling,
     listConnectionsCalling,
     createIntegrationCalling,
+    getIntegrationCalling,
     updateIntegrationCalling,
     toggleIntegrationStatusCalling,
     removeIntegrationCalling,
