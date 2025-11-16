@@ -1,6 +1,7 @@
 import { OpenAI } from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import logger from './logger';
+import { emitAIProviderErrorEvent } from './platform-events';
 
 // Define interfaces for better type safety
 interface AIServiceOptions {
@@ -21,6 +22,7 @@ interface AIServiceOptions {
 interface AIServiceSource {
   kind: string;
   tenant: string;
+  _id?: string;
   metadata: {
     apiKey?: string;
     apiUrl?: string;
@@ -96,6 +98,15 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
         return response;
       } catch (error: any) {
         logger.error('Error creating chat completion', error);
+        emitAIProviderErrorEvent({
+          tenant: source.tenant,
+          provider: source.kind,
+          sourceId: source._id,
+          stream: false,
+          model: options.model || source.metadata.defaultModel || 'gpt-4.1',
+          context: options.unsafeUserContext,
+          error,
+        });
         throw error;
       }
     },
@@ -120,6 +131,15 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
         return stream;
       } catch (error: any) {
         logger.error('Error creating chat completion stream', error);
+        emitAIProviderErrorEvent({
+          tenant: source.tenant,
+          provider: source.kind,
+          sourceId: source._id,
+          stream: true,
+          model: options.model || source.metadata.defaultModel || 'gpt-4.1',
+          context: options.unsafeUserContext,
+          error,
+        });
         throw error;
       }
     }
@@ -159,6 +179,15 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
         return transformAnthropicResponseToOpenAI(response);
       } catch (error: any) {
         logger.error('Error creating chat completion with Anthropic', error);
+        emitAIProviderErrorEvent({
+          tenant: source.tenant,
+          provider: source.kind,
+          sourceId: source._id,
+          stream: false,
+          model: options.model || source.metadata.defaultModel || 'claude-3-opus-20240229',
+          context: options.unsafeUserContext,
+          error,
+        });
         throw error;
       }
     },
@@ -180,6 +209,15 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
         return createAnthropicSDKStreamGenerator(stream);
       } catch (error: any) {
         logger.error('Error creating chat completion stream with Anthropic', error);
+        emitAIProviderErrorEvent({
+          tenant: source.tenant,
+          provider: source.kind,
+          sourceId: source._id,
+          stream: true,
+          model: options.model || source.metadata.defaultModel || 'claude-3-opus-20240229',
+          context: options.unsafeUserContext,
+          error,
+        });
         throw error;
       }
     }

@@ -8,6 +8,7 @@ import { executeFunctionCalls } from "../services/execute-function-calls";
 import { verifyUserPermissions } from "../services/source-service";
 import { IThread, Thread } from "../models/thread";
 import { getAllBlueprints } from "../services/no-code-service";
+import { emitDataManipulationErrorEvent } from "../services/platform-events";
 
 export async function getIntegrationToIntegrate(req, res, next) {
   try {
@@ -151,22 +152,40 @@ export async function chatCompletion(req: any, res: any | null) {
     await thread.save();
   }
 
+  try {
+    options = await executeDataManipulation(integration.tenant, {
+      user: req.user,
+      messages: safeUserMessages,
+      context: options.context,
+    }, integration.dataManipulation);
+  } catch (error) {
+    logger.error('Failed to execute pre-chat data manipulation', error);
+    emitDataManipulationErrorEvent({
+      tenant: integration.tenant,
+      userId: req.user?._id?.toString(),
+      integrationId: integration._id,
+      stage: 'pre_chat',
+      context: {
+        messagesCount: safeUserMessages.length,
+        context: options.context,
+      },
+      error,
+    });
+    res.status(500).json({ message: 'Could not calculate prompt or load tools integrations' }).end();
+    return;
+  }
+
   let toolsIntegrations;
   let ingestedBlueprints: IBlueprint[];
   let ingestedAgents: IIntegration[];
   try {
-    [options, toolsIntegrations, ingestedBlueprints, ingestedAgents] = await Promise.all([
-      executeDataManipulation(integration.tenant, {
-        user: req.user,
-        messages: safeUserMessages,
-        context: options.context,
-      }, integration.dataManipulation),
+    [toolsIntegrations, ingestedBlueprints, ingestedAgents] = await Promise.all([
       getToolsIntegrations(integration.tenant, integration.target.source.kind, integration._id),
       integration.target.details.ingestedBlueprints && integration.target.details.ingestedBlueprints.length > 0 ? getAllBlueprints(integration.tenant, { identifier: integration.target.details.ingestedBlueprints }) : Promise.resolve([]),
       integration.target.details.ingestedAgents && integration.target.details.ingestedAgents.length > 0 ? getIntegrations(integration.tenant, {active: true, kind: integration.trigger.source.kind, _id: integration.target.details.ingestedAgents.join(',')}) : Promise.resolve([]),
     ]);
   } catch (e: any) {
-    logger.error('Failed to calculate prompt or load tools integrations', e);
+    logger.error('Failed to load tools integrations or ingested resources', e);
     res.status(500).json({ message: 'Could not calculate prompt or load tools integrations' }).end();
     return;
   }

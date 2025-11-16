@@ -115,6 +115,30 @@ async function executeBlueprintOperation(
   }
 }
 
+const HEARTBEAT_INTERVAL_MS = 1000;
+
+function startHeartbeat(
+  sendSSE?: ChatCompletionService.SSEHandler,
+  eventPrefix: string = ''
+) {
+  if (!sendSSE) {
+    return () => {};
+  }
+
+  // Send an initial ping so the client knows the agent is still working
+  sendSSE({ type: `${eventPrefix}heartbeat` });
+
+  const intervalId = setInterval(() => {
+    try {
+      sendSSE({ type: `${eventPrefix}heartbeat` });
+    } catch (error) {
+      logger.warn('Failed to send heartbeat event', error);
+    }
+  }, HEARTBEAT_INTERVAL_MS);
+
+  return () => clearInterval(intervalId);
+}
+
 // Helper function to execute multiple function calls
 export async function executeFunctionCalls(
   req: any,
@@ -125,7 +149,8 @@ export async function executeFunctionCalls(
   eventPrefix: string = ''
 ): Promise<any[]> {
   const functionResults: any[] = [];
-  
+  const stopHeartbeat = startHeartbeat(sendSSE, eventPrefix);
+
   if (sendSSE && functionCalls.length > 0) {
     sendSSE({ 
       type: `${eventPrefix}function_calls_detected`, 
@@ -133,86 +158,90 @@ export async function executeFunctionCalls(
     });
   }
   
-  for (const functionCall of functionCalls) {
-    try {
-      const targetIntegration = findTargetIntegration(toolsIntegrations, functionCall.function.name);
-      if (targetIntegration) {
-        if (sendSSE) {
-          sendSSE({ 
-            type: `${eventPrefix}function_executing`, 
-            functionCall 
-          });
-        }
-
-        // Parse all JSON objects from the function arguments
-        const argsIterator = ChatCompletionService.parseFunctionArguments(functionCall.function.arguments);
-        let results: any[] = [];
-        
-        // Process each JSON object from the arguments
-        for (let args of argsIterator) {
-          let result: any;
-          
-          // Apply data manipulation if configured
-          if (targetIntegration.dataManipulation) {
-            args = (await executeDataManipulation(tenant, {arguments: args, user: req.user, workspace: req.user?.workspace}, targetIntegration.dataManipulation)).arguments;
-          }
-          
-          // Check if this is a blueprint operation
-          const { isBlueprint } = isBlueprintOperation(functionCall.function.name);
-          
-          // Execute the integration or blueprint operation
-          if (isBlueprint) {
-            // Handle blueprint operation
-            result = await executeBlueprintOperation(req, functionCall.function.name, args, tenant);
-          } else if (targetIntegration.handler) {
-            // Use custom handler if available
-            result = await targetIntegration.handler(req, args);
-          } else {
-            // Default to triggering integration source
-            result = await triggerIntegrationSource(tenant, targetIntegration.target.source, {
-              payload: args,
-              operation: targetIntegration.target.operation,
-              details: targetIntegration.target.details
+  try {
+    for (const functionCall of functionCalls) {
+      try {
+        const targetIntegration = findTargetIntegration(toolsIntegrations, functionCall.function.name);
+        if (targetIntegration) {
+          if (sendSSE) {
+            sendSSE({ 
+              type: `${eventPrefix}function_executing`, 
+              functionCall 
             });
           }
-          
-          // Add to results array
-          results.push(result);
-        }
 
-        const functionResult = ChatCompletionService.createFunctionResult(functionCall, results);
+          // Parse all JSON objects from the function arguments
+          const argsIterator = ChatCompletionService.parseFunctionArguments(functionCall.function.arguments);
+          let results: any[] = [];
+          
+          // Process each JSON object from the arguments
+          for (let args of argsIterator) {
+            let result: any;
+            
+            // Apply data manipulation if configured
+            if (targetIntegration.dataManipulation) {
+              args = (await executeDataManipulation(tenant, {arguments: args, user: req.user, workspace: req.user?.workspace}, targetIntegration.dataManipulation)).arguments;
+            }
+            
+            // Check if this is a blueprint operation
+            const { isBlueprint } = isBlueprintOperation(functionCall.function.name);
+            
+            // Execute the integration or blueprint operation
+            if (isBlueprint) {
+              // Handle blueprint operation
+              result = await executeBlueprintOperation(req, functionCall.function.name, args, tenant);
+            } else if (targetIntegration.handler) {
+              // Use custom handler if available
+              result = await targetIntegration.handler(req, args);
+            } else {
+              // Default to triggering integration source
+              result = await triggerIntegrationSource(tenant, targetIntegration.target.source, {
+                payload: args,
+                operation: targetIntegration.target.operation,
+                details: targetIntegration.target.details
+              });
+            }
+            
+            // Add to results array
+            results.push(result);
+          }
+
+          const functionResult = ChatCompletionService.createFunctionResult(functionCall, results);
+          functionResults.push(functionResult);
+          
+          if (sendSSE) {
+            sendSSE({ 
+              type: `${eventPrefix}function_executed`, 
+              functionCall, 
+              result: results,
+            });
+          }
+        } else {
+          functionResults.push(ChatCompletionService.createFunctionResult(functionCall, [{
+            error: `Function ${functionCall.function.name} not found`
+          }]));
+        }
+      } catch (error) {
+        logger.error('error', error);
+        const errorMessage = error instanceof Error ? error.message : 'Invalid function arguments';
+        const functionResult = ChatCompletionService.createFunctionResult(functionCall, [{
+          error: errorMessage
+        }]);
+        
         functionResults.push(functionResult);
         
+        // Send SSE event for function execution failure
         if (sendSSE) {
           sendSSE({ 
-            type: `${eventPrefix}function_executed`, 
+            type: `${eventPrefix}function_failed`, 
             functionCall, 
-            result: results,
+            error: errorMessage
           });
         }
-      } else {
-        functionResults.push(ChatCompletionService.createFunctionResult(functionCall, [{
-          error: `Function ${functionCall.function.name} not found`
-        }]));
-      }
-    } catch (error) {
-      logger.error('error', error);
-      const errorMessage = error instanceof Error ? error.message : 'Invalid function arguments';
-      const functionResult = ChatCompletionService.createFunctionResult(functionCall, [{
-        error: errorMessage
-      }]);
-      
-      functionResults.push(functionResult);
-      
-      // Send SSE event for function execution failure
-      if (sendSSE) {
-        sendSSE({ 
-          type: `${eventPrefix}function_failed`, 
-          functionCall, 
-          error: errorMessage
-        });
       }
     }
+  } finally {
+    stopHeartbeat();
   }
   
   return functionResults;
