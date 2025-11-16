@@ -45,6 +45,13 @@
         <span>{{ $t('Admin Dashboard') }}</span>
       </el-menu-item>
 
+      <el-menu-item v-if="isAdmin" :route="{ name: 'log' }" index="/admin/log" :data-title="$t('Logs')">
+        <el-icon>
+          <font-awesome-icon :icon="['fas', 'clipboard-list']" />
+        </el-icon>
+        <span>{{ $t('Logs') }}</span>
+      </el-menu-item>
+
       <div class="nav-group" v-if="isManagingEnabled">
         <h4>{{ $t('COMPONENTS') }}</h4>
 

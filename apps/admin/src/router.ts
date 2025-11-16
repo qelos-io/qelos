@@ -17,6 +17,7 @@ import { workspacesRoutes, adminWorkspacesRoutes } from '@/modules/workspaces/ro
 import noCodeRoutes from '@/modules/no-code/routes';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import { integrationsRoutes } from '@/modules/integrations/routes';
+import { adminLogRoutes } from '@/modules/admins/routes';
 
 // @ts-ignore
 const BASE = import.meta.env.BASE_URL || '/';
@@ -53,6 +54,7 @@ const router = createRouter({
         integrationsRoutes,
         playRoutes,
         adminRoutesScreenEditor,
+        adminLogRoutes,
       ]
     },
     {

@@ -19,8 +19,18 @@ export default class QlEvents extends BaseSDK {
     super(options)
   }
 
-  getList({page}: { page?: number } = {}) {
-    return this.callJsonApi<IQelosEvent[]>(this.relativePath + (page ? ('?page=' + page) : ''));
+  getList(params?: { page?: number; kind?: string; eventName?: string; source?: string; user?: string; workspace?: string; period?: string }) {
+    const queryParams = new URLSearchParams();
+    if (params?.page !== undefined) queryParams.append('page', params.page.toString());
+    if (params?.kind) queryParams.append('kind', params.kind);
+    if (params?.eventName) queryParams.append('eventName', params.eventName);
+    if (params?.source) queryParams.append('source', params.source);
+    if (params?.user) queryParams.append('user', params.user);
+    if (params?.workspace) queryParams.append('workspace', params.workspace);
+    if (params?.period) queryParams.append('period', params.period);
+    
+    const queryString = queryParams.toString();
+    return this.callJsonApi<IQelosEvent[]>(this.relativePath + (queryString ? '?' + queryString : ''));
   }
 
   getEvent(eventId: string) {
