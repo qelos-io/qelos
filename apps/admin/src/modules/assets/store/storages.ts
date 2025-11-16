@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import storagesService from '@/services/storages-service'
+import storagesService from '@/services/apis/storages-service'
 import { IStorage } from '@/services/types/storage'
 
 export interface IStoragesStore {

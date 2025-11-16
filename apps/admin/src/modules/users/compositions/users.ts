@@ -1,5 +1,5 @@
 import { useConfirmAction } from '../../core/compositions/confirm-action';
-import usersService from '../../../services/users-service';
+import usersService from '../../../services/apis/users-service';
 import { useDispatcher } from '../../core/compositions/dispatcher';
 import { useSubmitting } from '../../core/compositions/submitting';
 import { useRoute, useRouter } from 'vue-router';

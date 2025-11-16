@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
-import componentsService from '@/services/components-service';
+import componentsService from '@/services/apis/components-service';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { INoCodeComponent } from '@qelos/global-types';
 

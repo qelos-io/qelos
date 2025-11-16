@@ -2,7 +2,7 @@ import { computed, ref, toRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { defineStore } from 'pinia';
 import { IBlueprint, IScreenRequirement } from '@qelos/global-types'
-import { api, getCallData } from '@/services/api';
+import { api, getCallData } from '@/services/apis/api';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import Sdk from '@/services/sdk';

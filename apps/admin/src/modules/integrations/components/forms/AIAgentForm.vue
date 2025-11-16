@@ -19,7 +19,9 @@ defineProps<{
 
 const workspacesConfig = useWsConfiguration()
 
-const formData = defineModel<Pick<IIntegration, 'trigger' | 'target' | 'dataManipulation'>>({ required: true });
+const trigger = defineModel<IIntegration['trigger']>('trigger', { required: true });
+const target = defineModel<IIntegration['target']>('target', { required: true });
+const dataManipulation = defineModel<IIntegration['dataManipulation']>('dataManipulation', { required: true });
 const currentStep = defineModel<number>('currentStep', { default: 0 });
 
 const store = useIntegrationSourcesStore();
@@ -36,39 +38,39 @@ const openAISources = computed(() => {
 
 // Step 1: Agent Identity & Trigger
 const agentName = computed({
-  get: () => formData.value.trigger?.details?.name || '',
+  get: () => trigger.value?.details?.name || '',
   set: (value: string) => {
-    if (!formData.value.trigger) {
-      formData.value.trigger = { source: '', operation: '', details: {} };
+    if (!trigger.value) {
+      trigger.value = { source: '', operation: '', details: {} };
     }
-    formData.value.trigger.details = {
-      ...formData.value.trigger.details,
+    trigger.value.details = {
+      ...trigger.value.details,
       name: value
     };
   }
 });
 
 const agentDescription = computed({
-  get: () => formData.value.trigger?.details?.description || '',
+  get: () => trigger.value?.details?.description || '',
   set: (value: string) => {
-    if (!formData.value.trigger) {
-      formData.value.trigger = { source: '', operation: '', details: {} };
+    if (!trigger.value) {
+      trigger.value = { source: '', operation: '', details: {} };
     }
-    formData.value.trigger.details = {
-      ...formData.value.trigger.details,
+    trigger.value.details = {
+      ...trigger.value.details,
       description: value
     };
   }
 });
 
 const recordThread = computed({
-  get: () => formData.value.trigger?.details?.recordThread || false,
+  get: () => trigger.value?.details?.recordThread || false,
   set: (value: boolean) => {
-    if (!formData.value.trigger) {
-      formData.value.trigger = { source: '', operation: '', details: {} };
+    if (!trigger.value) {
+      trigger.value = { source: '', operation: '', details: {} };
     }
-    formData.value.trigger.details = {
-      ...formData.value.trigger.details,
+    trigger.value.details = {
+      ...trigger.value.details,
       recordThread: value
     };
   }
@@ -77,7 +79,7 @@ const recordThread = computed({
 // Step 2: Context & Data Manipulation
 // Initialize from existing data manipulation
 const detectExistingContext = () => {
-  const dataManip = formData.value.dataManipulation || [];
+  const dataManip = dataManipulation.value || [];
   
   // Check for workspace context in map
   const hasWorkspaceInMap = dataManip.some(step => 
@@ -120,108 +122,108 @@ const includeWorkspaceContext = ref(initialContext.hasWorkspace);
 
 // Step 3: AI Configuration & Target
 const selectedOpenAISource = computed({
-  get: () => formData.value.target?.source || '',
+  get: () => target.value?.source || '',
   set: (value: string) => {
-    if (!formData.value.target) {
-      formData.value.target = { source: '', operation: '', details: {} };
+    if (!target.value) {
+      target.value = { source: '', operation: '', details: {} };
     }
-    formData.value.target.source = value;
-    formData.value.target.operation = OpenAITargetOperation.chatCompletion;
+    target.value.source = value;
+    target.value.operation = OpenAITargetOperation.chatCompletion;
   }
 });
 
 const systemMessage = computed({
   get: () => {
-    const preMessages = formData.value.target?.details?.pre_messages || [];
+    const preMessages = target.value?.details?.pre_messages || [];
     const systemMsg = preMessages.find(msg => msg.role === 'system');
     return systemMsg?.content || '';
   },
   set: (value: string) => {
-    if (!formData.value.target) {
-      formData.value.target = { source: '', operation: '', details: {} };
+    if (!target.value) {
+      target.value = { source: '', operation: '', details: {} };
     }
-    if (!formData.value.target.details) {
-      formData.value.target.details = {};
+    if (!target.value.details) {
+      target.value.details = {};
     }
-    if (!formData.value.target.details.pre_messages) {
-      formData.value.target.details.pre_messages = [];
+    if (!target.value.details.pre_messages) {
+      target.value.details.pre_messages = [];
     }
     
-    const systemMsgIndex = formData.value.target.details.pre_messages.findIndex(msg => msg.role === 'system');
+    const systemMsgIndex = target.value.details.pre_messages.findIndex(msg => msg.role === 'system');
     if (value) {
       if (systemMsgIndex >= 0) {
-        formData.value.target.details.pre_messages[systemMsgIndex].content = value;
+        target.value.details.pre_messages[systemMsgIndex].content = value;
       } else {
-        formData.value.target.details.pre_messages.push({ role: 'system', content: value });
+        target.value.details.pre_messages.push({ role: 'system', content: value });
       }
     } else if (systemMsgIndex >= 0) {
-      formData.value.target.details.pre_messages.splice(systemMsgIndex, 1);
+      target.value.details.pre_messages.splice(systemMsgIndex, 1);
     }
   }
 });
 
 const model = computed({
-  get: () => formData.value.target?.details?.model || 'gpt-4o-mini',
+  get: () => target.value?.details?.model || 'gpt-4o-mini',
   set: (value: string) => {
-    if (!formData.value.target?.details) return;
-    formData.value.target.details.model = value;
+    if (!target.value?.details) return;
+    target.value.details.model = value;
   }
 });
 
 const temperature = computed({
-  get: () => formData.value.target?.details?.temperature ?? 0.7,
+  get: () => target.value?.details?.temperature ?? 0.7,
   set: (value: number) => {
-    if (!formData.value.target?.details) return;
-    formData.value.target.details.temperature = value;
+    if (!target.value?.details) return;
+    target.value.details.temperature = value;
   }
 });
 
 const maxTokens = computed({
-  get: () => formData.value.target?.details?.max_tokens || 1000,
+  get: () => target.value?.details?.max_tokens || 1000,
   set: (value: number) => {
-    if (!formData.value.target?.details) return;
-    formData.value.target.details.max_tokens = value;
+    if (!target.value?.details) return;
+    target.value.details.max_tokens = value;
   }
 });
 
 const ingestedBlueprints = computed({
-  get: () => formData.value.target?.details?.ingestedBlueprints || [],
+  get: () => target.value?.details?.ingestedBlueprints || [],
   set: (value: string[]) => {
-    if (!formData.value.target?.details) return;
-    formData.value.target.details.ingestedBlueprints = value;
+    if (!target.value?.details) return;
+    target.value.details.ingestedBlueprints = value;
   }
 });
 
 const ingestedAgents = computed({
-  get: () => formData.value.target?.details?.ingestedAgents || [],
+  get: () => target.value?.details?.ingestedAgents || [],
   set: (value: string[]) => {
-    if (!formData.value.target?.details) return;
-    formData.value.target.details.ingestedAgents = value;
+    if (!target.value?.details) return;
+    target.value.details.ingestedAgents = value;
   }
 });
 
 // Initialize trigger and target if not set
-watch(formData, (newValue) => {
-  if (!newValue.trigger?.source && qelosSource.value) {
-    formData.value.trigger = {
+watch([trigger, target], ([newTrigger, newTarget]) => {
+  if (!newTrigger?.source && qelosSource.value) {
+    trigger.value = {
       source: qelosSource.value._id || '',
       operation: QelosTriggerOperation.chatCompletion,
-      details: newValue.trigger?.details || {}
+      details: newTrigger?.details || {}
     };
   }
   
-  if (!newValue.target?.source && openAISources.value.length > 0) {
-    formData.value.target = {
+  if (!newTarget?.source && openAISources.value.length > 0) {
+    target.value = {
       source: openAISources.value[0]._id || '',
       operation: OpenAITargetOperation.chatCompletion,
-      details: newValue.target?.details || {}
+      details: newTarget?.details || {}
     };
   }
 }, { immediate: true, deep: true });
 
 // Check if data manipulation appears to be auto-generated (not manually customized)
 const isAutoGeneratedDataManipulation = () => {
-  const dataManip = formData.value.dataManipulation || [];
+  const dataManip = dataManipulation.value || [];
   
   // Empty or very simple structure is safe to regenerate
   if (dataManip.length === 0) return true;
@@ -323,7 +325,7 @@ const generateDataManipulation = () => {
     }
   }
   
-  formData.value.dataManipulation = steps;
+  dataManipulation.value = steps;
 };
 
 // Watch for manual changes to context selections

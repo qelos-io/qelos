@@ -21,7 +21,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useSubmitting } from '../core/compositions/submitting'
-import configurationsService from '@/services/configurations-service';
+import configurationsService from '@/services/apis/configurations-service';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import Monaco from '../users/components/Monaco.vue';
 import { useI18n } from 'vue-i18n';

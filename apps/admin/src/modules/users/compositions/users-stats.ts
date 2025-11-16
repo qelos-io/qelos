@@ -1,4 +1,4 @@
-import usersService from '../../../services/users-service';
+import usersService from '../../../services/apis/users-service';
 import { useDispatcher } from '../../core/compositions/dispatcher';
 
 export function useUsersStats() {

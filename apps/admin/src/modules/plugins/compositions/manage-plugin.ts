@@ -1,6 +1,6 @@
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
-import pluginsService from '@/services/plugins-service';
+import pluginsService from '@/services/apis/plugins-service';
 import { IPlugin } from '@/services/types/plugin';
 import { usePluginsList } from '../store/plugins-list';
 import { reactive } from 'vue';

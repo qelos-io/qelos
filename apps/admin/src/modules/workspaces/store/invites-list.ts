@@ -1,6 +1,6 @@
 import { useDispatcher } from '../../core/compositions/dispatcher'
 import { defineStore } from 'pinia';
-import invitesService from '@/services/invites-service';
+import invitesService from '@/services/apis/invites-service';
 import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 
 export enum InviteKind {

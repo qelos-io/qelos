@@ -2,7 +2,7 @@ import {reactive} from 'vue'
 import {useSubmitting} from '../../core/compositions/submitting'
 import {useDispatcher} from '../../core/compositions/dispatcher'
 import {removeUnsavedChanges} from '../../drafts/compositions/unsaved-changes'
-import blocksService from '../../../services/blocks-service'
+import blocksService from '../../../services/apis/blocks-service'
 import {useEditedInputModels} from '../../core/compositions/edited-inputs';
 import {IBlock} from '@/services/types/block';
 

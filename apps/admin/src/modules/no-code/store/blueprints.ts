@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
-import blueprintsService from '@/services/blueprints-service';
+import blueprintsService from '@/services/apis/blueprints-service';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { IBlueprint } from '@qelos/global-types';
 

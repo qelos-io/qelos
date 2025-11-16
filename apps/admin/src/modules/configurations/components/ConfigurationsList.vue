@@ -95,7 +95,7 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useConfigurationsList } from '../compositions/configurations';
 import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
-import configurationsService from '@/services/configurations-service';
+import configurationsService from '@/services/apis/configurations-service';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { Calendar, Edit, Delete, DocumentRemove } from '@element-plus/icons-vue';

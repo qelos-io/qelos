@@ -210,7 +210,7 @@ import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import VChart from '@/modules/pre-designed/components/VChart.vue';
 import { useAdminEvents } from '@/modules/core/store/admin-events';
 import { authStore } from '@/modules/core/store/auth';
-import { api } from '@/services/api';
+import { api } from '@/services/apis/api';
 import { useUserMetadataStore } from '@/modules/core/store/user-metadata';
 
 import { Plus } from '@element-plus/icons-vue';

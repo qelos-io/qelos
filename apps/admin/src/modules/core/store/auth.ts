@@ -1,5 +1,5 @@
 import { computed, reactive, ref, watch } from 'vue'
-import { api } from '@/services/api'
+import { api } from '@/services/apis/api'
 import { IAuthStore } from './types/auth-store'
 import { IUser } from './types/user'
 

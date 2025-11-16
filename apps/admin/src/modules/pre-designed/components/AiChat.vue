@@ -214,7 +214,7 @@ import {
   ArrowLeft,
 } from "@element-plus/icons-vue";
 import { Remarkable } from "remarkable";
-import threadsService from "@/services/threads-service";
+import threadsService from "@/services/apis/threads-service";
 import { linkify } from "remarkable/linkify";
 
 const props = defineProps<{

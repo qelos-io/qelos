@@ -20,7 +20,7 @@
 <script lang="ts" setup>
 import {ref} from 'vue'
 import {useConfirmAction} from '../../core/compositions/confirm-action'
-import {getAll, deleteDraft} from '../../../services/drafts-service'
+import {getAll, deleteDraft} from '../../../services/apis/drafts-service'
 import {useNotifications} from '../../core/compositions/notifications'
 import {useSubmitting} from '../../core/compositions/submitting'
 import GpItem from '@/modules/core/components/layout/BlockItem.vue';

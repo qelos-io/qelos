@@ -1,5 +1,5 @@
 import { api, getCallData } from './api'
-import { Draft } from './types/draft'
+import { Draft } from '../types/draft'
 
 export function getAll<T = any>(): Promise<Draft<T>[]> {
   return api.get('/api/drafts/all').then(getCallData)

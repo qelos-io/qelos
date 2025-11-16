@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import { IBlock } from '@/services/types/block';
-import blocksService from '@/services/blocks-service';
+import blocksService from '@/services/apis/blocks-service';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 
 export const useBlocksList = defineStore('blocks-list', function useBlocksList() {

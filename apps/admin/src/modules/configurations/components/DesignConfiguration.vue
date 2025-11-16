@@ -5,7 +5,7 @@ import { softResetConfiguration, useAppConfiguration } from '@/modules/configura
 import ColorsPaletteInput from '@/modules/configurations/components/ColorsPaletteInput.vue';
 import { useLiveEditStore } from '@/modules/layouts/store/live-edit';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import configurationsService from '@/services/configurations-service';
+import configurationsService from '@/services/apis/configurations-service';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { useI18n } from 'vue-i18n';
 

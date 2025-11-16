@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
-import configurationsService from '@/services/configurations-service';
+import configurationsService from '@/services/apis/configurations-service';
 import { computed } from 'vue';
 import { authStore } from '@/modules/core/store/auth';
 import { WorkspaceConfigurationMetadata } from '@qelos/global-types'

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { reactive, readonly, ref } from 'vue';
 import { ColorName } from '@/modules/configurations/types/colors-palette';
 import { softResetConfiguration, useAppConfiguration } from '@/modules/configurations/store/app-configuration';
-import configurationsService from '@/services/configurations-service';
+import configurationsService from '@/services/apis/configurations-service';
 
 export const useLiveEditStore = defineStore('live-edit', () => {
   const { appConfig } = useAppConfiguration();

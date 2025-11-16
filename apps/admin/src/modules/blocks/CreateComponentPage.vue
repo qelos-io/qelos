@@ -17,7 +17,7 @@
 <script setup lang="ts">
 import PageTitle from '../core/components/semantics/PageTitle.vue';
 import ComponentForm from './components/ComponentForm.vue';
-import componentsService from '@/services/components-service';
+import componentsService from '@/services/apis/components-service';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { useComponentsList } from './store/components-list';
 import { useRouter } from 'vue-router';

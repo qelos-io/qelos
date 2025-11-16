@@ -2,7 +2,7 @@
 import { computed, defineProps, defineEmits } from 'vue';
 import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
-import integrationsService from '@/services/integrations-service';
+import integrationsService from '@/services/apis/integrations-service';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { ElMessage } from 'element-plus';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';

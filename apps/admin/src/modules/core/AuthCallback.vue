@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { api } from '@/services/api';
+import { api } from '@/services/apis/api';
 
 const route = useRoute();
 const response = ref('');

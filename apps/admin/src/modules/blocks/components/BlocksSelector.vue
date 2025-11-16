@@ -5,7 +5,7 @@ import { useBlocksList } from '../store/blocks-list';
 import BlockForm from './BlockForm.vue'
 import { IBlock } from '@/services/types/block';
 
-import blocksService from '@/services/blocks-service';
+import blocksService from '@/services/apis/blocks-service';
 
 const props = defineProps<{ title?: string, editable?: boolean }>()
 

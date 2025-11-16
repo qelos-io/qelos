@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
-import pluginsService from '@/services/plugins-service';
+import pluginsService from '@/services/apis/plugins-service';
 import { IPlugin } from '@/services/types/plugin';
 
 export const usePluginsList = defineStore('plugins-list', function usePluginsList() {

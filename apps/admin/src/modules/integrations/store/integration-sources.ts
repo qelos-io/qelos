@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { IIntegrationSource, IntegrationSourceKind } from '@qelos/global-types';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
-import integrationSourcesService from '@/services/integration-sources-service';
+import integrationSourcesService from '@/services/apis/integration-sources-service';
 import { computed } from 'vue';
 
 export const useIntegrationSourcesStore = defineStore('integration-sources', () => {

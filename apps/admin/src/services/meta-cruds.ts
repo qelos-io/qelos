@@ -1,15 +1,16 @@
 import { IMetaCrud } from '@/modules/plugins/store/types';
-import { getCrud } from '@/services/crud';
-import blocksService from '@/services/blocks-service';
-import blueprintsService from '@/services/blueprints-service';
-import configurationsService from '@/services/configurations-service';
-import invitesService from '@/services/invites-service';
-import pluginsService from '@/services/plugins-service';
-import storagesService from '@/services/storages-service';
-import usersService from '@/services/users-service';
-import workspacesService from '@/services/workspaces-service';
-import integrationSourcesService from '@/services/integration-sources-service';
-import eventsService from '@/services/events-service';
+import { getCrud } from '@/services/apis/crud';
+import blocksService from '@/services/apis/blocks-service';
+import blueprintsService from '@/services/apis/blueprints-service';
+import configurationsService from '@/services/apis/configurations-service';
+import invitesService from '@/services/apis/invites-service';
+import pluginsService from '@/services/apis/plugins-service';
+import storagesService from '@/services/apis/storages-service';
+import usersService from '@/services/apis/users-service';
+import workspacesService from '@/services/apis/workspaces-service';
+import integrationSourcesService from '@/services/apis/integration-sources-service';
+import eventsService from '@/services/apis/events-service';
+import threadsService from '@/services/apis/threads-service';
 
 function getMetaCrud(api: ReturnType<typeof getCrud>, editRouteName?: string, paramIdentifierName?: string): IMetaCrud {
   return {
@@ -36,5 +37,6 @@ export function getAllStandardMetaCruds(): Record<string, IMetaCrud> {
     workspaces: getMetaCrud(workspacesService, 'workspaces'),
     integrationSources: getMetaCrud(integrationSourcesService, 'editIntegrationSource', 'sourceId'),
     events: getMetaCrud(eventsService, null, 'eventId'),
+    threads: getMetaCrud(threadsService, null, 'threadId')
   }
 }

@@ -1,8 +1,8 @@
-import workspacesService from '@/services/workspaces-service';
+import workspacesService from '@/services/apis/workspaces-service';
 import { useSubmitting } from '../../core/compositions/submitting';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import { IWorkspace } from '@qelos/sdk/dist/workspaces';
-import workspacesMembersService from '@/services/workspaces-members-service';
+import workspacesMembersService from '@/services/apis/workspaces-members-service';
 
 export function useCreateWorkspace() {
   const { submit, submitting } = useSubmitting(workspacesService.create, {

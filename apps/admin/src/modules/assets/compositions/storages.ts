@@ -1,5 +1,5 @@
 import { computed, reactive, ref } from 'vue'
-import storagesService from '../../../services/storages-service'
+import storagesService from '../../../services/apis/storages-service'
 import { fetchStorages, removeStorage, storagesStore } from '../store/storages'
 import { useSubmitting } from '../../core/compositions/submitting'
 import { IStorage } from '../../../services/types/storage'

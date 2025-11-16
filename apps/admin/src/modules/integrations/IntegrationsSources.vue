@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
-import integrationSourcesService from '@/services/integration-sources-service';
+import integrationSourcesService from '@/services/apis/integration-sources-service';
 import { useConfirmAction } from '../core/compositions/confirm-action';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';

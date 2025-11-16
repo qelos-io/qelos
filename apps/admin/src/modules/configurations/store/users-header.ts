@@ -1,5 +1,5 @@
 import { reactive, computed } from 'vue'
-import configurationsService from '../../../services/configurations-service';
+import configurationsService from '../../../services/apis/configurations-service';
 
 export const usersHeaderStore = reactive<{
   loaded: boolean,

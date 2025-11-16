@@ -2,7 +2,7 @@
 import { reactive, watch, nextTick, ref, computed } from 'vue';
 import { IIntegration, IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
-import integrationsService from '@/services/integrations-service';
+import integrationsService from '@/services/apis/integrations-service';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { ElMessage } from 'element-plus';
 import { detectIntegrationType, IntegrationType } from '@/modules/integrations/utils/integration-type-detector';
@@ -309,7 +309,9 @@ const selectMode = (mode: IntegrationType) => {
         <!-- AI Agent Form View -->
         <div v-if="selectedViewMode === IntegrationType.AIAgent" class="ai-agent-view">
           <AIAgentForm
-            v-model="form"
+            v-model:trigger="form.trigger"
+            v-model:target="form.target"
+            v-model:data-manipulation="form.dataManipulation"
             v-model:current-step="aiAgentCurrentStep"
             :integration-id="props.editingIntegration?._id"
           />

@@ -5,7 +5,7 @@ import { usePluginsList } from './plugins-list';
 import MicroFrontendPage from '../MicroFrontendPage.vue';
 import { authStore, isAdmin } from '@/modules/core/store/auth';
 import { IMicroFrontend } from '@/services/types/plugin';
-import { getCrud } from '@/services/crud';
+import { getCrud } from '@/services/apis/crud';
 import { IMetaCrud } from '@/modules/plugins/store/types';
 import { getAllStandardMetaCruds } from '@/services/meta-cruds';
 

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import blocksService from '@/services/blocks-service';
+import blocksService from '@/services/apis/blocks-service';
 import { computed, reactive } from 'vue';
 
 export const useBlocks = defineStore('blocks', function useBlocks() {

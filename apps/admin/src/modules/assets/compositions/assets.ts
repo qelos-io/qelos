@@ -1,4 +1,4 @@
-import { api, getCallData } from '@/services/api'
+import { api, getCallData } from '@/services/apis/api'
 import { computed, Ref, ref } from 'vue'
 
 export function getAssetInStorage(storageId: string, identifier?: string) {

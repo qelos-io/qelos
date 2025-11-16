@@ -126,7 +126,7 @@
 <script setup lang="ts">
 
 import { resetConfiguration, useAppConfiguration } from '@/modules/configurations/store/app-configuration';
-import configurationsService from '@/services/configurations-service';
+import configurationsService from '@/services/apis/configurations-service';
 import { DesignPalette, PALETTES } from '@/modules/core/utils/colors-palettes';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import BlueprintsList from '@/modules/no-code/components/BlueprintsList.vue';

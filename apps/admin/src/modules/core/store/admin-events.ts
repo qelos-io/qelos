@@ -1,4 +1,4 @@
-import eventsService from '@/services/events-service';
+import eventsService from '@/services/apis/events-service';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';

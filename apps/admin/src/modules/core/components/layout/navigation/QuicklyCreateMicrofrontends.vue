@@ -52,7 +52,7 @@ import FormInput from '../../forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
 import { useQuickBoilerplate } from '@/modules/core/compositions/quick-boilerplate';
-import pluginsService from '@/services/plugins-service';
+import pluginsService from '@/services/apis/plugins-service';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 
 const { plugins } = usePluginsList();

@@ -1,5 +1,5 @@
 import { useDispatcher } from '../../core/compositions/dispatcher';
-import configurationsService from '../../../services/configurations-service';
+import configurationsService from '../../../services/apis/configurations-service';
 import { resetConfiguration } from '@/modules/configurations/store/app-configuration';
 
 export function useConfigurationsList() {

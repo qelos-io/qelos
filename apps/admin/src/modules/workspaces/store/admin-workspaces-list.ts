@@ -2,7 +2,7 @@ import { useDispatcher } from '../../core/compositions/dispatcher';
 import { useSubmitting } from '../../core/compositions/submitting';
 import { useConfirmAction } from '../../core/compositions/confirm-action';
 import { defineStore } from 'pinia';
-import workspacesService from '@/services/workspaces-service';
+import workspacesService from '@/services/apis/workspaces-service';
 import { IWorkspace } from '@qelos/sdk/dist/workspaces';
 
 const useAdminWorkspacesList = defineStore('admin-workspaces-list', function useAdminWorkspacesList() {

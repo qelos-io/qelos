@@ -2,7 +2,7 @@ import { ElMessageBox } from 'element-plus'
 import debounce from 'lodash.debounce'
 import { Ref, watch } from 'vue'
 import { UnwrapRef } from 'vue'
-import { deleteDraft, getDraft, setDraft } from '@/services/drafts-service'
+import { deleteDraft, getDraft, setDraft } from '@/services/apis/drafts-service'
 import { IDraftContexts } from '@/services/types/draft'
 import { useRoute } from 'vue-router'
 import {translate} from '@/plugins/i18n';

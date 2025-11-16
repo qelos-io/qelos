@@ -20,7 +20,7 @@ import { useRouter } from 'vue-router'
 import { ref } from 'vue'
 import BlockForm from './components/BlockForm.vue'
 import { removeUnsavedChanges } from '../drafts/compositions/unsaved-changes'
-import blocksService from '../../services/blocks-service'
+import blocksService from '../../services/apis/blocks-service'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useBlocksList } from './store/blocks-list'
 

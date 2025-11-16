@@ -1,4 +1,4 @@
-import { getCrud } from '@/services/crud';
+import { getCrud } from '@/services/apis/crud';
 
 export interface IMetaCrud {
   api: ReturnType<typeof getCrud>
