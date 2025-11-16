@@ -1,5 +1,7 @@
 import logger from './logger';
 
+const MAX_AUTO_CONTINUE_STEPS = 3;
+
 // Define types for function calls
 export interface FunctionCall {
   id: string;
@@ -180,6 +182,7 @@ async function processStreamingCompletion(
   additionalArgs: any[] = [],
   isFollowUp: boolean = false,
   onNewMessage?: Function,
+  autoContinueCount: number = 0,
 ) {
   let currentFunctionCalls: FunctionCall[] = [];
   let isCollectingFunctionCall = false;
@@ -293,7 +296,34 @@ async function processStreamingCompletion(
         executeFunctionCallsHandler,
         sendSSE,
         additionalArgs,
-        true // isFollowUp
+        true, // isFollowUp
+        onNewMessage,
+        autoContinueCount,
+      );
+      
+      // Return after processing the recursive call
+      return;
+    }
+
+    // Auto-continue if OpenAI stops due to length limits
+    if (chunk.choices[0]?.finish_reason === 'length' && autoContinueCount < MAX_AUTO_CONTINUE_STEPS) {
+      // Create a new user message to continue the conversation
+      const continueMessage = {
+        role: 'user',
+        content: 'Continue',
+      };
+
+      // Recursively process the next completion with the new message
+      await processStreamingCompletion(
+        res,
+        aiService,
+        { ...chatOptions, messages: [...chatOptions.messages, continueMessage] },
+        executeFunctionCallsHandler,
+        sendSSE,
+        additionalArgs,
+        true, // isFollowUp
+        onNewMessage,
+        autoContinueCount + 1,
       );
       
       // Return after processing the recursive call
@@ -359,7 +389,8 @@ async function processStreamingCompletion(
       sendSSE,
       additionalArgs,
       true, // isFollowUp
-      onNewMessage
+      onNewMessage,
+      autoContinueCount,
     );
   }
   
