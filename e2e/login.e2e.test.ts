@@ -1,4 +1,4 @@
-import QelosAdministratorSDK from '@qelos/sdk/src/administrator';
+import QelosAdministratorSDK from '@qelos/sdk/administrator';
 import { test, describe } from 'node:test';
 import * as assert from 'node:assert';
 import { setTimeout } from 'node:timers/promises';

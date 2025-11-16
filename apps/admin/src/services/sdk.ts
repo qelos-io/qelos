@@ -1,4 +1,4 @@
-import QelosAdministratorSDK from '@qelos/sdk/dist/administrator'
+import QelosAdministratorSDK from '@qelos/sdk/administrator'
 
 const sdk = new QelosAdministratorSDK({
     appUrl: location.origin,

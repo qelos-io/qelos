@@ -3,6 +3,72 @@
   "version": "3.11.0",
   "description": "SDK for Qelos API",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "administrator": ["./dist/administrator/index.d.ts"],
+      "administrator/*": ["./dist/administrator/*.d.ts"],
+      "workspaces": ["./dist/workspaces.d.ts"],
+      "configurations": ["./dist/configurations.d.ts"],
+      "types": ["./dist/types.d.ts"],
+      "*": ["./dist/*.d.ts"]
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./administrator": {
+      "types": "./dist/administrator/index.d.ts",
+      "import": "./dist/administrator/index.js",
+      "require": "./dist/administrator/index.js",
+      "default": "./dist/administrator/index.js"
+    },
+    "./administrator/*": {
+      "types": "./dist/administrator/*.d.ts",
+      "import": "./dist/administrator/*.js",
+      "require": "./dist/administrator/*.js",
+      "default": "./dist/administrator/*.js"
+    },
+    "./workspaces": {
+      "types": "./dist/workspaces.d.ts",
+      "import": "./dist/workspaces.js",
+      "require": "./dist/workspaces.js",
+      "default": "./dist/workspaces.js"
+    },
+    "./configurations": {
+      "types": "./dist/configurations.d.ts",
+      "import": "./dist/configurations.js",
+      "require": "./dist/configurations.js",
+      "default": "./dist/configurations.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.js",
+      "default": "./dist/types.js"
+    },
+    "./src": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./src/*": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    },
+    "./dist": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./dist/*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "test": "node --import tsx --test **/**/*.test.ts",
     "type-check": "tsc --noEmit",
