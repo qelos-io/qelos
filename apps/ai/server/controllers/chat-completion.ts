@@ -3,7 +3,7 @@ import logger from "../services/logger";
 import { createAIService } from "../services/ai-service";
 import * as ChatCompletionService from "../services/chat-completion-service";
 import { executeDataManipulation, getIntegration, getIntegrations, getSourceAuthentication, getToolsIntegrations } from "../services/plugins-service-api";
-import { findSimilarTools } from "../services/vector-search-service";
+import { getRelevantToolsForAgent } from "../services/vector-search-service";
 import { executeFunctionCalls } from "../services/execute-function-calls";
 import { verifyUserPermissions } from "../services/source-service";
 import { IThread, Thread } from "../models/thread";
@@ -457,23 +457,14 @@ export async function chatCompletion(req: any, res: any | null) {
     toolsIntegrations.push(...agentTools);
   }
 
-  // Extract the latest user message to use for tool relevance filtering
-  const lastUserMessage = options.messages
-    .filter(msg => msg.role === 'user')
-    .pop()?.content || '';
-
-  // Determine whether to use local embeddings or OpenAI
-  const embeddingType = integration.target.details.embeddingType || 'local'
-  const maxTools = Number(integration.target.details.maxTools || 15);
-
-  // Use vector search to find relevant tools based on the user's query
-  const tools = allTools.length <= maxTools ? allTools : await findSimilarTools({
-    userQuery: lastUserMessage,
+  // Use improved context-aware tool filtering
+  const tools = await getRelevantToolsForAgent({
     tenant: integration.tenant,
+    safeUserMessages: options.messages,
+    sourceDetails: integration.target.details,
+    sourceAuthentication: req.integrationSourceTargetAuthentication,
     allTools,
-    maxTools,
-    embeddingType,
-    authentication: req.integrationSourceTargetAuthentication
+    defaultMaxTools: 15,
   });
 
   try {

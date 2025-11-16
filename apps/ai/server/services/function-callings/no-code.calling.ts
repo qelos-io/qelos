@@ -169,4 +169,61 @@ export const getComponentsCalling = {
 
       return list;
     }
-} 
+}
+
+export const searchComponentsCalling = {
+  type: 'function',
+  name: 'searchComponents',
+  description: 'Search existing components by name, description, or tags to find reusable UI pieces.',
+  function: {
+    name: 'searchComponents',
+    description: 'Search existing components by name, description, or tags to find reusable UI pieces.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search phrase to match against component name or description.' },
+        limit: { type: 'number', description: 'Maximum number of components to return.', default: 10 },
+      },
+      required: ['query']
+    },
+  },
+  handler: async (req, payload = { query: '', limit: 10 }) => {
+    const tenant = req.headers.tenant;
+    const components = await getComponents(tenant);
+
+    if (!payload.query || !payload.query.trim()) {
+      return components.slice(0, payload.limit || 10);
+    }
+
+    const limit = Math.max(1, Math.min(payload.limit || 10, 50));
+    const query = payload.query.trim().toLowerCase();
+
+    const scored = components.map(component => {
+      const name = component.componentName?.toLowerCase() || '';
+      const description = component.description?.toLowerCase() || '';
+      let score = 0;
+
+      if (name === query) {
+        score += 100;
+      } else if (name.startsWith(query)) {
+        score += 75;
+      } else if (name.includes(query)) {
+        score += 50;
+      }
+
+      if (description.includes(query)) {
+        score += 25;
+      }
+
+      return { component, score };
+    });
+
+    const filtered = scored
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(item => item.component);
+
+    return filtered;
+  }
+}

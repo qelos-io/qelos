@@ -236,3 +236,59 @@ export async function findSimilarTools({
     return allTools.slice(0, maxTools); // Fallback to all tools
   }
 }
+
+/**
+ * Helper for agents to select relevant tools based on the latest user message
+ * and optional source details (embedding type, max tools).
+ */
+export async function getRelevantToolsForAgent({
+  tenant,
+  safeUserMessages,
+  sourceDetails,
+  sourceAuthentication,
+  allTools,
+  defaultMaxTools = 8,
+}: {
+  tenant: string;
+  safeUserMessages: any[];
+  sourceDetails: any;
+  sourceAuthentication: AIAuthentication;
+  allTools: Tool[];
+  defaultMaxTools?: number;
+}): Promise<Tool[]> {
+  // Build context from recent conversation history
+  // Filter out tool/function messages and take last 3 conversational messages
+  // This helps when the user says "continue", "do it", etc.
+  const conversationalMessages = safeUserMessages.filter(msg => {
+    // Only include user and assistant messages with actual text content
+    if (msg.role !== 'user' && msg.role !== 'assistant') {
+      return false;
+    }
+    // Skip messages that are tool calls or function results
+    if (msg.tool_calls || msg.function_call || msg.tool_call_id) {
+      return false;
+    }
+    const content = typeof msg.content === 'string' ? msg.content : '';
+    return content.trim().length > 0;
+  });
+  
+  const recentMessages = conversationalMessages.slice(-3);
+  const contextParts = recentMessages.map(msg => msg.content);
+  const contextQuery = contextParts.join(' ');
+
+  const embeddingType = sourceDetails?.embeddingType || 'local';
+  const maxTools = Number(sourceDetails?.maxTools || defaultMaxTools);
+
+  if (allTools.length <= maxTools) {
+    return allTools;
+  }
+
+  return findSimilarTools({
+    userQuery: contextQuery || 'general',
+    tenant,
+    allTools,
+    maxTools,
+    embeddingType,
+    authentication: sourceAuthentication,
+  });
+}

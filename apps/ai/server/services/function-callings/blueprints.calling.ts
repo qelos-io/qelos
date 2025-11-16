@@ -1,5 +1,5 @@
 import { IBlueprint, IBlueprintPropertyDescriptor } from "@qelos/global-types";
-import { getAllBlueprints, createBlueprint, updateBlueprint } from "../no-code-service";
+import { getAllBlueprints, createBlueprint, updateBlueprint, getBlueprint } from "../no-code-service";
 
 export const getBlueprintsCalling = {
   type: 'function',
@@ -20,6 +20,7 @@ export const getBlueprintsCalling = {
   handler: async (req, payload = { name: undefined, description: undefined }) => {
     const tenant = req.headers.tenant;
     const query: Record<string, any> = {}
+
     if (typeof payload.name === 'string') {
       query.name = { $regex: payload.name, $options: 'i' }
     }
@@ -30,6 +31,32 @@ export const getBlueprintsCalling = {
     const list = await getAllBlueprints(tenant, query);
 
     return list;
+  }
+}
+
+export const getBlueprintDefinitionCalling = {
+  type: 'function',
+  name: 'getBlueprintDefinition',
+  description: 'Get the full definition of a blueprint by identifier to inspect fields, relations, permissions, and limitations.',
+  function: {
+    name: 'getBlueprintDefinition',
+    description: 'Get the full definition of a blueprint by identifier.',
+    parameters: {
+      type: 'object',
+      properties: {
+        identifier: { type: 'string', description: 'Identifier of the blueprint to retrieve.' }
+      },
+      required: ['identifier']
+    },
+  },
+  handler: async (req, payload = { identifier: '' }) => {
+    if (!payload.identifier) {
+      return { error: 'identifier is required' };
+    }
+
+    const tenant = req.headers.tenant;
+    const blueprint = await getBlueprint(tenant, payload.identifier);
+    return blueprint;
   }
 }
 

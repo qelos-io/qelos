@@ -1,6 +1,6 @@
 import { calPublicPluginsService, createPlugin } from "../plugins-service-api";
 import logger from "../logger";
-import { IPlugin, IScreenRequirement } from "@qelos/global-types";
+import { IScreenRequirement } from "@qelos/global-types";
 import { getBlueprint } from "../no-code-service";
 
 // Helper functions for plugin and page operations
@@ -8,7 +8,7 @@ async function getPluginAndPage(pluginId: string, pageId: string, headers: any) 
   if (!pluginId) {
     throw new Error('Plugin ID is required');
   }
-  
+
   if (!pageId) {
     throw new Error('Page ID is required');
   }
@@ -16,22 +16,22 @@ async function getPluginAndPage(pluginId: string, pageId: string, headers: any) 
   try {
     // Get the plugin first to verify it exists
     const plugin = await calPublicPluginsService(
-      `/api/plugins/${pluginId}`, 
-      { tenant: headers.tenant, user: headers.user }, 
+      `/api/plugins/${pluginId}`,
+      { tenant: headers.tenant, user: headers.user },
       { data: {}, method: 'GET' }
     );
-    
+
     if (!plugin) {
       throw new Error(`Plugin with ID ${pluginId} not found`);
     }
-    
+
     // Find the page to update
     const pageIndex = plugin.microFrontends?.findIndex(page => page._id === pageId);
-    
+
     if (pageIndex === undefined || pageIndex === -1 || !plugin.microFrontends) {
       throw new Error(`Page with ID ${pageId} not found in plugin ${pluginId}`);
     }
-    
+
     return { plugin, pageIndex };
   } catch (error: any) {
     throw new Error(`Failed to get plugin or page: ${error?.message || 'Unknown error'}`);
@@ -43,14 +43,14 @@ async function updatePluginPage(plugin: any, pageIndex: number, updatedPage: any
     // Create a new microFrontends array with the updated page
     const updatedMicroFrontends = [...plugin.microFrontends];
     updatedMicroFrontends[pageIndex] = updatedPage;
-    
+
     // Update the plugin with the new microFrontends array
     const updatedPlugin = await calPublicPluginsService(
       `/api/plugins/${plugin._id}`,
       { tenant: headers.tenant, user: headers.user },
       { data: { ...plugin, microFrontends: updatedMicroFrontends }, method: 'PUT' }
     );
-    
+
     // Return the updated page
     return updatedPlugin.microFrontends[pageIndex];
   } catch (error: any) {
@@ -58,6 +58,52 @@ async function updatePluginPage(plugin: any, pageIndex: number, updatedPage: any
   }
 }
 
+export const upsertPageRequirementCalling = {
+  type: 'function',
+  name: 'upsertPageRequirement',
+  description: 'Insert or update a requirement entry on a page without rewriting the entire page structure.',
+  function: {
+    name: 'upsertPageRequirement',
+    description: 'Insert or update a requirement entry on a page without rewriting the entire page structure.',
+    parameters: {
+      type: 'object',
+      properties: {
+        pluginId: { type: 'string', description: 'ID of the plugin containing the page' },
+        pageId: { type: 'string', description: 'ID of the page to update' },
+        requirement: {
+          type: 'object',
+          description: 'Requirement object previously produced by getHTTPRequirementForPage or getBlueprintRequirementForPage.',
+        },
+      },
+      required: ['pluginId', 'pageId', 'requirement']
+    },
+  },
+  handler: async (req, payload: { pluginId: string; pageId: string; requirement: IScreenRequirement | null }) => {
+    if (!payload?.requirement || typeof payload.requirement.key !== 'string') {
+      throw new Error('Requirement must include a key');
+    }
+
+    const { plugin, pageIndex } = await getPluginAndPage(payload.pluginId, payload.pageId, req.headers);
+    const page = plugin.microFrontends[pageIndex];
+    const updatedPage = { ...page };
+    const existingRequirements: IScreenRequirement[] = Array.isArray(updatedPage.requirements)
+      ? [...updatedPage.requirements]
+      : [];
+
+    const requirement = payload.requirement as IScreenRequirement;
+
+    const idx = existingRequirements.findIndex(req => req.key === requirement.key);
+    if (idx >= 0) {
+      existingRequirements[idx] = requirement;
+    } else {
+      existingRequirements.push(requirement);
+    }
+
+    updatedPage.requirements = existingRequirements;
+    await updatePluginPage(plugin, pageIndex, updatedPage, req.headers);
+    return updatedPage.requirements;
+  }
+}
 export const createPageCalling = {
     type: 'function',
     name: 'createPage',
@@ -324,6 +370,61 @@ export const getPageCalling = {
     handler: async (req, payload = { pluginId: '', pageId: '' }) => {
       return getPluginAndPage(payload.pluginId, payload.pageId, req.headers);
     }
+}
+
+export const analyzePageStructureCalling = {
+  type: 'function',
+  name: 'analyzePageStructure',
+  description: 'Analyze a page to understand its structure, requirements, and components used before editing.',
+  function: {
+    name: 'analyzePageStructure',
+    description: 'Analyze a page to understand its structure, requirements, and components used before editing.',
+    parameters: {
+      type: 'object',
+      properties: {
+        pluginId: { type: 'string', description: 'Plugin ID of the page' },
+        pageId: { type: 'string', description: 'Page ID of the page' },
+      },
+      required: ['pluginId', 'pageId']
+    },
+  },
+  handler: async (req, payload = { pluginId: '', pageId: '' }) => {
+    const { plugin, pageIndex } = await getPluginAndPage(payload.pluginId, payload.pageId, req.headers);
+    const page = plugin.microFrontends[pageIndex];
+
+    const structure = page?.structure || '';
+    const componentRegex = /<([a-z][a-z0-9-]*)\b/gi;
+    const componentSet = new Set<string>();
+    let match: RegExpExecArray | null;
+
+    const ignoreTags = new Set([
+      'div','span','section','header','footer','main','article','aside','nav','ul','ol','li','p','button','input','label','form','table','tr','td','th','thead','tbody','template'
+    ]);
+
+    while ((match = componentRegex.exec(structure))) {
+      const tag = match[1];
+      if (!tag) continue;
+      if (ignoreTags.has(tag)) continue;
+      // Capture custom components (kebab-case) or Element Plus / custom tags with hyphen or prefix
+      if (tag.includes('-') || tag.startsWith('el-') || tag.includes('component')) {
+        componentSet.add(tag);
+      }
+    }
+
+    return {
+      page: {
+        id: page._id,
+        name: page.name,
+        description: page.description,
+        route: page.route,
+        pluginId: plugin._id,
+        pluginName: plugin.name,
+      },
+      requirements: page.requirements || [],
+      componentsUsed: Array.from(componentSet),
+      structure,
+    };
+  }
 }
 
 
