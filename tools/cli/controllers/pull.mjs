@@ -8,7 +8,7 @@ import { logger } from '../services/logger.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export default async function pullController({ type, path: targetPath }) {
+export default async function pullController({ type, path: targetPath = './' }) {
   try {
     // Validate parent directory exists
     const parentDir = path.dirname(targetPath);

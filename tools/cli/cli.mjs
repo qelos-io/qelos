@@ -9,6 +9,7 @@ import process from 'node:process';
 import createCommand from './commands/create.mjs';
 import pushCommand from './commands/push.mjs';
 import pullCommand from './commands/pull.mjs';
+import generateCommand from './commands/generate.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const program = yargs(hideBin(process.argv));
@@ -24,5 +25,6 @@ program.option('verbose', {
 createCommand(program)
 pushCommand(program)
 pullCommand(program)
+generateCommand(program)
 
 program.help().argv;
