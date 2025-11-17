@@ -6,6 +6,7 @@ import { getIntegration } from '../services/plugins-service-api';
 import { verifyUserPermissions } from '../services/source-service';
 import { QelosTriggerOperation } from '@qelos/global-types';
 import logger from '../services/logger';
+import { emitPlatformEvent } from '@qelos/api-kit';
 
 /**
  * Create a new thread
@@ -43,7 +44,22 @@ export const createThread = async (req: RequestWithUser, res: Response) => {
       messages: []
     })
 
+
     await thread.save()
+
+    emitPlatformEvent({
+      kind: 'threads',
+      eventName: 'create',
+      source: 'ai',
+      user: req.user?._id,
+      metadata: {
+        thread: thread._id,
+        integration: integration._id,
+        workspace: req.user?.workspace
+      },
+      tenant: req.headers.tenant,
+      description: 'Thread created'
+    }).catch(() => {});
     
     return res.status(201).json(thread).end();
   } catch (error) {
@@ -174,6 +190,20 @@ export const deleteThread = async (req: RequestWithUser, res: Response) => {
     if (!thread) {
       return res.status(404).json({ error: 'Thread not found' }).end();
     }
+
+    emitPlatformEvent({
+      kind: 'threads',
+      eventName: 'delete',
+      source: 'ai',
+      user: req.user?._id,
+      metadata: {
+        thread: thread._id,
+        integration: thread.integration,
+        workspace: req.user?.workspace
+      },
+      tenant: req.headers.tenant,
+      description: 'Thread deleted'
+    }).catch(() => {});
     
     return res.json({ message: 'Thread deleted successfully' }).end();
   } catch (error) {

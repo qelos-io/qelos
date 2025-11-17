@@ -18,3 +18,4 @@ Chart.lock
 .cloudfairy/libraries
 .cloudfairy/*-data
 .cloudfairy.build
+apps/admin/components.d.ts

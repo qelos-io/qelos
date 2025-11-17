@@ -1,6 +1,7 @@
 import { getCrud } from './crud'
 
 export interface IEvent {
+  _id: string;
   tenant: string;
   user?: string;
   source: string;

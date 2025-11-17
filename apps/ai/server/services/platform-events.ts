@@ -45,9 +45,9 @@ export function emitDataManipulationErrorEvent(params: BaseEventParams & {
   emitSafePlatformEvent({
     tenant: params.tenant,
     user: params.userId,
-    source: 'ai_service',
-    kind: 'data_manipulation',
-    eventName: 'data_manipulation_failed',
+    source: 'ai',
+    kind: 'data-manipulation',
+    eventName: 'data-manipulation-failed',
     description: `Data manipulation failed during ${params.stage}`,
     metadata: {
       integrationId: params.integrationId,
