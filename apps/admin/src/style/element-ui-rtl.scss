@@ -30,4 +30,14 @@
   .el-button [class*=el-icon] + span {
 	margin-inline: 6px 0;
   }
+
+  .el-switch__label--left {
+    margin-inline-start: 0;
+    margin-inline-end: 10px;
+  }
+
+  .el-switch__label--right {
+    margin-inline-start: 10px;
+    margin-inline-end: 0;
+  }
 }
