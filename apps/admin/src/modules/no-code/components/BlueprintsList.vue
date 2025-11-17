@@ -405,11 +405,11 @@ function getMinMax(min, max) {
 .required-badge {
   color: #f56c6c;
   font-weight: bold;
-  margin-left: 2px;
+  margin-inline-start: 2px;
 }
 
 .info-icon {
-  margin-left: 4px;
+  margin-inline-start: 4px;
 }
 
 .property-type {
@@ -434,8 +434,8 @@ function getMinMax(min, max) {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  padding-top: 12px;
-  border-top: 1px solid #ebeef5;
+  padding-block-start: 12px;
+  border-block-start: 1px solid #ebeef5;
 }
 
 .marked {

@@ -113,11 +113,11 @@ function addNewMicroFrontend() {
 }
 
 .add-button {
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .button-text {
-  margin-left: 0.5rem;
+  margin-inline-start: 0.5rem;
 }
 
 /* Screen reader only class for assistive text */

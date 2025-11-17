@@ -229,7 +229,7 @@ function ensureSocialLoginsSources(metadata: Partial<IAuthConfigurationMetadata>
 }
 
 .preview-container {
-  margin-left: 2rem;
+  margin-inline-start: 2rem;
   display: flex;
   flex-direction: column;
   border-radius: 8px;

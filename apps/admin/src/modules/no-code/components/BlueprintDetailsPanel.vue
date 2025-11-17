@@ -135,29 +135,29 @@ function getBlueprintName(identifier: string): string {
 .property-type,
 .property-required,
 .property-multi {
-  margin-left: 5px;
+  margin-inline-start: 5px;
 }
 
 .property-description {
-  margin-bottom: 8px;
+  margin-block-end: 8px;
   font-size: 13px;
   color: #606266;
 }
 
 .property-enum,
 .property-range {
-  margin-top: 5px;
+  margin-block-start: 5px;
   font-size: 12px;
 }
 
 .property-enum-label {
-  margin-right: 5px;
+  margin-inline-end: 5px;
   font-weight: bold;
 }
 
 .property-enum-option {
-  margin-right: 5px;
-  margin-bottom: 5px;
+  margin-inline-end: 5px;
+  margin-block-end: 5px;
 }
 
 .property-range {
@@ -166,7 +166,7 @@ function getBlueprintName(identifier: string): string {
 }
 
 .relation-item {
-  margin-bottom: 8px;
+  margin-block-end: 8px;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -181,11 +181,11 @@ function getBlueprintName(identifier: string): string {
 .no-properties {
   color: #909399;
   font-style: italic;
-  margin-bottom: 15px;
+  margin-block-end: 15px;
 }
 
 .actions {
-  margin-top: 20px;
+  margin-block-end: 20px;
   display: flex;
   gap: 10px;
 }
@@ -193,8 +193,8 @@ function getBlueprintName(identifier: string): string {
 @media (max-width: 768px) {
   .blueprint-details {
     width: 100%;
-    border-left: none;
-    border-top: 1px solid #e0e0e0;
+    border-inline-start: none;
+    border-block-start: 1px solid #e0e0e0;
   }
 }
 </style>

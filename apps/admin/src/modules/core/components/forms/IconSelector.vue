@@ -179,7 +179,7 @@ function clearSelection() {
 }
 
 .clear-icon {
-  margin-left: 8px;
+  margin-inline-start: 8px;
 }
 
 .icons-container {

@@ -510,7 +510,7 @@ img, small {
   border-radius: 12px;
   background-color: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
-  margin-right: 20px;
+  margin-inline-end: 20px;
   flex-shrink: 0;
 }
 
@@ -550,7 +550,7 @@ img, small {
   .option-icon {
     width: 48px;
     height: 48px;
-    margin-right: 16px;
+    margin-inline-end: 16px;
   }
   
   .option-content h4 {

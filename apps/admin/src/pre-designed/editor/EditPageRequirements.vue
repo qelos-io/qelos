@@ -434,8 +434,8 @@ function clearIfEmpty($event: any, obj: any, key: string) {
 <style scoped>
 .requirements-header {
   margin-bottom: 1rem;
-  margin-left: 1rem;
-  margin-right: 1rem;
+  margin-inline-start: 1rem;
+  margin-inline-end: 1rem;
 }
 
 .header-actions {
@@ -457,7 +457,7 @@ function clearIfEmpty($event: any, obj: any, key: string) {
 .right-actions {
   display: flex;
   align-items: center;
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .filter-buttons .el-button:not(.el-button--primary):hover,
@@ -474,7 +474,7 @@ function clearIfEmpty($event: any, obj: any, key: string) {
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  margin-left: 6px;
+  margin-inline-start: 6px;
   font-size: 12px;
   line-height: 1;
   border-radius: 10px;

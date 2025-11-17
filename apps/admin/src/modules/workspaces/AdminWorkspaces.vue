@@ -57,7 +57,7 @@ const selectedLabels = computed({
 }
 
 .filter-container {
-  margin-left: 50px;
+  margin-inline-start: 50px;
   height: 32px;
 }
 </style>

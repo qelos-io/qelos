@@ -382,7 +382,7 @@ provide('editableManager', ref(false));
 }
 
 .tab-badge {
-  margin-left: 0.25rem;
+  margin-inline-start: 0.25rem;
 }
 
 .tab-content {

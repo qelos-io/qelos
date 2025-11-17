@@ -290,7 +290,7 @@ function removeLimitation(index: number) {
 }
 
 .remove-button {
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .scope-selector {

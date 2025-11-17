@@ -258,19 +258,19 @@ watch(() => props.modelValue, initQelosDetails, { immediate: true });
 .config-description {
   color: var(--el-text-color-secondary);
   font-size: 0.9em;
-  margin-bottom: 15px;
+  margin-block-end: 15px;
 }
 
 .mr-1 {
-  margin-right: 0.25rem;
+  margin-inline-end: 0.25rem;
 }
 
 .mb-1 {
-  margin-bottom: 0.25rem;
+  margin-block-end: 0.25rem;
 }
 
 .ml-1 {
-  margin-left: 0.25rem;
+  margin-inline-start: 0.25rem;
 }
 
 .w-auto {

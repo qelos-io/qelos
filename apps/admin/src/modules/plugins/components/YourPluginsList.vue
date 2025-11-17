@@ -316,7 +316,7 @@ const getMicroFrontendsBadgeClass = (plugin: IPlugin) => {
   background-color: #fdf6ec;
   padding: 2px 6px;
   border-radius: 10px;
-  margin-left: 4px;
+  margin-inline-start: 4px;
 }
 
 .detail-type, .detail-actions {

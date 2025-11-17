@@ -792,7 +792,7 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
   padding: 2px 6px;
   border-radius: 10px;
   font-size: 12px;
-  margin-left: 5px;
+  margin-inline-start: 5px;
 }
 
 .form-group {

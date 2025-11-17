@@ -424,7 +424,7 @@ function getPreviewStyles(palette: DesignPalette['palette']) {
 }
 
 .status-tag {
-  margin-left: 10px;
+  margin-inline-start: 10px;
   font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;

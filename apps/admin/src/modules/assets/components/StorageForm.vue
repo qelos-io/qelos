@@ -234,7 +234,7 @@ const submit = () => {
     gap: 8px;
     
     strong {
-      margin-left: 8px;
+      margin-inline-start: 8px;
       color: var(--el-color-primary);
     }
   }
@@ -336,7 +336,7 @@ const submit = () => {
 }
 
 .info-icon {
-  margin-left: 5px;
+  margin-inline-start: 5px;
   font-size: 14px;
   color: var(--el-color-info);
   cursor: help;

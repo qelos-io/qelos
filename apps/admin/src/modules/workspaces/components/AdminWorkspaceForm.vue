@@ -303,12 +303,12 @@ function updateMemberRoles(index: number) {
 }
 
 .remove-button {
-	margin-left: 8px;
+	margin-inline-start: 8px;
 	margin-top: 45px;
 }
 
 .save-btn {
-	margin-left: 8px;
+	margin-inline-start: 8px;
 }
 
 .styled-select {
@@ -330,7 +330,7 @@ function updateMemberRoles(index: number) {
 }
 
 .member-header h3 {
-	margin-right: 20px;
+	margin-inline-end: 20px;
 }
 
 .search-input {
