@@ -8,6 +8,7 @@ import {
   getBlueprintEntityForUser,
   getBlueprintEntitiesForUser
 } from "./users-no-code-service";
+import { emitFunctionExecutionErrorEvent } from "./platform-events";
 
 // Helper function to find target integration by function name
 export function findTargetIntegration(toolsIntegrations: any[], functionName: string) {
@@ -116,6 +117,7 @@ async function executeBlueprintOperation(
 }
 
 const HEARTBEAT_INTERVAL_MS = 1000;
+const FUNCTION_CALL_TIMEOUT_MS = 300000; // 5 minutes timeout for individual function calls
 
 function startHeartbeat(
   sendSSE?: ChatCompletionService.SSEHandler,
@@ -139,6 +141,20 @@ function startHeartbeat(
   return () => clearInterval(intervalId);
 }
 
+// Helper function to execute a single function call with timeout
+async function executeWithTimeout<T>(promise: Promise<T>, timeoutMs: number, functionName: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`Function ${functionName} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise
+      .then(resolve)
+      .catch(reject)
+      .finally(() => clearTimeout(timeoutId));
+  });
+}
+
 // Helper function to execute multiple function calls
 export async function executeFunctionCalls(
   req: any,
@@ -149,7 +165,7 @@ export async function executeFunctionCalls(
   eventPrefix: string = ''
 ): Promise<any[]> {
   const functionResults: any[] = [];
-  const stopHeartbeat = startHeartbeat(sendSSE, eventPrefix);
+  let stopHeartbeat: (() => void) | null = null;
 
   if (sendSSE && functionCalls.length > 0) {
     sendSSE({ 
@@ -160,8 +176,13 @@ export async function executeFunctionCalls(
   
   try {
     for (const functionCall of functionCalls) {
+      // Start heartbeat for each function call to keep connection alive during long operations
+      stopHeartbeat = startHeartbeat(sendSSE, eventPrefix);
+      
+      let targetIntegration: any = null;
+      
       try {
-        const targetIntegration = findTargetIntegration(toolsIntegrations, functionCall.function.name);
+        targetIntegration = findTargetIntegration(toolsIntegrations, functionCall.function.name);
         if (targetIntegration) {
           if (sendSSE) {
             sendSSE({ 
@@ -178,32 +199,56 @@ export async function executeFunctionCalls(
           for (let args of argsIterator) {
             let result: any;
             
-            // Apply data manipulation if configured
-            if (targetIntegration.dataManipulation) {
-              args = (await executeDataManipulation(tenant, {arguments: args, user: req.user, workspace: req.user?.workspace}, targetIntegration.dataManipulation)).arguments;
-            }
-            
-            // Check if this is a blueprint operation
-            const { isBlueprint } = isBlueprintOperation(functionCall.function.name);
-            
-            // Execute the integration or blueprint operation
-            if (isBlueprint) {
-              // Handle blueprint operation
-              result = await executeBlueprintOperation(req, functionCall.function.name, args, tenant);
-            } else if (targetIntegration.handler) {
-              // Use custom handler if available
-              result = await targetIntegration.handler(req, args);
-            } else {
-              // Default to triggering integration source
-              result = await triggerIntegrationSource(tenant, targetIntegration.target.source, {
-                payload: args,
-                operation: targetIntegration.target.operation,
-                details: targetIntegration.target.details
+            try {
+              // Apply data manipulation if configured
+              if (targetIntegration.dataManipulation) {
+                args = (await executeDataManipulation(tenant, {arguments: args, user: req.user, workspace: req.user?.workspace}, targetIntegration.dataManipulation)).arguments;
+              }
+              
+              // Check if this is a blueprint operation
+              const { isBlueprint } = isBlueprintOperation(functionCall.function.name);
+              
+              // Execute the integration or blueprint operation with timeout
+              const executionPromise = isBlueprint
+                ? executeBlueprintOperation(req, functionCall.function.name, args, tenant)
+                : targetIntegration.handler
+                  ? targetIntegration.handler(req, args)
+                  : triggerIntegrationSource(tenant, targetIntegration.target.source, {
+                      payload: args,
+                      operation: targetIntegration.target.operation,
+                      details: targetIntegration.target.details
+                    });
+              
+              result = await executeWithTimeout(
+                executionPromise,
+                FUNCTION_CALL_TIMEOUT_MS,
+                functionCall.function.name
+              );
+              
+              // Add to results array
+              results.push(result);
+            } catch (argError) {
+              logger.error(`Error executing function call argument for ${functionCall.function.name}:`, argError);
+              
+              // Emit platform event for function execution error
+              emitFunctionExecutionErrorEvent({
+                tenant,
+                userId: req.user?._id?.toString(),
+                integrationId: targetIntegration._id,
+                functionName: functionCall.function.name,
+                functionCallId: functionCall.id,
+                error: argError,
+                context: {
+                  arguments: args,
+                  targetIntegration: targetIntegration.name || targetIntegration._id
+                }
+              });
+              
+              // Add error to results
+              results.push({
+                error: argError instanceof Error ? argError.message : 'Function execution failed'
               });
             }
-            
-            // Add to results array
-            results.push(result);
           }
 
           const functionResult = ChatCompletionService.createFunctionResult(functionCall, results);
@@ -217,13 +262,42 @@ export async function executeFunctionCalls(
             });
           }
         } else {
+          const errorMessage = `Function ${functionCall.function.name} not found`;
+          logger.warn(errorMessage);
+          
+          // Emit platform event for function not found
+          emitFunctionExecutionErrorEvent({
+            tenant,
+            userId: req.user?._id?.toString(),
+            functionName: functionCall.function.name,
+            functionCallId: functionCall.id,
+            error: new Error(errorMessage),
+            context: {
+              availableFunctions: toolsIntegrations.map(t => t.trigger?.details?.name || t.name).filter(Boolean)
+            }
+          });
+          
           functionResults.push(ChatCompletionService.createFunctionResult(functionCall, [{
-            error: `Function ${functionCall.function.name} not found`
+            error: errorMessage
           }]));
         }
       } catch (error) {
-        logger.error('error', error);
+        logger.error(`Error executing function call ${functionCall.function.name}:`, error);
         const errorMessage = error instanceof Error ? error.message : 'Invalid function arguments';
+        
+        // Emit platform event for function execution error
+        emitFunctionExecutionErrorEvent({
+          tenant,
+          userId: req.user?._id?.toString(),
+          integrationId: targetIntegration?._id,
+          functionName: functionCall.function.name,
+          functionCallId: functionCall.id,
+          error,
+          context: {
+            arguments: functionCall.function.arguments
+          }
+        });
+        
         const functionResult = ChatCompletionService.createFunctionResult(functionCall, [{
           error: errorMessage
         }]);
@@ -238,10 +312,42 @@ export async function executeFunctionCalls(
             error: errorMessage
           });
         }
+      } finally {
+        // Stop heartbeat after each function call completes
+        if (stopHeartbeat) {
+          stopHeartbeat();
+          stopHeartbeat = null;
+        }
       }
     }
+  } catch (globalError) {
+    logger.error('Global error in executeFunctionCalls:', globalError);
+    
+    // Emit platform event for global execution error
+    emitFunctionExecutionErrorEvent({
+      tenant,
+      userId: req.user?._id?.toString(),
+      functionName: 'multiple_functions',
+      functionCallId: 'global_error',
+      error: globalError,
+      context: {
+        functionCallsCount: functionCalls.length,
+        functionNames: functionCalls.map(fc => fc.function.name)
+      }
+    });
+    
+    // Send SSE event for global error
+    if (sendSSE) {
+      sendSSE({ 
+        type: `${eventPrefix}error`, 
+        error: globalError instanceof Error ? globalError.message : 'Global error during function execution'
+      });
+    }
   } finally {
-    stopHeartbeat();
+    // Ensure heartbeat is stopped if still running
+    if (stopHeartbeat) {
+      stopHeartbeat();
+    }
   }
   
   return functionResults;

@@ -147,7 +147,13 @@ export async function handleStreamingChatCompletion(
   onNewMessage?: Function,
 ) {
   const sendSSE = (data: any) => {
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
+    try {
+      if (!res.writableEnded) {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+      }
+    } catch (writeError) {
+      logger.error('Failed to write SSE data', writeError);
+    }
   };
 
   try {
@@ -164,11 +170,19 @@ export async function handleStreamingChatCompletion(
     
     // End the response
     sendSSE({ type: 'done' });
-    res.end();
+    if (!res.writableEnded) {
+      res.end();
+    }
   } catch (error) {
     logger.error('Error in streaming chat completion', error);
-    sendSSE({ type: 'error', message: 'Error processing streaming chat completion' });
-    res.end();
+    sendSSE({ 
+      type: 'error', 
+      message: error instanceof Error ? error.message : 'Error processing streaming chat completion',
+      stack: process.env.NODE_ENV === 'production' ? undefined : (error instanceof Error ? error.stack : undefined)
+    });
+    if (!res.writableEnded) {
+      res.end();
+    }
   }
 }
 
@@ -262,44 +276,54 @@ async function processStreamingCompletion(
         });
       }
       
-      // Execute all collected function calls
-      const functionResults = await executeFunctionCallsHandler(
-        currentFunctionCalls,
-        sendSSE,
-        ...additionalArgs
-      );
+      try {
+        // Execute all collected function calls
+        const functionResults = await executeFunctionCallsHandler(
+          currentFunctionCalls,
+          sendSSE,
+          ...additionalArgs
+        );
 
-      if (onNewMessage) {
-        onNewMessage({
-          type: 'function_calls_executed',
-          functionResults: functionResults
+        if (onNewMessage) {
+          onNewMessage({
+            type: 'function_calls_executed',
+            functionResults: functionResults
+          });
+        }
+        
+        // Continue the conversation with function results
+        sendSSE({ 
+          type: isFollowUp ? 'followup_continuing_conversation' : 'continuing_conversation' 
         });
-      }
-      
-      // Continue the conversation with function results
-      sendSSE({ 
-        type: isFollowUp ? 'followup_continuing_conversation' : 'continuing_conversation' 
-      });
-      
-      // Create follow-up messages with function results
-      const followUpMessages = [
-        ...chatOptions.messages,
-        { role: 'assistant', tool_calls: currentFunctionCalls },
-        ...functionResults
-      ];
+        
+        // Create follow-up messages with function results
+        const followUpMessages = [
+          ...chatOptions.messages,
+          { role: 'assistant', tool_calls: currentFunctionCalls },
+          ...functionResults
+        ];
 
-      // Recursively process the next completion with updated messages
-      await processStreamingCompletion(
-        res,
-        aiService,
-        { ...chatOptions, messages: followUpMessages },
-        executeFunctionCallsHandler,
-        sendSSE,
-        additionalArgs,
-        true, // isFollowUp
-        onNewMessage,
-        autoContinueCount,
-      );
+        // Recursively process the next completion with updated messages
+        await processStreamingCompletion(
+          res,
+          aiService,
+          { ...chatOptions, messages: followUpMessages },
+          executeFunctionCallsHandler,
+          sendSSE,
+          additionalArgs,
+          true, // isFollowUp
+          onNewMessage,
+          autoContinueCount,
+        );
+      } catch (functionError) {
+        logger.error('Error executing function calls in streaming completion', functionError);
+        sendSSE({ 
+          type: 'error', 
+          message: functionError instanceof Error ? functionError.message : 'Error executing function calls',
+          functionCalls: currentFunctionCalls
+        });
+        // Don't throw - let the stream end gracefully
+      }
       
       // Return after processing the recursive call
       return;
@@ -355,43 +379,53 @@ async function processStreamingCompletion(
       type: isFollowUp ? 'followup_function_calls_detected' : 'function_calls_detected' 
     });
     
-    const functionResults = await executeFunctionCallsHandler(
-      currentFunctionCalls,
-      sendSSE,
-      ...additionalArgs
-    );
+    try {
+      const functionResults = await executeFunctionCallsHandler(
+        currentFunctionCalls,
+        sendSSE,
+        ...additionalArgs
+      );
 
-    if (onNewMessage) {
-      onNewMessage({
-        type: 'function_calls_executed',
-        functionResults: functionResults
+      if (onNewMessage) {
+        onNewMessage({
+          type: 'function_calls_executed',
+          functionResults: functionResults
+        });
+      }
+      
+      // Continue the conversation with function results
+      sendSSE({ 
+        type: isFollowUp ? 'followup_continuing_conversation' : 'continuing_conversation' 
       });
+      
+      // Create follow-up messages with function results
+      const followUpMessages = [
+        ...chatOptions.messages,
+        { role: 'assistant', tool_calls: currentFunctionCalls },
+        ...functionResults
+      ];
+      
+      // Recursively process the next completion with updated messages
+      await processStreamingCompletion(
+        res,
+        aiService,
+        { ...chatOptions, messages: followUpMessages },
+        executeFunctionCallsHandler,
+        sendSSE,
+        additionalArgs,
+        true, // isFollowUp
+        onNewMessage,
+        autoContinueCount,
+      );
+    } catch (functionError) {
+      logger.error('Error executing incomplete function calls in streaming completion', functionError);
+      sendSSE({ 
+        type: 'error', 
+        message: functionError instanceof Error ? functionError.message : 'Error executing function calls',
+        functionCalls: currentFunctionCalls
+      });
+      // Don't throw - let the stream end gracefully
     }
-    
-    // Continue the conversation with function results
-    sendSSE({ 
-      type: isFollowUp ? 'followup_continuing_conversation' : 'continuing_conversation' 
-    });
-    
-    // Create follow-up messages with function results
-    const followUpMessages = [
-      ...chatOptions.messages,
-      { role: 'assistant', tool_calls: currentFunctionCalls },
-      ...functionResults
-    ];
-    
-    // Recursively process the next completion with updated messages
-    await processStreamingCompletion(
-      res,
-      aiService,
-      { ...chatOptions, messages: followUpMessages },
-      executeFunctionCallsHandler,
-      sendSSE,
-      additionalArgs,
-      true, // isFollowUp
-      onNewMessage,
-      autoContinueCount,
-    );
   }
   
   // If we reached here, we either have content or no function calls to process

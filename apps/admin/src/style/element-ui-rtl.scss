@@ -40,4 +40,10 @@
     margin-inline-start: 10px;
     margin-inline-end: 0;
   }
+
+  .el-menu {
+    border-inline-end: 1px solid var(--el-menu-border-color);
+    padding-inline-start: 0;
+    padding-inline-end: auto;
+}
 }

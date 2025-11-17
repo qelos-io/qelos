@@ -87,3 +87,30 @@ export function emitAIProviderErrorEvent(params: BaseEventParams & {
     },
   });
 }
+
+export function emitFunctionExecutionErrorEvent(params: BaseEventParams & {
+  integrationId?: string;
+  functionName: string;
+  functionCallId: string;
+  error: any;
+}) {
+  if (!params.tenant) {
+    return;
+  }
+
+  emitSafePlatformEvent({
+    tenant: params.tenant,
+    user: params.userId,
+    source: 'ai',
+    kind: 'function_execution',
+    eventName: 'function_execution_failed',
+    description: `Function execution failed: ${params.functionName}`,
+    metadata: {
+      integrationId: params.integrationId,
+      functionName: params.functionName,
+      functionCallId: params.functionCallId,
+      context: params.context,
+      error: serializeError(params.error),
+    },
+  });
+}
