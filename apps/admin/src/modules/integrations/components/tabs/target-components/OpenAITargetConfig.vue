@@ -233,9 +233,9 @@ const applyPersonality = () => {
 };
 
 // Update target details from JSON text
-const updateTargetDetails = (value: string) => {
+const updateTargetDetails = (value: string | KeyboardEvent) => {
   try {
-    const parsed = JSON.parse(value);
+    const parsed = typeof value === 'string' ? JSON.parse(value) : JSON.parse((value.target as HTMLInputElement)?.value);
     const newModelValue = { ...props.modelValue };
     newModelValue.details = parsed;
     emit('update:modelValue', newModelValue);
