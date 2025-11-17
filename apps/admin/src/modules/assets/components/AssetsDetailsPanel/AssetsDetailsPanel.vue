@@ -33,20 +33,20 @@ const togglePanel = () => isOpen.value = !isOpen.value
 .panel {
   position: fixed;
   z-index: 2;
-  top: 130px;
-  right: -400px;
+  inset-block-start: 130px;
+  inset-inline-end: -400px;
   width: 400px;
   height: 70%;
   max-width: 50%;
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
-  transition: right 0.3s ease-in-out;
+  transition: inset-inline-end 0.3s ease-in-out;
 
   &[dir="rtl"] {
-    left: -400px;
-    right: auto;
-    transition: left 0.3s ease-in-out;
+    inset-inline-start: -400px;
+    inset-inline-end: auto;
+    transition: inset-inline-start 0.3s ease-in-out;
 
     .toggle {
       border-radius: 0 8px 8px 0;
@@ -54,17 +54,17 @@ const togglePanel = () => isOpen.value = !isOpen.value
   }
 
   &.open {
-    right: 0;
+    inset-inline-end: 0;
 
     &[dir="rtl"] {
-      right: auto;
-      left: 0;
+      inset-inline-end: auto;
+      inset-inline-start: 0;
     }
   }
 
   .toggle {
     cursor: pointer;
-    margin-top: 200px;
+    margin-block-start: 200px;
     margin-inline-start: -20px;
     width: 20px;
     height: 50px;

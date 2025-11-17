@@ -101,7 +101,7 @@ function displayDate(date: string) {
 }
 
 .components-list-card {
-  margin-top: 20px;
+  margin-block-start: 20px;
 }
 
 .component-name {

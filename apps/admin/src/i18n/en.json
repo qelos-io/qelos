@@ -83,6 +83,8 @@
   "Cancel": "Cancel",
   "Confirm": "Confirm",
   "OK": "OK",
+  "Next": "Next",
+  "Previous": "Previous",
   "Tags": "Tags",
   "Select an event to view details": "Select an event to view details",
   "leave empty to auto-generate": "Leave empty to auto-generate",

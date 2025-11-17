@@ -114,7 +114,7 @@ textarea {
   background-color: transparent;
 }
 
-.monaco-editor {
+.monaco-editor, [dir="ltr"] {
   text-align: left;
   direction: ltr;
 }

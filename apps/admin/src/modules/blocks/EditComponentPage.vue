@@ -83,6 +83,6 @@ loadComponent();
 }
 
 .component-form-card {
-  margin-top: 20px;
+  margin-block-start: 20px;
 }
 </style>

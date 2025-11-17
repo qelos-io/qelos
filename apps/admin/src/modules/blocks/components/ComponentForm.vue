@@ -325,7 +325,7 @@ const extractComponentInfo = (content: string, fileName: string) => {
 .form-hint {
   font-size: 12px;
   color: #909399;
-  margin-top: 4px;
+  margin-block-start: 4px;
 }
 
 .file-drop-zone {
@@ -336,7 +336,7 @@ const extractComponentInfo = (content: string, fileName: string) => {
   border: 2px dashed #dcdfe6;
   border-radius: 8px;
   padding: 30px;
-  margin-bottom: 20px;
+  margin-block-end: 20px;
   background-color: #f8f9fa;
   transition: all 0.3s ease;
   cursor: pointer;
@@ -348,7 +348,7 @@ const extractComponentInfo = (content: string, fileName: string) => {
 }
 
 .uploaded-file-container {
-  margin-bottom: 20px;
+  margin-block-end: 20px;
   border: 1px solid #dcdfe6;
   border-radius: 8px;
   overflow: hidden;
@@ -379,7 +379,7 @@ const extractComponentInfo = (content: string, fileName: string) => {
 .file-drop-zone .el-icon {
   font-size: 48px;
   color: #909399;
-  margin-bottom: 16px;
+  margin-block-end: 16px;
 }
 
 .file-drop-zone.is-active .el-icon {

@@ -72,8 +72,8 @@ const openPasteDialog = () => {
 <style scoped>
 .dialog-actions-row {
   position: absolute;
-  top: 10px;
-  right: 55px;
+  inset-block-start: 10px;
+  inset-inline-end: 55px;
   z-index: 1;
   display: flex;
   align-items: center;
@@ -81,7 +81,7 @@ const openPasteDialog = () => {
 }
 
 .ai-mode-switch {
-  border-left: 1px solid var(--el-border-color-lighter);
+  border-inline-start: 1px solid var(--el-border-color-lighter);
   padding-inline-start: 10px;
 }
 
@@ -93,7 +93,7 @@ const openPasteDialog = () => {
   }
   
   .ai-mode-switch {
-    border-left: none;
+    border-inline-start: none;
     padding-inline-start: 0;
   }
 }

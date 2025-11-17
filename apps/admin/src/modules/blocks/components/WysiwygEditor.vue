@@ -703,13 +703,13 @@ const handleDrop = (event: DragEvent) => {
 .html-source-editor {
   height: 100%;
   min-height: 400px;
-  border-top: 1px solid #dcdfe6;
+  border-block-start: 1px solid #dcdfe6;
 }
 
 .html-source-editor :deep(.monaco) {
   height: 100%;
   min-height: 400px;
-  margin-bottom: 0;
+  margin-block-end: 0;
 }
 
 /* Image upload container styles */
@@ -720,7 +720,7 @@ const handleDrop = (event: DragEvent) => {
 }
 
 .manual-url-section {
-  margin-top: 10px;
+  margin-block-start: 10px;
 }
 
 .image-upload-container :deep(.asset-view img) {
@@ -734,7 +734,7 @@ const handleDrop = (event: DragEvent) => {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 20px;
+  margin-block-start: 20px;
 }
 
 /* Editor content styles */
@@ -770,9 +770,9 @@ const handleDrop = (event: DragEvent) => {
 }
 
 .wysiwyg-editor-content blockquote {
-  border-left: 3px solid #dcdfe6;
+  border-inline-start: 3px solid #dcdfe6;
   padding-inline-start: 1em;
-  margin-left: 0;
+  margin-inline-start: 0;
   color: #606266;
   background-color: #f8f8f8;
   padding: 0.5em 1em;

@@ -108,10 +108,10 @@ async function handleFunctionExecuted(func: {name: string, arguments: any}) {
   .ai-panel-content {
     position: fixed;
     width: 100%;
-    top: 60px; /* Adjust based on your header height */
-    bottom: 0;
-    left: 0;
-    right: 0;
+    inset-block-start: 60px; /* Adjust based on your header height */
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
     min-width: unset;
     z-index: 2000;
   }

@@ -259,8 +259,8 @@ nav {
         &::after {
           content: attr(data-title);
           position: absolute;
-          left: 64px;
-          top: 50%;
+          inset-inline-start: 64px;
+          inset-block-start: 50%;
           transform: translateY(-50%);
           padding: 8px 12px;
           background: var(--nav-bg-color);
@@ -348,7 +348,7 @@ nav {
 .el-popper {
   &.is-pure {
     .el-popper__arrow {
-      left: -6px !important;
+      inset-inline-start: -6px !important;
     }
   }
   
@@ -407,7 +407,7 @@ nav {
     &::before {
       content: '';
       position: absolute;
-      left: 0;
+      inset-inline-start: 0;
       top: 0;
       height: 100%;
       width: 3px;
@@ -465,11 +465,11 @@ nav {
     
     .el-sub-menu__icon-arrow {
       position: absolute;
-      right: 20px;
-      top: 25%;
+      inset-inline-end: 20px;
+      inset-block-start: 25%;
       transform: translateY(-50%);
       font-size: 12px;
-      margin-top: 0;
+      margin-block-start: 0;
     }
   }
 
@@ -512,7 +512,7 @@ a:hover {
   padding: 5px;
   background-color: var(--nav-bg-color);
   position: sticky;
-  top: 0;
+  inset-block-start: 0;
   z-index: 2;
   transition: all 0.3s ease;
   width: 100%;
@@ -591,7 +591,7 @@ a:hover {
 
     &.show {
       position: fixed;
-      top: 0;
+      inset-block-start: 0;
       bottom: 0;
       left: 0;
       right: 0;
@@ -616,10 +616,10 @@ a:hover {
       .mobile-mask {
         display: block;
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        inset-block-start: 0;
+        inset-inline-start: 0;
+        inset-inline-end: 0;
+        inset-block-end: 0;
         background-color: rgba(0, 0, 0, 0.5);
         backdrop-filter: blur(2px);
         z-index: -1;

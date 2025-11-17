@@ -268,8 +268,8 @@ const activeImageTab = ref<'horizontal' | 'vertical' | 'content'>('horizontal');
 
 .remove-image {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  inset-block-start: 0.5rem;
+  inset-inline-end: 0.5rem;
   background-color: rgba(255, 255, 255, 0.8);
   border: none;
   border-radius: 50%;
@@ -311,18 +311,18 @@ const activeImageTab = ref<'horizontal' | 'vertical' | 'content'>('horizontal');
 .separator::after {
   content: '';
   position: absolute;
-  top: 50%;
+  inset-block-start: 50%;
   width: 40%;
   height: 1px;
   background-color: var(--el-border-color-lighter, #ebeef5);
 }
 
 .separator::before {
-  left: 0;
+  inset-inline-start: 0;
 }
 
 .separator::after {
-  right: 0;
+  inset-inline-end: 0;
 }
 
 .content-preview-container {

@@ -85,6 +85,7 @@
               :aria-describedby="(!plugin.manifestUrl && !plugin.apiPath) ? 'api-path-helper' : undefined"
               :aria-invalid="!plugin.apiPath && !plugin.manifestUrl"
               :aria-required="!plugin.manifestUrl"
+              dir="ltr"
             >
               <template #prefix>
                 <span class="input-prefix" aria-hidden="true">{{ baseUrl }}</span>
@@ -126,6 +127,7 @@
               v-model="proxyUrlWithoutProtocol" 
               placeholder="api.your-plugin-domain.com" 
               clearable
+              dir="ltr"
               :status="!plugin.proxyUrl && !plugin.manifestUrl ? 'warning' : ''"
               :aria-label="$t('Proxy URL')"
               :aria-describedby="(plugin.manifestUrl || !plugin.proxyUrl) ? 'proxy-url-helper' : undefined"
@@ -207,6 +209,7 @@
               clearable 
               show-password
               type="password"
+              dir="ltr"
               :aria-label="$t('API Token')"
               :aria-describedby="(plugin._id && !plugin.token) || !plugin.token ? 'token-helper' : undefined"
             >

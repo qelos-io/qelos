@@ -225,7 +225,7 @@ const submit = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-block-end: 20px;
   
   h2 {
     margin: 0;
@@ -241,7 +241,7 @@ const submit = () => {
 }
 
 .form-card {
-  margin-bottom: 20px;
+  margin-block-end: 20px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
   border-radius: 8px;
   
@@ -262,7 +262,7 @@ const submit = () => {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
-  margin-top: 10px;
+  margin-block-start: 10px;
   justify-content: center;
   
   @media (max-width: 768px) {
@@ -322,12 +322,12 @@ const submit = () => {
   cursor: pointer;
   
   .toggle-icon {
-    margin-left: auto;
+    margin-inline-start: auto;
   }
 }
 
 .auth-info {
-  margin-bottom: 20px;
+  margin-block-end: 20px;
 }
 
 .help-text {

@@ -220,7 +220,7 @@ function ensureSocialLoginsSources(metadata: Partial<IAuthConfigurationMetadata>
   bottom: 0;
   padding: 1rem 0;
   background: linear-gradient(to top, var(--el-bg-color, #ffffff) 80%, transparent);
-  border-top: 1px solid var(--el-border-color-light, #e4e7ed);
+  border-block-start: 1px solid var(--el-border-color-light, #e4e7ed);
   display: flex;
   justify-content: flex-end;
   z-index: 10;
@@ -238,7 +238,7 @@ function ensureSocialLoginsSources(metadata: Partial<IAuthConfigurationMetadata>
   background-color: var(--el-bg-color, #ffffff);
   height: calc(100vh - 120px);
   position: sticky;
-  top: 20px;
+  inset-block-start: 20px;
 }
 
 .preview-header {
@@ -247,7 +247,7 @@ function ensureSocialLoginsSources(metadata: Partial<IAuthConfigurationMetadata>
   color: var(--el-color-primary, #409eff);
   font-weight: 600;
   text-align: center;
-  border-bottom: 1px solid var(--el-border-color-light, #e4e7ed);
+  border-block-end: 1px solid var(--el-border-color-light, #e4e7ed);
 }
 
 .login-demo {

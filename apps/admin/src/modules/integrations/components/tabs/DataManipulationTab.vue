@@ -700,11 +700,13 @@ onMounted(() => {
           <div class="map-entries">
             <div v-for="(entry, index) in getMapEntries(i)" :key="index" class="map-entry">
               <el-input 
+                dir="ltr"
                 v-model="entry.key" 
                 placeholder="Key" 
                 @update:model-value="syncToModel" 
-              />
+              />  
               <el-input 
+                dir="ltr"
                 v-model="entry.value" 
                 placeholder="JQ Expression" 
                 @update:model-value="syncToModel" 
@@ -721,6 +723,7 @@ onMounted(() => {
           <div class="populate-entries">
             <div v-for="(entry, index) in populateEntries[i]" :key="index" class="populate-entry">
               <el-input 
+                dir="ltr"
                 v-model="entry.key" 
                 placeholder="Key" 
                 @update:model-value="syncToModel" 
@@ -784,6 +787,7 @@ onMounted(() => {
                 
                 <el-input
                   v-if="abortTypes[i] === 'expression'"
+                  dir="ltr"
                   v-model="abortValues[i]"
                   placeholder="JQ Expression"
                   @update:model-value="syncToModel"
@@ -982,13 +986,13 @@ onMounted(() => {
 :deep(.flex-row img) {
   width: 20px;
   height: 20px;
-  margin-right: 8px;
+  margin-inline-end: 8px;
   object-fit: contain;
 }
 
 :deep(.flex-row small) {
   font-size: 0.8em;
-  margin-right: 8px;
+  margin-inline-end: 8px;
   color: var(--el-text-color-secondary);
 }
 

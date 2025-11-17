@@ -264,8 +264,8 @@ const remove = useConfirmAction(removeFn);
   font-size: 15px;
   font-weight: 600;
   color: #303133;
-  border-bottom: 1px solid #ebeef5;
-  padding-bottom: 8px;
+  border-block-end: 1px solid #ebeef5;
+  padding-block-end: 8px;
 }
 
 .config-meta {
@@ -286,8 +286,8 @@ const remove = useConfirmAction(removeFn);
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  padding-top: 12px;
-  border-top: 1px solid #ebeef5;
+  padding-block-start: 12px;
+  border-block-start: 1px solid #ebeef5;
 }
 
 .loading-state {

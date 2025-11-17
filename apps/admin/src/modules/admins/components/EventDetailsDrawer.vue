@@ -104,7 +104,7 @@
 
               <div v-if="blueprintEntity.metadata" class="metadata-subsection">
                 <h4>{{ $t("Entity Data") }}</h4>
-                <pre>{{
+                <pre dir="ltr">{{
                   JSON.stringify(blueprintEntity.metadata, null, 2)
                 }}</pre>
               </div>
@@ -114,7 +114,7 @@
 
         <div v-if="event.metadata" class="metadata-section">
           <h3>{{ $t("Metadata") }}</h3>
-          <pre class="metadata-content">{{
+          <pre dir="ltr" class="metadata-content">{{
             JSON.stringify(event.metadata, null, 2)
           }}</pre>
         </div>
@@ -307,7 +307,7 @@ const userDisplayName = computed(() => {
   }
 
   .metadata-section {
-    margin-top: 24px;
+    margin-block-start: 24px;
     padding: 15px;
     border-radius: 4px;
     background: var(--el-color-info-light-9, #f5f7fa);
@@ -318,7 +318,7 @@ const userDisplayName = computed(() => {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 12px;
+    margin-block-end: 12px;
   }
 
   .metadata-content {
@@ -329,12 +329,12 @@ const userDisplayName = computed(() => {
 
   .entity-details {
     .el-descriptions {
-      margin-bottom: 12px;
+      margin-block-end: 12px;
     }
   }
 
   .metadata-subsection {
-    margin-top: 16px;
+    margin-block-start: 16px;
   }
 }
 

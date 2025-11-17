@@ -5,9 +5,9 @@
         <template #template>
           <div style="padding: 16px;">
             <el-skeleton-item variant="p" style="width: 50%" />
-            <el-skeleton-item variant="text" style="margin-top: 16px; width: 80%" />
-            <el-skeleton-item variant="text" style="margin-top: 16px; width: 80%" />
-            <el-skeleton-item variant="text" style="margin-top: 16px; width: 60%" />
+            <el-skeleton-item variant="text" style="margin-block-start: 16px; width: 80%" />
+            <el-skeleton-item variant="text" style="margin-block-start: 16px; width: 80%" />
+            <el-skeleton-item variant="text" style="margin-block-start: 16px; width: 60%" />
           </div>
         </template>
       </el-skeleton>
@@ -65,14 +65,14 @@ async function handleUpdate(data) {
   padding: 24px;
   background-color: var(--el-fill-color-blank);
   border-radius: 4px;
-  margin-top: 24px;
+  margin-block-start: 24px;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-block-end: 24px;
 }
 
 .page-title h1 {
@@ -89,7 +89,7 @@ async function handleUpdate(data) {
 }
 
 .block-card {
-  margin-bottom: 24px;
+  margin-block-end: 24px;
 }
 
 .block-card :deep(.el-card__body) {

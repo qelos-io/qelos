@@ -68,7 +68,7 @@ const copyToClipboard = (text: string) => {
     <div v-if="integrationId" class="url-section">
       <el-divider />
       <h4>{{ $t('API Endpoint') }}</h4>
-      <el-input :value="getCompletionUrl" readonly>
+      <el-input :value="getCompletionUrl" readonly dir="ltr">
         <template #append>
           <el-button @click="copyToClipboard(getCompletionUrl)">
             {{ $t('Copy') }}

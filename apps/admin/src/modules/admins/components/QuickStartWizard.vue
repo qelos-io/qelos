@@ -659,12 +659,12 @@ img {
 }
 
 .step-header {
-  margin-bottom: 24px;
+  margin-block-end: 24px;
   text-align: center;
 }
 
 .step-header h2 {
-  margin-bottom: 8px;
+  margin-block-end: 8px;
   font-weight: 600;
   color: var(--el-color-primary);
 }
@@ -677,11 +677,11 @@ img {
 .form-actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 32px;
+  margin-block-start: 32px;
 }
 
 .wizard-progress {
-  margin-bottom: 30px;
+  margin-block-end: 30px;
   padding: 0 20px;
 }
 
@@ -689,7 +689,7 @@ img {
   height: 4px;
   background-color: #e4e7ed;
   border-radius: 4px;
-  margin-bottom: 15px;
+  margin-block-end: 15px;
   position: relative;
   overflow: hidden;
 }
@@ -738,7 +738,7 @@ img {
 }
 
 .logo-preview {
-  margin-top: 10px;
+  margin-block-start: 10px;
   padding: 10px;
   border: 1px solid #eee;
   border-radius: 4px;
@@ -750,7 +750,7 @@ img {
   flex-wrap: wrap;
   justify-content: center;
   gap: 15px;
-  margin-top: 15px;
+  margin-block-start: 15px;
 }
 
 .theme-option {
@@ -776,7 +776,7 @@ img {
 }
 
 .theme-color-preview {
-  margin-bottom: 8px;
+  margin-block-end: 8px;
 }
 
 .main-color {
@@ -792,7 +792,7 @@ img {
   display: flex;
   justify-content: center;
   gap: 4px;
-  margin-top: 6px;
+  margin-block-start: 6px;
 }
 
 .palette-color {
@@ -805,7 +805,7 @@ img {
 .theme-label {
   font-size: 13px;
   font-weight: 600;
-  margin-bottom: 3px;
+  margin-block-end: 3px;
 }
 
 .theme-description {
@@ -817,7 +817,7 @@ img {
 .help-text {
   color: #606266;
   font-size: 14px;
-  margin-top: 5px;
+  margin-block-start: 5px;
   line-height: 1.5;
   text-align: center;
 }
@@ -826,7 +826,7 @@ img {
   display: flex;
   justify-content: center;
   gap: 20px;
-  margin: 20px 0;
+  margin-block: 20px 0;
 }
 
 .app-type-card {
@@ -864,7 +864,7 @@ img {
 .app-type-title {
   font-size: 18px;
   font-weight: 600;
-  margin-bottom: 5px;
+  margin-block-end: 5px;
 }
 
 .app-type-subtitle {
@@ -878,7 +878,7 @@ img {
 
 .blueprints-summary {
   text-align: center;
-  margin-bottom: 10px;
+  margin-block-end: 10px;
 }
 
 .blueprints-compact {
@@ -890,11 +890,11 @@ img {
 
 .blueprint-item {
   padding: 8px;
-  border-bottom: 1px solid #e4e7ed;
+  border-block-end: 1px solid #e4e7ed;
 }
 
 .blueprint-item:last-child {
-  border-bottom: none;
+  border-block-end: none;
 }
 
 .blueprint-number {
@@ -911,17 +911,17 @@ img {
 .blueprint-properties {
   font-size: 12px;
   color: #909399;
-  margin-left: 8px;
+  margin-inline-start: 8px;
 }
 
 .no-blueprints {
   text-align: center;
-  margin-top: 20px;
+  margin-block-start: 20px;
 }
 
 .no-blueprints i {
   font-size: 24px;
-  margin-bottom: 10px;
+  margin-block-end: 10px;
 }
 
 .final-step {
@@ -936,13 +936,13 @@ img {
 
 .success-icon {
   font-size: 48px;
-  margin-bottom: 20px;
+  margin-block-end: 20px;
   color: var(--el-color-success);
 }
 
 .completion-message {
   font-size: 16px;
-  margin-bottom: 20px;
+  margin-block-end: 20px;
 }
 
 .completion-stats {
@@ -950,7 +950,7 @@ img {
   flex-wrap: wrap;
   justify-content: center;
   gap: 20px;
-  margin-bottom: 30px;
+  margin-block-end: 30px;
 }
 
 .stat-card {
@@ -972,9 +972,9 @@ img {
 .stat-card::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  inset-block-start: 0;
   height: 3px;
   background: linear-gradient(90deg, var(--el-color-primary), var(--el-color-primary-light-3));
   opacity: 0;
@@ -999,7 +999,7 @@ img {
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  margin-bottom: 15px;
+  margin-block-end: 15px;
   transition: all 0.3s ease;
 }
 
@@ -1029,7 +1029,7 @@ img {
 .stat-value {
   font-size: 20px;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-block-end: 8px;
   color: #2c3e50;
   line-height: 1.2;
 }
@@ -1069,7 +1069,7 @@ img {
     width: 45px;
     height: 45px;
     font-size: 22px;
-    margin-bottom: 12px;
+    margin-block-end: 12px;
   }
   
   .stat-value {
