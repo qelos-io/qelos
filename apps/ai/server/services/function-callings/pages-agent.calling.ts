@@ -3,11 +3,11 @@ import { processPagesChatCompletion } from "../system-agents/pages-agent";
 export const callPagesEditorAgentCalling = {
   type: 'function',
   name: 'callPagesEditorAgent',
-  description: 'Call pages editor agent. This agent can create and manage pages and components in your application. It can create new pages, edit existing ones, create and deploy UI components, and add various content elements like forms, tables, and grids. The agent supports operations such as: createComponent (build reusable UI components), createPage (create new application pages), editPage (modify existing pages), createBlueprint (define data structures), getPages (find existing pages), addFreeTextToPage (add custom HTML/Vue content), addGridToPage (add card-based data displays), addTableToPage (add tabular data displays), and addFormToPage (add data entry forms). Use this agent when you need to build or modify your application UI.',
+  description: 'Call pages editor agent. This agent can create and manage pages and components in your application. It can create new pages, edit existing ones, create and deploy UI components, and add various content elements like forms, tables, and grids. Use this agent when you need to build or modify your application UI. If you received a context to help this agent identify the relevant page, plugin, component, etc - add it to the messages array.',
   parameters: {},
   function: {
     name: 'callPagesEditorAgent',
-    description: 'Call pages editor agent. This agent can create and manage pages and components in your application. It can create new pages, edit existing ones, create and deploy UI components, and add various content elements like forms, tables, and grids. The agent supports operations such as: createComponent (build reusable UI components), createPage (create new application pages), editPage (modify existing pages), createBlueprint (define data structures), getPages (find existing pages), addFreeTextToPage (add custom HTML/Vue content), addGridToPage (add card-based data displays), addTableToPage (add tabular data displays), and addFormToPage (add data entry forms). Use this agent when you need to build or modify your application UI.',
+    description: 'Call pages editor agent. This agent can create and manage pages and components in your application. It can create new pages, edit existing ones, create and deploy UI components, and add various content elements like forms, tables, and grids. Use this agent when you need to build or modify your application UI. If you received a context to help this agent identify the relevant page, plugin, component, etc - add it to the messages array.',
     parameters: {
       type: 'object',
       properties: {
