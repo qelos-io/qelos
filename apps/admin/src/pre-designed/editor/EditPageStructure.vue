@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { provide, ref, toRef, watch, computed } from 'vue';
+import { ElMessage } from 'element-plus';
 
 import Monaco from '@/modules/users/components/Monaco.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
@@ -17,6 +18,47 @@ const props = defineProps<{
   mfe: IMicroFrontend,
   submitting: boolean
 }>()
+
+const BUILT_IN_HTML_TAGS = new Set([
+  'html','head','title','base','link','meta','style','body','article','section','nav','aside','h1','h2','h3','h4','h5','h6','header','footer','address','p','hr','pre','blockquote','ol','ul','li','dl','dt','dd','figure','figcaption','main','div','a','em','strong','small','s','cite','q','dfn','abbr','ruby','rt','rp','data','time','code','var','samp','kbd','sub','sup','i','b','u','mark','span','br','wbr','ins','del','picture','source','img','iframe','embed','object','param','video','audio','track','map','area','table','caption','colgroup','col','tbody','thead','tfoot','tr','td','th','form','label','input','button','select','datalist','optgroup','option','textarea','output','progress','meter','fieldset','legend','details','summary','dialog','script','noscript','template','slot','canvas'
+]);
+
+const CUSTOM_COMPONENT_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)+$/;
+
+function validateHtmlStructure(structure: string): string | null {
+  const trimmed = structure?.trim();
+  if (!trimmed || typeof document === 'undefined') {
+    return null;
+  }
+
+  const template = document.createElement('template');
+  try {
+    template.innerHTML = trimmed;
+  } catch (error) {
+    return 'Invalid HTML structure. Please fix the markup and try again.';
+  }
+
+  const walker = document.createTreeWalker(
+    template.content,
+    NodeFilter.SHOW_ELEMENT
+  );
+
+  while (walker.nextNode()) {
+    const element = walker.currentNode as Element;
+    const tagName = element.tagName.toLowerCase();
+
+    if (!BUILT_IN_HTML_TAGS.has(tagName) && !CUSTOM_COMPONENT_REGEX.test(tagName)) {
+      return `Invalid tag "${element.tagName}". Custom components must use kebab-case.`;
+    }
+
+    const hasInvalidAttr = Array.from(element.attributes).some(attr => !attr.name.trim());
+    if (hasInvalidAttr) {
+      return `Found an attribute without a proper name on <${element.tagName}>.`;
+    }
+  }
+
+  return null;
+}
 
 provide('submitting', toRef(props, 'submitting'))
 
@@ -75,6 +117,13 @@ function handleHtmlChange() {
 }
 
 function save() {
+  if (props.mfe.structure) {
+    const validationError = validateHtmlStructure(props.mfe.structure);
+    if (validationError) {
+      ElMessage.error(validationError);
+      return;
+    }
+  }
   emit('save', {
     settings: editedSettings.value,
     structure: props.mfe.structure,
