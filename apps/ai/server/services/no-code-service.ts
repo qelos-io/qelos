@@ -1,5 +1,6 @@
 import { internalServicesSecret } from '../../config';
 import { service } from '@qelos/api-kit';
+import logger from './logger';
 
 const noCodeService = service('NO_CODE', { port: process.env.NO_CODE_SERVICE_PORT || 9004 });
 
@@ -27,8 +28,24 @@ function callNoCodeService(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE
     method,
     data,
     url,
+    timeout: 30000, // 30 second timeout for no-code service calls
   })
     .then((axiosRes: any) => axiosRes.data)
+    .catch((error: any) => {
+      // Log the error for debugging
+      logger.error(`No-code service call failed: ${method} ${url}`, {
+        tenant,
+        error: error.message,
+        code: error.code,
+        timeout: error.code === 'ECONNABORTED'
+      });
+      
+      // Re-throw with more context
+      if (error.code === 'ECONNABORTED') {
+        throw new Error(`No-code service timeout: ${method} ${url} (tenant: ${tenant})`);
+      }
+      throw error;
+    });
 }
 
 export function callPublicNoCodeService(url: string, {tenant, user}: {tenant: string, user: string}, {data, method = 'GET'}: {data?: any, method: string}) {
@@ -36,9 +53,26 @@ export function callPublicNoCodeService(url: string, {tenant, user}: {tenant: st
     headers: { internal_secret: internalServicesSecret, tenant, user },
     method,
     data,
-    url
+    url,
+    timeout: 30000, // 30 second timeout for no-code service calls
   })
     .then((axiosRes: any) => axiosRes.data)
+    .catch((error: any) => {
+      // Log the error for debugging
+      logger.error(`Public no-code service call failed: ${method} ${url}`, {
+        tenant,
+        user,
+        error: error.message,
+        code: error.code,
+        timeout: error.code === 'ECONNABORTED'
+      });
+      
+      // Re-throw with more context
+      if (error.code === 'ECONNABORTED') {
+        throw new Error(`No-code service timeout: ${method} ${url} (tenant: ${tenant}, user: ${user})`);
+      }
+      throw error;
+    });
 }
 
 export async function getAllBlueprints(tenant: string, query: any) {

@@ -1,6 +1,7 @@
 import { IDataManipulationStep, IIntegration } from '@qelos/global-types';
 import { internalServicesSecret } from '../../config';
 import { service } from '@qelos/api-kit';
+import logger from './logger';
 
 const pluginsService = service('PLUGINS', { port: process.env.PLUGINS_SERVICE_PORT || 9006 });
 
@@ -9,9 +10,26 @@ export function calPublicPluginsService(url: string, {tenant, user}: {tenant: st
     headers: { internal_secret: internalServicesSecret, tenant, user },
     method,
     data,
-    url
+    url,
+    timeout: 30000, // 30 second timeout for plugins service calls
   })
     .then((axiosRes: any) => axiosRes.data)
+    .catch((error: any) => {
+      // Log the error for debugging
+      logger.error(`Public plugins service call failed: ${method} ${url}`, {
+        tenant,
+        user: user?._id || user,
+        error: error.message,
+        code: error.code,
+        timeout: error.code === 'ECONNABORTED'
+      });
+      
+      // Re-throw with more context
+      if (error.code === 'ECONNABORTED') {
+        throw new Error(`Plugins service timeout: ${method} ${url} (tenant: ${tenant})`);
+      }
+      throw error;
+    });
 }
 
 export function callPluginsService(url: string, tenant: string, data?: any, method: string = 'GET') {
@@ -19,9 +37,25 @@ export function callPluginsService(url: string, tenant: string, data?: any, meth
     headers: { internal_secret: internalServicesSecret, tenant },
     method,
     data,
-    url
+    url,
+    timeout: 30000, // 30 second timeout for plugins service calls
   })
     .then((axiosRes: any) => axiosRes.data)
+    .catch((error: any) => {
+      // Log the error for debugging
+      logger.error(`Plugins service call failed: ${method} ${url}`, {
+        tenant,
+        error: error.message,
+        code: error.code,
+        timeout: error.code === 'ECONNABORTED'
+      });
+      
+      // Re-throw with more context
+      if (error.code === 'ECONNABORTED') {
+        throw new Error(`Plugins service timeout: ${method} ${url} (tenant: ${tenant})`);
+      }
+      throw error;
+    });
 }
 
 export function getIntegrations(tenant: string, params: Record<string, string | boolean>): Promise<IIntegration[]> {

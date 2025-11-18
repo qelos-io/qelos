@@ -99,9 +99,12 @@ export function emitFunctionExecutionErrorEvent(params: BaseEventParams & {
   }
 
   // Determine event name based on error type
-  const isTimeout = params.error?.name === 'TimeoutError';
+  const isTimeout = params.error?.name === 'TimeoutError' || params.error?.name === 'HeartbeatTimeoutError';
+  const isHeartbeatTimeout = params.error?.name === 'HeartbeatTimeoutError';
   const eventName = isTimeout ? 'function_execution_timeout' : 'function_execution_failed';
-  const description = isTimeout 
+  const description = isHeartbeatTimeout
+    ? `Function execution exceeded heartbeat timeout: ${params.functionName}`
+    : isTimeout 
     ? `Function execution timed out: ${params.functionName}`
     : `Function execution failed: ${params.functionName}`;
 

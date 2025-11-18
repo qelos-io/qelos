@@ -3,6 +3,8 @@ import { executeFunctionCalls } from "./execute-function-calls";
 import { createAIService } from "./ai-service";
 import logger from "./logger";
 
+const NESTED_AGENT_TIMEOUT_MS = 600000; // 10 minutes timeout for nested agent calls
+
 /**
  * Sets up SSE response headers for streaming responses
  */
@@ -115,12 +117,21 @@ export async function processChatCompletion(req: any, res: any, systemPrompt: an
         []
       );
     } else {
-      const result = await ChatCompletionService.handleNonStreamingChatCompletion(
-        aiService,
-        chatOptions,
-        executeFunctionCallsHandler,
-        []
-      );
+      // For non-streaming (when res is null), use a timeout wrapper
+      const result = await Promise.race([
+        ChatCompletionService.handleNonStreamingChatCompletion(
+          aiService,
+          chatOptions,
+          executeFunctionCallsHandler,
+          []
+        ),
+        new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Non-streaming chat completion timed out after ${NESTED_AGENT_TIMEOUT_MS}ms`));
+          }, NESTED_AGENT_TIMEOUT_MS);
+        })
+      ]);
+      
       if (res) {
         res.status(200).json(result).end();
       } else {

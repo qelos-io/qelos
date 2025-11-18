@@ -122,18 +122,62 @@ const NESTED_AGENT_TIMEOUT_MS = 600000; // 10 minutes timeout for nested agent c
 
 function startHeartbeat(
   sendSSE?: ChatCompletionService.SSEHandler,
-  eventPrefix: string = ''
+  eventPrefix: string = '',
+  tenant?: string,
+  userId?: string,
+  functionName?: string
 ) {
   if (!sendSSE) {
     return () => {};
   }
+
+  let heartbeatCount = 0;
+  const maxHeartbeats = Math.floor(NESTED_AGENT_TIMEOUT_MS / HEARTBEAT_INTERVAL_MS); // Max heartbeats before timeout
 
   // Send an initial ping so the client knows the agent is still working
   sendSSE({ type: `${eventPrefix}heartbeat` });
 
   const intervalId = setInterval(() => {
     try {
+      heartbeatCount++;
       sendSSE({ type: `${eventPrefix}heartbeat` });
+      
+      // Log warning if heartbeat has been running for a long time
+      if (heartbeatCount % 60 === 0) { // Every minute
+        const minutes = Math.floor(heartbeatCount * HEARTBEAT_INTERVAL_MS / 60000);
+        logger.warn(`Heartbeat has been running for ${minutes} minutes - possible stuck function execution`);
+      }
+      
+      // Force stop if we've exceeded the maximum heartbeats (safety net)
+      if (heartbeatCount >= maxHeartbeats) {
+        logger.error(`Heartbeat exceeded maximum count (${maxHeartbeats}) - forcing stop to prevent infinite heartbeat`);
+        clearInterval(intervalId);
+        
+        // Emit platform event for heartbeat timeout
+        if (tenant && functionName) {
+          const timeoutError = new Error(`Function ${functionName} exceeded heartbeat timeout after ${maxHeartbeats} heartbeats`);
+          timeoutError.name = 'HeartbeatTimeoutError';
+          emitFunctionExecutionErrorEvent({
+            tenant,
+            userId,
+            functionName,
+            functionCallId: 'heartbeat_timeout',
+            error: timeoutError,
+            context: {
+              heartbeatCount,
+              maxHeartbeats,
+              timeoutMs: NESTED_AGENT_TIMEOUT_MS
+            }
+          });
+        }
+        
+        sendSSE({ 
+          type: `${eventPrefix}error`, 
+          message: 'Function execution exceeded maximum time limit',
+          isTimeout: true,
+          errorType: 'HeartbeatTimeout'
+        });
+      }
     } catch (error) {
       logger.warn('Failed to send heartbeat event', error);
     }
@@ -182,7 +226,7 @@ export async function executeFunctionCalls(
   try {
     for (const functionCall of functionCalls) {
       // Start heartbeat for each function call to keep connection alive during long operations
-      stopHeartbeat = startHeartbeat(sendSSE, eventPrefix);
+      stopHeartbeat = startHeartbeat(sendSSE, eventPrefix, tenant, req.user?._id?.toString(), functionCall.function.name);
       
       let targetIntegration: any = null;
       

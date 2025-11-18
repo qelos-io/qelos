@@ -22,5 +22,6 @@ export function callInternalService(service: Service, options: AxiosRequestConfi
   return axios({
     ...options,
     url: `${service.protocol}://${service.url}:${service.port}${options.url}`,
+    timeout: options.timeout || 30000, // 30 second default timeout
   });
 }
