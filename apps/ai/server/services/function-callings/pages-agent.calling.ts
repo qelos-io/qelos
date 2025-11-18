@@ -25,6 +25,8 @@ export const callPagesEditorAgentCalling = {
       messages: payload.messages || []
     }
 
+    // For function call handlers, we need to use non-streaming mode
+    // to get a proper result that can be returned
     const result = await processPagesChatCompletion(req, null);
 
     return result;

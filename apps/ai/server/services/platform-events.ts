@@ -98,17 +98,25 @@ export function emitFunctionExecutionErrorEvent(params: BaseEventParams & {
     return;
   }
 
+  // Determine event name based on error type
+  const isTimeout = params.error?.name === 'TimeoutError';
+  const eventName = isTimeout ? 'function_execution_timeout' : 'function_execution_failed';
+  const description = isTimeout 
+    ? `Function execution timed out: ${params.functionName}`
+    : `Function execution failed: ${params.functionName}`;
+
   emitSafePlatformEvent({
     tenant: params.tenant,
     user: params.userId,
     source: 'ai',
     kind: 'function_execution',
-    eventName: 'function_execution_failed',
-    description: `Function execution failed: ${params.functionName}`,
+    eventName,
+    description,
     metadata: {
       integrationId: params.integrationId,
       functionName: params.functionName,
       functionCallId: params.functionCallId,
+      isTimeout,
       context: params.context,
       error: serializeError(params.error),
     },

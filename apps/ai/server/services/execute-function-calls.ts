@@ -118,6 +118,7 @@ async function executeBlueprintOperation(
 
 const HEARTBEAT_INTERVAL_MS = 1000;
 const FUNCTION_CALL_TIMEOUT_MS = 300000; // 5 minutes timeout for individual function calls
+const NESTED_AGENT_TIMEOUT_MS = 600000; // 10 minutes timeout for nested agent calls
 
 function startHeartbeat(
   sendSSE?: ChatCompletionService.SSEHandler,
@@ -144,8 +145,12 @@ function startHeartbeat(
 // Helper function to execute a single function call with timeout
 async function executeWithTimeout<T>(promise: Promise<T>, timeoutMs: number, functionName: string): Promise<T> {
   return new Promise((resolve, reject) => {
+    const startTime = Date.now();
     const timeoutId = setTimeout(() => {
-      reject(new Error(`Function ${functionName} timed out after ${timeoutMs}ms`));
+      const duration = Date.now() - startTime;
+      const timeoutError = new Error(`Function ${functionName} timed out after ${duration}ms (limit: ${timeoutMs}ms)`);
+      timeoutError.name = 'TimeoutError';
+      reject(timeoutError);
     }, timeoutMs);
 
     promise
@@ -219,9 +224,13 @@ export async function executeFunctionCalls(
                       details: targetIntegration.target.details
                     });
               
+              // Use longer timeout for nested agent calls (functions that call other agents)
+              const isNestedAgentCall = functionCall.function.name.includes('Agent');
+              const timeoutMs = isNestedAgentCall ? NESTED_AGENT_TIMEOUT_MS : FUNCTION_CALL_TIMEOUT_MS;
+              
               result = await executeWithTimeout(
                 executionPromise,
-                FUNCTION_CALL_TIMEOUT_MS,
+                timeoutMs,
                 functionCall.function.name
               );
               

@@ -317,10 +317,13 @@ async function processStreamingCompletion(
         );
       } catch (functionError) {
         logger.error('Error executing function calls in streaming completion', functionError);
+        const isTimeout = functionError instanceof Error && functionError.name === 'TimeoutError';
         sendSSE({ 
           type: 'error', 
           message: functionError instanceof Error ? functionError.message : 'Error executing function calls',
-          functionCalls: currentFunctionCalls
+          functionCalls: currentFunctionCalls,
+          isTimeout,
+          errorType: functionError instanceof Error ? functionError.name : 'UnknownError'
         });
         // Don't throw - let the stream end gracefully
       }
@@ -419,10 +422,13 @@ async function processStreamingCompletion(
       );
     } catch (functionError) {
       logger.error('Error executing incomplete function calls in streaming completion', functionError);
+      const isTimeout = functionError instanceof Error && functionError.name === 'TimeoutError';
       sendSSE({ 
         type: 'error', 
         message: functionError instanceof Error ? functionError.message : 'Error executing function calls',
-        functionCalls: currentFunctionCalls
+        functionCalls: currentFunctionCalls,
+        isTimeout,
+        errorType: functionError instanceof Error ? functionError.name : 'UnknownError'
       });
       // Don't throw - let the stream end gracefully
     }

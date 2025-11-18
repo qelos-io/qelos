@@ -32,6 +32,8 @@ export const callBlueprintsAgentCalling = {
       messages: payload.messages || [],
     };
 
+    // For function call handlers, we need to use non-streaming mode
+    // to get a proper result that can be returned
     const result = await processBlueprintsChatCompletion(req, null);
 
     return result;
