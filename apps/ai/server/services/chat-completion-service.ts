@@ -465,7 +465,15 @@ export async function handleNonStreamingChatCompletion(
 ) {
   try {
     // Get initial completion
-    const completion = await aiService.createChatCompletion(chatOptions);
+    // Add timeout protection for initial AI call
+    const completion = await Promise.race([
+      aiService.createChatCompletion(chatOptions),
+      new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Initial chat completion timeout after 2 minutes'));
+        }, 120000); // 2 minute timeout
+      })
+    ]);
     const message = completion.choices[0].message;
     
     // Check for function calls
@@ -477,11 +485,19 @@ export async function handleNonStreamingChatCompletion(
         });
       }
       // Execute all function calls
-      const functionResults = await executeFunctionCallsHandler(
-        message.tool_calls,
-        null, // No SSE for non-streaming
-        ...additionalArgs
-      );
+      // Add timeout protection for function execution in non-streaming mode
+      const functionResults = await Promise.race([
+        executeFunctionCallsHandler(
+          message.tool_calls,
+          null, // No SSE for non-streaming
+          ...additionalArgs
+        ),
+        new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('Function execution timeout after 10 minutes'));
+          }, 600000); // 10 minute timeout (same as NESTED_AGENT_TIMEOUT_MS)
+        })
+      ]);
       
       if (onNewMessage) {
         onNewMessage({
