@@ -313,17 +313,25 @@ async function processStreamingCompletion(
         ];
 
         // Recursively process the next completion with updated messages
-        await processStreamingCompletion(
-          res,
-          aiService,
-          { ...chatOptions, messages: followUpMessages },
-          executeFunctionCallsHandler,
-          sendSSE,
-          additionalArgs,
-          true, // isFollowUp
-          onNewMessage,
-          autoContinueCount,
-        );
+        // Add timeout protection for recursive calls
+        await Promise.race([
+          processStreamingCompletion(
+            res,
+            aiService,
+            { ...chatOptions, messages: followUpMessages },
+            executeFunctionCallsHandler,
+            sendSSE,
+            additionalArgs,
+            true, // isFollowUp
+            onNewMessage,
+            autoContinueCount,
+          ),
+          new Promise((_, reject) => {
+            setTimeout(() => {
+              reject(new Error('Recursive chat completion timeout after 2 minutes'));
+            }, 120000); // 2 minute timeout
+          })
+        ]);
       } catch (functionError) {
         logger.error('Error executing function calls in streaming completion', functionError);
         const isTimeout = functionError instanceof Error && functionError.name === 'TimeoutError';
@@ -490,10 +498,18 @@ export async function handleNonStreamingChatCompletion(
       ];
       
       // Get final completion with function results
-      const followUpCompletion = await aiService.createChatCompletion({
-        ...chatOptions,
-        messages: followUpMessages
-      });
+      // Add timeout protection for follow-up completion
+      const followUpCompletion = await Promise.race([
+        aiService.createChatCompletion({
+          ...chatOptions,
+          messages: followUpMessages
+        }),
+        new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('Follow-up chat completion timeout after 2 minutes'));
+          }, 120000); // 2 minute timeout
+        })
+      ]);
       
       if (onNewMessage) {
         onNewMessage({
