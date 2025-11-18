@@ -19,6 +19,12 @@ spec:
           image: redis/redis-stack-server:latest
           ports:
             - containerPort: 6379
+          command:
+            - redis-stack-server
+            - --maxmemory
+            - 1536mb
+            - --maxmemory-policy
+            - allkeys-lru
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
 ---
