@@ -79,6 +79,22 @@ function handleChatCompletionError(error, res, useSSE) {
  * Processes a chat completion request with the given system prompt and tools
  */
 export async function processChatCompletion(req: any, res: any, systemPrompt: any, getToolsFn: any) {
+  // Track recursion depth to prevent infinite loops
+  const recursionDepth = (req._recursionDepth || 0) + 1;
+  const MAX_RECURSION_DEPTH = 5;
+  
+  if (recursionDepth > MAX_RECURSION_DEPTH) {
+    const error = new Error(`Maximum recursion depth (${MAX_RECURSION_DEPTH}) exceeded in chat completion`);
+    logger.error('Chat completion recursion limit exceeded', { recursionDepth, tenant: req.headers.tenant });
+    if (res) {
+      handleChatCompletionError(error, res, false);
+      return;
+    } else {
+      throw error;
+    }
+  }
+  
+  req._recursionDepth = recursionDepth;
   const { source, sourceAuthentication } = req;
   let options = req.aiOptions || req.body;
   // Only use SSE if res is provided and streaming is requested

@@ -4,6 +4,13 @@ import { createComponentCalling, editComponentCalling, getComponentsCalling } fr
 import { addFormToPageCalling, addFreeTextToPageCalling, addGridToPageCalling, addTableToPageCalling, analyzePageStructureCalling, createPageCalling, editPageCalling, getBlueprintRequirementForPageCalling, getHTTPRequirementForPageCalling, getPageCalling, getPagesCalling, upsertPageRequirementCalling } from "../function-callings/plugins.calling";
 import { getComponents } from "../no-code-service";
 import { getRelevantToolsForAgent } from "../vector-search-service";
+import logger from "../logger";
+
+// Simple circuit breaker for getComponents
+let componentServiceFailures = 0;
+let lastComponentServiceFailure = 0;
+const COMPONENT_SERVICE_FAILURE_THRESHOLD = 3;
+const COMPONENT_SERVICE_RECOVERY_TIME = 60000; // 1 minute
 
 
 /**
@@ -131,7 +138,48 @@ async function getPagesTools(tenant: string, safeUserMessages: any[], sourceDeta
  */
 export async function processPagesChatCompletion(req: any, res: any) {
   const tenant = req.headers.tenant;
-  const list = await getComponents(tenant);
+  
+  let list: any[] = [];
+  
+  // Circuit breaker: skip component service if it's been failing recently
+  const now = Date.now();
+  const isCircuitOpen = componentServiceFailures >= COMPONENT_SERVICE_FAILURE_THRESHOLD && 
+                       (now - lastComponentServiceFailure) < COMPONENT_SERVICE_RECOVERY_TIME;
+  
+  if (isCircuitOpen) {
+    logger.warn('Component service circuit breaker is OPEN, skipping getComponents call', {
+      failures: componentServiceFailures,
+      lastFailure: new Date(lastComponentServiceFailure).toISOString(),
+      tenant
+    });
+    list = [];
+  } else {
+    try {
+      // Add aggressive timeout and fallback for getComponents
+      list = await Promise.race([
+        getComponents(tenant),
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('getComponents timeout after 5 seconds')), 5000);
+        })
+      ]) as any[];
+      
+      // Reset failure count on success
+      componentServiceFailures = 0;
+    } catch (error) {
+      componentServiceFailures++;
+      lastComponentServiceFailure = now;
+      
+      logger.error('Failed to get components, using empty list:', {
+        error: error instanceof Error ? error.message : error,
+        failures: componentServiceFailures,
+        tenant
+      });
+      
+      // Continue with empty components list instead of failing
+      list = [];
+    }
+  }
+  
   const prompt = {
     role: SAAS_BUILDER_SYSTEM_PROMPT_PAGES.role,
     content: SAAS_BUILDER_SYSTEM_PROMPT_PAGES.content + 

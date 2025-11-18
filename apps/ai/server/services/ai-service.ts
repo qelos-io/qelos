@@ -70,11 +70,12 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
     throw new Error('OpenAI API key is required');
   }
   
-  // Create OpenAI client instance
+  // Create OpenAI client instance with timeout
   const openai = new OpenAI({
     apiKey: apiKey,
     organization: organizationId,
     baseURL: source.metadata.apiUrl, // Will use default if not provided
+    timeout: 120000, // 2 minute timeout for OpenAI API calls
   });
   
   return {
@@ -154,10 +155,11 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
     throw new Error('Anthropic API key is required');
   }
   
-  // Create Anthropic client instance
+  // Create Anthropic client instance with timeout
   const anthropic = new Anthropic({
     apiKey,
     baseURL: source.metadata.apiUrl, // Will use default if not provided
+    timeout: 120000, // 2 minute timeout for Anthropic API calls
   });
   
   return {

@@ -35,13 +35,24 @@ async function getRedisClient() {
       throw new Error('Redis URL is not configured');
     }
     
-    redisClient = createClient({ url: redisUrl });
+    redisClient = createClient({ 
+      url: redisUrl,
+      socket: {
+        connectTimeout: 10000, // 10 second connection timeout
+      }
+    });
     
     redisClient.on('error', (err: any) => {
       logger.error('Redis Client Error', err);
     });
     
-    await redisClient.connect();
+    // Add timeout to connection
+    await Promise.race([
+      redisClient.connect(),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Redis connection timeout')), 10000);
+      })
+    ]);
   }
   
   return redisClient;
@@ -199,13 +210,25 @@ export async function findSimilarTools({
   
   try {
     const indexName = `tools_index_${tenant}_${embeddingType}`;
-    const vectorStore = await createVectorStore(indexName, embeddingType, authentication);
     
-    // First, ensure tools are indexed
-    await indexTools(allTools, tenant, embeddingType, authentication);
+    // Add timeout wrapper for vector operations
+    const vectorOperations = async () => {
+      const vectorStore = await createVectorStore(indexName, embeddingType, authentication);
+      
+      // First, ensure tools are indexed
+      await indexTools(allTools, tenant, embeddingType, authentication);
+      
+      // Search for similar tools
+      return await vectorStore.similaritySearch(userQuery, maxTools);
+    };
     
-    // Search for similar tools
-    const results = await vectorStore.similaritySearch(userQuery, maxTools);
+    // Execute with 30-second timeout
+    const results = await Promise.race([
+      vectorOperations(),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Vector search timeout')), 30000);
+      })
+    ]) as any[];
     
     // Convert results back to Tool objects
     const relevantTools = results

@@ -23,7 +23,16 @@ export interface FunctionResult {
 export type SSEHandler = (data: any) => void;
 
 // Helper function to safely parse JSON
-export function* parseFunctionArguments(argsString: string): Generator<any> {
+export function* parseFunctionArguments(argsString: string, depth: number = 0): Generator<any> {
+  // Prevent infinite recursion in argument parsing
+  const MAX_PARSE_DEPTH = 10;
+  const currentDepth = depth;
+  
+  if (currentDepth > MAX_PARSE_DEPTH) {
+    logger.error('Maximum parsing depth exceeded', { argsString: argsString.substring(0, 100), depth: currentDepth });
+    throw new Error('Maximum parsing depth exceeded');
+  }
+  
   try {
     // First try to parse as a single JSON object
     yield JSON.parse(argsString);
@@ -66,7 +75,7 @@ export function* parseFunctionArguments(argsString: string): Generator<any> {
               if (nextStart < remainingStr.length) {
                 const nextJsonStr = remainingStr.substring(nextStart);
                 // Use the generator recursively to parse remaining objects
-                const remainingGenerator = parseFunctionArguments(nextJsonStr);
+                const remainingGenerator = parseFunctionArguments(nextJsonStr, currentDepth + 1);
                 let result = remainingGenerator.next();
                 while (!result.done) {
                   yield result.value;
