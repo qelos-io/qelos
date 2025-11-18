@@ -241,11 +241,83 @@ export async function executeFunctionCalls(
           }
 
           // Parse all JSON objects from the function arguments
-          const argsIterator = ChatCompletionService.parseFunctionArguments(functionCall.function.arguments);
+          // Add timeout protection for argument parsing to prevent infinite loops
           let results: any[] = [];
+          let argsArray: any[] = [];
           
-          // Process each JSON object from the arguments
-          for (let args of argsIterator) {
+          try {
+            // Convert generator to array with timeout protection
+            const argsIterator = ChatCompletionService.parseFunctionArguments(functionCall.function.arguments);
+            const parseTimeout = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error('Argument parsing timeout')), 10000); // 10 second timeout
+            });
+            
+            const parsePromise = new Promise<any[]>((resolve) => {
+              const args: any[] = [];
+              let iterationCount = 0;
+              
+              const processNextArg = () => {
+                try {
+                  const { value, done } = argsIterator.next();
+                  if (done) {
+                    resolve(args);
+                    return;
+                  }
+                  
+                  args.push(value);
+                  iterationCount++;
+                  
+                  // Safety checks
+                  if (args.length > 10) {
+                    logger.warn('Too many arguments parsed, limiting to first 10', { 
+                      functionName: functionCall.function.name,
+                      argumentsLength: functionCall.function.arguments.length 
+                    });
+                    resolve(args);
+                    return;
+                  }
+                  
+                  if (iterationCount > 100) {
+                    logger.error('Infinite loop detected in argument parsing', {
+                      functionName: functionCall.function.name,
+                      iterationCount
+                    });
+                    resolve(args);
+                    return;
+                  }
+                  
+                  // Use setImmediate to yield control and prevent blocking
+                  setImmediate(processNextArg);
+                } catch (error) {
+                  logger.error('Error in argument parsing iteration', {
+                    functionName: functionCall.function.name,
+                    error: error instanceof Error ? error.message : error,
+                    iterationCount
+                  });
+                  resolve(args);
+                }
+              };
+              
+              processNextArg();
+            });
+            
+            argsArray = await Promise.race([parsePromise, parseTimeout]) as any[];
+          } catch (parseError) {
+            logger.error('Failed to parse function arguments', {
+              functionName: functionCall.function.name,
+              arguments: functionCall.function.arguments.substring(0, 200),
+              error: parseError instanceof Error ? parseError.message : parseError
+            });
+            // Fallback: try simple JSON parse
+            try {
+              argsArray = [JSON.parse(functionCall.function.arguments)];
+            } catch (fallbackError) {
+              throw new Error(`Failed to parse function arguments: ${parseError instanceof Error ? parseError.message : parseError}`);
+            }
+          }
+          
+          // Process each parsed argument
+          for (let args of argsArray) {
             let result: any;
             
             try {
