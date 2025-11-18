@@ -1,4 +1,5 @@
 import { IBlueprint, IIntegration, IOpenAISource, OpenAITargetPayload } from "@qelos/global-types";
+import Handlebars from "handlebars";
 import logger from "../services/logger";
 import { createAIService } from "../services/ai-service";
 import * as ChatCompletionService from "../services/chat-completion-service";
@@ -157,6 +158,7 @@ export async function chatCompletion(req: any, res: any | null) {
       user: req.user,
       messages: safeUserMessages,
       context: options.context,
+      systemContext: {},
     }, integration.dataManipulation);
   } catch (error) {
     logger.error('Failed to execute pre-chat data manipulation', error);
@@ -190,30 +192,63 @@ export async function chatCompletion(req: any, res: any | null) {
     return;
   }
 
-  // the variables will be: {{userId}} {{userEmail}} {{userFirstName}} {{userLastName}} {{workspaceId}} {{currentDate}} {{currentDateTime}} {{userRoles}}
-  const variables = {
-    userId: req.user._id,
-    userEmail: req.user.email,
-    userFirstName: req.user.firstName,
-    userLastName: req.user.lastName,
+  const now = new Date();
+
+  const templateVariables = {
+    userId: req.user?._id,
+    userEmail: req.user?.email,
+    userFirstName: req.user?.firstName,
+    userLastName: req.user?.lastName,
     workspaceId: req.workspace?._id,
     workspaceName: req.workspace?.name,
-    workspaceLabels: req.workspace?.labels.join(','),
-    currentDate: new Date().toISOString().split('T')[0],
-    currentDateTime: new Date().toISOString(),
-    userRoles: req.user.roles.join(','),
+    workspaceLabels: req.workspace?.labels?.join(',') || '',
+    currentDate: now.toISOString().split('T')[0],
+    currentDateTime: now.toISOString(),
+    userRoles: req.user?.roles?.join(',') || '',
+    systemContext: req.systemContext || {},
+    user: {
+      id: req.user?._id,
+      email: req.user?.email,
+      firstName: req.user?.firstName,
+      lastName: req.user?.lastName,
+      roles: req.user?.roles,
+      wsRoles: req.user?.wsRoles
+    },
+    workspace: req.workspace ? {
+      id: req.workspace._id,
+      name: req.workspace.name,
+      labels: req.workspace.labels,
+    } : undefined,
+    integration: {
+      id: integration._id,
+      name: integration.name,
+      kind: integration.kind,
+      trigger: integration.trigger,
+      target: integration.target,
+    },
   };
 
-  function ingestMessageWithContext(message: any) {
-    if (message.content) {
-      message.content = message.content.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (match, key) => {
-        return variables[key?.trim()];
-      });
+  function ingestSystemMessage(message: any) {
+    if (message.role !== 'system' || !message.content || typeof message.content !== 'string') {
+      return message;
     }
-    return message;
+
+    try {
+      const template = Handlebars.compile(message.content, { noEscape: true });
+      return {
+        ...message,
+        content: template(templateVariables),
+      };
+    } catch (error) {
+      logger.warn('Failed to render system message template', error);
+      return message;
+    }
   }
 
-  const initialMessages = [...integration.target.details.pre_messages || [], ...options.messages].map(ingestMessageWithContext);
+  const initialMessages = [
+    ...(integration.target.details.pre_messages || []),
+    ...options.messages,
+  ].map(ingestSystemMessage);
 
   // Map all available tools
   const allTools = toolsIntegrations.map(tool => ({
