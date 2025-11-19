@@ -201,7 +201,7 @@ Now that you have Qelos running:
 ## Getting Help
 
 - **Documentation**: Check the detailed guides above
-- **Discord**: Join our community at `https://discord.gg/WJRswGxdHs`
+- **Discord**: Join our community at `https://discord.gg/8D6TMdzZYJ`
 - **GitHub Issues**: Report bugs or request features
 - **GitHub Discussions**: Ask questions and share experiences
 

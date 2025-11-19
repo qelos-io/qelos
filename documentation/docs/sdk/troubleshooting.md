@@ -410,7 +410,7 @@ If you've tried the troubleshooting steps above and are still experiencing issue
    - Error messages and stack traces
    - Code samples demonstrating the issue
 
-4. **Community Discord**: Join the Qelos Discord server at [https://discord.gg/WJRswGxdHs](https://discord.gg/WJRswGxdHs) to get help from the community.
+4. **Community Discord**: Join the Qelos Discord server at [https://discord.gg/8D6TMdzZYJ](https://discord.gg/8D6TMdzZYJ) to get help from the community.
 
 ## Conclusion
 

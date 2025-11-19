@@ -23,7 +23,7 @@ export default defineConfig({
       { text: 'Deployment', link: '/deployment/' },
     ],
     socialLinks: [
-      { icon: 'discord', link: 'https://discord.gg/WJRswGxdHs', ariaLabel: 'Discord Server' },
+      { icon: 'discord', link: 'https://discord.gg/8D6TMdzZYJ', ariaLabel: 'Discord Server' },
       { icon: 'github', link: 'https://github.com/qelos-io/qelos', ariaLabel: 'GitHub Repository' }, 
     ],
     search: {
