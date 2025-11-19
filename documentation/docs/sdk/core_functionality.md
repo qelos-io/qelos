@@ -122,3 +122,49 @@ await sdk.authentication.oAuthSignin({
 const workspaces = await sdk.workspaces.getList();
 const userProfile = await sdk.authentication.getLoggedInUser();
 ```
+
+## Emitting Platform Events
+
+The SDK provides a utility function to emit platform-wide events. These events can be used for auditing, analytics, or triggering other processes within the Qelos ecosystem.
+
+### `emitPlatformEvent(platformEvent)`
+
+This function sends a platform event to the Qelos backend.
+
+**Arguments**
+
+- `platformEvent` (`PlatformEvent`): An object containing the event details.
+
+### The `PlatformEvent` Interface
+
+The `PlatformEvent` object has the following structure:
+
+- **tenant** (`string`): The ID of the tenant where the event occurred.
+- **user** (`string`, optional): The ID of the user who triggered the event.
+- **source** (`string`): The source of the event (e.g., 'auth-service', 'billing-module').
+- **kind** (`string`): The type or category of the event (e.g., 'security', 'billing', 'user-management').
+- **eventName** (`string`): A specific name for the event (e.g., 'user-login', 'invoice-paid').
+- **description** (`string`): A human-readable description of the event.
+- **metadata** (`any`): Any additional data associated with the event.
+- **created** (`Date`, optional): The timestamp of when the event was created. Defaults to the current time if not provided.
+
+### Example: Emitting an Event
+
+Here's an example of how to emit an event when a user logs in:
+
+```typescript
+import { emitPlatformEvent } from '@qelos/api-kit';
+
+emitPlatformEvent({
+  tenant: 'tenant-id-123',
+  user: 'user-id-456',
+  source: 'my-custom-app',
+  kind: 'authentication',
+  eventName: 'user-logged-in',
+  description: 'User successfully logged into the application.',
+  metadata: {
+    ipAddress: '192.168.1.1',
+    userAgent: 'Mozilla/5.0 ...'
+  }
+});
+```
