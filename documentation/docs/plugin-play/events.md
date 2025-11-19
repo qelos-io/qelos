@@ -284,12 +284,28 @@ registerToHook({
 | auth   | failed-social-login      | failed-linkedin-login        | LinkedIn login failed          |
 | auth   | failed-social-login      | failed-facebook-login        | Facebook login failed          |
 | auth   | failed-social-login      | failed-google-login          | Google login failed            |
-| auth   | failed-social-login      | failed-twitter-login         | Twitter login failed           |
+| auth   | failed-social-login      | failed-github-login          | Github login failed            |
 | assets | asset-operation          | asset-uploaded               | File/asset uploaded            |
 | assets | storage-connection-error | s3-connection-error          | S3 connection failed           |
 | assets | storage-connection-error | gcs-connection-error         | Google Cloud Storage failed    |
 | assets | storage-connection-error | ftp-connection-error         | FTP connection failed          |
 | assets | storage-connection-error | cloudinary-connection-error  | Cloudinary connection failed   |
+| auth   | invites                  | invite-responded             | User responded to an invite    |
+| auth   | invites                  | invite-created               | New invite created             |
+| auth   | workspaces               | workspace-created            | New workspace created          |
+| auth   | workspaces               | workspace-deleted            | Workspace deleted              |
+| ai     | threads                  | create                       | AI thread created              |
+| ai     | threads                  | delete                       | AI thread deleted              |
+
+### Blueprint Events
+
+Blueprint events are dynamic and correspond to the `identifier` of a blueprint.
+
+| Source      | Kind                   | Event Name | Description                    |
+|-------------|------------------------|------------|--------------------------------|
+| blueprints  | {blueprint.identifier} | create     | A new entity has been created  |
+| blueprints  | {blueprint.identifier} | update     | An entity has been updated     |
+| blueprints  | {blueprint.identifier} | delete     | An entity has been deleted     |
 
 ## Custom Plugin Events
 

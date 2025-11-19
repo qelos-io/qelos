@@ -207,5 +207,5 @@ qelos generate rules all
 ## Related Resources
 
 - [Components Documentation](/pre-designed-frontends/components/) - Learn about global components
-- [Blueprint Structure](/sdk/blueprints) - Understanding blueprints
+- [Blueprint Structure](/sdk/blueprints_operations.md) - Understanding blueprints
 - [Plugin Development](/plugins/create) - Creating plugins
