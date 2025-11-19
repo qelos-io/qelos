@@ -22,6 +22,9 @@ import type { Request } from 'express';
 import { hasGuestReachedLimit } from '../services/guest-request-limit';
 import { getBlueprint } from '../services/blueprints.service';
 
+const PUBLIC_USER_DATA = ['firstName', 'lastName', 'profileImage'];
+const PUBLIC_WS_DATA = ['name', 'logo'];
+
 function getAuditItem(req: Request): IAuditItem {
   return {
     ip: req.ip || 'Unknown',
@@ -143,6 +146,13 @@ const convertPropertyValueByType = (value: any, propertyType: string): any => {
       }, {});
     }
   }
+
+  if (typeof value === 'object' && value.$regex) {
+    return {
+      $regex: value.$regex || '',
+      $options: value.$options || 'i'
+    }
+  }
   
   return value;
 };
@@ -170,6 +180,8 @@ export async function getAllBlueprintEntities(req, res) {
     delete query.$page;
     delete query.$outerPopulate;
     delete query.$flat;
+    delete query.$q;
+    delete query.$qProps;
     if ('bypassAdmin' in req.query) {
       delete query.bypassAdmin;
     }
@@ -177,6 +189,22 @@ export async function getAllBlueprintEntities(req, res) {
     const limit = req.query.$limit && (parseInt(req.query.$limit) || DEFAULT_LIMIT);
     const page = req.query.$page && (parseInt(req.query.$page) || 1);
     const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
+
+    const generalSearch = req.query.$q ? {$regex: req.query.$q, $options: 'i'} : undefined;
+    if (generalSearch) {
+      if (!query.$or) {
+        query.$or = [];
+      }
+      
+      if (generalSearch) {
+        const searchProps = (req.query.$qProps as string)?.split(',') || Object.keys(blueprint.properties).filter(key => blueprint.properties[key].type === 'string' && blueprint.properties[key].required).slice(0, 3);
+        if (searchProps && Array.isArray(searchProps) && searchProps.length) {
+          searchProps.forEach(prop => {
+            query.$or.push({ [`metadata.${prop}`]: generalSearch });
+          });
+        }
+      }
+    }
 
     convertQueryToMetadata(query, blueprint);
     convertQueryToIndexes(query, blueprint);
@@ -210,8 +238,8 @@ export async function getAllBlueprintEntities(req, res) {
       const uniqueUsers: string[] = Array.from(new Set(entities.map(entity => entity.user?.toString()).filter(Boolean)));
 
       const [workspaces, users, relations] = await Promise.all([
-        uniqueWorkspaces.length ? getWorkspaces(req.headers.tenant, ['name', 'logo'], uniqueWorkspaces) : Promise.all([]),
-        uniqueUsers.length ? getUsersByIds(req.headers.tenant, ['firstName', 'lastName', 'profileImage'], uniqueUsers) : Promise.all([]),
+        uniqueWorkspaces.length ? getWorkspaces(req.headers.tenant, PUBLIC_WS_DATA, uniqueWorkspaces) : Promise.all([]),
+        uniqueUsers.length ? getUsersByIds(req.headers.tenant, PUBLIC_USER_DATA, uniqueUsers) : Promise.all([]),
         Promise.all(
           blueprint.relations?.map(async relation => {
             const query = {
