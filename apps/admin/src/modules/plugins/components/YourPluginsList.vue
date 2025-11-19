@@ -12,7 +12,7 @@
       </template>
       
       <template #default>
-        <div v-if="store.plugins.length === 0" class="empty-state">
+        <div v-if="plugins.length === 0" class="empty-state">
           <el-empty :description="$t('No plugins found')">
             <el-button type="primary" @click="$router.push({ name: 'createPlugin' })">
               <el-icon><icon-plus /></el-icon>
@@ -22,7 +22,7 @@
         </div>
         
         <div v-else class="plugins-grid">
-          <div v-for="plugin in store.plugins" 
+          <div v-for="plugin in plugins" 
                :key="plugin._id"
                :id="'plugin-' + plugin._id"
                class="plugin-card"
@@ -131,15 +131,25 @@
 </template>
 
 <script lang="ts" setup>
-
-import { useRouter } from 'vue-router';
 import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 import { usePluginsList } from '@/modules/plugins/store/plugins-list';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { IPlugin } from '@/services/types/plugin';
+import { useRoute } from 'vue-router';
+import { computed } from 'vue';
 
-const router = useRouter();
+const route = useRoute();
 const store = usePluginsList();
+
+const plugins = computed(() => {
+  if (!route.query.q) return store.plugins;
+  const query = String(route.query.q).toLowerCase();
+  return store.plugins.filter(plugin => 
+    plugin.name.toLowerCase().includes(query) ||
+    (plugin.description && plugin.description.toLowerCase().includes(query)) || 
+    (plugin.apiPath && plugin.apiPath.toLowerCase().includes(query))
+  );
+});
 
 const remove = useConfirmAction(store.removePlugin);
 

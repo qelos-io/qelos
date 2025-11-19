@@ -11,7 +11,7 @@ export const managePluginsRoutes = {
       path: '',
       name: 'plugins',
       component: async () => (await import('./Plugins.vue')).default,
-      meta: { roles: ['admin'] },
+      meta: { roles: ['admin'], searchQuery: true },
     },
     {
       path: 'new',
