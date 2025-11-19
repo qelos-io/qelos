@@ -61,6 +61,20 @@ const filteredProducts = await productEntities.getList({
 });
 ```
 
+To run a metadata search, pass `$q` (the search string) and `$qProps` (comma-separated metadata keys) through `getList`:
+
+```typescript
+const matchingProducts = await productEntities.getList({
+  $q: 'Premium',
+  $qProps: 'name,description',
+  $limit: 20,
+  $sort: '-created',
+  'metadata.category': 'electronics',
+  price: { $lt: 500 },
+  $outerPopulate: 'relatedOrders:orders:workspace'
+});
+```
+
 ### Getting a Specific Entity
 
 To retrieve a specific entity by its identifier:
