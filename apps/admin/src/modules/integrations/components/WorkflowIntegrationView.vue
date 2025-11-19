@@ -7,6 +7,7 @@ import TargetTab from '@/modules/integrations/components/tabs/TargetTab.vue';
 import TriggerResponseTab from '@/modules/integrations/components/tabs/TriggerResponseTab.vue';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
+import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { 
   ArrowRight, 
   Check, 
@@ -30,6 +31,7 @@ const props = defineProps<{ integrationId?: string }>();
 const router = useRouter();
 const integrationsStore = useIntegrationsStore();
 const sourcesStore = useIntegrationSourcesStore();
+const integrationKinds = useIntegrationKinds();
 
 const sourcesById = computed(() => {
   if (!sourcesStore.result) return {} as Record<string, any>;
@@ -88,6 +90,21 @@ const downstreamIntegrations = computed(() => {
   });
 });
 
+// Get source logos for trigger and target
+const triggerSourceLogo = computed(() => {
+  if (!trigger.value?.source) return null;
+  const source = sourcesById.value[trigger.value.source];
+  if (!source?.kind) return null;
+  return integrationKinds[source.kind]?.logo || null;
+});
+
+const targetSourceLogo = computed(() => {
+  if (!target.value?.source) return null;
+  const source = sourcesById.value[target.value.source];
+  if (!source?.kind) return null;
+  return integrationKinds[source.kind]?.logo || null;
+});
+
 // Workflow step state management
 const expandedSteps = ref(new Set(['trigger'])); // Start with trigger expanded
 const workflowSteps = computed(() => [
@@ -129,7 +146,7 @@ const scrollToStep = (stepId: string) => {
   if (element) {
     element.scrollIntoView({ 
       behavior: 'smooth', 
-      block: 'start',
+      block: 'center',
       inline: 'nearest'
     });
     
@@ -357,6 +374,44 @@ onUnmounted(() => {
             <text v-if="step.subtitle" y="75" text-anchor="middle" font-size="10" fill="#909399" class="node-subtitle">
               {{ step.subtitle }}
             </text>
+            <!-- Source icon badge for trigger -->
+            <g v-if="index === 1 && triggerSourceLogo" class="source-badge">
+              <defs>
+                <clipPath :id="`badge-clip-trigger-${index}`">
+                  <circle cx="28" cy="28" r="15"/>
+                </clipPath>
+              </defs>
+              <g :clip-path="`url(#badge-clip-trigger-${index})`">
+                <circle cx="28" cy="28" r="16" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+                <image 
+                  :href="triggerSourceLogo" 
+                  x="16" 
+                  y="16" 
+                  width="24" 
+                  height="24" 
+                  preserveAspectRatio="xMidYMid slice"
+                />
+              </g>
+            </g>
+            <!-- Source icon badge for target -->
+            <g v-if="index === 3 && targetSourceLogo" class="source-badge">
+              <defs>
+                <clipPath :id="`badge-clip-target-${index}`">
+                  <circle cx="28" cy="28" r="15"/>
+                </clipPath>
+              </defs>
+              <g :clip-path="`url(#badge-clip-target-${index})`">
+                <circle cx="28" cy="28" r="16" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+                <image 
+                  :href="targetSourceLogo" 
+                  x="16" 
+                  y="16" 
+                  width="24" 
+                  height="24" 
+                  preserveAspectRatio="xMidYMid slice"
+                />
+              </g>
+            </g>
           </g>
         </g>
       </svg>
@@ -799,10 +854,16 @@ onUnmounted(() => {
 }
 
 
-/* Hide labels in compact mode */
+/* Hide labels in compact mode but keep badges */
 .workflow-diagram.is-compact .node-label,
 .workflow-diagram.is-compact .node-subtitle {
   display: none;
+}
+
+/* Adjust badge size in compact mode */
+.workflow-diagram.is-compact .source-badge {
+  transform: scale(0.8);
+  transform-origin: 28px 28px;
 }
 
 /* Adjust background animation in compact mode */
@@ -922,6 +983,44 @@ onUnmounted(() => {
 @keyframes warning-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+/* Source badge styles */
+.source-badge {
+  animation: badge-appear 0.8s ease-out backwards;
+  animation-delay: 0.6s;
+  transition: all 0.3s ease;
+}
+
+.source-badge circle {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.source-badge image {
+  opacity: 0.9;
+}
+
+.workflow-node:hover .source-badge {
+  transform: scale(1.1);
+}
+
+.workflow-diagram.is-compact .workflow-node:hover .source-badge {
+  transform: scale(0.9);
+}
+
+.workflow-node:hover .source-badge image {
+  opacity: 1;
+}
+
+@keyframes badge-appear {
+  0% {
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
 }
 
 /* Workflow Minimap */
