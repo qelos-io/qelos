@@ -9,7 +9,11 @@ export const integrationsRoutes = {
       path: '',
       name: 'integrations',
       component: async () => (await import('@/modules/integrations/Integrations.vue')).default,
-      meta: { roles: ['admin'] },
+      meta: {
+        roles: ['admin'],
+        searchQuery: true,
+        searchPlaceholder: 'Search integrations...'
+      },
     },
     {
       path: ':kind/sources',

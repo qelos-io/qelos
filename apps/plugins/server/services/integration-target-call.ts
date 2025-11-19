@@ -14,6 +14,59 @@ import { HttpTargetPayload } from '@qelos/global-types';
 import { chatCompletion, chatCompletionForUserByIntegration } from './ai-service';
 import { sendEmail } from './email-service';
 
+type TriggerResponseConfig = {
+  source?: string;
+  kind?: string;
+  eventName?: string;
+  description?: string;
+  metadata?: Record<string, any>;
+};
+
+function mergeTriggerResponses(
+  detailsTriggerResponse?: TriggerResponseConfig,
+  payloadTriggerResponse?: TriggerResponseConfig,
+): TriggerResponseConfig | undefined {
+  if (!detailsTriggerResponse && !payloadTriggerResponse) {
+    return undefined;
+  }
+
+  const merged: TriggerResponseConfig = {
+    ...(detailsTriggerResponse || {}),
+    ...(payloadTriggerResponse || {}),
+  };
+
+  merged.metadata = {
+    ...(detailsTriggerResponse?.metadata || {}),
+    ...(payloadTriggerResponse?.metadata || {}),
+  };
+
+  return merged;
+}
+
+function emitTriggerResponseEvent(
+  tenant: string,
+  triggerResponse?: TriggerResponseConfig,
+  extraMetadata?: Record<string, any>,
+) {
+  if (!triggerResponse?.source || !triggerResponse?.kind || !triggerResponse?.eventName) {
+    return;
+  }
+
+  const event = new PlatformEvent({
+    tenant,
+    source: triggerResponse.source,
+    kind: triggerResponse.kind,
+    eventName: triggerResponse.eventName,
+    description: triggerResponse.description,
+    metadata: {
+      ...(triggerResponse.metadata || {}),
+      ...(extraMetadata || {}),
+    },
+  });
+
+  event.save().then(savedEvent => emitPlatformEvent(savedEvent)).catch(() => {});
+}
+
 async function handleHttpTarget(
   integrationTarget: IIntegrationEntity,
   source: IHttpSource,
@@ -61,7 +114,6 @@ async function handleHttpTarget(
     Object.entries(fetchData.query).forEach(([key, value]) => {
       fullPath.searchParams.append(key, value);
     });
-    console.log('fullPath', fullPath.toString());
     const res = await fetch(fullPath.toString(), {
       method: fetchData.method,
       body: fetchData.method === 'GET' ? undefined : JSON.stringify(fetchData.body),
@@ -134,6 +186,16 @@ async function handleQelosTarget(integrationTarget: IIntegrationEntity,
   payload: any = {}) {
     const operation = integrationTarget.operation as QelosTargetOperation;
     const details = integrationTarget.details || {};
+    const triggerResponse = mergeTriggerResponses(
+      details.triggerResponse as TriggerResponseConfig,
+      payload.triggerResponse as TriggerResponseConfig,
+    );
+    const emitQelosTriggerResponse = (metadata?: Record<string, any>) => {
+      emitTriggerResponseEvent(source.tenant, triggerResponse, {
+        operation,
+        ...(metadata || {}),
+      });
+    };
 
     if (operation === QelosTargetOperation.webhook) {
       const event = new PlatformEvent({
@@ -149,36 +211,60 @@ async function handleQelosTarget(integrationTarget: IIntegrationEntity,
       await event.save();
       emitPlatformEvent(event);
     } else if (operation === QelosTargetOperation.createUser) {
-      return createUser(source.tenant, { 
+      const result = await createUser(source.tenant, { 
         username: payload.username,
         password: payload.password || details.password,
         roles: payload.roles || details.roles || ['user'],
         firstName: payload.firstName,
         lastName: payload.lastName,
        })
+      emitQelosTriggerResponse({ result });
+      return result;
     } else if (operation === QelosTargetOperation.updateUser) {
-      return updateUser(source.tenant, payload.userId || details.userId, {
+      const result = await updateUser(source.tenant, payload.userId || details.userId, {
         password: payload.password || details.password || undefined,
         roles: payload.roles || details.roles || undefined,
         firstName: payload.firstName || undefined,
         lastName: payload.lastName || undefined,
       })
+      emitQelosTriggerResponse({ result });
+      return result;
     } else if (operation === QelosTargetOperation.setUserRoles) {
-      return updateUser(source.tenant, payload.userId || details.userId, {
+      const result = await updateUser(source.tenant, payload.userId || details.userId, {
         roles: payload.roles || details.roles || undefined,
       })
+      emitQelosTriggerResponse({ result });
+      return result;
     } else if (operation === QelosTargetOperation.setWorkspaceLabels) {
       logger.log('operation not supported yet.')
     } else if (operation === QelosTargetOperation.createBlueprintEntity) {
-      return createBlueprintEntity(source.tenant, payload.blueprint || details.blueprint, payload.metadata || details.metadata)
+      const result = await createBlueprintEntity(
+        source.tenant,
+        payload.blueprint || details.blueprint,
+        payload.metadata || details.metadata,
+      );
+      emitQelosTriggerResponse({ result });
+      return result;
     } else if (operation === QelosTargetOperation.updateBlueprintEntity) {
-      return updateBlueprintEntity(source.tenant, payload.blueprint || details.blueprint, payload.metadata || details.metadata)
+      const result = await updateBlueprintEntity(
+        source.tenant,
+        payload.blueprint || details.blueprint,
+        payload.metadata || details.metadata,
+      );
+      emitQelosTriggerResponse({ result });
+      return result;
     } else if (operation === QelosTargetOperation.chatCompletion) {
-      return chatCompletionForUserByIntegration(source.tenant, source.user, {
+      const result = await chatCompletionForUserByIntegration(source.tenant, source.user, {
         integrationId: payload.integrationId,
         threadId: payload.threadId,
         messages: payload.messages,
       })
+      emitQelosTriggerResponse({
+        result,
+        integrationId: payload.integrationId,
+        threadId: payload.threadId,
+      });
+      return result;
     } else {
       logger.log('operation not supported yet.')
     }

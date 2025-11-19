@@ -12,6 +12,7 @@ import TriggerTab from '@/modules/integrations/components/tabs/TriggerTab.vue';
 import DataManipulationTab from '@/modules/integrations/components/tabs/DataManipulationTab.vue';
 import TargetTab from '@/modules/integrations/components/tabs/TargetTab.vue';
 import FunctionToolsTab from '@/modules/integrations/components/tabs/FunctionToolsTab.vue';
+import TriggerResponseTab from '@/modules/integrations/components/tabs/TriggerResponseTab.vue';
 
 // Import specialized form components
 import AIAgentForm from '@/modules/integrations/components/forms/AIAgentForm.vue';
@@ -327,6 +328,9 @@ const selectMode = (mode: IntegrationType) => {
           </el-tab-pane>
           <el-tab-pane :label="$t('Target')">
             <TargetTab v-model="form.target" :integration-id="props.editingIntegration?._id" />
+          </el-tab-pane>
+          <el-tab-pane :label="$t('Trigger Response')">
+            <TriggerResponseTab v-model="form.target" :integration-id="props.editingIntegration?._id" />
           </el-tab-pane>
           <el-tab-pane v-if="isChatCompletionIntegration" :label="$t('Function Tools')">
             <FunctionToolsTab v-if="props.editingIntegration?._id" :integration-id="props.editingIntegration?._id" />

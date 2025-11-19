@@ -8,12 +8,14 @@ import { ElMessage } from 'element-plus';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { IIntegrationSource, IIntegration } from '@qelos/global-types';
 import { useIntegrationsStore } from '../store/integrations';
+import { useRoute } from 'vue-router';
 
 const emit = defineEmits(['retry']);
 
 const kinds = useIntegrationKinds();
 const integrationsStore = useIntegrationsStore();
 const integrationSourcesStore = useIntegrationSourcesStore();
+const route = useRoute();
 
 // Map source IDs to source objects
 const sourcesById = computed(() => {
@@ -22,6 +24,35 @@ const sourcesById = computed(() => {
     acc[source._id] = source;
     return acc;
   }, {} as Record<string, IIntegrationSource>);
+});
+
+const filteredIntegrations = computed(() => {
+  const list = integrationsStore.integrations || [];
+  const queryParam = route.query.q;
+  if (!queryParam) return list;
+
+  const query = String(queryParam).toLowerCase();
+  const includesQuery = (value?: string | null) => (value || '').toLowerCase().includes(query);
+
+  return list.filter((integration) => {
+    const triggerSourceName = sourcesById.value[integration.trigger.source]?.name;
+    const targetSourceName = sourcesById.value[integration.target.source]?.name;
+    const triggerDetails = integration.trigger.details;
+    const targetDetails = integration.target.details;
+
+    return [
+      triggerSourceName,
+      targetSourceName,
+      integration.trigger.operation,
+      integration.target.operation,
+      triggerDetails?.name,
+      triggerDetails?.description,
+      targetDetails?.name,
+      targetDetails?.description,
+      integration.kind?.join(' '),
+      integration._id,
+    ].some(includesQuery);
+  });
 });
 
 const remove = useConfirmAction((id: string) => {
@@ -63,7 +94,7 @@ const toggleActive = async (integration: IIntegration) => {
       </template>
       
       <template #default>
-        <div v-if="integrationsStore.loaded && integrationsStore.integrations.length === 0" class="empty-state">
+        <div v-if="integrationsStore.loaded && filteredIntegrations.length === 0" class="empty-state">
           <el-empty :description="$t('No integrations found')">
             <el-button type="primary" @click="$router.push({ query: { mode: 'create' } })">
               <el-icon><icon-plus /></el-icon>
@@ -73,7 +104,7 @@ const toggleActive = async (integration: IIntegration) => {
         </div>
         
         <div v-else class="integrations-grid">
-          <div v-for="integration in integrationsStore.integrations" 
+          <div v-for="integration in filteredIntegrations" 
                :key="integration._id"
                :id="'integration-' + integration._id"
                class="integration-card"
