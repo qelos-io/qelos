@@ -7,12 +7,18 @@ import { logger } from './logger.mjs';
  * @param {Object} sdk - Initialized SDK instance
  * @param {string} path - Path to components directory
  */
-export async function pushComponents(sdk, path) {
-  const files = fs.readdirSync(path);
+export async function pushComponents(sdk, path, options = {}) {
+  const { targetFile } = options;
+  const directoryFiles = fs.readdirSync(path);
+  const files = targetFile ? [targetFile] : directoryFiles;
   const vueFiles = files.filter(f => f.endsWith('.vue'));
   
   if (vueFiles.length === 0) {
-    logger.warning(`No .vue files found in ${path}`);
+    if (targetFile) {
+      logger.warning(`File ${targetFile} is not a .vue component. Skipping.`);
+    } else {
+      logger.warning(`No .vue files found in ${path}`);
+    }
     return;
   }
   
@@ -30,7 +36,7 @@ export async function pushComponents(sdk, path) {
   
   const existingComponents = await sdk.components.getList();
   
-  await Promise.all(files.map(async (file) => {
+  await Promise.all(vueFiles.map(async (file) => {
     if (file.endsWith('.vue')) {
       const componentName = file.replace('.vue', '');
       const info = componentsJson[componentName] || {};

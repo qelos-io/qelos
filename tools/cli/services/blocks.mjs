@@ -17,12 +17,18 @@ function toKebabCase(str) {
  * @param {Object} sdk - Initialized SDK instance
  * @param {string} path - Path to blocks directory
  */
-export async function pushBlocks(sdk, path) {
-  const files = fs.readdirSync(path);
+export async function pushBlocks(sdk, path, options = {}) {
+  const { targetFile } = options;
+  const directoryFiles = fs.readdirSync(path);
+  const files = targetFile ? [targetFile] : directoryFiles;
   const blockFiles = files.filter(f => f.endsWith('.html'));
   
   if (blockFiles.length === 0) {
-    logger.warning(`No .html files found in ${path}`);
+    if (targetFile) {
+      logger.warning(`File ${targetFile} is not an .html block. Skipping.`);
+    } else {
+      logger.warning(`No .html files found in ${path}`);
+    }
     return;
   }
   

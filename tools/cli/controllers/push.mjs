@@ -17,10 +17,16 @@ export default async function pushController({ type, path: sourcePath }) {
       process.exit(1);
     }
 
-    // Validate path is a directory
-    if (!fs.statSync(sourcePath).isDirectory()) {
-      logger.error(`Path is not a directory: ${sourcePath}`);
-      logger.info('Please provide a directory path, not a file');
+    const stat = fs.statSync(sourcePath);
+    let basePath = sourcePath;
+    let targetFile = null;
+
+    if (stat.isFile()) {
+      basePath = path.dirname(sourcePath);
+      targetFile = path.basename(sourcePath);
+      logger.info(`Detected file path. Only pushing ${targetFile}`);
+    } else if (!stat.isDirectory()) {
+      logger.error(`Path must be a file or directory: ${sourcePath}`);
       process.exit(1);
     }
 
@@ -28,6 +34,10 @@ export default async function pushController({ type, path: sourcePath }) {
 
     // Handle "all" or "*" type
     if (type === 'all' || type === '*') {
+      if (targetFile) {
+        logger.error('Cannot push "all" using a single file. Please provide a directory path.');
+        process.exit(1);
+      }
       logger.section(`Pushing all resources from ${sourcePath}`);
       
       const types = [
@@ -39,7 +49,7 @@ export default async function pushController({ type, path: sourcePath }) {
       ];
 
       for (const { name, fn } of types) {
-        const typePath = path.join(sourcePath, name);
+        const typePath = path.join(basePath, name);
         
         // Skip if directory doesn't exist
         if (!fs.existsSync(typePath)) {
@@ -60,18 +70,18 @@ export default async function pushController({ type, path: sourcePath }) {
       return;
     }
 
-    logger.section(`Pushing ${type} from ${sourcePath}`);
+    logger.section(`Pushing ${type} from ${targetFile ? `${basePath} (${targetFile})` : basePath}`);
 
     if (type === 'components') {
-      await pushComponents(sdk, sourcePath);
+      await pushComponents(sdk, basePath, { targetFile });
     } else if (type === 'blueprints') {
-      await pushBlueprints(sdk, sourcePath);
+      await pushBlueprints(sdk, basePath, { targetFile });
     } else if (type === 'plugins') {
-      await pushPlugins(sdk, sourcePath);
+      await pushPlugins(sdk, basePath, { targetFile });
     } else if (type === 'blocks') {
-      await pushBlocks(sdk, sourcePath);
+      await pushBlocks(sdk, basePath, { targetFile });
     }  else if (type === 'config' || type === 'configs' || type === 'configuration') {
-      await pushConfigurations(sdk, sourcePath);
+      await pushConfigurations(sdk, basePath, { targetFile });
     } else {
       logger.error(`Unknown type: ${type}`);
       logger.info('Supported types: components, blueprints, plugins, blocks, config, configs, configuration, all');

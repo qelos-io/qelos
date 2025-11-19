@@ -9,12 +9,18 @@ import { extractMicroFrontendStructures, resolveMicroFrontendStructures } from '
  * @param {Object} sdk - Initialized SDK instance
  * @param {string} path - Path to plugins directory
  */
-export async function pushPlugins(sdk, path) {
-  const files = fs.readdirSync(path);
+export async function pushPlugins(sdk, path, options = {}) {
+  const { targetFile } = options;
+  const directoryFiles = fs.readdirSync(path);
+  const files = targetFile ? [targetFile] : directoryFiles;
   const pluginFiles = files.filter(f => f.endsWith('.plugin.json'));
   
   if (pluginFiles.length === 0) {
-    logger.warning(`No plugin files (*.plugin.json) found in ${path}`);
+    if (targetFile) {
+      logger.warning(`File ${targetFile} is not a .plugin.json file. Skipping.`);
+    } else {
+      logger.warning(`No plugin files (*.plugin.json) found in ${path}`);
+    }
     return;
   }
   

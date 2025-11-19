@@ -8,12 +8,18 @@ import { appUrl } from './sdk.mjs';
  * @param {Object} sdk - Initialized SDK instance
  * @param {string} path - Path to configurations directory
  */
-export async function pushConfigurations(sdk, path) {
-  const files = fs.readdirSync(path);
+export async function pushConfigurations(sdk, path, options = {}) {
+  const { targetFile } = options;
+  const directoryFiles = fs.readdirSync(path);
+  const files = targetFile ? [targetFile] : directoryFiles;
   const configFiles = files.filter(f => f.endsWith('.config.json'));
   
   if (configFiles.length === 0) {
-    logger.warning(`No configuration files (*.config.json) found in ${path}`);
+    if (targetFile) {
+      logger.warning(`File ${targetFile} is not a .config.json file. Skipping.`);
+    } else {
+      logger.warning(`No configuration files (*.config.json) found in ${path}`);
+    }
     return;
   }
   

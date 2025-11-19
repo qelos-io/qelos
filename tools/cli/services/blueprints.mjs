@@ -7,12 +7,18 @@ import { logger } from './logger.mjs';
  * @param {Object} sdk - Initialized SDK instance
  * @param {string} path - Path to blueprints directory
  */
-export async function pushBlueprints(sdk, path) {
-  const files = fs.readdirSync(path);
+export async function pushBlueprints(sdk, path, options = {}) {
+  const { targetFile } = options;
+  const directoryFiles = fs.readdirSync(path);
+  const files = targetFile ? [targetFile] : directoryFiles;
   const blueprintFiles = files.filter(f => f.endsWith('.blueprint.json'));
   
   if (blueprintFiles.length === 0) {
-    logger.warning(`No blueprint files (*.blueprint.json) found in ${path}`);
+    if (targetFile) {
+      logger.warning(`File ${targetFile} is not a .blueprint.json file. Skipping.`);
+    } else {
+      logger.warning(`No blueprint files (*.blueprint.json) found in ${path}`);
+    }
     return;
   }
   

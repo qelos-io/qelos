@@ -49,7 +49,7 @@ export function useCreatePlugin() {
       pluginsService.create<Partial<IPlugin>>(data),
     {
       success: 'Plugin created successfully',
-      error: 'Failed to create plugin'
+      error: (err: any) => err?.response?.data?.message || 'Failed to create plugin'
     }
   )
 

@@ -193,7 +193,12 @@ export async function updatePlugin(req, res) {
     res.json(plugin).end();
     clearPlugins(req.headers.tenant);
   } catch (err: any) {
-    res.status(500).json({ message: err?.responseError || 'could not update plugin' }).end();
+    const manifestInvalid = typeof err?.message === 'string' && err.message.includes('invalid json response body');
+    const statusCode = manifestInvalid ? 400 : 500;
+    const message = err?.responseError || (manifestInvalid
+      ? 'plugin manifest endpoint returned invalid JSON. please verify the manifest URL responds with valid JSON.'
+      : 'could not update plugin');
+    res.status(statusCode).json({ message }).end();
     logger.log('error while edit plugin', new Error((err as any)?.message || err));
   }
 }
