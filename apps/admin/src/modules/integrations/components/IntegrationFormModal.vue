@@ -1,261 +1,125 @@
 <script setup lang="ts">
-import { reactive, watch, nextTick, ref, computed } from 'vue';
-import { IIntegration, IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
+import { computed, ref, watch } from 'vue';
+import type { IIntegration } from '@qelos/global-types';
+import { QelosTriggerOperation } from '@qelos/global-types';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import integrationsService from '@/services/apis/integrations-service';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { ElMessage } from 'element-plus';
 import { detectIntegrationType, IntegrationType } from '@/modules/integrations/utils/integration-type-detector';
-
-// Import tab components
-import TriggerTab from '@/modules/integrations/components/tabs/TriggerTab.vue';
-import DataManipulationTab from '@/modules/integrations/components/tabs/DataManipulationTab.vue';
-import TargetTab from '@/modules/integrations/components/tabs/TargetTab.vue';
-import FunctionToolsTab from '@/modules/integrations/components/tabs/FunctionToolsTab.vue';
-import TriggerResponseTab from '@/modules/integrations/components/tabs/TriggerResponseTab.vue';
-
-// Import specialized form components
 import AIAgentForm from '@/modules/integrations/components/forms/AIAgentForm.vue';
 import IntegrationFormModalHeader from '@/modules/integrations/components/IntegrationFormModalHeader.vue';
+import WorkflowIntegrationView from '@/modules/integrations/components/WorkflowIntegrationView.vue';
+import StandardIntegrationTabs from '@/modules/integrations/components/StandardIntegrationTabs.vue';
+import { useIntegrationFormState } from '@/modules/integrations/compositions/use-integration-form-state';
 
-const visible = defineModel<boolean>('visible')
-const props = defineProps<{ editingIntegration?: any }>()
-const emit = defineEmits(['close', 'saved'])
+const visible = defineModel<boolean>('visible');
+const props = defineProps<{ editingIntegration?: Partial<IIntegration> }>();
+const emit = defineEmits(['close', 'saved']);
 
-const pasteDialogVisible = ref(false)
-const pasteContent = ref('')
-const pasteError = ref('')
+const pasteDialogVisible = ref(false);
+const pasteContent = ref('');
+const pasteError = ref('');
+const showTypeSelection = ref(false);
 
 const store = useIntegrationSourcesStore();
 
-// View mode state
-const selectedViewMode = ref<IntegrationType>(IntegrationType.Standard);
-const showModeSelection = ref(false);
+const {
+  form,
+  selectedViewMode
+} = useIntegrationFormState({ props, visible, sourcesStore: store });
 
-// AI Agent wizard step state
 const aiAgentCurrentStep = ref(0);
 const totalAIAgentSteps = 4;
 
-const form = reactive<Pick<IIntegration, 'trigger' | 'target' | 'dataManipulation' | 'active'>>({
-  trigger: {
-    source: '',
-    operation: '',
-    details: {}
-  },
-  target: {
-    source: '',
-    operation: '',
-    details: {}
-  },
-  dataManipulation: [
-    {
-      'map': {},
-      'populate': {
-        user: {
-          source: 'user'
-        },
-        workspace: {
-          source: 'workspace'
-        }
-      }
-    },
-    {
-      map: {
-        userEmail: '.user.email',
-        workspaceMembers: '.workspace.members | map(.user)'
-      },
-      populate: {}
-    },
-    {
-      map: {},
-      populate: {
-        workspaceMembers: {
-          source: 'user'
-        }
-      }
-    }
-  ],
-  active: false
-})
+const isAIAgentView = computed(() => selectedViewMode.value === IntegrationType.AIAgent);
+const isWorkflowView = computed(() => selectedViewMode.value === IntegrationType.Workflow);
+const isChatCompletionIntegration = computed(() => (
+  !!form.trigger?.source && form.trigger?.operation === QelosTriggerOperation.chatCompletion
+));
+const hasSavedIntegration = computed(() => Boolean(props.editingIntegration?._id));
 
-// Computed property to check if the integration is a chat completion integration
-const isChatCompletionIntegration = computed(() => {
-  return form.trigger?.source && 
-         form.trigger?.operation === QelosTriggerOperation.chatCompletion;
+const detectedIntegrationType = computed(() => {
+  if (!store.result?.length) return IntegrationType.Standard;
+  return detectIntegrationType(form, store.result);
 });
 
-// Update selected view mode when form changes (for auto-detection)
-watch(() => [form.trigger, form.target, store.result], () => {
-  if (!props.editingIntegration?._id && store.result?.length) {
-    const detectedType = detectIntegrationType(form, store.result);
-    if (detectedType === IntegrationType.AIAgent) {
-      selectedViewMode.value = IntegrationType.AIAgent;
-    }
-  }
-}, { immediate: true, deep: true });
+const canGoNext = computed(() => isAIAgentView.value && aiAgentCurrentStep.value < totalAIAgentSteps - 1);
+const canGoPrevious = computed(() => isAIAgentView.value && aiAgentCurrentStep.value > 0);
+const isLastStep = computed(() => isAIAgentView.value && aiAgentCurrentStep.value === totalAIAgentSteps - 1);
+const isNewIntegration = computed(() => !props.editingIntegration?._id);
 
-// Find Qelos integration source for default target
-const findQelosSource = () => {
-  if (!store.result?.length) return '';
-  const qelosSource = store.result.find(source => source.kind === IntegrationSourceKind.Qelos);
-  return qelosSource?._id || '';
-}
-
-watch(visible, () => {
-  if (visible.value) {
+watch(visible, (value) => {
+  if (value) {
     aiAgentCurrentStep.value = 0;
-    Object.assign(form, {
-      ...(props.editingIntegration || {}),
-      trigger: {
-        source: '',
-        operation: '',
-        details: {},
-        ...(props.editingIntegration?.trigger || {})
-      },
-      target: {
-        source: '',
-        operation: '',
-        details: {},
-        ...(props.editingIntegration?.target || {})
-      },
-      dataManipulation: props.editingIntegration?.dataManipulation || [
-        {
-          'map': {},
-          'populate': {
-            user: {
-              source: 'user'
-            },
-            workspace: {
-              source: 'workspace'
-            }
-          }
-        },
-        {
-          map: {
-            userEmail: '.user.email',
-            workspaceMembers: '.workspace.members | map(.user)'
-          },
-          populate: {}
-        },
-        {
-          map: {},
-          populate: {
-            workspaceMembers: {
-              source: 'user'
-            }
-          }
-        }
-      ],
-      active: props.editingIntegration?.active || false,
-    });
-    
-    // Set view mode based on editing integration
-    if (props.editingIntegration?._id && store.result?.length) {
-      const detectedType = detectIntegrationType(form, store.result);
-      selectedViewMode.value = detectedType;
-      showModeSelection.value = false;
-    } else {
-      selectedViewMode.value = IntegrationType.Standard;
-      showModeSelection.value = true; // Show mode selection for new integrations
-    }
-    form.dataManipulation = (form.dataManipulation || []).map((row: any) => {
-      delete row._id;
-      return row;
-    })
-    
-    // For new integrations, set default target as Qelos with webhook operation
-    if (!props.editingIntegration?._id) {
-      // Wait for store to be populated
-      nextTick(() => {
-        if (store.result?.length) {
-          const qelosSourceId = findQelosSource();
-          if (qelosSourceId) {
-            form.target.source = qelosSourceId;
-            form.target.operation = 'webhook';
-            form.target.details = {};
-          }
-        }
-      });
-    }
+    showTypeSelection.value = isNewIntegration.value;
   }
-}, { immediate: true })
+});
 
-const { submit, submitting } = useSubmitting(() => {
-  if (props.editingIntegration?._id) {
-    return integrationsService.update(props.editingIntegration?._id, form)
-  } else {
-    return integrationsService.create(form)
-  }
-}, {
-  error: (err: any) => err?.response?.data?.message || 'Failed to save integration'
-}, () => {
-  emit('close')
-  emit('saved', form)
-})
-
-const openPasteDialog = () => {
-  pasteDialogVisible.value = true
-  pasteContent.value = ''
-  pasteError.value = ''
-}
-
-const applyPastedIntegration = () => {
-  try {
-    pasteError.value = ''
-    const parsedContent = JSON.parse(pasteContent.value)
-    
-    // Validate that the pasted content has the required structure
-    if (!parsedContent.trigger || !parsedContent.target) {
-      pasteError.value = 'Invalid integration object. Must contain trigger and target properties.'
-      return
-    }
-    
-    // Apply the pasted content to the form
-    form.trigger = parsedContent.trigger
-    form.target = parsedContent.target
-    
-    // Always reset data manipulation and replace with pasted content or empty array
-    if (parsedContent.dataManipulation && Array.isArray(parsedContent.dataManipulation)) {
-      form.dataManipulation = parsedContent.dataManipulation.map((row: any) => {
-        const newRow = { ...row }
-        delete newRow._id
-        return newRow
-      })
-    } else {
-      // If no data manipulation in pasted content, set to empty array
-      form.dataManipulation = []
-    }
-    
-    pasteDialogVisible.value = false
-    ElMessage.success('Integration object applied successfully')
-  } catch (error) {
-    pasteError.value = 'Invalid JSON format. Please check your input.'
-  }
-}
-
-// AI Agent navigation functions
 const goToNextStep = () => {
-  if (aiAgentCurrentStep.value < totalAIAgentSteps - 1) {
+  if (canGoNext.value) {
     aiAgentCurrentStep.value++;
   }
 };
 
 const goToPreviousStep = () => {
-  if (aiAgentCurrentStep.value > 0) {
+  if (canGoPrevious.value) {
     aiAgentCurrentStep.value--;
   }
 };
 
-const isAIAgentView = computed(() => selectedViewMode.value === IntegrationType.AIAgent);
-const canGoNext = computed(() => isAIAgentView.value && aiAgentCurrentStep.value < totalAIAgentSteps - 1);
-const canGoPrevious = computed(() => isAIAgentView.value && aiAgentCurrentStep.value > 0);
-const isLastStep = computed(() => isAIAgentView.value && aiAgentCurrentStep.value === totalAIAgentSteps - 1);
-
 const selectMode = (mode: IntegrationType) => {
   selectedViewMode.value = mode;
-  showModeSelection.value = false;
+  showTypeSelection.value = false;
 };
 
+const { submit, submitting } = useSubmitting(() => {
+  if (props.editingIntegration?._id) {
+    return integrationsService.update(props.editingIntegration._id, form);
+  }
+  return integrationsService.create(form);
+}, {
+  error: (err: any) => err?.response?.data?.message || 'Failed to save integration'
+}, () => {
+  emit('close');
+  emit('saved', form);
+});
+
+const openPasteDialog = () => {
+  pasteDialogVisible.value = true;
+  pasteContent.value = '';
+  pasteError.value = '';
+};
+
+const applyPastedIntegration = () => {
+  try {
+    pasteError.value = '';
+    const parsedContent = JSON.parse(pasteContent.value);
+
+    if (!parsedContent.trigger || !parsedContent.target) {
+      pasteError.value = 'Invalid integration object. Must contain trigger and target properties.';
+      return;
+    }
+
+    form.trigger = parsedContent.trigger;
+    form.target = parsedContent.target;
+
+    if (parsedContent.dataManipulation && Array.isArray(parsedContent.dataManipulation)) {
+      form.dataManipulation = parsedContent.dataManipulation.map((row: any) => {
+        const newRow = { ...row };
+        delete newRow._id;
+        return newRow;
+      });
+    } else {
+      form.dataManipulation = [];
+    }
+
+    pasteDialogVisible.value = false;
+    ElMessage.success('Integration object applied successfully');
+  } catch (error) {
+    pasteError.value = 'Invalid JSON format. Please check your input.';
+  }
+};
 </script>
 
 <template>
@@ -265,39 +129,48 @@ const selectMode = (mode: IntegrationType) => {
              :width="$isMobile ? '100%' : '70%'"
              :fullscreen="$isMobile"
              @close="$emit('close', $event)">
-    <!-- Mode Selection View for New Integrations -->
-    <el-card v-if="showModeSelection" class="mode-selection-card">
-      <template #header>
-        <div class="card-header">
-          <h3>{{ $t('Choose Integration Mode') }}</h3>
-          <p class="subtitle">{{ $t('Select how you want to build your integration') }}</p>
-        </div>
-      </template>
-      
-      <div class="mode-options">
-        <div class="mode-option" @click="selectMode(IntegrationType.Standard)">
-          <div class="option-icon">
-            <el-icon :size="24"><icon-setting /></el-icon>
+    <template v-if="showTypeSelection">
+      <el-card class="mode-selection-card">
+        <template #header>
+          <div class="card-header">
+            <h3>{{ $t('Choose Integration Mode') }}</h3>
+            <p class="subtitle">{{ $t('Select how you want to build your integration') }}</p>
           </div>
-          <div class="option-content">
-            <h4>{{ $t('Standard Mode') }}</h4>
-            <p>{{ $t('Full control with trigger, data manipulation, and target configuration') }}</p>
-          </div>
-        </div>
-        
-        <div class="mode-option" @click="selectMode(IntegrationType.AIAgent)">
-          <div class="option-icon ai-icon">
-            <el-icon :size="24"><icon-magic-stick /></el-icon>
-          </div>
-          <div class="option-content">
-            <h4>{{ $t('AI Agent Mode') }}</h4>
-            <p>{{ $t('Create an intelligent agent with tools and conversational capabilities') }}</p>
-          </div>
-        </div>
-      </div>
-    </el-card>
+        </template>
 
-    <!-- Integration Form -->
+        <div class="mode-options">
+          <div class="mode-option" @click="selectMode(IntegrationType.Workflow)">
+            <div class="option-icon">
+              <el-icon :size="24"><icon-guide /></el-icon>
+            </div>
+            <div class="option-content">
+              <h4>{{ $t('Workflow View') }}</h4>
+              <p>{{ $t('Visual storyline that highlights upstream/downstream automations and every workflow stage.') }}</p>
+            </div>
+          </div>
+
+          <div class="mode-option" @click="selectMode(IntegrationType.Standard)">
+            <div class="option-icon">
+              <el-icon :size="24"><IconSetting /></el-icon>
+            </div>
+            <div class="option-content">
+              <h4>{{ $t('Standard Mode') }}</h4>
+              <p>{{ $t('Classic tabs for trigger, data manipulation, target, and trigger response.') }}</p>
+            </div>
+          </div>
+
+          <div class="mode-option" @click="selectMode(IntegrationType.AIAgent)">
+            <div class="option-icon ai-icon">
+              <el-icon :size="24"><IconMagicStick /></el-icon>
+            </div>
+            <div class="option-content">
+              <h4>{{ $t('AI Agent Mode') }}</h4>
+              <p>{{ $t('Guided wizard for conversational agents with function calling and tooling.') }}</p>
+            </div>
+          </div>
+        </div>
+      </el-card>
+    </template>
     <template v-else>
       <IntegrationFormModalHeader
         v-model:active="form.active"
@@ -307,8 +180,16 @@ const selectMode = (mode: IntegrationType) => {
         @paste="openPasteDialog"
       />
       <el-form v-if="visible" @submit.prevent="submit" class="form-content">
-        <!-- AI Agent Form View -->
-        <div v-if="selectedViewMode === IntegrationType.AIAgent" class="ai-agent-view">
+        <div v-if="isWorkflowView" class="view-wrapper">
+          <WorkflowIntegrationView
+            v-model:trigger="form.trigger"
+            v-model:target="form.target"
+            v-model:data-manipulation="form.dataManipulation"
+            :integration-id="props.editingIntegration?._id"
+          />
+        </div>
+
+        <div v-else-if="isAIAgentView" class="view-wrapper">
           <AIAgentForm
             v-model:trigger="form.trigger"
             v-model:target="form.target"
@@ -318,37 +199,23 @@ const selectMode = (mode: IntegrationType) => {
           />
         </div>
 
-        <!-- Standard Integration Form View -->
-        <el-tabs v-else>
-          <el-tab-pane :label="$t('Trigger')">
-            <TriggerTab v-model="form.trigger" :integration-id="props.editingIntegration?._id" />
-          </el-tab-pane>
-          <el-tab-pane :label="$t('Data Manipulation')">
-            <DataManipulationTab v-model="form.dataManipulation" />
-          </el-tab-pane>
-          <el-tab-pane :label="$t('Target')">
-            <TargetTab v-model="form.target" :integration-id="props.editingIntegration?._id" />
-          </el-tab-pane>
-          <el-tab-pane :label="$t('Trigger Response')">
-            <TriggerResponseTab v-model="form.target" :integration-id="props.editingIntegration?._id" />
-          </el-tab-pane>
-          <el-tab-pane v-if="isChatCompletionIntegration" :label="$t('Function Tools')">
-            <FunctionToolsTab v-if="props.editingIntegration?._id" :integration-id="props.editingIntegration?._id" />
-            <el-alert v-else :title="$t('Please save the integration first')" type="warning" show-icon />
-          </el-tab-pane>
-        </el-tabs>
+        <div v-else class="view-wrapper">
+          <StandardIntegrationTabs
+            v-model:trigger="form.trigger"
+            v-model:target="form.target"
+            v-model:data-manipulation="form.dataManipulation"
+            :integration-id="props.editingIntegration?._id"
+            :is-chat-completion-integration="isChatCompletionIntegration"
+            :has-saved-integration="hasSavedIntegration"
+          />
+        </div>
       </el-form>
     </template>
     
     <template #footer>
       <div class="dialog-footer">
         <!-- Mode Selection Footer -->
-        <template v-if="showModeSelection">
-          <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
-        </template>
-        
-        <!-- AI Agent Mode Footer -->
-        <template v-else-if="isAIAgentView">
+        <template v-if="isAIAgentView">
           <div class="ai-agent-footer">
             <div class="step-info">
               <span class="step-text">{{ $t('Step') }} {{ aiAgentCurrentStep + 1 }} {{ $t('of') }} {{ totalAIAgentSteps }}</span>
@@ -381,7 +248,7 @@ const selectMode = (mode: IntegrationType) => {
           </div>
         </template>
         
-        <!-- Standard Mode Footer -->
+        <!-- Standard / Workflow Footer -->
         <template v-else>
           <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
           <el-button type="primary" @click="submit" :disabled="submitting" :loading="submitting">{{ $t('Save') }}</el-button>
