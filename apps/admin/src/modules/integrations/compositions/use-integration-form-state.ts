@@ -54,7 +54,7 @@ export function useIntegrationFormState({ props, visible, sourcesStore }: UseInt
     active: false
   });
 
-  const selectedViewMode = ref<IntegrationType>(IntegrationType.Standard);
+  const selectedViewMode = ref<IntegrationType>(IntegrationType.Workflow);
 
   const findQelosSource = () => {
     if (!sourcesStore.result?.length) return '';
@@ -97,7 +97,7 @@ export function useIntegrationFormState({ props, visible, sourcesStore }: UseInt
       const detectedType = detectIntegrationType(form, sourcesStore.result);
       selectedViewMode.value = detectedType;
     } else {
-      selectedViewMode.value = IntegrationType.Standard;
+      selectedViewMode.value = IntegrationType.Workflow;
 
       nextTick(() => {
         if (sourcesStore.result?.length) {
@@ -119,11 +119,10 @@ export function useIntegrationFormState({ props, visible, sourcesStore }: UseInt
         return;
       }
       const detectedType = detectIntegrationType(form, sourcesStore.result || []);
-      if (
-        detectedType === IntegrationType.AIAgent &&
-        selectedViewMode.value === IntegrationType.Standard
-      ) {
+      if (detectedType === IntegrationType.AIAgent) {
         selectedViewMode.value = IntegrationType.AIAgent;
+      } else {
+        selectedViewMode.value = IntegrationType.Workflow;
       }
     },
     { immediate: true, deep: true }

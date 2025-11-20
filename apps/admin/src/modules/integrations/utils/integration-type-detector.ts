@@ -5,7 +5,6 @@ import { IIntegration, IIntegrationSource, IntegrationSourceKind, QelosTriggerOp
  */
 export enum IntegrationType {
   AIAgent = 'ai-agent',
-  Standard = 'standard',
   Workflow = 'workflow',
   // Future types can be added here
   // Webhook = 'webhook',
@@ -56,7 +55,7 @@ export function detectIntegrationType(
 
   // Future: Add more detection logic for other specialized types
   
-  return IntegrationType.Standard;
+  return IntegrationType.Workflow;
 }
 
 /**
@@ -68,8 +67,6 @@ export function getIntegrationTypeLabel(type: IntegrationType): string {
       return 'AI Agent';
     case IntegrationType.Workflow:
       return 'Workflow';
-    case IntegrationType.Standard:
-      return 'Standard Integration';
     default:
       return 'Integration';
   }
@@ -84,8 +81,6 @@ export function getIntegrationTypeDescription(type: IntegrationType): string {
       return 'A specialized integration for AI-powered chat agents with function calling capabilities';
     case IntegrationType.Workflow:
       return 'Visualizes the end-to-end flow (trigger → data → target → trigger response) with related integrations';
-    case IntegrationType.Standard:
-      return 'A flexible integration with full control over trigger, target, and data manipulation';
     default:
       return '';
   }

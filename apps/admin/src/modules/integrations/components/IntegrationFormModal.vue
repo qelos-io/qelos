@@ -10,7 +10,7 @@ import { detectIntegrationType, IntegrationType } from '@/modules/integrations/u
 import AIAgentForm from '@/modules/integrations/components/forms/AIAgentForm.vue';
 import IntegrationFormModalHeader from '@/modules/integrations/components/IntegrationFormModalHeader.vue';
 import WorkflowIntegrationView from '@/modules/integrations/components/WorkflowIntegrationView.vue';
-import StandardIntegrationTabs from '@/modules/integrations/components/StandardIntegrationTabs.vue';
+import WorkflowIntegrationTabs from '@/modules/integrations/components/WorkflowIntegrationTabs.vue';
 import { useIntegrationFormState } from '@/modules/integrations/compositions/use-integration-form-state';
 
 const visible = defineModel<boolean>('visible');
@@ -38,11 +38,6 @@ const isChatCompletionIntegration = computed(() => (
   !!form.trigger?.source && form.trigger?.operation === QelosTriggerOperation.chatCompletion
 ));
 const hasSavedIntegration = computed(() => Boolean(props.editingIntegration?._id));
-
-const detectedIntegrationType = computed(() => {
-  if (!store.result?.length) return IntegrationType.Standard;
-  return detectIntegrationType(form, store.result);
-});
 
 const canGoNext = computed(() => isAIAgentView.value && aiAgentCurrentStep.value < totalAIAgentSteps - 1);
 const canGoPrevious = computed(() => isAIAgentView.value && aiAgentCurrentStep.value > 0);
@@ -149,16 +144,6 @@ const applyPastedIntegration = () => {
             </div>
           </div>
 
-          <div class="mode-option" @click="selectMode(IntegrationType.Standard)">
-            <div class="option-icon">
-              <el-icon :size="24"><IconSetting /></el-icon>
-            </div>
-            <div class="option-content">
-              <h4>{{ $t('Standard Mode') }}</h4>
-              <p>{{ $t('Classic tabs for trigger, data manipulation, target, and trigger response.') }}</p>
-            </div>
-          </div>
-
           <div class="mode-option" @click="selectMode(IntegrationType.AIAgent)">
             <div class="option-icon ai-icon">
               <el-icon :size="24"><IconMagicStick /></el-icon>
@@ -196,17 +181,6 @@ const applyPastedIntegration = () => {
             v-model:data-manipulation="form.dataManipulation"
             v-model:current-step="aiAgentCurrentStep"
             :integration-id="props.editingIntegration?._id"
-          />
-        </div>
-
-        <div v-else class="view-wrapper">
-          <StandardIntegrationTabs
-            v-model:trigger="form.trigger"
-            v-model:target="form.target"
-            v-model:data-manipulation="form.dataManipulation"
-            :integration-id="props.editingIntegration?._id"
-            :is-chat-completion-integration="isChatCompletionIntegration"
-            :has-saved-integration="hasSavedIntegration"
           />
         </div>
       </el-form>

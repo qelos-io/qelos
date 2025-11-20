@@ -24,7 +24,7 @@ const isActive = computed({
 
 // Integration type detection
 const detectedIntegrationType = computed(() => {
-  if (!props.sources?.length) return IntegrationType.Standard;
+  if (!props.sources?.length) return IntegrationType.Workflow;
   return detectIntegrationType(props.integrationForm, props.sources);
 });
 
@@ -32,7 +32,7 @@ const detectedIntegrationType = computed(() => {
 const isAIAgentMode = computed({
   get: () => props.viewMode === IntegrationType.AIAgent,
   set: (value: boolean) => {
-    emit('update:viewMode', value ? IntegrationType.AIAgent : IntegrationType.Standard);
+    emit('update:viewMode', value ? IntegrationType.AIAgent : IntegrationType.Workflow);
   }
 });
 
@@ -51,13 +51,12 @@ const openPasteDialog = () => {
       :inactive-text="$t('Inactive')"
     />
     
-    <!-- AI Agent Mode Toggle (only show when detected as AI Agent) -->
+    <!-- View Mode Toggle -->
     <el-switch
-      v-if="detectedIntegrationType === IntegrationType.AIAgent"
       v-model="isAIAgentMode"
       size="small"
       :active-text="$t('AI Agent')"
-      :inactive-text="$t('Standard')"
+      :inactive-text="$t('Workflow')"
       class="ai-mode-switch"
     />
     
