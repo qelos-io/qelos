@@ -54,6 +54,7 @@ const systemMessage = ref('');
 
 const qelosDetails = ref({
   eventName: '',
+  kind: '',
   description: '',
   password: '',
   roles: '',
@@ -156,6 +157,7 @@ const initTargetDetails = () => {
     // Initialize Qelos details
     qelosDetails.value = {
       eventName: props.modelValue.details?.eventName || '',
+      kind: props.modelValue.details?.kind || '',
       description: props.modelValue.details?.description || '',
       password: props.modelValue.details?.password || '',
       roles: props.modelValue.details?.roles || '',

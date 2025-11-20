@@ -30,6 +30,7 @@ const integrationSourcesStore = useIntegrationSourcesStore();
 const integrationKinds = useIntegrationKinds();
 
 const searchQuery = ref('');
+const hoveredIntegrationId = ref<string | null>(null);
 
 const sourcesById = computed(() => {
   if (!integrationSourcesStore.result) return {} as Record<string, any>;
@@ -103,6 +104,9 @@ const getWorkflowSteps = (integration: IIntegration) => ([
 
 const getSourceName = (sourceId?: string) => sourcesById.value[sourceId || '']?.name || 'Unknown';
 
+const getIntegrationDisplayName = (integration: IIntegration) => integration.trigger?.details?.name || '';
+const getIntegrationDescription = (integration: IIntegration) => integration.target?.details?.description || 'No description';
+
 const getSourceLogo = (sourceId?: string) => {
   if (!sourceId) return null;
   const source = sourcesById.value[sourceId];
@@ -117,13 +121,15 @@ const goToIntegration = (integrationId: string) => {
 const trackHeight = 130;
 const nodeSpacing = 140;
 const nodeY = 70;
-const svgWidth = 1000;
+const baseSvgWidth = 1000;
 const triggerNodeIndex = 0;
 const triggerResponseNodeIndex = 3;
 const nodeRadius = 24;
+const rightShiftOffset = (triggerResponseNodeIndex - triggerNodeIndex) * nodeSpacing;
 
 const svgHeight = computed(() => Math.max(filteredIntegrations.value.length * trackHeight + 80, 200));
-const svgViewBox = computed(() => `0 0 ${svgWidth} ${svgHeight.value}`);
+const svgWidth = computed(() => baseSvgWidth + rightShiftOffset);
+const svgViewBox = computed(() => `0 0 ${svgWidth.value} ${svgHeight.value}`);
 
 const getTrackOffset = (index: number) => index * trackHeight;
 const getNodeX = (index: number) => nodeSpacing * index + 100;
@@ -188,14 +194,31 @@ const interIntegrationConnections = computed<IntegrationConnection[]>(() => {
   return result;
 });
 
+const incomingIntegrationIds = computed(() => {
+  const ids = new Set<string>();
+  interIntegrationConnections.value.forEach(connection => {
+    ids.add(connection.toId);
+  });
+  return ids;
+});
+
+const trackShiftByIntegration = computed(() => {
+  return filteredIntegrations.value.reduce((acc, integration) => {
+    acc[integration._id] = incomingIntegrationIds.value.has(integration._id) ? rightShiftOffset : 0;
+    return acc;
+  }, {} as Record<string, number>);
+});
+
+const getTrackShift = (integrationId: string) => trackShiftByIntegration.value[integrationId] || 0;
+
 const getArrowPath = (connection: IntegrationConnection) => {
   const fromTrack = trackIndexByIntegration.value[connection.fromId];
   const toTrack = trackIndexByIntegration.value[connection.toId];
   if (fromTrack === undefined || toTrack === undefined) return '';
 
-  const startX = getNodeX(triggerResponseNodeIndex) + nodeRadius + 6;
+  const startX = getNodeX(triggerResponseNodeIndex) + nodeRadius + 6 + getTrackShift(connection.fromId);
   const startY = nodeY + getTrackOffset(fromTrack);
-  const endX = getNodeX(triggerNodeIndex) - nodeRadius - 6;
+  const endX = getNodeX(triggerNodeIndex) - nodeRadius - 6 + getTrackShift(connection.toId);
   const endY = nodeY + getTrackOffset(toTrack);
 
   const verticalBend = Math.max(40, Math.abs(endY - startY) * 0.4);
@@ -218,6 +241,11 @@ const interIntegrationArrows = computed<IntegrationArrow[]>(() => {
     })
     .filter((connection): connection is IntegrationArrow => Boolean(connection));
 });
+
+const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null) => {
+  if (!integrationId) return false;
+  return arrow.fromId === integrationId || arrow.toId === integrationId;
+};
 </script>
 
 <template>
@@ -285,27 +313,52 @@ const interIntegrationArrows = computed<IntegrationArrow[]>(() => {
               :key="arrow.id"
               :d="arrow.path"
               marker-end="url(#arrowHead)"
-              class="inter-arrow"
+              :class="[
+                'inter-arrow',
+                { 'inter-arrow--highlighted': isArrowConnected(arrow, hoveredIntegrationId) }
+              ]"
             />
           </g>
 
           <template v-for="(integration, trackIndex) in filteredIntegrations" :key="integration._id">
             <text
               class="integration-title"
-              :x="20"
+              :x="20 + getTrackShift(integration._id)"
               :y="getTrackOffset(trackIndex) + 18"
             >
-              {{ getSourceName(integration.trigger?.source) }} → {{ getSourceName(integration.target?.source) }}
+              <tspan
+                v-if="getIntegrationDisplayName(integration)"
+                class="integration-title integration-title--name"
+              >
+                {{ getIntegrationDisplayName(integration) }} · 
+              </tspan>
+              <tspan>
+                {{ getSourceName(integration.trigger?.source) }} → {{ getSourceName(integration.target?.source) }}
+              </tspan>
             </text>
             <text
               class="integration-description"
-              :x="20"
+              :x="20 + getTrackShift(integration._id)"
               :y="getTrackOffset(trackIndex) + 36"
             >
-              {{ integration.trigger?.details?.name || integration.target?.details?.description || 'No description' }}
+              {{ getIntegrationDescription(integration) }}
+            </text>
+            <text
+              v-if="hoveredIntegrationId === integration._id"
+              class="click-hint"
+              :x="20 + getTrackShift(integration._id)"
+              :y="getTrackOffset(trackIndex) + 52"
+            >
+              Click to edit
             </text>
 
-            <g :transform="`translate(0, ${getTrackOffset(trackIndex)})`" class="integration-track">
+            <g
+              :transform="`translate(${getTrackShift(integration._id)}, ${getTrackOffset(trackIndex)})`"
+              class="integration-track"
+              @mouseenter="hoveredIntegrationId = integration._id"
+              @mouseleave="hoveredIntegrationId = null"
+              @click="goToIntegration(integration._id)"
+            >
               <g class="connection-lines">
                 <line
                   v-for="(step, index) in getWorkflowSteps(integration).slice(0, -1)"
@@ -469,6 +522,12 @@ const interIntegrationArrows = computed<IntegrationArrow[]>(() => {
   animation: flow-arrow 2s linear infinite;
 }
 
+.inter-arrow--highlighted {
+  stroke: rgba(64, 158, 255, 0.85);
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 6px rgba(64, 158, 255, 0.55));
+}
+
 @keyframes flow-arrow {
   from {
     stroke-dashoffset: 0;
@@ -509,6 +568,10 @@ const interIntegrationArrows = computed<IntegrationArrow[]>(() => {
   fill: #303133;
 }
 
+.integration-title--name {
+  font-size: 16px;
+}
+
 .integration-description {
   font-size: 11px;
   fill: #909399;
@@ -516,6 +579,13 @@ const interIntegrationArrows = computed<IntegrationArrow[]>(() => {
 
 .integration-track {
   transition: opacity 0.2s ease;
+  cursor: pointer;
+}
+
+.click-hint {
+  font-size: 10px;
+  fill: #409eff;
+  font-weight: 600;
 }
 
 .empty-state {

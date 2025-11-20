@@ -34,10 +34,6 @@ const totalAIAgentSteps = 4;
 
 const isAIAgentView = computed(() => selectedViewMode.value === IntegrationType.AIAgent);
 const isWorkflowView = computed(() => selectedViewMode.value === IntegrationType.Workflow);
-const isChatCompletionIntegration = computed(() => (
-  !!form.trigger?.source && form.trigger?.operation === QelosTriggerOperation.chatCompletion
-));
-const hasSavedIntegration = computed(() => Boolean(props.editingIntegration?._id));
 
 const canGoNext = computed(() => isAIAgentView.value && aiAgentCurrentStep.value < totalAIAgentSteps - 1);
 const canGoPrevious = computed(() => isAIAgentView.value && aiAgentCurrentStep.value > 0);

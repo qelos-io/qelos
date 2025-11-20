@@ -13,6 +13,7 @@ const emit = defineEmits(['update:modelValue']);
 // Qelos target UI state
 const qelosDetails = ref({
   eventName: '',
+  kind: '',
   description: '',
   password: '',
   roles: '',
@@ -20,7 +21,6 @@ const qelosDetails = ref({
   blueprint: '',
   metadata: {},
   source: '',
-  kind: ''
 });
 
 // Roles input UI state
@@ -49,7 +49,7 @@ const initQelosDetails = () => {
       blueprint: props.modelValue.details.blueprint || '',
       metadata: props.modelValue.details.metadata || {},
       source: props.modelValue.source,
-      kind: props.modelValue.kind
+      kind: props.modelValue.details.kind || ''
     };
   }
 };
@@ -134,10 +134,14 @@ watch(() => props.modelValue, initQelosDetails, { immediate: true });
   <div class="qelos-target-config">
     <!-- Webhook -->
     <div v-if="operation === QelosTargetOperation.webhook" class="webhook-config">
+      <el-form-item :label="$t('Event Kind')">
+        <el-input v-model="qelosDetails.kind" placeholder="e.g., users, orders" @input="syncQelosDetailsToTargetDetails" />
+      </el-form-item>
+      
       <el-form-item :label="$t('Event Name')">
         <el-input v-model="qelosDetails.eventName" placeholder="e.g., user.created" @input="syncQelosDetailsToTargetDetails" />
       </el-form-item>
-      
+
       <el-form-item :label="$t('Description')">
         <el-input v-model="qelosDetails.description" placeholder="Event description" @input="syncQelosDetailsToTargetDetails" />
       </el-form-item>

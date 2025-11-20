@@ -136,7 +136,7 @@ const blockAllFunctions = async () => {
         <el-dropdown trigger="click" @command="handleBulkAction">
           <el-button type="primary" plain size="small">
             {{ $t('Bulk Actions') }}
-            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+            <el-icon class="el-icon--right"><icon-arrow-down /></el-icon>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>

@@ -16,10 +16,6 @@ import {
   Setting, 
   View, 
   ArrowDown,
-  Connection,
-  DataAnalysis,
-  Promotion,
-  Position
 } from '@element-plus/icons-vue';
 
 const trigger = defineModel<any>('trigger', { required: true });

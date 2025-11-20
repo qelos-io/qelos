@@ -330,7 +330,7 @@
               <el-button type="success" plain class="template-button" :aria-haspopup="true">
                 <el-icon aria-hidden="true"><Document /></el-icon>
                 {{ $t('Use Template') }}
-                <el-icon class="el-icon--right" aria-hidden="true"><arrow-down /></el-icon>
+                <el-icon class="el-icon--right" aria-hidden="true"><icon-arrow-down /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu role="menu">
