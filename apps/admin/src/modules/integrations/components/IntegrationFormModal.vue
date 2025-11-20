@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import type { IIntegration } from '@qelos/global-types';
-import { QelosTriggerOperation } from '@qelos/global-types';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import integrationsService from '@/services/apis/integrations-service';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { ElMessage } from 'element-plus';
-import { detectIntegrationType, IntegrationType } from '@/modules/integrations/utils/integration-type-detector';
+import { IntegrationType } from '@/modules/integrations/utils/integration-type-detector';
 import AIAgentForm from '@/modules/integrations/components/forms/AIAgentForm.vue';
 import IntegrationFormModalHeader from '@/modules/integrations/components/IntegrationFormModalHeader.vue';
 import WorkflowIntegrationView from '@/modules/integrations/components/WorkflowIntegrationView.vue';
-import WorkflowIntegrationTabs from '@/modules/integrations/components/WorkflowIntegrationTabs.vue';
 import { useIntegrationFormState } from '@/modules/integrations/compositions/use-integration-form-state';
 
 const visible = defineModel<boolean>('visible');

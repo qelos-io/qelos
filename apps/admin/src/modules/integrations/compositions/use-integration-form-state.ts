@@ -1,4 +1,4 @@
-import { computed, nextTick, reactive, ref, watch } from 'vue';
+import { nextTick, reactive, ref, watch } from 'vue';
 import type { Ref } from 'vue';
 import { IIntegration, IDataManipulationStep, IntegrationSourceKind } from '@qelos/global-types';
 import { detectIntegrationType, IntegrationType } from '@/modules/integrations/utils/integration-type-detector';

@@ -33,16 +33,15 @@ watch(viewMode, newMode => {
 });
 
 watch(() => route.query.view, newView => {
-  const normalized = newView === 'workflows' ? 'workflows' : 'list';
-  if (viewMode.value !== normalized) {
-    viewMode.value = normalized;
+  if (newView !== 'workflows' && newView !== 'list') return;
+  if (viewMode.value !== newView) {
+    viewMode.value = newView;
   }
 });
 
 const createRouteQuery = computed(() => buildQuery({
   mode: route.query.mode ? undefined : 'create',
   id: undefined,
-  view: viewMode.value,
 }));
 
 const editingIntegration = computed(() => {
@@ -55,7 +54,7 @@ const editingIntegration = computed(() => {
 
 const closeIntegrationFormModal = () => {
   integrationsStore.retry();
-  router.push({ query: buildQuery({ mode: undefined, id: undefined, view: viewMode.value }) });
+  router.push({ query: buildQuery({ mode: undefined, id: undefined }) });
 }
 </script>
 
