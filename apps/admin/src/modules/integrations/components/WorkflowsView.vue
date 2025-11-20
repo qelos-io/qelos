@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElButton, ElEmpty, ElInput } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
@@ -31,6 +31,45 @@ const integrationKinds = useIntegrationKinds();
 
 const searchQuery = ref('');
 const hoveredIntegrationId = ref<string | null>(null);
+const zoomLevel = ref(1);
+const zoomBounds = { min: 0.6, max: 2.4 };
+const zoomSensitivity = 0.0015;
+const panX = ref(0);
+const panY = ref(0);
+const integrationDiagramRef = ref<HTMLElement | null>(null);
+const viewportSize = ref({ width: 0, height: 0 });
+let resizeObserver: ResizeObserver | null = null;
+
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+const workflowTransformStyle = computed(() => ({
+  transform: `translate(${panX.value}px, ${panY.value}px) scale(${zoomLevel.value})`,
+  transformOrigin: '0 0'
+}));
+
+const handleWorkflowWheel = (event: WheelEvent) => {
+  if (event.ctrlKey) {
+    event.preventDefault();
+    const nextZoom = clamp(
+      zoomLevel.value - event.deltaY * zoomSensitivity,
+      zoomBounds.min,
+      zoomBounds.max
+    );
+    zoomLevel.value = Number(nextZoom.toFixed(3));
+    return;
+  }
+
+  event.preventDefault();
+  panX.value = clamp(panX.value - event.deltaX, minPanX.value, 0);
+  panY.value = clamp(panY.value - event.deltaY, minPanY.value, 0);
+};
+
+const cleanupResizeObserver = () => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
+};
 
 const sourcesById = computed(() => {
   if (!integrationSourcesStore.result) return {} as Record<string, any>;
@@ -131,10 +170,45 @@ const svgHeight = computed(() => Math.max(filteredIntegrations.value.length * tr
 const svgWidth = computed(() => baseSvgWidth + rightShiftOffset);
 const svgViewBox = computed(() => `0 0 ${svgWidth.value} ${svgHeight.value}`);
 
+const scaledWidth = computed(() => svgWidth.value * zoomLevel.value);
+const scaledHeight = computed(() => svgHeight.value * zoomLevel.value);
+const minPanX = computed(() => Math.min(0, viewportSize.value.width - scaledWidth.value));
+const minPanY = computed(() => Math.min(0, viewportSize.value.height - scaledHeight.value));
+
+const clampPanOffsets = () => {
+  panX.value = clamp(panX.value, minPanX.value, 0);
+  panY.value = clamp(panY.value, minPanY.value, 0);
+};
+
+onMounted(() => {
+  if (typeof window === 'undefined' || !integrationDiagramRef.value) return;
+  resizeObserver = new ResizeObserver(entries => {
+    if (!entries.length) return;
+    const { width, height } = entries[0].contentRect;
+    viewportSize.value = { width, height };
+    clampPanOffsets();
+  });
+  resizeObserver.observe(integrationDiagramRef.value);
+});
+
+onUnmounted(() => {
+  cleanupResizeObserver();
+});
+
 const getTrackOffset = (index: number) => index * trackHeight;
 const getNodeX = (index: number) => nodeSpacing * index + 100;
 const getLineStartX = (index: number) => nodeSpacing * index + 120;
 const getLineEndX = (index: number) => nodeSpacing * (index + 1) + 70;
+
+watch([scaledWidth, scaledHeight, () => viewportSize.value.width, () => viewportSize.value.height], () => {
+  clampPanOffsets();
+});
+
+watch(filteredIntegrations, () => {
+  panX.value = 0;
+  panY.value = 0;
+  clampPanOffsets();
+});
 
 const createSignature = (source?: string, kind?: string, eventName?: string): Signature | null => {
   if (!source || !kind || !eventName) return null;
@@ -274,13 +348,19 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
         </el-empty>
       </div>
 
-      <div v-else class="integration-diagram">
-        <svg
-          class="workflow-svg"
-          :viewBox="svgViewBox"
-          preserveAspectRatio="xMidYMid meet"
-          :height="svgHeight"
-        >
+      <div
+        v-else
+        ref="integrationDiagramRef"
+        class="integration-diagram"
+        @wheel="handleWorkflowWheel"
+      >
+        <div class="workflow-viewport" :style="workflowTransformStyle">
+          <svg
+            class="workflow-svg"
+            :viewBox="svgViewBox"
+            preserveAspectRatio="xMidYMid meet"
+            :height="svgHeight"
+          >
           <defs>
             <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" style="stop-color:#409eff;stop-opacity:0.2" />
@@ -456,7 +536,8 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
               </g>
             </g>
           </template>
-        </svg>
+          </svg>
+        </div>
       </div>
     </div>
   </div>
@@ -504,6 +585,13 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
 
 .integration-diagram {
   position: relative;
+  overflow: auto;
+}
+
+.workflow-viewport {
+  transform-origin: top left;
+  transition: transform 0.12s ease-out;
+  will-change: transform;
 }
 
 .workflow-svg {
