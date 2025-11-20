@@ -6,6 +6,9 @@ qelos is a saas platform to create saas applications
 it is multi-tenant
 the tech stack is: node.js, express, mongodb, redis, mongoose.
 the frontend tech stack is: vue 3.5 with composition api, pinia, element-plus, vue-i18n, vue-router, vue-echarts, monaco-editor, primevue
+when writing css and styles: always prefer using inset positons like inline and block instead of top, left, bottom and right.
+when an input have to be ltr, like a code line, a script line, etc - ude the dir="ltr" attribute - we already defined it in css to assure it will work.
+
 the /apps/gateway is the source to all requests.
 /packages/api-kit is the api kit for all backend services. it uses express.js, node, axios, morgan for logs.
 in vue.js components, prefer composition api, prefer to use defineModel() when possible instead of defineProps() + defineEmits() for "update:modelValue".
