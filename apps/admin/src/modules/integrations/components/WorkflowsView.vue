@@ -386,6 +386,7 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
         v-else
         ref="integrationDiagramRef"
         class="integration-diagram"
+        dir="ltr"
         @wheel="handleWorkflowWheel"
       >
         <div class="workflow-viewport" :style="workflowTransformStyle">
