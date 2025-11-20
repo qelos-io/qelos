@@ -24,7 +24,11 @@
   }
 
   .el-button + .el-button {
-	margin-inline: 10px 0;
+	  margin-inline: 10px 0;
+  }
+
+  .el-button-group > .el-button + .el-button {
+    margin-inline: 0;
   }
 
   .el-button [class*=el-icon] + span {
