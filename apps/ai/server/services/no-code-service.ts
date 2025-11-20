@@ -42,7 +42,7 @@ function callNoCodeService(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE
       
       // Re-throw with more context
       if (error.code === 'ECONNABORTED') {
-        throw new Error(`No-code service timeout: ${method} ${url} (tenant: ${tenant})`);
+        throw new Error(`No-code service timeout: ${method} (tenant: ${tenant})`);
       }
       throw error;
     });
@@ -69,7 +69,7 @@ export function callPublicNoCodeService(url: string, {tenant, user}: {tenant: st
       
       // Re-throw with more context
       if (error.code === 'ECONNABORTED') {
-        throw new Error(`No-code service timeout: ${method} ${url} (tenant: ${tenant}, user: ${user})`);
+        throw new Error(`No-code service timeout: ${method} (tenant: ${tenant}, user: ${user})`);
       }
       throw error;
     });

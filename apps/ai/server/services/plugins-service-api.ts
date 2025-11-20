@@ -26,7 +26,7 @@ export function calPublicPluginsService(url: string, {tenant, user}: {tenant: st
       
       // Re-throw with more context
       if (error.code === 'ECONNABORTED') {
-        throw new Error(`Plugins service timeout: ${method} ${url} (tenant: ${tenant})`);
+        throw new Error(`Plugins service timeout: ${method} (tenant: ${tenant})`);
       }
       throw error;
     });
@@ -52,7 +52,7 @@ export function callPluginsService(url: string, tenant: string, data?: any, meth
       
       // Re-throw with more context
       if (error.code === 'ECONNABORTED') {
-        throw new Error(`Plugins service timeout: ${method} ${url} (tenant: ${tenant})`);
+        throw new Error(`Plugins service timeout: ${method} (tenant: ${tenant})`);
       }
       throw error;
     });

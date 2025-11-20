@@ -111,7 +111,7 @@ const getStepStatus = (integration: IIntegration, stepId: string) => {
     case 'trigger':
       return integration.trigger?.source && integration.trigger?.details ? 'success' : 'error';
     case 'data-manipulation':
-      return integration.dataManipulation?.length ? 'success' : 'inactive';
+      return 'success';
     case 'target':
       return integration.target?.source && integration.target?.details ? 'success' : 'error';
     case 'trigger-response':
