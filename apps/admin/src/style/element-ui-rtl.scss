@@ -69,3 +69,8 @@
     border-radius: var(--el-border-radius-base);
   }
 }
+
+.el-radio-button__inner {
+  border: var(--el-border);
+  border-inline-start: 0;
+}
