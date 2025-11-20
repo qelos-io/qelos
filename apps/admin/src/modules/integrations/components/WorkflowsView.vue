@@ -145,6 +145,7 @@ const getSourceName = (sourceId?: string) => sourcesById.value[sourceId || '']?.
 
 const getIntegrationDisplayName = (integration: IIntegration) => integration.trigger?.details?.name || '';
 const getIntegrationDescription = (integration: IIntegration) => integration.target?.details?.description || 'No description';
+const isIntegrationActive = (integration: IIntegration) => integration.active !== false;
 
 const getSourceLogo = (sourceId?: string) => {
   if (!sourceId) return null;
@@ -415,6 +416,12 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
               <tspan>
                 {{ getSourceName(integration.trigger?.source) }} → {{ getSourceName(integration.target?.source) }}
               </tspan>
+              <tspan
+                v-if="!isIntegrationActive(integration)"
+                class="integration-status-tag"
+              >
+                · Inactive
+              </tspan>
             </text>
             <text
               class="integration-description"
@@ -435,6 +442,7 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
             <g
               :transform="`translate(${getTrackShift(integration._id)}, ${getTrackOffset(trackIndex)})`"
               class="integration-track"
+              :class="{ 'integration-track--inactive': !isIntegrationActive(integration) }"
               @mouseenter="hoveredIntegrationId = integration._id"
               @mouseleave="hoveredIntegrationId = null"
               @click="goToIntegration(integration._id)"
@@ -586,6 +594,20 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
 .integration-diagram {
   position: relative;
   overflow: auto;
+}
+
+.integration-track {
+  transition: opacity 0.2s ease;
+}
+
+.integration-track--inactive {
+  opacity: 0.4;
+}
+
+.integration-status-tag {
+  fill: #f56c6c;
+  font-weight: 600;
+  font-size: 12px;
 }
 
 .workflow-viewport {
