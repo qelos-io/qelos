@@ -5,7 +5,7 @@ import ConnectionsList from '@/modules/integrations/components/ConnectionsList.v
 import IntegrationsList from '@/modules/integrations/components/IntegrationsList.vue';
 import WorkflowsView from '@/modules/integrations/components/WorkflowsView.vue';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElRadioGroup, ElRadioButton } from 'element-plus';
 import { List, Connection } from '@element-plus/icons-vue';
@@ -14,7 +14,35 @@ const route = useRoute();
 const integrationsStore = useIntegrationsStore();
 const router = useRouter();
 
-const viewMode = ref<'list' | 'workflows'>('list');
+const initialViewMode = route.query.view === 'workflows' ? 'workflows' : 'list';
+const viewMode = ref<'list' | 'workflows'>(initialViewMode);
+
+const buildQuery = (updates: Record<string, string | string[] | undefined>) => {
+  const newQuery = { ...route.query, ...updates } as Record<string, any>;
+  Object.keys(newQuery).forEach(key => {
+    if (newQuery[key] === undefined) {
+      delete newQuery[key];
+    }
+  });
+  return newQuery;
+};
+
+watch(viewMode, newMode => {
+  if (route.query.view === newMode) return;
+  router.replace({ query: buildQuery({ view: newMode }) });
+});
+
+watch(() => route.query.view, newView => {
+  const normalized = newView === 'workflows' ? 'workflows' : 'list';
+  if (viewMode.value !== normalized) {
+    viewMode.value = normalized;
+  }
+});
+
+const createRouteQuery = computed(() => buildQuery({
+  mode: route.query.mode ? undefined : 'create',
+  id: undefined,
+}));
 
 const editingIntegration = computed(() => {
   if (route.query.mode === 'create') return undefined;
@@ -26,7 +54,7 @@ const editingIntegration = computed(() => {
 
 const closeIntegrationFormModal = () => {
   integrationsStore.retry();
-  router.push({ query: { mode: undefined, id: undefined } });
+  router.push({ query: buildQuery({ mode: undefined, id: undefined }) });
 }
 </script>
 
@@ -35,18 +63,18 @@ const closeIntegrationFormModal = () => {
     <ListPageTitle 
       title="Integrations" 
       description="Integrations connect your application to external services and APIs. Set up triggers, actions, and data flows between different platforms."
-      :create-route-query="{ mode: $route.query.mode ? undefined : 'create' }" 
+      :create-route-query="createRouteQuery"
     />
     
     <div class="view-mode-selector">
       <el-radio-group v-model="viewMode" size="default">
         <el-radio-button value="list">
           <el-icon><List /></el-icon>
-          List View
+          {{ $t('List View') }}
         </el-radio-button>
         <el-radio-button value="workflows">
           <el-icon><Connection /></el-icon>
-          Workflows
+          {{ $t('Workflows') }}
         </el-radio-button>
       </el-radio-group>
     </div>
@@ -69,5 +97,6 @@ const closeIntegrationFormModal = () => {
   margin-bottom: 20px;
   display: flex;
   justify-content: center;
+  border-radius: var(--border-radius);
 }
 </style>

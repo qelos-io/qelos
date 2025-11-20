@@ -23,6 +23,7 @@
   --header-height: 55px;
   --collapsed-nav-width: 64px;
   --nav-width: 240px;
+  --el-border-radius-base: var(--border-radius, 4px);
 }
 
 body:has(nav.collapsed) {

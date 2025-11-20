@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import { ElButton, ElEmpty, ElInput } from 'element-plus';
-import { Search } from '@element-plus/icons-vue';
+import { useRoute, useRouter } from 'vue-router';
+import { ElButton, ElEmpty } from 'element-plus';
+import { ZoomIn, ZoomOut, Refresh } from '@element-plus/icons-vue';
 import { useIntegrationsStore } from '../store/integrations';
 import { useIntegrationSourcesStore } from '../store/integration-sources';
 import { useIntegrationKinds } from '../compositions/integration-kinds';
@@ -24,18 +24,20 @@ interface IntegrationArrow extends IntegrationConnection {
   path: string;
 }
 
+const route = useRoute();
 const router = useRouter();
 const integrationsStore = useIntegrationsStore();
 const integrationSourcesStore = useIntegrationSourcesStore();
 const integrationKinds = useIntegrationKinds();
 
-const searchQuery = ref('');
+const globalSearchQuery = computed(() => (route.query.q as string) || '');
 const hoveredIntegrationId = ref<string | null>(null);
 const zoomLevel = ref(1);
 const zoomBounds = { min: 0.6, max: 2.4 };
 const zoomSensitivity = 0.0015;
 const panX = ref(0);
 const panY = ref(0);
+const showInactive = ref(true);
 const integrationDiagramRef = ref<HTMLElement | null>(null);
 const viewportSize = ref({ width: 0, height: 0 });
 let resizeObserver: ResizeObserver | null = null;
@@ -50,12 +52,7 @@ const workflowTransformStyle = computed(() => ({
 const handleWorkflowWheel = (event: WheelEvent) => {
   if (event.ctrlKey) {
     event.preventDefault();
-    const nextZoom = clamp(
-      zoomLevel.value - event.deltaY * zoomSensitivity,
-      zoomBounds.min,
-      zoomBounds.max
-    );
-    zoomLevel.value = Number(nextZoom.toFixed(3));
+    setZoomLevel(zoomLevel.value - event.deltaY * zoomSensitivity);
     return;
   }
 
@@ -71,6 +68,8 @@ const cleanupResizeObserver = () => {
   }
 };
 
+const isIntegrationActive = (integration: IIntegration) => integration.active !== false;
+
 const sourcesById = computed(() => {
   if (!integrationSourcesStore.result) return {} as Record<string, any>;
   return integrationSourcesStore.result.reduce((acc, source) => {
@@ -81,10 +80,13 @@ const sourcesById = computed(() => {
 
 const filteredIntegrations = computed(() => {
   const integrations = integrationsStore.integrations || [];
-  const query = searchQuery.value.trim().toLowerCase();
-  if (!query) return integrations;
+  const query = globalSearchQuery.value.trim().toLowerCase();
 
   return integrations.filter(integration => {
+    if (!showInactive.value && !isIntegrationActive(integration)) return false;
+
+    if (!query) return true;
+
     const triggerName = sourcesById.value[integration.trigger?.source]?.name || '';
     const targetName = sourcesById.value[integration.target?.source]?.name || '';
     const triggerOp = integration.trigger?.operation || '';
@@ -145,7 +147,6 @@ const getSourceName = (sourceId?: string) => sourcesById.value[sourceId || '']?.
 
 const getIntegrationDisplayName = (integration: IIntegration) => integration.trigger?.details?.name || '';
 const getIntegrationDescription = (integration: IIntegration) => integration.target?.details?.description || 'No description';
-const isIntegrationActive = (integration: IIntegration) => integration.active !== false;
 
 const getSourceLogo = (sourceId?: string) => {
   if (!sourceId) return null;
@@ -179,6 +180,25 @@ const minPanY = computed(() => Math.min(0, viewportSize.value.height - scaledHei
 const clampPanOffsets = () => {
   panX.value = clamp(panX.value, minPanX.value, 0);
   panY.value = clamp(panY.value, minPanY.value, 0);
+};
+
+const setZoomLevel = (value: number) => {
+  const next = clamp(value, zoomBounds.min, zoomBounds.max);
+  zoomLevel.value = Number(next.toFixed(3));
+  clampPanOffsets();
+};
+
+const zoomIn = () => setZoomLevel(zoomLevel.value + 0.15);
+const zoomOut = () => setZoomLevel(zoomLevel.value - 0.15);
+const resetZoom = () => {
+  zoomLevel.value = 1;
+  panX.value = 0;
+  panY.value = 0;
+  clampPanOffsets();
+};
+
+const toggleInactiveVisibility = () => {
+  showInactive.value = !showInactive.value;
 };
 
 onMounted(() => {
@@ -326,18 +346,31 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
 <template>
   <div class="workflows-view">
     <div class="workflows-header">
-      <div class="workflows-title">
-        <h2>Integration Workflows</h2>
-        <p>Review every integration visually to understand its flow</p>
-      </div>
+      <div class="workflows-actions">
+        <div class="workflow-toolbar">
+          <el-button-group>
+            <el-button size="small" plain @click="zoomOut" title="Zoom out">
+              <el-icon><ZoomOut /></el-icon>
+            </el-button>
+            <el-button size="small" plain @click="resetZoom" title="Reset zoom">
+              <el-icon><Refresh /></el-icon>
+              {{ $t('Reset') }}
+            </el-button>
+            <el-button size="small" plain @click="zoomIn" title="Zoom in">
+              <el-icon><ZoomIn /></el-icon>
+            </el-button>
+          </el-button-group>
 
-      <el-input
-        v-model="searchQuery"
-        placeholder="Search integrations..."
-        :prefix-icon="Search"
-        class="search-input"
-        clearable
-      />
+          <el-button
+            size="small"
+            :type="showInactive ? 'default' : 'primary'"
+            plain
+            @click="toggleInactiveVisibility"
+          >
+            {{ showInactive ? 'Hide Inactive' : 'Show Inactive' }}
+          </el-button>
+        </div>
+      </div>
     </div>
 
     <div class="integration-list">
@@ -553,7 +586,7 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
 
 <style scoped>
 .workflows-view {
-  padding: 24px;
+  padding: 12px;
   background: #f5f7fa;
   min-height: calc(100vh - 160px);
   border-radius: 12px;
@@ -561,11 +594,19 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
 
 .workflows-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
   gap: 16px;
+}
+
+.workflows-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .workflows-title h2 {
@@ -582,6 +623,14 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
 
 .search-input {
   width: 320px;
+}
+
+.workflow-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .integration-list {
