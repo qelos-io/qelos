@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
@@ -8,6 +8,8 @@ import { TriggerOperation, useIntegrationKindsTriggerOperations } from '@/module
 import { OpenAITargetOperation, IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
 import { ElMessage } from 'element-plus';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
+import eventsService, { IEvent } from '@/services/apis/events-service';
+import { PLATFORM_EVENTS, PlatformEventDefinition } from '@/modules/integrations/constants/platform-events';
 
 const props = defineProps<{
   modelValue: any;
@@ -23,6 +25,13 @@ const integrationsStore = useIntegrationsStore();
 
 const selectedTriggerOperation = ref<TriggerOperation>();
 const recordThread = ref(false);
+const webhookSamples = ref<IEvent[]>([]);
+const webhookSamplesLoading = ref(false);
+const webhookSamplesError = ref<string | null>(null);
+const webhookSampleMetadata = ref('');
+const webhookSampleLoading = ref(false);
+const webhookSampleSelectedId = ref<string | null>(null);
+let webhookSamplesLoadTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Computed property for the chat completion URL
 const getCompletionUrl = computed(() => {
@@ -41,8 +50,58 @@ const urlHelpText = computed(() => {
 // Computed property for the selected source
 const selectedTriggerSource = computed(() => store.result?.find(s => s._id === props.modelValue.source));
 
+const isQelosWebhook = computed(() => selectedTriggerSource.value?.kind === IntegrationSourceKind.Qelos && props.modelValue.operation === QelosTriggerOperation.webhook);
+
+const canLoadWebhookSamples = computed(() => {
+  if (!isQelosWebhook.value) return false;
+  const details = props.modelValue.details || {};
+  return Boolean(details.source && details.kind && details.eventName);
+});
+
+const platformEvents: PlatformEventDefinition[] = PLATFORM_EVENTS;
+
+const platformEventSources = computed(() => Array.from(new Set(platformEvents.map(event => event.source))).sort());
+
+type SuggestionFetcher = (queryString: string, cb: (data: { value: string }[]) => void) => void;
+
+const createSuggestionFetcher = (valuesGetter: () => string[]): SuggestionFetcher => {
+  return (queryString, cb) => {
+    const normalized = queryString.trim().toLowerCase();
+    const values = valuesGetter()
+      .filter((value) => !normalized || value.toLowerCase().includes(normalized))
+      .slice(0, 10)
+      .map((value) => ({ value }));
+    cb(values);
+  };
+};
+
+const fetchSourceSuggestions = createSuggestionFetcher(() => platformEventSources.value);
+
+const fetchKindSuggestions = createSuggestionFetcher(() => {
+  const source = props.modelValue.details?.source;
+  const kinds = platformEvents
+    .filter((event) => !source || event.source === source)
+    .map((event) => event.kind);
+  return Array.from(new Set(kinds)).sort();
+});
+
+const fetchEventNameSuggestions = createSuggestionFetcher(() => {
+  const { source, kind } = props.modelValue.details || {};
+  const events = platformEvents
+    .filter((event) => (!source || event.source === source) && (!kind || event.kind === kind))
+    .map((event) => event.eventName);
+  return Array.from(new Set(events)).sort();
+});
+
 // Use a ref for the trigger details JSON instead of a computed property
 const triggerDetailsText = ref(JSON.stringify(props.modelValue.details || {}, null, 2));
+
+const commitTriggerDetails = (details: Record<string, any>) => {
+  const newModelValue = { ...props.modelValue };
+  newModelValue.details = JSON.parse(JSON.stringify(details || {}));
+  triggerDetailsText.value = JSON.stringify(newModelValue.details || {}, null, 2);
+  emit('update:modelValue', newModelValue);
+};
 
 // Reactive refs for function calling form
 const functionName = ref('');
@@ -75,6 +134,95 @@ const updateTriggerDetails = (value: string) => {
     emit('update:modelValue', newModelValue);
   } catch (e) {
     // Invalid JSON, ignore
+  }
+};
+
+const scheduleWebhookSamplesLoad = (immediate = false) => {
+  if (webhookSamplesLoadTimeout) {
+    clearTimeout(webhookSamplesLoadTimeout);
+    webhookSamplesLoadTimeout = null;
+  }
+
+  if (!canLoadWebhookSamples.value || !isQelosWebhook.value) {
+    return;
+  }
+
+  webhookSamplesLoadTimeout = setTimeout(() => {
+    webhookSamplesLoadTimeout = null;
+    loadWebhookSamples();
+  }, immediate ? 0 : 600);
+};
+
+type WebhookField = 'source' | 'kind' | 'eventName';
+
+const updateWebhookDetail = (field: WebhookField, value: string) => {
+  const details = { ...(props.modelValue.details || {}) };
+  details[field] = value;
+  commitTriggerDetails(details);
+};
+
+const loadWebhookSamples = async () => {
+  if (!canLoadWebhookSamples.value) {
+    webhookSamplesError.value = 'Fill source, kind, and event name to search for events.';
+    return;
+  }
+
+  webhookSamplesLoading.value = true;
+  webhookSamplesError.value = null;
+  webhookSampleMetadata.value = '';
+  webhookSampleSelectedId.value = null;
+
+  try {
+    const details = props.modelValue.details || {};
+    const events = await eventsService.getAll({
+      source: details.source,
+      kind: details.kind,
+      eventName: details.eventName,
+      period: 'last-month',
+      page: 0,
+    });
+    webhookSamples.value = events;
+  } catch (error: any) {
+    webhookSamplesError.value = error?.message || 'Failed to load webhook events.';
+    webhookSamples.value = [];
+  } finally {
+    webhookSamplesLoading.value = false;
+  }
+};
+
+const previewWebhookSample = async (sample: IEvent) => {
+  webhookSampleSelectedId.value = sample._id;
+  webhookSampleLoading.value = true;
+  webhookSampleMetadata.value = '';
+  webhookSamplesError.value = null;
+
+  try {
+    const event = await eventsService.getOne(sample._id);
+    webhookSampleMetadata.value = JSON.stringify(event || {}, null, 2);
+  } catch (error: any) {
+    webhookSamplesError.value = error?.message || 'Failed to load sample payload.';
+  } finally {
+    webhookSampleLoading.value = false;
+  }
+};
+
+const applyWebhookSampleDetails = (sample: IEvent) => {
+  const details = { ...(props.modelValue.details || {}) };
+  details.source = sample.source;
+  details.kind = sample.kind;
+  details.eventName = sample.eventName;
+  commitTriggerDetails(details);
+};
+
+const formatEventTimestamp = (value?: string | Date) => {
+  if (!value) return '-';
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(new Date(value));
+  } catch (error) {
+    return typeof value === 'string' ? value : new Date(value).toISOString();
   }
 };
 
@@ -112,6 +260,7 @@ const handleSourceChange = () => {
   const newModelValue = { ...props.modelValue };
   newModelValue.operation = '';
   newModelValue.details = {};
+  triggerDetailsText.value = JSON.stringify(newModelValue.details, null, 2);
   emit('update:modelValue', newModelValue);
 };
 
@@ -141,28 +290,20 @@ const handleOperationChange = () => {
     newModelValue.details = JSON.parse(JSON.stringify(operation?.details || {}));
   }
   
+  triggerDetailsText.value = JSON.stringify(newModelValue.details || {}, null, 2);
   emit('update:modelValue', newModelValue);
 };
 
 // Set trigger details from option
 const setTriggerDetails = (optionValue: any) => {
-  const newModelValue = { ...props.modelValue };
-  newModelValue.details = optionValue;
-  triggerDetailsText.value = JSON.stringify(optionValue, null, 2);
-  emit('update:modelValue', newModelValue);
+  commitTriggerDetails(optionValue);
 };
 
 // Update recordThread setting in the model details
 const updateRecordThreadSetting = () => {
-  const newModelValue = { ...props.modelValue };
-  if (!newModelValue.details) {
-    newModelValue.details = {};
-  }
-  
-  // Set recordThread in the details
-  newModelValue.details.recordThread = recordThread.value;
-  
-  emit('update:modelValue', newModelValue);
+  const details = { ...(props.modelValue.details || {}) };
+  details.recordThread = recordThread.value;
+  commitTriggerDetails(details);
 };
 
 // Initialize the UI when the component is mounted
@@ -194,6 +335,42 @@ onMounted(() => {
     }
   }
 });
+
+onBeforeUnmount(() => {
+  if (webhookSamplesLoadTimeout) {
+    clearTimeout(webhookSamplesLoadTimeout);
+    webhookSamplesLoadTimeout = null;
+  }
+});
+
+watch(
+  () => props.modelValue.details,
+  (details) => {
+    triggerDetailsText.value = JSON.stringify(details || {}, null, 2);
+  },
+  { deep: true }
+);
+
+watch(
+  () => [
+    isQelosWebhook.value,
+    props.modelValue.details?.source,
+    props.modelValue.details?.kind,
+    props.modelValue.details?.eventName
+  ],
+  () => {
+    webhookSamples.value = [];
+    webhookSampleMetadata.value = '';
+    webhookSampleSelectedId.value = null;
+    webhookSamplesError.value = null;
+    if (isQelosWebhook.value && canLoadWebhookSamples.value) {
+      scheduleWebhookSamplesLoad();
+    } else if (webhookSamplesLoadTimeout) {
+      clearTimeout(webhookSamplesLoadTimeout);
+      webhookSamplesLoadTimeout = null;
+    }
+  }
+);
 </script>
 
 <style>
@@ -217,6 +394,45 @@ onMounted(() => {
   font-size: 0.7em !important;
   color: var(--el-text-color-secondary) !important;
   margin-right: 8px !important;
+}
+
+.webhook-config {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.webhook-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-block-start: 8px;
+}
+
+.webhook-alert {
+  margin-block-start: 12px;
+}
+
+.webhook-samples {
+  margin-block-start: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.webhook-samples-table {
+  width: 100%;
+}
+
+.webhook-sample-metadata {
+  margin-block-start: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.webhook-sample-textarea :deep(textarea) {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 </style>
 
@@ -316,6 +532,110 @@ onMounted(() => {
         </div>
         <div v-else class="chat-completion-info">
           <p class="help-text">The chat completion URL will be available after saving the integration</p>
+        </div>
+      </div>
+
+      <!-- Qelos Webhook Form -->
+      <div v-else-if="selectedTriggerSource?.kind === IntegrationSourceKind.Qelos && modelValue.operation === QelosTriggerOperation.webhook" class="webhook-config">
+        <el-form label-position="top" class="webhook-form">
+          <el-form-item label="Source" required>
+            <el-autocomplete
+              :model-value="modelValue.details?.source || ''"
+              :fetch-suggestions="fetchSourceSuggestions"
+              highlight-first-item
+              placeholder="e.g., auth"
+              dir="ltr"
+              @input="(val) => updateWebhookDetail('source', val as string)"
+              @select="(item) => updateWebhookDetail('source', item.value)"
+            />
+            <small class="help-text">Available sources are documented in the <a href="https://docs.qelos.io/plugin-play/events#complete-event-list" target="_blank" rel="noopener noreferrer">platform events catalog</a>.</small>
+          </el-form-item>
+          <el-form-item label="Kind" required>
+            <el-autocomplete
+              :model-value="modelValue.details?.kind || ''"
+              :fetch-suggestions="fetchKindSuggestions"
+              highlight-first-item
+              placeholder="e.g., signup"
+              dir="ltr"
+              @input="(val) => updateWebhookDetail('kind', val as string)"
+              @select="(item) => updateWebhookDetail('kind', item.value)"
+            />
+            <small class="help-text">Usually matches the domain of the event, such as signup, workspaces, or blueprints.</small>
+          </el-form-item>
+          <el-form-item label="Event name" required>
+            <el-autocomplete
+              :model-value="modelValue.details?.eventName || ''"
+              :fetch-suggestions="fetchEventNameSuggestions"
+              highlight-first-item
+              placeholder="e.g., user-registered"
+              dir="ltr"
+              @input="(val) => updateWebhookDetail('eventName', val as string)"
+              @select="(item) => updateWebhookDetail('eventName', item.value)"
+            />
+            <small class="help-text">Use the kebab-case event identifier.</small>
+          </el-form-item>
+        </el-form>
+
+        <div class="webhook-actions">
+          <el-button
+            type="primary"
+            :disabled="!canLoadWebhookSamples"
+            :loading="webhookSamplesLoading"
+            @click="loadWebhookSamples"
+          >
+            Check existing webhooks
+          </el-button>
+          <small class="help-text">We retrieve matching events from the last month.</small>
+        </div>
+
+        <el-alert
+          v-if="webhookSamplesError"
+          type="error"
+          :closable="false"
+          class="webhook-alert"
+        >
+          {{ webhookSamplesError }}
+        </el-alert>
+
+        <div v-if="webhookSamples.length" class="webhook-samples">
+          <h5>Recent matching events</h5>
+          <el-table :data="webhookSamples" size="small" border class="webhook-samples-table">
+            <el-table-column prop="source" label="Source" width="120" />
+            <el-table-column prop="kind" label="Kind" width="140" />
+            <el-table-column prop="eventName" label="Event" />
+            <el-table-column label="Received" width="200">
+              <template #default="{ row }">
+                {{ formatEventTimestamp(row.created) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="Actions" width="200">
+              <template #default="{ row }">
+                <el-button link type="primary" :loading="webhookSampleLoading && webhookSampleSelectedId === row._id" @click="previewWebhookSample(row)">
+                  Preview payload
+                </el-button>
+                <el-button link type="success" @click="applyWebhookSampleDetails(row)">
+                  Use event
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <p v-else-if="!webhookSamplesLoading" class="help-text">
+          No matching events were found for the selected identifiers in the last month.
+        </p>
+
+        <div v-if="webhookSampleMetadata" class="webhook-sample-metadata">
+          <h5>Sample payload</h5>
+          <el-input
+            type="textarea"
+            :model-value="webhookSampleMetadata"
+            readonly
+            dir="ltr"
+            :autosize="{ minRows: 8 }"
+            class="webhook-sample-textarea"
+          />
+          <small class="help-text">Review the payload shape before wiring downstream steps.</small>
         </div>
       </div>
       

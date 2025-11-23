@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import TriggerTab from '@/modules/integrations/components/tabs/TriggerTab.vue';
 import DataManipulationTab from '@/modules/integrations/components/tabs/DataManipulationTab.vue';
 import TargetTab from '@/modules/integrations/components/tabs/TargetTab.vue';
@@ -25,6 +25,7 @@ const dataManipulation = defineModel<any>('dataManipulation', { required: true }
 const props = defineProps<{ integrationId?: string }>();
 
 const router = useRouter();
+const route = useRoute();
 const integrationsStore = useIntegrationsStore();
 const sourcesStore = useIntegrationSourcesStore();
 const integrationKinds = useIntegrationKinds();
@@ -184,7 +185,7 @@ const getStepIcon = (stepId: string, status: string) => {
 };
 
 const navigateToIntegration = (integrationId: string) => {
-  router.push({ query: { mode: 'edit', id: integrationId } });
+  router.push({ query: { ...route.query, mode: 'edit', id: integrationId } });
 };
 
 const renderIntegrationName = (integration: any) => (
@@ -802,7 +803,7 @@ onUnmounted(() => {
 /* Workflow Diagram */
 .workflow-diagram {
   margin-bottom: 32px;
-  padding: 24px;
+  padding: 0;
   background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
   border-radius: 16px;
   border: 1px solid var(--el-border-color-lighter);
@@ -1351,6 +1352,10 @@ onUnmounted(() => {
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
+  }
+
+  .workflow-diagram-wrapper.is-sticky {
+    margin: 0;
   }
   
   .workflow-controls {

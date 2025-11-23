@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import { Delete, Plus, ArrowUp, ArrowDown, MagicStick, Document } from '@element-plus/icons-vue';
 import BlueprintDropdown from '@/modules/integrations/components/BlueprintDropdown.vue';
@@ -7,10 +7,18 @@ import { storeToRefs } from 'pinia';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import { capitalize } from 'vue';
 import { getPlural } from '@/modules/core/utils/texts';
+import { QelosTriggerOperation } from '@qelos/global-types';
+import { ElMessage } from 'element-plus';
+import { executeDataManipulationTest } from '@/services/apis/data-manipulation-service';
+import eventsService, { IEvent } from '@/services/apis/events-service';
 
 // Define props and emits
 const props = defineProps<{
   modelValue: any[];
+  trigger?: {
+    operation?: string;
+    details?: Record<string, any>;
+  };
 }>();
 
 const emit = defineEmits(['update:modelValue']);
@@ -31,7 +39,7 @@ const templates = ref([
     description: 'Add workspace blueprint data as context for AI chat completion',
     icon: 'Document',
     requiresBlueprint: true,
-    generate: (blueprintId: string) => {
+    generate: (blueprintId?: string) => {
       const blueprint = blueprints.value?.find(b => b.identifier === blueprintId);
       const blueprintName = blueprint ? capitalize(blueprint.name) : capitalize(blueprintId);
       const blueprintNamePlural = getPlural(blueprintName.toLowerCase());
@@ -84,7 +92,7 @@ const templates = ref([
     description: 'Combine blueprint data with user information for comprehensive context',
     icon: 'Collection',
     requiresBlueprint: true,
-    generate: (blueprintId: string) => {
+    generate: (blueprintId?: string) => {
       const blueprint = blueprints.value?.find(b => b.identifier === blueprintId);
       const blueprintName = blueprint ? capitalize(blueprint.name) : capitalize(blueprintId);
       const blueprintNamePlural = getPlural(blueprintName.toLowerCase());
@@ -122,7 +130,7 @@ const templates = ref([
     description: 'Load blueprint context only when certain conditions are met',
     icon: 'Switch',
     requiresBlueprint: true,
-    generate: (blueprintId: string) => {
+    generate: (blueprintId?: string) => {
       const blueprint = blueprints.value?.find(b => b.identifier === blueprintId);
       const blueprintName = blueprint ? capitalize(blueprint.name) : capitalize(blueprintId);
       const blueprintNamePlural = getPlural(blueprintName.toLowerCase());
@@ -162,20 +170,266 @@ const steps = ref<any[]>([]);
 const mapEntries = ref<Record<number, Array<{key: string, value: string}>>>({});
 const populateEntries = ref<Record<number, Array<{key: string, source: string, blueprint?: string}>>>({});
 const clearFlags = ref<Record<number, boolean>>({});
-const abortValues = ref<Record<number, string | boolean>>({});
+const abortValues = ref<Record<number, string>>({});
 const abortTypes = ref<Record<number, 'none' | 'boolean' | 'expression'>>({});
+const stepErrors = ref<Record<number, { field?: string; phase?: string; message: string }>>({});
 
 // JSON representation for each step
 const stepJsons = ref<Record<number, string>>({});
 const completeJsonText = ref('');
+const testPayloadText = ref('');
+const lastAutofillPayload = ref('');
+const isTestingDataManipulation = ref(false);
+const testResultText = ref('');
+const testError = ref('');
 
 // Helper functions to safely access entries
 const getMapEntries = (stepIndex: number) => {
   return mapEntries.value[stepIndex] || [];
 };
 
-const getPopulateEntries = (stepIndex: number) => {
-  return populateEntries.value[stepIndex] || [];
+const triggerDetails = computed(() => props.trigger?.details || {});
+const triggerOperation = computed(() => props.trigger?.operation);
+const isChatCompletionTrigger = computed(() => triggerOperation.value === QelosTriggerOperation.chatCompletion);
+const isWebhookTrigger = computed(() => triggerOperation.value === QelosTriggerOperation.webhook);
+const canLoadWebhookSamples = computed(() => {
+  if (!isWebhookTrigger.value) return false;
+  return Boolean(triggerDetails.value.source && triggerDetails.value.kind && triggerDetails.value.eventName);
+});
+
+const webhookSamples = ref<IEvent[]>([]);
+const webhookSamplesLoading = ref(false);
+const webhookSamplesError = ref<string | null>(null);
+const webhookSamplesLoaded = ref(false);
+const webhookSampleSelectedId = ref<string | null>(null);
+const webhookSampleLoading = ref(false);
+
+const defaultTestPayload = computed(() => {
+  if (isChatCompletionTrigger.value) {
+    return {
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: 'Hello! Can you help me summarize this note?' }
+      ],
+      context: {
+        threadId: 'thread_123',
+        workspaceId: 'workspace_456',
+        paidCustomer: true
+      }
+    };
+  }
+
+  const triggerDetails = props.trigger?.details || {};
+  return {
+    tenant: triggerDetails.tenant || 'tenant_id',
+    source: triggerDetails.source || 'auth',
+    kind: triggerDetails.kind || 'signup',
+    eventName: triggerDetails.eventName || 'user-registered',
+    description: 'Sample webhook event payload',
+    metadata: {
+      user: {
+        _id: 'user_123',
+        email: 'user@example.com'
+      },
+      workspace: {
+        _id: 'workspace_456',
+        name: 'Acme Inc'
+      }
+    },
+    user: 'user_123',
+    created: '2024-01-01T00:00:00.000Z'
+  };
+});
+
+const applyDefaultTestPayload = (force = false) => {
+  const nextPayload = JSON.stringify(defaultTestPayload.value, null, 2);
+  if (!force && testPayloadText.value && testPayloadText.value.trim() && testPayloadText.value !== lastAutofillPayload.value) {
+    return;
+  }
+  testPayloadText.value = nextPayload;
+  lastAutofillPayload.value = nextPayload;
+};
+
+watch(
+  () => JSON.stringify({ operation: props.trigger?.operation, details: props.trigger?.details }),
+  () => {
+    applyDefaultTestPayload(false);
+  },
+  { immediate: true }
+);
+
+let webhookSamplesLoadTimeout: ReturnType<typeof setTimeout> | null = null;
+
+watch(
+  () => JSON.stringify({
+    source: triggerDetails.value.source,
+    kind: triggerDetails.value.kind,
+    eventName: triggerDetails.value.eventName,
+    operation: triggerOperation.value
+  }),
+  () => {
+    webhookSamples.value = [];
+    webhookSamplesLoaded.value = false;
+    webhookSamplesError.value = null;
+    webhookSampleSelectedId.value = null;
+    if (webhookSamplesLoadTimeout) {
+      clearTimeout(webhookSamplesLoadTimeout);
+    }
+    if (canLoadWebhookSamples.value) {
+      webhookSamplesLoadTimeout = setTimeout(() => {
+        loadWebhookSamples(true);
+      }, 600);
+    }
+  },
+  { immediate: true }
+);
+
+const updateTestPayload = (value: string) => {
+  testPayloadText.value = value;
+};
+
+const resetTestPayload = () => {
+  applyDefaultTestPayload(true);
+};
+
+const clearStepErrors = () => {
+  stepErrors.value = {};
+};
+
+const setStepError = (stepIndex: number, data: { field?: string; phase?: string; message: string }) => {
+  stepErrors.value = { [stepIndex]: data };
+};
+
+const getStepError = (stepIndex: number) => stepErrors.value[stepIndex];
+
+const isMapFieldError = (stepIndex: number, fieldKey: string) => {
+  const error = stepErrors.value[stepIndex];
+  if (!error || !fieldKey) return false;
+  return error.field === fieldKey && error.phase === 'map';
+};
+
+const isPopulateFieldError = (stepIndex: number, fieldKey: string) => {
+  const error = stepErrors.value[stepIndex];
+  if (!error || !fieldKey) return false;
+  return error.field === fieldKey && error.phase === 'populate';
+};
+
+const isAbortError = (stepIndex: number) => stepErrors.value[stepIndex]?.phase === 'abort';
+
+const loadWebhookSamples = async (silent = false) => {
+  if (!canLoadWebhookSamples.value) {
+    if (!silent) {
+      webhookSamplesError.value = 'Fill source, kind, and event name to load events.';
+    }
+    return;
+  }
+
+  webhookSamplesLoading.value = true;
+  webhookSamplesError.value = null;
+
+  try {
+    const events = await eventsService.getAll({
+      source: triggerDetails.value.source,
+      kind: triggerDetails.value.kind,
+      eventName: triggerDetails.value.eventName,
+      period: 'last-month',
+      page: 0
+    });
+    webhookSamples.value = events;
+  } catch (error: any) {
+    webhookSamplesError.value = error?.message || 'Failed to load webhook events.';
+    webhookSamples.value = [];
+  } finally {
+    webhookSamplesLoaded.value = true;
+    webhookSamplesLoading.value = false;
+  }
+};
+
+const applyWebhookSample = async (sample: IEvent) => {
+  webhookSampleSelectedId.value = sample._id;
+  webhookSampleLoading.value = true;
+  webhookSamplesError.value = null;
+
+  try {
+    const event = await eventsService.getOne(sample._id);
+    const payload = JSON.stringify(event, null, 2);
+    testPayloadText.value = payload;
+    lastAutofillPayload.value = payload;
+    testResultText.value = '';
+    ElMessage.success('Loaded event payload into the tester');
+  } catch (error: any) {
+    webhookSamplesError.value = error?.message || 'Failed to load event payload.';
+  } finally {
+    webhookSampleLoading.value = false;
+  }
+};
+
+const formatEventTimestamp = (value?: string | Date) => {
+  if (!value) return '-';
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(new Date(value));
+  } catch (error) {
+    return typeof value === 'string' ? value : new Date(value).toISOString();
+  }
+};
+
+const runDataManipulationTest = async () => {
+  testError.value = '';
+  testResultText.value = '';
+  clearStepErrors();
+
+  if (!testPayloadText.value?.trim()) {
+    testError.value = 'Please provide a sample payload before running the test.';
+    return;
+  }
+
+  let parsedPayload: Record<string, any>;
+  try {
+    parsedPayload = JSON.parse(testPayloadText.value);
+  } catch (err) {
+    testError.value = 'Sample payload must be a valid JSON object.';
+    return;
+  }
+
+  if (!steps.value.length) {
+    testError.value = 'Add at least one data manipulation step before testing.';
+    return;
+  }
+
+  syncToModel();
+
+  try {
+    isTestingDataManipulation.value = true;
+    const workflowPayload = JSON.parse(JSON.stringify(steps.value));
+    const response = await executeDataManipulationTest({
+      payload: parsedPayload,
+      workflow: workflowPayload
+    });
+    testResultText.value = JSON.stringify(response, null, 2);
+    ElMessage.success('Data manipulation executed successfully');
+  } catch (error: any) {
+    const apiError = error?.response?.data;
+    if (typeof apiError?.stepIndex === 'number') {
+      const humanStep = apiError.stepIndex + 1;
+      const fieldPart = apiError.field ? `Field "${apiError.field}"` : null;
+      const phasePart = apiError.phase ? `(${apiError.phase})` : null;
+      const detail = apiError.details || apiError.message || 'Unknown error.';
+      const friendly = [`Step ${humanStep}`, phasePart, fieldPart].filter(Boolean).join(' ');
+      testError.value = `${friendly}: ${detail}`;
+      setStepError(apiError.stepIndex, {
+        field: apiError.field,
+        phase: apiError.phase,
+        message: detail
+      });
+    } else {
+      testError.value = apiError?.message || error?.message || 'Failed to execute data manipulation test.';
+    }
+  } finally {
+    isTestingDataManipulation.value = false;
+  }
 };
 
 // Initialize the component with data from props
@@ -190,7 +444,7 @@ const initialize = () => {
     if (step.map) {
       mapEntries.value[stepIndex] = Object.entries(step.map).map(([key, value]) => ({
         key,
-        value: value as string
+        value: typeof value === 'string' ? value : JSON.stringify(value ?? '', null, 2)
       }));
     } else {
       mapEntries.value[stepIndex] = [];
@@ -199,7 +453,7 @@ const initialize = () => {
     // Convert populate object to array
     if (step.populate) {
       populateEntries.value[stepIndex] = Object.entries(step.populate).map(([key, config]) => {
-        const populateConfig = config as any;
+        const populateConfig = config as { source?: string; blueprint?: string };
         return {
           key,
           source: populateConfig.source || 'user',
@@ -218,10 +472,10 @@ const initialize = () => {
       abortValues.value[stepIndex] = '';
       abortTypes.value[stepIndex] = 'none';
     } else if (typeof step.abort === 'boolean') {
-      abortValues.value[stepIndex] = step.abort;
+      abortValues.value[stepIndex] = '';
       abortTypes.value[stepIndex] = 'boolean';
     } else {
-      abortValues.value[stepIndex] = step.abort as string;
+      abortValues.value[stepIndex] = String(step.abort);
       abortTypes.value[stepIndex] = 'expression';
     }
     
@@ -280,6 +534,8 @@ const syncToModel = () => {
     
     return newStep;
   });
+  // Keep local steps array in sync with reconstructed data
+  steps.value = JSON.parse(JSON.stringify(newModelValue));
   
   // Update JSON representations
   newModelValue.forEach((step, index) => {
@@ -464,7 +720,7 @@ const updateStepJson = (stepIndex: number, json: string) => {
     if (parsedJson.map) {
       mapEntries.value[stepIndex] = Object.entries(parsedJson.map).map(([key, value]) => ({
         key,
-        value: value as string
+        value: typeof value === 'string' ? value : JSON.stringify(value ?? '', null, 2)
       }));
     } else {
       mapEntries.value[stepIndex] = [];
@@ -472,7 +728,7 @@ const updateStepJson = (stepIndex: number, json: string) => {
     
     if (parsedJson.populate) {
       populateEntries.value[stepIndex] = Object.entries(parsedJson.populate).map(([key, config]) => {
-        const populateConfig = config as any;
+        const populateConfig = config as { source?: string; blueprint?: string };
         return {
           key,
           source: populateConfig.source || 'user',
@@ -491,10 +747,10 @@ const updateStepJson = (stepIndex: number, json: string) => {
       abortValues.value[stepIndex] = '';
       abortTypes.value[stepIndex] = 'none';
     } else if (typeof parsedJson.abort === 'boolean') {
-      abortValues.value[stepIndex] = parsedJson.abort;
+      abortValues.value[stepIndex] = '';
       abortTypes.value[stepIndex] = 'boolean';
     } else {
-      abortValues.value[stepIndex] = parsedJson.abort as string;
+      abortValues.value[stepIndex] = String(parsedJson.abort);
       abortTypes.value[stepIndex] = 'expression';
     }
     
@@ -521,7 +777,7 @@ const updateCompleteJson = (json: string) => {
     // Convert all steps to arrays of entries
     parsedJson.forEach((step, stepIndex) => {
       if (step.map) {
-        mapEntries.value[stepIndex] = Object.entries(step.map).map(([key, value]) => ({ key, value }));
+        mapEntries.value[stepIndex] = Object.entries(step.map).map(([key, value]) => ({ key, value: typeof value === 'string' ? value : JSON.stringify(value ?? '', null, 2) }));
       } else {
         mapEntries.value[stepIndex] = [];
       }
@@ -543,10 +799,10 @@ const updateCompleteJson = (json: string) => {
         abortValues.value[stepIndex] = '';
         abortTypes.value[stepIndex] = 'none';
       } else if (typeof step.abort === 'boolean') {
-        abortValues.value[stepIndex] = step.abort;
+        abortValues.value[stepIndex] = '';
         abortTypes.value[stepIndex] = 'boolean';
       } else {
-        abortValues.value[stepIndex] = step.abort;
+        abortValues.value[stepIndex] = String(step.abort);
         abortTypes.value[stepIndex] = 'expression';
       }
     });
@@ -568,7 +824,7 @@ const updateCompleteJson = (json: string) => {
 // Handle abort type change
 const handleAbortTypeChange = (stepIndex: number) => {
   if (abortTypes.value[stepIndex] === 'boolean') {
-    abortValues.value[stepIndex] = true;
+    abortValues.value[stepIndex] = '';
   } else if (abortTypes.value[stepIndex] === 'expression') {
     abortValues.value[stepIndex] = '';
   } else {
@@ -618,7 +874,7 @@ const applyTemplate = () => {
     
     if (step.populate) {
       populateEntries.value[stepIndex] = Object.entries(step.populate).map(([key, config]) => {
-        const populateConfig = config;
+        const populateConfig = config as { source?: string; blueprint?: string };
         return { key, source: populateConfig.source || 'user', blueprint: populateConfig.blueprint };
       });
     } else {
@@ -686,30 +942,44 @@ onMounted(() => {
     <div v-for="(step, i) in steps" :key="i" class="data-step">
       <div class="step-header">
         <h4>{{ $t('Step') }} {{ i + 1 }}</h4>
+        <el-tag v-if="getStepError(i)" type="danger" size="small">
+          {{ $t('Needs attention') }}
+        </el-tag>
         <div class="step-actions">
           <el-button size="small" type="danger" @click="removeStep(i)" :icon="Delete" circle />
           <el-button size="small" @click="moveStep(i, i - 1)" :disabled="i === 0" :icon="ArrowUp" circle />
           <el-button size="small" @click="moveStep(i, i + 1)" :disabled="i === steps.length - 1" :icon="ArrowDown" circle />
         </div>
       </div>
+      <el-alert
+        v-if="getStepError(i)"
+        type="error"
+        show-icon
+        :closable="false"
+        class="step-error-alert"
+        :title="$t('This step failed during the last test.')"
+        :description="getStepError(i)?.message"
+      />
       
       <el-tabs class="step-tabs">
         <!-- Map Tab -->
         <el-tab-pane :label="$t('Map')">
           <p class="step-description">{{ $t('Map transforms data using JQ-like expressions') }}</p>
           <div class="map-entries">
-            <div v-for="(entry, index) in getMapEntries(i)" :key="index" class="map-entry">
+            <div v-for="(entry, index) in getMapEntries(i)" :key="index" class="map-entry" :class="{ 'has-error': isMapFieldError(i, entry.key) }">
               <el-input 
                 dir="ltr"
                 v-model="entry.key" 
                 placeholder="Key" 
                 @update:model-value="syncToModel" 
+                :class="{ 'input-error': isMapFieldError(i, entry.key) }"
               />  
               <el-input 
                 dir="ltr"
                 v-model="entry.value" 
                 placeholder="JQ Expression" 
                 @update:model-value="syncToModel" 
+                :class="{ 'input-error': isMapFieldError(i, entry.key) }"
               />
               <el-button type="danger" :icon="Delete" @click="removeMapEntry(i, index)" circle />
             </div>
@@ -721,17 +991,19 @@ onMounted(() => {
         <el-tab-pane :label="$t('Populate')">
           <p class="step-description">{{ $t('Populate fetches related data from databases') }}</p>
           <div class="populate-entries">
-            <div v-for="(entry, index) in populateEntries[i]" :key="index" class="populate-entry">
+            <div v-for="(entry, index) in populateEntries[i]" :key="index" class="populate-entry" :class="{ 'has-error': isPopulateFieldError(i, entry.key) }">
               <el-input 
                 dir="ltr"
                 v-model="entry.key" 
                 placeholder="Key" 
                 @update:model-value="syncToModel" 
+                :class="{ 'input-error': isPopulateFieldError(i, entry.key) }"
               />
               <el-select 
                 v-model="entry.source" 
                 placeholder="Source"
                 @update:model-value="syncToModel" 
+                :class="{ 'input-error': isPopulateFieldError(i, entry.key) }"
               >
                 <el-option value="user" label="User" />
                 <el-option value="workspace" label="Workspace" />
@@ -779,6 +1051,7 @@ onMounted(() => {
                 <el-select
                   v-model="abortTypes[i]"
                   @update:model-value="handleAbortTypeChange(i)"
+                  :class="{ 'input-error': isAbortError(i) }"
                 >
                   <el-option value="none" :label="$t('No abort')" />
                   <el-option value="boolean" :label="$t('Abort operation')" />
@@ -791,6 +1064,7 @@ onMounted(() => {
                   v-model="abortValues[i]"
                   placeholder="JQ Expression"
                   @update:model-value="syncToModel"
+                  :class="{ 'input-error': isAbortError(i) }"
                 />
               </div>
               <div class="option-description">
@@ -819,6 +1093,121 @@ onMounted(() => {
         language="json"
         @update:modelValue="updateCompleteJson" 
       />
+    </div>
+
+    <el-divider />
+
+    <div class="data-manipulation-test">
+      <div class="test-header">
+        <div>
+          <h4>{{ $t('Test Data Manipulation') }}</h4>
+          <p>{{ $t('Send a sample payload to preview the transformed result without leaving this form.') }}</p>
+        </div>
+        <div class="test-actions">
+          <el-button @click="resetTestPayload">{{ $t('Reset Sample Payload') }}</el-button>
+          <el-button type="primary" :loading="isTestingDataManipulation" @click="runDataManipulationTest">
+            {{ $t('Run Test') }}
+          </el-button>
+        </div>
+      </div>
+
+      <div class="test-editor">
+        <label class="section-label">{{ $t('Sample Payload (JSON)') }}</label>
+        <Monaco 
+          :modelValue="testPayloadText" 
+          height="200px" 
+          language="json"
+          @update:modelValue="updateTestPayload" 
+        />
+      </div>
+
+      <div v-if="isWebhookTrigger" class="webhook-samples">
+        <div class="webhook-samples-header">
+          <div>
+            <label class="section-label">{{ $t('Recent Webhook Events') }}</label>
+            <p>{{ $t('Load real events captured in the last month to test your workflow.') }}</p>
+          </div>
+          <el-button
+            size="small"
+            :loading="webhookSamplesLoading"
+            type="primary"
+            plain
+            @click="loadWebhookSamples()"
+          >
+            {{ webhookSamplesLoaded ? $t('Refresh Events') : $t('Load Events') }}
+          </el-button>
+        </div>
+
+        <el-alert
+          v-if="!canLoadWebhookSamples"
+          :title="$t('Fill Source, Kind, and Event Name to fetch events.')"
+          type="info"
+          show-icon
+          class="mb-2"
+        />
+        <el-alert
+          v-else-if="webhookSamplesError"
+          :title="webhookSamplesError"
+          type="error"
+          show-icon
+          class="mb-2"
+        />
+        <el-skeleton v-else-if="webhookSamplesLoading" :rows="3" animated />
+        <el-empty
+          v-else-if="webhookSamplesLoaded && !webhookSamples.length"
+          :description="$t('No events found for the selected filters.')"
+        />
+        <el-table
+          v-else
+          :data="webhookSamples"
+          size="small"
+          border
+          class="webhook-samples-table"
+        >
+          <el-table-column :label="$t('Event')">
+            <template #default="{ row }">
+              <div class="event-name">{{ row.eventName }}</div>
+              <small class="event-source">{{ row.source }} · {{ row.kind }}</small>
+            </template>
+          </el-table-column>
+          <el-table-column :label="$t('Captured')" width="160">
+            <template #default="{ row }">
+              {{ formatEventTimestamp(row.created) }}
+            </template>
+          </el-table-column>
+          <el-table-column width="140">
+            <template #default="{ row }">
+              <el-button
+                size="small"
+                type="primary"
+                plain
+                :loading="webhookSampleLoading && webhookSampleSelectedId === row._id"
+                @click="applyWebhookSample(row)"
+              >
+                {{ $t('Use Sample') }}
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+
+      <el-alert
+        v-if="testError"
+        :title="testError"
+        type="error"
+        show-icon
+        class="mb-3"
+      />
+
+      <div v-if="testResultText" class="test-result">
+        <label class="section-label">{{ $t('Result') }}</label>
+        <Monaco 
+          :modelValue="testResultText" 
+          height="200px" 
+          language="json"
+          @update:modelValue="(value) => testResultText = value"
+        />
+      </div>
     </div>
     
     <!-- Template Dialog -->
@@ -1172,5 +1561,98 @@ onMounted(() => {
   padding: 16px 20px;
   border-top: 1px solid var(--el-border-color);
   background: var(--el-bg-color-page);
+}
+
+.data-manipulation-test {
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  padding: 16px;
+  margin-block: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.test-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.test-header h4 {
+  margin: 0;
+}
+
+.test-header p {
+  margin: 4px 0 0;
+  color: var(--el-text-color-secondary);
+}
+
+.test-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.test-editor,
+.test-result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-label {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.step-error-alert {
+  margin-bottom: 12px;
+}
+
+.input-error :global(.el-input__wrapper),
+.input-error :global(.el-select__wrapper) {
+  border-color: var(--el-color-danger);
+  box-shadow: 0 0 0 1px var(--el-color-danger) inset;
+}
+
+.map-entry.has-error,
+.populate-entry.has-error {
+  border-inline-start: 3px solid var(--el-color-danger);
+  padding-inline-start: 8px;
+  border-radius: 4px;
+}
+
+.webhook-samples {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.webhook-samples-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.webhook-samples-header p {
+  margin: 4px 0 0;
+  color: var(--el-text-color-secondary);
+}
+
+.webhook-samples-table {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.event-name {
+  font-weight: 600;
+}
+
+.event-source {
+  color: var(--el-text-color-secondary);
 }
 </style>

@@ -7,7 +7,7 @@ export function dataManipulationRouter() {
 
   const AUTHENTICATION_MIDDLEWARES = [populateUser, verifyUser, onlyEditPrivilegedOrPlugin];
 
-  router.post('/api/data-manipulation', AUTHENTICATION_MIDDLEWARES, getDataManipulation);
+  router.post('/api/data-manipulation', AUTHENTICATION_MIDDLEWARES, getBodyParser(), getDataManipulation);
   router.post('/internal-api/data-manipulation', getBodyParser(), verifyInternalCall, getDataManipulation);
   return router;
 }

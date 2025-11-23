@@ -38,6 +38,8 @@ const canGoPrevious = computed(() => isAIAgentView.value && aiAgentCurrentStep.v
 const isLastStep = computed(() => isAIAgentView.value && aiAgentCurrentStep.value === totalAIAgentSteps - 1);
 const isNewIntegration = computed(() => !props.editingIntegration?._id);
 
+const integrationName = computed(() => form.trigger?.details?.name);
+
 watch(visible, (value) => {
   if (value) {
     aiAgentCurrentStep.value = 0;
@@ -114,8 +116,8 @@ const applyPastedIntegration = () => {
 <template>
   <el-dialog top="2vh" v-model="visible"
              class="integration-form-modal"
-             :title="$t(props.editingIntegration?._id ? 'Edit Integration' : 'New Integration')"
-             :width="$isMobile ? '100%' : '70%'"
+             :title="$t(props.editingIntegration?._id ? 'Edit Integration' : 'New Integration') + (integrationName ? ' - ' + integrationName : '')"
+             :width="$isMobile ? '100%' : '90%'"
              :fullscreen="$isMobile"
              @close="$emit('close', $event)">
     <template v-if="showTypeSelection">
@@ -403,7 +405,7 @@ img, small {
 
 @media (min-width: 768px) {
   .form-content {
-    max-height: calc(90vh - 240px);
+    max-height: calc(90vh - 130px);
     overflow-y: auto;
   }
 }
@@ -458,12 +460,12 @@ img, small {
 </style>
 <style>
 .integration-form-modal {
-  max-height: 90%;
+  height: 90%;
   overflow: auto;
 }
 
 .integration-form-modal :deep(.el-dialog) {
-  max-height: 90vh;
+  height: 90vh;
   display: flex;
   flex-direction: column;
 }

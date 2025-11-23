@@ -1,4 +1,4 @@
-import { executeDataManipulation } from "../services/data-manipulation-service";
+import { DataManipulationError, executeDataManipulation } from "../services/data-manipulation-service";
 import logger from "../services/logger";
 import { IDataManipulationStep } from "@qelos/global-types";
 
@@ -15,6 +15,26 @@ export async function getDataManipulation (req, res) {
     const result = await executeDataManipulation(tenant, payload, workflow);
     res.json(result);
   } catch (error) {
+    if (error instanceof DataManipulationError) {
+      logger.warn('Data manipulation failed', {
+        stepIndex: error.stepIndex,
+        field: error.field,
+        phase: error.phase,
+        source: error.source,
+        message: error.message,
+      });
+
+      res.status(400).json({
+        message: 'Failed to run data manipulation. Please review the details below.',
+        stepIndex: error.stepIndex,
+        field: error.field,
+        phase: error.phase,
+        source: error.source,
+        details: error.message,
+      });
+      return;
+    }
+
     logger.error('Error executing data manipulation', error);
     res.status(500).json({ message: 'Error executing data manipulation' });
   }
