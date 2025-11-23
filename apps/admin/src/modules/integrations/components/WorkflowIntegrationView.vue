@@ -572,7 +572,7 @@ onUnmounted(() => {
         </div>
         <el-collapse-transition>
           <div v-show="isStepExpanded('data-manipulation')" class="step-content">
-            <DataManipulationTab v-model="dataManipulation" />
+            <DataManipulationTab v-model="dataManipulation" :trigger="trigger" />
           </div>
         </el-collapse-transition>
       </div>

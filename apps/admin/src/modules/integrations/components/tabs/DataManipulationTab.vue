@@ -1611,12 +1611,6 @@ onMounted(() => {
   margin-bottom: 12px;
 }
 
-.input-error :global(.el-input__wrapper),
-.input-error :global(.el-select__wrapper) {
-  border-color: var(--el-color-danger);
-  box-shadow: 0 0 0 1px var(--el-color-danger) inset;
-}
-
 .map-entry.has-error,
 .populate-entry.has-error {
   border-inline-start: 3px solid var(--el-color-danger);

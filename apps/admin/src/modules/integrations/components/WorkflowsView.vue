@@ -7,6 +7,7 @@ import { useIntegrationsStore } from '../store/integrations';
 import { useIntegrationSourcesStore } from '../store/integration-sources';
 import { useIntegrationKinds } from '../compositions/integration-kinds';
 import type { IIntegration } from '@qelos/global-types';
+import { OpenAITargetOperation, QelosTriggerOperation } from '@qelos/global-types';
 
 interface Signature {
   source: string;
@@ -255,7 +256,47 @@ const trackIndexByIntegration = computed(() => {
   }, {} as Record<string, number>);
 });
 
-const interIntegrationConnections = computed<IntegrationConnection[]>(() => {
+const chatCompletionIntegrations = computed(() =>
+  filteredIntegrations.value.filter(
+    integration => integration.trigger?.operation === QelosTriggerOperation.chatCompletion
+  )
+);
+
+const functionCallingIntegrations = computed(() =>
+  filteredIntegrations.value.filter(
+    integration => integration.trigger?.operation === OpenAITargetOperation.functionCalling
+  )
+);
+
+const functionToolConnections = computed<IntegrationConnection[]>(() => {
+  const connections: IntegrationConnection[] = [];
+
+  chatCompletionIntegrations.value.forEach(chatIntegration => {
+    const details = chatIntegration.trigger?.details || {};
+    const allowedListRaw = Array.isArray(details.allowedIntegrationIds) ? details.allowedIntegrationIds : [];
+    const blockedList = Array.isArray(details.blockedIntegrationIds) ? details.blockedIntegrationIds : [];
+
+    const allowAll = !allowedListRaw.length || allowedListRaw.includes('*');
+    const allowedSet = new Set(allowedListRaw.filter(id => id !== '*'));
+    const blockedSet = new Set(blockedList);
+
+    functionCallingIntegrations.value.forEach(funcIntegration => {
+      if (funcIntegration._id === chatIntegration._id) return;
+      if (blockedSet.has(funcIntegration._id)) return;
+      if (!allowAll && !allowedSet.has(funcIntegration._id)) return;
+
+      connections.push({
+        id: `function-tool-${chatIntegration._id}-${funcIntegration._id}`,
+        fromId: chatIntegration._id,
+        toId: funcIntegration._id
+      });
+    });
+  });
+
+  return connections;
+});
+
+const signatureBasedConnections = computed<IntegrationConnection[]>(() => {
   const triggersBySignature = new Map<string, IIntegration[]>();
   filteredIntegrations.value.forEach(integration => {
     const signature = getTriggerSignature(integration);
@@ -285,9 +326,13 @@ const interIntegrationConnections = computed<IntegrationConnection[]>(() => {
       });
     });
   });
-
   return result;
 });
+
+const interIntegrationConnections = computed<IntegrationConnection[]>(() => [
+  ...signatureBasedConnections.value,
+  ...functionToolConnections.value
+]);
 
 const incomingIntegrationIds = computed(() => {
   const ids = new Set<string>();
@@ -589,8 +634,9 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
 .workflows-view {
   padding: 12px;
   background: #f5f7fa;
-  min-height: calc(100vh - 160px);
+  height: 100%;
   border-radius: 12px;
+  overflow: hidden;
 }
 
 .workflows-header {

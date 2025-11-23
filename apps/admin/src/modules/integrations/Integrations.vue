@@ -59,7 +59,7 @@ const closeIntegrationFormModal = () => {
 </script>
 
 <template>
-  <div>
+  <div class="integrations-page">
     <ListPageTitle 
       title="Integrations" 
       description="Integrations connect your application to external services and APIs. Set up triggers, actions, and data flows between different platforms."
@@ -84,7 +84,9 @@ const closeIntegrationFormModal = () => {
       <IntegrationsList @retry="integrationsStore.retry" />
     </template>
     
-    <WorkflowsView v-else />
+    <div v-else class="workflows-container">
+      <WorkflowsView />
+    </div>
 
     <IntegrationFormModal :visible="$route.query.mode === 'create' || ($route.query.mode === 'edit' && !!editingIntegration)"
       :editing-integration="editingIntegration"
@@ -93,10 +95,23 @@ const closeIntegrationFormModal = () => {
 </template>
 
 <style scoped>
+.integrations-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
 .view-mode-selector {
   margin-bottom: 20px;
   display: flex;
   justify-content: center;
   border-radius: var(--border-radius);
+}
+
+.workflows-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
 }
 </style>

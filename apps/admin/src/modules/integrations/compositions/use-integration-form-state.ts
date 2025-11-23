@@ -85,7 +85,7 @@ export function useIntegrationFormState({ props, visible, sourcesStore }: UseInt
         details: {},
         ...(props.editingIntegration?.target || {})
       },
-      dataManipulation: (props.editingIntegration._id || props.editingIntegration?.dataManipulation?.length)
+      dataManipulation: (props.editingIntegration?._id || props.editingIntegration?.dataManipulation?.length)
         ? (props.editingIntegration.dataManipulation || [])
         : [...DEFAULT_DATA_MANIPULATION],
       active: props.editingIntegration?.active || false
