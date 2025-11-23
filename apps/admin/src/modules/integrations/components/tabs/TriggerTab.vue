@@ -52,6 +52,7 @@ const selectedTriggerSource = computed(() => store.result?.find(s => s._id === p
 
 const isQelosWebhook = computed(() => selectedTriggerSource.value?.kind === IntegrationSourceKind.Qelos && props.modelValue.operation === QelosTriggerOperation.webhook);
 
+const chosenFromSample = ref(false);
 const canLoadWebhookSamples = computed(() => {
   if (!isQelosWebhook.value) return false;
   const details = props.modelValue.details || {};
@@ -167,6 +168,7 @@ const loadWebhookSamples = async () => {
     return;
   }
 
+  chosenFromSample.value = false;
   webhookSamplesLoading.value = true;
   webhookSamplesError.value = null;
   webhookSampleMetadata.value = '';
@@ -212,6 +214,7 @@ const applyWebhookSampleDetails = (sample: IEvent) => {
   details.kind = sample.kind;
   details.eventName = sample.eventName;
   commitTriggerDetails(details);
+  chosenFromSample.value = true;
 };
 
 const formatEventTimestamp = (value?: string | Date) => {
@@ -363,7 +366,7 @@ watch(
     webhookSampleMetadata.value = '';
     webhookSampleSelectedId.value = null;
     webhookSamplesError.value = null;
-    if (isQelosWebhook.value && canLoadWebhookSamples.value) {
+    if (isQelosWebhook.value && canLoadWebhookSamples.value && !chosenFromSample.value) {
       scheduleWebhookSamplesLoad();
     } else if (webhookSamplesLoadTimeout) {
       clearTimeout(webhookSamplesLoadTimeout);
@@ -597,7 +600,7 @@ watch(
           {{ webhookSamplesError }}
         </el-alert>
 
-        <div v-if="webhookSamples.length" class="webhook-samples">
+        <div v-if="!chosenFromSample || webhookSamples.length" class="webhook-samples">
           <h5>Recent matching events</h5>
           <el-table :data="webhookSamples" size="small" border class="webhook-samples-table">
             <el-table-column prop="source" label="Source" width="120" />

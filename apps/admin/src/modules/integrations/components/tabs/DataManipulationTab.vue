@@ -11,6 +11,9 @@ import { QelosTriggerOperation } from '@qelos/global-types';
 import { ElMessage } from 'element-plus';
 import { executeDataManipulationTest } from '@/services/apis/data-manipulation-service';
 import eventsService, { IEvent } from '@/services/apis/events-service';
+import Accordion from 'primevue/accordion';
+import AccordionTab from 'primevue/accordiontab';
+
 
 // Define props and emits
 const props = defineProps<{
@@ -1086,13 +1089,16 @@ onMounted(() => {
     
     <!-- Complete JSON Preview -->
     <div class="json-preview">
-      <h4>{{ $t('Complete Data Manipulation JSON') }}</h4>
-      <Monaco 
-        :modelValue="completeJsonText" 
-        height="200px" 
-        language="json"
-        @update:modelValue="updateCompleteJson" 
-      />
+      <Accordion>
+        <AccordionTab :header="$t('Complete Data Manipulation JSON')">
+          <Monaco 
+            :modelValue="completeJsonText" 
+            height="200px" 
+            language="json"
+            @update:modelValue="updateCompleteJson" 
+          />
+        </AccordionTab>
+      </Accordion>
     </div>
 
     <el-divider />
@@ -1112,13 +1118,16 @@ onMounted(() => {
       </div>
 
       <div class="test-editor">
-        <label class="section-label">{{ $t('Sample Payload (JSON)') }}</label>
-        <Monaco 
-          :modelValue="testPayloadText" 
-          height="200px" 
-          language="json"
-          @update:modelValue="updateTestPayload" 
-        />
+        <Accordion>
+          <AccordionTab :header="$t('Sample Payload (JSON)')">
+            <Monaco 
+              :modelValue="testPayloadText" 
+              height="200px" 
+              language="json"
+              @update:modelValue="updateTestPayload" 
+            />
+          </AccordionTab>
+        </Accordion>
       </div>
 
       <div v-if="isWebhookTrigger" class="webhook-samples">
