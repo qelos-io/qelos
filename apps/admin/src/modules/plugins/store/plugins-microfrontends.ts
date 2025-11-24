@@ -192,7 +192,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         }
       })
       if (location.pathname === '/' || !allRoutes[location.pathname]) {
-        router.push(location.pathname);
+        router.push(location.pathname + location.search);
       }
     }
   }
