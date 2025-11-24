@@ -24,7 +24,7 @@ export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind 
     },
     [IntegrationSourceKind.ClaudeAi]: {
       logo: '/logos/claude.svg',
-      name: 'Claude Ai',
+      name: 'Claude AI',
       kind: IntegrationSourceKind.ClaudeAi
     },
     // [IntegrationSourceKind.Supabase]: {
