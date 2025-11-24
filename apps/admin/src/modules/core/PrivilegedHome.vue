@@ -118,6 +118,13 @@
       <el-tab-pane name="blueprints" :label="$t('Blueprints')">
         <BlueprintsList/>
       </el-tab-pane>
+      <el-tab-pane name="integrations" :label="$t('Integrations')">
+        <WorkflowsView />
+
+    <IntegrationFormModal :visible="($route.query.mode === 'edit' && !!editingIntegration)"
+      :editing-integration="editingIntegration"
+      @close="closeIntegrationFormModal" />
+      </el-tab-pane>
     </el-tabs>
   </div>
  <footer><QuickStartWizard/></footer>
@@ -130,11 +137,15 @@ import configurationsService from '@/services/apis/configurations-service';
 import { DesignPalette, PALETTES } from '@/modules/core/utils/colors-palettes';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import BlueprintsList from '@/modules/no-code/components/BlueprintsList.vue';
-
 import DesignConfiguration from '@/modules/configurations/components/DesignConfiguration.vue';
 import QuickStartWizard from '@/modules/admins/components/QuickStartWizard.vue';
 import DashboardOverview from '@/modules/core/components/DashboardOverview.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import WorkflowsView from '../integrations/components/WorkflowsView.vue';
+import IntegrationFormModal from '../integrations/components/IntegrationFormModal.vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useIntegrationsStore } from '../integrations/store/integrations';
+import { computed } from 'vue';
 
 const { appConfig, loaded: configLoaded } = useAppConfiguration();
 
@@ -184,6 +195,24 @@ function getPreviewStyles(palette: DesignPalette['palette']) {
     '--preview-border-color': palette.bordersColor
   };
 }
+
+
+const route = useRoute();
+const integrationsStore = useIntegrationsStore();
+const router = useRouter();
+
+const closeIntegrationFormModal = () => {
+  integrationsStore.retry();
+  router.push({ query: { ...route.query, mode: undefined, id: undefined } });
+}
+
+const editingIntegration = computed(() => {
+  if (route.query.mode === 'create') return undefined;
+  if (route.query.mode === 'edit' && route.query.id) {
+    return integrationsStore.integrations?.find(integration => integration._id === route.query.id);
+  }
+  return undefined;
+})
 </script>
 <style scoped lang="scss">
 .blocks-list {
