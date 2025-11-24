@@ -22,29 +22,49 @@ export async function getSourceById(tenant: string, sourceId: string) {
     return { error: 'Could not get source', status: 500 };
   }
 }
+const normalize = (value?: string | string[]) => {
+  if (!value) return [] as string[];
+  return Array.isArray(value) ? value : [value];
+};
+
+const hasMatch = (required: string[], actual: string[]) => {
+  if (!required.length || required.includes('*')) return true;
+  if (!actual.length) return false;
+  return required.some(role => actual.includes(role));
+};
 
 /**
  * Verifies if a user has the required roles/permissions for a source
  */
 export function verifyUserPermissions(user: any, sourceDetails: any) {
-  const { roles, workspaceRoles, workspaceLabels } = sourceDetails || {};
+  const requiredRoles = normalize(sourceDetails?.roles);
+  const requiredWorkspaceRoles = normalize(sourceDetails?.workspaceRoles);
+  const requiredWorkspaceLabels = normalize(sourceDetails?.workspaceLabels);
 
-  if (roles && roles?.length > 0) {
-    if (!roles.some(role => user.roles.includes(role))) {
-      return { error: 'User does not have required roles', status: 403 };
+  const userRoles = normalize(user?.roles);
+  const userWorkspaceRoles = normalize(user?.workspace?.roles);
+  const userWorkspaceLabels = normalize(user?.workspace?.labels);
+
+  const isGuestRequest = !user?._id;
+
+  if (isGuestRequest) {
+    if (!requiredRoles.includes('guest')) {
+      return { error: 'Guest access is not allowed', status: 403 };
     }
+    // Guest is explicitly allowed, skip the rest of the checks since no user/workspace context exists
+    return { success: true };
   }
 
-  if (workspaceRoles && workspaceRoles?.length > 0) {
-    if (!workspaceRoles.some(role => user.workspace.roles.includes(role))) {
-      return { error: 'User does not have required workspace roles', status: 403 };
-    }
+  if (!hasMatch(requiredRoles.filter(role => role !== 'guest'), userRoles)) {
+    return { error: 'User does not have required roles', status: 403 };
   }
 
-  if (workspaceLabels && workspaceLabels?.length > 0) {
-    if (!workspaceLabels.some(label => user.workspace.labels.includes(label))) {
-      return { error: 'User does not have required workspace labels', status: 403 };
-    }
+  if (!hasMatch(requiredWorkspaceRoles, userWorkspaceRoles)) {
+    return { error: 'User does not have required workspace roles', status: 403 };
+  }
+
+  if (!hasMatch(requiredWorkspaceLabels, userWorkspaceLabels)) {
+    return { error: 'User does not have required workspace labels', status: 403 };
   }
 
   return { success: true };

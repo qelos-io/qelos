@@ -28,7 +28,7 @@ const {
 } = useIntegrationFormState({ props, visible, sourcesStore: store });
 
 const aiAgentCurrentStep = ref(0);
-const totalAIAgentSteps = 4;
+const totalAIAgentSteps = 5;
 
 const isAIAgentView = computed(() => selectedViewMode.value === IntegrationType.AIAgent);
 const isWorkflowView = computed(() => selectedViewMode.value === IntegrationType.Workflow);

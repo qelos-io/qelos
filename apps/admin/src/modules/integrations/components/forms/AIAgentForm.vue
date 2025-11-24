@@ -4,7 +4,7 @@ import { IIntegration, IntegrationSourceKind, QelosTriggerOperation, OpenAITarge
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import { storeToRefs } from 'pinia';
-import { ChatDotRound, Tools, Document, Setting } from '@element-plus/icons-vue';
+import { ChatDotRound, Tools, Document, Setting, Lock } from '@element-plus/icons-vue';
 
 // Import step components
 import AgentIdentityStep from './steps/AgentIdentityStep.vue';
@@ -12,6 +12,7 @@ import AgentContextStep from './steps/AgentContextStep.vue';
 import AgentConfigurationStep from './steps/AgentConfigurationStep.vue';
 import AgentToolsStep from './steps/AgentToolsStep.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import AccessControlStep from '@/modules/integrations/components/forms/AccessControlStep.vue';
 
 defineProps<{
   integrationId?: string;
@@ -22,6 +23,7 @@ const workspacesConfig = useWsConfiguration()
 const trigger = defineModel<IIntegration['trigger']>('trigger', { required: true });
 const target = defineModel<IIntegration['target']>('target', { required: true });
 const dataManipulation = defineModel<IIntegration['dataManipulation']>('dataManipulation', { required: true });
+const totalAIAgentSteps = 5;
 const currentStep = defineModel<number>('currentStep', { default: 0 });
 
 const store = useIntegrationSourcesStore();
@@ -72,6 +74,25 @@ const recordThread = computed({
     trigger.value.details = {
       ...trigger.value.details,
       recordThread: value
+    };
+  }
+});
+
+const accessControlPermissions = computed({
+  get: () => ({
+    roles: trigger.value?.details?.roles || [],
+    workspaceRoles: trigger.value?.details?.workspaceRoles || [],
+    workspaceLabels: trigger.value?.details?.workspaceLabels || []
+  }),
+  set: (value: { roles?: string[]; workspaceRoles?: string[]; workspaceLabels?: string[] }) => {
+    if (!trigger.value) {
+      trigger.value = { source: '', operation: '', details: {} };
+    }
+    trigger.value.details = {
+      ...trigger.value.details,
+      roles: value.roles || [],
+      workspaceRoles: value.workspaceRoles || [],
+      workspaceLabels: value.workspaceLabels || []
     };
   }
 });
@@ -343,6 +364,7 @@ watch([contextBlueprints, includeUserContext, includeWorkspaceContext], (newValu
     <!-- Steps Navigation - Sticky Header -->
     <div class="steps-header-sticky">
       <el-steps :active="currentStep" finish-status="success" align-center class="mb-6">
+        <el-step :title="$t('Access Control')" :icon="Lock" />
         <el-step :title="$t('Agent Identity')" :icon="ChatDotRound" />
         <el-step :title="$t('Context & Data')" :icon="Document" />
         <el-step :title="$t('AI Configuration')" :icon="Setting" />
@@ -351,26 +373,32 @@ watch([contextBlueprints, includeUserContext, includeWorkspaceContext], (newValu
     </div>
 
     <el-form label-position="top" class="agent-form">
-      <!-- Step 0: Agent Identity -->
-      <AgentIdentityStep
+      <!-- Step 0: Access Control -->
+      <AccessControlStep
         v-show="currentStep === 0"
+        v-model:permissions="accessControlPermissions"
+      />
+
+      <!-- Step 1: Agent Identity -->
+      <AgentIdentityStep
+        v-show="currentStep === 1"
         v-model:agent-name="agentName"
         v-model:agent-description="agentDescription"
         v-model:record-thread="recordThread"
         :integration-id="integrationId"
       />
 
-      <!-- Step 1: Context & Data -->
+      <!-- Step 2: Context & Data -->
       <AgentContextStep
-        v-show="currentStep === 1"
+        v-show="currentStep === 2"
         v-model:context-blueprints="contextBlueprints"
         v-model:include-user-context="includeUserContext"
         v-model:include-workspace-context="includeWorkspaceContext"
       />
 
-      <!-- Step 2: AI Configuration -->
+      <!-- Step 3: AI Configuration -->
       <AgentConfigurationStep
-        v-show="currentStep === 2"
+        v-show="currentStep === 3"
         v-model:selected-open-a-i-source="selectedOpenAISource"
         v-model:system-message="systemMessage"
         v-model:model="model"
@@ -378,9 +406,9 @@ watch([contextBlueprints, includeUserContext, includeWorkspaceContext], (newValu
         v-model:max-tokens="maxTokens"
       />
 
-      <!-- Step 3: Tools & Functions -->
+      <!-- Step 4: Tools & Functions -->
       <AgentToolsStep
-        v-show="currentStep === 3"
+        v-show="currentStep === 4"
         v-model:ingested-blueprints="ingestedBlueprints"
         v-model:ingested-agents="ingestedAgents"
         :integration-id="integrationId"

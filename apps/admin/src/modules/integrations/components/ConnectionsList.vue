@@ -1,11 +1,67 @@
 <script setup lang="ts">
 import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
+import IntegrationSourceFormModal from '@/modules/integrations/components/IntegrationSourceFormModal.vue';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
-import { computed } from 'vue';
+import integrationSourcesService from '@/services/apis/integration-sources-service';
+import { useSubmitting } from '@/modules/core/compositions/submitting';
+import { computed, ref } from 'vue';
+import { IntegrationSourceKind } from '@qelos/global-types';
 
 const kinds = useIntegrationKinds();
 const integrationSourcesStore = useIntegrationSourcesStore();
+
+const formVisible = ref(false);
+const selectedKind = ref<IntegrationSourceKind | string>('');
+const editingIntegration = ref<any>(null);
+
+const resetFormState = () => {
+  formVisible.value = false;
+  editingIntegration.value = null;
+  selectedKind.value = '';
+};
+
+const getDefaultMetadata = (kind: IntegrationSourceKind) => {
+  if (kind === IntegrationSourceKind.LinkedIn) {
+    return { scope: 'openid email profile' };
+  }
+  if (kind === IntegrationSourceKind.Facebook) {
+    return { scope: 'openid email public_profile' };
+  }
+  if (kind === IntegrationSourceKind.Google || kind === IntegrationSourceKind.GitHub) {
+    return { scope: 'openid email public_profile' };
+  }
+  return {};
+};
+
+const openCreateForm = (kind: IntegrationSourceKind) => {
+  selectedKind.value = kind;
+  editingIntegration.value = {
+    kind,
+    name: '',
+    labels: [],
+    metadata: getDefaultMetadata(kind),
+    authentication: {}
+  };
+  formVisible.value = true;
+};
+
+const { submit: saveConnection } = useSubmitting(
+  async (formData: any) => {
+    const savedData = await integrationSourcesService.create(formData);
+    await integrationSourcesStore.retry();
+    return savedData;
+  },
+  {
+    success: 'Connection created successfully',
+    error: 'Failed to save connection'
+  },
+  resetFormState
+);
+
+const handleCloseForm = () => {
+  resetFormState();
+};
 
 // Count sources by kind
 const sourcesCount = computed(() => {
@@ -24,7 +80,7 @@ const sourcesCount = computed(() => {
     
     <div class="blocks-list">
       <el-tooltip 
-        v-for="kind in kinds" 
+        v-for="(kind, key) in kinds" 
         :key="kind.kind"
         :content="kind.name"
         placement="top"
@@ -40,9 +96,27 @@ const sourcesCount = computed(() => {
             <el-badge v-if="sourcesCount[kind.kind] && sourcesCount[kind.kind] > 0" :value="sourcesCount[kind.kind]" class="source-count-badge" type="primary" />
           </div>
           <div class="integration-name">{{ kind.name }}</div>
+          <el-button
+            class="add-source-btn"
+            type="primary"
+            size="small"
+            circle
+            aria-label="Add connection"
+            @click.stop="openCreateForm(key)"
+          >
+            <el-icon><icon-plus /></el-icon>
+          </el-button>
         </BlockItem>
       </el-tooltip>
     </div>
+
+    <IntegrationSourceFormModal
+      v-model:visible="formVisible"
+      :editing-integration="editingIntegration"
+      :kind="selectedKind"
+      @save="saveConnection"
+      @close="handleCloseForm"
+    />
   </div>
 </template>
 
@@ -52,16 +126,16 @@ const sourcesCount = computed(() => {
   flex-wrap: wrap;
   justify-content: flex-start;
   align-content: flex-start;
-  gap: 16px;
-  margin-top: 20px;
+  gap: 0px;
+  margin-block-start: 20px;
 }
 
 .source {
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
-  width: 140px;
-  height: 140px;
+  width: 86px;
+  height: 86px;
 }
 
 .source:hover {
@@ -83,7 +157,8 @@ const sourcesCount = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 70px;
+  margin-block-start: 12px;
+  height: 60px;
   width: 100%;
 }
 
@@ -97,7 +172,7 @@ const sourcesCount = computed(() => {
 }
 
 .integration-name {
-  margin-top: 12px;
+  margin-block-start: 12px;
   font-size: 14px;
   font-weight: 500;
   text-align: center;
@@ -109,12 +184,27 @@ const sourcesCount = computed(() => {
 }
 
 .large {
-  font-size: 32px;
+  font-size: 26px;
 }
 
 .source-count-badge {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  inset-block-start: -8px;
+  inset-inline-end: -8px;
+}
+
+.add-source-btn {
+  position: absolute;
+  inset-block-end: 8px;
+  inset-inline-start: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.source:hover .add-source-btn,
+.add-source-btn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 </style>

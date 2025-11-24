@@ -5,6 +5,7 @@ import TriggerTab from '@/modules/integrations/components/tabs/TriggerTab.vue';
 import DataManipulationTab from '@/modules/integrations/components/tabs/DataManipulationTab.vue';
 import TargetTab from '@/modules/integrations/components/tabs/TargetTab.vue';
 import TriggerResponseTab from '@/modules/integrations/components/tabs/TriggerResponseTab.vue';
+import AccessControlStep from '@/modules/integrations/components/forms/AccessControlStep.vue';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
@@ -29,6 +30,45 @@ const route = useRoute();
 const integrationsStore = useIntegrationsStore();
 const sourcesStore = useIntegrationSourcesStore();
 const integrationKinds = useIntegrationKinds();
+
+type AccessControlPermissions = {
+  roles: string[];
+  workspaceRoles: string[];
+  workspaceLabels: string[];
+};
+
+const ensureTriggerDetails = () => {
+  if (!trigger.value) {
+    trigger.value = { source: '', operation: '', details: {} };
+  }
+  if (!trigger.value.details) {
+    trigger.value.details = {};
+  }
+  return trigger.value.details;
+};
+
+const accessControlPermissions = computed<AccessControlPermissions>({
+  get: () => ({
+    roles: trigger.value?.details?.roles || [],
+    workspaceRoles: trigger.value?.details?.workspaceRoles || [],
+    workspaceLabels: trigger.value?.details?.workspaceLabels || []
+  }),
+  set: (value) => {
+    const details = ensureTriggerDetails();
+    details.roles = value.roles || [];
+    details.workspaceRoles = value.workspaceRoles || [];
+    details.workspaceLabels = value.workspaceLabels || [];
+  }
+});
+
+const guestAccessAllowed = computed(() => (accessControlPermissions.value.roles || []).includes('guest'));
+const hasAccessRestrictions = computed(() => {
+  const roles = (accessControlPermissions.value.roles || []).filter(role => role !== 'guest' && role !== '*');
+  const workspaceRoles = (accessControlPermissions.value.workspaceRoles || []).filter(role => role !== '*');
+  const workspaceLabels = accessControlPermissions.value.workspaceLabels || [];
+  const labelsRestricted = workspaceLabels.length > 0 && !workspaceLabels.includes('*');
+  return roles.length > 0 || workspaceRoles.length > 0 || labelsRestricted;
+});
 
 const sourcesById = computed(() => {
   if (!sourcesStore.result) return {} as Record<string, any>;
@@ -103,9 +143,10 @@ const targetSourceLogo = computed(() => {
 });
 
 // Workflow step state management
-const expandedSteps = ref(new Set(['trigger'])); // Start with trigger expanded
+const expandedSteps = ref(new Set(['access-control', 'trigger'])); // Start with key configuration expanded
 const workflowSteps = computed(() => [
   { id: 'upstream', title: 'Incoming Signals', icon: 'Connection', optional: true },
+  { id: 'access-control', title: 'Access Control', icon: 'Lock', required: true },
   { 
     id: 'trigger', 
     title: 'Trigger', 
@@ -162,6 +203,8 @@ const getStepStatus = (stepId: string) => {
   switch (stepId) {
     case 'upstream':
       return hasTriggerSignature.value ? (upstreamIntegrations.value.length > 0 ? 'success' : 'warning') : 'inactive';
+    case 'access-control':
+      return 'success';
     case 'trigger':
       return trigger.value?.source && trigger.value?.details ? 'success' : 'error';
     case 'data-manipulation':
@@ -372,7 +415,7 @@ onUnmounted(() => {
               {{ step.subtitle }}
             </text>
             <!-- Source icon badge for trigger -->
-            <g v-if="index === 1 && triggerSourceLogo" class="source-badge">
+            <g v-if="step.id === 'trigger' && triggerSourceLogo" class="source-badge">
               <defs>
                 <clipPath :id="`badge-clip-trigger-${index}`">
                   <circle cx="28" cy="28" r="15"/>
@@ -391,7 +434,7 @@ onUnmounted(() => {
               </g>
             </g>
             <!-- Source icon badge for target -->
-            <g v-if="index === 3 && targetSourceLogo" class="source-badge">
+            <g v-if="step.id === 'target' && targetSourceLogo" class="source-badge">
               <defs>
                 <clipPath :id="`badge-clip-target-${index}`">
                   <circle cx="28" cy="28" r="15"/>
@@ -504,6 +547,46 @@ onUnmounted(() => {
         <div class="connector-arrow"><el-icon><ArrowDown /></el-icon></div>
       </div>
 
+      <!-- Access Control Step -->
+      <div class="workflow-step" :class="`status-${getStepStatus('access-control')}`" data-step-id="access-control">
+        <div class="step-header" @click="toggleStep('access-control')">
+          <div class="step-indicator">
+            <el-icon class="step-status-icon" :class="`status-${getStepStatus('access-control')}`">
+              <component :is="getStepIcon('access-control', getStepStatus('access-control'))" />
+            </el-icon>
+            <div class="step-number">1</div>
+          </div>
+          <div class="step-info">
+            <h3>{{ $t('Access Control') }}</h3>
+            <p>{{ $t('Specify who can trigger this workflow') }}</p>
+            <div class="step-badges">
+              <el-tag size="small" :type="guestAccessAllowed ? 'success' : 'warning'">
+                {{ guestAccessAllowed ? $t('Guests Allowed') : $t('Authenticated Users') }}
+              </el-tag>
+              <el-tag size="small" :type="hasAccessRestrictions ? 'info' : 'success'">
+                {{ hasAccessRestrictions ? $t('Restricted') : $t('Open Access') }}
+              </el-tag>
+            </div>
+          </div>
+          <div class="step-actions">
+            <el-icon class="expand-icon" :class="{ expanded: isStepExpanded('access-control') }">
+              <ArrowDown />
+            </el-icon>
+          </div>
+        </div>
+        <el-collapse-transition>
+          <div v-show="isStepExpanded('access-control')" class="step-content">
+            <AccessControlStep v-model:permissions="accessControlPermissions" />
+          </div>
+        </el-collapse-transition>
+      </div>
+
+      <!-- Flow Connector -->
+      <div class="flow-connector" :class="{ active: getStepStatus('access-control') === 'success' }">
+        <div class="connector-line"></div>
+        <div class="connector-arrow"><el-icon><ArrowDown /></el-icon></div>
+      </div>
+
       <!-- Trigger Step -->
       <div class="workflow-step" :class="`status-${getStepStatus('trigger')}`" data-step-id="trigger">
         <div class="step-header" @click="toggleStep('trigger')">
@@ -511,7 +594,7 @@ onUnmounted(() => {
             <el-icon class="step-status-icon" :class="`status-${getStepStatus('trigger')}`">
               <component :is="getStepIcon('trigger', getStepStatus('trigger'))" />
             </el-icon>
-            <div class="step-number">1</div>
+            <div class="step-number">2</div>
           </div>
           <div class="step-info">
             <h3>{{ $t('Trigger') }}</h3>
@@ -552,7 +635,7 @@ onUnmounted(() => {
             <el-icon class="step-status-icon" :class="`status-${getStepStatus('data-manipulation')}`">
               <component :is="getStepIcon('data-manipulation', getStepStatus('data-manipulation'))" />
             </el-icon>
-            <div class="step-number">2</div>
+            <div class="step-number">3</div>
           </div>
           <div class="step-info">
             <h3>{{ $t('Data Manipulation') }}</h3>
@@ -590,7 +673,7 @@ onUnmounted(() => {
             <el-icon class="step-status-icon" :class="`status-${getStepStatus('target')}`">
               <component :is="getStepIcon('target', getStepStatus('target'))" />
             </el-icon>
-            <div class="step-number">3</div>
+            <div class="step-number">4</div>
           </div>
           <div class="step-info">
             <h3>{{ $t('Target') }}</h3>
@@ -631,7 +714,7 @@ onUnmounted(() => {
             <el-icon class="step-status-icon" :class="`status-${getStepStatus('trigger-response')}`">
               <component :is="getStepIcon('trigger-response', getStepStatus('trigger-response'))" />
             </el-icon>
-            <div class="step-number">4</div>
+            <div class="step-number">5</div>
           </div>
           <div class="step-info">
             <h3>{{ $t('Trigger Response') }}</h3>
@@ -669,7 +752,7 @@ onUnmounted(() => {
             <el-icon class="step-status-icon" :class="`status-${getStepStatus('downstream')}`">
               <component :is="getStepIcon('downstream', getStepStatus('downstream'))" />
             </el-icon>
-            <div class="step-number">5</div>
+            <div class="step-number">6</div>
           </div>
           <div class="step-info">
             <h3>{{ $t('Downstream Automations') }}</h3>
