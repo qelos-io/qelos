@@ -88,7 +88,7 @@ const updateTargetDetails = (value: string) => {
 };
 
 // Initialize system message from pre_messages when component mounts or details change
-const initializeSystemMessage = () => {
+const f = () => {
   if (selectedTargetSource.value?.kind === IntegrationSourceKind.OpenAI && 
       props.modelValue.operation === OpenAITargetOperation.chatCompletion && 
       props.modelValue.details?.pre_messages?.length) {

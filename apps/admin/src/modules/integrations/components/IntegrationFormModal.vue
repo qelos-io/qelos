@@ -27,37 +27,18 @@ const {
   selectedViewMode
 } = useIntegrationFormState({ props, visible, sourcesStore: store });
 
-const aiAgentCurrentStep = ref(0);
-const totalAIAgentSteps = 5;
-
 const isAIAgentView = computed(() => selectedViewMode.value === IntegrationType.AIAgent);
 const isWorkflowView = computed(() => selectedViewMode.value === IntegrationType.Workflow);
 
-const canGoNext = computed(() => isAIAgentView.value && aiAgentCurrentStep.value < totalAIAgentSteps - 1);
-const canGoPrevious = computed(() => isAIAgentView.value && aiAgentCurrentStep.value > 0);
-const isLastStep = computed(() => isAIAgentView.value && aiAgentCurrentStep.value === totalAIAgentSteps - 1);
 const isNewIntegration = computed(() => !props.editingIntegration?._id);
 
 const integrationName = computed(() => form.trigger?.details?.name);
 
 watch(visible, (value) => {
   if (value) {
-    aiAgentCurrentStep.value = 0;
     showTypeSelection.value = isNewIntegration.value;
   }
 });
-
-const goToNextStep = () => {
-  if (canGoNext.value) {
-    aiAgentCurrentStep.value++;
-  }
-};
-
-const goToPreviousStep = () => {
-  if (canGoPrevious.value) {
-    aiAgentCurrentStep.value--;
-  }
-};
 
 const selectMode = (mode: IntegrationType) => {
   selectedViewMode.value = mode;
@@ -175,7 +156,6 @@ const applyPastedIntegration = () => {
             v-model:trigger="form.trigger"
             v-model:target="form.target"
             v-model:data-manipulation="form.dataManipulation"
-            v-model:current-step="aiAgentCurrentStep"
             :integration-id="props.editingIntegration?._id"
           />
         </div>
@@ -186,35 +166,16 @@ const applyPastedIntegration = () => {
       <div class="dialog-footer">
         <!-- Mode Selection Footer -->
         <template v-if="isAIAgentView">
-          <div class="ai-agent-footer">
-            <div class="step-info">
-              <span class="step-text">{{ $t('Step') }} {{ aiAgentCurrentStep + 1 }} {{ $t('of') }} {{ totalAIAgentSteps }}</span>
-            </div>
-            <div class="footer-actions">
-              <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
-              <el-button 
-                v-if="canGoPrevious"
-                @click="goToPreviousStep"
-              >
-                {{ $t('Previous') }}
-              </el-button>
-              <el-button 
-                v-if="canGoNext"
-                type="primary"
-                @click="goToNextStep"
-              >
-                {{ $t('Next') }}
-              </el-button>
-              <el-button 
-                v-if="isLastStep"
-                type="success"
-                @click="submit" 
-                :disabled="submitting" 
-                :loading="submitting"
-              >
-                {{ $t('Save Agent') }}
-              </el-button>
-            </div>
+          <div class="footer-actions">
+            <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
+            <el-button
+              type="primary"
+              @click="submit"
+              :disabled="submitting"
+              :loading="submitting"
+            >
+              {{ $t('Save Agent') }}
+            </el-button>
           </div>
         </template>
         
