@@ -5,6 +5,10 @@ import monaco from '@/services/monaco-service'
 const props = defineProps({
   modelValue: String,
   language: String,
+  height: {
+    type: String,
+    default: '350px'
+  }
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -48,7 +52,7 @@ function emitUpdate() {
 </template>
 <style scoped>
 .monaco {
-  height: 350px;
+  height: v-bind(height);
   width: 100%;
   margin-bottom: 15px;
 }
