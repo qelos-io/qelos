@@ -24,7 +24,8 @@ const store = useIntegrationSourcesStore();
 
 const {
   form,
-  selectedViewMode
+  selectedViewMode,
+  setSelectedViewMode
 } = useIntegrationFormState({ props, visible, sourcesStore: store });
 
 const isAIAgentView = computed(() => selectedViewMode.value === IntegrationType.AIAgent);
@@ -41,7 +42,7 @@ watch(visible, (value) => {
 });
 
 const selectMode = (mode: IntegrationType) => {
-  selectedViewMode.value = mode;
+  setSelectedViewMode(mode, { manual: true });
   showTypeSelection.value = false;
 };
 

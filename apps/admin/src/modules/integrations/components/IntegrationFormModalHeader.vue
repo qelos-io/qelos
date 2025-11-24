@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { IIntegration, IIntegrationSource } from '@qelos/global-types';
-import { detectIntegrationType, IntegrationType } from '@/modules/integrations/utils/integration-type-detector';
+import { IntegrationType } from '@/modules/integrations/utils/integration-type-detector';
 
 const props = defineProps<{
   active: boolean;
@@ -18,14 +18,8 @@ const emit = defineEmits<{
 
 // Active toggle
 const isActive = computed({
-  get: () => props.active,
+  get: () => !!props.active,
   set: (value: boolean) => emit('update:active', value)
-});
-
-// Integration type detection
-const detectedIntegrationType = computed(() => {
-  if (!props.sources?.length) return IntegrationType.Workflow;
-  return detectIntegrationType(props.integrationForm, props.sources);
 });
 
 // AI Agent mode toggle

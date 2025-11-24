@@ -55,6 +55,14 @@ export function useIntegrationFormState({ props, visible, sourcesStore }: UseInt
   });
 
   const selectedViewMode = ref<IntegrationType>(IntegrationType.Workflow);
+  const hasManualViewModeSelection = ref(false);
+
+  const setSelectedViewMode = (mode: IntegrationType, options?: { manual?: boolean }) => {
+    selectedViewMode.value = mode;
+    if (options?.manual) {
+      hasManualViewModeSelection.value = true;
+    }
+  };
 
   const findQelosSource = () => {
     if (!sourcesStore.result?.length) return '';
@@ -71,33 +79,37 @@ export function useIntegrationFormState({ props, visible, sourcesStore }: UseInt
   };
 
   const hydrateForm = () => {
+    hasManualViewModeSelection.value = false;
+
+    const editingIntegration = props.editingIntegration || {};
+
     Object.assign(form, {
-      ...(props.editingIntegration || {}),
+      ...editingIntegration,
       trigger: {
         source: '',
         operation: '',
         details: {},
-        ...(props.editingIntegration?.trigger || {})
+        ...(editingIntegration.trigger || {})
       },
       target: {
         source: '',
         operation: '',
         details: {},
-        ...(props.editingIntegration?.target || {})
+        ...(editingIntegration.target || {})
       },
-      dataManipulation: (props.editingIntegration?._id || props.editingIntegration?.dataManipulation?.length)
-        ? (props.editingIntegration.dataManipulation || [])
+      dataManipulation: (editingIntegration._id || editingIntegration.dataManipulation?.length)
+        ? (editingIntegration.dataManipulation || [])
         : [...DEFAULT_DATA_MANIPULATION],
-      active: props.editingIntegration?.active || false
+      active: editingIntegration.active || false
     });
 
     sanitizeDataManipulation();
 
-    if (props.editingIntegration?._id && sourcesStore.result?.length) {
+    if (editingIntegration._id && sourcesStore.result?.length) {
       const detectedType = detectIntegrationType(form, sourcesStore.result);
-      selectedViewMode.value = detectedType;
+      setSelectedViewMode(detectedType);
     } else {
-      selectedViewMode.value = IntegrationType.Workflow;
+      setSelectedViewMode(IntegrationType.Workflow);
 
       nextTick(() => {
         if (sourcesStore.result?.length) {
@@ -115,14 +127,14 @@ export function useIntegrationFormState({ props, visible, sourcesStore }: UseInt
   watch(
     () => [form.trigger, form.target, sourcesStore.result],
     () => {
-      if (props.editingIntegration?._id || !sourcesStore.result?.length) {
+      if (props.editingIntegration?._id || !sourcesStore.result?.length || hasManualViewModeSelection.value) {
         return;
       }
       const detectedType = detectIntegrationType(form, sourcesStore.result || []);
       if (detectedType === IntegrationType.AIAgent) {
-        selectedViewMode.value = IntegrationType.AIAgent;
+        setSelectedViewMode(IntegrationType.AIAgent);
       } else {
-        selectedViewMode.value = IntegrationType.Workflow;
+        setSelectedViewMode(IntegrationType.Workflow);
       }
     },
     { immediate: true, deep: true }
@@ -140,6 +152,7 @@ export function useIntegrationFormState({ props, visible, sourcesStore }: UseInt
 
   return {
     form,
-    selectedViewMode
+    selectedViewMode,
+    setSelectedViewMode
   };
 }
