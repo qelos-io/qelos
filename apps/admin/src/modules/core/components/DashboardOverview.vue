@@ -1,5 +1,8 @@
 <template>
   <div class="dashboard-overview">
+
+    <OpenAiAlert v-if="!groupedSources.openai?.length" />
+
     <!-- System Status Overview -->
     <div class="status-overview">
       <h2 class="section-title">{{ $t('System Status') }}</h2>
@@ -212,9 +215,10 @@ import { useAdminEvents } from '@/modules/core/store/admin-events';
 import { authStore } from '@/modules/core/store/auth';
 import { api } from '@/services/apis/api';
 import { useUserMetadataStore } from '@/modules/core/store/user-metadata';
-
+import OpenAiAlert from '@/modules/core/components/forms/OpenAiAlert.vue';
 import { Plus } from '@element-plus/icons-vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 
 const { loading: loadingBlocks, blocks } = toRefs(useBlocksList());
 const { loading: loadingStats, stats } = useUsersStats();
@@ -222,6 +226,7 @@ const { systemStatus, activityChartOption, activityTimeframe } = toRefs(useAdmin
 const { t } = useI18n();
 
 const wsConfig = useWsConfiguration();
+const { groupedSources } = toRefs(useIntegrationSourcesStore());
 
 // Load plugins data
 const pluginsStore = usePluginsList();
@@ -262,6 +267,11 @@ const allQuickActions = [
     text: t('View Content Boxes'), 
     icon: ['fas', 'cubes'], 
     route: '/blocks'
+  },
+  {
+    text: t('Manage Integrations'),
+    icon: ['fas', 'arrows-turn-to-dots'],
+    route: '/integrations'
   }
 ];
 
