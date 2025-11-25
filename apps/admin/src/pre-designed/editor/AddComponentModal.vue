@@ -82,7 +82,8 @@
                            :key="child.prop"
                            :type="child.type"
                            :title="child.label"
-                           :options="child.options"
+                           :options="getPropOptions(child)"
+                           :select-options="child.selectOptions"
                            v-model="col[child.prop]"
                 />
                 <div class="flex-0 remove-row">
@@ -96,7 +97,8 @@
                        :title="prop.label"
                        :label="prop.description"
                        :placeholder="prop.placeholder"
-                       :options="prop.options"
+                       :options="getPropOptions(prop)"
+                       :select-options="prop.selectOptions"
                        v-model="propsBuilder[prop.prop]"/>
           </div>
         </div>
@@ -119,7 +121,7 @@
 </template>
 
 <script lang="ts" setup>
-import { capitalize, provide, ref, toRef, watch } from 'vue'
+import { capitalize, computed, provide, ref, toRef, watch } from 'vue'
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
@@ -127,6 +129,7 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import { useEditorComponents } from '@/modules/pre-designed/compositions/editor-components';
+import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 
 const dialogVisible = ref(true)
 const active = ref(0)
@@ -135,8 +138,63 @@ const propsBuilder = ref<any>({})
 const cruds = toRef(usePluginsMicroFrontends(), 'cruds')
 const blueprints = toRef(useBlueprintsStore(), 'blueprints');
 const crudsOrBlueprints = ref('blueprints');
+const integrationsStore = useIntegrationsStore();
 
 const { availableComponents, getColumnsFromBlueprint } = useEditorComponents();
+
+const aiChatUrlOptions = computed(() => {
+  const integrations = integrationsStore.integrations || [];
+  return integrations
+    .filter((integration: any) => integration?.trigger?.operation === 'chatCompletion')
+    .map((integration: any) => {
+      const integrationId = integration?._id;
+      if (!integrationId) return null;
+      const baseUrl = `/api/ai/${integrationId}/chat-completion`;
+      const shouldRecord = Boolean(integration?.trigger?.details?.recordThread);
+      const url = shouldRecord ? `${baseUrl}/[threadId]` : baseUrl;
+      const name = integration?.trigger?.details?.name || integration?.name || integrationId;
+      return {
+        identifier: url,
+        name: `${name} (${url})`
+      };
+    })
+    .filter((option): option is { identifier: string, name: string } => Boolean(option));
+});
+
+const fontAwesomeIconOptions = [
+  { identifier: 'robot', name: '🤖 Robot (fa-robot)' },
+  { identifier: 'user-astronaut', name: '👩‍🚀 Astronaut (fa-user-astronaut)' },
+  { identifier: 'comments', name: '💬 Comments (fa-comments)' },
+  { identifier: 'lightbulb', name: '💡 Lightbulb (fa-lightbulb)' },
+  { identifier: 'bolt', name: '⚡ Bolt (fa-bolt)' },
+  { identifier: 'brain', name: '🧠 Brain (fa-brain)' },
+  { identifier: 'gear', name: '⚙️ Gear (fa-gear)' },
+  { identifier: 'question-circle', name: '❓ Question (fa-question-circle)' },
+  { identifier: 'hands-helping', name: '🤝 Help (fa-hands-helping)' },
+  { identifier: 'wand-magic-sparkles', name: '✨ Magic (fa-wand-magic-sparkles)' },
+  { identifier: 'headset', name: '🎧 Support (fa-headset)' },
+  { identifier: 'rocket', name: '🚀 Rocket (fa-rocket)' },
+  { identifier: 'chart-line', name: '📈 Insights (fa-chart-line)' },
+  { identifier: 'shield-check', name: '🛡️ Secure (fa-shield-check)' },
+  { identifier: 'circle-info', name: 'ℹ️ Info (fa-circle-info)' },
+  { identifier: 'flag-checkered', name: '🏁 Goals (fa-flag-checkered)' },
+  { identifier: 'paper-plane', name: '🛫 Launch (fa-paper-plane)' },
+  { identifier: 'puzzle-piece', name: '🧩 Puzzle (fa-puzzle-piece)' },
+  { identifier: 'clipboard-list', name: '📋 Tasks (fa-clipboard-list)' },
+  { identifier: 'star', name: '⭐ Favorite (fa-star)' }
+];
+
+const optionResolvers: Record<string, () => Array<{ identifier: string, name: string }>> = {
+  aiChatUrls: () => aiChatUrlOptions.value,
+  faIcons: () => fontAwesomeIconOptions,
+};
+
+const getPropOptions = (prop: any) => {
+  if (prop?.optionsResolver && optionResolvers[prop.optionsResolver]) {
+    return optionResolvers[prop.optionsResolver]() || [];
+  }
+  return prop?.options || [];
+};
 
 const emit = defineEmits(['save', 'close'])
 

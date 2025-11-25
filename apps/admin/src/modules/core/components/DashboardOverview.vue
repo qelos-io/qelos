@@ -531,12 +531,12 @@ async function removeBlueprintFromDashboard(identifier: string) {
 
 .blueprint-select-popover .el-input__wrapper:hover {
   border-color: rgba(var(--main-color-rgb), 0.3);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
 }
 
 .blueprint-select-popover .el-input__wrapper.is-focus {
   border-color: var(--main-color);
-  box-shadow: 0 0 0 2px rgba(var(--main-color-rgb), 0.2);
+  box-shadow: 0 0 0 1px rgba(var(--main-color-rgb), 0.2);
 }
 
 .select-prefix-icon {

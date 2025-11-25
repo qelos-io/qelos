@@ -13,6 +13,7 @@ import MockStatsCard from '@/pre-designed/editor/MockStatsCard.vue';
 import AiChat from '@/modules/pre-designed/components/AiChat.vue';
 import { useComponentsList } from '@/modules/blocks/store/components-list';
 import kebabCase from 'lodash.kebabcase';
+import MockAiChat from '@/pre-designed/editor/MockAiChat.vue';
 
 
 export interface EditorComponent {
@@ -29,6 +30,8 @@ export interface EditorComponent {
     description?: string,
     placeholder?: string,
     options?: Array<{ identifier: string, name: string }>,
+    selectOptions?: Record<string, any>,
+    optionsResolver?: 'aiChatUrls' | 'faIcons' | string,
     value?: any,
     bind?: boolean,
     source: string,
@@ -267,14 +270,31 @@ export function useEditorComponents() {
       title: 'AI Chat',
       description: 'A chat interface with AI assistant and file upload support.',
       component: AiChat,
+      mock: MockAiChat,
       requiredProps: [
-        { prop: 'url', label: 'AI API URL', type: 'text', source: 'manual', placeholder: 'https://...' },
+        {
+          prop: 'url',
+          label: 'AI API URL',
+          type: 'select',
+          source: 'manual',
+          placeholder: 'Select or enter an AI chat endpoint',
+          description: 'Existing chat completion endpoints detected from your AI Agents.',
+          optionsResolver: 'aiChatUrls',
+          selectOptions: { filterable: true, allowCreate: true, defaultFirstOption: false }
+        },
         { prop: 'title', label: 'Title', type: 'text', source: 'manual', placeholder: 'Enter the card title' },
         { prop: 'full-screen', label: 'Full Screen', type: 'switch', source: 'manual', bind: true, value: true },
         { prop: 'suggestions', label: 'Suggestions', type: 'array', source: 'manual', 
           children: [
             { prop: 'label', label: 'Label', type: 'text', placeholder: 'Enter the label' },
-            { prop: 'icon', label: 'Icon', type: 'text', placeholder: 'Enter the icon' },
+            {
+              prop: 'icon',
+              label: 'Icon',
+              type: 'select',
+              placeholder: 'Select or type an icon name',
+              optionsResolver: 'faIcons',
+              selectOptions: { filterable: true, allowCreate: true }
+            },
             { prop: 'text', label: 'Text', type: 'text', placeholder: 'Enter the text' },
           ]
         },
