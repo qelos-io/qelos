@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard flex-container">
-    <el-tabs model-value="dashboard">
+    <el-tabs model-value="dashboard" class="dashboard-tabs">
       <el-tab-pane name="dashboard" :label="$t('Dashboard')">
         <DashboardOverview />
       </el-tab-pane>
@@ -683,5 +683,55 @@ footer {
 
 .container {
   margin-inline: 2%;
+}
+
+.dashboard-tabs {
+  :deep(.el-tabs__header) {
+    inset-block-start: 0;
+    background-color: var(--body-bg);
+    z-index: 2;
+  }
+
+  :deep(.el-tabs__nav-wrap) {
+    transition: box-shadow 0.2s ease;
+  }
+
+  @media (max-width: 768px) {
+    :deep(.el-tabs__header) {
+      position: sticky;
+      padding-inline: 8px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    :deep(.el-tabs__nav-wrap) {
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    :deep(.el-tabs__nav-wrap::-webkit-scrollbar) {
+      display: none;
+    }
+
+    :deep(.el-tabs__nav-scroll) {
+      overflow: visible;
+      min-width: max-content;
+    }
+
+    :deep(.el-tabs__nav) {
+      display: inline-flex;
+      min-width: max-content;
+      gap: 12px;
+      padding-inline: 4px;
+    }
+
+    :deep(.el-tabs__item) {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      padding-inline: 12px;
+    }
+  }
 }
 </style>
