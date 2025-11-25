@@ -266,7 +266,7 @@ const allQuickActions = [
   { 
     text: t('View Content Boxes'), 
     icon: ['fas', 'cubes'], 
-    route: '/blocks'
+    route: '/admin/blocks'
   },
   {
     text: t('Manage Integrations'),

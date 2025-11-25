@@ -3,9 +3,9 @@ import { ref, onMounted, watch, computed } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
-import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { useIntegrationKindsTargetOperations } from '@/modules/integrations/compositions/integration-kinds-operations';
 import { IntegrationSourceKind, OpenAITargetOperation, HttpTargetOperation, EmailTargetOperation } from '@qelos/global-types';
+import ConnectionSelector from '@/modules/integrations/components/ConnectionSelector.vue';
 
 // Import target configuration components
 import HttpTargetConfig from './target-components/HttpTargetConfig.vue';
@@ -21,7 +21,6 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue']);
 
 const store = useIntegrationSourcesStore();
-const kinds = useIntegrationKinds();
 const targetOperations = useIntegrationKindsTargetOperations();
 
 // Target tab UI state
@@ -206,25 +205,13 @@ onMounted(() => {
       {{ $t('Configure the target that will be triggered by this workflow.') }}
     </el-alert>
     
-    <!-- Connection Selection -->
-    <div class="section-container">
-      <h4>{{ $t('Connection') }}</h4>
-      <FormInput type="select" v-model="modelValue.source"
-               label="Connection that will be triggered by this workflow"
-               @change="handleSourceChange">
-        <template #options>
-          <el-option v-for="source in store.result"
-                    :key="source._id"
-                    :value="source._id"
-                    :label="source.name" class="qelos-connection-option">
-            <img v-if="kinds[source.kind].logo" class="qelos-connection-icon" :src="kinds[source.kind].logo"
-                :alt="kinds[source.kind].name"/>
-            <small v-else class="qelos-connection-text">{{ kinds[source.kind].name }}</small>
-            <span>{{ source.name }}</span>
-          </el-option>
-        </template>
-      </FormInput>
-    </div>
+    <ConnectionSelector
+      v-model="modelValue.source"
+      section-title="Connection"
+      field-label="Connection that will be triggered by this workflow"
+      description="Select the downstream connection to execute after the trigger."
+      @change="handleSourceChange"
+    />
     
     <!-- Operation Selection -->
     <div v-if="selectedTargetSource" class="section-container">

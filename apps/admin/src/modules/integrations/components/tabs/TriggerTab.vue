@@ -3,7 +3,6 @@ import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
-import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { TriggerOperation, useIntegrationKindsTriggerOperations } from '@/modules/integrations/compositions/integration-kinds-operations';
 import { OpenAITargetOperation, IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
 import { ElMessage } from 'element-plus';
@@ -12,6 +11,7 @@ import { useIntegrationsStore } from '@/modules/integrations/store/integrations'
 import eventsService, { IEvent } from '@/services/apis/events-service';
 import { PLATFORM_EVENTS, PlatformEventDefinition } from '@/modules/integrations/constants/platform-events';
 import FunctionParametersSchemaEditor from '@/modules/integrations/components/forms/FunctionParametersSchemaEditor.vue';
+import ConnectionSelector from '@/modules/integrations/components/ConnectionSelector.vue';
 
 const props = defineProps<{
   modelValue: any;
@@ -21,7 +21,6 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue']);
 
 const store = useIntegrationSourcesStore();
-const kinds = useIntegrationKinds();
 const triggerOperations = useIntegrationKindsTriggerOperations();
 const integrationsStore = useIntegrationsStore();
 
@@ -411,28 +410,6 @@ watch(
 </script>
 
 <style>
-/* Global styles for connection selectors */
-.qelos-connection-option {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-}
-
-.qelos-connection-icon {
-  width: 14px !important;
-  height: 14px !important;
-  margin-right: 8px !important;
-  margin-bottom: 0;
-  object-fit: contain !important;
-  flex-shrink: 0 !important;
-}
-
-.qelos-connection-text {
-  font-size: 0.7em !important;
-  color: var(--el-text-color-secondary) !important;
-  margin-right: 8px !important;
-}
-
 .webhook-config {
   display: flex;
   flex-direction: column;
@@ -479,25 +456,13 @@ watch(
       {{ $t('Configure the trigger that will start this workflow.') }}
     </el-alert>
     
-    <!-- Connection Selection -->
-    <div class="section-container">
-      <h4>{{ $t('Connection') }}</h4>
-      <FormInput type="select" v-model="modelValue.source"
-               @change="handleSourceChange"
-               label="Connection that will trigger this workflow">
-        <template #options>
-          <el-option v-for="source in store.result"
-                    :key="source._id"
-                    :value="source._id"
-                    :label="source.name" class="qelos-connection-option">
-            <img v-if="kinds[source.kind].logo" class="qelos-connection-icon" :src="kinds[source.kind].logo"
-                :alt="kinds[source.kind].name"/>
-            <small v-else class="qelos-connection-text">{{ kinds[source.kind].name }}</small>
-            <span>{{ source.name }}</span>
-          </el-option>
-        </template>
-      </FormInput>
-    </div>
+    <ConnectionSelector
+      v-model="modelValue.source"
+      section-title="Connection"
+      field-label="Connection that will trigger this workflow"
+      description="Choose which connection will start this workflow."
+      @change="handleSourceChange"
+    />
     
     <!-- Operation Selection -->
     <div v-if="selectedTriggerSource" class="section-container">
