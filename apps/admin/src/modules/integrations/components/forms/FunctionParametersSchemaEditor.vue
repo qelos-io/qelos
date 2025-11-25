@@ -16,7 +16,7 @@ interface ParameterRow {
 }
 
 const collapseState = ref(false);
-const mode = ref<'editor' | 'viewer'>('editor');
+const mode = ref<'editor' | 'viewer'>('viewer');
 const rows = ref<ParameterRow[]>([]);
 const schemaError = ref<string | null>(null);
 const isSyncingFromViewer = ref(false);

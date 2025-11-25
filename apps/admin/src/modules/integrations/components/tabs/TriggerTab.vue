@@ -7,6 +7,7 @@ import { useIntegrationKinds } from '@/modules/integrations/compositions/integra
 import { TriggerOperation, useIntegrationKindsTriggerOperations } from '@/modules/integrations/compositions/integration-kinds-operations';
 import { OpenAITargetOperation, IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
 import { ElMessage } from 'element-plus';
+import { ArrowDown } from '@element-plus/icons-vue';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 import eventsService, { IEvent } from '@/services/apis/events-service';
 import { PLATFORM_EVENTS, PlatformEventDefinition } from '@/modules/integrations/constants/platform-events';
@@ -115,6 +116,38 @@ const functionParameters = ref(JSON.stringify({
 }, null, 2));
 const allowedIntegrationIds = ref([]);
 const blockedIntegrationIds = ref([]);
+const integrationAccessCollapsed = ref(true);
+
+const qelosChatIntegrations = computed(() => {
+  return (integrationsStore.integrations || []).filter(
+    (integration) =>
+      integration.kind?.[0] === IntegrationSourceKind.Qelos &&
+      integration.trigger?.operation === QelosTriggerOperation.chatCompletion
+  );
+});
+
+const integrationSummary = (ids: string[], emptyLabel: string) => {
+  if (!ids?.length) {
+    return emptyLabel;
+  }
+
+  const names = ids
+    .map((id) => qelosChatIntegrations.value.find((integration) => integration._id === id)?.trigger?.details?.name)
+    .filter((name): name is string => Boolean(name));
+
+  if (!names.length) {
+    return `${ids.length} selected`;
+  }
+
+  if (names.length === 1) {
+    return names[0];
+  }
+
+  return `${names[0]} + ${ids.length - 1} more`;
+};
+
+const allowedIntegrationsSummary = computed(() => integrationSummary(allowedIntegrationIds.value, 'All integrations'));
+const blockedIntegrationsSummary = computed(() => integrationSummary(blockedIntegrationIds.value, 'No blocked integrations'));
 
 // Copy text to clipboard
 const copyToClipboard = (text: string) => {
@@ -671,51 +704,78 @@ watch(
             v-model="functionParameters"
             @update:modelValue="updateFunctionCallingDetails"
           />
-          
-          <!-- Allowed Integrations Selection -->
-          <el-form-item label="Allowed Integrations">
-            <small class="help-text">Select integrations that are allowed to use this function</small>
-            <el-select
-              v-model="allowedIntegrationIds"
-              multiple
-              filterable
-              collapse-tags-tooltip
-              placeholder="Select allowed integrations"
-              @change="updateFunctionCallingDetails"
-              class="integration-select"
-            >
-              <el-option
-                v-for="integration in integrationsStore.integrations?.filter(i => i.kind[0] === IntegrationSourceKind.Qelos && i.trigger.operation === QelosTriggerOperation.chatCompletion)"
-                :key="integration._id"
-                :label="integration.trigger.details?.name || 'No name'"
-                :tooltip="integration.trigger.details?.description || 'No description'"
-                :value="integration._id"
-              />
-            </el-select>
-            <small class="help-text">If none selected, all integrations are allowed</small>
-          </el-form-item>
-          
-          <!-- Blocked Integrations Selection -->
-          <el-form-item label="Blocked Integrations">
-            <small class="help-text">Select integrations that are blocked from using this function</small>
-            <el-select
-              v-model="blockedIntegrationIds"
-              multiple
-              filterable
-              collapse-tags-tooltip
-              placeholder="Select blocked integrations"
-              @change="updateFunctionCallingDetails"
-              class="integration-select"
-            >
-              <el-option
-                v-for="integration in integrationsStore.integrations?.filter(i => i.kind[0] === IntegrationSourceKind.Qelos && i.trigger.operation === QelosTriggerOperation.chatCompletion)"
-                :key="integration._id"
-                :label="integration.trigger.details?.name || 'No name'"
-                :tooltip="integration.trigger.details?.description || 'No description'"
-                :value="integration._id"
-              />
-            </el-select>
-          </el-form-item>
+
+          <div class="integration-access">
+            <button class="collapse-header" type="button" @click="integrationAccessCollapsed = !integrationAccessCollapsed">
+              <div class="header-content">
+                <strong>Integration Access Control</strong>
+                <span class="help-text">
+                  Define which Qelos chat agents may call this function.
+                </span>
+              </div>
+              <el-icon :class="['collapse-icon', { collapsed: integrationAccessCollapsed }]">
+                <ArrowDown />
+              </el-icon>
+            </button>
+            <el-collapse-transition>
+              <div v-show="!integrationAccessCollapsed" class="integration-access-body">
+                <div class="integration-summary-cards">
+                  <div class="summary-card">
+                    <span class="summary-label">Allowed</span>
+                    <strong>{{ allowedIntegrationsSummary }}</strong>
+                    <small class="help-text">Empty = all integrations allowed</small>
+                  </div>
+                  <div class="summary-card">
+                    <span class="summary-label">Blocked</span>
+                    <strong>{{ blockedIntegrationsSummary }}</strong>
+                    <small class="help-text">Empty = no restrictions</small>
+                  </div>
+                </div>
+                <el-form-item label="Allowed Integrations">
+                  <small class="help-text">Select integrations that are allowed to use this function</small>
+                  <el-select
+                    v-model="allowedIntegrationIds"
+                    multiple
+                    filterable
+                    collapse-tags-tooltip
+                    placeholder="Select allowed integrations"
+                    @change="updateFunctionCallingDetails"
+                    class="integration-select"
+                  >
+                    <el-option
+                      v-for="integration in qelosChatIntegrations"
+                      :key="integration._id"
+                      :label="integration.trigger.details?.name || 'No name'"
+                      :tooltip="integration.trigger.details?.description || 'No description'"
+                      :value="integration._id"
+                    />
+                  </el-select>
+                  <small class="help-text">If none selected, all integrations are allowed</small>
+                </el-form-item>
+
+                <el-form-item label="Blocked Integrations">
+                  <small class="help-text">Select integrations that are blocked from using this function</small>
+                  <el-select
+                    v-model="blockedIntegrationIds"
+                    multiple
+                    filterable
+                    collapse-tags-tooltip
+                    placeholder="Select blocked integrations"
+                    @change="updateFunctionCallingDetails"
+                    class="integration-select"
+                  >
+                    <el-option
+                      v-for="integration in qelosChatIntegrations"
+                      :key="integration._id"
+                      :label="integration.trigger.details?.name || 'No name'"
+                      :tooltip="integration.trigger.details?.description || 'No description'"
+                      :value="integration._id"
+                    />
+                  </el-select>
+                </el-form-item>
+              </div>
+            </el-collapse-transition>
+          </div>
         </el-form>
       </div>
       
@@ -881,5 +941,58 @@ watch(
 
 .integration-select {
   width: 100%;
+}
+
+.integration-access {
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  background-color: var(--el-bg-color);
+  margin-block-end: 20px;
+}
+
+.integration-access .collapse-header {
+  inline-size: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.integration-access .header-content {
+  display: flex;
+  flex-direction: column;
+  inline-size: calc(100% - 40px);
+  text-align: start;
+}
+
+.integration-access .integration-access-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.integration-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.summary-card {
+  padding: 12px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  background-color: var(--el-bg-color-page);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-label {
+  font-size: 0.8em;
+  color: var(--el-text-color-secondary);
 }
 </style>
