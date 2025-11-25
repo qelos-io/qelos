@@ -149,10 +149,7 @@ const initTargetDetails = () => {
       pre_messages: props.modelValue.details?.pre_messages || [],
       embeddingType: props.modelValue.details?.embeddingType || 'local',
       maxTools: props.modelValue.details?.maxTools ?? 15,
-    };
-    
-    // Initialize system message from pre_messages
-    initializeSystemMessage();
+    };    
   } else if (source.kind === IntegrationSourceKind.Qelos) {
     // Initialize Qelos details
     qelosDetails.value = {
