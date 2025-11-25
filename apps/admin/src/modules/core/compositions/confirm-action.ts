@@ -15,11 +15,13 @@ export interface ConfirmationContent {
  * @param type
  * @returns {function(...[*]=)}
  */
-export function useConfirmAction(action, { text = 'Are you sure?', title = '', type = 'warning' }: ConfirmationContent = {}) {
-  return (item) => {
-		ElMessageBox.confirm(text, title, { type })
-      .then(() => action(item))
-      .catch(() => {
-      })
+export function useConfirmAction<T>(action: (item: T) => Promise<void> | void, { text = 'Are you sure?', title = '', type = 'warning' }: ConfirmationContent = {}) {
+  return async (item: T) => {
+    try {
+      await ElMessageBox.confirm(text, title, { type });
+      return await action(item);
+    } catch {
+      return undefined;
+    }
   }
 }

@@ -1,10 +1,55 @@
-import { computed, provide, ref } from 'vue';
+import { computed, provide, ref, type Ref } from 'vue';
 import { IMicroFrontend } from '@/services/types/plugin';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { isEditingEnabled } from '@/modules/core/store/auth';
 import { useRoute, useRouter } from 'vue-router';
 import { useEditPlugin } from '@/modules/plugins/compositions/manage-plugin';
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
+
+export type DragPosition = 'before' | 'after';
+
+export type EditableManager = {
+  removeComponent: (el: HTMLElement) => Promise<void>;
+  editComponent: (el: HTMLElement) => Promise<void>;
+  addComponentBefore: (el: HTMLElement) => void;
+  addComponentAfter: (el: HTMLElement) => void;
+  reorderComponents: (draggedQlId: string, targetQlId: string, position: DragPosition) => Promise<void>;
+  setDraggingQlId: (qlId: string | null) => void;
+  draggingQlId: Ref<string | null>;
+};
+
+function createTemplateFromStructure(structure?: string) {
+  const template = document.createElement('template');
+  template.innerHTML = structure || '';
+  return template;
+}
+
+function getElementByQlId(template: HTMLTemplateElement, qlId?: string | null) {
+  if (!qlId) {
+    return null;
+  }
+  const [outerIndexRaw, innerIndexRaw] = qlId.split('-inner-');
+  const outerIndex = Number(outerIndexRaw);
+  if (Number.isNaN(outerIndex)) {
+    return null;
+  }
+  const elements = Array.from(template.content.querySelectorAll('*'));
+  const outerEl = elements[outerIndex];
+  if (!outerEl) {
+    return null;
+  }
+  if (innerIndexRaw === undefined) {
+    return outerEl;
+  }
+  if (outerEl.tagName.toLowerCase() !== 'template') {
+    return null;
+  }
+  const innerIndex = Number(innerIndexRaw);
+  if (Number.isNaN(innerIndex)) {
+    return null;
+  }
+  return Array.from((outerEl as HTMLTemplateElement).content.querySelectorAll('*'))[innerIndex] || null;
+}
 
 export function useEditMfeStructure() {
   const route = useRoute();
@@ -14,6 +59,7 @@ export function useEditMfeStructure() {
   const { reloadRequirements } = useScreenRequirementsStore()
   const editedPluginMfe = ref<IMicroFrontend>()
   const editedComponentContext = ref();
+  const draggingQlId = ref<string | null>(null);
 
   async function getUpdatedPluginAndMfe() {
     const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId)
@@ -135,33 +181,10 @@ export function useEditMfeStructure() {
       return {};
     }
     const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
-    const template = document.createElement('template');
+    const template = createTemplateFromStructure(pluginMfe.structure);
     let child;
-    template.innerHTML = pluginMfe.structure || '';
     if (el !== null) {
-      const elements = Array.from(template.content.querySelectorAll('*'));
-      elements.length = Number(qlId.split('-inner')[0]) + 2;
-      elements.forEach((el, index) => {
-        if (child) {
-          return;
-        }
-        const id = index.toString();
-
-        if (qlId === id) {
-          child = el;
-          return;
-        }
-
-        if (el.tagName.toLowerCase() === 'template') {
-          Array.from((el as HTMLTemplateElement).content.querySelectorAll('*')).forEach((innerEl, innerIndex) => {
-            const innerId = index.toString() + '-inner-' + innerIndex.toString();
-            if (innerId === qlId) {
-              child = innerEl;
-            }
-          })
-        }
-      })
-      child = child || elements[Number(qlId)];
+      child = getElementByQlId(template, qlId);
     }
 
     return {
@@ -220,11 +243,43 @@ export function useEditMfeStructure() {
     await router.push('/');
   })
 
-  provide('editableManager', computed(() => isEditingEnabled.value && {
-    removeComponent,
-    editComponent,
-    addComponentBefore: (el: HTMLElement) => addComponentOptions.value = { beforeEl: el },
-    addComponentAfter: (el: HTMLElement) => addComponentOptions.value = { afterEl: el },
+  async function reorderComponents(draggedQlId: string, targetQlId: string, position: DragPosition) {
+    if (!draggedQlId || !targetQlId || draggedQlId === targetQlId) {
+      return;
+    }
+    const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe();
+    const template = createTemplateFromStructure(pluginMfe.structure);
+    const draggedNode = getElementByQlId(template, draggedQlId);
+    const targetNode = getElementByQlId(template, targetQlId);
+
+    if (!draggedNode || !targetNode || draggedNode === targetNode) {
+      return;
+    }
+
+    if (position === 'before') {
+      targetNode.before(draggedNode);
+    } else {
+      targetNode.after(draggedNode);
+    }
+
+    pluginMfe.structure = template.innerHTML.trim();
+    await updatePlugin(plugin);
+    updateRouteFromPluginMfe(routeMfe, pluginMfe);
+  }
+
+  provide('editableManager', computed<EditableManager | false>(() => {
+    if (!isEditingEnabled.value) {
+      return false;
+    }
+    return {
+      removeComponent,
+      editComponent,
+      addComponentBefore: (el: HTMLElement) => addComponentOptions.value = { beforeEl: el },
+      addComponentAfter: (el: HTMLElement) => addComponentOptions.value = { afterEl: el },
+      reorderComponents,
+      setDraggingQlId: (qlId: string | null) => draggingQlId.value = qlId,
+      draggingQlId,
+    };
   }));
 
   return {

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 import { ref, computed, watch, nextTick, onMounted, VNode } from 'vue';
 import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
 import { ElMessageBox } from 'element-plus';
@@ -352,7 +351,6 @@ const formatPercent = (value: number, decimals = 2) => {
 </script>
 <template>
   <div class="quick-table-wrapper" :class="{ 'is-loading': props.loading }">
-    <EditComponentBar />
     <div class="quick-table-toolbar" v-if="props.showToolbar !== false">
       <div class="quick-table-search" v-if="props.columns?.some(col => col.filterable)">
         <el-input
