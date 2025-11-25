@@ -10,6 +10,7 @@ import { ElMessage } from 'element-plus';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 import eventsService, { IEvent } from '@/services/apis/events-service';
 import { PLATFORM_EVENTS, PlatformEventDefinition } from '@/modules/integrations/constants/platform-events';
+import FunctionParametersSchemaEditor from '@/modules/integrations/components/forms/FunctionParametersSchemaEditor.vue';
 
 const props = defineProps<{
   modelValue: any;
@@ -666,15 +667,10 @@ watch(
             />
             <small class="help-text">Clear description of what the function does and when to use it</small>
           </el-form-item>
-          <el-form-item label="Parameters Schema" required>
-            <small class="help-text">JSON schema defining the function parameters. Example: {"type": "object", "properties": {"location": {"type": "string"}}, "required": ["location"]}</small>
-            <Monaco 
-              v-model="functionParameters"
-              @update:modelValue="updateFunctionCallingDetails"
-              height="250px" 
-              language="json" 
-            />
-          </el-form-item>
+          <FunctionParametersSchemaEditor
+            v-model="functionParameters"
+            @update:modelValue="updateFunctionCallingDetails"
+          />
           
           <!-- Allowed Integrations Selection -->
           <el-form-item label="Allowed Integrations">
