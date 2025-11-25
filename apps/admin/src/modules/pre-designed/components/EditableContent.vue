@@ -140,7 +140,7 @@ const slottedComponent = computed(() => {
   const slotHtml = (slotElement as any)?.ctx?.type.template;
   const template = document.createElement('template');
   template.innerHTML = slotHtml;
-  const slotElementAttributes = template.content.querySelector('*')
+  const slotElementAttributes = template.content.querySelector('[data-ql-id="' + qlId.value + '"]');
 
   return {
     name: componentName,
