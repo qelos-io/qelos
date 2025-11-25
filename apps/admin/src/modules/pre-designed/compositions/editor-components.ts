@@ -14,6 +14,27 @@ import AiChat from '@/modules/pre-designed/components/AiChat.vue';
 import { useComponentsList } from '@/modules/blocks/store/components-list';
 import kebabCase from 'lodash.kebabcase';
 import MockAiChat from '@/pre-designed/editor/MockAiChat.vue';
+import TemplatedRemoveButton from '@/modules/pre-designed/components/TemplatedRemoveButton.vue';
+import TemplatedEditButton from '@/modules/pre-designed/components/TemplatedEditButton.vue';
+import TemplatedViewButton from '@/modules/pre-designed/components/TemplatedViewButton.vue';
+import FormInput from '@/modules/core/components/forms/FormInput.vue';
+import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
+import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
+import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
+import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
+import Monaco from '@/modules/users/components/Monaco.vue';
+import GeneralForm from '@/modules/pre-designed/components/GeneralForm.vue';
+import ConfirmMessage from '@/modules/pre-designed/components/ConfirmMessage.vue';
+import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+import EditableContent from '@/modules/pre-designed/components/EditableContent.vue';
+import Pre from '@/modules/pre-designed/components/Pre.vue';
+import ContentBox from '@/modules/pre-designed/components/ContentBox.vue';
+import QRating from '@/modules/pre-designed/components/QRating.vue';
+import CopyToClipboard from '@/modules/pre-designed/components/CopyToClipboard.vue';
+import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
+import LifeCycle from '@/modules/pre-designed/components/LifeCycle.vue';
+import AssetUploader from '@/modules/assets/components/AssetUploader.vue';
 
 
 export interface EditorComponent {
@@ -23,6 +44,11 @@ export interface EditorComponent {
   title?: string;
   description?: string;
   classes?: string;
+  icon?: string;
+  category?: 'layout' | 'data' | 'automation' | 'visualization' | 'messaging' | 'custom';
+  tags?: string[];
+  capabilities?: string[];
+  docUrl?: string;
   requiredProps: Array<{
     prop: string,
     label?: string,
@@ -54,6 +80,11 @@ export function useEditorComponents() {
       description: 'A title and a button to create a new item.',
       component: ListPageTitle,
       mock: MockListPageTitle,
+      category: 'layout',
+      icon: 'document',
+      tags: ['content', 'navigation'],
+      capabilities: ['presentation'],
+      docUrl: 'https://docs.qelos.io/components/list-page-title',
       requiredProps: [
         { prop: 'title', label: 'Title', type: 'text', source: 'manual' },
         { prop: 'create-route-path', label: 'Path to Create New Item', type: 'text', source: 'manual' },
@@ -64,6 +95,10 @@ export function useEditorComponents() {
       tag: 'div',
       title: 'Flex Row (Desktop) / Column (Mobile)',
       classes: 'flex-row-column',
+      category: 'layout',
+      tags: ['responsive', 'structure'],
+      icon: 'grid',
+      capabilities: ['presentation'],
       requiredProps: [
         { prop: 'blocks', label: 'Blocks', type: 'number', source: 'manual', value: 2 },
       ],
@@ -88,6 +123,9 @@ export function useEditorComponents() {
       tag: 'div',
       title: 'Container',
       classes: 'container',
+      category: 'layout',
+      tags: ['content'],
+      capabilities: ['presentation'],
       requiredProps: [
         { prop: 'paragraphs', label: 'Paragraphs', type: 'number', source: 'manual', value: 2 },
       ],
@@ -106,6 +144,11 @@ export function useEditorComponents() {
       description: 'This table includes a remove button for each row and pagination.',
       component: QuickTable,
       mock: MockTable,
+      category: 'data',
+      tags: ['table', 'crud'],
+      icon: 'table',
+      capabilities: ['data', 'actions'],
+      docUrl: 'https://docs.qelos.io/components/quick-table',
       requiredProps: [
         { prop: 'data', label: 'Data', type: 'array', source: 'requirements' },
         {
@@ -152,6 +195,10 @@ export function useEditorComponents() {
       component: BlueprintEntityForm,
       title: 'Blueprint Form',
       description: 'Complete form to create a new blueprint entity.',
+      category: 'data',
+      tags: ['forms', 'blueprints'],
+      icon: 'edit',
+      capabilities: ['data', 'actions'],
       requiredProps: [
         {
           prop: 'blueprint',
@@ -231,6 +278,10 @@ export function useEditorComponents() {
       title: 'Apache EChart',
       component: VChart,
       mock: MockVChart,
+      category: 'visualization',
+      tags: ['charts'],
+      icon: 'trend-charts',
+      capabilities: ['data'],
       extendProps: (props: any) => {
         props[':autoresize'] = true;
       },
@@ -253,6 +304,10 @@ export function useEditorComponents() {
       requiredProps: [
         { prop: 'resource', label: 'Resource', source: 'blueprint' },
       ],
+      category: 'automation',
+      tags: ['modals', 'actions'],
+      icon: 'warning',
+      capabilities: ['actions'],
       extendProps: (props: any) => {
         props['target'] = 'blueprint';
         props['v-model'] = `pageState.${props.resource}ToRemove`;
@@ -271,6 +326,11 @@ export function useEditorComponents() {
       description: 'A chat interface with AI assistant and file upload support.',
       component: AiChat,
       mock: MockAiChat,
+      category: 'messaging',
+      tags: ['ai', 'conversation'],
+      icon: 'chat-dot-round',
+      capabilities: ['ai', 'automation'],
+      docUrl: 'https://docs.qelos.io/components/ai-chat',
       requiredProps: [
         {
           prop: 'url',
@@ -304,6 +364,10 @@ export function useEditorComponents() {
       component: StatsCard,
       mock: MockStatsCard,
       title: 'Statistics Card',
+      category: 'visualization',
+      tags: ['kpi', 'insights'],
+      icon: 'data-analysis',
+      capabilities: ['presentation'],
       requiredProps: [
         { prop: 'title', label: 'Title', type: 'text', source: 'manual', placeholder: 'Enter the card title' },
         {
@@ -348,6 +412,235 @@ export function useEditorComponents() {
         },
       ],
     }
+    ,
+    'templated-remove-button': {
+      component: TemplatedRemoveButton,
+      title: 'Templated Remove Button',
+      description: 'Pre-wired remove trigger for templated lists.',
+      category: 'automation',
+      tags: ['actions'],
+      icon: 'delete',
+      capabilities: ['actions'],
+      requiredProps: []
+    },
+    'templated-edit-button': {
+      component: TemplatedEditButton,
+      title: 'Templated Edit Button',
+      description: 'Pre-wired edit trigger for templated lists.',
+      category: 'automation',
+      tags: ['actions'],
+      icon: 'edit',
+      capabilities: ['actions'],
+      requiredProps: []
+    },
+    'templated-view-button': {
+      component: TemplatedViewButton,
+      title: 'Templated View Button',
+      description: 'Pre-wired detail trigger for templated lists.',
+      category: 'automation',
+      tags: ['actions'],
+      icon: 'view',
+      capabilities: ['presentation'],
+      requiredProps: []
+    },
+    'form-input': {
+      component: FormInput,
+      title: 'Form Input',
+      description: 'Single input field with validation helpers.',
+      category: 'data',
+      tags: ['forms'],
+      icon: 'edit-pen',
+      capabilities: ['data'],
+      requiredProps: [
+        { prop: 'title', label: 'Label', type: 'text', source: 'manual', placeholder: 'Field label' },
+        { prop: 'type', label: 'Type', type: 'select', source: 'manual', options: [
+          { identifier: 'text', name: 'Text' },
+          { identifier: 'textarea', name: 'Textarea' },
+          { identifier: 'number', name: 'Number' },
+          { identifier: 'password', name: 'Password' },
+          { identifier: 'switch', name: 'Switch' },
+        ], value: 'text' },
+        { prop: 'placeholder', label: 'Placeholder', type: 'text', source: 'manual', placeholder: 'Enter placeholder text' }
+      ]
+    },
+    'form-row-group': {
+      component: FormRowGroup,
+      title: 'Form Row Group',
+      description: 'Horizontal alignment helper for form fields.',
+      category: 'layout',
+      tags: ['forms', 'layout'],
+      icon: 'grid',
+      capabilities: ['presentation'],
+      requiredProps: []
+    },
+    'save-button': {
+      component: SaveButton,
+      title: 'Save Button',
+      description: 'Standardized primary save action.',
+      category: 'automation',
+      tags: ['actions'],
+      icon: 'checked',
+      capabilities: ['actions'],
+      requiredProps: []
+    },
+    'edit-header': {
+      component: EditHeader,
+      title: 'Edit Header',
+      description: 'Heading wrapper for editable sections.',
+      category: 'layout',
+      tags: ['headers'],
+      icon: 'header',
+      capabilities: ['presentation'],
+      requiredProps: [
+        { prop: 'title', label: 'Title', type: 'text', source: 'manual', placeholder: 'Section title' }
+      ]
+    },
+    'info-icon': {
+      component: InfoIcon,
+      title: 'Info Icon',
+      description: 'Inline helper tooltip icon.',
+      category: 'layout',
+      tags: ['help'],
+      icon: 'info-filled',
+      capabilities: ['presentation'],
+      requiredProps: []
+    },
+    'block-item': {
+      component: BlockItem,
+      title: 'Block Item Container',
+      description: 'Reusable block with header/actions slots.',
+      category: 'layout',
+      tags: ['container'],
+      icon: 'box',
+      capabilities: ['presentation'],
+      requiredProps: [],
+      getInnerHTML: () => `<template #header>{{ $t('Block title') }}</template>\n<div>{{ $t('Add content here') }}</div>\n<template #actions><el-button text>{{ $t('Action') }}</el-button></template>`
+    },
+    'monaco-editor': {
+      component: Monaco,
+      title: 'Monaco Editor',
+      description: 'Code editor powered by Monaco.',
+      category: 'data',
+      tags: ['code'],
+      icon: 'code',
+      capabilities: ['manual'],
+      requiredProps: []
+    },
+    'general-form': {
+      component: GeneralForm,
+      title: 'General Form',
+      description: 'Configurable form block with dynamic schema.',
+      category: 'data',
+      tags: ['forms'],
+      icon: 'tickets',
+      capabilities: ['data'],
+      requiredProps: []
+    },
+    'confirm-message': {
+      component: ConfirmMessage,
+      title: 'Confirm Message',
+      description: 'Confirmation block for destructive actions.',
+      category: 'automation',
+      tags: ['modals'],
+      icon: 'question-filled',
+      capabilities: ['actions'],
+      requiredProps: []
+    },
+    'remove-button': {
+      component: RemoveButton,
+      title: 'Remove Button',
+      description: 'Standard remove trigger with confirmation slot.',
+      category: 'automation',
+      tags: ['actions'],
+      icon: 'delete',
+      capabilities: ['actions'],
+      requiredProps: []
+    },
+    'editable-content': {
+      component: EditableContent,
+      title: 'Editable Content',
+      description: 'Inline rich-text area.',
+      category: 'layout',
+      tags: ['content'],
+      icon: 'document',
+      capabilities: ['presentation'],
+      requiredProps: []
+    },
+    'q-pre': {
+      component: Pre,
+      title: 'Preformatted Text',
+      description: 'Stylized pre/code block.',
+      category: 'layout',
+      tags: ['content'],
+      icon: 'document-copy',
+      capabilities: ['presentation'],
+      requiredProps: []
+    },
+    'content-box': {
+      component: ContentBox,
+      title: 'Content Box',
+      description: 'Card-like content container.',
+      category: 'layout',
+      tags: ['cards'],
+      icon: 'box',
+      capabilities: ['presentation'],
+      requiredProps: []
+    },
+    'q-rating': {
+      component: QRating,
+      title: 'Rating',
+      description: 'Display or collect rating values.',
+      category: 'data',
+      tags: ['forms'],
+      icon: 'star-filled',
+      capabilities: ['data'],
+      requiredProps: []
+    },
+    'copy-to-clipboard': {
+      component: CopyToClipboard,
+      title: 'Copy To Clipboard',
+      description: 'Button to copy arbitrary text.',
+      category: 'automation',
+      tags: ['actions'],
+      icon: 'copy-document',
+      capabilities: ['actions'],
+      requiredProps: [
+        { prop: 'text', label: 'Text', type: 'text', source: 'manual', placeholder: 'Content to copy' }
+      ]
+    },
+    'empty-state': {
+      component: EmptyState,
+      title: 'Empty State Panel',
+      description: 'Communicates empty data situations.',
+      category: 'layout',
+      tags: ['states'],
+      icon: 'picture',
+      capabilities: ['presentation'],
+      requiredProps: [
+        { prop: 'title', label: 'Title', type: 'text', source: 'manual' },
+        { prop: 'subtitle', label: 'Subtitle', type: 'text', source: 'manual' }
+      ]
+    },
+    'life-cycle': {
+      component: LifeCycle,
+      title: 'Lifecycle Timeline',
+      description: 'Visualizes lifecycle steps.',
+      category: 'visualization',
+      tags: ['timeline'],
+      icon: 'timer',
+      capabilities: ['presentation'],
+      requiredProps: []
+    },
+    'asset-uploader': {
+      component: AssetUploader,
+      title: 'Asset Uploader',
+      description: 'Upload and manage assets.',
+      category: 'data',
+      tags: ['files'],
+      icon: 'upload-filled',
+      capabilities: ['data'],
+      requiredProps: []
+    }
   }
 
   const availableComponents = computed(() => {
@@ -361,6 +654,11 @@ export function useEditorComponents() {
         description: value.description,
         component: 'div',
         mock: value.mock,
+        category: value.category || 'custom',
+        tags: value.tags || ['custom'],
+        icon: value.icon || 'box',
+        capabilities: value.capabilities || ['custom'],
+        docUrl: value.docUrl,
         requiredProps: (value.requiredProps || []).map((prop: any) => ({
           prop: prop.prop,
           type: prop.type,
