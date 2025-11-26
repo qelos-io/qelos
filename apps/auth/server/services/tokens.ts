@@ -32,6 +32,23 @@ export function getUniqueId(creationTime = Date.now().toString()) {
   return creationTime + ':' + Buffer.from(Math.random().toString()).toString('base64')
 }
 
+function encodeIfNeeded(value?: string) {
+  if (value === undefined || value === null || value === '') {
+    return value
+  }
+
+  try {
+    const decoded = decodeURIComponent(value)
+    if (encodeURIComponent(decoded) === value) {
+      return value;
+    }
+  } catch {
+    // value is not a valid encoded URI component, fall through to encode it
+  }
+
+  return encodeURIComponent(value);
+}
+
 function getCookieParameters(cookieId: string, maxAge: string, domain?: string) {
   let cookieParams: any = { maxAge, httpOnly: true, path: '/api' }
   if (domain || cookieBaseDomain) {
@@ -54,17 +71,17 @@ export function getSignedToken(user: any, workspace: any, tokenIdentifier: strin
     workspace: workspace ? {
       ...workspace,
       // encode workspace name that might contain special characters
-      name: encodeURIComponent(workspace.name || '')
+      name: encodeIfNeeded(workspace.name || '')
     } : undefined,
     sub: user._id,
     tenant: user.tenant,
     username: user.username,
     email: user.email,
     phone: user.phone,
-    name: encodeURIComponent(user.name),
-    fullName: encodeURIComponent(user.fullName),
-    firstName: encodeURIComponent(user.firstName),
-    lastName: encodeURIComponent(user.lastName),
+    name: encodeIfNeeded(user.name),
+    fullName: encodeIfNeeded(user.fullName),
+    firstName: encodeIfNeeded(user.firstName),
+    lastName: encodeIfNeeded(user.lastName),
     roles: user.roles,
     profileImage: user.profileImage,
   }
