@@ -151,6 +151,7 @@ export async function updateIntegration(req, res) {
       await integration.save();
       cacheManager.setItem(geIntegrationCacheKey(integration.tenant, req.params.integrationId, true), JSON.stringify(integration), { ttl: 1 }).catch();
       cacheManager.setItem(geIntegrationCacheKey(integration.tenant, req.params.integrationId, false), JSON.stringify(integration), { ttl: 1 }).catch();
+      cacheManager.setItem(`integration-tools:${integration.tenant}:${integration.kind[0]}:${req.params.integrationId}`, '', { ttl: 1 }).catch();
     }
     res.json(integration).end();
   } catch (err) {
@@ -174,6 +175,7 @@ export async function removeIntegration(req, res) {
     await Integration.deleteOne(query).exec();
     cacheManager.setItem(geIntegrationCacheKey(integration.tenant, req.params.integrationId, true), '', { ttl: 1 }).catch();
     cacheManager.setItem(geIntegrationCacheKey(integration.tenant, req.params.integrationId, false), '', { ttl: 1 }).catch();
+    cacheManager.setItem(`integration-tools:${integration.tenant}:${integration.kind[0]}:${req.params.integrationId}`, '', { ttl: 1 }).catch();
     res.json(integration).end();
   } catch {
     res.status(500).json({ message: 'could not delete integration' }).end();
