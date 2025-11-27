@@ -28,7 +28,7 @@
           <div class="config-title">
             <h3>
               <router-link :to="{name: 'editConfiguration', params: {key: config.key}}" @click.stop>
-                {{ $t(config.key) }}
+                {{ getConfigTitle(config) }}
               </router-link>
             </h3>
             <el-tag 
@@ -39,8 +39,8 @@
               {{ config.key === 'app-configuration' ? 'System' : (config.public ? 'Public' : 'Private') }}
             </el-tag>
           </div>
-          <div class="config-description" v-if="config.description">
-            {{ config.description }}
+          <div class="config-description" v-if="getConfigDescription(config)">
+            {{ getConfigDescription(config) }}
           </div>
         </div>
         
@@ -91,7 +91,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useConfigurationsList } from '../compositions/configurations';
 import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
@@ -104,6 +104,122 @@ import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
 const { t } = useI18n();  
+
+type RequiredConfigurationDefinition = {
+  title: string;
+  description: string;
+  kind?: string;
+  public: boolean;
+  metadata: Record<string, any>;
+};
+
+const requiredConfigurations: Record<string, RequiredConfigurationDefinition> = {
+  'app-configuration': {
+    title: 'Application Branding & Theme',
+    description: 'Control your app name, app URL, logo, direction, language, and theme.',
+    kind: 'app',
+    public: true,
+    metadata: {
+      colorsPalette: {
+        mainColor: '#264653',
+        mainColorLight: '#1c4252',
+        textColor: '#1c4252',
+        secondaryColor: '#2a9d8f',
+        thirdColor: '#e9c46a',
+        bgColor: '#ffffff',
+        bordersColor: '#e2e8f0',
+        inputsTextColor: '#1c4252',
+        inputsBgColor: '#f8fafc',
+        linksColor: '#2a9d8f',
+        navigationBgColor: '#1c4252',
+        negativeColor: '#9b7a3a',
+        buttonTextColor: '#ffffff',
+        buttonBgColor: '#264653',
+        focusColor: '#2a9d8f',
+        fontFamily: 'Helvetica, Arial, sans-serif',
+        headingsFontFamily: 'Helvetica, Arial, sans-serif',
+        baseFontSize: 16,
+        borderRadius: 4,
+        buttonRadius: 4,
+        spacing: 'normal',
+        shadowStyle: 'light',
+        animationSpeed: 250
+      },
+      description: '',
+      direction: 'ltr',
+      homeScreen: '',
+      keywords: '',
+      language: 'en',
+      logoUrl: '',
+      name: '',
+      scriptUrl: '',
+      slogan: '',
+      themeStylesUrl: '',
+      borderRadius: 5,
+      baseFontSize: 16,
+      websiteUrls: []
+    }
+  },
+  'auth-configuration': {
+    title: 'Authentication Experience',
+    description: 'Customize login flows, user fields, and available social providers.',
+    kind: 'auth',
+    public: true,
+    metadata: {
+      treatUsernameAs: 'email',
+      formPosition: 'right',
+      loginTitle: '',
+      showLoginPage: true,
+      showRegisterPage: false,
+      allowSocialAutoRegistration: true,
+      additionalUserFields: [],
+      socialLoginsSources: {},
+      slots: {},
+      disableUsernamePassword: false
+    }
+  },
+  'ssr-scripts': {
+    title: 'SSR Scripts',
+    description: 'SSR scripts configuration.',
+    kind: 'ssr',
+    public: true,
+    metadata: {
+      head: '',
+      body: ''
+    }
+  },
+  'workspace-configuration': {
+    title: 'Workspace Mode & Labels',
+    description: 'Enable multi-workspace mode, labels, and creation permissions.',
+    kind: 'workspace',
+    public: true,
+    metadata: {
+      isActive: false,
+      creationPrivilegedRoles: [],
+      viewMembersPrivilegedWsRoles: [],
+      labels: [],
+      allowNonLabeledWorkspaces: true,
+      allowNonWorkspaceUsers: true
+    }
+  },
+  'users-header': {
+    title: 'Users Header Template',
+    description: 'Design a custom HTML header for the users list view.',
+    kind: 'users-header',
+    public: true,
+    metadata: {
+      html: '',
+      active: false
+    }
+  }
+};
+
+const requiredConfigKeys = Object.keys(requiredConfigurations);
+
+const ensuringDefaults = ref(false);
+const ensuredKeys = new Set<string>();
+
+const cloneMetadata = (metadata: Record<string, any>) => JSON.parse(JSON.stringify(metadata));
 
 // Accept filter type and search query from parent component
 const props = defineProps({
@@ -118,6 +234,57 @@ const props = defineProps({
 });
 
 const { list, retry } = useConfigurationsList();
+
+async function createRequiredConfiguration(key: string) {
+  const definition = requiredConfigurations[key];
+  if (!definition) return;
+
+  await configurationsService.create({
+    key,
+    public: definition.public,
+    kind: definition.kind,
+    description: definition.description,
+    metadata: cloneMetadata(definition.metadata)
+  });
+  ensuredKeys.add(key);
+}
+
+watch(list, async (configs) => {
+  if (!Array.isArray(configs) || ensuringDefaults.value) {
+    return;
+  }
+
+  const missingKeys = requiredConfigKeys.filter((key) => {
+    if (ensuredKeys.has(key)) {
+      return false;
+    }
+    return !configs.some((config) => config.key === key);
+  });
+
+  if (!missingKeys.length) {
+    return;
+  }
+
+  ensuringDefaults.value = true;
+  try {
+    for (const key of missingKeys) {
+      await createRequiredConfiguration(key);
+    }
+    await retry();
+  } catch (error) {
+    console.error('[ConfigurationsList] Failed to auto-create required configurations', error);
+  } finally {
+    ensuringDefaults.value = false;
+  }
+}, { immediate: true });
+
+const getConfigTitle = (config: { key: string }) => {
+  return requiredConfigurations[config.key]?.title || t(config.key);
+};
+
+const getConfigDescription = (config: { key: string; description?: string }) => {
+  return config.description || requiredConfigurations[config.key]?.description || '';
+};
 
 // Format date helper
 const formatDate = (dateString) => {
