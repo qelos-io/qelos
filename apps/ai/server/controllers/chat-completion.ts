@@ -356,12 +356,12 @@ export async function chatCompletion(req: any, res: any | null) {
             parameters: {
               type: 'object',
               properties: {
-                id: {
+                identifier: {
                   type: 'string',
                   description: `The identifier of the ${blueprint.name} entity to retrieve`
                 }
               },
-              required: ['id']
+              required: ['identifier']
             }
           }
         },
@@ -375,13 +375,13 @@ export async function chatCompletion(req: any, res: any | null) {
             parameters: {
               type: 'object',
               properties: {
-                id: {
+                identifier: {
                   type: 'string',
                   description: `The identifier of the ${blueprint.name} entity to update`
                 },
                 ...propertiesSchema
               },
-              required: ['id']
+              required: ['identifier']
             }
           }
         },
@@ -395,12 +395,12 @@ export async function chatCompletion(req: any, res: any | null) {
             parameters: {
               type: 'object',
               properties: {
-                id: {
+                identifier: {
                   type: 'string',
                   description: `The identifier of the ${blueprint.name} entity to delete`
                 }
               },
-              required: ['id']
+              required: ['identifier']
             }
           }
         },

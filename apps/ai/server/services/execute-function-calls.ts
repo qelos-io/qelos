@@ -88,8 +88,8 @@ async function executeBlueprintOperation(
     
     case 'update':
       // Extract id from args and use the rest as payload
-      const { id, ...updatePayload } = args;
-      return updateBlueprintEntityForUser(tenant, user, blueprintIdentifier, { identifier: id, metadata: updatePayload });
+      const { identifier, ...updatePayload } = args;
+      return updateBlueprintEntityForUser(tenant, user, blueprintIdentifier, { identifier, metadata: updatePayload });
     
     case 'delete':
       return deleteBlueprintEntityForUser(tenant, user, blueprintIdentifier, args.identifier);
