@@ -7,6 +7,12 @@ const AUTH_MIDDLEWARES = [populateUser, verifyUser];
 
 const router = getRouter();
 
-router.post("/api/upload", AUTH_MIDDLEWARES, upload.single('file'), uploadFile);
+router.post("/api/upload", AUTH_MIDDLEWARES, (req, res, next) => {
+  if (req.get('content-type')?.startsWith('multipart/form-data')) {
+    upload.single('file')(req, res, next);
+  } else {
+    next();
+  }
+}, uploadFile);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 import { service } from "@qelos/api-kit";
+import logger from "./logger";
 
 const assetsService = service("ASSETS", {
   port: process.env.ASSETS_SERVICE_PORT || 9003,
@@ -25,6 +26,7 @@ export async function uploadProfileImage(
     if (response.status === 200) {
       return response.data.publicUrl;
     } else {
+      logger.log("Failed to upload profile image", response.data);
       throw new Error("Failed to upload profile image");
     }
   } catch (error) {
