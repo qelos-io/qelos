@@ -229,7 +229,7 @@ const props = defineProps<{
   suggestions?: Array<string | { label: string; text?: string; icon?: string }>;
   fullScreen?: boolean;
   typingText?: string;
-  manage?: boolean;
+  manager?: boolean;
 }>();
 
 const emit = defineEmits([
@@ -603,7 +603,7 @@ async function onSend() {
     // Streaming with fetch (SSE-style JSON lines)
     const url = new URL(chatCompletionUrl.value, window.location.origin);
     url.searchParams.append("stream", "true");
-    if (isPrivilegedUser.value && !props.manage) {
+    if (isPrivilegedUser.value && !props.manager) {
       url.searchParams.append("bypassAdmin", "true");
     }
     const res = await fetch(url.toString(), {
@@ -689,7 +689,7 @@ async function onSend() {
     try {
       const url = new URL(props.url, window.location.origin);
       url.searchParams.append("stream", "false");
-      if (isPrivilegedUser.value && !props.manage) {
+      if (isPrivilegedUser.value && !props.manager) {
         url.searchParams.append("bypassAdmin", "true");
       }
       const res = await fetch(url.toString(), {
