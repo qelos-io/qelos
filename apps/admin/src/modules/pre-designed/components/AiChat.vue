@@ -216,7 +216,7 @@ import {
 import { Remarkable } from "remarkable";
 import threadsService from "@/services/apis/threads-service";
 import { linkify } from "remarkable/linkify";
-import { isPrivilegedUser } from "@/modules/core/store/auth";
+import { isAdmin, isLoadingDataAsUser } from "@/modules/core/store/auth";
 
 const props = defineProps<{
   url: string;
@@ -603,7 +603,7 @@ async function onSend() {
     // Streaming with fetch (SSE-style JSON lines)
     const url = new URL(chatCompletionUrl.value, window.location.origin);
     url.searchParams.append("stream", "true");
-    if (isPrivilegedUser.value && !props.manager) {
+    if (isAdmin.value && isLoadingDataAsUser.value && !props.manager) {
       url.searchParams.append("bypassAdmin", "true");
     }
     const res = await fetch(url.toString(), {
@@ -689,7 +689,7 @@ async function onSend() {
     try {
       const url = new URL(props.url, window.location.origin);
       url.searchParams.append("stream", "false");
-      if (isPrivilegedUser.value && !props.manager) {
+      if (isAdmin.value && isLoadingDataAsUser.value && !props.manager) {
         url.searchParams.append("bypassAdmin", "true");
       }
       const res = await fetch(url.toString(), {

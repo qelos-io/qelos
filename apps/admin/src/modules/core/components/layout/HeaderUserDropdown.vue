@@ -15,16 +15,47 @@
         <el-dropdown-item @click.stop>
           <router-link :to="{name: 'updateProfile'}" @click.stop>{{ $t('Update profile') }}</router-link>
         </el-dropdown-item>
-        <el-dropdown-item v-if="isAdmin" id="edit-mode-toggle" @click.stop>
-          <el-switch
-              v-model="isManagingEnabled"
-              :active-text="$t('Manager')"
-              :inactive-text="$t('Manager')"
-              style="--el-switch-on-color: #3da62d; --el-switch-off-color: #b33939;"
-              size="large"
-              inline-prompt
-              @click.stop
-          />
+        <el-dropdown-item
+            v-if="isAdmin"
+            class="privileged-toggle"
+            @click.stop
+        >
+          <div class="privileged-toggle__row">
+            <div class="privileged-toggle__copy">
+              <p class="label">{{ $t('Data scope') }}</p>
+              <p class="hint">{{ $t('Choose what your SDK pulls') }}</p>
+              <el-tag size="small" effect="plain" class="privileged-toggle__tag">{{ $t('Admin only') }}</el-tag>
+            </div>
+            <el-switch
+                v-model="isLoadingDataAsUser"
+                :active-text="$t('Act as user')"
+                :inactive-text="$t('See all data')"
+                :active-value="true"
+                :inactive-value="false"
+                inline-prompt
+                size="large"
+                class="privileged-toggle__switch"
+                @click.stop
+            />
+          </div>
+        </el-dropdown-item>
+        <el-dropdown-item v-if="isAdmin" class="privileged-toggle" id="edit-mode-toggle" @click.stop>
+          <div class="privileged-toggle__row">
+            <div class="privileged-toggle__copy">
+              <p class="label">{{ $t('Manager mode') }}</p>
+              <p class="hint">{{ $t('Enable layout editing tools') }}</p>
+              <el-tag size="small" effect="plain" class="privileged-toggle__tag">{{ $t('Admin only') }}</el-tag>
+            </div>
+            <el-switch
+                v-model="isManagingEnabled"
+                :active-text="$t('Manager on')"
+                :inactive-text="$t('Manager off')"
+                inline-prompt
+                size="large"
+                class="privileged-toggle__switch"
+                @click.stop
+            />
+          </div>
         </el-dropdown-item>
         <template v-for="group in customLinks" :key="group.key">
           <template v-if="group.items.length">
@@ -52,7 +83,7 @@ import { storeToRefs } from 'pinia';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import HeaderUserWorkspacesSelection from '@/modules/core/components/layout/HeaderUserWorkspacesSelection.vue';
-import { isAdmin, isManagingEnabled } from '@/modules/core/store/auth';
+import { isAdmin, isManagingEnabled, isLoadingDataAsUser, isPrivilegedUser } from '@/modules/core/store/auth';
 
 const emit = defineEmits(['open']);
 const { user, logout: logoutApi } = useAuth()
@@ -97,6 +128,60 @@ a {
 
   &:hover {
     text-decoration: underline;
+  }
+}
+
+.privileged-toggle {
+  min-width: 260px;
+  width: min(360px, 90vw);
+  white-space: normal;
+  padding: 4px 0;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  &__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-color-muted, #8c8c8c);
+  }
+
+  &__tag {
+    align-self: flex-start;
+  }
+
+  &__switch {
+    --el-switch-on-color: var(--el-color-primary);
+    --el-switch-off-color: var(--el-border-color);
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 480px) {
+    &__row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    &__switch {
+      width: 100%;
+    }
   }
 }
 </style>

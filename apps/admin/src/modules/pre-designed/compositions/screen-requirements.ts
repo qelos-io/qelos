@@ -7,6 +7,7 @@ import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import Sdk from '@/services/sdk';
 import { useAuth } from '@/modules/core/compositions/authentication';
+import { isLoadingDataAsUser } from '@/modules/core/store/auth';
 
 export const useScreenRequirementsStore = defineStore('screen-requirements', function useScreenRequirements() {
   const route = useRoute()
@@ -162,7 +163,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
     });
   }
 
-  watch(() => [route.meta.screenRequirements, mfes.navBar, mfes.modals, mfes.cruds], reloadRequirements, { immediate: true })
+  watch(() => [route.meta.screenRequirements, mfes.navBar, mfes.modals, mfes.cruds, isLoadingDataAsUser.value], reloadRequirements, { immediate: true })
 
   const isRequirementsLoaded = computed(() => {
     const hasEmptyRequirement = (route.meta.screenRequirements as IScreenRequirement[] || [])

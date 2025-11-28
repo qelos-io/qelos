@@ -6,6 +6,7 @@
         v-if="sourceId"
         :chat-context="chatContext"
         :url="url" class="ai-chat"
+        :manager="true"
         @function-executed="handleFunctionExecuted"
         key="chat"
         :suggestions="suggestions" />
