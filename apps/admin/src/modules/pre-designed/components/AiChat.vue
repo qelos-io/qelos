@@ -1,3 +1,72 @@
+.context-chips {
+  margin-top: 1.2em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  justify-content: center;
+}
+
+.context-label {
+  width: 100%;
+  text-align: center;
+  font-size: 0.8em;
+  color: #94a3b8;
+  margin-bottom: 0.2em;
+}
+
+.context-chip {
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 999px;
+  padding: 0.25em 0.8em;
+  font-size: 0.82em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  background: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #475569;
+}
+
+.context-chip:hover {
+  border-color: rgba(64, 158, 255, 0.5);
+  color: var(--el-color-primary);
+  transform: translateY(-1px);
+}
+
+.input-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  margin-inline-end: 0.6em;
+  align-self: flex-start;
+}
+
+.rail-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(248, 250, 255, 0.9);
+  color: #4b5563;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rail-btn:hover:not(:disabled) {
+  color: var(--el-color-primary);
+  border-color: rgba(64, 158, 255, 0.5);
+  box-shadow: 0 4px 10px rgba(64, 158, 255, 0.15);
+}
+
+.rail-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 <template>
   <div
     class="ai-chat"
@@ -94,10 +163,18 @@
                 <el-icon v-if="msg.role === 'user'"><UserFilled /></el-icon>
                 <font-awesome-icon v-else :icon="['fas', 'robot']" />
               </span>
-              <span class="meta"
-                >{{ msg.role === "user" ? "You" : "AI" }} ·
-                {{ formatTime(msg.time) }}</span
-              >
+              <div class="meta">
+                <span class="meta-text">{{ msg.role === "user" ? "You" : "AI" }} ·
+                {{ formatTime(msg.time) }}</span>
+                <span
+                  v-if="msg.status && msg.role === 'user'"
+                  class="message-status"
+                  :class="msg.status"
+                  aria-label="Message status"
+                >
+                  <font-awesome-icon :icon="['fas', msg.status === 'sent' ? 'check' : 'clock']" />
+                </span>
+              </div>
               <div
                 class="copy-button"
                 @click="copyMessage(msg)"
@@ -174,6 +251,17 @@
     />
     <form v-else class="input-row" @submit.prevent="onSend">
       <div class="input-group">
+        <div class="input-rail">
+          <button type="button" class="rail-btn" :disabled="loading" @click="openFilePicker" :title="$t('Attach files')">
+            <font-awesome-icon :icon="['fas', 'paperclip']" />
+          </button>
+          <button type="button" class="rail-btn" :disabled="loading" @click="insertTemplatePrompt" :title="$t('Insert template prompt')">
+            <font-awesome-icon :icon="['fas', 'lightbulb']" />
+          </button>
+          <button type="button" class="rail-btn" :disabled="loading" @click="insertSlashCommand" :title="$t('Slash command')">
+            /
+          </button>
+        </div>
         <el-input
           v-model="input"
           type="textarea"
@@ -226,6 +314,13 @@ import threadsService from "@/services/apis/threads-service";
 import { linkify } from "remarkable/linkify";
 import { isAdmin, isLoadingDataAsUser } from "@/modules/core/store/auth";
 
+type ContextChip = {
+  key: string;
+  label: string;
+  value: string;
+  icon: string;
+};
+
 const props = defineProps<{
   url: string;
   title?: string;
@@ -238,6 +333,7 @@ const props = defineProps<{
   fullScreen?: boolean;
   typingText?: string;
   manager?: boolean;
+  contextChips?: ContextChip[];
 }>();
 
 const emit = defineEmits([
@@ -250,6 +346,51 @@ const emit = defineEmits([
 ]);
 
 const localThreadId = ref(props.threadId);
+
+const contextChips = computed(
+  () =>
+    props.contextChips ??
+    [
+      props.chatContext?.currentPage
+        ? {
+            key: "page",
+            label: "Current page",
+            value: String(props.chatContext.currentPage),
+            icon: "location-arrow",
+          }
+        : undefined,
+      props.chatContext?.pluginId
+        ? {
+            key: "plugin",
+            label: "Plugin",
+            value: String(props.chatContext.pluginId),
+            icon: "puzzle-piece",
+          }
+        : undefined,
+      props.chatContext?.timezone
+        ? {
+            key: "tz",
+            label: `Timezone (${props.chatContext.timezone})`,
+            value: String(props.chatContext.timezone),
+            icon: "clock",
+          }
+        : undefined,
+    ].filter((chip): chip is ContextChip => Boolean(chip))
+);
+
+const templatePromptPool = computed(() => {
+  const prompts: string[] = [];
+  if (props.chatContext?.currentPage) {
+    prompts.push(
+      `Review and enhance the layout of ${props.chatContext.currentPage}.`
+    );
+  }
+  prompts.push(
+    "Summarize the last AI response into actionable steps.",
+    "Suggest the next best action for our current workflow."
+  );
+  return prompts;
+});
 
 const shouldRecordThread = computed(() => props.recordThread || props.threadId);
 
@@ -287,6 +428,7 @@ interface ChatMessage {
   time: string;
   type: "text" | "file";
   filename?: string;
+  status?: "sending" | "sent";
 }
 
 interface AttachedFile {
@@ -326,6 +468,7 @@ const hoveredSuggestion = ref<number | null>(null);
 
 // Reference to markdown content elements
 const markdownContent = ref<HTMLElement[]>([]);
+const templatePromptIndex = ref(0);
 
 // Function to add copy buttons to tables
 function addTableCopyButtons() {
@@ -526,6 +669,14 @@ function addMessage(msg: Omit<ChatMessage, "id" | "time">) {
   });
 }
 
+function markUserMessagesAsSent() {
+  messages.forEach((msg, index) => {
+    if (msg.role === "user" && msg.status === "sending") {
+      messages[index] = { ...msg, status: "sent" };
+    }
+  });
+}
+
 function onFileDrop(e: DragEvent) {
   dropActive.value = false;
   const files = Array.from(e.dataTransfer?.files || []);
@@ -574,6 +725,34 @@ function onSuggestionClick(
   inputRef.value?.focus();
 }
 
+function onContextChipClick(value: string) {
+  input.value = value;
+  inputRef.value?.focus();
+}
+
+function openFilePicker() {
+  fileInputRef.value?.click();
+}
+
+function insertTemplatePrompt() {
+  if (!templatePromptPool.value.length) return;
+  const prompt =
+    templatePromptPool.value[templatePromptIndex.value % templatePromptPool.value.length];
+  templatePromptIndex.value += 1;
+  input.value = prompt;
+  inputRef.value?.focus();
+}
+
+function insertSlashCommand() {
+  if (!input.value.startsWith("/")) {
+    input.value = "/" + input.value.trimStart();
+  }
+  if (!input.value.endsWith(" ")) {
+    input.value += " ";
+  }
+  inputRef.value?.focus();
+}
+
 async function onSend() {
   if (!canSend()) return;
   for (const file of attachedFiles) {
@@ -582,9 +761,10 @@ async function onSend() {
       content: file.content,
       type: "file",
       filename: file.name,
+      status: "sending",
     });
   }
-  addMessage({ role: "user", content: input.value.trim(), type: "text" });
+  addMessage({ role: "user", content: input.value.trim(), type: "text", status: "sending" });
   const payload = {
     messages: messages.map((m) => ({
       role: m.role,
@@ -688,6 +868,7 @@ async function onSend() {
       }
     }
     loading.value = false;
+    markUserMessagesAsSent();
     // Only add table copy buttons after the assistant has finished typing
     nextTick(() => {
       setTimeout(addTableCopyButtons, 100);
@@ -711,6 +892,7 @@ async function onSend() {
       aiMsg.content = "[Error: failed to fetch AI response]";
     }
     loading.value = false;
+    markUserMessagesAsSent();
     // Only add table copy buttons after the assistant has finished typing
     nextTick(() => {
       setTimeout(addTableCopyButtons, 100);
@@ -935,6 +1117,38 @@ onMounted(() => {
   align-self: flex-start;
   background: #ffffff;
   border: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.meta-text {
+  font-size: clamp(0.78rem, 1vw, 0.9rem);
+  color: #828da3;
+}
+
+.message-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  border: 1px solid transparent;
+}
+
+.message-status.sending {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.message-status.sent {
+  color: #67c23a;
+  border-color: rgba(103, 194, 58, 0.3);
 }
 
 .bubble-header {
