@@ -48,13 +48,16 @@ function callNoCodeService(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE
     });
 }
 
-export function callPublicNoCodeService(url: string, {tenant, user}: {tenant: string, user: string}, {data, method = 'GET'}: {data?: any, method: string}) {
+export function callPublicNoCodeService(url: string, {tenant, user, bypassAdmin}: {tenant: string, user: string, bypassAdmin?: boolean}, {data, method = 'GET'}: {data?: any, method: string}) {
   return noCodeService({
     headers: { internal_secret: internalServicesSecret, tenant, user },
     method,
     data,
     url,
     timeout: 30000, // 30 second timeout for no-code service calls
+    params: {
+      ...bypassAdmin ? { bypassAdmin: 'true' } : {},
+    }
   })
     .then((axiosRes: any) => axiosRes.data)
     .catch((error: any) => {

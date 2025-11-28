@@ -216,6 +216,7 @@ import {
 import { Remarkable } from "remarkable";
 import threadsService from "@/services/apis/threads-service";
 import { linkify } from "remarkable/linkify";
+import { isPrivilegedUser } from "@/modules/core/store/auth";
 
 const props = defineProps<{
   url: string;
@@ -228,6 +229,7 @@ const props = defineProps<{
   suggestions?: Array<string | { label: string; text?: string; icon?: string }>;
   fullScreen?: boolean;
   typingText?: string;
+  manager?: boolean;
 }>();
 
 const emit = defineEmits([
@@ -599,7 +601,12 @@ async function onSend() {
       await createThread();
     }
     // Streaming with fetch (SSE-style JSON lines)
-    const res = await fetch(chatCompletionUrl.value + "?stream=true", {
+    const url = new URL(chatCompletionUrl.value, window.location.origin);
+    url.searchParams.append("stream", "true");
+    if (isPrivilegedUser.value && !props.manager) {
+      url.searchParams.append("bypassAdmin", "true");
+    }
+    const res = await fetch(url.toString(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -680,7 +687,12 @@ async function onSend() {
   } catch (err) {
     // Fallback to HTTP
     try {
-      const res = await fetch(props.url + "?stream=false", {
+      const url = new URL(props.url, window.location.origin);
+      url.searchParams.append("stream", "false");
+      if (isPrivilegedUser.value && !props.manager) {
+        url.searchParams.append("bypassAdmin", "true");
+      }
+      const res = await fetch(url.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
