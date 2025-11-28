@@ -545,7 +545,9 @@ export async function chatCompletion(req: any, res: any | null) {
         functionCalls,
         toolsIntegrations,
         integration.tenant,
-        args[0] // sendSSE if provided
+        args[0], // sendSSE if provided
+        '',
+        req.query.bypassAdmin === 'true'
       );
     };
 
