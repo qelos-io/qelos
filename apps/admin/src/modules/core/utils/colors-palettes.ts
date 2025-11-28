@@ -35,302 +35,225 @@ export interface DesignPalette {
 
 export const PALETTES: DesignPalette[] = [
   {
-    name: 'Modern Blue',
-    description: 'Clean and professional design with blue accents',
+    name: 'Aurora Slate',
+    description: 'Balanced blue and slate neutrals crafted for data-dense dashboards',
     colors: [
-      '#2563eb', // Main blue
-      '#3b82f6', // Light blue
-      '#1e40af', // Dark blue
-      '#f8fafc', // Light background
-      '#e2e8f0', // Border color
-      '#94a3b8', // Muted text
-      '#0f172a', // Dark text
+      '#2563eb',
+      '#60a5fa',
+      '#0ea5e9',
+      '#f5f7fb',
+      '#d5dbe7',
+      '#0f172a'
     ],
     palette: {
       mainColor: '#2563eb',
-      mainColorLight: '#3b82f6',
+      mainColorLight: '#60a5fa',
       textColor: '#0f172a',
-      secondaryColor: '#f8fafc',
-      thirdColor: '#93c5fd',
-      bgColor: '#f8fafc',
-      bordersColor: '#e2e8f0',
+      secondaryColor: '#0ea5e9',
+      thirdColor: '#14b8a6',
+      bgColor: '#f5f7fb',
+      bordersColor: '#d5dbe7',
       inputsTextColor: '#0f172a',
       inputsBgColor: '#ffffff',
-      linksColor: '#2563eb',
-      navigationBgColor: '#1e3a8a',
-      negativeColor: '#29dfff',
+      linksColor: '#1d4ed8',
+      navigationBgColor: '#111c36',
+      negativeColor: '#ef4444',
       buttonTextColor: '#ffffff',
       buttonBgColor: '#2563eb',
-      focusColor: '#3b82f6',
-      fontFamily: '-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Oxygen, Ubuntu, Cantarell, \'Open Sans\', \'Helvetica Neue\', sans-serif',
-      headingsFontFamily: '-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Oxygen, Ubuntu, Cantarell, \'Open Sans\', \'Helvetica Neue\', sans-serif',
-      baseFontSize: 16,
-      borderRadius: 6,
-      buttonRadius: 6,
-      spacing: 'normal',
-      shadowStyle: 'light',
-      animationSpeed: 300
-    }
-  },
-  {
-    name: 'Velocitech Brand',
-    description: 'Qelos brand colors with modern typography',
-    colors: [
-      '#264653', // Main color
-      '#1c4252', // Main color light
-      '#2a9d8f', // Secondary color
-      '#e9c46a', // Accent color
-      '#f4a261', // Highlight
-      '#ffffff', // Background
-    ],
-    palette: {
-      mainColor: '#264653',
-      mainColorLight: '#1c4252',
-      textColor: '#1c4252',
-      secondaryColor: '#2a9d8f',
-      thirdColor: '#e9c46a',
-      bgColor: '#ffffff',
-      bordersColor: '#e2e8f0',
-      inputsTextColor: '#1c4252',
-      inputsBgColor: '#f8fafc',
-      linksColor: '#2a9d8f',
-      navigationBgColor: '#1c4252',
-      negativeColor: '#9b7a3a',
-      buttonTextColor: '#ffffff',
-      buttonBgColor: '#264653',
-      focusColor: '#2a9d8f',
-      fontFamily: 'Helvetica, Arial, sans-serif',
-      headingsFontFamily: 'Helvetica, Arial, sans-serif',
-      baseFontSize: 16,
-      borderRadius: 4,
-      buttonRadius: 4,
-      spacing: 'normal',
-      shadowStyle: 'light',
-      animationSpeed: 250
-    }
-  },
-  {
-    name: 'Minimal Light',
-    description: 'Clean, minimal design with subtle shadows',
-    colors: [
-      '#8389f7', // Main color (indigo)
-      '#818cf8', // Light indigo
-      '#4f46e5', // Dark indigo
-      '#160461', // Third color
-      '#dcdcfa', // Background
-      '#f9fafb', // Secondary background
-      '#111827', // Text
-    ],
-    palette: {
-      mainColor: '#8389f7',
-      mainColorLight: '#818cf8',
-      textColor: '#111827',
-      secondaryColor: '#4f46e5',
-      thirdColor: '#160461',
-      bgColor: '#dcdcfa',
-      bordersColor: '#e5e7eb',
-      inputsTextColor: '#111827',
-      inputsBgColor: '#f9fafb',
-      linksColor: '#4f46e5',
-      navigationBgColor: '#cdd1fa',
-      negativeColor: '#ebf2ce',
-      buttonTextColor: '#ffffff',
-      buttonBgColor: '#6366f1',
-      focusColor: '#818cf8',
-      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif',
-      headingsFontFamily: 'Inter, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif',
+      focusColor: '#38bdf8',
+      fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif",
+      headingsFontFamily: "Space Grotesk, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       baseFontSize: 16,
       borderRadius: 8,
       buttonRadius: 8,
-      spacing: 'comfortable',
+      spacing: 'normal',
       shadowStyle: 'medium',
-      animationSpeed: 350
+      animationSpeed: 280
     }
   },
   {
-    name: 'Dark Mode',
-    description: 'Modern dark theme with vibrant accents',
+    name: 'Velocitech Core',
+    description: 'Refined take on the Velocitech brand with high-contrast surfaces',
     colors: [
-      '#8b5cf6', // Main color (violet)
-      '#a78bfa', // Light violet
-      '#7c3aed', // Dark violet
-      '#1e1e1e', // Background
-      '#2d2d2d', // Secondary background
-      '#ffffff', // Text
+      '#2a9d8f',
+      '#5eead4',
+      '#1c4252',
+      '#fcfcfc',
+      '#d7dbdf',
+      '#f4a261'
     ],
     palette: {
-      mainColor: '#8b5cf6',
-      mainColorLight: '#a78bfa',
-      textColor: '#ffffff', // Brighter text for better contrast
-      secondaryColor: '#7c3aed',
-      thirdColor: '#c4b5fd',
-      bgColor: '#1e1e1e',
-      bordersColor: '#4b5563',
-      inputsTextColor: '#ffffff', // Brighter text for better contrast
-      inputsBgColor: '#2d2d2d',
-      linksColor: '#a78bfa',
-      navigationBgColor: '#171717',
+      mainColor: '#2a9d8f',
+      mainColorLight: '#5eead4',
+      textColor: '#1c4252',
+      secondaryColor: '#f4a261',
+      thirdColor: '#e9c46a',
+      bgColor: '#fcfcfc',
+      bordersColor: '#d7dbdf',
+      inputsTextColor: '#1c4252',
+      inputsBgColor: '#ffffff',
+      linksColor: '#2a9d8f',
+      navigationBgColor: '#102129',
       negativeColor: '#f87171',
       buttonTextColor: '#ffffff',
-      buttonBgColor: '#8b5cf6',
-      focusColor: '#a78bfa',
-      fontFamily: 'SF Pro Display, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif',
-      headingsFontFamily: 'SF Pro Display, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif',
+      buttonBgColor: '#1c4252',
+      focusColor: '#5eead4',
+      fontFamily: "Sora, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      headingsFontFamily: "Space Grotesk, Sora, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       baseFontSize: 16,
       borderRadius: 6,
-      buttonRadius: 6,
+      buttonRadius: 8,
       spacing: 'normal',
-      shadowStyle: 'medium',
-      animationSpeed: 300
+      shadowStyle: 'light',
+      animationSpeed: 260
     }
   },
   {
-    name: 'Soft Pastel',
-    description: 'Gentle pastel colors with rounded elements',
+    name: 'Nordic Mist',
+    description: 'Soft indigo primary with mint accents for calm, minimal layouts',
     colors: [
-      '#06b6d4', // Main color (cyan)
-      '#22d3ee', // Light cyan
-      '#0891b2', // Dark cyan
-      '#0b4f57', // Third color
-      '#f0fdfa', // Background
-      '#ccfbf1', // Secondary background
-      '#134e4a', // Text
+      '#6366f1',
+      '#a5b4fc',
+      '#14b8a6',
+      '#f9fafb',
+      '#e2e8f0',
+      '#111827'
     ],
     palette: {
-      mainColor: '#06b6d4',
-      mainColorLight: '#22d3ee',
-      textColor: '#134e4a',
-      secondaryColor: '#0891b2',
-      thirdColor: '#0b4f57',
-      bgColor: '#f0fdfa',
-      bordersColor: '#99f6e4',
-      inputsTextColor: '#134e4a',
+      mainColor: '#6366f1',
+      mainColorLight: '#a5b4fc',
+      textColor: '#111827',
+      secondaryColor: '#14b8a6',
+      thirdColor: '#0f172a',
+      bgColor: '#f9fafb',
+      bordersColor: '#e2e8f0',
+      inputsTextColor: '#111827',
       inputsBgColor: '#ffffff',
-      linksColor: '#0891b2',
-      navigationBgColor: '#ecfeff',
-      negativeColor: '#e7f598',
+      linksColor: '#4338ca',
+      navigationBgColor: '#1f2937',
+      negativeColor: '#f43f5e',
       buttonTextColor: '#ffffff',
-      buttonBgColor: '#06b6d4',
-      focusColor: '#22d3ee',
-      fontFamily: 'Quicksand, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif',
-      headingsFontFamily: 'Quicksand, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif',
+      buttonBgColor: '#4f46e5',
+      focusColor: '#34d399',
+      fontFamily: "IBM Plex Sans, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      headingsFontFamily: "Space Grotesk, IBM Plex Sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       baseFontSize: 16,
-      borderRadius: 12,
-      buttonRadius: 24,
+      borderRadius: 10,
+      buttonRadius: 12,
       spacing: 'comfortable',
       shadowStyle: 'light',
-      animationSpeed: 400
-    }
-  },
-  {
-    name: 'Corporate Green',
-    description: 'Professional green palette with clean typography',
-    colors: [
-      '#3ba884', // Main color (emerald)
-      '#34d399', // Light emerald
-      '#059669', // Dark emerald
-      '#f9fafb', // Background
-      '#ecfdf5', // Secondary background
-      '#064e3b', // Text
-    ],
-    palette: {
-      mainColor: '#3ba884',
-      mainColorLight: '#34d399',
-      textColor: '#064e3b',
-      secondaryColor: '#059669',
-      thirdColor: '#082b1b',
-      bgColor: '#e9f0ce',
-      bordersColor: '#d1d5db',
-      inputsTextColor: '#064e3b',
-      inputsBgColor: '#ffffff',
-      linksColor: '#059669',
-      navigationBgColor: '#ecfdf5',
-      negativeColor: '#ebebeb',
-      buttonTextColor: '#ffffff',
-      buttonBgColor: '#10b981',
-      focusColor: '#34d399',
-      fontFamily: 'Georgia, serif',
-      headingsFontFamily: 'Georgia, serif',
-      baseFontSize: 16,
-      borderRadius: 4,
-      buttonRadius: 4,
-      spacing: 'normal',
-      shadowStyle: 'light',
       animationSpeed: 300
     }
   },
   {
-    name: 'Warm Sunset',
-    description: 'Warm orange and red tones with comfortable spacing',
+    name: 'Cassia Ember',
+    description: 'Warm productivity theme with editorial typography and soft surfaces',
     colors: [
-      '#f97316', // Main color (orange)
-      '#fb923c', // Light orange
-      '#ea580c', // Dark orange
-      '#c26e08', // Background
-      '#ffedd5', // Secondary background
-      '#7c2d12', // Text
+      '#ea580c',
+      '#fb923c',
+      '#b54708',
+      '#fff7ed',
+      '#fed7aa',
+      '#422006'
     ],
     palette: {
-      mainColor: '#f97316',
+      mainColor: '#ea580c',
       mainColorLight: '#fb923c',
-      textColor: '#7c2d12',
-      secondaryColor: '#ea580c',
-      thirdColor: '#7c2d12',
-      bgColor: '#c26e08',
+      textColor: '#422006',
+      secondaryColor: '#f97316',
+      thirdColor: '#b45309',
+      bgColor: '#fff7ed',
       bordersColor: '#fed7aa',
-      inputsTextColor: '#7c2d12',
+      inputsTextColor: '#422006',
       inputsBgColor: '#ffffff',
-      linksColor: '#ea580c',
-      navigationBgColor: '#ffedd5',
-      negativeColor: '#f8fae8',
+      linksColor: '#c2410c',
+      navigationBgColor: '#422006',
+      negativeColor: '#dc2626',
       buttonTextColor: '#ffffff',
-      buttonBgColor: '#f97316',
-      focusColor: '#fb923c',
-      fontFamily: 'Verdana, Geneva, sans-serif',
-      headingsFontFamily: 'Verdana, Geneva, sans-serif',
+      buttonBgColor: '#ea580c',
+      focusColor: '#fdba74',
+      fontFamily: "Source Sans 3, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      headingsFontFamily: "Playfair Display, 'Times New Roman', serif",
+      baseFontSize: 17,
+      borderRadius: 12,
+      buttonRadius: 20,
+      spacing: 'comfortable',
+      shadowStyle: 'medium',
+      animationSpeed: 320
+    }
+  },
+  {
+    name: 'Eclipse Neon',
+    description: 'Obsidian UI with electric teal actions and magenta detailing for analytics surfaces',
+    colors: [
+      '#0ea5e9',
+      '#67e8f9',
+      '#f472b6',
+      '#080b16',
+      '#101728',
+      '#f4f4f5'
+    ],
+    palette: {
+      mainColor: '#0ea5e9',
+      mainColorLight: '#67e8f9',
+      textColor: '#f4f4f5',
+      secondaryColor: '#f472b6',
+      thirdColor: '#a855f7',
+      bgColor: '#080b16',
+      bordersColor: '#1f2937',
+      inputsTextColor: '#f8fafc',
+      inputsBgColor: '#101728',
+      linksColor: '#67e8f9',
+      navigationBgColor: '#04060c',
+      negativeColor: '#f87171',
+      buttonTextColor: '#041019',
+      buttonBgColor: '#0ea5e9',
+      focusColor: '#67e8f9',
+      fontFamily: "Sora, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      headingsFontFamily: "Space Grotesk, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       baseFontSize: 16,
       borderRadius: 8,
-      buttonRadius: 8,
-      spacing: 'comfortable',
+      buttonRadius: 10,
+      spacing: 'normal',
       shadowStyle: 'medium',
-      animationSpeed: 350
+      animationSpeed: 260
     }
   },
   {
-    name: 'Tech Purple',
-    description: 'Bold purple theme with sharp edges for tech products',
+    name: 'Verdant Flow',
+    description: 'Fresh green system with editorial whites and soft elevation',
     colors: [
-      '#9333ea', // Main color (purple)
-      '#a855f7', // Light purple
-      '#7e22ce', // Dark purple
-      '#faf5ff', // Background
-      '#f3e8ff', // Secondary background
-      '#581c87', // Text
+      '#0f9d58',
+      '#34d399',
+      '#065f46',
+      '#f3f7f4',
+      '#cbd5d1',
+      '#0f172a'
     ],
     palette: {
-      mainColor: '#9333ea',
-      mainColorLight: '#a855f7',
-      textColor: '#581c87',
-      secondaryColor: '#7e22ce',
-      thirdColor: '#581c87',
-      bgColor: '#faf5ff',
-      bordersColor: '#e9d5ff',
-      inputsTextColor: '#581c87',
+      mainColor: '#0f9d58',
+      mainColorLight: '#34d399',
+      textColor: '#0f172a',
+      secondaryColor: '#10b981',
+      thirdColor: '#065f46',
+      bgColor: '#f3f7f4',
+      bordersColor: '#cbd5d1',
+      inputsTextColor: '#0f172a',
       inputsBgColor: '#ffffff',
-      linksColor: '#7e22ce',
-      navigationBgColor: '#f3e8ff',
-      negativeColor: '#fcf2b3',
+      linksColor: '#0f9d58',
+      navigationBgColor: '#0b3b2a',
+      negativeColor: '#f97316',
       buttonTextColor: '#ffffff',
-      buttonBgColor: '#9333ea',
-      focusColor: '#a855f7',
-      fontFamily: 'Arial, sans-serif',
-      headingsFontFamily: 'Arial, sans-serif',
+      buttonBgColor: '#0f9d58',
+      focusColor: '#34d399',
+      fontFamily: "Sora, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      headingsFontFamily: "Space Grotesk, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       baseFontSize: 16,
-      borderRadius: 2,
-      buttonRadius: 2,
-      spacing: 'compact',
-      shadowStyle: 'medium',
-      animationSpeed: 250
+      borderRadius: 6,
+      buttonRadius: 10,
+      spacing: 'normal',
+      shadowStyle: 'light',
+      animationSpeed: 300
     }
   }
 ]

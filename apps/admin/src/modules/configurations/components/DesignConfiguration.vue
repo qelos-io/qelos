@@ -15,7 +15,14 @@ const { changePalette } = useLiveEditStore();
 
 // Default typography options
 const fontFamilies = [
-  { label: 'System UI', value: '-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Oxygen, Ubuntu, Cantarell, \'Open Sans\', \'Helvetica Neue\', sans-serif' },
+  { label: 'System UI', value: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif" },
+  { label: 'Inter', value: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" },
+  { label: 'Sora', value: "Sora, 'Segoe UI', Roboto, sans-serif" },
+  { label: 'Space Grotesk', value: "Space Grotesk, 'Segoe UI', Roboto, sans-serif" },
+  { label: 'IBM Plex Sans', value: "'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif" },
+  { label: 'Manrope', value: "Manrope, 'Segoe UI', Roboto, sans-serif" },
+  { label: 'Source Sans 3', value: "'Source Sans 3', 'Segoe UI', Roboto, sans-serif" },
+  { label: 'Playfair Display', value: "'Playfair Display', 'Times New Roman', serif" },
   { label: 'Arial', value: 'Arial, sans-serif' },
   { label: 'Helvetica', value: 'Helvetica, Arial, sans-serif' },
   { label: 'Georgia', value: 'Georgia, serif' },

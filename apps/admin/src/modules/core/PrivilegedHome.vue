@@ -599,6 +599,7 @@ footer {
 .palette-header h3 {
   margin: 0 0 5px;
   font-size: 16px;
+  color: black;
 }
 
 .palette-description {
