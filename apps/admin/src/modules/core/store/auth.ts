@@ -15,6 +15,7 @@ export const isAdmin = computed(() => !!(authStore.user && authStore.user.roles.
 export const isPrivilegedUser = computed(() => !!(isAdmin.value || authStore.user?.roles.includes('editor')));
 export const isEditingEnabled = ref<boolean>(false);
 export const isManagingEnabled = ref<boolean>(false);
+export const isLoadingDataAsUser = ref<boolean>(true);
 
 function handleAdminFeatures() {
   if (isAdmin.value) {
