@@ -68,7 +68,8 @@ async function executeBlueprintOperation(
   req: any,
   functionName: string,
   args: any,
-  tenant: string
+  tenant: string,
+  bypassAdmin?: boolean,
 ): Promise<any> {
   const { isBlueprint, operation, blueprintIdentifier } = isBlueprintOperation(functionName);
   
@@ -81,18 +82,18 @@ async function executeBlueprintOperation(
   
   switch (operation) {
     case 'create':
-      return createBlueprintEntityForUser(tenant, user, blueprintIdentifier, {metadata: args});
+      return createBlueprintEntityForUser(tenant, user, blueprintIdentifier, {metadata: args}, bypassAdmin);
     
     case 'get':
-      return getBlueprintEntityForUser(tenant, user, blueprintIdentifier, args.identifier);
+      return getBlueprintEntityForUser(tenant, user, blueprintIdentifier, args.identifier, bypassAdmin);
     
     case 'update':
       // Extract id from args and use the rest as payload
       const { identifier, ...updatePayload } = args;
-      return updateBlueprintEntityForUser(tenant, user, blueprintIdentifier, { identifier, metadata: updatePayload });
+      return updateBlueprintEntityForUser(tenant, user, blueprintIdentifier, { identifier, metadata: updatePayload }, bypassAdmin);
     
     case 'delete':
-      return deleteBlueprintEntityForUser(tenant, user, blueprintIdentifier, args.identifier);
+      return deleteBlueprintEntityForUser(tenant, user, blueprintIdentifier, args.identifier, bypassAdmin);
     
     case 'list':
       // Use query if provided, otherwise empty object
@@ -109,7 +110,7 @@ async function executeBlueprintOperation(
       if (query.updatedTo) {
         query[`metadata.updated[$lte]`] = new Date(query.updatedTo).toJSON();
       }
-      return getBlueprintEntitiesForUser(tenant, user, blueprintIdentifier, query);
+      return getBlueprintEntitiesForUser(tenant, user, blueprintIdentifier, query, bypassAdmin);
     
     default:
       throw new Error(`Unknown blueprint operation: ${operation}`);
@@ -211,7 +212,8 @@ export async function executeFunctionCalls(
   toolsIntegrations: any[],
   tenant: string,
   sendSSE?: ChatCompletionService.SSEHandler,
-  eventPrefix: string = ''
+  eventPrefix: string = '',
+  bypassAdmin?: boolean,
 ): Promise<any[]> {
   const functionResults: any[] = [];
   let stopHeartbeat: (() => void) | null = null;
@@ -331,7 +333,7 @@ export async function executeFunctionCalls(
               
               // Execute the integration or blueprint operation with timeout
               const executionPromise = isBlueprint
-                ? executeBlueprintOperation(req, functionCall.function.name, args, tenant)
+                ? executeBlueprintOperation(req, functionCall.function.name, args, tenant, bypassAdmin)
                 : targetIntegration.handler
                   ? targetIntegration.handler(req, args)
                   : triggerIntegrationSource(tenant, targetIntegration.target.source, {
