@@ -17,6 +17,12 @@ export default function blueprintsCommand(program) {
             required: false,
             default: 'mongodb://localhost:27017/db'
           })
+          .option('guides', {
+            describe: 'Generate SDK guides for each blueprint',
+            type: 'boolean',
+            required: false,
+            default: true
+          })
       },
       blueprintsController)
 }

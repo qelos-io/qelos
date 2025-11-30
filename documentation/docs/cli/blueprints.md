@@ -45,6 +45,27 @@ Each generated file includes:
 - Default permissions (workspace scope)
 - Property descriptors with inferred metadata
 - Empty `relations`, `limitations`, and disabled dispatchers (create/update/delete)
+- Matching **SDK guide** (`<identifier>.sdk.md`) with usage instructions (list, get, create, update, delete) built from the inferred blueprint
+
+### SDK Guides output
+
+By default, the command writes a Markdown file next to every blueprint. Each guide shows:
+
+- Installation snippet for `@qelos/sdk`
+- Sample initialization of `QelosAdministratorSDK`
+- Generated TypeScript interface reflecting the inferred properties
+- Example payload built from sampled data (or sensible defaults)
+- CRUD examples using `sdk.blueprints.entitiesOf('<identifier>')`
+
+If you want to skip the Markdown guides you can pass `--guides false`:
+
+```bash
+qelos blueprints generate ./blueprints \
+  --uri mongodb://localhost:27017/legacy_app \
+  --guides false
+```
+
+This keeps only the `.blueprint.json` files while avoiding the additional documentation.
 
 ## Examples
 
