@@ -20,5 +20,6 @@ RUN apt-get update \
 
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
-RUN pnpm i @esbuild/linux-x64 node-jq
+RUN pnpm i @esbuild/linux-x64
+RUN pnpm rebuild node-jq
 CMD pnpm start
