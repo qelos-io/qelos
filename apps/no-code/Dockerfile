@@ -4,6 +4,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 ENV NODE_ENV=production
 ENV PORT=9004
+ENV NODE_JQ_PATH="/usr/bin/jq"
 EXPOSE $PORT
 COPY qelos-no-code.tgz .
 # Extract the tarball directly to root with special flags to handle paths with '..' safely

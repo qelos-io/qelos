@@ -4,6 +4,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 ENV NODE_ENV=production
 ENV PORT=9006
+ENV NODE_JQ_PATH="/usr/bin/jq"
 EXPOSE $PORT
 
 # Copy the tarball
