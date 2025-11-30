@@ -15,13 +15,10 @@ RUN cd / && tar --absolute-names --no-same-owner --no-same-permissions -xzf qelo
 # Set working directory to the package directory
 WORKDIR /package
 
-# Install required system packages for dependency postinstall scripts
+# Install required system packages (curl for node-jq postinstall, jq as fallback runtime)
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends curl \
+  && apt-get install -y --no-install-recommends curl jq \
   && rm -rf /var/lib/apt/lists/*
-
-#install jq
-RUN apt-get install -y jq
 
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
