@@ -18,5 +18,7 @@ WORKDIR /package
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
 
+RUN pnpm i node-jq
+
 # Start the application
 CMD ["pnpm", "start"]
