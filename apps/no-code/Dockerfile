@@ -14,5 +14,5 @@ WORKDIR /package
 
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
-RUN pnpm i @esbuild/linux-x64
+RUN pnpm i @esbuild/linux-x64 node-jq
 CMD pnpm start
