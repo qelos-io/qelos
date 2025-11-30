@@ -23,7 +23,7 @@ RUN apt-get update \
 
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
-RUN pnpm rebuild node-jq
+RUN npm rebuild node-jq
 
 # Start the application
 CMD ["pnpm", "start"]
