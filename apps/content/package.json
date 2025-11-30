@@ -36,9 +36,6 @@
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
   "bundleDependencies": [
     "@qelos/api-kit",
-    "@qelos/cache-manager",
-    "mongoose",
-    "node-fetch",
-    "shortid"
+    "@qelos/cache-manager"
   ]
 }

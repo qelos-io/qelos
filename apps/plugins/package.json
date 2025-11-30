@@ -46,15 +46,6 @@
   "bundleDependencies": [
     "@qelos/api-kit",
     "@qelos/cache-manager",
-    "@qelos/global-types",
-    "@types/nodemailer",
-    "http-proxy-middleware",
-    "mongoose",
-    "node-fetch",
-    "node-jq",
-    "nodemailer",
-    "redis",
-    "tsx",
-    "uniqid"
+    "@qelos/global-types"
   ]
 }

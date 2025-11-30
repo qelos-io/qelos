@@ -38,16 +38,6 @@
   },
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
   "bundleDependencies": [
-    "@aws-sdk/client-s3",
-    "@google-cloud/storage",
-    "@qelos/api-kit",
-    "cloudinary",
-    "datauri",
-    "ftp",
-    "mime",
-    "mongoose",
-    "multer",
-    "tsx",
-    "uniqid"
+    "@qelos/api-kit"
   ]
 }
