@@ -13,6 +13,7 @@ import { executeDataManipulationTest } from '@/services/apis/data-manipulation-s
 import eventsService, { IEvent } from '@/services/apis/events-service';
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
+import { authStore } from '@/modules/core/store/auth';
 
 
 // Define props and emits
@@ -218,7 +219,8 @@ const defaultTestPayload = computed(() => {
         threadId: 'thread_123',
         workspaceId: 'workspace_456',
         paidCustomer: true
-      }
+      },
+      user: authStore.user
     };
   }
 

@@ -104,9 +104,8 @@ export async function executeDataManipulation(tenant: string, initialPayload: an
             }
           } else if (source === 'blueprintEntities') {
             const existing = previousData[key];
-            if (existing && typeof existing === 'object' && existing.blueprint) {
-              data[key] = await getBlueprintEntities(tenant, existing.blueprint, existing);
-            } else if (blueprint && typeof existing === 'string') {
+            const blueprint = config.blueprint || existing.blueprint;
+            if (existing && blueprint) {
               data[key] = await getBlueprintEntities(tenant, blueprint, existing);
             }
           }

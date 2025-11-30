@@ -26,8 +26,8 @@ export function getBlueprintEntity(tenant: string, blueprintIdentifier: string, 
   return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities/${entityId}`, 'GET', tenant);
 }
 
-export function getBlueprintEntities(tenant: string, blueprintIdentifier: string, query: any) {
-  const queryString = Object.entries(query).map(([key, value]) => `${key}=${value}`).join('&');
+export function getBlueprintEntities(tenant: string, blueprintIdentifier: string, query: any | string) {
+  const queryString = typeof query === 'string' ? query : Object.entries(query).map(([key, value]) => `${key}=${value}`).join('&');
   return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities?${queryString}`, 'GET', tenant);
 }
 

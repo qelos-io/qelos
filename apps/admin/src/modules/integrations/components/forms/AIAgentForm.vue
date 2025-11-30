@@ -13,6 +13,7 @@ import WorkspaceLabelSelector from '@/modules/no-code/components/WorkspaceLabelS
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import { ElMessage } from 'element-plus';
+import { getPlural } from '@/modules/core/utils/texts';
 
 const props = defineProps<{
   integrationId?: string;
@@ -444,14 +445,14 @@ const generateDataManipulation = () => {
     const mapStep: any = { map: {}, populate: {} };
     
     if (includeWorkspaceContext.value) {
-      mapStep.map.workspace = { workspace: 'user.workspace' };
+      mapStep.map.workspace = `.user.workspace`;
     }
 
     if (contextBlueprints.value.length > 0) {
       contextBlueprints.value.forEach(blueprintId => {
         const blueprint = blueprints.value?.find(b => b.identifier === blueprintId);
         if (blueprint) {
-          mapStep.map[blueprint.name] = workspacesConfig.metadata.isActive ? `{ workspace: .user.workspace._id }` : `{ user: .user._id }`;
+          mapStep.map[getPlural(blueprint.identifier)] = workspacesConfig.metadata.isActive ? `{ workspace: .user.workspace._id }` : `{ user: .user._id }`;
         }
       });
     }
@@ -464,33 +465,34 @@ const generateDataManipulation = () => {
       contextBlueprints.value.forEach(blueprintId => {
         const blueprint = blueprints.value?.find(b => b.identifier === blueprintId);
         if (blueprint) {
-          blueprintStep.populate[blueprint.name] = {
+          blueprintStep.populate[getPlural(blueprint.identifier)] = {
             source: 'blueprintEntities',
             blueprint: blueprintId
           };
         }
       });
       
+      
       steps.push(blueprintStep);
-      
-      const contextParts: string[] = [];
-      if (includeUserContext.value) contextParts.push('(.user | tostring)');
-      if (includeWorkspaceContext.value) contextParts.push('(.workspace | tostring)');
-      contextBlueprints.value.forEach(blueprintId => {
-        const blueprint = blueprints.value?.find(b => b.identifier === blueprintId);
-        if (blueprint) {
-          contextParts.push(`(.${blueprint.name} | tostring)`);
-        }
-      });
-      
-      const contextString = contextParts.join(' + " " + ');
-      steps.push({
-        map: {
-          messages: `([{role: "system", content: "Context: " + ${contextString}}] + .messages)`
-        },
-        populate: {}
-      });
     }
+    
+    const contextParts: string[] = [];
+    if (includeUserContext.value) contextParts.push('"User: " + (.user | tostring)');
+    if (includeWorkspaceContext.value) contextParts.push('"Workspace: " + (.workspace | tostring)');
+    contextBlueprints.value.forEach(blueprintId => {
+      const blueprint = blueprints.value?.find(b => b.identifier === blueprintId);
+      if (blueprint) {
+        contextParts.push(`"${getPlural(blueprint.name)}: " + (.${getPlural(blueprint.identifier)} | tostring)`);
+      }
+    });
+    
+    const contextString = contextParts.join(' + "\n" + ');
+    steps.push({
+      map: {
+        messages: `([{role: "system", content: ("Context: " + ${contextString})}] + .messages)`
+      },
+      populate: {}
+    });
   }
   
   dataManipulation.value = steps;
@@ -692,7 +694,7 @@ watch([contextBlueprints, includeUserContext, includeWorkspaceContext], (newValu
                 <el-checkbox v-model="includeUserContext" class="context-checkbox">
                   {{ $t('Include user information') }}
                 </el-checkbox>
-                <el-checkbox v-model="includeWorkspaceContext" class="context-checkbox">
+                <el-checkbox v-if="workspacesConfig.isActive" v-model="includeWorkspaceContext" class="context-checkbox">
                   {{ $t('Include workspace information') }}
                 </el-checkbox>
               </div>
