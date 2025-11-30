@@ -17,7 +17,10 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends curl \
   && rm -rf /var/lib/apt/lists/*
 
+#install jq
+RUN apt-get install -y jq
+
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
-RUN pnpm i @esbuild/linux-x64 node-jq
+RUN pnpm i @esbuild/linux-x64
 CMD pnpm start

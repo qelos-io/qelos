@@ -20,10 +20,11 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends curl \
   && rm -rf /var/lib/apt/lists/*
 
+#install jq
+RUN apt-get install -y jq
+
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
-
-RUN pnpm i node-jq
 
 # Start the application
 CMD ["pnpm", "start"]
