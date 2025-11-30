@@ -12,6 +12,11 @@ RUN cd / && tar --absolute-names --no-same-owner --no-same-permissions -xzf qelo
 # Set working directory to the package directory
 WORKDIR /package
 
+# Install required system packages for dependency postinstall scripts
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl \
+  && rm -rf /var/lib/apt/lists/*
+
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
 RUN pnpm i @esbuild/linux-x64 node-jq
