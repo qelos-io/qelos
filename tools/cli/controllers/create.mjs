@@ -2,7 +2,7 @@ import follow from "follow-redirects";
 import cliSelect from "cli-select";
 import { blue } from "../utils/colors.mjs";
 import DecompressZip from "decompress-zip";
-import { join } from "path";
+import { join } from "node:path";
 import { rimraf } from "rimraf";
 import ProgressBar from "../utils/progress-bar.mjs";
 import * as readline from "node:readline";

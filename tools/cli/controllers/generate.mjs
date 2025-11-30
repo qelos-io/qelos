@@ -1,7 +1,5 @@
 import { generateRules } from '../services/generate-rules.mjs';
 import { logger } from '../services/logger.mjs';
-import path from 'node:path';
-import fs from 'node:fs';
 
 export default async function generateController({ type }) {
   try {
