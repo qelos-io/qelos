@@ -20,7 +20,7 @@
       </div>
     </el-form>
 
-    <template v-if="authConfig.socialLoginsSources?.linkedin || authConfig.socialLoginsSources?.facebook">
+    <template v-if="hasSocialLogins">
       <div v-if="!props.authConfig?.disableUsernamePassword" class="separator">
         <span>{{ $t('OR') }}</span>
       </div>
@@ -48,7 +48,7 @@
 </template>
 
 <script lang="ts" setup>
-import { watch } from 'vue'
+import { watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLogin } from '../compositions/authentication'
 import { useSubmitting } from '../compositions/submitting'
@@ -61,6 +61,9 @@ const router = useRouter()
 
 const { submit, submitting } = useSubmitting(login, { error: 'Login failed' })
 
+const hasSocialLogins = computed(() => {
+  return props.authConfig.socialLoginsSources?.linkedin || props.authConfig.socialLoginsSources?.facebook || props.authConfig.socialLoginsSources?.google || props.authConfig.socialLoginsSources?.github
+})
 watch(isLoggedIn, (is) => {
   if (is) {
     const redirect = router.currentRoute.value.query.redirect as string
