@@ -10,7 +10,7 @@
   >
     <div class="chat-window" ref="chatWindow">
       <div v-if="messages.length === 0" class="ai-initial-message">
-        <slot v-if="$slots.initialMessage || $slots['initial-message']" name="initialMessage" />
+        <slot v-if="$slots.initialMessage || $slots['initial-message']" name="initialMessage" :setInput="onSuggestionClick" :input="input" />
         <template v-else>
           <div class="ai-initial-title">
             {{ $t(title || "🤖 I'm your AI assistant") }}
@@ -170,7 +170,7 @@
     <slot
       v-if="$slots['user-input']"
       name="user-input"
-      :send="onSend"
+      :send="send"
       :input="input"
       :update-input="(value: string) => input = value"
       :loading="loading"
@@ -180,7 +180,7 @@
       :input-ref="inputRef"
       :on-input-enter="onInputEnter"
     />
-    <form v-else class="input-row" @submit.prevent="onSend">
+    <form v-else class="input-row" @submit.prevent="send">
       <div class="input-group">
         <div class="input-rail">
           <button type="button" class="rail-btn" :disabled="loading" @click="openFilePicker" :title="$t('Attach files')">
@@ -244,13 +244,6 @@ import threadsService from "@/services/apis/threads-service";
 import { linkify } from "remarkable/linkify";
 import { isAdmin, isLoadingDataAsUser } from "@/modules/core/store/auth";
 
-type ContextChip = {
-  key: string;
-  label: string;
-  value: string;
-  icon: string;
-};
-
 const props = defineProps<{
   url: string;
   title?: string;
@@ -263,7 +256,6 @@ const props = defineProps<{
   fullScreen?: boolean;
   typingText?: string;
   manager?: boolean;
-  contextChips?: ContextChip[];
 }>();
 
 const emit = defineEmits([
@@ -273,40 +265,10 @@ const emit = defineEmits([
   "message-received",
   "function-executed",
   "update:threadId",
+  "mounted"
 ]);
 
 const localThreadId = ref(props.threadId);
-
-const contextChips = computed(
-  () =>
-    props.contextChips ??
-    [
-      props.chatContext?.currentPage
-        ? {
-            key: "page",
-            label: "Current page",
-            value: String(props.chatContext.currentPage),
-            icon: "location-arrow",
-          }
-        : undefined,
-      props.chatContext?.pluginId
-        ? {
-            key: "plugin",
-            label: "Plugin",
-            value: String(props.chatContext.pluginId),
-            icon: "puzzle-piece",
-          }
-        : undefined,
-      props.chatContext?.timezone
-        ? {
-            key: "tz",
-            label: `Timezone (${props.chatContext.timezone})`,
-            value: String(props.chatContext.timezone),
-            icon: "clock",
-          }
-        : undefined,
-    ].filter((chip): chip is ContextChip => Boolean(chip))
-);
 
 const templatePromptPool = computed(() => {
   const prompts: string[] = [];
@@ -479,7 +441,7 @@ function onInputEnter(e: KeyboardEvent) {
   // Enter (no Ctrl/Cmd): send. Ctrl+Enter or Cmd+Enter: newline
   if (e.key === "Enter" && !e.shiftKey && !(e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    onSend();
+    send();
   }
   // Otherwise (Ctrl+Enter/Cmd+Enter), allow default (newline)
 }
@@ -655,11 +617,6 @@ function onSuggestionClick(
   inputRef.value?.focus();
 }
 
-function onContextChipClick(value: string) {
-  input.value = value;
-  inputRef.value?.focus();
-}
-
 function openFilePicker() {
   fileInputRef.value?.click();
 }
@@ -683,7 +640,7 @@ function insertSlashCommand() {
   inputRef.value?.focus();
 }
 
-async function onSend() {
+async function send() {
   if (!canSend()) return;
   for (const file of attachedFiles) {
     addMessage({
@@ -841,6 +798,21 @@ onMounted(() => {
   }
   // Initialize table copy buttons for any existing content
   setTimeout(addTableCopyButtons, 100);
+
+  emit('mounted', {
+    input,
+    messages,
+    threadId: localThreadId,
+    chatWindow,
+    inputRef,
+    loading,
+    chatCompletionUrl,
+    createThread,
+    addMessage,
+    send,
+    renderMarkdown,
+    openFilePicker
+  });
 });
 </script>
 
