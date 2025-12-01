@@ -100,12 +100,12 @@ function getDefaultMetadata(kind: IntegrationSourceKind) {
   }
   if (kind === 'google') {
     return {
-      scope: 'openid email public_profile',
+      scope: 'openid email profile',
     };
   }
   if (kind === 'github') {
     return {
-      scope: 'openid email public_profile',
+      scope: 'openid email profile',
     };
   }
   return {};

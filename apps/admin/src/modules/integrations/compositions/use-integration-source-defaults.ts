@@ -9,7 +9,7 @@ export function useIntegrationSourceDefaults() {
       return { scope: 'openid email public_profile' };
     }
     if (kind === IntegrationSourceKind.Google || kind === IntegrationSourceKind.GitHub) {
-      return { scope: 'openid email public_profile' };
+      return { scope: 'openid email profile' };
     }
 
     return {};
