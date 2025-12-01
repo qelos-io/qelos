@@ -43,12 +43,32 @@ The `<ai-chat>` component provides a complete AI chat interface with streaming s
 | `message-received` | (message: Object) | Emitted when AI responds |
 | `function-executed` | (data: Object) | Emitted when AI executes a function call |
 | `update:threadId` | (threadId: String) | Emitted when thread ID changes (for v-model) |
+| `mounted` | ({ input, messages, threadId, chatWindow, inputRef, loading, chatCompletionUrl, createThread, addMessage, send, renderMarkdown, openFilePicker }: Object) | Fired once the component mounts to expose internals for advanced integrations |
+
+**Mounted payload reference**
+
+- `input`: `Ref<string>` bound to the textarea value
+- `messages`: `Reactive<ChatMessage[]>` with the entire conversation log
+- `threadId`: `Ref<string | undefined>` that syncs with `v-model:thread-id`
+- `chatWindow`: `Ref<HTMLElement | undefined>` pointing to the scrollable container
+- `inputRef`: `Ref<InstanceType<typeof ElInput> | undefined>` for focusing the textarea
+- `loading`: `Ref<boolean>` indicating when the assistant is streaming
+- `chatCompletionUrl`: `ComputedRef<string>` that resolves the active endpoint (including thread ids)
+- `createThread`: `() => Promise<Thread>` helper to lazily create a thread
+- `addMessage`: `(message: ChatMessageInput) => void` to push custom messages into the log
+- `send`: `() => Promise<void>` to trigger the default send routine
+- `renderMarkdown`: `(content: string) => string` renderer used by message bubbles
+- `openFilePicker`: `() => void` to show the hidden file input
 
 ## Slots
 
 ### `initialMessage`
 
 Customize the initial message shown when chat is empty.
+
+**Slot Props:**
+- `setInput` - Function that mirrors the component's suggestion click handler `(value: string | Suggestion) => void`
+- `input` - Reactive ref holding the current textarea value
 
 ```html
 <ai-chat url="/api/ai/chat">
