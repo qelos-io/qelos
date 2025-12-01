@@ -1,72 +1,3 @@
-.context-chips {
-  margin-top: 1.2em;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4em;
-  justify-content: center;
-}
-
-.context-label {
-  width: 100%;
-  text-align: center;
-  font-size: 0.8em;
-  color: #94a3b8;
-  margin-bottom: 0.2em;
-}
-
-.context-chip {
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  border-radius: 999px;
-  padding: 0.25em 0.8em;
-  font-size: 0.82em;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35em;
-  background: rgba(255, 255, 255, 0.9);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: #475569;
-}
-
-.context-chip:hover {
-  border-color: rgba(64, 158, 255, 0.5);
-  color: var(--el-color-primary);
-  transform: translateY(-1px);
-}
-
-.input-rail {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4em;
-  margin-inline-end: 0.6em;
-  align-self: flex-start;
-}
-
-.rail-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  background: rgba(248, 250, 255, 0.9);
-  color: #4b5563;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85em;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.rail-btn:hover:not(:disabled) {
-  color: var(--el-color-primary);
-  border-color: rgba(64, 158, 255, 0.5);
-  box-shadow: 0 4px 10px rgba(64, 158, 255, 0.15);
-}
-
-.rail-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
 <template>
   <div
     class="ai-chat"
@@ -79,7 +10,7 @@
   >
     <div class="chat-window" ref="chatWindow">
       <div v-if="messages.length === 0" class="ai-initial-message">
-        <slot v-if="$slots.initialMessage" name="initialMessage" />
+        <slot v-if="$slots.initialMessage || $slots['initial-message']" name="initialMessage" />
         <template v-else>
           <div class="ai-initial-title">
             {{ $t(title || "🤖 I'm your AI assistant") }}
@@ -303,7 +234,6 @@ import {
   Document,
   Loading,
   UserFilled,
-  Cpu,
   DocumentCopy,
   Check,
   ArrowRight,
