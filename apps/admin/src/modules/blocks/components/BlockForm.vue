@@ -23,6 +23,25 @@
         <SaveButton :submitting="submitting" />
       </div>
     </div>
+
+    <div class="block-snippet">
+      <div class="snippet-header">
+        <div class="snippet-title">Embed this content box</div>
+        <div class="snippet-description">Copy and paste into any page or component.</div>
+      </div>
+      <div class="snippet-body">
+        <pre class="snippet-code" dir="ltr">{{ embedSnippet }}</pre>
+        <el-button
+          type="primary"
+          plain
+          size="small"
+          :icon="'icon-document-copy'"
+          @click="copySnippet"
+        >
+          Copy
+        </el-button>
+      </div>
+    </div>
     
     <!-- Basic Information Tab -->
     <div v-if="activeTab === 'basic'" class="tab-content">
@@ -30,7 +49,7 @@
         <FormInput
           title="Name"
           v-model="name"
-          placeholder="Enter a name for this block"
+          placeholder="Enter a name for this content box"
           required
         />
         <FormInput
@@ -38,7 +57,7 @@
           v-model="description"
           type="textarea"
           :rows="3"
-          placeholder="Enter a description for this block"
+          placeholder="Enter a description for this content box"
         />
       </div>
     </div>
@@ -87,6 +106,7 @@
 </template>
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import FormInput from '../../core/components/forms/FormInput.vue'
 import { clearNulls } from '../../core/utils/clear-nulls'
 import { useBlockForm } from '../compositions/blocks'
@@ -109,6 +129,9 @@ const { editedBlock, name, content, description } = useBlockForm(props)
 const { editorConfig } = useEditorConfig()
 
 useUnsavedChanges('block', props.block?._id, computed(() => props.block?.name), editedBlock)
+
+const snippetPlaceholder = '[PUT_THE_ID_HERE]'
+const embedSnippet = computed(() => `<content-box identifier="${props.block?._id || snippetPlaceholder}"></content-box>`)
 
 // UI state management
 const activeTab = ref(props.block?._id ? 'content' : 'basic')
@@ -137,6 +160,16 @@ watch(content, () => {
   }
 }, { deep: true })
 
+const copySnippet = async () => {
+  try {
+    await navigator.clipboard.writeText(embedSnippet.value)
+    ElMessage.success('Embed code copied')
+  } catch (error) {
+    console.error('Failed to copy embed snippet', error)
+    ElMessage.error('Unable to copy embed code')
+  }
+}
+
 const submit = () => {
   if (!name.value) {
     activeTab.value = 'basic'
@@ -159,6 +192,54 @@ const submit = () => {
   align-items: center;
   margin-bottom: 16px;
   border-bottom: 1px solid var(--el-border-color);
+}
+
+.block-snippet {
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  background-color: var(--el-fill-color-light);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.snippet-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.snippet-title {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.snippet-description {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+.snippet-body {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.snippet-code {
+  flex: 1;
+  margin: 0;
+  padding: 12px;
+  border-radius: 6px;
+  background-color: #0f172a;
+  color: #e2e8f0;
+  font-family: var(--font-family-mono, 'SFMono-Regular', 'Roboto Mono', monospace);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tabs-container {
