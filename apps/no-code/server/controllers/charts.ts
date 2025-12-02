@@ -20,7 +20,7 @@ interface RequestWithBlueprint extends RequestWithUser {
 
 export function checkChartPermissions(req: RequestWithBlueprint, res: Response, next: Function) {
   const blueprint: IBlueprint = req.blueprint;
-  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin);
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin === 'true');
 
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
