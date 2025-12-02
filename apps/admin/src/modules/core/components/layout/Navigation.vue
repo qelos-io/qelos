@@ -14,7 +14,7 @@
     </div>
 
     <el-menu router :default-active="$route.path" :collapse="isCollapsed && !opened" :collapse-transition="false" class="el-menu-vertical" :ellipsis="false">
-      <div class="nav-group" v-if="isEditingEnabled || (isAdmin && !navBar?.top?.length && !navBar?.bottom?.length)">
+      <div class="nav-group" v-if="isEditingEnabled || (isAdmin && !hasPages)">
         <el-menu-item id="menu-item-create-new-page" @click="openDrawer" :data-title="$t('Create New Page')">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'plus-circle']"/>
@@ -184,7 +184,7 @@ import { useAppConfiguration } from '@/modules/configurations/store/app-configur
 
 import { ref, onMounted, toRef } from 'vue';
 
-const { navBar } = storeToRefs(usePluginsMicroFrontends());
+const { navBar, hasPages } = storeToRefs(usePluginsMicroFrontends());
 const { appConfig } = useAppConfiguration();
 import QuicklyCreateMicrofrontends from './navigation/QuicklyCreateMicrofrontends.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';

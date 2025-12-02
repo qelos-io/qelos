@@ -208,6 +208,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     navBar: computed(() => microFrontends.value.navBar),
     modals: computed(() => microFrontends.value.modals),
     cruds,
-    openModals: ref([])
+    openModals: ref([]),
+    hasPages: computed(() => !!microFrontends.value.onlyRoutes?.length)
   }
 })
