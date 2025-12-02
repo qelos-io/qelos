@@ -47,6 +47,7 @@ export async function getStandardChart(req, res: Response) {
     ...getEntityQuery({ blueprint, req, permittedScopes: req.permittedScopes })
   }
   delete query.x;
+  delete query.bypassAdmin;
 
   let $group;
   switch (propType) {
@@ -162,6 +163,7 @@ export async function getPieChart(req, res: Response) {
     ...getEntityQuery({ blueprint, req, permittedScopes: req.permittedScopes })
   }
   delete query.x;
+  delete query.bypassAdmin;
 
   const data = await BlueprintEntity.aggregate([
     { $match: query },
@@ -205,6 +207,7 @@ export async function getCountCard(req, res: Response) {
     ...qs.parse(req._parsedUrl.query, { depth: 3 }),
     ...getEntityQuery({ blueprint, req, permittedScopes: req.permittedScopes })
   }
+  delete query.bypassAdmin;
 
   const data = await BlueprintEntity.countDocuments(query).exec();
   res.json({ count: data }).end();
