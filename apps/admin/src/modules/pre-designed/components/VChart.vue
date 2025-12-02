@@ -1,9 +1,7 @@
 <script lang="ts">
-import { onBeforeMount, onMounted, onBeforeUnmount, shallowRef, ref } from 'vue';
-import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
+import { onBeforeMount, shallowRef, ref } from 'vue';
 
 export default {
-  components: { EditComponentBar },
   props: {
     height: {
       type: String,
@@ -14,7 +12,7 @@ export default {
       default: true
     }
   },
-  setup(props) {
+  setup() {
     const EChart = shallowRef();
     const wrapperRef = ref(null);
     const chartRef = ref(null);
@@ -37,7 +35,6 @@ export default {
 
 <template>
   <div class="wrapper" ref="wrapperRef">
-    <EditComponentBar/>
     <component v-if="EChart" :is="EChart" v-bind="$attrs" :autoresize="autoresize" ref="chartRef"></component>
   </div>
 </template>

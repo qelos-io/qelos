@@ -288,14 +288,63 @@ export function useEditorComponents() {
       requiredProps: [
         { prop: 'height', label: 'Height', type: 'text', source: 'manual', placeholder: '(400px)' },
         {
-          prop: 'option',
-          label: 'Option',
-          type: 'text',
-          bind: true,
-          source: 'manual',
-          placeholder: 'Enter a requirement key'
+          prop: 'blueprint',
+          label: 'Blueprint',
+          type: 'select',
+          source: 'blueprint',
+          placeholder: 'Select blueprint source'
         },
-      ]
+        {
+          prop: 'chart-type',
+          label: 'Chart Type',
+          type: 'select',
+          source: 'manual',
+          value: 'line',
+          options: [
+            { identifier: 'line', name: 'Line' },
+            { identifier: 'bar', name: 'Bar' },
+            { identifier: 'pie', name: 'Pie' }
+          ]
+        },
+        {
+          prop: 'group-by',
+          label: 'Group By Property',
+          type: 'text',
+          source: 'manual',
+          placeholder: 'status',
+          description: 'Enter the blueprint property key to aggregate (as defined in the blueprint metadata).'
+        },
+      ],
+      extendRequirements: (requirements: any, props: any) => {
+        const blueprintKey = props.blueprint;
+        const blueprint = blueprints.value.find(b => b.identifier === blueprintKey);
+        if (!blueprint) {
+          return;
+        }
+        const chartType = props['chart-type'] || 'line';
+        const groupByKey = props['group-by'] || Object.keys(blueprint.properties)[0];
+
+        const requirementKey = `vChart_${blueprintKey}_${Date.now().toString(36)}`;
+        const encodedBlueprint = encodeURIComponent(blueprintKey);
+        const isPie = chartType === 'pie';
+        const chartPath = isPie ? 'pie' : chartType;
+        requirements[requirementKey] = {
+          key: requirementKey,
+          fromHTTP: {
+            method: 'GET',
+            uri: `/api/blueprints/${encodedBlueprint}/charts/${chartPath}`,
+            query: {
+              x: groupByKey
+            }
+          }
+        };
+
+        props['v-bind:option'] = `${requirementKey}.result`;
+        props['v-bind:loading'] = `${requirementKey}.loading`;
+        delete props.blueprint;
+        delete props['chart-type'];
+        delete props['group-by'];
+      }
     },
     'remove-confirmation': {
       component: RemoveConfirmation,
@@ -344,7 +393,7 @@ export function useEditorComponents() {
         },
         { prop: 'title', label: 'Title', type: 'text', source: 'manual', placeholder: 'Enter the card title' },
         { prop: 'full-screen', label: 'Full Screen', type: 'switch', source: 'manual', bind: true, value: true },
-        { prop: 'suggestions', label: 'Suggestions', type: 'array', source: 'manual', 
+        { prop: 'suggestions', label: 'Suggestions', type: 'array', bind: true, source: 'manual', 
           children: [
             { prop: 'label', label: 'Label', type: 'text', placeholder: 'Enter the label' },
             {

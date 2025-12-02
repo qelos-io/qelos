@@ -5,7 +5,7 @@ import { isEditingEnabled } from '@/modules/core/store/auth';
 import { usePluginsStore } from '@/modules/plugins/store/pluginsStore';
 
 const editableContent = document.createElement('editable-content');
-const selector = 'p, h1, h2, h3, h4, h5, h6, div, remove-confirmation, block-item, empty-state, ai-chat, el-button, el-select, el-input, el-form, form, life-cycle, list-page-title, quick-table';
+const selector = 'p, h1, h2, h3, h4, h5, h6, div, remove-confirmation, block-item, empty-state, ai-chat, el-button, el-select, el-input, el-form, form, life-cycle, list-page-title, quick-table, v-chart';
 
 export function useSingleItemCrud() {
   const mfes = usePluginsMicroFrontends();
