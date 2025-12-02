@@ -142,6 +142,42 @@ const newProduct = await productEntities.create({
 // newProduct is of type Product
 ```
 
+## Blueprint Charts & Metrics
+
+Blueprints expose ready-made analytics endpoints that return ECharts-compatible payloads for dashboards.
+
+### Available Endpoints
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/api/blueprints/:blueprintIdentifier/charts/:chartType` | Returns a standard chart (line, bar, etc.). Requires the `x` query param with the metadata key to aggregate. |
+| `GET` | `/api/blueprints/:blueprintIdentifier/charts/pie` | Returns a pie chart configuration. Also expects the `x` query param. |
+| `GET` | `/api/blueprints/:blueprintIdentifier/charts/count` | Returns a numeric count for entities matching the supplied filters. |
+
+All endpoints honor the same query parameters that blueprint entity listing supports (`$limit`, `$skip`, filters, etc.) and automatically enforce the caller's permission scopes.
+
+### Using the SDK
+
+```typescript
+// Aggregated line / bar chart
+const chartOption = await sdk.blueprints.getChart('products', 'line', {
+  x: 'status',
+  $limit: 0
+});
+
+// Pie chart
+const pieOption = await sdk.blueprints.getPieChart('products', {
+  x: 'category'
+});
+
+// Count metric (e.g., KPI cards)
+const totalProducts = await sdk.blueprints.getCount('products', {
+  published: true
+});
+```
+
+Each call returns an object ready to pass directly into `<v-chart>`'s `option` prop or to display as a numeric metric.
+
 ## Managing Blueprints as an Administrator
 
 **Note**: Administrative blueprint management is only available through the administrator SDK (`QelosAdminSDK`).

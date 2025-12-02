@@ -43,8 +43,10 @@ export async function getStandardChart(req, res: Response) {
   }
 
   const query = {
+    ...qs.parse(req._parsedUrl.query, { depth: 3 }),
     ...getEntityQuery({ blueprint, req, permittedScopes: req.permittedScopes })
   }
+  delete query.x;
 
   let $group;
   switch (propType) {
@@ -116,11 +118,84 @@ export async function getStandardChart(req, res: Response) {
   }).end();
 }
 
-export async function getPieChart(req: RequestWithBlueprint, res: Response) {
+export async function getPieChart(req, res: Response) {
   const blueprint: IBlueprint = req.blueprint;
+  const propToAggregate: string = req.query.x?.toString() || '';
+  const propType = blueprint.properties[propToAggregate]?.type;
+  const propDisplayName = blueprint.properties[propToAggregate]?.title;
+
+  if (!propToAggregate || !propType) {
+    res.status(400).json({ message: 'xAxis is required' }).end();
+    return;
+  }
+
+  let $group;
+  switch (propType) {
+    case BlueprintPropertyType.DATE:
+    case BlueprintPropertyType.DATETIME:
+      $group = {
+        _id: { $dayOfWeek: `$metadata.${propToAggregate}` },
+        count: { $sum: 1 }
+      }
+      break;
+    case BlueprintPropertyType.TIME:
+      $group = {
+        _id: { $hour: `$metadata.${propToAggregate}` },
+        count: { $sum: 1 }
+      }
+      break;
+    case BlueprintPropertyType.STRING:
+    case BlueprintPropertyType.NUMBER:
+    case BlueprintPropertyType.BOOLEAN:
+      $group = {
+        _id: `$metadata.${propToAggregate}`,
+        count: { $sum: 1 }
+      }
+      break;
+    case BlueprintPropertyType.OBJECT:
+      res.status(400).json({ message: 'cannot aggregate objects' }).end();
+      return;
+  }
+
+  const query = {
+    ...qs.parse(req._parsedUrl.query, { depth: 3 }),
+    ...getEntityQuery({ blueprint, req, permittedScopes: req.permittedScopes })
+  }
+  delete query.x;
+
+  const data = await BlueprintEntity.aggregate([
+    { $match: query },
+    { $group },
+    { $sort: { _id: 1 } }
+  ]).exec();
 
   // return this kind of object: https://echarts.apache.org/examples/en/editor.html?c=pie-simple
-  res.json({ type: 'line', data: [] }).end();
+  res.json({
+    tooltip: {
+      trigger: 'item'
+    },
+    legend: {
+      orient: 'vertical',
+      left: 'inline-start',
+      data: data.map(d => (d._id ?? 'Unknown').toString())
+    },
+    series: [
+      {
+        name: propDisplayName,
+        type: 'pie',
+        radius: '50%',
+        avoidLabelOverlap: false,
+        data: data.map(d => ({ value: d.count, name: (d._id ?? 'Unknown').toString() })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.2)'
+          }
+        }
+      }
+    ]
+  }).end();
 }
 
 export async function getCountCard(req, res: Response) {
