@@ -41,16 +41,18 @@ export async function pushComponents(sdk, path, options = {}) {
       const componentName = file.replace('.vue', '');
       const info = componentsJson[componentName] || {};
       const content = fs.readFileSync(join(path, file), 'utf-8');
+      const targetIdentifier = info.identifier || componentName;
+      const targetDescription = info.description || 'Component description';
       
       logger.step(`Pushing component: ${componentName}`);
       
       const existingComponent = existingComponents.find(
-        component => component.identifier === componentName
+        component => component.identifier === targetIdentifier || component.componentName === componentName
       );
       
       if (existingComponent) {
         await sdk.components.update(existingComponent._id, {
-          identifier: info.identifier || existingComponent.identifier || componentName,
+          identifier: targetIdentifier,
           componentName: componentName,
           content,
           description: info.description || existingComponent.description || 'Component description'
@@ -58,10 +60,10 @@ export async function pushComponents(sdk, path, options = {}) {
         logger.success(`Updated: ${componentName}`);
       } else {
         await sdk.components.create({
-          identifier: info.identifier || componentName,
+          identifier: targetIdentifier,
           componentName: componentName,
           content,
-          description: info.description || 'Component description'
+          description: targetDescription
         });
         logger.success(`Created: ${componentName}`);
       }

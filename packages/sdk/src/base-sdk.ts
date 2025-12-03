@@ -54,13 +54,20 @@ export default class BaseSDK {
   private async parseResponse<T>(res: Response): Promise<T> {
     const contentType = this.getContentType(res);
     const isJson = contentType.includes('json');
-    
+
     const body = await (isJson ? res.json() : res.text());
-    
+
     if (!res.ok) {
-      throw (typeof body === 'string' ? new Error(body) : body);
+      if (typeof body === 'string') {
+        throw new Error(body);
+      }
+
+      const message = body?.message || body?.error?.message || body?.error_description || body?.error || 'Request failed';
+      const error = new Error(message);
+      (error as Error & { details?: unknown }).details = body;
+      throw error;
     }
-    
+
     return body;
   }
 
