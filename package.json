@@ -1,6 +1,6 @@
 {
   "name": "@qelos/monorepo",
-  "version": "3.10.1",
+  "version": "3.11.1",
   "main": "index.js",
   "scripts": {
     "install:prod-only": "pnpm install --prod",
