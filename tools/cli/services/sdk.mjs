@@ -20,7 +20,7 @@ export async function initializeSdk() {
     }
 
     const QelosAdministratorSDK = await jiti(
-      "@qelos/sdk/src/administrator/index.ts"
+      "@qelos/sdk/administrator"
     );
 
     const sdk = new QelosAdministratorSDK.default({
