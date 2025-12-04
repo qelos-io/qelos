@@ -49,6 +49,7 @@ const rootSchema = ref<Partial<JsonSchema>>({
 });
 
 let syncingFromParent = false;
+let updateTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Parse JSON schema from string
 function parseSchema(schemaString: string): JsonSchema | null {
@@ -168,12 +169,28 @@ watch(() => modelValue.value, (newValue) => {
   }
 }, { immediate: true });
 
-// Watch for changes and emit to parent
-watch([rootSchema, schemaProperties], () => {
+// Debounced function to update parent model
+function updateParentModel() {
   if (syncingFromParent) return;
   
   const schema = generateJsonSchema();
   modelValue.value = JSON.stringify(schema, null, 2);
+}
+
+// Debounced watch for changes to prevent focus loss
+watch([rootSchema, schemaProperties], () => {
+  if (syncingFromParent) return;
+  
+  // Clear existing timeout
+  if (updateTimeout) {
+    clearTimeout(updateTimeout);
+  }
+  
+  // Set new timeout to update parent after user stops typing
+  updateTimeout = setTimeout(() => {
+    updateParentModel();
+    updateTimeout = null;
+  }, 300); // 300ms delay
 }, { deep: true });
 
 function addProperty() {
