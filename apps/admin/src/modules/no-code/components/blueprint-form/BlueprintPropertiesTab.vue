@@ -8,6 +8,7 @@ import { getKeyFromName } from '@/modules/core/utils/texts';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import { Plus, Delete } from '@element-plus/icons-vue';
 import Monaco from '@/modules/users/components/Monaco.vue';
+import JsonSchemaBuilder from './JsonSchemaBuilder.vue';
 
 const entityIdentifierMechanism = defineModel('entityIdentifierMechanism');
 const properties = defineModel('properties');
@@ -50,6 +51,9 @@ function normalizeProperties(raw: Record<string, IBlueprintPropertyDescriptor> |
 
 // Track the currently selected property for detailed view
 const selectedPropertyIndex = ref(-1);
+
+// Track schema editor mode (visual or json)
+const schemaEditorMode = ref('visual'); // 'visual' or 'json'
 
 watch(() => properties.value, async (newProperties) => {
   syncingFromParent = true;
@@ -159,6 +163,10 @@ function getPropertySummary(property) {
   }
   
   return parts.join(' • ');
+}
+
+function toggleSchemaEditor() {
+  schemaEditorMode.value = schemaEditorMode.value === 'visual' ? 'json' : 'visual';
 }
 
 // Watch for changes and update the parent component
@@ -368,10 +376,48 @@ watch(blueprintProperties, () => {
               </div>
             </el-form-item>
 
-            <div v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.OBJECT">
-              <el-form-item :label="$t('Schema')">
-                <Monaco v-model="blueprintProperties[selectedPropertyIndex].schema" language="json"/>
-              </el-form-item>
+            <div v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.OBJECT" class="schema-editor-section">
+              <div class="schema-editor-header">
+                <h5>{{ $t('Object Schema') }}</h5>
+                <el-button 
+                  size="small" 
+                  @click="toggleSchemaEditor"
+                >
+                  {{ schemaEditorMode === 'visual' ? $t('Switch to JSON') : $t('Switch to Visual') }}
+                </el-button>
+              </div>
+              
+              <div class="schema-editor-content">
+                <JsonSchemaBuilder 
+                  v-if="schemaEditorMode === 'visual'"
+                  v-model="blueprintProperties[selectedPropertyIndex].schema"
+                  @toggle-mode="toggleSchemaEditor"
+                />
+                
+                <el-form-item 
+                  v-else
+                  :label="$t('JSON Schema')"
+                  class="json-editor-wrapper"
+                >
+                  <Monaco 
+                    v-model="blueprintProperties[selectedPropertyIndex].schema" 
+                    language="json"
+                    height="400px"
+                  />
+                  <div class="editor-help">
+                    <small>
+                      {{ $t('Enter a valid JSON Schema. ') }}
+                      <el-link 
+                        type="primary" 
+                        href="https://json-schema.org/understanding-json-schema/" 
+                        target="_blank"
+                      >
+                        {{ $t('Learn more about JSON Schema') }}
+                      </el-link>
+                    </small>
+                  </div>
+                </el-form-item>
+              </div>
             </div>
             
             <FormRowGroup v-if="blueprintProperties[selectedPropertyIndex].type === BlueprintPropertyType.NUMBER">
@@ -783,5 +829,52 @@ h3, h4 {
   .mobile-form-group > * {
     flex: 1;
   }
+}
+
+/* Schema editor styles */
+.schema-editor-section {
+  background-color: var(--el-fill-color-lighter);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid var(--el-border-color-light);
+}
+
+.schema-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--el-border-color-light);
+}
+
+.schema-editor-header h5 {
+  margin: 0;
+  color: var(--el-text-color-primary);
+}
+
+.schema-editor-content {
+  background-color: var(--el-bg-color);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.json-editor-wrapper {
+  margin: 0;
+}
+
+.json-editor-wrapper :deep(.el-form-item__content) {
+  line-height: normal;
+}
+
+.editor-help {
+  padding: 0.75rem 1rem;
+  background-color: var(--el-fill-color-lighter);
+  border-top: 1px solid var(--el-border-color-light);
+}
+
+.editor-help small {
+  color: var(--el-text-color-secondary);
+  line-height: 1.4;
 }
 </style>
