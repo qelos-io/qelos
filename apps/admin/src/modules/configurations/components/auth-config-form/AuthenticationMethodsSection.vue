@@ -202,7 +202,7 @@ const hasSocialLoginConfigured = computed(() => {
 
 <style scoped>
 .section-container {
-  margin-bottom: 2rem;
+  margin-block-end: 2rem;
   padding: 1.5rem;
   border-radius: 8px;
   background-color: var(--el-bg-color-page, #f5f7fa);
@@ -212,18 +212,18 @@ const hasSocialLoginConfigured = computed(() => {
 .section-title {
   font-size: 1.25rem;
   font-weight: 600;
-  margin-top: 0;
-  margin-bottom: 1rem;
+  margin-block-start: 0;
+  margin-block-end: 1rem;
   color: var(--el-text-color-primary, #303133);
-  border-bottom: 1px solid var(--el-border-color-light, #e4e7ed);
-  padding-bottom: 0.75rem;
+  border-block-end: 1px solid var(--el-border-color-light, #e4e7ed);
+  padding-block-end: 0.75rem;
 }
 
 .subsection-title {
   font-size: 1.1rem;
   font-weight: 500;
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
+  margin-block-start: 1.5rem;
+  margin-block-end: 1rem;
   color: var(--el-text-color-primary, #303133);
 }
 
@@ -231,14 +231,14 @@ const hasSocialLoginConfigured = computed(() => {
   font-size: 0.8rem;
   color: var(--el-text-color-secondary, #909399);
   display: block;
-  margin-top: 0.25rem;
+  margin-block-start: 0.25rem;
 }
 
 .social-logins-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 1rem;
-  margin-top: 1rem;
+  margin-block-start: 1rem;
 }
 
 .social-login-card {
@@ -260,9 +260,9 @@ const hasSocialLoginConfigured = computed(() => {
 .social-card-header {
   display: flex;
   align-items: center;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--el-border-color-lighter, #ebeef5);
+  margin-block-end: 0.75rem;
+  padding-block-end: 0.75rem;
+  border-block-end: 1px solid var(--el-border-color-lighter, #ebeef5);
 }
 
 .social-name {
@@ -279,7 +279,7 @@ const hasSocialLoginConfigured = computed(() => {
 
 .social-icon {
   font-size: 1.5rem;
-  margin-right: 0.75rem;
+  margin-inline-end: 0.75rem;
   
   &.linkedin {
     color: #0077b5;
@@ -325,7 +325,7 @@ const hasSocialLoginConfigured = computed(() => {
 @media (max-width: 768px) {
   .section-container {
     padding: 1rem;
-    margin-bottom: 1rem;
+    margin-block-end: 1rem;
     max-width: 100%;
     overflow-x: hidden;
   }
