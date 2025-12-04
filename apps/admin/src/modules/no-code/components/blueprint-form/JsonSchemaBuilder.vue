@@ -6,7 +6,6 @@ import FormInput from '@/modules/core/components/forms/FormInput.vue';
 interface JsonSchemaProperty {
   id: string;
   key: string;
-  title: string;
   type: string;
   description?: string;
   required: boolean;
@@ -75,7 +74,6 @@ function generateJsonSchema(): JsonSchema {
     schemaProperties.value.forEach(prop => {
       const propSchema: any = {
         type: prop.type,
-        ...(prop.title && { title: prop.title }),
         ...(prop.description && { description: prop.description }),
       };
 
@@ -93,7 +91,6 @@ function generateJsonSchema(): JsonSchema {
       } else if (prop.type === 'array' && prop.items) {
         propSchema.items = {
           type: prop.items.type,
-          ...(prop.items.title && { title: prop.items.title }),
           ...(prop.items.description && { description: prop.items.description }),
         };
       } else if (prop.type === 'object' && prop.properties) {
@@ -133,7 +130,6 @@ function loadFromSchema(schema: JsonSchema) {
     schemaProperties.value = Object.entries(schema.properties).map(([key, propSchema]: [string, any]) => ({
       id: Math.random().toString(36).substr(2, 9),
       key,
-      title: propSchema.title || '',
       type: propSchema.type || 'string',
       description: propSchema.description || '',
       required: schema.required?.includes(key) || false,
@@ -147,7 +143,6 @@ function loadFromSchema(schema: JsonSchema) {
       items: propSchema.items ? {
         id: Math.random().toString(36).substr(2, 9),
         key: 'item',
-        title: propSchema.items.title || '',
         type: propSchema.items.type || 'string',
         description: propSchema.items.description || '',
         required: false,
@@ -185,7 +180,6 @@ function addProperty() {
   schemaProperties.value.push({
     id: Math.random().toString(36).substr(2, 9),
     key: 'new_property',
-    title: 'New Property',
     type: 'string',
     description: '',
     required: false,
@@ -234,9 +228,6 @@ const typeOptions = [
   { label: 'Null', value: 'null' },
 ];
 
-const getKeyFromName = (name: string): string => {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-};
 </script>
 
 <template>
@@ -300,7 +291,8 @@ const getKeyFromName = (name: string): string => {
               <el-tag :type="property.required ? 'danger' : 'info'" size="small">
                 {{ property.type }}
               </el-tag>
-              <strong>{{ property.title || property.key }}</strong>
+              <strong>{{ property.key }}</strong>
+              <span v-if="property.description" class="property-desc">{{ property.description }}</span>
             </div>
             <div class="property-actions">
               <el-button 
@@ -331,20 +323,12 @@ const getKeyFromName = (name: string): string => {
           </div>
 
           <div class="property-content">
-            <div class="form-row">
-              <FormInput 
-                v-model="property.key" 
-                :title="$t('Key')" 
-                required
-                :placeholder="$t('property_key')"
-              />
-              <FormInput 
-                v-model="property.title" 
-                :title="$t('Title')" 
-                :placeholder="$t('Property title')"
-                @input="property.key = getKeyFromName($event)"
-              />
-            </div>
+            <FormInput 
+              v-model="property.key" 
+              :title="$t('Key')" 
+              required
+              :placeholder="$t('property_key')"
+            />
 
             <div class="form-row">
               <el-form-item :label="$t('Type')">
@@ -450,15 +434,11 @@ const getKeyFromName = (name: string): string => {
                     :value="option.value"
                   />
                 </el-select>
-                <el-button v-else @click="property.items = { id: Math.random().toString(36).substr(2, 9), key: 'item', title: '', type: 'string', description: '', required: false }">
+                <el-button v-else @click="property.items = { id: Math.random().toString(36).substr(2, 9), key: 'item', type: 'string', description: '', required: false }">
                   {{ $t('Define Item Type') }}
                 </el-button>
               </el-form-item>
               <div v-if="property.items">
-                <FormInput 
-                  v-model="property.items.title" 
-                  :title="$t('Item Title')"
-                />
                 <FormInput 
                   v-model="property.items.description" 
                   :title="$t('Item Description')"
@@ -544,6 +524,7 @@ const getKeyFromName = (name: string): string => {
 
 .property-card {
   border-left: 3px solid var(--el-color-primary);
+  max-width: 100%;
 }
 
 .property-header {
@@ -557,6 +538,13 @@ const getKeyFromName = (name: string): string => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.property-desc {
+  color: var(--el-text-color-secondary);
+  font-size: 0.9em;
+  font-weight: normal;
 }
 
 .property-actions {
@@ -622,8 +610,13 @@ const getKeyFromName = (name: string): string => {
     gap: 0.5rem;
   }
   
+  .property-info {
+    align-items: flex-start;
+  }
+  
   .property-actions {
     justify-content: flex-end;
+    align-self: flex-end;
   }
 }
 </style>
