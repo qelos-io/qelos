@@ -220,5 +220,8 @@
   "Blueprints": "ישויות נתונים",
   "PLUGINS": "תוספים",
   "Plugins List": "רשימת תוספים",
-  "Integrations": "אינטגרציות"
+  "Integrations": "אינטגרציות",
+  "{count} connections": "{count} חיבורים",
+  "{count} active": "{count} פעילים",
+  "{providers} providers · {connections} total": "{providers} ספקים · {connections} סך הכל"
 }

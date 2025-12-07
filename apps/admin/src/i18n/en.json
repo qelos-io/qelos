@@ -220,5 +220,8 @@
   "Blueprints": "Blueprints",
   "PLUGINS": "PLUGINS",
   "Plugins List": "Plugins List",
-  "Integrations": "Integrations"
+  "Integrations": "Integrations",
+  "{count} connections": "{count} connections",
+  "{count} active": "{count} active",
+  "{providers} providers · {connections} total": "{providers} providers · {connections} total"
 }

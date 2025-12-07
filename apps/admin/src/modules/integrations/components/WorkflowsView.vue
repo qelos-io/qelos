@@ -632,6 +632,7 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
 
 <style scoped>
 .workflows-view {
+  width: 100%;
   padding: 12px;
   background: #f5f7fa;
   height: 100%;

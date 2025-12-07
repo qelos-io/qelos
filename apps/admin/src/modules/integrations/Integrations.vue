@@ -8,14 +8,21 @@ import { useIntegrationsStore } from '@/modules/integrations/store/integrations'
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElRadioGroup, ElRadioButton } from 'element-plus';
-import { List, Connection } from '@element-plus/icons-vue';
+import { List, Connection, Link } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const integrationsStore = useIntegrationsStore();
 const router = useRouter();
 
-const initialViewMode = route.query.view === 'workflows' ? 'workflows' : 'list';
-const viewMode = ref<'list' | 'workflows'>(initialViewMode);
+type ViewMode = 'connections' | 'list' | 'workflows';
+
+const initialViewMode = ((): ViewMode => {
+  if (route.query.view === 'workflows') return 'workflows';
+  if (route.query.view === 'connections') return 'connections';
+  return 'list';
+})();
+
+const viewMode = ref<ViewMode>(initialViewMode);
 
 const buildQuery = (updates: Record<string, string | string[] | undefined>) => {
   const newQuery = { ...route.query, ...updates } as Record<string, any>;
@@ -33,9 +40,9 @@ watch(viewMode, newMode => {
 });
 
 watch(() => route.query.view, newView => {
-  if (newView !== 'workflows' && newView !== 'list') return;
+  if (newView !== 'workflows' && newView !== 'list' && newView !== 'connections') return;
   if (viewMode.value !== newView) {
-    viewMode.value = newView;
+    viewMode.value = newView as ViewMode;
   }
 });
 
@@ -68,6 +75,10 @@ const closeIntegrationFormModal = () => {
     
     <div class="view-mode-selector">
       <el-radio-group v-model="viewMode" size="default">
+        <el-radio-button value="connections">
+          <el-icon><Link /></el-icon>
+          {{ $t('Connections') }}
+        </el-radio-button>
         <el-radio-button value="list">
           <el-icon><List /></el-icon>
           {{ $t('List View') }}
@@ -79,8 +90,11 @@ const closeIntegrationFormModal = () => {
       </el-radio-group>
     </div>
     
-    <template v-if="viewMode === 'list'">
+    <template v-if="viewMode === 'connections'">
       <ConnectionsList />
+    </template>
+
+    <template v-else-if="viewMode === 'list'">
       <IntegrationsList @retry="integrationsStore.retry" />
     </template>
     

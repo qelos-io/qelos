@@ -102,18 +102,18 @@ const totalConnections = computed(() =>
   activeKinds.value.reduce((sum, kind) => sum + kind.sources, 0)
 );
 
+const providersWithConnections = computed(() => activeKinds.value.length);
+
 const navigateToKind = (kind: IntegrationSourceKind) => {
   router.push({ name: 'integrations-sources', params: { kind } });
 };
 
-const handleAddCommand = (kind: IntegrationSourceKind | string) => {
-  if (!kind) return;
-  openCreateForm(kind as IntegrationSourceKind);
-};
+const addMenuKinds = computed(() => sortedKindOptions.value);
 
-const handlePrimaryAddClick = () => {
-  if (!sortedKindOptions.value.length) return;
-  openCreateForm(sortedKindOptions.value[0].kind);
+const handlePrimaryAddClick = (kind?: IntegrationSourceKind) => {
+  const targetKind = kind ?? addMenuKinds.value[0]?.kind;
+  if (!targetKind) return;
+  openCreateForm(targetKind);
 };
 </script>
 
@@ -123,49 +123,56 @@ const handlePrimaryAddClick = () => {
       <div class="panel-copy">
         <p class="panel-title">{{ $t('Connected providers') }}</p>
         <p class="panel-meta" v-if="activeKinds.length">
-          {{ $t('{count} active', { count: totalConnections }) }}
+          {{ $t('{providers} providers · {connections} total', {
+            providers: providersWithConnections,
+            connections: totalConnections
+          }) }}
         </p>
         <p class="panel-meta" v-else>
           {{ $t('No active connections yet') }}
         </p>
       </div>
-
-      <el-dropdown
-        trigger="click"
-        placement="bottom-end"
-        @command="handleAddCommand"
-      >
+      <div class="panel-actions">
+        <el-popover
+          v-if="addMenuKinds.length > 1"
+          placement="bottom-end"
+          trigger="click"
+          popper-class="add-connection-pop"
+        >
+          <div class="popover-list">
+            <button
+              v-for="kind in addMenuKinds"
+              :key="kind.kind"
+              type="button"
+              class="popover-item"
+              @click="handlePrimaryAddClick(kind.kind)"
+            >
+              <img v-if="kind.logo" :src="kind.logo" class="popover-logo" />
+              <span>{{ kind.name }}</span>
+            </button>
+          </div>
+          <template #reference>
+            <el-button
+              type="primary"
+              size="small"
+              :disabled="!addMenuKinds.length"
+            >
+              <el-icon><icon-plus /></el-icon>
+              <span>{{ $t('Add connection') }}</span>
+            </el-button>
+          </template>
+        </el-popover>
         <el-button
+          v-else
           type="primary"
           size="small"
-          :disabled="!sortedKindOptions.length"
+          :disabled="!addMenuKinds.length"
+          @click="() => handlePrimaryAddClick()"
         >
           <el-icon><icon-plus /></el-icon>
           <span>{{ $t('Add connection') }}</span>
         </el-button>
-        <template #dropdown>
-          <el-dropdown-menu class="add-connection-menu">
-            <el-dropdown-item
-              v-for="kind in sortedKindOptions"
-              :key="kind.kind"
-              :command="kind.kind"
-            >
-              <div class="dropdown-kind">
-                <img
-                  v-if="kind.logo"
-                  :src="kind.logo"
-                  :alt="kind.name"
-                  class="integration-logo"
-                >
-                <div class="dropdown-kind__copy">
-                  <span class="name">{{ kind.name }}</span>
-                  <span class="hint">{{ $t('Create new connection') }}</span>
-                </div>
-              </div>
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+      </div>
     </header>
 
     <el-empty
@@ -177,54 +184,68 @@ const handlePrimaryAddClick = () => {
         type="primary"
         size="small"
         :disabled="!sortedKindOptions.length"
-        @click="handlePrimaryAddClick"
+        @click="() => handlePrimaryAddClick()"
       >
         <el-icon><icon-plus /></el-icon>
         <span>{{ $t('Create connection') }}</span>
       </el-button>
     </el-empty>
 
-    <div v-else class="connections-list">
-      <button
+    <ul v-else class="connection-chips">
+      <li
         v-for="kind in activeKinds"
         :key="kind.kind"
-        type="button"
-        class="connection-item"
-        @click="navigateToKind(kind.kind)"
+        class="connection-chip"
       >
-        <div class="integration-logo-container" aria-hidden="true">
-          <img
-            v-if="kind.logo"
-            :src="kind.logo"
-            :alt="kind.name"
-            class="integration-logo"
-          >
-          <p
-            v-else
-            centered
-            class="integration-fallback"
-          >
-            {{ kind.name.charAt(0) }}
-          </p>
-        </div>
-        <div class="connection-details">
-          <span class="integration-name">{{ kind.name }}</span>
-          <span class="integration-count">
-            {{ $t('{count} connections', { count: kind.sources }) }}
-          </span>
-        </div>
-        <el-button
-          class="add-inline-btn"
-          link
-          size="small"
-          type="primary"
-          @click.stop="openCreateForm(kind.kind)"
+        <div
+          class="chip-main"
+          role="button"
+          tabindex="0"
+          @click="navigateToKind(kind.kind)"
+          @keydown.enter.prevent="navigateToKind(kind.kind)"
+          @keydown.space.prevent="navigateToKind(kind.kind)"
         >
-          <el-icon><icon-plus /></el-icon>
-          {{ $t('Add') }}
-        </el-button>
-      </button>
-    </div>
+          <div class="integration-logo-container" aria-hidden="true">
+            <img
+              v-if="kind.logo"
+              :src="kind.logo"
+              :alt="kind.name"
+              class="integration-logo"
+            >
+            <p v-else centered class="integration-fallback">
+              {{ kind.name.charAt(0) }}
+            </p>
+          </div>
+          <div class="connection-details">
+            <span class="integration-name">{{ kind.name }}</span>
+            <span class="integration-count">
+              {{ $t('{count} connections', { count: kind.sources }) }}
+            </span>
+          </div>
+          <el-tag size="small" type="info">
+            {{ $t('{count} active', { count: kind.sources }) }}
+          </el-tag>
+        </div>
+        <div class="chip-actions">
+          <el-link
+            :underline="false"
+            type="info"
+            @click.stop="navigateToKind(kind.kind)"
+          >
+            {{ $t('Manage') }}
+          </el-link>
+          <span class="divider" aria-hidden="true">·</span>
+          <el-link
+            :underline="false"
+            type="primary"
+            @click.stop="openCreateForm(kind.kind)"
+          >
+            <el-icon><icon-plus /></el-icon>
+            {{ $t('Add') }}
+          </el-link>
+        </div>
+      </li>
+    </ul>
 
     <IntegrationSourceFormModal
       v-model:visible="formVisible"
@@ -271,39 +292,80 @@ const handlePrimaryAddClick = () => {
   margin: 0;
 }
 
-.connections-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 12px;
+.connections-empty {
+  border-radius: var(--border-radius);
+  border: 1px dashed var(--el-border-color-lighter);
+  padding: 24px;
 }
 
-.connection-item {
+.add-connection-menu {
+  min-inline-size: 220px;
+}
+
+.dropdown-kind {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
-  border-radius: var(--border-radius);
+}
+
+.dropdown-kind__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdown-kind .name {
+  font-weight: 500;
+}
+
+.dropdown-kind .hint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.connection-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.connection-chip {
+  flex: 1 1 260px;
+  min-inline-size: 240px;
   border: 1px solid var(--el-border-color-lighter);
+  border-radius: calc(var(--border-radius) * 1.2);
   background-color: var(--el-bg-color);
-  cursor: pointer;
-  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
-  text-align: left;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.connection-item:hover {
+.connection-chip:hover {
   border-color: var(--el-color-primary-light-5);
-  background-color: var(--el-color-primary-light-9);
-  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
-.connection-item:focus-visible {
+.chip-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.chip-main:focus-visible {
   outline: 2px solid var(--el-color-primary);
-  outline-offset: 2px;
+  border-radius: calc(var(--border-radius) * 0.8);
 }
 
 .integration-logo-container {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
   background-color: var(--el-fill-color-light);
   display: flex;
@@ -317,6 +379,7 @@ const handlePrimaryAddClick = () => {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  margin: 0;
 }
 
 .integration-fallback {
@@ -343,43 +406,52 @@ const handlePrimaryAddClick = () => {
   color: var(--el-text-color-secondary);
 }
 
-.add-inline-btn {
-  margin-inline-start: auto;
-}
-
-.add-connection-menu {
-  min-width: 220px;
-}
-
-.dropdown-kind {
+.chip-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 
-.dropdown-kind__copy {
+.chip-actions .divider {
+  color: var(--el-text-color-disabled);
+}
+
+.popover-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  padding: 8px;
 }
 
-.dropdown-kind .name {
-  font-weight: 500;
+.popover-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px;
+  border-radius: var(--border-radius);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-.dropdown-kind .hint {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
+.popover-item:hover {
+  background-color: var(--el-fill-color-light);
+}
+
+.popover-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 4px;
+  margin: 0;
 }
 
 .connections-empty {
   border-radius: var(--border-radius);
   border: 1px dashed var(--el-border-color-lighter);
   padding: 24px;
-}
-
-.connection-item {
-  border: none;
-  background: var(--el-bg-color);
 }
 </style>
