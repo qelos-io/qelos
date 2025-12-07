@@ -183,6 +183,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.40.1
         version: 0.40.1
+      '@google/generative-ai':
+        specifier: ^0.11.5
+        version: 0.11.5
       '@langchain/core':
         specifier: 0.3.58
         version: 0.3.58(openai@4.104.0(zod@3.25.76))
@@ -1385,6 +1388,10 @@ packages:
   '@google-cloud/storage@7.17.0':
     resolution: {integrity: sha512-5m9GoZqKh52a1UqkxDBu/+WVFDALNtHg5up5gNmNbXQWBcV813tzJKsyDtKjOPrlR1em1TxtD7NSPCrObH7koQ==}
     engines: {node: '>=14'}
+
+  '@google/generative-ai@0.11.5':
+    resolution: {integrity: sha512-DviMgrnljEKh6qkDT2pVFW+NEuVhggqBUoEnyy2PNL7l4ewxXRJubk3PctC9yPl1AdRIlhqP7E076QQt+IWuTg==}
+    engines: {node: '>=18.0.0'}
 
   '@hapi/hoek@9.3.0':
     resolution: {integrity: sha512-/c6rf4UJlmHlC9b5BaNvzAcFv7HZ2QHaV0D4/HNlBdvFnvQq8RI4kYdhyPCl7Xj+oWvTWQ8ujhqS53LIgAe6KQ==}
@@ -7165,6 +7172,8 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
+
+  '@google/generative-ai@0.11.5': {}
 
   '@hapi/hoek@9.3.0': {}
 

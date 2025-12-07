@@ -9,7 +9,8 @@ export enum IntegrationSourceKind {
   ClaudeAi = 'claudeai',
   Facebook = 'facebook',
   Google = 'google',
-  GitHub = 'github'
+  GitHub = 'github',
+  Gemini = 'gemini',
 }
 
 export interface IIntegrationSource {
@@ -101,6 +102,18 @@ export interface IOpenAISource extends IIntegrationSource {
 export interface IClaudeAiSource extends IIntegrationSource {
   _id?: string;
   kind: IntegrationSourceKind.ClaudeAi;
+}
+
+export interface IGeminiSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.Gemini;
+  authentication: {
+    token: string;
+  };
+  metadata: {
+    defaultModel?: string | null;
+    initialMessages?: { role: string; content: string }[];
+  };
 }
 
 export interface IN8nSource extends IIntegrationSource {

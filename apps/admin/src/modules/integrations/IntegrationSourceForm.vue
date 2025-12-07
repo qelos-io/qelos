@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, defineEmits, computed } from 'vue';
+import { computed } from 'vue';
 import LinkedInForm from './components/forms/LinkedInForm.vue';
 import QelosForm from './components/forms/QelosForm.vue';
 import OpenAIForm from './components/forms/OpenAIForm.vue';
@@ -11,6 +11,7 @@ import ClaudeAiForm from './components/forms/ClaudeAIForm.vue';
 import FacebookForm from './components/forms/FacebookForm.vue';
 import GoogleForm from './components/forms/GoogleForm.vue';
 import GitHubForm from './components/forms/GitHubForm.vue';
+import GeminiForm from './components/forms/GeminiForm.vue';
 
 const props = defineProps<{
   modelValue: any;
@@ -24,6 +25,7 @@ const formComponentMap = {
   linkedin: LinkedInForm,
   qelos: QelosForm,
   openai: OpenAIForm,
+  gemini: GeminiForm,
   claudeai: ClaudeAiForm,
   supabase: SupabaseForm,
   n8n: N8nForm,

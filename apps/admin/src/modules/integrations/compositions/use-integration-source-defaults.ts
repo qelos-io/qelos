@@ -11,6 +11,9 @@ export function useIntegrationSourceDefaults() {
     if (kind === IntegrationSourceKind.Google || kind === IntegrationSourceKind.GitHub) {
       return { scope: 'openid email profile' };
     }
+    if (kind === IntegrationSourceKind.Gemini) {
+      return { defaultModel: 'gemini-1.5-pro-latest' };
+    }
 
     return {};
   };

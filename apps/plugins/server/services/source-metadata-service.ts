@@ -24,7 +24,7 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     };
   }
 
-  if (kind === IntegrationSourceKind.OpenAI) {
+  if (kind === IntegrationSourceKind.OpenAI || kind === IntegrationSourceKind.Gemini) {
     const { defaultModel, initialMessages } = metadata;
     return {
       defaultModel: typeof defaultModel === 'string' ? defaultModel : null,
