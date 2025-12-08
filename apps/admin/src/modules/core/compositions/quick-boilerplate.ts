@@ -67,7 +67,7 @@ export function useQuickBoilerplate({
   v-bind:identifier="$route.query.identifier"
   v-bind:clear-after-submit="true"
 >
-    ${availableComponents['blueprint-entity-form']?.getInnerHTML({
+    ${availableComponents.value['blueprint-entity-form']?.getInnerHTML({
        blueprint: selectedBlueprint.identifier, hideHeader: true, htmlBefore: dialogHTMLBefore, htmlAfter: dialogHTMLAfter }, {}, boilerplate.requirements.reduce((obj, item) => ({ ...obj, [item.key]: item }), {}))}
 </blueprint-entity-form>`
 
@@ -86,7 +86,7 @@ export function useQuickBoilerplate({
       boilerplate.structure += `
 ${getEmptyState(dataKey, selectedBlueprint.name)}
 <quick-table v-if="${dataKey}?.loaded && ${dataKey}.result?.length" :columns="tableColumns" :data="${dataKey}.result">
-  ${availableComponents['quick-table']?.getInnerHTML({ data: dataKey, columns }, {}, boilerplate.requirements.reduce((obj, item) => ({ ...obj, [item.key]: item }), {}))}
+  ${availableComponents.value['quick-table']?.getInnerHTML({ data: dataKey, columns }, {}, boilerplate.requirements.reduce((obj, item) => ({ ...obj, [item.key]: item }), {}))}
 </quick-table>
 ${getRemoveConfirmation(dataKey, selectedBlueprint.identifier)}`
     } else if (boilerplateType.value === 'grid') {
