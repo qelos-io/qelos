@@ -142,7 +142,7 @@ export default sdk;
 Create an instance of the Qelos SDK for an administrator.
 
 ```bash
-import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+import QelosAdminSDK from '@qelos/sdk/administrator';
 import nodeFetch from 'node-fetch';
 
 const sdkAdmin = new QelosAdminSDK({
