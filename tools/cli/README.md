@@ -47,7 +47,7 @@ qplay create my-app
 
 ### Pull
 
-Pull resources from your Qelos instance to your local filesystem. This allows you to work on components, plugins, integrations, and blueprints locally.
+Pull resources from your Qelos instance to your local filesystem. This allows you to work on components, blueprints, configs, plugins, blocks, integrations, and connections locally.
 
 **Syntax:**
 ```bash
@@ -55,7 +55,7 @@ qelos pull <type> <path>
 ```
 
 **Arguments:**
-- `type` - Type of resource to pull (e.g., `components`, `plugins`, `integrations`, `blueprints`)
+- `type` - Type of resource to pull (e.g., `components`, `plugins`, `integrations`, `connections`, `blueprints`)
 - `path` - Local directory path where resources will be saved
 
 **Example - Pull Components:**
@@ -82,7 +82,7 @@ All 5 components pulled to ./my-components
 
 ### Push
 
-Push local resources to your Qelos instance. This allows you to update or create components, plugins, integrations, and blueprints from your local filesystem.
+Push local resources to your Qelos instance. This allows you to update or create components, blueprints, configs, plugins, blocks, integrations, and connections from your local filesystem.
 
 **Syntax:**
 ```bash
@@ -90,7 +90,7 @@ qelos push <type> <path>
 ```
 
 **Arguments:**
-- `type` - Type of resource to push (e.g., `components`, `plugins`, `integrations`, `blueprints`)
+- `type` - Type of resource to push (e.g., `components`, `plugins`, `integrations`, `connections`, `blueprints`)
 - `path` - Local directory path containing the resources to push
 
 **Example - Push Components:**
@@ -128,6 +128,39 @@ qelos pull components ./local-components
 # Push the updated components back to Qelos
 qelos push components ./local-components
 ```
+
+### Integrations
+
+- Pulled integrations are stored as `.integration.json` files that exclude server-only fields such as `tenant`, `user`, `created`, `updated`, and `__v`.  
+- When pushing, the CLI automatically recalculates backend-only properties (like `kind`) so you do not need to keep them in local files.
+
+### Connections (Integration Sources)
+
+Connections (integration sources) are now fully supported via `qelos pull connections <path>` and `qelos push connections <path>`.
+
+- Each connection is stored as `<name>.connection.json` containing `name`, `kind`, `labels`, `metadata`, and an `authentication` placeholder:
+
+```json
+{
+  "_id": "64f1...",
+  "name": "OpenAI",
+  "kind": "openai",
+  "labels": ["ai"],
+  "metadata": { "defaultModel": "gpt-4o" },
+  "authentication": {
+    "$var": "INTEGRATION_AUTH_OPENAI"
+  }
+}
+```
+
+- At push time, the CLI reads the referenced environment variable (e.g., `INTEGRATION_AUTH_OPENAI`) which must contain a JSON string with the real credentials:
+
+```bash
+export INTEGRATION_AUTH_OPENAI='{"token":"sk-..."}'
+```
+
+- If the env var is missing, the CLI skips updating the secure authentication payload and only syncs metadata.
+- When new connections are created, the CLI persists the returned `_id` so future pushes update the same record.
 
 ## Help
 

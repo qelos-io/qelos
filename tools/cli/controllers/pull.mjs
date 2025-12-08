@@ -4,6 +4,8 @@ import { pullBlueprints } from '../services/blueprints.mjs';
 import { pullConfigurations } from '../services/configurations.mjs';
 import { pullPlugins } from '../services/plugins.mjs';
 import { pullBlocks } from '../services/blocks.mjs';
+import { pullIntegrations } from '../services/integrations.mjs';
+import { pullConnections } from '../services/connections.mjs';
 import { logger } from '../services/logger.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -36,7 +38,9 @@ export default async function pullController({ type, path: targetPath = './' }) 
         { name: 'blueprints', fn: pullBlueprints },
         { name: 'configs', fn: pullConfigurations },
         { name: 'plugins', fn: pullPlugins },
-        { name: 'blocks', fn: pullBlocks }
+        { name: 'blocks', fn: pullBlocks },
+        { name: 'integrations', fn: pullIntegrations },
+        { name: 'connections', fn: pullConnections }
       ];
 
       for (const { name, fn } of types) {
@@ -64,11 +68,15 @@ export default async function pullController({ type, path: targetPath = './' }) 
       await pullPlugins(sdk, targetPath);
     } else if (type === 'blocks') {
       await pullBlocks(sdk, targetPath);
+    } else if (type === 'integrations' || type === 'integration') {
+      await pullIntegrations(sdk, targetPath);
+    } else if (type === 'connections' || type === 'connection') {
+      await pullConnections(sdk, targetPath);
     } else if (type === 'config' || type === 'configs' || type === 'configuration') {
       await pullConfigurations(sdk, targetPath);
     } else {
       logger.error(`Unknown type: ${type}`);
-      logger.info('Supported types: components, blueprints, plugins, blocks, config, configs, configuration, all');
+      logger.info('Supported types: components, blueprints, plugins, blocks, integrations, connections, config, configs, configuration, all');
       process.exit(1);
     }
 

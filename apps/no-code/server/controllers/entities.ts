@@ -1,5 +1,4 @@
 import qs from 'qs'
-import { v4 as uuidv4 } from 'uuid';
 import BlueprintEntity, { IAuditItem, IBlueprintEntity } from '../models/blueprint-entity';
 import Blueprint, { IBlueprint } from '../models/blueprint';
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
@@ -24,6 +23,12 @@ import { getBlueprint } from '../services/blueprints.service';
 
 const PUBLIC_USER_DATA = ['firstName', 'lastName', 'profileImage'];
 const PUBLIC_WS_DATA = ['name', 'logo'];
+
+let uuidV7Loader;
+async function getUuidV7() {
+  uuidV7Loader ||= import('uuid').then((mod) => mod.v7);
+  return uuidV7Loader;
+}
 
 function getAuditItem(req: Request): IAuditItem {
   return {
@@ -421,7 +426,7 @@ export async function createBlueprintEntity(req, res) {
     const entity = new BlueprintEntity({
       tenant: req.headers.tenant,
       blueprint: blueprint.identifier,
-      identifier: blueprint.entityIdentifierMechanism === 'objectid' ? new mongoose.Types.ObjectId() : uuidv4().toString(),
+      identifier: blueprint.entityIdentifierMechanism === 'objectid' ? new mongoose.Types.ObjectId() : (await getUuidV7()).uuidv7().toString(),
       user,
       workspace,
       metadata: {},

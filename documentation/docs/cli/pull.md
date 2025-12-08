@@ -29,6 +29,8 @@ Currently supported resource types:
 - **config** / **configs** / **configuration** - Custom configuration objects
 - **plugins** - Plugin configurations and code
 - **blocks** - Pre-designed frontend blocks
+- **integrations** / **integration** - Workflow or agent integrations (stored as `.integration.json`)
+- **connections** / **connection** - Integration sources (stored as `.connection.json`)
 - **all** / **\*** - Pull all resource types into organized subdirectories
 
 ## How It Works
@@ -171,6 +173,60 @@ my-blocks/
 ├── testimonials.vue
 └── blocks.json
 ```
+
+### Pull Integrations
+
+```bash
+qelos pull integrations ./my-integrations
+```
+
+**Output:**
+```
+Created directory: ./my-integrations
+Found 4 integration(s) to pull
+→ Pulled: lead_router
+→ Pulled: enrich_profile
+→ Pulled: ai_agent_support
+→ Pulled: notify_sales
+ℹ Pulled 4 integration(s)
+✓ Successfully pulled integrations
+```
+
+Each integration is saved as `<identifier>.integration.json`. The CLI automatically strips server-only properties (`tenant`, `plugin`, `user`, `created`, `updated`, `__v`, etc.) so the files only contain the fields you can edit (`trigger`, `target`, `dataManipulation`, `active`). The backend recalculates derived fields such as `kind` when you push the file back.
+
+### Pull Connections (Integration Sources)
+
+```bash
+qelos pull connections ./my-connections
+```
+
+**Output:**
+```
+Created directory: ./my-connections
+Found 2 connection(s) to pull
+→ Pulled connection: OpenAI
+→ Pulled connection: CRM Webhook
+ℹ Pulled 2 connection(s)
+✓ Successfully pulled connections
+```
+
+Connections are saved as `<name>.connection.json` files that include `name`, `kind`, `labels`, `metadata`, and an `authentication` placeholder:
+
+```json
+{
+  "_id": "64f1c1e5c3f2",
+  "name": "OpenAI",
+  "kind": "openai",
+  "labels": ["ai", "default"],
+  "metadata": { "defaultModel": "gpt-4o" },
+  "authentication": {
+    "$var": "INTEGRATION_AUTH_OPENAI"
+  }
+}
+```
+
+> 👉 **Authentication values are never written to disk.**  
+> Set an environment variable with the name in `$var` (e.g. `INTEGRATION_AUTH_OPENAI`) containing the JSON credentials. The CLI reads that env var during `qelos push connections ...`. If the env var is missing, metadata is synced but the encrypted authentication secret is left unchanged.
 
 ### Pull All Resources
 

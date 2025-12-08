@@ -29,6 +29,8 @@ Currently supported resource types:
 - **config** / **configs** / **configuration** - Custom configuration objects
 - **plugins** - Plugin configurations and code
 - **blocks** - Pre-designed frontend blocks
+- **integrations** / **integration** - Workflow or agent integrations (stored as `.integration.json`)
+- **connections** / **connection** - Integration sources (stored as `.connection.json`)
 - **all** / **\*** - Push all resource types from organized subdirectories
 
 ## How It Works
@@ -208,6 +210,73 @@ Pushing blocks from ./my-resources/blocks
 ```
 
 **Note:** When using `all` or `*`, the command expects subdirectories named `components`, `blueprints`, `configs`, `plugins`, and `blocks`. If a subdirectory doesn't exist, it will be skipped.
+
+### Push Integrations
+
+```bash
+qelos push integrations ./my-integrations
+```
+
+**Output:**
+```
+Pushing integrations from ./my-integrations
+ℹ Found 4 integration(s) to push
+→ Pushing integration: lead_router
+✓ Updated: lead_router
+→ Pushing integration: ai_agent_support
+✓ Created: ai_agent_support
+ℹ Pushed 4 integration(s)
+✓ Successfully pushed integrations
+```
+
+Guidelines:
+
+- Each integration file must end with `.integration.json`.
+- Only include editable fields (`trigger`, `target`, `dataManipulation`, `active`). Server-only values such as `tenant`, `plugin`, `user`, `created`, `updated`, and `__v` are ignored on push and stripped automatically when pulling.
+- The backend recalculates the `kind` array for you; you do not need to specify it manually.
+
+### Push Connections (Integration Sources)
+
+```bash
+qelos push connections ./my-connections
+```
+
+**Output:**
+```
+Pushing connections from ./my-connections
+ℹ Found 2 connection(s) to push
+→ Pushing connection: OpenAI
+✓ Updated: OpenAI
+→ Pushing connection: CRM Webhook
+✓ Created: CRM Webhook
+ℹ Pushed 2 connection(s)
+✓ Successfully pushed connections
+```
+
+Connections include an `authentication` placeholder that points to an environment variable:
+
+```json
+{
+  "_id": "64f1c1e5c3f2",
+  "name": "OpenAI",
+  "kind": "openai",
+  "labels": ["ai", "default"],
+  "metadata": { "defaultModel": "gpt-4o" },
+  "authentication": {
+    "$var": "INTEGRATION_AUTH_OPENAI"
+  }
+}
+```
+
+- Before running `qelos push connections ...`, set the referenced environment variable with the JSON credentials:
+
+```bash
+export INTEGRATION_AUTH_OPENAI='{"token":"sk-..."}'
+```
+
+- The CLI reads that env var at push time and sends the decrypted payload to Qelos.
+- If the env var is missing, the CLI skips updating sensitive authentication data but still syncs metadata and labels.
+- Newly created connections write the returned `_id` back to the `.connection.json` file so future pushes update the same source.
 
 ### Push from Specific Directory
 

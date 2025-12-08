@@ -68,12 +68,12 @@ function buildMarkdown({ blueprint, interfaceName, entityVarName, interfaceDefin
     '',
     '### Create an Entity',
     '```ts',
-    `const created = await ${entityVarName}.create(${exampleLiteral});`,
+    `const created = await ${entityVarName}.create({\n  metadata: ${indentLiteral(exampleLiteral, 2)},\n});`,
     '```',
     '',
     '### Update an Entity',
     '```ts',
-    `const updated = await ${entityVarName}.update('replace-with-entity-id', {\n  ...${exampleLiteral.replace(/\n/g, '\n  ')},\n});`,
+    `const updated = await ${entityVarName}.update('replace-with-entity-id', {\n  metadata: {\n    ...oldMetadata,\n    ...${indentLiteral(exampleLiteral, 4)},\n  },\n});`,
     '```',
     '',
     '### Delete an Entity',
@@ -217,6 +217,11 @@ function stringifyObjectLiteral(value, level = 0) {
   }
 
   return String(value);
+}
+
+function indentLiteral(literal, spaces) {
+  const indent = ' '.repeat(spaces);
+  return literal.replace(/\n/g, `\n${indent}`);
 }
 
 function toCamelCase(value) {

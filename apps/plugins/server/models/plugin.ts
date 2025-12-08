@@ -199,7 +199,10 @@ PluginSchema.statics.getPluginForRedirect = function getPluginForRedirect(tenant
 
 PluginSchema.pre('validate', function () {
   if (!this.apiPath) {
-    this.apiPath = uniqid()
+    this.apiPath = this.name
+    .toLowerCase()
+    .replace(/ /g, '-')
+    .replace(/[^a-z0-9-]/g, '') + uniqid().substring(0, 4)
   }
 })
 

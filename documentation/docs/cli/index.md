@@ -14,7 +14,7 @@ The CLI provides powerful commands to:
 - **Pull** resources from your Qelos instance to work locally
 - **Push** local changes back to your Qelos instance
 - **Generate** IDE-specific rules files for better AI assistance
-- Manage components, blueprints, and configurations
+- Manage components, blueprints, configurations, integrations, connections, plugins, and blocks
 
 ## Installation
 
@@ -71,6 +71,10 @@ qelos pull blueprints ./my-blueprints
 # Pull configurations
 qelos pull config ./my-configs
 
+# Pull integrations & connections
+qelos pull integrations ./my-integrations
+qelos pull connections ./my-connections
+
 # Generate IDE rules for better AI assistance
 qelos generate rules all
 
@@ -80,6 +84,8 @@ qelos generate rules all
 qelos push components ./my-components
 qelos push blueprints ./my-blueprints
 qelos push config ./my-configs
+qelos push integrations ./my-integrations
+qelos push connections ./my-connections
 ```
 
 ## Commands

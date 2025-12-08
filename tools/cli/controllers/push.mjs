@@ -4,6 +4,8 @@ import { pushBlueprints } from '../services/blueprints.mjs';
 import { pushConfigurations } from '../services/configurations.mjs';
 import { pushPlugins } from '../services/plugins.mjs';
 import { pushBlocks } from '../services/blocks.mjs';
+import { pushIntegrations } from '../services/integrations.mjs';
+import { pushConnections } from '../services/connections.mjs';
 import { logger } from '../services/logger.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -45,7 +47,9 @@ export default async function pushController({ type, path: sourcePath }) {
         { name: 'blueprints', fn: pushBlueprints },
         { name: 'configs', fn: pushConfigurations },
         { name: 'plugins', fn: pushPlugins },
-        { name: 'blocks', fn: pushBlocks }
+        { name: 'blocks', fn: pushBlocks },
+        { name: 'integrations', fn: pushIntegrations },
+        { name: 'connections', fn: pushConnections }
       ];
 
       for (const { name, fn } of types) {
@@ -80,11 +84,15 @@ export default async function pushController({ type, path: sourcePath }) {
       await pushPlugins(sdk, basePath, { targetFile });
     } else if (type === 'blocks') {
       await pushBlocks(sdk, basePath, { targetFile });
-    }  else if (type === 'config' || type === 'configs' || type === 'configuration') {
+    } else if (type === 'integrations' || type === 'integration') {
+      await pushIntegrations(sdk, basePath, { targetFile });
+    } else if (type === 'connections' || type === 'connection') {
+      await pushConnections(sdk, basePath, { targetFile });
+    } else if (type === 'config' || type === 'configs' || type === 'configuration') {
       await pushConfigurations(sdk, basePath, { targetFile });
     } else {
       logger.error(`Unknown type: ${type}`);
-      logger.info('Supported types: components, blueprints, plugins, blocks, config, configs, configuration, all');
+      logger.info('Supported types: components, blueprints, plugins, blocks, integrations, connections, config, configs, configuration, all');
       process.exit(1);
     }
 
