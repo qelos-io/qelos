@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard flex-container">
-    <el-tabs model-value="dashboard" class="dashboard-tabs">
+    <el-tabs :model-value="activeTab" @update:model-value="activeTab = $event.toString()" class="dashboard-tabs">
       <el-tab-pane name="dashboard" :label="$t('Dashboard')">
         <DashboardOverview />
       </el-tab-pane>
@@ -157,7 +157,7 @@ const applyDesignPalette = useConfirmAction(async function applyDesignPalette(de
   const updatedConfig = {
     ...appConfig.value,
     colorsPalette: palette,
-    borderRadius: palette.borderRadius || appConfig.value.borderRadius || 4,
+    borderRadius: palette.borderRadius || appConfig.value.borderRadius || 0,
     buttonRadius: palette.buttonRadius || palette.borderRadius || appConfig.value.borderRadius || 4,
     baseFontSize: palette.baseFontSize || appConfig.value.baseFontSize || 16,
     fontFamily: palette.fontFamily || appConfig.value.fontFamily,
@@ -190,7 +190,7 @@ function getPreviewStyles(palette: DesignPalette['palette']) {
     '--preview-main-color': palette.mainColor,
     '--preview-bg-color': palette.bgColor,
     '--preview-text-color': palette.textColor,
-    '--preview-border-radius': `${palette.borderRadius || 4}px`,
+    '--preview-border-radius': `${palette.borderRadius || 0}px`,
     '--preview-button-radius': `${palette.buttonRadius || palette.borderRadius || 4}px`,
     '--preview-border-color': palette.bordersColor
   };
@@ -200,6 +200,15 @@ function getPreviewStyles(palette: DesignPalette['palette']) {
 const route = useRoute();
 const integrationsStore = useIntegrationsStore();
 const router = useRouter();
+
+const activeTab = computed({
+  get: () => {
+  return route.query.tab?.toString() || 'dashboard';
+  },
+  set: (tab) => {
+    router.push({ query: { ...route.query, tab } });
+  }
+});
 
 const closeIntegrationFormModal = () => {
   integrationsStore.retry();

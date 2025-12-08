@@ -131,18 +131,18 @@ header {
   margin: var(--spacing);
   border-radius: var(--border-radius);
   position: sticky;
-  top: 0;
+  inset-block-start: 0;
   z-index: 100;
   display: flex;
   justify-content: space-between;
-  height: 60px;
+  height: var(--header-height, 60px);
   align-items: center;
-  background: #fff;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  padding: 0 16px;
+  background: var(--layout-header-bg, #fff);
+  border: var(--layout-header-border, 1px solid var(--border-color));
+  box-shadow: var(--layout-header-shadow, 0 2px 8px rgba(0, 0, 0, 0.05));
+  padding-inline: 16px;
   transition: all 0.3s ease;
-  max-width: calc(100vw - var(--nav-width));
+  max-width: var(--layout-header-max-width, calc(100vw - var(--nav-width)));
   
   &.searching {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);

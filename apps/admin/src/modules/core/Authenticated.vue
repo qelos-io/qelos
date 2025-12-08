@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-panel" v-if="isLoaded">
+  <div v-if="isLoaded" :class="['admin-panel', layoutClass]">
     <Navigation class="navigation" :opened="navigationOpened" @close="navigationOpened = false"/>
     <div class="admin-content">
       <Header @toggle="navigationOpened = !navigationOpened" :is-navigation-opened="navigationOpened"/>
@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onBeforeMount, ref, toRef, watch } from 'vue'
+import { computed, onBeforeMount, ref, toRef, watch } from 'vue'
 import { onBeforeRouteUpdate, useRouter } from 'vue-router'
 import { useAuth, useAuthenticatedIntercept } from './compositions/authentication'
 import Header from './components/layout/Header.vue'
@@ -29,8 +29,10 @@ import { useWsConfiguration } from '@/modules/configurations/store/ws-configurat
 import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 import useInvitesList from '@/modules/workspaces/store/invites-list';
 import PrivilegedAddons from '@/modules/admins/components/PrivilegedAddons.vue';
+import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 
 const router = useRouter()
+const { appConfig } = useAppConfiguration();
 const wsConfig = useWsConfiguration()
 const workspacesStore = useWorkspacesList()
 const invitesStore = useInvitesList()
@@ -39,6 +41,8 @@ const { user } = useAuth();
 const navigationOpened = ref(false)
 const { isLoaded } = useAuthenticatedIntercept();
 const openModals = toRef(usePluginsMicroFrontends(), 'openModals');
+const layoutStyle = computed(() => appConfig.value.layoutStyle || 'classic');
+const layoutClass = computed(() => `layout-${layoutStyle.value}`);
 
 router.afterEach(() => navigationOpened.value = false);
 
@@ -79,6 +83,10 @@ watch(() => user.value?.roles, () => {
   document.querySelector('html')?.setAttribute('data-roles', user.value?.roles?.join(',') || '');
 }, { immediate: true });
 
+watch(layoutStyle, (style) => {
+  document.body.setAttribute('data-layout-style', style);
+}, { immediate: true });
+
 </script>
 <style scoped lang="scss">
 .admin-panel {
@@ -113,6 +121,13 @@ watch(() => user.value?.roles, () => {
     overflow: auto;
     padding-bottom: 0;
     position: relative;
+    border: var(--layout-main-border, 0);
+    background: var(--layout-main-bg, transparent);
+    border-radius: var(--layout-main-radius, var(--border-radius));
+    margin: var(--layout-main-margin, 0);
+    padding: var(--layout-main-padding, 0);
+    box-shadow: var(--layout-main-shadow, none);
+    transition: border 160ms ease, box-shadow 200ms ease;
   }
 
   .main-content {

@@ -103,9 +103,59 @@ code {
 /* Images */
 img {
   max-width: 100%;
-  height: auto;
-  margin-block-end: 15px;
-  border-radius: var(--border-radius);
+  --header-height: 55px;
+  --collapsed-nav-width: 64px;
+  --nav-width: 240px;
+  --el-border-radius-base: var(--border-radius, 4px);
+  --layout-header-border: 1px solid var(--border-color);
+  --layout-header-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --layout-header-bg: #fff;
+  --layout-nav-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  --layout-nav-border: 0;
+  --layout-main-border: 0;
+  --layout-main-bg: transparent;
+}
+
+body:has(nav.collapsed) {
+  --nav-width: var(--collapsed-nav-width);
+}
+
+html.mobile body {
+  --nav-width: 0;
+}
+
+body[data-layout-style='main-bordered'] {
+  --layout-header-border: 0;
+  --layout-header-shadow: none;
+  --layout-nav-shadow: none;
+  --layout-main-border: 1px solid var(--border-color);
+  --layout-main-bg: #fff;
+}
+
+body[data-layout-style='stacked-header'] {
+  --layout-header-border: 0;
+  --layout-header-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+body[data-layout-style='stacked-header'] .admin-panel {
+  padding-block-start: var(--header-height, 60px);
+}
+
+body[data-layout-style='stacked-header'] header {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  border-radius: 0;
+  z-index: 120;
+}
+
+body[data-layout-style='stacked-header'] .navigation,
+body[data-layout-style='stacked-header'] .admin-content {
+  margin-block-start: 0;
 }
 
 /* Responsive design */

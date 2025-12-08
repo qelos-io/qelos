@@ -46,6 +46,12 @@ const shadowOptions = [
   { label: t('Heavy'), value: 'heavy' }
 ];
 
+const layoutOptions = [
+  { label: t('Classic Split'), value: 'classic', description: t('Bordered header & navigation with airy content.') },
+  { label: t('Framed Main Area'), value: 'main-bordered', description: t('Minimal chrome with a bordered content canvas.') },
+  { label: t('Stacked Header'), value: 'stacked-header', description: t('Full-width header above navigation and workspace.') }
+];
+
 const colors = ref({
   mainColor: '',
   mainColorLight: appConfig.value.colorsPalette?.mainColor || '',
@@ -83,11 +89,15 @@ if (!appConfig.value.headingsFontFamily) {
 }
 
 if (!appConfig.value.buttonRadius) {
-  appConfig.value.buttonRadius = appConfig.value.borderRadius || 4;
+  appConfig.value.buttonRadius = appConfig.value.borderRadius || 0;
 }
 
 if (!appConfig.value.animationSpeed) {
   appConfig.value.animationSpeed = 300; // ms
+}
+
+if (!appConfig.value.layoutStyle) {
+  appConfig.value.layoutStyle = 'classic';
 }
 
 const updateColors = debounce(changePalette, 660);
@@ -106,6 +116,13 @@ async function updateProperty(key: string, value: string | number) {
     }
   })
   await softResetConfiguration();
+}
+
+function selectLayoutStyle(style: string) {
+  if (appConfig.value.layoutStyle === style) {
+    return;
+  }
+  updateProperty('layoutStyle', style);
 }
 
 // Computed styles for the preview box
@@ -171,6 +188,28 @@ function getShadowValue(shadow: string): string {
     </el-tab-pane>
     
     <el-tab-pane :label="t('Layout & Elements')">
+      <FormRowGroup>
+        <el-form-item :label="t('Layout Style')" class="layout-style">
+          <div class="layout-options">
+            <button
+              v-for="option in layoutOptions"
+              :key="option.value"
+              type="button"
+              class="layout-card"
+              :class="{ active: appConfig.layoutStyle === option.value }"
+              @click="selectLayoutStyle(option.value)"
+            >
+              <div class="layout-card-header">
+                <span class="layout-card-title">{{ option.label }}</span>
+                <el-icon v-if="appConfig.layoutStyle === option.value">
+                  <font-awesome-icon :icon="['fas', 'check-circle']"/>
+                </el-icon>
+              </div>
+              <p class="layout-card-description">{{ option.description }}</p>
+            </button>
+          </div>
+        </el-form-item>
+      </FormRowGroup>
       <FormRowGroup>
         <div class="flex-row">
           <el-form-item :label="t('Border Radius')" class="flex-1">
@@ -322,5 +361,52 @@ function getShadowValue(shadow: string): string {
 .preview-button:hover {
   opacity: 0.9;
   transform: translateY(-1px);
+}
+
+.layout-style {
+  display: flex;
+  flex-direction: row;
+  margin-block-start: 12px;
+}
+
+.layout-options {
+  display: flex;
+  gap: 12px;
+}
+
+.layout-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding-inline: 16px;
+  padding-block: 14px;
+  text-align: start;
+  background: var(--body-bg, #fff);
+  transition: border-color var(--transition-speed), box-shadow var(--transition-speed), transform 120ms ease;
+  cursor: pointer;
+}
+
+.layout-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-block-end: 6px;
+}
+
+.layout-card-title {
+  font-weight: 600;
+}
+
+.layout-card-description {
+  color: var(--text-color, #333);
+  font-size: 13px;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.layout-card.active {
+  border-color: var(--main-color, #409eff);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
 </style>

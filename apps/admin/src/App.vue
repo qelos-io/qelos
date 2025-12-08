@@ -102,7 +102,7 @@ watch(() => {
       /* Base design variables */
       --border-radius: ${typeof borderRadius === 'number' ? borderRadius : 5}px;
       --base-font-size: ${typeof baseFontSize === 'number' && baseFontSize > 0 ? baseFontSize : 16}px;
-      --button-radius: ${typeof buttonRadius === 'number' ? buttonRadius : borderRadius || 4}px;
+      --button-radius: ${typeof buttonRadius === 'number' ? buttonRadius : borderRadius || 0}px;
       
       /* Typography */
       --font-family: ${fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif'};

@@ -232,7 +232,8 @@ nav {
   min-width: var(--nav-width);
   overflow-y: auto;
   position: relative;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--layout-nav-shadow, 0 0 10px rgba(0, 0, 0, 0.1));
+  border-inline-end: var(--layout-nav-border, 0);
   
   &.collapsed {
     width: var(--nav-width);
