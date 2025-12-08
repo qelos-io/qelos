@@ -14,6 +14,7 @@ export interface IAppConfigurationMetadata {
   borderRadius: number;
   baseFontSize: number;
   websiteUrls: string[];
+  layoutStyle?: 'classic' | 'main-bordered' | 'stacked-header';
 
   [key: string]: any;
 }

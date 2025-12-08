@@ -4,6 +4,11 @@ import { getPlural } from '@/modules/core/utils/texts'
 import { IScreenRequirement } from '@qelos/global-types';
 import { useEditorComponents } from '@/modules/pre-designed/compositions/editor-components';
 
+type TableLayoutOptions = {
+  withStats?: boolean
+  extraBeforeTable?: (dataKey: string) => string
+}
+
 function getRemoveConfirmation(dataKey: string, blueprintIdentifier: string) {
   return `<remove-confirmation v-model="pageState.${dataKey}ToRemove" target="blueprint" resource="${blueprintIdentifier}"></remove-confirmation>`;
 }
@@ -14,6 +19,45 @@ function getEmptyState(dataKey: string, blueprintName: string) {
     Create a ${blueprintName}
   </el-button>
 </empty-state>`;
+}
+
+function buildRequirementsMap(requirements: IScreenRequirement[]) {
+  return requirements.reduce<Record<string, IScreenRequirement>>((acc, item) => {
+    acc[item.key] = item;
+    return acc;
+  }, {})
+}
+
+function getStatsSection(dataKey: string, blueprintName: string) {
+  const pluralName = capitalize(getPlural(blueprintName));
+  return `<div class="flex-row flex-wrap" style="gap: 1rem;">
+  <stats-card :title="'${pluralName} Total'" color="primary" icon="collection" :value="${dataKey}?.result?.length || 0"/>
+  <stats-card :title="'Active ${pluralName}'" color="success" icon="checked" :value="${dataKey}?.result?.filter(item => item.metadata?.status === 'active').length || 0"/>
+  <stats-card :title="'Draft ${pluralName}'" color="warning" icon="document" :value="${dataKey}?.result?.filter(item => item.metadata?.status === 'draft').length || 0"/>
+</div>`;
+}
+
+function getHighlightsSection(dataKey: string, selectedBlueprint: any) {
+  const highlightProps = Object.entries(selectedBlueprint?.properties || {})
+    .filter(([key, prop]: [string, any]) => key !== 'title' && prop?.type !== 'file')
+    .slice(0, 3);
+
+  if (!highlightProps.length) {
+    return '';
+  }
+
+  const propertyRows = highlightProps.map(([key, prop]: [string, any]) => {
+    return `<div class="property-row"><strong>${prop?.title || capitalize(key)}:</strong> {{ item.metadata?.${key} ?? '—' }}</div>`;
+  }).join('\n');
+
+  return `<div class="flex-row-column flex-wrap" style="gap: 1rem;">
+  <block-item v-for="item in (${dataKey}.result || []).slice(0, 3)" :key="item.identifier" class="flex-1" style="min-inline-size: 280px">
+    <template #title>
+      {{ item.metadata?.title || item.metadata?.name || 'Untitled' }}
+    </template>
+    ${propertyRows}
+  </block-item>
+</div>`;
 }
 
 export function useQuickBoilerplate({
@@ -47,8 +91,10 @@ export function useQuickBoilerplate({
       }]
     }
 
+    const getRequirementsMap = () => buildRequirementsMap(boilerplate.requirements);
+
     const dialogHTMLBefore = `<el-dialog :model-value="$route.query.mode === 'create' || $route.query.mode === 'edit'" @close="$router.push({ query: {} })">
-    <h2>{{form.identifier ? 'Edit' : 'Create'}} ${capitalize(selectedBlueprint.name)}</h2>`;
+    <h2>{{$route.query.mode === 'edit' ? 'Edit' : 'Create'}} ${capitalize(selectedBlueprint.name)}</h2>`;
     const dialogHTMLAfter = `<template #footer>
           <el-button type="primary" native-type="submit">
             {{ $t('Save') }}
@@ -68,13 +114,16 @@ export function useQuickBoilerplate({
   v-bind:clear-after-submit="true"
 >
     ${availableComponents.value['blueprint-entity-form']?.getInnerHTML({
-       blueprint: selectedBlueprint.identifier, hideHeader: true, htmlBefore: dialogHTMLBefore, htmlAfter: dialogHTMLAfter }, {}, boilerplate.requirements.reduce((obj, item) => ({ ...obj, [item.key]: item }), {}))}
+       blueprint: selectedBlueprint.identifier, hideHeader: true, htmlBefore: dialogHTMLBefore, htmlAfter: dialogHTMLAfter }, {}, getRequirementsMap())}
 </blueprint-entity-form>`
 
-    if (boilerplateType.value === 'table') {
+    const appendTableLayout = ({
+      withStats,
+      extraBeforeTable
+    }: TableLayoutOptions = {}) => {
       const dataKey = getPlural(selectedBlueprint.identifier)
-      const columns = [...getColumnsFromBlueprint(selectedBlueprint.identifier), { prop: '_operations', label: ' ' }]
-      
+      const columns = [...(getColumnsFromBlueprint(selectedBlueprint.identifier) || []), { prop: '_operations', label: ' ' }]
+
       boilerplate.requirements.push({
         key: 'tableColumns',
         fromData: columns
@@ -83,13 +132,20 @@ export function useQuickBoilerplate({
         fromBlueprint: { name: selectedBlueprint.identifier }
       })
 
+      const statsSection = withStats ? getStatsSection(dataKey, selectedBlueprint.name) : ''
+      const beforeTableSection = extraBeforeTable ? extraBeforeTable(dataKey) : ''
+
       boilerplate.structure += `
+${statsSection}
+${beforeTableSection}
 ${getEmptyState(dataKey, selectedBlueprint.name)}
 <quick-table v-if="${dataKey}?.loaded && ${dataKey}.result?.length" :columns="tableColumns" :data="${dataKey}.result">
-  ${availableComponents.value['quick-table']?.getInnerHTML({ data: dataKey, columns }, {}, boilerplate.requirements.reduce((obj, item) => ({ ...obj, [item.key]: item }), {}))}
+  ${availableComponents.value['quick-table']?.getInnerHTML({ blueprint: selectedBlueprint.identifier, data: dataKey, columns }, {}, getRequirementsMap())}
 </quick-table>
 ${getRemoveConfirmation(dataKey, selectedBlueprint.identifier)}`
-    } else if (boilerplateType.value === 'grid') {
+    }
+
+    if (boilerplateType.value === 'grid') {
       const dataKey = getPlural(selectedBlueprint.identifier)
       const columns = [...getColumnsFromBlueprint(selectedBlueprint.identifier), { prop: '_operations', label: ' ' }]
       
@@ -133,6 +189,16 @@ ${getEmptyState(dataKey, selectedBlueprint.name)}
 </block-item>
 </div>
 ${getRemoveConfirmation(dataKey, selectedBlueprint.identifier)}`
+    } else if (boilerplateType.value === 'table-stats') {
+      appendTableLayout({ withStats: true })
+    } else if (boilerplateType.value === 'dashboard') {
+      appendTableLayout({
+        withStats: true,
+        extraBeforeTable: (dataKey) => getHighlightsSection(dataKey, selectedBlueprint)
+      })
+    }
+     else {
+      appendTableLayout()
     }
 
     boilerplate.structure += dialog;

@@ -186,8 +186,11 @@ export function useEditorComponents() {
       extendRequirements: (requirements: any, props: any) => {
         requirements[props['v-bind:columns']]?.fromData.push({ prop: '_operations', label: ' ' })
       },
-      getInnerHTML: (propsBuilder: any, _props, requirements = {}) => {
-        let html = `<template #_operations="{row}"><remove-button @click="pageState ? (pageState.${propsBuilder.data}ToRemove = row.identifier) : null"/></template>`;
+      getInnerHTML: (propsBuilder: any, _props, _requirements = {}) => {
+        let html = `<template #_operations="{row}">
+        <remove-button @click="pageState ? (pageState.${propsBuilder.data}ToRemove = row.identifier) : null"></remove-button>
+        <el-button text @click="pageState.${propsBuilder.blueprint || propsBuilder.data}ToEdit = row.metadata; $router.push({query: {...$route.query, mode: 'edit', identifier: row.identifier}})"><el-icon><icon-edit></icon-edit></el-icon></el-button>
+      </template>`;
         return html;
       }
     },
@@ -265,7 +268,7 @@ export function useEditorComponents() {
         }).join('\n');
 
         return `<template #default="{form}">
-    ${propsBuilder.hideHeader ? '' : `<edit-header>{{form.identifier ? 'Edit' : 'Create'}} ${blueprint.name}</edit-header>`}
+    ${propsBuilder.hideHeader ? '' : `<edit-header>{{$route.query.mode === 'edit' ? 'Edit' : 'Create'}} ${blueprint.name}</edit-header>`}
     <div class="container">
     ${propsBuilder.htmlBefore || ''}
     ${blueprintsInputs}

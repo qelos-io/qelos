@@ -24,7 +24,8 @@
             <template #options>
               <el-option value="table" :label="$t('Table')"/>
               <el-option value="grid" :label="$t('Grid')"/>
-              <!--              <el-option value="block" :label="$t('Blocks')"/>-->
+              <el-option value="table-stats" :label="$t('Table + Stats')"/>
+              <el-option value="dashboard" :label="$t('Dashboard (Stats + Highlights)')"/>
             </template>
           </FormInput>
         </template>
