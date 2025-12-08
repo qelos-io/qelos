@@ -1,6 +1,6 @@
 import { fetch as undiciFetch } from 'undici';
 import QelosAdministratorSDK from '@qelos/sdk/administrator';
-import { FetchLike, QelosSDKOptions } from '@qelos/sdk/dist/types';
+import { FetchLike, QelosSDKOptions } from '@qelos/sdk/types';
 import config from './config';
 import { StandardPayload } from './handlers';
 import logger from './logger';

@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { QelosSDKOptions } from '@qelos/sdk/dist/types';
+import { QelosSDKOptions } from '@qelos/sdk/types';
 
 const port = Number(process.env.PORT || 1086);
 const host = process.env.HOST || '0.0.0.0';
