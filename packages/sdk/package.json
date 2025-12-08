@@ -1,17 +1,29 @@
 {
   "name": "@qelos/sdk",
-  "version": "3.11.1",
+  "version": "3.11.2",
   "description": "SDK for Qelos API",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "administrator": ["./dist/administrator/index.d.ts"],
-      "administrator/*": ["./dist/administrator/*.d.ts"],
-      "workspaces": ["./dist/workspaces.d.ts"],
-      "configurations": ["./dist/configurations.d.ts"],
-      "types": ["./dist/types.d.ts"],
-      "*": ["./dist/*.d.ts"]
+      "administrator": [
+        "./dist/administrator/index.d.ts"
+      ],
+      "administrator/*": [
+        "./dist/administrator/*.d.ts"
+      ],
+      "workspaces": [
+        "./dist/workspaces.d.ts"
+      ],
+      "configurations": [
+        "./dist/configurations.d.ts"
+      ],
+      "types": [
+        "./dist/types.d.ts"
+      ],
+      "*": [
+        "./dist/*.d.ts"
+      ]
     }
   },
   "exports": {
