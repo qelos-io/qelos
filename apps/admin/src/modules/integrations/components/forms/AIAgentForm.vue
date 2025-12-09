@@ -14,6 +14,7 @@ import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import { ElMessage } from 'element-plus';
 import { getPlural } from '@/modules/core/utils/texts';
+import { ALL_AI_MODELS, getMaxTokensForModel, getModelsByProvider, getProviderFromSourceKind } from '@/modules/integrations/constants/ai-models';
 
 const props = defineProps<{
   integrationId?: string;
@@ -64,6 +65,22 @@ const qelosSource = computed(() => {
 
 const openAISources = computed(() => {
   return store.result?.filter(s => s.kind === IntegrationSourceKind.OpenAI) || [];
+});
+
+const geminiSources = computed(() => {
+  return store.result?.filter(s => s.kind === IntegrationSourceKind.Gemini) || [];
+});
+
+const claudeSources = computed(() => {
+  return store.result?.filter(s => s.kind === IntegrationSourceKind.ClaudeAi) || [];
+});
+
+const allAISources = computed(() => {
+  return [
+    ...openAISources.value,
+    ...geminiSources.value,
+    ...claudeSources.value
+  ];
 });
 
 const agentName = computed({
@@ -251,45 +268,39 @@ const contextBlueprints = ref<string[]>(initialContext.blueprints);
 const includeUserContext = ref(initialContext.hasUser);
 const includeWorkspaceContext = ref(initialContext.hasWorkspace);
 
-const selectedOpenAISource = computed({
+const selectedAISource = computed({
   get: () => target.value?.source || '',
   set: (value: string) => {
     if (!target.value) {
-      target.value = { source: '', operation: '', details: {} };
+      target.value = {
+        source: value,
+        operation: OpenAITargetOperation.chatCompletion,
+        details: {}
+      };
+    } else {
+      target.value.source = value;
     }
-    target.value.source = value;
-    target.value.operation = OpenAITargetOperation.chatCompletion;
   }
 });
 
-const systemMessage = computed({
-  get: () => {
-    const preMessages = target.value?.details?.pre_messages || [];
-    const systemMsg = preMessages.find(msg => msg.role === 'system');
-    return systemMsg?.content || '';
-  },
-  set: (value: string) => {
-    if (!target.value) {
-      target.value = { source: '', operation: '', details: {} };
-    }
-    if (!target.value.details) {
-      target.value.details = {};
-    }
-    if (!target.value.details.pre_messages) {
-      target.value.details.pre_messages = [];
-    }
-    
-    const systemMsgIndex = target.value.details.pre_messages.findIndex(msg => msg.role === 'system');
-    if (value) {
-      if (systemMsgIndex >= 0) {
-        target.value.details.pre_messages[systemMsgIndex].content = value;
-      } else {
-        target.value.details.pre_messages.push({ role: 'system', content: value });
-      }
-    } else if (systemMsgIndex >= 0) {
-      target.value.details.pre_messages.splice(systemMsgIndex, 1);
-    }
-  }
+// Get the current source to determine provider
+const currentAISource = computed(() => {
+  return allAISources.value.find(source => source._id === selectedAISource.value);
+});
+
+// Get current provider type
+const currentProvider = computed(() => {
+  if (!currentAISource.value) return null;
+  return getProviderFromSourceKind(currentAISource.value.kind);
+});
+
+const availableModels = computed(() => {
+  if (!currentProvider.value) return [];
+  return getModelsByProvider(currentProvider.value).map(model => ({
+    label: model.label,
+    value: model.value || model.identifier,
+    description: model.description || ''
+  }));
 });
 
 const model = computed({
@@ -316,6 +327,36 @@ const maxTokens = computed({
   }
 });
 
+// Dynamic max tokens based on selected model
+const maxTokensLimit = computed(() => {
+  const selectedModel = target.value?.details?.model || 'gpt-4o';
+  return getMaxTokensForModel(selectedModel);
+});
+
+const systemMessage = computed({
+  get: () => target.value?.details?.system_message || target.value?.details?.pre_messages?.find(msg => msg.role === 'system')?.content || '',
+  set: (value: string) => {
+    if (!target.value?.details) return;
+    if (!target.value.details.pre_messages) {
+      target.value.details.pre_messages = [];
+    }
+    const systemMsgIndex = target.value.details.pre_messages.findIndex(msg => msg.role === 'system');
+    if (value) {
+      if (systemMsgIndex >= 0) {
+        target.value.details.pre_messages[systemMsgIndex].content = value;
+      } else {
+        target.value.details.pre_messages.push({
+          role: 'system',
+          content: value
+        });
+      }
+    } else if (systemMsgIndex >= 0) {
+      target.value.details.pre_messages.splice(systemMsgIndex, 1);
+    }
+    target.value.details.system_message = value;
+  }
+});
+
 const ingestedBlueprints = computed({
   get: () => target.value?.details?.ingestedBlueprints || [],
   set: (value: string[]) => {
@@ -331,27 +372,6 @@ const ingestedAgents = computed({
     target.value.details.ingestedAgents = value;
   }
 });
-
-const availableModels = [
-  { label: 'GPT-5', value: 'gpt-5', description: 'Next generation flagship model' },
-  { label: 'GPT-5 Turbo', value: 'gpt-5-turbo', description: 'GPT-5 optimized version' },
-  { label: 'GPT-5 Turbo Preview', value: 'gpt-5-turbo-preview', description: 'GPT-5 Turbo preview' },
-  { label: 'GPT-4o', value: 'gpt-4o', description: 'Most capable, multimodal flagship model' },
-  { label: 'GPT-4o Mini', value: 'gpt-4o-mini', description: 'Affordable and intelligent small model' },
-  { label: 'GPT-4o Nano', value: 'gpt-4o-nano', description: 'Ultra-efficient, lightweight model' },
-  { label: 'GPT-4.1', value: 'gpt-4.1', description: 'Enhanced GPT-4 model' },
-  { label: 'GPT-4.1 Turbo', value: 'gpt-4.1-turbo', description: 'GPT-4.1 optimized version' },
-  { label: 'GPT-4.1 Preview', value: 'gpt-4.1-preview', description: 'GPT-4.1 preview version' },
-  { label: 'GPT-4 Turbo', value: 'gpt-4-turbo', description: 'Latest GPT-4 Turbo' },
-  { label: 'GPT-4 Turbo Preview', value: 'gpt-4-turbo-preview', description: 'GPT-4 Turbo preview' },
-  { label: 'GPT-4', value: 'gpt-4', description: 'Latest GPT-4 model' },
-  { label: 'GPT-4 32k', value: 'gpt-4-32k', description: '32k context window' },
-  { label: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo', description: 'Latest GPT-3.5 Turbo' },
-  { label: 'GPT-3.5 Turbo Instruct', value: 'gpt-3.5-turbo-instruct', description: 'Instruction-following model' },
-  { label: 'O1', value: 'o1', description: 'Advanced reasoning model' },
-  { label: 'O1 Preview', value: 'o1-preview', description: 'O1 preview version' },
-  { label: 'O1 Mini', value: 'o1-mini', description: 'Faster, cheaper reasoning model' }
-];
 
 const connectedAgents = computed(() => integrationsStore.integrations?.filter(integration =>
   integration._id !== props.integrationId &&
@@ -369,9 +389,9 @@ watch([trigger, target], ([newTrigger, newTarget]) => {
     };
   }
   
-  if (!newTarget?.source && openAISources.value.length > 0) {
+  if (!newTarget?.source && allAISources.value.length > 0) {
     target.value = {
-      source: openAISources.value[0]._id || '',
+      source: allAISources.value[0]._id || '',
       operation: OpenAITargetOperation.chatCompletion,
       details: newTarget?.details || {}
     };
@@ -379,13 +399,11 @@ watch([trigger, target], ([newTrigger, newTarget]) => {
 }, { immediate: true, deep: true });
 
 onMounted(() => {
-  const sources = openAISources.value;
+  const sources = allAISources.value;
   if (!isEditMode.value && sources.length > 0) {
     target.value = {
       ...target.value,
-      source: sources[0]._id || '',
-      operation: OpenAITargetOperation.chatCompletion,
-      details: target.value?.details || {}
+      source: sources[0]._id || ''
     };
   }
 });
@@ -806,19 +824,46 @@ watch([contextBlueprints, includeUserContext, includeWorkspaceContext], (newValu
           </template>
 
           <el-form label-position="top">
-            <el-form-item :label="$t('OpenAI Source')" required>
+            <el-form-item :label="$t('AI Provider Source')" required>
               <el-select
-                v-model="selectedOpenAISource"
-                :placeholder="$t('Select OpenAI connection')"
+                v-model="selectedAISource"
+                :placeholder="$t('Select AI provider connection')"
                 size="large"
                 class="w-full"
               >
-                <el-option
-                  v-for="source in openAISources"
-                  :key="source._id"
-                  :label="source.name"
-                  :value="source._id"
-                />
+                <el-option-group
+                  v-if="openAISources.length > 0"
+                  :label="$t('OpenAI')"
+                >
+                  <el-option
+                    v-for="source in openAISources"
+                    :key="source._id"
+                    :label="source.name"
+                    :value="source._id"
+                  />
+                </el-option-group>
+                <el-option-group
+                  v-if="geminiSources.length > 0"
+                  :label="$t('Google Gemini')"
+                >
+                  <el-option
+                    v-for="source in geminiSources"
+                    :key="source._id"
+                    :label="source.name"
+                    :value="source._id"
+                  />
+                </el-option-group>
+                <el-option-group
+                  v-if="claudeSources.length > 0"
+                  :label="$t('Anthropic Claude')"
+                >
+                  <el-option
+                    v-for="source in claudeSources"
+                    :key="source._id"
+                    :label="source.name"
+                    :value="source._id"
+                  />
+                </el-option-group>
               </el-select>
             </el-form-item>
 
@@ -866,13 +911,13 @@ watch([contextBlueprints, includeUserContext, includeWorkspaceContext], (newValu
               <el-input-number
                 v-model="maxTokens"
                 :min="100"
-                :max="4096"
+                :max="maxTokensLimit"
                 :step="100"
                 size="large"
                 class="w-full"
               />
               <template #extra>
-                <small class="form-hint">{{ $t('Maximum length of the AI response') }}</small>
+                <small class="form-hint">{{ $t('Maximum length of the AI response (up to {max})', { max: maxTokensLimit }) }}</small>
               </template>
             </el-form-item>
           </el-form>

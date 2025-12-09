@@ -15,6 +15,7 @@ import {
   Operation as ConsultantIcon,
 } from '@element-plus/icons-vue';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
+import { OPENAI_MODEL_OPTIONS, getMaxTokensForModel } from '@/modules/integrations/constants/ai-models';
 
 const props = defineProps<{
   integrationId?: string;
@@ -24,30 +25,8 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:modelValue']);
 
-// OpenAI model options
-const openAiModelOptions = [  
-  { label: 'GPT-4o', identifier: 'gpt-4o' },
-  { label: 'GPT-4o Mini', identifier: 'gpt-4o-mini' },
-  { label: 'GPT-4o 16k', identifier: 'gpt-4o-16k' },
-  { label: 'GPT-4o 32k', identifier: 'gpt-4o-32k' },
-  { label: 'GPT-4o 64k', identifier: 'gpt-4o-64k' },
-  { label: 'GPT-4o 128k', identifier: 'gpt-4o-128k' },
-  { label: 'GPT-4o 256k', identifier: 'gpt-4o-256k' },
-  { label: 'GPT-4o 512k', identifier: 'gpt-4o-512k' },
-  { label: 'GPT-4o 1024k', identifier: 'gpt-4o-1024k' },
-  { label: 'GPT-4 Turbo', identifier: 'gpt-4-turbo' },
-  { label: 'GPT-4', identifier: 'gpt-4' },
-  { label: 'GPT-3.5', identifier: 'gpt-3.5' },
-  { label: 'GPT-3.5 Turbo', identifier: 'gpt-3.5-turbo' },
-  { label: 'GPT-3.5 Turbo 16k', identifier: 'gpt-3.5-turbo-16k' },
-  { label: 'GPT-4 Vision', identifier: 'gpt-4-vision-preview' },
-  { label: 'GPT-4 32k', identifier: 'gpt-4-32k' },
-  { label: 'GPT-4.1', identifier: 'gpt-4.1' },
-  { label: 'GPT-4.1 Nano', identifier: 'gpt-4.1-nano' },
-  { label: 'GPT-4.1 Mini', identifier: 'gpt-4.1-mini' },
-  { label: 'GPT-5', identifier: 'gpt-5' },
-  { label: 'GPT-5 Mini', identifier: 'gpt-5-mini' },
-];
+// OpenAI model options from shared constants
+const openAiModelOptions = OPENAI_MODEL_OPTIONS;
 
 // Pre-defined chat personalities with complete configurations
 const chatPersonalities = [
@@ -152,6 +131,11 @@ const showRawJson = ref(false);
 // Use a ref for the target details JSON instead of a computed property
 const targetDetailsText = computed(() => {
   return JSON.stringify(props.modelValue.details || {}, null, 2);
+});
+
+// Dynamic max tokens based on selected model
+const maxTokensLimit = computed(() => {
+  return getMaxTokensForModel(openAiDetails.value.model);
 });
 
 // Initialize component with existing data if available
@@ -348,6 +332,7 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
       type="select"
       :options="openAiModelOptions"
       label="Model"
+      :select-options="{ filterable: true, allowCreate: true }"
       help-text="Select the OpenAI model to use for chat completion"
       @change="syncOpenAiDetailsToTargetDetails"
     />
@@ -374,9 +359,9 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
       v-model="openAiDetails.max_tokens"
       type="number"
       label="{{ $t('Max Tokens') }}"
-      help-text="{{ $t('Maximum number of tokens to generate (1-4000)') }}"
+      :help-text="$t('Maximum number of tokens to generate (1-{max})', { max: maxTokensLimit })"
       :min="1"
-      :max="4000"
+      :max="maxTokensLimit"
       @change="syncOpenAiDetailsToTargetDetails"
     />
     
