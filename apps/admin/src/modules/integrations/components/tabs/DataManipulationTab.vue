@@ -446,28 +446,24 @@ const initialize = () => {
   // Convert map and populate objects to arrays of entries
   modelCopy.forEach((step, stepIndex) => {
     // Convert map object to array
-    if (step.map) {
-      mapEntries.value[stepIndex] = Object.entries(step.map).map(([key, value]) => ({
-        key,
-        value: typeof value === 'string' ? value : JSON.stringify(value ?? '', null, 2)
-      }));
-    } else {
-      mapEntries.value[stepIndex] = [];
-    }
+    mapEntries.value[stepIndex] = step.map 
+      ? Object.entries(step.map).map(([key, value]) => ({
+          key,
+          value: typeof value === 'string' ? value : JSON.stringify(value ?? '', null, 2)
+        }))
+      : [];
     
     // Convert populate object to array
-    if (step.populate) {
-      populateEntries.value[stepIndex] = Object.entries(step.populate).map(([key, config]) => {
-        const populateConfig = config as { source?: string; blueprint?: string };
-        return {
-          key,
-          source: populateConfig.source || 'user',
-          blueprint: populateConfig.blueprint
-        };
-      });
-    } else {
-      populateEntries.value[stepIndex] = [];
-    }
+    populateEntries.value[stepIndex] = step.populate
+      ? Object.entries(step.populate).map(([key, config]) => {
+          const populateConfig = config as { source?: string; blueprint?: string };
+          return {
+            key,
+            source: populateConfig.source || 'user',
+            blueprint: populateConfig.blueprint
+          };
+        })
+      : [];
     
     // Initialize clear flag
     clearFlags.value[stepIndex] = step.clear === true;
@@ -524,18 +520,23 @@ const syncToModel = () => {
     // Add clear flag if true
     if (clearFlags.value[stepIndex]) {
       newStep.clear = true;
-    } else {
+    }
+    if (!clearFlags.value[stepIndex]) {
       delete newStep.clear;
     }
     
     // Add abort property based on type
     if (abortTypes.value[stepIndex] === 'boolean' && abortValues.value[stepIndex] === true) {
       newStep.abort = true;
-    } else if (abortTypes.value[stepIndex] === 'expression' && abortValues.value[stepIndex]) {
-      newStep.abort = abortValues.value[stepIndex] as string;
-    } else {
-      delete newStep.abort;
+      return newStep;
     }
+
+    if (abortTypes.value[stepIndex] === 'expression' && abortValues.value[stepIndex]) {
+      newStep.abort = abortValues.value[stepIndex] as string;
+      return newStep;
+    }
+
+    delete newStep.abort;
     
     return newStep;
   });

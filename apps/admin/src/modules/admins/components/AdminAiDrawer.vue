@@ -64,16 +64,16 @@ const url = computed(() => {
 });
 
 const chatContext = computed(() => {
-  const mfe: any = route.meta?.mfe || {}
+  const mfe = (route.meta?.mfe || {}) as any;
   return {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     currentPage: route.path,
-    pluginId: route.params.pluginId as string || route.meta?.pluginId as string,
+    pluginId: (route.params.pluginId as string) || (route.meta?.pluginId as string),
     pagePluginId: mfe.pluginId as string,
     pageId: mfe._id as string,
     pageName: mfe._id as string,
     componentId: route.params.componentId as string,
-  }
+  };
 });
 
 const navigateToOpenAIIntegration = () => {

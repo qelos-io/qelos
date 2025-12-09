@@ -161,8 +161,11 @@ const activityTimeframe = ref('week');
             return hour >= startHour && hour < endHour;
           }).length || 0;
         });
-      } 
-      else if (timeframe === 'week') {
+
+        return { xAxis, registered: registeredCounts, created: createdCounts, createdWorkspaces: createdWorkspacesCounts };
+      }
+
+      if (timeframe === 'week') {
         // Group by days of the week
         xAxis = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         
@@ -183,8 +186,11 @@ const activityTimeframe = ref('week');
             return adjustedDay === dayIndex;
           }).length || 0;
         });
-      } 
-      else if (timeframe === 'month') {
+
+        return { xAxis, registered: registeredCounts, created: createdCounts, createdWorkspaces: createdWorkspacesCounts };
+      }
+
+      if (timeframe === 'month') {
         // Group by weeks of the month
         xAxis = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
         
@@ -211,18 +217,37 @@ const activityTimeframe = ref('week');
       
       return { xAxis, registered: registeredCounts, created: createdCounts, createdWorkspaces: createdWorkspacesCounts };
     };
+
+    const getEventsForTimeframe = () => {
+      if (activityTimeframe.value === 'day') {
+        return {
+          registered: registeredUsersLastDay.value,
+          created: createdUsersLastDay.value,
+          workspaces: createdWorkspacesLastDay.value
+        };
+      }
+
+      if (activityTimeframe.value === 'week') {
+        return {
+          registered: registeredUsersLastWeek.value,
+          created: createdUsersLastWeek.value,
+          workspaces: createdWorkspacesLastWeek.value
+        };
+      }
+
+      return {
+        registered: registeredUsersLastMonth.value,
+        created: createdUsersLastMonth.value,
+        workspaces: createdWorkspacesLastMonth.value
+      };
+    };
     
     // Process data for the current timeframe
+    const events = getEventsForTimeframe();
     const data = processEventsForTimeframe(
-      activityTimeframe.value === 'day' ? registeredUsersLastDay.value : 
-      activityTimeframe.value === 'week' ? registeredUsersLastWeek.value : 
-      registeredUsersLastMonth.value,
-      activityTimeframe.value === 'day' ? createdUsersLastDay.value : 
-      activityTimeframe.value === 'week' ? createdUsersLastWeek.value : 
-      createdUsersLastMonth.value,
-      activityTimeframe.value === 'day' ? createdWorkspacesLastDay.value : 
-      activityTimeframe.value === 'week' ? createdWorkspacesLastWeek.value : 
-      createdWorkspacesLastMonth.value,
+      events.registered,
+      events.created,
+      events.workspaces,
       activityTimeframe.value
     );
     

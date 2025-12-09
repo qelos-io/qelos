@@ -13,6 +13,24 @@ import { usePluginsStore } from './modules/plugins/store/pluginsStore';
 import { usePubSubNotifications } from './modules/core/compositions/pubsub-notifications';
 import { useUsersHeader } from './modules/configurations/store/users-header';
 
+// Color parsing constants
+const HEX_COLOR_SHORT_LENGTH = 3;
+const HEX_COLOR_FULL_LENGTH = 6;
+const HEX_RADIX = 16;
+const RGB_MAX_VALUE = 255;
+const DARK_THRESHOLD = 0.5;
+
+// Default design constants
+const DEFAULT_BORDER_RADIUS = 5;
+const DEFAULT_BASE_FONT_SIZE = 16;
+const DEFAULT_ANIMATION_SPEED = 300;
+const SPACING_COMPACT = '4px';
+const SPACING_COMPACT_CONTENT = '8px';
+const SPACING_COMFORTABLE = '12px';
+const SPACING_COMFORTABLE_CONTENT = '24px';
+const SPACING_DEFAULT = '8px';
+const SPACING_DEFAULT_CONTENT = '16px';
+
 // Function to determine if a color is dark (for applying appropriate text colors)
 function isColorDark(hexColor: string): boolean {
   // Default to false if invalid color
@@ -23,16 +41,16 @@ function isColorDark(hexColor: string): boolean {
   
   // Convert to RGB
   let r, g, b;
-  if (hexColor.length === 3) {
+  if (hexColor.length === HEX_COLOR_SHORT_LENGTH) {
     // For shorthand hex colors like #ABC
-    r = parseInt(hexColor.charAt(0) + hexColor.charAt(0), 16);
-    g = parseInt(hexColor.charAt(1) + hexColor.charAt(1), 16);
-    b = parseInt(hexColor.charAt(2) + hexColor.charAt(2), 16);
-  } else if (hexColor.length === 6) {
+    r = parseInt(hexColor.charAt(0) + hexColor.charAt(0), HEX_RADIX);
+    g = parseInt(hexColor.charAt(1) + hexColor.charAt(1), HEX_RADIX);
+    b = parseInt(hexColor.charAt(2) + hexColor.charAt(2), HEX_RADIX);
+  } else if (hexColor.length === HEX_COLOR_FULL_LENGTH) {
     // For full hex colors like #AABBCC
-    r = parseInt(hexColor.substring(0, 2), 16);
-    g = parseInt(hexColor.substring(2, 4), 16);
-    b = parseInt(hexColor.substring(4, 6), 16);
+    r = parseInt(hexColor.substring(0, 2), HEX_RADIX);
+    g = parseInt(hexColor.substring(2, 4), HEX_RADIX);
+    b = parseInt(hexColor.substring(4, 6), HEX_RADIX);
   } else {
     // Invalid hex color
     return false;
@@ -40,10 +58,10 @@ function isColorDark(hexColor: string): boolean {
   
   // Calculate perceived brightness using the formula: (0.299*R + 0.587*G + 0.114*B)
   // This formula considers human perception of color brightness
-  const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / RGB_MAX_VALUE;
   
-  // Return true if the color is dark (brightness < 0.5)
-  return brightness < 0.5;
+  // Return true if the color is dark (brightness < DARK_THRESHOLD)
+  return brightness < DARK_THRESHOLD;
 }
 
 const { appConfig, loaded } = useAppConfiguration()
@@ -64,7 +82,7 @@ watch(() => {
   const cssUrl = appConfig.value.themeStylesUrl;
   const palette = appConfig.value.colorsPalette;
   const borderRadius = appConfig.value.borderRadius || (palette?.borderRadius) || 0;
-  const baseFontSize = appConfig.value.baseFontSize || palette?.baseFontSize || 16;
+  const baseFontSize = appConfig.value.baseFontSize || palette?.baseFontSize || DEFAULT_BASE_FONT_SIZE;
   const fontFamily = appConfig.value.fontFamily || palette?.fontFamily || 'Arial, sans-serif';
   const headingsFontFamily = appConfig.value.headingsFontFamily || palette?.headingsFontFamily || 'Arial, sans-serif';
   const buttonRadius = appConfig.value.buttonRadius || palette?.buttonRadius || 0;
@@ -100,8 +118,8 @@ watch(() => {
     ${importCss}
     :root {
       /* Base design variables */
-      --border-radius: ${typeof borderRadius === 'number' ? borderRadius : 5}px;
-      --base-font-size: ${typeof baseFontSize === 'number' && baseFontSize > 0 ? baseFontSize : 16}px;
+      --border-radius: ${typeof borderRadius === 'number' ? borderRadius : DEFAULT_BORDER_RADIUS}px;
+      --base-font-size: ${typeof baseFontSize === 'number' && baseFontSize > 0 ? baseFontSize : DEFAULT_BASE_FONT_SIZE}px;
       --button-radius: ${typeof buttonRadius === 'number' ? buttonRadius : borderRadius || 0}px;
       
       /* Typography */
@@ -109,12 +127,12 @@ watch(() => {
       --headings-font-family: ${headingsFontFamily || fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif'};
       
       /* Spacing and layout */
-      --spacing: ${spacing?.includes('px') ? spacing : spacing === 'compact' ? '4px' : spacing === 'comfortable' ? '12px' : '8px'};
-      --content-spacing: ${spacing?.includes('px') ? spacing : spacing === 'compact' ? '8px' : spacing === 'comfortable' ? '24px' : '16px'};
+      --spacing: ${spacing?.includes('px') ? spacing : spacing === 'compact' ? SPACING_COMPACT : spacing === 'comfortable' ? SPACING_COMFORTABLE : SPACING_DEFAULT};
+      --content-spacing: ${spacing?.includes('px') ? spacing : spacing === 'compact' ? SPACING_COMPACT_CONTENT : spacing === 'comfortable' ? SPACING_COMFORTABLE_CONTENT : SPACING_DEFAULT_CONTENT};
       --element-spacing: var(--spacing);
       
       /* Animation */
-      --transition-speed: ${typeof animationSpeed === 'number' ? animationSpeed : 300}ms;
+      --transition-speed: ${typeof animationSpeed === 'number' ? animationSpeed : DEFAULT_ANIMATION_SPEED}ms;
       
       /* Shadows */
       --box-shadow: ${shadowStyle === 'none' ? 'none' : 

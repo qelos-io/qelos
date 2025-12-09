@@ -72,39 +72,20 @@ const colors = ref({
 });
 
 // Initialize additional design properties with defaults if not set
-if (!appConfig.value.fontFamily) {
-  appConfig.value.fontFamily = fontFamilies[0].value;
-}
-
-if (!appConfig.value.spacing) {
-  appConfig.value.spacing = 'normal';
-}
-
-if (!appConfig.value.shadowStyle) {
-  appConfig.value.shadowStyle = 'light';
-}
-
-if (!appConfig.value.headingsFontFamily) {
-  appConfig.value.headingsFontFamily = appConfig.value.fontFamily;
-}
-
-if (!appConfig.value.buttonRadius) {
-  appConfig.value.buttonRadius = appConfig.value.borderRadius || 0;
-}
-
-if (!appConfig.value.animationSpeed) {
-  appConfig.value.animationSpeed = 300; // ms
-}
-
-if (!appConfig.value.layoutStyle) {
-  appConfig.value.layoutStyle = 'classic';
-}
+appConfig.value.fontFamily = appConfig.value.fontFamily || fontFamilies[0].value;
+appConfig.value.spacing = appConfig.value.spacing || 'normal';
+appConfig.value.shadowStyle = appConfig.value.shadowStyle || 'light';
+appConfig.value.headingsFontFamily = appConfig.value.headingsFontFamily || appConfig.value.fontFamily;
+appConfig.value.buttonRadius = appConfig.value.buttonRadius ?? appConfig.value.borderRadius ?? 0;
+appConfig.value.animationSpeed = appConfig.value.animationSpeed ?? 300; // ms
+appConfig.value.layoutStyle = appConfig.value.layoutStyle || 'classic';
 
 const updateColors = debounce(changePalette, 660);
 
 async function updateUrlProperty(key: string, url: string) {
-  if (url.trim() === '' || url.startsWith('http')) {
-    await updateProperty(key, url.trim())
+  const trimmedUrl = url.trim();
+  if (trimmedUrl === '' || trimmedUrl.startsWith('http')) {
+    await updateProperty(key, trimmedUrl);
   }
 }
 
@@ -119,9 +100,7 @@ async function updateProperty(key: string, value: string | number) {
 }
 
 function selectLayoutStyle(style: string) {
-  if (appConfig.value.layoutStyle === style) {
-    return;
-  }
+  if (appConfig.value.layoutStyle === style) return;
   updateProperty('layoutStyle', style);
 }
 

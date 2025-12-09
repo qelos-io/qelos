@@ -4,7 +4,7 @@
 		<FormInput title="Api Secret" type="password" v-model="form.apiSecret"/>
 	</div>
 </template>
-<script>
+<script lang="ts">
 import { watchEffect, reactive } from 'vue'
 import FormInput from '../../core/components/forms/FormInput.vue'
 

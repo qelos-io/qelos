@@ -249,16 +249,54 @@ async function saveOpenAiToken() {
   }
 }
 
+async function generateBlueprintsFromAI(sourceId: string): Promise<any[]> {
+  const response = await fetch(`/api/ai/sources/${sourceId}/blueprints`, {
+    method: 'post',
+    headers: {'content-type': 'application/json'},
+    body: JSON.stringify({ prompt: aiPurpose.value })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status}`);
+  }
+  
+  return await response.json();
+}
+
+async function createBlueprints(blueprintsData: any[]): Promise<any[]> {
+  const successfullyCreatedList = [];
+  
+  for (const blueprint of blueprintsData) {
+    try {
+      const createdBlueprint = await blueprintsService.create(blueprint);
+      successfullyCreatedList.push(createdBlueprint);
+    } catch (error) {
+      console.error(`Failed to create blueprint ${blueprint.name}:`, error);
+    }
+  }
+  
+  return successfullyCreatedList;
+}
+
+function showBlueprintCreationResults(successCount: number, totalCount: number) {
+  if (successCount > 0) {
+    ElMessage.success(t(`${successCount} blueprints created successfully based on your AI purpose!`));
+  } else if (totalCount > 0) {
+    ElMessage.warning(t('Failed to create blueprints. You can create them manually later.'));
+  } else {
+    ElMessage.info(t('No blueprints were generated. You can create them manually later.'));
+  }
+}
+
 async function saveAiPurpose() {
   if (!aiPurpose.value.trim()) {
-    currentStep.value+= 2;
+    currentStep.value += 2;
     return;
   }
 
   loading.value = true;
   
   try {
-    // Find the first available OpenAI source for blueprint generation
     const openAISources = groupedSources.value?.[IntegrationSourceKind.OpenAI] || [];
     
     if (openAISources.length === 0) {
@@ -269,7 +307,6 @@ async function saveAiPurpose() {
     }
 
     const selectedSourceId = openAISources[0]._id;
-    
     const loadingInstance = ElLoading.service({
       lock: true,
       text: t('Generating blueprints based on your AI purpose...'),
@@ -277,46 +314,18 @@ async function saveAiPurpose() {
     });
 
     try {
-      // Generate blueprints using the AI purpose as prompt
-      const response = await fetch(`/api/ai/sources/${selectedSourceId}/blueprints`, {
-        method: 'post',
-        headers: {'content-type': 'application/json'},
-        body: JSON.stringify({
-          prompt: aiPurpose.value
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-      
-      const generatedBlueprintsData = await response.json();
+      const generatedBlueprintsData = await generateBlueprintsFromAI(selectedSourceId);
       
       if (generatedBlueprintsData && generatedBlueprintsData.length > 0) {
-        const successfullyCreatedList = [];
-        
-        // Create blueprints one by one and track successful ones
-        for (const blueprint of generatedBlueprintsData) {
-          try {
-            const createdBlueprint = await blueprintsService.create(blueprint);
-            successfullyCreatedList.push(createdBlueprint);
-          } catch (error) {
-            console.error(`Failed to create blueprint ${blueprint.name}:`, error);
-          }
-        }
+        const successfullyCreatedList = await createBlueprints(generatedBlueprintsData);
         
         generatedBlueprints.value = generatedBlueprintsData;
         successfullyCreated.value = successfullyCreatedList;
         
-        if (successfullyCreated.value.length > 0) {
-          ElMessage.success(t(`${successfullyCreated.value.length} blueprints created successfully based on your AI purpose!`));
-        } else {
-          ElMessage.warning(t('Failed to create blueprints. You can create them manually later.'));
-        }
+        showBlueprintCreationResults(successfullyCreatedList.length, generatedBlueprintsData.length);
       } else {
         ElMessage.info(t('No blueprints were generated. You can create them manually later.'));
       }
-      
     } catch (error) {
       console.error('Error generating blueprints:', error);
       ElMessage.warning(t('Failed to generate blueprints automatically. You can create them manually later.'));

@@ -216,19 +216,20 @@ const processVueFile = (file: File) => {
   
   reader.onload = (e) => {
     const content = e.target?.result as string;
-    if (content) {
-      // Extract component info from file content and name
-      extractComponentInfo(content, file.name);
-      
-      // Store file information for display
-      uploadedFileName.value = file.name;
-      uploadedFileContent.value = content;
-      fileUploaded.value = true;
-      
-      ElMessage.success(`File ${file.name} loaded successfully`);
-    } else {
+    if (!content) {
       ElMessage.warning('Could not read file content');
+      return;
     }
+
+    // Extract component info from file content and name
+    extractComponentInfo(content, file.name);
+    
+    // Store file information for display
+    uploadedFileName.value = file.name;
+    uploadedFileContent.value = content;
+    fileUploaded.value = true;
+    
+    ElMessage.success(`File ${file.name} loaded successfully`);
   };
   
   reader.onerror = () => {
@@ -289,14 +290,12 @@ const extractComponentInfo = (content: string, fileName: string) => {
       .trim();
     if (description) {
       form.description = description;
-    } else {
-      // Use component name as fallback description
-      form.description = `${form.componentName} component`;
+      return;
     }
-  } else {
-    // Use component name as fallback description
-    form.description = `${form.componentName} component`;
   }
+
+  // Use component name as fallback description
+  form.description = `${form.componentName} component`;
 };
 </script>
 
