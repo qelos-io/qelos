@@ -42,6 +42,7 @@ const navigationOpened = ref(false)
 const { isLoaded } = useAuthenticatedIntercept();
 const openModals = toRef(usePluginsMicroFrontends(), 'openModals');
 const layoutStyle = computed(() => appConfig.value.layoutStyle || 'classic');
+const navigationLayout = computed(() => appConfig.value.navigationLayout || 'icon-text');
 const layoutClass = computed(() => `layout-${layoutStyle.value}`);
 
 router.afterEach(() => navigationOpened.value = false);
@@ -85,6 +86,10 @@ watch(() => user.value?.roles, () => {
 
 watch(layoutStyle, (style) => {
   document.body.setAttribute('data-layout-style', style);
+}, { immediate: true });
+
+watch(navigationLayout, (layout) => {
+  document.body.setAttribute('data-navigation-layout', layout);
 }, { immediate: true });
 
 </script>

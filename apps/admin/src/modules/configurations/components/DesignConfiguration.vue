@@ -52,6 +52,14 @@ const layoutOptions = [
   { label: t('Stacked Header'), value: 'stacked-header', description: t('Full-width header above navigation and workspace.') }
 ];
 
+const navigationLayoutOptions = [
+  { label: t('Icon + Text'), value: 'icon-text', description: t('Icons and text labels side by side (default).') },
+  { label: t('Icon Above Text'), value: 'icon-above', description: t('Icons positioned above text labels.') },
+  { label: t('Icons Only'), value: 'icons-only', description: t('Show only icons with tooltips on hover.') },
+  { label: t('Text Only'), value: 'text-only', description: t('Show only text labels without icons.') },
+  { label: t('Compact Mode'), value: 'compact', description: t('Smaller icons and text for dense navigation.') }
+];
+
 const colors = ref({
   mainColor: '',
   mainColorLight: appConfig.value.colorsPalette?.mainColor || '',
@@ -79,6 +87,7 @@ appConfig.value.headingsFontFamily = appConfig.value.headingsFontFamily || appCo
 appConfig.value.buttonRadius = appConfig.value.buttonRadius ?? appConfig.value.borderRadius ?? 0;
 appConfig.value.animationSpeed = appConfig.value.animationSpeed ?? 300; // ms
 appConfig.value.layoutStyle = appConfig.value.layoutStyle || 'classic';
+appConfig.value.navigationLayout = appConfig.value.navigationLayout || 'icon-text';
 
 const updateColors = debounce(changePalette, 660);
 
@@ -102,6 +111,11 @@ async function updateProperty(key: string, value: string | number) {
 function selectLayoutStyle(style: string) {
   if (appConfig.value.layoutStyle === style) return;
   updateProperty('layoutStyle', style);
+}
+
+function selectNavigationLayout(layout: string) {
+  if (appConfig.value.navigationLayout === layout) return;
+  updateProperty('navigationLayout', layout);
 }
 
 // Computed styles for the preview box
@@ -181,6 +195,29 @@ function getShadowValue(shadow: string): string {
               <div class="layout-card-header">
                 <span class="layout-card-title">{{ option.label }}</span>
                 <el-icon v-if="appConfig.layoutStyle === option.value">
+                  <font-awesome-icon :icon="['fas', 'check-circle']"/>
+                </el-icon>
+              </div>
+              <p class="layout-card-description">{{ option.description }}</p>
+            </button>
+          </div>
+        </el-form-item>
+      </FormRowGroup>
+      
+      <FormRowGroup>
+        <el-form-item :label="t('Navigation Layout')" class="layout-style">
+          <div class="layout-options">
+            <button
+              v-for="option in navigationLayoutOptions"
+              :key="option.value"
+              type="button"
+              class="layout-card"
+              :class="{ active: appConfig.navigationLayout === option.value }"
+              @click="selectNavigationLayout(option.value)"
+            >
+              <div class="layout-card-header">
+                <span class="layout-card-title">{{ option.label }}</span>
+                <el-icon v-if="appConfig.navigationLayout === option.value">
                   <font-awesome-icon :icon="['fas', 'check-circle']"/>
                 </el-icon>
               </div>

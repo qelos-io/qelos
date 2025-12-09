@@ -1,172 +1,280 @@
 <template>
-  <nav :class="{ show: opened, collapsed: isCollapsed && !opened }">
-    <div class="mobile-mask" @click="close"/>
+  <nav
+    :class="{
+      show: opened,
+      collapsed: isCollapsed && !opened,
+      'nav-layout-icons-only': appConfig.navigationLayout === 'icons-only',
+    }"
+  >
+    <div class="mobile-mask" @click="close" />
     <div class="nav-header">
       <router-link to="/" class="home-logo">
-        <img :alt="appConfig.name" :src="appConfig.logoUrl" class="logo-image">
-        <img v-if="appConfig.smallLogoUrl" :src="appConfig.smallLogoUrl" class="small-logo-image" :alt="appConfig.name">
+        <img
+          :alt="appConfig.name"
+          :src="appConfig.logoUrl"
+          class="logo-image"
+        />
+        <img
+          v-if="appConfig.smallLogoUrl"
+          :src="appConfig.smallLogoUrl"
+          class="small-logo-image"
+          :alt="appConfig.name"
+        />
       </router-link>
-      <button class="collapse-toggle" @click="toggleCollapse" v-if="!$isMobile" :title="isCollapsed ? $t('Expand menu') : $t('Collapse menu')">
+      <button
+        class="collapse-toggle"
+        @click="toggleCollapse"
+        v-if="!$isMobile"
+        :title="isCollapsed ? $t('Expand menu') : $t('Collapse menu')"
+      >
         <el-icon>
-          <font-awesome-icon :icon="['fas', isCollapsed ? 'angle-right' : 'angle-left']"/>
+          <font-awesome-icon
+            :icon="['fas', isCollapsed ? 'angle-right' : 'angle-left']"
+          />
         </el-icon>
       </button>
     </div>
 
-    <el-menu router :default-active="$route.path" :collapse="isCollapsed && !opened" :collapse-transition="false" class="el-menu-vertical" :ellipsis="false">
+    <el-menu
+      router
+      :default-active="$route.path"
+      :collapse="isCollapsed && !opened"
+      :collapse-transition="false"
+      class="el-menu-vertical"
+      :class="`nav-layout-${appConfig.navigationLayout || 'icon-text'}`"
+      :ellipsis="false"
+    >
       <div class="nav-group" v-if="isEditingEnabled || (isAdmin && !hasPages)">
-        <el-menu-item id="menu-item-create-new-page" @click="openDrawer" :data-title="$t('Create New Page')">
+        <el-menu-item
+          id="menu-item-create-new-page"
+          @click="openDrawer"
+          :data-title="$t('Create New Page')"
+        >
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'plus-circle']"/>
+            <font-awesome-icon :icon="['fas', 'plus-circle']" />
           </el-icon>
-          <span>{{ $t('Create New Page') }}</span>
+          <span>{{ $t("Create New Page") }}</span>
         </el-menu-item>
 
-        <QuicklyCreateMicrofrontends v-model="dialogVisible"/>
-
+        <QuicklyCreateMicrofrontends v-model="dialogVisible" />
       </div>
       <template v-for="group in navBar.top">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.name">{{ group.name }}</h4>
-          <el-menu-item v-for="mfe in group.items" :key="mfe.route.path" :route="'/' + mfe.route.path"
-                        :index="'/' + mfe.route.path">
+          <el-menu-item
+            v-for="mfe in group.items"
+            :key="mfe.route.path"
+            :route="'/' + mfe.route.path"
+            :index="'/' + mfe.route.path"
+          >
             <el-icon>
-              <component v-if="mfe.route.iconName" :is="'icon-' + mfe.route.iconName"/>
-              <font-awesome-icon v-else :icon="['fas', 'circle-dot']"/>
+              <component
+                v-if="mfe.route.iconName"
+                :is="'icon-' + mfe.route.iconName"
+              />
+              <font-awesome-icon v-else :icon="['fas', 'circle-dot']" />
             </el-icon>
             <span>{{ mfe.name }}</span>
           </el-menu-item>
         </div>
       </template>
-      <el-menu-item v-if="isPrivilegedUser" route="/admin-dashboard" index="/admin-dashboard" :data-title="$t('Admin Dashboard')">
+      <el-menu-item
+        v-if="isPrivilegedUser"
+        route="/admin-dashboard"
+        index="/admin-dashboard"
+        :data-title="$t('Admin Dashboard')"
+      >
         <el-icon>
           <font-awesome-icon :icon="['fas', 'chart-column']" />
         </el-icon>
-        <span>{{ $t('Admin Dashboard') }}</span>
+        <span>{{ $t("Admin Dashboard") }}</span>
       </el-menu-item>
 
-      <el-menu-item v-if="isAdmin" :route="{ name: 'log' }" index="/admin/log" :data-title="$t('Logs')">
+      <el-menu-item
+        v-if="isAdmin"
+        :route="{ name: 'log' }"
+        index="/admin/log"
+        :data-title="$t('Logs')"
+      >
         <el-icon>
           <font-awesome-icon :icon="['fas', 'clipboard-list']" />
         </el-icon>
-        <span>{{ $t('Logs') }}</span>
+        <span>{{ $t("Logs") }}</span>
       </el-menu-item>
 
       <div class="nav-group" v-if="isManagingEnabled">
-        <h4>{{ $t('COMPONENTS') }}</h4>
+        <h4>{{ $t("COMPONENTS") }}</h4>
 
         <el-sub-menu index="3" :data-title="$t('Content Boxes')">
           <template #title>
             <el-icon>
-              <icon-box/>
+              <icon-box />
             </el-icon>
-            <span>{{ $t('Content Boxes') }}</span>
+            <span>{{ $t("Content Boxes") }}</span>
           </template>
-          <el-menu-item :route="{ name: 'blocks' }" index="/admin/blocks" :data-title="$t('Boxes List')">
+          <el-menu-item
+            :route="{ name: 'blocks' }"
+            index="/admin/blocks"
+            :data-title="$t('Boxes List')"
+          >
             <el-icon>
-              <font-awesome-icon :icon="['fas', 'list']"/>
+              <font-awesome-icon :icon="['fas', 'list']" />
             </el-icon>
-            <span>{{ $t('Boxes List') }}</span>
+            <span>{{ $t("Boxes List") }}</span>
           </el-menu-item>
-          <el-menu-item :route="{ name: 'createBlock' }" index="/admin/blocks/new" :data-title="$t('Create Content Box')">
+          <el-menu-item
+            :route="{ name: 'createBlock' }"
+            index="/admin/blocks/new"
+            :data-title="$t('Create Content Box')"
+          >
             <el-icon>
-              <font-awesome-icon :icon="['fas', 'plus']"/>
+              <font-awesome-icon :icon="['fas', 'plus']" />
             </el-icon>
-            <span>{{ $t('Create Content Box') }}</span>
+            <span>{{ $t("Create Content Box") }}</span>
           </el-menu-item>
         </el-sub-menu>
 
-      <el-sub-menu index="4" :data-title="$t('Vue Components')">
+        <el-sub-menu index="4" :data-title="$t('Vue Components')">
           <template #title>
             <el-icon>
               <font-awesome-icon icon="fa-brands fa-web-awesome" />
             </el-icon>
-            <span>{{ $t('Vue Components') }}</span>
+            <span>{{ $t("Vue Components") }}</span>
           </template>
-          <el-menu-item :route="{ name: 'components' }" index="/admin/components" :data-title="$t('Components List')">
+          <el-menu-item
+            :route="{ name: 'components' }"
+            index="/admin/components"
+            :data-title="$t('Components List')"
+          >
             <el-icon>
-              <font-awesome-icon :icon="['fas', 'list']"/>
+              <font-awesome-icon :icon="['fas', 'list']" />
             </el-icon>
-            <span>{{ $t('Components List') }}</span>
+            <span>{{ $t("Components List") }}</span>
           </el-menu-item>
-          <el-menu-item :route="{ name: 'createComponent' }" index="/admin/components/new" :data-title="$t('Create Vue Component')">
+          <el-menu-item
+            :route="{ name: 'createComponent' }"
+            index="/admin/components/new"
+            :data-title="$t('Create Vue Component')"
+          >
             <el-icon>
-              <font-awesome-icon :icon="['fas', 'plus']"/>
+              <font-awesome-icon :icon="['fas', 'plus']" />
             </el-icon>
-            <span>{{ $t('Create Vue Component') }}</span>
+            <span>{{ $t("Create Vue Component") }}</span>
           </el-menu-item>
         </el-sub-menu>
       </div>
 
       <div class="nav-group" v-if="isManagingEnabled">
-        <h4>{{ $t('MANAGE') }}</h4>
-        <el-menu-item :route="{ name: 'storageList' }" index="/assets" :data-title="$t('Storage & Assets')">
+        <h4>{{ $t("MANAGE") }}</h4>
+        <el-menu-item
+          :route="{ name: 'storageList' }"
+          index="/assets"
+          :data-title="$t('Storage & Assets')"
+        >
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'folder-tree']"/>
+            <font-awesome-icon :icon="['fas', 'folder-tree']" />
           </el-icon>
-          <span>{{ $t('Storage & Assets') }}</span>
+          <span>{{ $t("Storage & Assets") }}</span>
         </el-menu-item>
 
-        <el-menu-item v-if="isAdmin && isManagingEnabled" index="/users" :data-title="$t('Users')">
+        <el-menu-item
+          v-if="isAdmin && isManagingEnabled"
+          index="/users"
+          :data-title="$t('Users')"
+        >
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'users']"/>
+            <font-awesome-icon :icon="['fas', 'users']" />
           </el-icon>
-          <span>{{ $t('Users') }}</span>
+          <span>{{ $t("Users") }}</span>
         </el-menu-item>
 
-        <el-menu-item v-if="isAdmin && isManagingEnabled && isWorkspacesActive" index="/admin/workspaces" :data-title="$t('Workspaces')">
+        <el-menu-item
+          v-if="isAdmin && isManagingEnabled && isWorkspacesActive"
+          index="/admin/workspaces"
+          :data-title="$t('Workspaces')"
+        >
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'briefcase']"/>
+            <font-awesome-icon :icon="['fas', 'briefcase']" />
           </el-icon>
-          <span>{{ $t('Workspaces') }}</span>
+          <span>{{ $t("Workspaces") }}</span>
         </el-menu-item>
 
-        <el-menu-item :route="{ name: 'drafts' }" index="/drafts" :data-title="$t('Drafts')">
+        <el-menu-item
+          :route="{ name: 'drafts' }"
+          index="/drafts"
+          :data-title="$t('Drafts')"
+        >
           <el-icon>
-            <font-awesome-icon :icon="['far', 'file-lines']"/>
+            <font-awesome-icon :icon="['far', 'file-lines']" />
           </el-icon>
-          <span>{{ $t('Drafts') }}</span>
+          <span>{{ $t("Drafts") }}</span>
         </el-menu-item>
 
-        <el-menu-item id="menu-item-blueprints" v-if="isAdmin && isManagingEnabled" :route="{ name: 'blueprints' }" index="/no-code/blueprints" :data-title="$t('Blueprints')">
+        <el-menu-item
+          id="menu-item-blueprints"
+          v-if="isAdmin && isManagingEnabled"
+          :route="{ name: 'blueprints' }"
+          index="/no-code/blueprints"
+          :data-title="$t('Blueprints')"
+        >
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'database']"/>
+            <font-awesome-icon :icon="['fas', 'database']" />
           </el-icon>
-          <span>{{ $t('Blueprints') }}</span>
+          <span>{{ $t("Blueprints") }}</span>
         </el-menu-item>
 
-        <el-menu-item v-if="isAdmin && isManagingEnabled" :route="{ name: 'configurations' }" index="/configurations" :data-title="$t('Configurations')">
+        <el-menu-item
+          v-if="isAdmin && isManagingEnabled"
+          :route="{ name: 'configurations' }"
+          index="/configurations"
+          :data-title="$t('Configurations')"
+        >
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'gear']"/>
+            <font-awesome-icon :icon="['fas', 'gear']" />
           </el-icon>
-          <span>{{ $t('Configurations') }}</span>
+          <span>{{ $t("Configurations") }}</span>
         </el-menu-item>
       </div>
 
       <div class="nav-group" v-if="isAdmin && isManagingEnabled">
-        <h4>{{ $t('PLUGINS') }}</h4>
-        <el-menu-item :route="{ name: 'plugins' }" index="/plugins" :data-title="$t('Plugins List')">
+        <h4>{{ $t("PLUGINS") }}</h4>
+        <el-menu-item
+          :route="{ name: 'plugins' }"
+          index="/plugins"
+          :data-title="$t('Plugins List')"
+        >
           <el-icon>
-            <font-awesome-icon :icon="['fas', 'plug-circle-bolt']"/>
+            <font-awesome-icon :icon="['fas', 'plug-circle-bolt']" />
           </el-icon>
-          <span>{{ $t('Plugins List') }}</span>
+          <span>{{ $t("Plugins List") }}</span>
         </el-menu-item>
-        <el-menu-item :route="{ name: 'integrations' }" index="/integrations" :data-title="$t('Integrations')">
+        <el-menu-item
+          :route="{ name: 'integrations' }"
+          index="/integrations"
+          :data-title="$t('Integrations')"
+        >
           <el-icon>
             <font-awesome-icon :icon="['fas', 'arrows-turn-to-dots']" />
           </el-icon>
-          <span>{{ $t('Integrations') }}</span>
+          <span>{{ $t("Integrations") }}</span>
         </el-menu-item>
       </div>
 
       <template v-for="group in navBar.bottom">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.name">{{ group.name }}</h4>
-          <el-menu-item v-for="mfe in group.items" :key="mfe.route.path" :route="'/' + mfe.route.path"
-                        :index="'/' + mfe.route.path">
+          <el-menu-item
+            v-for="mfe in group.items"
+            :key="mfe.route.path"
+            :route="'/' + mfe.route.path"
+            :index="'/' + mfe.route.path"
+          >
             <el-icon>
-              <component v-if="mfe.route.iconName" :is="'icon-' + mfe.route.iconName"/>
-              <font-awesome-icon v-else :icon="['fas', 'circle-dot']"/>
+              <component
+                v-if="mfe.route.iconName"
+                :is="'icon-' + mfe.route.iconName"
+              />
+              <font-awesome-icon v-else :icon="['fas', 'circle-dot']" />
             </el-icon>
             <span>{{ mfe.name }}</span>
           </el-menu-item>
@@ -177,39 +285,43 @@
 </template>
 
 <script lang="ts" setup>
-import { storeToRefs } from 'pinia';
-import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
-import { isAdmin, isEditingEnabled, isManagingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
-import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
+import { storeToRefs } from "pinia";
+import { usePluginsMicroFrontends } from "@/modules/plugins/store/plugins-microfrontends";
+import {
+  isAdmin,
+  isEditingEnabled,
+  isManagingEnabled,
+  isPrivilegedUser,
+} from "@/modules/core/store/auth";
+import { useAppConfiguration } from "@/modules/configurations/store/app-configuration";
 
-import { ref, onMounted, toRef } from 'vue';
+import { ref, onMounted, toRef } from "vue";
 
 const { navBar, hasPages } = storeToRefs(usePluginsMicroFrontends());
 const { appConfig } = useAppConfiguration();
-import QuicklyCreateMicrofrontends from './navigation/QuicklyCreateMicrofrontends.vue';
-import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import QuicklyCreateMicrofrontends from "./navigation/QuicklyCreateMicrofrontends.vue";
+import { useWsConfiguration } from "@/modules/configurations/store/ws-configuration";
 
 // Visibility state of the modal window
 const dialogVisible = ref(false);
 const isCollapsed = ref(false);
-const isWorkspacesActive = toRef(useWsConfiguration(), 'isActive');
-
+const isWorkspacesActive = toRef(useWsConfiguration(), "isActive");
 
 // Check if the user has a preference for collapsed state in localStorage
 onMounted(() => {
-  const savedState = localStorage.getItem('qelos-nav-collapsed');
+  const savedState = localStorage.getItem("qelos-nav-collapsed");
   if (savedState) {
-    isCollapsed.value = savedState === 'true';
-  }  
+    isCollapsed.value = savedState === "true";
+  }
 });
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value;
-  localStorage.setItem('qelos-nav-collapsed', isCollapsed.value.toString());
-  
+  localStorage.setItem("qelos-nav-collapsed", isCollapsed.value.toString());
+
   // Force a small delay to ensure the DOM updates properly
   setTimeout(() => {
-    window.dispatchEvent(new Event('resize'));
+    window.dispatchEvent(new Event("resize"));
   }, 300);
 };
 
@@ -217,27 +329,26 @@ const openDrawer = () => {
   dialogVisible.value = true;
 };
 
-defineProps({ opened: Boolean })
-const emit = defineEmits(['close'])
+defineProps({ opened: Boolean });
+const emit = defineEmits(["close"]);
 
-const close = () => emit('close')
-
+const close = () => emit("close");
 </script>
 <style scoped lang="scss">
 nav {
   display: flex;
   flex-direction: column;
   background-color: var(--nav-bg-color);
-  transition: width .3s ease, min-width .3s ease;
+  transition: width 0.3s ease, min-width 0.3s ease;
   min-width: var(--nav-width);
   overflow-y: auto;
   position: relative;
   box-shadow: var(--layout-nav-shadow, 0 0 10px rgba(0, 0, 0, 0.1));
   border-inline-end: var(--layout-nav-border, 0);
-  
+
   &.collapsed {
     width: var(--nav-width);
-    
+
     .home-logo {
       .logo-image {
         display: none;
@@ -246,40 +357,89 @@ nav {
         display: block;
       }
     }
-    
+
     .nav-group h4 {
       opacity: 0;
       height: 0;
       margin: 0;
       overflow: hidden;
     }
-    
-    // Add tooltip for menu items in collapsed mode
-    .el-menu-item, .el-sub-menu__title {
-      &:hover {
-        &::after {
-          content: attr(data-title);
-          position: absolute;
-          inset-inline-start: 64px;
-          inset-block-start: 50%;
-          transform: translateY(-50%);
-          padding: 8px 12px;
-          background: var(--nav-bg-color);
-          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-          border-radius: 4px;
-          white-space: nowrap;
-          color: var(--negative-color);
-          font-size: 14px;
-          z-index: 10;
-          animation: fadeIn 0.2s ease-in-out;
+
+    // Add tooltip for menu items in collapsed mode (but not for icons-only layout)
+    &:not(.nav-layout-icons-only) {
+      .el-menu-item,
+      .el-sub-menu__title {
+        &:hover {
+          &::after {
+            content: attr(data-title);
+            position: absolute;
+            inset-inline-start: 64px;
+            inset-block-start: 50%;
+            transform: translateY(-50%);
+            padding: 8px 12px;
+            background: var(--nav-bg-color);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+            white-space: nowrap;
+            color: var(--negative-color);
+            font-size: 14px;
+            z-index: 10;
+            animation: fadeIn 0.2s ease-in-out;
+          }
+        }
+      }
+
+      .el-menu-item {
+        &.is-active {
+          position: relative;
+
+          &::before {
+            content: "";
+            position: absolute;
+            inset-inline-start: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background-color: var(--el-menu-active-color);
+            border-radius: 0 2px 2px 0;
+          }
+        }
+      }
+
+      &.is-active {
+        ::v-deep(.el-sub-menu__title) {
+          &::before {
+            content: "";
+            position: absolute;
+            inset-inline-start: 0;
+            inset-block-start: 0;
+            height: 100%;
+            width: 3px;
+            background-color: var(--el-menu-active-color);
+            border-radius: 0 2px 2px 0;
+          }
+        }
+      }
+
+      .el-sub-menu {
+        ::v-deep(.el-menu) {
+          padding-inline-start: 5px;
+          border-inline-start: 1px dashed rgba(255, 255, 255, 0.1);
+          margin-inline-start: 10px;
         }
       }
     }
   }
-  
+
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-50%) translateX(-10px); }
-    to { opacity: 1; transform: translateY(-50%) translateX(0); }
+    from {
+      opacity: 0;
+      transform: translateY(-50%) translateX(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
+    }
   }
 }
 
@@ -297,15 +457,15 @@ nav {
   &:hover {
     overflow: auto;
   }
-  
+
   &::-webkit-scrollbar {
     width: 5px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: var(--nav-bg-color);
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background-color: var(--el-menu-hover-bg-color);
     border-radius: 20px;
@@ -315,30 +475,31 @@ nav {
 // Properly handle Element Plus menu collapse
 .el-menu-vertical:not(.el-menu--collapse) {
   width: 100%;
-  min-width: 200px;
+  min-width: var(--nav-width);
 }
 
 .el-menu--collapse {
   width: 64px !important;
-  
+
   .el-sub-menu__title span {
     display: none;
   }
-  
+
   .el-sub-menu__title .el-sub-menu__icon-arrow {
     display: none;
   }
-  
+
   .el-menu-item span {
     display: none;
   }
-  
-  .el-menu-item, .el-sub-menu__title {
+
+  .el-menu-item,
+  .el-sub-menu__title {
     padding: 0 !important;
     text-align: center;
     display: flex;
     justify-content: center;
-    
+
     .el-icon {
       margin: 0 !important;
     }
@@ -352,14 +513,14 @@ nav {
       inset-inline-start: -6px !important;
     }
   }
-  
+
   .el-menu--popup {
     padding: 5px;
     min-width: 180px;
     background-color: var(--nav-bg-color);
     border-radius: 4px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-    
+
     .el-menu-item {
       border-radius: 4px;
       margin: 2px;
@@ -367,7 +528,7 @@ nav {
       line-height: 40px;
       display: flex;
       align-items: center;
-      
+
       .el-icon {
         margin-right: 8px;
       }
@@ -397,26 +558,11 @@ nav {
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  
+
   &:hover {
     transform: translateX(3px);
   }
-  
-  &.is-active {
-    position: relative;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      inset-inline-start: 0;
-      top: 0;
-      height: 100%;
-      width: 3px;
-      background-color: var(--el-menu-active-color);
-      border-radius: 0 2px 2px 0;
-    }
-  }
-  
+
   .el-icon {
     margin-right: 8px;
     display: flex;
@@ -425,7 +571,7 @@ nav {
     width: 24px;
     height: 24px;
   }
-  
+
   span {
     flex: 1;
   }
@@ -445,12 +591,12 @@ nav {
     position: relative;
     display: flex;
     align-items: center;
-    
+
     &:hover {
       color: var(--negative-color);
       transform: translateX(3px);
     }
-    
+
     .el-icon {
       margin-right: 8px;
       display: flex;
@@ -459,11 +605,11 @@ nav {
       width: 24px;
       height: 24px;
     }
-    
+
     span {
       flex: 1;
     }
-    
+
     .el-sub-menu__icon-arrow {
       position: absolute;
       inset-inline-end: 20px;
@@ -477,24 +623,6 @@ nav {
   ::v-deep(.el-menu) {
     background-color: var(--nav-bg-color);
     --el-menu-text-color: var(--secondary-color);
-    padding-inline-start: 5px;
-    border-inline-start: 1px dashed rgba(255, 255, 255, 0.1);
-    margin-inline-start: 10px;
-  }
-  
-  &.is-active {
-    ::v-deep(.el-sub-menu__title) {
-      &::before {
-        content: '';
-        position: absolute;
-        inset-inline-start: 0;
-        inset-block-start: 0;
-        height: 100%;
-        width: 3px;
-        background-color: var(--el-menu-active-color);
-        border-radius: 0 2px 2px 0;
-      }
-    }
   }
 }
 
@@ -529,14 +657,14 @@ a:hover {
   flex: 1;
   transition: all 0.3s ease;
   overflow: hidden;
-  
+
   .logo-image {
     max-width: 80%;
     max-height: 100%;
     transition: opacity 0.3s ease;
     margin-bottom: 0;
   }
-  
+
   .small-logo-image {
     max-width: 40px;
     max-height: 40px;
@@ -556,7 +684,7 @@ a:hover {
   justify-content: center;
   border-radius: 50%;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
     color: var(--negative-color);
@@ -585,7 +713,7 @@ a:hover {
     margin: 0;
     transform: translateY(100%); /* Start off-screen */
     pointer-events: none; /* Prevent interaction when hidden */
-    
+
     .el-menu {
       display: none;
     }
@@ -605,8 +733,11 @@ a:hover {
       pointer-events: auto; /* Re-enable interactions */
       display: flex;
       flex-direction: column;
-      padding-bottom: env(safe-area-inset-bottom, 80px); /* Add safe area padding for iPhone */
-      
+      padding-bottom: env(
+        safe-area-inset-bottom,
+        80px
+      ); /* Add safe area padding for iPhone */
+
       .el-menu {
         display: block;
         padding-bottom: 100px;
@@ -635,7 +766,7 @@ a:hover {
       display: inline;
     }
   }
-  
+
   .collapse-toggle {
     display: none;
   }
@@ -661,15 +792,20 @@ a:hover {
   position: relative;
   padding: 5px 0;
   transition: all 0.3s ease;
-  
+
   &:not(:last-child)::after {
-    content: '';
+    content: "";
     display: block;
     height: 1px;
-    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
     margin: 8px 15px;
   }
-  
+
   h4 {
     color: var(--negative-color);
     font-size: var(--base-font-size, 16px);
@@ -680,9 +816,9 @@ a:hover {
     letter-spacing: 0.5px;
     text-transform: uppercase;
     font-size: 0.8rem;
-    
+
     &:before {
-      content: '';
+      content: "";
       display: inline-block;
       vertical-align: middle;
       width: 15px;
@@ -696,5 +832,133 @@ a:hover {
 
 .bottom {
   margin-top: auto;
+}
+
+// Navigation Layout Styles
+.nav-layout-icon-above {
+  .el-menu-item,
+  .el-sub-menu__title {
+    flex-direction: column !important;
+    height: 70px;
+    line-height: 1.2;
+    text-align: center;
+    padding: 8px 20px;
+
+    .el-icon:not(.el-sub-menu__icon-arrow) {
+      margin-right: 0 !important;
+      margin-bottom: 4px;
+      width: 36px;
+      height: 36px;
+      font-size: 28px;
+    }
+
+    span {
+      font-size: 12px;
+      line-height: 1.2;
+    }
+  }
+
+  .el-sub-menu {
+    ::v-deep(.el-sub-menu__title) {
+      flex-direction: column !important;
+      height: 70px;
+      
+      .el-icon:not(.el-sub-menu__icon-arrow) {
+        margin-right: 0 !important;
+        margin-bottom: 4px;
+        width: 36px;
+        height: 36px;
+        font-size: 28px;
+      }
+    }
+  }
+
+  &.el-menu--collapse {
+    .el-menu-item,
+    .el-sub-menu__title {
+      height: 50px;
+
+      .el-icon {
+        margin-bottom: 0;
+      }
+
+      span {
+        display: none;
+      }
+    }
+  }
+}
+
+.nav-layout-icons-only {
+  .logo-image {
+    max-width: 40px;
+  }
+  .collapse-toggle,
+  .nav-group h4 {
+    display: none;
+  }
+  .el-menu-item,
+  .el-sub-menu__title {
+    justify-content: center;
+    position: relative;
+
+    .el-icon {
+      margin-right: 0;
+      width: 36px;
+      height: 36px;
+      font-size: 28px;
+    }
+
+    span {
+      display: none !important;
+    }
+  }
+
+  .el-sub-menu {
+    .el-menu {
+      .el-menu-item {
+        padding: 0;
+        padding-inline-start: 10px;
+      }
+    }
+  }
+}
+
+.nav-layout-text-only {
+  .el-menu-item,
+  .el-sub-menu__title {
+    .el-icon {
+      display: none;
+    }
+
+    span {
+      margin-left: 0;
+    }
+  }
+}
+
+.nav-layout-compact {
+  .el-menu-item,
+  .el-sub-menu__title {
+    height: 40px;
+    line-height: 40px;
+    padding: 0 16px;
+    margin: 2px;
+
+    .el-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: 6px;
+    }
+
+    span {
+      font-size: 13px;
+    }
+  }
+
+  .nav-group h4 {
+    font-size: 0.7rem;
+    margin: 10px 8px 6px;
+  }
 }
 </style>

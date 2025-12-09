@@ -56,6 +56,31 @@ body[data-layout-style='stacked-header'] {
   --layout-main-radius: var(--border-radius);
 }
 
+// Navigation Layout Width Overrides
+body[data-navigation-layout='icon-above'] {
+  --nav-width: 180px;
+  --collapsed-nav-width: 64px;
+  --layout-header-max-width: calc(100vw - 180px);
+}
+
+body[data-navigation-layout='icons-only'] {
+  --nav-width: 80px;
+  --collapsed-nav-width: 64px;
+  --layout-header-max-width: calc(100vw - 80px);
+}
+
+body[data-navigation-layout='text-only'] {
+  --nav-width: 180px;
+  --collapsed-nav-width: 64px;
+  --layout-header-max-width: calc(100vw - 180px);
+}
+
+body[data-navigation-layout='compact'] {
+  --nav-width: 200px;
+  --collapsed-nav-width: 64px;
+  --layout-header-max-width: calc(100vw - 200px);
+}
+
 body:has(nav.collapsed) {
   --nav-width: var(--collapsed-nav-width);
 }
