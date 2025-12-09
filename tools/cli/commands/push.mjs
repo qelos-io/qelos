@@ -8,7 +8,7 @@ export default function createCommand(program) {
           .positional('type', {
             describe: 'Type of the resource to push. Can be components, blueprints, configurations, plugins, blocks, or all.',
             type: 'string',
-            choices: ['components', 'blueprints', 'configs', 'plugins', 'blocks', 'integrations', 'all', '*'],
+            choices: ['components', 'blueprints', 'configs', 'plugins', 'blocks', 'integrations', 'connections', 'all', '*'],
             required: true
           })
           .positional('path', {
