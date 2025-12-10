@@ -285,7 +285,7 @@ const templatePromptPool = computed(() => {
   return prompts;
 });
 
-const shouldRecordThread = computed(() => props.recordThread || props.threadId);
+const shouldRecordThread = computed(() => props.recordThread || props.threadId || props.url?.includes("[threadId]"));
 
 const chatCompletionUrl = computed(() => {
   if (shouldRecordThread.value) {
