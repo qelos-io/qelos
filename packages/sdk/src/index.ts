@@ -6,6 +6,7 @@ import QlAuthentication from './authentication';
 import QlWorkspaces from './workspaces';
 import QlInvites from './invites';
 import QlBlueprints from './blueprints';
+import QlAI from './ai';
 
 const noExtraHeadersUrls = new Set(['/api/token/refresh', '/api/signin', '/api/signup'])
 
@@ -18,6 +19,7 @@ export default class QelosSDK extends BaseSDK {
   workspaces: QlWorkspaces;
   invites: QlInvites;
   blueprints: QlBlueprints;
+  ai: QlAI;
 
   constructor(private options: QelosSDKOptions) {
     super(options);
@@ -27,6 +29,7 @@ export default class QelosSDK extends BaseSDK {
     this.workspaces = new QlWorkspaces(this.options);
     this.invites = new QlInvites(this.options);
     this.blueprints = new QlBlueprints(this.options);
+    this.ai = new QlAI(this.options);
 
     const isBrowser = globalThis.navigator && globalThis.window && globalThis.document
 
@@ -59,5 +62,4 @@ export default class QelosSDK extends BaseSDK {
   removeCustomHeader(key: string) {
     delete this.#customHeaders[key];
   }
-
 }
