@@ -44,6 +44,10 @@ export interface IChatCompletionOptions {
   stream?: boolean;
 }
 
+export interface ISSEStreamProcessor extends AsyncIterable<any> {
+  processManually(onData: (data: any) => void | boolean): Promise<void>;
+}
+
 export interface IChatCompletionResponse {
   id: string;
   object: string;
@@ -161,7 +165,7 @@ export default class QlAI extends BaseSDK {
     integrationId: string,
     options: IChatCompletionOptions
   ): Promise<ReadableStream<Uint8Array>> {
-    const response = await this.callApi(`${this.relativePath}/integrations/${integrationId}/chat-completion${this.getQueryParams({ stream: true })}`, {
+    const response = await this.callApi(`${this.relativePath}/${integrationId}/chat-completion${this.getQueryParams({ stream: true })}`, {
       method: 'POST',
       headers: { 
         'content-type': 'application/json',
@@ -187,7 +191,7 @@ export default class QlAI extends BaseSDK {
     options: IChatCompletionOptions
   ): Promise<ReadableStream<Uint8Array>> {
     const response = await this.callApi(
-      `${this.relativePath}/integrations/${integrationId}/threads/${threadId}/chat-completion${this.getQueryParams({ stream: true })}`,
+      `${this.relativePath}/${integrationId}/chat-completion/${threadId}${this.getQueryParams({ stream: true })}`,
       {
         method: 'POST',
         headers: { 
@@ -206,39 +210,111 @@ export default class QlAI extends BaseSDK {
   }
 
   /**
-   * Helper method to parse Server-Sent Events stream
+   * Helper method to parse Server-Sent Events stream with proper buffering
+   * Handles incomplete lines across multiple stream chunks
    */
-  parseSSEStream(stream: ReadableStream<Uint8Array>): AsyncIterable<any> {
+  parseSSEStream(stream: ReadableStream<Uint8Array>): ISSEStreamProcessor {
     const reader = stream.getReader();
     const decoder = new TextDecoder();
 
-    return {
-      async *[Symbol.asyncIterator]() {
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
-
+    const processStream = async (onData: (data: any) => void | boolean): Promise<void> => {
+      let buffer = "";
+      let done = false;
+      let finished = false;
+      
+      try {
+        while (!done && !finished) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          
+          if (value) {
+            buffer += decoder.decode(value, { stream: true });
+            let lines = buffer.split(/\r?\n/);
+            // Keep the last line in buffer if it's incomplete
+            buffer = lines.pop() || "";
+            
             for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6);
-                if (data === '[DONE]') return;
-                
-                try {
-                  yield JSON.parse(data);
-                } catch (e) {
-                  // Skip invalid JSON
+              if (!line.trim() || !line.startsWith("data: ")) continue;
+              const jsonStr = line.slice(6);
+              if (!jsonStr) continue;
+              
+              // Handle special SSE termination signals
+              if (jsonStr === '[DONE]') {
+                finished = true;
+                break;
+              }
+              
+              try {
+                const data = JSON.parse(jsonStr);
+                const shouldContinue = onData(data);
+                if (shouldContinue === false) {
+                  finished = true;
+                  break;
                 }
+              } catch (e) {
+                // Skip invalid JSON lines
+                continue;
               }
             }
           }
-        } finally {
-          reader.releaseLock();
         }
+        
+        // Process any remaining data in buffer
+        if (!finished && buffer.trim() && buffer.startsWith("data: ")) {
+          const jsonStr = buffer.slice(6);
+          if (jsonStr && jsonStr !== '[DONE]') {
+            try {
+              const data = JSON.parse(jsonStr);
+              onData(data);
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
       }
     };
+
+    const processor = {
+      async *[Symbol.asyncIterator]() {
+        const dataQueue: any[] = [];
+        let streamFinished = false;
+        let resolveNext: ((value: IteratorResult<any>) => void) | null = null;
+        
+        // Start processing stream in background
+        processStream((data) => {
+          dataQueue.push(data);
+          if (resolveNext) {
+            const resolve = resolveNext;
+            resolveNext = null;
+            resolve({ value: dataQueue.shift(), done: false });
+          }
+          return true; // Continue processing
+        }).then(() => {
+          streamFinished = true;
+          if (resolveNext) {
+            resolveNext({ value: undefined, done: true });
+          }
+        });
+        
+        while (true) {
+          if (dataQueue.length > 0) {
+            yield dataQueue.shift();
+          } else if (streamFinished) {
+            break;
+          } else {
+            // Wait for next data
+            await new Promise<IteratorResult<any>>((resolve) => {
+              resolveNext = resolve;
+            });
+          }
+        }
+      },
+      
+      processManually: processStream
+    };
+    
+    return processor as ISSEStreamProcessor;
   }
 }

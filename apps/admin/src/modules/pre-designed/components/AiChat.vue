@@ -240,9 +240,9 @@ import {
   ArrowLeft,
 } from "@element-plus/icons-vue";
 import { Remarkable } from "remarkable";
-import threadsService from "@/services/apis/threads-service";
 import { linkify } from "remarkable/linkify";
 import { isAdmin, isLoadingDataAsUser } from "@/modules/core/store/auth";
+import sdk from "@/services/sdk";
 
 const props = defineProps<{
   url: string;
@@ -304,7 +304,7 @@ function getIntegrationIdFromUrl() {
 }
 
 async function createThread() {
-  const newThread = await threadsService.create({
+  const newThread = await sdk.ai.createThread({
     integration: props.integrationId || getIntegrationIdFromUrl(),
   });
 
@@ -318,7 +318,7 @@ async function createThread() {
 
 async function loadThread(threadId: string) {
   try {
-    const thread = await threadsService.getOne(threadId);
+    const thread = await sdk.ai.getThread(threadId);
     currentThread.value = thread;
     
     // Load thread messages if they exist and we don't have messages already
@@ -723,109 +723,108 @@ async function send() {
     if (shouldRecordThread.value && !localThreadId.value) {
       await createThread();
     }
-    // Streaming with fetch (SSE-style JSON lines)
-    const url = new URL(chatCompletionUrl.value, window.location.origin);
-    url.searchParams.append("stream", "true");
-    if (isAdmin.value && isLoadingDataAsUser.value && !props.manager) {
-      url.searchParams.append("bypassAdmin", "true");
-    }
-    const res = await fetch(url.toString(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.body) throw new Error("No response body");
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let done = false;
-    let finished = false;
-    while (!done && !finished) {
-      const { value, done: doneReading } = await reader.read();
-      done = doneReading;
-      if (value) {
-        buffer += decoder.decode(value, { stream: true });
-        let lines = buffer.split(/\r?\n/);
-        // Keep the last line in buffer if it's incomplete
-        buffer = lines.pop() || "";
-        for (const line of lines) {
-          if (!line.trim() || !line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6);
-          if (!jsonStr) continue;
-          let data;
-          try {
-            data = JSON.parse(jsonStr);
-          } catch (e) {
-            continue; // skip malformed lines
+
+    const integrationId = props.integrationId || getIntegrationIdFromUrl();
+    const chatOptions = {
+      messages: payload.messages,
+      context: payload.context,
+      stream: true
+    };
+
+    // Try streaming first
+    try {
+      let stream;
+      if (shouldRecordThread.value && localThreadId.value) {
+        // Use thread-based streaming
+        stream = await sdk.ai.streamChatInThread(integrationId, localThreadId.value, chatOptions);
+      } else {
+        // Use regular streaming
+        stream = await sdk.ai.streamChat(integrationId, chatOptions);
+      }
+
+      // Process the stream using the SDK's parseSSEStream method
+      for await (const data of sdk.ai.parseSSEStream(stream)) {
+        if (data.type === "connection_established") {
+          // Optionally handle connection established
+          continue;
+        }
+        if (data.type === "chunk") {
+          if (data.content) {
+            aiMsg.content += data.content;
+            // Force Vue reactivity for live updates
+            const idx = messages.findIndex((m) => m.id === aiMsg.id);
+            if (idx !== -1) messages[idx] = { ...aiMsg };
+            scrollToBottom();
           }
-          if (data.type === "connection_established") {
-            // Optionally handle connection established
-            continue;
-          }
-          if (data.type === "chunk") {
-            if (data.content) {
-              aiMsg.content += data.content;
-              // Force Vue reactivity for live updates
-              const idx = messages.findIndex((m) => m.id === aiMsg.id);
-              if (idx !== -1) messages[idx] = { ...aiMsg };
-              scrollToBottom();
-            }
-            // If finish_reason is stop, mark as finished
-            if (data.chunk?.choices?.[0]?.finish_reason === "stop") {
-              finished = true;
-              break;
-            }
-          } else if (data.type === "followup_chunk") {
-            // Handle followup chunks from function calling
-            if (data.content) {
-              aiMsg.content += data.content;
-              // Force Vue reactivity for live updates
-              const idx = messages.findIndex((m) => m.id === aiMsg.id);
-              if (idx !== -1) messages[idx] = { ...aiMsg };
-              scrollToBottom();
-            }
-          } else if (data.type === 'function_executed') {
-            let args = {}
-            try {
-              args = JSON.parse(data.functionCall?.arguments || '{}');
-            } catch (e) {
-              // ignore
-            }
-            emit('function-executed',{
-              name: data.functionCall?.function?.name,
-              arguments: args,
-            });
-          } else if (data.type === "done") {
-            finished = true;
+          // If finish_reason is stop, mark as finished
+          if (data.chunk?.choices?.[0]?.finish_reason === "stop") {
             break;
           }
+        } else if (data.type === "followup_chunk") {
+          // Handle followup chunks from function calling
+          if (data.content) {
+            aiMsg.content += data.content;
+            // Force Vue reactivity for live updates
+            const idx = messages.findIndex((m) => m.id === aiMsg.id);
+            if (idx !== -1) messages[idx] = { ...aiMsg };
+            scrollToBottom();
+          }
+        } else if (data.type === 'function_executed') {
+          let args = {}
+          try {
+            args = JSON.parse(data.functionCall?.arguments || '{}');
+          } catch (e) {
+            // ignore
+          }
+          emit('function-executed',{
+            name: data.functionCall?.function?.name,
+            arguments: args,
+          });
+        } else if (data.type === "done") {
+          break;
         }
       }
-    }
-    loading.value = false;
-    markUserMessagesAsSent();
-    // Only add table copy buttons after the assistant has finished typing
-    nextTick(() => {
-      setTimeout(addTableCopyButtons, 100);
-    });
-  } catch (err) {
-    // Fallback to HTTP
-    try {
-      const url = new URL(props.url, window.location.origin);
-      url.searchParams.append("stream", "false");
-      if (isAdmin.value && isLoadingDataAsUser.value && !props.manager) {
-        url.searchParams.append("bypassAdmin", "true");
-      }
-      const res = await fetch(url.toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      
+      loading.value = false;
+      markUserMessagesAsSent();
+      // Only add table copy buttons after the assistant has finished typing
+      nextTick(() => {
+        setTimeout(addTableCopyButtons, 100);
       });
-      const data = await res.json();
-      aiMsg.content = data.content || "[No response]";
-    } catch (err) {
-      aiMsg.content = "[Error: failed to fetch AI response]";
+    } catch (streamError) {
+      console.warn('Streaming failed, falling back to non-streaming:', streamError);
+      
+      // Fallback to non-streaming chat completion
+      try {
+        let response;
+        if (shouldRecordThread.value && localThreadId.value) {
+          // Use thread-based chat completion
+          response = await sdk.ai.chatInThread(integrationId, localThreadId.value, {
+            ...chatOptions,
+          });
+        } else {
+          // Use regular chat completion
+          response = await sdk.ai.chat(integrationId, {
+            ...chatOptions,
+          });
+        }
+        
+        aiMsg.content = response.choices?.[0]?.message?.content || "[No response]";
+      } catch (fallbackError) {
+        console.error('Both streaming and non-streaming failed:', fallbackError);
+        aiMsg.content = "[Error: failed to fetch AI response]";
+      }
+      
+      loading.value = false;
+      markUserMessagesAsSent();
+      // Only add table copy buttons after the assistant has finished typing
+      nextTick(() => {
+        setTimeout(addTableCopyButtons, 100);
+      });
     }
+  } catch (err) {
+    console.error('Chat completion failed:', err);
+    aiMsg.content = "[Error: failed to fetch AI response]";
     loading.value = false;
     markUserMessagesAsSent();
     // Only add table copy buttons after the assistant has finished typing

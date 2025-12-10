@@ -184,9 +184,9 @@ for await (const chunk of sdk.ai.parseSSEStream(stream)) {
 }
 ```
 
-### Manual Stream Processing
+### Advanced Stream Processing
 
-For more control over stream processing, you can handle the raw stream:
+The SDK's `parseSSEStream()` method includes robust buffering and error handling:
 
 ```typescript
 const stream = await sdk.ai.streamChat('integration-id', options);
