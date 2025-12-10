@@ -61,6 +61,13 @@ Welcome to the Qelos SDK documentation. This section provides an overview of the
   </div>
   <div class="vp-feature">
     <div class="icon-container">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6l6 6l1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6l-6 6l-1.4-1.4z"/></svg>
+    </div>
+    <h3><a href="/sdk/ai_operations">AI Operations</a></h3>
+    <p>Powerful AI chat completions, thread management, and streaming capabilities for intelligent applications.</p>
+  </div>
+  <div class="vp-feature">
+    <div class="icon-container">
       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
     </div>
     <h3><a href="/sdk/error_handling">Error Handling</a></h3>
@@ -153,6 +160,16 @@ await sdk.authentication.oAuthSignin({
 // Now you can use the SDK to interact with Qelos
 const workspaces = await sdk.workspaces.getList();
 const userProfile = await sdk.authentication.getLoggedInUser();
+
+// Use AI capabilities
+const thread = await sdk.ai.createThread({
+  integration: 'your-ai-integration-id',
+  title: 'Customer Support Chat'
+});
+
+const response = await sdk.ai.chat('your-ai-integration-id', {
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
 ```
 
 ### Developer Resources
@@ -196,6 +213,9 @@ The Qelos SDK is organized into several modules, each providing specific functio
 
 ### Extensions
 - [Managing Plugins](./managing_plugins.md) - Plugin integration and management
+
+### AI & Intelligence
+- [AI Operations](./ai_operations.md) - AI chat completions, thread management, and streaming capabilities
 
 ## About Qelos
 
