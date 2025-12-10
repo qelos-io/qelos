@@ -269,6 +269,7 @@ const emit = defineEmits([
 ]);
 
 const localThreadId = ref(props.threadId);
+const currentThread = ref<any>(null);
 
 const templatePromptPool = computed(() => {
   const prompts: string[] = [];
@@ -307,10 +308,46 @@ async function createThread() {
     integration: props.integrationId || getIntegrationIdFromUrl(),
   });
 
+  currentThread.value = newThread;
   emit("update:threadId", newThread._id);
+  emit("thread-created", newThread);
   localThreadId.value = newThread._id;
 
   return newThread;
+}
+
+async function loadThread(threadId: string) {
+  try {
+    const thread = await threadsService.getOne(threadId);
+    currentThread.value = thread;
+    
+    // Load thread messages if they exist and we don't have messages already
+    if (thread.messages && Array.isArray(thread.messages) && messages.length === 0) {
+      thread.messages.forEach((msg: any) => {
+        messages.push({
+          id: msg._id || Math.random().toString(36).slice(2),
+          role: msg.role,
+          content: msg.content,
+          time: msg.createdAt || msg.time || new Date().toISOString(),
+          type: msg.type || 'text',
+          filename: msg.filename,
+          status: 'sent'
+        });
+      });
+      
+      // Scroll to bottom after loading messages
+      nextTick(() => {
+        scrollToBottom();
+        setTimeout(addTableCopyButtons, 100);
+      });
+    }
+    
+    emit("thread-updated", thread);
+    return thread;
+  } catch (error) {
+    console.error("Failed to load thread:", error);
+    return null;
+  }
 }
 
 interface ChatMessage {
@@ -547,6 +584,17 @@ watch(
     setTimeout(addTableCopyButtons, 100);
   },
   { deep: true }
+);
+
+// Watch localThreadId to load thread data when it changes
+watch(
+  localThreadId,
+  async (newThreadId, oldThreadId) => {
+    if (newThreadId && newThreadId !== oldThreadId) {
+      await loadThread(newThreadId);
+    }
+  },
+  { immediate: true }
 );
 
 function canSend() {
@@ -803,17 +851,22 @@ onMounted(() => {
     input,
     messages,
     threadId: localThreadId,
+    currentThread,
     chatWindow,
     inputRef,
     loading,
     chatCompletionUrl,
     createThread,
+    loadThread,
     addMessage,
     send,
     renderMarkdown,
     openFilePicker
   });
 });
+
+
+
 </script>
 
 <style scoped>

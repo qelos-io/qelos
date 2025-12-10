@@ -555,3 +555,27 @@ export async function handleNonStreamingChatCompletion(
     throw error;
   }
 }
+
+export async function generateThreadTitle({aiService, model, messages, tryAgain}: {aiService: any, model: string, messages: any[], tryAgain?: boolean}): Promise<string> {
+  const result = await aiService.createChatCompletion({
+    model,
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a title generator for another existing conversation with AI. ' +
+        'you will get a conversation messages and you need to generate a title for it. ' +
+        'make shorter title as possible. try hard not to over 4-5 words.' +
+        'If the messages are not clear enough, add a asterisk (*) to the beginning of the title, so we will run it again after few more messages. ' +
+        'return the data in this schema: { title: string }',
+        response_format: { type: 'json_object' },
+      },
+      {
+        role: 'user',
+        content: 'give me the title for this conversation: ' + JSON.stringify(messages.filter(({role}) => role === 'user').slice(0, tryAgain ? 6 : 3))
+      }
+    ]
+  });
+  const { title } = JSON.parse(result.choices[0].message.content);
+
+  return title;
+}

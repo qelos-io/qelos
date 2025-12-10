@@ -150,6 +150,7 @@ export async function chatCompletion(req: any, res: any | null) {
           timestamp: new Date()
         }));
     }
+
     await thread.save();
   }
 
@@ -578,6 +579,19 @@ export async function chatCompletion(req: any, res: any | null) {
 
       thread.save().catch(() => { });
     } : undefined;
+
+    // generate title id we can using ai
+    if (thread && (!thread.title || thread.title.startsWith('*'))) {
+      thread.title = await ChatCompletionService.generateThreadTitle({
+        aiService,
+        model: chatOptions.model,
+        messages: thread.messages || [],
+        tryAgain: !!thread.title,
+      }).catch(() => {
+        return '*No Title';
+      });
+      await thread.save();
+    }
 
     if (useSSE) {
       // Use the shared streaming chat completion handler

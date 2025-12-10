@@ -21,6 +21,7 @@ interface IMessageSummary {
 // Define the thread interface
 export interface IThread extends Document {
   integration: mongoose.Types.ObjectId;
+  title?: string;
   messages: IMessage[];
   messageSummaries: IMessageSummary[];
   created: Date;
@@ -58,6 +59,7 @@ const MessageSummarySchema = new Schema<IMessageSummary>(
 const ThreadSchema = new Schema<IThread>(
   {
     integration: { type: Schema.Types.ObjectId, required: true, ref: 'Integration' },
+    title: { type: String, required: false },
     messages: { type: [MessageSchema], default: [] },
     messageSummaries: { type: [MessageSummarySchema], default: [] },
     user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
