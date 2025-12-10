@@ -107,9 +107,9 @@ export default class QlAI extends BaseSDK {
     user?: string;
     workspace?: string;
     [key: string]: string | number;
-  }): Promise<{ threads: IThread[]; total: number; page: number; limit: number }> {
+  }): Promise<IThread[]> {
     const queryParams = this.getQueryParams(options);
-    return this.callJsonApi<{ threads: IThread[]; total: number; page: number; limit: number }>(
+    return this.callJsonApi<IThread[]>(
       `${this.relativePath}/threads${queryParams}`
     );
   }

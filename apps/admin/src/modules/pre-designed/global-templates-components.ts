@@ -27,6 +27,7 @@ import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
 import LifeCycle from '@/modules/pre-designed/components/LifeCycle.vue';
 import AiChat from '@/modules/pre-designed/components/AiChat.vue';
 import AssetUploader from '@/modules/assets/components/AssetUploader.vue';
+import ThreadsList from '@/modules/pre-designed/components/ThreadsList.vue';
 
 export default function applyGlobalTemplatesComponents(app: App) {
   app.component('TemplatedRemoveButton', TemplatedRemoveButton)
@@ -57,4 +58,5 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('LifeCycle', LifeCycle)
   app.component('AiChat', AiChat)
   app.component('AssetUploader', AssetUploader)
+  app.component('ThreadsList', ThreadsList)
 }

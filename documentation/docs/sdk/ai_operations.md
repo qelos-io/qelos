@@ -449,3 +449,175 @@ try {
 - [Authentication](./authentication.md) - User authentication setup
 - [Error Handling](./error_handling.md) - Error handling patterns
 - [TypeScript Types](./typescript_types.md) - Complete type definitions
+
+## ThreadsList Component
+
+The ThreadsList component provides a ready-to-use interface for displaying and managing AI chat threads in your Qelos application. It includes pagination, thread actions, and responsive design.
+
+### Features
+
+- **Thread Display**: Shows threads in a responsive grid layout with title, metadata, and message preview
+- **Pagination**: Built-in pagination for handling large numbers of threads
+- **Thread Actions**: Create new threads, select existing threads, and delete threads with confirmation
+- **Responsive Design**: Adapts to different screen sizes with mobile-friendly layout
+- **SDK Integration**: Uses the Qelos SDK for all thread operations
+
+### Component Usage
+
+```vue
+<template>
+  <ThreadsList
+    title="Chat Threads"
+    :show-header="true"
+    :allow-create="true"
+    :allow-delete="true"
+    integration="your-integration-id"
+    :limit="20"
+    :auto-load="true"
+    @create-thread="handleCreateThread"
+    @select-thread="handleSelectThread"
+    @thread-deleted="handleThreadDeleted"
+  />
+</template>
+
+<script setup lang="ts">
+import ThreadsList from '@/modules/pre-designed/components/ThreadsList.vue'
+
+function handleCreateThread() {
+  // Navigate to thread creation or open modal
+  console.log('Create new thread requested')
+}
+
+function handleSelectThread(thread) {
+  // Navigate to selected thread or open in chat component
+  console.log('Thread selected:', thread._id)
+}
+
+function handleThreadDeleted(threadId) {
+  // Handle thread deletion completion
+  console.log('Thread deleted:', threadId)
+}
+</script>
+```
+
+### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `title` | `string` | `'Threads'` | Header title displayed above the threads list |
+| `show-header` | `boolean` | `true` | Whether to show the header with title and create button |
+| `allow-create` | `boolean` | `true` | Whether to show the "Create New Thread" button |
+| `allow-delete` | `boolean` | `true` | Whether to show delete buttons on thread cards |
+| `integration` | `string` | `undefined` | Optional integration ID to filter threads by |
+| `limit` | `number` | `20` | Number of threads per page |
+| `auto-load` | `boolean` | `true` | Whether to automatically load threads on component mount |
+
+### Events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `create-thread` | `void` | Emitted when the "Create New Thread" button is clicked |
+| `select-thread` | `thread: IThread` | Emitted when a thread card is clicked |
+| `thread-deleted` | `threadId: string` | Emitted after a thread is successfully deleted |
+
+### SDK Methods Used
+
+The component internally uses these SDK methods:
+
+```typescript
+// List threads with pagination
+const result = await sdk.ai.listThreads({
+  integration: props.integration,
+  limit: props.limit,
+  page: currentPage,
+  sort: '-updated'
+});
+
+// Delete a thread
+await sdk.ai.deleteThread(threadId);
+```
+
+### Styling
+
+The component uses scoped CSS with Element Plus design tokens and includes:
+
+- Responsive grid layout (300px minimum card width)
+- Hover effects and transitions
+- Mobile-friendly design (single column on small screens)
+- Color-coded status indicators
+- Loading states and empty states
+
+### Integration with AiChat Component
+
+The ThreadsList component works seamlessly with the AiChat component:
+
+```vue
+<template>
+  <div class="chat-interface">
+    <ThreadsList
+      v-if="!selectedThreadId"
+      @select-thread="selectThread"
+    />
+    <AiChat
+      v-else
+      :thread-id="selectedThreadId"
+      @back="selectedThreadId = null"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import ThreadsList from '@/modules/pre-designed/components/ThreadsList.vue'
+import AiChat from '@/modules/pre-designed/components/AiChat.vue'
+
+const selectedThreadId = ref<string>()
+
+function selectThread(thread) {
+  selectedThreadId.value = thread._id
+}
+</script>
+```
+
+### Advanced Usage
+
+#### Custom Thread Filtering
+
+```vue
+<template>
+  <ThreadsList
+    integration="customer-support-integration"
+    :limit="10"
+    @select-thread="loadCustomerThread"
+  />
+</template>
+```
+
+#### Programmatic Thread Refresh
+
+```vue
+<template>
+  <div>
+    <ThreadsList ref="threadsListRef" />
+    <el-button @click="refreshThreads">Refresh</el-button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import ThreadsList from '@/modules/pre-designed/components/ThreadsList.vue'
+
+const threadsListRef = ref()
+
+function refreshThreads() {
+  threadsListRef.value?.refresh()
+}
+</script>
+```
+
+## Related Documentation
+
+- [Authentication](./authentication.md) - User authentication setup
+- [Error Handling](./error_handling.md) - Error handling patterns
+- [TypeScript Types](./typescript_types.md) - Complete type definitions
+- [AiChat Component](./components/ai-chat.md) - AI chat interface component

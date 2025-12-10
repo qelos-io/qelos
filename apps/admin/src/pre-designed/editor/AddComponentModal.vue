@@ -524,6 +524,19 @@ const fontAwesomeIconOptions = [
 
 const optionResolvers: Record<string, () => Array<{ identifier: string, name: string }>> = {
   aiChatUrls: () => aiChatUrlOptions.value,
+  aiIntegrationIds: () => {
+    return integrationsStore.integrations
+      .filter((integration: any) => integration?.trigger?.operation === 'chatCompletion')
+      .map((integration: any) => {
+        const integrationId = integration?._id;
+        const name = integration?.trigger?.details?.name || integration?.name || integrationId;
+        return {
+          identifier: integrationId,
+          name: name || integrationId
+        };
+      })
+      .filter((option): option is { identifier: string, name: string } => Boolean(option.identifier));
+  },
   faIcons: () => fontAwesomeIconOptions,
 };
 

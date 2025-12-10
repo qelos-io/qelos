@@ -14,6 +14,7 @@ import AiChat from '@/modules/pre-designed/components/AiChat.vue';
 import { useComponentsList } from '@/modules/blocks/store/components-list';
 import kebabCase from 'lodash.kebabcase';
 import MockAiChat from '@/pre-designed/editor/MockAiChat.vue';
+import MockThreadsList from '@/pre-designed/editor/MockThreadsList.vue';
 import TemplatedRemoveButton from '@/modules/pre-designed/components/TemplatedRemoveButton.vue';
 import TemplatedEditButton from '@/modules/pre-designed/components/TemplatedEditButton.vue';
 import TemplatedViewButton from '@/modules/pre-designed/components/TemplatedViewButton.vue';
@@ -35,6 +36,7 @@ import CopyToClipboard from '@/modules/pre-designed/components/CopyToClipboard.v
 import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
 import LifeCycle from '@/modules/pre-designed/components/LifeCycle.vue';
 import AssetUploader from '@/modules/assets/components/AssetUploader.vue';
+import ThreadsList from '@/modules/pre-designed/components/ThreadsList.vue';
 
 
 export interface EditorComponent {
@@ -57,7 +59,7 @@ export interface EditorComponent {
     placeholder?: string,
     options?: Array<{ identifier: string, name: string }>,
     selectOptions?: Record<string, any>,
-    optionsResolver?: 'aiChatUrls' | 'faIcons' | string,
+    optionsResolver?: 'aiChatUrls' | 'aiIntegrationIds' | 'faIcons' | string,
     value?: any,
     bind?: boolean,
     source: string,
@@ -692,6 +694,26 @@ export function useEditorComponents() {
       icon: 'upload-filled',
       capabilities: ['data'],
       requiredProps: []
+    },
+    'threads-list': {
+      component: ThreadsList,
+      mock: MockThreadsList,
+      title: 'Threads List',
+      description: 'Display and manage AI chat threads with pagination and actions.',
+      category: 'messaging',
+      tags: ['ai', 'threads', 'conversation'],
+      icon: 'chat-dot-round',
+      capabilities: ['ai', 'data'],
+      docUrl: 'https://docs.qelos.io/components/threads-list',
+      requiredProps: [
+        { prop: 'title', label: 'Title', type: 'text', source: 'manual', placeholder: 'Threads', value: 'Threads' },
+        { prop: 'show-header', label: 'Show Header', type: 'switch', source: 'manual', bind: true, value: true },
+        { prop: 'allow-create', label: 'Allow Create Thread', type: 'switch', source: 'manual', bind: true, value: true },
+        { prop: 'allow-delete', label: 'Allow Delete Thread', type: 'switch', source: 'manual', bind: true, value: true },
+        { prop: 'integration', label: 'Integration', type: 'select', source: 'manual', placeholder: 'Select AI integration for threads', description: 'Choose the AI integration to filter threads by', optionsResolver: 'aiIntegrationIds', selectOptions: { filterable: true, defaultFirstOption: true } },
+        { prop: 'limit', label: 'Page Size', type: 'number', source: 'manual', placeholder: '20', value: 20 },
+        { prop: 'auto-load', label: 'Auto Load Threads', type: 'switch', source: 'manual', bind: true, value: true }
+      ]
     }
   }
 
