@@ -1,5 +1,5 @@
 <template>
-  <header v-if="loaded && showStandardHeader" :dir="$t('appDirection')" :class="{ 'searching': isSearching, header: true }">
+  <header v-if="loaded && showStandardHeader" :dir="$t('appDirection')" :class="{ 'searching': isSearching, header: true, mobile: $isMobile }">
     <div class="header-left">
       <el-button class="mobile-menu-opener" v-if="$isMobile" text circle size="large" @click="toggle">
         <el-icon>
@@ -142,10 +142,13 @@ header {
   box-shadow: var(--layout-header-shadow, 0 2px 8px rgba(0, 0, 0, 0.05));
   padding-inline: 16px;
   transition: all 0.3s ease;
-  max-width: var(--layout-header-max-width, calc(100vw - var(--nav-width)));
   
   &.searching {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  &:not(.mobile) {
+    max-width: var(--layout-header-max-width, calc(100vw - var(--nav-width)));
   }
 }
 
