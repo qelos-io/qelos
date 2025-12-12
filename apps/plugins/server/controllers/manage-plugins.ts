@@ -159,11 +159,11 @@ export async function createPlugin(req, res) {
 
 export async function updatePlugin(req, res) {
   try {
-    const plugin = await Plugin.findOne({ tenant: req.headers.tenant, _id: req.params.pluginId });
+    const plugin = await Plugin.findOne({ tenant: req.headers.tenant, _id: req.params.pluginId }).exec();
     if (!plugin) {
       throw new Error('plugin not found');
     }
-    const { tenant: top_p, token, auth, hardReset = false, ...allowedChanges } = req.body;
+    const { tenant: _, token, auth, clearToken, hardReset = false, __v, ...allowedChanges } = req.body;
 
     const newRefreshToken = allowedChanges.authAcquire?.refreshToken;
     Object.assign(plugin, allowedChanges);
@@ -187,6 +187,8 @@ export async function updatePlugin(req, res) {
 
     if (token) {
       plugin.token = token;
+    } else if (clearToken) {
+      plugin.token = '';
     }
 
     await plugin.save();
