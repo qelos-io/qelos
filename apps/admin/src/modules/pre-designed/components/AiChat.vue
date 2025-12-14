@@ -748,6 +748,11 @@ async function send() {
           // Optionally handle connection established
           continue;
         }
+        if (data.type === "continuing_conversation") {
+          // Reset aiMsg for a new response after function calls
+          aiMsg.content = "";
+          continue;
+        }
         if (data.type === "chunk") {
           if (data.content) {
             aiMsg.content += data.content;
@@ -867,9 +872,6 @@ onMounted(() => {
     openFilePicker
   });
 });
-
-
-
 </script>
 
 <style scoped>
