@@ -763,6 +763,10 @@ async function send() {
         } else if (data.type === "followup_chunk") {
           // Handle followup chunks from function calling
           if (data.content) {
+            // Only add a space if the content doesn't start with one and the last message doesn't end with one
+            if (aiMsg.content && !aiMsg.content.endsWith(' ') && !data.content.startsWith(' ')) {
+              aiMsg.content += ' ';
+            }
             aiMsg.content += data.content;
             // Force Vue reactivity for live updates
             const idx = messages.findIndex((m) => m.id === aiMsg.id);
