@@ -106,7 +106,7 @@ export async function processChatCompletion(req: any, res: any, systemPrompt: an
 
   const aiService = createAIService(source, sourceAuthentication);
   const safeUserMessages = getSafeUserMessages(options.messages);
-  const initialMessages = (options.pre_messages || []).concat(systemPrompt);
+  const initialMessages = systemPrompt ? (options.pre_messages || []).concat(systemPrompt) : options.pre_messages || [];
   const sourceDetails = options.details || {};
   
   // Get tools based on the provided function
