@@ -35,7 +35,7 @@ function migrate() {
       themeStylesUrl: '',
       homeScreen: '/',
       scriptUrl: '',
-      websiteUrls: ['localhost:3000', '127.0.0.1'],
+      websiteUrls: ['localhost:3000', '127.0.0.1', 'localhost'],
       colorsPalette: {
         mainColor: "#4d1438",
         textColor: "#000",
