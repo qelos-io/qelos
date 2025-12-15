@@ -21,6 +21,7 @@ The token usage event is emitted after every successful AI chat completion, whet
   eventName: 'token_usage', // Event name
   description: string,      // Description of the event
   metadata: {
+    workspace?: string,
     provider: string,           // AI provider ('openai', 'anthropic', 'gemini')
     sourceId?: string,          // Source configuration ID
     integrationId?: string,     // Integration ID
@@ -33,7 +34,6 @@ The token usage event is emitted after every successful AI chat completion, whet
     },
     stream: boolean,             // Whether this was a streaming request
     context?: any,              // Additional context information
-    timestamp: string,          // ISO timestamp of the event
   }
 }
 ```

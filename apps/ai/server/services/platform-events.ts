@@ -151,6 +151,7 @@ export function emitTokenUsageEvent(params: BaseEventParams & {
     eventName: 'token_usage',
     description: `AI token usage for ${params.provider}`,
     metadata: {
+      workspace: params.context?.workspaceId,
       provider: params.provider,
       sourceId: params.sourceId,
       integrationId: params.integrationId,
@@ -159,7 +160,6 @@ export function emitTokenUsageEvent(params: BaseEventParams & {
       usage: params.usage,
       stream: params.stream || false,
       context: params.context,
-      timestamp: new Date().toISOString(),
     },
   });
 }
