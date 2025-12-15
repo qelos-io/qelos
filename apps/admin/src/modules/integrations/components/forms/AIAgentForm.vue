@@ -279,6 +279,8 @@ const selectedAISource = computed({
       };
     } else {
       target.value.source = value;
+      // Always ensure the operation is set to chat completion for AI agents
+      target.value.operation = OpenAITargetOperation.chatCompletion;
     }
   }
 });
@@ -320,10 +322,18 @@ const temperature = computed({
 });
 
 const maxTokens = computed({
-  get: () => target.value?.details?.max_tokens || 1000,
+  get: () => target.value?.details?.max_tokens || 10000,
   set: (value: number) => {
     if (!target.value?.details) return;
     target.value.details.max_tokens = value;
+  }
+});
+
+const responseFormat = computed({
+  get: () => target.value?.details?.response_format,
+  set: (value: any) => {
+    if (!target.value?.details) return;
+    target.value.details.response_format = value;
   }
 });
 
@@ -395,6 +405,11 @@ watch([trigger, target], ([newTrigger, newTarget]) => {
       operation: OpenAITargetOperation.chatCompletion,
       details: newTarget?.details || {}
     };
+  }
+  
+  // For new agents (no integrationId), always ensure target operation is chat completion
+  if (!props.integrationId && target.value) {
+    target.value.operation = OpenAITargetOperation.chatCompletion;
   }
 }, { immediate: true, deep: true });
 
@@ -918,6 +933,38 @@ watch([contextBlueprints, includeUserContext, includeWorkspaceContext], (newValu
               />
               <template #extra>
                 <small class="form-hint">{{ $t('Maximum length of the AI response (up to {max})', { max: maxTokensLimit }) }}</small>
+              </template>
+            </el-form-item>
+
+            <!-- Response Format -->
+            <el-form-item>
+              <template #label>
+                <span>{{ $t('Response Format') }}</span>
+                <el-tooltip :content="$t('Constrains the model output to a specific format. JSON mode ensures valid JSON output.')" placement="top">
+                  <i class="el-icon-question" style="margin-left: 4px;"></i>
+                </el-tooltip>
+              </template>
+              <el-select
+                v-model="responseFormat"
+                :placeholder="$t('Select response format')"
+                clearable
+                size="large"
+                class="w-full"
+              >
+                <el-option
+                  :label="$t('Default (no format constraint)')"
+                  :value="undefined"
+                />
+                <el-option
+                  :label="$t('JSON Object')"
+                  :value="{ type: 'json_object' }"
+                />
+              </el-select>
+              <template #extra>
+                <div class="info-box" v-if="responseFormat?.type === 'json_object'" style="margin-top: 8px;">
+                  <i class="el-icon-warning" style="color: #e6a23c; margin-right: 4px;"></i>
+                  <small style="color: #e6a23c;">{{ $t('When using JSON mode, you must instruct the model to produce JSON in your system message or user prompt.') }}</small>
+                </div>
               </template>
             </el-form-item>
           </el-form>
