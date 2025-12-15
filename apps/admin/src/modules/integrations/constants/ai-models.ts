@@ -76,6 +76,42 @@ export const OPENAI_MODELS: AIModel[] = [
     contextWindow: 1000000,
     provider: 'openai'
   },
+  { 
+    label: 'GPT-5.2', 
+    identifier: 'gpt-5.2', 
+    value: 'gpt-5.2', 
+    description: 'Latest GPT-5.2 model',
+    maxTokens: 200000,
+    contextWindow: 1000000,
+    provider: 'openai'
+  },
+  { 
+    label: 'GPT-5.2 Mini', 
+    identifier: 'gpt-5.2-mini', 
+    value: 'gpt-5.2-mini', 
+    description: 'GPT-5.2 optimized version',
+    maxTokens: 128000,
+    contextWindow: 128000,
+    provider: 'openai'
+  },
+  { 
+    label: 'GPT-5.2 Turbo', 
+    identifier: 'gpt-5.2-turbo', 
+    value: 'gpt-5.2-turbo', 
+    description: 'GPT-5.2 turbo version',
+    maxTokens: 200000,
+    contextWindow: 1000000,
+    provider: 'openai'
+  },
+  { 
+    label: 'GPT-5.2 Turbo Preview', 
+    identifier: 'gpt-5.2-turbo-preview', 
+    value: 'gpt-5.2-turbo-preview', 
+    description: 'GPT-5.2 turbo preview',
+    maxTokens: 200000,
+    contextWindow: 1000000,
+    provider: 'openai'
+  },
   
   // GPT-4o Series
   { 
