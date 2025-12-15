@@ -5,6 +5,7 @@ import { getSourceById } from "../services/source-service";
 import { processGeneralChatCompletion } from "../services/system-agents/general-agent";
 import { processPagesChatCompletion } from "../services/system-agents/pages-agent";
 import { processIntegrationsChatCompletion } from "../services/system-agents/integrations-agent";
+import { processPlainChatCompletion } from "../services/system-agents/plain-agent";
 
 // System prompts are now imported from the service
 
@@ -70,4 +71,8 @@ export async function internalChatCompletion(req, res) {
   } catch {
     res.json({message: 'failed to execute chat completion'}).end();
   }
+}
+
+export async function chatCompletionPlain(req, res) {
+  await processPlainChatCompletion(req, res);
 }

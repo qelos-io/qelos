@@ -14,7 +14,8 @@ import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import { ElMessage } from 'element-plus';
 import { getPlural } from '@/modules/core/utils/texts';
-import { ALL_AI_MODELS, getMaxTokensForModel, getModelsByProvider, getProviderFromSourceKind } from '@/modules/integrations/constants/ai-models';
+import { getMaxTokensForModel, getModelsByProvider, getProviderFromSourceKind } from '@/modules/integrations/constants/ai-models';
+import AiPromptButton from '@/modules/admins/components/AiPromptButton.vue';
 
 const props = defineProps<{
   integrationId?: string;
@@ -539,6 +540,91 @@ watch([contextBlueprints, includeUserContext, includeWorkspaceContext], (newValu
     generateDataManipulation();
   }
 }, { deep: true });
+
+// AI generation functions
+const agentSchema = {
+  type: "object",
+  properties: {
+    name: { type: "string", description: "A clear, concise name for the agent" },
+    system_message: { type: "string", description: "The system prompt defining the agent's role, tone, and responsibilities" },
+    model: { type: "string", description: "The AI model to use (e.g., gpt-4, claude-3-5-sonnet-20241022, gemini-1.5-pro)" },
+    maxTokens: { type: "number", description: "Maximum tokens for the response (e.g., 4096, 8192, 16384)" },
+    temperature: { type: "number", description: "Controls randomness (0.0-2.0, lower = more focused)" },
+    recordThread: { type: "boolean", description: "Whether to record conversation threads" },
+    includeUserContext: { type: "boolean", description: "Whether to include user information in context" },
+    includeWorkspaceContext: { type: "boolean", description: "Whether to include workspace information in context" },
+    permissions: { 
+      type: "object",
+      properties: {
+        canReadFiles: { type: "boolean", description: "Can read uploaded files" },
+        canBrowseWeb: { type: "boolean", description: "Can browse the web" },
+        canExecuteCode: { type: "boolean", description: "Can execute code snippets" },
+        canAccessApis: { type: "boolean", description: "Can make API calls" }
+      }
+    }
+  },
+  required: ["name", "system_message"]
+};
+
+const getAgentPrompt = async () => {
+  return {
+    prompt: `Based on the following description, generate a complete AI agent configuration:\n\nDescription: ${agentDescription.value}\n\nGenerate appropriate values for the agent configuration. Consider:\n1. A suitable AI model (use gpt-4 for complex tasks, gpt-4-turbo for general use, claude-3-5-sonnet for nuanced reasoning, or gemini-1.5-pro for multimodal tasks)\n2. Appropriate max tokens (4096 for simple responses, 8192+ for detailed analysis)\n3. Temperature setting (0.7 for creative tasks, 0.3-0.5 for analytical tasks)\n4. Relevant permissions based on the agent's purpose\n\nThe system message should be detailed and professional, defining the agent's role, tone, and specific responsibilities.`,
+    schema: agentSchema
+  };
+};
+
+const handleAiGeneratedAgent = (result: any) => {
+  // Update agent name
+  if (result.name) {
+    agentName.value = result.name;
+  }
+  
+  // Update system message
+  if (result.system_message) {
+    systemMessage.value = result.system_message;
+  }
+  
+  // Update model if it exists
+  if (result.model && target.value?.details) {
+    target.value.details.model = result.model;
+  }
+  
+  // Update max tokens if it exists
+  if (result.maxTokens && target.value?.details) {
+    target.value.details.max_tokens = result.maxTokens;
+  }
+  
+  // Update temperature if it exists
+  if (result.temperature !== undefined && target.value?.details) {
+    target.value.details.temperature = result.temperature;
+  }
+  
+  // Update recording option
+  if (typeof result.recordThread === 'boolean') {
+    recordThread.value = result.recordThread;
+  }
+  
+  // Update context options
+  if (typeof result.includeUserContext === 'boolean') {
+    includeUserContext.value = result.includeUserContext;
+  }
+  
+  if (typeof result.includeWorkspaceContext === 'boolean') {
+    includeWorkspaceContext.value = result.includeWorkspaceContext;
+  }
+  
+  // Update permissions if they exist
+  if (result.permissions && target.value?.details) {
+    target.value.details.permissions = result.permissions;
+  }
+  
+  ElMessage.success('Agent configuration generated successfully');
+};
+
+const handleAiError = (error: any) => {
+  console.error('Failed to generate agent configuration:', error);
+  ElMessage.error('Failed to generate agent configuration');
+};
 </script>
 
 <template>
@@ -635,7 +721,20 @@ watch([contextBlueprints, includeUserContext, includeWorkspaceContext], (newValu
               />
             </el-form-item>
 
-            <el-form-item :label="$t('Agent Description')">
+            <el-form-item>
+              <template #label>
+                <div class="form-item-with-button">
+                  <span>{{ $t('Agent Description') }}</span>
+                  <AiPromptButton
+                    size="small"
+                    :disabled="!agentDescription"
+                    :prompt="getAgentPrompt"
+                    :schema="agentSchema"
+                    @result="handleAiGeneratedAgent"
+                    @error="handleAiError"
+                  />
+                </div>
+              </template>
               <el-input
                 v-model="agentDescription"
                 type="textarea"
@@ -1166,6 +1265,31 @@ watch([contextBlueprints, includeUserContext, includeWorkspaceContext], (newValu
 
 .w-full {
   width: 100%;
+}
+
+.form-item-with-button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.form-item-with-button .ai-prompt-button {
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.form-item-with-button .ai-prompt-button .el-select {
+  width: 120px !important;
+}
+
+.form-item-with-button .ai-prompt-button .el-button {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.form-item-with-button .ai-prompt-button .el-button .el-icon {
+  font-size: 12px;
 }
 
 .sticky-panel {
