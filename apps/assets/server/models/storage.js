@@ -16,6 +16,29 @@ const StorageSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  imageOptimization: {
+    type: {
+      enabled: {
+        type: Boolean,
+        default: true,
+      },
+      quality: {
+        type: Number,
+        default: 85,
+        min: 0,
+        max: 100,
+      },
+      formats: {
+        type: [String],
+        default: ['jpeg', 'jpg', 'png', 'webp', 'gif']
+      },
+    },
+    default: {
+      enabled: true,
+      quality: 100,
+      formats: ['jpeg', 'jpg', 'png', 'webp', 'gif']
+    },
+  },
   metadata: {
     publicUrl: {
       type: String,
