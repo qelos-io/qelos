@@ -556,7 +556,7 @@ export async function handleNonStreamingChatCompletion(
   }
 }
 
-export async function generateThreadTitle({aiService, model, messages, tryAgain}: {aiService: any, model: string, messages: any[], tryAgain?: boolean}): Promise<string> {
+export async function generateThreadTitle({aiService, model, messages, tryAgain, loggingContext}: {aiService: any, model: string, messages: any[], tryAgain?: boolean, loggingContext?: any}): Promise<string> {
   const result = await aiService.createChatCompletion({
     model,
     messages: [
@@ -573,7 +573,8 @@ export async function generateThreadTitle({aiService, model, messages, tryAgain}
         role: 'user',
         content: 'give me the title for this conversation: ' + JSON.stringify(messages.filter(({role}) => role === 'user').slice(0, tryAgain ? 6 : 3))
       }
-    ]
+    ],
+    loggingContext,
   });
   const { title } = JSON.parse(result.choices[0].message.content);
 

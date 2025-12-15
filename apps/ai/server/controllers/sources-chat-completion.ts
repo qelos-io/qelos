@@ -60,6 +60,11 @@ export async function internalChatCompletion(req, res) {
       stream: false,
       max_tokens: payload.max_tokens || source.metadata.defaultMaxTokens,
       response_format: payload.response_format || source.metadata.defaultResponseFormat,
+      loggingContext: {
+        tenant: req.headers.tenant,
+        userId: req.user?._id?.toString(),
+        workspaceId: req.workspace?._id?.toString(),
+      },
     })
     res.json(response).end();
   } catch {

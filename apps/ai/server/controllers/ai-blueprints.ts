@@ -1,6 +1,5 @@
 import { AIMessageTemplates } from "../services/ai-message-templates";
 import { createAIService } from "../services/ai-service";
-import { createBlueprint } from "../services/no-code-service";
 
 export async function createBlueprintUsingAI(req, res) {
   const tenant = req.headers.tenant;
@@ -21,7 +20,12 @@ export async function createBlueprintUsingAI(req, res) {
         content: `describe the list of blueprints (db models) for the following app idea: ${req.body.prompt}`
       }
     ],
-    stream: false
+    stream: false,
+    loggingContext: {
+      tenant,
+      userId: req.user?._id?.toString(),
+      workspaceId: req.workspace?._id?.toString(),
+    },
   });
 
 
@@ -32,7 +36,12 @@ export async function createBlueprintUsingAI(req, res) {
     const blueprintResponse = await aiService.createChatCompletion({
       model: req.source.metadata.defaultModel || 'gpt-4o',
       messages: AIMessageTemplates.getBlueprintGenerationMessages(blueprintDescription, response.choices[0].message.content, req.body.prompt),
-      stream: false
+      stream: false,
+      loggingContext: {
+        tenant,
+        userId: req.user?._id?.toString(),
+        workspaceId: req.workspace?._id?.toString(),
+      },
     });
 
     const blueprintProperties = blueprintResponse.choices[0].message.content;

@@ -502,7 +502,7 @@ export async function chatCompletion(req: any, res: any | null) {
           tenant: req.headers.tenant,
           workspace: req.workspace,
           integration: fullAgent,
-          integrationSourceTargetAuthentication: (await getSourceAuthentication(req.headers.tenant, fullAgent.target.source?._id || fullAgent.target.source))?.authentication
+          integrationSourceTargetAuthentication: (await getSourceAuthentication(req.headers.tenant, (fullAgent.target.source as any)?._id || fullAgent.target.source))?.authentication
         }, null);
       }
     }));
@@ -534,6 +534,13 @@ export async function chatCompletion(req: any, res: any | null) {
       unsafeUserContext: Object.keys(options?.context || {}).length > 0 ? options.context : undefined,
       response_format: options.response_format || integration.target.details.response_format,
       tools,
+      loggingContext: {
+        tenant: integration.tenant,
+        userId: req.user?._id?.toString(),
+        workspaceId: req.workspace?._id?.toString(),
+        integrationId: integration._id,
+        integrationName: integration.name,
+      },
     };
 
     // Custom function to execute function calls for this controller
@@ -587,6 +594,7 @@ export async function chatCompletion(req: any, res: any | null) {
         model: chatOptions.model,
         messages: thread.messages || [],
         tryAgain: !!thread.title,
+        loggingContext: chatOptions.loggingContext,
       }).catch(() => {
         return '*No Title';
       });
@@ -645,6 +653,11 @@ export async function internalChatCompletion(req, res) {
       stream: false,
       max_tokens: payload.max_tokens || source.metadata.defaultMaxTokens,
       response_format: payload.response_format || source.metadata.defaultResponseFormat,
+      loggingContext: {
+        tenant: req.headers.tenant,
+        userId: req.user?._id?.toString(),
+        workspaceId: req.workspace?._id?.toString(),
+      },
     })
     res.json(response).end();
   } catch {

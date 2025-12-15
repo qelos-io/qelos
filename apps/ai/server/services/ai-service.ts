@@ -2,7 +2,7 @@ import { OpenAI } from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import logger from './logger';
-import { emitAIProviderErrorEvent } from './platform-events';
+import { emitAIProviderErrorEvent, emitTokenUsageEvent } from './platform-events';
 
 // Define interfaces for better type safety
 interface AIServiceOptions {
@@ -18,6 +18,13 @@ interface AIServiceOptions {
   response_format?: any;
   unsafeUserContext?: Record<string, string>;
   stream?: boolean;
+  loggingContext?: {
+    tenant?: string;
+    userId?: string;
+    workspaceId?: string;
+    integrationId?: string;
+    integrationName?: string;
+  };
 }
 
 function createGeminiService(source: AIServiceSource, authentication: AIServiceAuthentication) {
@@ -66,7 +73,29 @@ function createGeminiService(source: AIServiceSource, authentication: AIServiceA
       try {
         const result = await model.generateContent(payload);
         const response = result.response ?? result;
-        return transformGeminiResponseToOpenAI(response, modelName);
+        const transformedResponse = transformGeminiResponseToOpenAI(response, modelName);
+        
+        // Emit token usage event
+        if (response.usageMetadata && options.loggingContext?.tenant) {
+          emitTokenUsageEvent({
+            tenant: options.loggingContext.tenant,
+            userId: options.loggingContext.userId,
+            provider: source.kind,
+            sourceId: source._id,
+            integrationId: options.loggingContext.integrationId,
+            integrationName: options.loggingContext.integrationName,
+            model: modelName,
+            usage: {
+              prompt_tokens: response.usageMetadata.promptTokenCount || 0,
+              completion_tokens: response.usageMetadata.candidatesTokenCount || 0,
+              total_tokens: response.usageMetadata.totalTokenCount || 0,
+            },
+            stream: false,
+            context: options.loggingContext,
+          });
+        }
+        
+        return transformedResponse;
       } catch (error: any) {
         logger.error('Error creating chat completion with Gemini', error);
         emitAIProviderErrorEvent({
@@ -88,7 +117,7 @@ function createGeminiService(source: AIServiceSource, authentication: AIServiceA
 
       try {
         const result = await model.generateContentStream(payload);
-        return createGeminiStreamGenerator(result.stream, modelName);
+        return createGeminiStreamGenerator(result.stream, modelName, options, source);
       } catch (error: any) {
         logger.error('Error creating chat completion stream with Gemini', error);
         emitAIProviderErrorEvent({
@@ -376,7 +405,9 @@ function mapGeminiFinishReason(reason?: string, toolCalls?: any[]) {
   }
 }
 
-async function* createGeminiStreamGenerator(stream: AsyncIterable<any>, modelName: string) {
+async function* createGeminiStreamGenerator(stream: AsyncIterable<any>, modelName: string, options?: AIServiceOptions, source?: AIServiceSource) {
+  let usageEmitted = false;
+  
   for await (const chunk of stream) {
     const candidate = chunk?.candidates?.[0];
     if (!candidate) {
@@ -411,6 +442,27 @@ async function* createGeminiStreamGenerator(stream: AsyncIterable<any>, modelNam
     }
 
     const finishReason = toolCalls.length ? 'tool_calls' : mapGeminiFinishReason(candidate.finishReason);
+
+    // Emit token usage event when usage is available
+    if (chunk.usageMetadata && !usageEmitted && options?.loggingContext?.tenant && source) {
+      emitTokenUsageEvent({
+        tenant: options.loggingContext.tenant,
+        userId: options.loggingContext.userId,
+        provider: source.kind,
+        sourceId: source._id,
+        integrationId: options.loggingContext.integrationId,
+        integrationName: options.loggingContext.integrationName,
+        model: modelName,
+        usage: {
+          prompt_tokens: chunk.usageMetadata.promptTokenCount || 0,
+          completion_tokens: chunk.usageMetadata.candidatesTokenCount || 0,
+          total_tokens: chunk.usageMetadata.totalTokenCount || 0,
+        },
+        stream: true,
+        context: options.loggingContext,
+      });
+      usageEmitted = true;
+    }
 
     yield {
       id: chunk.responseId || `gemini-${Date.now()}`,
@@ -494,6 +546,26 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
           stream: false
         });
         
+        // Emit token usage event
+        if (response.usage && options.loggingContext?.tenant) {
+          emitTokenUsageEvent({
+            tenant: options.loggingContext.tenant,
+            userId: options.loggingContext.userId,
+            provider: source.kind,
+            sourceId: source._id,
+            integrationId: options.loggingContext.integrationId,
+            integrationName: options.loggingContext.integrationName,
+            model: response.model,
+            usage: {
+              prompt_tokens: response.usage.prompt_tokens,
+              completion_tokens: response.usage.completion_tokens,
+              total_tokens: response.usage.total_tokens,
+            },
+            stream: false,
+            context: options.loggingContext,
+          });
+        }
+        
         return response;
       } catch (error: any) {
         logger.error('Error creating chat completion', error);
@@ -524,10 +596,41 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
           max_tokens: options.max_tokens,
           tools: options.tools,
           response_format: options.response_format,
-          stream: true
+          stream: true,
+          stream_options: { include_usage: true }
         });
         
-        return stream;
+        // Create a wrapper stream that emits token usage event when usage is received
+        async function* createStreamWithUsageTracking(originalStream: any, options: AIServiceOptions) {
+          let usageEmitted = false;
+          
+          for await (const chunk of originalStream) {
+            // Emit token usage event if usage data is present and we haven't emitted yet
+            if (chunk.usage && !usageEmitted && options.loggingContext?.tenant) {
+              emitTokenUsageEvent({
+                tenant: options.loggingContext.tenant,
+                userId: options.loggingContext.userId,
+                provider: source.kind,
+                sourceId: source._id,
+                integrationId: options.loggingContext.integrationId,
+                integrationName: options.loggingContext.integrationName,
+                model: chunk.model,
+                usage: {
+                  prompt_tokens: chunk.usage.prompt_tokens,
+                  completion_tokens: chunk.usage.completion_tokens,
+                  total_tokens: chunk.usage.total_tokens,
+                },
+                stream: true,
+                context: options.loggingContext,
+              });
+              usageEmitted = true;
+            }
+            
+            yield chunk;
+          }
+        }
+        
+        return createStreamWithUsageTracking(stream, options);
       } catch (error: any) {
         logger.error('Error creating chat completion stream', error);
         emitAIProviderErrorEvent({
@@ -581,7 +684,29 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
         });
         
         // Transform Anthropic response to OpenAI format for consistency
-        return transformAnthropicResponseToOpenAI(response);
+        const transformedResponse = transformAnthropicResponseToOpenAI(response);
+        
+        // Emit token usage event
+        if (response.usage && options.loggingContext?.tenant) {
+          emitTokenUsageEvent({
+            tenant: options.loggingContext.tenant,
+            userId: options.loggingContext.userId,
+            provider: source.kind,
+            sourceId: source._id,
+            integrationId: options.loggingContext.integrationId,
+            integrationName: options.loggingContext.integrationName,
+            model: response.model,
+            usage: {
+              prompt_tokens: response.usage.input_tokens,
+              completion_tokens: response.usage.output_tokens,
+              total_tokens: (response.usage.input_tokens || 0) + (response.usage.output_tokens || 0),
+            },
+            stream: false,
+            context: options.loggingContext,
+          });
+        }
+        
+        return transformedResponse;
       } catch (error: any) {
         logger.error('Error creating chat completion with Anthropic', error);
         emitAIProviderErrorEvent({
@@ -616,7 +741,8 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
           tools,
         });
         
-        return createAnthropicSDKStreamGenerator(stream);
+        // Return the wrapped stream generator that tracks usage
+        return createAnthropicSDKStreamGenerator(stream, options, source);
       } catch (error: any) {
         logger.error('Error creating chat completion stream with Anthropic', error);
         emitAIProviderErrorEvent({
@@ -744,7 +870,7 @@ function transformAnthropicResponseToOpenAI(response: any) {
 }
 
 // Create an async generator for Anthropic SDK streaming responses
-async function* createAnthropicSDKStreamGenerator(stream: any) {
+async function* createAnthropicSDKStreamGenerator(stream: any, options?: AIServiceOptions, source?: AIServiceSource) {
   let currentMessageId: string | null = null;
   let currentModel: string | null = null;
   let finishReason: string | null = null;
@@ -753,6 +879,7 @@ async function* createAnthropicSDKStreamGenerator(stream: any) {
     number,
     { id: string; name: string; argumentsParts: string[] }
   >();
+  let usageEmitted = false;
 
   const createChunk = (delta: any, finish?: string | null) => ({
     id: currentMessageId || `anthropic-${Date.now()}`,
@@ -834,6 +961,27 @@ async function* createAnthropicSDKStreamGenerator(stream: any) {
       case 'message_delta':
         if (event.delta?.stop_reason) {
           finishReason = mapAnthropicFinishReason(event.delta.stop_reason, hasToolCalls);
+        }
+        
+        // Emit token usage event when usage is available
+        if (event.usage && !usageEmitted && options?.loggingContext?.tenant && source) {
+          emitTokenUsageEvent({
+            tenant: options.loggingContext.tenant,
+            userId: options.loggingContext.userId,
+            provider: source.kind,
+            sourceId: source._id,
+            integrationId: options.loggingContext.integrationId,
+            integrationName: options.loggingContext.integrationName,
+            model: currentModel || 'anthropic',
+            usage: {
+              prompt_tokens: event.usage.input_tokens,
+              completion_tokens: event.usage.output_tokens,
+              total_tokens: (event.usage.input_tokens || 0) + (event.usage.output_tokens || 0),
+            },
+            stream: true,
+            context: options.loggingContext,
+          });
+          usageEmitted = true;
         }
         break;
       case 'content_block_stop':

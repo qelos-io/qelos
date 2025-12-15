@@ -59,6 +59,11 @@ export const createComponentCalling = {
           stream: false,
           max_tokens: source.metadata.defaultMaxTokens,
           response_format: { type: 'json_object' },
+          loggingContext: {
+            tenant: req.headers.tenant,
+            userId: req.user?._id?.toString(),
+            workspaceId: req.workspace?._id?.toString(),
+          },
         });
         const component = await createComponent(req.headers.tenant as string, {
           identifier: name,
@@ -135,6 +140,11 @@ ${componentData.content}`,
         stream: false,
         max_tokens: source.metadata.defaultMaxTokens,
         response_format: { type: 'json_object' },
+        loggingContext: {
+          tenant: req.headers.tenant,
+          userId: req.user?._id?.toString(),
+          workspaceId: req.workspace?._id?.toString(),
+        },
       });
       const component = await updateComponent(req.headers.tenant as string, componentId, {
         content: JSON.parse(response.choices[0].message.content).code,

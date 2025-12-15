@@ -125,3 +125,41 @@ export function emitFunctionExecutionErrorEvent(params: BaseEventParams & {
     },
   });
 }
+
+export function emitTokenUsageEvent(params: BaseEventParams & {
+  provider: string;
+  sourceId?: string;
+  integrationId?: string;
+  integrationName?: string;
+  model: string;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  stream?: boolean;
+}) {
+  if (!params.tenant) {
+    return;
+  }
+
+  emitSafePlatformEvent({
+    tenant: params.tenant,
+    user: params.userId,
+    source: `ai_service:${params.sourceId || params.provider}`,
+    kind: 'ai_service',
+    eventName: 'token_usage',
+    description: `AI token usage for ${params.provider}`,
+    metadata: {
+      provider: params.provider,
+      sourceId: params.sourceId,
+      integrationId: params.integrationId,
+      integrationName: params.integrationName,
+      model: params.model,
+      usage: params.usage,
+      stream: params.stream || false,
+      context: params.context,
+      timestamp: new Date().toISOString(),
+    },
+  });
+}

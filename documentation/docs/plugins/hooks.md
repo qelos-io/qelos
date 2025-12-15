@@ -34,6 +34,12 @@ registerToHook({source: 'auth', kind: 'signup', eventName: 'user-registered'}, (
 | assets | storage-connection-error | gcs-connection-error         |
 | assets | storage-connection-error | ftp-connection-error         |
 | assets | storage-connection-error | cloudinary-connection-error  |
+| ai_service | ai_service           | token_usage                  |
+| ai_service | ai_provider           | chat_completion_error        |
+| ai_service | ai_provider           | chat_completion_stream_error |
+| ai_service | function_execution     | function_execution_failed    |
+| ai_service | function_execution     | function_execution_timeout   |
+| ai_service | data_manipulation      | data-manipulation-failed     |
 
 ## Custom Plugins' events
 
