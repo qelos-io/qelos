@@ -74,9 +74,5 @@ export async function internalChatCompletion(req, res) {
 }
 
 export async function chatCompletionPlain(req, res) {
-<<<<<<< HEAD
   await processPlainChatCompletion(req, res);
-=======
-    await processPlainChatCompletion(req, res);
->>>>>>> f8d4e1ff19674081799b7d7a56082bacbcdf2917
 }
