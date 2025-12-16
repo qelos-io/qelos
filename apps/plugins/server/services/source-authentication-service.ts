@@ -16,7 +16,7 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
   if (
     kind === IntegrationSourceKind.OpenAI
   ) {
-    const { token } = authentication;
+    const { token } = authentication || {};
     if (token !== undefined) {
       await setSecret(tenant, `integration-source-${kind}-${authId}`, { token });
     } else {
@@ -29,7 +29,7 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
     kind === IntegrationSourceKind.ClaudeAi ||
     kind === IntegrationSourceKind.Gemini
   ) {
-    const { token } = authentication;
+    const { token } = authentication || {};
     if (token !== undefined) {
       await setSecret(tenant, `integration-source-${kind}-${authId}`, { token });
     } else {
