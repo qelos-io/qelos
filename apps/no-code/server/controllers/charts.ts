@@ -212,3 +212,97 @@ export async function getCountCard(req, res: Response) {
   const data = await BlueprintEntity.countDocuments(query).exec();
   res.json({ count: data }).end();
 }
+
+export async function getSumCard(req, res: Response) {
+  const blueprint: IBlueprint = req.blueprint;
+  
+  const propToSum: string = req.query.sum?.toString() || '';
+  const propToGroupBy: string = req.query.groupBy?.toString() || '';
+  
+  const sumPropType = blueprint.properties[propToSum]?.type;
+  
+  if (!propToSum || !sumPropType) {
+    res.status(400).json({ message: 'sum property is required' }).end();
+    return;
+  }
+  
+  if (sumPropType !== BlueprintPropertyType.NUMBER) {
+    res.status(400).json({ message: 'sum property must be of type number' }).end();
+    return;
+  }
+  
+  const query = {
+    ...qs.parse(req._parsedUrl.query, { depth: 3 }),
+    ...getEntityQuery({ blueprint, req, permittedScopes: req.permittedScopes })
+  }
+  delete query.sum;
+  delete query.groupBy;
+  delete query.bypassAdmin;
+  
+  // If no groupBy provided, return just the total sum
+  if (!propToGroupBy) {
+    const result = await BlueprintEntity.aggregate([
+      { $match: query },
+      { $group: { _id: null, sum: { $sum: `$metadata.${propToSum}` } } }
+    ]).exec();
+    
+    const totalSum = result.length > 0 ? result[0].sum : 0;
+    res.json({ sum: totalSum }).end();
+    return;
+  }
+  
+  // Group by logic
+  const groupPropType = blueprint.properties[propToGroupBy]?.type;
+  
+  if (!groupPropType) {
+    res.status(400).json({ message: 'groupBy property not found' }).end();
+    return;
+  }
+  
+  if (groupPropType === BlueprintPropertyType.OBJECT) {
+    res.status(400).json({ message: 'cannot group by objects' }).end();
+    return;
+  }
+  
+  let $group;
+  switch (groupPropType) {
+    case BlueprintPropertyType.DATE:
+    case BlueprintPropertyType.DATETIME:
+      $group = {
+        _id: { $dayOfWeek: `$metadata.${propToGroupBy}` },
+        sum: { $sum: `$metadata.${propToSum}` }
+      }
+      break;
+    case BlueprintPropertyType.TIME:
+      $group = {
+        _id: { $hour: `$metadata.${propToGroupBy}` },
+        sum: { $sum: `$metadata.${propToSum}` }
+      }
+      break;
+    case BlueprintPropertyType.STRING:
+    case BlueprintPropertyType.NUMBER:
+    case BlueprintPropertyType.BOOLEAN:
+      $group = {
+        _id: `$metadata.${propToGroupBy}`,
+        sum: { $sum: `$metadata.${propToSum}` }
+      }
+      break;
+    default:
+      res.status(400).json({ message: 'cannot group by objects' }).end();
+      return;
+  }
+  
+  const data = await BlueprintEntity.aggregate([
+    { $match: query },
+    { $group },
+    { $sort: { _id: 1 } }
+  ]).exec();
+  
+  res.json({
+    groups: data.map(d => ({
+      group: d._id,
+      sum: d.sum
+    })),
+    sum: data.reduce((acc, d) => acc + d.sum, 0)
+  }).end();
+}

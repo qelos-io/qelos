@@ -41,4 +41,9 @@ export default class QlBlueprints extends BaseSDK {
     const qs = this.getQueryParams(query);
     return this.callJsonApi<{ count: number }>(`${this.relativePath}/${blueprintKey}/charts/count${qs}`);
   }
+
+  getSum(blueprintKey: string, sumProperty: string, groupByProperty?: string, query?: Record<string, any>) {
+    const qs = this.getQueryParams({ ...query, sum: sumProperty, ...(groupByProperty && { groupBy: groupByProperty }) });
+    return this.callJsonApi<{ groups?: Array<{ group: any; sum: number }>; sum: number }>(`${this.relativePath}/${blueprintKey}/charts/sum${qs}`);
+  }
 }

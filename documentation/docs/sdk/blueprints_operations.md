@@ -153,6 +153,7 @@ Blueprints expose ready-made analytics endpoints that return ECharts-compatible 
 | `GET` | `/api/blueprints/:blueprintIdentifier/charts/:chartType` | Returns a standard chart (line, bar, etc.). Requires the `x` query param with the metadata key to aggregate. |
 | `GET` | `/api/blueprints/:blueprintIdentifier/charts/pie` | Returns a pie chart configuration. Also expects the `x` query param. |
 | `GET` | `/api/blueprints/:blueprintIdentifier/charts/count` | Returns a numeric count for entities matching the supplied filters. |
+| `GET` | `/api/blueprints/:blueprintIdentifier/charts/sum` | Returns sum values grouped by a property. Requires `sum` query param, `groupBy` is optional. |
 
 All endpoints honor the same query parameters that blueprint entity listing supports (`$limit`, `$skip`, filters, etc.) and automatically enforce the caller's permission scopes.
 
@@ -174,9 +175,89 @@ const pieOption = await sdk.blueprints.getPieChart('products', {
 const totalProducts = await sdk.blueprints.getCount('products', {
   published: true
 });
+
+// Sum values grouped by a property
+const salesByRegion = await sdk.blueprints.getSum('orders', 'amount', 'region', {
+  status: 'completed',
+  'metadata.orderDate[$gte]': '2024-01-01'
+});
+// Returns: { groups: [{ group: 'North', sum: 15000 }, { group: 'South', sum: 12000 }], sum: 27000 }
+
+// Total sum without grouping
+const totalSales = await sdk.blueprints.getSum('orders', 'amount', undefined, {
+  status: 'completed',
+  'metadata.orderDate[$gte]': '2024-01-01'
+});
+// Returns: { sum: 27000 }
 ```
 
 Each call returns an object ready to pass directly into `<v-chart>`'s `option` prop or to display as a numeric metric.
+
+### Sum Endpoint Details
+
+The `getSum` method allows you to calculate the sum of a numeric property grouped by another property. This is useful for creating reports like "total sales by region" or "revenue by product category".
+
+#### Parameters
+
+- `blueprintKey` (string): The identifier of the blueprint
+- `sumProperty` (string): The numeric property to sum (must be of type number)
+- `groupByProperty` (optional string): The property to group by (string, number, boolean, date, datetime, or time). If not provided, returns a single total sum.
+- `query` (optional): Additional filters to apply to the data
+
+#### Response Format
+
+When `groupByProperty` is provided:
+```typescript
+{
+  groups: Array<{
+    group: any;  // The grouped value
+    sum: number; // The sum for this group
+  }>;
+  sum: number; // Grand total across all groups
+}
+```
+
+When `groupByProperty` is omitted:
+```typescript
+{
+  sum: number; // Total sum across all matching entities
+}
+```
+
+#### Examples
+
+```typescript
+// Total sales by region
+const salesByRegion = await sdk.blueprints.getSum('orders', 'amount', 'region');
+
+// Total revenue by product category (with filters)
+const revenueByCategory = await sdk.blueprints.getSum('orders', 'total', 'category', {
+  status: 'completed',
+  'metadata.date[$gte]': '2024-01-01',
+  'metadata.date[$lte]': '2024-12-31'
+});
+
+// Total sales amount (no grouping)
+const totalSales = await sdk.blueprints.getSum('orders', 'amount', undefined, {
+  status: 'completed'
+});
+
+// Average order value per customer (using count for division)
+const [orderSum, orderCount] = await Promise.all([
+  sdk.blueprints.getSum('orders', 'amount', 'customerId'),
+  sdk.blueprints.getCount('orders')
+]);
+
+// Calculate average
+const averageOrderValue = orderSum.sum / orderCount.count;
+```
+
+#### Grouping Behavior
+
+- **String/Number/Boolean**: Groups by exact values
+- **Date/Datetime**: Groups by day of week (0=Sunday, 6=Saturday)
+- **Time**: Groups by hour of day (0-23)
+- **Object properties**: Not supported for grouping
 
 ## Managing Blueprints as an Administrator
 
