@@ -61,7 +61,7 @@ interface Props {
   allowCreate?: boolean
   allowDelete?: boolean
   integration?: string
-  limit?: number
+  limit?: number | string
   autoLoad?: boolean
 }
 
@@ -73,6 +73,9 @@ const props = withDefaults(defineProps<Props>(), {
   limit: 20,
   autoLoad: true
 })
+
+// Convert limit to number if it's a string
+const limitNumber = computed(() => typeof props.limit === 'string' ? parseInt(props.limit, 10) : props.limit)
 
 const emit = defineEmits<{
   'create-thread': [thread?: IThread]
@@ -87,7 +90,7 @@ const loadThreads = async () => {
   loading.value = true  
   try {
     const query: any = {
-      limit: props.limit,
+      limit: limitNumber.value,
       sort: '-updated'
     };
     if (props.integration) {

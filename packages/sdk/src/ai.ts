@@ -213,17 +213,19 @@ export default class QlAI extends BaseSDK {
    * Helper method to parse Server-Sent Events stream
    */
   parseSSEStream(stream: ReadableStream<Uint8Array>): ISSEStreamProcessor {
-    const reader = stream.getReader();
-    const decoder = new TextDecoder();
-
     const processStream = async (onData: (data: any) => void | boolean): Promise<void> => {
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      
       try {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+          buffer += decoder.decode(value, { stream: true });
+          let lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() || ""; // Keep incomplete line
 
           for (const line of lines) {
             if (line.startsWith('data: ')) {
@@ -251,24 +253,40 @@ export default class QlAI extends BaseSDK {
       async *[Symbol.asyncIterator]() {
         const reader = stream.getReader();
         const decoder = new TextDecoder();
+        let buffer = "";
+        let chunkCount = 0;
+        
+        console.log('[SDK] Starting stream processing');
         
         try {
           while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+              console.log('[SDK] Stream finished');
+              break;
+            }
 
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
+            chunkCount++;
+            console.log(`[SDK] Received chunk #${chunkCount}, size: ${value?.length || 0}`);
+
+            buffer += decoder.decode(value, { stream: true });
+            let lines = buffer.split(/\r?\n/);
+            buffer = lines.pop() || ""; // Keep incomplete line
 
             for (const line of lines) {
               if (line.startsWith('data: ')) {
                 const data = line.slice(6);
-                if (data === '[DONE]') return;
+                if (data === '[DONE]') {
+                  console.log('[SDK] Received [DONE] signal');
+                  return;
+                }
                 
                 try {
-                  yield JSON.parse(data);
+                  const parsed = JSON.parse(data);
+                  console.log(`[SDK] Parsed data type: ${parsed.type}, content length: ${parsed.content?.length || 0}`);
+                  yield parsed;
                 } catch (e) {
-                  // Skip invalid JSON
+                  console.error('[SDK] Failed to parse JSON:', e, 'Line:', line);
                 }
               }
             }

@@ -227,6 +227,7 @@ import {
   watch,
   computed,
   onMounted,
+  triggerRef,
 } from "vue";
 import { ElMessage } from "element-plus";
 import {
@@ -290,6 +291,10 @@ const shouldRecordThread = computed(() => props.recordThread || props.threadId |
 const chatCompletionUrl = computed(() => {
   if (shouldRecordThread.value) {
     const threadId = props.threadId || localThreadId.value;
+    // Don't modify sources URLs - they're already complete paths
+    if (props.url?.startsWith('/api/ai/sources')) {
+      return props.url;
+    }
     return props.url.includes("[threadId]")
       ? props.url.replace("[threadId]", threadId)
       : props.url.includes(threadId)
@@ -299,8 +304,33 @@ const chatCompletionUrl = computed(() => {
   return props.url;
 });
 
+const isSourcesUrl = computed(() => {
+  return props.url?.startsWith('/api/ai/sources');
+});
+
 function getIntegrationIdFromUrl() {
   return props.url?.split("/api/ai/")[1]?.split("/")[0] || undefined;
+}
+
+async function directStreamChat(url: string, options: any): Promise<ReadableStream<Uint8Array>> {
+  // Get auth headers from SDK to maintain authentication
+  const extraHeaders = await (sdk as any).qlOptions.extraHeaders?.(url) || {};
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 
+      'content-type': 'application/json',
+      'accept': 'text/event-stream',
+      ...extraHeaders
+    },
+    body: JSON.stringify({ ...options, stream: true })
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return response.body!;
 }
 
 async function createThread() {
@@ -345,7 +375,6 @@ async function loadThread(threadId: string) {
     emit("thread-updated", thread);
     return thread;
   } catch (error) {
-    console.error("Failed to load thread:", error);
     return null;
   }
 }
@@ -450,7 +479,6 @@ function addTableCopyButtons() {
               }, 5000);
             })
             .catch((err) => {
-              console.error("Failed to copy table:", err);
             });
         });
       });
@@ -562,7 +590,6 @@ function copyMessage(msg: ChatMessage) {
       })
       .catch((err) => {
         ElMessage.error("Failed to copy message");
-        console.error("Failed to copy message:", err);
       });
   }
 }
@@ -734,49 +761,51 @@ async function send() {
     // Try streaming first
     try {
       let stream;
-      if (shouldRecordThread.value && localThreadId.value) {
+      if (isSourcesUrl.value) {
+        // Use direct fetch for sources URLs
+        stream = await directStreamChat(chatCompletionUrl.value, chatOptions);
+      } else if (shouldRecordThread.value && localThreadId.value) {
         // Use thread-based streaming
         stream = await sdk.ai.streamChatInThread(integrationId, localThreadId.value, chatOptions);
       } else {
         // Use regular streaming
         stream = await sdk.ai.streamChat(integrationId, chatOptions);
       }
-
+      
       // Process the stream using the SDK's parseSSEStream method
-      for await (const data of sdk.ai.parseSSEStream(stream)) {
+      for await (const data of sdk.ai.parseSSEStream(stream)) {        
         if (data.type === "connection_established") {
-          // Optionally handle connection established
           continue;
         }
         if (data.type === "continuing_conversation") {
-          // Reset aiMsg for a new response after function calls
           aiMsg.content = "";
           continue;
         }
         if (data.type === "chunk") {
           if (data.content) {
+            const prevLength = aiMsg.content.length;
             aiMsg.content += data.content;
-            // Force Vue reactivity for live updates
             const idx = messages.findIndex((m) => m.id === aiMsg.id);
             if (idx !== -1) {
-              messages[idx].content = aiMsg.content;
+              setTimeout(() => {
+                messages[idx] = { ...messages[idx], content: aiMsg.content };
+                scrollToBottom();
+              }, 0);
             }
-            scrollToBottom();
           }
-          // If finish_reason is stop, mark as finished
           if (data.chunk?.choices?.[0]?.finish_reason === "stop") {
             break;
           }
         } else if (data.type === "followup_chunk") {
-          // Handle followup chunks from function calling
           if (data.content) {
             aiMsg.content += data.content;
-            // Force Vue reactivity for live updates
             const idx = messages.findIndex((m) => m.id === aiMsg.id);
             if (idx !== -1) {
-              messages[idx].content = aiMsg.content;
+              setTimeout(() => {
+                messages[idx] = { ...messages[idx], content: aiMsg.content };
+                scrollToBottom();
+              }, 0);
             }
-            scrollToBottom();
           }
         } else if (data.type === 'function_executed') {
           let args = {}
@@ -800,9 +829,7 @@ async function send() {
       nextTick(() => {
         setTimeout(addTableCopyButtons, 100);
       });
-    } catch (streamError) {
-      console.warn('Streaming failed, falling back to non-streaming:', streamError);
-      
+    } catch (streamError) {      
       // Fallback to non-streaming chat completion
       try {
         let response;
@@ -820,7 +847,6 @@ async function send() {
         
         aiMsg.content = response.choices?.[0]?.message?.content || "[No response]";
       } catch (fallbackError) {
-        console.error('Both streaming and non-streaming failed:', fallbackError);
         aiMsg.content = "[Error: failed to fetch AI response]";
       }
       
@@ -832,7 +858,6 @@ async function send() {
       });
     }
   } catch (err) {
-    console.error('Chat completion failed:', err);
     aiMsg.content = "[Error: failed to fetch AI response]";
     loading.value = false;
     markUserMessagesAsSent();

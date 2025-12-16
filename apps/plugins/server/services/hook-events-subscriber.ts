@@ -99,7 +99,6 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
 }
 
 hookEvents.on('hook', async (platformEvent: IEvent) => {
-  logger.log('hook event', platformEvent.source, platformEvent.kind, platformEvent.eventName);
   const [awaitedPlugins, awaitedIntegrations] = await Promise.all([
     Plugin.find({
       $and: [
