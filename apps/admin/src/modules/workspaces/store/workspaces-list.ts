@@ -7,6 +7,7 @@ import { fetchAuthUser } from '@/modules/core/store/auth';
 import { IWorkspace } from '@qelos/sdk/workspaces';
 import pubsub from '@/services/pubsub';
 import { api } from '@/services/apis/api';
+import { isImpersonating, impersonatedWorkspace } from '@/modules/core/store/impersonation';
 
 const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesList() {
   const { result, retry, loading, promise } = useDispatcher<IWorkspace[]>(() => workspacesService.getAll(), [])
@@ -23,6 +24,13 @@ const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesL
     }, () => retry())
 
   const activateSilently = async (workspace: IWorkspace) => {
+    // If impersonating, just update localStorage instead of making API call
+    if (isImpersonating.value) {
+      impersonatedWorkspace.value = { _id: workspace._id, name: workspace.name };
+      fetchAuthUser(true).catch();
+      return workspace;
+    }
+    
     // Use axios API instance which includes impersonation headers
     const res = await api.post(`/api/workspaces/${workspace._id}/activate`)
     if (!res.data) {
