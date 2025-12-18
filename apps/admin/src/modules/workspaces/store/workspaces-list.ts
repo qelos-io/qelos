@@ -3,7 +3,7 @@ import { useSubmitting } from '../../core/compositions/submitting'
 import { useConfirmAction } from '../../core/compositions/confirm-action'
 import { defineStore } from 'pinia';
 import workspacesService from '@/services/apis/workspaces-service';
-import { authStore, fetchAuthUser } from '@/modules/core/store/auth';
+import { fetchAuthUser } from '@/modules/core/store/auth';
 import { IWorkspace } from '@qelos/sdk/workspaces';
 import pubsub from '@/services/pubsub';
 import { api } from '@/services/apis/api';
