@@ -521,7 +521,9 @@ export async function chatCompletion(req: any, res: any | null) {
         const fullAgent = await getIntegration(req.headers.tenant, agent._id, true);
         return chatCompletion({
           headers: {...req.headers, tenant: req.headers.tenant, user: req.headers.user},
-          query: {}, // Add empty query object to prevent errors
+          query: {
+            bypassAdmin: req.query.bypassAdmin
+          },
           body: {
             messages: args.messages
           },
