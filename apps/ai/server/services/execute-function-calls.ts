@@ -99,7 +99,7 @@ async function executeBlueprintOperation(
     
     case 'list':
       // Use query if provided, otherwise empty object
-      const {createdFrom, createdTo, updatedFrom, updatedTo, $fields, ...query} = args?.query || {};
+      const {createdFrom, createdTo, updatedFrom, updatedTo, $fields, ...query} = args || {};
       if (createdFrom) {
         query[`metadata.created[$gte]`] = new Date(createdFrom).toJSON();
       }
@@ -112,7 +112,7 @@ async function executeBlueprintOperation(
       if (updatedTo) {
         query[`metadata.updated[$lte]`] = new Date(updatedTo).toJSON();
       }
-      const list =  await getBlueprintEntitiesForUser(tenant, user, blueprintIdentifier, query, bypassAdmin);
+      const list = await getBlueprintEntitiesForUser(tenant, user, blueprintIdentifier, query, bypassAdmin);
       if ($fields instanceof Array) {
         return list.map(row => $fields.reduce((all, field) => {
           all[field] = row[field] || row.metadata[field];
