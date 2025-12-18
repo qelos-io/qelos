@@ -75,6 +75,138 @@ const matchingProducts = await productEntities.getList({
 });
 ```
 
+## Outer Population with $outerPopulate
+
+The `$outerPopulate` parameter allows you to populate related entities from other blueprints that have a relation to the current blueprint. This is useful when you need to fetch child entities or related data in a single query.
+
+### Supported Formats
+
+The `$outerPopulate` parameter supports three formats:
+
+#### 1. String Format
+```typescript
+// Single relation: setKey:blueprintName:scope
+const products = await productEntities.getList({
+  $outerPopulate: 'relatedOrders:orders:workspace'
+});
+
+// Multiple relations: setKey1:blueprint1:scope1,setKey2:blueprint2:scope2
+const products = await productEntities.getList({
+  $outerPopulate: 'relatedOrders:orders:workspace,reviews:reviews:tenant'
+});
+```
+
+#### 2. Array Format
+```typescript
+const products = await productEntities.getList({
+  $outerPopulate: [
+    'relatedOrders:orders:workspace',
+    'reviews:reviews:tenant'
+  ]
+});
+```
+
+#### 3. Object Format (Recommended for advanced use)
+```typescript
+const products = await productEntities.getList({
+  $outerPopulate: {
+    relatedOrders: {
+      target: 'orders',
+      scope: 'workspace',
+      limit: 10,
+      sort: '-created',
+      fields: 'amount,status,created'
+    },
+    reviews: {
+      target: 'reviews',
+      scope: 'tenant',
+      limit: 5,
+      sort: '-rating',
+      fields: ['rating', 'comment', 'created']
+    }
+  }
+});
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `setKey` | string | Yes | The property name where the populated data will be stored |
+| `target` | string | Yes | The blueprint identifier of the related entities |
+| `scope` | string | Yes | Permission scope: `user`, `workspace`, or `tenant` |
+| `limit` | number | No | Maximum number of entities to populate (object format only) |
+| `sort` | string | No | Sort order (e.g., `-created`, `name`) (object format only) |
+| `fields` | string\|string[] | No | Fields to include in the result (object format only) |
+
+### Scope Values
+
+- `user`: Only fetch entities owned by the current user
+- `workspace`: Fetch entities from the current workspace
+- `tenant`: Fetch all entities the user has permission to read
+
+### Example Usage
+
+```typescript
+// Get products with their orders (workspace-scoped)
+const productsWithOrders = await productEntities.getList({
+  $limit: 20,
+  $outerPopulate: {
+    orders: {
+      target: 'orders',
+      scope: 'workspace',
+      limit: 5,
+      sort: '-created',
+      fields: 'amount,status,created'
+    }
+  }
+});
+
+// Result format:
+// [
+//   {
+//     id: 'product1',
+//     name: 'Product 1',
+//     // ... other product fields
+//     orders: [
+//       {
+//         id: 'order1',
+//         amount: 99.99,
+//         status: 'completed',
+//         created: '2024-01-01T00:00:00Z'
+//       },
+//       // ... more orders
+//     ]
+//   },
+//   // ... more products
+// ]
+
+// Get users with their posts (user-scoped)
+const usersWithPosts = await sdk.blueprints.entitiesOf('user').getList({
+  $outerPopulate: 'posts:blog-posts:user'
+});
+
+// Get categories with articles (all-scoped, with limit and sorting)
+const categories = await sdk.blueprints.entitiesOf('category').getList({
+  $outerPopulate: {
+    articles: {
+      target: 'blog-posts',
+      scope: 'tenant',
+      limit: 10,
+      sort: '-publishedAt',
+      fields: ['title', 'publishedAt', 'author']
+    }
+  }
+});
+```
+
+### Important Notes
+
+1. **Relations Required**: The target blueprint must have a relation defined that points to the current blueprint
+2. **Field Filtering**: The `auditInfo` field is automatically excluded from populated results for security
+3. **Performance**: Use `limit` and specific `fields` to improve performance when populating large datasets
+4. **Type Safety**: When using TypeScript, the populated data will be added dynamically to the entity type
+
 ### Getting a Specific Entity
 
 To retrieve a specific entity by its identifier:

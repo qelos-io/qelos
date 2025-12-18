@@ -175,10 +175,13 @@ export async function getAllBlueprintEntities(req, res) {
       res.status(404).json({ message: 'blueprint not found' }).end();
       return;
     }
+    const parsedQuery = qs.parse(req._parsedUrl.query, { depth: 3, duplicates: 'combine' });
     const query = {
-      ...qs.parse(req._parsedUrl.query, { depth: 3, duplicates: 'combine' }),
+      ...parsedQuery,
       ...getEntityQuery({ blueprint, req, permittedScopes })
     }
+    // Store $outerPopulate value before removing from query
+    const outerPopulateValue = parsedQuery.$outerPopulate;
     delete query.$populate;
     delete query.$sort;
     delete query.$limit;
@@ -284,12 +287,41 @@ export async function getAllBlueprintEntities(req, res) {
       })
     }
 
-    // outerPopulate can looks like:
-    // ?$outerPopulate=setKey:blueprintName:scope,setKey:blueprintName:scope
-    if (req.query.$outerPopulate) {
+    // outerPopulate can look like:
+    // String format: ?$outerPopulate=setKey:blueprintName:scope,setKey:blueprintName:scope
+    // or
+    // Array format: ?$outerPopulate=setKey:blueprintName:scope&$outerPopulate=setKey:blueprintName:scope
+    // or
+    // Object format: ?$outerPopulate[setKey]={target: "blueprintName", scope: "user|workspace|all", limit?: number, sort?: string, fields?: "a,b,c"|["a", "b", "c"]}
+    if (outerPopulateValue) {
+      let outerPopulateItems: any[] = [];
+      
+      // Handle different formats
+      if (typeof outerPopulateValue === 'string') {
+        // String format: "setKey:blueprintName:scope,setKey:blueprintName:scope"
+        outerPopulateItems = outerPopulateValue.split(',').map(item => {
+          const [setKey, blueprintName, scope] = item.split(':');
+          return { setKey, target: blueprintName, scope };
+        });
+      } else if (Array.isArray(outerPopulateValue)) {
+        // Array format: ["setKey:blueprintName:scope", "setKey:blueprintName:scope"]
+        outerPopulateItems = outerPopulateValue.flatMap(item => 
+          item.split(',').map(str => {
+            const [setKey, blueprintName, scope] = str.split(':');
+            return { setKey, target: blueprintName, scope };
+          })
+        );
+      } else if (typeof outerPopulateValue === 'object' && outerPopulateValue !== null && !Array.isArray(outerPopulateValue)) {
+        // Object format: { setKey1: { target: "blueprint1", scope: "user", limit: 10 }, setKey2: { ... } }
+        outerPopulateItems = Object.entries(outerPopulateValue).map(([setKey, config]) => ({
+          setKey,
+          ...(config as { target: string; scope: string; limit?: number; sort?: string; fields?: string | string[] })
+        }));
+      }
+      
       const outerEntities = await Promise.all(
-        req.query.$outerPopulate.split(',').map(async (expression: string = '') => {
-          const [setKey, blueprintName, scope] = expression.split(':');
+        outerPopulateItems.map(async (item: any) => {
+          const { setKey, target: blueprintName, scope, limit, sort, fields } = item;
           const queryBuilder = {
             blueprintName,
             scope,
@@ -310,11 +342,37 @@ export async function getAllBlueprintEntities(req, res) {
               entityQuery.workspace = req.workspace?._id;
             }
             entityQuery.indexes = { $in: entities.map(entity => `${relation.key}:${entity.identifier}`) };
+            
+            // Build the find query with optional parameters
+            let findQuery = BlueprintEntity.find(entityQuery);
+            
+            // Apply fields selection if provided
+            if (fields) {
+              const fieldsArray = Array.isArray(fields) ? fields : (typeof fields === 'string' ? fields.split(',') : []);
+              fieldsArray.push('identifier');
+              const selectFields = Array.from(new Set(fieldsArray
+              .map(field => queryBuilder.blueprint.properties[field] ? 'metadata.' + field : field)))
+              .join(' ')
+              findQuery = findQuery.select(selectFields.includes('auditInfo') ? selectFields.replace(/auditInfo/g, '') : selectFields);
+            } else {
+              findQuery = findQuery.select(GLOBAL_PERMITTED_FIELDS);
+            }
+            
+            // Apply sort if provided
+            if (sort) {
+              findQuery = findQuery.sort(sort);
+            }
+            
+            // Apply limit if provided
+            if (limit) {
+              findQuery = findQuery.limit(parseInt(limit));
+            }
+            
             return {
-              entities: await BlueprintEntity.find(entityQuery).select(GLOBAL_PERMITTED_FIELDS).lean().exec(),
+              entities: await findQuery.lean().exec(),
               key: queryBuilder.setKey,
               relationKey: relation.key,
-            }
+            };
           }
         })
       )
@@ -443,7 +501,6 @@ export async function createBlueprintEntity(req, res) {
 
     await entity.save();
     if (blueprint.dispatchers?.create) {
-      logger.log('dispatch create event');
       emitPlatformEvent({
         tenant: entity.tenant,
         user: entity.user?.toString(),
