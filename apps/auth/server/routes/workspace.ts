@@ -17,16 +17,18 @@ import {
 } from '../controllers/workspace'
 import verifyUser from '../middleware/verify-user'
 import { onlyAuthenticated, onlyPrivileged } from '../middleware/auth-check'
+import { handleImpersonation } from '../middleware/impersonation'
 
 const router = getRouter()
 
 router
-  .get('/api/workspaces', verifyUser, onlyAuthenticated, getWorkspaces)
-  .get('/api/workspaces/all', verifyUser, onlyPrivileged, getEveryWorkspaces)
-  .post('/api/workspaces', verifyUser, onlyAuthenticated, createWorkspace)
+  .get('/api/workspaces', verifyUser, handleImpersonation, onlyAuthenticated, getWorkspaces)
+  .get('/api/workspaces/all', verifyUser, handleImpersonation, onlyPrivileged, getEveryWorkspaces)
+  .post('/api/workspaces', verifyUser, handleImpersonation, onlyAuthenticated, createWorkspace)
   .put(
     '/api/workspaces/:workspaceId',
     verifyUser,
+    handleImpersonation,
     onlyAuthenticated,
     getWorkspaceByParams,
     onlyWorkspacePrivileged,
@@ -35,6 +37,7 @@ router
   .delete(
     '/api/workspaces/:workspaceId',
     verifyUser,
+    handleImpersonation,
     onlyAuthenticated,
     getWorkspaceByParams,
     onlyWorkspacePrivileged,
@@ -43,6 +46,7 @@ router
   .get(
     '/api/workspaces/:workspaceId',
     verifyUser,
+    handleImpersonation,
     onlyAuthenticated,
     getWorkspaceByParams,
     getWorkspace
@@ -50,17 +54,18 @@ router
   .get(
     '/api/workspaces/:workspaceId/members',
     verifyUser,
+    handleImpersonation,
     onlyAuthenticated,
     getWorkspaceByParams,
     onlyWorkspacePrivileged,
     getWorkspaceMembers
   )
-  .post('/api/workspaces/:workspaceId/members', verifyUser, onlyPrivileged, getWorkspaceByParams, addWorkspaceMember)
-  .put('/api/workspaces/:workspaceId/members/:userId', verifyUser, onlyAuthenticated, getWorkspaceByParams, onlyWorkspacePrivileged, updateWorkspaceMember)
-  .delete('/api/workspaces/:workspaceId/members/:userId', verifyUser, onlyAuthenticated, getWorkspaceByParams, onlyWorkspacePrivileged, deleteWorkspaceMember)
-  .get('/api/workspaces/:workspaceId/encrypted', verifyUser, onlyPrivileged, getWorkspaceEncryptedData)
-  .post('/api/workspaces/:workspaceId/encrypted', verifyUser, onlyPrivileged, setWorkspaceEncryptedData)
-  .post('/api/workspaces/:workspaceId/activate', verifyUser, onlyAuthenticated, getWorkspaceByParams, activateWorkspace)
+  .post('/api/workspaces/:workspaceId/members', verifyUser, handleImpersonation, onlyPrivileged, getWorkspaceByParams, addWorkspaceMember)
+  .put('/api/workspaces/:workspaceId/members/:userId', verifyUser, handleImpersonation, onlyAuthenticated, getWorkspaceByParams, onlyWorkspacePrivileged, updateWorkspaceMember)
+  .delete('/api/workspaces/:workspaceId/members/:userId', verifyUser, handleImpersonation, onlyAuthenticated, getWorkspaceByParams, onlyWorkspacePrivileged, deleteWorkspaceMember)
+  .get('/api/workspaces/:workspaceId/encrypted', verifyUser, handleImpersonation, onlyPrivileged, getWorkspaceEncryptedData)
+  .post('/api/workspaces/:workspaceId/encrypted', verifyUser, handleImpersonation, onlyPrivileged, setWorkspaceEncryptedData)
+  .post('/api/workspaces/:workspaceId/activate', verifyUser, handleImpersonation, onlyAuthenticated, getWorkspaceByParams, activateWorkspace)
 
 router
   .get('/internal-api/workspaces', verifyInternalCall, getEveryWorkspaces)

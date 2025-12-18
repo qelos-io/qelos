@@ -13,18 +13,19 @@ import {
 import verifyUser from '../middleware/verify-user'
 import { onlyPrivileged } from '../middleware/auth-check'
 import { authConfigCheck } from '../middleware/auth-config-check';
+import { handleImpersonation } from '../middleware/impersonation';
 
 const router = getRouter()
 
 router
-  .get('/api/users', verifyUser, onlyPrivileged, getUsers)
-  .post('/api/users', verifyUser, onlyPrivileged, authConfigCheck, createUser)
-  .post('/api/users/:userId/encrypted', verifyUser, onlyPrivileged, setUserEncryptedData)
-  .get('/api/users/stats', verifyUser, onlyPrivileged, getUsersStats)
-  .get('/api/users/:userId', verifyUser, onlyPrivileged, getUser)
-  .get('/api/users/:userId/encrypted', verifyUser, onlyPrivileged, getUserEncryptedData)
-  .put('/api/users/:userId', verifyUser, onlyPrivileged, authConfigCheck, updateUser)
-  .delete('/api/users/:userId', verifyUser, onlyPrivileged, removeUser);
+  .get('/api/users', verifyUser, handleImpersonation, onlyPrivileged, getUsers)
+  .post('/api/users', verifyUser, handleImpersonation, onlyPrivileged, authConfigCheck, createUser)
+  .post('/api/users/:userId/encrypted', verifyUser, handleImpersonation, onlyPrivileged, setUserEncryptedData)
+  .get('/api/users/stats', verifyUser, handleImpersonation, onlyPrivileged, getUsersStats)
+  .get('/api/users/:userId', verifyUser, handleImpersonation, onlyPrivileged, getUser)
+  .get('/api/users/:userId/encrypted', verifyUser, handleImpersonation, onlyPrivileged, getUserEncryptedData)
+  .put('/api/users/:userId', verifyUser, handleImpersonation, onlyPrivileged, authConfigCheck, updateUser)
+  .delete('/api/users/:userId', verifyUser, handleImpersonation, onlyPrivileged, removeUser);
 
 const internalVerify: any = verifyInternalCall;
 

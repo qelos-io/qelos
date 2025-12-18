@@ -4,11 +4,12 @@ import { getRouter } from '@qelos/api-kit';
 import verifyUser from '../middleware/verify-user';
 import { onlyAuthenticated } from '../middleware/auth-check';
 import { getMe, setMe } from '../controllers/me';
+import { handleImpersonation } from '../middleware/impersonation';
 
 const router = getRouter()
 
 router
-  .get('/api/me', verifyUser, onlyAuthenticated, getMe)
-  .post('/api/me', verifyUser, onlyAuthenticated, setMe);
+  .get('/api/me', verifyUser, handleImpersonation, onlyAuthenticated, getMe)
+  .post('/api/me', verifyUser, handleImpersonation, onlyAuthenticated, setMe);
 
 export default router;

@@ -8,7 +8,6 @@ import logger from '../services/logger';
 import { isObjectId } from '../../helpers/mongo-utils';
 import * as UsersService from '../services/users';
 import { Types, Schema } from 'mongoose';
-import { getImpersonate } from './me';
 
 import ObjectId = Types.ObjectId
 import { getValidMetadata } from '../services/users';
@@ -16,26 +15,12 @@ import Workspace from '../models/workspace';
 
 const privilegedUserFields = 'username phone fullName firstName lastName birthDate roles profileImage socialLogins emailVerified lastLogin';
 
-// Helper function to check for impersonation
-async function checkImpersonation(req: AuthRequest, res: Response): Promise<boolean> {
-  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
-    await getImpersonate(req, res);
-    return true;
-  }
-  return false;
-}
-
 function getUserIdIfExists(_id, tenant) {
   // Use type assertion to avoid complex union type error
   return (User as any).findOne({ _id, tenant }).select('_id').lean().exec();
 }
 
 export function getUsersForAdmin(req: AuthRequest, res: Response): void {
-  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
-    getImpersonate(req, res);
-    return;
-  }
-  
   try {
     // support old versions
     const username = req.query.username?.toString().toLowerCase().trim().replace(/ /g, '+') || undefined;
@@ -79,11 +64,6 @@ export function getUsersForAdmin(req: AuthRequest, res: Response): void {
 }
 
 export function getUsers(req: AuthRequest, res: Response): RequestHandler {
-  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
-    getImpersonate(req, res);
-    return;
-  }
-  
   if (!req.query.users) {
     getUsersForAdmin(req, res);
     return;
@@ -175,11 +155,6 @@ export function getUser(req: AuthRequest, res: Response): RequestHandler {
 }
 
 export async function getUserEncryptedData(req: AuthRequest, res: Response) {
-  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
-    await getImpersonate(req, res);
-    return;
-  }
-  
   const tenant = req.headers.tenant as string;
   if (!tenant) {
     return res.status(401).end();
@@ -200,11 +175,6 @@ export async function getUserEncryptedData(req: AuthRequest, res: Response) {
 }
 
 export async function setUserEncryptedData(req: AuthRequest, res: Response) {
-  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
-    await getImpersonate(req, res);
-    return;
-  }
-  
   const tenant = req.headers.tenant as string;
   if (!tenant) {
     return res.status(401).end();
@@ -224,11 +194,6 @@ export async function setUserEncryptedData(req: AuthRequest, res: Response) {
 }
 
 export async function createUser(req: AuthRequest, res: Response) {
-  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
-    await getImpersonate(req, res);
-    return;
-  }
-  
   const { tenant, name, internalMetadata, metadata, ...userData } = req.body
   const user = new User(userData);
 
@@ -286,11 +251,6 @@ export async function createUser(req: AuthRequest, res: Response) {
 }
 
 export async function updateUser(req: AuthRequest, res: Response) {
-  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
-    await getImpersonate(req, res);
-    return;
-  }
-  
   const {
     username,
     roles,
@@ -364,11 +324,6 @@ export async function updateUser(req: AuthRequest, res: Response) {
 }
 
 export async function removeUser(req: AuthRequest, res: Response) {
-  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
-    await getImpersonate(req, res);
-    return;
-  }
-  
   try {
     await UsersService.deleteUser(req.params.userId, req.headers.tenant);
 
@@ -389,11 +344,6 @@ export async function removeUser(req: AuthRequest, res: Response) {
 }
 
 export async function getUsersStats(req: AuthRequest, res: Response) {
-  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
-    await getImpersonate(req, res);
-    return;
-  }
-  
   try {
     const [users, workspaces] = await Promise.all([
       User.countDocuments({ tenant: req.headers.tenant }).exec(),

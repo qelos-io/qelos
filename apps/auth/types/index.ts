@@ -26,6 +26,30 @@ export interface AuthRequest extends Request {
     profileImage: string,
     roles: string[],
     isPrivileged: boolean,
+    isImpersonating?: boolean,
+    originalAdminId?: string,
+    user: any,
+    workspace?: {
+      _id: string,
+      name: string,
+      roles: string[],
+      labels: string[]
+    }
+  }
+  originalUserPayload?: {
+    sub: string,
+    tenant: string,
+    username: string,
+    email?: string,
+    phone?: string,
+    name: string,
+    fullName: string,
+    firstName: string,
+    lastName: string,
+    birthDate: string,
+    profileImage: string,
+    roles: string[],
+    isPrivileged: boolean,
     user: any
   }
   activeWorkspace?: {
