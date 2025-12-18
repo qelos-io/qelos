@@ -15,6 +15,7 @@
         <el-dropdown-item @click.stop>
           <router-link :to="{name: 'updateProfile'}" @click.stop>{{ $t('Update profile') }}</router-link>
         </el-dropdown-item>
+        <ImpersonationSelector v-if="isImpersonating" />
         <el-dropdown-item
             v-if="isAdmin"
             class="privileged-toggle"
@@ -83,7 +84,9 @@ import { storeToRefs } from 'pinia';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import HeaderUserWorkspacesSelection from '@/modules/core/components/layout/HeaderUserWorkspacesSelection.vue';
-import { isAdmin, isManagingEnabled, isLoadingDataAsUser, isPrivilegedUser } from '@/modules/core/store/auth';
+import ImpersonationSelector from '@/modules/core/components/layout/ImpersonationSelector.vue';
+import { isAdmin, isManagingEnabled, isLoadingDataAsUser } from '@/modules/core/store/auth';
+import { isImpersonating } from '@/modules/core/store/impersonation';
 
 const emit = defineEmits(['open']);
 const { user, logout: logoutApi } = useAuth()

@@ -86,6 +86,19 @@
                 <el-icon><Edit /></el-icon>
               </el-button>
             </el-tooltip>
+            <el-tooltip 
+              v-if="isAdmin && authStore.user?._id !== user._id" 
+              :content="$t('Impersonate User')" 
+              placement="top"
+            >
+              <el-button 
+                type="warning" 
+                circle 
+                @click.stop="impersonate(user)"
+              >
+                <el-icon><User /></el-icon>
+              </el-button>
+            </el-tooltip>
             <el-tooltip :content="$t('Remove User')" placement="top">
               <el-button 
                 type="danger" 
@@ -94,6 +107,7 @@
               >
                 <el-icon><Delete /></el-icon>
               </el-button>
+              
             </el-tooltip>
           </div>
           </div>
@@ -124,12 +138,20 @@
 import { ref, computed, watch } from 'vue';
 import { useRemoveUser } from '../compositions/users';
 import { IUser } from '@/modules/core/store/types/user';
-import { Search, Edit, Delete, Check } from '@element-plus/icons-vue';
+import { Edit, Delete, Check, User } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import { isAdmin, authStore } from '@/modules/core/store/auth';
+import { isImpersonating, impersonatedUser, impersonatedWorkspace } from '@/modules/core/store/impersonation';
+import sdk, { impersonateUser } from '@/services/sdk';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 
 import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 
 const props = defineProps<{ users: IUser[], loading?: boolean }>();
 const emit = defineEmits(['removed']);
+
+// Initialize workspace configuration
+const wsConfig = useWsConfiguration();
 
 // Search and filter state
 const searchQuery = ref('');
@@ -141,6 +163,30 @@ const pageSize = ref(32); // Number of users per page
 const { remove } = useRemoveUser((id) => {
   emit('removed', id);
 });
+
+// Impersonate user functionality
+function impersonate(user: IUser) {
+  const userToImpersonate = {
+    _id: user._id,
+    name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || user.email,
+    email: user.email,
+  };
+
+  // Don't impersonate if trying to impersonate yourself
+  if (userToImpersonate._id === authStore.user?._id) {
+    ElMessage.warning('Cannot impersonate yourself');
+    return;
+  }
+
+  // Use the SDK wrapper which updates the store
+  impersonateUser(userToImpersonate);
+  ElMessage.success(`Now impersonating ${userToImpersonate.name || userToImpersonate.email}`);
+  
+  // Reload the page to apply impersonation
+  setTimeout(() => {
+    window.location.reload();
+  }, 500);
+}
 
 // Extract all unique roles from users for the filter dropdown
 const availableRoles = computed(() => {

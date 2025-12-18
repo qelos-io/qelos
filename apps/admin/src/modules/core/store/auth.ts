@@ -2,6 +2,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { api } from '@/services/apis/api'
 import { IAuthStore } from './types/auth-store'
 import { IUser } from './types/user'
+import { isImpersonating, clearImpersonation } from './impersonation'
 
 const runIdle = typeof window["requestIdleCallback"] === "function" ? requestIdleCallback : setTimeout;
 const ADMIN_DATA_SCOPE_KEY = 'adminLoadingDataAsUser';
@@ -45,6 +46,9 @@ function loadUser() {
 }
 
 export const logout = async () => {
+  // Clear impersonation on logout
+  clearImpersonation();
+  
   authStore.user = null
   authStore.isLoaded = false
   authStore.userPromise = null
@@ -72,6 +76,21 @@ export const fetchAuthUser = async (force: boolean = false, optionalUser: boolea
   if (user?.roles?.length) {
     authStore.user = user;
     handleAdminFeatures();
+    
+    // If impersonation is active, reload user data to ensure fresh data with impersonation context
+    if (isImpersonating.value) {
+      setTimeout(async () => {
+        try {
+          const refreshedUser = await loadUser();
+          if (refreshedUser) {
+            authStore.user = refreshedUser;
+          }
+        } catch (error) {
+          console.error('Failed to refresh user data during impersonation:', error);
+        }
+      }, 100);
+    }
+    
     return user
   } else if (!optionalUser) {
     logout()
@@ -79,6 +98,9 @@ export const fetchAuthUser = async (force: boolean = false, optionalUser: boolea
 }
 
 export const login = async ({ username, password }: { username: string, password: string }) => {
+  // Clear impersonation on new login
+  clearImpersonation();
+  
   const { data: { payload } } = await api.post<{ payload: { user: IUser } }>('/api/signin', {
     username,
     password,

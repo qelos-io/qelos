@@ -4,8 +4,9 @@ import { useConfirmAction } from '../../core/compositions/confirm-action'
 import { defineStore } from 'pinia';
 import workspacesService from '@/services/apis/workspaces-service';
 import { fetchAuthUser } from '@/modules/core/store/auth';
-import { IWorkspace } from '@qelos/sdk/dist/workspaces';
+import { IWorkspace } from '@qelos/sdk/workspaces';
 import pubsub from '@/services/pubsub';
+import { api } from '@/services/apis/api';
 
 const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesList() {
   const { result, retry, loading, promise } = useDispatcher<IWorkspace[]>(() => workspacesService.getAll(), [])
@@ -22,8 +23,9 @@ const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesL
     }, () => retry())
 
   const activateSilently = async (workspace: IWorkspace) => {
-    const res = await fetch(`/api/workspaces/${workspace._id}/activate`, { method: 'POST' })
-    if (!res.ok) {
+    // Use axios API instance which includes impersonation headers
+    const res = await api.post(`/api/workspaces/${workspace._id}/activate`)
+    if (!res.data) {
       throw new Error('failed');
     }
     fetchAuthUser(true).catch();

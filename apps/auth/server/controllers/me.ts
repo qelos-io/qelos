@@ -6,36 +6,45 @@ import { getWorkspaceForUser } from '../services/workspaces';
 async function getImpersonate(req: AuthRequest, res: Response) {
   const userId = req.get('x-impersonate-user')?.toString() as string;
   const workspaceId = req.get('x-impersonate-workspace')?.toString() as string;
-  const [user, workspace] = await Promise.all([
-    getUser({ username: req.get('x-impersonate-user')?.toString() as string, tenant: req.userPayload.tenant }).catch(),
-    workspaceId ? getWorkspaceForUser(req.headers.tenant, userId, workspaceId).catch() : Promise.resolve()
-  ])
+  
+  try {
+    const [user, workspace] = await Promise.all([
+      getUser({ _id: userId, tenant: req.userPayload.tenant }),
+      workspaceId ? getWorkspaceForUser(req.headers.tenant, userId, workspaceId) : Promise.resolve(null)
+    ]);
 
-  if (!user) {
-    return res.status(403).json({ message: 'user not exist' }).end()
-  }
-  if (workspaceId && !workspace) {
-    return res.status(403).json({ message: 'workspace not exist' }).end()
-  }
+    if (!user) {
+      return res.status(403).json({ message: 'user not exist' }).end()
+    }
+    if (workspaceId && !workspace) {
+      return res.status(403).json({ message: 'workspace not exist' }).end()
+    }
 
-  // Use type assertion to access user properties
-  const userObj = user as any;
-  const firstName = userObj.firstName;
-  const lastName = userObj.lastName;
-  const fullName = userObj.fullName || `${firstName} ${lastName}`;
-  res.status(200).json({
-    _id: userObj._id,
-    username: userObj.username,
-    email: userObj.email,
-    name: fullName,
-    firstName,
-    lastName,
-    fullName,
-    roles: userObj.roles,
-    profileImage: userObj.profileImage,
-    metadata: userObj.metadata,
-    workspace
-  }).end();
+    // Use type assertion to access user properties
+    const userObj = user as any;
+    const firstName = userObj.firstName;
+    const lastName = userObj.lastName;
+    const fullName = userObj.fullName || `${firstName} ${lastName}`;
+    res.status(200).json({
+      _id: userObj._id,
+      username: userObj.username,
+      email: userObj.email,
+      name: fullName,
+      firstName,
+      lastName,
+      fullName,
+      roles: userObj.roles,
+      profileImage: userObj.profileImage,
+      metadata: userObj.metadata,
+      workspace
+    }).end();
+  } catch (error) {
+    console.error('Error in getImpersonate:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    console.error('Request headers:', req.headers);
+    console.error('User payload:', req.userPayload);
+    res.status(500).json({ message: 'failed to impersonate user', error: error?.message || 'Unknown error' }).end();
+  }
 }
 
 export async function getMe(req: AuthRequest, res: Response) {

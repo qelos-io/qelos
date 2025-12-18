@@ -123,16 +123,6 @@ const isActiveWorkspace = (workspace) => {
   return authStore.user?.workspace?._id === workspace._id;
 };
 
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat(undefined, { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  }).format(date);
-};
-
 const navigateToEdit = (workspace) => {
   router.push({ name: 'editMyWorkspace', params: { id: workspace._id } });
 };
