@@ -9,6 +9,8 @@ import {
   getBlueprintEntitiesForUser
 } from "./users-no-code-service";
 import { emitFunctionExecutionErrorEvent } from "./platform-events";
+import { stringify } from 'csv-stringify/sync';
+import { flatten } from 'flat';
 
 // Helper function to find target integration by function name
 export function findTargetIntegration(toolsIntegrations: any[], functionName: string) {
@@ -115,6 +117,89 @@ async function executeBlueprintOperation(
     default:
       throw new Error(`Unknown blueprint operation: ${operation}`);
   }
+}
+
+// Helper function to convert array to CSV format
+function convertArrayToCSV(arr: any[]): string {
+  if (!arr || arr.length === 0) {
+    return '';
+  }
+
+  // Check if it's an array of primitives - handle differently
+  const isPrimitiveArray = arr.every(item => 
+    item === null || 
+    typeof item !== 'object' || 
+    (Array.isArray(item) && item.every(subItem => typeof subItem !== 'object'))
+  );
+
+  if (isPrimitiveArray) {
+    // For primitive arrays, create a simple single-column CSV
+    const csvData = arr.map(item => [item]);
+    return stringify(csvData, {
+      header: false,
+      quoted: true,
+      quoted_empty: true
+    });
+  }
+
+  // Flatten all objects in the array
+  const flattenedData = arr.map(item => {
+    if (item && typeof item === 'object' && !Array.isArray(item)) {
+      return flatten(item, { 
+        delimiter: '.', 
+        safe: true,
+        maxDepth: 5
+      });
+    }
+    return { value: item }; // Wrap non-objects
+  });
+
+  // Get all possible keys from flattened objects
+  const allKeys = new Set<string>();
+  for (const item of flattenedData) {
+    if (item && typeof item === 'object') {
+      Object.keys(item).forEach(key => allKeys.add(key));
+    }
+  }
+
+  // Convert Set to sorted array for consistent column order
+  const keys = Array.from(allKeys).sort();
+  
+  // Check if we have too many columns (which might not benefit from CSV)
+  const MAX_COLUMNS = 100;
+  if (keys.length > MAX_COLUMNS) {
+    logger.warn(`Array has ${keys.length} columns, exceeding max of ${MAX_COLUMNS}. CSV conversion may not be beneficial.`);
+    return JSON.stringify(arr); // Return original JSON
+  }
+
+  // Prepare data for csv-stringify
+  const csvData = flattenedData.map(item => {
+    const row: any = {};
+    keys.forEach(key => {
+      row[key] = item && typeof item === 'object' ? item[key] : '';
+    });
+    return row;
+  });
+
+  // Generate CSV with proper options
+  const csvString = stringify(csvData, {
+    header: true,
+    columns: keys,
+    quoted: true,
+    quoted_empty: true,
+    quoted_string: true,
+    escape: '"'
+  });
+
+  // Add metadata header
+  const metadata = [
+    '# CSV converted from JSON array',
+    `# Original rows: ${arr.length}`,
+    `# Columns: ${keys.join(', ')}`,
+    ''
+  ].join('\n');
+
+  return metadata + csvString;
 }
 
 const HEARTBEAT_INTERVAL_MS = 1000;
@@ -351,8 +436,36 @@ export async function executeFunctionCalls(
                 timeoutMs,
                 functionCall.function.name
               );
-              
-              // Add to results array
+
+              if (result instanceof Array) {
+                // Check if array is too large and convert to CSV if needed
+                const jsonString = JSON.stringify(result);
+                const CSV_THRESHOLD = 8192; // ~8KB threshold (roughly 2K tokens)
+                
+                if (jsonString.length > CSV_THRESHOLD && result.length > 0) {
+                  // Check if it's an array of ONLY primitives (which doesn't benefit from CSV)
+                  const isPrimitiveArray = result.every(item => 
+                    item === null || 
+                    typeof item !== 'object'
+                  );
+                  
+                  if (!isPrimitiveArray) {
+                    try {                      
+                      // Convert array to CSV
+                      const csvResult = convertArrayToCSV(result);
+                      
+                      // Only use CSV if it's actually smaller than JSON
+                      if (csvResult.length < jsonString.length) {
+                        result = csvResult;
+                      }
+                    } catch (csvError) {
+                      // Keep original JSON result if CSV conversion fails
+                    }
+                  } else {
+                    logger.info(`Array of primitives detected, CSV conversion not beneficial`);
+                  }
+                }
+              }
               results.push(result);
             } catch (argError) {
               logger.error(`Error executing function call argument for ${functionCall.function.name}:`, argError);
