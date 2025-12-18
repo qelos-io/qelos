@@ -151,11 +151,19 @@ function convertArrayToCSV(arr: any[]): string {
 
   // Flatten all objects in the array
   const flattenedData = arr.map(item => {
+    delete item.__v;
+    delete item.tenant;
+    delete item.blueprint;
+    delete item.indexes;
+    delete item.auditInfo;
+    if (item.id === item.identifier) {
+      delete item.identifier;
+    }
     if (item && typeof item === 'object' && !Array.isArray(item)) {
       return flatten(item, { 
         delimiter: '.', 
         safe: true,
-        maxDepth: 5
+        maxDepth: 4
       });
     }
     return { value: item }; // Wrap non-objects
@@ -167,19 +175,6 @@ function convertArrayToCSV(arr: any[]): string {
     if (item && typeof item === 'object') {
       Object.keys(item).forEach(key => allKeys.add(key));
     }
-  }
-
-  if (allKeys.has('__v')) {
-    allKeys.delete('__v');
-  }
-  if (allKeys.has('tenant')) {
-    allKeys.delete('tenant');
-  }
-  if (allKeys.has('blueprint')) {
-    allKeys.delete('blueprint');
-  }
-  if (allKeys.has('id') && allKeys.has('identifier')) {
-    allKeys.delete('identifier');
   }
 
   // Convert Set to sorted array for consistent column order
