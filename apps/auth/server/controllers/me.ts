@@ -3,7 +3,7 @@ import { Response } from 'express'
 import { AuthRequest } from '../../types'
 import { getWorkspaceForUser } from '../services/workspaces';
 
-async function getImpersonate(req: AuthRequest, res: Response) {
+export async function getImpersonate(req: AuthRequest, res: Response) {
   const userId = req.get('x-impersonate-user')?.toString() as string;
   const workspaceId = req.get('x-impersonate-workspace')?.toString() as string;
   

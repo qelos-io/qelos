@@ -4,8 +4,22 @@ import logger from '../services/logger';
 
 import Workspace, { Invite } from '../models/workspace';
 import { emitPlatformEvent } from '@qelos/api-kit';
+import { getImpersonate } from './me';
+
+// Helper function to check for impersonation
+async function checkImpersonation(req: AuthRequest, res: Response): Promise<boolean> {
+  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
+    await getImpersonate(req, res);
+    return true;
+  }
+  return false;
+}
 
 export async function getInvites(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const { username } = req.userPayload;
   const { tenant } = req.headers;
 
@@ -45,6 +59,10 @@ export async function getInvites(req: AuthRequest, res: Response) {
 }
 
 export async function respondToInvite(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const { workspace: workspaceId, kind = 'decline' } = req.body;
   const { email } = req.userPayload;
   const { tenant } = req.headers;

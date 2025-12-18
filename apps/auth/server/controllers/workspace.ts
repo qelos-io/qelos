@@ -11,6 +11,7 @@ import { cookieTokenExpiration } from '../../config';
 import { getRequestHost } from '../services/req-host';
 import { getWorkspaceConfiguration } from '../services/workspace-configuration';
 import { getEncryptedData, setEncryptedData } from '../services/encrypted-data';
+import { getImpersonate } from './me';
 
 const ObjectId = Types.ObjectId;
 
@@ -20,7 +21,20 @@ function getWorkspaceIdIfExists(_id: string, tenant: string) {
   return (Workspace as any).findOne({ _id, tenant }).select('_id').lean().exec();
 }
 
+// Helper function to check for impersonation
+async function checkImpersonation(req: AuthRequest, res: Response): Promise<boolean> {
+  if (req.userPayload.isPrivileged && req.get('x-impersonate-user')) {
+    await getImpersonate(req, res);
+    return true;
+  }
+  return false;
+}
+
 export async function getWorkspace(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   if (!req.isWorkspacePrivileged) {
     res.status(200).json(req.workspace).end()
     return;
@@ -39,6 +53,10 @@ export async function getWorkspace(req: AuthRequest, res: Response) {
 }
 
 export async function getWorkspaces(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const { tenant } = req.headers || {};
   const userId = req.userPayload.sub;
   try {
@@ -60,6 +78,10 @@ export async function getWorkspaces(req: AuthRequest, res: Response) {
 }
 
 export async function getEveryWorkspaces(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const { tenant } = req.headers || {};
   const dbQuery: any = {
     tenant,
@@ -90,6 +112,10 @@ export async function getEveryWorkspaces(req: AuthRequest, res: Response) {
 }
 
 export async function getWorkspaceEncryptedData(req, res) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const tenant = req.headers.tenant as string;
   if (!tenant) {
     return res.status(401).end();
@@ -110,6 +136,10 @@ export async function getWorkspaceEncryptedData(req, res) {
 }
 
 export async function setWorkspaceEncryptedData(req, res) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const tenant = req.headers.tenant as string;
   if (!tenant) {
     return res.status(401).end();
@@ -129,6 +159,10 @@ export async function setWorkspaceEncryptedData(req, res) {
 }
 
 export async function createWorkspace(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const { tenant } = req.headers || {};
   const userId = req.userPayload.sub;
   const { name, logo, invites = [], labels = [] } = req.body;
@@ -211,6 +245,10 @@ export async function createWorkspace(req: AuthRequest, res: Response) {
 }
 
 export async function updateWorkspace(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const { name, logo, invites, members, labels } = req.body;
   const workspace = req.workspace;
   try {
@@ -264,6 +302,10 @@ export async function updateWorkspace(req: AuthRequest, res: Response) {
 }
 
 export async function deleteWorkspace(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const { tenant } = req.headers || {};
   const userId = req.userPayload.sub;
 
@@ -292,6 +334,10 @@ export async function deleteWorkspace(req: AuthRequest, res: Response) {
 }
 
 export async function activateWorkspace(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const token = getCookieTokenValue(req);
   const tenant = req.headers.tenant;
 
@@ -331,6 +377,10 @@ export async function activateWorkspace(req: AuthRequest, res: Response) {
 }
 
 export async function getWorkspaceMembers(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const { tenant } = req.headers || {};
   const userId = req.userPayload.sub;
   const _id = req.params.workspaceId;
@@ -371,6 +421,10 @@ export async function getWorkspaceMembers(req: AuthRequest, res: Response) {
 }
 
 export async function addWorkspaceMember(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const { tenant } = req.headers || {};
   const { workspaceId } = req.params;
   const { userId, roles } = req.body;
@@ -404,6 +458,10 @@ export async function addWorkspaceMember(req: AuthRequest, res: Response) {
 }
 
 export async function deleteWorkspaceMember(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const { tenant } = req.headers || {};
   const { userId } = req.params;
 
@@ -435,6 +493,10 @@ export async function deleteWorkspaceMember(req: AuthRequest, res: Response) {
 }
 
 export async function updateWorkspaceMember(req: AuthRequest, res: Response) {
+  if (await checkImpersonation(req, res)) {
+    return;
+  }
+  
   const { tenant } = req.headers || {};
   const { workspaceId, userId } = req.params;
   const { roles } = req.body;
