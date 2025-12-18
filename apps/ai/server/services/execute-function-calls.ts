@@ -145,7 +145,7 @@ function convertArrayToCSV(arr: any[]): string {
     return stringify(csvData, {
       header: false,
       quoted: true,
-      quoted_empty: true
+      quoted_empty: true,
     });
   }
 
@@ -167,6 +167,19 @@ function convertArrayToCSV(arr: any[]): string {
     if (item && typeof item === 'object') {
       Object.keys(item).forEach(key => allKeys.add(key));
     }
+  }
+
+  if (allKeys.has('__v')) {
+    allKeys.delete('__v');
+  }
+  if (allKeys.has('tenant')) {
+    allKeys.delete('tenant');
+  }
+  if (allKeys.has('blueprint')) {
+    allKeys.delete('blueprint');
+  }
+  if (allKeys.has('id') && allKeys.has('identifier')) {
+    allKeys.delete('identifier');
   }
 
   // Convert Set to sorted array for consistent column order
