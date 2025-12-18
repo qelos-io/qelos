@@ -10,6 +10,7 @@ import { verifyUserPermissions } from "../services/source-service";
 import { IThread, Thread } from "../models/thread";
 import { getAllBlueprints } from "../services/no-code-service";
 import { emitDataManipulationErrorEvent } from "../services/platform-events";
+import { emitPlatformEvent } from '@qelos/api-kit';
 
 export async function getIntegrationToIntegrate(req, res, next) {
   try {
@@ -79,7 +80,8 @@ export async function getIntegrationToIntegrate(req, res, next) {
 export async function chatCompletion(req: any, res: any | null) {
   const { integration, integrationSourceTargetAuthentication } = req;
   const source = integration.target.source;
-  const useSSE = req.headers.accept?.includes('text/event-stream') || req.query?.stream === 'true';
+  // Force non-streaming mode when res is null (nested agent calls)
+  const useSSE = res && (req.headers.accept?.includes('text/event-stream') || req.query?.stream === 'true');
 
   const thread: IThread | undefined = req.thread;
   let options = req.body || {};
@@ -99,7 +101,7 @@ export async function chatCompletion(req: any, res: any | null) {
     }
   });
 
-  if (useSSE) {
+  if (useSSE && res) {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
@@ -174,7 +176,27 @@ export async function chatCompletion(req: any, res: any | null) {
       },
       error,
     });
-    res.status(500).json({ message: 'Could not calculate prompt or load tools integrations' }).end();
+    emitPlatformEvent({
+      tenant: req.headers.tenant,
+      source: integration._id,
+      kind: integration.trigger.source.kind,
+      eventName: 'ai_chat_completion_failed',
+      description: 'AI chat completion failed - could not calculate prompt or load tools integrations',
+      metadata: {
+        integrationId: integration._id,
+        stage: 'pre_chat',
+        context: {
+          messagesCount: safeUserMessages.length,
+          context: options.context,
+        },
+        error,
+      },
+    });
+    if (res) {
+      res.status(500).json({ message: 'Could not calculate prompt or load tools integrations' }).end();
+    } else {
+      throw { message: 'Could not calculate prompt or load tools integrations', error };
+    }
     return;
   }
 
@@ -189,7 +211,11 @@ export async function chatCompletion(req: any, res: any | null) {
     ]);
   } catch (e: any) {
     logger.error('Failed to load tools integrations or ingested resources', e);
-    res.status(500).json({ message: 'Could not calculate prompt or load tools integrations' }).end();
+    if (res) {
+      res.status(500).json({ message: 'Could not calculate prompt or load tools integrations' }).end();
+    } else {
+      throw { message: 'Could not calculate prompt or load tools integrations', error: e };
+    }
     return;
   }
 
@@ -628,7 +654,7 @@ export async function chatCompletion(req: any, res: any | null) {
     }
   } catch (error) {
     logger.error('Error processing AI chat completion', error);
-    if (useSSE) {
+    if (useSSE && res) {
       res.write(`data: ${JSON.stringify({ type: 'error', message: 'Error processing AI chat completion' })}\n\n`);
       res.end();
     } else if (res) {
