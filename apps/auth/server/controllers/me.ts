@@ -39,10 +39,6 @@ export async function getImpersonate(req: AuthRequest, res: Response) {
       workspace
     }).end();
   } catch (error) {
-    console.error('Error in getImpersonate:', error);
-    console.error('Error details:', JSON.stringify(error, null, 2));
-    console.error('Request headers:', req.headers);
-    console.error('User payload:', req.userPayload);
     res.status(500).json({ message: 'failed to impersonate user', error: error?.message || 'Unknown error' }).end();
   }
 }
