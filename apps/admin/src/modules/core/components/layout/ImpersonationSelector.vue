@@ -24,8 +24,8 @@
 
 <script lang="ts" setup>
 import { ElMessage } from 'element-plus';
-import { isImpersonating, impersonatedUser, impersonatedWorkspace } from '@/modules/core/store/impersonation';
-import sdk, { clearImpersonation as clearImpersonationFn } from '@/services/sdk';
+import { impersonatedUser, impersonatedWorkspace } from '@/modules/core/store/impersonation';
+import { clearImpersonation as clearImpersonationFn } from '@/services/sdk';
 
 const handleClearImpersonation = () => {
   clearImpersonationFn();
