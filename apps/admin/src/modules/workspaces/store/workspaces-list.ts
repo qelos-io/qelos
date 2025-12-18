@@ -3,11 +3,11 @@ import { useSubmitting } from '../../core/compositions/submitting'
 import { useConfirmAction } from '../../core/compositions/confirm-action'
 import { defineStore } from 'pinia';
 import workspacesService from '@/services/apis/workspaces-service';
-import { fetchAuthUser } from '@/modules/core/store/auth';
+import { authStore, fetchAuthUser } from '@/modules/core/store/auth';
 import { IWorkspace } from '@qelos/sdk/workspaces';
 import pubsub from '@/services/pubsub';
 import { api } from '@/services/apis/api';
-import { isImpersonating, impersonatedWorkspace } from '@/modules/core/store/impersonation';
+import { isImpersonating, setImpersonation, impersonatedUser } from '@/modules/core/store/impersonation';
 
 const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesList() {
   const { result, retry, loading, promise } = useDispatcher<IWorkspace[]>(() => workspacesService.getAll(), [])
@@ -26,7 +26,7 @@ const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesL
   const activateSilently = async (workspace: IWorkspace) => {
     // If impersonating, just update localStorage instead of making API call
     if (isImpersonating.value) {
-      impersonatedWorkspace.value = { _id: workspace._id, name: workspace.name };
+      setImpersonation(impersonatedUser.value, {_id: workspace._id, name: workspace.name})
       fetchAuthUser(true).catch();
       return workspace;
     }

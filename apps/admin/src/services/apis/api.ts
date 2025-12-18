@@ -15,13 +15,13 @@ api.interceptors.request.use((config) => {
   if (isImpersonating.value) {
     config.headers = config.headers || {} as AxiosHeaders;
     if (impersonatedUser.value) {
-      (config.headers as any)['x-impersonate-user'] = impersonatedUser.value._id
+      (config.headers as any)['x-impersonate-user'] = impersonatedUser.value._id;
     }
     if (impersonatedWorkspace.value) {
-      (config.headers as any)['x-impersonate-workspace'] = impersonatedWorkspace.value._id
+      (config.headers as any)['x-impersonate-workspace'] = impersonatedWorkspace.value._id;
     }
   }
-  return config
+  return config;
 }, (error) => {
   return Promise.reject(error)
 })
