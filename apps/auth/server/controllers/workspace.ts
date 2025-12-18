@@ -295,6 +295,11 @@ export async function activateWorkspace(req: AuthRequest, res: Response) {
   const token = getCookieTokenValue(req);
   const tenant = req.headers.tenant;
 
+  if (req.userPayload.isImpersonating) {
+    res.json(req.workspace).end();
+    return;
+  }
+
   try {
     const payload = await verifyToken(token, tenant) as any;
     const user = await User
@@ -323,6 +328,7 @@ export async function activateWorkspace(req: AuthRequest, res: Response) {
     );
 
     setCookie(res, getCookieTokenName(tenant), newToken, null, getRequestHost(req));
+
 
     res.json(req.workspace).end()
   } catch (err) {
