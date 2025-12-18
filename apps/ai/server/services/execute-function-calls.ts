@@ -99,20 +99,27 @@ async function executeBlueprintOperation(
     
     case 'list':
       // Use query if provided, otherwise empty object
-      const query = args?.query || {};
-      if (query.createdFrom) {
-        query[`metadata.created[$gte]`] = new Date(query.createdFrom).toJSON();
+      const {createdFrom, createdTo, updatedFrom, updatedTo, $fields, ...query} = args?.query || {};
+      if (createdFrom) {
+        query[`metadata.created[$gte]`] = new Date(createdFrom).toJSON();
       }
-      if (query.createdTo) {
-        query[`metadata.created[$lte]`] = new Date(query.createdTo).toJSON();
+      if (createdTo) {
+        query[`metadata.created[$lte]`] = new Date(createdTo).toJSON();
       }
-      if (query.updatedFrom) {
-        query[`metadata.updated[$gte]`] = new Date(query.updatedFrom).toJSON();
+      if (updatedFrom) {
+        query[`metadata.updated[$gte]`] = new Date(updatedFrom).toJSON();
       }
-      if (query.updatedTo) {
-        query[`metadata.updated[$lte]`] = new Date(query.updatedTo).toJSON();
+      if (updatedTo) {
+        query[`metadata.updated[$lte]`] = new Date(updatedTo).toJSON();
       }
-      return getBlueprintEntitiesForUser(tenant, user, blueprintIdentifier, query, bypassAdmin);
+      const list =  await getBlueprintEntitiesForUser(tenant, user, blueprintIdentifier, query, bypassAdmin);
+      if ($fields instanceof Array) {
+        return list.map(row => $fields.reduce((all, field) => {
+          all[field] = row[field] || row.metadata[field];
+          return all
+        }, {identifier: row.identifier}))
+      }
+      return list;
     
     default:
       throw new Error(`Unknown blueprint operation: ${operation}`);

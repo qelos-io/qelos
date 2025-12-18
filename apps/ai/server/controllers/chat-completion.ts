@@ -458,6 +458,9 @@ export async function chatCompletion(req: any, res: any | null) {
                   type: 'boolean',
                   description: 'Populate the results. default: false. if true, the results will be populated with the blueprint relations.'
                 },
+                $fields: {
+                  description: 'selected fields to get from each entity. when given - only those filters will return.',
+                },
                 createdFrom: {
                   type: 'string',
                   format: 'date-time',
