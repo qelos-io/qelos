@@ -70,13 +70,32 @@ export function emitAIProviderErrorEvent(params: BaseEventParams & {
     return;
   }
 
+  // Check if this is a rate limit error
+  const isRateLimitError = params.error?.status === 429 || params.error?.name === 'RateLimitError';
+  
+  // Extract rate limit details from error message if available
+  let rateLimitDetails: any = undefined;
+  if (isRateLimitError && params.error?.message) {
+    const limitMatch = params.error.message.match(/Limit (\d+), Requested (\d+)/);
+    if (limitMatch) {
+      rateLimitDetails = {
+        limit: parseInt(limitMatch[1]),
+        requested: parseInt(limitMatch[2]),
+        type: params.error.message.includes('TPM') ? 'tokens_per_minute' : 
+              params.error.message.includes('RPM') ? 'requests_per_minute' : 'unknown'
+      };
+    }
+  }
+
   emitSafePlatformEvent({
     tenant: params.tenant,
     user: params.userId,
     source: `ai_provider:${params.sourceId || params.provider}`,
     kind: 'ai_provider',
-    eventName: params.stream ? 'chat_completion_stream_error' : 'chat_completion_error',
-    description: `Failed to execute ${params.provider} chat completion`,
+    eventName: isRateLimitError ? 'rate_limit_exceeded' : (params.stream ? 'chat_completion_stream_error' : 'chat_completion_error'),
+    description: isRateLimitError 
+      ? `${params.provider} rate limit exceeded` 
+      : `Failed to execute ${params.provider} chat completion`,
     metadata: {
       provider: params.provider,
       sourceId: params.sourceId,
@@ -84,6 +103,7 @@ export function emitAIProviderErrorEvent(params: BaseEventParams & {
       stream: params.stream,
       context: params.context,
       error: serializeError(params.error),
+      ...(isRateLimitError && { rateLimitDetails }),
     },
   });
 }
