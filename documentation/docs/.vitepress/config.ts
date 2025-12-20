@@ -60,6 +60,14 @@ export default defineConfig({
         ]
       },
       {
+        text: 'PAYMENTS',
+        collapsed: true,
+        items: [
+          { text: 'Introduction', link: '/payments/' },
+          { text: 'Sumit', link: '/payments/sumit' },
+        ]
+      },
+      {
         text: 'SDK',
         items: [
           { text: 'Introduction to the SDK', link: '/sdk/sdk' },

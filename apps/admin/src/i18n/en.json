@@ -223,5 +223,11 @@
   "Integrations": "Integrations",
   "{count} connections": "{count} connections",
   "{count} active": "{count} active",
-  "{providers} providers · {connections} total": "{providers} providers · {connections} total"
+  "{providers} providers · {connections} total": "{providers} providers · {connections} total",
+  "integrations": {
+    "sumit": {
+      "apiKey": "API Key",
+      "baseUrl": "Base URL"
+    }
+  }
 }

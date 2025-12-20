@@ -7,7 +7,8 @@ import {
   OpenAITargetOperation,
   QelosTargetOperation,
   ClaudeAITargetOperation,
-  EmailTargetOperation
+  EmailTargetOperation,
+  SumitTargetOperation
 } from '@qelos/global-types';
 
 const supportedSources = {
@@ -90,7 +91,73 @@ const supportedSources = {
       required: [],
       optional: ['to', 'subject', 'body', 'cc', 'bcc'],
     }
-  }
+  },
+  [IntegrationSourceKind.Sumit]: {
+    [SumitTargetOperation.createCustomer]: {
+      required: ['name'],
+      optional: ['email', 'phone', 'address'],
+    },
+    [SumitTargetOperation.setPaymentDetails]: {
+      required: ['customerId', 'paymentMethodToken'],
+      optional: [],
+    },
+    [SumitTargetOperation.listPaymentMethods]: {
+      required: ['customerId'],
+      optional: [],
+    },
+    [SumitTargetOperation.createPaymentMethod]: {
+      required: ['customerId', 'token'],
+      optional: [],
+    },
+    [SumitTargetOperation.getPaymentMethod]: {
+      required: ['customerId', 'paymentMethodId'],
+      optional: [],
+    },
+    [SumitTargetOperation.updatePaymentMethod]: {
+      required: ['customerId', 'paymentMethodId'],
+      optional: ['token'],
+    },
+    [SumitTargetOperation.deletePaymentMethod]: {
+      required: ['customerId', 'paymentMethodId'],
+      optional: [],
+    },
+    [SumitTargetOperation.listPayments]: {
+      required: [],
+      optional: ['customerId'],
+    },
+    [SumitTargetOperation.createPayment]: {
+      required: ['amount', 'currency'],
+      optional: ['customerId', 'paymentMethodId'],
+    },
+    [SumitTargetOperation.getPayment]: {
+      required: ['paymentId'],
+      optional: [],
+    },
+    [SumitTargetOperation.updatePayment]: {
+      required: ['paymentId'],
+      optional: ['metadata'],
+    },
+    [SumitTargetOperation.listRecurringPayments]: {
+      required: [],
+      optional: ['customerId'],
+    },
+    [SumitTargetOperation.createRecurringPayment]: {
+      required: ['amount', 'currency', 'interval'],
+      optional: ['customerId', 'paymentMethodId'],
+    },
+    [SumitTargetOperation.getRecurringPayment]: {
+      required: ['recurringPaymentId'],
+      optional: [],
+    },
+    [SumitTargetOperation.updateRecurringPayment]: {
+      required: ['recurringPaymentId'],
+      optional: ['amount', 'currency', 'interval'],
+    },
+    [SumitTargetOperation.deleteRecurringPayment]: {
+      required: ['recurringPaymentId'],
+      optional: [],
+    },
+  },
 }
 
 const COMMON_OPTIONAL_PARAMS = ['triggerResponse'];
