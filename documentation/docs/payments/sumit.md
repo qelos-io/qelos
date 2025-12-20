@@ -11,7 +11,6 @@ This guide will walk you through setting up and using the Sumit integration.
 To connect your Sumit account, you will need to provide the following information:
 
 - **API Key**: You can find your API key in your Sumit account settings.
-- **Base URL**: The base URL for the Sumit API is `https://app.sumit.co.il/api/`.
 
 ## Usage
 

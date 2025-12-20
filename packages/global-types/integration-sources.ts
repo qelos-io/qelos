@@ -100,9 +100,7 @@ export interface ISumitSource extends IIntegrationSource {
   authentication: {
     apiKey: string;
   };
-  metadata: {
-    baseUrl: string;
-  };
+  metadata: {};
 }
 
 export interface IQelosSource extends IIntegrationSource {

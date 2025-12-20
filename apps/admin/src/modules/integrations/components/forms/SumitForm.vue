@@ -1,9 +1,22 @@
+<template>
+  <el-form @submit.prevent="submit">
+    <el-form-item :label="$t('API Key')">
+      <el-input
+        v-model="form.authentication.apiKey"
+        type="password"
+        required
+      />
+    </el-form-item>
+    <div class="d-flex justify-content-end">
+      <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
+      <el-button type="primary" @click="submit">{{ $t('Save') }}</el-button>
+    </div>
+  </el-form>
+</template>
+
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { Form, Field, ErrorMessage } from 'vee-validate';
-
-const { t } = useI18n();
+import { ElForm, ElFormItem, ElInput, ElButton } from 'element-plus';
 
 const props = defineProps<{
   modelValue: any;
@@ -17,40 +30,3 @@ const submit = () => {
   emit('submit', form.value);
 };
 </script>
-
-<template>
-  <Form @submit="submit">
-    <div class="form-group">
-      <label for="api-key">{{ t('integrations.sumit.apiKey') }}</label>
-      <Field
-        id="api-key"
-        v-model="form.authentication.apiKey"
-        name="apiKey"
-        type="password"
-        class="form-control"
-        rules="required"
-      />
-      <ErrorMessage name="apiKey" class="text-danger" />
-    </div>
-    <div class="form-group">
-      <label for="base-url">{{ t('integrations.sumit.baseUrl') }}</label>
-      <Field
-        id="base-url"
-        v-model="form.metadata.baseUrl"
-        name="baseUrl"
-        type="text"
-        class="form-control"
-        rules="required"
-      />
-      <ErrorMessage name="baseUrl" class="text-danger" />
-    </div>
-    <div class="d-flex justify-content-end">
-      <button type="button" class="btn btn-secondary" @click="$emit('close')">
-        {{ t('common.cancel') }}
-      </button>
-      <button type="submit" class="btn btn-primary ms-2">
-        {{ t('common.save') }}
-      </button>
-    </div>
-  </Form>
-</template>
