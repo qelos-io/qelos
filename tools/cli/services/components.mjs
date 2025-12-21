@@ -50,22 +50,29 @@ export async function pushComponents(sdk, path, options = {}) {
         component => component.identifier === targetIdentifier || component.componentName === componentName
       );
       
-      if (existingComponent) {
-        await sdk.components.update(existingComponent._id, {
-          identifier: targetIdentifier,
-          componentName: componentName,
-          content,
-          description: info.description || existingComponent.description || 'Component description'
-        });
-        logger.success(`Updated: ${componentName}`);
-      } else {
-        await sdk.components.create({
-          identifier: targetIdentifier,
-          componentName: componentName,
-          content,
-          description: targetDescription
-        });
-        logger.success(`Created: ${componentName}`);
+      try {
+        if (existingComponent) {
+          await sdk.components.update(existingComponent._id, {
+            identifier: targetIdentifier,
+            componentName: componentName,
+            content,
+            description: info.description || existingComponent.description || 'Component description'
+          });
+          logger.success(`Updated: ${componentName}`);
+        } else {
+          await sdk.components.create({
+            identifier: targetIdentifier,
+            componentName: componentName,
+            content,
+            description: targetDescription
+          });
+          logger.success(`Created: ${componentName}`);
+        }
+      } catch (error) {
+        // Extract reason from error details if available
+        const reason = error.details?.reason || error.message;
+        logger.error(`Failed to push component: ${componentName} - ${reason}`);
+        throw error;
       }
     }
   }));
