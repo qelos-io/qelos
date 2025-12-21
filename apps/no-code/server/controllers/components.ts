@@ -75,6 +75,7 @@ export const createComponent = async (req, res) => {
 };
 
 export const updateComponent = async (req, res) => {
+  const componentQuery = { _id: req.params.componentId, tenant: req.headers.tenant };
   try {
     const $set: Partial<IComponent> = {
       updated: new Date(),
@@ -85,16 +86,22 @@ export const updateComponent = async (req, res) => {
     
     // If content is updated, recompile the component
     if (req.body.content) {
-      $set.content = req.body.content;
-      try {
-        const { js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost);
-        $set.compiledContent = { js, css };
-        $set.requiredProps = props;
-      } catch (compileErr: any) {
-        logger.log('failed to compile a component during update', compileErr?.message);
-        const sanitizedError = sanitizeCompilationError(compileErr);
-        res.status(400).json({ message: 'failed to compile a component', reason: sanitizedError }).end();
-        return;
+      const existingComponent = await Component.findOne(componentQuery).select('content').lean().exec();
+      if (!existingComponent) {
+        return res.status(404).json({message: 'component not found'}).end();
+      }
+      if (req.body.content.trim() !== existingComponent.content.trim()) {
+        $set.content = req.body.content;
+        try {
+          const { js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost);
+          $set.compiledContent = { js, css };
+          $set.requiredProps = props;
+        } catch (compileErr: any) {
+          logger.log('failed to compile a component during update', compileErr?.message);
+          const sanitizedError = sanitizeCompilationError(compileErr);
+          res.status(400).json({ message: 'failed to compile a component', reason: sanitizedError }).end();
+          return;
+        }
       }
     }
 
