@@ -5,6 +5,7 @@ import { getService } from "../controllers/assets";
 import Storage from "../models/storage";
 import { emitPlatformEvent } from "@qelos/api-kit";
 import logger from "../services/logger";
+import { handleImageOptimization } from "../services/image-optimizer";
 
 // Default file extension for unknown types
 const DEFAULT_EXTENSION = "jpg";
@@ -41,6 +42,8 @@ async function handleUpload(
   if (!service) {
     throw new Error("Storage service not found");
   }
+  
+  file = await handleImageOptimization(storage, file, extension);
 
   return service.uploadFile(storage, {
     identifier: '',
