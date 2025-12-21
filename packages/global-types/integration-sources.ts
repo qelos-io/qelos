@@ -11,6 +11,7 @@ export enum IntegrationSourceKind {
   Google = 'google',
   GitHub = 'github',
   Gemini = 'gemini',
+  Sumit = 'sumit',
 }
 
 export interface IIntegrationSource {
@@ -59,6 +60,28 @@ export enum ClaudeAITargetOperation {
   chatCompletion = 'chatCompletion',
 }
 
+export enum SumitTargetOperation {
+  createCustomer = 'createCustomer',
+  setPaymentDetails = 'setPaymentDetails',
+  // Placeholder for payment methods
+  listPaymentMethods = 'listPaymentMethods',
+  createPaymentMethod = 'createPaymentMethod',
+  getPaymentMethod = 'getPaymentMethod',
+  updatePaymentMethod = 'updatePaymentMethod',
+  deletePaymentMethod = 'deletePaymentMethod',
+  // Placeholder for payments
+  listPayments = 'listPayments',
+  createPayment = 'createPayment',
+  getPayment = 'getPayment',
+  updatePayment = 'updatePayment',
+  // Placeholder for recurring payments
+  listRecurringPayments = 'listRecurringPayments',
+  createRecurringPayment = 'createRecurringPayment',
+  getRecurringPayment = 'getRecurringPayment',
+  updateRecurringPayment = 'updateRecurringPayment',
+  deleteRecurringPayment = 'deleteRecurringPayment',
+}
+
 export interface ILinkedInSource extends IIntegrationSource {
   _id?: string;
   kind: IntegrationSourceKind.LinkedIn;
@@ -68,6 +91,17 @@ export interface ILinkedInSource extends IIntegrationSource {
   metadata: {
     clientId: string;
     scope: string;
+  };
+}
+
+export interface ISumitSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.Sumit;
+  authentication: {
+    apiKey: string;
+  };
+  metadata: {
+    companyId: string;
   };
 }
 

@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fetch from 'node-fetch';
-import { EmailTargetOperation, HttpTargetOperation, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation } from '@qelos/global-types';
+import { EmailTargetOperation, HttpTargetOperation, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation } from '@qelos/global-types';
 import { IIntegrationEntity } from '../models/integration';
 import IntegrationSource from '../models/integration-source';
 import { getEncryptedSourceAuthentication } from './source-authentication-service';
@@ -153,7 +153,7 @@ async function handleOpenAiTarget(integrationTarget: IIntegrationEntity,
     messages: []
   }) {
   const operation = integrationTarget.operation as keyof typeof OpenAITargetOperation;
-  
+
   if (operation === OpenAITargetOperation.chatCompletion) {
 
     const response = await chatCompletion(source.tenant, {
@@ -211,7 +211,7 @@ async function handleQelosTarget(integrationTarget: IIntegrationEntity,
       await event.save();
       emitPlatformEvent(event);
     } else if (operation === QelosTargetOperation.createUser) {
-      const result = await createUser(source.tenant, { 
+      const result = await createUser(source.tenant, {
         username: payload.username,
         password: payload.password || details.password,
         roles: payload.roles || details.roles || ['user'],
@@ -273,7 +273,7 @@ async function handleQelosTarget(integrationTarget: IIntegrationEntity,
 
 /**
  * Handle email target operations
- * 
+ *
  * @param integrationTarget Integration target entity
  * @param source Email source configuration
  * @param authentication Authentication details
@@ -287,7 +287,7 @@ async function handleEmailTarget(
   payload?: Record<string, any>
 ): Promise<any> {
   logger.log('Handling email target', { operation: integrationTarget.operation });
-  
+
   if (integrationTarget.operation === EmailTargetOperation.sendEmail) {
     // Extract email details from target details or payload
     const to = payload?.to || integrationTarget.details?.to;
@@ -295,20 +295,20 @@ async function handleEmailTarget(
     const body = payload?.body || integrationTarget.details?.body;
     const cc = payload?.cc || integrationTarget.details?.cc;
     const bcc = payload?.bcc || integrationTarget.details?.bcc;
-    
+
     // Validate required fields
     if (!to) {
       throw new Error('Email recipient (to) is required');
     }
-    
+
     if (!subject) {
       throw new Error('Email subject is required');
     }
-    
+
     if (!body) {
       throw new Error('Email body is required');
     }
-    
+
     // Send the email
     const result = await sendEmail(
       source,
@@ -335,11 +335,76 @@ async function handleEmailTarget(
       });
       event.save().then(event => emitPlatformEvent(event)).catch(() => {});
     }
-    
+
     return result;
   }
-  
+
   throw new Error(`Unsupported email operation: ${integrationTarget.operation}`);
+}
+
+async function handleSumitTarget(
+  integrationTarget: IIntegrationEntity,
+  source: ISumitSource,
+  authentication: { apiKey?: string } = {},
+  payload: any = {}
+) {
+  const operation = integrationTarget.operation as SumitTargetOperation;
+  logger.log('Handling Sumit target', { operation });
+
+  const { apiKey } = authentication;
+  const { companyId } = source.metadata;
+  const baseUrl = 'https://app.sumit.co.il/api/';
+
+  if (!apiKey || !companyId) {
+    throw new Error('Missing API key or Company ID for Sumit integration');
+  }
+
+  const credentials = {
+    CompanyID: companyId,
+    APIKey: apiKey,
+  };
+
+  let endpoint = '';
+  let method = 'POST';
+  let body: any = { ...payload, Credentials: credentials };
+
+  switch (operation) {
+    case SumitTargetOperation.createCustomer:
+      endpoint = '/v1/customers/add';
+      break;
+    case SumitTargetOperation.setPaymentDetails:
+      endpoint = '/v1/customers/update-payment-method';
+      break;
+    // ... (add cases for other operations from the swagger file)
+    default:
+      throw new Error(`Unsupported Sumit operation: ${operation}`);
+  }
+
+  const url = new URL(endpoint, baseUrl).toString();
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    const response = await fetch(url, {
+      method,
+      headers,
+      body: JSON.stringify(body),
+      agent: httpAgent,
+    });
+
+    const responseBody = await response.json();
+
+    if (!response.ok) {
+      throw new Error(`Sumit API request failed with status ${response.status}: ${JSON.stringify(responseBody)}`);
+    }
+
+    return responseBody;
+  } catch (error) {
+    logger.error('Error calling Sumit API', error);
+    throw error;
+  }
 }
 
 export async function callIntegrationTarget(tenant: string, payload: any, integrationTarget: IIntegrationEntity) {
@@ -358,5 +423,7 @@ export async function callIntegrationTarget(tenant: string, payload: any, integr
     return handleQelosTarget(integrationTarget, source as IQelosSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Email) {
     return handleEmailTarget(integrationTarget, source as IEmailSource, authentication || {}, payload);
+  } else if (source.kind === IntegrationSourceKind.Sumit) {
+    return handleSumitTarget(integrationTarget, source as ISumitSource, authentication || {}, payload);
   }
 }

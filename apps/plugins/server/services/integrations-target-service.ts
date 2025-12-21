@@ -7,7 +7,8 @@ import {
   OpenAITargetOperation,
   QelosTargetOperation,
   ClaudeAITargetOperation,
-  EmailTargetOperation
+  EmailTargetOperation,
+  SumitTargetOperation
 } from '@qelos/global-types';
 
 const supportedSources = {
@@ -90,7 +91,7 @@ const supportedSources = {
       required: [],
       optional: ['to', 'subject', 'body', 'cc', 'bcc'],
     }
-  }
+  },
 }
 
 const COMMON_OPTIONAL_PARAMS = ['triggerResponse'];
