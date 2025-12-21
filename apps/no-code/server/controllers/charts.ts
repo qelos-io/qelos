@@ -269,6 +269,13 @@ export async function getSumCard(req, res: Response) {
         } 
       }
     ]).exec();
+    
+    // Handle case where no documents match the query
+    if (!result || result.length === 0) {
+      res.json({ sum: 0 }).end();
+      return;
+    }
+    
     res.json({ sum: result[0].sum }).end();
     return;
   }
