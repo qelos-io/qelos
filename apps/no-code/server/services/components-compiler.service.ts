@@ -264,10 +264,18 @@ window['components:${hash}'] = Component;`;
         ]);
         
         // Use spawn instead of exec for better process control
-        // Determine the correct vite executable for the platform
-        const viteExecutable = process.platform === 'win32' ? 'vite.cmd' : 'vite';
-        const vitePath = path.join(__dirname, '../../../node_modules/.bin', viteExecutable);
-        
+        // Find the actual vite executable location
+        let vitePath: string;
+        try {
+          // Try to resolve vite package directly
+          vitePath = require.resolve('vite/bin/vite.js');
+        } catch (error) {
+          // Fallback to platform-specific binary in node_modules
+          const viteExecutable = process.platform === 'win32' ? 'vite.cmd' : 'vite';
+          // Use absolute path from project root
+          vitePath = path.join(process.cwd(), 'node_modules', '.bin', viteExecutable);
+        }
+                
         childProcess = spawn(vitePath, ['build'], {
           cwd: path.join(__dirname, './components-compiler'),
           stdio: 'pipe',
