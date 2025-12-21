@@ -6,9 +6,8 @@ import { IBlueprint } from '../models/blueprint';
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
 import BlueprintEntity from '../models/blueprint-entity';
 import { getEntityQuery } from '../services/entities.service';
-import { Types } from 'mongoose'
+import mongoose from 'mongoose'
 
-const ObjectId = Types.ObjectId;
 
 /**
  * Creates a robust sum aggregation expression that handles various data types
@@ -279,11 +278,11 @@ export async function getSumCard(req, res: Response) {
   delete query.bypassAdmin;
   
   // Convert string IDs to ObjectId for aggregation queries
-  if (query.workspace && typeof query.workspace === 'string' && ObjectId.isValid(query.workspace)) {
-    query.workspace = new ObjectId(query.workspace);
+  if (query.workspace && typeof query.workspace === 'string' && mongoose.Types.ObjectId.isValid(query.workspace)) {
+    query.workspace = new mongoose.Types.ObjectId(query.workspace);
   }
-  if (query.user && typeof query.user === 'string' && ObjectId.isValid(query.user)) {
-    query.user = new ObjectId(query.user);
+  if (query.user && typeof query.user === 'string' && mongoose.Types.ObjectId.isValid(query.user)) {
+    query.user = new mongoose.Types.ObjectId(query.user);
   }
   
   if (!propToGroupBy) {
