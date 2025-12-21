@@ -1,110 +1,16 @@
-import { spawn } from 'node:child_process';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import os from 'node:os';
 import logger from './logger';
 
-// Use relative paths from the service directory - works in containerized environment
+const execPromise = promisify(exec);
+
 const DIST_DIR = path.join(__dirname, './components-compiler/dist');
 const SRC_DIR = path.join(__dirname, './components-compiler/src/components');
 
-// Memory and queue configuration
-const MEMORY_THRESHOLD_MB = 500; // Minimum free memory required to start a build (MB)
-const MAX_CONCURRENT_BUILDS = 10; // Maximum number of builds running simultaneously
-const MEMORY_CHECK_INTERVAL = 5000; // Check memory every 5 seconds when waiting (ms)
-const MAX_OLD_SPACE_SIZE = 4096; // Maximum memory per build process (MB)
-const MAX_QUEUE_LENGTH = 20; // Maximum number of builds allowed in queue
-const MEMORY_WAIT_TIMEOUT = 60000; // Maximum time to wait for memory (ms)
-const BUILD_TIMEOUT = 300000; // Maximum time for a single build (ms)
-
-// Build queue and tracking
-interface BuildTask {
-  id: string;
-  fileContent: string;
-  tenanthost: string;
-  resolve: (result: {js: string, css: string, props: Array<{type: string, prop: string}>}) => void;
-  reject: (error: Error) => void;
-}
-
-class BuildQueue {
-  private queue: BuildTask[] = [];
-  private activeBuilds = 0;
-  private processing = false;
-
-  async add(task: BuildTask): Promise<void> {
-    if (this.queue.length >= MAX_QUEUE_LENGTH) {
-      throw new Error(`Build queue is full (${MAX_QUEUE_LENGTH} items). Please try again later.`);
-    }
-    
-    this.queue.push(task);
-    this.process();
-  }
-
-  private async process(): Promise<void> {
-    if (this.processing || this.activeBuilds >= MAX_CONCURRENT_BUILDS) {
-      return;
-    }
-
-    this.processing = true;
-
-    while (this.queue.length > 0 && this.activeBuilds < MAX_CONCURRENT_BUILDS) {
-      const task = this.queue.shift();
-      if (!task) break;
-
-      try {
-        // Wait for available memory - catch timeout and attribute to this task
-        await this.waitForMemory();
-        
-        this.activeBuilds++;
-        
-        // Execute build without awaiting here to allow concurrent builds
-        this.executeBuild(task).finally(() => {
-          this.activeBuilds--;
-          // Process next items in queue
-          this.process();
-        });
-      } catch (error) {
-        // If we fail here (e.g., memory timeout), reject the specific task
-        logger.error(`Failed to start build ${task.id}:`, error);
-        task.reject(error as Error);
-      }
-    }
-
-    this.processing = false;
-  }
-
-  private async waitForMemory(): Promise<void> {
-    const startTime = Date.now();
-    
-    while (true) {
-      // Check timeout
-      if (Date.now() - startTime > MEMORY_WAIT_TIMEOUT) {
-        throw new Error(`Timeout waiting for available memory after ${MEMORY_WAIT_TIMEOUT}ms`);
-      }
-      
-      const freeMemoryMB = os.freemem() / 1024 / 1024;
-      const heapUsedMB = process.memoryUsage().heapUsed / 1024 / 1024;
-            
-      if (freeMemoryMB >= MEMORY_THRESHOLD_MB) {
-        break;
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, MEMORY_CHECK_INTERVAL));
-    }
-  }
-
-  private async executeBuild(task: BuildTask): Promise<void> {
-    try {
-      const result = await compileInternalWithTimeout(task.fileContent, task.tenanthost, BUILD_TIMEOUT, task.id);
-      task.resolve(result);
-    } catch (error) {
-      task.reject(error as Error);
-    }
-  }
-}
-
-const buildQueue = new BuildQueue();
+let lastExecution;
 
 function getProps(jsContent: string): Array<{type: string, prop: string, placeholder?: string}> {
   try {
@@ -189,189 +95,86 @@ function getProps(jsContent: string): Array<{type: string, prop: string, placeho
 
 /**
  * Compiles a Vue component into a client-side library that can be imported in the frontend
- * Uses a memory-aware queue system to prevent process failures
  * @param fileContent The Vue component content as a string
- * @param tenanthost The tenant host URL
  * @returns An object with compiled js and css strings
  */
 export async function compileVueComponent(fileContent: string, tenanthost: string = 'http://localhost'): Promise<{js: string, css: string, props: Array<{type: string, prop: string}>}> {
-  const buildId = crypto.randomBytes(8).toString('hex');
-  
-  return new Promise((resolve, reject) => {
-    buildQueue.add({
-      id: buildId,
-      fileContent,
-      tenanthost,
-      resolve,
-      reject
-    });
-  });
-}
+  const hash = 'Comp' + crypto.createHash('sha256').update(fileContent).digest('hex').substring(0, 8);
+  const libJs = `import Component from './${hash}.vue';
+  window['components:${hash}'] = Component;`;
+  try {
+    await Promise.all([
+      fs.writeFile(path.join(SRC_DIR, hash + '.js'), libJs),
+      fs.writeFile(path.join(SRC_DIR, hash + '.vue'), fileContent),
+    ]);
 
-/**
- * Internal compilation function that performs the actual build with proper timeout handling
- * @param fileContent The Vue component content as a string
- * @param tenanthost The tenant host URL
- * @param timeoutMs Build timeout in milliseconds
- * @param buildId Build ID for logging
- * @returns An object with compiled js and css strings
- */
-async function compileInternalWithTimeout(fileContent: string, tenanthost: string, timeoutMs: number, buildId: string): Promise<{js: string, css: string, props: Array<{type: string, prop: string}>}> {
-  return new Promise((resolve, reject) => {
-    const hash = 'Comp' + crypto.createHash('sha256').update(fileContent).digest('hex').substring(0, 8);
-    const libJs = `import Component from './${hash}.vue';
-window['components:${hash}'] = Component;`;
-    let childProcess: any;
-    let timeoutId: NodeJS.Timeout;
-    let cleanupDone = false;
-    
-    const cleanup = async () => {
-      if (cleanupDone) return;
-      cleanupDone = true;
-      
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+    if (lastExecution) {
+      await lastExecution;
+    }
+
+    lastExecution = execPromise(`../../../node_modules/.bin/vite build`, { 
+      cwd: path.join(__dirname, './components-compiler'), 
+      env: {
+        // Pass all environment variables needed for node execution
+        PATH: process.env.PATH,
+        HOME: process.env.HOME,
+        USER: process.env.USER,
+        SHELL: process.env.SHELL,
+        NVM_DIR: process.env.NVM_DIR,
+        NVM_PATH: process.env.NVM_PATH,
+        NVM_BIN: process.env.NVM_BIN,
+        // Only pass specific variables needed for Vite build
+        NODE_ENV: 'production',
+        VITE_USER_NODE_ENV: 'production',
+        // Standard Vite environment variables
+        BASE_URL: tenanthost,
+        MODE: 'production',
+        DEV: 'false',
+        PROD: 'true',
+        // Custom variables
+        COMPONENT_HASH: hash,
+        // memory limit variable to node.js
+        NODE_OPTIONS: '--max-old-space-size=512',
+      },
+    });
+
+    const { stderr, stdout } = await lastExecution.finally(() => lastExecution = null);
+
+    if (stderr || !stdout.includes('built in')) {
+      // Check if the output files actually exist to determine if compilation succeeded
+      const jsFileExists = await fs.access(path.join(DIST_DIR, hash + '.umd.js'))
+        .then(() => true)
+        .catch(() => false);
+        
+      if (!jsFileExists) {
+        logger.error('Failed to compile component: output files not found');
+        throw new Error('failed to compile component');
       }
-      
-      if (childProcess && !childProcess.killed) {
-        logger.log(`Killing build process ${buildId} due to timeout or error`);
-        childProcess.kill('SIGTERM');
-        // Force kill if it doesn't terminate gracefully
-        setTimeout(() => {
-          if (childProcess && !childProcess.killed) {
-            childProcess.kill('SIGKILL');
-          }
-        }, 5000);
-      }
-      
-      // Clean up temp files on timeout or error
-      try {
-        await Promise.all([
-          fs.unlink(path.join(SRC_DIR, hash + '.js')).catch(() => {}),
-          fs.unlink(path.join(SRC_DIR, hash + '.vue')).catch(() => {}),
-          fs.unlink(path.join(DIST_DIR, hash + '.umd.js')).catch(() => {}),
-          fs.unlink(path.join(DIST_DIR, hash + '.css')).catch(() => {}),
-        ]);
-      } catch (error) {
-        logger.log(`Error cleaning up temp files for build ${buildId}:`, error);
-      }
+    }
+
+    const [jsContent, cssContent] = await Promise.all([
+      fs.readFile(path.join(DIST_DIR, hash + '.umd.js'), 'utf-8').catch(() => '{}'),
+      fs.readFile(path.join(DIST_DIR, hash + '.css'), 'utf-8').catch(() => '')  ,
+    ]);
+
+    return {
+      js: jsContent + `
+      const Component = window['components:${hash}'];
+      delete window['components:${hash}'];
+      export default Component;`,
+      css: cssContent,
+      props: getProps(jsContent)
     };
-    
-    const runBuild = async () => {
-      try {
-        await Promise.all([
-          fs.writeFile(path.join(SRC_DIR, hash + '.js'), libJs),
-          fs.writeFile(path.join(SRC_DIR, hash + '.vue'), fileContent),
-        ]);
-        
-        // Use spawn instead of exec for better process control
-        // Find the actual vite executable location
-        let vitePath: string;
-        try {
-          // Try to resolve vite package directly from the service directory
-          vitePath = require.resolve('vite/bin/vite.js');
-        } catch (error) {
-          // Fallback to platform-specific binary in local node_modules
-          const viteExecutable = process.platform === 'win32' ? 'vite.cmd' : 'vite';
-          // Use path relative to the service directory
-          vitePath = path.join(__dirname, '../../../node_modules/.bin', viteExecutable);
-        }
-                
-        childProcess = spawn(vitePath, ['build'], {
-          cwd: path.join(__dirname, './components-compiler'),
-          stdio: 'pipe',
-          env: {
-            // Pass all environment variables needed for node execution
-            PATH: process.env.PATH,
-            HOME: process.env.HOME,
-            USER: process.env.USER,
-            SHELL: process.env.SHELL,
-            NVM_DIR: process.env.NVM_DIR,
-            NVM_PATH: process.env.NVM_PATH,
-            NVM_BIN: process.env.NVM_BIN,
-            // Only pass specific variables needed for Vite build
-            NODE_ENV: 'production',
-            VITE_USER_NODE_ENV: 'production',
-            // Set memory limit for child process
-            NODE_OPTIONS: `--max-old-space-size=${MAX_OLD_SPACE_SIZE}`,
-            // Standard Vite environment variables
-            BASE_URL: tenanthost,
-            MODE: 'production',
-            DEV: 'false',
-            PROD: 'true',
-            // Custom variables
-            COMPONENT_HASH: hash,
-          },
-        });
-        
-        let stdout = '';
-        let stderr = '';
-        
-        childProcess.stdout?.on('data', (data: Buffer) => {
-          stdout += data.toString();
-        });
-        
-        childProcess.stderr?.on('data', (data: Buffer) => {
-          stderr += data.toString();
-        });
-        
-        childProcess.on('error', async (error: Error) => {
-          await cleanup();
-          reject(error);
-        });
-        
-        childProcess.on('exit', async (code: number | null, signal: string | null) => {
-          await cleanup();
-          
-          if (signal === 'SIGTERM' || signal === 'SIGKILL') {
-            reject(new Error(`Build ${buildId} was terminated due to timeout`));
-            return;
-          }
-          
-          if (code !== 0) {
-            // Check if the output files actually exist to determine if compilation succeeded
-            const jsFileExists = await fs.access(path.join(DIST_DIR, hash + '.umd.js'))
-              .then(() => true)
-              .catch(() => false);
-              
-            if (!jsFileExists) {
-              logger.error(`Failed to compile component ${buildId}: output files not found`);
-              reject(new Error(`Build failed with exit code ${code}\n${stderr}`));
-              return;
-            }
-          }
-          
-          try {
-            const [jsContent, cssContent] = await Promise.all([
-              fs.readFile(path.join(DIST_DIR, hash + '.umd.js'), 'utf-8').catch(() => '{}'),
-              fs.readFile(path.join(DIST_DIR, hash + '.css'), 'utf-8').catch(() => ''),
-            ]);
-            
-            resolve({
-              js: jsContent + `
-              const Component = window['components:${hash}'];
-              delete window['components:${hash}'];
-              export default Component;`,
-              css: cssContent,
-              props: getProps(jsContent)
-            });
-          } catch (error) {
-            reject(error);
-          }
-        });
-        
-        // Set up timeout
-        timeoutId = setTimeout(async () => {
-          await cleanup();
-          reject(new Error(`Build ${buildId} timed out after ${timeoutMs}ms`));
-        }, timeoutMs);
-        
-      } catch (error) {
-        await cleanup();
-        reject(error);
-      }
-    };
-    
-    runBuild();
-  });
+  } catch (err: any) {
+    // Re-throw the original error to preserve stderr and other details
+    throw err;
+  } finally {
+    // remove files
+    await Promise.all([
+      fs.unlink(path.join(DIST_DIR, hash + '.umd.js')).catch(() => {}),
+      fs.unlink(path.join(DIST_DIR, hash + '.css')).catch(() => {}),
+      fs.unlink(path.join(SRC_DIR, hash + '.js')).catch(() => {}),
+      fs.unlink(path.join(SRC_DIR, hash + '.vue')).catch(() => {}),
+    ]);
+  }
 }
