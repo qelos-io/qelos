@@ -31,9 +31,9 @@ function buildRequirementsMap(requirements: IScreenRequirement[]) {
 function getStatsSection(dataKey: string, blueprintName: string) {
   const pluralName = capitalize(getPlural(blueprintName));
   return `<div class="flex-row flex-wrap" style="gap: 1rem;">
-  <stats-card :title="'${pluralName} Total'" color="primary" icon="collection" :value="${dataKey}?.result?.length || 0"/>
-  <stats-card :title="'Active ${pluralName}'" color="success" icon="checked" :value="${dataKey}?.result?.filter(item => item.metadata?.status === 'active').length || 0"/>
-  <stats-card :title="'Draft ${pluralName}'" color="warning" icon="document" :value="${dataKey}?.result?.filter(item => item.metadata?.status === 'draft').length || 0"/>
+  <stats-card :title="'${pluralName} Total'" color="primary" icon="collection" :value="${dataKey}?.result?.length || 0"></stats-card>
+  <stats-card :title="'Active ${pluralName}'" color="success" icon="checked" :value="${dataKey}?.result?.filter(item => item.metadata?.status === 'active').length || 0"></stats-card>
+  <stats-card :title="'Draft ${pluralName}'" color="warning" icon="document" :value="${dataKey}?.result?.filter(item => item.metadata?.status === 'draft').length || 0"></stats-card>
 </div>`;
 }
 
