@@ -7,6 +7,12 @@
         required
       />
     </el-form-item>
+    <el-form-item :label="$t('Company ID')">
+      <el-input
+        v-model="form.metadata.companyId"
+        required
+      />
+    </el-form-item>
     <div class="d-flex justify-content-end">
       <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
       <el-button type="primary" @click="submit">{{ $t('Save') }}</el-button>

@@ -223,5 +223,7 @@
   "Integrations": "אינטגרציות",
   "{count} connections": "{count} חיבורים",
   "{count} active": "{count} פעילים",
-  "{providers} providers · {connections} total": "{providers} ספקים · {connections} סך הכל"
+  "{providers} providers · {connections} total": "{providers} ספקים · {connections} סך הכל",
+  "API Key": "מפתח API",
+  "Company ID": "מזהה חברה"
 }

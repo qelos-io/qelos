@@ -223,5 +223,7 @@
   "Integrations": "Integraciones",
   "{count} connections": "{count} conexiones",
   "{count} active": "{count} activas",
-  "{providers} providers · {connections} total": "{providers} proveedores · {connections} en total"
+  "{providers} providers · {connections} total": "{providers} proveedores · {connections} en total",
+  "API Key": "Clave API",
+  "Company ID": "ID de la empresa"
 }

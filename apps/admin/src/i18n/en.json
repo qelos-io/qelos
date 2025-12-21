@@ -224,5 +224,6 @@
   "{count} connections": "{count} connections",
   "{count} active": "{count} active",
   "{providers} providers · {connections} total": "{providers} providers · {connections} total",
-  "API Key": "API Key"
+  "API Key": "API Key",
+  "Company ID": "Company ID"
 }
