@@ -28,12 +28,28 @@ function buildRequirementsMap(requirements: IScreenRequirement[]) {
   }, {})
 }
 
-function getStatsSection(dataKey: string, blueprintName: string) {
+function getStatsSection(dataKey: string, blueprintName: string, blueprintIdentifier: string, blueprint?: any) {
   const pluralName = capitalize(getPlural(blueprintName));
+  const identifier = blueprintIdentifier || blueprintName;
+  
+  // Check if there are numeric properties that could be summed
+  const numericProps = Object.entries(blueprint?.properties || {})
+    .filter(([key, prop]: [string, any]) => prop?.type === 'number')
+    .slice(0, 2); // Limit to first 2 numeric properties
+  
+  const countKey = `${identifier}Count`;
+  const sumKeys = numericProps.map(prop => `${identifier}${capitalize(prop[0])}Sum`);
+  
   return `<div class="flex-row flex-wrap" style="gap: 1rem;">
-  <stats-card :title="'${pluralName} Total'" color="primary" icon="collection" :value="${dataKey}?.result?.length || 0"></stats-card>
-  <stats-card :title="'Active ${pluralName}'" color="success" icon="checked" :value="${dataKey}?.result?.filter(item => item.metadata?.status === 'active').length || 0"></stats-card>
-  <stats-card :title="'Draft ${pluralName}'" color="warning" icon="document" :value="${dataKey}?.result?.filter(item => item.metadata?.status === 'draft').length || 0"></stats-card>
+  <stats-card :title="'${pluralName} Total'" color="primary" icon="collection" :value="${countKey}?.count || 0}"></stats-card>
+  ${numericProps.map((prop, index) => {
+    const sumKey = sumKeys[index];
+    const propName = prop[0];
+    const propTitle = (prop[1] as any)?.title || capitalize(propName);
+    return `<stats-card :title="'Total ${propTitle}'" color="info" icon="coin" :value="${sumKey}?.sum || 0}"></stats-card>`;
+  }).join('\n  ')}
+  <stats-card :title="'Active ${pluralName}'" color="success" icon="checked" :value="${dataKey}?.result?.filter(item => item.metadata?.status === 'active').length || 0}"></stats-card>
+  <stats-card :title="'Draft ${pluralName}'" color="warning" icon="document" :value="${dataKey}?.result?.filter(item => item.metadata?.status === 'draft').length || 0}"></stats-card>
 </div>`;
 }
 
@@ -132,7 +148,41 @@ export function useQuickBoilerplate({
         fromBlueprint: { name: selectedBlueprint.identifier }
       })
 
-      const statsSection = withStats ? getStatsSection(dataKey, selectedBlueprint.name) : ''
+      // Add count and sum requirements if stats are enabled
+      if (withStats) {
+        // Add count requirement
+        boilerplate.requirements.push({
+          key: `${selectedBlueprint.identifier}Count`,
+          fromHTTP: {
+            uri: `/api/blueprints/${selectedBlueprint.identifier}/charts/count`,
+            method: 'GET',
+            query: {
+              workspace: '{{workspace._id}}'
+            }
+          }
+        })
+
+        // Add sum requirements for numeric properties
+        const numericProps = Object.entries(selectedBlueprint?.properties || {})
+          .filter(([key, prop]: [string, any]) => prop?.type === 'number')
+          .slice(0, 2);
+        
+        numericProps.forEach(([propName]) => {
+          boilerplate.requirements.push({
+            key: `${selectedBlueprint.identifier}${capitalize(propName)}Sum`,
+            fromHTTP: {
+              uri: `/api/blueprints/${selectedBlueprint.identifier}/charts/sum`,
+              method: 'GET',
+              query: {
+                workspace: '{{workspace._id}}',
+                sum: propName
+              }
+            }
+          })
+        })
+      }
+
+      const statsSection = withStats ? getStatsSection(dataKey, selectedBlueprint.name, selectedBlueprint.identifier, selectedBlueprint) : ''
       const beforeTableSection = extraBeforeTable ? extraBeforeTable(dataKey) : ''
 
       boilerplate.structure += `
