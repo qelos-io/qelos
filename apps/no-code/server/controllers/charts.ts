@@ -7,6 +7,26 @@ import { getUserPermittedScopes } from '../services/entities-permissions.service
 import BlueprintEntity from '../models/blueprint-entity';
 import { getEntityQuery } from '../services/entities.service';
 
+/**
+ * Creates a robust sum aggregation expression that handles various data types
+ * @param propToSum - The property name to sum
+ * @returns MongoDB aggregation expression for sum with type checking
+ */
+function createSumExpression(propToSum: string) {
+  return {
+    $sum: {
+      $switch: {
+        branches: [
+          { case: { $isNumber: `$metadata.${propToSum}` }, then: `$metadata.${propToSum}` },
+          { case: { $eq: [`$metadata.${propToSum}`, null] }, then: 0 },
+          { case: { $not: { $isNumber: { $toDouble: `$metadata.${propToSum}` } } }, then: 0 }
+        ],
+        default: { $toDouble: `$metadata.${propToSum}` }
+      }
+    }
+  };
+}
+
 interface RequestWithBlueprint extends RequestWithUser {
   _parsedUrl: {
     query: string;
@@ -239,30 +259,21 @@ export async function getSumCard(req, res: Response) {
   delete query.groupBy;
   delete query.bypassAdmin;
   
-  // If no groupBy provided, return just the total sum
   if (!propToGroupBy) {
     const result = await BlueprintEntity.aggregate([
       { $match: query },
       { 
         $group: { 
           _id: null, 
-          sum: { 
-            $sum: { 
-              $ifNull: [ { $toDouble: `$metadata.${propToSum}` }, 0 ]
-            } 
-          } 
+          sum: createSumExpression(propToSum)
         } 
       }
     ]).exec();
-    
-    const totalSum = result.length > 0 ? result[0].sum : 0;
-    res.json({ sum: totalSum }).end();
+    res.json({ sum: result[0].sum }).end();
     return;
   }
   
-  // Group by logic
   const groupPropType = blueprint.properties[propToGroupBy]?.type;
-  
   if (!groupPropType) {
     res.status(400).json({ message: 'groupBy property not found' }).end();
     return;
@@ -279,13 +290,13 @@ export async function getSumCard(req, res: Response) {
     case BlueprintPropertyType.DATETIME:
       $group = {
         _id: { $dayOfWeek: `$metadata.${propToGroupBy}` },
-        sum: { $sum: { $ifNull: [ { $toDouble: `$metadata.${propToSum}` }, 0 ] } }
+        sum: createSumExpression(propToSum)
       }
       break;
     case BlueprintPropertyType.TIME:
       $group = {
         _id: { $hour: `$metadata.${propToGroupBy}` },
-        sum: { $sum: { $ifNull: [ { $toDouble: `$metadata.${propToSum}` }, 0 ] } }
+        sum: createSumExpression(propToSum)
       }
       break;
     case BlueprintPropertyType.STRING:
@@ -293,7 +304,7 @@ export async function getSumCard(req, res: Response) {
     case BlueprintPropertyType.BOOLEAN:
       $group = {
         _id: `$metadata.${propToGroupBy}`,
-        sum: { $sum: { $ifNull: [ { $toDouble: `$metadata.${propToSum}` }, 0 ] } }
+        sum: createSumExpression(propToSum)
       }
       break;
     default:
