@@ -73,6 +73,7 @@ export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind 
       kind: IntegrationSourceKind.Gemini
     },
     [IntegrationSourceKind.Sumit]: {
+      logo: '/logos/sumit.png',
       name: 'Sumit',
       kind: IntegrationSourceKind.Sumit
     }
