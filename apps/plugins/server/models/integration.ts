@@ -29,7 +29,6 @@ const IntegrationEntitySchema = new Schema<IIntegrationEntity>({
 const IntegrationSchema = new Schema<IIntegration>({
   tenant: {
     type: String,
-    index: true,
     required: true,
   },
   plugin: {

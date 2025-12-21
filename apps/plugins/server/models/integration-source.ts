@@ -8,7 +8,6 @@ export interface IIntegrationSource extends Omit<IIntegrationSourceBase, 'plugin
 const IntegrationSourceSchema = new mongoose.Schema<IIntegrationSource>({
   tenant: {
     type: String,
-    index: true,
     required: true
   },
   plugin: {

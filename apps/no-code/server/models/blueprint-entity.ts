@@ -27,7 +27,6 @@ export interface IBlueprintEntity extends Document {
 const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
   tenant: {
     type: String,
-    index: true,
     required: true
   },
   identifier: {
@@ -88,7 +87,6 @@ const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
   }
 });
 
-BlueprintEntitySchema.index({ tenant: 1, blueprint: 1 });
 BlueprintEntitySchema.index({ tenant: 1, blueprint: 1, created: 1 });
 BlueprintEntitySchema.index({ tenant: 1, blueprint: 1, identifier: 1 }, { unique: true });
 BlueprintEntitySchema.index({ tenant: 1, indexes: 1 });

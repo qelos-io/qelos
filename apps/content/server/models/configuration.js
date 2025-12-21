@@ -33,9 +33,6 @@ const Configuration = new mongoose.Schema({
 
 Configuration.index({ tenant: 1, key: 1 }, { unique: true });
 
-// Index for efficiently querying app-configurations by websiteUrls
-Configuration.index({ key: 1, 'metadata.websiteUrls': 1 });
-
 // Specific index for the getTenantByHost query - includes tenant in projection
 Configuration.index({ key: 1, 'metadata.websiteUrls': 1, tenant: 1 });
 
