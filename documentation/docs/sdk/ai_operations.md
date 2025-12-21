@@ -620,4 +620,4 @@ function refreshThreads() {
 - [Authentication](./authentication.md) - User authentication setup
 - [Error Handling](./error_handling.md) - Error handling patterns
 - [TypeScript Types](./typescript_types.md) - Complete type definitions
-- [AiChat Component](./components/ai-chat.md) - AI chat interface component
+- [AiChat Component](../pre-designed-frontends/components/ai-chat.md) - AI chat interface component
