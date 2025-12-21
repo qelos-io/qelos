@@ -152,7 +152,7 @@ await sdkAdmin.adminWorkspaces.setEncryptedData('workspaceId', 'encryptedId', {
 Here's a complete example of managing workspaces as an administrator:
 
 ```typescript
-import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+import QelosAdminSDK from '@qelos/sdk/administrator';
 
 // Initialize the admin SDK
 const sdkAdmin = new QelosAdminSDK({

@@ -464,7 +464,7 @@ await sdkAdmin.manageBlueprints.remove('blueprintKey');
 Here's a complete example of managing blueprints as an administrator:
 
 ```typescript
-import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+import QelosAdminSDK from '@qelos/sdk/administrator';
 
 // Initialize the admin SDK
 const sdkAdmin = new QelosAdminSDK({

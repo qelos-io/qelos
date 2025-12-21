@@ -2,7 +2,7 @@ import * as nodeTest from 'node:test';
 import * as assert from 'node:assert';
 import { request } from 'undici';
 import QelosSDK from '@qelos/sdk';
-import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+import QelosAdminSDK from '@qelos/sdk/administrator';
 import crypto from 'node:crypto';
 
 import { startServer, stopServer } from './utils/processManager';

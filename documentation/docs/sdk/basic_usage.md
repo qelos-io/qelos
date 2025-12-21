@@ -118,7 +118,7 @@ This section demonstrates how to create an instance of the Qelos SDK for adminis
 
 ```typescript
 // Import the administrator version of the Qelos SDK
-import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+import QelosAdminSDK from '@qelos/sdk/administrator';
 
 // Create an instance of QelosAdminSDK
 const sdkAdmin = new QelosAdminSDK({

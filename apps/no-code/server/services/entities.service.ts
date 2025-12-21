@@ -5,6 +5,7 @@ import * as jq from 'node-jq';
 import Ajv from 'ajv';
 import { ResponseError } from '@qelos/api-kit'
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
+import mongoose from 'mongoose';
 
 const ajv = new Ajv()
 
@@ -206,7 +207,8 @@ export function getEntityQuery({ entityIdentifier, blueprint, req, permittedScop
         if (!req.workspace) {
           throw new ResponseError('user is not connected to a workspace', 403);
         }
-        query.workspace = req.workspace._id;
+        // Convert workspace ID to ObjectId for proper matching in aggregation queries
+        query.workspace = new mongoose.Types.ObjectId(req.workspace._id);
       } else if (blueprint.permissionScope === PermissionScope.USER) {
         query.user = req.user._id;
       }

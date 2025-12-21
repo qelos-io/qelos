@@ -72,7 +72,7 @@ export default sdk;
 Create an instance of the Qelos SDK for an administrator in a browser environment.
 
 ```typescript
-import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+import QelosAdminSDK from '@qelos/sdk/administrator';
 
 const sdkAdmin = new QelosAdminSDK({
   appUrl: 'https://yourdomain.com', // Use 'http://localhost:3000' if running locally
@@ -87,7 +87,7 @@ export default sdkAdmin;
 Create an instance of the Qelos SDK for an administrator in a Node.js environment.
 
 ```typescript
-import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+import QelosAdminSDK from '@qelos/sdk/administrator';
 
 const sdkAdmin = new QelosAdminSDK({
   appUrl: 'https://yourdomain.com', // Use 'http://localhost:3000' if running locally
@@ -102,7 +102,7 @@ export default sdkAdmin;
 Create an instance of the Qelos SDK for an administrator in a Node.js environment using node-fetch.
 
 ```typescript
-import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+import QelosAdminSDK from '@qelos/sdk/administrator';
 import nodeFetch from 'node-fetch';
 
 const sdkAdmin = new QelosAdminSDK({

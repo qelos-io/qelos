@@ -153,7 +153,7 @@ interface IManagedUserRequest<T = any> extends IManagedUser<T> {
 Here's a complete example of managing users:
 
 ```typescript
-import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+import QelosAdminSDK from '@qelos/sdk/administrator';
 
 // Initialize the admin SDK
 const sdkAdmin = new QelosAdminSDK({

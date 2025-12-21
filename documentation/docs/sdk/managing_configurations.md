@@ -107,7 +107,7 @@ interface ICustomConfiguration<T = any> {
 Here's a complete example of managing configurations:
 
 ```typescript
-import QelosAdminSDK from '@qelos/sdk/dist/administrator';
+import QelosAdminSDK from '@qelos/sdk/administrator';
 
 // Initialize the admin SDK
 const sdkAdmin = new QelosAdminSDK({
