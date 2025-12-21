@@ -54,11 +54,13 @@
       </div>
 
       <div v-if="showTokenHelp" class="token-help-section">
-        <h4>How to get your Sumit API Key:</h4>
+        <h4>How to get your Sumit API Key and Company ID:</h4>
         <ol>
-          <li>Go to the <el-link type="primary" @click="openSumitConsole" :underline="false">Sumit API Documentation</el-link></li>
-          <li>Follow the instructions to generate a new API Key</li>
-          <li>Copy the generated key and paste it here</li>
+          <li>Go to <el-link type="primary" href="https://app.sumit.co.il/developers/keys/" target="_blank" :underline="false">https://app.sumit.co.il/developers/keys/</el-link></li>
+          <li>Log in to your Sumit account</li>
+          <li>Copy your <strong>Company ID</strong> from the page</li>
+          <li>Click "Generate New Key" to create an API Key</li>
+          <li>Copy the generated API Key and paste it here</li>
         </ol>
         <div class="token-warning">
           <el-icon><Warning /></el-icon> Your API Key gives access to Sumit services and will be charged according to your Sumit account usage. Keep it secure.
@@ -117,8 +119,8 @@ const toggleTokenHelp = () => {
   showTokenHelp.value = !showTokenHelp.value;
 };
 
-const openSumitConsole = () => {
-  window.open('https://app.sumit.co.il/help/developers/swagger/index.html', '_blank');
+const openSumitKeys = () => {
+  window.open('https://app.sumit.co.il/developers/keys/', '_blank');
 };
 
 const validateForm = async () => {
