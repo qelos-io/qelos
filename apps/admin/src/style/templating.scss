@@ -83,6 +83,7 @@ body[data-navigation-layout='compact'] {
 
 body:has(nav.collapsed) {
   --nav-width: var(--collapsed-nav-width);
+  --layout-header-max-width: calc(100vw - var(--nav-width))
 }
 
 html.mobile body {
