@@ -85,7 +85,7 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
         }
       } else if (item.fromHTTP) {
         const method = (item.fromHTTP.method || 'get').toLowerCase();
-        const cachedKey = `http:${method}:${item.fromHTTP.uri}`;
+        const cachedKey = `http:${method}:${item.fromHTTP.uri}:${JSON.stringify(item.fromHTTP.query || {})}`;
         if (cachedDispatchers[cachedKey]) {
           cachedDispatchers[cachedKey].retry();
         } else {
