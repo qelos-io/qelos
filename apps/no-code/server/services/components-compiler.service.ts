@@ -5,6 +5,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import logger from './logger';
 
+// Use relative paths from the service directory - works in containerized environment
 const DIST_DIR = path.join(__dirname, './components-compiler/dist');
 const SRC_DIR = path.join(__dirname, './components-compiler/src/components');
 
@@ -267,13 +268,13 @@ window['components:${hash}'] = Component;`;
         // Find the actual vite executable location
         let vitePath: string;
         try {
-          // Try to resolve vite package directly
+          // Try to resolve vite package directly from the service directory
           vitePath = require.resolve('vite/bin/vite.js');
         } catch (error) {
-          // Fallback to platform-specific binary in node_modules
+          // Fallback to platform-specific binary in local node_modules
           const viteExecutable = process.platform === 'win32' ? 'vite.cmd' : 'vite';
-          // Use absolute path from project root
-          vitePath = path.join(process.cwd(), 'node_modules', '.bin', viteExecutable);
+          // Use path relative to the service directory
+          vitePath = path.join(__dirname, '../../../node_modules/.bin', viteExecutable);
         }
                 
         childProcess = spawn(vitePath, ['build'], {
