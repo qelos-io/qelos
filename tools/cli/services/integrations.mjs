@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { join } from 'node:path';
 import { logger } from './logger.mjs';
+import { extractIntegrationContent, resolveReferences } from './file-refs.mjs';
 
 const INTEGRATION_FILE_EXTENSION = '.integration.json';
 const INTEGRATIONS_API_PATH = '/api/integrations';
@@ -123,7 +124,11 @@ export async function pullIntegrations(sdk, targetPath) {
   integrations.forEach((integration, index) => {
     const fileName = buildFileName(integration, index, usedNames);
     const filePath = join(targetPath, fileName);
-    writeIntegrationFile(filePath, sanitizeIntegrationForFile(integration));
+    
+    // Extract content to files for AI agents
+    const processedIntegration = extractIntegrationContent(integration, targetPath, fileName);
+    
+    writeIntegrationFile(filePath, sanitizeIntegrationForFile(processedIntegration));
     logger.step(`Pulled: ${getIntegrationDisplayName(integration) || integration._id || fileName}`);
   });
 
@@ -154,8 +159,12 @@ export async function pushIntegrations(sdk, path, options = {}) {
     try {
       const integrationData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
       validateIntegrationPayload(integrationData, file);
-      const payload = toRequestPayload(integrationData);
-      const displayName = getIntegrationDisplayName(integrationData) || file.replace(INTEGRATION_FILE_EXTENSION, '');
+      
+      // Resolve any $ref references in the integration
+      const resolvedIntegration = await resolveReferences(integrationData, path);
+      
+      const payload = toRequestPayload(resolvedIntegration);
+      const displayName = getIntegrationDisplayName(resolvedIntegration) || file.replace(INTEGRATION_FILE_EXTENSION, '');
 
       logger.step(`Pushing integration: ${displayName}`);
 

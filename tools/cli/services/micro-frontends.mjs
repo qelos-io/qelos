@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { logger } from './logger.mjs';
+import { loadReference } from './file-refs.mjs';
 
 /**
  * Convert a string to kebab-case
@@ -57,41 +58,6 @@ export function extractMicroFrontendStructures(microFrontends, pluginPath) {
       structure: { $ref: relativeRef }
     };
   });
-}
-
-/**
- * Load content from a $ref reference
- * @param {string} ref - Reference path (relative, absolute, or URL)
- * @param {string} basePath - Base path for resolving relative references
- * @returns {Promise<string>} Loaded content
- */
-async function loadReference(ref, basePath) {
-  // Handle HTTP/HTTPS URLs
-  if (ref.startsWith('http://') || ref.startsWith('https://')) {
-    logger.debug(`Loading structure from URL: ${ref}`);
-    try {
-      const response = await fetch(ref);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      return await response.text();
-    } catch (error) {
-      throw new Error(`Failed to load from URL ${ref}: ${error.message}`);
-    }
-  }
-
-  // Handle absolute and relative paths
-  const filePath = path.isAbsolute(ref) 
-    ? ref 
-    : path.resolve(basePath, ref);
-
-  logger.debug(`Loading structure from file: ${filePath}`);
-  
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`Referenced file does not exist: ${filePath}`);
-  }
-
-  return fs.readFileSync(filePath, 'utf-8');
 }
 
 /**

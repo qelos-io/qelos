@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { join } from 'node:path';
 import { logger } from './logger.mjs';
 import { appUrl } from './sdk.mjs';
+import { extractConfigContent, resolveReferences } from './file-refs.mjs';
 
 /**
  * Push configurations from local directory to remote
@@ -44,6 +45,9 @@ export async function pushConfigurations(sdk, path, options = {}) {
       }
       
       logger.step(`Pushing configuration: ${key}`);
+      
+      // Resolve any $ref references in the configuration
+      configData = await resolveReferences(configData, path);
       
       // Special handling for app-configuration: ensure QELOS_URL hostname is in websiteUrls
       if (key === 'app-configuration') {
@@ -160,7 +164,10 @@ export async function pullConfigurations(sdk, targetPath) {
     // Remove fields that shouldn't be in the file
     const { _id, tenant, created, updated, ...relevantFields } = fullConfig;
     
-    fs.writeFileSync(filePath, JSON.stringify(relevantFields, null, 2), 'utf-8');
+    // Extract content to files for supported config types
+    const processedConfig = extractConfigContent(relevantFields, targetPath);
+    
+    fs.writeFileSync(filePath, JSON.stringify(processedConfig, null, 2), 'utf-8');
     logger.step(`Pulled: ${config.key}`);
   }));
 
