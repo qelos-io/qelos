@@ -3,7 +3,7 @@ import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import integrationsService from '@/services/apis/integrations-service';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { IIntegrationSource, IIntegration } from '@qelos/global-types';
@@ -55,6 +55,50 @@ const filteredIntegrations = computed(() => {
   });
 });
 
+// Group integrations by categories
+const groupedIntegrations = computed(() => {
+  const groups: Record<string, IIntegration[]> = {
+    'AI Agents': [],
+    'Function callings': [],
+  };
+  
+  const webhookGroups: Record<string, IIntegration[]> = {};
+  
+  filteredIntegrations.value.forEach(integration => {
+    // AI Agents: kind[0] === qelos && trigger.operation === chatCompletion
+    if (integration.kind[0] === 'qelos' && integration.trigger.operation === 'chatCompletion') {
+      groups['AI Agents'].push(integration);
+    }
+    // Function callings: trigger.operation === functionCalling
+    else if (integration.trigger.operation === 'functionCalling') {
+      groups['Function callings'].push(integration);
+    }
+    // Webhooks: trigger.operation === webhook && trigger.details.source
+    else if (integration.trigger.operation === 'webhook' && integration.trigger.details?.source) {
+      const sourceName = integration.trigger.details.source;
+      if (!webhookGroups[sourceName]) {
+        webhookGroups[sourceName] = [];
+      }
+      webhookGroups[sourceName].push(integration);
+    }
+  });
+  
+  // Add webhook groups to the main groups object
+  Object.keys(webhookGroups).forEach(sourceName => {
+    groups[`Webhook - ${sourceName}`] = webhookGroups[sourceName];
+  });
+  
+  return groups;
+});
+
+// Get only non-empty groups for display
+const nonEmptyGroups = computed(() => {
+  return Object.entries(groupedIntegrations.value).filter(([_, integrations]) => integrations.length > 0);
+});
+
+// Track which groups are collapsed
+const collapsedGroups = ref<Record<string, boolean>>({});
+
 const remove = useConfirmAction((id: string) => {
   integrationsService.remove(id).then(() => {
     integrationsStore.retry();
@@ -103,94 +147,118 @@ const toggleActive = async (integration: IIntegration) => {
           </el-empty>
         </div>
         
-        <div v-else class="integrations-grid">
-          <div v-for="integration in filteredIntegrations" 
-               :key="integration._id"
-               :id="'integration-' + integration._id"
-               class="integration-card"
-               :class="{ 'integration-card-inactive': !integration.active }"
-               @click="$router.push({query: { mode: 'edit', id: integration._id }})">
-            
-            <div class="integration-header">
-              <div class="integration-title">
-                <h3>
-                  <router-link :to="{query: { mode: 'edit', id: integration._id }}" @click.stop>
-                    {{ sourcesById[integration.trigger.source]?.name || 'Unknown' }} → {{ sourcesById[integration.target.source]?.name || 'Unknown' }}
-                  </router-link>
-                </h3>
-                <div class="integration-subtitle" v-if="integration.trigger.details?.name">
-                  {{ integration.trigger.details.name }}
+        <div v-else>
+          <!-- Display grouped integrations -->
+          <template v-for="[groupName, integrations] in nonEmptyGroups" :key="groupName">
+            <div class="group-section">
+              <div class="group-header" @click="collapsedGroups[groupName] = !collapsedGroups[groupName]">
+                <h4 class="group-title">{{ groupName }}</h4>
+                <div class="group-header-right">
+                  <el-badge :value="integrations.length" type="primary" class="group-count" />
+                  <el-icon class="collapse-icon" :class="{ 'collapsed': collapsedGroups[groupName] }">
+                    <icon-arrow-down />
+                  </el-icon>
                 </div>
               </div>
-              <p class="integration-description" v-if="integration.trigger.details?.description">{{ integration.trigger.details.description }}</p>
-            </div>
+              <el-collapse-transition>
+                <div v-show="!collapsedGroups[groupName]">
+                  <div class="integrations-grid">
+                    <div v-for="integration in integrations" 
+                         :key="integration._id"
+                         :id="'integration-' + integration._id"
+                         class="integration-card"
+                         :class="{ 'integration-card-inactive': !integration.active }"
+                         @click="$router.push({query: { mode: 'edit', id: integration._id }})">
+                      
+                      <div class="integration-header">
+                        <div class="integration-title">
+                          <h3>
+                            <router-link :to="{query: { mode: 'edit', id: integration._id }}" @click.stop>
+                              {{ sourcesById[integration.trigger.source]?.name || 'Unknown' }} → {{ sourcesById[integration.target.source]?.name || 'Unknown' }}
+                            </router-link>
+                          </h3>
+                          <div class="integration-subtitle" v-if="integration.trigger.details?.name">
+                            {{ integration.trigger.details.name }}
+                          </div>
+                        </div>
+                        <p class="integration-description" v-if="integration.trigger.operation === 'webhook'">
+                          {{ integration.trigger.details?.kind }}<span v-if="integration.trigger.details?.eventName"> | Event: {{ integration.trigger.details.eventName }}</span>
+                        </p>
+                        <p class="integration-description" v-else-if="integration.trigger.details?.description">{{ integration.trigger.details.description }}</p>
+                      </div>
 
-            <div class="integration-flow">
-              <div class="integration-icon-container">
-                <div class="integration-icon">
-                  <img v-if="kinds[integration.kind[0]]?.logo" :src="kinds[integration.kind[0]]?.logo" :alt="kinds[integration.kind[0]]?.name" class="integration-logo">
-                  <p v-else class="large">{{ kinds[integration.kind[0]]?.name }}</p>
+                      <div class="integration-flow">
+                        <div class="integration-icon-container">
+                          <div class="integration-icon">
+                            <img v-if="kinds[integration.kind[0]]?.logo" :src="kinds[integration.kind[0]]?.logo" :alt="kinds[integration.kind[0]]?.name" class="integration-logo">
+                            <p v-else class="large">{{ kinds[integration.kind[0]]?.name }}</p>
+                          </div>
+                          <div class="integration-details">
+                            <div class="integration-source-name">{{ sourcesById[integration.trigger.source]?.name || 'Unknown' }}</div>
+                            <div class="integration-operation">{{ integration.trigger.operation }}</div>
+                          </div>
+                        </div>
+                        
+                        <div class="integration-arrow">
+                          <el-icon><icon-arrow-right /></el-icon>
+                        </div>
+                        
+                        <div class="integration-icon-container">
+                          <div class="integration-icon">
+                            <img v-if="kinds[integration.kind[1]]?.logo" :src="kinds[integration.kind[1]]?.logo" :alt="kinds[integration.kind[1]]?.name" class="integration-logo">
+                            <p v-else class="large">{{ kinds[integration.kind[1]]?.name }}</p>
+                          </div>
+                          <div class="integration-details">
+                            <div class="integration-source-name">{{ sourcesById[integration.target.source]?.name || 'Unknown' }}</div>
+                            <div class="integration-operation">{{ integration.target.operation }}</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div class="integration-actions">
+                        <el-tooltip :content="$t('Toggle Active Status')" placement="top">
+                          <el-button 
+                            :type="integration.active ? 'success' : 'info'" 
+                            circle 
+                            @click.stop="toggleActive(integration)"
+                          >
+                            <el-icon><icon-check v-if="integration.active" /><icon-close v-else /></el-icon>
+                          </el-button>
+                        </el-tooltip>
+                        
+                        <el-tooltip :content="$t('Edit Integration')" placement="top">
+                          <el-button 
+                            type="primary" 
+                            circle 
+                            @click.stop="$router.push({ query: { mode: 'edit', id: integration._id } })"
+                          >
+                            <el-icon><icon-edit /></el-icon>
+                          </el-button>
+                        </el-tooltip>
+                        
+                        <el-tooltip :content="$t('Delete Integration')" placement="top">
+                          <el-button 
+                            type="danger" 
+                            circle 
+                            @click.stop="remove(integration._id)"
+                          >
+                            <el-icon><icon-delete /></el-icon>
+                          </el-button>
+                        </el-tooltip>
+                      </div>
+                    </div>
+                    
+                    <AddNewCard 
+                      v-if="groupName === Object.keys(nonEmptyGroups)[0]"
+                      :title="$t('Create new Integration')"
+                      :description="$t('Connect your services together')"
+                      :to="{ query: { mode: 'create' } }"
+                    />
+                  </div>
                 </div>
-                <div class="integration-details">
-                  <div class="integration-source-name">{{ sourcesById[integration.trigger.source]?.name || 'Unknown' }}</div>
-                  <div class="integration-operation">{{ integration.trigger.operation }}</div>
-                </div>
-              </div>
-              
-              <div class="integration-arrow">
-                <el-icon><icon-arrow-right /></el-icon>
-              </div>
-              
-              <div class="integration-icon-container">
-                <div class="integration-icon">
-                  <img v-if="kinds[integration.kind[1]]?.logo" :src="kinds[integration.kind[1]]?.logo" :alt="kinds[integration.kind[1]]?.name" class="integration-logo">
-                  <p v-else class="large">{{ kinds[integration.kind[1]]?.name }}</p>
-                </div>
-                <div class="integration-details">
-                  <div class="integration-source-name">{{ sourcesById[integration.target.source]?.name || 'Unknown' }}</div>
-                  <div class="integration-operation">{{ integration.target.operation }}</div>
-                </div>
-              </div>
+              </el-collapse-transition>
             </div>
-            
-            <div class="integration-actions">
-              <el-tooltip :content="$t('Toggle Active Status')" placement="top">
-                <el-button 
-                  :type="integration.active ? 'success' : 'info'" 
-                  circle 
-                  @click.stop="toggleActive(integration)"
-                >
-                  <el-icon><icon-check v-if="integration.active" /><icon-close v-else /></el-icon>
-                </el-button>
-              </el-tooltip>
-              
-              <el-tooltip :content="$t('Edit Integration')" placement="top">
-                <el-button 
-                  type="primary" 
-                  circle 
-                  @click.stop="$router.push({ query: { mode: 'edit', id: integration._id } })"
-                >
-                  <el-icon><icon-edit /></el-icon>
-                </el-button>
-              </el-tooltip>
-              
-              <el-tooltip :content="$t('Delete Integration')" placement="top">
-                <el-button 
-                  type="danger" 
-                  circle 
-                  @click.stop="remove(integration._id)"
-                >
-                  <el-icon><icon-delete /></el-icon>
-                </el-button>
-              </el-tooltip>
-            </div>
-          </div>
-          
-          <AddNewCard 
-            :title="$t('Create new Integration')"
-            :description="$t('Connect your services together')"
-            :to="{ query: { mode: 'create' } }"
-          />
+          </template>
         </div>
       </template>
     </el-skeleton>
@@ -198,12 +266,58 @@ const toggleActive = async (integration: IIntegration) => {
 </template>
 
 <style scoped>
+.group-section {
+  margin-bottom: 40px;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--el-border-color-light);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s ease;
+}
+
+.group-header:hover {
+  border-bottom-color: var(--el-color-primary-light-5);
+}
+
+.group-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.group-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin: 0;
+}
+
+.group-count {
+  flex-shrink: 0;
+}
+
+.collapse-icon {
+  transition: transform 0.3s ease;
+  color: var(--el-text-color-secondary);
+}
+
+.collapse-icon.collapsed {
+  transform: rotate(-90deg);
+}
+
 .integrations-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 16px;
   width: 100%;
-  margin-top: 20px;
 }
 
 .integration-skeleton {
@@ -224,7 +338,7 @@ const toggleActive = async (integration: IIntegration) => {
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  padding: 20px;
+  padding: 16px;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -243,18 +357,18 @@ const toggleActive = async (integration: IIntegration) => {
 }
 
 .integration-header {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .integration-title {
   display: flex;
   flex-direction: column;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .integration-title h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--el-color-primary);
 }
@@ -272,8 +386,8 @@ const toggleActive = async (integration: IIntegration) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  padding: 20px 0;
+  gap: 16px;
+  padding: 16px 0;
   flex: 1;
 }
 
@@ -288,8 +402,8 @@ const toggleActive = async (integration: IIntegration) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
+  width: 60px;
+  height: 60px;
 }
 
 .integration-details {
@@ -312,8 +426,8 @@ const toggleActive = async (integration: IIntegration) => {
 
 .integration-icon img {
   max-width: 100%;
-  max-height: 60px;
-  border-radius: 8px;
+  max-height: 45px;
+  border-radius: 6px;
   margin: 0;
   object-fit: contain;
 }
@@ -328,14 +442,14 @@ const toggleActive = async (integration: IIntegration) => {
 
 .integration-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: flex-end;
-  padding-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid #ebeef5;
 }
 
 .large {
-  font-size: 32px;
+  font-size: 24px;
 }
 
 .section-divider-container {
@@ -372,24 +486,24 @@ const toggleActive = async (integration: IIntegration) => {
 .integration-header {
   background-color: var(--el-color-primary-light-9);
   border-radius: 6px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
   position: relative;
   border-left: 4px solid var(--el-color-primary);
 }
 
 .integration-subtitle {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--el-color-primary-dark-2);
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .integration-description {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--el-text-color-secondary);
-  line-height: 1.5;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
