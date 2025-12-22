@@ -133,5 +133,15 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     }
   }
 
+  if (kind === IntegrationSourceKind.Sumit) {
+    const { companyId } = metadata;
+    if (!companyId ||typeof companyId !== 'string') {
+      throw new ResponseError('Invalid Sumit metadata: companyId is required.', 400);
+    }
+    return {
+      companyId
+    }
+  }
+
   return {};
 }

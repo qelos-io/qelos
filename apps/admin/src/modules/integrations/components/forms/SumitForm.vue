@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineProps, defineEmits } from 'vue';
+import { ref, computed } from 'vue';
 import { ISumitSource } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';

@@ -59,9 +59,15 @@ const editingIntegration = computed(() => {
   return undefined;
 })
 
+// Check if AI agent mode is enabled
+const isAIAgentMode = computed(() => route.query.agentMode === 'true');
+
+// Get pre-selected source ID
+const preSelectedSourceId = computed(() => route.query.sourceId as string | undefined);
+
 const closeIntegrationFormModal = () => {
   integrationsStore.retry();
-  router.push({ query: buildQuery({ mode: undefined, id: undefined }) });
+  router.push({ query: buildQuery({ mode: undefined, id: undefined, agentMode: undefined, sourceId: undefined }) });
 }
 </script>
 
@@ -102,8 +108,11 @@ const closeIntegrationFormModal = () => {
       <WorkflowsView />
     </div>
 
-    <IntegrationFormModal :visible="$route.query.mode === 'create' || ($route.query.mode === 'edit' && !!editingIntegration)"
+    <IntegrationFormModal 
+      :visible="$route.query.mode === 'create' || ($route.query.mode === 'edit' && !!editingIntegration)"
       :editing-integration="editingIntegration"
+      :is-ai-agent-mode="isAIAgentMode"
+      :pre-selected-source-id="preSelectedSourceId"
       @close="closeIntegrationFormModal" />
   </div>
 </template>

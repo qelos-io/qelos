@@ -176,20 +176,20 @@ const closeForm = () => {
         <strong>{{ $t('Labels') }}:</strong>
         <el-tag v-for="label in connection.labels" :key="label" class="role">{{ label }}</el-tag>
       </p>
-      <p v-if="connection.metadata.url">
+      <p v-if="connection.metadata?.url">
         <strong>{{ $t('URL') }}:</strong> {{ connection.metadata.url }}
       </p>
-      <p v-if="connection.metadata.clientId">
+      <p v-if="connection.metadata?.clientId">
         <strong>{{ $t('Client ID') }}:</strong> {{ connection.metadata.clientId }}
       </p>
-      <p v-if="connection.metadata.baseUrl" class="base-url-container">
+      <p v-if="connection.metadata?.baseUrl" class="base-url-container">
         <strong class="base-url-text">{{ $t('Base Url') }}:</strong>
         <span class="base-url">{{ connection.metadata.baseUrl }}</span>
       </p>
-      <p v-if="connection.metadata.scope">
+      <p v-if="connection.metadata?.scope">
         <strong>{{ $t('Scope') }}:</strong> {{ connection.metadata.scope }}
       </p>
-      <p v-if="connection.metadata.apiEndpoint">
+      <p v-if="connection.metadata?.apiEndpoint">
         <strong>{{ $t('API Endpoint') }}:</strong> {{ connection.metadata.apiEndpoint }}
       </p>
       <template #actions>

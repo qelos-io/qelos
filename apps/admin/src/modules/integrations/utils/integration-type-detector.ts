@@ -14,31 +14,33 @@ export enum IntegrationType {
 /**
  * Detects if an integration is an AI Agent
  * AI Agent criteria:
- * - kind[0] === 'qelos' (trigger source is Qelos)
- * - kind[1] === 'openai' (target source is OpenAI)
- * - trigger.operation === 'chatCompletion'
- * - target.operation === 'chatCompletion'
+ * - Trigger source is an AI provider (OpenAI, Claude, Gemini)
+ * - trigger.operation === 'chat_completion'
+ * - Target can be any source (usually Qelos for webhook)
  */
 export function isAIAgentIntegration(
   integration: Pick<IIntegration, 'trigger' | 'target'>,
   sources: IIntegrationSource[]
 ): boolean {
-  if (!integration.trigger?.source || !integration.target?.source) {
+  if (!integration.trigger?.source) {
     return false;
   }
 
   const triggerSource = sources.find(s => s._id === integration.trigger.source);
-  const targetSource = sources.find(s => s._id === integration.target.source);
 
-  if (!triggerSource || !targetSource) {
+  if (!triggerSource) {
     return false;
   }
 
+  const AI_PROVIDER_KINDS = [
+    IntegrationSourceKind.OpenAI,
+    IntegrationSourceKind.ClaudeAi,
+    IntegrationSourceKind.Gemini
+  ];
+
   return (
-    triggerSource.kind === IntegrationSourceKind.Qelos &&
-    targetSource.kind === IntegrationSourceKind.OpenAI &&
-    integration.trigger.operation === QelosTriggerOperation.chatCompletion &&
-    integration.target.operation === OpenAITargetOperation.chatCompletion
+    AI_PROVIDER_KINDS.includes(triggerSource.kind) &&
+    integration.trigger.operation === 'chat_completion'
   );
 }
 

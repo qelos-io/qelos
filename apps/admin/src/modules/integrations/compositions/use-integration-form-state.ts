@@ -1,4 +1,4 @@
-import { nextTick, reactive, ref, watch } from 'vue';
+import { nextTick, reactive, ref, toValue, watch } from 'vue';
 import type { Ref } from 'vue';
 import { IIntegration, IDataManipulationStep, IntegrationSourceKind } from '@qelos/global-types';
 import { detectIntegrationType, IntegrationType } from '@/modules/integrations/utils/integration-type-detector';
@@ -7,6 +7,8 @@ interface UseIntegrationFormStateOptions {
   props: { editingIntegration?: Partial<IIntegration> };
   visible: Ref<boolean>;
   sourcesStore: { result?: any[] };
+  isAIAgentMode?: Ref<boolean> | boolean;
+  preSelectedSourceId?: Ref<string> | string;
 }
 
 const DEFAULT_DATA_MANIPULATION: IDataManipulationStep[] = [
@@ -38,7 +40,13 @@ const DEFAULT_DATA_MANIPULATION: IDataManipulationStep[] = [
   }
 ];
 
-export function useIntegrationFormState({ props, visible, sourcesStore }: UseIntegrationFormStateOptions) {
+export function useIntegrationFormState({ 
+  props, 
+  visible, 
+  sourcesStore,
+  isAIAgentMode,
+  preSelectedSourceId 
+}: UseIntegrationFormStateOptions) {
   const form = reactive<Pick<IIntegration, 'trigger' | 'target' | 'dataManipulation' | 'active'>>({
     trigger: {
       source: '',
@@ -82,6 +90,8 @@ export function useIntegrationFormState({ props, visible, sourcesStore }: UseInt
     hasManualViewModeSelection.value = false;
 
     const editingIntegration = props.editingIntegration || {};
+    const aiAgentMode = toValue(isAIAgentMode);
+    const selectedSourceId = toValue(preSelectedSourceId);
 
     Object.assign(form, {
       ...editingIntegration,
@@ -109,15 +119,46 @@ export function useIntegrationFormState({ props, visible, sourcesStore }: UseInt
       const detectedType = detectIntegrationType(form, sourcesStore.result);
       setSelectedViewMode(detectedType);
     } else {
-      setSelectedViewMode(IntegrationType.Workflow);
+      // Set AI agent mode if specified
+      if (aiAgentMode) {
+        setSelectedViewMode(IntegrationType.AIAgent);
+      } else {
+        setSelectedViewMode(IntegrationType.Workflow);
+      }
 
       nextTick(() => {
         if (sourcesStore.result?.length) {
-          const qelosSourceId = findQelosSource();
-          if (qelosSourceId) {
-            form.target.source = qelosSourceId;
-            form.target.operation = 'webhook';
-            form.target.details = {};
+          // Use pre-selected source if provided
+          if (selectedSourceId) {
+            const preSelectedSource = sourcesStore.result.find(s => s._id === selectedSourceId);
+            if (preSelectedSource) {
+              // For AI agents, set the source as trigger
+              if (aiAgentMode) {
+                form.trigger.source = selectedSourceId;
+                form.trigger.operation = 'chat_completion';
+                form.trigger.details = {
+                  name: `AI Agent - ${preSelectedSource.name}`,
+                  instructions: '',
+                  model: preSelectedSource.metadata?.defaultModel || 'gpt-4'
+                };
+                
+                // Set target to Qelos for webhook
+                const qelosSourceId = findQelosSource();
+                if (qelosSourceId) {
+                  form.target.source = qelosSourceId;
+                  form.target.operation = 'webhook';
+                  form.target.details = {};
+                }
+              }
+            }
+          } else {
+            // Default behavior: use Qelos source for target
+            const qelosSourceId = findQelosSource();
+            if (qelosSourceId) {
+              form.target.source = qelosSourceId;
+              form.target.operation = 'webhook';
+              form.target.details = {};
+            }
           }
         }
       });
@@ -128,6 +169,10 @@ export function useIntegrationFormState({ props, visible, sourcesStore }: UseInt
     () => [form.trigger, form.target, sourcesStore.result],
     () => {
       if (props.editingIntegration?._id || !sourcesStore.result?.length || hasManualViewModeSelection.value) {
+        return;
+      }
+      // Don't override if AI agent mode is explicitly set
+      if (toValue(isAIAgentMode)) {
         return;
       }
       const detectedType = detectIntegrationType(form, sourcesStore.result || []);
