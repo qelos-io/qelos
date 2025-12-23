@@ -507,7 +507,7 @@ nav {
     display: none;
   }
 
-  .el-menu-item span {
+  .el-menu-item a span {
     display: none;
   }
 
@@ -539,7 +539,7 @@ nav {
     border-radius: 4px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 
-    .el-menu-item {
+    .el-menu-item a{
       border-radius: 4px;
       margin: 2px;
       height: 40px;
@@ -572,7 +572,7 @@ nav {
   color: var(--negative-color);
 }
 
-.el-menu-item {
+.el-menu-item a {
   padding: 0 20px;
   margin: 5px;
   border-radius: 5px;
@@ -941,7 +941,7 @@ a:hover {
 
   .el-sub-menu {
     .el-menu {
-      .el-menu-item {
+      .el-menu-item a{
         padding: 0;
         padding-inline-start: 10px;
       }
