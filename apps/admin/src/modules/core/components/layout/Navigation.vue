@@ -573,7 +573,7 @@ nav {
 }
 
 .el-menu-item a {
-  padding: 0 20px;
+  padding: 0;
   margin: 5px;
   border-radius: 5px;
   line-height: 50px;
