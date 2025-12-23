@@ -37,11 +37,13 @@
       </div>
     </el-card>
   </div>
+  <NavigationGroupsTab :plugin="edit" />
 </template>
 
 <script setup lang="ts">
 import { provide, reactive, ref } from 'vue';
 import EditPluginMicroFrontends from '@/modules/plugins/components/EditPluginMicroFrontends.vue';
+import NavigationGroupsTab from './NavigationGroupsTab.vue';
 import { IPlugin } from '@/services/types/plugin';
 
 const props = defineProps<{

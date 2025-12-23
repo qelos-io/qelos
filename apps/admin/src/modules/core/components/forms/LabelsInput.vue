@@ -8,8 +8,12 @@ const model = defineModel()
 
 <template>
   <el-form-item>
-    <template #label>{{ title }}
+    <template #label>
+      <slot v-if="$slots.label" name=label></slot>
+      <template v-else>
+        {{ title }}
       <InfoIcon v-if="info" :content="info"/>
+      </template>
     </template>
     <el-select
         v-model="model"

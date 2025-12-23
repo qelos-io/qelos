@@ -4,37 +4,64 @@
     <div class="mfe-content" :class="{ 'with-panel': showSidePanel }">
       <!-- MFE List -->
       <div class="mfe-list">
-        <div v-if="!edit.microFrontends?.length" class="empty-state" role="status" aria-live="polite">
-          <el-icon class="empty-icon" aria-hidden="true"><font-awesome-icon :icon="['fas', 'window-restore']" /></el-icon>
+        <div
+          v-if="!edit.microFrontends?.length"
+          class="empty-state"
+          role="status"
+          aria-live="polite"
+        >
+          <el-icon class="empty-icon" aria-hidden="true"
+            ><font-awesome-icon :icon="['fas', 'window-restore']"
+          /></el-icon>
           <h4>No Micro Frontends</h4>
           <p>Start by adding your first micro frontend</p>
-          <el-button 
-            type="primary" 
+          <el-button
+            type="primary"
             @click="addNewMicroFrontend"
-            :aria-label="$t('Add your first micro-frontend')">
-            <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'plus']" /></el-icon>
+            :aria-label="$t('Add your first micro-frontend')"
+          >
+            <el-icon aria-hidden="true"
+              ><font-awesome-icon :icon="['fas', 'plus']"
+            /></el-icon>
             Add First MFE
           </el-button>
         </div>
 
         <!-- Desktop Table View -->
-        <div v-else class="mfe-table desktop-table" role="table" aria-label="Micro-frontends list">
+        <div
+          v-else
+          class="mfe-table desktop-table"
+          role="table"
+          aria-label="Micro-frontends list"
+        >
           <div class="table-header" role="row">
             <div class="col-status" role="columnheader">Status</div>
             <div class="col-name" role="columnheader">Name</div>
             <div class="col-type" role="columnheader">Type</div>
-            <div class="col-implementation" :class="{ 'hidden': showSidePanel }" role="columnheader">Implementation</div>
+            <div
+              class="col-implementation"
+              :class="{ hidden: showSidePanel }"
+              role="columnheader"
+            >
+              Implementation
+            </div>
             <div class="col-route" role="columnheader">Route/Target</div>
-            <div class="col-permissions" :class="{ 'hidden': showSidePanel }" role="columnheader">Permissions</div>
+            <div
+              class="col-permissions"
+              :class="{ hidden: showSidePanel }"
+              role="columnheader"
+            >
+              Permissions
+            </div>
             <div class="col-actions" role="columnheader">Actions</div>
           </div>
-          <div 
-            v-for="(mfe, index) in edit.microFrontends" 
+          <div
+            v-for="(mfe, index) in edit.microFrontends"
             :key="index"
             class="table-row"
-            :class="{ 
-              'selected': selectedMfe === index,
-              'inactive': !mfe.active 
+            :class="{
+              selected: selectedMfe === index,
+              inactive: !mfe.active,
             }"
             @click="editMfe(index)"
             role="row"
@@ -45,75 +72,119 @@
             @keydown.space.prevent="editMfe(index)"
           >
             <div class="col-status" role="cell">
-              <el-switch 
-                v-model="mfe.active" 
+              <el-switch
+                v-model="mfe.active"
                 size="small"
                 @click.stop
-                :aria-label="`Toggle ${mfe.name || 'micro-frontend'} active status`"
+                :aria-label="`Toggle ${
+                  mfe.name || 'micro-frontend'
+                } active status`"
               />
             </div>
-            
+
             <div class="col-name" role="cell">
-              <div class="mfe-name">{{ mfe.name || 'Unnamed MFE' }}</div>
-              <div class="mfe-description">{{ mfe.description || 'No description' }}</div>
+              <div class="mfe-name">{{ mfe.name || "Unnamed MFE" }}</div>
+              <div class="mfe-description">
+                {{ mfe.description || "No description" }}
+              </div>
             </div>
-            
+
             <div class="col-type" role="cell">
-              <el-tag size="small" :type="getMfeTypeDisplay(mfe) === 'Page' ? 'primary' : getMfeTypeDisplay(mfe) === 'Component' ? 'success' : 'warning'">
+              <el-tag
+                size="small"
+                :type="
+                  getMfeTypeDisplay(mfe) === 'Page'
+                    ? 'primary'
+                    : getMfeTypeDisplay(mfe) === 'Component'
+                    ? 'success'
+                    : 'warning'
+                "
+              >
                 {{ getMfeTypeDisplay(mfe) }}
               </el-tag>
             </div>
-            
-            <div class="col-implementation" :class="{ 'hidden': showSidePanel }" role="cell">
-              <el-tag size="small" :type="getMfeImplementation(mfe) === 'No-Code' ? 'info' : 'info'">
+
+            <div
+              class="col-implementation"
+              :class="{ hidden: showSidePanel }"
+              role="cell"
+            >
+              <el-tag
+                size="small"
+                :type="
+                  getMfeImplementation(mfe) === 'No-Code' ? 'info' : 'info'
+                "
+              >
                 {{ getMfeImplementation(mfe) }}
               </el-tag>
             </div>
-            
+
             <div class="col-route" role="cell">
-              <span v-if="getCurrentMfeType(mfe) === 'page'">{{ mfe.route.path || mfe.route.name || 'Not set' }}</span>
-              <span v-else-if="getCurrentMfeType(mfe) === 'global'">{{ mfe.global.position || 'Not set' }}</span>
-              <span v-else-if="getCurrentMfeType(mfe) === 'modal'">{{ mfe.modal.name || 'Not set' }}</span>
+              <span v-if="getCurrentMfeType(mfe) === 'page'">{{
+                mfe.route.path || mfe.route.name || "Not set"
+              }}</span>
+              <span v-else-if="getCurrentMfeType(mfe) === 'global'">{{
+                mfe.global.position || "Not set"
+              }}</span>
+              <span v-else-if="getCurrentMfeType(mfe) === 'modal'">{{
+                mfe.modal.name || "Not set"
+              }}</span>
               <span v-else>-</span>
             </div>
-            
-            <div class="col-permissions" :class="{ 'hidden': showSidePanel }" role="cell">
-              <el-tag v-if="mfe.guest" size="small" type="warning">Guest</el-tag>
-              <el-tag v-else size="small">{{ mfe.roles?.includes('*') ? 'All Users' : 'Restricted' }}</el-tag>
+
+            <div
+              class="col-permissions"
+              :class="{ hidden: showSidePanel }"
+              role="cell"
+            >
+              <el-tag v-if="mfe.guest" size="small" type="warning"
+                >Guest</el-tag
+              >
+              <el-tag v-else size="small">{{
+                mfe.roles?.includes("*") ? "All Users" : "Restricted"
+              }}</el-tag>
             </div>
-            
+
             <div class="col-actions" role="cell">
-              <el-button 
-                text 
-                type="primary" 
+              <el-button
+                text
+                type="primary"
                 @click.stop="editMfe(index)"
                 size="small"
                 :aria-label="`Edit ${mfe.name || 'micro-frontend'}`"
               >
                 <font-awesome-icon :icon="['fas', 'edit']" aria-hidden="true" />
               </el-button>
-              <el-button 
-                text 
-                type="danger" 
+              <el-button
+                text
+                type="danger"
                 @click.stop="removeMicroFrontend(index)"
                 size="small"
                 :aria-label="`Delete ${mfe.name || 'micro-frontend'}`"
               >
-                <font-awesome-icon :icon="['fas', 'trash']" aria-hidden="true" />
+                <font-awesome-icon
+                  :icon="['fas', 'trash']"
+                  aria-hidden="true"
+                />
               </el-button>
             </div>
           </div>
         </div>
 
         <!-- Mobile Card View -->
-        <div v-if="edit.microFrontends?.length" class="mobile-cards" role="list" aria-label="Micro-frontends list">
-          <div 
-            v-for="(mfe, index) in edit.microFrontends" 
+        <div
+          v-if="edit.microFrontends?.length"
+          class="mobile-cards"
+          role="list"
+          aria-label="Micro-frontends list"
+        >
+          <div
+            v-for="(mfe, index) in edit.microFrontends"
             :key="index"
             class="mobile-card"
-            :class="{ 
-              'selected': selectedMfe === index,
-              'inactive': !mfe.active 
+            :class="{
+              selected: selectedMfe === index,
+              inactive: !mfe.active,
             }"
             @click="editMfe(index)"
             role="listitem"
@@ -124,51 +195,82 @@
           >
             <div class="card-header">
               <div class="card-title">
-                <h4>{{ mfe.name || 'Unnamed MFE' }}</h4>
+                <h4>{{ mfe.name || "Unnamed MFE" }}</h4>
                 <div class="card-badges">
-                  <el-tag size="small" :type="getMfeTypeDisplay(mfe) === 'Page' ? 'primary' : getMfeTypeDisplay(mfe) === 'Component' ? 'success' : 'warning'">
+                  <el-tag
+                    size="small"
+                    :type="
+                      getMfeTypeDisplay(mfe) === 'Page'
+                        ? 'primary'
+                        : getMfeTypeDisplay(mfe) === 'Component'
+                        ? 'success'
+                        : 'warning'
+                    "
+                  >
                     {{ getMfeTypeDisplay(mfe) }}
                   </el-tag>
-                  <el-tag size="small" :type="getMfeImplementation(mfe) === 'No-Code' ? 'info' : 'info'">
+                  <el-tag
+                    size="small"
+                    :type="
+                      getMfeImplementation(mfe) === 'No-Code' ? 'info' : 'info'
+                    "
+                  >
                     {{ getMfeImplementation(mfe) }}
                   </el-tag>
                 </div>
               </div>
               <div class="card-actions">
-                <el-switch 
-                  v-model="mfe.active" 
+                <el-switch
+                  v-model="mfe.active"
                   size="small"
                   @click.stop
-                  :aria-label="`Toggle ${mfe.name || 'micro-frontend'} active status`"
+                  :aria-label="`Toggle ${
+                    mfe.name || 'micro-frontend'
+                  } active status`"
                 />
-                <el-button 
-                  text 
-                  type="danger" 
+                <el-button
+                  text
+                  type="danger"
                   @click.stop="removeMicroFrontend(index)"
                   size="small"
                   :aria-label="`Delete ${mfe.name || 'micro-frontend'}`"
                 >
-                  <font-awesome-icon :icon="['fas', 'trash']" aria-hidden="true" />
+                  <font-awesome-icon
+                    :icon="['fas', 'trash']"
+                    aria-hidden="true"
+                  />
                 </el-button>
               </div>
             </div>
-            
+
             <div class="card-content">
-              <p v-if="mfe.description" class="card-description">{{ mfe.description }}</p>
+              <p v-if="mfe.description" class="card-description">
+                {{ mfe.description }}
+              </p>
               <div class="card-info">
                 <div class="info-item">
                   <span class="info-label">Route/Target:</span>
                   <span class="info-value">
-                    <span v-if="mfe.route">{{ mfe.route.path || mfe.route.name || 'Not set' }}</span>
-                    <span v-else-if="mfe.global">{{ mfe.global.position || 'Not set' }}</span>
-                    <span v-else-if="mfe.modal">{{ mfe.modal.name || 'Not set' }}</span>
+                    <span v-if="mfe.route">{{
+                      mfe.route.path || mfe.route.name || "Not set"
+                    }}</span>
+                    <span v-else-if="mfe.global">{{
+                      mfe.global.position || "Not set"
+                    }}</span>
+                    <span v-else-if="mfe.modal">{{
+                      mfe.modal.name || "Not set"
+                    }}</span>
                     <span v-else>-</span>
                   </span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Permissions:</span>
-                  <el-tag v-if="mfe.guest" size="small" type="warning">Guest</el-tag>
-                  <el-tag v-else size="small">{{ mfe.roles?.includes('*') ? 'All Users' : 'Restricted' }}</el-tag>
+                  <el-tag v-if="mfe.guest" size="small" type="warning"
+                    >Guest</el-tag
+                  >
+                  <el-tag v-else size="small">{{
+                    mfe.roles?.includes("*") ? "All Users" : "Restricted"
+                  }}</el-tag>
                 </div>
               </div>
             </div>
@@ -177,7 +279,14 @@
       </div>
 
       <!-- Side Panel -->
-      <div v-if="showSidePanel && currentMfe" class="side-panel" :class="{ 'mobile-panel': true }" role="dialog" aria-modal="true" :aria-label="`Configure ${currentMfe.name || 'micro-frontend'}`">
+      <div
+        v-if="showSidePanel && currentMfe"
+        class="side-panel"
+        :class="{ 'mobile-panel': true }"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="`Configure ${currentMfe.name || 'micro-frontend'}`"
+      >
         <div class="panel-header">
           <div class="header-content">
             <div class="header-icon" aria-hidden="true">
@@ -185,18 +294,21 @@
             </div>
             <div class="header-text">
               <h4 id="panel-title">Configure Micro Frontend</h4>
-              <p class="header-subtitle">{{ currentMfe.name || 'Unnamed MFE' }}</p>
+              <p class="header-subtitle">
+                {{ currentMfe.name || "Unnamed MFE" }}
+              </p>
             </div>
           </div>
-          <el-button 
-            text 
-            @click="closeSidePanel" 
+          <el-button
+            text
+            @click="closeSidePanel"
             class="close-button"
-            :aria-label="$t('Close configuration panel')">
+            :aria-label="$t('Close configuration panel')"
+          >
             <font-awesome-icon :icon="['fas', 'times']" aria-hidden="true" />
           </el-button>
         </div>
-        
+
         <div class="panel-content" role="form" aria-labelledby="panel-title">
           <!-- Basic Info Card -->
           <div class="form-card">
@@ -207,29 +319,40 @@
               <h5>Basic Information</h5>
             </div>
             <div class="card-content">
-              <div class="form-grid" role="group" aria-labelledby="basic-info-section">
-                <FormInput 
-                  title="Name" 
-                  v-model="currentMfe.name" 
-                  class="form-field full-width" 
-                  :aria-label="$t('Micro-frontend name')"
-                  id="mfe-name-input" />
-                <FormInput 
-                  title="Description" 
-                  v-model="currentMfe.description" 
+              <div
+                class="form-grid"
+                role="group"
+                aria-labelledby="basic-info-section"
+              >
+                <FormInput
+                  title="Name"
+                  v-model="currentMfe.name"
                   class="form-field full-width"
-                  :aria-label="$t('Micro-frontend description')" 
-                  id="mfe-description-input" />
+                  :aria-label="$t('Micro-frontend name')"
+                  id="mfe-name-input"
+                />
+                <FormInput
+                  title="Description"
+                  v-model="currentMfe.description"
+                  class="form-field full-width"
+                  :aria-label="$t('Micro-frontend description')"
+                  id="mfe-description-input"
+                />
                 <div class="switch-field">
                   <div class="switch-label">
-                    <font-awesome-icon :icon="['fas', 'power-off']" class="switch-icon" aria-hidden="true" />
+                    <font-awesome-icon
+                      :icon="['fas', 'power-off']"
+                      class="switch-icon"
+                      aria-hidden="true"
+                    />
                     <label for="mfe-active-switch">Active Status</label>
                   </div>
-                  <el-switch 
+                  <el-switch
                     id="mfe-active-switch"
-                    v-model="currentMfe.active" 
+                    v-model="currentMfe.active"
                     size="large"
-                    :aria-label="$t('Toggle micro-frontend active status')" />
+                    :aria-label="$t('Toggle micro-frontend active status')"
+                  />
                 </div>
               </div>
             </div>
@@ -244,16 +367,24 @@
               <h5>Frontend Type</h5>
             </div>
             <div class="card-content">
-              <div class="type-selector" role="radiogroup" aria-labelledby="frontend-type-section">
-                <div 
-                  v-for="type in mfeTypes" 
+              <div
+                class="type-selector"
+                role="radiogroup"
+                aria-labelledby="frontend-type-section"
+              >
+                <div
+                  v-for="type in mfeTypes"
                   :key="type.value"
                   class="type-option"
-                  :class="{ 'active': getCurrentMfeType(currentMfe) === type.value }"
+                  :class="{
+                    active: getCurrentMfeType(currentMfe) === type.value,
+                  }"
                   @click="toggleMfeType(currentMfe, type.value)"
                   role="radio"
                   :aria-checked="getCurrentMfeType(currentMfe) === type.value"
-                  :aria-label="`${type.label}: ${getTypeDescription(type.value)}`"
+                  :aria-label="`${type.label}: ${getTypeDescription(
+                    type.value
+                  )}`"
                   tabindex="0"
                   @keydown.enter="toggleMfeType(currentMfe, type.value)"
                   @keydown.space.prevent="toggleMfeType(currentMfe, type.value)"
@@ -265,7 +396,11 @@
                     <h6>{{ type.label }}</h6>
                     <p>{{ getTypeDescription(type.value) }}</p>
                   </div>
-                  <div class="type-check" v-if="getCurrentMfeType(currentMfe) === type.value" aria-hidden="true">
+                  <div
+                    class="type-check"
+                    v-if="getCurrentMfeType(currentMfe) === type.value"
+                    aria-hidden="true"
+                  >
                     <font-awesome-icon :icon="['fas', 'check-circle']" />
                   </div>
                 </div>
@@ -282,12 +417,18 @@
               <h5>Implementation</h5>
             </div>
             <div class="card-content">
-              <div class="template-selector" role="group" aria-labelledby="implementation-section">
-                <label class="template-label" for="template-select-input">Base Template</label>
-                <el-select 
+              <div
+                class="template-selector"
+                role="group"
+                aria-labelledby="implementation-section"
+              >
+                <label class="template-label" for="template-select-input"
+                  >Base Template</label
+                >
+                <el-select
                   id="template-select-input"
-                  v-model="currentMfe.use" 
-                  placeholder="Choose a template..." 
+                  v-model="currentMfe.use"
+                  placeholder="Choose a template..."
                   clearable
                   size="large"
                   class="template-select"
@@ -313,16 +454,27 @@
                     </div>
                   </el-option>
                 </el-select>
-                
-                <div style="margin: 1rem 0; text-align: center; color: var(--el-text-color-secondary); font-size: 0.875rem;" role="separator" aria-label="or">
+
+                <div
+                  style="
+                    margin: 1rem 0;
+                    text-align: center;
+                    color: var(--el-text-color-secondary);
+                    font-size: 0.875rem;
+                  "
+                  role="separator"
+                  aria-label="or"
+                >
                   — OR —
                 </div>
-                
-                <label class="template-label" for="mfe-url-input">Custom URL (iFrame)</label>
-                <FormInput 
+
+                <label class="template-label" for="mfe-url-input"
+                  >Custom URL (iFrame)</label
+                >
+                <FormInput
                   id="mfe-url-input"
-                  title="URL" 
-                  v-model="currentMfe.url" 
+                  title="URL"
+                  v-model="currentMfe.url"
                   placeholder="https://your-app.com"
                   @input="onUrlChange"
                   :aria-label="$t('Custom URL for iFrame')"
@@ -333,7 +485,10 @@
           </div>
 
           <!-- Type-specific Configuration Cards -->
-          <div class="form-card" v-if="getCurrentMfeType(currentMfe) === 'page'">
+          <div
+            class="form-card"
+            v-if="getCurrentMfeType(currentMfe) === 'page'"
+          >
             <div class="card-header" id="page-config-section">
               <div class="card-icon" aria-hidden="true">
                 <font-awesome-icon :icon="['fas', 'route']" />
@@ -341,20 +496,77 @@
               <h5>Page Configuration</h5>
             </div>
             <div class="card-content">
-              <div class="form-grid" role="group" aria-labelledby="page-config-section">
-                <FormInput title="Route Name" v-model="currentMfe.route.name" class="form-field" :aria-label="$t('Route name')" />
-                <FormInput title="Route Path" v-model="currentMfe.route.path" class="form-field" :aria-label="$t('Route path')" />
+              <div
+                class="form-grid"
+                role="group"
+                aria-labelledby="page-config-section"
+              >
+                <FormInput
+                  title="Route Name"
+                  v-model="currentMfe.route.name"
+                  class="form-field"
+                  :aria-label="$t('Route name')"
+                />
+                <FormInput
+                  title="Route Path"
+                  v-model="currentMfe.route.path"
+                  class="form-field"
+                  :aria-label="$t('Route path')"
+                />
                 <div class="form-field full-width">
-                  <NavigationPositionSelector title="Navigation Position" v-model="currentMfe.route.navBarPosition" :aria-label="$t('Navigation position')" />
+                  <NavigationPositionSelector
+                    title="Navigation Position"
+                    v-model="currentMfe.route.navBarPosition"
+                    :aria-label="$t('Navigation position')"
+                  />
+                </div>
+                <div class="form-field full-width" v-if="currentMfe.route.navBarPosition && currentMfe.route.navBarPosition !== false">
+                  <label class="field-label" for="nav-group-select">Navigation Group</label>
+                  <el-select
+                    id="nav-group-select"
+                    v-model="currentMfe.route.group"
+                    placeholder="Select a navigation group (optional)"
+                    clearable
+                    size="large"
+                    class="nav-group-select"
+                    :aria-label="$t('Select navigation group')"
+                  >
+                    <el-option
+                      v-for="group in availableNavGroups"
+                      :key="group.key"
+                      :label="getNavGroupDisplayText(group.key)"
+                      :value="group.key"
+                    >
+                      <div class="nav-group-option">
+                        <el-icon v-if="group.iconName" class="group-icon">
+                          <component :is="getElementPlusIcon(group.iconName)" />
+                        </el-icon>
+                        <span class="group-name">{{ group.name }}</span>
+                        <el-tag v-if="!group.isCurrentPlugin" size="small" type="info" class="plugin-tag">
+                          {{ group.pluginName }}
+                        </el-tag>
+                      </div>
+                    </el-option>
+                  </el-select>
+                  <div class="field-help">
+                    Groups allow you to organize navigation items. Select a group to add this MFE to it.
+                  </div>
                 </div>
                 <div class="form-field full-width">
-                  <LabelsInput title="Route Roles" v-model="currentMfe.route.roles" :aria-label="$t('Route roles')" />
+                  <LabelsInput
+                    title="Route Roles"
+                    v-model="currentMfe.route.roles"
+                    :aria-label="$t('Route roles')"
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="form-card" v-if="getCurrentMfeType(currentMfe) === 'global'">
+          <div
+            class="form-card"
+            v-if="getCurrentMfeType(currentMfe) === 'global'"
+          >
             <div class="card-header" id="global-config-section">
               <div class="card-icon" aria-hidden="true">
                 <font-awesome-icon :icon="['fas', 'puzzle-piece']" />
@@ -362,13 +574,20 @@
               <h5>Global Template Configuration</h5>
             </div>
             <div class="card-content">
-              <div class="form-field" role="group" aria-labelledby="global-config-section">
-                <label class="field-label" for="global-position-input">Position</label>
-                <el-input 
+              <div
+                class="form-field"
+                role="group"
+                aria-labelledby="global-config-section"
+              >
+                <label class="field-label" for="global-position-input"
+                  >Position</label
+                >
+                <el-input
                   id="global-position-input"
-                  v-model="currentMfe.global.position" 
+                  v-model="currentMfe.global.position"
                   size="large"
-                  :aria-label="$t('Global template position')" />
+                  :aria-label="$t('Global template position')"
+                />
               </div>
             </div>
           </div>
@@ -381,15 +600,27 @@
               <h5>Modal Configuration</h5>
             </div>
             <div class="card-content">
-              <div class="form-grid" role="group" aria-labelledby="modal-config-section">
-                <FormInput title="Modal Name" v-model="currentMfe.modal.name" class="form-field" :aria-label="$t('Modal name')" />
+              <div
+                class="form-grid"
+                role="group"
+                aria-labelledby="modal-config-section"
+              >
+                <FormInput
+                  title="Modal Name"
+                  v-model="currentMfe.modal.name"
+                  class="form-field"
+                  :aria-label="$t('Modal name')"
+                />
                 <div class="form-field">
-                  <label class="field-label" for="modal-size-select">Size</label>
-                  <el-select 
+                  <label class="field-label" for="modal-size-select"
+                    >Size</label
+                  >
+                  <el-select
                     id="modal-size-select"
-                    v-model="currentMfe.modal.size" 
+                    v-model="currentMfe.modal.size"
                     size="large"
-                    :aria-label="$t('Modal size')">
+                    :aria-label="$t('Modal size')"
+                  >
                     <el-option value="sm" label="Small" />
                     <el-option value="md" label="Medium" />
                     <el-option value="lg" label="Large" />
@@ -406,7 +637,7 @@
               <div class="card-icon" aria-hidden="true">
                 <font-awesome-icon :icon="['fas', 'shield-alt']" />
               </div>
-              <h5>Access Control</h5>
+              <h5>{{ $t('Access Control') }}</h5>
             </div>
             <div class="card-content">
               <div class="permission-toggle">
@@ -415,50 +646,73 @@
                     <font-awesome-icon :icon="['fas', 'user-friends']" />
                   </div>
                   <div class="toggle-text">
-                    <label for="guest-access-switch"><h6>Guest Access</h6></label>
-                    <p>Allow unauthenticated users to access this micro frontend</p>
+                    <label for="guest-access-switch"><h6>{{ $t('Guest Access') }}</h6></label>
+                    <p>
+                      {{ $t('Allow unauthenticated users to access this micro frontend') }}
+                    </p>
                   </div>
                 </div>
-                <el-switch 
+                <el-switch
                   id="guest-access-switch"
-                  v-model="currentMfe.guest" 
+                  v-model="currentMfe.guest"
                   size="large"
-                  :aria-label="$t('Toggle guest access')" />
+                  :aria-label="$t('Toggle guest access')"
+                />
               </div>
-              
-              <div v-if="!currentMfe.guest" class="permissions-grid" role="group" aria-labelledby="access-control-section">
+
+              <div
+                v-if="!currentMfe.guest"
+                class="permissions-grid"
+                role="group"
+                aria-labelledby="access-control-section"
+              >
                 <div class="permission-section">
-                  <div class="permission-header" id="user-roles-label">
-                    <font-awesome-icon :icon="['fas', 'users']" />
-                    <span>User Roles</span>
-                  </div>
-                  <LabelsInput 
-                    title="User Roles" 
-                    v-model="currentMfe.roles" 
+                  <LabelsInput
+                    title="User Roles"
+                    v-model="currentMfe.roles"
                     placeholder="Add user roles..."
-                    aria-labelledby="user-roles-label" />
+                    aria-labelledby="user-roles-label"
+                  >
+                    <template #slot>
+                      <div class="permission-header" id="user-roles-label">
+                        <font-awesome-icon :icon="['fas', 'users']" />
+                        <span>{{ $t('User Roles') }}</span>
+                      </div>
+                    </template>
+                  </LabelsInput>
                 </div>
                 <div class="permission-section">
-                  <div class="permission-header" id="workspace-roles-label">
-                    <font-awesome-icon :icon="['fas', 'briefcase']" />
-                    <span>Workspace Roles</span>
-                  </div>
-                  <LabelsInput 
-                    title="Workspace Roles" 
-                    v-model="currentMfe.workspaceRoles" 
+                  <LabelsInput
+                    title="Workspace Roles"
+                    v-model="currentMfe.workspaceRoles"
                     placeholder="Add workspace roles..."
-                    aria-labelledby="workspace-roles-label" />
+                    aria-labelledby="workspace-roles-label"
+                  >
+                    <template #label>
+                      <div class="permission-header" id="workspace-roles-label">
+                        <font-awesome-icon :icon="['fas', 'briefcase']" />
+                        <span>{{ $t('Workspace Roles') }}</span>
+                      </div>
+                    </template>
+                  </LabelsInput>
                 </div>
                 <div class="permission-section">
-                  <div class="permission-header" id="workspace-labels-label">
-                    <font-awesome-icon :icon="['fas', 'tags']" />
-                    <span>Workspace Labels</span>
-                  </div>
-                  <LabelsInput 
-                    title="Workspace Labels" 
-                    v-model="currentMfe.workspaceLabels" 
+                  <LabelsInput
+                    title="Workspace Labels"
+                    v-model="currentMfe.workspaceLabels"
                     placeholder="Add workspace labels..."
-                    aria-labelledby="workspace-labels-label" />
+                    aria-labelledby="workspace-labels-label"
+                  >
+                    <template #label>
+                      <div
+                        class="permission-header"
+                        id="workspace-labels-label"
+                      >
+                        <font-awesome-icon :icon="['fas', 'tags']" />
+                        <span>{{ $t('Workspace Labels') }}</span>
+                      </div>
+                    </template>
+                  </LabelsInput>
                 </div>
               </div>
             </div>
@@ -468,59 +722,103 @@
     </div>
 
     <!-- Mobile Panel Overlay -->
-    <div 
-      v-if="showSidePanel" 
-      class="mobile-overlay" 
+    <div
+      v-if="showSidePanel"
+      class="mobile-overlay"
       @click="closeSidePanel"
       role="presentation"
-      aria-hidden="true"></div>
+      aria-hidden="true"
+    ></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { inject, ref, computed } from 'vue';
-import { IPlugin } from '@/services/types/plugin';
-import { UnwrapNestedRefs } from '@vue/reactivity';
+import { inject, ref, computed } from "vue";
+import { IPlugin } from "@/services/types/plugin";
+import { UnwrapNestedRefs } from "@vue/reactivity";
+import { INavbarGroup } from "@qelos/global-types";
+import * as ElementPlusIconsVue from "@element-plus/icons-vue";
 
-import FormInput from '@/modules/core/components/forms/FormInput.vue';
+import FormInput from "@/modules/core/components/forms/FormInput.vue";
 
-import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
+import LabelsInput from "@/modules/core/components/forms/LabelsInput.vue";
 
-import NavigationPositionSelector from '@/modules/plugins/components/NavigationPositionSelector.vue';
+import NavigationPositionSelector from "@/modules/plugins/components/NavigationPositionSelector.vue";
+import { usePluginsList } from "@/modules/plugins/store/plugins-list";
+import { toRefs } from "vue";
 
-const edit = inject<UnwrapNestedRefs<Partial<IPlugin>>>('edit');
+const edit = inject<UnwrapNestedRefs<Partial<IPlugin>>>("edit");
+const { plugins } = toRefs(usePluginsList());
 
 const selectedMfe = ref<number | null>(null);
 const showSidePanel = ref(false);
 
+// Get all available navigation groups from all plugins
+const availableNavGroups = computed(() => {
+  const groupsMap = new Map<string, INavbarGroup & { pluginName: string; isCurrentPlugin: boolean }>();
+  
+  plugins.value?.forEach(plugin => {
+    if (plugin.navBarGroups) {
+      plugin.navBarGroups.forEach(group => {
+        if (!groupsMap.has(group.key)) {
+          groupsMap.set(group.key, {
+            ...group,
+            pluginName: plugin.name,
+            isCurrentPlugin: plugin._id === edit._id
+          });
+        }
+      });
+    }
+  });
+  
+  return Array.from(groupsMap.values()).sort((a, b) => (a.priority || 99999) - (b.priority || 99999));
+});
+
+// Get Element Plus icon component
+function getElementPlusIcon(iconName: string) {
+  // Convert kebab-case to PascalCase
+  const pascalCaseName = iconName.split('-').map(part => 
+    part.charAt(0).toUpperCase() + part.slice(1)
+  ).join('');
+  
+  return ElementPlusIconsVue[pascalCaseName] || ElementPlusIconsVue.QuestionFilled;
+}
+
+// Get display text for navigation group
+const getNavGroupDisplayText = (groupKey: string) => {
+  const group = availableNavGroups.value.find(g => g.key === groupKey);
+  if (!group) return groupKey;
+  return group.isCurrentPlugin ? group.name : `${group.name} (${group.pluginName})`;
+};
+
 const mfeTypes = [
-  { value: 'page', label: 'Page', icon: ['fas', 'window-maximize'] },
-  { value: 'global', label: 'Global', icon: ['fas', 'puzzle-piece'] },
-  { value: 'modal', label: 'Modal', icon: ['fas', 'window-restore'] }
+  { value: "page", label: "Page", icon: ["fas", "window-maximize"] },
+  { value: "global", label: "Global", icon: ["fas", "puzzle-piece"] },
+  { value: "modal", label: "Modal", icon: ["fas", "window-restore"] },
 ];
 
 function addNewMicroFrontend() {
   if (!edit.microFrontends) edit.microFrontends = [];
-  
+
   const newMfe = {
     name: `MFE ${edit.microFrontends.length + 1}`,
-    description: '',
-    manifestUrl: '',
+    description: "",
+    manifestUrl: "",
     active: true,
     opened: true,
-    url: '',
-    roles: ['*'],
-    workspaceRoles: ['*'],
-    workspaceLabels: ['*'],
+    url: "",
+    roles: ["*"],
+    workspaceRoles: ["*"],
+    workspaceLabels: ["*"],
     guest: false,
     route: {
-      name: '',
-      path: '',
-      roles: ['*'],
-      navBarPosition: false as const
-    }
+      name: "",
+      path: "",
+      roles: ["*"],
+      navBarPosition: false as const,
+    },
   };
-  
+
   edit.microFrontends.push(newMfe);
   selectedMfe.value = edit.microFrontends.length - 1;
   showSidePanel.value = true;
@@ -548,34 +846,43 @@ function closeSidePanel() {
 
 function getMfeTypeDisplay(mfe: any) {
   const type = getCurrentMfeType(mfe);
-  if (type === 'page') return 'Page';
-  if (type === 'global') return 'Global';
-  if (type === 'modal') return 'Modal';
-  return 'Page';
+  if (type === "page") return "Page";
+  if (type === "global") return "Global";
+  if (type === "modal") return "Modal";
+  return "Page";
 }
 
 function getMfeImplementation(mfe: any) {
-  if (mfe.use) return 'No-Code';
-  return 'IFrame';
+  if (mfe.use) return "No-Code";
+  return "IFrame";
 }
 
-function toggleMfeType(mfe: any, type: string) {  
+function toggleMfeType(mfe: any, type: string) {
   const currentType = getCurrentMfeType(mfe);
   if (currentType === type) return;
   // Set the appropriate type
   switch (type) {
-    case 'page':
-      mfe.route = { name: mfe.name.replaceAll(' ', '-'), path: '', roles: ['*'], navBarPosition: false };
+    case "page":
+      mfe.route = {
+        name: mfe.name.replaceAll(" ", "-"),
+        path: "",
+        roles: ["*"],
+        navBarPosition: false,
+      };
       mfe.modal = {};
       mfe.global = {};
       break;
-    case 'global':
-      mfe.global = { position: 'top' };
+    case "global":
+      mfe.global = { position: "top" };
       mfe.route = {};
       mfe.modal = {};
       break;
-    case 'modal':
-      mfe.modal = { name: mfe.name.replaceAll(' ', '-'), params: [], size: 'md' };
+    case "modal":
+      mfe.modal = {
+        name: mfe.name.replaceAll(" ", "-"),
+        params: [],
+        size: "md",
+      };
       mfe.route = {};
       mfe.global = {};
       break;
@@ -583,22 +890,22 @@ function toggleMfeType(mfe: any, type: string) {
 }
 
 function getCurrentMfeType(mfe: any) {
-  if (mfe.route?.path) return 'page';
-  if (mfe.global?.position) return 'global';
-  if (mfe.modal?.name) return 'modal';
-  return 'page';
+  if (mfe.route?.path) return "page";
+  if (mfe.global?.position) return "global";
+  if (mfe.modal?.name) return "modal";
+  return "page";
 }
 
 function getTypeDescription(type: string) {
   switch (type) {
-    case 'page':
-      return 'A full-page micro frontend';
-    case 'global':
-      return 'A shared template micro frontend that will be inserted into all pages';
-    case 'modal':
-      return 'A modal window micro frontend';
+    case "page":
+      return "A full-page micro frontend";
+    case "global":
+      return "A shared template micro frontend that will be inserted into all pages";
+    case "modal":
+      return "A modal window micro frontend";
     default:
-      return '';
+      return "";
   }
 }
 
@@ -610,16 +917,16 @@ const currentMfe = computed(() => {
 });
 
 function onTemplateChange() {
-  currentMfe.value.url = '';
+  currentMfe.value.url = "";
 }
 
 function onUrlChange() {
-  currentMfe.value.use = '';
+  currentMfe.value.use = "";
 }
 
 // Expose functions to parent component
 defineExpose({
-  addNewMicroFrontend
+  addNewMicroFrontend,
 });
 </script>
 
@@ -759,7 +1066,9 @@ defineExpose({
   white-space: nowrap;
 }
 
-.col-type, .col-implementation, .col-permissions {
+.col-type,
+.col-implementation,
+.col-permissions {
   display: flex;
   align-items: center;
 }
@@ -886,10 +1195,14 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 1rem 1rem 1rem;
+  padding: 0.75rem;
   border-bottom: 1px solid var(--el-border-color-light);
   flex-shrink: 0;
-  background: linear-gradient(135deg, var(--el-color-primary-light-9) 0%, white 100%);
+  background: linear-gradient(
+    135deg,
+    var(--el-color-primary-light-9) 0%,
+    white 100%
+  );
   border-radius: 8px 8px 0 0;
 }
 
@@ -967,7 +1280,7 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem 1.25rem;
+  padding: 0.75rem;
   background: var(--el-bg-color-page);
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
@@ -1134,7 +1447,11 @@ defineExpose({
 }
 
 .permissions-card .card-header {
-  background: linear-gradient(135deg, var(--el-color-warning-light-9) 0%, var(--el-bg-color-page) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--el-color-warning-light-9) 0%,
+    var(--el-bg-color-page) 100%
+  );
 }
 
 .permissions-card .card-icon {
@@ -1222,7 +1539,7 @@ defineExpose({
     gap: 0.75rem;
     padding: 0.75rem;
   }
-  
+
   .side-panel {
     width: 350px;
   }
@@ -1233,7 +1550,7 @@ defineExpose({
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .side-panel {
     width: 100%;
     height: 400px;
@@ -1242,13 +1559,13 @@ defineExpose({
     position: relative;
     top: 0;
   }
-  
+
   .table-header,
   .table-row {
     grid-template-columns: 60px 1fr 80px 100px 80px;
     gap: 0.5rem;
   }
-  
+
   .col-implementation,
   .col-route {
     display: none;
@@ -1261,31 +1578,31 @@ defineExpose({
     align-items: stretch;
     text-align: center;
   }
-  
+
   .header-description {
     display: none;
   }
-  
+
   .add-button {
     width: 100%;
   }
-  
+
   .add-button .button-text {
     display: inline;
   }
-  
+
   .desktop-table {
     display: none;
   }
-  
+
   .mobile-cards {
     display: flex;
   }
-  
+
   .mfe-content.with-panel {
     position: relative;
   }
-  
+
   .side-panel.mobile-panel {
     position: fixed;
     top: 0;
@@ -1300,7 +1617,7 @@ defineExpose({
     transform: translateX(0);
     animation: slideInRight 0.3s ease-out;
   }
-  
+
   .mobile-overlay {
     display: block;
     position: fixed;
@@ -1311,29 +1628,29 @@ defineExpose({
     background: rgba(0, 0, 0, 0.5);
     z-index: 999;
   }
-  
+
   .card-header {
     flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
   }
-  
+
   .card-title {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
   }
-  
+
   .card-actions {
     align-self: flex-end;
   }
-  
+
   .info-item {
     flex-direction: column;
     align-items: stretch;
     gap: 0.25rem;
   }
-  
+
   .info-value {
     text-align: left;
   }
@@ -1344,35 +1661,35 @@ defineExpose({
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
   }
-  
+
   .header-info h3 {
     font-size: 1.125rem;
   }
-  
+
   .mobile-card {
     padding: 0.75rem;
   }
-  
+
   .card-title h4 {
     font-size: 0.875rem;
   }
-  
+
   .side-panel.mobile-panel {
     max-width: 100%;
   }
-  
+
   .panel-content {
     padding: 0.75rem;
   }
-  
+
   .config-section {
     margin-bottom: 1rem;
   }
-  
+
   .type-buttons {
     flex-direction: column;
   }
-  
+
   .type-buttons .el-button {
     justify-content: flex-start;
   }
@@ -1392,19 +1709,50 @@ defineExpose({
   display: none !important;
 }
 
+/* Navigation Group Select Styles */
+.nav-group-select {
+  width: 100%;
+}
+
+.nav-group-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.group-icon {
+  font-size: 16px;
+  color: var(--el-color-primary);
+}
+
+.group-name {
+  flex: 1;
+}
+
+.plugin-tag {
+  margin-left: auto;
+}
+
+.field-help {
+  font-size: 0.75rem;
+  color: var(--el-text-color-secondary);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
 /* Touch optimizations */
 @media (hover: none) and (pointer: coarse) {
   .table-row,
   .mobile-card {
     min-height: 44px;
   }
-  
+
   .col-actions .el-button,
   .card-actions .el-button {
     min-width: 44px;
     min-height: 44px;
   }
-  
+
   .close-button {
     min-width: 44px;
     min-height: 44px;

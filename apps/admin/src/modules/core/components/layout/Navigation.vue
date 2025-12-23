@@ -64,10 +64,10 @@
           <el-menu-item
             v-for="mfe in group.items"
             :key="mfe.route.path"
-            :route="'/' + mfe.route.path"
             :index="'/' + mfe.route.path"
           >
-            <el-icon>
+            <router-link :to="'/' + mfe.route.path">
+              <el-icon>
               <component
                 v-if="mfe.route.iconName"
                 :is="'icon-' + mfe.route.iconName"
@@ -75,31 +75,34 @@
               <font-awesome-icon v-else :icon="['fas', 'circle-dot']" />
             </el-icon>
             <span>{{ mfe.name }}</span>
+            </router-link>
           </el-menu-item>
         </div>
       </template>
       <el-menu-item
         v-if="isPrivilegedUser"
-        route="/admin-dashboard"
         index="/admin-dashboard"
         :data-title="$t('Admin Dashboard')"
       >
-        <el-icon>
+        <router-link to="/admin-dashboard">
+          <el-icon>
           <font-awesome-icon :icon="['fas', 'chart-column']" />
         </el-icon>
         <span>{{ $t("Admin Dashboard") }}</span>
+        </router-link>
       </el-menu-item>
 
       <el-menu-item
         v-if="isAdmin"
-        :route="{ name: 'log' }"
         index="/admin/log"
         :data-title="$t('Logs')"
       >
-        <el-icon>
+        <router-link to="/admin/log">
+          <el-icon>
           <font-awesome-icon :icon="['fas', 'clipboard-list']" />
         </el-icon>
         <span>{{ $t("Logs") }}</span>
+        </router-link>
       </el-menu-item>
 
       <div class="nav-group" v-if="isManagingEnabled">
@@ -113,24 +116,26 @@
             <span>{{ $t("Content Boxes") }}</span>
           </template>
           <el-menu-item
-            :route="{ name: 'blocks' }"
             index="/admin/blocks"
             :data-title="$t('Boxes List')"
           >
-            <el-icon>
+            <router-link to="/admin/blocks">
+              <el-icon>
               <font-awesome-icon :icon="['fas', 'list']" />
             </el-icon>
             <span>{{ $t("Boxes List") }}</span>
+            </router-link>
           </el-menu-item>
           <el-menu-item
-            :route="{ name: 'createBlock' }"
             index="/admin/blocks/new"
             :data-title="$t('Create Content Box')"
           >
-            <el-icon>
+            <router-link to="/admin/blocks/new">
+              <el-icon>
               <font-awesome-icon :icon="['fas', 'plus']" />
             </el-icon>
             <span>{{ $t("Create Content Box") }}</span>
+            </router-link>
           </el-menu-item>
         </el-sub-menu>
 
@@ -142,24 +147,26 @@
             <span>{{ $t("Vue Components") }}</span>
           </template>
           <el-menu-item
-            :route="{ name: 'components' }"
             index="/admin/components"
             :data-title="$t('Components List')"
           >
+            <router-link to="/admin/components">
             <el-icon>
               <font-awesome-icon :icon="['fas', 'list']" />
             </el-icon>
             <span>{{ $t("Components List") }}</span>
+            </router-link>
           </el-menu-item>
           <el-menu-item
-            :route="{ name: 'createComponent' }"
             index="/admin/components/new"
             :data-title="$t('Create Vue Component')"
           >
+            <router-link to="/admin/components/new">
             <el-icon>
               <font-awesome-icon :icon="['fas', 'plus']" />
             </el-icon>
             <span>{{ $t("Create Vue Component") }}</span>
+            </router-link>
           </el-menu-item>
         </el-sub-menu>
       </div>
@@ -167,14 +174,15 @@
       <div class="nav-group" v-if="isManagingEnabled">
         <h4>{{ $t("MANAGE") }}</h4>
         <el-menu-item
-          :route="{ name: 'storageList' }"
           index="/assets"
           :data-title="$t('Storage & Assets')"
         >
+          <router-link to="/assets">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'folder-tree']" />
           </el-icon>
           <span>{{ $t("Storage & Assets") }}</span>
+          </router-link>
         </el-menu-item>
 
         <el-menu-item
@@ -182,10 +190,12 @@
           index="/users"
           :data-title="$t('Users')"
         >
+          <router-link to="/users">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'users']" />
           </el-icon>
           <span>{{ $t("Users") }}</span>
+          </router-link>
         </el-menu-item>
 
         <el-menu-item
@@ -193,70 +203,77 @@
           index="/admin/workspaces"
           :data-title="$t('Workspaces')"
         >
+          <router-link to="/admin/workspaces">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'briefcase']" />
           </el-icon>
           <span>{{ $t("Workspaces") }}</span>
+          </router-link>
         </el-menu-item>
 
         <el-menu-item
-          :route="{ name: 'drafts' }"
           index="/drafts"
           :data-title="$t('Drafts')"
         >
+          <router-link to="/drafts">
           <el-icon>
             <font-awesome-icon :icon="['far', 'file-lines']" />
           </el-icon>
           <span>{{ $t("Drafts") }}</span>
+          </router-link>
         </el-menu-item>
 
         <el-menu-item
           id="menu-item-blueprints"
           v-if="isAdmin && isManagingEnabled"
-          :route="{ name: 'blueprints' }"
           index="/no-code/blueprints"
           :data-title="$t('Blueprints')"
         >
+          <router-link to="/no-code/blueprints">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'database']" />
           </el-icon>
           <span>{{ $t("Blueprints") }}</span>
+          </router-link>
         </el-menu-item>
 
         <el-menu-item
           v-if="isAdmin && isManagingEnabled"
-          :route="{ name: 'configurations' }"
           index="/configurations"
           :data-title="$t('Configurations')"
         >
+          <router-link to="/configurations">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'gear']" />
           </el-icon>
           <span>{{ $t("Configurations") }}</span>
+          </router-link>
         </el-menu-item>
       </div>
 
       <div class="nav-group" v-if="isAdmin && isManagingEnabled">
         <h4>{{ $t("PLUGINS") }}</h4>
         <el-menu-item
-          :route="{ name: 'plugins' }"
           index="/plugins"
           :data-title="$t('Plugins List')"
         >
+          <router-link to="/plugins">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'plug-circle-bolt']" />
           </el-icon>
           <span>{{ $t("Plugins List") }}</span>
+          </router-link>
         </el-menu-item>
         <el-menu-item
-          :route="{ name: 'integrations' }"
           index="/integrations"
           :data-title="$t('Integrations')"
         >
+          <router-link to="/integrations">
           <el-icon>
             <font-awesome-icon :icon="['fas', 'arrows-turn-to-dots']" />
           </el-icon>
           <span>{{ $t("Integrations") }}</span>
+          </router-link>
         </el-menu-item>
       </div>
 
@@ -266,10 +283,10 @@
           <el-menu-item
             v-for="mfe in group.items"
             :key="mfe.route.path"
-            :route="'/' + mfe.route.path"
             :index="'/' + mfe.route.path"
           >
-            <el-icon>
+            <router-link :to="'/' + mfe.route.path">
+              <el-icon>
               <component
                 v-if="mfe.route.iconName"
                 :is="'icon-' + mfe.route.iconName"
@@ -277,6 +294,7 @@
               <font-awesome-icon v-else :icon="['fas', 'circle-dot']" />
             </el-icon>
             <span>{{ mfe.name }}</span>
+            </router-link>
           </el-menu-item>
         </div>
       </template>
@@ -543,7 +561,14 @@ nav {
   border: 0;
 }
 
-.el-menu-item.is-active:hover {
+.el-menu-item a {
+  color: var(--el-menu-text-color);
+  text-decoration: none;
+  display: block;
+  width: 100%;
+}
+
+.el-menu-item.is-active:hover, .el-menu-item.is-active a:hover {
   color: var(--negative-color);
 }
 

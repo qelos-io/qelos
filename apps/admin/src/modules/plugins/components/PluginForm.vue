@@ -35,21 +35,21 @@
         type="border-card"
         :aria-label="$t('Plugin configuration sections')">
         <el-tab-pane 
-          :id="tabPanelIds.basic"
-          :aria-labelledby="tabLabelIds.basic"
-          name="basic" 
+          :id="tabPanelIds['basic-info']"
+          :aria-labelledby="tabLabelIds['basic-info']"
+          name="basic-info" 
           lazy>
           <template #label>
             <div 
-              :id="tabLabelIds.basic"
+              :id="tabLabelIds['basic-info']"
               class="tab-label"
               role="tab"
-              data-tab-label="basic"
-              :aria-controls="tabPanelIds.basic"
-              :aria-selected="activeTab === 'basic'"
-              :tabindex="getTabIndex('basic')"
-              @focus="handleTabFocus('basic')"
-              @keydown="handleTabKeydown('basic', $event)">
+              data-tab-label="basic-info"
+              :aria-controls="tabPanelIds['basic-info']"
+              :aria-selected="activeTab === 'basic-info'"
+              :tabindex="getTabIndex('basic-info')"
+              @focus="handleTabFocus('basic-info')"
+              @keydown="handleTabKeydown('basic-info', $event)">
               <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'info-circle']" /></el-icon>
               <span>{{ $t('Basic Information') }}</span>
             </div>
@@ -127,6 +127,29 @@
         </el-tab-pane>
         
         <el-tab-pane 
+          :id="tabPanelIds.injectables"
+          :aria-labelledby="tabLabelIds.injectables"
+          name="injectables" 
+          lazy>
+          <template #label>
+            <div 
+              :id="tabLabelIds.injectables"
+              class="tab-label"
+              role="tab"
+              data-tab-label="injectables"
+              :aria-controls="tabPanelIds.injectables"
+              :aria-selected="activeTab === 'injectables'"
+              :tabindex="getTabIndex('injectables')"
+              @focus="handleTabFocus('injectables')"
+              @keydown="handleTabKeydown('injectables', $event)">
+              <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'puzzle-piece']" /></el-icon>
+              <span>{{ $t('Injectables') }}</span>
+            </div>
+          </template>
+          <InjectablesTab :plugin="edit" />
+        </el-tab-pane>
+        
+        <el-tab-pane 
           :id="tabPanelIds.microfrontends"
           :aria-labelledby="tabLabelIds.microfrontends"
           name="microfrontends" 
@@ -150,29 +173,6 @@
         </el-tab-pane>
         
         <el-tab-pane 
-          :id="tabPanelIds.injectables"
-          :aria-labelledby="tabLabelIds.injectables"
-          name="injectables" 
-          lazy>
-          <template #label>
-            <div 
-              :id="tabLabelIds.injectables"
-              class="tab-label"
-              role="tab"
-              data-tab-label="injectables"
-              :aria-controls="tabPanelIds.injectables"
-              :aria-selected="activeTab === 'injectables'"
-              :tabindex="getTabIndex('injectables')"
-              @focus="handleTabFocus('injectables')"
-              @keydown="handleTabKeydown('injectables', $event)">
-              <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
-              <span>{{ $t('Injectables') }}</span>
-            </div>
-          </template>
-          <InjectablesTab :plugin="edit" />
-        </el-tab-pane>
-        
-        <el-tab-pane 
           :id="tabPanelIds.summary"
           :aria-labelledby="tabLabelIds.summary"
           name="summary" 
@@ -188,11 +188,11 @@
               :tabindex="getTabIndex('summary')"
               @focus="handleTabFocus('summary')"
               @keydown="handleTabKeydown('summary', $event)">
-              <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'code']" /></el-icon>
+              <el-icon aria-hidden="true"><font-awesome-icon :icon="['fas', 'file-alt']" /></el-icon>
               <span>{{ $t('Summary') }}</span>
             </div>
           </template>
-          <SummaryTab :plugin="edit" @update-json="updatePluginJson" />
+          <SummaryTab :plugin="edit" />
         </el-tab-pane>
       </el-tabs>
       
@@ -214,16 +214,16 @@
 <script setup lang="ts">
 import { computed, provide, reactive, nextTick, ref, watch, type ComponentPublicInstance } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { IPlugin } from '@/services/types/plugin';
-import {
-  BasicInfoTab,
-  APIsTab,
-  HooksEventsTab,
-  CRUDsTab,
-  MicroFrontendsTab,
-  InjectablesTab,
-  SummaryTab
-} from '@/modules/plugins/components/plugin-form';
+
+import BasicInfoTab from './plugin-form/BasicInfoTab.vue';
+import APIsTab from './plugin-form/APIsTab.vue';
+import HooksEventsTab from './plugin-form/HooksEventsTab.vue';
+import CRUDsTab from './plugin-form/CRUDsTab.vue';
+import InjectablesTab from './plugin-form/InjectablesTab.vue';
+import MicroFrontendsTab from './plugin-form/MicroFrontendsTab.vue';
+import SummaryTab from './plugin-form/SummaryTab.vue';
 
 const props = defineProps<{
   plugin?: Partial<IPlugin>;
@@ -244,17 +244,17 @@ const edit = reactive<Partial<IPlugin>>({
   ...props.plugin as Partial<IPlugin>
 });
 
-type TabName = 'basic' | 'apis' | 'hooks' | 'cruds' | 'microfrontends' | 'injectables' | 'summary';
+type TabName = 'basic-info' | 'apis' | 'hooks' | 'cruds' | 'injectables' | 'microfrontends' | 'summary';
 
 // Ordered list of tabs to support roving tabindex keyboard navigation
-const tabOrder: TabName[] = ['basic', 'apis', 'hooks', 'cruds', 'microfrontends', 'injectables', 'summary'];
+const tabOrder: TabName[] = ['basic-info', 'apis', 'hooks', 'cruds', 'injectables', 'microfrontends', 'summary'];
 
 const isTabName = (value: string | undefined | null): value is TabName => {
   return !!value && (tabOrder as string[]).includes(value);
 };
 
 const activeTab = computed({
-  get: () => (isTabName(route.query.tab?.toString()) ? route.query.tab!.toString() as TabName : 'basic'),
+  get: () => (isTabName(route.query.tab?.toString()) ? route.query.tab!.toString() as TabName : 'basic-info'),
   set: (tabName: string) => {
     if (!isTabName(tabName)) return;
     router.replace({ query: { ...route.query, tab: tabName } }).catch(error => {
@@ -269,31 +269,31 @@ const tabsRoot = ref<ComponentPublicInstance | null>(null);
 
 // Map of tab label ids so tabs are properly linked by aria attributes
 const tabLabelIds: Record<TabName, string> = {
-  basic: 'plugin-tab-basic',
-  apis: 'plugin-tab-apis',
-  hooks: 'plugin-tab-hooks',
-  cruds: 'plugin-tab-cruds',
-  microfrontends: 'plugin-tab-microfrontends',
-  injectables: 'plugin-tab-injectables',
-  summary: 'plugin-tab-summary'
+  'basic-info': 'tab-label-basic-info',
+  'apis': 'tab-label-apis',
+  'hooks': 'tab-label-hooks',
+  'cruds': 'tab-label-cruds',
+  'injectables': 'tab-label-injectables',
+  'microfrontends': 'tab-label-microfrontends',
+  'summary': 'tab-label-summary'
 };
 
 // Matching panel ids to connect each tab with its content region
 const tabPanelIds: Record<TabName, string> = {
-  basic: 'plugin-panel-basic',
-  apis: 'plugin-panel-apis',
-  hooks: 'plugin-panel-hooks',
-  cruds: 'plugin-panel-cruds',
-  microfrontends: 'plugin-panel-microfrontends',
-  injectables: 'plugin-panel-injectables',
-  summary: 'plugin-panel-summary'
+  'basic-info': 'plugin-panel-basic-info',
+  'apis': 'plugin-panel-apis',
+  'hooks': 'plugin-panel-hooks',
+  'cruds': 'plugin-panel-cruds',
+  'injectables': 'plugin-panel-injectables',
+  'microfrontends': 'plugin-panel-microfrontends',
+  'summary': 'plugin-panel-summary'
 };
 
 // Query selector to find the first logical field inside each tab panel
 const focusableSelector = 'button:not([disabled]), [href], input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])';
 
 watch(() => activeTab.value, tabName => {
-  const resolvedTab = isTabName(tabName) ? tabName : 'basic';
+  const resolvedTab = isTabName(tabName) ? tabName : 'basic-info';
   const nextIndex = tabOrder.indexOf(resolvedTab);
   focusedTabIndex.value = nextIndex === -1 ? 0 : nextIndex;
 });
