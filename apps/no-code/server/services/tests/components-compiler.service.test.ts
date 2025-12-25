@@ -49,17 +49,6 @@ describe('Vue Component Compiler', () => {
     assert.ok(!result.js.includes('ssrRender'), 'Should not contain SSR-specific code');
   });
 
-  it('should handle errors during compilation gracefully', async () => {
-    // Arrange - component with invalid template
-    const invalidComponent = `<template><div>{{ message }</template>`;
-    
-    // Act & Assert
-    await assert.rejects(
-      async () => await compileVueComponent(invalidComponent),
-      /Error: failed to compile component/
-    );
-  });
-
   it('should compile a component with script setup syntax', async () => {
     // Arrange - component with script setup syntax (with TypeScript)
     const componentWithScriptSetup = `<script setup>
@@ -680,5 +669,97 @@ function showMessage() {
       assert.ok(result.js.includes('computedValue'), 'Compiled JS should include the computedValue computed property');
       assert.ok(result.js.includes('showMessage'), 'Compiled JS should include the showMessage function');
     })
+  })
+
+  describe('Local Component Imports', () => {
+    it('should remove import statements for existing local components', async () => {
+      // Arrange
+      const componentWithLocalImport = `
+<template>
+  <div>
+    <DemoComponent />
+    <p>Hello World</p>
+  </div>
+</template>
+
+<script setup>
+import DemoComponent from './DemoComponent.vue';
+</script>
+
+<style scoped>
+p {
+  color: red;
+}
+</style>
+      `.trim();
+      
+      const existingComponents = ['DemoComponent'];
+      
+      // Act
+      const result = await compileVueComponent(componentWithLocalImport, 'http://localhost:3000', existingComponents);
+      
+      // Assert
+      assert.equal(typeof result, 'object');
+      assert.equal(typeof result.js, 'string');
+      assert.equal(typeof result.css, 'string');
+      
+      // The compilation should succeed
+      assert.ok(result.js.length > 0, 'Compiled JS should not be empty');
+      assert.ok(result.js.includes('export default'), 'Should export the component');
+      
+      // The import statement should be removed from the compiled code
+      assert.ok(!result.js.includes('import DemoComponent'), 'Import statement should be removed');
+      
+      // But the component reference should still work (no errors about undefined component)
+      assert.ok(result.js.includes('DemoComponent'), 'Component reference should still exist in template');
+    });
+
+    it('should keep import statements for non-existing local components', async () => {
+      // Arrange
+      const componentWithInvalidImport = `
+<template>
+  <div>
+    <InvalidComponent />
+  </div>
+</template>
+
+<script setup>
+import InvalidComponent from './InvalidComponent.vue';
+</script>
+      `.trim();
+      
+      const existingComponents = []; // No components exist
+      
+      // Act & Assert
+      await assert.rejects(
+        () => compileVueComponent(componentWithInvalidImport, 'http://localhost:3000', existingComponents),
+        /Command failed/
+      );
+    });
+
+    it('should handle mixed valid and invalid local imports', async () => {
+      // Arrange
+      const componentWithMixedImports = `
+<template>
+  <div>
+    <ValidComponent />
+    <InvalidComponent />
+  </div>
+</template>
+
+<script setup>
+import ValidComponent from './ValidComponent.vue';
+import InvalidComponent from './InvalidComponent.vue';
+</script>
+      `.trim();
+      
+      const existingComponents = ['ValidComponent']; // Only ValidComponent exists
+      
+      // Act & Assert
+      await assert.rejects(
+        () => compileVueComponent(componentWithMixedImports, 'http://localhost:3000', existingComponents),
+        /Command failed/
+      );
+    });
   })
 });

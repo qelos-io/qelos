@@ -46,8 +46,15 @@ const sanitizeCompilationError = (error: any): string => {
 export const createComponent = async (req, res) => {
   let js, css, props;
   try {
-     // Compile the Vue component
-    ({ js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost));
+    // Fetch existing component names from the database
+    const existingComponents = await Component.find({ tenant: req.headers.tenant })
+      .select('componentName')
+      .lean()
+      .exec();
+    const componentNames = existingComponents.map(c => c.componentName);
+    
+     // Compile the Vue component with existing components list
+    ({ js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost, componentNames));
   } catch (err: any | Error) {
     logger.log('failed to compile a component', err?.message);
     const sanitizedError = sanitizeCompilationError(err);
@@ -93,7 +100,14 @@ export const updateComponent = async (req, res) => {
       if (req.body.content.trim() !== existingComponent.content.trim()) {
         $set.content = req.body.content;
         try {
-          const { js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost);
+          // Fetch existing component names from the database
+          const existingComponents = await Component.find({ tenant: req.headers.tenant })
+            .select('componentName')
+            .lean()
+            .exec();
+          const componentNames = existingComponents.map(c => c.componentName);
+          
+          const { js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost, componentNames);
           $set.compiledContent = { js, css };
           $set.requiredProps = props;
         } catch (compileErr: any) {

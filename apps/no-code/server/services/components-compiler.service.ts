@@ -12,6 +12,76 @@ const SRC_DIR = path.join(__dirname, './components-compiler/src/components');
 
 let lastExecution;
 
+interface LocalComponentImport {
+  importName: string;
+  componentName: string;
+  importPath: string;
+}
+
+/**
+ * Extracts and removes local component imports from Vue file content
+ * @param fileContent The Vue component content
+ * @param existingComponents List of existing component names in the database
+ * @returns Object with cleaned content and list of removed imports
+ */
+function extractAndRemoveLocalImports(fileContent: string, existingComponents: string[]): { cleanedContent: string, removedImports: LocalComponentImport[] } {
+  const imports: LocalComponentImport[] = [];
+  let cleanedContent = fileContent;
+  
+  // Match default imports: import MyComponent from './MyComponent.vue'
+  const defaultImportRegex = /import\s+(\w+)\s+from\s+['"](\.\/[^'"]+\.vue)['"]/g;
+  let match;
+  
+  while ((match = defaultImportRegex.exec(fileContent)) !== null) {
+    const importName = match[1];
+    const importPath = match[2];
+    
+    // Extract component name from path (e.g., './MyComponent.vue' -> 'MyComponent')
+    const componentName = importPath.split('/').pop()?.replace('.vue', '') || '';
+    
+    if (componentName && existingComponents.includes(componentName)) {
+      imports.push({
+        importName,
+        componentName,
+        importPath
+      });
+      
+      // Remove the import statement from cleaned content
+      cleanedContent = cleanedContent.replace(match[0], '');
+    }
+  }
+  
+  // Match named imports: import { ComponentA, ComponentB } from './components.vue'
+  const namedImportRegex = /import\s*\{([^}]+)\}\s+from\s+['"](\.\/[^'"]+\.vue)['"]/g;
+  
+  // Reset regex lastIndex
+  defaultImportRegex.lastIndex = 0;
+  namedImportRegex.lastIndex = 0;
+  
+  while ((match = namedImportRegex.exec(fileContent)) !== null) {
+    const namedImports = match[1].split(',').map(s => s.trim().split(' as ')[0]);
+    const importPath = match[2];
+    
+    for (const importName of namedImports) {
+      if (importName && existingComponents.includes(importName)) {
+        imports.push({
+          importName,
+          componentName: importName,
+          importPath
+        });
+      }
+    }
+    
+    // If all named imports exist in database, remove the entire import statement
+    const allExist = namedImports.every(name => name && existingComponents.includes(name));
+    if (allExist) {
+      cleanedContent = cleanedContent.replace(match[0], '');
+    }
+  }
+  
+  return { cleanedContent, removedImports: imports };
+}
+
 function getProps(jsContent: string): Array<{type: string, prop: string, placeholder?: string}> {
   try {
     // Extract the props section using a more robust approach
@@ -96,16 +166,33 @@ function getProps(jsContent: string): Array<{type: string, prop: string, placeho
 /**
  * Compiles a Vue component into a client-side library that can be imported in the frontend
  * @param fileContent The Vue component content as a string
+ * @param tenanthost The tenant host URL
+ * @param existingComponents List of existing component names in the database
  * @returns An object with compiled js and css strings
  */
-export async function compileVueComponent(fileContent: string, tenanthost: string = 'http://localhost'): Promise<{js: string, css: string, props: Array<{type: string, prop: string}>}> {
+export async function compileVueComponent(
+  fileContent: string, 
+  tenanthost: string = 'http://localhost',
+  existingComponents: string[] = []
+): Promise<{js: string, css: string, props: Array<{type: string, prop: string}>}> {
   const hash = 'Comp' + crypto.createHash('sha256').update(fileContent).digest('hex').substring(0, 8);
+  
+  // Remove local component imports that exist in the database
+  const { cleanedContent, removedImports } = extractAndRemoveLocalImports(fileContent, existingComponents);
+  
+  // Log the import removal process
+  if (removedImports.length > 0) {
+    logger.log(`Removed ${removedImports.length} local component imports from component ${hash}`, {
+      removedImports: removedImports.map(imp => `${imp.importName} from ${imp.importPath}`)
+    });
+  }
+  
   const libJs = `import Component from './${hash}.vue';
-  window['components:${hash}'] = Component;`;
+window['components:${hash}'] = Component;`;
   try {
     await Promise.all([
       fs.writeFile(path.join(SRC_DIR, hash + '.js'), libJs),
-      fs.writeFile(path.join(SRC_DIR, hash + '.vue'), fileContent),
+      fs.writeFile(path.join(SRC_DIR, hash + '.vue'), cleanedContent),
     ]);
 
     if (lastExecution) {
