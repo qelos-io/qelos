@@ -18,30 +18,31 @@ import LifeCycle from '@/modules/pre-designed/components/LifeCycle.vue';
 import AiChat from '@/modules/pre-designed/components/AiChat.vue';
 import AssetUploader from '@/modules/assets/components/AssetUploader.vue';
 import ThreadsList from '@/modules/pre-designed/components/ThreadsList.vue';
+import { defineAsyncComponent } from 'vue';
 
 export default function applyGlobalTemplatesComponents(app: App) {
-  app.component('TemplatedRemoveButton', async () => (await import('./components/TemplatedRemoveButton.vue')).default)
-  app.component('TemplatedEditButton', async () => (await import('./components/TemplatedEditButton.vue')).default)
-  app.component('TemplatedViewButton', async () => (await import('./components/TemplatedViewButton.vue')).default)
+  app.component('TemplatedRemoveButton', defineAsyncComponent(async () => (await import('./components/TemplatedRemoveButton.vue')).default))
+  app.component('TemplatedEditButton', defineAsyncComponent(async () => (await import('./components/TemplatedEditButton.vue')).default))
+  app.component('TemplatedViewButton', defineAsyncComponent(async() => (await import('./components/TemplatedViewButton.vue')).default))
   app.component('FormInput', FormInput)
   app.component('FormRowGroup', FormRowGroup)
   app.component('SaveButton', SaveButton)
   app.component('EditHeader', EditHeader)
   app.component('InfoIcon', InfoIcon)
   app.component('BlockItem', BlockItem)
-  app.component('Monaco', async () => (await import('@/modules/users/components/Monaco.vue')).default)
+  app.component('Monaco', defineAsyncComponent(async () => (await import('@/modules/users/components/Monaco.vue')).default))
   app.component('QuickTable', QuickTable)
   app.component('ListPageTitle', ListPageTitle)
-  app.component('GeneralForm', async () => (await import('./components/GeneralForm.vue')).default)
-  app.component('BlueprintEntityForm', async () => (await import('./components/BlueprintEntityForm.vue')).default)
-  app.component('ConfirmMessage', async () => (await import('./components/ConfirmMessage.vue')).default)
+  app.component('GeneralForm', defineAsyncComponent(async () => (await import('./components/GeneralForm.vue')).default))
+  app.component('BlueprintEntityForm',  defineAsyncComponent(async () => (await import('./components/BlueprintEntityForm.vue')).default)
+  app.component('ConfirmMessage', defineAsyncComponent(async () => (await import('./components/ConfirmMessage.vue')).default))
   app.component('RemoveButton', RemoveButton)
-  app.component('VChart', async () => (await import('./components/VChart.vue')).default)
-  app.component('EditableContent', async () => (await import('./components/EditableContent.vue')).default)
-  app.component('RemoveConfirmation', async () => (await import('./components/RemoveConfirmation.vue')).default)
+  app.component('VChart', defineAsyncComponent(async () => (await import('./components/VChart.vue')).default))
+  app.component('EditableContent', defineAsyncComponent(async () => (await import('./components/EditableContent.vue')).default))
+  app.component('RemoveConfirmation', defineAsyncComponent(async () => (await import('./components/RemoveConfirmation.vue')).default))
   app.component('StatsCard', StatsCard)
-  app.component('QPre', async () => (await import('./components/Pre.vue')).default)
-  app.component('ContentBox', ContentBox);
+  app.component('QPre', defineAsyncComponent(async () => (await import('./components/Pre.vue')).default))
+  app.component('ContentBox', ContentBox)
   app.component('QRating', QRating)
   app.component('CopyToClipboard', CopyToClipboard)
   app.component('EmptyState', EmptyState)
