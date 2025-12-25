@@ -4,6 +4,7 @@
       show: opened,
       collapsed: isCollapsed && !opened,
       'nav-layout-icons-only': appConfig.navigationLayout === 'icons-only',
+      'mobile': $isMobile
     }"
   >
     <div class="mobile-mask" @click="close" />
@@ -461,6 +462,10 @@ nav {
   }
 }
 
+nav:not(.mobile) .el-menu {
+  overflow: hidden;
+}
+
 nav .el-menu,
 nav {
   --el-menu-text-color: var(--secondary-color);
@@ -469,7 +474,6 @@ nav {
   --el-menu-active-color: var(--third-color);
   border: 0;
   scrollbar-color: var(--el-menu-hover-bg-color) var(--nav-bg-color);
-  overflow: hidden;
   scrollbar-width: thin;
 
   &:hover {
@@ -902,6 +906,10 @@ a:hover {
     .el-menu-item,
     .el-sub-menu__title {
       height: 50px;
+
+      a {
+        padding-inline-start: 22%;
+      }
 
       .el-icon {
         margin-bottom: 0;
