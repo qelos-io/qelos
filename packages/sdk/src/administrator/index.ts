@@ -10,6 +10,7 @@ import { QlRoles } from './roles';
 import QlIntegrationSources from './integration-sources';
 import QlManagePlugins from './manage-plugins';
 import QlComponents from './components';
+import QlIntegrations from './integrations';
 
 
 export default class QelosAdministratorSDK<T = any> extends QelosSDK {
@@ -23,6 +24,7 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
   integrationSources: QlIntegrationSources;
   managePlugins: QlManagePlugins;
   components: QlComponents;
+  integrations: QlIntegrations;
 
   constructor(options: QelosSDKOptions) {
     super(options);
@@ -36,6 +38,7 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
     this.integrationSources = new QlIntegrationSources(options);
     this.managePlugins = new QlManagePlugins(options);
     this.components = new QlComponents(options);
+    this.integrations = new QlIntegrations(options);
 
     if (!options.extraQueryParams) {
       options.extraQueryParams = () => ({

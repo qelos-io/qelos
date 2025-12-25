@@ -4,6 +4,48 @@ import { join } from 'node:path';
 import { logger } from './logger.mjs';
 import { extractMicroFrontendStructures, resolveMicroFrontendStructures } from './micro-frontends.mjs';
 
+function sanitizePluginForFile(plugin) {
+  const sanitized = JSON.parse(JSON.stringify(plugin));
+  
+  // Remove _id from internal objects in arrays
+  if (Array.isArray(sanitized.subscribedEvents)) {
+    sanitized.subscribedEvents.forEach(item => {
+      if (item._id) delete item._id;
+    });
+  }
+  
+  if (Array.isArray(sanitized.microFrontends)) {
+    sanitized.microFrontends.forEach(mfe => {
+      if (mfe._id) delete mfe._id;
+      if (Array.isArray(mfe.requires)) {
+        mfe.requires.forEach(item => {
+          if (item._id) delete item._id;
+        });
+      }
+    });
+  }
+  
+  if (Array.isArray(sanitized.injectables)) {
+    sanitized.injectables.forEach(item => {
+      if (item._id) delete item._id;
+    });
+  }
+  
+  if (Array.isArray(sanitized.navBarGroups)) {
+    sanitized.navBarGroups.forEach(item => {
+      if (item._id) delete item._id;
+    });
+  }
+  
+  if (Array.isArray(sanitized.cruds)) {
+    sanitized.cruds.forEach(item => {
+      if (item._id) delete item._id;
+    });
+  }
+  
+  return sanitized;
+}
+
 /**
  * Push plugins from local directory to remote
  * @param {Object} sdk - Initialized SDK instance
@@ -179,7 +221,10 @@ export async function pullPlugins(sdk, targetPath) {
       cruds: (fullPlugin.cruds || []).map(removeIdFromObject),
     }
     
-    fs.writeFileSync(filePath, JSON.stringify(relevantFields, null, 2), 'utf-8');
+    // Sanitize the plugin to remove any remaining _id fields from internal objects
+    const sanitizedPlugin = sanitizePluginForFile(relevantFields);
+    
+    fs.writeFileSync(filePath, JSON.stringify(sanitizedPlugin, null, 2), 'utf-8');
     logger.step(`Pulled: ${plugin.apiPath}`);
   }));
 

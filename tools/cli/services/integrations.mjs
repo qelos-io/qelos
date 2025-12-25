@@ -76,6 +76,24 @@ function sanitizeIntegrationForFile(integration) {
       delete sanitized[field];
     }
   });
+  
+  // Remove _id from internal objects
+  if (sanitized.trigger && sanitized.trigger._id) {
+    delete sanitized.trigger._id;
+  }
+  
+  if (sanitized.target && sanitized.target._id) {
+    delete sanitized.target._id;
+  }
+  
+  if (Array.isArray(sanitized.dataManipulation)) {
+    sanitized.dataManipulation.forEach(item => {
+      if (item._id) {
+        delete item._id;
+      }
+    });
+  }
+  
   return sanitized;
 }
 
@@ -177,8 +195,11 @@ export async function pushIntegrations(sdk, path, options = {}) {
         logger.success(`Created: ${displayName}`);
       }
 
+      // Re-extract content to files to maintain $ref structure
+      const processedResponse = extractIntegrationContent(response, path, file);
+      
       // Persist returned integration (with _id) back to disk
-      writeIntegrationFile(filePath, sanitizeIntegrationForFile(response));
+      writeIntegrationFile(filePath, sanitizeIntegrationForFile(processedResponse));
       results.push({ status: 'fulfilled' });
     } catch (error) {
       logger.error(`Failed to push integration file ${file}`, error);
