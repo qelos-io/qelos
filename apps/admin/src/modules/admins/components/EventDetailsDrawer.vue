@@ -46,10 +46,10 @@
               class="user-link"
               :to="{
                 name: 'adminEditWorkspace',
-                params: { id: event.metadata.workspace },
+                params: { id: event.metadata.workspace._id },
               }"
             >
-              {{ event.metadata.workspace }}
+              {{ event.metadata.workspace._id }}
             </router-link>
           </el-descriptions-item>
         </el-descriptions>
