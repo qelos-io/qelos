@@ -33,7 +33,7 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('QuickTable', QuickTable)
   app.component('ListPageTitle', ListPageTitle)
   app.component('GeneralForm', defineAsyncComponent(async () => (await import('./components/GeneralForm.vue')).default))
-  app.component('BlueprintEntityForm',  defineAsyncComponent(async () => (await import('./components/BlueprintEntityForm.vue')).default)
+  app.component('BlueprintEntityForm',  defineAsyncComponent(async () => (await import('./components/BlueprintEntityForm.vue')).default))
   app.component('ConfirmMessage', defineAsyncComponent(async () => (await import('./components/ConfirmMessage.vue')).default))
   app.component('RemoveButton', RemoveButton)
   app.component('VChart', defineAsyncComponent(async () => (await import('./components/VChart.vue')).default))
