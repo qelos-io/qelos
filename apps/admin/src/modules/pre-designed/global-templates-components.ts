@@ -9,7 +9,6 @@ import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
 import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import StatsCard from '@/modules/pre-designed/components/StatsCard.vue';
-import Pre from '@/modules/pre-designed/components/Pre.vue';
 import ContentBox from '@/modules/pre-designed/components/ContentBox.vue';
 import QRating from '@/modules/pre-designed/components/QRating.vue';
 import CopyToClipboard from '@/modules/pre-designed/components/CopyToClipboard.vue';
