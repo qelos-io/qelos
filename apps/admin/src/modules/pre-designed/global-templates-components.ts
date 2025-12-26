@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue';
 import { App } from '@vue/runtime-core';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
@@ -17,7 +18,7 @@ import LifeCycle from '@/modules/pre-designed/components/LifeCycle.vue';
 import AiChat from '@/modules/pre-designed/components/AiChat.vue';
 import AssetUploader from '@/modules/assets/components/AssetUploader.vue';
 import ThreadsList from '@/modules/pre-designed/components/ThreadsList.vue';
-import { defineAsyncComponent } from 'vue';
+import CallbackLink from './components/CallbackLink.vue';
 
 export default function applyGlobalTemplatesComponents(app: App) {
   app.component('TemplatedRemoveButton', defineAsyncComponent(async () => (await import('./components/TemplatedRemoveButton.vue')).default))
@@ -49,4 +50,5 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('AiChat', AiChat)
   app.component('AssetUploader', AssetUploader)
   app.component('ThreadsList', ThreadsList)
+  app.component('SecuredLink', CallbackLink)
 }
