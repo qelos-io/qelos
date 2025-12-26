@@ -59,7 +59,6 @@ export function redirectToPluginMfe(req, res) {
   headers.user = headers.user || req.user;
   Plugin.getPluginForRedirect(headers.tenant, req.params.pluginId)
     .then(async (plugin) => {
-      console.log('plugin', plugin);
       if (!plugin) {
         res.status(404).end();
         return;
