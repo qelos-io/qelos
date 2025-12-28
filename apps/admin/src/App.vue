@@ -164,8 +164,12 @@ watch(() => {
     /* Element Plus component overrides for dark themes */
     ${isDarkTheme ? `
       /* Tab styles for dark themes */
-      .el-tabs__item {
-        color: rgba(255, 255, 255, 0.8) !important;
+      .el-tabs__nav-scroll {
+        background-color: var(--secondary-color);
+      }
+      .el-tabs .el-tabs__header .el-tabs__item {
+        background-color: var(--secondary-color);
+        color: rgba(255, 255, 255, 0.8);
       }
       .el-tabs__item.is-active {
         color: #ffffff !important;
