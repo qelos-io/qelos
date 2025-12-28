@@ -156,7 +156,6 @@ watch(navigationLayout, (layout) => {
     width: 100%;
     position: relative;
     left: 0;
-    z-index: 90;
   }
   
   .header {

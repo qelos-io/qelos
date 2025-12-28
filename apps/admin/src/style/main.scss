@@ -150,12 +150,16 @@ body[data-layout-style='stacked-header'] header {
   max-width: 100%;
   margin: 0;
   border-radius: 0;
-  z-index: 120;
+  z-index: 100;
 }
 
-body[data-layout-style='stacked-header'] .navigation,
+body[data-layout-style='stacked-header'] .navigation:not(.mobile),
 body[data-layout-style='stacked-header'] .admin-content {
   margin-block-start: 0;
+}
+
+body[data-layout-style='stacked-header'] .navigation.mobile {
+  z-index: 121;
 }
 
 /* Responsive design */
