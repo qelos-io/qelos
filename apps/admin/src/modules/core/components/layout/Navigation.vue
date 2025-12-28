@@ -8,7 +8,7 @@
     }"
   >
     <div class="mobile-mask" @click="close" />
-    <div class="nav-header">
+    <div class="nav-header" v-if="!isStackedHeader || $isMobile">
       <router-link to="/" class="home-logo">
         <img
           :alt="appConfig.name"
@@ -314,12 +314,14 @@ import {
 } from "@/modules/core/store/auth";
 import { useAppConfiguration } from "@/modules/configurations/store/app-configuration";
 
-import { ref, onMounted, toRef } from "vue";
+import { ref, onMounted, toRef, computed } from "vue";
 
 const { navBar, hasPages } = storeToRefs(usePluginsMicroFrontends());
 const { appConfig } = useAppConfiguration();
 import QuicklyCreateMicrofrontends from "./navigation/QuicklyCreateMicrofrontends.vue";
 import { useWsConfiguration } from "@/modules/configurations/store/ws-configuration";
+
+const isStackedHeader = computed(() => appConfig.value.layoutStyle === "stacked-header");
 
 // Visibility state of the modal window
 const dialogVisible = ref(false);
