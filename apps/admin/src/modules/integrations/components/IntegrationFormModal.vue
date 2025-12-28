@@ -5,6 +5,7 @@ import { useSubmitting } from '@/modules/core/compositions/submitting';
 import integrationsService from '@/services/apis/integrations-service';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { ElMessage } from 'element-plus';
+import FooterActions from '@/modules/core/components/common/FooterActions.vue';
 import { IntegrationType } from '@/modules/integrations/utils/integration-type-detector';
 import AIAgentForm from '@/modules/integrations/components/forms/AIAgentForm.vue';
 import IntegrationFormModalHeader from '@/modules/integrations/components/IntegrationFormModalHeader.vue';
@@ -167,23 +168,26 @@ const applyPastedIntegration = () => {
       <div class="dialog-footer">
         <!-- Mode Selection Footer -->
         <template v-if="isAIAgentView">
-          <div class="footer-actions">
-            <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
-            <el-button
-              type="primary"
-              @click="submit"
-              :disabled="submitting"
-              :loading="submitting"
-            >
-              {{ $t('Save Agent') }}
-            </el-button>
-          </div>
+          <FooterActions 
+            @save="submit"
+            @cancel="$emit('close')"
+            :loading="submitting"
+            :show-cancel="true"
+            button-text="Save Agent"
+            aria-label="Agent form actions"
+          />
         </template>
         
         <!-- Standard / Workflow Footer -->
         <template v-else>
-          <el-button @click="$emit('close')">{{ $t('Cancel') }}</el-button>
-          <el-button type="primary" @click="submit" :disabled="submitting" :loading="submitting">{{ $t('Save') }}</el-button>
+          <FooterActions 
+            @save="submit"
+            @cancel="$emit('close')"
+            :loading="submitting"
+            :show-cancel="true"
+            button-text="Save"
+            aria-label="Integration form actions"
+          />
         </template>
       </div>
     </template>
@@ -397,11 +401,6 @@ img, small {
   color: var(--el-text-color-primary);
 }
 
-.footer-actions {
-  display: flex;
-  gap: 8px;
-}
-
 @media (max-width: 768px) {
   .ai-agent-footer {
     flex-direction: column;
@@ -411,11 +410,6 @@ img, small {
   .step-info {
     width: 100%;
     justify-content: center;
-  }
-  
-  .footer-actions {
-    width: 100%;
-    justify-content: flex-end;
   }
 }
 

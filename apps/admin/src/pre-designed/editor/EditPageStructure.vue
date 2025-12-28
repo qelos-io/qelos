@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus';
 
 import Monaco from '@/modules/users/components/Monaco.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
+import FooterActions from '@/modules/core/components/common/FooterActions.vue';
 import { IMicroFrontend } from '@/services/types/plugin';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
@@ -339,11 +340,7 @@ provide('editableManager', ref(false));
         </el-tab-pane>
       </el-tabs>
       
-      <div class="footer-actions">
-        <el-button type="primary" @click="save" :loading="props.submitting" :disabled="props.submitting">
-          {{ $t('Save Changes') }}
-        </el-button>
-      </div>
+      <FooterActions @save="save" :loading="props.submitting" />
     </div>
   </el-form>
 </template>
@@ -497,7 +494,7 @@ provide('editableManager', ref(false));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0;
+  padding: 0.5rem;
 }
 
 .switch-label {
@@ -517,35 +514,5 @@ provide('editableManager', ref(false));
 :deep(.el-switch.is-checked .el-switch__core) {
   background-color: var(--el-color-primary) !important;
   border-color: var(--el-color-primary) !important;
-}
-
-.w-full {
-  width: 100%;
-}
-
-.footer-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding: 1rem;
-  border-top: 1px solid var(--el-border-color);
-  margin-top: 1rem;
-  background-color: var(--el-fill-color-light);
-}
-
-:deep(.el-tabs__content) {
-  flex: 1;
-  overflow: auto;
-}
-
-:deep(.el-tabs__nav) {
-  background-color: var(--el-fill-color-light);
-}
-
-:deep(.el-tabs__item.is-active) {
-  font-weight: 600;
-}
-
-:deep(.el-card__body) {
-  padding: 1rem;
 }
 </style>

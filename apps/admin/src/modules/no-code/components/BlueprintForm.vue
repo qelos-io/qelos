@@ -8,6 +8,7 @@ import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import AddMore from '@/modules/core/components/forms/AddMore.vue';
 import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
+import FooterActions from '@/modules/core/components/common/FooterActions.vue';
 
 import { getKeyFromName } from '@/modules/core/utils/texts';
 import BlueprintLimitationsInput from '@/modules/no-code/components/blueprint-form/BlueprintLimitationsInput.vue';
@@ -18,7 +19,6 @@ import BlueprintEventsTab from '@/modules/no-code/components/blueprint-form/Blue
 
 // temporary sample
 const availableLabels = ['*', 'supplier', 'store', 'consumer'];
-const editor = ref()
 const route = useRoute();
 const router = useRouter();
 const props = withDefaults(defineProps<{
@@ -352,7 +352,6 @@ function submit() {
             </template>
             <div class="monaco-container">
               <Monaco 
-                ref="editor" 
                 v-model="blueprintJson"
                 language="json"
                 class="monaco-editor"
@@ -364,11 +363,7 @@ function submit() {
 
     </el-tabs>
     
-    <div class="footer-actions">
-      <el-button type="primary" @click="submit" :loading="props.submitting" :disabled="props.submitting">
-        {{ $t('Save Changes') }}
-      </el-button>
-    </div>
+    <FooterActions @save="submit" :loading="props.submitting" background-color="var(--main-color-light)" />
   </div>
   </el-form>
 </template>
@@ -499,22 +494,13 @@ function submit() {
   height: 100%;
 }
 
-.footer-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding: 1rem;
-  border-top: 1px solid var(--el-border-color);
-  margin-top: 1rem;
-  background-color: var(--el-fill-color-light);
-}
-
 :deep(.el-tabs__content) {
   flex: 1;
   overflow: auto;
 }
 
 :deep(.el-tabs__nav) {
-  background-color: var(--el-fill-color-light);
+  background-color: var(--main-color-light);
 }
 
 :deep(.el-tabs__item.is-active) {
@@ -554,7 +540,7 @@ function submit() {
 }
 
 :deep(.el-tabs--border-card > .el-tabs__header) {
-  background-color: var(--el-fill-color-light);
+  background-color: var(--main-color-light);
   border-bottom: 1px solid var(--el-border-color-light);
   margin: 0;
 }

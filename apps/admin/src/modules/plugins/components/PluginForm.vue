@@ -196,18 +196,13 @@
         </el-tab-pane>
       </el-tabs>
       
-      <div class="footer-actions" role="group" :aria-label="$t('Form actions')">
-        <el-button 
-          type="primary" 
-          native-type="submit"
-          @click="submit" 
-          :loading="props.submitting" 
-          :disabled="props.submitting"
-          :aria-label="$t('Save plugin changes')"
-          :aria-busy="props.submitting">
-          {{ $t('Save Changes') }}
-        </el-button>
-      </div>
+      <FooterActions 
+        @save="submit" 
+        :loading="props.submitting"
+        aria-label="Form actions"
+        button-aria-label="Save plugin changes"
+        native-type="submit"
+      />
     </div>
   </el-form>
 </template>
@@ -216,6 +211,7 @@ import { computed, provide, reactive, nextTick, ref, watch, type ComponentPublic
 import { useRoute, useRouter } from 'vue-router';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { IPlugin } from '@/services/types/plugin';
+import FooterActions from '@/modules/core/components/common/FooterActions.vue';
 
 import BasicInfoTab from './plugin-form/BasicInfoTab.vue';
 import APIsTab from './plugin-form/APIsTab.vue';
@@ -615,30 +611,8 @@ function submit() {
   color: var(--el-color-info);
 }
 
-.footer-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding: 1rem;
-  border-top: 1px solid var(--el-border-color);
-  margin-top: 1rem;
-  background-color: var(--el-fill-color-light);
-}
-
 .remove-row {
   margin-bottom: 5px;
-}
-
-:deep(.el-tabs__content) {
-  flex: 1;
-  overflow: auto;
-}
-
-:deep(.el-tabs__nav) {
-  background-color: var(--el-fill-color-light);
-}
-
-:deep(.el-tabs__item.is-active) {
-  font-weight: 600;
 }
 
 :deep(.el-tabs__item:focus-visible) {
@@ -650,10 +624,6 @@ function submit() {
 :deep(.el-button:focus-visible) {
   outline: 2px solid var(--el-color-primary);
   outline-offset: 2px;
-}
-
-:deep(.el-card__body) {
-  padding: 1rem;
 }
 
 h3 {
