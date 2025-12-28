@@ -1,5 +1,5 @@
 <template>
-  <header v-if="loaded && showStandardHeader" :dir="$t('appDirection')" :class="{ 'searching': isSearching, header: true, mobile: $isMobile }">
+  <header v-if="loaded && showStandardHeader" :dir="$t('appDirection')" :class="{ 'searching': isSearching, header: true, mobile: $isMobile, 'stacked-header': isStackedHeader }">
     <div class="header-left">
       <el-button class="mobile-menu-opener" v-if="$isMobile" text circle size="large" @click="toggle">
         <el-icon>
@@ -65,6 +65,7 @@ const { appConfig } = useAppConfiguration()
 
 const { usersHeader, loaded } = useUsersHeader()
 
+const isStackedHeader = computed(() => appConfig.value.layoutStyle === 'stacked-header');
 const showStandardHeader = computed(() => isPrivilegedUser.value || !usersHeader.value?.active)
 
 const props = defineProps({
@@ -127,6 +128,7 @@ watch(tempQuery, debounce((value: string) => {
 const toggle = () => emit('toggle');
 </script>
 <style scoped lang="scss">
+
 header {
   margin: var(--spacing);
   border-radius: var(--border-radius);
@@ -147,7 +149,7 @@ header {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
-  &:not(.mobile) {
+  &:not(.mobile):not(.stacked-header) {
     max-width: var(--layout-header-max-width, calc(100vw - var(--nav-width)));
   }
 }
