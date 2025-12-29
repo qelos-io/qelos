@@ -381,9 +381,9 @@ function submit() {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--el-border-color);
+  border-bottom: 1px solid var(--border-color);
   padding: 1rem;
-  background-color: var(--el-fill-color-light);
+  background-color: var(--main-color-light);
   border-radius: 4px 4px 0 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -485,7 +485,7 @@ function submit() {
 
 .monaco-container {
   height: 400px;
-  border: 1px solid var(--el-border-color);
+  border: 1px solid var(--aborder-color)á
   border-radius: 4px;
   overflow: hidden;
 }

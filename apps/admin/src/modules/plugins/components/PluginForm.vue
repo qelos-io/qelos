@@ -453,9 +453,9 @@ function submit() {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--el-border-color);
+  border-bottom: 1px solid var(--border-color);
   padding: 1rem;
-  background-color: var(--el-fill-color-light);
+  background-color: var(--main-color-light);
   border-radius: 4px 4px 0 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -548,7 +548,7 @@ function submit() {
 .event-item, .injectable-item {
   margin-bottom: 1rem;
   padding: 1rem;
-  background-color: var(--el-fill-color-light);
+  background-color: var(--main-color-light);
   border-radius: 4px;
   transition: all 0.3s;
 }
@@ -561,7 +561,7 @@ function submit() {
   content: '  ';
   display: block;
   width: 50%;
-  border-block-end: 1px solid var(--el-border-color);
+  border-block-end: 1px solid var(--border-color);
   margin-inline: auto;
   margin-block-end: 10px;
 }
@@ -572,7 +572,7 @@ function submit() {
 
 .monaco-container {
   height: 400px;
-  border: 1px solid var(--el-border-color);
+  border: 1px solid var(--order-color);
   border-radius: 4px;
   overflow: hidden;
   margin-top: 1rem;
