@@ -114,7 +114,7 @@ function submit() {
   if (blueprintMapping.value) {
     data.updateMapping = blueprintMapping.value.reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {});
   }
-  emit('submitted', data)
+  emit('submitted', data);
 }
 </script>
 
@@ -485,7 +485,7 @@ function submit() {
 
 .monaco-container {
   height: 400px;
-  border: 1px solid var(--aborder-color)á
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   overflow: hidden;
 }
