@@ -1087,7 +1087,7 @@ onMounted(() => {
   border-radius: 16px;
   background: var(--body-bg, #fff);
   box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.02);
-  max-width: 80%;
+  max-width: 90%;
   transition: box-shadow 0.2s, background 0.2s;
   animation: pop-in 0.2s;
 }
