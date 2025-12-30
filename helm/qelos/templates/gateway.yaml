@@ -6,6 +6,11 @@ metadata:
     app: gateway
 spec:
   replicas: {{ .Values.gateway.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: gateway
@@ -18,8 +23,6 @@ spec:
         checksum/microservices-config: {{ include (print $.Template.BasePath "/microservices.yaml") . | sha256sum }}
         checksum/mongodb-config: {{ include (print $.Template.BasePath "/mongodb.yaml") . | sha256sum }}
         checksum/redis-config: {{ include (print $.Template.BasePath "/redis.yaml") . | sha256sum }}
-        # This timestamp annotation forces pod recreation on helm upgrade
-        rollme: {{ randAlphaNum 10 | quote }}
     spec:
       containers:
         - name: gateway
@@ -93,6 +96,16 @@ spec:
       name: http
   selector:
     app: gateway
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gateway-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: gateway
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

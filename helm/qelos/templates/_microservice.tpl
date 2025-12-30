@@ -29,11 +29,12 @@ spec:
           ports:
             - containerPort: {{ .values.port }}
               name: http
+          {{- if ne (.values.enableHealthProbes | default true | toString) "false" }}
           readinessProbe:
             httpGet:
               path: {{ .values.healthCheckPath | default "/internal-api/health" }}
               port: {{ .values.port }}
-            initialDelaySeconds: {{ (.values.readinessProbe).initialDelaySeconds | default 10 }}
+            initialDelaySeconds: {{ (.values.readinessProbe).initialDelaySeconds | default 15 }}
             periodSeconds: {{ (.values.readinessProbe).periodSeconds | default 5 }}
             timeoutSeconds: {{ (.values.readinessProbe).timeoutSeconds | default 3 }}
             successThreshold: {{ (.values.readinessProbe).successThreshold | default 1 }}
@@ -42,10 +43,11 @@ spec:
             httpGet:
               path: {{ .values.healthCheckPath | default "/internal-api/health" }}
               port: {{ .values.port }}
-            initialDelaySeconds: {{ (.values.livenessProbe).initialDelaySeconds | default 30 }}
+            initialDelaySeconds: {{ (.values.livenessProbe).initialDelaySeconds | default 45 }}
             periodSeconds: {{ (.values.livenessProbe).periodSeconds | default 10 }}
             timeoutSeconds: {{ (.values.livenessProbe).timeoutSeconds | default 5 }}
             failureThreshold: {{ (.values.livenessProbe).failureThreshold | default 3 }}
+          {{- end }}
           env:
             - name: INTERNAL_SECRET
               value: "{{ .global.internalSecret }}"
