@@ -29,7 +29,7 @@ spec:
           ports:
             - containerPort: {{ .values.port }}
               name: http
-          {{- if ne (.values.enableHealthProbes | default true | toString) "false" }}
+          {{- if ne (.values.enableHealthProbes | default false | toString) "false" }}
           readinessProbe:
             httpGet:
               path: {{ .values.healthCheckPath | default "/internal-api/health" }}

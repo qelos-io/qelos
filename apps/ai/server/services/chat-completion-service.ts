@@ -1,6 +1,8 @@
 import logger from './logger';
+import { emitAIProviderErrorEvent } from './platform-events';
 
-const MAX_AUTO_CONTINUE_STEPS = 3;
+// Define constants
+const MAX_AUTO_CONTINUE_STEPS = 5;
 
 // Define types for function calls
 export interface FunctionCall {
@@ -154,6 +156,13 @@ export async function handleStreamingChatCompletion(
   executeFunctionCallsHandler: Function,
   additionalArgs: any[] = [],
   onNewMessage?: Function,
+  context?: {
+    tenant?: string;
+    userId?: string;
+    integrationId?: string;
+    integrationName?: string;
+    workspaceId?: string;
+  }
 ) {
   const sendSSE = (data: any) => {
     try {
@@ -174,7 +183,9 @@ export async function handleStreamingChatCompletion(
       sendSSE,
       additionalArgs,
       false, // isFollowUp
-      onNewMessage
+      onNewMessage,
+      0, // autoContinueCount
+      context
     );
     
     // End the response
@@ -184,6 +195,25 @@ export async function handleStreamingChatCompletion(
     }
   } catch (error) {
     logger.error('Error in streaming chat completion', error);
+    
+    // Emit platform event for streaming errors
+    if (context?.tenant && error) {
+      emitAIProviderErrorEvent({
+        tenant: context.tenant,
+        userId: context.userId,
+        provider: aiService.source?.kind || 'unknown',
+        sourceId: aiService.source?._id,
+        stream: true,
+        model: chatOptions.model,
+        error,
+        context: {
+          integrationId: context.integrationId,
+          integrationName: context.integrationName,
+          workspaceId: context.workspaceId,
+        }
+      });
+    }
+    
     sendSSE({ 
       type: 'error', 
       message: error instanceof Error ? error.message : 'Error processing streaming chat completion',
@@ -206,6 +236,13 @@ async function processStreamingCompletion(
   isFollowUp: boolean = false,
   onNewMessage?: Function,
   autoContinueCount: number = 0,
+  context?: {
+    tenant?: string;
+    userId?: string;
+    integrationId?: string;
+    integrationName?: string;
+    workspaceId?: string;
+  }
 ) {
   let currentFunctionCalls: FunctionCall[] = [];
   let isCollectingFunctionCall = false;
@@ -325,10 +362,30 @@ async function processStreamingCompletion(
             true, // isFollowUp
             onNewMessage,
             autoContinueCount,
+            context
           ),
           new Promise((_, reject) => {
             setTimeout(() => {
-              reject(new Error('Recursive chat completion timeout after 2 minutes'));
+              const timeoutError = new Error('Recursive chat completion timeout after 2 minutes');
+              // Emit platform event for timeout
+              if (context?.tenant) {
+                emitAIProviderErrorEvent({
+                  tenant: context.tenant,
+                  userId: context.userId,
+                  provider: aiService.source?.kind || 'unknown',
+                  sourceId: aiService.source?._id,
+                  stream: true,
+                  model: chatOptions.model,
+                  error: timeoutError,
+                  context: {
+                    integrationId: context.integrationId,
+                    integrationName: context.integrationName,
+                    workspaceId: context.workspaceId,
+                    stage: 'recursive_completion'
+                  }
+                });
+              }
+              reject(timeoutError);
             }, 120000); // 2 minute timeout
           })
         ]);
@@ -368,6 +425,7 @@ async function processStreamingCompletion(
         true, // isFollowUp
         onNewMessage,
         autoContinueCount + 1,
+        context
       );
       
       // Return after processing the recursive call
@@ -436,6 +494,7 @@ async function processStreamingCompletion(
         true, // isFollowUp
         onNewMessage,
         autoContinueCount,
+        context
       );
     } catch (functionError) {
       logger.error('Error executing incomplete function calls in streaming completion', functionError);
@@ -462,6 +521,13 @@ export async function handleNonStreamingChatCompletion(
   executeFunctionCallsHandler: Function,
   additionalArgs: any[] = [],
   onNewMessage?: Function,
+  context?: {
+    tenant?: string;
+    userId?: string;
+    integrationId?: string;
+    integrationName?: string;
+    workspaceId?: string;
+  }
 ) {
   try {
     // Get initial completion
@@ -470,7 +536,25 @@ export async function handleNonStreamingChatCompletion(
       aiService.createChatCompletion(chatOptions),
       new Promise((_, reject) => {
         setTimeout(() => {
-          reject(new Error('Initial chat completion timeout after 2 minutes'));
+          const timeoutError = new Error('Initial chat completion timeout after 2 minutes');
+          // Emit platform event for timeout
+          if (context?.tenant) {
+            emitAIProviderErrorEvent({
+              tenant: context.tenant,
+              userId: context.userId,
+              provider: aiService.source?.kind || 'unknown',
+              sourceId: aiService.source?._id,
+              stream: false,
+              model: chatOptions.model,
+              error: timeoutError,
+              context: {
+                integrationId: context.integrationId,
+                integrationName: context.integrationName,
+                workspaceId: context.workspaceId,
+              }
+            });
+          }
+          reject(timeoutError);
         }, 120000); // 2 minute timeout
       })
     ]);
@@ -494,7 +578,26 @@ export async function handleNonStreamingChatCompletion(
         ),
         new Promise((_, reject) => {
           setTimeout(() => {
-            reject(new Error('Function execution timeout after 10 minutes'));
+            const timeoutError = new Error('Function execution timeout after 10 minutes');
+            // Emit platform event for function execution timeout
+            if (context?.tenant) {
+              emitAIProviderErrorEvent({
+                tenant: context.tenant,
+                userId: context.userId,
+                provider: aiService.source?.kind || 'unknown',
+                sourceId: aiService.source?._id,
+                stream: false,
+                model: chatOptions.model,
+                error: timeoutError,
+                context: {
+                  integrationId: context.integrationId,
+                  integrationName: context.integrationName,
+                  workspaceId: context.workspaceId,
+                  stage: 'function_execution'
+                }
+              });
+            }
+            reject(timeoutError);
           }, 600000); // 10 minute timeout (same as NESTED_AGENT_TIMEOUT_MS)
         })
       ]);
@@ -522,7 +625,26 @@ export async function handleNonStreamingChatCompletion(
         }),
         new Promise((_, reject) => {
           setTimeout(() => {
-            reject(new Error('Follow-up chat completion timeout after 2 minutes'));
+            const timeoutError = new Error('Follow-up chat completion timeout after 2 minutes');
+            // Emit platform event for timeout
+            if (context?.tenant) {
+              emitAIProviderErrorEvent({
+                tenant: context.tenant,
+                userId: context.userId,
+                provider: aiService.source?.kind || 'unknown',
+                sourceId: aiService.source?._id,
+                stream: false,
+                model: chatOptions.model,
+                error: timeoutError,
+                context: {
+                  integrationId: context.integrationId,
+                  integrationName: context.integrationName,
+                  workspaceId: context.workspaceId,
+                  stage: 'follow_up_completion'
+                }
+              });
+            }
+            reject(timeoutError);
           }, 120000); // 2 minute timeout
         })
       ]);
@@ -552,6 +674,25 @@ export async function handleNonStreamingChatCompletion(
     }
   } catch (error) {
     logger.error('Error in non-streaming chat completion', error);
+    
+    // Emit platform event for general errors
+    if (context?.tenant && error) {
+      emitAIProviderErrorEvent({
+        tenant: context.tenant,
+        userId: context.userId,
+        provider: aiService.source?.kind || 'unknown',
+        sourceId: aiService.source?._id,
+        stream: false,
+        model: chatOptions.model,
+        error,
+        context: {
+          integrationId: context.integrationId,
+          integrationName: context.integrationName,
+          workspaceId: context.workspaceId,
+        }
+      });
+    }
+    
     throw error;
   }
 }

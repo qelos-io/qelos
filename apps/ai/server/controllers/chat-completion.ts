@@ -11,6 +11,7 @@ import { IThread, Thread } from "../models/thread";
 import { getAllBlueprints } from "../services/no-code-service";
 import { emitDataManipulationErrorEvent } from "../services/platform-events";
 import { emitPlatformEvent } from '@qelos/api-kit';
+import { analyzeChatCompletionError, createErrorResponse, logError } from "../services/error-analysis";
 
 export async function getIntegrationToIntegrate(req, res, next) {
   try {
@@ -554,26 +555,28 @@ export async function chatCompletion(req: any, res: any | null) {
     defaultMaxTools: 15,
   });
 
+  // Declare chatOptions outside try block so it's accessible in catch
+  const chatOptions = {
+    model: options.model || integration.target.details.model || source.metadata.defaultModel,
+    temperature: options.temperature || integration.target.details.temperature,
+    top_p: options.top_p || integration.target.details.top_p,
+    frequency_penalty: options.frequency_penalty || integration.target.details.frequency_penalty,
+    presence_penalty: options.presence_penalty || integration.target.details.presence_penalty,
+    stop: options.stop || integration.target.details.stop,
+    messages: initialMessages.map(msg => typeof msg === 'string' ? { role: 'user', content: msg } : msg),
+    unsafeUserContext: Object.keys(options?.context || {}).length > 0 ? options.context : undefined,
+    response_format: options.response_format || integration.target.details.response_format,
+    tools,
+    loggingContext: {
+      tenant: integration.tenant,
+      userId: req.user?._id?.toString(),
+      workspaceId: req.workspace?._id?.toString(),
+      integrationId: integration._id,
+      integrationName: integration.name,
+    },
+  };
+
   try {
-    const chatOptions = {
-      model: options.model || integration.target.details.model || source.metadata.defaultModel,
-      temperature: options.temperature || integration.target.details.temperature,
-      top_p: options.top_p || integration.target.details.top_p,
-      frequency_penalty: options.frequency_penalty || integration.target.details.frequency_penalty,
-      presence_penalty: options.presence_penalty || integration.target.details.presence_penalty,
-      stop: options.stop || integration.target.details.stop,
-      messages: initialMessages.map(msg => typeof msg === 'string' ? { role: 'user', content: msg } : msg),
-      unsafeUserContext: Object.keys(options?.context || {}).length > 0 ? options.context : undefined,
-      response_format: options.response_format || integration.target.details.response_format,
-      tools,
-      loggingContext: {
-        tenant: integration.tenant,
-        userId: req.user?._id?.toString(),
-        workspaceId: req.workspace?._id?.toString(),
-        integrationId: integration._id,
-        integrationName: integration.name,
-      },
-    };
 
     // Custom function to execute function calls for this controller
     const executeFunctionCallsHandler = async (
@@ -641,7 +644,14 @@ export async function chatCompletion(req: any, res: any | null) {
         chatOptions,
         executeFunctionCallsHandler,
         [],
-        onNewMessage
+        onNewMessage,
+        {
+          tenant: integration.tenant,
+          userId: req.user?._id?.toString(),
+          integrationId: integration._id,
+          integrationName: integration.name,
+          workspaceId: req.workspace?._id?.toString(),
+        }
       );
     } else {
       // Use the shared non-streaming chat completion handler
@@ -650,7 +660,14 @@ export async function chatCompletion(req: any, res: any | null) {
         chatOptions,
         executeFunctionCallsHandler,
         [],
-        onNewMessage
+        onNewMessage,
+        {
+          tenant: integration.tenant,
+          userId: req.user?._id?.toString(),
+          integrationId: integration._id,
+          integrationName: integration.name,
+          workspaceId: req.workspace?._id?.toString(),
+        }
       );
       if (res) {
         res.status(200).json(result).end();
@@ -659,14 +676,61 @@ export async function chatCompletion(req: any, res: any | null) {
       }
     }
   } catch (error) {
-    logger.error('Error processing AI chat completion', error);
+    // Analyze the error to provide actionable insights
+    const errorAnalysis = analyzeChatCompletionError(error, {
+      provider: integration.target.source.kind,
+      model: chatOptions.model,
+      integrationId: integration._id,
+      tenant: integration.tenant,
+      hasFunctionCalls: !!chatOptions.tools,
+      messageCount: chatOptions.messages?.length,
+      isStreaming: useSSE
+    });
+    
+    // Log with structured data for better debugging
+    logError(logger, 'Error processing AI chat completion', error, errorAnalysis, {
+      integrationId: integration._id,
+      integrationName: integration.name,
+      provider: integration.target.source.kind,
+      model: chatOptions.model,
+      userId: req.user?._id?.toString(),
+      workspaceId: req.workspace?._id?.toString(),
+      hasFunctionCalls: !!chatOptions.tools,
+      messageCount: chatOptions.messages?.length,
+      isStreaming: useSSE
+    });
+    
+    // Emit platform event for monitoring
+    emitPlatformEvent({
+      tenant: integration.tenant,
+      source: integration._id,
+      kind: integration.target.source.kind,
+      eventName: 'ai_chat_completion_failed',
+      description: `AI chat completion failed: ${errorAnalysis.category}`,
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+        errorCategory: errorAnalysis.category,
+        possibleCauses: errorAnalysis.possibleCauses,
+        suggestedFixes: errorAnalysis.suggestedFixes,
+        integrationId: integration._id,
+        integrationName: integration.name,
+        model: chatOptions.model,
+        isStreaming: useSSE,
+        hasFunctionCalls: !!chatOptions.tools,
+        userId: req.user?._id?.toString(),
+      }
+    });
+    
+    // Create and return detailed error response
+    const errorResponse = createErrorResponse(error, errorAnalysis, req.id);
+    
     if (useSSE && res) {
-      res.write(`data: ${JSON.stringify({ type: 'error', message: 'Error processing AI chat completion' })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'error', ...errorResponse })}\n\n`);
       res.end();
     } else if (res) {
-      res.status(500).json({ message: 'Error processing AI chat completion' }).end();
+      res.status(500).json(errorResponse).end();
     } else {
-      throw { message: 'Error processing AI chat completion' };
+      throw { ...errorResponse, originalError: error };
     }
   }
 }
@@ -692,7 +756,27 @@ export async function internalChatCompletion(req, res) {
       },
     })
     res.json(response).end();
-  } catch {
-    res.json({ message: 'failed to execute chat completion' }).end();
+  } catch (error) {
+    // Analyze the error for internal requests too
+    const errorAnalysis = analyzeChatCompletionError(error, {
+      provider: source.kind,
+      model: payload.model || source.metadata.defaultModel,
+      integrationId: req.integration?._id,
+      tenant: req.headers.tenant,
+      hasFunctionCalls: false,
+      messageCount: payload.messages?.length || 0,
+      isStreaming: false
+    });
+    
+    logError(logger, 'Error in internal chat completion', error, errorAnalysis, {
+      sourceId: source._id,
+      provider: source.kind,
+      model: payload.model || source.metadata.defaultModel,
+      tenant: req.headers.tenant
+    });
+    
+    // Return detailed error for internal requests
+    const errorResponse = createErrorResponse(error, errorAnalysis);
+    res.status(500).json(errorResponse).end();
   }
 }

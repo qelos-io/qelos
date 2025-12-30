@@ -1,6 +1,7 @@
 import * as ChatCompletionService from "./chat-completion-service";
 import { executeFunctionCalls } from "./execute-function-calls";
 import { createAIService } from "./ai-service";
+import { emitAIProviderErrorEvent } from "./platform-events";
 import logger from "./logger";
 
 const NESTED_AGENT_TIMEOUT_MS = 600000; // 10 minutes timeout for nested agent calls
@@ -130,20 +131,56 @@ export async function processChatCompletion(req: any, res: any, systemPrompt: an
         aiService,
         chatOptions,
         executeFunctionCallsHandler,
-        []
+        [],
+        undefined,
+        {
+          tenant: req.headers.tenant,
+          userId: req.user?._id?.toString(),
+          integrationId: source._id,
+          integrationName: source.name,
+          workspaceId: req.workspace?._id?.toString(),
+        }
       );
     } else {
       // For non-streaming (when res is null), use a timeout wrapper
+      const context = {
+        tenant: req.headers.tenant,
+        userId: req.user?._id?.toString(),
+        integrationId: source._id,
+        integrationName: source.name,
+        workspaceId: req.workspace?._id?.toString(),
+      };
+      
       const result = await Promise.race([
         ChatCompletionService.handleNonStreamingChatCompletion(
           aiService,
           chatOptions,
           executeFunctionCallsHandler,
-          []
+          [],
+          undefined,
+          context
         ),
         new Promise((_, reject) => {
           setTimeout(() => {
-            reject(new Error(`Non-streaming chat completion timed out after ${NESTED_AGENT_TIMEOUT_MS}ms`));
+            const timeoutError = new Error(`Non-streaming chat completion timed out after ${NESTED_AGENT_TIMEOUT_MS}ms`);
+            // Emit platform event for timeout
+            if (req.headers.tenant) {
+              emitAIProviderErrorEvent({
+                tenant: req.headers.tenant,
+                userId: req.user?._id?.toString(),
+                provider: source.kind || 'unknown',
+                sourceId: source._id,
+                stream: false,
+                model: chatOptions.model,
+                error: timeoutError,
+                context: {
+                  integrationId: source._id,
+                  integrationName: source.name,
+                  workspaceId: req.workspace?._id?.toString(),
+                }
+              });
+            }
+            reject(timeoutError);
           }, NESTED_AGENT_TIMEOUT_MS);
         })
       ]);
