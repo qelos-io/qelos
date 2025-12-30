@@ -9,6 +9,7 @@ import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElRadioGroup, ElRadioButton } from 'element-plus';
 import { List, Connection, Link } from '@element-plus/icons-vue';
+import { QelosTriggerOperation } from '@qelos/global-types';
 
 const route = useRoute();
 const integrationsStore = useIntegrationsStore();
@@ -60,14 +61,25 @@ const editingIntegration = computed(() => {
 })
 
 // Check if AI agent mode is enabled
-const isAIAgentMode = computed(() => route.query.agentMode === 'true');
+const isAIAgentMode = computed(() => {
+  // Check query parameter first
+  if (route.query.agentMode === 'true') {
+    return true;
+  }
+  // For editing, check if the integration is an AI agent type
+  if (editingIntegration.value) {
+    // Check if the trigger operation is chatCompletion (AI agent indicator)
+    return editingIntegration.value.trigger?.operation === QelosTriggerOperation.chatCompletion;
+  }
+  return false;
+});
 
 // Get pre-selected source ID
 const preSelectedSourceId = computed(() => route.query.sourceId as string | undefined);
 
 const closeIntegrationFormModal = () => {
   integrationsStore.retry();
-  router.push({ query: buildQuery({ mode: undefined, id: undefined, agentMode: undefined, sourceId: undefined }) });
+  router.push({ query: buildQuery({ mode: undefined, id: undefined, agentMode: undefined, sourceId: undefined, clone: undefined }) });
 }
 </script>
 

@@ -64,7 +64,6 @@ const handleCancel = () => {
   display: flex;
   justify-content: flex-end;
   padding: 1rem;
-  border-top: 1px solid var(--border-color);
   margin-top: 1rem;
 }
 

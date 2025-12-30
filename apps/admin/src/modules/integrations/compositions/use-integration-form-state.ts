@@ -1,6 +1,6 @@
 import { nextTick, reactive, ref, toValue, watch } from 'vue';
 import type { Ref } from 'vue';
-import { IIntegration, IDataManipulationStep, IntegrationSourceKind } from '@qelos/global-types';
+import { IIntegration, IDataManipulationStep, IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
 import { detectIntegrationType, IntegrationType } from '@/modules/integrations/utils/integration-type-detector';
 
 interface UseIntegrationFormStateOptions {
@@ -93,6 +93,9 @@ export function useIntegrationFormState({
     const aiAgentMode = toValue(isAIAgentMode);
     const selectedSourceId = toValue(preSelectedSourceId);
 
+    // Check if editing integration has chat completion operation to force AI agent mode
+    const isEditingChatCompletion = editingIntegration.trigger?.operation === QelosTriggerOperation.chatCompletion;
+
     Object.assign(form, {
       ...editingIntegration,
       trigger: {
@@ -116,8 +119,13 @@ export function useIntegrationFormState({
     sanitizeDataManipulation();
 
     if (editingIntegration._id && sourcesStore.result?.length) {
-      const detectedType = detectIntegrationType(form, sourcesStore.result);
-      setSelectedViewMode(detectedType);
+      // For existing integrations, use AI agent mode if explicitly set or if it's a chat completion
+      if (aiAgentMode || isEditingChatCompletion) {
+        setSelectedViewMode(IntegrationType.AIAgent);
+      } else {
+        const detectedType = detectIntegrationType(form, sourcesStore.result);
+        setSelectedViewMode(detectedType);
+      }
     } else {
       // Set AI agent mode if specified
       if (aiAgentMode) {

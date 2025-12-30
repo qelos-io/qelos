@@ -15,7 +15,7 @@ export enum IntegrationType {
  * Detects if an integration is an AI Agent
  * AI Agent criteria:
  * - Trigger source is an AI provider (OpenAI, Claude, Gemini)
- * - trigger.operation === 'chat_completion'
+ * - trigger.operation === 'chatCompletion'
  * - Target can be any source (usually Qelos for webhook)
  */
 export function isAIAgentIntegration(
@@ -40,7 +40,7 @@ export function isAIAgentIntegration(
 
   return (
     AI_PROVIDER_KINDS.includes(triggerSource.kind) &&
-    integration.trigger.operation === 'chat_completion'
+    integration.trigger.operation === QelosTriggerOperation.chatCompletion
   );
 }
 

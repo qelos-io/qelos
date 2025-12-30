@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
+import { useRoute } from 'vue-router';
 import type { IIntegration } from '@qelos/global-types';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import integrationsService from '@/services/apis/integrations-service';
@@ -12,8 +13,17 @@ import IntegrationFormModalHeader from '@/modules/integrations/components/Integr
 import WorkflowIntegrationView from '@/modules/integrations/components/WorkflowIntegrationView.vue';
 import { useIntegrationFormState } from '@/modules/integrations/compositions/use-integration-form-state';
 
+// Disable attribute inheritance to avoid warning about non-props attributes
+defineOptions({
+  inheritAttrs: false
+});
+
 const visible = defineModel<boolean>('visible');
-const props = defineProps<{ editingIntegration?: Partial<IIntegration> }>();
+const props = defineProps<{ 
+  editingIntegration?: Partial<IIntegration>,
+  isAIAgentMode?: boolean,
+  preSelectedSourceId?: string
+}>();
 const emit = defineEmits(['close', 'saved']);
 
 const pasteDialogVisible = ref(false);
@@ -22,12 +32,19 @@ const pasteError = ref('');
 const showTypeSelection = ref(false);
 
 const store = useIntegrationSourcesStore();
+const route = useRoute();
 
 const {
   form,
   selectedViewMode,
   setSelectedViewMode
-} = useIntegrationFormState({ props, visible, sourcesStore: store });
+} = useIntegrationFormState({ 
+  props, 
+  visible, 
+  sourcesStore: store,
+  isAIAgentMode: props.isAIAgentMode,
+  preSelectedSourceId: props.preSelectedSourceId
+});
 
 const isAIAgentView = computed(() => selectedViewMode.value === IntegrationType.AIAgent);
 const isWorkflowView = computed(() => selectedViewMode.value === IntegrationType.Workflow);
@@ -38,7 +55,39 @@ const integrationName = computed(() => form.trigger?.details?.name);
 
 watch(visible, (value) => {
   if (value) {
-    showTypeSelection.value = isNewIntegration.value;
+    // Check if we're cloning an integration
+    if (route.query.clone === 'true') {
+      const clonedIntegration = sessionStorage.getItem('clonedIntegration');
+      if (clonedIntegration) {
+        try {
+          const parsed = JSON.parse(clonedIntegration);
+          
+          // Wait a bit for the form to be fully initialized
+          setTimeout(() => {
+            // Apply the cloned integration to the form
+            // We need to do this deeply to ensure all properties are set
+            form.trigger = { ...parsed.trigger };
+            form.target = { ...parsed.target };
+            form.dataManipulation = parsed.dataManipulation || [];
+            form.active = parsed.active || false;
+            
+            // After applying cloned data, we need to update the view mode
+            // Check if the cloned integration is an AI agent
+            if (parsed.trigger?.operation === 'chatCompletion') {
+              setSelectedViewMode(IntegrationType.AIAgent, { manual: true });
+            }
+          }, 200);
+          
+          // Clear sessionStorage
+          sessionStorage.removeItem('clonedIntegration');
+        } catch (error) {
+          console.error('Failed to parse cloned integration:', error);
+        }
+      }
+    }
+    
+    // Skip type selection if AI agent mode is explicitly set OR if we're cloning
+    showTypeSelection.value = isNewIntegration.value && !props.isAIAgentMode && route.query.clone !== 'true';
   }
 });
 
@@ -371,7 +420,7 @@ img, small {
 
 @media (min-width: 768px) {
   .form-content {
-    max-height: calc(90vh - 130px);
+    max-height: calc(90vh - 160px);
     overflow-y: auto;
   }
 }
@@ -379,7 +428,7 @@ img, small {
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
-  padding: 10px 20px;
+  padding: 0;
 }
 
 .ai-agent-footer {
@@ -424,12 +473,20 @@ img, small {
   height: 90vh;
   display: flex;
   flex-direction: column;
+  max-height: 90vh;
 }
 
 .integration-form-modal :deep(.el-dialog__body) {
   overflow-y: auto;
   flex: 1;
   padding: 20px;
+  min-height: 0;
+}
+
+.integration-form-modal :deep(.el-dialog__footer) {
+  flex-shrink: 0;
+  padding: 0;
+  border-top: 1px solid var(--el-border-color-lighter);
 }
 
 @media (max-width: 768px) {
@@ -439,7 +496,7 @@ img, small {
   }
 
   .integration-form-modal.el-dialog .el-dialog__body {
-    height: calc(100% - 100px);
+    height: calc(100% - 130px);
     overflow-y: auto;
   }
 }

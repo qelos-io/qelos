@@ -625,6 +625,49 @@ const handleAiError = (error: any) => {
   console.error('Failed to generate agent configuration:', error);
   ElMessage.error('Failed to generate agent configuration');
 };
+
+// System prompt improvement functions
+const systemPromptSchema = {
+  type: "object",
+  properties: {
+    improved_system_message: { 
+      type: "string", 
+      description: "An improved version of the system prompt that is more clear, specific, and effective" 
+    }
+  },
+  required: ["improved_system_message"]
+};
+
+const getSystemPromptImprover = async () => {
+  return {
+    prompt: `Improve the following system prompt to make it more effective, clear, and professional. The improved prompt should:
+1. Be more specific about the agent's role and responsibilities
+2. Include clear guidelines on tone and communication style
+3. Provide specific instructions for handling different scenarios
+4. Be more concise while retaining all essential information
+5. Include best practices for the agent's domain
+
+Current system prompt:
+"""
+${systemMessage.value}
+"""
+
+Agent description for context:
+"""
+${agentDescription.value || 'No description provided'}
+"""
+
+Return only the improved system message without any additional explanation.`,
+    schema: systemPromptSchema
+  };
+};
+
+const handleSystemPromptImproved = (result: any) => {
+  if (result.improved_system_message) {
+    systemMessage.value = result.improved_system_message;
+    ElMessage.success('System prompt improved successfully');
+  }
+};
 </script>
 
 <template>
@@ -801,6 +844,17 @@ const handleAiError = (error: any) => {
                 @click="copyVariableToClipboard(key)"
               >{{ getVariableTemplate(key) }}</el-tag>
             </p>
+            <div class="form-item-with-button">
+              <span>{{ $t('System Prompt') }}</span>
+              <AiPromptButton
+                size="small"
+                :disabled="!systemMessage"
+                :prompt="getSystemPromptImprover"
+                :schema="systemPromptSchema"
+                @result="handleSystemPromptImproved"
+                @error="handleAiError"
+              />
+            </div>
             <el-input
               v-model="systemMessage"
               type="textarea"
