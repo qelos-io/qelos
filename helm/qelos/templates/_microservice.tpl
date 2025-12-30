@@ -33,19 +33,19 @@ spec:
             httpGet:
               path: {{ .values.healthCheckPath | default "/internal-api/health" }}
               port: {{ .values.port }}
-            initialDelaySeconds: {{ .values.readinessProbe.initialDelaySeconds | default 10 }}
-            periodSeconds: {{ .values.readinessProbe.periodSeconds | default 5 }}
-            timeoutSeconds: {{ .values.readinessProbe.timeoutSeconds | default 3 }}
-            successThreshold: {{ .values.readinessProbe.successThreshold | default 1 }}
-            failureThreshold: {{ .values.readinessProbe.failureThreshold | default 3 }}
+            initialDelaySeconds: {{ (.values.readinessProbe).initialDelaySeconds | default 10 }}
+            periodSeconds: {{ (.values.readinessProbe).periodSeconds | default 5 }}
+            timeoutSeconds: {{ (.values.readinessProbe).timeoutSeconds | default 3 }}
+            successThreshold: {{ (.values.readinessProbe).successThreshold | default 1 }}
+            failureThreshold: {{ (.values.readinessProbe).failureThreshold | default 3 }}
           livenessProbe:
             httpGet:
               path: {{ .values.healthCheckPath | default "/internal-api/health" }}
               port: {{ .values.port }}
-            initialDelaySeconds: {{ .values.livenessProbe.initialDelaySeconds | default 30 }}
-            periodSeconds: {{ .values.livenessProbe.periodSeconds | default 10 }}
-            timeoutSeconds: {{ .values.livenessProbe.timeoutSeconds | default 5 }}
-            failureThreshold: {{ .values.livenessProbe.failureThreshold | default 3 }}
+            initialDelaySeconds: {{ (.values.livenessProbe).initialDelaySeconds | default 30 }}
+            periodSeconds: {{ (.values.livenessProbe).periodSeconds | default 10 }}
+            timeoutSeconds: {{ (.values.livenessProbe).timeoutSeconds | default 5 }}
+            failureThreshold: {{ (.values.livenessProbe).failureThreshold | default 3 }}
           env:
             - name: INTERNAL_SECRET
               value: "{{ .global.internalSecret }}"
@@ -93,7 +93,7 @@ kind: PodDisruptionBudget
 metadata:
   name: {{ .name }}-pdb
 spec:
-  minAvailable: {{ .values.pdb.minAvailable | default 1 }}
+  minAvailable: {{ (.values.pdb).minAvailable | default 1 }}
   selector:
     matchLabels:
       app: {{ .name }}
