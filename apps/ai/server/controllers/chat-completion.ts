@@ -444,7 +444,7 @@ export async function chatCompletion(req: any, res: any | null) {
                 $sort: {
                   type: 'string',
                   description: 'Sort the results by this field. add "minus" to sort in descending order (e.g. "-rank"). default: "-created"',
-                  enum: ['created', 'updated', ...Object.keys(blueprint.properties).map(prop => [prop, '-' + prop]).flat()]
+                  enum: ['created', 'updated', ...Object.keys(blueprint.properties).map(prop => ['metadata' + prop, '-metadata.' + prop]).flat()]
                 },
                 $page: {
                   type: 'number',
