@@ -7,6 +7,11 @@ metadata:
     app: {{ .name }}
 spec:
   replicas: {{ .values.replicas | default 2 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: {{ .name }}
@@ -24,6 +29,23 @@ spec:
           ports:
             - containerPort: {{ .values.port }}
               name: http
+          readinessProbe:
+            httpGet:
+              path: {{ .values.healthCheckPath | default "/internal-api/health" }}
+              port: {{ .values.port }}
+            initialDelaySeconds: {{ .values.readinessProbe.initialDelaySeconds | default 10 }}
+            periodSeconds: {{ .values.readinessProbe.periodSeconds | default 5 }}
+            timeoutSeconds: {{ .values.readinessProbe.timeoutSeconds | default 3 }}
+            successThreshold: {{ .values.readinessProbe.successThreshold | default 1 }}
+            failureThreshold: {{ .values.readinessProbe.failureThreshold | default 3 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .values.healthCheckPath | default "/internal-api/health" }}
+              port: {{ .values.port }}
+            initialDelaySeconds: {{ .values.livenessProbe.initialDelaySeconds | default 30 }}
+            periodSeconds: {{ .values.livenessProbe.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .values.livenessProbe.timeoutSeconds | default 5 }}
+            failureThreshold: {{ .values.livenessProbe.failureThreshold | default 3 }}
           env:
             - name: INTERNAL_SECRET
               value: "{{ .global.internalSecret }}"
@@ -65,4 +87,14 @@ spec:
       name: {{ .name }}-http
   selector:
     app: {{ .name }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .name }}-pdb
+spec:
+  minAvailable: {{ .values.pdb.minAvailable | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .name }}
 {{- end -}}

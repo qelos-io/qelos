@@ -42,6 +42,9 @@ function configureApp(app: Express) {
   if (_config.bodyParser) {
     app.use(express[_config.bodyParser]())
   }
+  app.get('/internal-api/health', (_, res) => {
+    res.status(200).send('ok');
+  })
 }
 
 export function getBodyParser() {
