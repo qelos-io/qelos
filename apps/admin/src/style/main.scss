@@ -141,7 +141,7 @@ body[data-layout-style='stacked-header'] .admin-panel {
   padding-block-start: var(--header-height, 60px);
 }
 
-body[data-layout-style='stacked-header'] header {
+body[data-layout-style='stacked-header'] header.header {
   position: fixed;
   inset-block-start: 0;
   inset-inline-start: 0;
