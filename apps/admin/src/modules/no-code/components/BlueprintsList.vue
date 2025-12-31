@@ -135,11 +135,10 @@ const props = defineProps({
 const store = useBlueprintsStore()
 const removeWithConfirm = useConfirmAction(store.remove)
 
-const removeAllEntities = useConfirmAction((identifier: string) => sdk.blueprints.entitiesOf(identifier).remove('all'))
+const removeAllEntities = useConfirmAction((identifier: string) => sdk.blueprints.entitiesOf(identifier).remove('all', {query: {bypassAdmin: ''}}))
 
 const route = useRoute();
 const router = useRouter();
-const markedRelationships = computed(() => ({}));
 
 // Get current view from route query or default to list
 const currentView = computed<'list' | 'graph'>(() => {

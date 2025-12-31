@@ -688,6 +688,22 @@ export async function removeBlueprintEntity(req, res) {
 export async function removeAllBlueprintEntities(req, res) {
   const blueprintIdentifier = req.params.blueprintIdentifier.toString();
 
+  const blueprint: IBlueprint = req.blueprint;
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.DELETE, req.query.bypassAdmin === 'true');
+  if (!(permittedScopes === true || permittedScopes.length > 0)) {
+    res.status(403).json({ message: 'not permitted' }).end();
+    return;
+  }
+  const query = getEntityQuery({ blueprint, req, permittedScopes });
+  if (permittedScopes === true) {
+    if (req.body.user) {
+      query.user = req.body.user;
+    }
+    if (req.body.workspace) {
+      query.workspace = req.body.workspace;
+    }
+  }
+
   const blueprintsWithRelations = await Blueprint.find({
     tenant: req.headers.tenant,
     'relations.target': blueprintIdentifier
@@ -716,10 +732,7 @@ export async function removeAllBlueprintEntities(req, res) {
   }
 
   try {
-    const result = await BlueprintEntity.deleteMany({
-      tenant: req.headers.tenant,
-      blueprint: blueprintIdentifier
-    }).exec();
+    const result = await BlueprintEntity.deleteMany(query).exec();
 
     res.json(result).end();
   } catch {

@@ -20,7 +20,7 @@ entitiesRouter
   .get('/api/blueprints/:blueprintIdentifier/entities', AUTHENTICATION_MIDDLEWARES.concat(getAllBlueprintEntities) as any[])
   .post('/api/blueprints/:blueprintIdentifier/entities', AUTHENTICATION_MIDDLEWARES.concat(createBlueprintEntity) as any[])
   .put('/api/blueprints/:blueprintIdentifier/entities/:entityIdentifier', AUTHENTICATION_MIDDLEWARES.concat(updateBlueprintEntity) as any[])
-  .delete('/api/blueprints/:blueprintIdentifier/entities/all', AUTHENTICATION_MIDDLEWARES_FOR_ADMIN.concat(removeAllBlueprintEntities) as any[])
+  .delete('/api/blueprints/:blueprintIdentifier/entities/all', AUTHENTICATION_MIDDLEWARES.concat(removeAllBlueprintEntities) as any[])
   .delete('/api/blueprints/:blueprintIdentifier/entities/:entityIdentifier', AUTHENTICATION_MIDDLEWARES.concat(removeBlueprintEntity) as any[])
 
 const internalVerify: any = verifyInternalCall;
