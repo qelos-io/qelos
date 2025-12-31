@@ -78,7 +78,9 @@ const forceFontColor = computed(() => {
   font-size: 120%;
 }
 .stats-card :deep(.el-card__footer) {
-    border-top: none;
+  position: relative;
+  border-top: none;
+  z-index: 1;
 }
 
 .bg-icon {
