@@ -696,11 +696,11 @@ export async function removeAllBlueprintEntities(req, res) {
   }
   const query = getEntityQuery({ blueprint, req, permittedScopes });
   if (permittedScopes === true) {
-    if (req.body.user) {
-      query.user = req.body.user;
+    if (req.query.user) {
+      query.user = req.query.user;
     }
-    if (req.body.workspace) {
-      query.workspace = req.body.workspace;
+    if (req.query.workspace) {
+      query.workspace = req.query.workspace;
     }
   }
 
