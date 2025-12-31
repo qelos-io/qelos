@@ -705,13 +705,13 @@ export async function removeAllBlueprintEntities(req, res) {
   }
 
   const blueprintsWithRelations = await Blueprint.find({
-    tenant: req.headers.tenant,
+    ...query,
     'relations.target': blueprintIdentifier
   }).select('identifier relations').lean().exec();
 
   if (blueprintsWithRelations.length) {
     const entitiesOfRelations = await BlueprintEntity.countDocuments({
-      tenant: req.headers.tenant,
+      ...query,
       $or: blueprintsWithRelations
         .filter(blueprint => blueprint.identifier !== blueprintIdentifier)
         .map(blueprint => {
