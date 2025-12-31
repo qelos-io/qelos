@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElButton, ElEmpty } from 'element-plus';
+import { ElButton } from 'element-plus';
 import { ZoomIn, ZoomOut, Refresh } from '@element-plus/icons-vue';
+import SectionHeader from './shared/SectionHeader.vue';
+import EmptyState from './shared/EmptyState.vue';
 import { useIntegrationsStore } from '../store/integrations';
 import { useIntegrationSourcesStore } from '../store/integration-sources';
 import { useIntegrationKinds } from '../compositions/integration-kinds';
@@ -390,6 +392,12 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
 
 <template>
   <div class="workflows-view">
+    <SectionHeader 
+      title="Integration Workflows"
+      subtitle="Visualize your integration flows and connections"
+      :count="filteredIntegrations.length"
+    />
+
     <div class="workflows-header">
       <div class="workflows-actions">
         <div class="workflow-toolbar">
@@ -419,13 +427,11 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
     </div>
 
     <div class="integration-list">
-      <div v-if="filteredIntegrations.length === 0" class="empty-state">
-        <el-empty description="No integrations found">
-          <el-button type="primary" @click="router.push({ query: { mode: 'create' } })">
-            Create Integration
-          </el-button>
-        </el-empty>
-      </div>
+      <EmptyState
+        v-if="filteredIntegrations.length === 0"
+        type="workflows"
+        @action="router.push({ query: { mode: 'create' } })"
+      />
 
       <div
         v-else
@@ -644,7 +650,7 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
   gap: 16px;
 }
@@ -655,22 +661,6 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
   gap: 12px;
   flex-wrap: wrap;
   justify-content: flex-end;
-}
-
-.workflows-title h2 {
-  margin: 0;
-  font-size: 24px;
-  color: #303133;
-}
-
-.workflows-title p {
-  margin: 4px 0 0;
-  color: #606266;
-  font-size: 14px;
-}
-
-.search-input {
-  width: 320px;
 }
 
 .workflow-toolbar {
@@ -793,20 +783,5 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
   font-size: 10px;
   fill: #409eff;
   font-weight: 600;
-}
-
-.empty-state {
-  padding: 60px 0;
-}
-
-@media (max-width: 768px) {
-  .search-input {
-    width: 100%;
-  }
-
-  .integration-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 }
 </style>

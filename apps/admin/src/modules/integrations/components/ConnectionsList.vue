@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import IntegrationSourceFormModal from '@/modules/integrations/components/IntegrationSourceFormModal.vue';
+import SectionHeader from './shared/SectionHeader.vue';
+import EmptyState from './shared/EmptyState.vue';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import integrationSourcesService from '@/services/apis/integration-sources-service';
@@ -119,77 +121,59 @@ const handlePrimaryAddClick = (kind?: IntegrationSourceKind) => {
 
 <template>
   <section class="connections-panel">
-    <header class="panel-header">
-      <div class="panel-copy">
-        <p class="panel-title">{{ $t('Connected providers') }}</p>
-        <p class="panel-meta" v-if="activeKinds.length">
-          {{ $t('{providers} providers · {connections} total', {
-            providers: providersWithConnections,
-            connections: totalConnections
-          }) }}
-        </p>
-        <p class="panel-meta" v-else>
-          {{ $t('No active connections yet') }}
-        </p>
-      </div>
-      <div class="panel-actions">
-        <el-popover
-          v-if="addMenuKinds.length > 1"
-          placement="bottom-end"
-          trigger="click"
-          popper-class="add-connection-pop"
-        >
-          <div class="popover-list">
-            <button
-              v-for="kind in addMenuKinds"
-              :key="kind.kind"
-              type="button"
-              class="popover-item"
-              @click="handlePrimaryAddClick(kind.kind)"
-            >
-              <img v-if="kind.logo" :src="kind.logo" class="popover-logo" />
-              <span>{{ kind.name }}</span>
-            </button>
-          </div>
-          <template #reference>
-            <el-button
-              type="primary"
-              size="small"
-              :disabled="!addMenuKinds.length"
-            >
-              <el-icon><icon-plus /></el-icon>
-              <span>{{ $t('Add connection') }}</span>
-            </el-button>
-          </template>
-        </el-popover>
-        <el-button
-          v-else
-          type="primary"
-          size="small"
-          :disabled="!addMenuKinds.length"
-          @click="() => handlePrimaryAddClick()"
-        >
-          <el-icon><icon-plus /></el-icon>
-          <span>{{ $t('Add connection') }}</span>
-        </el-button>
-      </div>
-    </header>
+    <SectionHeader 
+      title="Connected providers"
+      :subtitle="activeKinds.length ? $t('{providers} providers · {connections} total', { providers: providersWithConnections, connections: totalConnections }) : 'No active connections yet'"
+      :count="totalConnections"
+    />
 
-    <el-empty
-      v-if="!activeKinds.length"
-      class="connections-empty"
-      :description="$t('Start by connecting your first provider')"
-    >
+    <div class="panel-actions">
+      <el-popover
+        v-if="addMenuKinds.length > 1"
+        placement="bottom-end"
+        trigger="click"
+        popper-class="add-connection-pop"
+      >
+        <div class="popover-list">
+          <button
+            v-for="kind in addMenuKinds"
+            :key="kind.kind"
+            type="button"
+            class="popover-item"
+            @click="handlePrimaryAddClick(kind.kind)"
+          >
+            <img v-if="kind.logo" :src="kind.logo" class="popover-logo" />
+            <span>{{ kind.name }}</span>
+          </button>
+        </div>
+        <template #reference>
+          <el-button
+            type="primary"
+            size="small"
+            :disabled="!addMenuKinds.length"
+          >
+            <el-icon><icon-plus /></el-icon>
+            <span>{{ $t('Add connection') }}</span>
+          </el-button>
+        </template>
+      </el-popover>
       <el-button
+        v-else
         type="primary"
         size="small"
-        :disabled="!sortedKindOptions.length"
+        :disabled="!addMenuKinds.length"
         @click="() => handlePrimaryAddClick()"
       >
         <el-icon><icon-plus /></el-icon>
-        <span>{{ $t('Create connection') }}</span>
+        <span>{{ $t('Add connection') }}</span>
       </el-button>
-    </el-empty>
+    </div>
+
+    <EmptyState
+      v-if="!activeKinds.length"
+      type="connections"
+      @action="() => handlePrimaryAddClick()"
+    />
 
     <ul v-else class="connection-chips">
       <li
@@ -264,38 +248,10 @@ const handlePrimaryAddClick = (kind?: IntegrationSourceKind) => {
   gap: 16px;
 }
 
-.panel-header {
+.panel-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.panel-title {
-  font-size: 14px;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: var(--el-text-color-primary);
-  margin: 0;
-}
-
-.panel-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.panel-meta {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-  margin: 0;
-}
-
-.connections-empty {
-  border-radius: var(--border-radius);
-  border: 1px dashed var(--el-border-color-lighter);
-  padding: 24px;
+  justify-content: flex-end;
+  margin-bottom: 0;
 }
 
 .add-connection-menu {
@@ -321,6 +277,37 @@ const handlePrimaryAddClick = (kind?: IntegrationSourceKind) => {
 .dropdown-kind .hint {
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+
+.popover-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+}
+
+.popover-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px;
+  border-radius: var(--border-radius);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.popover-item:hover {
+  background-color: var(--el-fill-color-light);
+}
+
+.popover-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 4px;
+  margin: 0;
 }
 
 .connection-chips {
@@ -416,42 +403,5 @@ const handlePrimaryAddClick = (kind?: IntegrationSourceKind) => {
 
 .chip-actions .divider {
   color: var(--el-text-color-disabled);
-}
-
-.popover-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px;
-}
-
-.popover-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px;
-  border-radius: var(--border-radius);
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.popover-item:hover {
-  background-color: var(--el-fill-color-light);
-}
-
-.popover-logo {
-  width: 20px;
-  height: 20px;
-  object-fit: contain;
-  border-radius: 4px;
-  margin: 0;
-}
-
-.connections-empty {
-  border-radius: var(--border-radius);
-  border: 1px dashed var(--el-border-color-lighter);
-  padding: 24px;
 }
 </style>

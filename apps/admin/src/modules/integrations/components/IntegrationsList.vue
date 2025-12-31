@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 import IntegrationCard from './IntegrationCard.vue';
+import SectionHeader from './shared/SectionHeader.vue';
+import EmptyState from './shared/EmptyState.vue';
 import integrationsService from '@/services/apis/integrations-service';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { computed, ref } from 'vue';
@@ -167,11 +169,11 @@ const cloneIntegration = (integration: IIntegration) => {
 
 <template>
   <div>
-    <div class="section-divider-container">
-      <div class="section-divider"></div>
-      <h3 class="section-title">{{ $t('Your Integrations') }}</h3>
-    </div>
-    
+    <SectionHeader 
+      title="Your Integrations"
+      :count="filteredIntegrations.length"
+    />
+
     <el-skeleton :loading="!integrationsStore.loaded" :count="3" animated>
       <template #template>
         <div class="integrations-grid">
@@ -184,14 +186,11 @@ const cloneIntegration = (integration: IIntegration) => {
       </template>
       
       <template #default>
-        <div v-if="integrationsStore.loaded && filteredIntegrations.length === 0" class="empty-state">
-          <el-empty :description="$t('No integrations found')">
-            <el-button type="primary" @click="$router.push({ query: { mode: 'create' } })">
-              <el-icon><icon-plus /></el-icon>
-              {{ $t('Add Integration') }}
-            </el-button>
-          </el-empty>
-        </div>
+        <EmptyState
+          v-if="integrationsStore.loaded && filteredIntegrations.length === 0"
+          type="integrations"
+          @action="$router.push({ query: { mode: 'create' } })"
+        />
         
         <div v-else>
           <!-- Display grouped integrations -->
@@ -299,9 +298,4 @@ const cloneIntegration = (integration: IIntegration) => {
   padding: 20px;
   height: 300px;
 }
-
-.empty-state {
-  margin: 40px 0;
-}
-
 </style>

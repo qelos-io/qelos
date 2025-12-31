@@ -89,9 +89,9 @@ const closeIntegrationFormModal = () => {
       title="Integrations" 
       description="Integrations connect your application to external services and APIs. Set up triggers, actions, and data flows between different platforms."
       :create-route-query="createRouteQuery"
-    />
-    
-    <div class="view-mode-selector">
+    >
+  <template #content>
+  <div class="view-mode-selector">
       <el-radio-group v-model="viewMode" size="default">
         <el-radio-button value="connections">
           <el-icon><Link /></el-icon>
@@ -107,18 +107,11 @@ const closeIntegrationFormModal = () => {
         </el-radio-button>
       </el-radio-group>
     </div>
-    
-    <template v-if="viewMode === 'connections'">
-      <ConnectionsList />
-    </template>
-
-    <template v-else-if="viewMode === 'list'">
-      <IntegrationsList @retry="integrationsStore.retry" />
-    </template>
-    
-    <div v-else class="workflows-container">
-      <WorkflowsView />
-    </div>
+  </template>
+  </ListPageTitle>
+    <ConnectionsList v-if="viewMode === 'connections'" />
+    <IntegrationsList v-else-if="viewMode === 'list'" @retry="integrationsStore.retry" />
+    <WorkflowsView v-else />
 
     <IntegrationFormModal 
       :visible="$route.query.mode === 'create' || ($route.query.mode === 'edit' && !!editingIntegration)"
@@ -135,10 +128,10 @@ const closeIntegrationFormModal = () => {
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  gap: 24px;
 }
 
 .view-mode-selector {
-  margin-bottom: 20px;
   display: flex;
   justify-content: center;
   border-radius: var(--border-radius);
