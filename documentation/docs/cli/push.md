@@ -5,7 +5,7 @@ editLink: true
 
 # {{ $frontmatter.title }}
 
-The `push` command uploads local resources to your Qelos instance, allowing you to update existing resources or create new ones from your local filesystem. Supports components, blueprints, configurations, plugins, blocks, and more.
+The `push` command uploads local resources to your Qelos instance, allowing you to update existing resources or create new ones from your local filesystem. Supports components, blueprints, configurations, plugins, blocks, integrations, and git-based workflows.
 
 ## Usage
 
@@ -31,6 +31,8 @@ Currently supported resource types:
 - **blocks** - Pre-designed frontend blocks
 - **integrations** / **integration** - Workflow or agent integrations (stored as `.integration.json`)
 - **connections** / **connection** - Integration sources (stored as `.connection.json`)
+- **committed** - Push all files from the last git commit
+- **staged** - Push all staged git files
 - **all** / **\*** - Push all resource types from organized subdirectories
 
 ## How It Works
@@ -211,6 +213,80 @@ Pushing blocks from ./my-resources/blocks
 
 **Note:** When using `all` or `*`, the command expects subdirectories named `components`, `blueprints`, `configs`, `plugins`, and `blocks`. If a subdirectory doesn't exist, it will be skipped.
 
+### Push Committed Files
+
+Push all files that were committed in the last git commit:
+
+```bash
+qelos push committed ./
+```
+
+**Output:**
+```
+ℹ Found 3 committed file(s)
+ℹ   components: 2 file(s)
+ℹ   integrations: 1 file(s)
+
+Pushing committed files from ./
+
+Pushing components (2 file(s))
+→ components/header-component.vue
+→ components/footer-component.vue
+ℹ Found 2 component(s) to push
+→ Pushing component: header-component
+✓ Updated: header-component
+→ Pushing component: footer-component
+✓ Updated: footer-component
+ℹ Pushed 2 component(s)
+✓ Successfully pushed components
+
+Pushing integrations (1 file(s))
+→ integrations/ai-agent.integration.json
+ℹ Found 1 integration(s) to push
+→ Pushing integration: ai-agent
+✓ Updated: ai-agent
+ℹ Pushed 1 integration(s)
+✓ Successfully pushed integrations
+
+✓ Successfully pushed committed files
+```
+
+### Push Staged Files
+
+Push all files that are currently staged for commit:
+
+```bash
+qelos push staged ./
+```
+
+**Output:**
+```
+ℹ Found 2 staged file(s)
+ℹ   prompts: 1 file(s) (will be pushed via parent)
+ℹ   integrations: 1 file(s)
+
+Pushing staged files from ./
+
+Pushing integrations (1 file(s))
+→ integrations/ai-agent.integration.json
+ℹ Found 1 integration(s) to push
+→ Pushing integration: ai-agent
+✓ Updated: ai-agent
+ℹ Pushed 1 integration(s)
+✓ Successfully pushed integrations
+ℹ Found 1 prompt file(s) that will be pushed via their parent integrations
+✓ Successfully pushed staged files
+```
+
+#### Special File Handling
+
+When using `committed` or `staged`:
+
+- **Prompt files** (`.md` in `prompts/` directories): These are not pushed directly. Instead, the system finds the integration that references the prompt via `$ref` and pushes that integration.
+- **Micro-frontend HTML files**: These are also not pushed directly. The system finds the parent plugin that contains the HTML file and pushes the plugin.
+
+This ensures that dependencies are properly maintained when pushing changes to referenced files.
+
 ### Push Integrations
 
 ```bash
@@ -329,6 +405,30 @@ git commit -m "Updated header component"
 qelos push components ./src/components
 
 # Push to Git
+git push origin main
+```
+
+### Git-Based Workflow
+
+```bash
+# 1. Make changes to your files
+vim ./integrations/prompts/ai-assistant.md
+vim ./components/new-feature.vue
+
+# 2. Stage your changes
+git add ./integrations/prompts/ai-assistant.md
+git add ./components/new-feature.vue
+
+# 3. Push only staged changes to Qelos
+qelos push staged ./
+
+# 4. Commit your changes
+git commit -m "Add AI assistant prompt and new component"
+
+# 5. Push all committed changes to Qelos (if needed)
+qelos push committed ./
+
+# 6. Push to Git
 git push origin main
 ```
 
@@ -629,6 +729,21 @@ qelos push components ./components
 git push origin main
 ```
 
+For git-based workflows, you can also:
+
+```bash
+# Stage changes and push them directly
+git add ./components/header.vue
+qelos push staged ./
+
+# Then commit
+git commit -m "Update header component"
+
+# Or commit first, then push
+git commit -m "Update multiple components"
+qelos push committed ./
+```
+
 ### 3. Push to Staging First
 
 Test in staging before production:
@@ -677,6 +792,8 @@ Before pushing, ensure:
   - `.blueprint.json` for blueprints
   - `.config.json` for configurations
   - Plugin directories with proper structure
+  - `.integration.json` for integrations
+  - `.connection.json` for connections
 - ✅ File names match the required pattern:
   - Components: `{identifier}.vue`
   - Blueprints: `{identifier}.blueprint.json`
@@ -687,6 +804,10 @@ Before pushing, ensure:
 - ✅ Required fields are present (identifier, key, etc.)
 - ✅ You're connected to the correct Qelos instance
 - ✅ You have proper permissions
+- ✅ For `committed` and `staged`:
+  - You're in a git repository
+  - Files are properly committed or staged
+  - Referenced files (prompts, HTML) are accessible by their parent resources
 
 ## Safety Tips
 
