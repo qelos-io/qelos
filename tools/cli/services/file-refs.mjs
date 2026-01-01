@@ -134,26 +134,33 @@ export function extractIntegrationContent(integration, integrationPath, fileName
 
   // Extract the first pre_message content
   const preMessage = updatedIntegration.target.details.pre_messages[0];
-  if (preMessage && preMessage.content && typeof preMessage.content === 'string') {
-    const content = preMessage.content;
-    
-    // Skip if content is empty or just whitespace
-    if (!content.trim()) {
+  if (preMessage && preMessage.content) {
+    // Check if content is already a $ref
+    if (typeof preMessage.content === 'object' && preMessage.content.$ref) {
       return updatedIntegration;
     }
+    
+    // Only extract if content is a string
+    if (typeof preMessage.content === 'string') {
+      const content = preMessage.content;
+      
+      // Skip if content is empty or just whitespace
+      if (!content.trim()) {
+        return updatedIntegration;
+      }
 
-    // Generate filename
-    const baseName = path.basename(fileName, '.integration.json');
-    const mdFileName = `${baseName}.md`;
-    const mdFilePath = path.join(extractDir, mdFileName);
-    const relativeRef = `./prompts/${mdFileName}`;
+      // Generate filename
+      const baseName = path.basename(fileName, '.integration.json');
+      const mdFileName = `${baseName}.md`;
+      const mdFilePath = path.join(extractDir, mdFileName);
+      const relativeRef = `./prompts/${mdFileName}`;
 
-    // Write content to file
-    fs.writeFileSync(mdFilePath, content, 'utf-8');
-    logger.debug(`Extracted pre_message content to: ${relativeRef}`);
+      // Write content to file
+      fs.writeFileSync(mdFilePath, content, 'utf-8');
 
-    // Replace with $ref
-    updatedIntegration.target.details.pre_messages[0].content = { $ref: relativeRef };
+      // Replace with $ref
+      updatedIntegration.target.details.pre_messages[0].content = { $ref: relativeRef };
+    }
   }
 
   return updatedIntegration;

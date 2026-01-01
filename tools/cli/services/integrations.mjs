@@ -196,10 +196,12 @@ export async function pushIntegrations(sdk, path, options = {}) {
       }
 
       // Re-extract content to files to maintain $ref structure
+      // This ensures pre_messages are stored as prompt md files after pushing
       const processedResponse = extractIntegrationContent(response, path, file);
       
       // Persist returned integration (with _id) back to disk
       writeIntegrationFile(filePath, sanitizeIntegrationForFile(processedResponse));
+      
       results.push({ status: 'fulfilled' });
     } catch (error) {
       logger.error(`Failed to push integration file ${file}`, error);
