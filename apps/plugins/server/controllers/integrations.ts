@@ -5,8 +5,31 @@ import { validateIntegrationTarget } from '../services/integrations-target-servi
 import { validateIntegrationTrigger } from '../services/integrations-trigger-service';
 import logger from '../services/logger';
 import { cacheManager } from '../services/cache-manager';
+import uniqid from 'uniqid';
+import { IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
 
+const WEBHOOK_CACHE_TTL = 60 * 60 * 24; // 24 hours
 const INTEGRATION_POPULATE_FIELDS = ['trigger.source', 'target.source'];
+
+export async function createWebhookForIntegration(req, res) {
+    const { integrationId } = req.params;
+    const integration = await Integration.findById(integrationId).lean().exec();
+
+    if (!integration) {
+        throw new ResponseError('Integration not found', 404);
+    }
+
+    if (integration.trigger?.source.kind !== IntegrationSourceKind.Qelos || integration.trigger?.operation !== QelosTriggerOperation.webhook) {
+        throw new ResponseError('Integration is not a webhook trigger', 400);
+    }
+
+    const webhookId = uniqid();
+    await cacheManager.setItem(`webhook:${webhookId}`, { integrationId, tenant: req.headers.tenant }, { ttl: WEBHOOK_CACHE_TTL });
+
+    const webhookUrl = `https://${req.headers.host}/api/webhooks/trigger/${webhookId}`;
+
+    res.json({ webhookUrl });
+}
 
 function geIntegrationCacheKey(tenant: string, integrationId: string, $populate: boolean) {
   return `integration:${$populate ? 'populated': 'plain'}:${tenant}:${integrationId}`

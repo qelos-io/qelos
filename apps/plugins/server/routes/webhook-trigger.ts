@@ -1,10 +1,9 @@
 import { getRouter, getBodyParser } from '@qelos/api-kit';
-import { createWebhook, triggerWebhook } from '../controllers/webhooks';
+import { triggerWebhook } from '../controllers/webhook-trigger';
 
-export function webhooksRouter() {
+export function webhookTriggerRouter() {
   const router = getRouter();
 
-  router.post('/api/webhooks/:sourceId', getBodyParser(), createWebhook);
   router.post('/api/webhooks/trigger/:webhookId', getBodyParser(), triggerWebhook);
 
   return router;

@@ -1,6 +1,22 @@
 import { IntegrationSourceKind } from '@qelos/global-types';
 
-function toAwsParams(params) {
+export interface NormalizedFunction {
+  name: string;
+  runtime: string;
+  description?: string;
+  memorySize?: number;
+  timeout?: number;
+  // AWS specific
+  role?: string;
+  handler?: string;
+  zipFile?: Buffer;
+  // Cloudflare specific
+  code?: string;
+  entryPoint?: string;
+  bindings?: any[];
+}
+
+function toAwsParams(params: NormalizedFunction) {
   const awsParams: any = {};
   if (params.name) awsParams.FunctionName = params.name;
   if (params.role) awsParams.Role = params.role;
@@ -9,43 +25,42 @@ function toAwsParams(params) {
   if (params.description) awsParams.Description = params.description;
   if (params.timeout) awsParams.Timeout = params.timeout;
   if (params.memorySize) awsParams.MemorySize = params.memorySize;
-  if (params.environment) awsParams.Environment = { Variables: params.environment };
   if (params.zipFile) awsParams.Code = { ZipFile: params.zipFile };
   return awsParams;
 }
 
-function fromAwsParams(awsParams) {
-  const params: any = {};
-  if (awsParams.FunctionName) params.name = awsParams.FunctionName;
-  if (awsParams.Role) params.role = awsParams.Role;
-  if (awsParams.Handler) params.handler = awsParams.Handler;
-  if (awsParams.Runtime) params.runtime = awsParams.Runtime;
-  if (awsParams.Description) params.description = awsParams.Description;
-  if (awsParams.Timeout) params.timeout = awsParams.Timeout;
-  if (awsParams.MemorySize) params.memorySize = awsParams.MemorySize;
-  if (awsParams.Environment) params.environment = awsParams.Environment.Variables;
-  return params;
+function fromAwsParams(awsParams): NormalizedFunction {
+  return {
+    name: awsParams.FunctionName,
+    runtime: awsParams.Runtime,
+    description: awsParams.Description,
+    timeout: awsParams.Timeout,
+    memorySize: awsParams.MemorySize,
+    role: awsParams.Role,
+    handler: awsParams.Handler,
+  };
 }
 
-function toCloudflareParams(params) {
+function toCloudflareParams(params: NormalizedFunction) {
   const cfParams: any = {};
-  if (params.name) cfParams.name = params.name;
+  if (params.name) cfParams.id = params.name;
   if (params.code) cfParams.script = params.code;
   if (params.entryPoint) cfParams.entry_point = params.entryPoint;
   if (params.bindings) cfParams.bindings = params.bindings;
   return cfParams;
 }
 
-function fromCloudflareParams(cfParams) {
-  const params: any = {};
-  if (cfParams.id) params.name = cfParams.id;
-  if (cfParams.script) params.code = cfParams.script;
-  if (cfParams.entry_point) params.entryPoint = cfParams.entry_point;
-  if (cfParams.bindings) params.bindings = cfParams.bindings;
-  return params;
+function fromCloudflareParams(cfParams): NormalizedFunction {
+    return {
+        name: cfParams.id,
+        runtime: 'javascript', // Cloudflare workers are always JS
+        code: cfParams.script,
+        entryPoint: cfParams.entry_point,
+        bindings: cfParams.bindings,
+    };
 }
 
-export function toProviderParams(kind: IntegrationSourceKind, params: any) {
+export function toProviderParams(kind: IntegrationSourceKind, params: NormalizedFunction) {
   switch (kind) {
     case IntegrationSourceKind.AWS:
       return toAwsParams(params);
@@ -56,7 +71,7 @@ export function toProviderParams(kind: IntegrationSourceKind, params: any) {
   }
 }
 
-export function fromProviderParams(kind: IntegrationSourceKind, params: any) {
+export function fromProviderParams(kind: IntegrationSourceKind, params: any): NormalizedFunction {
     switch (kind) {
       case IntegrationSourceKind.AWS:
         return fromAwsParams(params);

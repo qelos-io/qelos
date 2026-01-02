@@ -5,7 +5,7 @@ import { IntegrationSourceKind } from '@qelos/global-types';
 import { getEncryptedSourceAuthentication } from '../services/source-authentication-service';
 import AWS from 'aws-sdk';
 import Cloudflare from 'cloudflare';
-import { toProviderParams, fromProviderParams } from '../services/lambda-adapter-service';
+import { toProviderParams, fromProviderParams, NormalizedFunction } from '../services/lambda-adapter-service';
 
 async function getAwsLambdaClient(source) {
   const auth = await getEncryptedSourceAuthentication(source.tenant, source.kind, source.authentication);
@@ -31,7 +31,7 @@ export async function listFunctions(req: Request, res: Response) {
     throw new ResponseError('Source not found', 404);
   }
 
-  let functions;
+  let functions: NormalizedFunction[];
   if (source.kind === IntegrationSourceKind.AWS) {
     const lambda = await getAwsLambdaClient(source);
     const result = await lambda.listFunctions({}).promise();
@@ -55,7 +55,7 @@ export async function getFunction(req: Request, res: Response) {
     throw new ResponseError('Source not found', 404);
   }
 
-  let func;
+  let func: NormalizedFunction;
   if (source.kind === IntegrationSourceKind.AWS) {
     const lambda = await getAwsLambdaClient(source);
     const result = await lambda.getFunction({ FunctionName: functionName }).promise();
@@ -101,18 +101,19 @@ export async function createFunction(req: Request, res: Response) {
     }
 
     let resource;
+    const normalizedParams: NormalizedFunction = req.body;
+
     if (source.kind === IntegrationSourceKind.AWS) {
         const lambda = await getAwsLambdaClient(source);
-        const params = toProviderParams(source.kind, req.body);
+        const params = toProviderParams(source.kind, normalizedParams);
         resource = await lambda.createFunction(params).promise();
     } else if (source.kind === IntegrationSourceKind.Cloudflare) {
         const cf = await getCloudflareClient(source);
-        const params = toProviderParams(source.kind, req.body);
-        const { name } = req.body;
-        if (!name || typeof name !== 'string' || name.length > 63 || !/^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/.test(name)) {
+        const params = toProviderParams(source.kind, normalizedParams);
+        if (!normalizedParams.name || typeof normalizedParams.name !== 'string' || normalizedParams.name.length > 63 || !/^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/.test(normalizedParams.name)) {
             throw new ResponseError('Invalid Cloudflare worker name', 400);
         }
-        resource = await cf.workers.scripts.update(source.metadata.accountId, name, params);
+        resource = await cf.workers.scripts.update(source.metadata.accountId, normalizedParams.name, params);
     } else {
         throw new ResponseError('Unsupported source kind', 400);
     }
@@ -129,9 +130,11 @@ export async function updateFunction(req: Request, res: Response) {
   }
 
   let resource;
+  const normalizedParams: NormalizedFunction = req.body;
+
   if (source.kind === IntegrationSourceKind.AWS) {
     const lambda = await getAwsLambdaClient(source);
-    const params = toProviderParams(source.kind, req.body);
+    const params = toProviderParams(source.kind, normalizedParams);
     const { Code, ...configParams } = params;
 
     if (Code) {
@@ -143,7 +146,7 @@ export async function updateFunction(req: Request, res: Response) {
     }
   } else if (source.kind === IntegrationSourceKind.Cloudflare) {
     const cf = await getCloudflareClient(source);
-    const params = toProviderParams(source.kind, req.body);
+    const params = toProviderParams(source.kind, normalizedParams);
     resource = await cf.workers.scripts.update(source.metadata.accountId, functionName, params);
   } else {
     throw new ResponseError('Unsupported source kind', 400);

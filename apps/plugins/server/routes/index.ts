@@ -7,7 +7,7 @@ import { integrationSourcesRouter } from './integration-sources';
 import { integrationToolsRouter } from './integration-tools';
 import { dataManipulationRouter } from './data-manipulation';
 import { lambdasRouter } from './lambdas';
-import { webhooksRouter } from './webhooks';
+import { webhookTriggerRouter } from './webhook-trigger';
 
 export async function loadRoutes() {
   const app = getApp()
@@ -19,5 +19,5 @@ export async function loadRoutes() {
   app.use(integrationToolsRouter());
   app.use(dataManipulationRouter());
   app.use(lambdasRouter());
-  app.use(webhooksRouter());
+  app.use(webhookTriggerRouter());
 }
