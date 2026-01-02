@@ -1,5 +1,5 @@
 import { ResponseError } from '@qelos/api-kit';
-import { privilegedEditingRoles, privilegedViewingRoles, privilegedAdminRoles } from '../../config';
+import { privilegedEditingRoles, privilegedViewingRoles } from '../../config';
 
 export function onlyViewPrivileged(req, res, next) {
   if (req.user.roles.find(role => privilegedViewingRoles.includes(role))) {
@@ -39,11 +39,4 @@ export function onlyEditPrivilegedOrPlugin(req, res, next) {
     return next()
   }
   return res.status(401).end()
-}
-
-export function onlyAdminPrivileged(req, res, next) {
-    if (req.user.roles.find(role => privilegedAdminRoles.includes(role))) {
-        return next();
-    }
-    return res.status(403).end();
 }

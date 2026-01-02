@@ -1,5 +1,5 @@
 import { getRouter, getBodyParser, populateUser, verifyUser } from '@qelos/api-kit';
-import { onlyAdminPrivileged } from '../middlewares/privileged-check';
+import { onlyEditPrivileged } from '../middlewares/privileged-check';
 import {
   listFunctions,
   getFunction,
@@ -11,7 +11,7 @@ import {
 export function lambdasRouter() {
   const router = getRouter();
 
-  const AUTHENTICATION_MIDDLEWARES = [getBodyParser(), populateUser, verifyUser, onlyAdminPrivileged];
+  const AUTHENTICATION_MIDDLEWARES = [getBodyParser(), populateUser, verifyUser, onlyEditPrivileged];
 
   router.get('/api/lambdas/:sourceId', AUTHENTICATION_MIDDLEWARES, listFunctions);
   router.post('/api/lambdas/:sourceId', AUTHENTICATION_MIDDLEWARES, createFunction);
