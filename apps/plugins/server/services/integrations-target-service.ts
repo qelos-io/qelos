@@ -96,15 +96,15 @@ const supportedSources = {
   },
   [IntegrationSourceKind.AWS]: {
     [AWSTargetOperation.callFunction]: {
-      required: ['functionName'],
+      required: ['name'],
       optional: ['payload'],
     },
     [AWSTargetOperation.getFunction]: {
-      required: ['functionName'],
+      required: ['name'],
       optional: [],
     },
     [AWSTargetOperation.createFunction]: {
-      required: ['functionName', 'role', 'handler', 'runtime', 'zipFile'],
+      required: ['name', 'role', 'handler', 'runtime', 'zipFile'],
       optional: ['description', 'timeout', 'memorySize', 'environment'],
     },
     [AWSTargetOperation.listFunctions]: {
@@ -112,21 +112,21 @@ const supportedSources = {
       optional: [],
     },
     [AWSTargetOperation.updateFunction]: {
-      required: ['functionName'],
+      required: ['name'],
       optional: ['description', 'timeout', 'memorySize', 'environment', 'role', 'handler', 'runtime', 'zipFile'],
     },
   },
   [IntegrationSourceKind.Cloudflare]: {
     [CloudflareTargetOperation.callFunction]: {
-      required: ['functionName'],
+      required: ['name'],
       optional: ['payload'],
     },
     [CloudflareTargetOperation.getFunction]: {
-      required: ['functionName'],
+      required: ['name'],
       optional: [],
     },
     [CloudflareTargetOperation.createFunction]: {
-      required: ['functionName', 'code', 'runtime'],
+      required: ['name', 'code', 'runtime'],
       optional: ['entryPoint', 'bindings'],
     },
     [CloudflareTargetOperation.listFunctions]: {
@@ -134,7 +134,7 @@ const supportedSources = {
       optional: [],
     },
     [CloudflareTargetOperation.updateFunction]: {
-      required: ['functionName'],
+      required: ['name'],
       optional: ['code', 'runtime', 'entryPoint', 'bindings'],
     },
   },

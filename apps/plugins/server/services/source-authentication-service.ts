@@ -69,14 +69,14 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
   }
 
   if (kind === IntegrationSourceKind.AWS) {
-    const { secret_access_key } = authentication;
-    await setSecret(tenant, `integration-source-${kind}-${authId}`, { secret_access_key });
+    const { secretAccessKey } = authentication;
+    await setSecret(tenant, `integration-source-${kind}-${authId}`, { secretAccessKey });
     return authId;
   }
 
   if (kind === IntegrationSourceKind.Cloudflare) {
-    const { api_token } = authentication;
-    await setSecret(tenant, `integration-source-${kind}-${authId}`, { api_token });
+    const { apiToken } = authentication;
+    await setSecret(tenant, `integration-source-${kind}-${authId}`, { apiToken });
     return authId;
   }
 

@@ -11,58 +11,8 @@ import {
 import { validateSourceMetadata } from '../services/source-metadata-service';
 import { callIntegrationTarget } from '../services/integration-target-call';
 import { isValidObjectId, Types } from 'mongoose';
-import { IntegrationSourceKind } from '@qelos/global-types';
-import uniqid from 'uniqid';
-import Webhook from '../models/webhook';
-import { IIntegrationEntity } from '../models/integration';
 
 const PUBLIC_FIELDS = '-authentication';
-
-export async function createWebhook(req, res) {
-  const { sourceId } = req.params;
-  const source = await IntegrationSource.findById(sourceId).lean().exec();
-
-  if (!source) {
-    throw new ResponseError('Source not found', 404);
-  }
-
-  if (source.kind !== IntegrationSourceKind.Qelos) {
-    throw new ResponseError('Unsupported source kind', 400);
-  }
-
-  const webhookId = uniqid();
-  const webhook = new Webhook({
-    sourceId,
-    webhookId,
-    tenant: req.headers.tenant,
-  });
-  await webhook.save();
-
-  const webhookUrl = `https://${req.headers.host}/api/integration-sources/${sourceId}/trigger-webhook/${webhookId}`;
-
-  res.json({ webhookUrl });
-}
-
-export async function triggerWebhook(req, res) {
-  const { webhookId } = req.params;
-  const { payload, operation, details } = req.body;
-
-  const webhook = await Webhook.findOne({ webhookId }).lean().exec();
-
-  if (!webhook) {
-    throw new ResponseError('Webhook not found', 404);
-  }
-
-  const target: IIntegrationEntity = {
-    source: new Types.ObjectId(webhook.sourceId),
-    operation,
-    details,
-  };
-
-  await callIntegrationTarget(webhook.tenant, payload, target);
-
-  res.status(200).send();
-}
 
 export async function getAllIntegrationSources(req, res) {
   const query = { tenant: req.headers.tenant };

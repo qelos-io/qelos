@@ -104,11 +104,11 @@ export interface IAWSSource extends IIntegrationSource {
   _id?: string;
   kind: IntegrationSourceKind.AWS;
   authentication: {
-    secret_access_key: string;
+    secretAccessKey: string;
   };
   metadata: {
     region: string;
-    access_key_id: string;
+    accessKeyId: string;
   };
 }
 
@@ -116,10 +116,10 @@ export interface ICloudflareSource extends IIntegrationSource {
   _id?: string;
   kind: IntegrationSourceKind.Cloudflare;
   authentication: {
-    api_token: string;
+    apiToken: string;
   };
   metadata: {
-    account_id: string;
+    accountId: string;
   };
 }
 

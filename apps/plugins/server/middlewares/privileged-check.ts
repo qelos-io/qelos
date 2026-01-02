@@ -1,8 +1,7 @@
 import { ResponseError } from '@qelos/api-kit';
-import { privilegedEditingRoles, privilegedViewingRoles } from '../../config';
 
 export function onlyViewPrivileged(req, res, next) {
-  if (req.user?.roles?.some(role => privilegedViewingRoles.includes(role))) {
+  if (req.user?.roles?.includes('admin') || req.user?.roles?.includes('editor') || req.user?.roles?.includes('viewer')) {
     next();
     return;
   }
@@ -10,7 +9,7 @@ export function onlyViewPrivileged(req, res, next) {
 }
 
 export function onlyEditPrivileged(req, res, next) {
-  if (req.user?.roles?.some(role => privilegedEditingRoles.includes(role))) {
+  if (req.user?.roles?.includes('admin') || req.user?.roles?.includes('editor')) {
     next();
     return;
   }
@@ -18,13 +17,12 @@ export function onlyEditPrivileged(req, res, next) {
 }
 
 export function checkEditPrivileged(req, res, next) {
-  req.user.isPrivileged = req.user?.roles?.some(role => privilegedEditingRoles.includes(role));
+  req.isPrivileged = req.user?.roles?.includes('admin') || req.user?.roles?.includes('editor');
   next();
 }
 
 export function onlyEditPrivilegedOrPlugin(req, res, next) {
-  req.user.hasPluginPrivileges = req.user?.roles?.some(role => privilegedEditingRoles.includes(role)) || req.isPlugin;
-  if (req.user.hasPluginPrivileges) {
+  if (req.user?.roles?.includes('admin') || req.user?.roles?.includes('editor') || req.isPlugin) {
     next();
     return;
   }
