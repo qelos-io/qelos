@@ -1,43 +1,40 @@
-import {privilegedEditingRoles, privilegedViewingRoles} from '../../config';
+import { ResponseError } from '@qelos/api-kit';
+import { privilegedEditingRoles, privilegedViewingRoles } from '../../config';
 
 export function onlyViewPrivileged(req, res, next) {
-  if (req.user.roles.find(role => privilegedViewingRoles.includes(role))) {
-    req.user.hasViewingPrivileges = true
-    return next()
-  }
-
-  return res.status(401).end()
-}
-
-
-export function checkEditPrivileged(req, res, next) {
-  if (req.user?.roles.find(role => privilegedEditingRoles.includes(role))) {
-    req.user.isPrivileged = true
-    req.user.hasPluginPrivileges = true
-    next()
+  if (req.user?.roles?.some(role => privilegedViewingRoles.includes(role))) {
+    next();
     return;
   }
-
-  next();
+  next(new ResponseError('only privileged user can perform this action', 403));
 }
 
 export function onlyEditPrivileged(req, res, next) {
-  if (req.user.roles.find(role => privilegedEditingRoles.includes(role))) {
-    req.user.isPrivileged = true
-    req.user.hasPluginPrivileges = true
-    return next()
+  if (req.user?.roles?.some(role => privilegedEditingRoles.includes(role))) {
+    next();
+    return;
   }
-
-  return res.status(401).end()
+  next(new ResponseError('only privileged user can perform this action', 403));
 }
 
-const pluginOrPrivileged = [...privilegedEditingRoles, 'plugin'];
+export function checkEditPrivileged(req, res, next) {
+  req.user.isPrivileged = req.user?.roles?.some(role => privilegedEditingRoles.includes(role));
+  next();
+}
 
 export function onlyEditPrivilegedOrPlugin(req, res, next) {
-  if (req.user.roles.find(role => pluginOrPrivileged.includes(role))) {
-    req.user.hasPluginPrivileges = true
-    return next()
+  req.user.hasPluginPrivileges = req.user?.roles?.some(role => privilegedEditingRoles.includes(role)) || req.isPlugin;
+  if (req.user.hasPluginPrivileges) {
+    next();
+    return;
   }
-
-  return res.status(401).end()
+  next(new ResponseError('only privileged user can perform this action', 403));
 }
+
+export function onlyAdminPrivileged(req, res, next) {
+    if (req.user?.roles?.includes('admin')) {
+      next();
+      return;
+    }
+    next(new ResponseError('only privileged user can perform this action', 403));
+  }

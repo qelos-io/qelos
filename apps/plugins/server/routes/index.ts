@@ -6,6 +6,7 @@ import { integrationsRouter } from './integrations';
 import { integrationSourcesRouter } from './integration-sources';
 import { integrationToolsRouter } from './integration-tools';
 import { dataManipulationRouter } from './data-manipulation';
+import { lambdasRouter } from './lambdas';
 
 export async function loadRoutes() {
   const app = getApp()
@@ -16,4 +17,5 @@ export async function loadRoutes() {
   app.use(integrationsRouter());
   app.use(integrationToolsRouter());
   app.use(dataManipulationRouter());
+  app.use(lambdasRouter());
 }

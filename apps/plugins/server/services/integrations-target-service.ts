@@ -8,7 +8,9 @@ import {
   QelosTargetOperation,
   ClaudeAITargetOperation,
   EmailTargetOperation,
-  SumitTargetOperation
+  SumitTargetOperation,
+  AWSTargetOperation,
+  CloudflareTargetOperation,
 } from '@qelos/global-types';
 
 const supportedSources = {
@@ -91,6 +93,50 @@ const supportedSources = {
       required: [],
       optional: ['to', 'subject', 'body', 'cc', 'bcc'],
     }
+  },
+  [IntegrationSourceKind.AWS]: {
+    [AWSTargetOperation.callFunction]: {
+      required: ['functionName'],
+      optional: ['payload'],
+    },
+    [AWSTargetOperation.getFunction]: {
+      required: ['functionName'],
+      optional: [],
+    },
+    [AWSTargetOperation.createFunction]: {
+      required: ['functionName', 'role', 'handler', 'runtime', 'zipFile'],
+      optional: ['description', 'timeout', 'memorySize', 'environment'],
+    },
+    [AWSTargetOperation.listFunctions]: {
+      required: [],
+      optional: [],
+    },
+    [AWSTargetOperation.updateFunction]: {
+      required: ['functionName'],
+      optional: ['description', 'timeout', 'memorySize', 'environment', 'role', 'handler', 'runtime', 'zipFile'],
+    },
+  },
+  [IntegrationSourceKind.Cloudflare]: {
+    [CloudflareTargetOperation.callFunction]: {
+      required: ['functionName'],
+      optional: ['payload'],
+    },
+    [CloudflareTargetOperation.getFunction]: {
+      required: ['functionName'],
+      optional: [],
+    },
+    [CloudflareTargetOperation.createFunction]: {
+      required: ['functionName', 'code', 'runtime'],
+      optional: ['entryPoint', 'bindings'],
+    },
+    [CloudflareTargetOperation.listFunctions]: {
+      required: [],
+      optional: [],
+    },
+    [CloudflareTargetOperation.updateFunction]: {
+      required: ['functionName'],
+      optional: ['code', 'runtime', 'entryPoint', 'bindings'],
+    },
   },
 }
 

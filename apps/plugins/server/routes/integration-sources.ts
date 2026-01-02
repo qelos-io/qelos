@@ -3,7 +3,9 @@ import { onlyEditPrivilegedOrPlugin } from '../middlewares/privileged-check';
 import {
   createIntegrationSource,
   getAllIntegrationSources,
-  getIntegrationSource, getInternalIntegrationSource, removeIntegrationSource, triggerIntegrationSource, updateIntegrationSource
+  getIntegrationSource, getInternalIntegrationSource, removeIntegrationSource, triggerIntegrationSource, updateIntegrationSource,
+  createWebhook,
+  triggerWebhook,
 } from '../controllers/integration-sources';
 
 export function integrationSourcesRouter() {
@@ -24,6 +26,8 @@ export function integrationSourcesRouter() {
   router
     .get('/internal-api/integration-sources/:sourceId', verifyInternalCall, getInternalIntegrationSource)
     .post('/internal-api/integration-sources/:sourceId/trigger', verifyInternalCall, getBodyParser(), triggerIntegrationSource)
+    .post('/api/integration-sources/:sourceId/webhook', AUTHENTICATION_MIDDLEWARES.concat(createWebhook))
+    .post('/api/integration-sources/:sourceId/trigger-webhook/:webhookId', getBodyParser(), triggerWebhook)
 
   return router;
 }

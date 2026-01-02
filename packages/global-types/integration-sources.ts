@@ -12,6 +12,8 @@ export enum IntegrationSourceKind {
   GitHub = 'github',
   Gemini = 'gemini',
   Sumit = 'sumit',
+  AWS = 'aws',
+  Cloudflare = 'cloudflare',
 }
 
 export interface IIntegrationSource {
@@ -80,6 +82,45 @@ export enum SumitTargetOperation {
   getRecurringPayment = 'getRecurringPayment',
   updateRecurringPayment = 'updateRecurringPayment',
   deleteRecurringPayment = 'deleteRecurringPayment',
+}
+
+export enum AWSTargetOperation {
+  callFunction = 'callFunction',
+  getFunction = 'getFunction',
+  createFunction = 'createFunction',
+  listFunctions = 'listFunctions',
+  updateFunction = 'updateFunction',
+}
+
+export enum CloudflareTargetOperation {
+  callFunction = 'callFunction',
+  getFunction = 'getFunction',
+  createFunction = 'createFunction',
+  listFunctions = 'listFunctions',
+  updateFunction = 'updateFunction',
+}
+
+export interface IAWSSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.AWS;
+  authentication: {
+    secret_access_key: string;
+  };
+  metadata: {
+    region: string;
+    access_key_id: string;
+  };
+}
+
+export interface ICloudflareSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.Cloudflare;
+  authentication: {
+    api_token: string;
+  };
+  metadata: {
+    account_id: string;
+  };
 }
 
 export interface ILinkedInSource extends IIntegrationSource {
