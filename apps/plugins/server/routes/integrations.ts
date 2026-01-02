@@ -5,8 +5,7 @@ import {
   getAllIntegrations,
   getIntegration,
   removeIntegration,
-  updateIntegration,
-  createWebhookForIntegration,
+  updateIntegration
 } from '../controllers/integrations';
 
 export function integrationsRouter() {
@@ -22,7 +21,6 @@ export function integrationsRouter() {
     .get('/api/integrations/:integrationId', AUTHENTICATION_MIDDLEWARES.concat(getIntegration))
     .put('/api/integrations/:integrationId', AUTHENTICATION_MIDDLEWARES.concat(updateIntegration))
     .delete('/api/integrations/:integrationId', AUTHENTICATION_MIDDLEWARES.concat(removeIntegration))
-    .post('/api/integrations/:integrationId/webhook', AUTHENTICATION_MIDDLEWARES.concat(createWebhookForIntegration))
 
   router.get('/internal-api/integrations', getBodyParser(), verifyInternalCall, getAllIntegrations)
   router.get('/internal-api/integrations/:integrationId', getBodyParser(), verifyInternalCall, getIntegration)
