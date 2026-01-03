@@ -1,23 +1,13 @@
-import BaseSDK from '../base-sdk';
+import { QelosSDKOptions } from "../types";
+import BaseSDK from "../base-sdk";
 
-export class AdminLambdasSDK extends BaseSDK {
-    public list(sourceId: string) {
-        return this.get(`/lambdas/${sourceId}`);
-    }
-
-    public get(sourceId: string, functionName: string) {
-        return this.get(`/lambdas/${sourceId}/${functionName}`);
-    }
-
-    public create(sourceId: string, data: any) {
-        return this.post(`/lambdas/${sourceId}`, data);
-    }
-
-    public update(sourceId: string, functionName: string, data: any) {
-        return this.put(`/lambdas/${sourceId}/${functionName}`, data);
-    }
-
-    public delete(sourceId: string, functionName: string) {
-        return this.del(`/lambdas/${sourceId}/${functionName}`);
+export default function QlAdminLambdas(options: QelosSDKOptions) {
+    const client = new BaseSDK(options);
+    return {
+        list: (sourceId: string) => client.get(`/lambdas/${sourceId}`),
+        get: (sourceId: string, functionName: string) => client.get(`/lambdas/${sourceId}/${functionName}`),
+        create: (sourceId: string, data: any) => client.post(`/lambdas/${sourceId}`, data),
+        update: (sourceId: string, functionName: string, data: any) => client.put(`/lambdas/${sourceId}/${functionName}`, data),
+        delete: (sourceId: string, functionName: string) => client.del(`/lambdas/${sourceId}/${functionName}`),
     }
 }

@@ -26,9 +26,13 @@ You can create a new function.
 const newFunc = await qelos.administrator.lambdas.create('sourceId', {
   name: 'my-new-function',
   runtime: 'nodejs18.x',
+  description: 'My new function',
+  // AWS specific
   handler: 'index.handler',
   role: 'arn:aws:iam::123456789012:role/lambda-role',
   zipFile: Buffer.from('...'),
+  // Cloudflare specific
+  code: 'export default { fetch: () => new Response("Hello World!") }',
 });
 ```
 

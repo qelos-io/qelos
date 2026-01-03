@@ -7,7 +7,7 @@ import QlWorkspaces from './workspaces';
 import QlInvites from './invites';
 import QlBlueprints from './blueprints';
 import QlAI from './ai';
-import { LambdasSDK } from './lambdas';
+import QlLambdas from './lambdas';
 
 const noExtraHeadersUrls = new Set(['/api/token/refresh', '/api/signin', '/api/signup'])
 
@@ -21,7 +21,7 @@ export default class QelosSDK extends BaseSDK {
   invites: QlInvites;
   blueprints: QlBlueprints;
   ai: QlAI;
-  lambdas: LambdasSDK;
+  lambdas: ReturnType<typeof QlLambdas>;
 
   constructor(private options: QelosSDKOptions) {
     super(options);
@@ -32,7 +32,7 @@ export default class QelosSDK extends BaseSDK {
     this.invites = new QlInvites(this.options);
     this.blueprints = new QlBlueprints(this.options);
     this.ai = new QlAI(this.options);
-    this.lambdas = new LambdasSDK(this.options);
+    this.lambdas = QlLambdas(this.options);
 
     const isBrowser = globalThis.navigator && globalThis.window && globalThis.document
 
