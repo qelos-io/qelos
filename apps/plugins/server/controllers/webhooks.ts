@@ -1,10 +1,15 @@
 import { Request, Response } from 'express';
 import { callIntegrationTarget } from '../services/integration-target-call';
 import logger from '../services/logger';
+import { IIntegrationEntity } from '../models/integration';
 
-export async function triggerWebhook(req: Request, res: Response) {
+interface RequestWithIntegration extends Request {
+    integration: IIntegrationEntity;
+}
+
+export async function triggerWebhook(req: RequestWithIntegration, res: Response) {
     try {
-        const { integration } = req as any;
+        const { integration } = req;
         const result = await callIntegrationTarget(integration.tenant, req.body, integration.target);
         res.json(result);
     } catch (error) {

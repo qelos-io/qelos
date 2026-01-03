@@ -120,6 +120,7 @@ export interface ICloudflareSource extends IIntegrationSource {
   };
   metadata: {
     accountId: string;
+    workersDevSubdomain: string;
   };
 }
 

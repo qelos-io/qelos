@@ -1,5 +1,4 @@
-import { ResponseError } from '@qelos/api-kit';
-import { privilegedEditingRoles, privilegedViewingRoles } from '../../config';
+import {privilegedEditingRoles, privilegedViewingRoles} from '../../config';
 
 export function onlyViewPrivileged(req, res, next) {
   if (req.user.roles.find(role => privilegedViewingRoles.includes(role))) {
@@ -10,7 +9,6 @@ export function onlyViewPrivileged(req, res, next) {
   return res.status(401).end()
 }
 
-
 export function checkEditPrivileged(req, res, next) {
   if (req.user?.roles.find(role => privilegedEditingRoles.includes(role))) {
     req.user.isPrivileged = true
@@ -18,6 +16,7 @@ export function checkEditPrivileged(req, res, next) {
     next()
     return;
   }
+
   next();
 }
 
@@ -38,5 +37,6 @@ export function onlyEditPrivilegedOrPlugin(req, res, next) {
     req.user.hasPluginPrivileges = true
     return next()
   }
+
   return res.status(401).end()
 }
