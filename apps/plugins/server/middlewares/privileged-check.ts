@@ -9,7 +9,6 @@ export function onlyViewPrivileged(req, res, next) {
   return res.status(401).end()
 }
 
-
 export function checkEditPrivileged(req, res, next) {
   if (req.user?.roles.find(role => privilegedEditingRoles.includes(role))) {
     req.user.isPrivileged = true

@@ -8,8 +8,15 @@ import {
   QelosTargetOperation,
   ClaudeAITargetOperation,
   EmailTargetOperation,
-  SumitTargetOperation
+  SumitTargetOperation,
+  AWSTargetOperation,
+  CloudflareTargetOperation,
 } from '@qelos/global-types';
+
+const unifiedLambdaParams = {
+    required: ['name', 'runtime'],
+    optional: ['description', 'timeout', 'memorySize', 'role', 'handler', 'zipFile', 'code', 'entryPoint', 'bindings'],
+};
 
 const supportedSources = {
   [IntegrationSourceKind.Qelos]: {
@@ -74,9 +81,6 @@ const supportedSources = {
         'temperature',
         'top_p',
         'stop_sequences',
-        //  'top_k', // Include if you intend to support it
-        // 'tools', // Include if you intend to support tool use
-        // 'tool_choice' // Include if you intend to support tool use
       ],
     }
   },
@@ -91,6 +95,38 @@ const supportedSources = {
       required: [],
       optional: ['to', 'subject', 'body', 'cc', 'bcc'],
     }
+  },
+  [IntegrationSourceKind.AWS]: {
+    [AWSTargetOperation.callFunction]: {
+      required: ['name'],
+      optional: ['payload'],
+    },
+    [AWSTargetOperation.getFunction]: {
+      required: ['name'],
+      optional: [],
+    },
+    [AWSTargetOperation.createFunction]: unifiedLambdaParams,
+    [AWSTargetOperation.listFunctions]: {
+      required: [],
+      optional: [],
+    },
+    [AWSTargetOperation.updateFunction]: unifiedLambdaParams,
+  },
+  [IntegrationSourceKind.Cloudflare]: {
+    [CloudflareTargetOperation.callFunction]: {
+      required: ['name'],
+      optional: ['payload'],
+    },
+    [CloudflareTargetOperation.getFunction]: {
+      required: ['name'],
+      optional: [],
+    },
+    [CloudflareTargetOperation.createFunction]: unifiedLambdaParams,
+    [CloudflareTargetOperation.listFunctions]: {
+      required: [],
+      optional: [],
+    },
+    [CloudflareTargetOperation.updateFunction]: unifiedLambdaParams,
   },
 }
 
@@ -127,13 +163,11 @@ export async function validateIntegrationTarget(tenant: string, target: IIntegra
     throw new ResponseError(`operation ${target.operation} must contain relevant details: ${params.required.join(',')}`, 400)
   }
 
-  // Filter out invalid parameters instead of throwing an error
   const validParams = [...params.required, ...params.optional, ...COMMON_OPTIONAL_PARAMS];
   const invalidParams = Object.keys(target.details)
     .filter(key => !validParams.includes(key));
   
   if (invalidParams.length) {
-    // Remove invalid parameters from the details object
     invalidParams.forEach(key => {
       delete target.details[key];
     });
