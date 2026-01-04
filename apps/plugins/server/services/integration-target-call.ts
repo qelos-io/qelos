@@ -416,7 +416,7 @@ async function handleAwsTarget(
   authentication: { secretAccessKey?: string } = {},
   payload: any = {}
 ) {
-  const operation = integrationTarget.operation as AWSTargetOperation;
+  const operation = integrationTarget.operation as keyof typeof AWSTargetOperation;
 
   const { secretAccessKey } = authentication;
   const { region, accessKeyId } = source.metadata;
@@ -748,8 +748,7 @@ async function handleCloudflareTarget(
   authentication: { apiToken?: string } = {},
   payload: any = {}
 ) {
-  const operation = integrationTarget.operation as CloudflareTargetOperation;
-  logger.log('Handling Cloudflare target', { operation });
+  const operation = integrationTarget.operation as keyof typeof CloudflareTargetOperation;
 
   const { apiToken } = authentication;
   const { accountId, workersDevSubdomain } = source.metadata;
