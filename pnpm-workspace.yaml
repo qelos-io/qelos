@@ -4,6 +4,7 @@ packages:
 
 onlyBuiltDependencies:
   - '@parcel/watcher'
+  - aws-sdk
   - core-js
   - esbuild
   - node-jq
