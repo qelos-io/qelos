@@ -54,7 +54,7 @@ const updatedLambda = await sdk.manageLambdas.update('sourceId', 'functionName',
 });
 ```
 
-### Delete a lambda
+### Remove a lambda
 ```typescript
 import QelosAdministratorSDK from '@qelos/sdk/administrator';
 
@@ -62,7 +62,7 @@ const sdk = new QelosAdministratorSDK({
     // ...
 });
 
-await sdk.manageLambdas.delete('sourceId', 'functionName');
+await sdk.manageLambdas.remove('sourceId', 'functionName');
 ```
 
 ## Execute a lambda

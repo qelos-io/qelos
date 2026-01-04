@@ -1,17 +1,18 @@
-import BaseSDK from './base-sdk';
-import { QlError } from './types';
+import BaseSDK from "./base-sdk";
+import { QelosSDKOptions } from "./types";
 
-export type LambdasSDK = {
-  execute: (sourceId: string, functionName: string, payload: any) => Promise<any>;
-};
+export default class QlLambdas extends BaseSDK {
+    private relativePath = '/api/lambdas';
 
-export default (sdk: BaseSDK): { lambdas: LambdasSDK } => ({
-  lambdas: {
-    execute: (sourceId: string, functionName: string, payload: any) => {
-      if (!sourceId || !functionName) {
-        throw new QlError('Source ID and function name are required');
-      }
-      return sdk.post(`/lambdas/${sourceId}/${functionName}/execute`, payload);
-    },
-  },
-});
+    constructor(private options: QelosSDKOptions) {
+        super(options)
+    }
+
+    public execute(sourceId: string, functionName: string, payload: any) {
+        return this.callJsonApi(`${this.relativePath}/${sourceId}/${functionName}/execute`, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'content-type': 'application/json' },
+        });
+    }
+}

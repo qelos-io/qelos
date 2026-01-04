@@ -51,7 +51,7 @@ const updatedFunc = await qelos.administrator.manageLambdas.update('sourceId', '
 You can delete a function.
 
 ```typescript
-await qelos.administrator.manageLambdas.delete('sourceId', 'functionName');
+await qelos.administrator.manageLambdas.remove('sourceId', 'functionName');
 ```
 
 ## Executing a Function

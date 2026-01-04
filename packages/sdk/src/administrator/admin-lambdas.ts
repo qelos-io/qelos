@@ -1,45 +1,38 @@
-import BaseSDK from '../base-sdk';
-import { QlError } from '../types';
+import BaseSDK from "../base-sdk";
+import { QelosSDKOptions } from "../types";
 
-export type ManageLambdasSDK = {
-  getList: (sourceId: string) => Promise<any>;
-  getLambda: (sourceId: string, functionName: string) => Promise<any>;
-  create: (sourceId: string, data: any) => Promise<any>;
-  update: (sourceId: string, functionName: string, data: any) => Promise<any>;
-  delete: (sourceId: string, functionName: string) => Promise<any>;
-};
+export default class QlManageLambdas extends BaseSDK {
+    private relativePath = '/api/lambdas';
 
-export default (sdk: BaseSDK): { manageLambdas: ManageLambdasSDK } => ({
-  manageLambdas: {
-    getList: (sourceId: string) => {
-      if (!sourceId) {
-        throw new QlError('Source ID is required');
-      }
-      return sdk.get(`/lambdas/${sourceId}`);
-    },
-    getLambda: (sourceId: string, functionName: string) => {
-      if (!sourceId || !functionName) {
-        throw new QlError('Source ID and function name are required');
-      }
-      return sdk.get(`/lambdas/${sourceId}/${functionName}`);
-    },
-    create: (sourceId: string, data: any) => {
-      if (!sourceId) {
-        throw new QlError('Source ID is required');
-      }
-      return sdk.post(`/lambdas/${sourceId}`, data);
-    },
-    update: (sourceId: string, functionName: string, data: any) => {
-      if (!sourceId || !functionName) {
-        throw new QlError('Source ID and function name are required');
-      }
-      return sdk.put(`/lambdas/${sourceId}/${functionName}`, data);
-    },
-    delete: (sourceId: string, functionName: string) => {
-      if (!sourceId || !functionName) {
-        throw new QlError('Source ID and function name are required');
-      }
-      return sdk.delete(`/lambdas/${sourceId}/${functionName}`);
-    },
-  },
-});
+    constructor(private options: QelosSDKOptions) {
+        super(options)
+    }
+
+    public getList(sourceId: string) {
+        return this.callJsonApi(`${this.relativePath}/${sourceId}`);
+    }
+
+    public getLambda(sourceId: string, functionName: string) {
+        return this.callJsonApi(`${this.relativePath}/${sourceId}/${functionName}`);
+    }
+
+    public create(sourceId: string, data: any) {
+        return this.callJsonApi(`${this.relativePath}/${sourceId}`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: { 'content-type': 'application/json' },
+        });
+    }
+
+    public update(sourceId: string, functionName: string, data: any) {
+        return this.callJsonApi(`${this.relativePath}/${sourceId}/${functionName}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+            headers: { 'content-type': 'application/json' },
+        });
+    }
+
+    public remove(sourceId: string, functionName: string) {
+        return this.callApi(`${this.relativePath}/${sourceId}/${functionName}`, { method: 'DELETE' });
+    }
+}
