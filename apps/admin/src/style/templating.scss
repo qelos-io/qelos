@@ -36,6 +36,8 @@
   --layout-main-margin: 0;
   --layout-main-radius: var(--border-radius);
   --layout-main-shadow: none;
+  --el-text-color-primary: var(--main-color);
+  --el-text-color-regular: var(--text-color):
 }
 
 body[data-layout-style='main-bordered'] {
