@@ -58,47 +58,47 @@ export const EmailTargetOperation = {
   sendEmail: 'sendEmail',
 } as const;
 
-export enum ClaudeAITargetOperation {
-  chatCompletion = 'chatCompletion',
-}
+export const ClaudeAITargetOperation = {
+  chatCompletion: 'chatCompletion',
+} as const;
 
-export enum SumitTargetOperation {
-  createCustomer = 'createCustomer',
-  setPaymentDetails = 'setPaymentDetails',
+export const SumitTargetOperation = {
+  createCustomer: 'createCustomer',
+  setPaymentDetails: 'setPaymentDetails',
   // Placeholder for payment methods
-  listPaymentMethods = 'listPaymentMethods',
-  createPaymentMethod = 'createPaymentMethod',
-  getPaymentMethod = 'getPaymentMethod',
-  updatePaymentMethod = 'updatePaymentMethod',
-  deletePaymentMethod = 'deletePaymentMethod',
+  listPaymentMethods: 'listPaymentMethods',
+  createPaymentMethod: 'createPaymentMethod',
+  getPaymentMethod: 'getPaymentMethod',
+  updatePaymentMethod: 'updatePaymentMethod',
+  deletePaymentMethod: 'deletePaymentMethod',
   // Placeholder for payments
-  listPayments = 'listPayments',
-  createPayment = 'createPayment',
-  getPayment = 'getPayment',
-  updatePayment = 'updatePayment',
+  listPayments: 'listPayments',
+  createPayment: 'createPayment',
+  getPayment: 'getPayment',
+  updatePayment: 'updatePayment',
   // Placeholder for recurring payments
-  listRecurringPayments = 'listRecurringPayments',
-  createRecurringPayment = 'createRecurringPayment',
-  getRecurringPayment = 'getRecurringPayment',
-  updateRecurringPayment = 'updateRecurringPayment',
-  deleteRecurringPayment = 'deleteRecurringPayment',
+  listRecurringPayments: 'listRecurringPayments',
+  createRecurringPayment: 'createRecurringPayment',
+  getRecurringPayment: 'getRecurringPayment',
+  updateRecurringPayment: 'updateRecurringPayment',
+  deleteRecurringPayment: 'deleteRecurringPayment',
 }
 
-export enum AWSTargetOperation {
-  callFunction = 'callFunction',
-  getFunction = 'getFunction',
-  createFunction = 'createFunction',
-  listFunctions = 'listFunctions',
-  updateFunction = 'updateFunction',
-}
+export const AWSTargetOperation = {
+  callFunction: 'callFunction',
+  getFunction: 'getFunction',
+  createFunction: 'createFunction',
+  listFunctions: 'listFunctions',
+  updateFunction: 'updateFunction',
+} as const;
 
-export enum CloudflareTargetOperation {
-  callFunction = 'callFunction',
-  getFunction = 'getFunction',
-  createFunction = 'createFunction',
-  listFunctions = 'listFunctions',
-  updateFunction = 'updateFunction',
-}
+export const CloudflareTargetOperation = {
+  callFunction: 'callFunction',
+  getFunction: 'getFunction',
+  createFunction: 'createFunction',
+  listFunctions: 'listFunctions',
+  updateFunction: 'updateFunction',
+} as const;
 
 export interface IAWSSource extends IIntegrationSource {
   _id?: string;

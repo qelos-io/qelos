@@ -8,7 +8,6 @@ import {
   QelosTargetOperation,
   ClaudeAITargetOperation,
   EmailTargetOperation,
-  SumitTargetOperation,
   AWSTargetOperation,
   CloudflareTargetOperation,
 } from '@qelos/global-types';
