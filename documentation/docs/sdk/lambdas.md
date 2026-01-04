@@ -75,7 +75,7 @@ const sdk = new QelosSDK({
     // ...
 });
 
-const result = await sdk.lambdas.execute('sourceId', 'functionName', {
+const result = await sdk.lambdas.execute('integrationId', {
     // ...
 });
 ```

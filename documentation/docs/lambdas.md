@@ -59,7 +59,7 @@ await qelos.administrator.manageLambdas.remove('sourceId', 'functionName');
 You can execute a function and get the result.
 
 ```typescript
-const result = await qelos.lambdas.execute('sourceId', 'functionName', {
+const result = await qelos.lambdas.execute('integrationId', {
   foo: 'bar',
 });
 ```
