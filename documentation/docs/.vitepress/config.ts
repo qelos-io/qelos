@@ -79,6 +79,7 @@ export default defineConfig({
           { text: 'Troubleshooting', link: '/sdk/troubleshooting' },
           { text: 'Basic Usage', link: '/sdk/basic_usage' },
           { text: 'Blueprints Operations', link: '/sdk/blueprints_operations' },
+          { text: 'Lambda/Serverless Operations', link: '/sdk/lambdas' },
           { text: 'Managing Configurations', link: '/sdk/managing_configurations' },
           { text: 'Managing Layouts', link: '/sdk/managing_layouts' },
           { text: 'Managing Plugins', link: '/sdk/managing_plugins' },
