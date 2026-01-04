@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fetch from 'node-fetch';
-import { EmailTargetOperation, HttpTargetOperation, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation } from '@qelos/global-types';
+import { CloudflareTargetOperation, EmailTargetOperation, HttpTargetOperation, ICloudflareSource, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation, AWSTargetOperation, IAWSSource } from '@qelos/global-types';
 import { IIntegrationEntity } from '../models/integration';
 import IntegrationSource from '../models/integration-source';
 import { getEncryptedSourceAuthentication } from './source-authentication-service';
@@ -13,6 +13,9 @@ import { createBlueprintEntity, updateBlueprintEntity } from './no-code-service'
 import { HttpTargetPayload } from '@qelos/global-types';
 import { chatCompletion, chatCompletionForUserByIntegration } from './ai-service';
 import { sendEmail } from './email-service';
+import Cloudflare from 'cloudflare';
+import { cacheManager } from './cache-manager';
+import AWS from 'aws-sdk';
 
 type TriggerResponseConfig = {
   source?: string;
@@ -407,6 +410,697 @@ async function handleSumitTarget(
   }
 }
 
+
+async function handleAwsTarget(
+  integrationTarget: IIntegrationEntity,
+  source: IAWSSource,
+  authentication: { secretAccessKey?: string } = {},
+  payload: any = {}
+) {
+  const operation = integrationTarget.operation as AWSTargetOperation;
+  logger.log('Handling AWS target', { operation });
+
+  const { secretAccessKey } = authentication;
+  const { region, accessKeyId } = source.metadata;
+
+  if (!secretAccessKey) {
+    throw new Error('Missing secret access key for AWS integration');
+  }
+
+  if (!region) {
+    throw new Error('Missing region for AWS integration');
+  }
+
+  if (!accessKeyId) {
+    throw new Error('Missing access key ID for AWS integration');
+  }
+
+  const details = integrationTarget.details || {};
+  
+  // Initialize AWS Lambda client
+  const lambda = new AWS.Lambda({
+    region,
+    accessKeyId,
+    secretAccessKey,
+  });
+
+  // Cache key prefix for this account
+  const cacheKeyPrefix = `aws:${source.tenant}:${accessKeyId}:${region}:`;
+
+  try {
+    switch (operation) {
+      case AWSTargetOperation.callFunction: {
+        const functionName = payload.name || details.name;
+        
+        if (!functionName) {
+          throw new Error('Function name is required for AWS Lambda calls');
+        }
+
+        // Prepare the invocation parameters
+        const invokeParams: AWS.Lambda.InvocationRequest = {
+          FunctionName: functionName,
+          Payload: JSON.stringify({
+            ...(payload.body || details.body || {}),
+          }),
+          ...(payload.invocationType || details.invocationType ? { 
+            InvocationType: payload.invocationType || details.invocationType 
+          } : {}),
+          ...(payload.logType || details.logType ? { 
+            LogType: payload.logType || details.logType 
+          } : {}),
+        };
+
+        const response = await lambda.invoke(invokeParams).promise();
+        
+        let responseBody;
+        if (response.Payload) {
+          const payloadStr = response.Payload.toString();
+          try {
+            responseBody = JSON.parse(payloadStr);
+          } catch {
+            responseBody = payloadStr;
+          }
+        }
+
+        // Handle trigger response if configured
+        const triggerResponse = mergeTriggerResponses(
+          details.triggerResponse as TriggerResponseConfig,
+          payload.triggerResponse as TriggerResponseConfig,
+        );
+
+        if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+          const event = new PlatformEvent({
+            tenant: source.tenant,
+            source: triggerResponse.source,
+            kind: triggerResponse.kind,
+            eventName: triggerResponse.eventName,
+            description: triggerResponse.description,
+            metadata: {
+              ...triggerResponse.metadata,
+              functionName,
+              statusCode: response.StatusCode,
+              logResult: response.LogResult,
+              executedVersion: response.ExecutedVersion,
+              body: responseBody,
+            },
+          });
+          event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+        }
+
+        return {
+          statusCode: response.StatusCode,
+          logResult: response.LogResult,
+          executedVersion: response.ExecutedVersion,
+          body: responseBody,
+        };
+      }
+
+      case AWSTargetOperation.getFunction: {
+        const functionName = payload.name || details.name;
+        
+        if (!functionName) {
+          throw new Error('Function name is required to get AWS Lambda function');
+        }
+
+        // Use cacheManager.wrap to handle caching automatically
+        const cacheKey = `${cacheKeyPrefix}function:${functionName}`;
+        const functionData = await cacheManager.wrap(
+          cacheKey,
+          async () => {
+            // Fetch from AWS API
+            const result = await lambda.getFunction({ FunctionName: functionName }).promise();
+            logger.log('Fetched AWS Lambda function data from API', { functionName });
+            return JSON.stringify(result);
+          },
+          { ttl: 1800 } // Cache for 30 minutes (1800 seconds)
+        );
+        
+        // Parse the cached data
+        const parsedData = JSON.parse(functionData);
+
+        // Handle trigger response if configured
+        const triggerResponse = mergeTriggerResponses(
+          details.triggerResponse as TriggerResponseConfig,
+          payload.triggerResponse as TriggerResponseConfig,
+        );
+
+        if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+          const event = new PlatformEvent({
+            tenant: source.tenant,
+            source: triggerResponse.source,
+            kind: triggerResponse.kind,
+            eventName: triggerResponse.eventName,
+            description: triggerResponse.description,
+            metadata: {
+              ...triggerResponse.metadata,
+              functionName,
+              operation: 'getFunction',
+              result: parsedData,
+            },
+          });
+          event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+        }
+
+        return parsedData;
+      }
+
+      case AWSTargetOperation.listFunctions: {
+        // Use cacheManager.wrap to handle caching automatically
+        const cacheKey = `${cacheKeyPrefix}functions:list`;
+        const functionsList = await cacheManager.wrap(
+          cacheKey,
+          async () => {
+            // Fetch from AWS API
+            const result = await lambda.listFunctions({}).promise();
+            logger.log('Fetched AWS Lambda functions list from API', { count: result.Functions?.length || 0 });
+            return JSON.stringify(result);
+          },
+          { ttl: 600 } // Cache for 10 minutes (600 seconds)
+        );
+        
+        // Parse the cached data
+        const parsedList = JSON.parse(functionsList);
+
+        // Handle trigger response if configured
+        const triggerResponse = mergeTriggerResponses(
+          details.triggerResponse as TriggerResponseConfig,
+          payload.triggerResponse as TriggerResponseConfig,
+        );
+
+        if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+          const event = new PlatformEvent({
+            tenant: source.tenant,
+            source: triggerResponse.source,
+            kind: triggerResponse.kind,
+            eventName: triggerResponse.eventName,
+            description: triggerResponse.description,
+            metadata: {
+              ...triggerResponse.metadata,
+              operation: 'listFunctions',
+              result: parsedList,
+            },
+          });
+          event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+        }
+
+        return parsedList;
+      }
+
+      case AWSTargetOperation.createFunction: {
+        const { name, runtime, handler, role, code, description, timeout, memorySize, ...otherParams } = { ...details, ...payload };
+        
+        if (!name) {
+          throw new Error('Function name is required to create AWS Lambda function');
+        }
+
+        if (!runtime) {
+          throw new Error('Runtime is required to create AWS Lambda function');
+        }
+
+        if (!handler) {
+          throw new Error('Handler is required to create AWS Lambda function');
+        }
+
+        if (!role) {
+          throw new Error('Role ARN is required to create AWS Lambda function');
+        }
+
+        if (!code) {
+          throw new Error('Function code is required to create AWS Lambda function');
+        }
+
+        const createParams: AWS.Lambda.CreateFunctionRequest = {
+          FunctionName: name,
+          Runtime: runtime,
+          Handler: handler,
+          Role: role,
+          Code: code,
+          ...(description && { Description: description }),
+          ...(timeout && { Timeout: timeout }),
+          ...(memorySize && { MemorySize: memorySize }),
+          ...otherParams,
+        };
+
+        const result = await lambda.createFunction(createParams).promise();
+
+        // Clear relevant caches
+        await cacheManager.setItem(`${cacheKeyPrefix}functions:list`, '', { ttl: 1 });
+
+        // Handle trigger response if configured
+        const triggerResponse = mergeTriggerResponses(
+          details.triggerResponse as TriggerResponseConfig,
+          payload.triggerResponse as TriggerResponseConfig,
+        );
+
+        if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+          const event = new PlatformEvent({
+            tenant: source.tenant,
+            source: triggerResponse.source,
+            kind: triggerResponse.kind,
+            eventName: triggerResponse.eventName,
+            description: triggerResponse.description,
+            metadata: {
+              ...triggerResponse.metadata,
+              functionName: name,
+              operation: 'createFunction',
+              result: result,
+            },
+          });
+          event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+        }
+
+        return result;
+      }
+
+      case AWSTargetOperation.updateFunction: {
+        const { name, runtime, handler, role, code, description, timeout, memorySize, ...otherParams } = { ...details, ...payload };
+        
+        if (!name) {
+          throw new Error('Function name is required to update AWS Lambda function');
+        }
+
+        // Update function configuration if needed
+        if (runtime || handler || role || description || timeout || memorySize || Object.keys(otherParams).length > 0) {
+          const updateConfigParams: AWS.Lambda.UpdateFunctionConfigurationRequest = {
+            FunctionName: name,
+            ...(runtime && { Runtime: runtime }),
+            ...(handler && { Handler: handler }),
+            ...(role && { Role: role }),
+            ...(description && { Description: description }),
+            ...(timeout && { Timeout: timeout }),
+            ...(memorySize && { MemorySize: memorySize }),
+            ...otherParams,
+          };
+
+          await lambda.updateFunctionConfiguration(updateConfigParams).promise();
+        }
+
+        // Update function code if provided
+        if (code) {
+          const updateCodeParams: AWS.Lambda.UpdateFunctionCodeRequest = {
+            FunctionName: name,
+            ...code,
+          };
+
+          await lambda.updateFunctionCode(updateCodeParams).promise();
+        }
+
+        // Clear relevant caches
+        await cacheManager.setItem(`${cacheKeyPrefix}functions:list`, '', { ttl: 1 });
+        await cacheManager.setItem(`${cacheKeyPrefix}function:${name}`, '', { ttl: 1 });
+
+        // Handle trigger response if configured
+        const triggerResponse = mergeTriggerResponses(
+          details.triggerResponse as TriggerResponseConfig,
+          payload.triggerResponse as TriggerResponseConfig,
+        );
+
+        if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+          const event = new PlatformEvent({
+            tenant: source.tenant,
+            source: triggerResponse.source,
+            kind: triggerResponse.kind,
+            eventName: triggerResponse.eventName,
+            description: triggerResponse.description,
+            metadata: {
+              ...triggerResponse.metadata,
+              functionName: name,
+              operation: 'updateFunction',
+              result: { success: true, message: 'Function updated successfully' },
+            },
+          });
+          event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+        }
+
+        return { success: true, message: 'Function updated successfully' };
+      }
+
+      default:
+        throw new Error(`Unsupported AWS operation: ${operation}`);
+    }
+  } catch (error) {
+    logger.error('Error in AWS operation', error);
+    throw error;
+  }
+}
+
+
+async function handleCloudflareTarget(
+  integrationTarget: IIntegrationEntity,
+  source: ICloudflareSource,
+  authentication: { apiToken?: string } = {},
+  payload: any = {}
+) {
+  const operation = integrationTarget.operation as CloudflareTargetOperation;
+  logger.log('Handling Cloudflare target', { operation });
+
+  const { apiToken } = authentication;
+  const { accountId, workersDevSubdomain } = source.metadata;
+
+  if (!apiToken) {
+    throw new Error('Missing API token for Cloudflare integration');
+  }
+
+  if (!accountId) {
+    throw new Error('Missing account ID for Cloudflare integration');
+  }
+
+  const details = integrationTarget.details || {};
+  
+  // Initialize Cloudflare client
+  const cf = new Cloudflare({
+    apiToken: apiToken,
+  });
+
+  // Cache key prefix for this account
+  const cacheKeyPrefix = `cloudflare:${source.tenant}:${accountId}:`;
+
+  try {
+    switch (operation) {
+      case CloudflareTargetOperation.callFunction: {
+        const functionName = payload.name || details.name;
+        
+        if (!functionName) {
+          throw new Error('Function name is required for Cloudflare function calls');
+        }
+
+        const functionUrl = `https://${accountId}.${workersDevSubdomain}.workers.dev/${functionName}`;
+        
+        // Prepare the request body
+        const requestBody = {
+          ...(payload.body || details.body || {}),
+        };
+
+        const headers = {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json',
+          ...(payload.headers || details.headers || {}),
+        };
+
+        const response = await fetch(functionUrl, {
+          method: payload.method || details.method || 'POST',
+          headers,
+          body: JSON.stringify(requestBody),
+          agent: httpAgent,
+        });
+
+        // Handle response - Cloudflare Workers might return various content types
+        let responseBody;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+          responseBody = await response.json();
+        } else {
+          responseBody = await response.text();
+        }
+
+        if (!response.ok) {
+          throw new Error(`Cloudflare function request failed with status ${response.status}: ${responseBody}`);
+        }
+
+        // Handle trigger response if configured
+        const triggerResponse = mergeTriggerResponses(
+          details.triggerResponse as TriggerResponseConfig,
+          payload.triggerResponse as TriggerResponseConfig,
+        );
+
+        if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+          const event = new PlatformEvent({
+            tenant: source.tenant,
+            source: triggerResponse.source,
+            kind: triggerResponse.kind,
+            eventName: triggerResponse.eventName,
+            description: triggerResponse.description,
+            metadata: {
+              ...triggerResponse.metadata,
+              functionName,
+              requestUrl: functionUrl,
+              status: response.status,
+              body: responseBody,
+            },
+          });
+          event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+        }
+
+        return {
+          status: response.status,
+          headers: response.headers,
+          body: responseBody,
+        };
+      }
+
+      case CloudflareTargetOperation.getFunction: {
+        const functionName = payload.name || details.name;
+        
+        if (!functionName) {
+          throw new Error('Function name is required to get Cloudflare function');
+        }
+
+        // Use cacheManager.wrap to handle caching automatically
+        const cacheKey = `${cacheKeyPrefix}function:${functionName}`;
+        const functionData = await cacheManager.wrap(
+          cacheKey,
+          async () => {
+            // Fetch from Cloudflare API
+            const result = await cf.workers.scripts.get(accountId, functionName);
+            logger.log('Fetched Cloudflare function data from API', { functionName });
+            return JSON.stringify(result);
+          },
+          { ttl: 1800 } // Cache for 30 minutes (1800 seconds)
+        );
+        
+        // Parse the cached data
+        const parsedData = JSON.parse(functionData);
+
+        // Handle trigger response if configured
+        const triggerResponse = mergeTriggerResponses(
+          details.triggerResponse as TriggerResponseConfig,
+          payload.triggerResponse as TriggerResponseConfig,
+        );
+
+        if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+          const event = new PlatformEvent({
+            tenant: source.tenant,
+            source: triggerResponse.source,
+            kind: triggerResponse.kind,
+            eventName: triggerResponse.eventName,
+            description: triggerResponse.description,
+            metadata: {
+              ...triggerResponse.metadata,
+              functionName,
+              operation: 'getFunction',
+              result: parsedData,
+            },
+          });
+          event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+        }
+
+        return parsedData;
+      }
+
+      case CloudflareTargetOperation.listFunctions: {
+        // Use cacheManager.wrap to handle caching automatically
+        const cacheKey = `${cacheKeyPrefix}functions:list`;
+        const functionsList = await cacheManager.wrap(
+          cacheKey,
+          async () => {
+            // Fetch from Cloudflare API
+            const result = await cf.workers.scripts.list({ account_id: accountId });
+            logger.log('Fetched Cloudflare functions list from API', { count: (result as any)?.length || 0 });
+            return JSON.stringify(result);
+          },
+          { ttl: 600 } // Cache for 10 minutes (600 seconds)
+        );
+        
+        // Parse the cached data
+        const parsedList = JSON.parse(functionsList);
+
+        // Handle trigger response if configured
+        const triggerResponse = mergeTriggerResponses(
+          details.triggerResponse as TriggerResponseConfig,
+          payload.triggerResponse as TriggerResponseConfig,
+        );
+
+        if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+          const event = new PlatformEvent({
+            tenant: source.tenant,
+            source: triggerResponse.source,
+            kind: triggerResponse.kind,
+            eventName: triggerResponse.eventName,
+            description: triggerResponse.description,
+            metadata: {
+              ...triggerResponse.metadata,
+              operation: 'listFunctions',
+              result: parsedList,
+            },
+          });
+          event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+        }
+
+        return parsedList;
+      }
+
+      case CloudflareTargetOperation.createFunction: {
+        const { name, runtime = 'compatibility', content, bindings, ...otherParams } = { ...details, ...payload };
+        
+        if (!name) {
+          throw new Error('Function name is required to create Cloudflare function');
+        }
+
+        if (!content) {
+          throw new Error('Function content is required to create Cloudflare function');
+        }
+
+        // Create the script using Cloudflare SDK
+        const scriptParams = {
+          ...(runtime && { runtime }),
+          ...(bindings && { bindings }),
+          ...otherParams,
+        };
+
+        // First, create the script metadata
+        await cf.workers.scripts.update(accountId, name, scriptParams);
+
+        const createResult = { success: true, script_name: name };
+
+        // Then upload the content
+        const formData = new FormData();
+        const metadata = {
+          bindings: bindings || [],
+          main_module: 'main.js',
+        };
+        
+        formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        formData.append('main.js', new Blob([content], { type: 'application/javascript+module' }));
+
+        const uploadResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${name}/submissions/metadata`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${apiToken}`,
+          },
+          body: formData,
+          agent: httpAgent,
+        });
+
+        const uploadBody = await uploadResponse.json();
+
+        if (!uploadResponse.ok || !uploadBody.success) {
+          throw new Error(`Failed to upload Cloudflare function content: ${JSON.stringify(uploadBody.errors || uploadBody)}`);
+        }
+
+        // Clear relevant caches
+        await cacheManager.setItem(`${cacheKeyPrefix}functions:list`, '', { ttl: 1 });
+
+        // Handle trigger response if configured
+        const triggerResponse = mergeTriggerResponses(
+          details.triggerResponse as TriggerResponseConfig,
+          payload.triggerResponse as TriggerResponseConfig,
+        );
+
+        if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+          const event = new PlatformEvent({
+            tenant: source.tenant,
+            source: triggerResponse.source,
+            kind: triggerResponse.kind,
+            eventName: triggerResponse.eventName,
+            description: triggerResponse.description,
+            metadata: {
+              ...triggerResponse.metadata,
+              functionName: name,
+              operation: 'createFunction',
+              result: createResult,
+            },
+          });
+          event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+        }
+
+        return createResult;
+      }
+
+      case CloudflareTargetOperation.updateFunction: {
+        const { name, content, bindings, ...otherParams } = { ...details, ...payload };
+        
+        if (!name) {
+          throw new Error('Function name is required to update Cloudflare function');
+        }
+
+        // Update script metadata if needed
+        if (Object.keys(otherParams).length > 0 || bindings) {
+          const updateParams = {
+            ...(bindings && { bindings }),
+            ...otherParams,
+          };
+
+          await cf.workers.scripts.update(accountId, name, updateParams);
+        }
+
+        // Update content if provided
+        if (content) {
+          const formData = new FormData();
+          const metadata = {
+            bindings: bindings || details.bindings || [],
+            main_module: 'main.js',
+          };
+          
+          formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+          formData.append('main.js', new Blob([content], { type: 'application/javascript+module' }));
+
+          const uploadResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${name}/submissions/metadata`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${apiToken}`,
+            },
+            body: formData,
+            agent: httpAgent,
+          });
+
+          const uploadBody = await uploadResponse.json();
+
+          if (!uploadResponse.ok || !uploadBody.success) {
+            throw new Error(`Failed to update Cloudflare function content: ${JSON.stringify(uploadBody.errors || uploadBody)}`);
+          }
+        }
+
+        // Clear relevant caches
+        await cacheManager.setItem(`${cacheKeyPrefix}functions:list`, '', { ttl: 1 });
+        await cacheManager.setItem(`${cacheKeyPrefix}function:${name}`, '', { ttl: 1 });
+
+        // Handle trigger response if configured
+        const triggerResponse = mergeTriggerResponses(
+          details.triggerResponse as TriggerResponseConfig,
+          payload.triggerResponse as TriggerResponseConfig,
+        );
+
+        if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+          const event = new PlatformEvent({
+            tenant: source.tenant,
+            source: triggerResponse.source,
+            kind: triggerResponse.kind,
+            eventName: triggerResponse.eventName,
+            description: triggerResponse.description,
+            metadata: {
+              ...triggerResponse.metadata,
+              functionName: name,
+              operation: 'updateFunction',
+              result: { success: true, message: 'Function updated successfully' },
+            },
+          });
+          event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+        }
+
+        return { success: true, message: 'Function updated successfully' };
+      }
+
+      default:
+        throw new Error(`Unsupported Cloudflare operation: ${operation}`);
+    }
+  } catch (error) {
+    logger.error('Error in Cloudflare operation', error);
+    throw error;
+  }
+}
+
+
 export async function callIntegrationTarget(tenant: string, payload: any, integrationTarget: IIntegrationEntity) {
   // load integration source data
   const source = await IntegrationSource.findOne({ tenant, _id: integrationTarget.source }).lean().exec();
@@ -425,5 +1119,9 @@ export async function callIntegrationTarget(tenant: string, payload: any, integr
     return handleEmailTarget(integrationTarget, source as IEmailSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Sumit) {
     return handleSumitTarget(integrationTarget, source as ISumitSource, authentication || {}, payload);
+  } else if (source.kind === IntegrationSourceKind.AWS) {
+    return handleAwsTarget(integrationTarget, source as IAWSSource, authentication || {}, payload);
+  } else if (source.kind === IntegrationSourceKind.Cloudflare) {
+    return handleCloudflareTarget(integrationTarget, source as ICloudflareSource, authentication || {}, payload);
   }
 }
