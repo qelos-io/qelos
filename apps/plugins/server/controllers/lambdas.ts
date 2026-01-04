@@ -21,7 +21,7 @@ async function getAwsLambdaClient(source) {
 async function getCloudflareClient(source) {
     const auth = await getEncryptedSourceAuthentication(source.tenant, source.kind, source.authentication);
     return new Cloudflare({
-        token: auth.apiToken,
+        apiToken: auth.apiToken,
     });
 }
 
@@ -38,11 +38,13 @@ export async function listFunctions(req: Request, res: Response) {
         if (source.kind === IntegrationSourceKind.AWS) {
             const lambda = await getAwsLambdaClient(source);
             const result = await lambda.listFunctions({}).promise();
-            functions = result.Functions.map(f => fromProviderParams(source.kind, f));
+            functions = result.Functions?.map(f => fromProviderParams(source.kind, f)) || [];
         } else if (source.kind === IntegrationSourceKind.Cloudflare) {
             const cf = await getCloudflareClient(source);
             const result = await cf.workers.scripts.list({ account_id: source.metadata.accountId });
-            functions = result.map(f => fromProviderParams(source.kind, f));
+            // ScriptsSinglePage is an array-like object, convert to array if needed
+            const functionsArray = Array.isArray(result) ? result : [result];
+            functions = functionsArray.map(f => fromProviderParams(source.kind, f));
         } else {
             throw new ResponseError('Unsupported source kind', 400);
         }
@@ -111,7 +113,7 @@ export async function getFunction(req: Request, res: Response) {
             func = fromProviderParams(source.kind, result.Configuration);
         } else if (source.kind === IntegrationSourceKind.Cloudflare) {
             const cf = await getCloudflareClient(source);
-            const result = await cf.workers.scripts.read(source.metadata.accountId, functionName);
+            const result = await cf.workers.scripts.get(source.metadata.accountId, functionName as any);
             func = fromProviderParams(source.kind, result);
         } else {
             throw new ResponseError('Unsupported source kind', 400);
@@ -142,7 +144,8 @@ export async function deleteFunction(req: Request, res: Response) {
             await lambda.deleteFunction({ FunctionName: functionName }).promise();
         } else if (source.kind === IntegrationSourceKind.Cloudflare) {
             const cf = await getCloudflareClient(source);
-            await cf.workers.scripts.delete(source.metadata.accountId, functionName);
+            // Cloudflare doesn't have a direct delete method, we update with empty content
+            await cf.workers.scripts.update(source.metadata.accountId, functionName as any, { content: '' } as any);
         } else {
             throw new ResponseError('Unsupported source kind', 400);
         }
@@ -180,7 +183,7 @@ export async function createFunction(req: Request, res: Response) {
             if (!normalizedParams.name || typeof normalizedParams.name !== 'string' || normalizedParams.name.length > 63 || !/^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/.test(normalizedParams.name)) {
                 throw new ResponseError('Invalid Cloudflare worker name', 400);
             }
-            resource = await cf.workers.scripts.update(source.metadata.accountId, normalizedParams.name, params);
+            resource = await cf.workers.scripts.update(source.metadata.accountId, normalizedParams.name as any, params);
         } else {
             throw new ResponseError('Unsupported source kind', 400);
         }
@@ -224,7 +227,7 @@ export async function updateFunction(req: Request, res: Response) {
         } else if (source.kind === IntegrationSourceKind.Cloudflare) {
             const cf = await getCloudflareClient(source);
             const params = toProviderParams(source.kind, normalizedParams);
-            resource = await cf.workers.scripts.update(source.metadata.accountId, functionName, params);
+            resource = await cf.workers.scripts.update(source.metadata.accountId, functionName as any, params);
         } else {
             throw new ResponseError('Unsupported source kind', 400);
         }

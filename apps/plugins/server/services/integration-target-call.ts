@@ -410,7 +410,6 @@ async function handleSumitTarget(
   }
 }
 
-
 async function handleAwsTarget(
   integrationTarget: IIntegrationEntity,
   source: IAWSSource,
@@ -418,7 +417,6 @@ async function handleAwsTarget(
   payload: any = {}
 ) {
   const operation = integrationTarget.operation as AWSTargetOperation;
-  logger.log('Handling AWS target', { operation });
 
   const { secretAccessKey } = authentication;
   const { region, accessKeyId } = source.metadata;
@@ -529,7 +527,6 @@ async function handleAwsTarget(
           async () => {
             // Fetch from AWS API
             const result = await lambda.getFunction({ FunctionName: functionName }).promise();
-            logger.log('Fetched AWS Lambda function data from API', { functionName });
             return JSON.stringify(result);
           },
           { ttl: 1800 } // Cache for 30 minutes (1800 seconds)
