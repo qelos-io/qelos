@@ -15,7 +15,7 @@ import QlAdminLambdas from './admin-lambdas';
 
 
 export default class QelosAdministratorSDK<T = any> extends QelosSDK {
-  lambdas: ReturnType<typeof QlAdminLambdas>;
+  lambdas: QlAdminLambdas;
   users: QlUsers<T>;
   manageConfigurations: QlManageConfigurations;
   manageBlueprints: QlManageBlueprints;
@@ -30,7 +30,7 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
 
   constructor(options: QelosSDKOptions) {
     super(options);
-    this.lambdas = QlAdminLambdas(options);
+    this.lambdas = new QlAdminLambdas(options);
     this.users = new QlUsers<T>(options);
     this.manageConfigurations = new QlManageConfigurations(options);
     this.manageBlueprints = new QlManageBlueprints(options);

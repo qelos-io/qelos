@@ -21,7 +21,7 @@ export default class QelosSDK extends BaseSDK {
   invites: QlInvites;
   blueprints: QlBlueprints;
   ai: QlAI;
-  lambdas: ReturnType<typeof QlLambdas>;
+  lambdas: QlLambdas;
 
   constructor(private options: QelosSDKOptions) {
     super(options);
@@ -32,7 +32,7 @@ export default class QelosSDK extends BaseSDK {
     this.invites = new QlInvites(this.options);
     this.blueprints = new QlBlueprints(this.options);
     this.ai = new QlAI(this.options);
-    this.lambdas = QlLambdas(this.options);
+    this.lambdas = new QlLambdas(this.options);
 
     const isBrowser = globalThis.navigator && globalThis.window && globalThis.document
 
