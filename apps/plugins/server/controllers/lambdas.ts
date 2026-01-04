@@ -3,7 +3,7 @@ import { ResponseError } from '@qelos/api-kit';
 import IntegrationSource from '../models/integration-source';
 import { IntegrationSourceKind } from '@qelos/global-types';
 import { getEncryptedSourceAuthentication } from '../services/source-authentication-service';
-import AWS from 'aws-sdk';
+import { LambdaClient, InvokeCommand, GetFunctionCommand, DeleteFunctionCommand, CreateFunctionCommand, UpdateFunctionConfigurationCommand, UpdateFunctionCodeCommand, ListFunctionsCommand } from '@aws-sdk/client-lambda';
 import Cloudflare from 'cloudflare';
 import { toProviderParams, fromProviderParams, NormalizedFunction } from '../services/lambda-adapter-service';
 import logger from '../services/logger';
@@ -11,10 +11,12 @@ import fetch from 'node-fetch';
 
 async function getAwsLambdaClient(source) {
   const auth = await getEncryptedSourceAuthentication(source.tenant, source.kind, source.authentication);
-  return new AWS.Lambda({
+  return new LambdaClient({
     region: source.metadata.region,
-    accessKeyId: source.metadata.accessKeyId,
-    secretAccessKey: auth.secretAccessKey,
+    credentials: {
+      accessKeyId: source.metadata.accessKeyId,
+      secretAccessKey: auth.secretAccessKey,
+    },
   });
 }
 
@@ -37,7 +39,8 @@ export async function listFunctions(req: Request, res: Response) {
         let functions: NormalizedFunction[];
         if (source.kind === IntegrationSourceKind.AWS) {
             const lambda = await getAwsLambdaClient(source);
-            const result = await lambda.listFunctions({}).promise();
+            const command = new ListFunctionsCommand({});
+            const result = await lambda.send(command);
             functions = result.Functions?.map(f => fromProviderParams(source.kind, f)) || [];
         } else if (source.kind === IntegrationSourceKind.Cloudflare) {
             const cf = await getCloudflareClient(source);
@@ -72,8 +75,10 @@ export async function executeFunction(req: Request, res: Response) {
         let result;
         if (source.kind === IntegrationSourceKind.AWS) {
             const lambda = await getAwsLambdaClient(source);
-            const response = await lambda.invoke({ FunctionName: functionName, Payload: JSON.stringify(req.body) }).promise();
-            result = JSON.parse(response.Payload as string);
+            const command = new InvokeCommand({ FunctionName: functionName, Payload: JSON.stringify(req.body) });
+            const response = await lambda.send(command);
+            const payloadStr = new TextDecoder().decode(response.Payload);
+            result = JSON.parse(payloadStr);
         } else if (source.kind === IntegrationSourceKind.Cloudflare) {
             const workerUrl = `https://${functionName}.${source.metadata.workersDevSubdomain}.workers.dev`;
             const response = await fetch(workerUrl, {
@@ -109,7 +114,8 @@ export async function getFunction(req: Request, res: Response) {
         let func: NormalizedFunction;
         if (source.kind === IntegrationSourceKind.AWS) {
             const lambda = await getAwsLambdaClient(source);
-            const result = await lambda.getFunction({ FunctionName: functionName }).promise();
+            const command = new GetFunctionCommand({ FunctionName: functionName });
+            const result = await lambda.send(command);
             func = fromProviderParams(source.kind, result.Configuration);
         } else if (source.kind === IntegrationSourceKind.Cloudflare) {
             const cf = await getCloudflareClient(source);
@@ -141,7 +147,8 @@ export async function deleteFunction(req: Request, res: Response) {
 
         if (source.kind === IntegrationSourceKind.AWS) {
             const lambda = await getAwsLambdaClient(source);
-            await lambda.deleteFunction({ FunctionName: functionName }).promise();
+            const command = new DeleteFunctionCommand({ FunctionName: functionName });
+            await lambda.send(command);
         } else if (source.kind === IntegrationSourceKind.Cloudflare) {
             const cf = await getCloudflareClient(source);
             // Cloudflare doesn't have a direct delete method, we update with empty content
@@ -176,7 +183,8 @@ export async function createFunction(req: Request, res: Response) {
         if (source.kind === IntegrationSourceKind.AWS) {
             const lambda = await getAwsLambdaClient(source);
             const params = toProviderParams(source.kind, normalizedParams);
-            resource = await lambda.createFunction(params).promise();
+            const command = new CreateFunctionCommand(params);
+            resource = await lambda.send(command);
         } else if (source.kind === IntegrationSourceKind.Cloudflare) {
             const cf = await getCloudflareClient(source);
             const params = toProviderParams(source.kind, normalizedParams);
@@ -217,13 +225,16 @@ export async function updateFunction(req: Request, res: Response) {
             const { Code, ...configParams } = params;
 
             if (Code) {
-                await lambda.updateFunctionCode({ FunctionName: functionName, ...Code }).promise();
+                const codeCommand = new UpdateFunctionCodeCommand({ FunctionName: functionName, ...Code });
+                await lambda.send(codeCommand);
             }
 
             if (Object.keys(configParams).length > 0) {
-                await lambda.updateFunctionConfiguration({ FunctionName: functionName, ...configParams }).promise();
+                const configCommand = new UpdateFunctionConfigurationCommand({ FunctionName: functionName, ...configParams });
+                await lambda.send(configCommand);
             }
-            resource = await lambda.getFunction({ FunctionName: functionName }).promise();
+            const getCommand = new GetFunctionCommand({ FunctionName: functionName });
+            resource = await lambda.send(getCommand);
         } else if (source.kind === IntegrationSourceKind.Cloudflare) {
             const cf = await getCloudflareClient(source);
             const params = toProviderParams(source.kind, normalizedParams);

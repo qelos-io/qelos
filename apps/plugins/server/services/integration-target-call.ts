@@ -15,7 +15,7 @@ import { chatCompletion, chatCompletionForUserByIntegration } from './ai-service
 import { sendEmail } from './email-service';
 import Cloudflare from 'cloudflare';
 import { cacheManager } from './cache-manager';
-import AWS from 'aws-sdk';
+import { LambdaClient, InvokeCommand, GetFunctionCommand, ListFunctionsCommand, CreateFunctionCommand, UpdateFunctionConfigurationCommand, UpdateFunctionCodeCommand } from '@aws-sdk/client-lambda';
 
 type TriggerResponseConfig = {
   source?: string;
@@ -436,10 +436,12 @@ async function handleAwsTarget(
   const details = integrationTarget.details || {};
   
   // Initialize AWS Lambda client
-  const lambda = new AWS.Lambda({
+  const lambda = new LambdaClient({
     region,
-    accessKeyId,
-    secretAccessKey,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
   });
 
   // Cache key prefix for this account
@@ -455,7 +457,7 @@ async function handleAwsTarget(
         }
 
         // Prepare the invocation parameters
-        const invokeParams: AWS.Lambda.InvocationRequest = {
+        const invokeParams = {
           FunctionName: functionName,
           Payload: JSON.stringify({
             ...(payload.body || details.body || {}),
@@ -468,7 +470,8 @@ async function handleAwsTarget(
           } : {}),
         };
 
-        const response = await lambda.invoke(invokeParams).promise();
+        const command = new InvokeCommand(invokeParams);
+        const response = await lambda.send(command);
         
         let responseBody;
         if (response.Payload) {
@@ -526,7 +529,8 @@ async function handleAwsTarget(
           cacheKey,
           async () => {
             // Fetch from AWS API
-            const result = await lambda.getFunction({ FunctionName: functionName }).promise();
+            const command = new GetFunctionCommand({ FunctionName: functionName });
+            const result = await lambda.send(command);
             return JSON.stringify(result);
           },
           { ttl: 1800 } // Cache for 30 minutes (1800 seconds)
@@ -568,7 +572,8 @@ async function handleAwsTarget(
           cacheKey,
           async () => {
             // Fetch from AWS API
-            const result = await lambda.listFunctions({}).promise();
+            const command = new ListFunctionsCommand({});
+            const result = await lambda.send(command);
             logger.log('Fetched AWS Lambda functions list from API', { count: result.Functions?.length || 0 });
             return JSON.stringify(result);
           },
@@ -626,7 +631,7 @@ async function handleAwsTarget(
           throw new Error('Function code is required to create AWS Lambda function');
         }
 
-        const createParams: AWS.Lambda.CreateFunctionRequest = {
+        const createParams = {
           FunctionName: name,
           Runtime: runtime,
           Handler: handler,
@@ -638,7 +643,8 @@ async function handleAwsTarget(
           ...otherParams,
         };
 
-        const result = await lambda.createFunction(createParams).promise();
+        const command = new CreateFunctionCommand(createParams);
+        const result = await lambda.send(command);
 
         // Clear relevant caches
         await cacheManager.setItem(`${cacheKeyPrefix}functions:list`, '', { ttl: 1 });
@@ -678,7 +684,7 @@ async function handleAwsTarget(
 
         // Update function configuration if needed
         if (runtime || handler || role || description || timeout || memorySize || Object.keys(otherParams).length > 0) {
-          const updateConfigParams: AWS.Lambda.UpdateFunctionConfigurationRequest = {
+          const updateConfigParams = {
             FunctionName: name,
             ...(runtime && { Runtime: runtime }),
             ...(handler && { Handler: handler }),
@@ -689,17 +695,19 @@ async function handleAwsTarget(
             ...otherParams,
           };
 
-          await lambda.updateFunctionConfiguration(updateConfigParams).promise();
+          const configCommand = new UpdateFunctionConfigurationCommand(updateConfigParams);
+          await lambda.send(configCommand);
         }
 
         // Update function code if provided
         if (code) {
-          const updateCodeParams: AWS.Lambda.UpdateFunctionCodeRequest = {
+          const updateCodeParams = {
             FunctionName: name,
             ...code,
           };
 
-          await lambda.updateFunctionCode(updateCodeParams).promise();
+          const codeCommand = new UpdateFunctionCodeCommand(updateCodeParams);
+          await lambda.send(codeCommand);
         }
 
         // Clear relevant caches
