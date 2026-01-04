@@ -8,14 +8,28 @@ import {
   QelosTargetOperation,
   ClaudeAITargetOperation,
   EmailTargetOperation,
-  AWSTargetOperation,
-  CloudflareTargetOperation,
 } from '@qelos/global-types';
 
 const unifiedLambdaParams = {
     required: ['name', 'runtime'],
     optional: ['description', 'timeout', 'memorySize', 'role', 'handler', 'zipFile', 'code', 'entryPoint', 'bindings'],
 };
+
+const AWSTargetOperation = {
+  callFunction: 'callFunction',
+  getFunction: 'getFunction',
+  createFunction: 'createFunction',
+  listFunctions: 'listFunctions',
+  updateFunction: 'updateFunction',
+} as const;
+
+const CloudflareTargetOperation = {
+  callFunction: 'callFunction',
+  getFunction: 'getFunction',
+  createFunction: 'createFunction',
+  listFunctions: 'listFunctions',
+  updateFunction: 'updateFunction',
+} as const;
 
 const supportedSources = {
   [IntegrationSourceKind.Qelos]: {
