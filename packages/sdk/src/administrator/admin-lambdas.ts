@@ -1,23 +1,23 @@
 import BaseSDK from "../base-sdk";
 
-export default class QlAdminLambdas extends BaseSDK {
+export default class QlManageLambdas extends BaseSDK {
     public getList(sourceId: string) {
-        return this.get(`/lambdas/${sourceId}`);
+        return this._fetch(`/lambdas/${sourceId}`, { method: 'GET' });
     }
 
-    public get(sourceId: string, functionName: string) {
-        return this.get(`/lambdas/${sourceId}/${functionName}`);
+    public getLambda(sourceId: string, functionName: string) {
+        return this._fetch(`/lambdas/${sourceId}/${functionName}`, { method: 'GET' });
     }
 
     public create(sourceId: string, data: any) {
-        return this.post(`/lambdas/${sourceId}`, data);
+        return this._fetch(`/lambdas/${sourceId}`, { method: 'POST', body: JSON.stringify(data) });
     }
 
     public update(sourceId: string, functionName: string, data: any) {
-        return this.put(`/lambdas/${sourceId}/${functionName}`, data);
+        return this._fetch(`/lambdas/${sourceId}/${functionName}`, { method: 'PUT', body: JSON.stringify(data) });
     }
 
     public delete(sourceId: string, functionName: string) {
-        return this.del(`/lambdas/${sourceId}/${functionName}`);
+        return this._fetch(`/lambdas/${sourceId}/${functionName}`, { method: 'DELETE' });
     }
 }

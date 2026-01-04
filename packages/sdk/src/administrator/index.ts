@@ -11,11 +11,11 @@ import QlIntegrationSources from './integration-sources';
 import QlManagePlugins from './manage-plugins';
 import QlComponents from './components';
 import QlIntegrations from './integrations';
-import QlAdminLambdas from './admin-lambdas';
+import QlManageLambdas from './admin-lambdas';
 
 
 export default class QelosAdministratorSDK<T = any> extends QelosSDK {
-  lambdas: QlAdminLambdas;
+  manageLambdas: QlManageLambdas;
   users: QlUsers<T>;
   manageConfigurations: QlManageConfigurations;
   manageBlueprints: QlManageBlueprints;
@@ -30,7 +30,7 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
 
   constructor(options: QelosSDKOptions) {
     super(options);
-    this.lambdas = new QlAdminLambdas(options);
+    this.manageLambdas = new QlManageLambdas(options);
     this.users = new QlUsers<T>(options);
     this.manageConfigurations = new QlManageConfigurations(options);
     this.manageBlueprints = new QlManageBlueprints(options);
