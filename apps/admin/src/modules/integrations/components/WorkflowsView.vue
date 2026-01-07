@@ -43,6 +43,9 @@ const panY = ref(0);
 const showInactive = ref(true);
 const integrationDiagramRef = ref<HTMLElement | null>(null);
 const viewportSize = ref({ width: 0, height: 0 });
+const isDragging = ref(false);
+const dragStart = ref({ x: 0, y: 0 });
+const lastPan = ref({ x: 0, y: 0 });
 let resizeObserver: ResizeObserver | null = null;
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
@@ -53,15 +56,43 @@ const workflowTransformStyle = computed(() => ({
 }));
 
 const handleWorkflowWheel = (event: WheelEvent) => {
-  if (event.ctrlKey) {
+  if (event.ctrlKey || event.metaKey) {
     event.preventDefault();
-    setZoomLevel(zoomLevel.value - event.deltaY * zoomSensitivity);
+    const delta = event.deltaY * zoomSensitivity;
+    setZoomLevel(zoomLevel.value - delta);
     return;
   }
 
   event.preventDefault();
-  panX.value = clamp(panX.value - event.deltaX, minPanX.value, 0);
-  panY.value = clamp(panY.value - event.deltaY, minPanY.value, 0);
+  
+  // Smooth scrolling with momentum
+  const scrollDeltaX = event.deltaX * 0.8;
+  const scrollDeltaY = event.deltaY * 0.8;
+  
+  panX.value = clamp(panX.value - scrollDeltaX, minPanX.value, 0);
+  panY.value = clamp(panY.value - scrollDeltaY, minPanY.value, 0);
+};
+
+const handleMouseDown = (event: MouseEvent) => {
+  if (event.button === 0) {
+    isDragging.value = true;
+    dragStart.value = { x: event.clientX, y: event.clientY };
+    lastPan.value = { x: panX.value, y: panY.value };
+  }
+};
+
+const handleMouseMove = (event: MouseEvent) => {
+  if (!isDragging.value) return;
+  
+  const deltaX = event.clientX - dragStart.value.x;
+  const deltaY = event.clientY - dragStart.value.y;
+  
+  panX.value = clamp(lastPan.value.x + deltaX, minPanX.value, 0);
+  panY.value = clamp(lastPan.value.y + deltaY, minPanY.value, 0);
+};
+
+const handleMouseUp = () => {
+  isDragging.value = false;
 };
 
 const cleanupResizeObserver = () => {
@@ -159,7 +190,13 @@ const getSourceLogo = (sourceId?: string) => {
 };
 
 const goToIntegration = (integrationId: string) => {
-  router.push({ query: { mode: 'edit', id: integrationId } });
+  router.push({ 
+    query: { 
+      ...route.query,
+      mode: 'edit', 
+      id: integrationId 
+    } 
+  });
 };
 
 const trackHeight = 130;
@@ -213,10 +250,16 @@ onMounted(() => {
     clampPanOffsets();
   });
   resizeObserver.observe(integrationDiagramRef.value);
+  
+  // Add global mouse event listeners for drag
+  window.addEventListener('mousemove', handleMouseMove);
+  window.addEventListener('mouseup', handleMouseUp);
 });
 
 onUnmounted(() => {
   cleanupResizeObserver();
+  window.removeEventListener('mousemove', handleMouseMove);
+  window.removeEventListener('mouseup', handleMouseUp);
 });
 
 const getTrackOffset = (index: number) => index * trackHeight;
@@ -438,15 +481,17 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
         ref="integrationDiagramRef"
         class="integration-diagram"
         dir="ltr"
-        @wheel="handleWorkflowWheel"
       >
-        <div class="workflow-viewport" :style="workflowTransformStyle">
-          <svg
-            class="workflow-svg"
-            :viewBox="svgViewBox"
-            preserveAspectRatio="xMidYMid meet"
-            :height="svgHeight"
-          >
+        <svg
+          class="workflow-svg"
+          :class="{ 'dragging': isDragging }"
+          :viewBox="svgViewBox"
+          preserveAspectRatio="xMidYMid meet"
+          :height="svgHeight"
+          @wheel="handleWorkflowWheel"
+          @mousedown="handleMouseDown"
+        >
+          <g class="workflow-viewport" :style="workflowTransformStyle">
           <defs>
             <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" style="stop-color:#409eff;stop-opacity:0.2" />
@@ -629,8 +674,8 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
               </g>
             </g>
           </template>
+          </g>
           </svg>
-        </div>
       </div>
     </div>
   </div>
@@ -680,7 +725,11 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
 
 .integration-diagram {
   position: relative;
-  overflow: auto;
+  width: 100%;
+  height: calc(100vh - 300px);
+  min-height: 500px;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .integration-track {
@@ -705,6 +754,20 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
 
 .workflow-svg {
   width: 100%;
+  height: 100%;
+  cursor: grab;
+  border-radius: 8px;
+  background: #fafbfc;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.workflow-svg:active {
+  cursor: grabbing;
+}
+
+.workflow-svg.dragging {
+  cursor: grabbing;
 }
 
 .inter-integration-arrows {
