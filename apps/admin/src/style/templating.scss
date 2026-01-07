@@ -37,7 +37,9 @@
   --layout-main-radius: var(--border-radius);
   --layout-main-shadow: none;
   --el-text-color-primary: var(--main-color);
-  --el-text-color-regular: var(--text-color):
+  --el-text-color-regular: var(--text-color);
+  --el-input-text-color: var(--inputs-text-color);
+
 }
 
 body[data-layout-style='main-bordered'] {
@@ -92,7 +94,7 @@ html.mobile body {
   --nav-width: 0;
 }
 
-.el-input__wrapper {
+.el-input__wrapper, .el-textarea {
   --el-input-bg-color: var(--inputs-bg-color);
 }
 .el-select__wrapper {
@@ -123,4 +125,7 @@ html.mobile body {
 
 .font-lg {
   font-size: var(--large-font-size);
+}
+.el-radio-button {
+  --el-button-bg-color: var(--negative-color)
 }

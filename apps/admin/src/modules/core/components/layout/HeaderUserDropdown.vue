@@ -156,7 +156,7 @@ a {
   .label {
     font-size: 14px;
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--secondary-color);
     margin: 0;
   }
 
