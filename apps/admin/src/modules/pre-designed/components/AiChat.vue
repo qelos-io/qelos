@@ -1094,13 +1094,14 @@ onMounted(() => {
 
 .bubble.user {
   align-self: flex-end;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.18), rgba(64, 158, 255, 0.1));
-  color: #0f172a;
+  background: var(--user-bubble-bg, linear-gradient(135deg, rgba(64, 158, 255, 0.18), rgba(64, 158, 255, 0.1)));
+  color: var(--user-bubble-text, #0f172a);
 }
 
 .bubble.assistant {
   align-self: flex-start;
-  background: #ffffff;
+  background: var(--ai-bubble-bg, inherit);
+  color: var(--ai-bubble-text, inherit);
   border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
