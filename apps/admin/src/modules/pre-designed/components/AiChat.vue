@@ -1458,7 +1458,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--main-color);
   cursor: pointer;
   opacity: 0;
   transition: all 0.2s ease;
@@ -1466,7 +1466,7 @@ onMounted(() => {
 
 .copy-button:hover {
   opacity: 1;
-  background: var(--el-color-primary-light-8);
+  background: var(--main-color-light);
 }
 
 .bubble:hover .copy-button {
