@@ -39,7 +39,6 @@
   --el-text-color-primary: var(--main-color);
   --el-text-color-regular: var(--text-color);
   --el-input-text-color: var(--inputs-text-color);
-
 }
 
 body[data-layout-style='main-bordered'] {
@@ -96,6 +95,7 @@ html.mobile body {
 
 .el-input__wrapper, .el-textarea {
   --el-input-bg-color: var(--inputs-bg-color);
+  --el-input-text-color: var(--inputs-text-color);
 }
 .el-select__wrapper {
   --el-fill-color-blank: var(--inputs-bg-color);
