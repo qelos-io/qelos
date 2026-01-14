@@ -2,7 +2,7 @@ import { redisUrl } from '../../config';
 import logger from './logger';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { RedisVectorStore } from '@langchain/redis';
-import { Document } from 'langchain/document';
+import { Document } from '@langchain/core/documents';
 import { createClient } from 'redis';
 import { pipeline } from '@xenova/transformers';
 
