@@ -12,6 +12,9 @@ import { getAllBlueprints } from "../services/no-code-service";
 import { emitDataManipulationErrorEvent } from "../services/platform-events";
 import { emitPlatformEvent } from '@qelos/api-kit';
 import { analyzeChatCompletionError, createErrorResponse, logError } from "../services/error-analysis";
+import { VectorStoreService } from "../services/vector-store-service";
+import OpenAI from "openai";
+import mongoose from "mongoose";
 
 export async function getIntegrationToIntegrate(req, res, next) {
   try {
@@ -556,7 +559,7 @@ export async function chatCompletion(req: any, res: any | null) {
   });
 
   // Declare chatOptions outside try block so it's accessible in catch
-  const chatOptions = {
+  const chatOptions: any = {
     model: options.model || integration.target.details.model || source.metadata.defaultModel,
     temperature: options.temperature || integration.target.details.temperature,
     top_p: options.top_p || integration.target.details.top_p,
@@ -575,6 +578,43 @@ export async function chatCompletion(req: any, res: any | null) {
       integrationName: integration.name,
     },
   };
+
+  // Configure file_search tool for the Responses API using vector store service
+  if (thread && integration.trigger.details?.vectorStore) {
+    try {
+      // Get the source authentication for OpenAI
+      // Handle both string ID and object with _id
+      const sourceId = typeof integration.target.source === 'string' 
+        ? integration.target.source 
+        : (integration.target.source as any)._id || integration.target.source;
+      
+      const sourceData = await getSourceAuthentication(req.headers.tenant, sourceId);
+      
+      if (sourceData && sourceData.authentication) {
+        const openai = new OpenAI({
+          apiKey: sourceData.authentication.token,
+          organization: sourceData.metadata?.organizationId,
+          baseURL: sourceData.metadata?.apiUrl,
+        });
+        
+        const vectorStoreService = new VectorStoreService(openai);
+        const vectorStoreIds = await vectorStoreService.getVectorStoreIdsForThread(
+          (thread._id as mongoose.Types.ObjectId).toString(),
+          integration._id.toString(),
+          req.headers.tenant
+        );
+        
+        if (vectorStoreIds.length > 0) {
+          tools.unshift({
+            type: "file_search",
+            vector_store_ids: vectorStoreIds,
+          });
+        }
+      }
+    } catch (error) {
+      logger.error('Error setting up vector stores for chat completion:', error);
+    }
+  }
 
   try {
 

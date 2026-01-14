@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 
 // Import models
 import './thread'
+import './vector-store'
 
 export const connect = (uri: string) => {
   mongoose.connect(uri, {})

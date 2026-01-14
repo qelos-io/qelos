@@ -11,7 +11,7 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, { required:
     },
     chatCompletion: {
       required: [],
-      optional: ['recordThread', 'name', 'description']
+      optional: ['recordThread', 'name', 'description', 'vectorStore', 'vectorStoreScope', 'vectorStoreExpirationDays', 'vectorStoreHardcodedIds']
     }
   },
   [IntegrationSourceKind.ClaudeAi]: null,
@@ -29,6 +29,10 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, { required:
   [IntegrationSourceKind.Facebook]: null,
   [IntegrationSourceKind.Google]: null,
   [IntegrationSourceKind.GitHub]: null,
+  [IntegrationSourceKind.Gemini]: null,
+  [IntegrationSourceKind.Sumit]: null,
+  [IntegrationSourceKind.AWS]: null,
+  [IntegrationSourceKind.Cloudflare]: null,
 } as const;
 
 const COMMON_OPTIONAL_PARAMS = ['roles', 'workspaceRoles', 'workspaceLabels'];

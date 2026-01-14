@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import logger from './logger';
 import { emitAIProviderErrorEvent, emitTokenUsageEvent } from './platform-events';
+import { ResponseTextConfig } from 'openai/resources/responses/responses';
 
 // Define interfaces for better type safety
 interface AIServiceOptions {
@@ -25,6 +26,9 @@ interface AIServiceOptions {
     integrationId?: string;
     integrationName?: string;
   };
+  // New options for Responses API
+  input?: any;
+  tool_resources?: any;
 }
 
 function createGeminiService(source: AIServiceSource, authentication: AIServiceAuthentication) {
@@ -74,7 +78,7 @@ function createGeminiService(source: AIServiceSource, authentication: AIServiceA
         const result = await model.generateContent(payload);
         const response = result.response ?? result;
         const transformedResponse = transformGeminiResponseToOpenAI(response, modelName);
-        
+
         // Emit token usage event
         if (response.usageMetadata && options.loggingContext?.tenant) {
           emitTokenUsageEvent({
@@ -94,7 +98,7 @@ function createGeminiService(source: AIServiceSource, authentication: AIServiceA
             context: options.loggingContext,
           });
         }
-        
+
         return transformedResponse;
       } catch (error: any) {
         logger.error('Error creating chat completion with Gemini', error);
@@ -162,7 +166,7 @@ function getMessagesWithUserContext(messages: any[], unsafeUserContext: Record<s
   }
   return messages;
 }
-    
+
 function compactObject<T extends Record<string, any>>(obj: T): T {
   return Object.entries(obj).reduce((acc, [key, value]) => {
     if (
@@ -252,9 +256,9 @@ function transformMessagesToGemini(messages: any[]) {
 
   const systemInstruction = systemParts.length
     ? {
-        role: 'system',
-        parts: [{ text: systemParts.join('\n\n') }],
-      }
+      role: 'system',
+      parts: [{ text: systemParts.join('\n\n') }],
+    }
     : undefined;
 
   return { contents, systemInstruction };
@@ -407,7 +411,7 @@ function mapGeminiFinishReason(reason?: string, toolCalls?: any[]) {
 
 async function* createGeminiStreamGenerator(stream: AsyncIterable<any>, modelName: string, options?: AIServiceOptions, source?: AIServiceSource) {
   let usageEmitted = false;
-  
+
   for await (const chunk of stream) {
     const candidate = chunk?.candidates?.[0];
     if (!candidate) {
@@ -515,11 +519,11 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
   // Get API key from authentication or source metadata
   const apiKey = authentication.token;
   const organizationId = source.metadata.organizationId;
-  
+
   if (!apiKey) {
     throw new Error('OpenAI API key is required');
   }
-  
+
   // Create OpenAI client instance with timeout
   const openai = new OpenAI({
     apiKey: apiKey,
@@ -527,26 +531,127 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
     baseURL: source.metadata.apiUrl, // Will use default if not provided
     timeout: 120000, // 2 minute timeout for OpenAI API calls
   });
-  
+
+  // Transform messages to input format for Responses API
+  function transformToInput(messages: any[]): string {
+    if (messages.length === 0) return '';
+
+    // Build conversation context for the Responses API
+    // The Responses API expects a single input string that includes the conversation context
+    let conversation = '';
+
+    for (const message of messages) {
+      if (message.role === 'user') {
+        conversation += `User: ${message.content}\n\n`;
+      } else if (message.role === 'assistant') {
+        conversation += `Assistant: ${message.content}\n\n`;
+        
+        // Include tool calls in the conversation
+        if (message.tool_calls && message.tool_calls.length > 0) {
+          conversation += `Assistant called the following functions:\n`;
+          for (const toolCall of message.tool_calls) {
+            conversation += `- ${toolCall.function.name} with arguments: ${toolCall.function.arguments}\n`;
+          }
+          conversation += '\n';
+        }
+      } else if (message.role === 'tool' || message.role === 'function') {
+        // Include function/tool results in the conversation
+        const toolCallId = message.tool_call_id;
+        const functionName = message.name || (toolCallId && toolCallId.startsWith('call_') ? 'function' : 'tool');
+        
+        if (typeof message.content === 'string') {
+          try {
+            // Try to parse the content as JSON to format it nicely
+            const parsedContent = JSON.parse(message.content);
+            conversation += `Function result for ${functionName}:\n${JSON.stringify(parsedContent, null, 2)}\n\n`;
+          } catch {
+            // If it's not JSON, include as-is
+            conversation += `Function result for ${functionName}:\n${message.content}\n\n`;
+          }
+        } else {
+          conversation += `Function result for ${functionName}:\n${JSON.stringify(message.content, null, 2)}\n\n`;
+        }
+      }
+    }
+
+    // Return the full conversation context
+    return conversation.trim();
+  }
+
+  function transformToInstructions(messages: any[]): string {
+    return messages
+      .filter((message) => message.role === 'system')
+      .map((message) => message.content)
+      .join('\n\n');
+  }
+
+  function convertResponseFormatToOpenAIText(responseFormat: any): ResponseTextConfig {
+    if (!responseFormat) {
+      return { format: { type: 'text' } };
+    }
+
+    return { format: responseFormat };
+  }
+
   return {
     async createChatCompletion(options: AIServiceOptions) {
       try {
         const messages = options.unsafeUserContext ? getMessagesWithUserContext(options.messages, options.unsafeUserContext) : options.messages;
-        const response = await openai.chat.completions.create({
-          model: options.model || source.metadata.defaultModel || 'gpt-4.1',
-          messages,
+        const model = options.model || source.metadata.defaultModel || 'gpt-4.1';
+
+        // Always use the new Responses API
+        // Transform tools to Responses API format
+        const transformedTools = options.tools?.filter(tool => tool && tool.function).map(tool => ({
+          type: 'function' as const,
+          name: tool.function.name,
+          description: tool.function.description,
+          parameters: tool.function.parameters,
+          strict: tool.function.strict
+        }));
+
+        const response = await openai.responses.create({
+          model,
+          instructions: transformToInstructions(messages),
+          input: options.input || transformToInput(messages),
+          tools: transformedTools,
           temperature: options.temperature,
           top_p: options.top_p,
-          frequency_penalty: options.frequency_penalty,
-          presence_penalty: options.presence_penalty,
-          stop: options.stop,
-          max_tokens: options.max_tokens,
-          tools: options.tools,
-          response_format: options.response_format,
+          max_output_tokens: options.max_tokens,
+          text: convertResponseFormatToOpenAIText(options.response_format),
           stream: false
         });
-        
-        // Emit token usage event
+
+        // Transform Responses API format to Completion API format for consistency
+        const transformedResponse = {
+          id: response.id || `resp-${Date.now()}`,
+          object: 'chat.completion' as const,
+          created: Math.floor(Date.now() / 1000),
+          model: response.model,
+          choices: [{
+            index: 0,
+            message: {
+              role: 'assistant' as const,
+              content: (response.output as any[])?.find((item: any) => item.type === 'message')?.content?.[0]?.text || '',
+              tool_calls: response.output?.filter((item: any) => item.type === 'function_call').map((item: any) => ({
+                id: item.id,
+                type: 'function' as const,
+                function: {
+                  name: item.name,
+                  arguments: item.arguments || ''
+                }
+              }))
+            },
+            finish_reason: response.status === 'completed' ? 'stop' as const : 
+                          response.output?.some((item: any) => item.type === 'function_call') ? 'tool_calls' as const : 'stop' as const
+          }],
+          usage: response.usage ? {
+            prompt_tokens: response.usage.input_tokens || 0,
+            completion_tokens: response.usage.output_tokens || 0,
+            total_tokens: (response.usage.input_tokens || 0) + (response.usage.output_tokens || 0),
+          } : undefined
+        };
+
+        // Emit token usage event if available
         if (response.usage && options.loggingContext?.tenant) {
           emitTokenUsageEvent({
             tenant: options.loggingContext.tenant,
@@ -557,16 +662,16 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
             integrationName: options.loggingContext.integrationName,
             model: response.model,
             usage: {
-              prompt_tokens: response.usage.prompt_tokens,
-              completion_tokens: response.usage.completion_tokens,
-              total_tokens: response.usage.total_tokens,
+              prompt_tokens: response.usage.input_tokens || 0,
+              completion_tokens: response.usage.output_tokens || 0,
+              total_tokens: (response.usage.input_tokens || 0) + (response.usage.output_tokens || 0),
             },
             stream: false,
             context: options.loggingContext,
           });
         }
-        
-        return response;
+
+        return transformedResponse;
       } catch (error: any) {
         logger.error('Error creating chat completion', error);
         emitAIProviderErrorEvent({
@@ -581,29 +686,44 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
         throw error;
       }
     },
-    
+
     async createChatCompletionStream(options: AIServiceOptions) {
       try {
         const messages = options.unsafeUserContext ? getMessagesWithUserContext(options.messages, options.unsafeUserContext) : options.messages;
-        const stream = await openai.chat.completions.create({
-          model: options.model || source.metadata.defaultModel || 'gpt-4.1',
-          messages,
+        const model = options.model || source.metadata.defaultModel || 'gpt-4.1';
+
+        // Transform tools to Responses API format (same as non-streaming)
+        const transformedTools = options.tools?.filter(tool => tool && tool.function).map(tool => ({
+          type: 'function' as const,
+          name: tool.function.name,
+          description: tool.function.description,
+          parameters: tool.function.parameters,
+          strict: tool.function.strict
+        }));
+
+        // Add file_search tools if present (they don't need transformation)
+        const fileSearchTools = options.tools?.filter(tool => tool && tool.type === 'file_search') || [];
+        const allTools = [...(transformedTools || []), ...fileSearchTools];
+
+        const stream = await openai.responses.create({
+          model,
+          instructions: transformToInstructions(messages),
+          input: options.input || transformToInput(messages),
+          tools: allTools,
           temperature: options.temperature,
           top_p: options.top_p,
-          frequency_penalty: options.frequency_penalty,
-          presence_penalty: options.presence_penalty,
-          stop: options.stop,
-          max_tokens: options.max_tokens,
-          tools: options.tools,
-          response_format: options.response_format,
-          stream: true,
-          stream_options: { include_usage: true }
+          max_output_tokens: options.max_tokens,
+          text: convertResponseFormatToOpenAIText(options.response_format),
+          stream: true
         });
-        
-        // Create a wrapper stream that emits token usage event when usage is received
-        async function* createStreamWithUsageTracking(originalStream: any, options: AIServiceOptions) {
+
+        // Create a wrapper stream that normalizes Responses API to Completion API format
+        async function* createNormalizedStream(originalStream: any, options: AIServiceOptions) {
           let usageEmitted = false;
-          
+          let messageId = `resp-${Date.now()}`;
+          let currentFunctionCall: any = null;
+          let accumulatedArgs = '';
+
           for await (const chunk of originalStream) {
             // Emit token usage event if usage data is present and we haven't emitted yet
             if (chunk.usage && !usageEmitted && options.loggingContext?.tenant) {
@@ -616,21 +736,191 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
                 integrationName: options.loggingContext.integrationName,
                 model: chunk.model,
                 usage: {
-                  prompt_tokens: chunk.usage.prompt_tokens,
-                  completion_tokens: chunk.usage.completion_tokens,
-                  total_tokens: chunk.usage.total_tokens,
+                  prompt_tokens: chunk.usage.input_tokens || 0,
+                  completion_tokens: chunk.usage.output_tokens || 0,
+                  total_tokens: (chunk.usage.input_tokens || 0) + (chunk.usage.output_tokens || 0),
                 },
                 stream: true,
                 context: options.loggingContext,
               });
               usageEmitted = true;
             }
-            
-            yield chunk;
+
+            // Normalize the Responses API format to match Completion API format
+            if (chunk.type === 'response.output_text.delta') {
+              // Individual character/word delta from Responses API - pass through as-is
+              const delta = chunk.delta || '';
+              if (delta) {
+                yield {
+                  id: messageId,
+                  object: 'chat.completion.chunk' as const,
+                  created: Math.floor(Date.now() / 1000),
+                  model: (chunk as any).model || model,
+                  choices: [{
+                    index: 0,
+                    delta: { content: delta },
+                    finish_reason: null
+                  }]
+                };
+              }
+            } else if (chunk.type === 'response.output_item.added' && chunk.item?.type === 'function_call') {
+              // Function call start - store the function info
+              currentFunctionCall = {
+                id: chunk.item.id,
+                name: chunk.item.name,
+                arguments: ''
+              };
+              accumulatedArgs = '';
+              
+              yield {
+                id: messageId,
+                object: 'chat.completion.chunk' as const,
+                created: Math.floor(Date.now() / 1000),
+                model: (chunk as any).model || model,
+                choices: [{
+                  index: 0,
+                  delta: {
+                    tool_calls: [{
+                      id: currentFunctionCall.id,
+                      type: 'function' as const,
+                      function: {
+                        name: currentFunctionCall.name,
+                        arguments: ''
+                      }
+                    }]
+                  },
+                  finish_reason: null
+                }]
+              };
+            } else if (chunk.type === 'response.function_call_arguments.delta') {
+              // Function call arguments delta - emit only the delta portion
+              if (currentFunctionCall && chunk.delta) {
+                accumulatedArgs += chunk.delta;
+                
+                yield {
+                  id: messageId,
+                  object: 'chat.completion.chunk' as const,
+                  created: Math.floor(Date.now() / 1000),
+                  model: (chunk as any).model || model,
+                  choices: [{
+                    index: 0,
+                    delta: {
+                      tool_calls: [{
+                        id: currentFunctionCall.id,
+                        type: 'function' as const,
+                        function: {
+                          name: null, // Don't repeat the name
+                          arguments: chunk.delta // Only emit the delta
+                        }
+                      }]
+                    },
+                    finish_reason: null
+                  }]
+                };
+              }
+            } else if (chunk.type === 'response.function_call_arguments.done') {
+              // Function call completed
+              currentFunctionCall = null;
+              accumulatedArgs = '';
+            } else if (chunk.type === 'text' || chunk.text) {
+              // Text chunk from Responses API - convert to delta format
+              const text = chunk.text || (chunk as any).content || '';
+              if (text) {
+                // Yield the text chunk as-is from OpenAI's natural streaming
+                yield {
+                  id: messageId,
+                  object: 'chat.completion.chunk' as const,
+                  created: Math.floor(Date.now() / 1000),
+                  model: (chunk as any).model || model,
+                  choices: [{
+                    index: 0,
+                    delta: { content: text },
+                    finish_reason: null
+                  }]
+                };
+              }
+            } else if ((chunk as any).type === 'function_call') {
+              // Function call from Responses API - convert to delta format
+              yield {
+                id: messageId,
+                object: 'chat.completion.chunk' as const,
+                created: Math.floor(Date.now() / 1000),
+                model: (chunk as any).model || model,
+                choices: [{
+                  index: 0,
+                  delta: {
+                    tool_calls: [{
+                      id: (chunk as any).id,
+                      type: 'function' as const,
+                      function: {
+                        name: (chunk as any).name,
+                        arguments: (chunk as any).arguments || ''
+                      }
+                    }]
+                  },
+                  finish_reason: null
+                }]
+              };
+            } else if ((chunk as any).output) {
+              // Handle output array format from Responses API
+              const outputItem = (chunk as any).output[(chunk as any).output.length - 1];
+              if (outputItem?.type === 'message' && outputItem.content) {
+                const text = outputItem.content[0]?.text || '';
+                if (text) {
+                  // Yield the text chunk as-is from OpenAI's natural streaming
+                  yield {
+                    id: messageId,
+                    object: 'chat.completion.chunk' as const,
+                    created: Math.floor(Date.now() / 1000),
+                    model: (chunk as any).model || model,
+                    choices: [{
+                      index: 0,
+                      delta: { content: text },
+                      finish_reason: null
+                    }]
+                  };
+                }
+              } else if (outputItem?.type === 'function_call') {
+                // Function call in output format
+                yield {
+                  id: messageId,
+                  object: 'chat.completion.chunk' as const,
+                  created: Math.floor(Date.now() / 1000),
+                  model: (chunk as any).model || model,
+                  choices: [{
+                    index: 0,
+                    delta: {
+                      tool_calls: [{
+                        id: outputItem.id,
+                        type: 'function' as const,
+                        function: {
+                          name: outputItem.name,
+                          arguments: outputItem.arguments || ''
+                        }
+                      }]
+                    },
+                    finish_reason: null
+                  }]
+                };
+              }
+            } else if ((chunk as any).type === 'response.done' || (chunk as any).type === 'response.completed') {
+              // End of stream - send finish reason
+              yield {
+                id: messageId,
+                object: 'chat.completion.chunk' as const,
+                created: Math.floor(Date.now() / 1000),
+                model: (chunk as any).model || model,
+                choices: [{
+                  index: 0,
+                  delta: {},
+                  finish_reason: 'stop' as const
+                }]
+              };
+            }
           }
         }
-        
-        return createStreamWithUsageTracking(stream, options);
+
+        return createNormalizedStream(stream, options);
       } catch (error: any) {
         logger.error('Error creating chat completion stream', error);
         emitAIProviderErrorEvent({
@@ -651,18 +941,18 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
 function createAnthropicService(source: AIServiceSource, authentication: AIServiceAuthentication) {
   // Get API key from authentication or source metadata
   const apiKey = authentication.token;
-  
+
   if (!apiKey) {
     throw new Error('Anthropic API key is required');
   }
-  
+
   // Create Anthropic client instance with timeout
   const anthropic = new Anthropic({
     apiKey,
     baseURL: source.metadata.apiUrl, // Will use default if not provided
     timeout: 120000, // 2 minute timeout for Anthropic API calls
   });
-  
+
   return {
     async createChatCompletion(options: AIServiceOptions) {
       try {
@@ -671,7 +961,7 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
           : options.messages;
         const { system, messages } = transformMessagesToAnthropicSDK(originalMessages);
         const tools = transformToolsToAnthropic(options.tools);
-        
+
         const response = await anthropic.messages.create({
           model: options.model || source.metadata.defaultModel || 'claude-3-opus-20240229',
           system,
@@ -682,10 +972,10 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
           stream: false,
           tools,
         });
-        
+
         // Transform Anthropic response to OpenAI format for consistency
         const transformedResponse = transformAnthropicResponseToOpenAI(response);
-        
+
         // Emit token usage event
         if (response.usage && options.loggingContext?.tenant) {
           emitTokenUsageEvent({
@@ -705,7 +995,7 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
             context: options.loggingContext,
           });
         }
-        
+
         return transformedResponse;
       } catch (error: any) {
         logger.error('Error creating chat completion with Anthropic', error);
@@ -721,7 +1011,7 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
         throw error;
       }
     },
-    
+
     async createChatCompletionStream(options: AIServiceOptions) {
       try {
         const originalMessages = options.unsafeUserContext
@@ -729,7 +1019,7 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
           : options.messages;
         const { system, messages } = transformMessagesToAnthropicSDK(originalMessages);
         const tools = transformToolsToAnthropic(options.tools);
-        
+
         const stream = await anthropic.messages.create({
           model: options.model || source.metadata.defaultModel || 'claude-3-opus-20240229',
           system,
@@ -740,7 +1030,7 @@ function createAnthropicService(source: AIServiceSource, authentication: AIServi
           stream: true,
           tools,
         });
-        
+
         // Return the wrapped stream generator that tracks usage
         return createAnthropicSDKStreamGenerator(stream, options, source);
       } catch (error: any) {
@@ -861,10 +1151,10 @@ function transformAnthropicResponseToOpenAI(response: any) {
     ],
     usage: response.usage
       ? {
-          prompt_tokens: response.usage.input_tokens,
-          completion_tokens: response.usage.output_tokens,
-          total_tokens: (response.usage.input_tokens || 0) + (response.usage.output_tokens || 0),
-        }
+        prompt_tokens: response.usage.input_tokens,
+        completion_tokens: response.usage.output_tokens,
+        total_tokens: (response.usage.input_tokens || 0) + (response.usage.output_tokens || 0),
+      }
       : undefined,
   };
 }
@@ -962,7 +1252,7 @@ async function* createAnthropicSDKStreamGenerator(stream: any, options?: AIServi
         if (event.delta?.stop_reason) {
           finishReason = mapAnthropicFinishReason(event.delta.stop_reason, hasToolCalls);
         }
-        
+
         // Emit token usage event when usage is available
         if (event.usage && !usageEmitted && options?.loggingContext?.tenant && source) {
           emitTokenUsageEvent({

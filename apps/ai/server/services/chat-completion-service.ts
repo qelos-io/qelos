@@ -254,7 +254,26 @@ async function processStreamingCompletion(
   const stream = await aiService.createChatCompletionStream(chatOptions);
   
   for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta;
+    // Debug: Log the first few chunks to understand the format
+    if (process.env.NODE_ENV !== 'production') {
+      if (!global._debugCount) global._debugCount = 0;
+      if (global._debugCount < 3) {
+        global._debugCount++;
+      }
+    }
+    
+    // Handle the standardized Chat Completions API format
+    let delta;
+    let content;
+    
+    if (chunk.choices) {
+      // Standard Chat Completions API format (after normalization)
+      delta = chunk.choices[0]?.delta;
+      content = delta?.content || '';
+    } else {
+      // Unknown format, log for debugging
+      continue;
+    }
     
     // Check for function calls in the delta
     if (delta?.tool_calls && delta.tool_calls.length > 0) {
@@ -298,18 +317,30 @@ async function processStreamingCompletion(
         currentFunctionCall = {};
         functionCallBuffer = '';
       }
-    } else if (delta?.content) {
+    } else if (content) {
       // Regular content chunk
       hasContent = true;
-      assistantLastContent += delta.content;
+      assistantLastContent += content;
       sendSSE({ 
         type: isFollowUp ? 'followup_chunk' : 'chunk', 
-        content: delta.content 
+        content: content 
       });
     }
     
     // Check if we're done with the response and have function calls to execute
-    if (chunk.choices[0]?.finish_reason === 'tool_calls' && currentFunctionCalls.length > 0) {
+    // Handle the standardized Chat Completions API format
+    const finishReason = chunk.choices?.[0]?.finish_reason;
+    
+    if (finishReason === 'tool_calls' && currentFunctionCalls.length > 0) {
+      // Check if we've reached the maximum auto-continue steps
+      if (autoContinueCount >= MAX_AUTO_CONTINUE_STEPS) {
+        sendSSE({
+          type: 'error',
+          message: `Maximum function call iterations reached (${MAX_AUTO_CONTINUE_STEPS}). Please try again with a more specific request.`
+        });
+        return;
+      }
+      
       // Send appropriate event based on whether this is a follow-up or initial call
       sendSSE({ 
         type: isFollowUp ? 'followup_function_calls_detected' : 'function_calls_detected' 
@@ -361,7 +392,7 @@ async function processStreamingCompletion(
             additionalArgs,
             true, // isFollowUp
             onNewMessage,
-            autoContinueCount,
+            autoContinueCount + 1, // Increment the counter
             context
           ),
           new Promise((_, reject) => {
@@ -407,29 +438,37 @@ async function processStreamingCompletion(
     }
 
     // Auto-continue if OpenAI stops due to length limits
-    if (chunk.choices[0]?.finish_reason === 'length' && autoContinueCount < MAX_AUTO_CONTINUE_STEPS) {
-      // Create a new user message to continue the conversation
-      const continueMessage = {
-        role: 'user',
-        content: 'Continue',
-      };
+    if (chunk.choices && chunk.choices[0]?.finish_reason === 'length') {
+      if (autoContinueCount < MAX_AUTO_CONTINUE_STEPS) {
+        // Create a new user message to continue the conversation
+        const continueMessage = {
+          role: 'user',
+          content: 'Continue',
+        };
 
-      // Recursively process the next completion with the new message
-      await processStreamingCompletion(
-        res,
-        aiService,
-        { ...chatOptions, messages: [...chatOptions.messages, continueMessage] },
-        executeFunctionCallsHandler,
-        sendSSE,
-        additionalArgs,
-        true, // isFollowUp
-        onNewMessage,
-        autoContinueCount + 1,
-        context
-      );
-      
-      // Return after processing the recursive call
-      return;
+        // Recursively process the next completion with the new message
+        await processStreamingCompletion(
+          res,
+          aiService,
+          { ...chatOptions, messages: [...chatOptions.messages, continueMessage] },
+          executeFunctionCallsHandler,
+          sendSSE,
+          additionalArgs,
+          true, // isFollowUp
+          onNewMessage,
+          autoContinueCount + 1,
+          context
+        );
+        
+        // Return after processing the recursive call
+        return;
+      }
+    }
+    
+    // Check if stream is complete
+    if (chunk.choices?.[0]?.finish_reason) {
+      // Stream is complete, break the loop
+      break;
     }
   }
 
@@ -443,6 +482,15 @@ async function processStreamingCompletion(
 
   // Handle any remaining incomplete function call
   if (isCollectingFunctionCall && currentFunctionCall.id) {
+    // Check if we've reached the maximum auto-continue steps
+    if (autoContinueCount >= MAX_AUTO_CONTINUE_STEPS) {
+      sendSSE({
+        type: 'error',
+        message: `Maximum function call iterations reached (${MAX_AUTO_CONTINUE_STEPS}). Please try again with a more specific request.`
+      });
+      return;
+    }
+    
     currentFunctionCalls.push(currentFunctionCall as FunctionCall);
 
     if (onNewMessage) {
@@ -493,7 +541,7 @@ async function processStreamingCompletion(
         additionalArgs,
         true, // isFollowUp
         onNewMessage,
-        autoContinueCount,
+        autoContinueCount + 1, // Increment the counter
         context
       );
     } catch (functionError) {
@@ -558,7 +606,10 @@ export async function handleNonStreamingChatCompletion(
         }, 120000); // 2 minute timeout
       })
     ]);
+    
+    // Handle the standardized Chat Completions API format
     const message = completion.choices[0].message;
+    const content = message.content || '';
     
     // Check for function calls
     if (message.tool_calls && message.tool_calls.length > 0) {
@@ -649,10 +700,23 @@ export async function handleNonStreamingChatCompletion(
         })
       ]);
       
+      // Handle both API formats for follow-up completion
+      let finalContent;
+      if (followUpCompletion.choices) {
+        // Chat Completions API format
+        finalContent = followUpCompletion.choices[0].message.content;
+      } else if (followUpCompletion.output) {
+        // Responses API format
+        const outputItem = followUpCompletion.output.find(item => item.type === 'message');
+        finalContent = outputItem?.content?.[0]?.text || '';
+      } else {
+        finalContent = '';
+      }
+      
       if (onNewMessage) {
         onNewMessage({
           type: 'assistant_last_content',
-          content: followUpCompletion.choices[0].message.content
+          content: finalContent
         });
       }
       
@@ -663,10 +727,13 @@ export async function handleNonStreamingChatCompletion(
         function_results: functionResults
       };
     } else {
+      // Handle the standardized content
+      const content = completion.choices[0].message.content || '';
+      
       if (onNewMessage) {
         onNewMessage({
           type: 'assistant_last_content',
-          content: completion.choices[0].message.content
+          content
         });
       }
       // No function calls, return the initial completion

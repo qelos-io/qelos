@@ -123,6 +123,59 @@ const recordThread = computed({
   }
 });
 
+const vectorStore = computed({
+  get: () => trigger.value?.details?.vectorStore || false,
+  set: (value: boolean) => {
+    if (!trigger.value) {
+      trigger.value = { source: '', operation: '', details: {} };
+    }
+    trigger.value.details = {
+      ...trigger.value.details,
+      vectorStore: value
+    };
+  }
+});
+
+const vectorStoreScope = computed({
+  get: () => trigger.value?.details?.vectorStoreScope || 'thread',
+  set: (value: string) => {
+    if (!trigger.value) {
+      trigger.value = { source: '', operation: '', details: {} };
+    }
+    trigger.value.details = {
+      ...trigger.value.details,
+      vectorStoreScope: value
+    };
+  }
+});
+
+const vectorStoreExpirationDays = computed({
+  get: () => trigger.value?.details?.vectorStoreExpirationDays ?? 14,
+  set: (value: number | undefined) => {
+    if (!trigger.value) {
+      trigger.value = { source: '', operation: '', details: {} };
+    }
+    trigger.value.details = {
+      ...trigger.value.details,
+      vectorStoreExpirationDays: value
+    };
+  }
+});
+
+const vectorStoreHardcodedIds = computed({
+  get: () => trigger.value?.details?.vectorStoreHardcodedIds?.join('\n') || '',
+  set: (value: string) => {
+    if (!trigger.value) {
+      trigger.value = { source: '', operation: '', details: {} };
+    }
+    const ids = value.split('\n').map(id => id.trim()).filter(id => id.length > 0);
+    trigger.value.details = {
+      ...trigger.value.details,
+      vectorStoreHardcodedIds: ids
+    };
+  }
+});
+
 const accessControlPermissions = computed({
   get: () => ({
     roles: trigger.value?.details?.roles || [],
@@ -551,6 +604,10 @@ const agentSchema = {
     maxTokens: { type: "number", description: "Maximum tokens for the response (e.g., 4096, 8192, 16384)" },
     temperature: { type: "number", description: "Controls randomness (0.0-2.0, lower = more focused)" },
     recordThread: { type: "boolean", description: "Whether to record conversation threads" },
+    vectorStore: { type: "boolean", description: "Whether to create a vector store for the thread" },
+    vectorStoreScope: { type: "string", description: "Scope of the vector store (thread, user, workspace, tenant)" },
+    vectorStoreExpirationDays: { type: "number", description: "Number of days after last activity before the vector store expires" },
+    vectorStoreHardcodedIds: { type: "array", items: { type: "string" }, description: "Additional OpenAI vector store IDs to include in file search" },
     includeUserContext: { type: "boolean", description: "Whether to include user information in context" },
     includeWorkspaceContext: { type: "boolean", description: "Whether to include workspace information in context" },
     permissions: { 
@@ -604,6 +661,26 @@ const handleAiGeneratedAgent = (result: any) => {
     recordThread.value = result.recordThread;
   }
   
+  // Update vector store option
+  if (typeof result.vectorStore === 'boolean') {
+    vectorStore.value = result.vectorStore;
+  }
+  
+  // Update vector store scope
+  if (result.vectorStoreScope) {
+    vectorStoreScope.value = result.vectorStoreScope;
+  }
+  
+  // Update vector store expiration days
+  if (typeof result.vectorStoreExpirationDays === 'number') {
+    vectorStoreExpirationDays.value = result.vectorStoreExpirationDays;
+  }
+  
+  // Update vector store hardcoded IDs
+  if (Array.isArray(result.vectorStoreHardcodedIds)) {
+    vectorStoreHardcodedIds.value = result.vectorStoreHardcodedIds.join('\n');
+  }
+
   // Update context options
   if (typeof result.includeUserContext === 'boolean') {
     includeUserContext.value = result.includeUserContext;
@@ -622,7 +699,6 @@ const handleAiGeneratedAgent = (result: any) => {
 };
 
 const handleAiError = (error: any) => {
-  console.error('Failed to generate agent configuration:', error);
   ElMessage.error('Failed to generate agent configuration');
 };
 
@@ -794,6 +870,61 @@ const handleSystemPromptImproved = (result: any) => {
                 {{ $t('When enabled, the API URL expects a thread identifier.') }}
               </span>
             </div>
+
+            <div class="recording-row">
+              <el-checkbox v-model="vectorStore">
+                {{ $t('Enable vector store') }}
+              </el-checkbox>
+              <span class="recording-hint">
+                {{ $t('When enabled, creates a vector store for file search (OpenAI only).') }}
+              </span>
+            </div>
+
+            <template v-if="vectorStore">
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item :label="$t('Vector store scope')">
+                    <el-select v-model="vectorStoreScope" :placeholder="$t('Select scope')">
+                      <el-option label="Thread" value="thread" />
+                      <el-option label="User" value="user" />
+                      <el-option label="Workspace" value="workspace" />
+                      <el-option label="Tenant" value="tenant" />
+                    </el-select>
+                    <div class="form-help-text">
+                      {{ $t('Thread: unique store per thread. User: shared across user\'s threads. Workspace: shared across workspace. Tenant: shared across all users.') }}
+                    </div>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item :label="$t('Expiration after days')">
+                    <el-input-number
+                      v-model="vectorStoreExpirationDays"
+                      :min="1"
+                      :max="365"
+                      :placeholder="$t('Days until expiration')"
+                    />
+                    <div class="form-help-text">
+                      {{ $t('Number of days after last activity before the vector store expires. Leave empty for no expiration.') }}
+                    </div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="24">
+                  <el-form-item :label="$t('Additional vector store IDs')">
+                    <el-input
+                      v-model="vectorStoreHardcodedIds"
+                      type="textarea"
+                      :rows="3"
+                      :placeholder="$t('Enter vector store IDs, one per line')"
+                    />
+                    <div class="form-help-text">
+                      {{ $t('Additional OpenAI vector store IDs to include in file search. Enter one ID per line.') }}
+                    </div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </template>
 
             <div v-if="props.integrationId" class="endpoint-box">
               <div class="endpoint-title">
@@ -1299,6 +1430,20 @@ const handleSystemPromptImproved = (result: any) => {
 .model-option {
   display: flex;
   flex-direction: column;
+}
+
+.form-help-text {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.recording-hint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
 }
 
 .model-label {
