@@ -171,9 +171,6 @@ watch(() => {
         background-color: var(--secondary-color);
         color: rgba(255, 255, 255, 0.8);
       }
-      .el-tabs__item.is-active {
-        color: #ffffff !important;
-      }
       .el-tabs__active-bar {
         background-color: ${palette.mainColor || '#8b5cf6'} !important;
       }
