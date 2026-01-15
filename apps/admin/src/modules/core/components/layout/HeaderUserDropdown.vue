@@ -1,5 +1,5 @@
 <template>
-  <el-dropdown class="user-dropdown" trigger="click" @click.stop>
+  <el-dropdown class="user-dropdown" :class="{'dark-app': $isDarkTheme}" trigger="click" @click.stop>
     <div class="el-dropdown-link user-welcome" @click.stop>
       <span>{{ user.firstName }}</span>
       <el-avatar class="avatar-img" v-if="user.workspace || user.profileImage" :src="user.profileImage">
@@ -115,6 +115,10 @@ const workspaceName = computed(() => decodeURIComponent(user.value?.workspace?.n
   gap: 5px;
   color: var(--text-color);
   font-size: var(--base-font-size);
+
+  &.dark-app {
+    color: var(--main-color)
+  }
 
   > i {
     margin-inline-start: 5px;

@@ -5,7 +5,7 @@
 </template>
 <script lang="ts" setup>
 import { useAppConfiguration } from './modules/configurations/store/app-configuration'
-import { computed, provide, ref, watch } from 'vue'
+import { computed, getCurrentInstance, provide, ref, watch } from 'vue'
 import { translate, loadLanguageAsync } from './plugins/i18n'
 import { usePluginsInjectables } from '@/modules/plugins/store/plugins-injectables';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
@@ -65,6 +65,7 @@ function isColorDark(hexColor: string): boolean {
 }
 
 const { appConfig, loaded } = useAppConfiguration()
+const vm = getCurrentInstance();
 useUsersHeader()
 
 usePluginsMicroFrontends();
@@ -113,7 +114,15 @@ watch(() => {
 
   // Determine if this is a dark theme based on background color brightness
   const isDarkTheme = palette?.bgColor ? isColorDark(palette.bgColor) : false;
+
+  vm.appContext.config.globalProperties.$isDarkTheme = isDarkTheme;
   
+  if (isDarkTheme) {
+    document.documentElement.setAttribute('data-dark-mode', 'true');
+  } else {
+    document.documentElement.removeAttribute('data-dark-mode');
+  }
+
   appStyle.innerHTML = `
     ${importCss}
     :root {

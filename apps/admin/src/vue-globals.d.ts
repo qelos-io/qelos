@@ -4,6 +4,7 @@ import { PubSubService } from './services/pubsub'
 declare module 'vue' {
   interface ComponentCustomProperties {
     $isMobile: boolean
+    $isDarkTheme: boolean
     $pubsub: PubSubService
     $t: (key: string) => string
   }

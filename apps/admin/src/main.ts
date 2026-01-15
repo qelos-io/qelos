@@ -16,6 +16,7 @@ declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
     $t: (text: string) => string,
     $isMobile: boolean,
+    $isDarkTheme: boolean,
     $pubsub: typeof pubsub
   }
 }
