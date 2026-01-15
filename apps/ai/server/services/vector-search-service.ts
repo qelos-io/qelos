@@ -11,7 +11,19 @@ type AIAuthentication = {
 };
 
 // Interface for tool representation
-export type Tool = { type: 'file_search', vector_store_ids: string[] } | {
+export type Tool = { 
+  type: 'file_search', 
+  vector_store_ids: string[] 
+} | {
+  type: 'web_search',
+  search_context_size?: 'low' | 'medium' | 'high',
+  user_location?: {
+    type: 'approximate' | 'exact'
+    city?: string;
+    region?: string;
+    country?: string;
+  }
+} | {
   type: string;
   name?: string;
   description: string;

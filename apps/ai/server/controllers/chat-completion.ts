@@ -1,10 +1,11 @@
-import { IBlueprint, IIntegration, IOpenAISource, OpenAITargetPayload } from "@qelos/global-types";
-import Handlebars from "handlebars";
+import { IBlueprint, IIntegration, IOpenAISource, OpenAITargetPayload, IntegrationSourceKind } from "@qelos/global-types";
 import logger from "../services/logger";
 import { createAIService } from "../services/ai-service";
 import * as ChatCompletionService from "../services/chat-completion-service";
 import { executeDataManipulation, getIntegration, getIntegrations, getSourceAuthentication, getToolsIntegrations } from "../services/plugins-service-api";
-import { getRelevantToolsForAgent } from "../services/vector-search-service";
+import { getRelevantToolsForAgent, Tool } from "../services/vector-search-service";
+import { generateBlueprintTools, mapToolsIntegrations } from "../services/blueprint-tools-service";
+import { ingestSystemMessage } from "../services/message-utils";
 import { executeFunctionCalls } from "../services/execute-function-calls";
 import { verifyUserPermissions } from "../services/source-service";
 import { IThread, Thread } from "../models/thread";
@@ -166,6 +167,12 @@ export async function chatCompletion(req: any, res: any | null) {
       messages: safeUserMessages,
       context: options.context,
       systemContext: {},
+      vectorStoreIds: [],
+      webSearch: integration.trigger.details?.webSearch && source.kind === IntegrationSourceKind.OpenAI ? {
+        type: "web_search",
+        search_context_size: "medium",
+        user_location: { type: "approximate" }
+      } : undefined,
     }, integration.dataManipulation);
   } catch (error) {
     logger.error('Failed to execute pre-chat data manipulation', error);
@@ -259,247 +266,17 @@ export async function chatCompletion(req: any, res: any | null) {
     },
   };
 
-  function ingestSystemMessage(message: any) {
-    if (message.role !== 'system' || !message.content || typeof message.content !== 'string') {
-      return message;
-    }
-
-    try {
-      const template = Handlebars.compile(message.content, { noEscape: true });
-      return {
-        ...message,
-        content: template(templateVariables),
-      };
-    } catch (error) {
-      logger.warn('Failed to render system message template', error);
-      return message;
-    }
-  }
-
   const initialMessages = [
     ...(integration.target.details.pre_messages || []),
     ...options.messages,
-  ].map(ingestSystemMessage);
+  ].map(message => ingestSystemMessage(message, templateVariables));
 
   // Map all available tools
-  const allTools = toolsIntegrations.map(tool => ({
-    type: 'function',
-    description: tool.trigger.details.description,
-    function: {
-      name: tool.trigger.details.name,
-      description: tool.trigger.details.description,
-      parameters: {
-        properties: {},
-        ...tool.trigger.details.parameters,
-      },
-    }
-  }));
+  const allTools: any[] = mapToolsIntegrations(toolsIntegrations);
 
   // Add blueprint tools for CRUD operations
   if (ingestedBlueprints && ingestedBlueprints.length > 0) {
-    const blueprintTools = ingestedBlueprints.flatMap(blueprint => {
-      // Helper function to convert blueprint property type to JSON Schema type
-      const getJsonSchemaType = (blueprintType: string): { type: string, format?: string } => {
-        switch (blueprintType.toLowerCase()) {
-          case 'string':
-            return { type: 'string' };
-          case 'number':
-            return { type: 'number' };
-          case 'boolean':
-            return { type: 'boolean' };
-          case 'date':
-            return { type: 'string', format: 'date' };
-          case 'datetime':
-            return { type: 'string', format: 'date-time' };
-          case 'time':
-            return { type: 'string', format: 'time' };
-          case 'object':
-            return { type: 'object' };
-          case 'file':
-            return { type: 'string', format: 'uri' }; // File is represented as a URL
-          default:
-            return { type: 'string' }; // Default to string for unknown types
-        }
-      };
-
-      // Create JSON schema for blueprint properties
-      const propertiesSchema = Object.entries(blueprint.properties).reduce((schema, [propName, propDesc]) => {
-        const typeInfo = getJsonSchemaType(propDesc.type);
-
-        let propSchema: any = {
-          ...typeInfo,
-          description: propDesc.description || propDesc.title
-        };
-
-        // Handle enum values
-        if (propDesc.enum && propDesc.enum.length > 0) {
-          propSchema.enum = propDesc.enum;
-        }
-
-        if (typeInfo.type === 'object') {
-          propSchema = propDesc.schema;
-          propSchema.description ||= propDesc.description;
-        }
-
-        if (propDesc.multi) {
-          propSchema.type = 'array';
-          propSchema.items = {
-            ...typeInfo,
-            description: propDesc.description || propDesc.title
-          };
-        }
-
-        // Handle min/max for numbers
-        if (propDesc.type.toLowerCase() === 'number') {
-          if (propDesc.min !== undefined) propSchema.minimum = propDesc.min;
-          if (propDesc.max !== undefined) propSchema.maximum = propDesc.max;
-        }
-
-        schema[propName] = propSchema;
-        return schema;
-      }, {});
-
-      // Generate CRUD function tools for this blueprint
-      return [
-        // Create entity function
-        {
-          type: 'function',
-          description: `Create a new ${blueprint.name} entity`,
-          function: {
-            name: `create_${blueprint.identifier}`,
-            description: `Create a new ${blueprint.name} entity. ${blueprint.description || ''}`,
-            parameters: {
-              type: 'object',
-              properties: propertiesSchema,
-              required: Object.entries(blueprint.properties)
-                .filter(([_, prop]) => prop.required)
-                .map(([name, _]) => name)
-            }
-          }
-        },
-        // Get entity function
-        {
-          type: 'function',
-          description: `Get a specific ${blueprint.name} entity by identifier`,
-          function: {
-            name: `get_${blueprint.identifier}`,
-            description: `Retrieve a specific ${blueprint.name} entity by its identifier`,
-            parameters: {
-              type: 'object',
-              properties: {
-                identifier: {
-                  type: 'string',
-                  description: `The identifier of the ${blueprint.name} entity to retrieve`
-                }
-              },
-              required: ['identifier']
-            }
-          }
-        },
-        // Update entity function
-        {
-          type: 'function',
-          description: `Update an existing ${blueprint.name} entity by identifier`,
-          function: {
-            name: `update_${blueprint.identifier}`,
-            description: `Update an existing ${blueprint.name} entity with new values`,
-            parameters: {
-              type: 'object',
-              properties: {
-                identifier: {
-                  type: 'string',
-                  description: `The identifier of the ${blueprint.name} entity to update`
-                },
-                ...propertiesSchema
-              },
-              required: ['identifier']
-            }
-          }
-        },
-        // Delete entity function
-        {
-          type: 'function',
-          description: `Delete a ${blueprint.name} entity by identifier`,
-          function: {
-            name: `delete_${blueprint.identifier}`,
-            description: `Delete a ${blueprint.name} entity by its identifier`,
-            parameters: {
-              type: 'object',
-              properties: {
-                identifier: {
-                  type: 'string',
-                  description: `The identifier of the ${blueprint.name} entity to delete`
-                }
-              },
-              required: ['identifier']
-            }
-          }
-        },
-        // List entities function
-        {
-          type: 'function',
-          description: `List ${blueprint.name} entities`,
-          function: {
-            name: `list_${blueprint.identifier}`,
-            description: `Retrieve a list of ${blueprint.name} entities, optionally filtered by query parameters`,
-            parameters: {
-              type: 'object',
-              properties: {
-                $sort: {
-                  type: 'string',
-                  description: 'Sort the results by this field. add "minus" to sort in descending order (e.g. "-rank"). default: "-created"',
-                  enum: ['created', 'updated', ...Object.keys(blueprint.properties).map(prop => ['metadata' + prop, '-metadata.' + prop]).flat()]
-                },
-                $page: {
-                  type: 'number',
-                  description: 'the page number to return. default: 1'
-                },
-                $limit: {
-                  type: 'number',
-                  description: 'Limit the number of results. default: 100'
-                },
-                $populate: {
-                  type: 'boolean',
-                  description: 'Populate the results. default: false. if true, the results will be populated with the blueprint relations.'
-                },
-                $fields: {
-                  description: 'selected fields to get from each entity. when given - only those filters will return.',
-                },
-                createdFrom: {
-                  type: 'string',
-                  format: 'date-time',
-                  description: 'Filter by created date from. default: null'
-                },
-                createdTo: {
-                  type: 'string',
-                  format: 'date-time',
-                  description: 'Filter by created date to. default: null'
-                },
-                updatedFrom: {
-                  type: 'string',
-                  format: 'date-time',
-                  description: 'Filter by updated date from. default: null'
-                },
-                updatedTo: {
-                  type: 'string',
-                  format: 'date-time',
-                  description: 'Filter by updated date to. default: null'
-                },
-                ...Object.keys(blueprint.properties).reduce((acc, prop) => {
-                  acc[prop] = {
-                    ...propertiesSchema[prop],
-                    description: `Filter by ${prop}. ${blueprint.properties[prop].description || ''}`
-                  }
-                  return acc;
-                }, {} as any)
-              },
-              required: []
-            }
-          }
-        }
-      ];
-    });
-
+    const blueprintTools = ingestedBlueprints.flatMap(blueprint => generateBlueprintTools(blueprint));
     // Add blueprint tools to allTools array
     allTools.push(...blueprintTools);
   }
@@ -549,12 +326,12 @@ export async function chatCompletion(req: any, res: any | null) {
   }
 
   // Use improved context-aware tool filtering
-  const tools = await getRelevantToolsForAgent({
+  const tools: Tool[] = await getRelevantToolsForAgent({
     tenant: integration.tenant,
     safeUserMessages: options.messages,
     sourceDetails: integration.target.details,
     sourceAuthentication: req.integrationSourceTargetAuthentication,
-    allTools,
+    allTools: allTools as Tool[],
     defaultMaxTools: 15,
   });
 
@@ -580,7 +357,7 @@ export async function chatCompletion(req: any, res: any | null) {
   };
 
   // Configure file_search tool for the Responses API using vector store service
-  if (thread && integration.trigger.details?.vectorStore) {
+  if ((thread && integration.trigger.details?.vectorStore) || options.vectorStoreIds?.length > 0) {
     try {
       // Get the source authentication for OpenAI
       // Handle both string ID and object with _id
@@ -599,10 +376,14 @@ export async function chatCompletion(req: any, res: any | null) {
         
         const vectorStoreService = new VectorStoreService(openai);
         const vectorStoreIds = await vectorStoreService.getVectorStoreIdsForThread(
-          (thread._id as mongoose.Types.ObjectId).toString(),
+          (thread?._id as mongoose.Types.ObjectId).toString(),
           integration._id.toString(),
           req.headers.tenant
         );
+        
+        if (options.vectorStoreIds?.length > 0) {
+          vectorStoreIds.push(...options.vectorStoreIds);
+        }
         
         if (vectorStoreIds.length > 0) {
           tools.unshift({
@@ -614,6 +395,11 @@ export async function chatCompletion(req: any, res: any | null) {
     } catch (error) {
       logger.error('Error setting up vector stores for chat completion:', error);
     }
+  }
+
+  // Add web search tool if enabled (OpenAI only)
+  if (options.webSearch && source.kind === IntegrationSourceKind.OpenAI) {
+    tools.unshift(options.webSearch);
   }
 
   try {

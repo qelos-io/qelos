@@ -176,6 +176,19 @@ const vectorStoreHardcodedIds = computed({
   }
 });
 
+const webSearch = computed({
+  get: () => trigger.value?.details?.webSearch || false,
+  set: (value: boolean) => {
+    if (!trigger.value) {
+      trigger.value = { source: '', operation: '', details: {} };
+    }
+    trigger.value.details = {
+      ...trigger.value.details,
+      webSearch: value
+    };
+  }
+});
+
 const accessControlPermissions = computed({
   get: () => ({
     roles: trigger.value?.details?.roles || [],
@@ -605,6 +618,7 @@ const agentSchema = {
     temperature: { type: "number", description: "Controls randomness (0.0-2.0, lower = more focused)" },
     recordThread: { type: "boolean", description: "Whether to record conversation threads" },
     vectorStore: { type: "boolean", description: "Whether to create a vector store for the thread" },
+    webSearch: { type: "boolean", description: "Whether to enable web search capability" },
     vectorStoreScope: { type: "string", description: "Scope of the vector store (thread, user, workspace, tenant)" },
     vectorStoreExpirationDays: { type: "number", description: "Number of days after last activity before the vector store expires" },
     vectorStoreHardcodedIds: { type: "array", items: { type: "string" }, description: "Additional OpenAI vector store IDs to include in file search" },
@@ -664,6 +678,11 @@ const handleAiGeneratedAgent = (result: any) => {
   // Update vector store option
   if (typeof result.vectorStore === 'boolean') {
     vectorStore.value = result.vectorStore;
+  }
+  
+  // Update web search option
+  if (typeof result.webSearch === 'boolean') {
+    webSearch.value = result.webSearch;
   }
   
   // Update vector store scope
@@ -877,6 +896,15 @@ const handleSystemPromptImproved = (result: any) => {
               </el-checkbox>
               <span class="recording-hint">
                 {{ $t('When enabled, creates a vector store for file search (OpenAI only).') }}
+              </span>
+            </div>
+
+            <div class="recording-row">
+              <el-checkbox v-model="webSearch">
+                {{ $t('Enable web search') }}
+              </el-checkbox>
+              <span class="recording-hint">
+                {{ $t('When enabled, the agent can search the web for current information (OpenAI only).') }}
               </span>
             </div>
 

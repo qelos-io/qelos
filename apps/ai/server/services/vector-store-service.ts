@@ -112,64 +112,77 @@ export class VectorStoreService {
 
     const stores: string[] = [];
     
-    // Check for thread-scoped store
-    const threadStore = await VectorStore.findOne({
-      tenant,
-      agent: agentId,
-      scope: 'thread',
-      subjectId: threadId
-    });
-    if (threadStore) {
-      stores.push(threadStore.externalId);
-    }
-
-    // Check for user-scoped store
-    const userStore = await VectorStore.findOne({
-      tenant,
-      agent: agentId,
-      scope: 'user',
-      subjectId: thread.user.toString()
-    });
-    if (userStore) {
-      stores.push(userStore.externalId);
-    }
-
-    // Check for workspace-scoped store
-    if (thread.workspace) {
-      const workspaceStore = await VectorStore.findOne({
+    // Run all vector store queries in parallel for better performance
+    const [
+      threadStore,
+      userStore,
+      workspaceStore,
+      tenantStore,
+      allStores
+    ] = await Promise.all([
+      // Check for thread-scoped store
+      VectorStore.findOne({
+        tenant,
+        agent: agentId,
+        scope: 'thread',
+        subjectId: threadId
+      }),
+      
+      // Check for user-scoped store
+      VectorStore.findOne({
+        tenant,
+        agent: agentId,
+        scope: 'user',
+        subjectId: thread.user.toString()
+      }),
+      
+      // Check for workspace-scoped store
+      thread.workspace ? VectorStore.findOne({
         tenant,
         agent: agentId,
         scope: 'workspace',
         subjectId: thread.workspace.toString()
-      });
-      if (workspaceStore) {
-        stores.push(workspaceStore.externalId);
-      }
-    }
+      }) : Promise.resolve(null),
+      
+      // Check for tenant-scoped store
+      VectorStore.findOne({
+        tenant,
+        agent: agentId,
+        scope: 'tenant',
+        subjectId: { $exists: false }
+      }),
+      
+      // Get all stores for hardcoded IDs
+      VectorStore.find({
+        tenant,
+        agent: agentId,
+        $or: [
+          { scope: 'thread', subjectId: threadId },
+          { scope: 'user', subjectId: thread.user.toString() },
+          { scope: 'workspace', subjectId: thread.workspace?.toString() },
+          { scope: 'tenant', subjectId: { $exists: false } }
+        ]
+      })
+    ]);
 
-    // Check for tenant-scoped store
-    const tenantStore = await VectorStore.findOne({
-      tenant,
-      agent: agentId,
-      scope: 'tenant',
-      subjectId: { $exists: false }
-    });
+    // Collect store IDs from the parallel query results
+    if (threadStore) {
+      stores.push(threadStore.externalId);
+    }
+    
+    if (userStore) {
+      stores.push(userStore.externalId);
+    }
+    
+    if (workspaceStore) {
+      stores.push(workspaceStore.externalId);
+    }
+    
     if (tenantStore) {
       stores.push(tenantStore.externalId);
     }
 
     // Add hardcoded IDs from any matching stores
-    const allStores = await VectorStore.find({
-      tenant,
-      agent: agentId,
-      $or: [
-        { scope: 'thread', subjectId: threadId },
-        { scope: 'user', subjectId: thread.user.toString() },
-        { scope: 'workspace', subjectId: thread.workspace?.toString() },
-        { scope: 'tenant', subjectId: { $exists: false } }
-      ]
-    });
-
     allStores.forEach(store => {
       if (store.hardcodedIds && store.hardcodedIds.length > 0) {
         stores.push(...store.hardcodedIds);
