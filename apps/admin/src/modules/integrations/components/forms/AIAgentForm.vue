@@ -881,32 +881,53 @@ const handleSystemPromptImproved = (result: any) => {
               />
             </el-form-item>
 
-            <div class="recording-row">
-              <el-checkbox v-model="recordThread">
-                {{ $t('Record conversation threads') }}
-              </el-checkbox>
-              <span class="recording-hint">
-                {{ $t('When enabled, the API URL expects a thread identifier.') }}
-              </span>
-            </div>
+            <!-- Agent Capabilities -->
+            <el-card class="capabilities-card" shadow="never">
+              <template #header>
+                <div class="card-header">
+                  <el-icon><Setting /></el-icon>
+                  <span>{{ $t('Agent Capabilities') }}</span>
+                </div>
+              </template>
+              
+              <div class="capabilities-grid">
+                <div class="capability-item">
+                  <div class="capability-header">
+                    <el-checkbox v-model="recordThread" size="large">
+                      <span class="capability-title">{{ $t('Record conversation threads') }}</span>
+                    </el-checkbox>
+                    <el-tag v-if="recordThread" type="success" size="small">{{ $t('Enabled') }}</el-tag>
+                  </div>
+                  <div class="capability-description">
+                    {{ $t('Maintains conversation context across multiple messages. Requires thread identifier in API.') }}
+                  </div>
+                </div>
 
-            <div class="recording-row">
-              <el-checkbox v-model="vectorStore">
-                {{ $t('Enable vector store') }}
-              </el-checkbox>
-              <span class="recording-hint">
-                {{ $t('When enabled, creates a vector store for file search (OpenAI only).') }}
-              </span>
-            </div>
+                <div class="capability-item">
+                  <div class="capability-header">
+                    <el-checkbox v-model="vectorStore" size="large">
+                      <span class="capability-title">{{ $t('Enable vector store') }}</span>
+                    </el-checkbox>
+                    <el-tag v-if="vectorStore" type="success" size="small">{{ $t('Enabled') }}</el-tag>
+                  </div>
+                  <div class="capability-description">
+                    {{ $t('Creates a vector store for file search capabilities. Allows agent to search through uploaded documents. (OpenAI only)') }}
+                  </div>
+                </div>
 
-            <div class="recording-row">
-              <el-checkbox v-model="webSearch">
-                {{ $t('Enable web search') }}
-              </el-checkbox>
-              <span class="recording-hint">
-                {{ $t('When enabled, the agent can search the web for current information (OpenAI only).') }}
-              </span>
-            </div>
+                <div class="capability-item">
+                  <div class="capability-header">
+                    <el-checkbox v-model="webSearch" size="large">
+                      <span class="capability-title">{{ $t('Enable web search') }}</span>
+                    </el-checkbox>
+                    <el-tag v-if="webSearch" type="success" size="small">{{ $t('Enabled') }}</el-tag>
+                  </div>
+                  <div class="capability-description">
+                    {{ $t('Agent can search the web for current information and real-time data. (OpenAI only)') }}
+                  </div>
+                </div>
+              </div>
+            </el-card>
 
             <template v-if="vectorStore">
               <el-row :gutter="20">
@@ -1396,6 +1417,59 @@ const handleSystemPromptImproved = (result: any) => {
 .flex-item {
   flex: 1;
   min-inline-size: 240px;
+}
+
+/* Agent Capabilities Card Styles */
+.capabilities-card {
+  margin: 16px 0;
+  border: 1px solid var(--el-border-color-light);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.capabilities-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.capability-item {
+  padding: 16px;
+  background-color: var(--el-fill-color-extra-light);
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  transition: all 0.2s ease;
+}
+
+.capability-item:hover {
+  background-color: var(--el-fill-color-light);
+  border-color: var(--el-border-color-light);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.capability-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.capability-title {
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+}
+
+.capability-description {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .recording-row {
