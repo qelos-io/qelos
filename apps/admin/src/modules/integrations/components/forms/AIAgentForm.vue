@@ -31,7 +31,7 @@ const store = useIntegrationSourcesStore();
 const { blueprints } = storeToRefs(useBlueprintsStore());
 const integrationsStore = useIntegrationsStore();
 
-const PANEL_IDS = ['rolesIdentity', 'systemPrompt', 'connections'] as const;
+const PANEL_IDS = ['rolesIdentity', 'capabilities', 'systemPrompt', 'connections'] as const;
 type PanelId = typeof PANEL_IDS[number];
 
 const isEditMode = computed(() => Boolean(props.integrationId));
@@ -880,56 +880,83 @@ const handleSystemPromptImproved = (result: any) => {
                 :placeholder="$t('Describe what this agent does...')"
               />
             </el-form-item>
+          </section>
+        </el-card>
 
-            <!-- Agent Capabilities -->
-            <el-card class="capabilities-card" shadow="never">
-              <template #header>
-                <div class="card-header">
-                  <el-icon><Setting /></el-icon>
-                  <span>{{ $t('Agent Capabilities') }}</span>
-                </div>
-              </template>
-              
-              <div class="capabilities-grid">
-                <div class="capability-item">
-                  <div class="capability-header">
-                    <el-checkbox v-model="recordThread" size="large">
-                      <span class="capability-title">{{ $t('Record conversation threads') }}</span>
-                    </el-checkbox>
-                    <el-tag v-if="recordThread" type="success" size="small">{{ $t('Enabled') }}</el-tag>
-                  </div>
-                  <div class="capability-description">
-                    {{ $t('Maintains conversation context across multiple messages. Requires thread identifier in API.') }}
-                  </div>
-                </div>
-
-                <div class="capability-item">
-                  <div class="capability-header">
-                    <el-checkbox v-model="vectorStore" size="large">
-                      <span class="capability-title">{{ $t('Enable vector store') }}</span>
-                    </el-checkbox>
-                    <el-tag v-if="vectorStore" type="success" size="small">{{ $t('Enabled') }}</el-tag>
-                  </div>
-                  <div class="capability-description">
-                    {{ $t('Creates a vector store for file search capabilities. Allows agent to search through uploaded documents. (OpenAI only)') }}
-                  </div>
-                </div>
-
-                <div class="capability-item">
-                  <div class="capability-header">
-                    <el-checkbox v-model="webSearch" size="large">
-                      <span class="capability-title">{{ $t('Enable web search') }}</span>
-                    </el-checkbox>
-                    <el-tag v-if="webSearch" type="success" size="small">{{ $t('Enabled') }}</el-tag>
-                  </div>
-                  <div class="capability-description">
-                    {{ $t('Agent can search the web for current information and real-time data. (OpenAI only)') }}
-                  </div>
+        <el-card
+          shadow="never"
+          class="panel-card"
+          :class="{ 'is-collapsed': !isPanelOpen('capabilities') }"
+        >
+          <template #header>
+            <button class="panel-toggle" type="button" @click="togglePanel('capabilities')">
+              <div class="panel-header">
+                <el-icon class="panel-icon"><Setting /></el-icon>
+                <div>
+                  <h3>{{ $t('Agent Capabilities') }}</h3>
+                  <p>{{ $t('Configure recording, vector store, and web search capabilities.') }}</p>
                 </div>
               </div>
-            </el-card>
+              <el-icon class="collapse-icon" :class="{ 'is-open': isPanelOpen('capabilities') }"><ArrowDown /></el-icon>
+            </button>
+          </template>
+
+          <section v-show="isPanelOpen('capabilities')" class="section-block">
+            <div v-if="props.integrationId" class="endpoint-box">
+              <div class="endpoint-title">
+                <el-icon><LinkIcon /></el-icon>
+                <span>{{ $t('Agent Endpoint') }}</span>
+              </div>
+              <el-input :value="completionUrl" readonly dir="ltr">
+                <template #append>
+                  <el-button @click="copyCompletionUrl">
+                    {{ $t('Copy') }}
+                  </el-button>
+                </template>
+              </el-input>
+            </div>
+
+            <div class="capabilities-grid">
+              <div class="capability-item">
+                <div class="capability-header">
+                  <el-checkbox v-model="recordThread" size="large">
+                    <span class="capability-title">{{ $t('Record conversation threads') }}</span>
+                  </el-checkbox>
+                  <el-tag v-if="recordThread" type="success" size="small">{{ $t('Enabled') }}</el-tag>
+                </div>
+                <div class="capability-description">
+                  {{ $t('Maintains conversation context across multiple messages. Requires thread identifier in API.') }}
+                </div>
+              </div>
+
+              <div class="capability-item">
+                <div class="capability-header">
+                  <el-checkbox v-model="vectorStore" size="large">
+                    <span class="capability-title">{{ $t('Enable vector store') }}</span>
+                  </el-checkbox>
+                  <el-tag v-if="vectorStore" type="success" size="small">{{ $t('Enabled') }}</el-tag>
+                </div>
+                <div class="capability-description">
+                  {{ $t('Creates a vector store for file search capabilities. Allows agent to search through uploaded documents. (OpenAI only)') }}
+                </div>
+              </div>
+
+              <div class="capability-item">
+                <div class="capability-header">
+                  <el-checkbox v-model="webSearch" size="large">
+                    <span class="capability-title">{{ $t('Enable web search') }}</span>
+                  </el-checkbox>
+                  <el-tag v-if="webSearch" type="success" size="small">{{ $t('Enabled') }}</el-tag>
+                </div>
+                <div class="capability-description">
+                  {{ $t('Agent can search the web for current information and real-time data. (OpenAI only)') }}
+                </div>
+              </div>
+            </div>
 
             <template v-if="vectorStore">
+              <el-divider />
+              <div class="section-title">{{ $t('Vector Store Configuration') }}</div>
               <el-row :gutter="20">
                 <el-col :span="12">
                   <el-form-item :label="$t('Vector store scope')">
@@ -974,20 +1001,6 @@ const handleSystemPromptImproved = (result: any) => {
                 </el-col>
               </el-row>
             </template>
-
-            <div v-if="props.integrationId" class="endpoint-box">
-              <div class="endpoint-title">
-                <el-icon><LinkIcon /></el-icon>
-                <span>{{ $t('Agent Endpoint') }}</span>
-              </div>
-              <el-input :value="completionUrl" readonly dir="ltr">
-                <template #append>
-                  <el-button @click="copyCompletionUrl">
-                    {{ $t('Copy') }}
-                  </el-button>
-                </template>
-              </el-input>
-            </div>
           </section>
         </el-card>
 
