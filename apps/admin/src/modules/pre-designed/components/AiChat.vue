@@ -1086,7 +1086,6 @@ onMounted(() => {
   padding: 0.35rem 0.55rem 0;
   border-radius: 16px;
   background: var(--body-bg, #fff);
-  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.02);
   max-width: 90%;
   transition: box-shadow 0.2s, background 0.2s;
   animation: pop-in 0.2s;
@@ -1096,13 +1095,13 @@ onMounted(() => {
   align-self: flex-end;
   background: var(--user-bubble-bg, linear-gradient(135deg, rgba(64, 158, 255, 0.18), rgba(64, 158, 255, 0.1)));
   color: var(--user-bubble-text, #0f172a);
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.02);
 }
 
 .bubble.assistant {
   align-self: flex-start;
   background: var(--ai-bubble-bg, inherit);
   color: var(--ai-bubble-text, inherit);
-  border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
 .meta {
