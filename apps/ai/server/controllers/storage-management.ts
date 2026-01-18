@@ -132,7 +132,7 @@ export async function clearStorageFiles(req: Request, res: Response) {
 
 export async function getVectorStores(req: Request, res: Response) {
   try {
-    const { scope, subjectId, subjectModel } = req.query;
+    const { scope, subjectId, subjectModel, agent } = req.query;
 
     const dbQuery: any = {
       tenant: req.headers.tenant,
@@ -145,6 +145,9 @@ export async function getVectorStores(req: Request, res: Response) {
     }
     if (subjectModel) {
       dbQuery.subjectModel = subjectModel
+    }
+    if (agent) {
+      dbQuery.agent = agent;
     }
 
     const stores = await VectorStore.find(dbQuery).lean().exec();

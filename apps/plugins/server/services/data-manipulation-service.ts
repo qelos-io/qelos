@@ -3,7 +3,7 @@ import * as jq from 'node-jq';
 import { IDataManipulationStep } from '@qelos/global-types';
 import { getUser, getWorkspaces } from './users';
 import { getBlueprintEntities, getBlueprintEntity } from './no-code-service';
-import { getVectorStore } from './ai-service';
+import { getVectorStores } from './ai-service';
 
 type DataManipulationPhase = 'map' | 'populate' | 'abort' | 'step';
 
@@ -87,7 +87,7 @@ export async function executeDataManipulation(tenant: string, initialPayload: an
         const { source, blueprint } = config || {} as any;
 
         // Skip undefined values for all sources except vectorStore
-        if (source !== 'vectorStore' && typeof previousData[key] === 'undefined') {
+        if (source !== 'vectorStores' && typeof previousData[key] === 'undefined') {
           return { key, value: undefined };
         }
 
@@ -110,12 +110,12 @@ export async function executeDataManipulation(tenant: string, initialPayload: an
             if (existing && blueprint) {
               result = await getBlueprintEntities(tenant, blueprint, existing);
             }
-          } else if (source === 'vectorStore') {
+          } else if (source === 'vectorStores') {
             const existing = previousData[key] || {};
             const scope = existing.scope || config?.scope || 'tenant';
             const subjectId = existing.subjectId || config?.subjectId;
             const subjectModel = existing.subjectModel || config?.subjectModel;
-            result = await getVectorStore(tenant, { scope, subjectId, subjectModel });
+            result = await getVectorStores(tenant, { scope, subjectId, subjectModel });
           }
           return { key, value: result };
         } catch (err) {

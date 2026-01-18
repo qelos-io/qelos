@@ -517,7 +517,7 @@ const syncToModel = () => {
           }
           
           // Add vector store specific properties
-          if (entry.source === 'vectorStore') {
+          if (entry.source === 'vectorStores') {
             if (entry.scope && entry.scope !== 'tenant') {
               populateConfig.scope = entry.scope;
             }
@@ -1030,27 +1030,27 @@ onMounted(() => {
                 v-model="entry.key" 
                 placeholder="Key" 
                 @update:model-value="syncToModel" 
-                :class="{ 'input-error': isPopulateFieldError(i, entry.key), 'flex-1': entry.source === 'vectorStore' }"
+                :class="{ 'input-error': isPopulateFieldError(i, entry.key), 'flex-1': entry.source === 'vectorStores' }"
               />
               <el-select 
                 v-model="entry.source" 
                 placeholder="Source"
                 @update:model-value="syncToModel" 
-                :class="{ 'input-error': isPopulateFieldError(i, entry.key), 'flex-1': entry.source === 'vectorStore' }"
+                :class="{ 'input-error': isPopulateFieldError(i, entry.key), 'flex-1': entry.source === 'vectorStores' }"
               >
                 <el-option value="user" label="User" />
                 <el-option value="workspace" label="Workspace" />
                 <el-option value="blueprint" label="Blueprint" />
                 <el-option value="blueprintEntities" label="Blueprint Entities" />
                 <el-option value="blueprintEntity" label="Blueprint Entity" />
-                <el-option value="vectorStore" label="Vector Store" />
+                <el-option value="vectorStores" label="Vector Stores" />
               </el-select>
               <BlueprintDropdown 
                 v-if="entry.source === 'blueprintEntities' || entry.source === 'blueprintEntity'" 
                 v-model="entry.blueprint" 
                 @update:model-value="syncToModel" 
               />
-              <template v-if="entry.source === 'vectorStore'">
+              <template v-if="entry.source === 'vectorStores'">
                 <el-select 
                   v-model="entry.scope" 
                   placeholder="Scope"

@@ -40,11 +40,12 @@ export function clearStorageFiles(tenant: string, body: { fileIds?: string[], so
   return callAiService(`/internal-api/ai/sources/${body.sourceId}/storage/clear`, 'POST', tenant, body);
 }
 
-export function getVectorStore(tenant: string, options?: { scope?: string, subjectId?: string, subjectModel?: string }) {
+export function getVectorStores(tenant: string, options?: { scope?: string, subjectId?: string, subjectModel?: string, agent?: string }) {
   const params = new URLSearchParams();
   if (options?.scope) params.append('scope', options.scope);
   if (options?.subjectId) params.append('subjectId', options.subjectId);
   if (options?.subjectModel) params.append('subjectModel', options.subjectModel);
+  if (options?.agent) params.append('agent', options.agent);
   
   const query = params.toString();
   const url = `/internal-api/ai/vector-stores${query ? '?' + query : ''}`;
