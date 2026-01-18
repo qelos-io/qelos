@@ -1,7 +1,7 @@
 import workspacesService from '@/services/apis/workspaces-service';
 import { useSubmitting } from '../../core/compositions/submitting';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
-import { IWorkspace } from '@qelos/sdk/dist/workspaces';
+import { IWorkspace } from '@qelos/sdk/workspaces';
 import workspacesMembersService from '@/services/apis/workspaces-members-service';
 
 export function useCreateWorkspace() {
@@ -17,7 +17,7 @@ export function useCreateWorkspace() {
 
 
 export function useUpdateWorkspace(workspaceId: string) {
-  const { result: workspace, loaded } = useDispatcher<IWorkspace>(() => workspacesService.getOne(workspaceId));
+  const { result: workspace, loaded, retry } = useDispatcher<IWorkspace>(() => workspacesService.getOne(workspaceId));
 
   const {
     submit,
@@ -30,7 +30,8 @@ export function useUpdateWorkspace(workspaceId: string) {
     updateWorkspace: submit,
     submitting,
     workspace,
-    loaded
+    loaded,
+    retry
   };
 }
 

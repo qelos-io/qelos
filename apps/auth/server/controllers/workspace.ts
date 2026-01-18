@@ -132,6 +132,12 @@ export async function createWorkspace(req: AuthRequest, res: Response) {
   const { tenant } = req.headers || {};
   const userId = req.userPayload.sub;
   const { name, logo, invites = [], labels = [] } = req.body;
+  
+  // Ensure invites have roles
+  const processedInvites = invites.map(invite => ({
+    ...invite,
+    roles: invite.roles && invite.roles.length > 0 ? invite.roles : ['member']
+  }));
   const wsConfig = await getWorkspaceConfiguration(tenant);
 
   if (
@@ -165,7 +171,7 @@ export async function createWorkspace(req: AuthRequest, res: Response) {
   }
 
   try {
-    const workspace = new Workspace({ tenant, name, logo, invites, labels });
+    const workspace = new Workspace({ tenant, name, logo, invites: processedInvites, labels });
     workspace.members = [{
       user: userId,
       roles: ['admin', 'user']
@@ -224,7 +230,11 @@ export async function updateWorkspace(req: AuthRequest, res: Response) {
     }
 
     if (invites) {
-      workspace.invites = invites;
+      // Ensure each invite has roles
+      workspace.invites = invites.map(invite => ({
+        ...invite,
+        roles: invite.roles && invite.roles.length > 0 ? invite.roles : ['member']
+      }));
     }
     if (req.userPayload.isPrivileged) {
       if (members) {
@@ -456,6 +466,8 @@ export async function updateWorkspaceMember(req: AuthRequest, res: Response) {
       return res.status(404).json({ message: 'Workspace not found.' });
     }
 
+    console.log('member', workspace.members);
+    console.log('params', userId);
     const member = workspace.members.find((member: any) => member.user.toString() === userId);
     if (!member) {
       return res.status(404).json({ message: 'Member not found in the workspace.' });

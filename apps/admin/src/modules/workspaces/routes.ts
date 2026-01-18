@@ -20,7 +20,40 @@ export const workspacesRoutes: RouteRecordRaw = {
     {
       path: ':id',
       name: 'editMyWorkspace',
+      redirect: { name: 'editMyWorkspaceGeneral' },
       component: async () => (await import('./EditMyWorkspace.vue')).default,
+      children: [
+        {
+          path: 'general',
+          name: 'editMyWorkspaceGeneral',
+          component: async () => (await import('./tabs/GeneralTab.vue')).default,
+        },
+        {
+          path: 'members',
+          name: 'editMyWorkspaceMembers',
+          component: async () => (await import('./tabs/MembersTab.vue')).default,
+        },
+        {
+          path: 'payments',
+          name: 'editMyWorkspacePayments',
+          component: async () => (await import('./tabs/PaymentsTab.vue')).default,
+        },
+        {
+          path: 'integrations',
+          name: 'editMyWorkspaceIntegrations',
+          component: async () => (await import('./tabs/IntegrationsTab.vue')).default,
+        },
+        {
+          path: 'security',
+          name: 'editMyWorkspaceSecurity',
+          component: async () => (await import('./tabs/SecurityTab.vue')).default,
+        },
+        {
+          path: 'advanced',
+          name: 'editMyWorkspaceAdvanced',
+          component: async () => (await import('./tabs/AdvancedTab.vue')).default,
+        }
+      ]
     }
   ],
 };

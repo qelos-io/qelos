@@ -1,5 +1,16 @@
 <template>
   <div class="menus-page">
+    <!-- Breadcrumb Navigation -->
+    <el-breadcrumb class="workspace-breadcrumb" separator="/">
+      <el-breadcrumb-item to="/">
+        <font-awesome-icon :icon="['fas', 'home']" class="breadcrumb-icon" />
+        {{ $t('Home') }}
+      </el-breadcrumb-item>
+      <el-breadcrumb-item>
+        {{ $t('My Workspaces') }}
+      </el-breadcrumb-item>
+    </el-breadcrumb>
+    
     <ListPageTitle 
       title="My Workspaces" 
       description="Your personal workspaces and those you've been invited to join. Switch between workspaces to access different projects and data."
@@ -22,3 +33,19 @@ const store = useInvitesList()
 const { canUserCreateWorkspace } = toRefs(useWsConfiguration())
 
 </script>
+
+<style scoped>
+.menus-page {
+  padding: 20px;
+}
+
+.workspace-breadcrumb {
+  margin-bottom: 20px;
+  padding: 10px 0;
+}
+
+.breadcrumb-icon {
+  margin-right: 5px;
+  color: var(--el-color-primary);
+}
+</style>

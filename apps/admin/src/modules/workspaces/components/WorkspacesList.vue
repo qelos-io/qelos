@@ -1,5 +1,26 @@
 <template>
   <div class="workspaces-list">
+    <!-- Search and Filter Bar -->
+    <div class="workspaces-list__header">
+      <el-input
+        v-model="searchQuery"
+        :placeholder="$t('Search workspaces...')"
+        prefix-icon="Search"
+        clearable
+        class="workspaces-list__search"
+      />
+      <el-select
+        v-model="roleFilter"
+        :placeholder="$t('Filter by role')"
+        clearable
+        class="workspaces-list__filter"
+      >
+        <el-option :label="$t('All')" value="" />
+        <el-option :label="$t('Admin')" value="admin" />
+        <el-option :label="$t('Manager')" value="manager" />
+        <el-option :label="$t('Member')" value="member" />
+      </el-select>
+    </div>
 
     <el-empty v-if="filteredWorkspaces.length === 0 && !store.loading" :description="$t('No workspaces found')" />
     
@@ -40,7 +61,19 @@
           <div class="workspace-card__info">
             <div class="workspace-card__info-item">
               <el-icon><font-awesome-icon :icon="['fas', 'users']" /></el-icon>
-              <span>{{ workspace.members?.length || 0 }} {{ $t('Users') }}</span>
+              <span>{{ workspace.members?.length || 0 }} {{ $t('Members') }}</span>
+            </div>
+            <div class="workspace-card__info-item">
+              <el-icon><font-awesome-icon :icon="['fas', 'user-tag']" /></el-icon>
+              <span>{{ getUserRole(workspace) }}</span>
+            </div>
+            <div class="workspace-card__info-item" v-if="workspace.lastAccessed">
+              <el-icon><font-awesome-icon :icon="['fas', 'clock']" /></el-icon>
+              <span>{{ formatLastAccessed(workspace.lastAccessed) }}</span>
+            </div>
+            <div class="workspace-card__info-item" v-if="workspace.description">
+              <el-icon><font-awesome-icon :icon="['fas', 'info-circle']" /></el-icon>
+              <span class="description">{{ workspace.description }}</span>
             </div>
           </div>
         </div>
@@ -98,11 +131,37 @@ import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 import { authStore } from '@/modules/core/store/auth';
+import { useAuth } from '@/modules/core/compositions/authentication';
+const { user } = useAuth();
 const { t } = useI18n();
 const router = useRouter();
 const store = useWorkspacesList();
 const searchQuery = ref('');
+const roleFilter = ref('');
 const activatingWorkspace = ref('');
+
+// Helper functions
+function getUserRole(workspace) {
+  const member = workspace.members?.find(m => m.user === user.value?._id);
+  if (!member) return t('Guest');
+  if (member.roles?.includes('admin')) return t('Admin');
+  if (member.roles?.includes('manager')) return t('Manager');
+  return t('Member');
+}
+
+function formatLastAccessed(date) {
+  if (!date) return '';
+  const now = new Date();
+  const accessed = new Date(date);
+  const diffMs = now.getTime() - accessed.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffHours < 1) return t('Just now');
+  if (diffHours < 24) return t('{hours}h ago', { hours: diffHours });
+  if (diffDays < 7) return t('{days}d ago', { days: diffDays });
+  return accessed.toLocaleDateString();
+}
 
 onMounted(() => {
   if (!store.workspaces.length) {
@@ -111,12 +170,26 @@ onMounted(() => {
 });
 
 const filteredWorkspaces = computed(() => {
-  if (!searchQuery.value) return store.workspaces;
+  let workspaces = store.workspaces;
   
-  const query = searchQuery.value.toLowerCase();
-  return store.workspaces.filter(workspace => 
-    workspace.name.toLowerCase().includes(query)
-  );
+  // Filter by search query
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    workspaces = workspaces.filter(workspace => 
+      workspace.name.toLowerCase().includes(query) ||
+      workspace.description?.toLowerCase().includes(query)
+    );
+  }
+  
+  // Filter by role
+  if (roleFilter.value) {
+    workspaces = workspaces.filter(workspace => {
+      const member = workspace.members?.find(m => m.user === user.value?._id);
+      return member?.roles?.includes(roleFilter.value);
+    });
+  }
+  
+  return workspaces;
 });
 
 const isActiveWorkspace = (workspace) => {
@@ -153,11 +226,17 @@ store.activate = async (workspace) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1rem;
 }
 
 .workspaces-list__search {
-  max-width: 300px;
+  flex: 1;
+  max-width: 400px;
+}
+
+.workspaces-list__filter {
+  width: 150px;
 }
 
 .workspaces-list__grid {
@@ -213,6 +292,13 @@ store.activate = async (workspace) => {
   gap: 0.5rem;
   color: var(--el-text-color-secondary);
   font-size: 0.9rem;
+}
+
+.workspace-card__info-item .description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
 }
 
 .workspace-card__actions {

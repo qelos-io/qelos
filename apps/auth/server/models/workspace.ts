@@ -37,6 +37,7 @@ export const WorkspaceSchema = new mongoose.Schema<any, any>({
     email: { type: String },
     phone: { type: String },
     name: { type: String },
+    roles: [{ type: String, required: true }],
     created: { type: Date, default: Date.now }
   }],
   created: { type: Date, default: Date.now }

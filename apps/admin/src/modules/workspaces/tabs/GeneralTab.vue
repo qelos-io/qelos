@@ -1,14 +1,14 @@
 <template>
-  <div class="workspace-form-container">
-    <el-form @submit.native.prevent="submit" class="workspace-form" :model="data" :rules="rules" ref="formRef">
-      <el-card class="workspace-card" shadow="hover">
-        <template #header>
-          <div class="card-header">
-            <h2>{{ workspace._id ? $t('Edit Workspace') : $t('Create Your Workspace') }}</h2>
-            <p v-if="!workspace._id" class="subtitle">{{ $t('Set up a new workspace for your team') }}</p>
-          </div>
-        </template>
-        
+  <div class="general-tab">
+    <el-card class="workspace-card" shadow="hover">
+      <template #header>
+        <div class="card-header">
+          <h2>{{ $t('General Settings') }}</h2>
+          <p class="subtitle">{{ $t('Manage your workspace basics') }}</p>
+        </div>
+      </template>
+      
+      <el-form @submit.native.prevent="submit" class="workspace-form" :model="data" :rules="rules" ref="formRef">
         <div class="section workspace-details">
           <h3>{{ $t('Workspace Details') }}</h3>
           <div class="workspace-info">
@@ -43,82 +43,17 @@
           <div class="workspace-types-grid">
             <div 
               v-for="option of filteredLabels" 
-              :key="option.value"
+              :key="option.title"
               class="workspace-type-option"
-              :class="{ 'selected': selectedLabels === option }"
+              :class="{ 'selected': selectedLabels?.value === option.value }"
               @click="selectedLabels = option"
             >
               <div class="type-icon">
-                <font-awesome-icon :icon="['fas', option.icon || 'building']" />
+                <font-awesome-icon :icon="['fas', 'building']" />
               </div>
               <div class="type-content">
                 <h4>{{ option.title }}</h4>
                 <p v-if="option.description">{{ option.description }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="section invite-members">
-          <h3>{{ $t('Invite Team Members') }}</h3>
-          <p class="description">{{ $t('Add people to your workspace by email') }}</p>
-          
-          <div class="invites-list">
-            <el-empty 
-              v-if="data.invites.length === 0" 
-              :description="$t('No invites added yet')"
-              :image-size="100"
-            >
-              <template #default>
-                <el-button type="primary" @click="addItem">
-                  <font-awesome-icon :icon="['fas', 'user-plus']" class="icon-left" />
-                  {{ $t('Add First Member') }}
-                </el-button>
-              </template>
-            </el-empty>
-            
-            <div v-else>
-              <el-table :data="data.invites" style="width: 100%" class="invites-table">
-                <el-table-column prop="name" :label="$t('Name')" min-width="180">
-                  <template #default="{ row, $index }">
-                    <el-input 
-                      v-model="row.name" 
-                      :placeholder="$t('Enter name')"
-                      size="default"
-                    />
-                  </template>
-                </el-table-column>
-                
-                <el-table-column prop="email" :label="$t('Email')" min-width="220">
-                  <template #default="{ row, $index }">
-                    <el-input 
-                      v-model="row.email" 
-                      :placeholder="$t('Enter email address')"
-                      type="email"
-                      size="default"
-                    />
-                  </template>
-                </el-table-column>
-                
-                <el-table-column width="80">
-                  <template #default="{ $index }">
-                    <el-button 
-                      type="danger" 
-                      circle 
-                      @click="removeItem($index)"
-                      size="small"
-                    >
-                      <font-awesome-icon :icon="['fas', 'trash']" />
-                    </el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-              
-              <div class="invites-actions">
-                <el-button @click="addItem" type="success" plain size="default">
-                  <font-awesome-icon :icon="['fas', 'user-plus']" class="icon-left" />
-                  {{ $t('Add Another Member') }}
-                </el-button>
               </div>
             </div>
           </div>
@@ -130,28 +65,7 @@
             {{ workspace._id ? $t('Update Workspace') : $t('Create Workspace') }}
           </SaveButton>
         </div>
-      </el-card>
-    </el-form>
-
-    <el-card class="members-card" v-if="workspace._id && members" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <h3>{{ $t('Workspace Members') }}</h3>
-          <p class="subtitle">{{ $t('People with access to this workspace') }}</p>
-        </div>
-      </template>
-      
-      <div class="members-list">
-        <el-empty v-if="!members.length" :description="$t('No members in this workspace yet')" />
-        <QuickTable v-else :data="members" :columns="membersColumns">
-          <template #lastName="{ row }">
-            {{ decodeURIComponent(row.lastName) }}
-          </template>
-          <template #firstName="{ row }">
-            {{ decodeURIComponent(row.firstName) }}
-          </template>
-        </QuickTable> 
-      </div>
+      </el-form>
     </el-card>
   </div>
 </template>
@@ -164,23 +78,11 @@ import FormInput from '../../core/components/forms/FormInput.vue';
 import { clearNulls } from '../../core/utils/clear-nulls';
 
 import { IWorkspace } from '@qelos/sdk/workspaces';
-import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
-import { useWorkspaceMembers } from '@/modules/workspaces/compositions/workspaces';
-
 import { WorkspaceConfigurationMetadata, WorkspaceLabelDefinition } from '@qelos/global-types';
 import { ElNotification } from 'element-plus';
 import { useAuth } from '@/modules/core/compositions/authentication';
-const router = useRouter();
-const formRef = ref(null);
 
-const membersColumns = [
-  { label: 'First Name', prop: 'firstName' },
-  { label: 'Last Name', prop: 'lastName' },
-  { label: 'Email', prop: 'email' },
-  { label: 'Roles', prop: 'roles', type: 'tags' as const },
-];
-
-const { workspace, wsConfig } = defineProps({
+const props = defineProps({
   submitting: Boolean,
   workspace: {
     type: Object as PropType<any>,
@@ -191,14 +93,15 @@ const { workspace, wsConfig } = defineProps({
 
 const emit = defineEmits(['submitted']);
 
+const router = useRouter();
+const formRef = ref(null);
 const { user } = useAuth();
 
-const filteredLabels = computed(() => wsConfig.labels?.filter(l => !l.allowedRolesForCreation ||
+const filteredLabels = computed(() => props.wsConfig.labels?.filter(l => !l.allowedRolesForCreation ||
     l.allowedRolesForCreation.includes('*') ||
     l.allowedRolesForCreation.some(r => user.value.roles.includes(r))
 ) || []);
 
-const { load: loadMembers, members } = useWorkspaceMembers(workspace._id);
 const selectedLabels = ref<WorkspaceLabelDefinition>();
 
 // Form validation rules
@@ -208,33 +111,29 @@ const rules = {
   ]
 };
 
-if (workspace._id) {
-  loadMembers();
-} else {
+if (!props.workspace._id) {
   selectedLabels.value = filteredLabels.value[0];
 }
 
 const data = reactive<Partial<IWorkspace>>({
-  name: workspace.name || null,
-  logo: workspace.logo || null,
-  invites: workspace.invites || [],
-  labels: workspace.labels || [],
+  name: props.workspace.name || null,
+  logo: props.workspace.logo || null,
+  labels: props.workspace.labels || [],
 });
-
-// If no invites are present and we're creating a new workspace, show empty state
-if (!workspace._id && (!data.invites || data.invites.length === 0)) {
-  data.invites = [];
-}
 
 function submit() {
   if (formRef.value) {
     formRef.value.validate(async (valid) => {
       if (!valid) {
-        ElNotification.warning('Please fill in all required fields');
+        ElNotification.warning({
+          title: 'Validation Error',
+          message: 'Please fill in all required fields',
+          duration: 3000
+        });
         return;
       }
       
-      if (!workspace._id) {
+      if (!props.workspace._id) {
         let labels = selectedLabels.value?.value || [];
         if (filteredLabels.value.length === 1) {
           labels = filteredLabels.value[0].value;
@@ -242,15 +141,14 @@ function submit() {
         if (labels.length) {
           data.labels = labels;
         }
-        if (data.labels.length === 0 && !wsConfig.allowNonLabeledWorkspaces) {
-          ElNotification.error('Please select a workspace type');
+        if (data.labels.length === 0 && !props.wsConfig.allowNonLabeledWorkspaces) {
+          ElNotification.error({
+            title: 'Validation Error',
+            message: 'Please select a workspace type',
+            duration: 3000
+          });
           return;
         }
-      }
-      
-      // Filter out empty invites
-      if (data.invites && data.invites.length > 0) {
-        data.invites = data.invites.filter(invite => invite.email && invite.email.trim() !== '');
       }
       
       emit('submitted', clearNulls(data));
@@ -261,31 +159,13 @@ function submit() {
   }
 }
 
-function addItem() {
-  data.invites.push({
-    name: null,
-    email: null,
-  });
-}
-
-function removeItem(index) {
-  data.invites.splice(index, 1);
-}
-
 function cancel() {
   router.back();
 }
 </script>
 
 <style scoped>
-.workspace-form-container {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.workspace-card,
-.members-card {
+.workspace-card {
   margin-bottom: 30px;
   border-radius: 8px;
 }
@@ -297,13 +177,6 @@ function cancel() {
 .card-header h2 {
   margin: 0;
   font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.card-header h3 {
-  margin: 0;
-  font-size: 1.3rem;
   font-weight: 600;
   color: var(--el-text-color-primary);
 }
@@ -424,24 +297,6 @@ function cancel() {
   color: var(--el-text-color-secondary);
 }
 
-.invites-list {
-  margin-top: 15px;
-}
-
-.invites-table {
-  margin-bottom: 15px;
-}
-
-.invites-actions {
-  display: flex;
-  justify-content: flex-start;
-  margin-top: 15px;
-}
-
-.icon-left {
-  margin-right: 5px;
-}
-
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -453,15 +308,7 @@ function cancel() {
   min-width: 150px;
 }
 
-.members-list {
-  margin-top: 15px;
-}
-
 @media (max-width: 768px) {
-  .workspace-form-container {
-    padding: 10px;
-  }
-  
   .workspace-types-grid {
     grid-template-columns: 1fr;
   }
