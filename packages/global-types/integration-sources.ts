@@ -49,9 +49,15 @@ export enum QelosTargetOperation {
   chatCompletion = 'chatCompletion',
 }
 
+export enum OpenAITriggerOperation {
+  functionCalling = 'functionCalling'
+}
+
 export const OpenAITargetOperation = {
   chatCompletion: 'chatCompletion',
-  functionCalling: 'functionCalling',
+  // manage vector stores
+  uploadContentToStorage: 'uploadContentToStorage',
+  clearStorageFiles: 'clearStorageFiles'
 } as const;
 
 export const EmailTargetOperation = {

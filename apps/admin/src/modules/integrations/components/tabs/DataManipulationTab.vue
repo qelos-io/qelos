@@ -171,8 +171,8 @@ const templates = ref([
 
 // Store steps as arrays of entries for stable references
 const steps = ref<any[]>([]);
-const mapEntries = ref<Record<number, Array<{key: string, value: string}>>>({});
-const populateEntries = ref<Record<number, Array<{key: string, source: string, blueprint?: string}>>>({});
+const mapEntries = ref<Record<number, Array<{key: string, value: unknown}>>>({});
+const populateEntries = ref<Record<number, Array<{key: string, source: string, blueprint?: string, scope?: string, subjectId?: string, subjectModel?: string}>>>({});
 const clearFlags = ref<Record<number, boolean>>({});
 const abortValues = ref<Record<number, string>>({});
 const abortTypes = ref<Record<number, 'none' | 'boolean' | 'expression'>>({});
@@ -507,12 +507,29 @@ const syncToModel = () => {
     if (populateEntries.value[stepIndex]) {
       populateEntries.value[stepIndex].forEach(entry => {
         if (entry.key.trim()) {
-          newStep.populate[entry.key] = {
+          const populateConfig: any = {
             source: entry.source || 'user'
           };
+          
+          // Add blueprint for blueprint sources
           if ((entry.source === 'blueprintEntities' || entry.source === 'blueprintEntity') && entry.blueprint) {
-            newStep.populate[entry.key].blueprint = entry.blueprint;
+            populateConfig.blueprint = entry.blueprint;
           }
+          
+          // Add vector store specific properties
+          if (entry.source === 'vectorStore') {
+            if (entry.scope && entry.scope !== 'tenant') {
+              populateConfig.scope = entry.scope;
+            }
+            if (entry.subjectId) {
+              populateConfig.subjectId = entry.subjectId;
+            }
+            if (entry.subjectModel) {
+              populateConfig.subjectModel = entry.subjectModel;
+            }
+          }
+          
+          newStep.populate[entry.key] = populateConfig;
         }
       });
     }
@@ -526,7 +543,7 @@ const syncToModel = () => {
     }
     
     // Add abort property based on type
-    if (abortTypes.value[stepIndex] === 'boolean' && abortValues.value[stepIndex] === true) {
+    if (abortTypes.value[stepIndex] === 'boolean' && abortValues.value[stepIndex] === 'true') {
       newStep.abort = true;
       return newStep;
     }
@@ -696,7 +713,10 @@ const addPopulateEntry = (stepIndex: number) => {
   // Add a new entry with default values
   populateEntries.value[stepIndex].push({
     key: '',
-    source: 'user'
+    source: 'user',
+    scope: undefined,
+    subjectId: undefined,
+    subjectModel: undefined
   });
   
   // Sync to model
@@ -790,8 +810,15 @@ const updateCompleteJson = (json: string) => {
       
       if (step.populate) {
         populateEntries.value[stepIndex] = Object.entries(step.populate).map(([key, config]) => {
-          const populateConfig = config;
-          return { key, source: populateConfig.source || 'user', blueprint: populateConfig.blueprint };
+          const populateConfig = config as any;
+          return { 
+            key, 
+            source: populateConfig.source || 'user', 
+            blueprint: populateConfig.blueprint,
+            scope: populateConfig.scope,
+            subjectId: populateConfig.subjectId,
+            subjectModel: populateConfig.subjectModel
+          };
         });
       } else {
         populateEntries.value[stepIndex] = [];
@@ -975,14 +1002,14 @@ onMounted(() => {
             <div v-for="(entry, index) in getMapEntries(i)" :key="index" class="map-entry" :class="{ 'has-error': isMapFieldError(i, entry.key) }">
               <el-input 
                 dir="ltr"
-                v-model="entry.key" 
-                placeholder="Key" 
-                @update:model-value="syncToModel" 
+                :model-value="typeof entry.value === 'string' ? entry.value : JSON.stringify(entry.value ?? '')"
+                @input="(val) => { entry.value = val; syncToModel(); }"
+                placeholder="Value" 
                 :class="{ 'input-error': isMapFieldError(i, entry.key) }"
               />  
               <el-input 
                 dir="ltr"
-                v-model="entry.value" 
+                v-model="entry.key" 
                 placeholder="JQ Expression" 
                 @update:model-value="syncToModel" 
                 :class="{ 'input-error': isMapFieldError(i, entry.key) }"
@@ -1003,25 +1030,56 @@ onMounted(() => {
                 v-model="entry.key" 
                 placeholder="Key" 
                 @update:model-value="syncToModel" 
-                :class="{ 'input-error': isPopulateFieldError(i, entry.key) }"
+                :class="{ 'input-error': isPopulateFieldError(i, entry.key), 'flex-1': entry.source === 'vectorStore' }"
               />
               <el-select 
                 v-model="entry.source" 
                 placeholder="Source"
                 @update:model-value="syncToModel" 
-                :class="{ 'input-error': isPopulateFieldError(i, entry.key) }"
+                :class="{ 'input-error': isPopulateFieldError(i, entry.key), 'flex-1': entry.source === 'vectorStore' }"
               >
                 <el-option value="user" label="User" />
                 <el-option value="workspace" label="Workspace" />
                 <el-option value="blueprint" label="Blueprint" />
                 <el-option value="blueprintEntities" label="Blueprint Entities" />
                 <el-option value="blueprintEntity" label="Blueprint Entity" />
+                <el-option value="vectorStore" label="Vector Store" />
               </el-select>
               <BlueprintDropdown 
                 v-if="entry.source === 'blueprintEntities' || entry.source === 'blueprintEntity'" 
                 v-model="entry.blueprint" 
                 @update:model-value="syncToModel" 
               />
+              <template v-if="entry.source === 'vectorStore'">
+                <el-select 
+                  v-model="entry.scope" 
+                  placeholder="Scope"
+                  @update:model-value="syncToModel"
+                  class="flex-1"
+                >
+                  <el-option value="tenant" label="Tenant" />
+                  <el-option value="user" label="User" />
+                  <el-option value="workspace" label="Workspace" />
+                  <el-option value="thread" label="Thread" />
+                </el-select>
+                <el-input 
+                  v-model="entry.subjectId" 
+                  placeholder="Subject ID (optional)"
+                  @update:model-value="syncToModel"
+                  class="flex-1"
+                />
+                <el-select 
+                  v-model="entry.subjectModel" 
+                  placeholder="Subject Model (optional)"
+                  @update:model-value="syncToModel"
+                  class="flex-1"
+                  clearable
+                >
+                  <el-option value="Thread" label="Thread" />
+                  <el-option value="User" label="User" />
+                  <el-option value="Workspace" label="Workspace" />
+                </el-select>
+              </template>
               <el-button type="danger" :icon="Delete" @click="removePopulateEntry(i, index)" circle />
             </div>
             <el-button type="primary" @click="addPopulateEntry(i)" :icon="Plus">{{ $t('Add Field') }}</el-button>

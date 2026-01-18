@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
-import { IIntegration, OpenAITargetOperation } from '@qelos/global-types';
+import { IIntegration, OpenAITriggerOperation } from '@qelos/global-types';
 import { ElMessage } from 'element-plus';
 import integrationsService from '@/services/apis/integrations-service';
 import { Check as IconCheck } from '@element-plus/icons-vue';
@@ -16,7 +16,7 @@ const integrationsStore = useIntegrationsStore();
 const functionCallingIntegrations = computed(() => 
   integrationsStore.integrations?.filter(integration => 
     integration.trigger.source && 
-    integration.trigger.operation === OpenAITargetOperation.functionCalling
+    integration.trigger.operation === OpenAITriggerOperation.functionCalling
   ) || []
 );
 

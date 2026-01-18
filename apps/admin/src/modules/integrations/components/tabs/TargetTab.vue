@@ -86,18 +86,6 @@ const updateTargetDetails = (value: string) => {
   }
 };
 
-// Initialize system message from pre_messages when component mounts or details change
-const f = () => {
-  if (selectedTargetSource.value?.kind === IntegrationSourceKind.OpenAI && 
-      props.modelValue.operation === OpenAITargetOperation.chatCompletion && 
-      props.modelValue.details?.pre_messages?.length) {
-    const systemMsg = props.modelValue.details.pre_messages.find(msg => msg.role === 'system');
-    systemMessage.value = systemMsg?.content || '';
-  } else {
-    systemMessage.value = '';
-  }
-};
-
 // Initialize target details based on selected kind and operation
 const initTargetDetails = () => {
   if (!props.modelValue || !props.modelValue.source || !props.modelValue.operation) {
@@ -244,9 +232,9 @@ onMounted(() => {
         @update:modelValue="emit('update:modelValue', $event)"
       />
       
-      <!-- OpenAI Chat Completion Form (Consolidated) -->
+      <!-- OpenAI Operations -->
       <OpenAITargetConfig
-        v-if="selectedTargetSource?.kind === IntegrationSourceKind.OpenAI && modelValue.operation === OpenAITargetOperation.chatCompletion"
+        v-if="selectedTargetSource?.kind === IntegrationSourceKind.OpenAI"
         :modelValue="modelValue"
         :integrationId="props.integrationId"
         :operation="modelValue.operation"

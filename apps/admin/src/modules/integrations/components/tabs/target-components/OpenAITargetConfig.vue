@@ -133,6 +133,20 @@ const targetDetailsText = computed(() => {
   return JSON.stringify(props.modelValue.details || {}, null, 2);
 });
 
+// Computed property for target details to use in forms
+const targetDetails = computed({
+  get: () => props.modelValue.details || {},
+  set: (value) => {
+    const newModelValue = { ...props.modelValue };
+    newModelValue.details = value;
+    emit('update:modelValue', newModelValue);
+  }
+});
+
+// Additional reactive variables for storage operations
+const metadataText = ref('');
+const fileIdsText = ref('');
+
 // Dynamic max tokens based on selected model
 const maxTokensLimit = computed(() => {
   return getMaxTokensForModel(openAiDetails.value.model);
@@ -158,6 +172,10 @@ const initOpenAiDetails = () => {
     };
     systemMessage.value = props.modelValue.details.system_message  || props.modelValue.details.pre_messages?.find(msg => msg.role === 'system')?.content || '';
     selectedPersonality.value = props.modelValue.details.personality || '';
+    
+    // Initialize storage operation fields
+    metadataText.value = props.modelValue.details.metadata ? JSON.stringify(props.modelValue.details.metadata, null, 2) : '';
+    fileIdsText.value = props.modelValue.details.fileIds ? props.modelValue.details.fileIds.join('\n') : '';
   }
 };
 
@@ -251,6 +269,25 @@ const syncOpenAiDetailsToTargetDetails = () => {
   newModelValue.details.ingestedAgents = openAiDetails.value.ingestedAgents || [];
   emit('update:modelValue', newModelValue);
 };
+
+// Watchers for storage operations
+watch(metadataText, (newValue) => {
+  try {
+    const metadata = newValue ? JSON.parse(newValue) : undefined;
+    const newModelValue = { ...props.modelValue };
+    newModelValue.details = { ...newModelValue.details, metadata };
+    emit('update:modelValue', newModelValue);
+  } catch (e) {
+    // Invalid JSON, don't update
+  }
+});
+
+watch(fileIdsText, (newValue) => {
+  const fileIds = newValue ? newValue.split('\n').filter(id => id.trim()).map(id => id.trim()) : undefined;
+  const newModelValue = { ...props.modelValue };
+  newModelValue.details = { ...newModelValue.details, fileIds };
+  emit('update:modelValue', newModelValue);
+});
 
 // Initialize on mount and when modelValue changes
 watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
@@ -623,6 +660,78 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
       </div>
     </div>
   </div>
+  <div v-else-if="operation === OpenAITargetOperation.uploadContentToStorage">
+    <div class="storage-form">
+      <el-form :model="targetDetails" label-width="150px" label-position="top">
+        <el-form-item :label="$t('Content')">
+          <el-input
+            v-model="targetDetails.content"
+            type="textarea"
+            :rows="6"
+            :placeholder="$t('Enter the content to upload to vector storage')"
+          />
+        </el-form-item>
+        
+        <el-form-item :label="$t('Vector Store ID')">
+          <el-input
+            v-model="targetDetails.vectorStoreId"
+            :placeholder="$t('Optional: Specify a custom vector store ID (leave empty to use integration default)')"
+          />
+          <span class="form-help">{{ $t('If not provided, a vector store will be created automatically for this integration') }}</span>
+        </el-form-item>
+        
+        <el-form-item :label="$t('File Name')">
+          <el-input
+            v-model="targetDetails.fileName"
+            :placeholder="$t('Optional: Specify a file name for the content')"
+          />
+        </el-form-item>
+        
+        <el-form-item :label="$t('Metadata')">
+          <el-input
+            v-model="metadataText"
+            type="textarea"
+            :rows="4"
+            :placeholder="$t('Optional: Add metadata as JSON object')"
+          />
+          <span class="form-help">{{ $t('Enter metadata as a valid JSON object, e.g., {"key": "value"}') }}</span>
+        </el-form-item>
+      </el-form>
+    </div>
+  </div>
+  
+  <div v-else-if="operation === OpenAITargetOperation.clearStorageFiles">
+    <div class="storage-form">
+      <el-form :model="targetDetails" label-width="150px" label-position="top">
+        <el-form-item :label="$t('Vector Store ID')">
+          <el-input
+            v-model="targetDetails.vectorStoreId"
+            :placeholder="$t('Optional: Specify a custom vector store ID (leave empty to use integration default)')"
+          />
+          <span class="form-help">{{ $t('If not provided, the integration\'s default vector store will be used') }}</span>
+        </el-form-item>
+        
+        <el-form-item :label="$t('File IDs to Clear')">
+          <el-input
+            v-model="fileIdsText"
+            type="textarea"
+            :rows="4"
+            :placeholder="$t('Enter file IDs to clear, one per line')"
+          />
+          <span class="form-help">{{ $t('Leave empty to clear all files from the vector store') }}</span>
+        </el-form-item>
+        
+        <el-alert
+          :title="$t('Warning')"
+          type="warning"
+          :closable="false"
+          show-icon
+        >
+          {{ $t('This will permanently remove files from the vector store. This action cannot be undone.') }}
+        </el-alert>
+      </el-form>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -863,5 +972,16 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
   color: white;
   background-color: var(--el-color-primary);
   border-radius: 50%;
+}
+
+.storage-form {
+  padding: 20px;
+}
+
+.form-help {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 </style>

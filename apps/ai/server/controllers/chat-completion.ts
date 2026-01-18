@@ -1,4 +1,4 @@
-import { IBlueprint, IIntegration, IOpenAISource, OpenAITargetPayload, IntegrationSourceKind } from "@qelos/global-types";
+import { IBlueprint, IIntegration, IOpenAISource, IntegrationSourceKind, OpenAIChatCompletionPayload } from "@qelos/global-types";
 import logger from "../services/logger";
 import { createAIService } from "../services/ai-service";
 import * as ChatCompletionService from "../services/chat-completion-service";
@@ -562,7 +562,7 @@ export async function chatCompletion(req: any, res: any | null) {
 }
 
 export async function internalChatCompletion(req, res) {
-  const { source, authentication, payload } = req.body as { source: IOpenAISource, authentication: any, payload: OpenAITargetPayload };
+  const { source, authentication, payload } = req.body as { source: IOpenAISource, authentication: any, payload: OpenAIChatCompletionPayload };
   const aiService = createAIService(source, authentication);
   try {
     const response = await aiService.createChatCompletion({

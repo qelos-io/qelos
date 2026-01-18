@@ -9,7 +9,7 @@ import { useIntegrationsStore } from '../store/integrations';
 import { useIntegrationSourcesStore } from '../store/integration-sources';
 import { useIntegrationKinds } from '../compositions/integration-kinds';
 import type { IIntegration } from '@qelos/global-types';
-import { OpenAITargetOperation, QelosTriggerOperation } from '@qelos/global-types';
+import { OpenAITriggerOperation, QelosTriggerOperation } from '@qelos/global-types';
 
 interface Signature {
   source: string;
@@ -309,7 +309,7 @@ const chatCompletionIntegrations = computed(() =>
 
 const functionCallingIntegrations = computed(() =>
   filteredIntegrations.value.filter(
-    integration => integration.trigger?.operation === OpenAITargetOperation.functionCalling
+    integration => integration.trigger?.operation === OpenAITriggerOperation.functionCalling
   )
 );
 

@@ -3,7 +3,8 @@ import {
   IntegrationSourceKind,
   OpenAITargetOperation,
   QelosTargetOperation, QelosTriggerOperation, ClaudeAITargetOperation,
-  EmailTargetOperation
+  EmailTargetOperation,
+  OpenAITriggerOperation
 } from '@qelos/global-types';
 
 export function useIntegrationKindsTargetOperations() {
@@ -39,7 +40,9 @@ export function useIntegrationKindsTargetOperations() {
     [IntegrationSourceKind.Google]: [], 
     [IntegrationSourceKind.GitHub]: [], 
     [IntegrationSourceKind.OpenAI]: [
-      { name: OpenAITargetOperation.chatCompletion, label: 'Chat Completion' }
+      { name: OpenAITargetOperation.chatCompletion, label: 'Chat Completion' },
+      { name: OpenAITargetOperation.uploadContentToStorage, label: 'Upload Content to Storage' },
+      { name: OpenAITargetOperation.clearStorageFiles, label: 'Clear Storage Files' }
     ],
     [IntegrationSourceKind.ClaudeAi]: [
       { name: ClaudeAITargetOperation.chatCompletion, label: 'Chat Completion' }
@@ -112,7 +115,7 @@ export function useIntegrationKindsTriggerOperations() {
     [IntegrationSourceKind.GitHub]: [], 
     [IntegrationSourceKind.OpenAI]: [
       {
-        name: OpenAITargetOperation.functionCalling,
+        name: OpenAITriggerOperation.functionCalling,
         label: 'Function Calling',
         details: {
           allowedIntegrationIds: ['*'],

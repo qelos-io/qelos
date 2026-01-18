@@ -1,9 +1,9 @@
 import * as jq from 'node-jq';
 
-import logger from './logger';
 import { IDataManipulationStep } from '@qelos/global-types';
 import { getUser, getWorkspaces } from './users';
 import { getBlueprintEntities, getBlueprintEntity } from './no-code-service';
+import { getVectorStore } from './ai-service';
 
 type DataManipulationPhase = 'map' | 'populate' | 'abort' | 'step';
 
@@ -83,32 +83,41 @@ export async function executeDataManipulation(tenant: string, initialPayload: an
     }
 
     if (populate) {
-      for (const [key, config] of Object.entries(populate)) {
-        if (typeof previousData[key] === 'undefined') {
-          continue;
-        }
-
+      const populatePromises = Object.entries(populate).map(async ([key, config]) => {
         const { source, blueprint } = config || {} as any;
 
+        // Skip undefined values for all sources except vectorStore
+        if (source !== 'vectorStore' && typeof previousData[key] === 'undefined') {
+          return { key, value: undefined };
+        }
+
         try {
+          let result;
           if (source === 'user') {
-            data[key] = await getUser(tenant, previousData[key]);
+            result = await getUser(tenant, previousData[key]);
           } else if (source === 'workspace') {
-            data[key] = await getWorkspaces(tenant, previousData[key]);
+            result = await getWorkspaces(tenant, previousData[key]);
           } else if (source === 'blueprintEntity') {
             const existing = previousData[key];
             if (existing && typeof existing === 'object' && existing.entity && existing.blueprint) {
-              data[key] = await getBlueprintEntity(tenant, existing.blueprint, existing.entity);
+              result = await getBlueprintEntity(tenant, existing.blueprint, existing.entity);
             } else if (blueprint && typeof existing === 'string') {
-              data[key] = await getBlueprintEntity(tenant, blueprint, existing);
+              result = await getBlueprintEntity(tenant, blueprint, existing);
             }
           } else if (source === 'blueprintEntities') {
             const existing = previousData[key];
             const blueprint = config.blueprint || existing.blueprint;
             if (existing && blueprint) {
-              data[key] = await getBlueprintEntities(tenant, blueprint, existing);
+              result = await getBlueprintEntities(tenant, blueprint, existing);
             }
+          } else if (source === 'vectorStore') {
+            const existing = previousData[key] || {};
+            const scope = existing.scope || config?.scope || 'tenant';
+            const subjectId = existing.subjectId || config?.subjectId;
+            const subjectModel = existing.subjectModel || config?.subjectModel;
+            result = await getVectorStore(tenant, { scope, subjectId, subjectModel });
           }
+          return { key, value: result };
         } catch (err) {
           throw new DataManipulationError(`Failed to populate "${key}" from ${source}`, {
             stepIndex,
@@ -118,7 +127,16 @@ export async function executeDataManipulation(tenant: string, initialPayload: an
             cause: err
           });
         }
-      }
+      });
+
+      const results = await Promise.all(populatePromises);
+      
+      // Apply the results to the data object
+      results.forEach(({ key, value }) => {
+        if (value !== undefined) {
+          data[key] = value;
+        }
+      });
     }
 
     previousData = data;

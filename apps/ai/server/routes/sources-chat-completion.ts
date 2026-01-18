@@ -1,7 +1,12 @@
 import { getRouter, verifyUser, populateUser, verifyInternalCall } from '@qelos/api-kit';
 import { onlyEditPrivileged } from '../middlewares/privileged-check';
-import { getSourceToIntegrate, chatCompletion, internalChatCompletion, chatCompletionPages, chatCompletionIntegrations ,chatCompletionAdmin, chatCompletionPlain } from '../controllers/sources-chat-completion';
+import { getSourceToIntegrate, chatCompletion, internalChatCompletion, chatCompletionPages, chatCompletionIntegrations, chatCompletionPlain } from '../controllers/sources-chat-completion';
 import { createBlueprintUsingAI } from '../controllers/ai-blueprints';
+import {
+  uploadContentToStorage,
+  clearStorageFiles,
+  getVectorStores
+} from '../controllers/storage-management';
 
 export function sourcesChatCompletionRouter() {
   const router = getRouter();
@@ -45,7 +50,41 @@ export function sourcesChatCompletionRouter() {
     )
 
   router
+    .post('/api/ai/sources/:sourceId/storage/upload',
+       AUTHENTICATION_MIDDLEWARES,
+       getSourceToIntegrate,
+       uploadContentToStorage
+    )
+
+  router
+    .post('/api/ai/sources/:sourceId/storage/clear',
+       AUTHENTICATION_MIDDLEWARES,
+       getSourceToIntegrate,
+       clearStorageFiles
+    )
+
+  router
     .post('/internal-api/sources-chat-completion', AUTHENTICATION_MIDDLEWARES, verifyInternalCall, internalChatCompletion)
+
+  router
+    .post('/internal-api/ai/sources/:sourceId/storage/upload',
+       verifyInternalCall,
+       getSourceToIntegrate,
+       uploadContentToStorage
+    )
+
+  router
+    .post('/internal-api/ai/sources/:sourceId/storage/clear',
+       verifyInternalCall,
+       getSourceToIntegrate,
+       clearStorageFiles
+    )
+  
+  router
+    .get('/internal-api/ai/vector-stores/',
+       verifyInternalCall,
+       getVectorStores
+    )
   
   return router;
 }

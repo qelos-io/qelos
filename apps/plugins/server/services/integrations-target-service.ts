@@ -84,7 +84,16 @@ const supportedSources = {
         'ingestedBlueprints',
         'ingestedAgents'
       ],
-    }
+    },
+    [OpenAITargetOperation.uploadContentToStorage]: {
+      required: ['content'],
+      optional: ['vectorStoreId', 'fileName', 'metadata'],
+    },
+    [OpenAITargetOperation.clearStorageFiles]: {
+      required: [],
+      optional: ['vectorStoreId', 'fileIds'],
+    },
+    
   },
   [IntegrationSourceKind.ClaudeAi]: {
     [ClaudeAITargetOperation.chatCompletion]: {

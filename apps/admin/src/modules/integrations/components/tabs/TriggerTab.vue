@@ -4,7 +4,7 @@ import Monaco from '@/modules/users/components/Monaco.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { TriggerOperation, useIntegrationKindsTriggerOperations } from '@/modules/integrations/compositions/integration-kinds-operations';
-import { OpenAITargetOperation, IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
+import { IntegrationSourceKind, QelosTriggerOperation, OpenAITriggerOperation } from '@qelos/global-types';
 import { ElMessage } from 'element-plus';
 import { ArrowDown } from '@element-plus/icons-vue';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
@@ -311,7 +311,7 @@ const handleOperationChange = () => {
   
   // Special handling for OpenAI function calling
   if (selectedTriggerSource.value?.kind === IntegrationSourceKind.OpenAI && 
-      props.modelValue.operation === OpenAITargetOperation.functionCalling) {
+      props.modelValue.operation === OpenAITriggerOperation.functionCalling) {
     newModelValue.details = {
       name: '',
       description: '',
@@ -350,7 +350,7 @@ onMounted(() => {
     
     // Initialize function calling form fields if we're in functionCalling mode
     if (selectedTriggerSource.value?.kind === IntegrationSourceKind.OpenAI && 
-        props.modelValue.operation === OpenAITargetOperation.functionCalling) {
+        props.modelValue.operation === OpenAITriggerOperation.functionCalling) {
       const details = props.modelValue.details || {};
       functionName.value = details.name || '';
       functionDescription.value = details.description || '';
@@ -642,7 +642,7 @@ watch(
       </div>
       
       <!-- OpenAI Function Calling Form -->
-      <div v-else-if="selectedTriggerSource?.kind === IntegrationSourceKind.OpenAI && modelValue.operation === OpenAITargetOperation.functionCalling" class="function-calling-form">
+      <div v-else-if="selectedTriggerSource?.kind === IntegrationSourceKind.OpenAI && modelValue.operation === OpenAITriggerOperation.functionCalling" class="function-calling-form">
         <div class="function-calling-info">
           <p class="help-text">Configure the function that OpenAI can call. The parameters should be a valid JSON schema.</p>
         </div>

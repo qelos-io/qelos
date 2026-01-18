@@ -6,7 +6,7 @@ const aiService = service('AI', { port: process.env.AI_SERVICE_PORT || 9007 });
 
 export function callPublicAiService(url: string, {tenant, user}: {tenant: string, user: string}, {data, method = 'GET'}: {data?: any, method: string}) {
   return aiService({
-    headers: { 'Content-Type': 'application/json', user, tenant },
+    headers: { 'Content-Type': 'application/json', internal_secret: internalServicesSecret, user, tenant },
     method,
     data,
     url
@@ -30,4 +30,24 @@ export function chatCompletion(tenant: string, body: { authentication: any, sour
 
 export function chatCompletionForUserByIntegration(tenant: string, user: string, body: { integrationId: string, threadId?: string, messages: any[] }) {
   return callPublicAiService(`/api/ai/${body.integrationId}/chat-completion/${body.threadId}`, {tenant, user}, {data: body, method: 'POST'});
+}
+
+export function uploadContentToStorage(tenant: string, body: { content: string | object, fileName?: string, metadata?: any, sourceId: string, integrationId: string, vectorStoreId?: string }) {
+  return callAiService(`/internal-api/ai/sources/${body.sourceId}/storage/upload`, 'POST', tenant, body);
+}
+
+export function clearStorageFiles(tenant: string, body: { fileIds?: string[], sourceId: string, integrationId: string, vectorStoreId?: string }) {
+  return callAiService(`/internal-api/ai/sources/${body.sourceId}/storage/clear`, 'POST', tenant, body);
+}
+
+export function getVectorStore(tenant: string, options?: { scope?: string, subjectId?: string, subjectModel?: string }) {
+  const params = new URLSearchParams();
+  if (options?.scope) params.append('scope', options.scope);
+  if (options?.subjectId) params.append('subjectId', options.subjectId);
+  if (options?.subjectModel) params.append('subjectModel', options.subjectModel);
+  
+  const query = params.toString();
+  const url = `/internal-api/ai/vector-stores${query ? '?' + query : ''}`;
+  
+  return callAiService(url, 'GET', tenant);
 }

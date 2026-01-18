@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fetch from 'node-fetch';
-import { CloudflareTargetOperation, EmailTargetOperation, HttpTargetOperation, ICloudflareSource, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation, AWSTargetOperation, IAWSSource } from '@qelos/global-types';
+import { CloudflareTargetOperation, EmailTargetOperation, HttpTargetOperation, ICloudflareSource, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation, AWSTargetOperation, IAWSSource, OpenAIChatCompletionPayload, OpenAIClearStoragePayload, OpenAIUploadStoragePayload } from '@qelos/global-types';
 import { IIntegrationEntity } from '../models/integration';
 import IntegrationSource from '../models/integration-source';
 import { getEncryptedSourceAuthentication } from './source-authentication-service';
@@ -11,7 +11,7 @@ import { createUser, updateUser } from './users';
 import logger from '../services/logger';
 import { createBlueprintEntity, updateBlueprintEntity } from './no-code-service';
 import { HttpTargetPayload } from '@qelos/global-types';
-import { chatCompletion, chatCompletionForUserByIntegration } from './ai-service';
+import { chatCompletion, chatCompletionForUserByIntegration, uploadContentToStorage, clearStorageFiles } from './ai-service';
 import { sendEmail } from './email-service';
 import Cloudflare from 'cloudflare';
 import { cacheManager } from './cache-manager';
@@ -152,20 +152,43 @@ async function handleHttpTarget(
 async function handleOpenAiTarget(integrationTarget: IIntegrationEntity,
   source: IOpenAISource,
   authentication: { token?: string } = {},
-  payload: OpenAITargetPayload = {
-    messages: []
-  }) {
+  payload: OpenAITargetPayload) {
   const operation = integrationTarget.operation as keyof typeof OpenAITargetOperation;
 
   if (operation === OpenAITargetOperation.chatCompletion) {
+    payload = (payload || {messages: []}) as OpenAIChatCompletionPayload;
 
     const response = await chatCompletion(source.tenant, {
-      authentication,
-      source,
-      payload,
-    })
-    const triggerResponse = payload.triggerResponse;
-    if (!payload.stream && triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+      authentication: { token: authentication.token },
+      source: source,
+      payload: {
+        messages: payload.messages || [],
+        pre_messages: payload.pre_messages,
+        model: payload.model,
+        temperature: payload.temperature,
+        max_tokens: payload.max_tokens,
+        top_p: payload.top_p,
+        frequency_penalty: payload.frequency_penalty,
+        presence_penalty: payload.presence_penalty,
+        stream: payload.stream,
+        response_format: payload.response_format,
+        system: payload.system,
+        stop: payload.stop,
+        embeddingType: payload.embeddingType,
+        maxTools: payload.maxTools,
+        ingestedBlueprints: payload.ingestedBlueprints,
+        ingestedAgents: payload.ingestedAgents,
+        triggerResponse: payload.triggerResponse,
+      }
+    });
+
+    const details = integrationTarget.details || {};
+    const triggerResponse = mergeTriggerResponses(
+      details.triggerResponse as TriggerResponseConfig,
+      payload.triggerResponse as TriggerResponseConfig,
+    );
+
+    if (triggerResponse) {
       const event = new PlatformEvent({
         tenant: source.tenant,
         source: triggerResponse.source,
@@ -180,7 +203,50 @@ async function handleOpenAiTarget(integrationTarget: IIntegrationEntity,
       event.save().then(event => emitPlatformEvent(event)).catch(() => {});
     }
     return response;
+  } else if (operation === OpenAITargetOperation.uploadContentToStorage) {
+    const storagePayload: OpenAIUploadStoragePayload = payload as any as OpenAIUploadStoragePayload;
+
+    // Upload content to vector store
+    if (!storagePayload.content) {
+      throw new Error('Content is required for uploadContentToStorage operation');
+    }
+    const requestBody: any = {
+      content: storagePayload.content || integrationTarget.details?.content,
+      sourceId: source._id,
+      vectorStoreId: integrationTarget.details?.vectorStoreId,
+      fileName: integrationTarget.details?.fileName,
+      metadata: integrationTarget.details?.metadata,
+      integrationId: integrationTarget._id // Pass integration ID
+    };
+    if (storagePayload.fileName) {
+      requestBody.fileName = storagePayload.fileName;
+    }
+    if (storagePayload.metadata) {
+      requestBody.metadata = storagePayload.metadata;
+    }
+    if (storagePayload.vectorStoreId) {
+      requestBody.vectorStoreId = storagePayload.vectorStoreId;
+    }
+
+    const response = await uploadContentToStorage(source.tenant, requestBody);
+    return response;
+  } else if (operation === OpenAITargetOperation.clearStorageFiles) {
+    payload = payload as OpenAIClearStoragePayload;
+    // Clear files from vector store
+    const requestBody: any = {
+      sourceId: source._id,
+      integrationId: integrationTarget._id // Pass integration ID
+    };
+    if (payload.fileIds) {
+      requestBody.fileIds = payload.fileIds;
+    }
+    if (payload.vectorStoreId) {
+      requestBody.vectorStoreId = payload.vectorStoreId;
+    }
+    const response = await clearStorageFiles(source.tenant, requestBody);
+    return response;
   }
+  
 }
 
 async function handleQelosTarget(integrationTarget: IIntegrationEntity,
@@ -574,7 +640,6 @@ async function handleAwsTarget(
             // Fetch from AWS API
             const command = new ListFunctionsCommand({});
             const result = await lambda.send(command);
-            logger.log('Fetched AWS Lambda functions list from API', { count: result.Functions?.length || 0 });
             return JSON.stringify(result);
           },
           { ttl: 600 } // Cache for 10 minutes (600 seconds)
@@ -748,7 +813,6 @@ async function handleAwsTarget(
     throw error;
   }
 }
-
 
 async function handleCloudflareTarget(
   integrationTarget: IIntegrationEntity,
