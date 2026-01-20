@@ -207,7 +207,6 @@ watch(() => {
       
       /* Input styles */
       .el-input__inner {
-        background-color: var(--negative-color);
         border-color: rgba(255, 255, 255, 0.2) !important;
         color: var(--negative-color);
       }
@@ -251,7 +250,7 @@ watch(() => {
         color: rgba(255, 255, 255, 0.8) !important;
       }
       .el-dropdown-menu__item:hover {
-        background-color: rgba(255, 255, 255, 0.1) !important;
+        background-color: var(--secondary-color);
       }
     ` : ''}
   `;
