@@ -156,7 +156,7 @@ export const createThread = async (req: RequestWithUser, res: Response) => {
  */
 export const getThreads = async (req: RequestWithUser, res: Response) => {
   try {
-    const { integration } = req.query
+    const { integration, sort, limit } = req.query
 
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' })
@@ -183,7 +183,11 @@ export const getThreads = async (req: RequestWithUser, res: Response) => {
       filter.integration = integration;
     }
 
-    const threads = await Thread.find(filter).select('-messages -vectorStoreExternalId').sort({ updated: -1 }).lean().exec();
+    const options: any  = {}
+    if (limit) {
+      options.limit = Number(limit || 50)
+    }
+    const threads = await Thread.find(filter).select('-messages -vectorStoreExternalId').sort(sort || '-updated').lean().exec();
 
     return res.json(threads).end();
   } catch (error) {
