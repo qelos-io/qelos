@@ -253,21 +253,14 @@ export default class QlAI extends BaseSDK {
       async *[Symbol.asyncIterator]() {
         const reader = stream.getReader();
         const decoder = new TextDecoder();
-        let buffer = "";
-        let chunkCount = 0;
-        
-        console.log('[SDK] Starting stream processing');
+        let buffer = "";        
         
         try {
           while (true) {
             const { done, value } = await reader.read();
             if (done) {
-              console.log('[SDK] Stream finished');
               break;
             }
-
-            chunkCount++;
-            console.log(`[SDK] Received chunk #${chunkCount}, size: ${value?.length || 0}`);
 
             buffer += decoder.decode(value, { stream: true });
             let lines = buffer.split(/\r?\n/);
@@ -277,16 +270,14 @@ export default class QlAI extends BaseSDK {
               if (line.startsWith('data: ')) {
                 const data = line.slice(6);
                 if (data === '[DONE]') {
-                  console.log('[SDK] Received [DONE] signal');
                   return;
                 }
                 
                 try {
                   const parsed = JSON.parse(data);
-                  console.log(`[SDK] Parsed data type: ${parsed.type}, content length: ${parsed.content?.length || 0}`);
                   yield parsed;
                 } catch (e) {
-                  console.error('[SDK] Failed to parse JSON:', e, 'Line:', line);
+                  //
                 }
               }
             }

@@ -321,8 +321,10 @@ async function processStreamingCompletion(
       // Regular content chunk
       hasContent = true;
       assistantLastContent += content;
+      // Check if this chunk has the completion_type field indicating full content
+      const isFullContent = (chunk as any).completion_type === 'full_content';
       sendSSE({ 
-        type: isFollowUp ? 'followup_chunk' : 'chunk', 
+        type: isFullContent ? 'full_content' : (isFollowUp ? 'followup_chunk' : 'chunk'), 
         content: content 
       });
     }

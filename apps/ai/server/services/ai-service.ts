@@ -763,6 +763,29 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
                   }]
                 };
               }
+            } else if (chunk.type === 'response.output_text.completed' || chunk.type === 'response.completed') {
+              // Send the full content with a different type to indicate completion
+              // This allows the client to handle it differently from regular chunks
+              const outputItem = (chunk as any).output?.[(chunk as any).output?.length - 1];
+              if (outputItem?.type === 'message' && outputItem.content) {
+                const text = outputItem.content[0]?.text || '';
+                if (text) {
+                  yield {
+                    id: messageId,
+                    object: 'chat.completion.chunk' as const,
+                    created: Math.floor(Date.now() / 1000),
+                    model: (chunk as any).model || model,
+                    choices: [{
+                      index: 0,
+                      delta: { content: text },
+                      finish_reason: null
+                    }],
+                    // Add a custom field to indicate this is the complete content
+                    completion_type: 'full_content'
+                  };
+                }
+              }
+              continue;
             } else if (chunk.type === 'response.output_item.added' && chunk.item?.type === 'function_call') {
               // Function call start - store the function info
               currentFunctionCall = {
