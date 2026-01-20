@@ -194,35 +194,31 @@ watch(() => {
       
       /* Card styles */
       .el-card {
-        background-color: ${palette.navigationBgColor || '#2d2d2d'} !important;
+        background-color: var(--negative-color);
         border-color: rgba(255, 255, 255, 0.1) !important;
-        color: ${palette.textColor || '#ffffff'} !important;
       }
       
       /* Button styles */
       .el-button--default {
-        background-color: ${palette.navigationBgColor || '#2d2d2d'} !important;
+        background-color: var(--negative-color);
         border-color: rgba(255, 255, 255, 0.2) !important;
         color: rgba(255, 255, 255, 0.8) !important;
       }
       
       /* Input styles */
       .el-input__inner {
-        background-color: ${palette.inputsBgColor || '#2d2d2d'} !important;
+        background-color: var(--negative-color);
         border-color: rgba(255, 255, 255, 0.2) !important;
-        color: ${palette.inputsTextColor || '#ffffff'} !important;
+        color: var(--negative-color);
       }
       
       /* Select styles */
       .el-select-dropdown {
-        background-color: ${palette.navigationBgColor || '#2d2d2d'} !important;
+        background-color: var(--negative-color);
         border-color: rgba(255, 255, 255, 0.1) !important;
       }
-      .el-select-dropdown__item {
-        color: rgba(255, 255, 255, 0.8) !important;
-      }
       .el-select-dropdown__item.hover, .el-select-dropdown__item:hover {
-        background-color: rgba(255, 255, 255, 0.1) !important;
+        background-color: var(--negative-color);
       }
       
       /* Dialog styles */
