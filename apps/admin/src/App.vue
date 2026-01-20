@@ -247,7 +247,7 @@ watch(() => {
         border-color: rgba(255, 255, 255, 0.1) !important;
       }
       .el-dropdown-menu__item {
-        color: rgba(255, 255, 255, 0.8) !important;
+        color: var(--negative-color);
       }
       .el-dropdown-menu__item:hover {
         background-color: var(--secondary-color);
