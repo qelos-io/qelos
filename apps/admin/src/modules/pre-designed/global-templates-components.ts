@@ -51,4 +51,5 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('AssetUploader', AssetUploader)
   app.component('ThreadsList', ThreadsList)
   app.component('SecuredLink', CallbackLink)
+  app.component('WysiwygEditor', defineAsyncComponent(async () => (await import('@/modules/blocks/components/WysiwygEditor.vue')).default))
 }
