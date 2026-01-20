@@ -10,7 +10,12 @@
   >
     <div class="chat-window" ref="chatWindow">
       <div v-if="messages.length === 0" class="ai-initial-message">
-        <slot v-if="$slots.initialMessage || $slots['initial-message']" name="initialMessage" :setInput="onSuggestionClick" :input="input" />
+        <slot
+          v-if="$slots.initialMessage || $slots['initial-message']"
+          name="initialMessage"
+          :setInput="onSuggestionClick"
+          :input="input"
+        />
         <template v-else>
           <div class="ai-initial-title">
             {{ $t(title || "🤖 I'm your AI assistant") }}
@@ -22,7 +27,11 @@
             }}</span>
           </div>
           <div v-if="suggestions?.length" class="ai-suggestions">
-            <TransitionGroup name="suggestion-fade" tag="div" class="suggestions-container">
+            <TransitionGroup
+              name="suggestion-fade"
+              tag="div"
+              class="suggestions-container"
+            >
               <div
                 v-for="(suggestion, idx) in suggestions"
                 :key="idx"
@@ -33,8 +42,13 @@
                 @mouseleave="hoveredSuggestion = null"
               >
                 <div class="suggestion-content">
-                  <el-icon v-if="(suggestion as any).icon" class="suggestion-icon">
-                    <font-awesome-icon :icon="['fas', (suggestion as any).icon]"/>
+                  <el-icon
+                    v-if="(suggestion as any).icon"
+                    class="suggestion-icon"
+                  >
+                    <font-awesome-icon
+                      :icon="['fas', (suggestion as any).icon]"
+                    />
                   </el-icon>
                   <span class="suggestion-text">
                     {{
@@ -44,7 +58,10 @@
                     }}
                   </span>
                 </div>
-                <el-icon class="suggestion-arrow" :class="{ 'visible': hoveredSuggestion === idx }">
+                <el-icon
+                  class="suggestion-arrow"
+                  :class="{ visible: hoveredSuggestion === idx }"
+                >
                   <ArrowRight v-if="$t('appDirection') === 'ltr'" />
                   <ArrowLeft v-else />
                 </el-icon>
@@ -55,15 +72,16 @@
       </div>
       <transition-group name="chat-bubble" tag="div">
         <template v-if="$slots.message">
-          <div
-            v-for="(msg, idx) in messages"
-            :key="msg.id"
-          >
+          <div v-for="(msg, idx) in messages" :key="msg.id">
             <slot
               name="message"
               :message="msg"
               :index="idx"
-              :is-streaming="loading && msg.role === 'assistant' && idx === messages.length - 1"
+              :is-streaming="
+                loading &&
+                msg.role === 'assistant' &&
+                idx === messages.length - 1
+              "
               :format-time="formatTime"
               :copy-message="copyMessage"
               :render-markdown="renderMarkdown"
@@ -95,15 +113,19 @@
                 <font-awesome-icon v-else :icon="['fas', 'robot']" />
               </span>
               <div class="meta">
-                <span class="meta-text">{{ msg.role === "user" ? "You" : "AI" }} ·
-                {{ formatTime(msg.time) }}</span>
+                <span class="meta-text"
+                  >{{ msg.role === "user" ? "You" : "AI" }} ·
+                  {{ formatTime(msg.timestamp) }}</span
+                >
                 <span
                   v-if="msg.status && msg.role === 'user'"
                   class="message-status"
                   :class="msg.status"
                   aria-label="Message status"
                 >
-                  <font-awesome-icon :icon="['fas', msg.status === 'sent' ? 'check' : 'clock']" />
+                  <font-awesome-icon
+                    :icon="['fas', msg.status === 'sent' ? 'check' : 'clock']"
+                  />
                 </span>
               </div>
               <div
@@ -122,7 +144,9 @@
                 ref="markdownContent"
               ></div>
               <div v-if="msg.type === 'file'" class="file-attachment-preview">
-                <font-awesome-icon :icon="['fas', fileIconClass(msg.filename)]" />
+                <font-awesome-icon
+                  :icon="['fas', fileIconClass(msg.filename)]"
+                />
                 <span>{{ msg.filename }}</span>
               </div>
             </div>
@@ -132,7 +156,9 @@
       <div v-if="loading" class="stream-indicator">
         <div class="typing-pill">
           <el-icon class="spin"><Loading /></el-icon>
-          <span class="typing-text">{{ $t(typingText || "AI is typing") }}</span>
+          <span class="typing-text">{{
+            $t(typingText || "AI is typing")
+          }}</span>
           <span class="typing-dots" aria-hidden="true">
             <span></span>
             <span></span>
@@ -172,7 +198,7 @@
       name="user-input"
       :send="send"
       :input="input"
-      :update-input="(value: string) => input = value"
+      :update-input="(value: string) => (input = value)"
       :loading="loading"
       :can-send="canSend()"
       :attached-files="attachedFiles"
@@ -183,13 +209,31 @@
     <form v-else class="input-row" @submit.prevent="send">
       <div class="input-group">
         <div class="input-rail">
-          <button type="button" class="rail-btn" :disabled="loading" @click="openFilePicker" :title="$t('Attach files')">
+          <button
+            type="button"
+            class="rail-btn"
+            :disabled="loading"
+            @click="openFilePicker"
+            :title="$t('Attach files')"
+          >
             <font-awesome-icon :icon="['fas', 'paperclip']" />
           </button>
-          <button type="button" class="rail-btn" :disabled="loading" @click="insertTemplatePrompt" :title="$t('Insert template prompt')">
+          <button
+            type="button"
+            class="rail-btn"
+            :disabled="loading"
+            @click="insertTemplatePrompt"
+            :title="$t('Insert template prompt')"
+          >
             <font-awesome-icon :icon="['fas', 'lightbulb']" />
           </button>
-          <button type="button" class="rail-btn" :disabled="loading" @click="insertSlashCommand" :title="$t('Slash command')">
+          <button
+            type="button"
+            class="rail-btn"
+            :disabled="loading"
+            @click="insertSlashCommand"
+            :title="$t('Slash command')"
+          >
             /
           </button>
         </div>
@@ -211,7 +255,8 @@
           class="ai-send-btn"
           :disabled="!canSend || loading || !input.trim()"
           type="submit"
-          aria-label="Send">
+          aria-label="Send"
+        >
           <el-icon><icon-arrow-up /></el-icon>
         </button>
       </div>
@@ -266,7 +311,7 @@ const emit = defineEmits([
   "message-received",
   "function-executed",
   "update:threadId",
-  "mounted"
+  "mounted",
 ]);
 
 const localThreadId = ref(props.threadId);
@@ -276,54 +321,60 @@ const templatePromptPool = computed(() => {
   const prompts: string[] = [];
   if (props.chatContext?.currentPage) {
     prompts.push(
-      `Review and enhance the layout of ${props.chatContext.currentPage}.`
+      `Review and enhance the layout of ${props.chatContext.currentPage}.`,
     );
   }
   prompts.push(
     "Summarize the last AI response into actionable steps.",
-    "Suggest the next best action for our current workflow."
+    "Suggest the next best action for our current workflow.",
   );
   return prompts;
 });
 
-const shouldRecordThread = computed(() => props.recordThread || props.threadId || props.url?.includes("[threadId]"));
+const shouldRecordThread = computed(
+  () =>
+    props.recordThread || props.threadId || props.url?.includes("[threadId]"),
+);
 
 const chatCompletionUrl = computed(() => {
   if (shouldRecordThread.value) {
     const threadId = props.threadId || localThreadId.value;
     // Don't modify sources URLs - they're already complete paths
-    if (props.url?.startsWith('/api/ai/sources')) {
+    if (props.url?.startsWith("/api/ai/sources")) {
       return props.url;
     }
     return props.url.includes("[threadId]")
       ? props.url.replace("[threadId]", threadId)
       : props.url.includes(threadId)
-      ? props.url
-      : props.url + "/" + threadId;
+        ? props.url
+        : props.url + "/" + threadId;
   }
   return props.url;
 });
 
 const isSourcesUrl = computed(() => {
-  return props.url?.startsWith('/api/ai/sources');
+  return props.url?.startsWith("/api/ai/sources");
 });
 
 function getIntegrationIdFromUrl() {
   return props.url?.split("/api/ai/")[1]?.split("/")[0] || undefined;
 }
 
-async function directStreamChat(url: string, options: any): Promise<ReadableStream<Uint8Array>> {
+async function directStreamChat(
+  url: string,
+  options: any,
+): Promise<ReadableStream<Uint8Array>> {
   // Get auth headers from SDK to maintain authentication
-  const extraHeaders = await (sdk as any).qlOptions.extraHeaders?.(url) || {};
-  
+  const extraHeaders = (await (sdk as any).qlOptions.extraHeaders?.(url)) || {};
+
   const response = await fetch(url, {
-    method: 'POST',
-    headers: { 
-      'content-type': 'application/json',
-      'accept': 'text/event-stream',
-      ...extraHeaders
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      accept: "text/event-stream",
+      ...extraHeaders,
     },
-    body: JSON.stringify({ ...options, stream: true })
+    body: JSON.stringify({ ...options, stream: true }),
   });
 
   if (!response.ok) {
@@ -350,28 +401,32 @@ async function loadThread(threadId: string) {
   try {
     const thread = await sdk.ai.getThread(threadId);
     currentThread.value = thread;
-    
+
     // Load thread messages if they exist and we don't have messages already
-    if (thread.messages && Array.isArray(thread.messages) && messages.length === 0) {
+    if (
+      thread.messages &&
+      Array.isArray(thread.messages) &&
+      messages.length === 0
+    ) {
       thread.messages.forEach((msg: any) => {
         messages.push({
           id: msg._id || Math.random().toString(36).slice(2),
           role: msg.role,
           content: msg.content,
-          time: msg.createdAt || msg.time || new Date().toISOString(),
-          type: msg.type || 'text',
+          timestamp: msg.createdAt || msg.timestamp || new Date().toISOString(),
+          type: msg.type || "text",
           filename: msg.filename,
-          status: 'sent'
+          status: "sent",
         });
       });
-      
+
       // Scroll to bottom after loading messages
       nextTick(() => {
         scrollToBottom();
         setTimeout(addTableCopyButtons, 100);
       });
     }
-    
+
     emit("thread-updated", thread);
     return thread;
   } catch (error) {
@@ -383,7 +438,7 @@ interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
-  time: string;
+  timestamp: string;
   type: "text" | "file";
   filename?: string;
   status?: "sending" | "sent";
@@ -478,8 +533,7 @@ function addTableCopyButtons() {
                   '<svg class="icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M768 832a128 128 0 0 1-128 128H192A128 128 0 0 1 64 832V384a128 128 0 0 1 128-128v64a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64h64z"></path><path fill="currentColor" d="M384 128a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64V192a64 64 0 0 0-64-64H384zm0-64h448a128 128 0 0 1 128 128v448a128 128 0 0 1-128 128H384a128 128 0 0 1-128-128V192A128 128 0 0 1 384 64z"></path></svg>';
               }, 5000);
             })
-            .catch((err) => {
-            });
+            .catch((err) => {});
         });
       });
     });
@@ -540,7 +594,7 @@ function copyTableToClipboard(table: HTMLTableElement): Promise<void> {
     headerRows.forEach((row) => {
       const headerCells = row.querySelectorAll("th");
       const headerTexts = Array.from(headerCells).map(
-        (cell) => cell.textContent?.trim() || ""
+        (cell) => cell.textContent?.trim() || "",
       );
       tsvContent += headerTexts.join("\t") + "\n";
     });
@@ -551,7 +605,7 @@ function copyTableToClipboard(table: HTMLTableElement): Promise<void> {
   bodyRows.forEach((row) => {
     const cells = row.querySelectorAll("td");
     const cellTexts = Array.from(cells).map(
-      (cell) => cell.textContent?.trim() || ""
+      (cell) => cell.textContent?.trim() || "",
     );
     tsvContent += cellTexts.join("\t") + "\n";
   });
@@ -563,7 +617,7 @@ function copyTableToClipboard(table: HTMLTableElement): Promise<void> {
       // Get all cells (th or td)
       const cells = row.querySelectorAll("th, td");
       const cellTexts = Array.from(cells).map(
-        (cell) => cell.textContent?.trim() || ""
+        (cell) => cell.textContent?.trim() || "",
       );
       tsvContent += cellTexts.join("\t") + "\n";
     });
@@ -610,7 +664,7 @@ watch(
     // Add slight delay to ensure markdown is rendered
     setTimeout(addTableCopyButtons, 100);
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Watch localThreadId to load thread data when it changes
@@ -621,18 +675,18 @@ watch(
       await loadThread(newThreadId);
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 function canSend() {
   return input.value.trim() || attachedFiles.length;
 }
 
-function addMessage(msg: Omit<ChatMessage, "id" | "time">) {
+function addMessage(msg: Omit<ChatMessage, "id" | "timestamp">) {
   messages.push({
     ...msg,
     id: Math.random().toString(36).slice(2),
-    time: new Date().toISOString(),
+    timestamp: new Date().toISOString(),
   });
 }
 
@@ -664,7 +718,7 @@ async function handleFiles(files: File[]) {
   for (const file of files) {
     if (
       !["text/plain", "text/csv", "application/json", "text/markdown"].includes(
-        file.type
+        file.type,
       ) &&
       !/\.(txt|csv|json|md)$/i.test(file.name)
     ) {
@@ -682,12 +736,15 @@ async function handleFiles(files: File[]) {
 }
 
 function onSuggestionClick(
-  suggestion: string | { label: string; text?: string; value?: string; icon?: string }
+  suggestion:
+    | string
+    | { label: string; text?: string; value?: string; icon?: string },
 ) {
   if (typeof suggestion === "string") {
     input.value = suggestion;
   } else {
-    input.value = (suggestion.text || suggestion.value || suggestion.label) + ' ';
+    input.value =
+      (suggestion.text || suggestion.value || suggestion.label) + " ";
   }
   inputRef.value?.focus();
 }
@@ -699,7 +756,9 @@ function openFilePicker() {
 function insertTemplatePrompt() {
   if (!templatePromptPool.value.length) return;
   const prompt =
-    templatePromptPool.value[templatePromptIndex.value % templatePromptPool.value.length];
+    templatePromptPool.value[
+      templatePromptIndex.value % templatePromptPool.value.length
+    ];
   templatePromptIndex.value += 1;
   input.value = prompt;
   inputRef.value?.focus();
@@ -726,14 +785,20 @@ async function send() {
       status: "sending",
     });
   }
-  addMessage({ role: "user", content: input.value.trim(), type: "text", status: "sending" });
+  addMessage({
+    role: "user",
+    content: input.value.trim(),
+    type: "text",
+    status: "sending",
+  });
   const payload = {
-    messages: messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-      type: m.type,
-      filename: m.filename,
-    })),
+    messages: messages
+      .map((m) => ({
+        role: m.role,
+        content: m.content,
+        type: m.type,
+        filename: m.filename,
+      })),
     context: props.chatContext,
   };
   loading.value = true;
@@ -742,7 +807,7 @@ async function send() {
     id: aiMsgId,
     role: "assistant",
     content: "",
-    time: new Date().toISOString(),
+    timestamp: new Date().toISOString(),
     type: "text",
   };
   messages.push(aiMsg);
@@ -755,7 +820,7 @@ async function send() {
     const chatOptions = {
       messages: payload.messages,
       context: payload.context,
-      stream: true
+      stream: true,
     };
 
     // Try streaming first
@@ -766,14 +831,18 @@ async function send() {
         stream = await directStreamChat(chatCompletionUrl.value, chatOptions);
       } else if (shouldRecordThread.value && localThreadId.value) {
         // Use thread-based streaming
-        stream = await sdk.ai.streamChatInThread(integrationId, localThreadId.value, chatOptions);
+        stream = await sdk.ai.streamChatInThread(
+          integrationId,
+          localThreadId.value,
+          chatOptions,
+        );
       } else {
         // Use regular streaming
         stream = await sdk.ai.streamChat(integrationId, chatOptions);
       }
-      
+
       // Process the stream using the SDK's parseSSEStream method
-      for await (const data of sdk.ai.parseSSEStream(stream)) {        
+      for await (const data of sdk.ai.parseSSEStream(stream)) {
         if (data.type === "connection_established") {
           continue;
         }
@@ -783,7 +852,6 @@ async function send() {
         }
         if (data.type === "chunk") {
           if (data.content) {
-            const prevLength = aiMsg.content.length;
             aiMsg.content += data.content;
             const idx = messages.findIndex((m) => m.id === aiMsg.id);
             if (idx !== -1) {
@@ -807,14 +875,14 @@ async function send() {
               }, 0);
             }
           }
-        } else if (data.type === 'function_executed') {
-          let args = {}
+        } else if (data.type === "function_executed") {
+          let args = {};
           try {
-            args = JSON.parse(data.functionCall?.arguments || '{}');
+            args = JSON.parse(data.functionCall?.arguments || "{}");
           } catch (e) {
             // ignore
           }
-          emit('function-executed',{
+          emit("function-executed", {
             name: data.functionCall?.function?.name,
             arguments: args,
           });
@@ -822,34 +890,39 @@ async function send() {
           break;
         }
       }
-      
+
       loading.value = false;
       markUserMessagesAsSent();
       // Only add table copy buttons after the assistant has finished typing
       nextTick(() => {
         setTimeout(addTableCopyButtons, 100);
       });
-    } catch (streamError) {      
+    } catch (streamError) {
       // Fallback to non-streaming chat completion
       try {
         let response;
         if (shouldRecordThread.value && localThreadId.value) {
           // Use thread-based chat completion
-          response = await sdk.ai.chatInThread(integrationId, localThreadId.value, {
-            ...chatOptions,
-          });
+          response = await sdk.ai.chatInThread(
+            integrationId,
+            localThreadId.value,
+            {
+              ...chatOptions,
+            },
+          );
         } else {
           // Use regular chat completion
           response = await sdk.ai.chat(integrationId, {
             ...chatOptions,
           });
         }
-        
-        aiMsg.content = response.choices?.[0]?.message?.content || "[No response]";
+
+        aiMsg.content =
+          response.choices?.[0]?.message?.content || "[No response]";
       } catch (fallbackError) {
         aiMsg.content = "[Error: failed to fetch AI response]";
       }
-      
+
       loading.value = false;
       markUserMessagesAsSent();
       // Only add table copy buttons after the assistant has finished typing
@@ -880,7 +953,7 @@ onMounted(() => {
   // Initialize table copy buttons for any existing content
   setTimeout(addTableCopyButtons, 100);
 
-  emit('mounted', {
+  emit("mounted", {
     input,
     messages,
     threadId: localThreadId,
@@ -894,7 +967,7 @@ onMounted(() => {
     addMessage,
     send,
     renderMarkdown,
-    openFilePicker
+    openFilePicker,
   });
 });
 </script>
@@ -905,7 +978,11 @@ onMounted(() => {
   flex-direction: column;
   height: 100%;
   width: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 249, 255, 0.92));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92),
+    rgba(247, 249, 255, 0.92)
+  );
   border-radius: var(--border-radius, 18px);
   box-shadow: 0 12px 40px rgba(22, 34, 71, 0.08);
   border: 1px solid rgba(113, 128, 150, 0.12);
@@ -921,7 +998,11 @@ onMounted(() => {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at top, rgba(64, 158, 255, 0.18), transparent 45%);
+  background: radial-gradient(
+    circle at top,
+    rgba(64, 158, 255, 0.18),
+    transparent 45%
+  );
   pointer-events: none;
   opacity: 0.6;
 }
@@ -934,7 +1015,11 @@ onMounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem;
-  background: linear-gradient(180deg, rgba(250, 251, 255, 0.6), rgba(244, 246, 252, 0.9));
+  background: linear-gradient(
+    180deg,
+    rgba(250, 251, 255, 0.6),
+    rgba(244, 246, 252, 0.9)
+  );
   min-height: 320px;
   max-height: 100%;
   transition: background 0.2s;
@@ -945,7 +1030,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
 }
-
 
 @media (max-width: 768px) {
   .ai-chat {
@@ -971,7 +1055,9 @@ onMounted(() => {
   padding: 1.2em 1.5em;
   background: rgba(255, 255, 255, 0.95);
   border-top: 1px solid rgba(17, 24, 39, 0.08);
-  transition: transform 0.3s ease, margin-top 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    margin-top 0.3s ease;
 }
 
 .empty-chat .ai-chat {
@@ -1011,7 +1097,11 @@ onMounted(() => {
   color: var(--text-color, #222);
   padding: 0.8em 1.2em 0.8em 1.2em;
   resize: none;
-  transition: box-shadow 0.18s, border 0.18s, background 0.18s, min-height 0.18s;
+  transition:
+    box-shadow 0.18s,
+    border 0.18s,
+    background 0.18s,
+    min-height 0.18s;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -1041,8 +1131,10 @@ onMounted(() => {
   );
   color: var(--button-text-color, #fff);
   border: none;
-  transition: box-shadow var(--transition-speed, 0.18s),
-    background var(--transition-speed, 0.18s), transform 0.12s;
+  transition:
+    box-shadow var(--transition-speed, 0.18s),
+    background var(--transition-speed, 0.18s),
+    transform 0.12s;
   font-size: 1.3em;
   cursor: pointer;
   margin-inline-start: 0.5em;
@@ -1087,13 +1179,18 @@ onMounted(() => {
   border-radius: 16px;
   background: var(--body-bg, #fff);
   max-width: 90%;
-  transition: box-shadow 0.2s, background 0.2s;
+  transition:
+    box-shadow 0.2s,
+    background 0.2s;
   animation: pop-in 0.2s;
 }
 
 .bubble.user {
   align-self: flex-end;
-  background: var(--user-bubble-bg, linear-gradient(135deg, rgba(64, 158, 255, 0.18), rgba(64, 158, 255, 0.1)));
+  background: var(
+    --user-bubble-bg,
+    linear-gradient(135deg, rgba(64, 158, 255, 0.18), rgba(64, 158, 255, 0.1))
+  );
   color: var(--user-bubble-text, #0f172a);
   box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.02);
 }
@@ -1156,12 +1253,20 @@ onMounted(() => {
 }
 
 .bubble.user .avatar {
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.95), rgba(33, 117, 226, 0.95));
+  background: linear-gradient(
+    135deg,
+    rgba(64, 158, 255, 0.95),
+    rgba(33, 117, 226, 0.95)
+  );
   color: #fff;
 }
 
 .bubble.assistant .avatar {
-  background: linear-gradient(135deg, rgba(239, 246, 255, 1), rgba(219, 234, 254, 1));
+  background: linear-gradient(
+    135deg,
+    rgba(239, 246, 255, 1),
+    rgba(219, 234, 254, 1)
+  );
   color: #305177;
   border: 1px solid rgba(15, 23, 42, 0.06);
 }
@@ -1265,7 +1370,11 @@ onMounted(() => {
   justify-content: center;
   text-align: center;
   color: #888;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(242, 248, 255, 0.92));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.92),
+    rgba(242, 248, 255, 0.92)
+  );
   border-radius: 18px;
   margin: 2.5em auto 1.25em auto;
   padding: 2.4em 1.8em 2em 1.8em;
@@ -1280,7 +1389,12 @@ onMounted(() => {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 20% 20%, rgba(64, 158, 255, 0.12), transparent 55%),
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(64, 158, 255, 0.12),
+      transparent 55%
+    ),
     radial-gradient(circle at 80% 0%, rgba(110, 191, 255, 0.2), transparent 45%);
   opacity: 0.8;
   pointer-events: none;
@@ -1587,7 +1701,11 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.18), rgba(110, 191, 255, 0.22));
+  background: linear-gradient(
+    135deg,
+    rgba(64, 158, 255, 0.18),
+    rgba(110, 191, 255, 0.22)
+  );
   box-shadow: inset 0 0 0 1px rgba(64, 158, 255, 0.35);
 }
 
@@ -1643,12 +1761,24 @@ onMounted(() => {
 }
 
 /* Apply staggered delay to suggestions */
-.suggestion-item:nth-child(1) { animation-delay: 0.1s; }
-.suggestion-item:nth-child(2) { animation-delay: 0.2s; }
-.suggestion-item:nth-child(3) { animation-delay: 0.3s; }
-.suggestion-item:nth-child(4) { animation-delay: 0.4s; }
-.suggestion-item:nth-child(5) { animation-delay: 0.5s; }
-.suggestion-item:nth-child(6) { animation-delay: 0.6s; }
+.suggestion-item:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.suggestion-item:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.suggestion-item:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.suggestion-item:nth-child(4) {
+  animation-delay: 0.4s;
+}
+.suggestion-item:nth-child(5) {
+  animation-delay: 0.5s;
+}
+.suggestion-item:nth-child(6) {
+  animation-delay: 0.6s;
+}
 
 .empty-chat .ai-suggestions {
   margin-top: 2em;
@@ -1669,14 +1799,14 @@ onMounted(() => {
     max-width: 100%;
     gap: 0.5em;
   }
-  
+
   .suggestion-item {
     flex: 1 1 calc(50% - 0.75em);
     min-width: 0;
     padding: 0.5em 0.75em;
     font-size: 0.9em;
   }
-  
+
   .empty-chat .ai-suggestions {
     margin-bottom: 2em;
   }
@@ -1685,5 +1815,5 @@ onMounted(() => {
 <style>
 :is(main, .template-content):has(.ai-chat[full-screen]) {
   height: 100%;
-} 
+}
 </style>
