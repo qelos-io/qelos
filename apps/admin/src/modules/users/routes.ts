@@ -8,17 +8,25 @@ const usersRoutes = {
     {
       path: '',
       name: 'users',
+      meta: { roles: ['admin'] },
       component: async () => (await import('./Users.vue')).default,
-      meta: {
-        searchQuery: true,
-        searchPlaceholder: 'Search user by email or username',
-        roles: ['admin']
-      }
     },
     {
       path: 'me',
-      name: 'updateProfile',
-      component: async () => (await import('./UpdateProfile.vue')).default
+      name: 'userProfile',
+      component: async () => (await import('./EditProfile.vue')).default,
+      children: [
+        {
+          path: '',
+          name: 'updateProfile',
+          component: async () => (await import('./tabs/GeneralTab.vue')).default,
+        },
+        {
+          path: 'payments',
+          name: 'userPayments',
+          component: async () => (await import('./tabs/PaymentsTab.vue')).default,
+        }
+      ]
     },
     {
       path: 'new',

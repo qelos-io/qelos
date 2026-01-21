@@ -3,22 +3,28 @@ import usersService from '../../../services/apis/users-service';
 import { useDispatcher } from '../../core/compositions/dispatcher';
 import { useSubmitting } from '../../core/compositions/submitting';
 import { useRoute, useRouter } from 'vue-router';
-import { computed, Ref, watch } from 'vue';
+import { computed, watch } from 'vue';
 import { IUser } from '@/modules/core/store/types/user';
 
-export function useEditUsers(userId) {
-  const { result: user } = useDispatcher<IUser>(() => usersService.getOne(userId));
+export function useEditUsers(userId: string | string[]) {
+  const { result: user, retry } = useDispatcher<IUser>(() => usersService.getOne(userId as string));
   const { submit, submitting } = useSubmitting(
-    (payload) => usersService.update(userId, payload),
+    (payload) => usersService.update(userId as string, payload),
     {
       success: 'User updated successfully',
       error: 'Failed to update user',
     }
   );
+  
+  const refreshUser = async () => {
+    await retry();
+  };
+  
   return {
     user,
     updateUser: submit,
     submitting,
+    refreshUser,
   };
 }
 
@@ -33,9 +39,9 @@ export function useCreateUser() {
   };
 }
 
-export function useRemoveUser(onSuccess) {
+export function useRemoveUser(onSuccess: (id: string) => void) {
   const { submit, submitting: removing } = useSubmitting(
-    (id) => usersService.remove(id).then(() => onSuccess(id)),
+    (id: string) => usersService.remove(id).then(() => onSuccess(id)),
     {
       success: 'User removed successfully',
       error: 'Failed to remove user',
@@ -43,7 +49,7 @@ export function useRemoveUser(onSuccess) {
   );
 
   return {
-    remove: useConfirmAction((user) => submit(user._id)),
+    remove: useConfirmAction((user: IUser) => submit(user._id)),
     removing,
   };
 }

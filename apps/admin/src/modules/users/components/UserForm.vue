@@ -8,10 +8,6 @@
     label-position="top"
     status-icon
   >
-    <EditHeader class="user-form-header">
-      <slot/>
-    </EditHeader>
-
     <el-card class="user-form-card" shadow="hover">
       <template #header>
         <div class="card-header">
@@ -21,6 +17,48 @@
       </template>
 
       <div class="form-section">
+        <!-- Profile Image -->
+        <el-form-item :label="$t('Profile Image')" class="form-item">
+          <div class="profile-image-section">
+            <!-- URL Input -->
+            <el-input 
+              v-model="editedData.profileImage" 
+              :placeholder="$t('Enter image URL or upload file')"
+              clearable
+            >
+              <template #prepend>
+                <font-awesome-icon :icon="['fas', 'link']" />
+              </template>
+            </el-input>
+            
+            <!-- File Upload -->
+            <div class="file-upload-row">
+              <FormInput type="file" v-model="editedData.profileImageFile" />
+              <el-button 
+                v-if="editedData.profileImageFile" 
+                type="primary" 
+                size="small"
+                @click="uploadFile"
+                :loading="uploading"
+              >
+                {{ $t('Upload') }}
+              </el-button>
+            </div>
+            
+            <!-- Image Preview -->
+            <div v-if="editedData.profileImage" class="image-preview">
+              <img :src="editedData.profileImage" alt="Profile preview" />
+              <el-button 
+                type="danger" 
+                size="small" 
+                @click="removeImage"
+              >
+                {{ $t('Remove') }}
+              </el-button>
+            </div>
+          </div>
+        </el-form-item>
+
         <div class="form-row">
           <el-form-item :label="$t('First Name')" prop="firstName" class="form-item">
             <el-input 
@@ -81,7 +119,7 @@
           <el-collapse-item :title="$t('Advanced: Metadata')" name="metadata">
             <el-form-item prop="internalMetadata" class="form-item">
               <Monaco 
-                :model-value="internalMetadata" 
+                :model-value="editedData.internalMetadata" 
                 @input="editedData.internalMetadata = $event.target.value"
                 height="200px"
               />
@@ -107,13 +145,14 @@
   </el-form>
 </template>
 <script lang="ts" setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { clearNulls } from '../../core/utils/clear-nulls'
 import { useEditedInputs } from '../../core/compositions/edited-inputs'
 import { IUser } from '../../core/store/types/user';
 import Monaco from './Monaco.vue';
 import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
+import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { ElMessage, FormInstance, FormRules } from 'element-plus';
 import { User, UserFilled, Message, Lock, Check, InfoFilled } from '@element-plus/icons-vue';
 import { useI18n } from 'vue-i18n';
@@ -154,7 +193,9 @@ const editedData = reactive({
   username: props.user?.username || null,
   password: null,
   roles: props.user && props.user._id ? null : ['user'],
-  internalMetadata: props.user?.internalMetadata ? JSON.stringify(props.user.internalMetadata, null, 2) : '{}'
+  internalMetadata: '{}',
+  profileImage: props.user?.profileImage || '',
+  profileImageFile: null
 });
 
 let roles;
@@ -171,9 +212,8 @@ if (!props.hideRoles) {
 const {
   firstName,
   lastName,
-  username,
-  internalMetadata
-} = useEditedInputs(editedData, props.user, ['firstName', 'lastName', 'username', 'internalMetadata'])
+  username
+} = useEditedInputs(editedData, props.user, ['firstName', 'lastName', 'username'])
 
 async function validateAndSubmit() {
   if (!formRef.value) return;
@@ -188,10 +228,14 @@ async function validateAndSubmit() {
 
 function submit() {
   try {
-    if (editedData.internalMetadata) {
-      editedData.internalMetadata = JSON.parse(editedData.internalMetadata);
+    // Create a copy of the data to avoid modifying the reactive object
+    const dataToSubmit = { ...editedData };
+    
+    if (dataToSubmit.internalMetadata) {
+      dataToSubmit.internalMetadata = JSON.parse(dataToSubmit.internalMetadata);
     }
-    emit('submitted', clearNulls(editedData));
+    
+    emit('submitted', clearNulls(dataToSubmit));
   } catch (error) {
     ElMessage.error(t('Error in metadata format. Please check the JSON syntax.'));
   }
@@ -201,13 +245,75 @@ function resetForm() {
   formRef.value?.resetFields();
   ElMessage.info(t('Form has been reset'));
 }
+
+const uploading = ref(false);
+
+async function uploadFile() {
+  if (!editedData.profileImageFile) {
+    ElMessage.error(t('Please select a file to upload'));
+    return;
+  }
+  
+  uploading.value = true;
+  try {
+    const formData = new FormData();
+    formData.append('file', editedData.profileImageFile);
+    
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: formData
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      editedData.profileImage = result.url;
+      editedData.profileImageFile = null;
+      ElMessage.success(t('Image uploaded successfully'));
+    } else {
+      throw new Error('Upload failed');
+    }
+  } catch (error) {
+    ElMessage.error(t('Failed to upload image'));
+  } finally {
+    uploading.value = false;
+  }
+}
+
+function removeImage() {
+  editedData.profileImage = '';
+  editedData.profileImageFile = null;
+}
+
+// Watch for user data changes to handle internalMetadata conversion
+watch(() => props.user, (newUser) => {
+  if (newUser) {
+    // Handle profile image
+    if (newUser.profileImage !== undefined) {
+      editedData.profileImage = newUser.profileImage || '';
+    }
+    
+    // Always ensure internalMetadata is a string
+    if (newUser.internalMetadata) {
+      if (typeof newUser.internalMetadata === 'object') {
+        editedData.internalMetadata = JSON.stringify(newUser.internalMetadata, null, 2);
+      } else if (typeof newUser.internalMetadata === 'string') {
+        editedData.internalMetadata = newUser.internalMetadata;
+      } else {
+        editedData.internalMetadata = '{}';
+      }
+    } else {
+      editedData.internalMetadata = '{}';
+    }
+  }
+}, { immediate: true, deep: true });
 </script>
 
 <style scoped>
 .user-form {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 20px;
+  width: 100%;
 }
 
 .user-form-header {
@@ -255,6 +361,40 @@ function resetForm() {
   margin-top: 30px;
 }
 
+.profile-image-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.file-upload-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.file-upload-row .form-input {
+  flex: 1;
+}
+
+.image-preview {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 6px;
+}
+
+.image-preview img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--el-border-color);
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .form-row {
@@ -262,8 +402,13 @@ function resetForm() {
     gap: 0;
   }
   
-  .user-form {
-    padding: 10px;
+  .file-upload-row {
+    flex-direction: column;
+  }
+  
+  .image-preview {
+    flex-direction: column;
+    text-align: center;
   }
 }
 </style>

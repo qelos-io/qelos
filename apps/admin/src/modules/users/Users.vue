@@ -1,5 +1,13 @@
 <template>
-  <div class="about-page">
+  <div class="users-page">
+    <!-- Breadcrumb Navigation -->
+    <el-breadcrumb class="users-breadcrumb" separator="/">
+      <el-breadcrumb-item>
+        <font-awesome-icon :icon="['fas', 'users']" class="breadcrumb-icon" />
+        {{ $t('Users') }}
+      </el-breadcrumb-item>
+    </el-breadcrumb>
+    
     <div class="header-container">
       <ListPageTitle title="Users" create-route="createUser">
         <template v-slot:content>
@@ -23,6 +31,20 @@ const { filteredUsers, users, removeUser } = useUsersList();
 </script>
 
 <style scoped>
+.users-page {
+  padding: 20px;
+}
+
+.users-breadcrumb {
+  margin-bottom: 20px;
+  padding: 10px 0;
+}
+
+.breadcrumb-icon {
+  margin-right: 5px;
+  color: var(--el-color-primary);
+}
+
 .header-container {
   display: flex;
   align-items: center;
@@ -34,6 +56,15 @@ const { filteredUsers, users, removeUser } = useUsersList();
 }
 
 @media (max-width: 768px) {
+  .users-page {
+    padding: 10px;
+  }
+  
+  .users-breadcrumb {
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+  }
+  
   .filter-container {
     margin: 0 5px;
   }

@@ -117,8 +117,12 @@ export async function updateUser(
     updates.birthDate = getAbsoluteDate(birthDate);
   }
 
-  if (profileImage) {
-    updates.profileImage = profileImage;
+  if (typeof profileImage === 'string') {
+    if (!profileImage) {
+      updates.profileImage = null;
+    } else {
+      updates.profileImage = profileImage;
+    }
   }
 
   if (roles) {

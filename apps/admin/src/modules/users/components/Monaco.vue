@@ -21,7 +21,7 @@ onMounted(() => {
     theme: 'vs-dark',
     automaticLayout: true,
     language: props.language || 'json',
-    value: props.modelValue,
+    value: typeof props.modelValue === 'string' ? props.modelValue : JSON.stringify(props.modelValue, null, 2),
   })
 })
 
@@ -35,8 +35,12 @@ defineExpose({
 })
 
 watch(() => props.modelValue, (newValue) => {
-  if (props.modelValue !== monacoInstance?.getValue()) {
-    monacoInstance?.setValue(newValue)
+  try {
+    if (typeof newValue === 'string' && newValue !== monacoInstance?.getValue()) {
+      monacoInstance?.setValue(newValue)
+    }
+  } catch (error) {
+    console.error('Error updating Monaco editor:', error)
   }
 })
 
