@@ -202,7 +202,7 @@ PluginSchema.pre('validate', function () {
     this.apiPath = this.name
     .toLowerCase()
     .replace(/ /g, '-')
-    .replace(/[^a-z0-9-]/g, '') + uniqid().substring(0, 4)
+    .replace(/[^a-z0-9-]/g, '') + '-' + uniqid().substring(0, 4)
   }
 })
 
