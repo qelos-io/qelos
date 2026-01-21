@@ -1,5 +1,60 @@
 <template>
   <div class="members-tab">
+
+    <!-- Members List -->
+    <el-card class="members-card" shadow="hover">
+      <template #header>
+        <div class="card-header">
+          <h2>{{ $t('Workspace Members') }}</h2>
+          <p class="subtitle">{{ $t('People with access to this workspace') }}</p>
+          <div class="header-actions">
+            <el-button v-if="isAdmin" @click="refreshMembers" :loading="!loaded">
+              <font-awesome-icon :icon="['fas', 'refresh']" class="icon-left" />
+              {{ $t('Refresh') }}
+            </el-button>
+          </div>
+        </div>
+      </template>
+      
+      <div class="members-list">
+        <el-empty v-if="!loaded && (!members || members.length === 0)" :description="$t('No members in this workspace yet')" />
+        <el-skeleton v-else-if="!loaded" :rows="5" animated />
+        <QuickTable v-else :data="members" :columns="membersColumns">
+          <template #lastName="{ row }">
+            {{ decodeURIComponent(row.lastName) }}
+          </template>
+          <template #firstName="{ row }">
+            {{ decodeURIComponent(row.firstName) }}
+          </template>
+          <template #roles="{ row }">
+            <el-tag v-for="role in row.roles" :key="role" size="small" class="role-tag">
+              {{ role }}
+            </el-tag>
+          </template>
+          <template #actions="{ row }" v-if="isAdmin">
+            <el-dropdown @command="(command) => handleMemberAction(command, row)">
+              <el-button type="primary" plain size="small">
+                {{ $t('Actions') }}
+                <font-awesome-icon :icon="['fas', 'chevron-down']" class="icon-left" />
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="edit-role">
+                    <font-awesome-icon :icon="['fas', 'user-edit']" class="icon-left" />
+                    {{ $t('Edit Role') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item command="remove" divided>
+                    <font-awesome-icon :icon="['fas', 'user-minus']" class="icon-left" />
+                    {{ $t('Remove Member') }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
+        </QuickTable> 
+      </div>
+    </el-card>
+
     <!-- Invite Section -->
     <el-card class="invite-card" shadow="hover" v-if="canInviteMembers">
       <template #header>
@@ -87,60 +142,6 @@
             {{ $t('Update Invites List') }}
           </el-button>
         </div>
-      </div>
-    </el-card>
-
-    <!-- Members List -->
-    <el-card class="members-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <h2>{{ $t('Workspace Members') }}</h2>
-          <p class="subtitle">{{ $t('People with access to this workspace') }}</p>
-          <div class="header-actions">
-            <el-button v-if="isAdmin" @click="refreshMembers" :loading="!loaded">
-              <font-awesome-icon :icon="['fas', 'refresh']" class="icon-left" />
-              {{ $t('Refresh') }}
-            </el-button>
-          </div>
-        </div>
-      </template>
-      
-      <div class="members-list">
-        <el-empty v-if="!loaded && (!members || members.length === 0)" :description="$t('No members in this workspace yet')" />
-        <el-skeleton v-else-if="!loaded" :rows="5" animated />
-        <QuickTable v-else :data="members" :columns="membersColumns">
-          <template #lastName="{ row }">
-            {{ decodeURIComponent(row.lastName) }}
-          </template>
-          <template #firstName="{ row }">
-            {{ decodeURIComponent(row.firstName) }}
-          </template>
-          <template #roles="{ row }">
-            <el-tag v-for="role in row.roles" :key="role" size="small" class="role-tag">
-              {{ role }}
-            </el-tag>
-          </template>
-          <template #actions="{ row }" v-if="isAdmin">
-            <el-dropdown @command="(command) => handleMemberAction(command, row)">
-              <el-button type="primary" plain size="small">
-                {{ $t('Actions') }}
-                <font-awesome-icon :icon="['fas', 'chevron-down']" class="icon-left" />
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="edit-role">
-                    <font-awesome-icon :icon="['fas', 'user-edit']" class="icon-left" />
-                    {{ $t('Edit Role') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item command="remove" divided>
-                    <font-awesome-icon :icon="['fas', 'user-minus']" class="icon-left" />
-                    {{ $t('Remove Member') }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-        </QuickTable> 
       </div>
     </el-card>
 
