@@ -43,6 +43,9 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
       throw new ResponseError(`Property ${key} must be a string`, 406);
     }
     value = String(value);
+    if (property.enum && property.enum.length && !property.enum.includes(value)) {
+      throw new ResponseError(`Property ${key} must be one of ${property.enum.join(', ')}`, 406);
+    }
   }
   if (property.type === 'file') {
     if (!value?.startsWith?.('http')) {
@@ -68,9 +71,6 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
       throw new ResponseError(`Property ${key} must be a time`, 406);
     }
     value = `${hours}:${minutes}`;
-  }
-  if (property.enum && property.enum.length && !property.enum.includes(value)) {
-    throw new ResponseError(`Property ${key} must be one of ${property.enum.join(', ')}`, 406);
   }
   if (typeof property.min !== 'undefined' && value < property.min) {
     throw new ResponseError(`Property ${key} must be greater than ${property.min}`, 406);
