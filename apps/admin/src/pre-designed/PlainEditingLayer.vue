@@ -124,7 +124,6 @@ const onRemovePage = () => removePage.value?.();
   .edit-bar-container {
     inset-inline-start: 0;
     bottom: 0;
-    width: 100%;
   }
 }
 
