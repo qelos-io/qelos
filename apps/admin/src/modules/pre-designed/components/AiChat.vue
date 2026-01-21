@@ -798,6 +798,7 @@ async function send() {
         content: m.content,
         type: m.type,
         filename: m.filename,
+        timestamp: m.timestamp,
       })),
     context: props.chatContext,
   };
