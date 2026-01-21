@@ -4,7 +4,7 @@ import BaseSDK from './base-sdk';
 export interface IMessage {
   role: string;
   content: string;
-  timestamp?: Date;
+  timestamp?: Date | string;
   tool_calls?: any[];
   name?: string;
   tool_call_id?: string;
