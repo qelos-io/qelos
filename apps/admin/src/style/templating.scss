@@ -138,3 +138,7 @@ html.mobile body {
 .el-tabs--border-card {
   --el-bg-color-overlay: var(--negative-color);
 }
+
+.el-radio-button__inner {
+  --el-button-text-color: var(--main-color);
+}
