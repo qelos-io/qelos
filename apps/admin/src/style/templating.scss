@@ -126,6 +126,11 @@ html.mobile body {
 .font-lg {
   font-size: var(--large-font-size);
 }
+
+.el-button {
+  --el-button-bg-color: var(--button-bg-color);
+}
+
 .el-radio-button {
   --el-button-bg-color: var(--negative-color)
 }
