@@ -243,7 +243,7 @@ export async function chatCompletion(req: any, res: any | null) {
     currentDate: now.toISOString().split('T')[0],
     currentDateTime: now.toISOString(),
     userRoles: req.user?.roles?.join(',') || '',
-    systemContext: req.systemContext || {},
+    systemContext: options.systemContext || {},
     user: {
       id: req.user?._id,
       email: req.user?.email,
