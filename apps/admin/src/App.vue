@@ -189,7 +189,7 @@ watch(() => {
       
       /* Form elements */
       .el-form-item__label {
-        color: rgba(255, 255, 255, 0.8) !important;
+        color: rgba(255, 255, 255, 0.8);
       }
       
       /* Card styles */
@@ -198,7 +198,7 @@ watch(() => {
         border-color: rgba(255, 255, 255, 0.1) !important;
         color: var(--main-color);
       }
-      .el-card .el-card__header, .el-card h3 {
+      .el-card .el-card__header, .el-card h3, .el-card .el-card__body, .el-card .el-card__body :is(label, p, div) {
         color: var(--main-color);
       }
       
