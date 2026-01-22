@@ -196,6 +196,7 @@ watch(() => {
       .el-card {
         background-color: var(--negative-color);
         border-color: rgba(255, 255, 255, 0.1) !important;
+        color: var(--main-color);
       }
       
       /* Button styles */
