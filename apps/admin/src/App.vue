@@ -198,6 +198,9 @@ watch(() => {
         border-color: rgba(255, 255, 255, 0.1) !important;
         color: var(--main-color);
       }
+      .el-card .el-card__header, .el-card h3 {
+        color: var(--main-color);
+      }
       
       /* Button styles */
       .el-button--default {
