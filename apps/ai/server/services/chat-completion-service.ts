@@ -2,7 +2,7 @@ import logger from './logger';
 import { emitAIProviderErrorEvent } from './platform-events';
 
 // Define constants
-const MAX_AUTO_CONTINUE_STEPS = 5;
+const MAX_AUTO_CONTINUE_STEPS = 10;
 
 // Define types for function calls
 export interface FunctionCall {

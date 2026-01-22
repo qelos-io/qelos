@@ -23,9 +23,15 @@ export const callIntegrationManagerAgentCalling = {
       },
     },
     handler: async (req, payload: { messages: any[] }) => {
+      // Separate system messages from regular messages
+      const systemMessages = payload.messages?.filter(msg => msg.role === 'system') || [];
+      const userMessages = payload.messages?.filter(msg => msg.role !== 'system') || [];
+      
       req.aiOptions = {
         ...req.body,
-        messages: payload.messages || []
+        messages: userMessages,
+        // Add system messages to pre_messages so they're handled as instructions
+        pre_messages: (req.body.pre_messages || []).concat(systemMessages)
       }
       
       // For function call handlers, we need to use non-streaming mode

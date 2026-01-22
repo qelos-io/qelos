@@ -3,6 +3,7 @@ import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microf
 import { useRoute } from 'vue-router';
 import { isEditingEnabled } from '@/modules/core/store/auth';
 import { usePluginsStore } from '@/modules/plugins/store/pluginsStore';
+import { useStaticComponentsStore } from '@/modules/no-code/store/static-components';
 
 const editableContent = document.createElement('editable-content');
 const selector = 'p, h1, h2, h3, h4, h5, h6, div, remove-confirmation, block-item, empty-state, ai-chat, el-button, el-select, el-input, el-form, form, life-cycle, list-page-title, quick-table, v-chart';
@@ -10,14 +11,18 @@ const selector = 'p, h1, h2, h3, h4, h5, h6, div, remove-confirmation, block-ite
 export function useSingleItemCrud() {
   const mfes = usePluginsMicroFrontends();
   const pluginsStore = usePluginsStore();
+  const staticComponentsStore = useStaticComponentsStore();
   const route = useRoute()
 
   const editableElementsSelector = computed(() => {
     const customComponents = pluginsStore.loadedCustomComponents;
-    if (!customComponents.length) {
+    const staticComponents = staticComponentsStore.staticComponents.map(c => c.name);
+    const allComponents = [...customComponents, ...staticComponents];
+    
+    if (!allComponents.length) {
       return selector;
     }
-    return `${selector}, ${customComponents.join(', ')}`;
+    return `${selector}, ${allComponents.join(', ')}`;
   });
 
   const crud = computed(() => {

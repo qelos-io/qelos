@@ -6,6 +6,16 @@ export const createComponentCalling = {
   type: 'function',
   name: 'createComponent',
   description: 'Create a new component for the application. Returns the created component.',
+  parameters: {
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'Name of the component. should be capitalized.' },
+      props: { type: 'object', description: 'Props of the component' },
+      purpose: { type: 'string', description: 'Purpose of the component' },
+      uxAndDesign: { type: 'string', description: 'UX and design of the component' },
+    },
+    required: ['name', 'props', 'purpose', 'uxAndDesign']
+  },
   function: {
       name: 'createComponent',
       description: 'Create a new component for the application. Returns the created component.',
@@ -85,24 +95,36 @@ export const createComponentCalling = {
   }
 }
 
-export const editComponentCalling = { 
+export const editComponentCalling = {
   type: 'function',
   name: 'editComponent',
-  description: 'Edit an existing component for the application. Returns the edited component.',
+  description: 'Edit an existing component for the application. Returns the updated component.',
+  parameters: {
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'Name of the component. should be capitalized.' },
+      props: { type: 'object', description: 'Props of the component' },
+      purpose: { type: 'string', description: 'Purpose of the component' },
+      uxAndDesign: { type: 'string', description: 'UX and design of the component' },
+    },
+    required: ['name', 'props', 'purpose', 'uxAndDesign']
+  },
   function: {
       name: 'editComponent',
       description: 'Edit an existing component for the application. Returns the edited component.',
       parameters: {
           type: 'object',
           properties: {
-              componentId: { type: 'string', description: 'ID of the component to edit' },
-              requestToEdit: { type: 'string', description: 'prompt to edit the component' },
+              name: { type: 'string', description: 'Name of the component. should be capitalized.' },
+              props: { type: 'object', description: 'Props of the component' },
+              purpose: { type: 'string', description: 'Purpose of the component' },
+              uxAndDesign: { type: 'string', description: 'UX and design of the component' },
           },
-          required: ['componentId', 'requestToEdit']
+          required: ['name', 'props', 'purpose', 'uxAndDesign']
       },
   },
-  handler: async (req, payload = { componentId: '', requestToEdit: '' }) => {
-    const { componentId, requestToEdit } = payload;
+  handler: async (req, payload = { name: '', props: {}, purpose: '', uxAndDesign: '' }) => {
+    const { name, props, purpose, uxAndDesign } = payload;
     const { source, sourceAuthentication } = req;        
 
     if (!source || !sourceAuthentication) {
@@ -110,7 +132,7 @@ export const editComponentCalling = {
     }
 
     const aiService = createAIService(source, sourceAuthentication);
-    const componentData = await getComponent(req.headers.tenant as string, componentId);
+    const componentData = await getComponent(req.headers.tenant as string, name);
 
     try {
       const response = await aiService.createChatCompletion({
@@ -127,7 +149,7 @@ export const editComponentCalling = {
           },
           {
             role: 'user',
-            content: `Edit the component.  Request to edit: ${requestToEdit}.
+            content: `Edit the component.  Request to edit: ${uxAndDesign}.
             Current component code:
 ${componentData.content}`,
           },
@@ -146,7 +168,7 @@ ${componentData.content}`,
           workspaceId: req.workspace?._id?.toString(),
         },
       });
-      const component = await updateComponent(req.headers.tenant as string, componentId, {
+      const component = await updateComponent(req.headers.tenant as string, name, {
         content: JSON.parse(response.choices[0].message.content).code,
       });
 
@@ -168,11 +190,20 @@ export const getComponentsCalling = {
     type: 'function',
     name: 'getComponents',
     description: 'Get list of components for the application. Returns an array of components.',
-    parameters: {},
+    parameters: {
+        type: 'object',
+        properties: {},
+        required: []
+    },
     function: {
       name: 'getComponents',
       description: 'Get list of components for the application. Returns an array of components.',
-     }, 
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: []
+      },
+    }, 
     handler: async (req) => {
       const tenant = req.headers.tenant;
       const list = await getComponents(tenant);
@@ -184,7 +215,14 @@ export const getComponentsCalling = {
 export const searchComponentsCalling = {
   type: 'function',
   name: 'searchComponents',
-  description: 'Search existing components by name, description, or tags to find reusable UI pieces.',
+  description: 'Search components by name or description for the application. Returns an array of components.',
+  parameters: {
+    type: 'object',
+    properties: {
+      query: { type: 'string', description: 'Search query.' },
+    },
+    required: ['query']
+  },
   function: {
     name: 'searchComponents',
     description: 'Search existing components by name, description, or tags to find reusable UI pieces.',

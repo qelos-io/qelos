@@ -10,6 +10,18 @@ type AIAuthentication = {
   token: string;
 };
 
+export interface FunctionTool {
+  type: string;
+  name?: string;
+  description: string;
+  parameters?: any;
+  function: {
+    name?: string;
+    description: string;
+  };
+  handler?: (req: any, payload: any) => Promise<any>;
+}
+
 // Interface for tool representation
 export type Tool = { 
   type: 'file_search', 
@@ -23,17 +35,7 @@ export type Tool = {
     region?: string;
     country?: string;
   }
-} | {
-  type: string;
-  name?: string;
-  description: string;
-  parameters?: any;
-  function: {
-    name?: string;
-    description: string;
-  };
-  handler?: (req: any, payload: any) => Promise<any>;
-}
+} | FunctionTool;
 
 // Redis client singleton
 let redisClient: any = null;
@@ -164,6 +166,10 @@ export async function indexTools(
     
     // Convert tools to documents for indexing
     const documents = tools.map((tool) => {
+      if (tool.type === 'file_search') {
+        return;
+      }
+      tool = tool as FunctionTool;
       const toolText = `${tool.function.name}: ${tool.function.description}`;
       return new Document({
         pageContent: toolText,
@@ -179,9 +185,26 @@ export async function indexTools(
       });
     });
     
-    // Add documents to vector store
-    await vectorStore.addDocuments(documents);
-    logger.log(`Indexed ${documents.length} tools for tenant ${tenant} using ${embeddingType} embeddings`);
+    // Check for existing documents and only add new ones
+    // Note: similaritySearch doesn't support metadata filtering in RedisVectorStore
+    // so we get all documents and filter in memory
+    const existingDocs = await vectorStore.similaritySearch('', 1000);
+    
+    const existingToolIds = new Set(
+      existingDocs
+        .filter(doc => doc.metadata.tenant === tenant && doc.metadata.embeddingType === embeddingType)
+        .map(doc => doc.metadata.toolId)
+        .filter(Boolean)
+    );
+    
+    const newDocuments: any[] = documents.filter(doc => 
+      doc && !existingToolIds.has(doc.metadata.toolId)
+    );
+    
+    if (newDocuments.length > 0) {
+      // Add only new documents to vector store
+      await vectorStore.addDocuments(newDocuments);
+    }
     
   } catch (error) {
     logger.error('Error indexing tools', error);

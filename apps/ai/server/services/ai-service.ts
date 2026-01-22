@@ -597,7 +597,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
     async createChatCompletion(options: AIServiceOptions) {
       try {
         const messages = options.unsafeUserContext ? getMessagesWithUserContext(options.messages, options.unsafeUserContext) : options.messages;
-        const model = options.model || source.metadata.defaultModel || 'gpt-4.1';
+        const model = options.model || source.metadata.defaultModel || 'gpt-5.2';
 
         // Always use the new Responses API
         // Transform tools to Responses API format
@@ -609,10 +609,15 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
           strict: tool.function.strict
         }));
 
+        const transformedInput = options.input || transformToInput(messages);
+        
+        // Ensure we always have a valid input for the Responses API
+        const finalInput = transformedInput || 'Please continue based on the system instructions.';
+        
         const response = await openai.responses.create({
           model,
           instructions: transformToInstructions(messages),
-          input: options.input || transformToInput(messages),
+          input: finalInput,
           tools: transformedTools,
           temperature: options.temperature,
           top_p: options.top_p,
@@ -690,7 +695,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
     async createChatCompletionStream(options: AIServiceOptions) {
       try {
         const messages = options.unsafeUserContext ? getMessagesWithUserContext(options.messages, options.unsafeUserContext) : options.messages;
-        const model = options.model || source.metadata.defaultModel || 'gpt-4.1';
+        const model = options.model || source.metadata.defaultModel || 'gpt-5.2';
 
         // Transform tools to Responses API format (same as non-streaming)
         const transformedTools = options.tools?.filter(tool => tool && tool.function).map(tool => ({
@@ -705,10 +710,15 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
         const fileSearchTools = options.tools?.filter(tool => tool && tool.type === 'file_search') || [];
         const allTools = [...(transformedTools || []), ...fileSearchTools];
 
+        const transformedInput = options.input || transformToInput(messages);
+        
+        // Ensure we always have a valid input for the Responses API
+        const finalInput = transformedInput || 'Please continue based on the system instructions.';
+        
         const stream = await openai.responses.create({
           model,
           instructions: transformToInstructions(messages),
-          input: options.input || transformToInput(messages),
+          input: finalInput,
           tools: allTools,
           temperature: options.temperature,
           top_p: options.top_p,

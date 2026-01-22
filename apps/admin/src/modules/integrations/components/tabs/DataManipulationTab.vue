@@ -1002,18 +1002,18 @@ onMounted(() => {
             <div v-for="(entry, index) in getMapEntries(i)" :key="index" class="map-entry" :class="{ 'has-error': isMapFieldError(i, entry.key) }">
               <el-input 
                 dir="ltr"
-                :model-value="typeof entry.value === 'string' ? entry.value : JSON.stringify(entry.value ?? '')"
-                @input="(val) => { entry.value = val; syncToModel(); }"
-                placeholder="Value" 
-                :class="{ 'input-error': isMapFieldError(i, entry.key) }"
-              />  
-              <el-input 
-                dir="ltr"
                 v-model="entry.key" 
-                placeholder="JQ Expression" 
+                placeholder="Key (Field Name)" 
                 @update:model-value="syncToModel" 
                 :class="{ 'input-error': isMapFieldError(i, entry.key) }"
               />
+              <el-input 
+                dir="ltr"
+                :model-value="typeof entry.value === 'string' ? entry.value : JSON.stringify(entry.value ?? '')"
+                @input="(val) => { entry.value = val; syncToModel(); }"
+                placeholder="JQ Expression or Value" 
+                :class="{ 'input-error': isMapFieldError(i, entry.key) }"
+              />  
               <el-button type="danger" :icon="Delete" @click="removeMapEntry(i, index)" circle />
             </div>
             <el-button type="primary" @click="addMapEntry(i)" :icon="Plus">{{ $t('Add Field') }}</el-button>

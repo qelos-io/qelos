@@ -5,6 +5,14 @@ export const getBlueprintsCalling = {
   type: 'function',
   name: 'getBlueprints',
   description: 'Get list of blueprints for the application. Returns an array of blueprints. blueprints consider to be the data models of the application.',
+  parameters: {
+    type: 'object',
+    properties: {
+      name: { type: 'string' },
+      description: { type: 'string' },
+    },
+    required: [],
+  },
   function: {
     name: 'getBlueprints',
     description: 'Get list of blueprints for the application. Returns an array of blueprints. blueprints consider to be the data models of the application.',
@@ -38,6 +46,13 @@ export const getBlueprintDefinitionCalling = {
   type: 'function',
   name: 'getBlueprintDefinition',
   description: 'Get the full definition of a blueprint by identifier to inspect fields, relations, permissions, and limitations.',
+  parameters: {
+    type: 'object',
+    properties: {
+      identifier: { type: 'string', description: 'Identifier of the blueprint to retrieve.' }
+    },
+    required: ['identifier']
+  },
   function: {
     name: 'getBlueprintDefinition',
     description: 'Get the full definition of a blueprint by identifier.',
@@ -64,6 +79,17 @@ export const createBlueprintCalling = {
   type: 'function',
   name: 'createBlueprint',
   description: 'Create a new blueprint (also known as db table) for the application. name, identifier, fields are required. each field must have key title, and type (string, number, boolean, date, datetime, time, object, file). If some data is missing - keep ask the user for it. Returns the created blueprint.',
+  parameters: {
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'Name of the blueprint' },
+      identifier: { type: 'string', description: 'Identifier of the blueprint' },
+      fields: { type: 'array', items: { type: 'object' }, description: 'Fields of the blueprint' },
+      permissions: { type: 'object', description: 'Permissions of the blueprint' },
+      relations: { type: 'array', items: { type: 'object' }, description: 'Relations of the blueprint' },
+    },
+    required: ['name', 'identifier', 'fields']
+  },
   function: {
     name: 'createBlueprint',
     description: 'Create a new blueprint for the application. Returns the created blueprint.',

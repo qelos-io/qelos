@@ -117,3 +117,99 @@ export function createPlugin(tenant: string, tenanthost: string, payload: any) {
   })
     .then((axiosRes: any) => axiosRes.data);
 }
+
+
+// Helper functions for plugin and page operations
+export async function getPluginAndPage(pluginId: string, pageId: string, headers: any) {
+  if (!pluginId) {
+    throw new Error('Plugin ID is required');
+  }
+
+  if (!pageId) {
+    throw new Error('Page ID is required');
+  }
+
+  try {
+    let plugin;
+    
+    // Check if pluginId is a valid ObjectId (24 hex characters)
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(pluginId);
+    
+    if (isValidObjectId) {
+      // Try to get plugin by ID
+      plugin = await calPublicPluginsService(
+        `/api/plugins/${pluginId}`,
+        { tenant: headers.tenant, user: headers.user },
+        { data: {}, method: 'GET' }
+      );
+    } else {
+      // If not a valid ObjectId, try to find plugin by name
+      const allPlugins = await calPublicPluginsService(
+        `/api/plugins`,
+        { tenant: headers.tenant, user: headers.user },
+        { data: {}, method: 'GET' }
+      );
+      
+      plugin = allPlugins.find((p: any) => p.name === pluginId || p._id === pluginId);
+      
+      if (!plugin) {
+        throw new Error(`Plugin with name or ID "${pluginId}" not found`);
+      }
+    }
+
+    if (!plugin) {
+      throw new Error(`Plugin with ID ${pluginId} not found`);
+    }
+
+    // Find the page to update
+    const pageIndex = plugin.microFrontends?.findIndex(page => 
+      page._id === pageId || 
+      page.route?.path === pageId.replace(/^\//, '') || // Remove leading slash
+      page.route?.path === pageId ||
+      page.route?.name === pageId ||
+      page.name === pageId
+    );
+
+    if (pageIndex === undefined || pageIndex === -1 || !plugin.microFrontends) {
+      throw new Error(`Page with ID or path "${pageId}" not found in plugin ${pluginId}. Available pages: ${plugin.microFrontends?.map(p => `${p.name} (${p._id}, path: ${p.route?.path})`).join(', ') || 'none'}`);
+    }
+
+    return { plugin, pageIndex };
+  } catch (error: any) {
+    // If plugin not found, try to provide helpful guidance
+    if (error.message?.includes('not found')) {
+      // Check if it's a common mistake like "builtin-pages"
+      if (pluginId === 'builtin-pages') {
+        throw new Error(`Plugin "builtin-pages" is not a valid plugin. You need to use the actual plugin ID. 
+To find the correct plugin ID:
+1. Use getPages() to list all available plugins and their pages
+2. Look for the plugin that contains your page
+3. Use that plugin's ID (usually a 24-character hex string)
+
+Example: If your page is in the "todos" plugin, the plugin ID might be something like "692ea08381d4bd06cfa41ede"`);
+      }
+      throw new Error(`Failed to get plugin or page: ${error?.message || 'Unknown error'}`);
+    }
+    throw new Error(`Failed to get plugin or page: ${error?.message || 'Unknown error'}`);
+  }
+}
+
+export async function updatePluginPage(plugin: any, pageIndex: number, updatedPage: any, headers: any) {
+  try {
+    // Create a new microFrontends array with the updated page
+    const updatedMicroFrontends = [...plugin.microFrontends];
+    updatedMicroFrontends[pageIndex] = updatedPage;
+
+    // Update the plugin with the new microFrontends array
+    const updatedPlugin = await calPublicPluginsService(
+      `/api/plugins/${plugin._id}`,
+      { tenant: headers.tenant, user: headers.user },
+      { data: { ...plugin, microFrontends: updatedMicroFrontends }, method: 'PUT' }
+    );
+
+    // Return the updated page
+    return updatedPlugin.microFrontends[pageIndex];
+  } catch (error: any) {
+    throw new Error(`Failed to update page: ${error?.message || 'Unknown error'}`);
+  }
+}

@@ -2,8 +2,9 @@
   <el-dropdown class="user-dropdown" :class="{'dark-app': $isDarkTheme}" trigger="click" @click.stop>
     <div class="el-dropdown-link user-welcome" @click.stop>
       <span>{{ user.firstName }}</span>
+
       <el-avatar class="avatar-img" v-if="user.workspace || user.profileImage" :src="user.profileImage">
-        {{ workspaceName }}
+        {{ workspaceName || user.firstName[0].toUpperCase() }}
       </el-avatar>
       <el-icon>
         <icon-arrow-down/>

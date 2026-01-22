@@ -156,7 +156,7 @@ export async function processChatCompletion(req: any, res: any, systemPrompt: an
           aiService,
           chatOptions,
           executeFunctionCallsHandler,
-          [],
+          allTools,
           undefined,
           context
         ),
