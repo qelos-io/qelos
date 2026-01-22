@@ -15,6 +15,7 @@
             v-model:vertical-background-image="edited.verticalBackgroundImage"
             v-model:login-title="edited.loginTitle"
             v-model:slots="edited.slots"
+            :form-position="edited.formPosition"
           />
 
           <AuthenticationMethodsSection

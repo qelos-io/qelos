@@ -138,6 +138,14 @@
             </template>
           </BlocksSelector>
         </FormRowGroup>
+
+        <FormRowGroup v-if="props.formPosition === 'left' || props.formPosition === 'right'">
+          <BlocksSelector v-model="slots.loginAside" editable title="Aside Content Box">
+            <template #help>
+              <span class="help-text">{{ $t('Custom content to display on the opposite side of the login form (when form is positioned left or right)') }}</span>
+            </template>
+          </BlocksSelector>
+        </FormRowGroup>
       </div>
     </BlockItem>
   </div>
@@ -154,6 +162,11 @@ const backgroundImage = defineModel<string>('backgroundImage');
 const verticalBackgroundImage = defineModel<string>('verticalBackgroundImage');
 const loginTitle = defineModel<string>('loginTitle');
 const slots = defineModel<Record<string, any>>('slots', { required: true });
+
+// Props
+const props = defineProps<{
+  formPosition?: string;
+}>();
 
 const activeImageTab = ref<'horizontal' | 'vertical' | 'content'>('horizontal');
 </script>

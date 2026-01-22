@@ -13,8 +13,11 @@
     </div>
     <template v-else>
       <aside :class="{'bg-image': !!bgImage}">
-        <img :alt="appConfig?.name || 'SaaS'" :src="appConfig?.logoUrl || '../../assets/logo.png'">
-        <h1>{{ $t(config?.loginTitle || 'Welcome') }}</h1>
+        <ContentBox v-if="(config.formPosition === 'left' || config.formPosition === 'right') && config.slots?.loginAside" :identifier="config.slots.loginAside"/>
+        <template v-else>
+          <img :alt="appConfig?.name || 'SaaS'" :src="appConfig?.logoUrl || '../../assets/logo.png'">
+          <h1>{{ $t(config?.loginTitle || 'Welcome') }}</h1>
+        </template>
       </aside>
       <div>
         <LoginForm :auth-config="config">
@@ -146,8 +149,11 @@ const { appConfig } = useAppConfiguration();
 aside {
   background: linear-gradient(318deg, var(--body-bg) 0%, var(--border-color) 100%);
   text-align: center;
-  height: 100vh;
+  height: 100%;
   width: 100%;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: auto;
 }
 
 img {

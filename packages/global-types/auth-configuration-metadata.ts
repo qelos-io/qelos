@@ -17,6 +17,7 @@ export interface IAuthConfigurationMetadata {
   slots?: {
     loginHeader?: string,
     loginFooter?: string,
+    loginAside?: string,
   },
   showLoginPage: boolean,
   showRegisterPage: boolean,
