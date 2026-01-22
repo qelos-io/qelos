@@ -223,6 +223,9 @@ watch(() => {
       .el-select-dropdown__item.hover, .el-select-dropdown__item:hover {
         background-color: var(--negative-color);
       }
+      .el-select-dropdown__list li {
+        color: var(--main-color);
+      }
       
       /* Dialog styles */
       .el-dialog {
