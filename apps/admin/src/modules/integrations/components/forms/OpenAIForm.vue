@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, defineProps, defineEmits } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { IOpenAISource } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import { ElMessage } from 'element-plus';
 import { QuestionFilled, Warning } from '@element-plus/icons-vue';
+import { AVAILABLE_MODELS } from '@/modules/integrations/constants/ai-models';
 
 const props = defineProps({
   modelValue: {
@@ -14,11 +15,20 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'submit', 'close']);
 const formRef = ref();
-const formModel = ref({ ...props.modelValue });
+const formModel = ref({ 
+  ...props.modelValue,
+  metadata: {
+    ...props.modelValue?.metadata,
+    defaultModel: props.modelValue?.metadata?.defaultModel || 'gpt-5.2'
+  }
+});
 const availableLabels = ['Chatbot', 'NLP', 'AI Assistant', 'Text Generation'];
 const tokenInput = ref('');
 const isSubmitting = ref(false);
 const showTokenHelp = ref(false);
+
+// OpenAI model options with descriptions
+const openAIModelOptions = AVAILABLE_MODELS;
 
 // Determine if this is a new integration or an edit
 const isNewIntegration = computed(() => !props.modelValue?._id);
@@ -88,6 +98,23 @@ const submitForm = async () => {
     isSubmitting.value = false;
   }
 };
+
+// Watch for modelValue changes to update formModel
+watch(() => props.modelValue, (newValue) => {
+  if (newValue) {
+    formModel.value = { 
+      ...newValue,
+      metadata: {
+        ...newValue?.metadata,
+        defaultModel: newValue?.metadata?.defaultModel || 'gpt-5.2'
+      }
+    };
+    // Initialize token for existing integrations
+    if (!isNewIntegration.value && newValue.authentication?.token) {
+      tokenInput.value = ''; // Keep empty for security, user can update if needed
+    }
+  }
+}, { immediate: true });
 </script>
 
 <template>
@@ -107,6 +134,17 @@ const submitForm = async () => {
     >
       <el-option v-for="label in availableLabels" :key="label" :label="label" :value="label" />
     </LabelsInput>
+    
+    <FormInput
+      v-model="formModel.metadata.defaultModel"
+      title="Default Model"
+      type="select"
+      :options="openAIModelOptions"
+      required
+      placeholder="gpt-5.2"
+      description="OpenAI model to use when a specific model isn't provided by workflows."
+      :select-options="{ filterable: true, allowCreate: true }"
+    />
     
     <el-form-item 
       label="API Token" 

@@ -33,7 +33,7 @@ function getSafeUserMessages(messages) {
  */
 function createChatOptions(options, sourceDetails, source, initialMessages, safeUserMessages, tools) {
   return {
-    model: options.model || sourceDetails.model || source.metadata.defaultModel || 'gpt-4.1',
+    model: options.model || sourceDetails.model || source.metadata.defaultModel || 'gpt-5.2',
     temperature: options.temperature || sourceDetails.temperature,
     top_p: options.top_p || sourceDetails.top_p,
     frequency_penalty: options.frequency_penalty || sourceDetails.frequency_penalty,

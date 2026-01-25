@@ -595,9 +595,9 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
 
   return {
     async createChatCompletion(options: AIServiceOptions) {
+      const model = options.model || source.metadata.defaultModel || 'gpt-5.2';
       try {
         const messages = options.unsafeUserContext ? getMessagesWithUserContext(options.messages, options.unsafeUserContext) : options.messages;
-        const model = options.model || source.metadata.defaultModel || 'gpt-5.2';
 
         // Always use the new Responses API
         // Transform tools to Responses API format
@@ -609,6 +609,9 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
           strict: tool.function.strict
         }));
 
+        const customTools = options.tools?.filter(tool => tool && tool.type !== 'function') || [];
+        const allTools = [...(transformedTools || []), ...customTools];
+
         const transformedInput = options.input || transformToInput(messages);
         
         // Ensure we always have a valid input for the Responses API
@@ -618,7 +621,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
           model,
           instructions: transformToInstructions(messages),
           input: finalInput,
-          tools: transformedTools,
+          tools: allTools,
           temperature: options.temperature,
           top_p: options.top_p,
           max_output_tokens: options.max_tokens,
@@ -684,7 +687,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
           provider: source.kind,
           sourceId: source._id,
           stream: false,
-          model: options.model || source.metadata.defaultModel || 'gpt-4.1',
+          model,
           context: options.unsafeUserContext,
           error,
         });
@@ -693,9 +696,9 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
     },
 
     async createChatCompletionStream(options: AIServiceOptions) {
+      const model = options.model || source.metadata.defaultModel || 'gpt-5.2';
       try {
         const messages = options.unsafeUserContext ? getMessagesWithUserContext(options.messages, options.unsafeUserContext) : options.messages;
-        const model = options.model || source.metadata.defaultModel || 'gpt-5.2';
 
         // Transform tools to Responses API format (same as non-streaming)
         const transformedTools = options.tools?.filter(tool => tool && tool.function).map(tool => ({
@@ -706,9 +709,8 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
           strict: tool.function.strict
         }));
 
-        // Add file_search tools if present (they don't need transformation)
-        const fileSearchTools = options.tools?.filter(tool => tool && tool.type === 'file_search') || [];
-        const allTools = [...(transformedTools || []), ...fileSearchTools];
+        const customTools = options.tools?.filter(tool => tool && tool.type !== 'function') || [];
+        const allTools = [...(transformedTools || []), ...customTools];
 
         const transformedInput = options.input || transformToInput(messages);
         
@@ -961,7 +963,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
           provider: source.kind,
           sourceId: source._id,
           stream: true,
-          model: options.model || source.metadata.defaultModel || 'gpt-4.1',
+          model,
           context: options.unsafeUserContext,
           error,
         });

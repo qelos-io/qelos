@@ -178,6 +178,9 @@ export interface IOpenAISource extends IIntegrationSource {
   kind: IntegrationSourceKind.OpenAI;
   authentication: {
     token: string;
+  },
+  metadata: {
+    defaultModel?: string | null
   }
 }
 
