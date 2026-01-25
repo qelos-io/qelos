@@ -776,7 +776,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
                 };
               }
             } else if (chunk.type === 'response.output_text.completed' || chunk.type === 'response.completed') {
-              // Send the full content with a different type to indicate completion
+              // Send the full content with a special type to indicate completion
               // This allows the client to handle it differently from regular chunks
               const outputItem = (chunk as any).output?.[(chunk as any).output?.length - 1];
               if (outputItem?.type === 'message' && outputItem.content) {
@@ -797,7 +797,18 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
                   };
                 }
               }
-              continue;
+              // Also send the finish event
+              yield {
+                id: messageId,
+                object: 'chat.completion.chunk' as const,
+                created: Math.floor(Date.now() / 1000),
+                model: (chunk as any).model || model,
+                choices: [{
+                  index: 0,
+                  delta: {},
+                  finish_reason: 'stop'
+                }]
+              };
             } else if (chunk.type === 'response.output_item.added' && chunk.item?.type === 'function_call') {
               // Function call start - store the function info
               currentFunctionCall = {
