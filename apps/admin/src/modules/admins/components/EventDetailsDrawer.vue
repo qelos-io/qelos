@@ -310,8 +310,13 @@ const userDisplayName = computed(() => {
     margin-block-start: 24px;
     padding: 15px;
     border-radius: 4px;
-    background: var(--el-color-info-light-9, #f5f7fa);
+    background: var(--negative-color);
     border: 1px solid var(--el-border-color, #e4e7ed);
+    color: var(--main-color);
+
+    h3 {
+      color: var(--main-color);
+    }
   }
 
   .section-header {
@@ -325,6 +330,8 @@ const userDisplayName = computed(() => {
     font-size: 12px;
     line-height: 1.6;
     overflow-x: auto;
+    background-color: var(--main-color);
+    color: var(--text-color);
   }
 
   .entity-details {
