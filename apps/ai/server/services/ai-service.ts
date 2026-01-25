@@ -735,6 +735,8 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
           let messageId = `resp-${Date.now()}`;
           let currentFunctionCall: any = null;
           let accumulatedArgs = '';
+          let accumulatedContent = '';
+          let hasSeenCompletion = false;
 
           for await (const chunk of originalStream) {
             // Emit token usage event if usage data is present and we haven't emitted yet
@@ -760,9 +762,10 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
 
             // Normalize the Responses API format to match Completion API format
             if (chunk.type === 'response.output_text.delta') {
-              // Individual character/word delta from Responses API - pass through as-is
+              // Individual character/word delta from Responses API
               const delta = chunk.delta || '';
               if (delta) {
+                accumulatedContent += delta;
                 yield {
                   id: messageId,
                   object: 'chat.completion.chunk' as const,
@@ -777,7 +780,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
               }
             } else if (chunk.type === 'response.output_text.completed' || chunk.type === 'response.completed') {
               // Send the full content with a special type to indicate completion
-              // This allows the client to handle it differently from regular chunks
+              hasSeenCompletion = true;
               const outputItem = (chunk as any).output?.[(chunk as any).output?.length - 1];
               if (outputItem?.type === 'message' && outputItem.content) {
                 const text = outputItem.content[0]?.text || '';
@@ -872,7 +875,10 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
               // Text chunk from Responses API - convert to delta format
               const text = chunk.text || (chunk as any).content || '';
               if (text) {
-                // Yield the text chunk as-is from OpenAI's natural streaming
+                // Check if this appears to be the complete content
+                const isCompleteContent = text.length > 50 && accumulatedContent && text.includes(accumulatedContent);
+                
+                // Yield the text chunk
                 yield {
                   id: messageId,
                   object: 'chat.completion.chunk' as const,
@@ -882,7 +888,9 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
                     index: 0,
                     delta: { content: text },
                     finish_reason: null
-                  }]
+                  }],
+                  // Add completion_type for complete content
+                  ...(isCompleteContent && { completion_type: 'full_content' })
                 };
               }
             } else if ((chunk as any).type === 'function_call') {
@@ -913,9 +921,11 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
               if (outputItem?.type === 'message' && outputItem.content) {
                 const text = outputItem.content[0]?.text || '';
                 if (text) {
-                  // Check if this is a complete response (has no delta)
-                  const isCompleteResponse = !chunk.type || chunk.type === 'response' || chunk.type === 'response.completed';
-                  // Yield the text chunk as-is from OpenAI's natural streaming
+                  // Check if this text appears to be the complete content
+                  // (it's much longer than a typical delta and contains previous content)
+                  const isCompleteContent = text.length > 50 && text.includes(accumulatedContent);
+                  
+                  // Yield the text chunk
                   yield {
                     id: messageId,
                     object: 'chat.completion.chunk' as const,
@@ -926,8 +936,8 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
                       delta: { content: text },
                       finish_reason: null
                     }],
-                    // Add completion_type for complete responses
-                    ...(isCompleteResponse && { completion_type: 'full_content' })
+                    // Add completion_type for complete content
+                    ...(isCompleteContent && { completion_type: 'full_content' })
                   };
                 }
               } else if (outputItem?.type === 'function_call') {

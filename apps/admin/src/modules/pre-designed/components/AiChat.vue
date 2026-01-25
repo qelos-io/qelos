@@ -272,7 +272,6 @@ import {
   watch,
   computed,
   onMounted,
-  triggerRef,
 } from "vue";
 import { ElMessage } from "element-plus";
 import {
@@ -287,7 +286,6 @@ import {
 } from "@element-plus/icons-vue";
 import { Remarkable } from "remarkable";
 import { linkify } from "remarkable/linkify";
-import { isAdmin, isLoadingDataAsUser } from "@/modules/core/store/auth";
 import sdk from "@/services/sdk";
 
 const props = defineProps<{
