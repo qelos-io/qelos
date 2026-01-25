@@ -180,7 +180,9 @@ export interface IOpenAISource extends IIntegrationSource {
     token: string;
   },
   metadata: {
-    defaultModel?: string | null
+    organizationId?: string;
+    apiUrl?: string;
+    defaultModel?: string | null;
   }
 }
 

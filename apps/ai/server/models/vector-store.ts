@@ -29,11 +29,6 @@ const VectorStoreSchema = new Schema<IVectorStore>(
       required: false,
       refPath: 'subjectModel' // Dynamic reference based on scope
     },
-    subjectModel: {
-      type: String,
-      required: false,
-      enum: ['Thread', 'User', 'Workspace']
-    },
     tenant: { type: String, required: true },
     agent: { type: Schema.Types.ObjectId, required: true, ref: 'Integration' },
     externalId: { type: String, required: true },

@@ -1,7 +1,7 @@
 <template>
-  <el-dropdown-item v-if="user.workspace" @click.stop>
+  <el-dropdown-item v-if="user.workspace" @click.stop class="workspace-row">
     <router-link :to="{ name: 'editMyWorkspace', params: {id: user.workspace._id} }">
-      <span class="workspace-row">{{ wsName }}</span>
+      <span class="link">{{ wsName }}</span>
     </router-link>
   </el-dropdown-item>
   <el-dropdown-item @click.stop>
@@ -17,7 +17,10 @@ const { user } = useAuth()
 const wsName = computed(() => decodeURIComponent(decodeURIComponent(user.value.workspace.name || '')))
 </script>
 <style scoped>
-.workspace-row {
+.workspace-row .link {
   color: var(--inputs-text-color);
+}
+.workspace-row:hover .link {
+  color: var(--link);
 }
 </style>

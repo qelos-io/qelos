@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import { IOpenAISource, OpenAIUploadStoragePayload, OpenAIClearStoragePayload } from '@qelos/global-types';
 import { createVectorStorageService, getOrCreateIntegrationVectorStore } from '../services/vector-storage-service';
-import { VectorStore } from '../models/vector-store';
+import { VectorStore, VectorStoreScope } from '../models/vector-store';
+import { OpenAI } from 'openai';
+import logger from '../services/logger';
+import { VectorStoreService } from '../services/vector-store-service';
 
 // Extend Request type to include source and sourceAuthentication
 declare global {
@@ -132,7 +135,7 @@ export async function clearStorageFiles(req: Request, res: Response) {
 
 export async function getVectorStores(req: Request, res: Response) {
   try {
-    const { scope, subjectId, subjectModel, agent } = req.query;
+    const { scope, subjectId, agent } = req.query;
 
     const dbQuery: any = {
       tenant: req.headers.tenant,
@@ -142,9 +145,6 @@ export async function getVectorStores(req: Request, res: Response) {
     }
     if (subjectId) {
       dbQuery.subjectId = subjectId;
-    }
-    if (subjectModel) {
-      dbQuery.subjectModel = subjectModel
     }
     if (agent) {
       dbQuery.agent = agent;
@@ -156,6 +156,70 @@ export async function getVectorStores(req: Request, res: Response) {
   } catch (error) {
     res.status(500).json({ 
       error: 'Failed to get vector store',
+      details: error instanceof Error ? error.message : String(error)
+    }).end();
+  }
+}
+
+export async function createVectorStorage(req: Request, res: Response) {
+  try {
+    const source = req.source as IOpenAISource;
+    const tenant = req.headers.tenant as string;
+    
+    // Get parameters from request body
+    const { integrationId, scope, subjectId, expirationAfterDays } = req.body;
+
+    // Validate required parameters
+    if (!integrationId) {
+      return res.status(400).json({ error: 'Integration ID (agent) is required' }).end();
+    }
+    if (!scope) {
+      return res.status(400).json({ error: 'Scope is required' }).end();
+    }
+    if (!Object.values(['thread', 'user', 'workspace', 'tenant']).includes(scope)) {
+      return res.status(400).json({ error: 'Invalid scope. Must be one of: thread, user, workspace, tenant' }).end();
+    }
+    if (scope !== 'tenant' && !subjectId) {
+      return res.status(400).json({ error: 'Subject ID is required for scope other than tenant' }).end();
+    }
+
+    // Create OpenAI client
+    const openai = new OpenAI({
+      apiKey: source.authentication.token,
+      organization: source.metadata?.organizationId,
+      baseURL: source.metadata?.apiUrl,
+    });
+
+    // Create VectorStoreService instance
+    const vectorStoreService = new VectorStoreService(openai);
+
+    // Create or get vector store using the service
+    const vectorStore = await vectorStoreService.getOrCreateVectorStore(
+      tenant,
+      integrationId,
+      scope as VectorStoreScope,
+      subjectId,
+      { expirationAfterDays }
+    );
+
+    res.json({
+      success: true,
+      message: 'Vector storage created successfully',
+      vectorStore: {
+        id: vectorStore._id,
+        scope: vectorStore.scope,
+        subjectId: vectorStore.subjectId,
+        tenant: vectorStore.tenant,
+        agent: vectorStore.agent,
+        externalId: vectorStore.externalId,
+        expirationAfterDays: vectorStore.expirationAfterDays,
+        created: vectorStore.created,
+      },
+    }).end();
+  } catch (error) {
+    logger.error('Failed to create vector storage:', error);
+    res.status(500).json({ 
+      error: 'Failed to create vector storage',
       details: error instanceof Error ? error.message : String(error)
     }).end();
   }

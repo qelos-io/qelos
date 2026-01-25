@@ -117,7 +117,7 @@ export async function getOrCreateIntegrationVectorStore(
 
   // For now, create a new vector store with a consistent name
   // In the future, we could cache this or store it elsewhere
-  const vectorStoreName = `Integration-${integrationId}`;
+  const vectorStoreName = `Integration-${integrationId}-${tenant}`;
   
   try {
     // Try to find existing vector store by name

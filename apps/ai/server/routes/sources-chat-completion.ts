@@ -5,7 +5,8 @@ import { createBlueprintUsingAI } from '../controllers/ai-blueprints';
 import {
   uploadContentToStorage,
   clearStorageFiles,
-  getVectorStores
+  getVectorStores,
+  createVectorStorage
 } from '../controllers/storage-management';
 
 export function sourcesChatCompletionRouter() {
@@ -49,6 +50,13 @@ export function sourcesChatCompletionRouter() {
        createBlueprintUsingAI
     )
 
+    router
+    .post('/api/ai/sources/:sourceId/storage',
+       AUTHENTICATION_MIDDLEWARES,
+       getSourceToIntegrate,
+       createVectorStorage
+    )
+
   router
     .post('/api/ai/sources/:sourceId/storage/upload',
        AUTHENTICATION_MIDDLEWARES,
@@ -81,7 +89,7 @@ export function sourcesChatCompletionRouter() {
     )
   
   router
-    .get('/internal-api/ai/vector-stores/',
+    .get('/internal-api/ai/vector-stores',
        verifyInternalCall,
        getVectorStores
     )
