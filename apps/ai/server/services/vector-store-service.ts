@@ -1,7 +1,8 @@
+import { OpenAI } from 'openai';
 import { VectorStore, IVectorStore, VectorStoreScope } from '../models/vector-store';
-import { Thread } from '../models/thread';
-import OpenAI from 'openai';
+import mongoose from 'mongoose';
 import logger from './logger';
+import { Thread } from '../models/thread';
 
 export interface VectorStoreConfig {
   scope: VectorStoreScope;
@@ -25,14 +26,30 @@ export class VectorStoreService {
     scope: VectorStoreScope,
     subjectId?: string,
     config?: Partial<VectorStoreConfig>
-  ): Promise<IVectorStore> {
+  ): Promise<IVectorStore> {   
+    // Convert subjectId to ObjectId if provided
+    const subjectObjectId = subjectId ? new mongoose.Types.ObjectId(subjectId) : undefined;
+    
     // First, try to find existing vector store
-    const existingStore = await VectorStore.findOne({
-      tenant,
-      agent: agentId,
-      scope,
-      subjectId: subjectId || undefined
-    });
+    let existingStore;
+    try {
+      existingStore = await VectorStore.findOne({
+        tenant,
+        agent: new mongoose.Types.ObjectId(agentId),
+        scope,
+        subjectId: subjectObjectId
+      });
+    } catch (error: any) {
+      logger.error('Error finding vector store:', {
+        error: error.message,
+        tenant,
+        agentId,
+        scope,
+        subjectId,
+        subjectObjectId
+      });
+      throw error;
+    }
 
     if (existingStore) {
       // Check if the store is still valid in OpenAI
@@ -74,27 +91,34 @@ export class VectorStoreService {
 
     const openaiStore = await this.openai.vectorStores.create(createParams);
 
-    // Determine subject model for reference
-    let subjectModel: string | undefined;
-    if (scope === 'thread') subjectModel = 'Thread';
-    else if (scope === 'user') subjectModel = 'User';
-    else if (scope === 'workspace') subjectModel = 'Workspace';
-
     const vectorStore = new VectorStore({
       scope,
-      subjectId: subjectId || undefined,
-      subjectModel,
+      subjectId: subjectId ? new mongoose.Types.ObjectId(subjectId) : undefined,
       tenant,
-      agent: agentId,
+      agent: new mongoose.Types.ObjectId(agentId),
       externalId: openaiStore.id,
       expirationAfterDays: config?.expirationAfterDays,
       hardcodedIds: config?.hardcodedIds || []
     });
 
-    await vectorStore.save();
+    let savedVectorStore;
+    try {
+      savedVectorStore = await vectorStore.save();
+    } catch (error: any) {
+      logger.error('Error saving vector store:', {
+        error: error.message,
+        tenant,
+        agentId,
+        scope,
+        subjectId,
+        vectorStoreData: vectorStore.toObject()
+      });
+      throw error;
+    }
+    
     logger.info(`Created vector store ${openaiStore.id} for ${scope} ${subjectId || 'tenant'} in tenant ${tenant}`);
 
-    return vectorStore;
+    return savedVectorStore;
   }
 
   /**
@@ -123,31 +147,31 @@ export class VectorStoreService {
       // Check for thread-scoped store
       VectorStore.findOne({
         tenant,
-        agent: agentId,
+        agent: new mongoose.Types.ObjectId(agentId),
         scope: 'thread',
-        subjectId: threadId
+        subjectId: new mongoose.Types.ObjectId(threadId)
       }),
       
       // Check for user-scoped store
       VectorStore.findOne({
         tenant,
-        agent: agentId,
+        agent: new mongoose.Types.ObjectId(agentId),
         scope: 'user',
-        subjectId: thread.user.toString()
+        subjectId: new mongoose.Types.ObjectId(thread.user.toString())
       }),
       
       // Check for workspace-scoped store
       thread.workspace ? VectorStore.findOne({
         tenant,
-        agent: agentId,
+        agent: new mongoose.Types.ObjectId(agentId),
         scope: 'workspace',
-        subjectId: thread.workspace.toString()
+        subjectId: new mongoose.Types.ObjectId(thread.workspace.toString())
       }) : Promise.resolve(null),
       
       // Check for tenant-scoped store
       VectorStore.findOne({
         tenant,
-        agent: agentId,
+        agent: new mongoose.Types.ObjectId(agentId),
         scope: 'tenant',
         subjectId: { $exists: false }
       }),
@@ -155,11 +179,11 @@ export class VectorStoreService {
       // Get all stores for hardcoded IDs
       VectorStore.find({
         tenant,
-        agent: agentId,
+        agent: new mongoose.Types.ObjectId(agentId),
         $or: [
-          { scope: 'thread', subjectId: threadId },
-          { scope: 'user', subjectId: thread.user.toString() },
-          { scope: 'workspace', subjectId: thread.workspace?.toString() },
+          { scope: 'thread', subjectId: new mongoose.Types.ObjectId(threadId) },
+          { scope: 'user', subjectId: new mongoose.Types.ObjectId(thread.user.toString()) },
+          { scope: 'workspace', subjectId: thread.workspace ? new mongoose.Types.ObjectId(thread.workspace.toString()) : { $exists: false } },
           { scope: 'tenant', subjectId: { $exists: false } }
         ]
       })

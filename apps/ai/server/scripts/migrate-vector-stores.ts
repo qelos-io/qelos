@@ -1,5 +1,6 @@
 import { Thread } from '../models/thread';
 import { VectorStore, VectorStoreScope } from '../models/vector-store';
+import mongoose from 'mongoose';
 import logger from '../services/logger';
 
 /**
@@ -22,19 +23,19 @@ export async function migrateVectorStores() {
         // Check if vector store already exists for this thread
         const existingVectorStore = await VectorStore.findOne({
           tenant: (thread.integration as any).tenant,
-          agent: thread.integration,
+          agent: new mongoose.Types.ObjectId(thread.integration),
           scope: 'thread',
-          subjectId: thread._id
+          subjectId: thread._id.toString()
         });
 
         if (!existingVectorStore) {
           // Create new vector store record
           const vectorStore = new VectorStore({
             scope: 'thread' as VectorStoreScope,
-            subjectId: thread._id,
+            subjectId: thread._id.toString(),
             subjectModel: 'Thread',
             tenant: (thread.integration as any).tenant,
-            agent: thread.integration,
+            agent: new mongoose.Types.ObjectId(thread.integration),
             externalId: (thread as any).vectorStoreExternalId,
             expirationAfterDays: 30, // Default expiration
             hardcodedIds: []

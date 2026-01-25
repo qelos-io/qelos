@@ -44,7 +44,7 @@ export const createThread = async (req: RequestWithUser, res: Response) => {
     const thread = new Thread({
       integration: integration._id,
       user: req.user._id,
-      workspace: req.user.workspace,
+      workspace: req.workspace?._id,
       messages: []
     })
 
@@ -92,8 +92,8 @@ export const createThread = async (req: RequestWithUser, res: Response) => {
             subjectId = (thread._id as mongoose.Types.ObjectId).toString();
           } else if (scope === 'user') {
             subjectId = (req.user._id as mongoose.Types.ObjectId).toString();
-          } else if (scope === 'workspace' && req.user.workspace) {
-            subjectId = (req.user.workspace as mongoose.Types.ObjectId).toString();
+          } else if (scope === 'workspace' && req.workspace) {
+            subjectId = req.workspace._id;
           }
           // For tenant scope, subjectId remains undefined
 
@@ -305,7 +305,7 @@ export const deleteThread = async (req: RequestWithUser, res: Response) => {
             tenant: req.headers.tenant,
             agent: integration._id,
             scope: 'thread',
-            subjectId: thread._id
+            subjectId: thread._id.toString()
           });
 
           if (threadVectorStore) {

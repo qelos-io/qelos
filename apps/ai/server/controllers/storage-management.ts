@@ -169,6 +169,18 @@ export async function createVectorStorage(req: Request, res: Response) {
     // Get parameters from request body
     const { integrationId, scope, subjectId, expirationAfterDays } = req.body;
 
+    // Validate subjectId is a string if provided
+    if (subjectId !== undefined && typeof subjectId !== 'string') {
+      logger.error(`Invalid subjectId type: expected string, got ${typeof subjectId}`, {
+        subjectId,
+        subjectIdString: String(subjectId)
+      });
+      return res.status(400).json({ 
+        error: 'Invalid subjectId: must be a string',
+        received: typeof subjectId
+      }).end();
+    }
+
     // Validate required parameters
     if (!integrationId) {
       return res.status(400).json({ error: 'Integration ID (agent) is required' }).end();
