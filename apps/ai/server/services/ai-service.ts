@@ -913,6 +913,8 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
               if (outputItem?.type === 'message' && outputItem.content) {
                 const text = outputItem.content[0]?.text || '';
                 if (text) {
+                  // Check if this is a complete response (has no delta)
+                  const isCompleteResponse = !chunk.type || chunk.type === 'response' || chunk.type === 'response.completed';
                   // Yield the text chunk as-is from OpenAI's natural streaming
                   yield {
                     id: messageId,
@@ -923,7 +925,9 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
                       index: 0,
                       delta: { content: text },
                       finish_reason: null
-                    }]
+                    }],
+                    // Add completion_type for complete responses
+                    ...(isCompleteResponse && { completion_type: 'full_content' })
                   };
                 }
               } else if (outputItem?.type === 'function_call') {
