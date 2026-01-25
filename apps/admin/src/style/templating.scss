@@ -146,3 +146,9 @@ html.mobile body {
 .el-popper.is-dark {
   color: var(--text-color);
 }
+
+html[data-dark-mode="true"] {
+  .el-descriptions__label.el-descriptions__cell.is-bordered-label {
+    color: var(--main-color);
+  }
+}
