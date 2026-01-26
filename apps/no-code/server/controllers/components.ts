@@ -165,8 +165,23 @@ export const getSingleComponent = async (req, res) => {
 };
 
 export const getCompiledComponent = async (req, res) => {
-  const [identifier, updated, extension] = req.params.componentKey.split('.');
+  const componentKey = String(req.params.componentKey || '');
+  const lastDotIndex = componentKey.lastIndexOf('.');
+  const beforeExtension = lastDotIndex > -1 ? componentKey.slice(0, lastDotIndex) : '';
+  const extension = lastDotIndex > -1 ? componentKey.slice(lastDotIndex + 1) : '';
+
+  const secondDotIndex = beforeExtension.lastIndexOf('.');
+  const identifier = secondDotIndex > -1 ? beforeExtension.slice(0, secondDotIndex).trim() : '';
+  const updated = secondDotIndex > -1 ? beforeExtension.slice(secondDotIndex + 1) : '';
   try {
+    if (!identifier || identifier.includes('..') || identifier.startsWith('/') || identifier.startsWith('\\')) {
+      res.status(404).json({ message: 'invalid identifier' }).end();
+      return;
+    }
+    if (!updated) {
+      res.status(404).json({ message: 'invalid updated token' }).end();
+      return;
+    }
     if (extension !== 'js' && extension !== 'css') {
       res.status(404).json({ message: 'invalid extension' }).end();
       return;

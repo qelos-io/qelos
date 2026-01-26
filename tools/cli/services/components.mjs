@@ -1,23 +1,57 @@
 import fs from 'node:fs';
-import { join } from 'node:path';
+import path, { join } from 'node:path';
 import { logger } from './logger.mjs';
+
+function normalizeRelativeIdentifier(value) {
+  return String(value || '')
+    .replaceAll('\\', '/')
+    .replace(/^\//, '')
+    .trim();
+}
+
+function isSafeRelativeIdentifier(value) {
+  if (!value) return false;
+  if (value.includes('..')) return false;
+  if (value.startsWith('/')) return false;
+  return true;
+}
+
+function listVueFilesRecursively(rootDir, currentDir = rootDir, out = []) {
+  const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = join(currentDir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === 'node_modules' || entry.name === '.git') continue;
+      listVueFilesRecursively(rootDir, fullPath, out);
+      continue;
+    }
+    if (!entry.isFile()) continue;
+    if (!entry.name.endsWith('.vue')) continue;
+    if (entry.name === 'components.json') continue;
+    out.push(fullPath);
+  }
+  return out;
+}
 
 /**
  * Push components from local directory to remote
  * @param {Object} sdk - Initialized SDK instance
  * @param {string} path - Path to components directory
  */
-export async function pushComponents(sdk, path, options = {}) {
+export async function pushComponents(sdk, componentsPath, options = {}) {
   const { targetFile } = options;
-  const directoryFiles = fs.readdirSync(path);
-  const files = targetFile ? [targetFile] : directoryFiles;
-  const vueFiles = files.filter(f => f.endsWith('.vue'));
+  const vueFilePaths = targetFile
+    ? [join(componentsPath, targetFile)]
+    : listVueFilesRecursively(componentsPath);
+  const vueFiles = vueFilePaths
+    .filter(filePath => fs.existsSync(filePath))
+    .filter(filePath => filePath.endsWith('.vue'));
   
   if (vueFiles.length === 0) {
     if (targetFile) {
       logger.warning(`File ${targetFile} is not a .vue component. Skipping.`);
     } else {
-      logger.warning(`No .vue files found in ${path}`);
+      logger.warning(`No .vue files found in ${componentsPath}`);
     }
     return;
   }
@@ -26,7 +60,7 @@ export async function pushComponents(sdk, path, options = {}) {
   let componentsJson = {};
   
   try {
-    const jsonPath = join(path, 'components.json');
+    const jsonPath = join(componentsPath, 'components.json');
     if (fs.existsSync(jsonPath)) {
       componentsJson = JSON.parse(fs.readFileSync(jsonPath));
     }
@@ -38,11 +72,17 @@ export async function pushComponents(sdk, path, options = {}) {
   
   await Promise.all(vueFiles.map(async (file) => {
     if (file.endsWith('.vue')) {
-      const componentName = file.replace('.vue', '');
+      const relativePath = normalizeRelativeIdentifier(path.relative(componentsPath, file));
+      const componentName = relativePath.split('/').pop().replace('.vue', '');
       const info = componentsJson[componentName] || {};
-      const content = fs.readFileSync(join(path, file), 'utf-8');
-      const targetIdentifier = info.identifier || componentName;
+      const content = fs.readFileSync(file, 'utf-8');
+      const targetIdentifier = normalizeRelativeIdentifier(info.identifier || relativePath.replace('.vue', ''));
       const targetDescription = info.description || 'Component description';
+
+      if (!isSafeRelativeIdentifier(targetIdentifier)) {
+        logger.error(`Skipping component with unsafe identifier: ${targetIdentifier}`);
+        return;
+      }
       
       logger.step(`Pushing component: ${componentName}`);
       
@@ -102,8 +142,19 @@ export async function pullComponents(sdk, targetPath) {
   logger.info(`Found ${components.length} component(s) to pull`);
 
   const componentsInformation = await Promise.all(components.map(async (component) => {
-    const fileName = `${component.componentName}.vue`;
+    const normalizedIdentifier = normalizeRelativeIdentifier(component.identifier);
+    const fileName = `${normalizedIdentifier}.vue`;
     const filePath = join(targetPath, fileName);
+
+    if (!isSafeRelativeIdentifier(normalizedIdentifier)) {
+      logger.error(`Skipping pull for unsafe identifier: ${component.identifier}`);
+      return null;
+    }
+
+    const targetDir = join(targetPath, fileName.split('/').slice(0, -1).join('/'));
+    if (targetDir && !fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
 
     const { content, description } = await sdk.components.getComponent(component._id);
     
@@ -118,10 +169,12 @@ export async function pullComponents(sdk, targetPath) {
     };
   }));
 
+  const filteredComponentsInformation = componentsInformation.filter(Boolean);
+
   fs.writeFileSync(
     join(targetPath, 'components.json'),
     JSON.stringify(
-      componentsInformation.reduce((obj, current) => {
+      filteredComponentsInformation.reduce((obj, current) => {
         obj[current.componentName] = current;
         return obj;
       }, {}),
@@ -131,5 +184,5 @@ export async function pullComponents(sdk, targetPath) {
   );
 
   logger.info(`Saved components.json with metadata`);
-  logger.info(`Pulled ${components.length} component(s)`);
+  logger.info(`Pulled ${filteredComponentsInformation.length} component(s)`);
 }

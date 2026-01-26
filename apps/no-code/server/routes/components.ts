@@ -21,6 +21,6 @@ componentsRouter.get('/internal-api/components/:componentId', verifyInternal, ge
 componentsRouter.put('/internal-api/components/:componentId', verifyInternal, updateComponent);
 
 componentsRouter.get('/api/static', getComponentsList);
-componentsRouter.get('/api/static/:componentKey', getCompiledComponent);
+componentsRouter.get('/api/static/:componentKey(*)', getCompiledComponent);
 
 export default componentsRouter;
