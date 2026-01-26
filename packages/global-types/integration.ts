@@ -1,12 +1,23 @@
+export const PopulateSource = {
+  user: 'user',
+  workspace: 'workspace',
+  blueprintEntity: 'blueprintEntity',
+  blueprintEntities: 'blueprintEntities',
+  vectorStores: 'vectorStores',
+  apiWebhook: 'apiWebhook'
+} as const;
+
+export type PopulateSource = typeof PopulateSource[keyof typeof PopulateSource];
+
 export interface IDataManipulationStep {
   map: Record<string, string> // JQ expressions to be assigned to the key
   // populate data from given object using qelos source. If blueprint is provided, it will be used to fetch the blueprint entity
   populate: Record<string, { 
-    source: 'user' | 'workspace' | 'blueprintEntity' | 'blueprintEntities' | 'vectorStores'; 
+    source: PopulateSource; 
     blueprint?: string;
     scope?: string;
     subjectId?: string;
-    subjectModel?: string;
+    integration?: string
   }>,
   clean?: boolean,
   abort?: boolean | string

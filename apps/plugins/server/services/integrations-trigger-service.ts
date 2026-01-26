@@ -12,6 +12,10 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, { required:
     chatCompletion: {
       required: [],
       optional: ['recordThread', 'name', 'description', 'vectorStore', 'vectorStoreScope', 'vectorStoreExpirationDays', 'vectorStoreHardcodedIds', 'webSearch']
+    },
+    apiWebhook: {
+      required: [],
+      optional: ['name']
     }
   },
   [IntegrationSourceKind.ClaudeAi]: null,

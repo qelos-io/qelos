@@ -743,10 +743,25 @@ watch(
           </div>
         </el-form>
       </div>
+
+      <el-alert v-if="modelValue.operation === QelosTriggerOperation.apiWebhook" type="info" :closable="false" class="mb-3">
+        {{ $t('API Webhook triggers are configured in the Integrations tab.') }}
+      </el-alert>
+      
+      <!-- API Webhook Name Configuration -->
+      <div v-if="modelValue.operation === QelosTriggerOperation.apiWebhook" class="mb-4">
+        <el-form-item :label="$t('Webhook Name')" prop="details.name">
+          <el-input 
+            v-model="modelValue.details.name" 
+            :placeholder="$t('Enter a nickname for this webhook')"
+            @input="updateTriggerDetails"
+          />
+        </el-form-item>
+      </div>
       
       <!-- Default JSON Editor for other operations -->
       <Monaco 
-        v-else 
+        v-else
         :modelValue="triggerDetailsText" 
         @update:modelValue="updateTriggerDetails" 
         height="300px" 

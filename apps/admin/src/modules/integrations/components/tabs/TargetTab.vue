@@ -36,20 +36,18 @@ const httpDetails = ref({
 const httpBodyJson = ref('{}');
 
 const openAiDetails = ref({
-  model: 'gpt-4o',
+  model: 'gpt-5.2',
   temperature: 0.7,
   top_p: 1,
   frequency_penalty: 0,
   presence_penalty: 0,
-  max_tokens: 1000,
+  max_tokens: 2000,
   stop: undefined,
   response_format: undefined,
   pre_messages: [],
   embeddingType: 'local',
   maxTools: 15,
 });
-
-const systemMessage = ref('');
 
 const qelosDetails = ref({
   eventName: '',

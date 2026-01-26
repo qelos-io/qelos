@@ -33,7 +33,6 @@ export async function migrateVectorStores() {
           const vectorStore = new VectorStore({
             scope: 'thread' as VectorStoreScope,
             subjectId: thread._id.toString(),
-            subjectModel: 'Thread',
             tenant: (thread.integration as any).tenant,
             agent: new mongoose.Types.ObjectId(thread.integration),
             externalId: (thread as any).vectorStoreExternalId,

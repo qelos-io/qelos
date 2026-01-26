@@ -35,6 +35,7 @@ export enum HttpTargetOperation {
 
 export enum QelosTriggerOperation {
   webhook = 'webhook',
+  apiWebhook = 'apiWebhook',
   chatCompletion = 'chatCompletion',
 }
 

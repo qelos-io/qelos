@@ -51,6 +51,10 @@ export function useIntegrationKindsTargetOperations() {
     [IntegrationSourceKind.Email]: [
       { name: EmailTargetOperation.sendEmail, label: 'Send Email' }
     ],
+    [IntegrationSourceKind.AWS]: [],
+    [IntegrationSourceKind.Cloudflare]: [],
+    [IntegrationSourceKind.Sumit]: [],
+    [IntegrationSourceKind.Gemini]: [],
   }
   return operations
 }
@@ -107,6 +111,11 @@ export function useIntegrationKindsTriggerOperations() {
         label: 'Chat Completion',
         details: {}
       },
+      {
+        name: QelosTriggerOperation.apiWebhook,
+        label: 'API Webhook',
+        details: {}
+      }
     ],
     [IntegrationSourceKind.N8n]: [],
     [IntegrationSourceKind.LinkedIn]: [],
@@ -126,6 +135,10 @@ export function useIntegrationKindsTriggerOperations() {
     [IntegrationSourceKind.ClaudeAi]: [],
     [IntegrationSourceKind.Supabase]: [],
     [IntegrationSourceKind.Email]: [],
+    [IntegrationSourceKind.AWS]: [],
+    [IntegrationSourceKind.Cloudflare]: [],
+    [IntegrationSourceKind.Sumit]: [],
+    [IntegrationSourceKind.Gemini]: [],
   }
   return operations
 }

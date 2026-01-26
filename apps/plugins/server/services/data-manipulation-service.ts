@@ -1,9 +1,10 @@
 import * as jq from 'node-jq';
 
-import { IDataManipulationStep } from '@qelos/global-types';
+import { IDataManipulationStep, PopulateSource } from '@qelos/global-types';
 import { getUser, getWorkspaces } from './users';
 import { getBlueprintEntities, getBlueprintEntity } from './no-code-service';
 import { getVectorStores } from './ai-service';
+import { triggerWebhookService } from './webhook-service';
 
 type DataManipulationPhase = 'map' | 'populate' | 'abort' | 'step';
 
@@ -87,35 +88,39 @@ export async function executeDataManipulation(tenant: string, initialPayload: an
         const { source, blueprint } = config || {} as any;
 
         // Skip undefined values for all sources except vectorStore
-        if (source !== 'vectorStores' && typeof previousData[key] === 'undefined') {
+        if (source !== PopulateSource.vectorStores && typeof previousData[key] === 'undefined') {
           return { key, value: undefined };
         }
 
         try {
           let result;
-          if (source === 'user') {
+          if (source === PopulateSource.user) {
             result = await getUser(tenant, previousData[key]);
-          } else if (source === 'workspace') {
+          } else if (source === PopulateSource.workspace) {
             result = await getWorkspaces(tenant, previousData[key]);
-          } else if (source === 'blueprintEntity') {
+          } else if (source === PopulateSource.blueprintEntity) {
             const existing = previousData[key];
             if (existing && typeof existing === 'object' && existing.entity && existing.blueprint) {
               result = await getBlueprintEntity(tenant, existing.blueprint, existing.entity);
             } else if (blueprint && typeof existing === 'string') {
               result = await getBlueprintEntity(tenant, blueprint, existing);
             }
-          } else if (source === 'blueprintEntities') {
+          } else if (source === PopulateSource.blueprintEntities) {
             const existing = previousData[key];
             const blueprint = config.blueprint || existing.blueprint;
             if (existing && blueprint) {
               result = await getBlueprintEntities(tenant, blueprint, existing);
             }
-          } else if (source === 'vectorStores') {
+          } else if (source === PopulateSource.vectorStores) {
             const existing = previousData[key] || {};
             const scope = existing.scope || config?.scope || 'tenant';
             const subjectId = existing.subjectId || config?.subjectId;
-            const subjectModel = existing.subjectModel || config?.subjectModel;
-            result = await getVectorStores(tenant, { scope, subjectId, subjectModel });
+            result = await getVectorStores(tenant, { scope, subjectId });
+          } else if (source === PopulateSource.apiWebhook) {
+            const existing: any = previousData[key] || {};
+            const integrationId = existing.integration || config?.integration;
+            const user = existing.user || {role: ['admin'] };
+            result = await triggerWebhookService(tenant, integrationId, { ...existing, user});
           }
           return { key, value: result };
         } catch (err) {

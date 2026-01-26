@@ -6,7 +6,6 @@ export type VectorStoreScope = 'thread' | 'user' | 'workspace' | 'tenant';
 export interface IVectorStore extends Document {
   scope: VectorStoreScope;
   subjectId?: mongoose.Types.ObjectId; // ID of thread/user/workspace, empty for tenant
-  subjectModel?: string; // Model name for dynamic reference
   tenant: string;
   agent: mongoose.Types.ObjectId;
   externalId: string; // OpenAI vector store ID
@@ -27,7 +26,6 @@ const VectorStoreSchema = new Schema<IVectorStore>(
     subjectId: { 
       type: Schema.Types.ObjectId, 
       required: false,
-      refPath: 'subjectModel' // Dynamic reference based on scope
     },
     tenant: { type: String, required: true },
     agent: { type: Schema.Types.ObjectId, required: true, ref: 'Integration' },

@@ -5,9 +5,10 @@ import { Delete, Plus, ArrowUp, ArrowDown, MagicStick, Document } from '@element
 import BlueprintDropdown from '@/modules/integrations/components/BlueprintDropdown.vue';
 import { storeToRefs } from 'pinia';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
+import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 import { capitalize } from 'vue';
 import { getPlural } from '@/modules/core/utils/texts';
-import { QelosTriggerOperation } from '@qelos/global-types';
+import { QelosTriggerOperation, PopulateSource, IntegrationSourceKind } from '@qelos/global-types';
 import { ElMessage } from 'element-plus';
 import { executeDataManipulationTest } from '@/services/apis/data-manipulation-service';
 import eventsService, { IEvent } from '@/services/apis/events-service';
@@ -29,6 +30,18 @@ const emit = defineEmits(['update:modelValue']);
 
 // Get blueprints for template suggestions
 const { blueprints } = storeToRefs(useBlueprintsStore());
+
+// Get integrations for API webhook selection
+const integrationsStore = useIntegrationsStore();
+const { integrations } = storeToRefs(integrationsStore);
+
+// Filter integrations for API webhook
+const apiWebhookIntegrations = computed(() => {
+  return integrations.value?.filter(integration => 
+    integration.kind?.[0] === IntegrationSourceKind.Qelos && 
+    integration.trigger?.operation === QelosTriggerOperation.apiWebhook
+  ) || [];
+});
 
 // Template system
 const showTemplateDialog = ref(false);
@@ -172,7 +185,7 @@ const templates = ref([
 // Store steps as arrays of entries for stable references
 const steps = ref<any[]>([]);
 const mapEntries = ref<Record<number, Array<{key: string, value: unknown}>>>({});
-const populateEntries = ref<Record<number, Array<{key: string, source: string, blueprint?: string, scope?: string, subjectId?: string, subjectModel?: string}>>>({});
+const populateEntries = ref<Record<number, Array<{key: string, source: string, blueprint?: string, scope?: string, subjectId?: string, integration?: string}>>>({});
 const clearFlags = ref<Record<number, boolean>>({});
 const abortValues = ref<Record<number, string>>({});
 const abortTypes = ref<Record<number, 'none' | 'boolean' | 'expression'>>({});
@@ -459,7 +472,7 @@ const initialize = () => {
           const populateConfig = config as { source?: string; blueprint?: string };
           return {
             key,
-            source: populateConfig.source || 'user',
+            source: populateConfig.source || PopulateSource.user,
             blueprint: populateConfig.blueprint
           };
         })
@@ -508,25 +521,27 @@ const syncToModel = () => {
       populateEntries.value[stepIndex].forEach(entry => {
         if (entry.key.trim()) {
           const populateConfig: any = {
-            source: entry.source || 'user'
+            source: entry.source || PopulateSource.user
           };
           
           // Add blueprint for blueprint sources
-          if ((entry.source === 'blueprintEntities' || entry.source === 'blueprintEntity') && entry.blueprint) {
+          if ((entry.source === PopulateSource.blueprintEntities || entry.source === PopulateSource.blueprintEntity) && entry.blueprint) {
             populateConfig.blueprint = entry.blueprint;
           }
           
           // Add vector store specific properties
-          if (entry.source === 'vectorStores') {
+          if (entry.source === PopulateSource.vectorStores) {
             if (entry.scope && entry.scope !== 'tenant') {
               populateConfig.scope = entry.scope;
             }
             if (entry.subjectId) {
               populateConfig.subjectId = entry.subjectId;
             }
-            if (entry.subjectModel) {
-              populateConfig.subjectModel = entry.subjectModel;
-            }
+          }
+          
+          // Add API webhook specific properties
+          if (entry.source === PopulateSource.apiWebhook && entry.integration) {
+            populateConfig.integration = entry.integration;
           }
           
           newStep.populate[entry.key] = populateConfig;
@@ -713,10 +728,9 @@ const addPopulateEntry = (stepIndex: number) => {
   // Add a new entry with default values
   populateEntries.value[stepIndex].push({
     key: '',
-    source: 'user',
+    source: PopulateSource.user,
     scope: undefined,
     subjectId: undefined,
-    subjectModel: undefined
   });
   
   // Sync to model
@@ -813,11 +827,10 @@ const updateCompleteJson = (json: string) => {
           const populateConfig = config as any;
           return { 
             key, 
-            source: populateConfig.source || 'user', 
+            source: populateConfig.source || PopulateSource.user, 
             blueprint: populateConfig.blueprint,
             scope: populateConfig.scope,
             subjectId: populateConfig.subjectId,
-            subjectModel: populateConfig.subjectModel
           };
         });
       } else {
@@ -908,7 +921,7 @@ const applyTemplate = () => {
     if (step.populate) {
       populateEntries.value[stepIndex] = Object.entries(step.populate).map(([key, config]) => {
         const populateConfig = config as { source?: string; blueprint?: string };
-        return { key, source: populateConfig.source || 'user', blueprint: populateConfig.blueprint };
+        return { key, source: populateConfig.source || PopulateSource.user, blueprint: populateConfig.blueprint };
       });
     } else {
       populateEntries.value[stepIndex] = [];
@@ -961,6 +974,10 @@ const canApplyTemplate = computed(() => {
 // Initialize on mount
 onMounted(() => {
   initialize();
+  // Load integrations for API webhook selection
+  if (!integrationsStore.loaded) {
+    integrationsStore.retry();
+  }
 });
 
 </script>
@@ -1030,27 +1047,27 @@ onMounted(() => {
                 v-model="entry.key" 
                 placeholder="Key" 
                 @update:model-value="syncToModel" 
-                :class="{ 'input-error': isPopulateFieldError(i, entry.key), 'flex-1': entry.source === 'vectorStores' }"
+                :class="{ 'input-error': isPopulateFieldError(i, entry.key), 'flex-1': entry.source === PopulateSource.vectorStores }"
               />
               <el-select 
                 v-model="entry.source" 
                 placeholder="Source"
                 @update:model-value="syncToModel" 
-                :class="{ 'input-error': isPopulateFieldError(i, entry.key), 'flex-1': entry.source === 'vectorStores' }"
+                :class="{ 'input-error': isPopulateFieldError(i, entry.key), 'flex-1': entry.source === PopulateSource.vectorStores }"
               >
-                <el-option value="user" label="User" />
-                <el-option value="workspace" label="Workspace" />
-                <el-option value="blueprint" label="Blueprint" />
-                <el-option value="blueprintEntities" label="Blueprint Entities" />
-                <el-option value="blueprintEntity" label="Blueprint Entity" />
-                <el-option value="vectorStores" label="Vector Stores" />
+                <el-option :value="PopulateSource.user" label="User" />
+                <el-option :value="PopulateSource.workspace" label="Workspace" />
+                <el-option :value="PopulateSource.blueprintEntities" label="Blueprint Entities" />
+                <el-option :value="PopulateSource.blueprintEntity" label="Blueprint Entity" />
+                <el-option :value="PopulateSource.vectorStores" label="Vector Stores" />
+                <el-option :value="PopulateSource.apiWebhook" label="API Webhook" />
               </el-select>
               <BlueprintDropdown 
-                v-if="entry.source === 'blueprintEntities' || entry.source === 'blueprintEntity'" 
+                v-if="entry.source === PopulateSource.blueprintEntities || entry.source === PopulateSource.blueprintEntity" 
                 v-model="entry.blueprint" 
                 @update:model-value="syncToModel" 
               />
-              <template v-if="entry.source === 'vectorStores'">
+              <template v-if="entry.source === PopulateSource.vectorStores">
                 <el-select 
                   v-model="entry.scope" 
                   placeholder="Scope"
@@ -1068,16 +1085,20 @@ onMounted(() => {
                   @update:model-value="syncToModel"
                   class="flex-1"
                 />
+              </template>
+              <template v-if="entry.source === PopulateSource.apiWebhook">
                 <el-select 
-                  v-model="entry.subjectModel" 
-                  placeholder="Subject Model (optional)"
+                  v-model="entry.integration" 
+                  placeholder="Select Integration"
                   @update:model-value="syncToModel"
-                  class="flex-1"
-                  clearable
+                  filterable
                 >
-                  <el-option value="Thread" label="Thread" />
-                  <el-option value="User" label="User" />
-                  <el-option value="Workspace" label="Workspace" />
+                  <el-option 
+                    v-for="integration in apiWebhookIntegrations" 
+                    :key="integration._id"
+                    :value="integration._id"
+                    :label="integration.trigger.details?.name || integration._id"
+                  />
                 </el-select>
               </template>
               <el-button type="danger" :icon="Delete" @click="removePopulateEntry(i, index)" circle />

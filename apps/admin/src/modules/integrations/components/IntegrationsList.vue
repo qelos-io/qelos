@@ -62,6 +62,7 @@ const groupedIntegrations = computed(() => {
   const groups: Record<string, IIntegration[]> = {
     'AI Agents': [],
     'Function callings': [],
+    'API Webhooks': [],
   };
   
   const webhookGroups: Record<string, IIntegration[]> = {};
@@ -74,6 +75,10 @@ const groupedIntegrations = computed(() => {
     // Function callings: trigger.operation === functionCalling
     else if (integration.trigger.operation === 'functionCalling') {
       groups['Function callings'].push(integration);
+    }
+    // API Webhooks: kind[0] === qelos && trigger.operation === apiWebhook
+    else if (integration.kind[0] === 'qelos' && integration.trigger.operation === 'apiWebhook') {
+      groups['API Webhooks'].push(integration);
     }
     // Webhooks: trigger.operation === webhook && trigger.details.source
     else if (integration.trigger.operation === 'webhook' && integration.trigger.details?.source) {
