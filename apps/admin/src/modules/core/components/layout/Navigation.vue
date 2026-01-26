@@ -525,7 +525,7 @@ nav {
     justify-content: center;
 
     .el-icon {
-      margin: 0 !important;
+      margin: 0 auto !important;
     }
   }
 }
