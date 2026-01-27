@@ -28,7 +28,6 @@ export async function triggerWebhookService(
     const query = {
       _id: new Types.ObjectId(integrationId),
       tenant,
-      kind: IntegrationSourceKind.Qelos,
       active: true,
       'trigger.operation': QelosTriggerOperation.apiWebhook,
     };
@@ -40,15 +39,9 @@ export async function triggerWebhookService(
       .exec();
 
     if (!integration || !integration.target) {
-      // Check if qelos is not the first element in kind array
-      if (integration && integration.kind && integration.kind[0] !== IntegrationSourceKind.Qelos) {
-        throw new Error('Integration not found: qelos must be the primary kind');
-      }
-      
       // Log details only when integration is not found for debugging
       logger.error('Integration not found - checking details', {
         integrationId,
-        tenant,
       });
       
       // Check if integration exists with different conditions (run in background, don't wait)
@@ -74,6 +67,9 @@ export async function triggerWebhookService(
         });
       
       throw new Error('Integration not found');
+    }
+    if (integration.kind[0] !== IntegrationSourceKind.Qelos) {
+      throw new Error('Integration not found: api webhook did not configured as expected');
     }
 
     const triggerDetails = integration.trigger.details || {};
