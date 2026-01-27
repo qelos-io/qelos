@@ -57,6 +57,7 @@ export async function triggerWebhookService(
               kind: integrationById.kind,
               active: integrationById.active,
               triggerOp: integrationById.trigger?.operation,
+              originalQuery: query
             });
           } else {
             logger.error('Integration not found in database', { integrationId });
