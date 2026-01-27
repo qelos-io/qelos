@@ -21,8 +21,14 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends curl jq \
   && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
+# Install dependencies (excluding @qelos packages which are bundled)
+# Backup bundled @qelos dependencies
+RUN mv node_modules/@qelos /tmp/qelos-backup || true
+# Install remaining dependencies
 RUN pnpm install --no-frozen-lockfile
+# Restore bundled dependencies
+RUN mv /tmp/qelos-backup node_modules/@qelos || true
+# Rebuild node-jq if needed
 RUN npm rebuild node-jq
 
 # Start the application

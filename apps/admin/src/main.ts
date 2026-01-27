@@ -1,4 +1,4 @@
-import { createApp, watch } from 'vue'
+import { createApp } from 'vue'
 import router from './router'
 import './style/main.scss'
 import elements from './plugins/element'
@@ -8,16 +8,16 @@ import { createPinia } from 'pinia';
 import App from './App.vue'
 import applyGlobalTemplatesComponents from '@/modules/pre-designed/global-templates-components';
 import usePrimeVue from '@/plugins/prime';
-import * as Sentry from '@sentry/vue';
 import pubsub from './services/pubsub';
-import { authStore } from './modules/core/store/auth'
+import analyticsService from './services/analytics';
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
     $t: (text: string) => string,
     $isMobile: boolean,
     $isDarkTheme: boolean,
-    $pubsub: typeof pubsub
+    $pubsub: typeof pubsub,
+    $analytics: typeof analyticsService
   }
 }
 const app = createApp(App)
@@ -33,24 +33,8 @@ app.config.globalProperties.$t = i18n.global.t;
 elements(app)
 app.mount('#app')
 
-if (import.meta.env.VITE_SENTRY_DSN || window.SENTRY_DSN) {
-  Sentry.init({
-    app,
-    dsn: import.meta.env.VITE_SENTRY_DSN || window.SENTRY_DSN,
-    integrations: [
-      Sentry.browserTracingIntegration({ router })
-    ],
-  });
-  watch(() => authStore.user, () => {
-    if (authStore.user) {
-      Sentry.setUser({
-        id: authStore.user._id,
-        email: authStore.user.email,
-        username: authStore.user.username
-      })
-    }
-  })
-}
+// Initialize analytics service (Sentry, Clarity, Google Analytics)
+analyticsService.initialize(app, router);
 
 const isMobile = (function () {
   let check = false;
@@ -63,3 +47,4 @@ document.querySelector('html').classList.add(isMobile ? 'mobile' : 'desktop');
 
 app.config.globalProperties.$isMobile = isMobile;
 app.config.globalProperties.$pubsub = pubsub;
+app.config.globalProperties.$analytics = analyticsService;

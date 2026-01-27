@@ -7,5 +7,6 @@ declare module 'vue' {
     $isDarkTheme: boolean
     $pubsub: PubSubService
     $t: (key: string) => string
+    $analytics: typeof analyticsService
   }
 }
