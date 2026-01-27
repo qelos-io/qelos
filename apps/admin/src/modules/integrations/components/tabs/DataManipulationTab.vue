@@ -731,6 +731,8 @@ const addPopulateEntry = (stepIndex: number) => {
     source: PopulateSource.user,
     scope: undefined,
     subjectId: undefined,
+    integration: undefined,
+    blueprint: undefined,
   });
   
   // Sync to model
