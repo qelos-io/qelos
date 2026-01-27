@@ -40,6 +40,7 @@ export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind 
     //   kind: IntegrationSourceKind.N8n,
     // },
     [IntegrationSourceKind.Email]: {
+      logo: '/logos/email.svg',
       name: 'EMAIL',
       kind: IntegrationSourceKind.Email
     },
@@ -54,6 +55,7 @@ export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind 
       kind: IntegrationSourceKind.Facebook
     },
     [IntegrationSourceKind.Http]: {
+      logo: '/logos/http.svg',
       name: 'HTTP',
       kind: IntegrationSourceKind.Http
     },
