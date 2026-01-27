@@ -15,7 +15,7 @@ type OptionalKind = IntegrationSourceKind.ClaudeAi |
 export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind }> {
   return {
     [IntegrationSourceKind.Qelos]: {
-      logo: '/logos/qelos_small.png',
+      logo: '/logos/qelos-small.png',
       name: 'Qelos',
       kind: IntegrationSourceKind.Qelos,
     },
