@@ -87,8 +87,8 @@ export async function executeDataManipulation(tenant: string, initialPayload: an
       const populatePromises = Object.entries(populate).map(async ([key, config]) => {
         const { source, blueprint } = config || {} as any;
 
-        // Skip undefined values for all sources except vectorStore
-        if (source !== PopulateSource.vectorStores && typeof previousData[key] === 'undefined') {
+        // Skip undefined values for all sources except vectorStore and apiWebhook
+        if (source !== PopulateSource.vectorStores && source !== PopulateSource.apiWebhook && typeof previousData[key] === 'undefined') {
           return { key, value: undefined };
         }
 

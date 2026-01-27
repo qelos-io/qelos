@@ -141,9 +141,10 @@ async function handleHttpTarget(
       });
       event.save().then(event => emitPlatformEvent(event)).catch(() => {});
     }
+
     return {
       status: res.status,
-      headers: res.headers,
+      headers: Object.fromEntries(res.headers.entries()),
       body: resBody,
     };
   }
@@ -418,7 +419,6 @@ async function handleSumitTarget(
   payload: any = {}
 ) {
   const operation = integrationTarget.operation as SumitTargetOperation;
-  logger.log('Handling Sumit target', { operation });
 
   const { apiKey } = authentication;
   const { companyId } = source.metadata;
@@ -1178,6 +1178,7 @@ export async function callIntegrationTarget(tenant: string, payload: any, integr
   const authentication = await getEncryptedSourceAuthentication(tenant, source.kind, source.authentication);
 
   if (source.kind === IntegrationSourceKind.Http) {
+    console.log('making http request', source, payload);
     return handleHttpTarget(integrationTarget, source as IHttpSource, authentication || {}, payload)
   } else if (source.kind === IntegrationSourceKind.OpenAI) {
     return handleOpenAiTarget(integrationTarget, source as IOpenAISource, authentication || {}, payload);
