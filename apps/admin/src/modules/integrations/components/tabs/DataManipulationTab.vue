@@ -770,11 +770,14 @@ const updateStepJson = (stepIndex: number, json: string) => {
     
     if (parsedJson.populate) {
       populateEntries.value[stepIndex] = Object.entries(parsedJson.populate).map(([key, config]) => {
-        const populateConfig = config as { source?: string; blueprint?: string };
+        const populateConfig = config as { source?: string; blueprint?: string; integration?: string; scope?: string; subjectId?: string };
         return {
           key,
           source: populateConfig.source || 'user',
-          blueprint: populateConfig.blueprint
+          blueprint: populateConfig.blueprint,
+          integration: populateConfig.integration,
+          scope: populateConfig.scope,
+          subjectId: populateConfig.subjectId
         };
       });
     } else {
@@ -831,6 +834,7 @@ const updateCompleteJson = (json: string) => {
             key, 
             source: populateConfig.source || PopulateSource.user, 
             blueprint: populateConfig.blueprint,
+            integration: populateConfig.integration,
             scope: populateConfig.scope,
             subjectId: populateConfig.subjectId,
           };
