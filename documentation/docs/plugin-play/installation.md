@@ -1,8 +1,7 @@
 ---
 title: Installation & Setup
 ---
-
-# {{ $frontmatter.title }}
+# Installation & Setup
 
 This guide covers installing Plugin Play and setting up your first plugin.
 

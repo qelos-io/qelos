@@ -2,8 +2,7 @@
 title: CRUD
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# CRUD
 
 The ability to easily create a fully operated CRUD, that will dynamically generate the UI in QELOS.
 

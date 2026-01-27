@@ -2,8 +2,7 @@
 title: Quick Table Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Quick Table Component
 
 ## Overview
 

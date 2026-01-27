@@ -1,8 +1,7 @@
 ---
 title: API Reference
 ---
-
-# {{ $frontmatter.title }}
+# API Reference
 
 Documentation coming soon.
 

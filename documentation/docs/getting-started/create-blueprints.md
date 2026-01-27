@@ -2,8 +2,7 @@
 title: Creating and Managing Blueprints
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Creating and Managing Blueprints
 
 ![QELOS Blueprint1](/blueprints/blueprint1.png)
 

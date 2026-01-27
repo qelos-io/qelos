@@ -1,8 +1,7 @@
 ---
 title: Token Refresh Functionality
 ---
-
-# {{ $frontmatter.title }}
+# Token Refresh Functionality
 
 The Qelos SDK provides automatic token refresh functionality when using OAuth authentication. This document explains how token refresh works and how to customize its behavior.
 

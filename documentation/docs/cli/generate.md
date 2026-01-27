@@ -2,8 +2,7 @@
 title: Generate Rules
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Generate Rules
 
 The `generate rules` command creates IDE-specific rules files that help AI assistants and developers understand the structure and conventions of pulled Qelos resources.
 

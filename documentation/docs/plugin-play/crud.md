@@ -1,8 +1,7 @@
 ---
 title: CRUD Operations
 ---
-
-# {{ $frontmatter.title }}
+# CRUD Operations
 
 Documentation coming soon.
 

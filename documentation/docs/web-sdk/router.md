@@ -1,8 +1,7 @@
 ---
 title: Router Integration
 ---
-
-# {{ $frontmatter.title }}
+# Router Integration
 
 Documentation coming soon.
 

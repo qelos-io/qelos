@@ -2,8 +2,7 @@
 title: Quick Plugin Page Creator
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Quick Plugin Page Creator
 
 Follow these steps to create your plugin page quickly and easily.
 

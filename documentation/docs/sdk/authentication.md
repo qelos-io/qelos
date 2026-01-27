@@ -1,8 +1,7 @@
 ---
 title: Authentication
 ---
-
-# {{ $frontmatter.title }}
+# Authentication
 
 Authentication is a crucial component of using the Qelos SDK. This section provides a detailed overview of the main authentication methods: `signin` and `oAuthSignin`.
 

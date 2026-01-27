@@ -2,8 +2,7 @@
 title: Create your first plugin
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Create your first plugin
 
 ![QELOS Plugin1](/plugin/create-plugin.png)
 

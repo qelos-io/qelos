@@ -1,20 +1,21 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'QELOS',
-  description: 'A powerful platform for creating multi-tenant SaaS applications',
+  title: 'Qelos',
+  description: 'Build AI Agents & SaaS Applications With Visual Builders',
   outDir: '../dist',
   lastUpdated: true,
   cleanUrls: true,
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/qelos.svg' }],
-    ['meta', { name: 'theme-color', content: '#c73758' }],
+    ['link', { rel: 'icon', type: 'image/png', href: '/qelos-icon.png' }],
+    ['meta', { name: 'theme-color', content: '#2563eb' }],
     ['meta', { name: 'og:type', content: 'website' }],
-    ['meta', { name: 'og:title', content: 'QELOS Documentation' }],
-    ['meta', { name: 'og:description', content: 'A powerful platform for creating multi-tenant SaaS applications' }],
+    ['meta', { name: 'og:title', content: 'Qelos Documentation' }],
+    ['meta', { name: 'og:description', content: 'Build AI Agents & SaaS Applications With Visual Builders' }],
   ],
   themeConfig: {
-    logo: '/qelos.svg',
+    siteTitle: false,
+    logo: '/qelos-hq.png',
     nav: [
       { text: 'Guide', link: '/getting-started/intro' },
       { text: 'SDK', link: '/sdk/sdk' },
@@ -30,14 +31,14 @@ export default defineConfig({
       provider: 'local'
     },
     footer: {
-      message: 'Released under the Apache License 2.0.',
-      copyright: 'Copyright © 2023-present Velocitech LTD'
+      message: 'Build SaaS Products Without Limits.',
+      copyright: 'Copyright © 2025-present Qelos'
     },
     sidebar: [
       {
         text: 'GETTING STARTED',
         items: [
-          { text: 'Intro to QELOS', link: '/getting-started/intro' },
+          { text: 'Intro to Qelos', link: '/getting-started/intro' },
           { text: 'Installation', link: '/getting-started/installation' },
           { text: 'Create your first plugin', link: '/getting-started/create-your-first-plugin' },
           { text: 'Create Blueprints', link: '/getting-started/create-blueprints' },

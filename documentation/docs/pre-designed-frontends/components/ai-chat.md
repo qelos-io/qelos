@@ -2,8 +2,7 @@
 title: AI Chat Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# AI Chat Component
 
 ## Overview
 

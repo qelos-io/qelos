@@ -1,8 +1,7 @@
 ---
 title: Basic Usage
 ---
-
-# {{ $frontmatter.title }}
+# Basic Usage
 
 Welcome to the Basic Usage section of the Qelos SDK documentation. This section provides an overview of using the SDK for both frontend and backend applications, including different methods for regular users and administrators.
 

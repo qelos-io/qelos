@@ -1,8 +1,7 @@
 ---
 title: Installation
 ---
-
-# {{ $frontmatter.title }}
+# Installation
 
 In this section, we will cover the installation and setup of the Qelos SDK for both regular users and administrators. This includes instructions for different environments such as browsers and Node.js, with specific configurations for each use case.
 

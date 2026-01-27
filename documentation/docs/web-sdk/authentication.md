@@ -1,8 +1,7 @@
 ---
 title: Authentication
 ---
-
-# {{ $frontmatter.title }}
+# Authentication
 
 The Web SDK provides a complete authentication system for micro-frontends running inside Qelos applications.
 

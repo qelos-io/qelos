@@ -2,5 +2,4 @@
 title: Rows List
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Rows List

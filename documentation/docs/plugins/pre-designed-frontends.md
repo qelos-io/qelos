@@ -2,5 +2,4 @@
 title: Pre-Designed Frontends
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Pre-Designed Frontends

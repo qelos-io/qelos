@@ -2,8 +2,7 @@
 title: Push Command
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Push Command
 
 The `push` command uploads local resources to your Qelos instance, allowing you to update existing resources or create new ones from your local filesystem. Supports components, blueprints, configurations, plugins, blocks, integrations, and git-based workflows.
 

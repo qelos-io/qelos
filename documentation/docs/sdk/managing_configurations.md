@@ -1,8 +1,7 @@
 ---
 title: Managing Configurations
 ---
-
-# {{ $frontmatter.title }}
+# Managing Configurations
 
 This section provides an overview of managing configurations using the Qelos SDK. Configurations in Qelos allow you to store and retrieve application settings and metadata. The SDK provides methods for both regular users and administrators to work with configurations.
 

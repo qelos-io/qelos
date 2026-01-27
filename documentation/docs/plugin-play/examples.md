@@ -1,8 +1,7 @@
 ---
 title: Examples
 ---
-
-# {{ $frontmatter.title }}
+# Examples
 
 Documentation coming soon.
 

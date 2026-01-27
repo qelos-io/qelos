@@ -1,8 +1,7 @@
 ---
 title: Core SDK Functionality
 ---
-
-# {{ $frontmatter.title }}
+# Core SDK Functionality
 
 This section covers the core functionality of the Qelos SDK, including initialization, custom headers management, and other base features that are available directly from the main SDK instance.
 

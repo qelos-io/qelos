@@ -2,8 +2,7 @@
 title: Save Button Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Save Button Component
 
 ## Overview
 

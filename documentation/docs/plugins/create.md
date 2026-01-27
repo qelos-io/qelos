@@ -2,8 +2,7 @@
 title: Create a Plugin
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Create a Plugin
 
 
 ### Run:

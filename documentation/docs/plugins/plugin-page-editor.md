@@ -2,8 +2,7 @@
 title: Edit Mode - Plugin Page Editor
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Edit Mode - Plugin Page Editor
 
 On this page, you will find tools to help you quickly and easily create and customize your plugin page. Add various content elements such as headers, tables, buttons, templates, charts, columns, and more.
 To start editing your plugin page, navigate to your page and activate **Edit Mode**.

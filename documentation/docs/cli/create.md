@@ -2,8 +2,7 @@
 title: Create Command
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Create Command
 
 The `create` command scaffolds a new Qelos plugin project with all necessary files and configurations.
 

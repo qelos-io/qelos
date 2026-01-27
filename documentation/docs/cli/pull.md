@@ -2,8 +2,7 @@
 title: Pull Command
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Pull Command
 
 The `pull` command downloads resources from your Qelos instance to your local filesystem, allowing you to work on components, blueprints, configurations, plugins, blocks, and more locally.
 

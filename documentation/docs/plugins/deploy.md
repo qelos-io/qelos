@@ -2,5 +2,4 @@
 title: Deploy your Plugin
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Deploy your Plugin

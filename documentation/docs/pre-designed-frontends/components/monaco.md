@@ -2,8 +2,7 @@
 title: Monaco Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Monaco Component
 
 ## Overview
 

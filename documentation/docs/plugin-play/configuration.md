@@ -1,8 +1,7 @@
 ---
 title: Configuration
 ---
-
-# {{ $frontmatter.title }}
+# Configuration
 
 Documentation coming soon.
 

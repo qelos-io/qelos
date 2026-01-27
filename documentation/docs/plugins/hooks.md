@@ -2,8 +2,7 @@
 title: Hooks and Events
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Hooks and Events
 
 You can use this ability in order to create a backend function that will register to a system hook inside a QELOS app.
 

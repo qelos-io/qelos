@@ -1,8 +1,7 @@
 ---
 title: Managing Users
 ---
-
-# {{ $frontmatter.title }}
+# Managing Users
 
 This section provides an overview of managing users using the Qelos SDK. The examples demonstrate how to create, update, remove, and retrieve user information, enabling administrators to effectively manage user accounts.
 

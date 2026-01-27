@@ -2,8 +2,7 @@
 title: V Chart Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# V Chart Component
 
 ## Overview
 

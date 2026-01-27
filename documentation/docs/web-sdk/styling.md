@@ -1,8 +1,7 @@
 ---
 title: Styling
 ---
-
-# {{ $frontmatter.title }}
+# Styling
 
 Documentation coming soon.
 

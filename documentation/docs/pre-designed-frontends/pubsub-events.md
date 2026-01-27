@@ -2,8 +2,7 @@
 title: PubSub Events System
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# PubSub Events System
 
 ## Overview
 

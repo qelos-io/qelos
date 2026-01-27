@@ -1,8 +1,7 @@
 ---
 title: TypeScript Types Reference
 ---
-
-# {{ $frontmatter.title }}
+# TypeScript Types Reference
 
 This reference guide provides detailed information about the TypeScript types used in the Qelos SDK. Understanding these types will help you write more robust code with better IDE support and fewer runtime errors.
 

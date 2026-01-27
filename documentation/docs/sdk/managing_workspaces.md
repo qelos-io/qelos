@@ -1,8 +1,7 @@
 ---
 title: Managing Workspaces
 ---
-
-# {{ $frontmatter.title }}
+# Managing Workspaces
 
 This section covers how to manage workspaces using the Qelos SDK. Workspaces in Qelos provide multi-tenant support, allowing you to organize users and resources efficiently.
 

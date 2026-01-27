@@ -2,8 +2,7 @@
 title: Template Ecosystem Components
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Template Ecosystem Components
 
 ## Overview
 

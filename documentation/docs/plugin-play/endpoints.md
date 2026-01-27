@@ -1,8 +1,7 @@
 ---
 title: Endpoints
 ---
-
-# {{ $frontmatter.title }}
+# Endpoints
 
 Documentation coming soon.
 

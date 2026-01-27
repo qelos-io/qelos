@@ -1,8 +1,7 @@
 ---
 title: Authentication
 ---
-
-# {{ $frontmatter.title }}
+# Authentication
 
 Documentation coming soon.
 

@@ -2,8 +2,7 @@
 title: Empty State Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Empty State Component
 
 ## Overview
 

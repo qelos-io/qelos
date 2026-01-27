@@ -2,8 +2,7 @@
 title: Design Settings
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Design Settings
 
 ![Design Start](/design/design-start.png)
 

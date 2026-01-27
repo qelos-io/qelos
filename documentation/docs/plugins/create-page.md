@@ -2,8 +2,7 @@
 title: Create a Plugin Page
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Create a Plugin Page
 
 To begin designing elements on your Plugin Page, follow these steps:
 

@@ -1,8 +1,7 @@
 ---
 title: Troubleshooting Guide
 ---
-
-# {{ $frontmatter.title }}
+# Troubleshooting Guide
 
 This guide helps you diagnose and resolve common issues when working with the Qelos SDK. If you encounter problems while using the SDK, follow these troubleshooting steps to identify and fix the issues.
 

@@ -1,8 +1,7 @@
 ---
 title: Lifecycle Hooks
 ---
-
-# {{ $frontmatter.title }}
+# Lifecycle Hooks
 
 Documentation coming soon.
 

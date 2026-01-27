@@ -1,8 +1,7 @@
 ---
 title: Event Communication
 ---
-
-# {{ $frontmatter.title }}
+# Event Communication
 
 Documentation coming soon.
 

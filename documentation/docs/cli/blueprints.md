@@ -2,8 +2,7 @@
 title: Generate Blueprints
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Generate Blueprints
 
 The `blueprints generate` command scans an existing MongoDB database and converts each collection into a Qelos blueprint definition (`*.blueprint.json`). This is useful when you want to bootstrap Qelos data models from an existing application or quickly experiment with real schemas.
 

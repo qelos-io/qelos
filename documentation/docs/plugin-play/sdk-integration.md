@@ -1,8 +1,7 @@
 ---
 title: SDK Integration
 ---
-
-# {{ $frontmatter.title }}
+# SDK Integration
 
 Documentation coming soon.
 

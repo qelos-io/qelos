@@ -2,8 +2,7 @@
 title: ThreadsList Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# ThreadsList Component
 
 The ThreadsList component provides a comprehensive interface for displaying and managing AI chat threads in your Qelos application. It features a responsive grid layout, thread actions, and seamless integration with the Qelos AI SDK.
 

@@ -2,8 +2,7 @@
 title: AI Operations
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# AI Operations
 
 The AI module provides comprehensive functionality for managing AI-powered conversations, threads, and chat completions within your Qelos application. This module enables you to build sophisticated AI-driven features with support for both streaming and non-streaming chat completions.
 

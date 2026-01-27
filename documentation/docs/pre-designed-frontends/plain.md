@@ -2,8 +2,7 @@
 title: Plain Template
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Plain Template
 
 ## Overview
 

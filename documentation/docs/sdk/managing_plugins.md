@@ -1,8 +1,7 @@
 ---
 title: Managing Plugins
 ---
-
-# {{ $frontmatter.title }}
+# Managing Plugins
 
 This section provides an overview of managing plugins using the Qelos SDK. The examples demonstrate how to create, update, remove, and retrieve plugin information, enabling administrators to effectively manage plugins.
 

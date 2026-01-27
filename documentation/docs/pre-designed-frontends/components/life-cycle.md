@@ -2,8 +2,7 @@
 title: Life Cycle Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Life Cycle Component
 
 ## Overview
 

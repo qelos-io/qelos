@@ -1,8 +1,7 @@
 ---
 title: Building a Complete Authentication Flow
 ---
-
-# {{ $frontmatter.title }}
+# Building a Complete Authentication Flow
 
 This tutorial guides you through implementing a complete authentication flow using the Qelos SDK. You'll learn how to handle user sign-in, token refresh, session management, and sign-out functionality.
 

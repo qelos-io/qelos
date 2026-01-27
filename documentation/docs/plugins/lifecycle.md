@@ -2,8 +2,7 @@
 title: Plugin Lifecycle
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Plugin Lifecycle
 
 Let's say you want to implement something complex, and you need to implement endpoints or change something major about the HTTP server created by the SDK, you can register to plugin lifecycle hooks.
 

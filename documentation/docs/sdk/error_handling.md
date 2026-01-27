@@ -1,8 +1,7 @@
 ---
 title: Error Handling Guide
 ---
-
-# {{ $frontmatter.title }}
+# Error Handling Guide
 
 This comprehensive guide explains how to handle errors in the Qelos SDK effectively. Proper error handling is crucial for building robust applications that can gracefully recover from failures and provide a good user experience.
 

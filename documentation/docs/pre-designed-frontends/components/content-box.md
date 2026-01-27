@@ -2,8 +2,7 @@
 title: Content Box Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Content Box Component
 
 ## Overview
 

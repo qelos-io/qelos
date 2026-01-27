@@ -2,6 +2,5 @@
 title: Cross-domain Authentication
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Cross-domain Authentication
 

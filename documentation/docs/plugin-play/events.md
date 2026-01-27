@@ -1,8 +1,7 @@
 ---
 title: Event Subscriptions
 ---
-
-# {{ $frontmatter.title }}
+# Event Subscriptions
 
 Plugin Play allows your plugin to subscribe to platform events and react to changes in real-time. This is one of the most powerful features for building integrations.
 

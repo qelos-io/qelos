@@ -190,5 +190,4 @@ try {
 ## Related Documentation
 
 - [Execute Lambdas and Webhooks](./execute_lambdas.md) - Learn how to trigger and execute lambdas
-- [Integration Sources](../integration-sources.md) - Configure integration sources
-- [Authentication](../authentication.md) - Handle authentication and authorization
+- [Authentication](./authentication.md) - Handle authentication and authorization

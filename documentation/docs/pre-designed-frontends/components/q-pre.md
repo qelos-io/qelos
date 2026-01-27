@@ -2,8 +2,7 @@
 title: Q Pre Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Q Pre Component
 
 ## Overview
 

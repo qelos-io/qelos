@@ -2,8 +2,7 @@
 title: CLI Tool
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# CLI Tool
 
 The Qelos CLI (`@qelos/plugins-cli`) is a command-line interface tool that helps developers manage and synchronize Qelos resources between their local development environment and their Qelos instance.
 

@@ -2,8 +2,7 @@
 title: Form Row Group Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Form Row Group Component
 
 ## Overview
 

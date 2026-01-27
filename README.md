@@ -4,12 +4,12 @@
 
 <div align="center">
   <a href="https://qelos.io" target="_blank">
-    <img src="https://docs.qelos.io/qelos.svg" alt="QELOS Logo" width="200">
+    <img src="https://qelos.io/qelos-hq.png" alt="Qelos Logo" width="200">
   </a>
   <p><strong>A powerful platform for creating multi-tenant SaaS applications with a built-in plugin system</strong></p>
 </div>
 
-## What is QELOS?
+## What is Qelos?
 
 QELOS is a platform to create SaaS products with a set of tools for developers and non-developers to manage, edit, improve, and change SaaS products faster and easier.
 

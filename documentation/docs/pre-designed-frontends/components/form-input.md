@@ -2,8 +2,7 @@
 title: Form Input Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Form Input Component
 
 ## Overview
 

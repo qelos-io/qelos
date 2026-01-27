@@ -2,8 +2,7 @@
 title: Copy To Clipboard Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Copy To Clipboard Component
 
 ## Overview
 

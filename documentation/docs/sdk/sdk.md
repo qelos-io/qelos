@@ -2,8 +2,7 @@
 title: Introduction to the SDK
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Introduction to the SDK
 
 Welcome to the Qelos SDK documentation. This section provides an overview of the SDK, including its core features, installation, and basic usage. Whether you are a developer or an administrator, this guide will help you get started with the SDK.
 

@@ -1,8 +1,7 @@
 ---
 title: Modals
 ---
-
-# {{ $frontmatter.title }}
+# Modals
 
 Documentation coming soon.
 

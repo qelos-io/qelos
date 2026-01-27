@@ -2,8 +2,7 @@
 title: Callback Link Component
 editLink: true
 ---
-
-# {{ $frontmatter.title }}
+# Callback Link Component
 
 The CallbackLink component is a utility component that generates callback URLs for plugin integrations. This component is commonly used for OAuth flows and third-party integrations where you need to redirect users through a plugin's callback endpoint.
 

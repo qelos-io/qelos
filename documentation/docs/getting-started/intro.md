@@ -2,10 +2,9 @@
 title: Intro to QELOS
 editLink: true
 ---
+# Intro to QELOS
 
-# {{ $frontmatter.title }}
-
-![QELOS Logo](/qelos.jpg)
+![QELOS Logo](/qelos-hq.png)
 
 ## What is QELOS?
 

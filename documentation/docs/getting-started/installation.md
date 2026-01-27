@@ -3,8 +3,7 @@ title: QELOS Installation and Setup Guide
 editLink: true
 
 ---
-
-# {{ $frontmatter.title }}
+# QELOS Installation and Setup Guide
 
 ## Prerequisites
 

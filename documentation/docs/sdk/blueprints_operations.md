@@ -1,8 +1,7 @@
 ---
 title: Blueprints Operations
 ---
-
-# {{ $frontmatter.title }}
+# Blueprints Operations
 
 This section provides an overview of managing blueprints using the Qelos SDK. Blueprints in Qelos represent data models that define the structure of your application's data. The SDK provides methods for creating, updating, removing, and retrieving blueprint information, as well as managing blueprint entities.
 

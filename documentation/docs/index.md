@@ -1,45 +1,45 @@
 ---
 layout: home
-title: QELOS Documentation
+title: Qelos Documentation
 editLink: true
 hero:
-  name: QELOS
-  text: Build SaaS Applications with Ease
-  tagline: A powerful platform for creating multi-tenant SaaS applications with built-in plugin system
+  name: Qelos
+  text: Build AI Agents & SaaS Applications
+  tagline: The ultimate AI-powered platform for creating intelligent agents, agent-to-agent communications, and multi-tenant SaaS applications using graphic builders, AI tooling, and visual workflows
   image:
-    src: /qelos.svg
-    alt: QELOS
+    src: /qelos-hq.png
+    alt: Qelos
   actions:
     - theme: brand
       text: Get Started
       link: /getting-started/intro
     - theme: alt
-      text: View on GitHub
-      link: https://github.com/qelos-io/qelos
+      text: Start Free Trial
+      link: https://app.qelos.io
 features:
-  - icon: 🚀
-    title: Multi-Tenant Architecture
-    details: Built-in support for multi-tenancy with isolated workspaces and configurations
+  - icon: 🤖
+    title: AI Agents & Workflows
+    details: Deploy intelligent AI agents that handle customer support, data processing, and complex workflows
+  - icon: 🎨
+    title: Visual Builders
+    details: Create powerful applications with our no-code visual interface and WYSIWYG editors
   - icon: 🔌
     title: Plugin System
     details: Extend your application with plugins and micro-frontends
-  - icon: 🎨
-    title: No-Code Builder
-    details: Create and customize blueprints without writing code
-  - icon: 🔒
-    title: Built-in Security
-    details: Authentication, authorization, and secrets management out of the box
-  - icon: 📦
-    title: Modern Tech Stack
-    details: Vue 3, Node.js, MongoDB, Redis, and more
+  - icon: 🚀
+    title: Launch in Days, Not Months
+    details: Go from concept to a fully functional SaaS with users, billing, and workflows in under a week
   - icon: 🌐
-    title: API-First Design
-    details: RESTful APIs and SDK for seamless integration
+    title: Multi-AI Support
+    details: Switch between OpenAI, Anthropic, Gemini, and other AI providers without changing your code
+  - icon: �
+    title: Scale Without Limits
+    details: Built for growth. Handle millions of users, process terabytes of data, and maintain 99.9% uptime
 ---
 
 ## Quick Start
 
-Get up and running with QELOS locally:
+Get up and running with Qelos locally:
 
 ```bash
 # Clone the repository
@@ -63,7 +63,7 @@ This will create your first tenant and admin user to get started.
 To create a new plugin:
 
 ```bash
-# Create a new QELOS plugin
+# Create a new Qelos plugin
 pnpm init play@latest my-plugin
 ```
 
@@ -73,7 +73,7 @@ pnpm init play@latest my-plugin
 
 <div class="custom-card">
   <h3>🏗️ Installation</h3>
-  <p>Set up your development environment and install QELOS.</p>
+  <p>Set up your development environment and install Qelos.</p>
   <a href="/getting-started/installation">Learn more →</a>
 </div>
 

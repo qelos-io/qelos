@@ -1,8 +1,7 @@
 ---
 title: Web SDK - Introduction
 ---
-
-# {{ $frontmatter.title }}
+# Web SDK - Introduction
 
 The Qelos Web SDK (`@qelos/web-sdk`) is a lightweight JavaScript library designed for developers building micro-frontends that run inside iframes within a Qelos application. It provides seamless communication between your iframe-based application and the host Qelos application.
 

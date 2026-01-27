@@ -1,8 +1,7 @@
 ---
 title: Installation & Setup
 ---
-
-# {{ $frontmatter.title }}
+# Installation & Setup
 
 This guide covers installing and setting up the Qelos Web SDK in your micro-frontend application.
 

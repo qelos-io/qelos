@@ -1,8 +1,7 @@
 ---
 title: Managing Blocks
 ---
-
-# {{ $frontmatter.title }}
+# Managing Blocks
 
 This section covers how to manage content blocks using the Qelos SDK. Blocks are reusable content components that can be used across your application.
 

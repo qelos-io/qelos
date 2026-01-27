@@ -1,8 +1,7 @@
 ---
 title: Plugin Play - Introduction
 ---
-
-# {{ $frontmatter.title }}
+# Plugin Play - Introduction
 
 Plugin Play (`@qelos/plugin-play`) is a powerful web framework built on top of Fastify that simplifies the creation of backend micro-services that integrate with Qelos applications. It provides a complete toolkit for building plugins with minimal boilerplate.
 

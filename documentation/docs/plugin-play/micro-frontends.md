@@ -1,8 +1,7 @@
 ---
 title: Micro-Frontends
 ---
-
-# {{ $frontmatter.title }}
+# Micro-Frontends
 
 Documentation coming soon.
 
