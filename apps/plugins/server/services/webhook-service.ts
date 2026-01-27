@@ -4,6 +4,7 @@ import Integration, { IIntegrationEntity } from '../models/integration';
 import { IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
 import { executeDataManipulation } from './data-manipulation-service';
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
+import { Types } from 'mongoose';
 
 interface WebhookPayload {
   body: any;
@@ -19,19 +20,54 @@ export async function triggerWebhookService(
   payload: WebhookPayload,
 ) {
   try {
+    // Validate ObjectId format
+    if (!Types.ObjectId.isValid(integrationId)) {
+      throw new Error('Integration not found. Integration ID is not valid.');
+    }
+    
+    const query = {
+      _id: new Types.ObjectId(integrationId),
+      tenant,
+      'kind.0': IntegrationSourceKind.Qelos,
+      active: true,
+      'trigger.operation': QelosTriggerOperation.apiWebhook,
+    };
+    
     const integration = await Integration
-      .findOne({
-        _id: integrationId,
-        tenant: tenant,
-        kind: IntegrationSourceKind.Qelos,
-        active: true,
-        'trigger.operation': QelosTriggerOperation.apiWebhook,
-      })
+      .findOne(query)
       .select('target trigger kind dataManipulation')
       .lean()
       .exec();
 
     if (!integration || !integration.target) {
+      // Log details only when integration is not found for debugging
+      logger.error('Integration not found - checking details', {
+        integrationId,
+        tenant,
+      });
+      
+      // Check if integration exists with different conditions (run in background, don't wait)
+      Integration.findById(integrationId)
+        .select('tenant kind active trigger')
+        .lean()
+        .exec()
+        .then(integrationById => {
+          if (integrationById) {
+            logger.error('Integration exists but query failed', {
+              actualTenant: integrationById.tenant,
+              tenantMatch: integrationById.tenant === tenant,
+              kind: integrationById.kind,
+              active: integrationById.active,
+              triggerOp: integrationById.trigger?.operation,
+            });
+          } else {
+            logger.error('Integration not found in database', { integrationId });
+          }
+        })
+        .catch(err => {
+          logger.error('Error checking integration details', { error: err.message });
+        });
+      
       throw new Error('Integration not found');
     }
 
