@@ -127,7 +127,7 @@ html.mobile body {
   font-size: var(--large-font-size);
 }
 
-.el-button {
+.el-button:not(.el-button--danger) {
   --el-button-bg-color: var(--button-bg-color);
 }
 
