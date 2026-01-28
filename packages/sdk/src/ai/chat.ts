@@ -4,7 +4,7 @@ import {
   IChatCompletionOptions, 
   IChatCompletionResponse, 
   ISSEStreamProcessor 
-} from '../ai';
+} from '.';
 
 export default class ChatSDK extends BaseSDK {
   private relativePath = '/api/ai';

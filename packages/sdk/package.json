@@ -1,6 +1,6 @@
 {
   "name": "@qelos/sdk",
-  "version": "3.11.3",
+  "version": "3.11.5",
   "description": "SDK for Qelos API",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,6 +11,9 @@
       ],
       "administrator/*": [
         "./dist/administrator/*.d.ts"
+      ],
+      "ai/*": [
+        "./dist/ai/*.d.ts"
       ],
       "workspaces": [
         "./dist/workspaces.d.ts"
@@ -44,6 +47,18 @@
       "import": "./dist/administrator/*.js",
       "require": "./dist/administrator/*.js",
       "default": "./dist/administrator/*.js"
+    },
+    "./ai": {
+      "types": "./dist/ai/index.d.ts",
+      "import": "./dist/ai/index.js",
+      "require": "./dist/ai/index.js",
+      "default": "./dist/ai/index.js"
+    },
+    "./ai/*": {
+      "types": "./dist/ai/*.d.ts",
+      "import": "./dist/ai/*.js",
+      "require": "./dist/ai/*.js",
+      "default": "./dist/ai/*.js"
     },
     "./workspaces": {
       "types": "./dist/workspaces.d.ts",
@@ -92,10 +107,10 @@
     "access": "public"
   },
   "dependencies": {
-    "@qelos/global-types": "^3.9.0"
+    "@qelos/global-types": "^3.11.4"
   },
   "devDependencies": {
-    "tsx": "^4.20.4",
+    "tsx": "^4.21.0",
     "typescript": "^4.9.5"
   },
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8"

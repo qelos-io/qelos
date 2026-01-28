@@ -5,9 +5,9 @@ import {
   IUploadContentRequest, 
   IClearStorageRequest, 
   IVectorStore 
-} from '../ai';
+} from '.';
 
-export default class RAGSDK extends BaseSDK {
+export default class RagSDK extends BaseSDK {
   private relativePath = '/api/ai';
 
   constructor(options: QelosSDKOptions) {

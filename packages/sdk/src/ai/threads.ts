@@ -1,6 +1,6 @@
 import BaseSDK from '../base-sdk';
 import { QelosSDKOptions } from '../types';
-import { IThread, ICreateThreadRequest } from '../ai';
+import { IThread, ICreateThreadRequest } from '.';
 
 export default class ThreadsSDK extends BaseSDK {
   private relativePath = '/api/ai';
