@@ -7,7 +7,7 @@
         </el-icon>
       </el-button>
       
-      <div class="logo-container" v-if="$isMobile">
+      <div class="logo-container" v-if="$isMobile || isStackedHeader">
         <img v-if="appConfig.logoUrl" :src="appConfig.logoUrl" :alt="appConfig.name" class="logo" />
         <h2 v-else class="app-title">{{ appConfig.name }}</h2>
       </div>
