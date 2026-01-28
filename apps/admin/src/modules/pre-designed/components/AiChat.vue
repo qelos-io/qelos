@@ -902,7 +902,7 @@ async function send() {
         let response;
         if (shouldRecordThread.value && localThreadId.value) {
           // Use thread-based chat completion
-          response = await sdk.ai.chatInThread(
+          response = await sdk.ai.chatCompletionInThread(
             integrationId,
             localThreadId.value,
             {
@@ -911,7 +911,7 @@ async function send() {
           );
         } else {
           // Use regular chat completion
-          response = await sdk.ai.chat(integrationId, {
+          response = await sdk.ai.chatCompletion(integrationId, {
             ...chatOptions,
           });
         }

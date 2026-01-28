@@ -6,6 +6,16 @@ editLink: true
 
 The AI module provides comprehensive functionality for managing AI-powered conversations, threads, and chat completions within your Qelos application. This module enables you to build sophisticated AI-driven features with support for both streaming and non-streaming chat completions.
 
+## SDK Structure
+
+The AI SDK is organized into three sub-SDKs for better organization:
+
+- **`sdk.ai.threads`** - Thread CRUD operations
+- **`sdk.ai.chat`** - Chat completion operations (streaming and non-streaming)
+- **`sdk.ai.rag`** - Vector storage management for RAG
+
+> **Note**: This documentation shows examples using the new sub-SDK structure. See [AI SDK Structure](./ai_sdk_structure.md) for detailed information about the SDK organization.
+
 ## Key Features
 
 - **Thread Management**: Create, retrieve, update, and delete conversation threads
@@ -13,6 +23,7 @@ The AI module provides comprehensive functionality for managing AI-powered conve
 - **Streaming Support**: Real-time streaming chat completions with Server-Sent Events
 - **Context Management**: Maintain conversation context across multiple interactions
 - **Integration Support**: Works with various AI providers through Qelos integrations
+- **RAG Support**: Vector storage for Retrieval-Augmented Generation
 
 ## Thread Operations
 
@@ -21,8 +32,8 @@ The AI module provides comprehensive functionality for managing AI-powered conve
 Create a new conversation thread to maintain context across multiple AI interactions:
 
 ```typescript
-// Create a new thread
-const thread = await sdk.ai.createThread({
+// Create a new thread using the threads sub-SDK
+const thread = await sdk.ai.threads.create({
   integration: 'your-integration-id',
   title: 'Customer Support Chat' // Optional
 });
@@ -36,7 +47,7 @@ Get a specific thread by its ID:
 
 ```typescript
 // Get a specific thread
-const thread = await sdk.ai.getThread('thread-id');
+const thread = await sdk.ai.threads.getOne('thread-id');
 console.log('Thread messages:', thread.messages);
 ```
 
@@ -46,7 +57,7 @@ Retrieve multiple threads with filtering options:
 
 ```typescript
 // List threads with filters
-const result = await sdk.ai.listThreads({
+const result = await sdk.ai.threads.list({
   integration: 'integration-id',
   limit: 20,
   page: 1,
@@ -67,7 +78,7 @@ Remove a thread when it's no longer needed:
 
 ```typescript
 // Delete a thread
-const result = await sdk.ai.deleteThread('thread-id');
+const result = await sdk.ai.threads.delete('thread-id');
 console.log('Thread deleted:', result.success);
 ```
 
@@ -79,7 +90,7 @@ Execute a chat completion without thread context:
 
 ```typescript
 // Simple chat completion
-const response = await sdk.ai.chat('integration-id', {
+const response = await sdk.ai.chat.chat('integration-id', {
   messages: [
     { role: 'user', content: 'Hello, how can you help me?' }
   ],
@@ -96,7 +107,7 @@ Execute a chat completion within a thread context to maintain conversation histo
 
 ```typescript
 // Chat completion with thread context
-const response = await sdk.ai.chatInThread(
+const response = await sdk.ai.chat.chatInThread(
   'integration-id',
   'thread-id',
   {
@@ -115,7 +126,7 @@ console.log('AI Response:', response.choices[0].message.content);
 Use advanced options for fine-tuned control:
 
 ```typescript
-const response = await sdk.ai.chat('integration-id', {
+const response = await sdk.ai.chat.chat('integration-id', {
   messages: [
     { role: 'system', content: 'You are a helpful customer service agent.' },
     { role: 'user', content: 'I need help with my order' }
@@ -142,7 +153,7 @@ For real-time AI responses, use streaming chat completions:
 
 ```typescript
 // Start streaming chat completion
-const stream = await sdk.ai.streamChat('integration-id', {
+const stream = await sdk.ai.chat.stream('integration-id', {
   messages: [
     { role: 'user', content: 'Tell me a long story' }
   ],
@@ -150,7 +161,7 @@ const stream = await sdk.ai.streamChat('integration-id', {
 });
 
 // Process the stream
-for await (const chunk of sdk.ai.parseSSEStream(stream)) {
+for await (const chunk of sdk.ai.chat.parseSSEStream(stream)) {
   if (chunk.choices?.[0]?.delta?.content) {
     process.stdout.write(chunk.choices[0].delta.content);
   }
@@ -163,7 +174,7 @@ Combine streaming with thread context for real-time conversational AI:
 
 ```typescript
 // Streaming chat with thread
-const stream = await sdk.ai.streamChatInThread(
+const stream = await sdk.ai.chat.streamChatInThread(
   'integration-id',
   'thread-id',
   {
@@ -174,7 +185,7 @@ const stream = await sdk.ai.streamChatInThread(
 );
 
 // Process streaming response
-for await (const chunk of sdk.ai.parseSSEStream(stream)) {
+for await (const chunk of sdk.ai.chat.parseSSEStream(stream)) {
   if (chunk.type === 'content') {
     console.log('New content:', chunk.choices[0].delta.content);
   } else if (chunk.type === 'function_call') {
@@ -188,7 +199,7 @@ for await (const chunk of sdk.ai.parseSSEStream(stream)) {
 The SDK's `parseSSEStream()` method includes robust buffering and error handling:
 
 ```typescript
-const stream = await sdk.ai.streamChat('integration-id', options);
+const stream = await sdk.ai.chat.stream('integration-id', options);
 const reader = stream.getReader();
 const decoder = new TextDecoder();
 
@@ -317,7 +328,7 @@ class AIChatApp {
   }
 
   async startNewConversation(title?: string) {
-    const thread = await this.sdk.ai.createThread({
+    const thread = await this.sdk.ai.threads.create({
       integration: this.integrationId,
       title: title || `Chat ${new Date().toLocaleString()}`
     });
@@ -331,7 +342,7 @@ class AIChatApp {
       await this.startNewConversation();
     }
 
-    const response = await this.sdk.ai.chatInThread(
+    const response = await this.sdk.ai.chat.chatInThread(
       this.integrationId,
       this.currentThread!,
       {
@@ -351,7 +362,7 @@ class AIChatApp {
       await this.startNewConversation();
     }
 
-    const stream = await this.sdk.ai.streamChatInThread(
+    const stream = await this.sdk.ai.chat.streamChatInThread(
       this.integrationId,
       this.currentThread!,
       {
@@ -360,7 +371,7 @@ class AIChatApp {
       }
     );
 
-    for await (const chunk of this.sdk.ai.parseSSEStream(stream)) {
+    for await (const chunk of this.sdk.ai.chat.parseSSEStream(stream)) {
       if (chunk.choices?.[0]?.delta?.content) {
         onChunk(chunk.choices[0].delta.content);
       }
@@ -370,12 +381,12 @@ class AIChatApp {
   async getConversationHistory() {
     if (!this.currentThread) return [];
     
-    const thread = await this.sdk.ai.getThread(this.currentThread);
+    const thread = await this.sdk.ai.threads.getOne(this.currentThread);
     return thread.messages;
   }
 
   async listPreviousChats() {
-    const result = await this.sdk.ai.listThreads({
+    const result = await this.sdk.ai.threads.list({
       integration: this.integrationId,
       limit: 50,
       sort: '-created'
@@ -407,7 +418,7 @@ The AI module follows the same error handling patterns as other SDK modules:
 
 ```typescript
 try {
-  const response = await sdk.ai.chat('integration-id', {
+  const response = await sdk.ai.chat.chat('integration-id', {
     messages: [{ role: 'user', content: 'Hello' }]
   });
 } catch (error) {
@@ -525,7 +536,7 @@ The component internally uses these SDK methods:
 
 ```typescript
 // List threads with pagination
-const result = await sdk.ai.listThreads({
+const result = await sdk.ai.threads.list({
   integration: props.integration,
   limit: props.limit,
   page: currentPage,
@@ -533,7 +544,7 @@ const result = await sdk.ai.listThreads({
 });
 
 // Delete a thread
-await sdk.ai.deleteThread(threadId);
+await sdk.ai.threads.delete(threadId);
 ```
 
 ### Styling
@@ -614,8 +625,91 @@ function refreshThreads() {
 </script>
 ```
 
+## RAG (Retrieval-Augmented Generation) Operations
+
+The RAG sub-SDK provides functionality for managing vector storage to enhance AI responses with contextual knowledge.
+
+### Creating Vector Storage
+
+Create a vector storage for a specific scope:
+
+```typescript
+// Create vector storage for a thread
+const storage = await sdk.ai.rag.createStorage('source-id', {
+  integrationId: 'integration-id',
+  scope: 'thread',
+  subjectId: 'thread-id',
+  expirationAfterDays: 30
+});
+
+console.log('Vector store created:', storage.vectorStore.id);
+```
+
+### Uploading Content
+
+Upload content to be indexed for RAG:
+
+```typescript
+// Upload text content
+const result = await sdk.ai.rag.uploadContent('source-id', {
+  integrationId: 'integration-id',
+  content: 'This is the documentation for our product...',
+  fileName: 'product-docs.txt',
+  metadata: { 
+    type: 'documentation',
+    version: '1.0',
+    category: 'product'
+  }
+});
+
+// Upload JSON content
+const jsonResult = await sdk.ai.rag.uploadContent('source-id', {
+  integrationId: 'integration-id',
+  content: {
+    title: 'Product Features',
+    features: ['Feature 1', 'Feature 2', 'Feature 3'],
+    pricing: { basic: '$10', pro: '$25' }
+  },
+  fileName: 'features.json'
+});
+```
+
+### Managing Storage
+
+Clear files from vector storage:
+
+```typescript
+// Clear specific files
+const clearResult = await sdk.ai.rag.clearStorage('source-id', {
+  integrationId: 'integration-id',
+  fileIds: ['file-id-1', 'file-id-2']
+});
+
+// Clear all files
+await sdk.ai.rag.clearStorage('source-id', {
+  integrationId: 'integration-id'
+});
+```
+
+### Getting Vector Stores
+
+List available vector stores (internal API):
+
+```typescript
+// Get all vector stores for a scope
+const stores = await sdk.ai.rag.getVectorStores({
+  scope: 'thread',
+  subjectId: 'thread-id'
+});
+
+stores.forEach(store => {
+  console.log(`Store: ${store.externalId}, Created: ${store.created}`);
+});
+```
+
 ## Related Documentation
 
+- [AI SDK Structure](./ai_sdk_structure.md) - Detailed SDK organization and sub-SDKs
 - [Authentication](./authentication.md) - User authentication setup
 - [Error Handling](./error_handling.md) - Error handling patterns
 - [TypeScript Types](./typescript_types.md) - Complete type definitions

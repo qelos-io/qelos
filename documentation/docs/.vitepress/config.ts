@@ -86,6 +86,8 @@ export default defineConfig({
           { text: 'Managing Plugins', link: '/sdk/managing_plugins' },
           { text: 'Managing Users', link: '/sdk/managing_users' },
           { text: 'Managing Workspaces', link: '/sdk/managing_workspaces' },
+          { text: 'AI SDK Structure', link: '/sdk/ai_sdk_structure' },
+          { text: 'AI Operations', link: '/sdk/ai_operations' },
           {
             text: 'Tutorials',
             collapsed: true,

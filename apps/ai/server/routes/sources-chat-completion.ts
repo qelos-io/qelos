@@ -50,7 +50,7 @@ export function sourcesChatCompletionRouter() {
        createBlueprintUsingAI
     )
 
-    router
+  router
     .post('/api/ai/sources/:sourceId/storage',
        AUTHENTICATION_MIDDLEWARES,
        getSourceToIntegrate,

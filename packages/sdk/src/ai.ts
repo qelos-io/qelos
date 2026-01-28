@@ -1,103 +1,113 @@
 import { QelosSDKOptions } from './types';
 import BaseSDK from './base-sdk';
+import ThreadsSDK from './ai/threads';
+import ChatSDK from './ai/chat';
+import RAGSDK from './ai/rag';
+import {
+  IMessage,
+  IMessageSummary,
+  IThread,
+  IChatCompletionOptions,
+  ISSEStreamProcessor,
+  IChatCompletionResponse,
+  ICreateThreadRequest,
+  ICreateVectorStorageRequest,
+  IUploadContentRequest,
+  IClearStorageRequest,
+  IVectorStore
+} from './ai/types';
 
-export interface IMessage {
-  role: string;
-  content: string;
-  timestamp?: Date | string;
-  tool_calls?: any[];
-  name?: string;
-  tool_call_id?: string;
-  function_call?: any;
-  message_id?: string;
-}
+// Re-export types for backward compatibility
+export {
+  IMessage,
+  IMessageSummary,
+  IThread,
+  IChatCompletionOptions,
+  ISSEStreamProcessor,
+  IChatCompletionResponse,
+  ICreateThreadRequest,
+  ICreateVectorStorageRequest,
+  IUploadContentRequest,
+  IClearStorageRequest,
+  IVectorStore
+};
 
-export interface IMessageSummary {
-  fromIndex: number;
-  toIndex: number;
-  summary: string;
-}
-
-export interface IThread {
-  _id?: string;
-  integration: string;
-  title?: string;
-  messages: IMessage[];
-  messageSummaries: IMessageSummary[];
-  created?: Date;
-  updated?: Date;
-  user?: string;
-  workspace?: string;
-}
-
-export interface IChatCompletionOptions {
-  messages: IMessage[];
-  model?: string;
-  temperature?: number;
-  top_p?: number;
-  frequency_penalty?: number;
-  presence_penalty?: number;
-  stop?: string | string[];
-  max_tokens?: number;
-  response_format?: any;
-  context?: Record<string, any>;
-  stream?: boolean;
-}
-
-export interface ISSEStreamProcessor extends AsyncIterable<any> {
-  processManually(onData: (data: any) => void | boolean): Promise<void>;
-}
-
-export interface IChatCompletionResponse {
-  id: string;
-  object: string;
-  created: number;
-  model: string;
-  choices: Array<{
-    index: number;
-    message: IMessage;
-    finish_reason: string;
-  }>;
-  usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
-}
-
-export interface ICreateThreadRequest {
-  integration: string;
-  title?: string;
-}
-
+/**
+ * Qelos AI SDK - Main SDK class with three sub-SDKs
+ * 
+ * This class provides access to AI functionality through three sub-SDKs:
+ * - `threads`: Thread CRUD operations for managing conversation threads
+ * - `chat`: Chat completion operations (streaming and non-streaming)
+ * - `rag`: Vector storage management for Retrieval-Augmented Generation
+ * 
+ * @example
+ * ```typescript
+ * const sdk = new QelosSDK({
+ *   appUrl: 'https://your-qelos-instance.com',
+ *   fetch: globalThis.fetch,
+ *   accessToken: 'your-token'
+ * });
+ * 
+ * // Create a thread
+ * const thread = await sdk.ai.threads.create({ integration: 'id' });
+ * 
+ * // Stream chat
+ * const stream = await sdk.ai.chat.stream('id', { messages: [...] });
+ * for await (const chunk of sdk.ai.chat.parseSSEStream(stream)) {
+ *   console.log(chunk);
+ * }
+ * 
+ * // Upload RAG content
+ * await sdk.ai.rag.uploadContent('sourceId', { content: '...' });
+ * ```
+ */
+// Main AI SDK with sub-SDKs
 export default class QlAI extends BaseSDK {
-  private relativePath = '/api/ai';
+  /**
+   * Threads sub-SDK for managing conversation threads
+   */
+  public threads: ThreadsSDK;
+  
+  /**
+   * Chat sub-SDK for chat completion operations
+   */
+  public chat: ChatSDK;
+  
+  /**
+   * RAG sub-SDK for vector storage management
+   */
+  public rag: RAGSDK;
+
+  /**
+   * Initialize the AI SDK with sub-SDKs
+   * 
+   * @param options - SDK configuration options
+   */
   constructor(options: QelosSDKOptions) {
     super(options);
+    this.threads = new ThreadsSDK(options);
+    this.chat = new ChatSDK(options);
+    this.rag = new RAGSDK(options);
   }
 
-  // Thread CRUD Operations
-
+  // Legacy methods for backward compatibility
+  
   /**
-   * Create a new thread
+   * @deprecated Use sdk.threads.create() instead
    */
   createThread(data: ICreateThreadRequest): Promise<IThread> {
-    return this.callJsonApi<IThread>(this.relativePath + '/threads', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(data)
-    });
+    return this.threads.create(data);
   }
 
   /**
-   * Get a specific thread by ID
+   * @deprecated Use sdk.threads.getOne() instead
    */
   getThread(threadId: string): Promise<IThread> {
-    return this.callJsonApi<IThread>(`${this.relativePath}/threads/${threadId}${this.getQueryParams({})}`);
+    return this.threads.getOne(threadId);
   }
 
   /**
-   * List threads with optional filters
+   * @deprecated Use sdk.threads.list() instead
    */
   listThreads(options?: {
     integration?: string;
@@ -108,188 +118,62 @@ export default class QlAI extends BaseSDK {
     workspace?: string;
     [key: string]: string | number;
   }): Promise<IThread[]> {
-    const queryParams = this.getQueryParams(options);
-    return this.callJsonApi<IThread[]>(
-      `${this.relativePath}/threads${queryParams}`
-    );
+    return this.threads.list(options);
   }
 
   /**
-   * Delete a thread
+   * @deprecated Use sdk.threads.delete() instead
    */
   deleteThread(threadId: string): Promise<{ success: boolean }> {
-    return this.callJsonApi<{ success: boolean }>(`${this.relativePath}/threads/${threadId}${this.getQueryParams({})}`, {
-      method: 'DELETE'
-    });
+    return this.threads.delete(threadId);
   }
 
-  // Chat Completion Operations
-
   /**
-   * Create a chat completion without a thread
+   * @deprecated Use sdk.chat.chat() instead
    */
-  chat(
+  chatCompletion(
     integrationId: string,
     options: IChatCompletionOptions
   ): Promise<IChatCompletionResponse> {
-    return this.callJsonApi<IChatCompletionResponse>(`${this.relativePath}/${integrationId}/chat-completion${this.getQueryParams({})}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(options)
-    });
+    return this.chat.chat(integrationId, options);
   }
 
   /**
-   * Create a chat completion with a thread
+   * @deprecated Use sdk.chat.chatInThread() instead
    */
-  chatInThread(
+  chatCompletionInThread(
     integrationId: string,
     threadId: string,
     options: IChatCompletionOptions
   ): Promise<IChatCompletionResponse> {
-    return this.callJsonApi<IChatCompletionResponse>(
-      `${this.relativePath}/${integrationId}/chat-completion/${threadId}${this.getQueryParams({})}`,
-      {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(options)
-      }
-    );
+    return this.chat.chatInThread(integrationId, threadId, options);
   }
 
   /**
-   * Create a streaming chat completion without a thread
-   * Returns a ReadableStream for Server-Sent Events
+   * @deprecated Use sdk.chat.stream() instead
    */
   async streamChat(
     integrationId: string,
     options: IChatCompletionOptions
   ): Promise<ReadableStream<Uint8Array>> {
-    const response = await this.callApi(`${this.relativePath}/${integrationId}/chat-completion${this.getQueryParams({ stream: true })}`, {
-      method: 'POST',
-      headers: { 
-        'content-type': 'application/json',
-        'accept': 'text/event-stream'
-      },
-      body: JSON.stringify({ ...options, stream: true })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    return response.body!;
+    return this.chat.stream(integrationId, options);
   }
 
   /**
-   * Create a streaming chat completion with a thread
-   * Returns a ReadableStream for Server-Sent Events
+   * @deprecated Use sdk.chat.streamInThread() instead
    */
   async streamChatInThread(
     integrationId: string,
     threadId: string,
     options: IChatCompletionOptions
   ): Promise<ReadableStream<Uint8Array>> {
-    const response = await this.callApi(
-      `${this.relativePath}/${integrationId}/chat-completion/${threadId}${this.getQueryParams({ stream: true })}`,
-      {
-        method: 'POST',
-        headers: { 
-          'content-type': 'application/json',
-          'accept': 'text/event-stream'
-        },
-        body: JSON.stringify({ ...options, stream: true })
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    return response.body!;
+    return this.chat.streamInThread(integrationId, threadId, options);
   }
 
   /**
-   * Helper method to parse Server-Sent Events stream
+   * @deprecated Use sdk.chat.parseSSEStream() instead
    */
   parseSSEStream(stream: ReadableStream<Uint8Array>): ISSEStreamProcessor {
-    const processStream = async (onData: (data: any) => void | boolean): Promise<void> => {
-      const reader = stream.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          let lines = buffer.split(/\r?\n/);
-          buffer = lines.pop() || ""; // Keep incomplete line
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') return;
-              
-              try {
-                const parsed = JSON.parse(data);
-                const shouldContinue = onData(parsed);
-                if (shouldContinue === false) {
-                  return;
-                }
-              } catch (e) {
-                // Skip invalid JSON
-              }
-            }
-          }
-        }
-      } finally {
-        reader.releaseLock();
-      }
-    };
-
-    const processor = {
-      async *[Symbol.asyncIterator]() {
-        const reader = stream.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";        
-        
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-              break;
-            }
-
-            buffer += decoder.decode(value, { stream: true });
-            let lines = buffer.split(/\r?\n/);
-            buffer = lines.pop() || ""; // Keep incomplete line
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6);
-                if (data === '[DONE]') {
-                  return;
-                }
-                
-                try {
-                  const parsed = JSON.parse(data);
-                  yield parsed;
-                } catch (e) {
-                  //
-                }
-              }
-            }
-          }
-        } finally {
-          reader.releaseLock();
-        }
-      },
-      
-      processManually: processStream
-    };
-    
-    return processor as ISSEStreamProcessor;
+    return this.chat.parseSSEStream(stream);
   }
 }

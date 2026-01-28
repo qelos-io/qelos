@@ -58,6 +58,17 @@ export class VectorStoreService {
         return existingStore;
       } catch (error) {
         logger.warn(`Vector store ${existingStore.externalId} no longer exists in OpenAI, creating new one`);
+        // Delete the invalid database entry
+        try {
+          await VectorStore.deleteOne({ _id: existingStore._id });
+          logger.info(`Deleted invalid vector store ${existingStore.externalId} from database`);
+        } catch (deleteError) {
+          logger.error('Error deleting invalid vector store from database:', {
+            error: deleteError instanceof Error ? deleteError.message : String(deleteError),
+            vectorStoreId: existingStore._id,
+            externalId: existingStore.externalId
+          });
+        }
       }
     }
 
