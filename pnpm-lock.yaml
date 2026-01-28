@@ -651,17 +651,17 @@ importers:
         specifier: ^6.12.0
         version: 6.12.0
       '@qelos/cache-manager':
-        specifier: ^3.11.1
-        version: 3.11.1
+        specifier: ^3.11.5
+        version: 3.11.5
       '@qelos/global-types':
-        specifier: ^3.11.1
-        version: 3.11.1
+        specifier: ^3.11.5
+        version: 3.11.5
       '@qelos/sdk':
-        specifier: ^3.11.1
-        version: 3.11.1
+        specifier: ^3.11.5
+        version: 3.11.5
       '@qelos/web-sdk':
-        specifier: ^3.11.1
-        version: 3.11.1
+        specifier: ^3.11.5
+        version: 3.11.5
       fastify:
         specifier: ~4.15.0
         version: 4.15.0
@@ -2114,20 +2114,20 @@ packages:
   '@protobufjs/utf8@1.1.0':
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
 
-  '@qelos/cache-manager@3.11.1':
-    resolution: {integrity: sha512-Z95Isn2wUlEqlF5nTxjUPdj9qMD0GtBPA89tQVcCmxTst0ZXljtZ+42qi0gx1xUht7uDyKSk0nEmgcd0VEKuug==}
-
-  '@qelos/global-types@3.11.1':
-    resolution: {integrity: sha512-S/GC3zxt51c1aLi7tkM5F15RwHNNDBDcT3lENM6HRFTyV0ocYs5H5/noJwkZTtDNfc2VsWeYuNN0vzLqi83f+g==}
+  '@qelos/cache-manager@3.11.5':
+    resolution: {integrity: sha512-8MEVPw7bcrv23OY1V4Ko9j6ygEXRF4raifFOi8rYfIsVFcvWRaQ3iVPri/yFsGhIyqviAa1IbjsV1jr/4v5bjA==}
 
   '@qelos/global-types@3.11.4':
     resolution: {integrity: sha512-DdzUfTPnRheZW+y3iHLKl7kyTCwQfCC3jjJN8NyRbrvi4ogfYaHdgNX18e3ulqBlfgPAozoMnCGduqTmdRtQGQ==}
 
-  '@qelos/sdk@3.11.1':
-    resolution: {integrity: sha512-xOF+6OPIVAKblWEaAlxfXnlw7Y//SKWI+IqgvG+2l7J51rW0NmyKCriWFj9oF9ceWLadb75EGUW17APXPcvNLA==}
+  '@qelos/global-types@3.11.5':
+    resolution: {integrity: sha512-MmDsBa6Du+a3ya+uTZOVe1k7xPHHtfR5CBWI6vY1TtVK3OOfdNrw4rE4yMawuMWZkh9KrBRprMIHEgi8s31fGg==}
 
-  '@qelos/web-sdk@3.11.1':
-    resolution: {integrity: sha512-sze3LkZXyFuIAFQDFUUq8YwzPD+EylHu2xW8OYBjJ41poe6jXJAOTQuFrc8Qz5HsA62MesHNu5rysU3YU4SzRg==}
+  '@qelos/sdk@3.11.5':
+    resolution: {integrity: sha512-cHjfRa17Jt+D6wJEt39zhou8v1GtIpgPdK0KkoTT732euZ5AW/aD4HFxIsyW8K0vdCWr4VuDOdnPUdGqOyF+lA==}
+
+  '@qelos/web-sdk@3.11.5':
+    resolution: {integrity: sha512-AxvDyum9RipA/IVCvP/JhTKiN+b4enzRlq8EbyWgXNFHEdKcNkU2N8fo7IlopavLFnTTbzOU1+O2vcKJS5OY0Q==}
 
   '@redis/bloom@1.2.0':
     resolution: {integrity: sha512-HG2DFjYKbpNmVXsa0keLHp/3leGJz1mjh09f2RLGGLQZzSHpkmZWuwJbAvo3QcRY8p80m5+ZdXZdYOSBLlp7Cg==}
@@ -8681,19 +8681,19 @@ snapshots:
 
   '@protobufjs/utf8@1.1.0': {}
 
-  '@qelos/cache-manager@3.11.1':
+  '@qelos/cache-manager@3.11.5':
     dependencies:
       redis: 3.1.2
 
-  '@qelos/global-types@3.11.1': {}
-
   '@qelos/global-types@3.11.4': {}
 
-  '@qelos/sdk@3.11.1':
-    dependencies:
-      '@qelos/global-types': 3.11.1
+  '@qelos/global-types@3.11.5': {}
 
-  '@qelos/web-sdk@3.11.1': {}
+  '@qelos/sdk@3.11.5':
+    dependencies:
+      '@qelos/global-types': 3.11.5
+
+  '@qelos/web-sdk@3.11.5': {}
 
   '@redis/bloom@1.2.0(@redis/client@1.6.1)':
     dependencies:
