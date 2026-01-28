@@ -221,7 +221,7 @@ const handlePrimaryAddClick = (kind?: IntegrationSourceKind) => {
           <span class="divider" aria-hidden="true">·</span>
           <el-link
             :underline="false"
-            type="primary"
+            :type="$isDarkTheme ? 'default' : 'primary'"
             @click.stop="openCreateForm(kind.kind)"
           >
             <el-icon><icon-plus /></el-icon>
@@ -385,7 +385,7 @@ const handlePrimaryAddClick = (kind?: IntegrationSourceKind) => {
 .integration-name {
   font-size: 15px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
+  color: var(--main-color-light);
 }
 
 .integration-count {
