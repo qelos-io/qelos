@@ -71,6 +71,10 @@ const openPasteDialog = () => {
   display: flex;
   align-items: center;
   gap: 10px;
+
+  :deep(*) {
+    color: var(--text-color);
+  }
 }
 
 .ai-mode-switch {
