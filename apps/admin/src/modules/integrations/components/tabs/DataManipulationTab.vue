@@ -469,11 +469,14 @@ const initialize = () => {
     // Convert populate object to array
     populateEntries.value[stepIndex] = step.populate
       ? Object.entries(step.populate).map(([key, config]) => {
-          const populateConfig = config as { source?: string; blueprint?: string };
+          const populateConfig = config as { source?: string; blueprint?: string; integration?: string; scope?: string; subjectId?: string };
           return {
             key,
             source: populateConfig.source || PopulateSource.user,
-            blueprint: populateConfig.blueprint
+            blueprint: populateConfig.blueprint,
+            integration: populateConfig.integration,
+            scope: populateConfig.scope,
+            subjectId: populateConfig.subjectId
           };
         })
       : [];
