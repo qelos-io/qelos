@@ -1178,7 +1178,6 @@ export async function callIntegrationTarget(tenant: string, payload: any, integr
   const authentication = await getEncryptedSourceAuthentication(tenant, source.kind, source.authentication);
 
   if (source.kind === IntegrationSourceKind.Http) {
-    console.log('making http request', source, payload);
     return handleHttpTarget(integrationTarget, source as IHttpSource, authentication || {}, payload)
   } else if (source.kind === IntegrationSourceKind.OpenAI) {
     return handleOpenAiTarget(integrationTarget, source as IOpenAISource, authentication || {}, payload);
