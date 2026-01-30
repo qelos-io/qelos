@@ -1,0 +1,10 @@
+html[data-dark-mode="true"] {
+  .el-button.is-plain {
+    color: var(--main-color);
+    border-color: var(--main-color-light);
+
+    &:hover {
+      border-color: var(--main-color);
+    }
+  }
+}
