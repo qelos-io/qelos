@@ -22,6 +22,7 @@ export async function getDataManipulation (req, res) {
         phase: error.phase,
         source: error.source,
         message: error.message,
+        cause: error.cause,
       });
 
       res.status(400).json({
