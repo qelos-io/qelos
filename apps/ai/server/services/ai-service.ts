@@ -806,8 +806,6 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
               // Flush any remaining buffer first
               yield* flushBuffer();
               
-              // Send the full content with a special type to indicate completion
-              hasSeenCompletion = true;
               const outputItem = (chunk as any).output?.[(chunk as any).output?.length - 1];
               if (outputItem?.type === 'message' && outputItem.content) {
                 const text = outputItem.content[0]?.text || '';
