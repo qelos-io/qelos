@@ -83,6 +83,8 @@ function extractAndRemoveLocalImports(fileContent: string, existingComponents: s
 }
 
 function getProps(jsContent: string): Array<{type: string, prop: string, placeholder?: string}> {
+  let processedStr: string | undefined;
+  
   try {
     // Extract the props section using a more robust approach
     const nameMatch = jsContent.match(/__name:"[^"]+",props:/g);
@@ -125,7 +127,7 @@ function getProps(jsContent: string): Array<{type: string, prop: string, placeho
     // Process the props object
     // We need to convert the props object to a valid JSON format
     // First, convert all property names to quoted strings
-    let processedStr = propsObjectStr.replace(/([a-zA-Z0-9_$]+):/g, '"$1":');
+    processedStr = propsObjectStr.replace(/([a-zA-Z0-9_$]+):/g, '"$1":');
     
     // Replace JavaScript constructors with their string representation
     processedStr = processedStr
@@ -150,7 +152,35 @@ function getProps(jsContent: string): Array<{type: string, prop: string, placeho
     // Replace single quotes with double quotes
     processedStr = processedStr.replace(/'/g, '"');
     
-    const props = Function(`return ${processedStr}`)();
+    // Handle URLs and other string values that might not be properly quoted
+    // Replace values that look like URLs but aren't quoted
+    processedStr = processedStr.replace(/:\s*(https?:\/\/[^\s,}]+)/g, ': "$1"');
+    
+    // Handle other unquoted string values (including alphanumeric strings with special chars)
+    processedStr = processedStr.replace(/:\s*([a-zA-Z0-9._-]+)(?=\s*[,\}])/g, (match, value) => {
+      // Skip if it's already quoted or if it's a known type
+      if (value.startsWith('"') || value.startsWith("'") || 
+          ['string', 'number', 'boolean', 'object', 'array', 'function', 'date', 'regexp'].includes(value)) {
+        return match;
+      }
+      return `: "${value}"`;
+    });
+    
+    // Add additional validation to ensure we have valid JSON-like structure
+    try {
+      // Validate the processed string before evaluation
+      JSON.parse(`{${processedStr}}`);
+    } catch (jsonError) {
+      // If JSON parsing fails, try to fix common issues
+      processedStr = processedStr
+        // Fix trailing commas
+        .replace(/,\s*}/g, '}')
+        .replace(/,\s*]/g, ']')
+        // Fix missing quotes around property values
+        .replace(/:\s*([^",\{\[\s][^",\}\]\s]*)/g, ': "$1"');
+    }
+    
+    const props = Function(`return {${processedStr}}`)();
 
     return Object.entries(props).map(([prop, type]) => ({
       type: (typeof type === 'object' ? (type as any)?.type?.toString() : type?.toString()) || 'object',
@@ -158,7 +188,13 @@ function getProps(jsContent: string): Array<{type: string, prop: string, placeho
       placeholder: (typeof type === 'object' && (type as any)?.default) ? (type as any)?.default : undefined,
       }));
   } catch (error) {
-    logger.error('Error extracting props from component', error);
+    const err = error as Error;
+    logger.error('Error extracting props from component', {
+      error: err.message,
+      stack: err.stack,
+      jsContent: jsContent.substring(0, 500) + (jsContent.length > 500 ? '...' : ''),
+      processedStr: processedStr ? processedStr.substring(0, 500) + (processedStr.length > 500 ? '...' : '') : 'null'
+    });
     return [];
   }
 }
