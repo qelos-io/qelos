@@ -82,122 +82,198 @@ function extractAndRemoveLocalImports(fileContent: string, existingComponents: s
   return { cleanedContent, removedImports: imports };
 }
 
-function getProps(jsContent: string): Array<{type: string, prop: string, placeholder?: string}> {
-  let processedStr: string | undefined;
-  
+function extractPropsFromVueComponent(vueContent: string): Array<{type: string, prop: string, placeholder?: string}> {
   try {
-    // Extract the props section using a more robust approach
-    const nameMatch = jsContent.match(/__name:"[^"]+",props:/g);
-    if (!nameMatch) {
-      return [];
+    // Extract the script setup section
+    const scriptSetupMatch = vueContent.match(/<script[^>]*\bsetup\b[^>]*>([\s\S]*?)<\/script>/);
+    if (!scriptSetupMatch) {
+      // Try regular script section
+      const scriptMatch = vueContent.match(/<script[^>]*>([\s\S]*?)<\/script>/);
+      if (!scriptMatch) {
+        return [];
+      }
+      return extractPropsFromRegularScript(scriptMatch[1]);
     }
     
-    // Find the position of the props definition
-    const propsStart = jsContent.indexOf(nameMatch[0]) + nameMatch[0].length;
+    const scriptContent = scriptSetupMatch[1];
     
-    // Now extract the props object by balancing braces
-    let braceCount = 0;
-    let propsEnd = propsStart;
-    let foundOpeningBrace = false;
+    // First try to find defineProps with object argument
+    const definePropsMatch = scriptContent.match(/defineProps\s*\(\s*({[\s\S]*?})\s*\)/);
+    if (definePropsMatch) {
+      return parsePropsObject(definePropsMatch[1]);
+    }
     
-    for (let i = propsStart; i < jsContent.length; i++) {
-      const char = jsContent[i];
-      
-      if (char === '{') {
-        foundOpeningBrace = true;
-        braceCount++;
-      } else if (char === '}') {
-        braceCount--;
+    // Try to find defineProps with TypeScript interface
+    const definePropsWithTypesMatch = scriptContent.match(/defineProps\s*<[^>]*>\s*\(\s*\)/);
+    if (definePropsWithTypesMatch) {
+      // Extract the interface or type definition
+      const interfaceMatch = scriptContent.match(/interface\s+\w+\s*{([^}]*)}/);
+      if (interfaceMatch) {
+        return parseTypeScriptInterface(interfaceMatch[1]);
       }
       
-      // If we've found the opening brace and balanced all braces, we've found the end
-      if (foundOpeningBrace && braceCount === 0) {
-        propsEnd = i + 1; // Include the closing brace
-        break;
+      // Try to extract type from generic parameter
+      const genericMatch = scriptContent.match(/defineProps\s*<([^>]+)>/);
+      if (genericMatch) {
+        // This is a simplified parser for inline types
+        return parseInlineType(genericMatch[1]);
       }
     }
     
-    // Extract the props object string
-    const propsObjectStr = jsContent.substring(propsStart, propsEnd);
-    
-    if (!propsObjectStr || propsObjectStr === '') {
-      return [];
-    }
-    
-    // Process the props object
-    // We need to convert the props object to a valid JSON format
-    // First, convert all property names to quoted strings
-    processedStr = propsObjectStr.replace(/([a-zA-Z0-9_$]+):/g, '"$1":');
-    
-    // Replace JavaScript constructors with their string representation
-    processedStr = processedStr
-      .replace(/:\s*String\b/g, ':"string"')
-      .replace(/:\s*Number\b/g, ':"number"')
-      .replace(/:\s*Boolean\b/g, ':"boolean"')
-      .replace(/:\s*Object\b/g, ':"object"')
-      .replace(/:\s*Array\b/g, ':"array"')
-      .replace(/:\s*Function\b/g, ':"function"')
-      .replace(/:\s*Date\b/g, ':"date"')
-      .replace(/:\s*RegExp\b/g, ':"regexp"');
-    
-    // Handle objects with type property
-    processedStr = processedStr.replace(/:\s*\{\s*type\s*:\s*([A-Za-z0-9_$]+)\s*\}/g, 
-      (_, type) => `:"${type.toLowerCase()}"`);
-    
-    // Handle empty objects and unknown types
-    processedStr = processedStr
-      .replace(/:\s*\{\s*\}/g, ':"object"')
-      .replace(/:\s*([A-Z][a-zA-Z0-9_$]*)\b/g, ':"object"');
-
-    // Replace single quotes with double quotes
-    processedStr = processedStr.replace(/'/g, '"');
-    
-    // Handle URLs and other string values that might not be properly quoted
-    // Replace values that look like URLs but aren't quoted
-    processedStr = processedStr.replace(/:\s*(https?:\/\/[^\s,}]+)/g, ': "$1"');
-    
-    // Handle other unquoted string values (including alphanumeric strings with special chars)
-    processedStr = processedStr.replace(/:\s*([a-zA-Z0-9._-]+)(?=\s*[,\}])/g, (match, value) => {
-      // Skip if it's already quoted or if it's a known type
-      if (value.startsWith('"') || value.startsWith("'") || 
-          ['string', 'number', 'boolean', 'object', 'array', 'function', 'date', 'regexp'].includes(value)) {
-        return match;
+    // Try to find props defined with withDefaults
+    const withDefaultsMatch = scriptContent.match(/withDefaults\s*\(\s*defineProps[^,]*,\s*({[\s\S]*?})\s*\)/);
+    if (withDefaultsMatch) {
+      const propsMatch = scriptContent.match(/defineProps\s*<[^>]*>/);
+      if (propsMatch) {
+        // Extract defaults
+        const defaultsStr = withDefaultsMatch[1];
+        return parseWithDefaults(defaultsStr);
       }
-      return `: "${value}"`;
-    });
-    
-    // Add additional validation to ensure we have valid JSON-like structure
-    try {
-      // Validate the processed string before evaluation
-      JSON.parse(`{${processedStr}}`);
-    } catch (jsonError) {
-      // If JSON parsing fails, try to fix common issues
-      processedStr = processedStr
-        // Fix trailing commas
-        .replace(/,\s*}/g, '}')
-        .replace(/,\s*]/g, ']')
-        // Fix missing quotes around property values
-        .replace(/:\s*([^",\{\[\s][^",\}\]\s]*)/g, ': "$1"');
     }
     
-    const props = Function(`return {${processedStr}}`)();
-
-    return Object.entries(props).map(([prop, type]) => ({
-      type: (typeof type === 'object' ? (type as any)?.type?.toString() : type?.toString()) || 'object',
-      prop,
-      placeholder: (typeof type === 'object' && (type as any)?.default) ? (type as any)?.default : undefined,
-      }));
+    return [];
   } catch (error) {
     const err = error as Error;
-    logger.error('Error extracting props from component', {
+    logger.error('Error extracting props from Vue component', {
       error: err.message,
-      stack: err.stack,
-      jsContent: jsContent.substring(0, 500) + (jsContent.length > 500 ? '...' : ''),
-      processedStr: processedStr ? processedStr.substring(0, 500) + (processedStr.length > 500 ? '...' : '') : 'null'
+      stack: err.stack
     });
     return [];
   }
 }
+
+function parsePropsObject(propsObjectStr: string): Array<{type: string, prop: string, placeholder?: string}> {
+  const props: Array<{type: string, prop: string, placeholder?: string}> = [];
+  
+  // Process the props object to extract prop definitions
+  // This regex matches prop definitions with various syntaxes
+  const propRegex = /(\w+)\s*:\s*({[\s\S]*?}|[\w\s.,'"|{}[\]:]+)/g;
+  let match;
+  
+  while ((match = propRegex.exec(propsObjectStr)) !== null) {
+    const propName = match[1];
+    const propDefinition = match[2];
+    
+    // Default to object type
+    let type = 'object';
+    let placeholder: string | undefined;
+    
+    // Extract type from prop definition
+    if (propDefinition.startsWith('{')) {
+      // Object syntax: { type: String, default: '' }
+      const typeMatch = propDefinition.match(/type\s*:\s*(\w+)/);
+      if (typeMatch) {
+        const typeName = typeMatch[1];
+        type = typeName.toLowerCase();
+      }
+      
+      // Extract default value
+      const defaultMatch = propDefinition.match(/default\s*:\s*([^,}]+)/);
+      if (defaultMatch) {
+        placeholder = defaultMatch[1].trim().replace(/['"]/g, '');
+      }
+    } else {
+      // Simple syntax: propName: String
+      type = propDefinition.trim().toLowerCase();
+    }
+    
+    // Normalize type names
+    const typeMap: Record<string, string> = {
+      'string': 'string',
+      'number': 'number',
+      'boolean': 'boolean',
+      'object': 'object',
+      'array': 'array',
+      'function': 'function',
+      'date': 'date'
+    };
+    
+    type = typeMap[type] || 'object';
+    
+    props.push({
+      prop: propName,
+      type,
+      placeholder
+    });
+  }
+  
+  return props;
+}
+
+function parseTypeScriptInterface(interfaceStr: string): Array<{type: string, prop: string, placeholder?: string}> {
+  const props: Array<{type: string, prop: string, placeholder?: string}> = [];
+  
+  // Split by lines and process each property
+  const lines = interfaceStr.split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('//')) continue;
+    
+    // Match property with optional type and default
+    const propMatch = trimmed.match(/(\w+)(\?)?:\s*([^;=]+)/);
+    if (propMatch) {
+      const propName = propMatch[1];
+      const typeStr = propMatch[3].trim();
+      
+      // Convert TypeScript types to our simplified types
+      let type = 'object';
+      if (typeStr.includes('string') || typeStr.includes('String')) {
+        type = 'string';
+      } else if (typeStr.includes('number') || typeStr.includes('Number')) {
+        type = 'number';
+      } else if (typeStr.includes('boolean') || typeStr.includes('Boolean')) {
+        type = 'boolean';
+      } else if (typeStr.includes('Array') || typeStr.includes('[]')) {
+        type = 'array';
+      }
+      
+      props.push({
+        prop: propName,
+        type
+      });
+    }
+  }
+  
+  return props;
+}
+
+function parseInlineType(typeStr: string): Array<{type: string, prop: string, placeholder?: string}> {
+  // This is a very basic parser for inline types
+  // In a real implementation, you'd want a proper TypeScript parser
+  return [];
+}
+
+function parseWithDefaults(defaultsStr: string): Array<{type: string, prop: string, placeholder?: string}> {
+  const props: Array<{type: string, prop: string, placeholder?: string}> = [];
+  
+  // Parse defaults object
+  const propRegex = /(\w+)\s*:\s*([^,}]+)/g;
+  let match;
+  
+  while ((match = propRegex.exec(defaultsStr)) !== null) {
+    const propName = match[1];
+    const defaultValue = match[2].trim().replace(/['"]/g, '');
+    
+    props.push({
+      prop: propName,
+      type: 'string', // Default to string, would need better type inference
+      placeholder: defaultValue
+    });
+  }
+  
+  return props;
+}
+
+function extractPropsFromRegularScript(scriptContent: string): Array<{type: string, prop: string, placeholder?: string}> {
+  // Handle Vue 2 style props in regular script section
+  const propsMatch = scriptContent.match(/props\s*:\s*({[\s\S]*?})/);
+  if (propsMatch) {
+    return parsePropsObject(propsMatch[1]);
+  }
+  
+  return [];
+}
+
 
 /**
  * Compiles a Vue component into a client-side library that can be imported in the frontend
@@ -215,6 +291,9 @@ export async function compileVueComponent(
   
   // Remove local component imports that exist in the database
   const { cleanedContent, removedImports } = extractAndRemoveLocalImports(fileContent, existingComponents);
+  
+  // Extract props from the original Vue component content before compilation
+  const props = extractPropsFromVueComponent(cleanedContent);
   
   // Log the import removal process
   if (removedImports.length > 0) {
@@ -286,7 +365,7 @@ window['components:${hash}'] = Component;`;
       delete window['components:${hash}'];
       export default Component;`,
       css: cssContent,
-      props: getProps(jsContent)
+      props
     };
   } catch (err: any) {
     // Re-throw the original error to preserve stderr and other details
