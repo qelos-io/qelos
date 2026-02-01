@@ -736,7 +736,28 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
           let currentFunctionCall: any = null;
           let accumulatedArgs = '';
           let accumulatedContent = '';
-          let hasSeenCompletion = false;
+          let buffer = '';
+          let lastFlushTime = Date.now();
+
+          // Helper function to flush buffered content
+          function* flushBuffer() {
+            if (buffer) {
+              accumulatedContent += buffer;
+              yield {
+                id: messageId,
+                object: 'chat.completion.chunk' as const,
+                created: Math.floor(Date.now() / 1000),
+                model: model,
+                choices: [{
+                  index: 0,
+                  delta: { content: buffer },
+                  finish_reason: null
+                }]
+              };
+              buffer = '';
+              lastFlushTime = Date.now();
+            }
+          }
 
           for await (const chunk of originalStream) {
             // Emit token usage event if usage data is present and we haven't emitted yet
@@ -765,20 +786,26 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
               // Individual character/word delta from Responses API
               const delta = chunk.delta || '';
               if (delta) {
-                accumulatedContent += delta;
-                yield {
-                  id: messageId,
-                  object: 'chat.completion.chunk' as const,
-                  created: Math.floor(Date.now() / 1000),
-                  model: (chunk as any).model || model,
-                  choices: [{
-                    index: 0,
-                    delta: { content: delta },
-                    finish_reason: null
-                  }]
-                };
+                buffer += delta;
+                
+                // Flush immediately for certain conditions
+                const now = Date.now();
+                const shouldFlush = 
+                  buffer.endsWith('\n') || // Flush at line breaks
+                  buffer.endsWith('. ') || // Flush after sentences
+                  buffer.endsWith('! ') || // Flush after exclamations
+                  buffer.endsWith('? ') || // Flush after questions
+                  buffer.length >= 10 || // Flush for longer content
+                  (now - lastFlushTime > 50); // Flush after 50ms for responsiveness
+                
+                if (shouldFlush) {
+                  yield* flushBuffer();
+                }
               }
             } else if (chunk.type === 'response.output_text.completed' || chunk.type === 'response.completed') {
+              // Flush any remaining buffer first
+              yield* flushBuffer();
+              
               // Send the full content with a special type to indicate completion
               hasSeenCompletion = true;
               const outputItem = (chunk as any).output?.[(chunk as any).output?.length - 1];
