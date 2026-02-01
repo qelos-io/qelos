@@ -155,6 +155,8 @@ plugins:
     SECRETS_SERVICE_PORT: 9002
     NO_CODE_SERVICE_URL: nocode-service
     NO_CODE_SERVICE_PORT: 9004
+    AI_SERVICE_URL: ai-service
+    AI_SERVICE_PORT: 9007
 
 assets:
   image:
