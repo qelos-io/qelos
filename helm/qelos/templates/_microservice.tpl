@@ -7,7 +7,7 @@ metadata:
     app: {{ .name }}
 spec:
   replicas: {{ .values.replicas | default 2 }}
-  progressDeadlineSeconds: {{ (.values.progressDeadlineSeconds) | default 1200 }}
+  progressDeadlineSeconds: {{ (.values.progressDeadlineSeconds) | default 180 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -59,6 +59,7 @@ spec:
               value: "{{ $value }}"
             {{- end }}
             {{- end }}
+          {{- if ne (.values.enableHealthProbes) false }}
           {{- with .values.readinessProbe }}
           readinessProbe:
             {{- toYaml . | nindent 12 }}
@@ -66,7 +67,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /internal-api/health
-              port: http
+              port: {{ .values.port }}
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3
@@ -80,12 +81,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /internal-api/health
-              port: http
-            initialDelaySeconds: 30
+              port: {{ .values.port }}
+            initialDelaySeconds: 60
             periodSeconds: 10
             timeoutSeconds: 5
             successThreshold: 1
             failureThreshold: 3
+          {{- end }}
           {{- end }}
           resources:
             {{- $defaultResources := dict "requests" (dict "memory" "128Mi" "cpu" "100m") "limits" (dict "memory" "256Mi" "cpu" "200m") }}
