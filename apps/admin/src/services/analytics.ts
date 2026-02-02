@@ -151,7 +151,12 @@ class AnalyticsService {
     // Clarity event tracking
     if (window.clarity) {
       try {
-        window.clarity('event', eventName)
+        window.clarity('event', eventName);
+        if (parameters) {
+          Object.entries(parameters).forEach(([key, value]) => {
+            window.clarity('set', key, typeof value === 'object' && value !== null && !Array.isArray(value) ? JSON.stringify(value) : String(value));
+          });
+        }
       } catch (error) {
         // console.error('Error tracking event with Clarity:', error)
       }
