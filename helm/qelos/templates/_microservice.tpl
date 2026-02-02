@@ -10,8 +10,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: {{ (.values.rollingUpdate).maxSurge | default "25%" }}
-      maxUnavailable: {{ (.values.rollingUpdate).maxUnavailable | default "25%" }}
+      maxSurge: {{ (.values.rollingUpdate).maxSurge | default 1 }}
+      maxUnavailable: {{ (.values.rollingUpdate).maxUnavailable | default 0 }}
   selector:
     matchLabels:
       app: {{ .name }}
