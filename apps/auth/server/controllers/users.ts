@@ -13,7 +13,7 @@ import ObjectId = Types.ObjectId
 import { getValidMetadata } from '../services/users';
 import Workspace from '../models/workspace';
 
-const privilegedUserFields = 'username phone fullName firstName lastName birthDate roles profileImage socialLogins emailVerified lastLogin';
+const privilegedUserFields = 'username phone fullName firstName lastName birthDate roles profileImage socialLogins emailVerified lastLogin metadata';
 
 function getUserIdIfExists(_id, tenant) {
   // Use type assertion to avoid complex union type error
