@@ -7,4 +7,8 @@ html[data-dark-mode="true"] {
       border-color: var(--main-color);
     }
   }
+
+  .el-button {
+    color: var(--main-color);
+  }
 }
