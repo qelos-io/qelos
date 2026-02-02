@@ -96,7 +96,7 @@ const loadThreads = async () => {
     if (props.integration) {
       query.integration = props.integration;
     }
-    const response = await sdk.ai.listThreads(query)
+    const response = await sdk.ai.threads.list(query)
     
     threads.value = response
   } catch (error) {
@@ -119,7 +119,7 @@ const deleteThread = async (thread: IThread) => {
       }
     )
     
-    await sdk.ai.deleteThread(thread._id!)
+    await sdk.ai.threads.delete(thread._id!)
     ElMessage.success('Thread deleted successfully')
     emit('thread-deleted', thread._id!)
     loadThreads();
@@ -136,20 +136,13 @@ const formatDate = (date: Date | string) => {
   return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-const getLastMessage = (messages: any[]) => {
-  const lastMessage = messages[messages.length - 1]
-  if (!lastMessage) return ''
-  
-  const content = lastMessage.content || ''
-  return content.length > 100 ? content.substring(0, 100) + '...' : content
-}
-
 async function createThread() {
   let thread: IThread;
   if (props.integration) {
-    thread = await sdk.ai.createThread({integration: props.integration});
+    thread = await sdk.ai.threads.create({integration: props.integration});
   }
-  emit('create-thread', thread)
+  emit('create-thread', thread!);
+  loadThreads();
 }
 
 defineExpose({
