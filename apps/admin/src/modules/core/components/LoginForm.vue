@@ -176,6 +176,7 @@ html[data-dark-mode="true"] {
   padding: 20px;
   font-size: var(--base-font-size);
   border-radius: calc(var(--border-radius) * 1.2);
+  border: none;
   transition: background-color 0.3s;
   color: white;
 }
