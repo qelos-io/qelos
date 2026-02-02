@@ -83,6 +83,9 @@ class AnalyticsService {
     if (window.clarity) {
       try {
         window.clarity('identify', user._id, user.username, user.email)
+        window.clarity('set', 'user_id', user._id)
+        window.clarity('set', 'username', user.username)
+        window.clarity('set', 'email', user.email)
       } catch (error) {
         // console.error('Error identifying user with Clarity:', error)
       }
