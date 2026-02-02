@@ -27,14 +27,18 @@ function createApp() {
   return _app;
 }
 
+const HEALTH_PATH = '/internal-api/health';
+
 function configureApp(app: Express) {
+  const morganSkip = (req: express.Request) => req.path === HEALTH_PATH;
+  const morganOptions = { skip: morganSkip };
   if (process.env.NODE_ENV !== 'production') {
-    app.use(require('morgan')('combined'))
+    app.use(require('morgan')('combined', morganOptions))
     app.get('/api/shutdown', () => {
       shutdown()
     })
   } else if (_config.showLogs) {
-    app.use(require('morgan')('combined'));
+    app.use(require('morgan')('combined', morganOptions));
   }
   if (_config.cors) {
     app.use(require('cors')())
@@ -42,7 +46,7 @@ function configureApp(app: Express) {
   if (_config.bodyParser) {
     app.use(express[_config.bodyParser]())
   }
-  app.get('/internal-api/health', (_, res) => {
+  app.get(HEALTH_PATH, (_, res) => {
     res.status(200).send('ok');
   })
 }
