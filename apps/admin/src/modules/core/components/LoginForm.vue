@@ -14,7 +14,7 @@
         <el-button native-type="submit" :loading="submitting">
           <span>{{ $t('Login') }}</span>
           <template #icon>
-            <font-awesome-icon :icon="['fas', 'arrow-right-long']" />
+            <font-awesome-icon :icon="['fas', $t('appDirection') === 'rtl' ? 'arrow-left-long' : 'arrow-right-long']" />
           </template>
         </el-button>
       </div>
