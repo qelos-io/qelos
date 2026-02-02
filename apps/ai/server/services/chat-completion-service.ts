@@ -320,9 +320,14 @@ async function processStreamingCompletion(
     } else if (content) {
       // Regular content chunk
       hasContent = true;
-      assistantLastContent += content;
-      // Check if this chunk has the completion_type field indicating full content
+      // When the provider sends a full_content chunk (entire message), replace accumulated
+      // content instead of appending to avoid duplicating the message in the DB
       const isFullContent = (chunk as any).completion_type === 'full_content';
+      if (isFullContent) {
+        assistantLastContent = content;
+      } else {
+        assistantLastContent += content;
+      }
       sendSSE({ 
         type: isFullContent ? 'full_content' : (isFollowUp ? 'followup_chunk' : 'chunk'), 
         content: content 
