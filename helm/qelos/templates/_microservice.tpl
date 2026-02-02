@@ -128,3 +128,4 @@ spec:
     matchLabels:
       app: {{ .name }}
 {{- end }}
+{{- end -}}
