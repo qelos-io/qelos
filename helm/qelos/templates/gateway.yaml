@@ -9,8 +9,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: {{ (.Values.gateway.rollingUpdate).maxSurge | default "25%" }}
+      maxUnavailable: {{ (.Values.gateway.rollingUpdate).maxUnavailable | default "25%" }}
   selector:
     matchLabels:
       app: gateway
@@ -18,18 +18,28 @@ spec:
     metadata:
       labels:
         app: gateway
+        version: {{ .Values.gateway.image.tag | quote }}
       annotations:
         # Service dependency checksums to force gateway restart when services change
         checksum/microservices-config: {{ include (print $.Template.BasePath "/microservices.yaml") . | sha256sum }}
         checksum/mongodb-config: {{ include (print $.Template.BasePath "/mongodb.yaml") . | sha256sum }}
         checksum/redis-config: {{ include (print $.Template.BasePath "/redis.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
     spec:
+      terminationGracePeriodSeconds: {{ (.Values.gateway.terminationGracePeriodSeconds) | default 30 }}
       containers:
         - name: gateway
           image: "{{ .Values.gateway.image.repository }}:{{ .Values.gateway.image.tag }}"
+          imagePullPolicy: {{ .Values.gateway.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: 3000
               name: http
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 10"]
           env:
             - name: IP
               value: "0.0.0.0"
@@ -77,6 +87,34 @@ spec:
               value: "true"
             - name: BASIC_TENANT
               value: "{{ .Values.gateway.environment.BASIC_TENANT }}"
+          {{- with .Values.gateway.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- else }}
+          readinessProbe:
+            httpGet:
+              path: /internal-api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          {{- end }}
+          {{- with .Values.gateway.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- else }}
+          livenessProbe:
+            httpGet:
+              path: /internal-api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          {{- end }}
           resources:
             {{- toYaml .Values.gateway.resources | nindent 12 }}
 ---
@@ -86,26 +124,39 @@ metadata:
   name: gateway-service
   labels:
     app: gateway
+  annotations:
+    {{- if (.Values.gateway.service).annotations }}
+    {{- range $key, $value := .Values.gateway.service.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
 spec:
-  type: NodePort
+  type: {{ (.Values.gateway.service).type | default "NodePort" }}
   ports:
     - port: 80
       targetPort: 3000
-      nodePort: 30000
+      {{- if eq ((.Values.gateway.service).type | default "NodePort") "NodePort" }}
+      nodePort: {{ (.Values.gateway.service).nodePort | default 30000 }}
+      {{- end }}
       protocol: TCP
       name: http
   selector:
     app: gateway
 ---
+{{- if not (.Values.gateway.pdb).disabled }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: gateway-pdb
 spec:
-  minAvailable: 1
+  minAvailable: {{ (.Values.gateway.pdb).minAvailable | default 1 }}
+  {{- if (.Values.gateway.pdb).maxUnavailable }}
+  maxUnavailable: {{ (.Values.gateway.pdb).maxUnavailable }}
+  {{- end }}
   selector:
     matchLabels:
       app: gateway
+{{- end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

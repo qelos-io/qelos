@@ -222,3 +222,47 @@ defaultResources: &defaultResources
   limits:
     memory: "256Mi"
     cpu: "150m"
+
+# Zero-downtime deployment configuration
+defaultDeployment: &defaultDeployment
+  # Rolling update strategy - allows zero-downtime deployments
+  rollingUpdate:
+    maxSurge: "25%"        # Can create 25% more pods during update
+    maxUnavailable: "25%"  # Can take down 25% of pods during update
+  # Health check configuration
+  readinessProbe:
+    httpGet:
+      path: /internal-api/health
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+  livenessProbe:
+    httpGet:
+      path: /internal-api/health
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+  # Graceful shutdown
+  terminationGracePeriodSeconds: 30
+  # Pod Disruption Budget
+  pdb:
+    minAvailable: 1  # Always keep at least 1 pod running
+    # To disable PDB for a service, set:
+    # pdb:
+    #   disabled: true
+  # Service configuration
+  service:
+    type: ClusterIP
+    # Additional service annotations (e.g., for load balancers)
+    # annotations:
+    #   service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+
+# Image pull policy
+imagePullPolicy: IfNotPresent
