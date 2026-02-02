@@ -7,6 +7,7 @@ metadata:
     app: {{ .name }}
 spec:
   replicas: {{ .values.replicas | default 2 }}
+  progressDeadlineSeconds: {{ (.values.progressDeadlineSeconds) | default 1200 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:

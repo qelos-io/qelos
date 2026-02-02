@@ -6,6 +6,7 @@ metadata:
     app: gateway
 spec:
   replicas: {{ .Values.gateway.replicas }}
+  progressDeadlineSeconds: {{ (.Values.gateway.progressDeadlineSeconds) | default 1200 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
