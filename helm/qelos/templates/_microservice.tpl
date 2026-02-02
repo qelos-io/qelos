@@ -25,7 +25,7 @@ spec:
         prometheus.io/port: "{{ .values.port }}"
         prometheus.io/path: "/metrics"
     spec:
-  terminationGracePeriodSeconds: {{ (.values.terminationGracePeriodSeconds) | default 30 }}
+      terminationGracePeriodSeconds: {{ (.values.terminationGracePeriodSeconds) | default 30 }}
       containers:
         - name: {{ .name }}
           image: "{{ .values.image.repository }}:{{ .values.image.tag }}"
