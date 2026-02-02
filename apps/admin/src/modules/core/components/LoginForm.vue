@@ -120,6 +120,14 @@ form {
   }
 }
 
+html[data-dark-mode="true"] {
+  .form-buttons {
+    .el-button {
+      color: var(--main-color);
+    }
+  }
+}
+
 .form-buttons :deep(.el-icon) {
   margin-inline-start: auto;
   position: absolute;
