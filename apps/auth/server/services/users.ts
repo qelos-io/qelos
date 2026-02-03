@@ -265,13 +265,41 @@ export async function clearOldTokens(userId: string) {
     return;
   }
   const now = Date.now()
-  const validTokens = user.tokens.filter(t => new Date(t.expiresAt).getTime() > now)
+  const validTokens = user.tokens.filter(t => {
+    if (!t.expiresAt) {
+      // Log tokens without expiration for debugging
+      logger.log('Token without expiresAt found', {
+        userId,
+        tokenKind: t.kind,
+        tokenIdentifier: t.tokenIdentifier?.substring(0, 20) + '...'
+      });
+      return false; // Remove tokens without expiration
+    }
+    const expiryTime = new Date(t.expiresAt).getTime();
+    if (isNaN(expiryTime)) {
+      // Log tokens with invalid expiration dates
+      logger.log('Token with invalid expiresAt found', {
+        userId,
+        tokenKind: t.kind,
+        expiresAt: t.expiresAt
+      });
+      return false; // Remove tokens with invalid dates
+    }
+    return expiryTime > now;
+  });
 
-  if (validTokens.length === user.tokens) {
-    return
+  if (validTokens.length === user.tokens.length) {
+    return // No tokens to clean up
   }
 
-  await User.updateOne({ _id: userId }, { $set: { tokens: validTokens } }).exec()
+  const removedCount = user.tokens.length - validTokens.length;
+  await User.updateOne({ _id: userId }, { $set: { tokens: validTokens } }).exec();
+  
+  logger.log('Cleared old tokens', {
+    userId,
+    removedCount,
+    remainingCount: validTokens.length
+  });
 }
 
 export function getCookieTokenName(tenant: string) {

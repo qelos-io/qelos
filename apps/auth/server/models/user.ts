@@ -214,20 +214,48 @@ UserSchema.methods.updateToken = function updateToken(
   newIdentifier,
   relatedToken
 ) {
+  // Remove the old token
   this.tokens = this.tokens.filter(
     (token) =>
       !(token.kind === authType && token.tokenIdentifier === currentPayload.tokenIdentifier)
   );
-  const token = { kind: authType, tokenIdentifier: newIdentifier };
+  
+  // Add the new token
+  const token = { 
+    kind: authType, 
+    tokenIdentifier: newIdentifier,
+    expiresAt: new Date(Date.now() + cookieTokenExpiration)
+  };
+  
   if (relatedToken || currentPayload.workspace) {
     (token as any).metadata = { relatedToken, workspace: currentPayload.workspace?._id };
   }
+  
   this.tokens.push(token);
+  
+  // Update last login
   this.lastLogin = {
     created: new Date(),
     workspace: currentPayload.workspace?._id
-  }
-  return this.save();
+  };
+  
+  // Use updateOne with optimistic concurrency to avoid race conditions
+  return this.constructor.updateOne(
+    { _id: this._id, tenant: this.tenant },
+    { 
+      $set: { 
+        tokens: this.tokens,
+        lastLogin: this.lastLogin
+      }
+    },
+    { upsert: false }
+  ).then((result) => {
+    if (result.matchedCount === 0) {
+      throw new Error('User not found during token update');
+    }
+    // Return the user document for consistency
+    return this;
+  });
 };
 
 UserSchema.methods.deleteToken = function deleteToken(

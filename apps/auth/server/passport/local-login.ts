@@ -63,6 +63,6 @@ module.exports = new Strategy(
         });
       })
       .catch((err) => done(err))
-      .finally(() => setTimeout(() => clearOldTokens((user as any)._id).catch(), 1))
+      .finally(() => setTimeout(() => clearOldTokens((user as any)._id).catch(), 1000)) // 1 second delay
   }
 );

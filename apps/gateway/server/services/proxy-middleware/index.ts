@@ -196,6 +196,11 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
       next();
       return;
     }
+    
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = globalThis.setTimeout(() => {controller.abort()}, 2000); // 2 second timeout
+    
     fetch(meUrl, {
       headers: {
         'Content-Type': 'application/json',
@@ -207,10 +212,15 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
         'x-impersonate-user': req.get('x-impersonate-user') || req.query.impersonateUser?.toString() || '',
         'x-impersonate-workspace': req.get('x-impersonate-workspace') || req.query.impersonateWorkspace?.toString() || '',
       },
+      signal: controller.signal
     })
       .then((response) => {
+        clearTimeout(timeoutId);
+        
+        // Always check for set-cookie header, even on non-200 responses
         const setCookie = response.headers.get('set-cookie');
         const setTenant = req.headers.tenant === defaultTenant && response.headers.get('x-qelos-tenant');
+        
         if (setCookie) {
           res.set('set-cookie', setCookie);
         }
@@ -218,8 +228,11 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
           req.headers.tenant = setTenant;
         }
 
+        // Only try to parse user if status is 200
         if (response.status === 200) {
           return response.text();
+        } else {
+          return '';
         }
       })
       .then((user = '') => {
@@ -227,6 +240,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
         next();
       })
       .catch((err) => {
+        clearTimeout(timeoutId);
         next();
       });
   });
