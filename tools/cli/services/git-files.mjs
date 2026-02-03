@@ -228,47 +228,58 @@ function classifyFiles(files, basePath) {
         }
       }
     } else if (ext === '.html') {
-      // Find plugins that contain this HTML file (micro-frontends)
-      classified.microFrontends.push(fullPath);
+      // HTML files can be in different contexts:
+      // 1. In plugins directory -> micro-frontends (part of a plugin)
+      // 2. In configs directory -> standalone HTML configs
+      // 3. Other locations -> treat as micro-frontends
       
-      // For HTML files, we need to find which plugin contains them
-      // HTML files in plugins are typically part of the plugin structure
-      let pluginDir = path.dirname(fullPath);
-      let pluginJson = path.join(pluginDir, 'plugin.json');
-      
-      // If the file is in a temp path or unusual location, try to find the actual plugin
-      if (!fs.existsSync(pluginJson)) {
-        // Check if we're in a micro-frontends subdirectory
-        if (path.basename(pluginDir) === 'micro-frontends' || 
-            relativePath.includes('micro-frontends/') ||
-            relativePath.includes('micro-frontends\\')) {
-          // Go up one more level to find the plugin directory
-          pluginDir = path.dirname(pluginDir);
-          pluginJson = path.join(pluginDir, 'plugin.json');
-        }
+      if (relativePath.includes('configs/') || relativePath.includes('configs\\')) {
+        // HTML file in configs directory - treat as a config file
+        classified.configs.push(fullPath);
+        logger.debug(`Found HTML config file: ${relativePath}`);
+      } else {
+        // Find plugins that contain this HTML file (micro-frontends)
+        classified.microFrontends.push(fullPath);
         
-        // If still not found, try searching for plugin.json in parent directories
+        // For HTML files, we need to find which plugin contains them
+        // HTML files in plugins are typically part of the plugin structure
+        let pluginDir = path.dirname(fullPath);
+        let pluginJson = path.join(pluginDir, 'plugin.json');
+        
+        // If the file is in a temp path or unusual location, try to find the actual plugin
         if (!fs.existsSync(pluginJson)) {
-          let searchDir = pluginDir;
-          for (let i = 0; i < 3; i++) { // Search up to 3 levels up
-            searchDir = path.dirname(searchDir);
-            const testPluginJson = path.join(searchDir, 'plugin.json');
-            if (fs.existsSync(testPluginJson)) {
-              pluginJson = testPluginJson;
-              break;
+          // Check if we're in a micro-frontends subdirectory
+          if (path.basename(pluginDir) === 'micro-frontends' || 
+              relativePath.includes('micro-frontends/') ||
+              relativePath.includes('micro-frontends\\')) {
+            // Go up one more level to find the plugin directory
+            pluginDir = path.dirname(pluginDir);
+            pluginJson = path.join(pluginDir, 'plugin.json');
+          }
+          
+          // If still not found, try searching for plugin.json in parent directories
+          if (!fs.existsSync(pluginJson)) {
+            let searchDir = pluginDir;
+            for (let i = 0; i < 3; i++) { // Search up to 3 levels up
+              searchDir = path.dirname(searchDir);
+              const testPluginJson = path.join(searchDir, 'plugin.json');
+              if (fs.existsSync(testPluginJson)) {
+                pluginJson = testPluginJson;
+                break;
+              }
             }
           }
         }
-      }
-      
-      if (fs.existsSync(pluginJson)) {
-        // This HTML file is part of a plugin
-        if (!classified.plugins.includes(pluginJson)) {
-          classified.plugins.push(pluginJson);
-          logger.debug(`Found plugin containing HTML ${relativePath}: ${path.basename(pluginJson)}`);
+        
+        if (fs.existsSync(pluginJson)) {
+          // This HTML file is part of a plugin
+          if (!classified.plugins.includes(pluginJson)) {
+            classified.plugins.push(pluginJson);
+            logger.debug(`Found plugin containing HTML ${relativePath}: ${path.basename(pluginJson)}`);
+          }
+        } else {
+          logger.warning(`Could not find plugin.json for HTML file: ${relativePath}`);
         }
-      } else {
-        logger.warning(`Could not find plugin.json for HTML file: ${relativePath}`);
       }
     } else {
       logger.debug(`Unclassified file: ${relativePath}`);
@@ -302,8 +313,10 @@ export function getGitFiles(type, basePath) {
   // Log what we found
   Object.entries(classified).forEach(([key, value]) => {
     if (value.length > 0) {
-      if (key === 'prompts' || key === 'microFrontends') {
+      if (key === 'prompts') {
         logger.info(`  ${key}: ${value.length} file(s) (will be pushed via parent)`);
+      } else if (key === 'microFrontends') {
+        logger.info(`  ${key}: ${value.length} file(s) (will be pushed via parent plugin)`);
       } else {
         logger.info(`  ${key}: ${value.length} file(s)`);
       }
