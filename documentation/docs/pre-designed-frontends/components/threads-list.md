@@ -116,6 +116,64 @@ function handleNewThread(thread) {
 | `auto-load` | `boolean` | `true` | Whether to automatically load threads on component mount |
 | `selected` (v-model) | `string` | `''` | The ID of the currently selected thread. Use `v-model:selected` to bind to this value. |
 
+## Slots
+
+### Header Slot
+
+You can customize the header section using the `header` slot. This slot provides access to the title and `createThread` function, allowing you to create a completely custom header layout.
+
+```vue
+<template>
+  <ThreadsList integration="customer-support" :show-header="false">
+    <template #header="{ title, createThread }">
+      <div class="custom-header">
+        <el-icon class="header-icon"><ChatDotRound /></el-icon>
+        <h2>{{ title }}</h2>
+        <el-button 
+          type="success" 
+          :icon="Plus"
+          @click="createThread"
+          class="custom-create-btn"
+        >
+          Start New Conversation
+        </el-button>
+      </div>
+    </template>
+  </ThreadsList>
+</template>
+
+<script setup lang="ts">
+import { ChatDotRound, Plus } from '@element-plus/icons-vue'
+</script>
+
+<style scoped>
+.custom-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.header-icon {
+  font-size: 24px;
+}
+
+.custom-create-btn {
+  margin-left: auto;
+}
+</style>
+```
+
+**Slot Props:**
+- `title`: `string` - The title prop value passed to the component
+- `createThread`: `() => Promise<void>` - Function to create a new thread
+
+**Note:** When using the header slot, you may want to set `:show-header="false"` to hide the default header.
+
 ## Events
 
 | Event | Payload | Description |
@@ -167,7 +225,7 @@ You can customize the appearance using CSS variables:
 <div class="threads-list">
   <div class="threads-list-header">
     <h3>{{ title }}</h3>
-    <el-button>Create New Thread</el-button>
+    <el-button class="create-thread-btn">Create New Thread</el-button>
   </div>
   
   <div class="threads-content">
@@ -176,6 +234,45 @@ You can customize the appearance using CSS variables:
     </div>
   </div>
 </div>
+```
+
+### CSS Classes for Custom Styling
+
+The component exposes specific CSS classes that you can target from outside the component:
+
+#### `.create-thread-btn`
+
+This class is applied to the "Create New Thread" button in the default header. You can use it to customize the button's appearance:
+
+```css
+/* Global styles in your main CSS file */
+.threads-list .create-thread-btn {
+  background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+  border: none;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(238, 90, 36, 0.3);
+}
+
+.threads-list .create-thread-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(238, 90, 36, 0.4);
+}
+```
+
+#### `.threads-list-header`
+
+This class is applied to the default header container when not using the header slot:
+
+```css
+.threads-list .threads-list-header {
+  background: #f8f9fa;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  margin-bottom: 20px;
+}
 ```
 
 ## Advanced Usage

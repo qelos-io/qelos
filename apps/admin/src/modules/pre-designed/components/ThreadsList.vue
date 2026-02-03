@@ -1,9 +1,11 @@
 <template>
   <div class="threads-list">
-    <div class="threads-list-header" v-if="showHeader">
+    <slot v-if="$slots.header" name="header" v-bind="{ title, createThread }" />
+    <div class="threads-list-header" v-else-if="showHeader">
       <h3>{{ title }}</h3>
       <el-button
         v-if="allowCreate"
+        class="create-thread-btn"
         type="primary"
         size="small"
         @click="createThread"
