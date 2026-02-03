@@ -22,6 +22,7 @@ The ThreadsList component provides a comprehensive interface for displaying and 
 ```vue
 <template>
   <ThreadsList
+    v-model:selected="selectedThreadId"
     title="Chat Threads"
     :show-header="true"
     :allow-create="true"
@@ -36,7 +37,10 @@ The ThreadsList component provides a comprehensive interface for displaying and 
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import ThreadsList from '@/modules/pre-designed/components/ThreadsList.vue'
+
+const selectedThreadId = ref<string>('')
 
 function handleCreateThread(thread) {
   // Handle thread creation
@@ -46,11 +50,16 @@ function handleCreateThread(thread) {
 function handleSelectThread(thread) {
   // Navigate to selected thread or open in chat component
   console.log('Thread selected:', thread._id)
+  // The selectedThreadId is automatically updated by v-model
 }
 
 function handleThreadDeleted(threadId) {
   // Handle thread deletion completion
   console.log('Thread deleted:', threadId)
+  // If the deleted thread was selected, clear the selection
+  if (selectedThreadId.value === threadId) {
+    selectedThreadId.value = ''
+  }
 }
 </script>
 ```
@@ -105,6 +114,7 @@ function handleNewThread(thread) {
 | `integration` | `string` | `undefined` | Integration ID to filter threads by (optional) |
 | `limit` | `number` | `20` | Number of threads to load |
 | `auto-load` | `boolean` | `true` | Whether to automatically load threads on component mount |
+| `selected` (v-model) | `string` | `''` | The ID of the currently selected thread. Use `v-model:selected` to bind to this value. |
 
 ## Events
 
@@ -120,20 +130,20 @@ The component uses the Qelos AI SDK for thread operations:
 
 ```typescript
 // List threads
-const threads = await sdk.ai.listThreads({
+const threads = await sdk.ai.threads.list({
   integration: 'integration-id',
   limit: 20,
   sort: '-updated'
 });
 
 // Create thread
-const thread = await sdk.ai.createThread({
+const thread = await sdk.ai.threads.create({
   integration: 'integration-id',
   title: 'New Thread'
 });
 
 // Delete thread
-await sdk.ai.deleteThread('thread-id');
+await sdk.ai.threads.delete('thread-id');
 ```
 
 ## Styling

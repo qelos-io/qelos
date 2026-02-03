@@ -133,17 +133,17 @@ export default defineConfig({
       },
       {
         text: 'PRE-DESIGNED FRONTENDS',
-        collapsed: true,
+        collapsed: false,
         items: [
           { text: 'Blocks List', link: '/pre-designed-frontends/blocks-list' },
           { text: 'Rows List', link: '/pre-designed-frontends/rows-list' },
           { text: 'Plain', link: '/pre-designed-frontends/plain' },
           {
-            text: 'Template Ecosystem',
-            collapsed: true,
+            text: '🌟 Template Ecosystem',
+            collapsed: false,
             items: [
-              { text: 'PubSub Events', link: '/pre-designed-frontends/pubsub-events' },
-              { text: 'Components', link: '/pre-designed-frontends/components/' }
+              { text: '📡 PubSub Events', link: '/pre-designed-frontends/pubsub-events' },
+              { text: '🧩 Components', link: '/pre-designed-frontends/components/' }
             ]
           }
         ]

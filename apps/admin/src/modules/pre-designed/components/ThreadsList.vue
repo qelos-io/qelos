@@ -24,7 +24,8 @@
           v-for="thread in threads"
           :key="thread._id"
           class="thread-card"
-          @click="$emit('select-thread', thread)"
+          :class="{ 'selected': selectedThreadId === thread._id }"
+          @click="selectThread(thread)"
         >
           <div class="thread-header">
             <h4 class="thread-title">{{ thread.title || 'Untitled Thread' }}</h4>
@@ -72,6 +73,10 @@ const props = withDefaults(defineProps<Props>(), {
   allowDelete: true,
   limit: 20,
   autoLoad: true
+})
+const selectedThreadId = defineModel<string>('selected', {
+  type: String,
+  default: ''
 })
 
 // Convert limit to number if it's a string
@@ -145,8 +150,14 @@ async function createThread() {
   loadThreads();
 }
 
+function selectThread(thread: IThread) {
+  selectedThreadId.value = thread._id;
+  emit('select-thread', thread);
+}
+
 defineExpose({
   loadThreads,
+  selectThread,
 })
 
 onMounted(() => {

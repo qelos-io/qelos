@@ -90,12 +90,6 @@ pnpm init play@latest my-plugin
 </div>
 
 <div class="custom-card">
-  <h3>🎨 Design Settings</h3>
-  <p>Customize your admin panel and user interface.</p>
-  <a href="/getting-started/design-settings">Learn more →</a>
-</div>
-
-<div class="custom-card">
   <h3>⚡ CLI Tool</h3>
   <p>Manage and sync resources between local and remote instances.</p>
   <a href="/cli/">Learn more →</a>
@@ -105,6 +99,12 @@ pnpm init play@latest my-plugin
   <h3>📚 SDK Reference</h3>
   <p>Integrate QELOS into your applications programmatically.</p>
   <a href="/sdk/sdk">Learn more →</a>
+</div>
+
+<div class="custom-card">
+  <h3>🌟 Template Ecosystem</h3>
+  <p>Build beautiful interfaces with pre-designed components and PubSub events.</p>
+  <a href="/pre-designed-frontends/components/">Learn more →</a>
 </div>
 
 </div>

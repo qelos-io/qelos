@@ -19,6 +19,7 @@ Here's a list of available components in the Qelos template ecosystem:
 The following components have detailed documentation:
 
 - [AI Chat](./ai-chat.md) - Complete AI chat interface with streaming, file attachments, and customizable UI
+- [Threads List](./threads-list.md) - Component for displaying and managing AI chat threads with create, delete, and selection functionality
 - [Callback Link](./callback-link.md) - Utility component for generating plugin callback URLs
 - [Form Input](./form-input.md) - Input component for forms
 - [Form Row Group](./form-row-group.md) - Group form inputs in rows
@@ -57,6 +58,7 @@ All components must be used with kebab-case naming and must have closing tags. F
 <form-input label="Name" v-model="name"></form-input>
 <save-button @click="saveData"></save-button>
 <content-box title="User Information">Content goes here</content-box>
+<threads-list integration="customer-support" @select-thread="openThread"></threads-list>
 ```
 
 ## Directives
