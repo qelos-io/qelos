@@ -1,15 +1,6 @@
 <template>
   <div class="edit-workspace">
-    <!-- Breadcrumb Navigation -->
-    <el-breadcrumb class="workspace-breadcrumb" separator="/">
-      <el-breadcrumb-item :to="{ name: 'workspaces' }">
-        <font-awesome-icon :icon="['fas', 'layer-group']" class="breadcrumb-icon" />
-        {{ $t('Workspaces') }}
-      </el-breadcrumb-item>
-      <el-breadcrumb-item v-if="workspace">
-        {{ workspace.name }}
-      </el-breadcrumb-item>
-    </el-breadcrumb>
+    <Breadcrumb :items="breadcrumbItems" />
     
     <div class="workspace-header" v-if="loaded && workspace">
       <div class="workspace-info">
@@ -124,12 +115,33 @@ import { useRoute, useRouter } from 'vue-router';
 import { useUpdateWorkspace } from './compositions/workspaces';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import { useAuth } from '@/modules/core/compositions/authentication';
+import Breadcrumb from '@/modules/core/components/Breadcrumb.vue';
+import { useI18n } from 'vue-i18n';
+
+interface BreadcrumbItem {
+  text: string
+  icon?: any
+  to?: string | object
+}
 
 const route = useRoute();
 const router = useRouter();
 const { workspace, updateWorkspace, loaded, retry } = useUpdateWorkspace(route.params?.id as string);
 const wsConfig = useWsConfiguration();
 const { user } = useAuth();
+const { t } = useI18n();
+
+const breadcrumbItems = computed((): BreadcrumbItem[] => {
+  const items: BreadcrumbItem[] = [
+    { text: t('Workspaces'), icon: ['fas', 'layer-group'], to: { name: 'workspaces' } }
+  ];
+  
+  if (workspace.value) {
+    items.push({ text: workspace.value.name });
+  }
+  
+  return items;
+});
 
 const activeTab = ref('general');
 const submitting = ref(false);
@@ -208,15 +220,6 @@ async function handleRefreshWorkspace() {
   margin: 0 auto;
 }
 
-.workspace-breadcrumb {
-  margin-bottom: 20px;
-  padding: 10px 0;
-}
-
-.breadcrumb-icon {
-  margin-right: 5px;
-  color: var(--el-color-primary);
-}
 
 .workspace-header {
   margin-bottom: 10px;
@@ -281,11 +284,6 @@ async function handleRefreshWorkspace() {
 @media (max-width: 768px) {
   .edit-workspace {
     padding: 10px;
-  }
-  
-  .workspace-breadcrumb {
-    margin-bottom: 15px;
-    font-size: 0.9rem;
   }
   
   .workspace-info {

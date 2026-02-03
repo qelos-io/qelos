@@ -1,15 +1,6 @@
 <template>
   <div class="edit-user">
-    <!-- Breadcrumb Navigation -->
-    <el-breadcrumb class="user-breadcrumb" separator="/">
-      <el-breadcrumb-item :to="{ name: 'users' }">
-        <font-awesome-icon :icon="['fas', 'users']" class="breadcrumb-icon" />
-        {{ $t('Users') }}
-      </el-breadcrumb-item>
-      <el-breadcrumb-item v-if="user">
-        {{ decodeURIComponent(user.firstName || '') }} {{ decodeURIComponent(user.lastName || '') }}
-      </el-breadcrumb-item>
-    </el-breadcrumb>
+    <Breadcrumb :items="breadcrumbItems" />
     
     <div class="user-header" v-if="user">
       <div class="user-info">
@@ -37,10 +28,35 @@
 import { useEditUsers } from './compositions/users'
 import UserForm from './components/UserForm.vue'
 import { useRoute } from 'vue-router'
+import { ArrowLeft } from '@element-plus/icons-vue'
+import Breadcrumb from '@/modules/core/components/Breadcrumb.vue'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+interface BreadcrumbItem {
+  text: string
+  icon?: any
+  to?: string | object
+}
 
 const route = useRoute()
 const userId = route.params.userId
 const { user, updateUser, submitting, refreshUser } = useEditUsers(userId)
+const { t } = useI18n()
+
+const breadcrumbItems = computed((): BreadcrumbItem[] => {
+  const items: BreadcrumbItem[] = [
+    { text: t('Users'), icon: ArrowLeft, to: { name: 'users' } }
+  ]
+  
+  if (user.value) {
+    items.push({
+      text: `${decodeURIComponent(user.value.firstName || '')} ${decodeURIComponent(user.value.lastName || '')}`
+    })
+  }
+  
+  return items
+})
 
 // Handle user update with refresh
 const handleUserUpdate = async (userData: any) => {
@@ -65,10 +81,6 @@ const handleUserUpdate = async (userData: any) => {
   padding: 10px 0;
 }
 
-.breadcrumb-icon {
-  margin-right: 5px;
-  color: var(--el-color-primary);
-}
 
 .user-header {
   margin-bottom: 10px;

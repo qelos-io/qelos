@@ -1,12 +1,6 @@
 <template>
   <div class="users-page">
-    <!-- Breadcrumb Navigation -->
-    <el-breadcrumb class="users-breadcrumb" separator="/">
-      <el-breadcrumb-item>
-        <font-awesome-icon :icon="['fas', 'users']" class="breadcrumb-icon" />
-        {{ $t('Users') }}
-      </el-breadcrumb-item>
-    </el-breadcrumb>
+    <Breadcrumb :items="breadcrumbItems" />
     
     <div class="header-container">
       <ListPageTitle title="Users" create-route="createUser">
@@ -26,23 +20,27 @@
 import UsersList from './components/UsersList.vue';
 import ListPageTitle from '../core/components/semantics/ListPageTitle.vue';
 import UserFilter from './components/UserFilter.vue';
+import Breadcrumb from '@/modules/core/components/Breadcrumb.vue';
 import { useUsersList } from '@/modules/users/compositions/users';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+interface BreadcrumbItem {
+  text: string
+  icon?: any
+  to?: string | object
+}
 const { filteredUsers, users, removeUser } = useUsersList();
+const { t } = useI18n();
+
+const breadcrumbItems = computed((): BreadcrumbItem[] => [
+  { text: t('Users'), icon: ['fas', 'users'] }
+])
 </script>
 
 <style scoped>
 .users-page {
   padding: 20px;
-}
-
-.users-breadcrumb {
-  margin-bottom: 20px;
-  padding: 10px 0;
-}
-
-.breadcrumb-icon {
-  margin-right: 5px;
-  color: var(--el-color-primary);
 }
 
 .header-container {
@@ -60,18 +58,13 @@ const { filteredUsers, users, removeUser } = useUsersList();
     padding: 10px;
   }
   
-  .users-breadcrumb {
-    margin-bottom: 15px;
-    font-size: 0.9rem;
+  .header-container {
+    flex-direction: column;
+    align-items: stretch;
   }
   
   .filter-container {
-    margin: 0 5px;
-  }
-  
-  .header-container {
-    flex-direction: column;
-    align-items: flex-start;
+    margin: 10px 0;
   }
 }
 </style>
