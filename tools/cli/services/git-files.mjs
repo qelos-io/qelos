@@ -377,6 +377,43 @@ export function prepareTempDirectories(classifiedFiles, tempDir) {
           logger.debug(`Failed to process refs for ${path.basename(file)}: ${error.message}`);
         }
       }
+      
+      // If this is a plugin, check for micro-frontend HTML files and copy them too
+      if (type === 'plugins' && file.endsWith('.plugin.json')) {
+        try {
+          const content = fs.readFileSync(dest, 'utf-8');
+          const plugin = JSON.parse(content);
+          
+          // Check if plugin has micro-frontends
+          if (plugin.microFrontends && plugin.microFrontends.length > 0) {
+            // Create micro-frontends directory in temp
+            const mfTempDir = path.join(tempDir, 'plugins', 'micro-frontends');
+            fs.mkdirSync(mfTempDir, { recursive: true });
+            
+            for (const mf of plugin.microFrontends) {
+              if (mf.structure && mf.structure.$ref) {
+                const refPath = mf.structure.$ref;
+                
+                // Resolve the ref path relative to the original plugin file location
+                const originalDir = path.dirname(file);
+                const mfSourcePath = path.resolve(originalDir, refPath);
+                
+                if (fs.existsSync(mfSourcePath)) {
+                  const mfFileName = path.basename(refPath);
+                  const mfDestPath = path.join(mfTempDir, mfFileName);
+                  
+                  fs.copyFileSync(mfSourcePath, mfDestPath);
+                  logger.debug(`Copied micro-frontend ${refPath} from ${mfSourcePath} to ${mfDestPath}`);
+                } else {
+                  logger.debug(`Micro-frontend file not found: ${mfSourcePath}`);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          logger.debug(`Failed to process micro-frontends for ${path.basename(file)}: ${error.message}`);
+        }
+      }
     }
   }
 
