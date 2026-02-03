@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { logger } from './logger.mjs';
 import { loadReference } from './file-refs.mjs';
+import { removeIdFromObject } from '../utils/object-utils.mjs';
 
 /**
  * Convert a string to kebab-case
@@ -55,6 +56,7 @@ export function extractMicroFrontendStructures(microFrontends, pluginPath) {
     // Return micro-frontend with $ref instead of structure
     return {
       ...mf,
+      requirements: (mf.requirements || []).map(removeIdFromObject),
       structure: { $ref: relativeRef }
     };
   });

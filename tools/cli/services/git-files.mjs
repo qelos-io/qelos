@@ -4,6 +4,61 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 /**
+ * Resolve the actual file path from Git output
+ * Git might show temp paths or different formats, so we need to find the real file
+ * @param {string} gitPath - Path as reported by Git
+ * @param {string} basePath - Base path to search for the actual file
+ * @returns {string|null} The actual file path or null if not found
+ */
+function resolveActualFilePath(gitPath, basePath) {
+  // First try the direct path
+  const directPath = path.resolve(basePath, gitPath);
+  if (fs.existsSync(directPath)) {
+    return directPath;
+  }
+  
+  // If it's an HTML file, it might be in a micro-frontends directory
+  if (gitPath.endsWith('.html')) {
+    // Try to find it in any plugin's micro-frontends directory
+    const pluginsDir = path.join(basePath, 'plugins');
+    if (fs.existsSync(pluginsDir)) {
+      const plugins = fs.readdirSync(pluginsDir);
+      const filename = path.basename(gitPath);
+      
+      for (const plugin of plugins) {
+        const mfPath = path.join(pluginsDir, plugin, 'micro-frontends', filename);
+        if (fs.existsSync(mfPath)) {
+          return mfPath;
+        }
+      }
+    }
+  }
+  
+  // For other files, try searching in common directories
+  const filename = path.basename(gitPath);
+  const searchDirs = [
+    'components',
+    'blueprints', 
+    'configs',
+    'plugins',
+    'blocks',
+    'integrations',
+    'connections',
+    'prompts'
+  ];
+  
+  for (const dir of searchDirs) {
+    const searchPath = path.join(basePath, dir, filename);
+    if (fs.existsSync(searchPath)) {
+      return searchPath;
+    }
+  }
+  
+  // If still not found, return null
+  return null;
+}
+
+/**
  * Get the list of files committed in the last commit
  * @returns {string[]} Array of file paths
  */
@@ -114,8 +169,22 @@ function classifyFiles(files, basePath) {
   };
 
   for (const file of files) {
+    // Try to resolve the actual file path (handles Git temp paths)
+    let fullPath = path.resolve(basePath, file);
+    
+    // If the direct path doesn't exist, try to find the actual file
+    if (!fs.existsSync(fullPath)) {
+      const resolvedPath = resolveActualFilePath(file, basePath);
+      if (resolvedPath) {
+        logger.debug(`Resolved Git path ${file} to actual path ${resolvedPath}`);
+        fullPath = resolvedPath;
+      } else {
+        logger.warning(`File not found, skipping: ${file}`);
+        continue;
+      }
+    }
+    
     // Make sure the file exists
-    const fullPath = path.resolve(basePath, file);
     if (!fs.existsSync(fullPath)) {
       logger.warning(`File not found, skipping: ${file}`);
       continue;
@@ -164,8 +233,33 @@ function classifyFiles(files, basePath) {
       
       // For HTML files, we need to find which plugin contains them
       // HTML files in plugins are typically part of the plugin structure
-      const pluginDir = path.dirname(fullPath);
-      const pluginJson = path.join(pluginDir, 'plugin.json');
+      let pluginDir = path.dirname(fullPath);
+      let pluginJson = path.join(pluginDir, 'plugin.json');
+      
+      // If the file is in a temp path or unusual location, try to find the actual plugin
+      if (!fs.existsSync(pluginJson)) {
+        // Check if we're in a micro-frontends subdirectory
+        if (path.basename(pluginDir) === 'micro-frontends' || 
+            relativePath.includes('micro-frontends/') ||
+            relativePath.includes('micro-frontends\\')) {
+          // Go up one more level to find the plugin directory
+          pluginDir = path.dirname(pluginDir);
+          pluginJson = path.join(pluginDir, 'plugin.json');
+        }
+        
+        // If still not found, try searching for plugin.json in parent directories
+        if (!fs.existsSync(pluginJson)) {
+          let searchDir = pluginDir;
+          for (let i = 0; i < 3; i++) { // Search up to 3 levels up
+            searchDir = path.dirname(searchDir);
+            const testPluginJson = path.join(searchDir, 'plugin.json');
+            if (fs.existsSync(testPluginJson)) {
+              pluginJson = testPluginJson;
+              break;
+            }
+          }
+        }
+      }
       
       if (fs.existsSync(pluginJson)) {
         // This HTML file is part of a plugin
@@ -173,6 +267,8 @@ function classifyFiles(files, basePath) {
           classified.plugins.push(pluginJson);
           logger.debug(`Found plugin containing HTML ${relativePath}: ${path.basename(pluginJson)}`);
         }
+      } else {
+        logger.warning(`Could not find plugin.json for HTML file: ${relativePath}`);
       }
     } else {
       logger.debug(`Unclassified file: ${relativePath}`);

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { join } from 'node:path';
 import { logger } from './logger.mjs';
 import { extractMicroFrontendStructures, resolveMicroFrontendStructures } from './micro-frontends.mjs';
+import { removeIdFromObject } from '../utils/object-utils.mjs';
 
 function sanitizePluginForFile(plugin) {
   const sanitized = JSON.parse(JSON.stringify(plugin));
@@ -193,11 +194,6 @@ export async function pullPlugins(sdk, targetPath) {
 
     // Fetch full plugin details
     const fullPlugin = await sdk.managePlugins.getById(plugin._id);
-
-    function removeIdFromObject(obj) {
-      const { _id, ...rest } = obj;
-      return rest;
-    }
 
     // Extract micro-frontend structures to separate files
     const processedMicroFrontends = extractMicroFrontendStructures(

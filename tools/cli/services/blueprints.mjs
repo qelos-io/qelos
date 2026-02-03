@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { join } from 'node:path';
 import { logger } from './logger.mjs';
+import { removeIdFromObject } from '../utils/object-utils.mjs';
 
 /**
  * Push blueprints from local directory to remote
@@ -136,11 +137,6 @@ export async function pullBlueprints(sdk, targetPath) {
 
     // Fetch full blueprint details
     const fullBlueprint = await sdk.manageBlueprints.getBlueprint(blueprint.identifier);
-
-    function removeIdFromObject(obj) {
-      const { _id, ...rest } = obj;
-      return rest;
-    }
 
     const relevantFields = {
       identifier: fullBlueprint.identifier,
