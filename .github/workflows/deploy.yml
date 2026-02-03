@@ -261,7 +261,7 @@ jobs:
             --set global.imageTag=sha-$IMAGE_TAG \
             --namespace "$NAMESPACE" \
             --create-namespace \
-            --atomic \
+            --rollback-on-failure \
             --timeout 10m \
             --debug=false \
             --history-max 10
