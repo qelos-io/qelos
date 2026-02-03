@@ -18,6 +18,8 @@ global:
       host: 
       port: 
       database: 
+  # Global image tag for all services - override with Git SHA during deployment
+  imageTag: {{ .Values.IMAGE_TAG | default "latest" }} 
 
 mongodb:
   enabled: true
@@ -52,7 +54,8 @@ redis:
 gateway:
   image:
     repository: registry.github.com/qelos-io/qelos/gateway
-    tag: latest
+    tag: {{ .Values.global.imageTag }}
+    pullPolicy: Always
   replicas: 2
   resources:
     requests:
@@ -69,7 +72,8 @@ gateway:
 auth:
   image:
     repository: registry.github.com/qelos-io/qelos/auth
-    tag: latest
+    tag: {{ .Values.global.imageTag }}
+    pullPolicy: Always
   host: auth-service
   port: 9000
   replicas: 2
@@ -88,7 +92,8 @@ auth:
 content:
   image:
     repository: registry.github.com/qelos-io/qelos/content
-    tag: latest
+    tag: {{ .Values.global.imageTag }}
+    pullPolicy: Always
   host: content-service
   port: 9001
   replicas: 2
@@ -101,7 +106,8 @@ content:
 secrets:
   image:
     repository: registry.github.com/qelos-io/qelos/secrets
-    tag: latest
+    tag: {{ .Values.global.imageTag }}
+    pullPolicy: Always
   host: secrets-service
   port: 9002
   replicas: 2
@@ -112,7 +118,8 @@ secrets:
 nocode:
   image:
     repository: registry.github.com/qelos-io/qelos/no-code
-    tag: latest
+    tag: {{ .Values.global.imageTag }}
+    pullPolicy: Always
   replicas: 2
   host: nocode-service
   port: 9004
@@ -128,7 +135,8 @@ nocode:
 admin:
   image:
     repository: registry.github.com/qelos-io/qelos/admin
-    tag: latest
+    tag: {{ .Values.global.imageTag }}
+    pullPolicy: Always
   replicas: 2
   host: admin-service
   port: 3001
@@ -143,7 +151,8 @@ admin:
 plugins:
   image:
     repository: registry.github.com/qelos-io/qelos/plugins
-    tag: latest
+    tag: {{ .Values.global.imageTag }}
+    pullPolicy: Always
   replicas: 2
   host: plugins-service
   port: 9006
@@ -161,7 +170,8 @@ plugins:
 assets:
   image:
     repository: registry.github.com/qelos-io/qelos/assets
-    tag: latest
+    tag: {{ .Values.global.imageTag }}
+    pullPolicy: Always
   replicas: 2
   host: assets-service
   port: 9005
@@ -184,7 +194,8 @@ assets:
 drafts:
   image:
     repository: registry.github.com/qelos-io/qelos/drafts
-    tag: latest
+    tag: {{ .Values.global.imageTag }}
+    pullPolicy: Always
   replicas: 1
   host: drafts-service
   port: 9006
@@ -198,7 +209,8 @@ drafts:
 ai:
   image:
     repository: registry.github.com/qelos-io/qelos/ai
-    tag: latest
+    tag: {{ .Values.global.imageTag }}
+    pullPolicy: Always
   replicas: 2
   host: ai-service
   port: 9007
@@ -264,5 +276,4 @@ defaultDeployment: &defaultDeployment
     #   service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
     #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
 
-# Image pull policy
-imagePullPolicy: IfNotPresent
+# Image pull policy is now set per service (Always) to ensure new images are pulled

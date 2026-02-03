@@ -240,10 +240,25 @@ jobs:
           NAMESPACE="${{ github.event.inputs.namespace || 'default' }}"
           NAMESPACE="${NAMESPACE//[^a-zA-Z0-9-]/-}"
           
+          # Get the Git SHA from the triggering workflow
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            # Get the SHA from the Docker Release workflow
+            WORKFLOW_RUN_ID="${{ github.event.workflow_run.id }}"
+            GIT_SHA=$(gh api repos/${{ github.repository }}/actions/runs/$WORKFLOW_RUN_ID --jq '.head_sha')
+            IMAGE_TAG="${GIT_SHA:0:7}"
+          else
+            # For manual triggers, use the latest commit SHA
+            GIT_SHA=$(git rev-parse HEAD)
+            IMAGE_TAG="${GIT_SHA:0:7}"
+          fi
+          
+          echo "Using IMAGE_TAG: $IMAGE_TAG"
+          
           cd helm
           
           helm upgrade --install qelos-release qelos \
             -f values.yaml \
+            --set IMAGE_TAG=$IMAGE_TAG \
             --namespace "$NAMESPACE" \
             --create-namespace \
             --atomic \
