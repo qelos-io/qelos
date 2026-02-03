@@ -29,7 +29,7 @@ spec:
       terminationGracePeriodSeconds: {{ (.values.terminationGracePeriodSeconds) | default 30 }}
       containers:
         - name: {{ .name }}
-          image: "{{ .values.image.repository }}:{{ .values.image.tag }}"
+          image: "{{ .values.image.repository }}:{{ .values.image.tag | default .global.imageTag }}"
           imagePullPolicy: {{ .values.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: {{ .values.port }}
