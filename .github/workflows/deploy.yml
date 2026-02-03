@@ -74,6 +74,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
+      - name: Add Helm repositories (if needed)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Update Helm repository cache with authentication
+          helm repo add stable https://charts.helm.sh/stable
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+          
       - name: Check for DigitalOcean token
         id: check-do-token
         run: |
