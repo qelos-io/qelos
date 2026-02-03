@@ -75,9 +75,13 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
               const groupTo = stackTo.find(group => group.key === mfe.route.group);
               if (groupTo) {
                 groupTo.items.push(mfe);
+                if (!groupTo.name && groups[mfe.route.group]) {
+                  Object.assign(groupTo, groups[mfe.route.group]);
+                }
               } else {
                 stackTo.unshift({
-                  ...groups[mfe.route.group],
+                  key: mfe.route.group,
+                  ...(groups[mfe.route.group] || {}),
                   items: [mfe]
                 })
               }
