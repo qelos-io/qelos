@@ -32,7 +32,7 @@ spec:
       terminationGracePeriodSeconds: {{ (.Values.gateway.terminationGracePeriodSeconds) | default 30 }}
       containers:
         - name: gateway
-          image: "{{ .Values.gateway.image.repository }}:{{ .Values.gateway.image.tag }}"
+          image: "{{ .Values.gateway.image.repository }}:{{ .Values.gateway.image.tag | default .Values.global.imageTag }}"
           imagePullPolicy: {{ .Values.gateway.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: 3000
