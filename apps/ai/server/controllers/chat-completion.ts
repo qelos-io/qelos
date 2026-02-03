@@ -566,8 +566,8 @@ export async function internalChatCompletion(req, res) {
   const aiService = createAIService(source, authentication);
   try {
     const response = await aiService.createChatCompletion({
-      messages: payload.messages,
-      model: payload.model || source.metadata.defaultModel,
+      messages: payload.messages as any,
+      model: payload.model || source.metadata.defaultModel as any,
       temperature: payload.temperature || source.metadata.defaultTemperature,
       top_p: payload.top_p || source.metadata.defaultTopP,
       frequency_penalty: payload.frequency_penalty || source.metadata.defaultFrequencyPenalty,
@@ -586,7 +586,7 @@ export async function internalChatCompletion(req, res) {
     // Analyze the error for internal requests too
     const errorAnalysis = analyzeChatCompletionError(error, {
       provider: source.kind,
-      model: payload.model || source.metadata.defaultModel,
+      model: payload.model || source.metadata.defaultModel as any,
       integrationId: req.integration?._id,
       tenant: req.headers.tenant,
       hasFunctionCalls: false,

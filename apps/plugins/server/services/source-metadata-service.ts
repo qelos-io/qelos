@@ -25,7 +25,7 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
   }
 
   if (kind === IntegrationSourceKind.OpenAI || kind === IntegrationSourceKind.Gemini) {
-    const { defaultModel, initialMessages } = metadata;
+    const { defaultModel, initialMessages, defaultTemperature, defaultTopP, defaultFrequencyPenalty, defaultPresencePenalty, defaultMaxTokens, defaultResponseFormat } = metadata;
     return {
       defaultModel: typeof defaultModel === 'string' ? defaultModel : null,
       initialMessages: initialMessages instanceof Array ? initialMessages.map(msg => {
@@ -34,6 +34,12 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
           content: typeof msg.content === 'string' ? msg.content : '',
         }
       }).filter(msg => !!msg.content) : [],
+      defaultTemperature: typeof defaultTemperature === 'number' ? defaultTemperature : null,
+      defaultTopP: typeof defaultTopP === 'number' ? defaultTopP : null,
+      defaultFrequencyPenalty: typeof defaultFrequencyPenalty === 'number' ? defaultFrequencyPenalty : null,
+      defaultPresencePenalty: typeof defaultPresencePenalty === 'number' ? defaultPresencePenalty : null,
+      defaultMaxTokens: typeof defaultMaxTokens === 'number' ? defaultMaxTokens : null,
+      defaultResponseFormat: typeof defaultResponseFormat === 'string' ? defaultResponseFormat : null
     };
   }
 

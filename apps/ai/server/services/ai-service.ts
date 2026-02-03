@@ -4,6 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import logger from './logger';
 import { emitAIProviderErrorEvent, emitTokenUsageEvent } from './platform-events';
 import { ResponseTextConfig } from 'openai/resources/responses/responses';
+import { IClaudeAiSource, IGeminiSource, IOpenAISource } from '@qelos/global-types';
 
 // Define interfaces for better type safety
 interface AIServiceOptions {
@@ -139,17 +140,7 @@ function createGeminiService(source: AIServiceSource, authentication: AIServiceA
   };
 }
 
-interface AIServiceSource {
-  kind: string;
-  tenant: string;
-  _id?: string;
-  metadata: {
-    apiKey?: string;
-    apiUrl?: string;
-    defaultModel?: string;
-    organizationId?: string;
-  };
-}
+type AIServiceSource = IOpenAISource | IClaudeAiSource | IGeminiSource;
 
 interface AIServiceAuthentication {
   token?: string;
@@ -186,7 +177,7 @@ export function createAIService(source: AIServiceSource, authentication: AIServi
   switch (source.kind) {
     case 'openai':
       return createOpenAIService(source, authentication);
-    case 'anthropic':
+    case 'claudeai':
       return createAnthropicService(source, authentication);
     case 'gemini':
       return createGeminiService(source, authentication);
@@ -545,7 +536,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
         conversation += `User: ${message.content}\n\n`;
       } else if (message.role === 'assistant') {
         conversation += `Assistant: ${message.content}\n\n`;
-        
+
         // Include tool calls in the conversation
         if (message.tool_calls && message.tool_calls.length > 0) {
           conversation += `Assistant called the following functions:\n`;
@@ -558,7 +549,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
         // Include function/tool results in the conversation
         const toolCallId = message.tool_call_id;
         const functionName = message.name || (toolCallId && toolCallId.startsWith('call_') ? 'function' : 'tool');
-        
+
         if (typeof message.content === 'string') {
           try {
             // Try to parse the content as JSON to format it nicely
@@ -590,6 +581,10 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
       return { format: { type: 'text' } };
     }
 
+    if (responseFormat === 'json_object') {
+      return { format: { type: 'json_object' } }
+    }
+
     return { format: responseFormat };
   }
 
@@ -613,10 +608,10 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
         const allTools = [...(transformedTools || []), ...customTools];
 
         const transformedInput = options.input || transformToInput(messages);
-        
+
         // Ensure we always have a valid input for the Responses API
         const finalInput = transformedInput || 'Please continue based on the system instructions.';
-        
+
         const response = await openai.responses.create({
           model,
           instructions: transformToInstructions(messages),
@@ -649,8 +644,8 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
                 }
               }))
             },
-            finish_reason: response.status === 'completed' ? 'stop' as const : 
-                          response.output?.some((item: any) => item.type === 'function_call') ? 'tool_calls' as const : 'stop' as const
+            finish_reason: response.status === 'completed' ? 'stop' as const :
+              response.output?.some((item: any) => item.type === 'function_call') ? 'tool_calls' as const : 'stop' as const
           }],
           usage: response.usage ? {
             prompt_tokens: response.usage.input_tokens || 0,
@@ -713,10 +708,10 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
         const allTools = [...(transformedTools || []), ...customTools];
 
         const transformedInput = options.input || transformToInput(messages);
-        
+
         // Ensure we always have a valid input for the Responses API
         const finalInput = transformedInput || 'Please continue based on the system instructions.';
-        
+
         const stream = await openai.responses.create({
           model,
           instructions: transformToInstructions(messages),
@@ -787,17 +782,17 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
               const delta = chunk.delta || '';
               if (delta) {
                 buffer += delta;
-                
+
                 // Flush immediately for certain conditions
                 const now = Date.now();
-                const shouldFlush = 
+                const shouldFlush =
                   buffer.endsWith('\n') || // Flush at line breaks
                   buffer.endsWith('. ') || // Flush after sentences
                   buffer.endsWith('! ') || // Flush after exclamations
                   buffer.endsWith('? ') || // Flush after questions
                   buffer.length >= 10 || // Flush for longer content
                   (now - lastFlushTime > 50); // Flush after 50ms for responsiveness
-                
+
                 if (shouldFlush) {
                   yield* flushBuffer();
                 }
@@ -805,7 +800,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
             } else if (chunk.type === 'response.output_text.completed' || chunk.type === 'response.completed') {
               // Flush any remaining buffer first
               yield* flushBuffer();
-              
+
               const outputItem = (chunk as any).output?.[(chunk as any).output?.length - 1];
               if (outputItem?.type === 'message' && outputItem.content) {
                 const text = outputItem.content[0]?.text || '';
@@ -845,7 +840,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
                 arguments: ''
               };
               accumulatedArgs = '';
-              
+
               yield {
                 id: messageId,
                 object: 'chat.completion.chunk' as const,
@@ -870,7 +865,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
               // Function call arguments delta - emit only the delta portion
               if (currentFunctionCall && chunk.delta) {
                 accumulatedArgs += chunk.delta;
-                
+
                 yield {
                   id: messageId,
                   object: 'chat.completion.chunk' as const,
@@ -902,7 +897,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
               if (text) {
                 // Check if this appears to be the complete content
                 const isCompleteContent = text.length > 50 && accumulatedContent && text.includes(accumulatedContent);
-                
+
                 // Yield the text chunk
                 yield {
                   id: messageId,
@@ -949,7 +944,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
                   // Check if this text appears to be the complete content
                   // (it's much longer than a typical delta and contains previous content)
                   const isCompleteContent = text.length > 50 && text.includes(accumulatedContent);
-                  
+
                   // Yield the text chunk
                   yield {
                     id: messageId,

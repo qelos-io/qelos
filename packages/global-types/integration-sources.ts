@@ -184,6 +184,12 @@ export interface IOpenAISource extends IIntegrationSource {
     organizationId?: string;
     apiUrl?: string;
     defaultModel?: string | null;
+    defaultTemperature?: number;
+    defaultTopP?: number;
+    defaultFrequencyPenalty?: number;
+    defaultPresencePenalty?: number;
+    defaultMaxTokens?: number;
+    defaultResponseFormat?: string;
   }
 }
 

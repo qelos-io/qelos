@@ -250,6 +250,8 @@ async function processStreamingCompletion(
   let functionCallBuffer = '';
   let hasContent = false;
   let assistantLastContent = '';
+  let receivedFullContent = false;
+  let savedFullContent = false;
 
   const stream = await aiService.createChatCompletionStream(chatOptions);
   
@@ -325,7 +327,17 @@ async function processStreamingCompletion(
       const isFullContent = (chunk as any).completion_type === 'full_content';
       if (isFullContent) {
         assistantLastContent = content;
-      } else {
+        receivedFullContent = true; // Set flag to prevent further accumulation
+        // Immediately save the full content to the thread
+        if (onNewMessage) {
+          onNewMessage({
+            type: 'assistant_last_content',
+            content: content
+          });
+          savedFullContent = true;
+        }
+      } else if (!receivedFullContent) {
+        // Only accumulate if we haven't received the full content yet
         assistantLastContent += content;
       }
       sendSSE({ 
@@ -479,7 +491,7 @@ async function processStreamingCompletion(
     }
   }
 
-  if (onNewMessage && hasContent && assistantLastContent) {
+  if (onNewMessage && hasContent && assistantLastContent && !savedFullContent) {
     onNewMessage({
       type: 'assistant_last_content',
       content: assistantLastContent
