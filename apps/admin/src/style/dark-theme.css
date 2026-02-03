@@ -8,7 +8,7 @@ html[data-dark-mode="true"] {
     }
   }
 
-  .el-button {
+  .el-button:not([class*="el-button--"]) {
     color: var(--main-color);
   }
 }
