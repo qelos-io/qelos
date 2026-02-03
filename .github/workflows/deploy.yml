@@ -24,6 +24,11 @@ on:
         default: 'default'
         type: string
 
+# Add permissions for GITHUB_TOKEN
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   # Check if required secrets exist before proceeding
   check-secrets:
@@ -210,6 +215,8 @@ jobs:
         shell: bash
           
       - name: Deploy with Helm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +x  # Disable command echoing
           # Verify kubeconfig and values.yaml exist before deployment
