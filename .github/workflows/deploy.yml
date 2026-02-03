@@ -258,7 +258,7 @@ jobs:
           
           helm upgrade --install qelos-release qelos \
             -f values.yaml \
-            --set IMAGE_TAG=$IMAGE_TAG \
+            --set global.imageTag=$IMAGE_TAG \
             --namespace "$NAMESPACE" \
             --create-namespace \
             --atomic \
