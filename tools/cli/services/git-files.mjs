@@ -87,6 +87,50 @@ function getStagedFiles() {
 }
 
 /**
+ * Find configuration files that reference a specific HTML file via $ref
+ * @param {string} refPath - The referenced file path (relative)
+ * @param {string} basePath - Base path to search for configurations
+ * @returns {string[]} Array of configuration file paths that reference the HTML file
+ */
+function findReferencingConfigs(refPath, basePath) {
+  const referencingConfigs = [];
+  const configsDir = path.join(basePath, 'configs');
+  
+  if (!fs.existsSync(configsDir)) {
+    return referencingConfigs;
+  }
+  
+  const configFiles = fs.readdirSync(configsDir)
+    .filter(file => file.endsWith('.config.json'));
+  
+  for (const file of configFiles) {
+    const filePath = path.join(configsDir, file);
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const config = JSON.parse(content);
+      
+      // Check all $ref references in the config
+      const refs = findAllRefs(config);
+      
+      // Check if any ref matches our target HTML file
+      // Normalize paths for comparison (handle ./ and different separators)
+      const normalizedRefPath = refPath.replace(/^\.\//, '').replace(/\\/g, '/');
+      
+      if (refs.some(ref => {
+        const normalizedRef = ref.replace(/^\.\//, '').replace(/\\/g, '/');
+        return normalizedRef === normalizedRefPath;
+      })) {
+        referencingConfigs.push(filePath);
+      }
+    } catch (error) {
+      logger.debug(`Failed to parse config ${file}: ${error.message}`);
+    }
+  }
+  
+  return referencingConfigs;
+}
+
+/**
  * Find integration files that reference a specific file via $ref
  * @param {string} refPath - The referenced file path (relative)
  * @param {string} basePath - Base path to search for integrations
@@ -230,13 +274,24 @@ function classifyFiles(files, basePath) {
     } else if (ext === '.html') {
       // HTML files can be in different contexts:
       // 1. In plugins directory -> micro-frontends (part of a plugin)
-      // 2. In configs directory -> standalone HTML configs
+      // 2. In configs directory -> These are typically referenced by configs, not pushed directly
       // 3. Other locations -> treat as micro-frontends
       
       if (relativePath.includes('configs/') || relativePath.includes('configs\\')) {
-        // HTML file in configs directory - treat as a config file
-        classified.configs.push(fullPath);
-        logger.debug(`Found HTML config file: ${relativePath}`);
+        // HTML file in configs directory - these are usually referenced by config files, not pushed directly
+        logger.debug(`Found HTML file in configs directory (will be pushed via referencing config): ${relativePath}`);
+        
+        // Find configs that reference this HTML file
+        const refPath = './' + path.relative('configs', relativePath);
+        const referencingConfigs = findReferencingConfigs(refPath, basePath);
+        
+        // Add the referencing configs to the configs list
+        for (const configPath of referencingConfigs) {
+          if (!classified.configs.includes(configPath)) {
+            classified.configs.push(configPath);
+            logger.debug(`Found config referencing HTML ${relativePath}: ${path.basename(configPath)}`);
+          }
+        }
       } else {
         // Find plugins that contain this HTML file (micro-frontends)
         classified.microFrontends.push(fullPath);
@@ -376,6 +431,39 @@ export function prepareTempDirectories(classifiedFiles, tempDir) {
               // Create the same directory structure in temp
               // The ref is relative to the integration file, so we need to copy it to the same relative path
               const refDestPath = path.join(tempDir, 'integrations', ref);
+              const refDestDir = path.dirname(refDestPath);
+              
+              fs.mkdirSync(refDestDir, { recursive: true });
+              fs.copyFileSync(refSourcePath, refDestPath);
+              copiedRefs.add(ref);
+              logger.debug(`Copied referenced file ${ref} from ${refSourcePath} to ${refDestPath}`);
+            } else {
+              logger.debug(`Referenced file not found: ${refSourcePath}`);
+            }
+          }
+        } catch (error) {
+          logger.debug(`Failed to process refs for ${path.basename(file)}: ${error.message}`);
+        }
+      }
+      
+      // If this is a config, check for $ref files and copy them too
+      if (type === 'configs' && file.endsWith('.config.json')) {
+        try {
+          const content = fs.readFileSync(dest, 'utf-8');
+          const config = JSON.parse(content);
+          const refs = findAllRefs(config);
+          
+          for (const ref of refs) {
+            if (copiedRefs.has(ref)) continue;
+            
+            // Resolve the ref path relative to the original file location
+            const originalDir = path.dirname(file);
+            const refSourcePath = path.resolve(originalDir, ref);
+            
+            if (fs.existsSync(refSourcePath)) {
+              // Create the same directory structure in temp
+              // The ref is relative to the config file, so we need to copy it to the same relative path
+              const refDestPath = path.join(tempDir, 'configs', ref);
               const refDestDir = path.dirname(refDestPath);
               
               fs.mkdirSync(refDestDir, { recursive: true });

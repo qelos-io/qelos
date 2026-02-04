@@ -3,7 +3,23 @@ import type { RequestWithUser } from './types';
 
 export function populateUser(req: RequestWithUser, res: Response, next: NextFunction): void {
   try {
-    req.user = req.headers.user ? JSON.parse(req.headers.user as string) : null;
+    if (req.headers.user) {
+      // Check if the user header is Base64 encoded (to handle non-ASCII characters)
+      const userHeader = req.headers.user as string;
+      let userJson: string;
+      
+      try {
+        // Try to decode from Base64 first
+        userJson = Buffer.from(userHeader, 'base64').toString('utf8');
+      } catch {
+        // If decoding fails, assume it's plain JSON (for backward compatibility)
+        userJson = userHeader;
+      }
+      
+      req.user = JSON.parse(userJson);
+    } else {
+      req.user = null;
+    }
     req.workspace = req.user?.workspace;
     next();
   } catch (e) {

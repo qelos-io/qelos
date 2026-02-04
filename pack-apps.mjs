@@ -77,8 +77,16 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
               if (err) {
                 console.log(err.message);
                 reject();
+                return;
               }
-              resolve();
+
+              // git checkout to all package.json files
+              exec(`cd apps/${folder} && git checkout package.json`, { maxBuffer: 1024 * 1024 }, (err) => {
+                if (err) {
+                  console.log(`Warning: Failed to checkout package.json for ${folder}:`, err.message);
+                }
+                resolve();
+              })
             })
           })
         })

@@ -1,6 +1,6 @@
 {
   "name": "@qelos/plugins-cli",
-  "version": "0.0.28",
+  "version": "0.0.30",
   "description": "CLI to manage QELOS plugins",
   "main": "cli.mjs",
   "bin": {

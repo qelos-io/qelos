@@ -236,7 +236,10 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
         }
       })
       .then((user = '') => {
-        req.headers.user = user;
+        if (user) {
+          // Base64 encode the user object to handle non-ASCII characters
+          req.headers.user = Buffer.from(user).toString('base64');
+        }
         next();
       })
       .catch((err) => {
