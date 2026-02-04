@@ -572,14 +572,29 @@ const md = new Remarkable({
   typographer: true, // Enable some language-neutral replacement + quotes beautification
 });
 
+md.renderer.rules.paragraph_open = function(tokens, idx, options, env) {
+  return '<p class="md-para">';
+};
+
+md.renderer.rules.paragraph_close = function(tokens, idx, options, env) {
+  return '</p>\n';
+};
+
+md.renderer.rules.hardbreak = function(tokens, idx, options) {
+  return '<br>\n';
+};
+
+md.renderer.rules.softbreak = function(tokens, idx, options) {
+  return '<br>\n';
+};
+
 md.use(linkify);
 
 // Function to render markdown content
 const renderMarkdown = (content: string): string => {
-  // Add two spaces at the end of lines with single newlines to force markdown to create line breaks
-  // This is a markdown hack: "  \n" creates a line break
-  const processedContent = content.replace(/([^\n])\n([^\n])/g, '$1  \n$2');
-  return md.render(processedContent);
+  // For plain text with line breaks, we need to ensure they're preserved
+  // Remarkable with breaks: true should handle this, but let's be explicit
+  return md.render(content);
 };
 
 // Function to copy table data in a format suitable for spreadsheets
@@ -1282,6 +1297,16 @@ onMounted(() => {
 .bubble-content {
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.bubble-content .md-para {
+  display: inline;
+  margin: 0;
+}
+
+.bubble-content p {
+  margin: 0.5em 0;
+  display: block;
 }
 
 .stream-indicator {
