@@ -576,7 +576,10 @@ md.use(linkify);
 
 // Function to render markdown content
 const renderMarkdown = (content: string): string => {
-  return md.render(content);
+  // Add two spaces at the end of lines with single newlines to force markdown to create line breaks
+  // This is a markdown hack: "  \n" creates a line break
+  const processedContent = content.replace(/([^\n])\n([^\n])/g, '$1  \n$2');
+  return md.render(processedContent);
 };
 
 // Function to copy table data in a format suitable for spreadsheets
