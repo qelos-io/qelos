@@ -1,4 +1,4 @@
-import { getRouter } from '@qelos/api-kit';
+import { getRouter, populateUser } from '@qelos/api-kit';
 import { getPluginProxy } from '../controllers/play-plugins';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { proxyApiPrefix } from '../../config';
@@ -14,6 +14,7 @@ declare module 'express' {
     plugin: Pick<IPlugin, 'token' | 'proxyUrl'>;
     pluginUrl: string;
     apiPath: string;
+    user?: any;
   }
 }
 
@@ -41,7 +42,7 @@ export function playPlugins() {
     next();
   }
 
-  router.use(proxyApiPrefix, loadPluginRequest, createProxyMiddleware({
+  router.use(proxyApiPrefix, populateUser, loadPluginRequest, createProxyMiddleware({
     changeOrigin: true,
     agent: httpAgent,
     pathRewrite(path, req) {
@@ -50,9 +51,14 @@ export function playPlugins() {
     router(req) {
       return req.pluginUrl;
     },
-    onProxyReq(proxyReq, req) {
+    onProxyReq(proxyReq, req: any) {
       proxyReq.removeHeader('cookie');
       proxyReq.setHeader('Authorization', 'Bearer ' + req.plugin.token);
+      
+      // Forward the user header if it exists (already decoded by populateUser middleware)
+      if (req.user) {
+        proxyReq.setHeader('user', JSON.stringify(req.user));
+      }
     },
     onProxyRes(proxyRes: http.IncomingMessage, req: Request, res: Response) {
       if (proxyRes.headers['x-q-auth'] === 'unauthorized' || proxyRes.statusCode === 407) {
