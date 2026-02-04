@@ -9,6 +9,36 @@ import { cacheManager } from '../services/cache-manager';
 
 const protocol = isDev ? 'http://' : 'https://';
 
+
+function prepareUserHeader(userHeader: string | undefined, userObject: any): string | undefined {
+  // If we have a user object (already decoded by populateUser), stringify it
+  if (userObject && typeof userObject === 'object') {
+    return JSON.stringify(userObject);
+  }
+  
+  // If we have a user header, try to decode it
+  if (userHeader) {
+    try {
+      // Try to decode from Base64 first
+      const decoded = Buffer.from(userHeader, 'base64').toString('utf8');
+      // Validate it's valid JSON
+      JSON.parse(decoded);
+      return decoded;
+    } catch {
+      // If decoding fails, assume it's already valid JSON
+      try {
+        JSON.parse(userHeader);
+        return userHeader;
+      } catch {
+        // If it's not valid JSON either, return undefined
+        return undefined;
+      }
+    }
+  }
+  
+  return undefined;
+}
+
 function clearPlugins(tenant: string) {
   cacheManager.setItem(`plugins:${tenant}`, '', {ttl: 1}).catch();  
   cacheManager.setItem(`plugins:${tenant}:full`, '', {ttl: 1}).catch();
@@ -56,7 +86,7 @@ async function fetchPluginCallback({ headers, plugin, callbackUrl, hard = false 
 export function redirectToPluginMfe(req, res) {
   const { returnUrl = '' } = req.query || {}
   const headers = { origin: `${protocol}${req.headers.tenanthost}`, ...req.headers };
-  headers.user = headers.user || req.user;
+  headers.user = prepareUserHeader(headers.user, req.user);
   Plugin.getPluginForRedirect(headers.tenant, req.params.pluginId)
     .then(async (plugin) => {
       if (!plugin) {
