@@ -102,7 +102,7 @@ const handleLogout = async () => {
   router.push('/login?redirect=' + location.href.replace(location.origin, ''))
 }
 
-const workspaceName = computed(() => decodeURIComponent(user.value?.workspace?.name[0].toUpperCase()))
+const workspaceName = computed(() => user.value?.workspace && decodeURIComponent(user.value?.workspace?.name[0].toUpperCase()))
 </script>
 <style scoped lang="scss">
 .user-dropdown {
