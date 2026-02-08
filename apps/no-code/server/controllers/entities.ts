@@ -134,7 +134,7 @@ function flattenMetadata(entity: any = {}) {
  */
 const convertPropertyValueByType = (value: any, propertyType: string): any => {
   if (propertyType === 'boolean') {
-    return value === 'true' || value === '1';
+    return value?.toLowerCase?.() === 'true' || value === '1';
   } else if (propertyType === 'number' || propertyType === 'datetime') {
     const conversionFn = propertyType === 'number' ? parseInt : (val: string) => new Date(val);
     
