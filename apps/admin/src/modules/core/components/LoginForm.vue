@@ -111,7 +111,7 @@ form {
 .form-buttons {
   text-align: end;
 
-  .el-button {
+  .el-button.el-button {
     width: 100%;
     display: flex;
     justify-content: center;
@@ -179,6 +179,10 @@ html[data-dark-mode="true"] {
   border: none;
   transition: background-color 0.3s;
   color: white;
+
+  &:hover {
+    border: none;
+  }
 }
 
 .linkedin-button {
