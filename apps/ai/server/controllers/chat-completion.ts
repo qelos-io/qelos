@@ -218,7 +218,7 @@ export async function chatCompletion(req: any, res: any | null) {
     [toolsIntegrations, ingestedBlueprints, ingestedAgents] = await Promise.all([
       getToolsIntegrations(integration.tenant, integration.target.source.kind, integration._id),
       integration.target.details.ingestedBlueprints && integration.target.details.ingestedBlueprints.length > 0 ? getAllBlueprints(integration.tenant, { identifier: integration.target.details.ingestedBlueprints }) : Promise.resolve([]),
-      integration.target.details.ingestedAgents && integration.target.details.ingestedAgents.length > 0 ? getIntegrations(integration.tenant, {active: true, kind: integration.trigger.source.kind, _id: integration.target.details.ingestedAgents.join(',')}) : Promise.resolve([]),
+      integration.target.details.ingestedAgents && integration.target.details.ingestedAgents.length > 0 ? getIntegrations(integration.tenant, { active: true, kind: integration.trigger.source.kind, _id: integration.target.details.ingestedAgents.join(',') }) : Promise.resolve([]),
     ]);
   } catch (e: any) {
     logger.error('Failed to load tools integrations or ingested resources', e);
@@ -304,7 +304,7 @@ export async function chatCompletion(req: any, res: any | null) {
       handler: async (req: any, args: any) => {
         const fullAgent = await getIntegration(req.headers.tenant, agent._id, true);
         return chatCompletion({
-          headers: {...req.headers, tenant: req.headers.tenant, user: req.headers.user},
+          headers: { ...req.headers, tenant: req.headers.tenant, user: req.headers.user },
           query: {
             bypassAdmin: req.query.bypassAdmin
           },
@@ -319,7 +319,7 @@ export async function chatCompletion(req: any, res: any | null) {
         }, null);
       }
     }));
-    
+
     // Add agent tools to allTools array
     allTools.push(...agentTools);
     toolsIntegrations.push(...agentTools);
@@ -361,30 +361,30 @@ export async function chatCompletion(req: any, res: any | null) {
     try {
       // Get the source authentication for OpenAI
       // Handle both string ID and object with _id
-      const sourceId = typeof integration.target.source === 'string' 
-        ? integration.target.source 
+      const sourceId = typeof integration.target.source === 'string'
+        ? integration.target.source
         : (integration.target.source as any)._id || integration.target.source;
-      
+
       const sourceData = await getSourceAuthentication(req.headers.tenant, sourceId);
-      
+
       if (sourceData && sourceData.authentication) {
         const openai = new OpenAI({
           apiKey: sourceData.authentication.token,
           organization: sourceData.metadata?.organizationId,
           baseURL: sourceData.metadata?.apiUrl,
         });
-        
+
         const vectorStoreService = new VectorStoreService(openai);
-        const vectorStoreIds = await vectorStoreService.getVectorStoreIdsForThread(
+        const vectorStoreIds = thread ? await vectorStoreService.getVectorStoreIdsForThread(
           (thread?._id as mongoose.Types.ObjectId).toString(),
           integration._id.toString(),
           req.headers.tenant
-        );
-        
+        ) : [];
+
         if (options.vectorStoreIds?.length > 0) {
           vectorStoreIds.push(...options.vectorStoreIds);
         }
-        
+
         if (vectorStoreIds.length > 0) {
           tools.unshift({
             type: "file_search",
@@ -394,6 +394,22 @@ export async function chatCompletion(req: any, res: any | null) {
       }
     } catch (error) {
       logger.error('Error setting up vector stores for chat completion:', error);
+      emitPlatformEvent({
+        tenant: integration.tenant,
+        source: integration._id,
+        kind: integration.target.source.kind,
+        eventName: 'ai_vector_store_failed',
+        description: `AI vector store failed: ${error}`,
+        user: req.user?._id?.toString(),
+        metadata: {
+          error: error instanceof Error ? error.message : String(error),
+          integrationId: integration._id,
+          integrationName: integration.name,
+          workspace: req.workspace?._id?.toString(),
+          vectorStoreIds: options.vectorStoreIds,
+          threadId: thread?._id?.toString(),
+        }
+      });
     }
   }
 
@@ -512,7 +528,7 @@ export async function chatCompletion(req: any, res: any | null) {
       messageCount: chatOptions.messages?.length,
       isStreaming: useSSE
     });
-    
+
     // Log with structured data for better debugging
     logError(logger, 'Error processing AI chat completion', error, errorAnalysis, {
       integrationId: integration._id,
@@ -525,7 +541,7 @@ export async function chatCompletion(req: any, res: any | null) {
       messageCount: chatOptions.messages?.length,
       isStreaming: useSSE
     });
-    
+
     // Emit platform event for monitoring
     emitPlatformEvent({
       tenant: integration.tenant,
@@ -546,10 +562,10 @@ export async function chatCompletion(req: any, res: any | null) {
         userId: req.user?._id?.toString(),
       }
     });
-    
+
     // Create and return detailed error response
     const errorResponse = createErrorResponse(error, errorAnalysis, req.id);
-    
+
     if (useSSE && res) {
       res.write(`data: ${JSON.stringify({ type: 'error', ...errorResponse })}\n\n`);
       res.end();
@@ -593,14 +609,14 @@ export async function internalChatCompletion(req, res) {
       messageCount: payload.messages?.length || 0,
       isStreaming: false
     });
-    
+
     logError(logger, 'Error in internal chat completion', error, errorAnalysis, {
       sourceId: source._id,
       provider: source.kind,
       model: payload.model || source.metadata.defaultModel,
       tenant: req.headers.tenant
     });
-    
+
     // Return detailed error for internal requests
     const errorResponse = createErrorResponse(error, errorAnalysis);
     res.status(500).json(errorResponse).end();
