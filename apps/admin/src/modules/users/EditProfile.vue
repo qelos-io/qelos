@@ -12,6 +12,17 @@
           <h1>{{ decodeURIComponent(user.firstName || '') }} {{ decodeURIComponent(user.lastName || '') }}</h1>
           <p>{{ user.username }}</p>
         </div>
+        <el-button 
+          type="danger" 
+          size="small" 
+          plain
+          class="logout-btn"
+          @click="handleLogout"
+          :loading="isLoggingOut"
+        >
+          <font-awesome-icon :icon="['fas', 'sign-out-alt']" />
+          <span>{{ $t('Logout') }}</span>
+        </el-button>
       </div>
     </div>
     <el-skeleton v-else-if="!isLoaded" :rows="3" animated />
@@ -68,13 +79,13 @@ import { ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '@/modules/core/compositions/authentication';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
-import { isAdmin } from '@/modules/core/store/auth';
 import { updateProfile } from '@/modules/core/store/auth';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
+import { ElMessageBox, ElMessage } from 'element-plus';
 
 const route = useRoute();
 const router = useRouter();
-const { user, isLoaded } = useAuth();
+const { user, isLoaded, logout } = useAuth();
 const wsConfig = useWsConfiguration();
 
 // For profile editing, we use the authenticated user directly
@@ -85,6 +96,7 @@ const { submit, submitting } = useSubmitting((payload) => updateProfile(payload)
 });
 
 const activeTab = ref('general');
+const isLoggingOut = ref(false);
 
 // Map tab names to route names
 const tabRouteMap = {
@@ -130,6 +142,33 @@ async function handleRefreshUser() {
     console.error('Refresh error:', error);
   }
 }
+
+async function handleLogout() {
+  try {
+    await ElMessageBox.confirm(
+      'Are you sure you want to logout?',
+      'Confirm Logout',
+      {
+        confirmButtonText: 'Logout',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    );
+    
+    isLoggingOut.value = true;
+    await logout();
+    router.push('/login');
+    // The logout function will handle redirecting to login page
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('Logout error:', error);
+      ElMessage.error('Failed to logout');
+    }
+  } finally {
+    isLoggingOut.value = false;
+  }
+}
 </script>
 
 <style scoped>
@@ -150,6 +189,21 @@ async function handleRefreshUser() {
   display: flex;
   align-items: center;
   gap: 20px;
+  position: relative;
+}
+
+.logout-btn {
+  margin-left: auto;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(245, 108, 108, 0.3);
+}
+
+.logout-btn span {
+  margin-left: 6px;
 }
 
 .user-avatar,
@@ -219,6 +273,13 @@ async function handleRefreshUser() {
   .user-info {
     flex-direction: column;
     text-align: center;
+    gap: 15px;
+  }
+  
+  .logout-btn {
+    margin-left: 0;
+    width: 100%;
+    max-width: 200px;
   }
   
   .user-details h1 {
