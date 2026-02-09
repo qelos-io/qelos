@@ -1,7 +1,35 @@
 <template>
   <div v-if="isLoaded" :class="['admin-panel', layoutClass]">
+    <!-- Builder theme components -->
+    <BuilderNavigationDrawer v-if="shouldShowBuilderComponents" />
+    <BuilderEditingLayer
+      v-if="shouldShowBuilderComponents"
+      :page-name="currentPageName"
+      :is-editing-enabled="isEditingEnabled"
+      :toggle-edit="() => isEditingEnabled = !isEditingEnabled"
+      :submitting="false"
+      :show-code-editor="false"
+      :open-add-component-modal="() => {}"
+      :open-code-editor="() => {}"
+      :clone-page="() => {}"
+      :remove-page="() => {}"
+      :save-code-editor="() => {}"
+      :close-code-editor="() => {}"
+      @preview-mode="handlePreviewMode"
+      @toggle-guides="handleToggleGuides"
+      @inspect-mode="handleInspectMode"
+      @page-settings="handlePageSettings"
+    />
+    
+    <!-- Fixed impersonation exit button -->
+    <div v-if="isImpersonating" class="impersonation-exit-btn" @click="handleExitImpersonation">
+      <font-awesome-icon icon="fas fa-user-secret" />
+      <span>Exit Impersonation</span>
+    </div>
+    
+    <!-- Regular navigation (always visible for regular users, shown alongside builder for admins) -->
     <Navigation class="navigation" :opened="navigationOpened" @close="navigationOpened = false"/>
-    <div class="admin-content">
+    <div class="admin-content" :class="{ 'has-builder-drawer': shouldShowBuilderComponents }">
       <Header @toggle="navigationOpened = !navigationOpened" :is-navigation-opened="navigationOpened"/>
       <div class="main-wrapper">
         <div class="main">
@@ -22,7 +50,8 @@ import { onBeforeRouteUpdate, useRouter } from 'vue-router'
 import { useAuth, useAuthenticatedIntercept } from './compositions/authentication'
 import Header from './components/layout/Header.vue'
 import Navigation from './components/layout/Navigation.vue'
-import { authStore, isPrivilegedUser } from '@/modules/core/store/auth';
+import { authStore, isPrivilegedUser, isEditingEnabled } from '@/modules/core/store/auth';
+import { isImpersonating, clearImpersonation } from '@/modules/core/store/impersonation';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
@@ -30,8 +59,13 @@ import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 import useInvitesList from '@/modules/workspaces/store/invites-list';
 import PrivilegedAddons from '@/modules/admins/components/PrivilegedAddons.vue';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
+import { shouldShowBuilderTheme } from '@/modules/builder/store/builderTheme';
+import BuilderNavigationDrawer from '@/modules/builder/components/BuilderNavigationDrawer.vue';
+import BuilderEditingLayer from '@/modules/builder/components/BuilderEditingLayer.vue';
+import { useRoute } from 'vue-router';
 
 const router = useRouter()
+const route = useRoute();
 const { appConfig } = useAppConfiguration();
 const wsConfig = useWsConfiguration()
 const workspacesStore = useWorkspacesList()
@@ -44,6 +78,20 @@ const openModals = toRef(usePluginsMicroFrontends(), 'openModals');
 const layoutStyle = computed(() => appConfig.value.layoutStyle || 'classic');
 const navigationLayout = computed(() => appConfig.value.navigationLayout || 'icon-text');
 const layoutClass = computed(() => `layout-${layoutStyle.value}`);
+
+// Builder theme computed properties
+const currentPageName = computed(() => {
+  return (route.meta?.title as string) || (route.name as string) || 'Unknown Page';
+});
+
+const shouldShowBuilderComponents = computed(() => {
+  // Show builder components on all pages for admin users on desktop
+  // except for specific pages where it shouldn't appear (like login, etc.)
+  const excludedRoutes = ['/login', '/register', '/forgot-password'];
+  const isExcludedRoute = excludedRoutes.some(excludedRoute => route.path.startsWith(excludedRoute));
+  
+  return shouldShowBuilderTheme.value && !isExcludedRoute;
+});
 
 router.afterEach(() => navigationOpened.value = false);
 
@@ -92,6 +140,32 @@ watch(navigationLayout, (layout) => {
   document.body.setAttribute('data-navigation-layout', layout);
 }, { immediate: true });
 
+// Builder theme event handlers
+function handlePreviewMode() {
+  // Implement preview mode logic
+  console.log('Preview mode activated');
+}
+
+function handleToggleGuides() {
+  // Implement guides toggle logic
+  console.log('Guides toggled');
+}
+
+function handleInspectMode() {
+  // Implement inspect mode logic
+  console.log('Inspect mode activated');
+}
+
+function handlePageSettings() {
+  // Implement page settings logic
+  console.log('Page settings opened');
+}
+
+function handleExitImpersonation() {
+  clearImpersonation();
+  window.location.reload();
+}
+
 </script>
 <style scoped lang="scss">
 .admin-panel {
@@ -111,6 +185,11 @@ watch(navigationLayout, (layout) => {
   height: calc(100% - 60px);
   overflow: auto;
   order: 2;
+  
+  // Adjust for builder drawer
+  &.has-builder-drawer {
+    max-width: calc(100vw - var(--builder-drawer-width, 280px));
+  }
 }
 
 .admin-content {
@@ -165,6 +244,37 @@ watch(navigationLayout, (layout) => {
   
   .main {
     order: 3;
+  }
+}
+
+// Impersonation exit button
+.impersonation-exit-btn {
+  position: fixed;
+  top: 80px;
+  inset-inline-end: 20px;
+  background: var(--el-color-warning);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: var(--el-color-warning-dark-2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  svg {
+    width: 16px;
+    height: 16px;
   }
 }
 </style>

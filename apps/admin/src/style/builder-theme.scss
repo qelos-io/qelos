@@ -1,0 +1,168 @@
+// Builder Theme Styles
+:root {
+  --builder-drawer-width: 280px;
+  --builder-drawer-collapsed-width: 64px;
+  --builder-drawer-hidden-width: 0px;
+}
+
+// Builder theme specific styles
+[data-builder-theme="true"] {
+  // Builder drawer is fixed overlay - no content adjustments needed
+  
+  // Drawer state adjustments - no content margin changes
+  &[data-builder-drawer="collapsed"] {
+    --builder-drawer-width: var(--builder-drawer-collapsed-width);
+  }
+  
+  &[data-builder-drawer="hidden"] {
+    --builder-drawer-width: var(--builder-drawer-hidden-width);
+  }
+  
+  // Mode-specific visual indicators
+  &[data-builder-mode="view"] {
+    .builder-mode-indicator {
+      --mode-color: #67c23a;
+    }
+  }
+  
+  &[data-builder-mode="edit"] {
+    .builder-mode-indicator {
+      --mode-color: #e6a23c;
+    }
+  }
+  
+  &[data-builder-mode="full-admin"] {
+    .builder-mode-indicator {
+      --mode-color: #f56c6c;
+    }
+    
+    // Add subtle border for admin mode
+    .admin-panel {
+      position: relative;
+      
+      &::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border: 3px solid var(--mode-color);
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.5;
+      }
+    }
+  }
+}
+
+// Mobile overrides - builder theme now works on mobile too
+@media (max-width: 768px) {
+  [data-builder-theme="true"] {
+    .admin-content {
+      margin-left: 0 !important;
+    }
+  }
+}
+
+// Dark mode adjustments
+@media (prefers-color-scheme: dark) {
+  [data-builder-theme="true"] {
+    .builder-navigation-drawer {
+      background: var(--el-bg-color-overlay);
+      border-color: var(--el-border-color-darker);
+    }
+    
+    .builder-toolbar {
+      background: rgba(20, 20, 20, 0.95);
+      border-color: var(--el-border-color-darker);
+    }
+  }
+}
+
+// Animation keyframes
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// Builder theme transitions
+.builder-transition-enter-active,
+.builder-transition-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.builder-transition-enter-from {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.builder-transition-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  [data-builder-theme="true"] {
+    .builder-navigation-drawer {
+      border-width: 2px;
+    }
+    
+    .builder-toolbar {
+      border-width: 2px;
+    }
+    
+    .builder-fab {
+      border: 2px solid currentColor;
+    }
+  }
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  [data-builder-theme="true"] {
+    .builder-navigation-drawer,
+    .builder-toolbar,
+    .builder-fab,
+    .admin-content {
+      transition: none;
+    }
+    
+    .builder-transition-enter-active,
+    .builder-transition-leave-active {
+      transition: none;
+    }
+  }
+}

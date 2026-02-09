@@ -17,31 +17,7 @@
           <router-link :to="{name: 'updateProfile'}" @click.stop>{{ $t('Update profile') }}</router-link>
         </el-dropdown-item>
         <ImpersonationSelector v-if="isImpersonating" />
-        <el-dropdown-item
-            v-if="isAdmin"
-            class="privileged-toggle"
-            @click.stop
-        >
-          <div class="privileged-toggle__row">
-            <div class="privileged-toggle__copy">
-              <p class="label">{{ $t('Data scope') }}</p>
-              <p class="hint">{{ $t('Choose what your SDK pulls') }}</p>
-              <el-tag size="small" effect="plain" class="privileged-toggle__tag">{{ $t('Admin only') }}</el-tag>
-            </div>
-            <el-switch
-                v-model="isLoadingDataAsUser"
-                :active-text="$t('Act as user')"
-                :inactive-text="$t('See all data')"
-                :active-value="true"
-                :inactive-value="false"
-                inline-prompt
-                size="large"
-                class="privileged-toggle__switch"
-                @click.stop
-            />
-          </div>
-        </el-dropdown-item>
-        <el-dropdown-item v-if="isAdmin" class="privileged-toggle" id="edit-mode-toggle" @click.stop>
+        <el-dropdown-item v-if="isAdmin && $isMobile" class="privileged-toggle" id="edit-mode-toggle" @click.stop>
           <div class="privileged-toggle__row">
             <div class="privileged-toggle__copy">
               <p class="label">{{ $t('Manager mode') }}</p>

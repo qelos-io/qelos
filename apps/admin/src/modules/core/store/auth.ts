@@ -49,10 +49,16 @@ export const logout = async () => {
   // Clear impersonation on logout
   clearImpersonation();
   
+  // Only try to logout if we have a user session
+  if (authStore.user) {
+    api.post('/api/logout').catch(() => {
+      // Ignore errors during logout - session might already be expired
+    });
+  }
+  
   authStore.user = null
   authStore.isLoaded = false
   authStore.userPromise = null
-  api.post('/api/logout').catch();
 }
 export const updateProfile = async (changes: Partial<IUser>) => {
   authStore.user = await api.post<IUser>('/api/me', changes).then(res => res.data)

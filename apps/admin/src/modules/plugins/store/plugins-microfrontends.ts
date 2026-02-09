@@ -213,6 +213,7 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     modals: computed(() => microFrontends.value.modals),
     cruds,
     openModals: ref([]),
-    hasPages: computed(() => !!microFrontends.value.onlyRoutes?.length)
+    hasPages: computed(() => !!microFrontends.value.onlyRoutes?.length),
+    microFrontends: computed(() => microFrontends.value)
   }
 })

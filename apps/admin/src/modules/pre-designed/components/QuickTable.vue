@@ -26,7 +26,7 @@ const props = defineProps<{
     className?: string,
     type?: 'selection' | 'expand' | 'index' | 'date' | 'datetime' | 'boolean' | 'status' | 'actions' | 'image' | 'tags' | 'link' | 'number' | 'currency' | 'percent' | 'file' | '',
     tag?: string,
-    renderHeader?: (h: any, params: { column: TableColumnCtx<any>, $index: number }) => VNode,
+    renderHeader?: (data: { column: TableColumnCtx<any>, $index: number }) => VNode,
     resizable?: boolean,
     showOverflowTooltip?: boolean
   }>,
@@ -232,9 +232,9 @@ const resetColumns = () => {
 // Helper functions for column types
 
 // Status type helpers
-const getStatusType = (value: any, statusMap?: Record<string, { type: string, label: string }>) => {
-  if (!statusMap) return '';
-  return statusMap[value]?.type || '';
+const getStatusType = (value: any, statusMap?: Record<string, { type: 'primary' | 'success' | 'warning' | 'info' | 'danger', label: string }>) => {
+  if (!statusMap) return 'info' as const;
+  return statusMap[value]?.type || 'info' as const;
 };
 
 const getStatusLabel = (value: any, statusMap?: Record<string, { type: string, label: string }>) => {
@@ -583,7 +583,7 @@ const formatPercent = (value: number, decimals = 2) => {
                   v-for="(tag, i) in get(scope.row, col.prop, [])"
                   :key="i"
                   size="small"
-                  :type="col.tagType || ''"
+                  :type="col.tagType || 'info'"
                   :effect="col.tagEffect || 'light'"
                   class="tag-item"
                 >

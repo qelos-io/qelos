@@ -3,6 +3,7 @@
 @use "templating";
 @use "forms";
 @use "element-ui-rtl";
+@use "builder-theme";
 @import "./dark-theme.css";
 
 // Fix for Element Plus 2.10 tabs position

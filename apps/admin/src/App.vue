@@ -12,6 +12,7 @@ import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microf
 import { usePluginsStore } from './modules/plugins/store/pluginsStore';
 import { usePubSubNotifications } from './modules/core/compositions/pubsub-notifications';
 import { useUsersHeader } from './modules/configurations/store/users-header';
+import { authStore } from './modules/core/store/auth';
 
 // Color parsing constants
 const HEX_COLOR_SHORT_LENGTH = 3;
@@ -68,8 +69,16 @@ const { appConfig, loaded } = useAppConfiguration()
 const vm = getCurrentInstance();
 useUsersHeader()
 
-usePluginsMicroFrontends();
+// Initialize plugins injectables at setup time
 usePluginsInjectables();
+
+// Wait for authentication before initializing plugins micro-frontends
+watch(() => authStore.isLoaded, (loaded) => {
+  if (loaded) {
+    usePluginsMicroFrontends();
+  }
+}, { immediate: true })
+
 const pluginsStore = usePluginsStore(); 
 
 const isAppReady = computed(() => loaded.value && pluginsStore.injectablesLoaded);
