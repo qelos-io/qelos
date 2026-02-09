@@ -86,6 +86,16 @@
           />
         </BuilderNavSection>
       </div>
+      
+      <!-- Footer -->
+      <div class="drawer-footer">
+        <BuilderNavItem
+          icon="fas fa-sign-out-alt"
+          label="Logout"
+          @click="handleLogout"
+          class="logout-item"
+        />
+      </div>
     </div>
   </div>
   
@@ -104,16 +114,18 @@
 
 <script setup lang="ts">
 import { computed, provide } from 'vue';
+import { useRouter } from 'vue-router';
 import { useNavigationDrawer } from '../composables/useNavigationDrawer';
 import { useBuilderTheme } from '../composables/useBuilderTheme';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
-import { isAdmin } from '@/modules/core/store/auth';
+import { isAdmin, authStore, logout } from '@/modules/core/store/auth';
 import BuilderNavSection from './BuilderNavSection.vue';
 import BuilderNavItem from './BuilderNavItem.vue';
 import { storeToRefs } from 'pinia';
 
 const { microFrontends } = storeToRefs(usePluginsMicroFrontends());
 const { shouldShowBuilderTheme } = useBuilderTheme(false);
+const router = useRouter();
 
 // Provide drawer collapsed state to child components
 const { isCollapsed, isHidden } = useNavigationDrawer();
@@ -180,6 +192,16 @@ const collapsedAdminItems = computed(() =>
 const collapsedMfeItems = computed(() => 
   mfeNavItems.value.slice(0, 3)
 );
+
+// Logout handler
+async function handleLogout() {
+  try {
+    await logout();
+    router.push('/login');
+  } catch (error) {
+    console.error('Logout failed:', error);
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -343,6 +365,20 @@ const collapsedMfeItems = computed(() =>
     flex: 1;
     overflow-y: auto;
     padding: 8px;
+  }
+  
+  .drawer-footer {
+    padding: 8px;
+    border-top: 1px solid var(--el-border-color-lighter);
+    
+    .logout-item {
+      color: var(--el-color-danger);
+      
+      &:hover {
+        background: var(--el-color-danger-light-9);
+        color: var(--el-color-danger);
+      }
+    }
   }
 }
 
