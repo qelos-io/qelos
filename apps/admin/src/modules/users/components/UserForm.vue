@@ -33,7 +33,7 @@
             
             <!-- File Upload -->
             <div class="file-upload-row">
-              <FormInput type="file" v-model="editedData.profileImageFile" />
+              <FormInput type="file" v-model="editedData.profileImageFile" :upload-config="{ isImage: true }" />
               <el-button 
                 v-if="editedData.profileImageFile" 
                 type="primary" 

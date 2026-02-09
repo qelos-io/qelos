@@ -39,14 +39,15 @@ export default {
         subheader: '',
         iconUrl: '',
         mainText: '',
-        secondaryText: ''
+        secondaryText: '',
+        isImage: false,
       })
     }
   },
   setup(props, { emit }) {
     const selectedStorage = ref(null)
 
-    const isImage = computed(() => ['jpg', 'jpeg', 'png', 'gif'].includes(props.value?.split?.('.').pop().toLowerCase()))
+    const isImage = computed(() => props.uploadConfig?.isImage || ['jpg', 'jpeg', 'png', 'gif'].includes(props.value?.split?.('.').pop().toLowerCase()))
     const showUploader = ref(!props.value);
 
     return {

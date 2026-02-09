@@ -255,7 +255,7 @@
 </template>
 
 <script lang="ts">
-import { ref, watch, computed, nextTick } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import AssetUploader from '@/modules/assets/components/AssetUploader.vue'
 import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 import IconSelector from '@/modules/core/components/forms/IconSelector.vue';
@@ -403,7 +403,8 @@ export default {
         subheader: '',
         iconUrl: '',
         mainText: '',
-        secondaryText: ''
+        secondaryText: '',
+        isImage: false
       })
     }
   },
