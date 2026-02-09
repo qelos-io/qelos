@@ -191,6 +191,87 @@ const collapsedMfeItems = computed(() =>
   z-index: 2000;
   pointer-events: none;
   
+  // Override all theme variables to use fixed qelos.io theme (white and blue)
+  --el-bg-color: #ffffff;
+  --el-bg-color-page: #f8f9fa;
+  --el-bg-color-overlay: #ffffff;
+  --el-text-color-primary: #1a1a1a;
+  --el-text-color-regular: #4a4a4a;
+  --el-text-color-secondary: #6a6a6a;
+  --el-text-color-placeholder: #9a9a9a;
+  --el-text-color-disabled: #bababa;
+  --el-border-color: #e0e0e0;
+  --el-border-color-light: #d0d0d0;
+  --el-border-color-lighter: #e8e8e8;
+  --el-border-color-extra-light: #f0f0f0;
+  --el-border-color-dark: #d0d0d0;
+  --el-border-color-darker: #c0c0c0;
+  --el-fill-color: #f5f7fa;
+  --el-fill-color-light: #f8f9fa;
+  --el-fill-color-lighter: #fafbfc;
+  --el-fill-color-extra-light: #fcfcfc;
+  --el-fill-color-dark: #f0f2f5;
+  --el-fill-color-darker: #e8eaed;
+  --el-fill-color-blank: transparent;
+  --el-mask-color: rgba(0, 0, 0, 0.5);
+  --el-mask-color-extra-light: rgba(0, 0, 0, 0.2);
+  
+  // Override custom theme variables
+  --body-bg: #ffffff;
+  --main-color: #409eff;
+  --main-color-light: #66b1ff;
+  --text-color: #1a1a1a;
+  --secondary-color: #909399;
+  --third-color: #c6dccc;
+  --link: #409eff;
+  --border-color: #e0e0e0;
+  --inputs-text-color: #1a1a1a;
+  --inputs-bg-color: #ffffff;
+  --nav-bg-color: #ffffff;
+  --negative-color: #f56c6c;
+  --button-text-color: #ffffff;
+  --button-bg-color: #409eff;
+  --focus-color: #409eff;
+  
+  // Override Element Plus component-specific variables
+  --el-color-primary: #409eff;
+  --el-color-primary-light-3: #79bbff;
+  --el-color-primary-light-5: #a0cfff;
+  --el-color-primary-light-7: #c6e2ff;
+  --el-color-primary-light-8: #d9ecff;
+  --el-color-primary-light-9: #ecf5ff;
+  --el-color-primary-dark-2: #337ecc;
+  --el-color-success: #67c23a;
+  --el-color-warning: #e6a23c;
+  --el-color-danger: #f56c6c;
+  --el-color-error: #f56c6c;
+  --el-color-info: #909399;
+  
+  // Input component overrides
+  --el-input-bg-color: var(--inputs-bg-color);
+  --el-input-text-color: var(--inputs-text-color);
+  --el-input-border-color: var(--border-color);
+  --el-input-hover-border-color: var(--main-color);
+  --el-input-focus-border-color: var(--main-color);
+  
+  // Button component overrides
+  --el-button-bg-color: var(--button-bg-color);
+  --el-button-text-color: var(--button-text-color);
+  --el-button-border-color: var(--button-bg-color);
+  
+  // Menu component overrides
+  --el-menu-bg-color: var(--nav-bg-color);
+  --el-menu-text-color: var(--text-color);
+  --el-menu-hover-bg-color: var(--el-fill-color-light);
+  --el-menu-active-color: var(--main-color);
+  
+  // Ensure all nested components use these overrides
+  * {
+    --el-bg-color: #ffffff !important;
+    --el-text-color-primary: #1a1a1a !important;
+    --el-border-color: #e0e0e0 !important;
+  }
+  
   // Remove backdrop - no glass effect
   .drawer-backdrop {
     display: none;
@@ -310,7 +391,7 @@ const collapsedMfeItems = computed(() =>
   top: 50%;
   left: 0;
   transform: translateY(-50%);
-  background: var(--el-color-primary);
+  background: #409eff;
   color: white;
   width: 48px;
   height: 48px;
@@ -319,13 +400,13 @@ const collapsedMfeItems = computed(() =>
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   transition: all 0.3s ease;
   
   &:hover {
     width: 56px;
-    background: var(--el-color-primary-dark-2);
+    background: #66b1ff;
   }
   
   svg {
