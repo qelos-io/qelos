@@ -8,7 +8,7 @@ const usersRoutes = {
     {
       path: '',
       name: 'users',
-      meta: { roles: ['admin'] },
+      meta: { roles: ['admin'], searchQuery: true },
       component: async () => (await import('./Users.vue')).default,
     },
     {
