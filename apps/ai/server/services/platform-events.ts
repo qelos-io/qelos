@@ -73,6 +73,13 @@ export function emitAIProviderErrorEvent(params: BaseEventParams & {
   // Check if this is a rate limit error
   const isRateLimitError = params.error?.status === 429 || params.error?.name === 'RateLimitError';
   
+  // Check if this is specifically a quota exceeded error
+  const isQuotaExceeded = isRateLimitError && (
+    params.error?.code === 'insufficient_quota' || 
+    params.error?.type === 'insufficient_quota' ||
+    (params.error?.message && params.error.message.includes('quota'))
+  );
+  
   // Extract rate limit details from error message if available
   let rateLimitDetails: any = undefined;
   if (isRateLimitError && params.error?.message) {
@@ -87,15 +94,26 @@ export function emitAIProviderErrorEvent(params: BaseEventParams & {
     }
   }
 
+  // Determine event name and description based on error type
+  let eventName, description;
+  if (isQuotaExceeded) {
+    eventName = 'quota_exceeded';
+    description = `${params.provider} API quota exceeded`;
+  } else if (isRateLimitError) {
+    eventName = 'rate_limit_exceeded';
+    description = `${params.provider} rate limit exceeded`;
+  } else {
+    eventName = params.stream ? 'chat_completion_stream_error' : 'chat_completion_error';
+    description = `Failed to execute ${params.provider} chat completion`;
+  }
+
   emitSafePlatformEvent({
     tenant: params.tenant,
     user: params.userId,
     source: `ai_provider:${params.sourceId || params.provider}`,
     kind: 'ai_provider',
-    eventName: isRateLimitError ? 'rate_limit_exceeded' : (params.stream ? 'chat_completion_stream_error' : 'chat_completion_error'),
-    description: isRateLimitError 
-      ? `${params.provider} rate limit exceeded` 
-      : `Failed to execute ${params.provider} chat completion`,
+    eventName,
+    description,
     metadata: {
       provider: params.provider,
       sourceId: params.sourceId,

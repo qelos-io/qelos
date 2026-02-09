@@ -543,23 +543,38 @@ export async function chatCompletion(req: any, res: any | null) {
     });
 
     // Emit platform event for monitoring
+    // Check if this is a quota exceeded error
+    const errorObj = error as any;
+    const isQuotaExceeded = errorObj?.status === 429 && (
+      errorObj?.code === 'insufficient_quota' || 
+      errorObj?.type === 'insufficient_quota' ||
+      (errorObj?.message && errorObj.message.includes('quota'))
+    );
+
     emitPlatformEvent({
       tenant: integration.tenant,
       source: integration._id,
       kind: integration.target.source.kind,
-      eventName: 'ai_chat_completion_failed',
-      description: `AI chat completion failed: ${errorAnalysis.category}`,
+      eventName: isQuotaExceeded ? 'quota_exceeded' : 'ai_chat_completion_failed',
+      description: isQuotaExceeded 
+        ? `${integration.target.source.kind} API quota exceeded`
+        : `AI chat completion failed: ${errorAnalysis.category}`,
       metadata: {
         error: error instanceof Error ? error.message : String(error),
         errorCategory: errorAnalysis.category,
         possibleCauses: errorAnalysis.possibleCauses,
         suggestedFixes: errorAnalysis.suggestedFixes,
         integrationId: integration._id,
-        integrationName: integration.name,
+        integrationName: integration.trigger?.details?.name,
         model: chatOptions.model,
         isStreaming: useSSE,
         hasFunctionCalls: !!chatOptions.tools,
         userId: req.user?._id?.toString(),
+        ...(isQuotaExceeded && {
+          sourceId: integration.target.source._id,
+          sourceName: integration.target.source.name,
+          timestamp: new Date().toISOString()
+        })
       }
     });
 
