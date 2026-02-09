@@ -8,11 +8,13 @@ import { useAppConfiguration } from './modules/configurations/store/app-configur
 import { computed, getCurrentInstance, provide, ref, watch } from 'vue'
 import { translate, loadLanguageAsync } from './plugins/i18n'
 import { usePluginsInjectables } from '@/modules/plugins/store/plugins-injectables';
-import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { usePluginsStore } from './modules/plugins/store/pluginsStore';
 import { usePubSubNotifications } from './modules/core/compositions/pubsub-notifications';
 import { useUsersHeader } from './modules/configurations/store/users-header';
-import { authStore } from './modules/core/store/auth';
+import { usePluginsMicroFrontends } from './modules/plugins/store/plugins-microfrontends';
+
+
+usePluginsMicroFrontends();
 
 // Color parsing constants
 const HEX_COLOR_SHORT_LENGTH = 3;
@@ -71,13 +73,6 @@ useUsersHeader()
 
 // Initialize plugins injectables at setup time
 usePluginsInjectables();
-
-// Wait for authentication before initializing plugins micro-frontends
-watch(() => authStore.isLoaded, (loaded) => {
-  if (loaded) {
-    usePluginsMicroFrontends();
-  }
-}, { immediate: true })
 
 const pluginsStore = usePluginsStore(); 
 

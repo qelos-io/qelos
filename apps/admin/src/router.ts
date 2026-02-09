@@ -89,7 +89,7 @@ router.beforeEach(async (to, from, next) => {
       isAdmin.value ||
       (!to.meta.roles || (to.meta.roles as string[]).some(checkValidRole)) &&
       (!to.meta.workspaceRoles || (to.meta.workspaceRoles as string[]).some(checkValidWsRole)) &&
-      (!to.meta.workspaceLabels?.length || (to.meta.workspaceLabels as string[]).some(checkValidWsLabels))
+      (!to.meta.workspaceLabels || !(to.meta.workspaceLabels as string[]).length || (to.meta.workspaceLabels as string[]).some(checkValidWsLabels))
     ) {
       return next()
     } else {

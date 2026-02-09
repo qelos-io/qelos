@@ -140,6 +140,7 @@ watch(navigationLayout, (layout) => {
   document.body.setAttribute('data-navigation-layout', layout);
 }, { immediate: true });
 
+
 // Builder theme event handlers
 function handlePreviewMode() {
   // Implement preview mode logic

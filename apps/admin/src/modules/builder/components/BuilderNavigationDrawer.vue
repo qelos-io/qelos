@@ -86,18 +86,6 @@
           />
         </BuilderNavSection>
       </div>
-      
-      <!-- Footer -->
-      <div v-if="isExpanded" class="drawer-footer">
-        <div class="shortcuts-hint">
-          <el-tooltip content="Press ⌘K to search" placement="top">
-            <span class="shortcut">⌘K</span>
-          </el-tooltip>
-          <el-tooltip content="Press ⌘B to toggle" placement="top">
-            <span class="shortcut">⌘B</span>
-          </el-tooltip>
-        </div>
-      </div>
     </div>
   </div>
   
@@ -274,33 +262,6 @@ const collapsedMfeItems = computed(() =>
     flex: 1;
     overflow-y: auto;
     padding: 8px;
-  }
-  
-  .drawer-footer {
-    padding: 16px;
-    border-top: 1px solid var(--el-border-color-lighter);
-    
-    .shortcuts-hint {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      
-      .shortcut {
-        padding: 4px 8px;
-        background: var(--el-fill-color-light);
-        border-radius: 4px;
-        font-size: 11px;
-        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-        color: var(--el-text-color-secondary);
-        cursor: help;
-        transition: all 0.2s;
-        
-        &:hover {
-          background: var(--el-fill-color);
-          color: var(--el-text-color-primary);
-        }
-      }
-    }
   }
 }
 

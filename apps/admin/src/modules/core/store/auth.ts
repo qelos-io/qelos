@@ -65,7 +65,7 @@ export const updateProfile = async (changes: Partial<IUser>) => {
 }
 export const fetchAuthUser = async (force: boolean = false, optionalUser: boolean = false) => {
   if (!force && (authStore.user || authStore.userPromise)) {
-    return authStore.userPromise
+    return authStore.userPromise.catch(() => null);
   }
 
   let user;
