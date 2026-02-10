@@ -11,4 +11,8 @@ html[data-dark-mode="true"] {
   .el-button:not([class*="el-button--"]) {
     color: var(--main-color);
   }
+
+  .el-breadcrumb__inner a, .el-breadcrumb__inner.is-link, .el-breadcrumb__inner .breadcrumb-icon {
+    color: var(--negative-link);
+  }
 }

@@ -25,9 +25,4 @@ const isElementPlusIcon = computed(() => {
   margin-right: 5px;
   color: var(--main-color);
 }
-
-/* Dark theme support - use :global() to affect the component in dark mode */
-:global([data-theme="dark"]) .breadcrumb-icon {
-  color: var(--secondary-color);
-}
 </style>
