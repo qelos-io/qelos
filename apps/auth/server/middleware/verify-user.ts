@@ -70,9 +70,6 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       return;
     }
     
-    // Time to refresh the token - mark it as being processed to prevent race conditions
-    await setCookieAsProcessed(payload.tokenIdentifier);
-    
     const newCookieIdentifier = getUniqueId();
     
     // Try to get user with the existing token
@@ -83,6 +80,8 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
         payload.sub,
         payload.tokenIdentifier
       );
+      // Mark as processed AFTER validating token exists but BEFORE updating
+      await setCookieAsProcessed(payload.tokenIdentifier);
     } catch (e) {
       // If user not found, check if token was processed by another request
       if (await isCookieProcessed(payload.tokenIdentifier)) {
