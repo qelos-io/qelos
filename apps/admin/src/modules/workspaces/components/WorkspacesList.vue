@@ -20,6 +20,15 @@
         <el-option :label="$t('Manager')" value="manager" />
         <el-option :label="$t('Member')" value="member" />
       </el-select>
+      <el-button 
+        v-if="canUserCreateWorkspace"
+        type="primary"
+        @click="$router.push({ name: 'createMyWorkspace' })"
+        class="workspaces-list__create-btn"
+      >
+        <el-icon><font-awesome-icon :icon="['fas', 'plus']" /></el-icon>
+        {{ $t('Create Workspace') }}
+      </el-button>
     </div>
 
     <el-empty v-if="filteredWorkspaces.length === 0 && !store.loading" :description="$t('No workspaces found')" />
@@ -126,19 +135,23 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 import { authStore } from '@/modules/core/store/auth';
 import { useAuth } from '@/modules/core/compositions/authentication';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import { toRefs } from 'vue';
 const { user } = useAuth();
 const { t } = useI18n();
 const router = useRouter();
+const route = useRoute();
 const store = useWorkspacesList();
-const searchQuery = ref('');
+const searchQuery = computed(() => route.query.q?.toString());
 const roleFilter = ref('');
 const activatingWorkspace = ref('');
+const { canUserCreateWorkspace } = toRefs(useWsConfiguration());
 
 // Helper functions
 function getUserRole(workspace) {
@@ -237,6 +250,10 @@ store.activate = async (workspace) => {
 
 .workspaces-list__filter {
   width: 150px;
+}
+
+.workspaces-list__create-btn {
+  margin-left: auto;
 }
 
 .workspaces-list__grid {

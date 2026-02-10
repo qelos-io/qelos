@@ -10,6 +10,7 @@ export const workspacesRoutes: RouteRecordRaw = {
     {
       path: "",
       name: "workspaces",
+      meta: {searchQuery: true},
       component: async () => (await import("./MyWorkspaces.vue")).default,
     },
     {
