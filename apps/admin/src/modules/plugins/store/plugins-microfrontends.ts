@@ -196,7 +196,15 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
         }
       })
       if (location.pathname === '/' || !allRoutes[location.pathname]) {
-        router.push(location.pathname + location.search);
+        router.push(location.pathname + location.search).then(() => {
+          if (router.currentRoute.value.matched.length === 0) {
+            if (addedRoutes['404']) {
+              router.push('/404?from=' + location.pathname + location.search);
+            } else {
+              router.push('/')
+            }
+          }
+        })
       }
     }
   }

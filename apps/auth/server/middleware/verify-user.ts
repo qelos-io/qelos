@@ -58,7 +58,8 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
     const created = Number(payload.tokenIdentifier?.split(':')[0]);
     
     // If token is still fresh, no need to verify further
-    if (Date.now() - created < cookieTokenVerificationTime) {
+    const tokenAge = Date.now() - created;
+    if (tokenAge < cookieTokenVerificationTime) {
       setUserPayload(payload, req, res, next);
       return;
     }
@@ -69,7 +70,9 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       return;
     }
     
-    // Time to refresh the token - first mark it as being processed
+    // Time to refresh the token - mark it as being processed to prevent race conditions
+    await setCookieAsProcessed(payload.tokenIdentifier);
+    
     const newCookieIdentifier = getUniqueId();
     
     // Try to get user with the existing token
@@ -96,9 +99,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       throw e;
     }
     
-    // Mark as processed BEFORE updating to prevent race conditions
-    await setCookieAsProcessed(payload.tokenIdentifier);
-    
+    let newToken, newPayload;
     try {
       // Update the token in database
       await updateToken(
@@ -109,15 +110,14 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       );
       
       // Generate new token and set cookie
-      const { token: newToken, payload: newPayload } = getSignedToken(
+      const { token, payload: p } = getSignedToken(
         user,
         payload.workspace,
         newCookieIdentifier,
         String(cookieTokenExpiration)
       );
-
-      setCookie(res, getCookieTokenName(req.headers.tenant), newToken, null, getRequestHost(req));
-      setUserPayload(newPayload, req, res, next);
+      newToken = token;
+      newPayload = p;
     } catch (e) {
       // If update fails, check if another request already processed it
       if (await isCookieProcessed(payload.tokenIdentifier)) {
@@ -131,6 +131,13 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
         tenant: payload.tenant
       });
       throw e;
+    }
+
+    if (newToken && newPayload) {
+      setCookie(res, getCookieTokenName(req.headers.tenant), newToken, null, getRequestHost(req));
+      setUserPayload(newPayload, req, res, next);
+    } else {
+      throw new Error('could not create new token and new payload for user');
     }
   } catch (e) {
     // Log the error but don't fail the request - let user continue with existing token
