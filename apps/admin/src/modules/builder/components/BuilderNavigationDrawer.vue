@@ -118,7 +118,7 @@ import { useRouter } from 'vue-router';
 import { useNavigationDrawer } from '../composables/useNavigationDrawer';
 import { useBuilderTheme } from '../composables/useBuilderTheme';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
-import { isAdmin, authStore, logout } from '@/modules/core/store/auth';
+import { isAdmin, logout } from '@/modules/core/store/auth';
 import BuilderNavSection from './BuilderNavSection.vue';
 import BuilderNavItem from './BuilderNavItem.vue';
 import { storeToRefs } from 'pinia';
@@ -151,6 +151,7 @@ const adminNavItems = computed(() => [
   { path: '/no-code/blueprints', label: 'Blueprints', icon: 'fas fa-database' },
   { path: '/configurations', label: 'Configurations', icon: 'fas fa-gear' },
   { path: '/drafts', label: 'Drafts', icon: 'fas fa-file-lines' },
+  { path: '/admin/log', label: 'Events Log', icon: 'fas fa-clipboard-list' },
   { path: '/assets', label: 'Storage & Assets', icon: 'fas fa-folder-tree' },
   { path: '/plugins', label: 'Plugins', icon: 'fas fa-plug' },
   { path: '/integrations', label: 'Integrations', icon: 'fas fa-link' }

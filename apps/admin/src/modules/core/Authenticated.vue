@@ -50,7 +50,7 @@ import { onBeforeRouteUpdate, useRouter } from 'vue-router'
 import { useAuth, useAuthenticatedIntercept } from './compositions/authentication'
 import Header from './components/layout/Header.vue'
 import Navigation from './components/layout/Navigation.vue'
-import { authStore, isPrivilegedUser, isEditingEnabled } from '@/modules/core/store/auth';
+import { authStore, isPrivilegedUser, isEditingEnabled, isAdmin } from '@/modules/core/store/auth';
 import { isImpersonating, clearImpersonation } from '@/modules/core/store/impersonation';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.vue';
@@ -85,6 +85,7 @@ const currentPageName = computed(() => {
 });
 
 const shouldShowBuilderComponents = computed(() => {
+  if (!isAdmin.value) return false;
   // Show builder components on all pages for admin users on desktop
   // except for specific pages where it shouldn't appear (like login, etc.)
   const excludedRoutes = ['/login', '/register', '/forgot-password'];

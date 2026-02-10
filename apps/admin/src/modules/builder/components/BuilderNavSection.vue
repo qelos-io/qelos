@@ -14,7 +14,7 @@
         <component v-else :is="icon" />
       </el-icon>
       <Transition name="section-title">
-        <span v-if="!isCollapsed" class="section-title">{{ title }}</span>
+        <span v-if="!isCollapsed" class="section-title">{{ $t(title) }}</span>
       </Transition>
       <el-icon 
         v-if="collapsible && !isCollapsed"
@@ -36,7 +36,7 @@
                 v-for="item in collapsedItems"
                 :key="item.path || item.key"
                 class="collapsed-item"
-                :title="item.label"
+                :title="$t(item.label)"
               >
                 <el-icon>
                   <font-awesome-icon 
@@ -59,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, inject } from 'vue';
+import { ref, inject } from 'vue';
 import { ArrowDown } from '@element-plus/icons-vue';
 
 interface Props {
