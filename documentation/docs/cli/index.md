@@ -10,6 +10,7 @@ The Qelos CLI (`@qelos/plugins-cli`) is a command-line interface tool that helps
 
 The CLI provides powerful commands to:
 - **Create** new plugin projects with scaffolding
+- **Get** preview files that would be pushed without actually pushing them
 - **Pull** resources from your Qelos instance to work locally
 - **Push** local changes back to your Qelos instance
 - **Generate** IDE-specific rules files for better AI assistance
@@ -77,6 +78,10 @@ qelos pull connections ./my-connections
 # Generate IDE rules for better AI assistance
 qelos generate rules all
 
+# Preview what will be pushed
+qelos get staged .
+qelos get committed .
+
 # Make changes locally
 
 # Push changes back to Qelos
@@ -93,6 +98,10 @@ qelos push connections ./my-connections
   <div class="vp-feature">
     <h3><a href="/cli/create">Create</a></h3>
     <p>Create a new plugin project with all necessary scaffolding and configuration files.</p>
+  </div>
+  <div class="vp-feature">
+    <h3><a href="/cli/get">Get</a></h3>
+    <p>Preview files that would be pushed to your Qelos instance without actually pushing them.</p>
   </div>
   <div class="vp-feature">
     <h3><a href="/cli/pull">Pull</a></h3>
@@ -161,6 +170,10 @@ qelos pull components ./backups/components-$(date +%Y%m%d)
 qelos pull blueprints ./backups/blueprints-$(date +%Y%m%d)
 qelos pull config ./backups/configs-$(date +%Y%m%d)
 
+# Preview what will be migrated
+qelos get staged ./backups/components-20241109
+qelos get staged ./backups/blueprints-20241109
+
 # Migrate to a new instance
 export QELOS_URL=https://new-instance.com
 qelos push components ./backups/components-20241109
@@ -181,6 +194,7 @@ View help for a specific command:
 
 ```bash
 qelos create --help
+qelos get --help
 qelos pull --help
 qelos push --help
 qelos generate --help

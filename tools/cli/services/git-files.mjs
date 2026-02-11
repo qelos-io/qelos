@@ -73,13 +73,17 @@ function getCommittedFiles() {
 }
 
 /**
- * Get the list of staged files
+ * Get the list of staged files (excluding deleted files)
  * @returns {string[]} Array of file paths
  */
 function getStagedFiles() {
   try {
-    const output = execSync('git diff --cached --name-only', { encoding: 'utf-8' });
-    return output.trim().split('\n').filter(file => file);
+    // Use --name-status to get file status, then filter out deleted files (status D)
+    const output = execSync('git diff --cached --name-status', { encoding: 'utf-8' });
+    return output.trim()
+      .split('\n')
+      .filter(line => line && !line.startsWith('D')) // Skip deleted files
+      .map(line => line.substring(1).trim()); // Remove status prefix and get file path
   } catch (error) {
     logger.error('Failed to get staged files', error);
     throw new Error('Unable to retrieve staged files from git');
@@ -131,10 +135,94 @@ function findReferencingConfigs(refPath, basePath) {
 }
 
 /**
+ * Find plugins that reference a specific HTML file through $ref
+ * @param {string} htmlRelativePath - Relative path of the HTML file from the plugin directory
+ * @param {string} basePath - Base path to search for plugins
+ * @returns {Array} Array of plugin.json file paths that reference the HTML file
+ */
+function findReferencingPlugins(htmlRelativePath, basePath) {
+  const referencingPlugins = [];
+  // Ensure basePath is absolute
+  const absoluteBasePath = path.resolve(basePath);
+  const pluginsDir = path.join(absoluteBasePath, 'plugins');
+  
+  if (!fs.existsSync(pluginsDir)) {
+    return referencingPlugins;
+  }
+  
+  // Get all plugin directories and .plugin.json files in the plugins directory
+  const pluginDirs = fs.readdirSync(pluginsDir, { withFileTypes: true })
+    .filter(dirent => dirent.isDirectory())
+    .map(dirent => dirent.name);
+  
+  // Also check for .plugin.json files directly in the plugins directory
+  const pluginFiles = fs.readdirSync(pluginsDir)
+    .filter(file => file.endsWith('.plugin.json'));
+  
+  // Check plugin files in subdirectories
+  for (const pluginDir of pluginDirs) {
+    const pluginJsonPath = path.join(pluginsDir, pluginDir, 'plugin.json');
+    
+    if (fs.existsSync(pluginJsonPath)) {
+      try {
+        const content = fs.readFileSync(pluginJsonPath, 'utf-8');
+        const plugin = JSON.parse(content);
+        
+        // Check all $ref references in the plugin
+        const refs = findAllRefs(plugin);
+        
+        // Check if any ref matches our target HTML file
+        // The ref might be like "./micro-frontends/categories.html"
+        for (const ref of refs) {
+          if (ref.includes(htmlRelativePath) || ref.endsWith(path.basename(htmlRelativePath))) {
+            if (!referencingPlugins.includes(pluginJsonPath)) {
+              referencingPlugins.push(pluginJsonPath);
+            }
+            logger.debug(`Plugin ${pluginDir} references HTML file: ${ref}`);
+            break;
+          }
+        }
+      } catch (error) {
+        logger.warning(`Error reading plugin.json ${pluginJsonPath}: ${error.message}`);
+      }
+    }
+  }
+  
+  // Check .plugin.json files directly in plugins directory
+  for (const pluginFile of pluginFiles) {
+    const pluginJsonPath = path.join(pluginsDir, pluginFile);
+    
+    try {
+      const content = fs.readFileSync(pluginJsonPath, 'utf-8');
+      const plugin = JSON.parse(content);
+      
+      // Check all $ref references in the plugin
+      const refs = findAllRefs(plugin);
+      
+      // Check if any ref matches our target HTML file
+      // The ref might be like "./micro-frontends/categories.html"
+      for (const ref of refs) {
+        if (ref.includes(htmlRelativePath) || ref.endsWith(path.basename(htmlRelativePath))) {
+          if (!referencingPlugins.includes(pluginJsonPath)) {
+            referencingPlugins.push(pluginJsonPath);
+          }
+          logger.debug(`Plugin ${pluginFile} references HTML file: ${ref}`);
+          break;
+        }
+      }
+    } catch (error) {
+      logger.warning(`Error reading plugin.json ${pluginJsonPath}: ${error.message}`);
+    }
+  }
+  
+  return referencingPlugins;
+}
+
+/**
  * Find integration files that reference a specific file via $ref
- * @param {string} refPath - The referenced file path (relative)
+ * @param {string} refPath - Reference path to look for
  * @param {string} basePath - Base path to search for integrations
- * @returns {string[]} Array of integration file paths that reference the file
+ * @returns {Array} Array of integration file paths that reference the target
  */
 function findReferencingIntegrations(refPath, basePath) {
   const referencingIntegrations = [];
@@ -240,21 +328,23 @@ function classifyFiles(files, basePath) {
     const basename = path.basename(fullPath, ext);
 
     // Check for specific file types
-    if (relativePath.includes('components/') && ext === '.vue') {
+    if (relativePath.startsWith('components/') && ext === '.vue') {
       classified.components.push(fullPath);
-    } else if (relativePath.includes('blueprints/') && ext === '.json') {
+    } else if (relativePath.startsWith('blueprints/') && ext === '.json') {
       classified.blueprints.push(fullPath);
-    } else if (relativePath.includes('configs/') && ext === '.json') {
+    } else if (relativePath.startsWith('configs/') && ext === '.json') {
       classified.configs.push(fullPath);
-    } else if (relativePath.includes('plugins/') && ext === '.json') {
-      classified.plugins.push(fullPath);
-    } else if (relativePath.includes('blocks/') && ext === '.json') {
+    } else if (relativePath.startsWith('plugins/') && ext === '.json') {
+      if (!classified.plugins.includes(fullPath)) {
+        classified.plugins.push(fullPath);
+      }
+    } else if (relativePath.startsWith('blocks/') && ext === '.json') {
       classified.blocks.push(fullPath);
-    } else if (relativePath.includes('integrations/') && ext === '.json') {
+    } else if (relativePath.startsWith('integrations/') && ext === '.json') {
       classified.integrations.push(fullPath);
-    } else if (relativePath.includes('connections/') && ext === '.json') {
+    } else if (relativePath.startsWith('connections/') && ext === '.json') {
       classified.connections.push(fullPath);
-    } else if (dir.includes('prompts') && ext === '.md') {
+    } else if (relativePath.startsWith('integrations/prompts/') && ext === '.md') {
       // Find integrations that reference this prompt file
       classified.prompts.push(fullPath);
       
@@ -277,7 +367,7 @@ function classifyFiles(files, basePath) {
       // 2. In configs directory -> These are typically referenced by configs, not pushed directly
       // 3. Other locations -> treat as micro-frontends
       
-      if (relativePath.includes('configs/') || relativePath.includes('configs\\')) {
+      if (relativePath.startsWith('configs/') || relativePath.startsWith('configs\\')) {
         // HTML file in configs directory - these are usually referenced by config files, not pushed directly
         logger.debug(`Found HTML file in configs directory (will be pushed via referencing config): ${relativePath}`);
         
@@ -296,44 +386,41 @@ function classifyFiles(files, basePath) {
         // Find plugins that contain this HTML file (micro-frontends)
         classified.microFrontends.push(fullPath);
         
-        // For HTML files, we need to find which plugin contains them
-        // HTML files in plugins are typically part of the plugin structure
-        let pluginDir = path.dirname(fullPath);
-        let pluginJson = path.join(pluginDir, 'plugin.json');
+        // For HTML files, we need to find which plugin references them
+        // The HTML file should be in a micro-frontends directory within a plugin
+        const htmlBasename = path.basename(fullPath);
         
-        // If the file is in a temp path or unusual location, try to find the actual plugin
-        if (!fs.existsSync(pluginJson)) {
-          // Check if we're in a micro-frontends subdirectory
-          if (path.basename(pluginDir) === 'micro-frontends' || 
-              relativePath.includes('micro-frontends/') ||
-              relativePath.includes('micro-frontends\\')) {
-            // Go up one more level to find the plugin directory
-            pluginDir = path.dirname(pluginDir);
-            pluginJson = path.join(pluginDir, 'plugin.json');
+        // Try to find plugins that reference this HTML file
+        // The ref path should be relative to the plugin directory
+        // e.g., "./micro-frontends/categories.html"
+        let refPath = `./micro-frontends/${htmlBasename}`;
+        
+        // If the file is in a nested path, preserve that structure
+        if (relativePath.startsWith('plugins/micro-frontends/')) {
+          const parts = relativePath.split('plugins/micro-frontends/');
+          if (parts[1]) {
+            refPath = `./micro-frontends/${parts[1]}`;
           }
-          
-          // If still not found, try searching for plugin.json in parent directories
-          if (!fs.existsSync(pluginJson)) {
-            let searchDir = pluginDir;
-            for (let i = 0; i < 3; i++) { // Search up to 3 levels up
-              searchDir = path.dirname(searchDir);
-              const testPluginJson = path.join(searchDir, 'plugin.json');
-              if (fs.existsSync(testPluginJson)) {
-                pluginJson = testPluginJson;
-                break;
-              }
-            }
+        } else if (relativePath.includes('micro-frontends/')) {
+          // Handle other micro-frontends paths
+          const parts = relativePath.split('micro-frontends/');
+          if (parts[1]) {
+            refPath = `./micro-frontends/${parts[1]}`;
           }
         }
         
-        if (fs.existsSync(pluginJson)) {
-          // This HTML file is part of a plugin
-          if (!classified.plugins.includes(pluginJson)) {
-            classified.plugins.push(pluginJson);
-            logger.debug(`Found plugin containing HTML ${relativePath}: ${path.basename(pluginJson)}`);
+        const referencingPlugins = findReferencingPlugins(refPath, basePath);
+        
+        // Add all referencing plugins to the classified list
+        for (const pluginPath of referencingPlugins) {
+          if (!classified.plugins.includes(pluginPath)) {
+            classified.plugins.push(pluginPath);
+            logger.debug(`Found plugin referencing HTML ${relativePath}: ${path.basename(pluginPath)}`);
           }
-        } else {
-          logger.warning(`Could not find plugin.json for HTML file: ${relativePath}`);
+        }
+        
+        if (referencingPlugins.length === 0) {
+          logger.warning(`Could not find any plugin referencing HTML file: ${relativePath} (searched for ref: ${refPath})`);
         }
       }
     } else {
