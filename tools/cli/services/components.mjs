@@ -186,3 +186,5 @@ export async function pullComponents(sdk, targetPath) {
   logger.info(`Saved components.json with metadata`);
   logger.info(`Pulled ${filteredComponentsInformation.length} component(s)`);
 }
+
+export { listVueFilesRecursively };

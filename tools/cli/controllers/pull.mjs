@@ -39,8 +39,8 @@ export default async function pullController({ type, path: targetPath = './' }) 
         { name: 'configs', fn: pullConfigurations },
         { name: 'plugins', fn: pullPlugins },
         { name: 'blocks', fn: pullBlocks },
+        { name: 'connections', fn: pullConnections },
         { name: 'integrations', fn: pullIntegrations },
-        { name: 'connections', fn: pullConnections }
       ];
 
       for (const { name, fn } of types) {

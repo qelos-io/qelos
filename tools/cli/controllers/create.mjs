@@ -1,5 +1,5 @@
 import follow from "follow-redirects";
-import cliSelect from "cli-select";
+import { interactiveSelect } from "../services/interactive-select.mjs";
 import { blue } from "../utils/colors.mjs";
 import DecompressZip from "decompress-zip";
 import { join } from "node:path";
@@ -53,7 +53,7 @@ export default async function createController({ name, boilerplate }) {
   } else {
     console.log(blue("Choose a boilerplate:"));
     try {
-      const project = await cliSelect({
+      const project = await interactiveSelect({
         values: {
           vanilla: "Vanilla",
           vue: "Vue",
@@ -62,12 +62,14 @@ export default async function createController({ name, boilerplate }) {
           more: "Show more",
           custom: "Custom from Github",
         },
+        message: "Choose a boilerplate:"
       });
       repository = project.id;
 
       if (repository === "more") {
-        const selected = await cliSelect({
+        const selected = await interactiveSelect({
           values: await getOrgReposNames(organization),
+          message: "Choose a repository:"
         });
         repository = selected.id;
       } else if (repository === "custom") {

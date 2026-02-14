@@ -90,6 +90,10 @@ qelos push blueprints ./my-blueprints
 qelos push config ./my-configs
 qelos push integrations ./my-integrations
 qelos push connections ./my-connections
+
+# Push with hard flag to remove remote resources that don't exist locally
+qelos push components ./my-components --hard
+qelos push all ./my-project --hard
 ```
 
 ## Commands
@@ -109,7 +113,7 @@ qelos push connections ./my-connections
   </div>
   <div class="vp-feature">
     <h3><a href="/cli/push">Push</a></h3>
-    <p>Push local resources back to your Qelos instance to update or create new items.</p>
+    <p>Push local resources back to your Qelos instance to update or create new items. Use the <code>--hard</code> flag to remove remote resources that don't exist locally.</p>
   </div>
   <div class="vp-feature">
     <h3><a href="/cli/generate">Generate Rules</a></h3>
@@ -231,3 +235,4 @@ If you encounter file permission errors:
 - [SDK Installation](/sdk/installation) - Install the Qelos SDK for programmatic access
 - [Plugin Development](/plugins/create) - Learn how to create plugins
 - [Components](/pre-designed-frontends/components/) - Learn about Qelos components
+- [Hard Push Flag](/cli/hard-push) - Learn about the --hard flag for synchronizing environments

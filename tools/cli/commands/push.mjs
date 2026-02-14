@@ -16,6 +16,12 @@ export default function pushCommand(program) {
             type: 'string',
             required: true
           })
+          .option('hard', {
+            alias: 'h',
+            type: 'boolean',
+            describe: 'Hard push: remove resources from Qelos that don\'t exist locally (only for components, integrations, plugins, blueprints when pushing a directory)',
+            default: false
+          })
       },
       pushController)
 }

@@ -642,6 +642,59 @@ testimonials.vue   →  identifier: "testimonials"
 
 ## Options
 
+### --hard (alias: -h)
+
+⚠️ **Destructive Operation** - Removes resources from Qelos that don't exist locally.
+
+The `--hard` flag synchronizes your Qelos environment with your local repository by:
+1. Comparing local files with remote resources
+2. Showing what will be removed
+3. Asking for confirmation
+4. Pushing local changes first
+5. Removing excess remote resources
+
+**Only available for**: `components`, `blueprints`, `plugins`, `integrations`, `all`, `*`
+**Only works with**: Directories (not single files)
+
+```bash
+# Remove remote components that don't exist locally
+qelos push components ./components --hard
+
+# Remove all types of resources that don't exist locally
+qelos push all ./my-project --hard
+```
+
+**Example with --hard flag:**
+```
+ℹ Checking for resources to remove...
+
+⚠️  WARNING: You are using the --hard flag
+This will permanently remove resources from Qelos that don't exist locally.
+
+The following resources will be removed:
+  - components: old-component
+  - components: unused-component
+
+Do you want to continue?
+(•) No (default)
+( ) Yes, remove them
+
+ℹ Will remove 2 components after push completes
+
+Pushing components from ./components
+ℹ Found 5 component(s) to push
+→ Pushing component: active-component
+✓ Updated: active-component
+...
+ℹ Pushed 5 component(s)
+✓ Successfully pushed components
+ℹ Removed components: old-component
+ℹ Removed components: unused-component
+✓ Removed 2 resources that no longer exist locally
+```
+
+For detailed information, see the [Hard Push Flag documentation](/cli/hard-push).
+
 View all available options:
 
 ```bash
@@ -842,6 +895,7 @@ find ./components -name "*.vue" -type f
 
 - [Pull Command](/cli/pull) - Pull resources from Qelos
 - [Create Command](/cli/create) - Create a new plugin project
+- [Hard Push Flag](/cli/hard-push) - Learn about the --hard flag for synchronizing environments
 
 ## Related Resources
 

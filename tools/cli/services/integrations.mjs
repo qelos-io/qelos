@@ -6,6 +6,7 @@ import { extractIntegrationContent, resolveReferences } from './file-refs.mjs';
 const INTEGRATION_FILE_EXTENSION = '.integration.json';
 const INTEGRATIONS_API_PATH = '/api/integrations';
 const SERVER_ONLY_FIELDS = ['tenant', 'plugin', 'user', 'created', 'updated', '__v'];
+const CONNECTION_FILE_EXTENSION = '.connection.json';
 
 function slugify(value = '') {
   return value
@@ -101,6 +102,136 @@ async function fetchIntegrations(sdk) {
   return sdk.callJsonApi(INTEGRATIONS_API_PATH);
 }
 
+/**
+ * Load all connection files and create a map of _id to file path
+ * @param {string} basePath - Base path to search for connection files
+ * @returns {Map<string, string>} Map of connection ID to relative file path
+ */
+function loadConnectionIdMap(basePath) {
+  const connectionMap = new Map();
+  
+  // Check if connections directory exists
+  const connectionsPath = join(basePath, 'connections');
+  if (!fs.existsSync(connectionsPath)) {
+    logger.warning('Connections directory not found, connection references will not be mapped');
+    return connectionMap;
+  }
+  
+  try {
+    const connectionFiles = fs.readdirSync(connectionsPath)
+      .filter(file => file.endsWith(CONNECTION_FILE_EXTENSION));
+    
+    for (const file of connectionFiles) {
+      const filePath = join(connectionsPath, file);
+      try {
+        const connectionData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+        if (connectionData._id) {
+          // Store relative path from the integrations directory
+          const relativePath = `./connections/${file}`;
+          connectionMap.set(connectionData._id, relativePath);
+          logger.debug(`Mapped connection ID ${connectionData._id} to ${relativePath}`);
+        }
+      } catch (error) {
+        logger.warning(`Failed to read connection file ${file}: ${error.message}`);
+      }
+    }
+    
+    logger.info(`Loaded ${connectionMap.size} connection mappings`);
+  } catch (error) {
+    logger.error('Failed to load connection files', error);
+  }
+  
+  return connectionMap;
+}
+
+/**
+ * Replace connection IDs with $refId objects in an integration
+ * @param {Object} integration - Integration object
+ * @param {Map<string, string>} connectionMap - Map of connection ID to file path
+ * @returns {Object} Integration with connection IDs replaced by $refId objects
+ */
+function replaceConnectionIds(integration, connectionMap) {
+  const updated = JSON.parse(JSON.stringify(integration));
+  
+  // Replace trigger.source if it's a connection ID
+  if (updated.trigger?.source && typeof updated.trigger.source === 'string') {
+    const connectionPath = connectionMap.get(updated.trigger.source);
+    if (connectionPath) {
+      updated.trigger.source = { $refId: connectionPath };
+      logger.debug(`Replaced trigger.source ${integration.trigger.source} with ${connectionPath}`);
+    }
+  }
+  
+  // Replace target.source if it's a connection ID
+  if (updated.target?.source && typeof updated.target.source === 'string') {
+    const connectionPath = connectionMap.get(updated.target.source);
+    if (connectionPath) {
+      updated.target.source = { $refId: connectionPath };
+      logger.debug(`Replaced target.source ${integration.target.source} with ${connectionPath}`);
+    }
+  }
+  
+  return updated;
+}
+
+/**
+ * Resolve $refId objects to actual connection IDs
+ * @param {Object} integration - Integration object with potential $refId references
+ * @param {string} basePath - Base path for resolving connection files
+ * @returns {Object} Integration with $refId objects resolved to IDs
+ */
+function resolveConnectionReferences(integration, basePath) {
+  const updated = JSON.parse(JSON.stringify(integration));
+  
+  // Resolve trigger.source if it's a $refId object
+  if (updated.trigger?.source && typeof updated.trigger.source === 'object' && updated.trigger.source.$refId) {
+    const connectionPath = updated.trigger.source.$refId;
+    const fullConnectionPath = join(basePath, connectionPath);
+    
+    try {
+      if (fs.existsSync(fullConnectionPath)) {
+        const connectionData = JSON.parse(fs.readFileSync(fullConnectionPath, 'utf-8'));
+        if (connectionData._id) {
+          updated.trigger.source = connectionData._id;
+          logger.debug(`Resolved trigger.source ${connectionPath} to ID ${connectionData._id}`);
+        } else {
+          throw new Error('Connection file missing _id field');
+        }
+      } else {
+        throw new Error(`Connection file not found: ${fullConnectionPath}`);
+      }
+    } catch (error) {
+      logger.error(`Failed to resolve trigger.source reference ${connectionPath}: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  // Resolve target.source if it's a $refId object
+  if (updated.target?.source && typeof updated.target.source === 'object' && updated.target.source.$refId) {
+    const connectionPath = updated.target.source.$refId;
+    const fullConnectionPath = join(basePath, connectionPath);
+    
+    try {
+      if (fs.existsSync(fullConnectionPath)) {
+        const connectionData = JSON.parse(fs.readFileSync(fullConnectionPath, 'utf-8'));
+        if (connectionData._id) {
+          updated.target.source = connectionData._id;
+          logger.debug(`Resolved target.source ${connectionPath} to ID ${connectionData._id}`);
+        } else {
+          throw new Error('Connection file missing _id field');
+        }
+      } else {
+        throw new Error(`Connection file not found: ${fullConnectionPath}`);
+      }
+    } catch (error) {
+      logger.error(`Failed to resolve target.source reference ${connectionPath}: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  return updated;
+}
+
 async function createIntegration(sdk, payload) {
   return sdk.callJsonApi(INTEGRATIONS_API_PATH, {
     method: 'post',
@@ -138,13 +269,19 @@ export async function pullIntegrations(sdk, targetPath) {
 
   logger.info(`Found ${integrations.length} integration(s) to pull`);
 
+  // Load connection ID mappings before processing integrations
+  const connectionMap = loadConnectionIdMap(targetPath);
+
   const usedNames = new Set();
   integrations.forEach((integration, index) => {
     const fileName = buildFileName(integration, index, usedNames);
     const filePath = join(targetPath, fileName);
     
+    // Replace connection IDs with $refId references
+    const integrationWithRefs = replaceConnectionIds(integration, connectionMap);
+    
     // Extract content to files for AI agents
-    const processedIntegration = extractIntegrationContent(integration, targetPath, fileName);
+    const processedIntegration = extractIntegrationContent(integrationWithRefs, targetPath, fileName);
     
     writeIntegrationFile(filePath, sanitizeIntegrationForFile(processedIntegration));
     logger.step(`Pulled: ${getIntegrationDisplayName(integration) || integration._id || fileName}`);
@@ -178,8 +315,11 @@ export async function pushIntegrations(sdk, path, options = {}) {
       const integrationData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
       validateIntegrationPayload(integrationData, file);
       
+      // Resolve $refId objects to actual connection IDs
+      const integrationWithResolvedRefs = resolveConnectionReferences(integrationData, path);
+      
       // Resolve any $ref references in the integration
-      const resolvedIntegration = await resolveReferences(integrationData, path);
+      const resolvedIntegration = await resolveReferences(integrationWithResolvedRefs, path);
       
       const payload = toRequestPayload(resolvedIntegration);
       const displayName = getIntegrationDisplayName(resolvedIntegration) || file.replace(INTEGRATION_FILE_EXTENSION, '');
@@ -199,8 +339,12 @@ export async function pushIntegrations(sdk, path, options = {}) {
       // This ensures pre_messages are stored as prompt md files after pushing
       const processedResponse = extractIntegrationContent(response, path, file);
       
+      // Replace connection IDs with $refId objects again for the stored file
+      const connectionMap = loadConnectionIdMap(path);
+      const finalIntegration = replaceConnectionIds(processedResponse, connectionMap);
+      
       // Persist returned integration (with _id) back to disk
-      writeIntegrationFile(filePath, sanitizeIntegrationForFile(processedResponse));
+      writeIntegrationFile(filePath, sanitizeIntegrationForFile(finalIntegration));
       
       results.push({ status: 'fulfilled' });
     } catch (error) {
@@ -220,3 +364,6 @@ export async function pushIntegrations(sdk, path, options = {}) {
 
   logger.info(`Pushed ${integrationFiles.length} integration(s)`);
 }
+
+// Export helper functions for testing
+export { loadConnectionIdMap, replaceConnectionIds, resolveConnectionReferences };
