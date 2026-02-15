@@ -294,5 +294,6 @@ Use `--verbose` to see:
 
 - [CLI Overview](/cli/) - Main CLI documentation
 - [Pull Command](/cli/pull) - Pull integrations to work with them locally
-- [SDK Documentation](/sdk/) - Programmatic access to Qelos features
-- [AI Integration](/ai/) - Learn about AI integrations in Qelos
+- [SDK Installation](/sdk/installation) - Programmatic access to Qelos features
+- [AI SDK Operations](/sdk/ai_operations) - Learn about AI operations in the SDK
+- [Token Usage Tracking](/ai/token-usage-tracking) - Learn about AI usage tracking

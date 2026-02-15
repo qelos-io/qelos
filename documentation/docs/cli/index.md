@@ -248,4 +248,4 @@ If you encounter file permission errors:
 - [Plugin Development](/plugins/create) - Learn how to create plugins
 - [Components](/pre-designed-frontends/components/) - Learn about Qelos components
 - [Hard Push Flag](/cli/hard-push) - Learn about the --hard flag for synchronizing environments
-- [AI Integration](/ai/) - Learn about AI integrations in Qelos
+- [Token Usage Tracking](/ai/token-usage-tracking) - Learn about AI usage tracking

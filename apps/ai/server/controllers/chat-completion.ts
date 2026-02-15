@@ -388,7 +388,7 @@ export async function chatCompletion(req: any, res: any | null) {
         if (vectorStoreIds.length > 0) {
           tools.unshift({
             type: "file_search",
-            vector_store_ids: vectorStoreIds,
+            vector_store_ids: Array.from(new Set(vectorStoreIds)),
           });
         }
       }
