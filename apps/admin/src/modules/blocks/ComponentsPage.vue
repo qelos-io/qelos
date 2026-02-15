@@ -3,7 +3,7 @@
     <ListPageTitle
       title="Components" 
       description="Components are reusable Vue elements that can be used across your application. Create and manage custom components here."
-      :create-route-name="'createComponent'"
+      create-route="createComponent"
     />
     
     <el-card class="components-list-card">
