@@ -14,6 +14,7 @@ The CLI provides powerful commands to:
 - **Pull** resources from your Qelos instance to work locally
 - **Push** local changes back to your Qelos instance
 - **Generate** IDE-specific rules files for better AI assistance
+- **Agent** interact with AI agents via command line with conversation support
 - Manage components, blueprints, configurations, integrations, connections, plugins, and blocks
 
 ## Installation
@@ -94,6 +95,11 @@ qelos push connections ./my-connections
 # Push with hard flag to remove remote resources that don't exist locally
 qelos push components ./my-components --hard
 qelos push all ./my-project --hard
+
+# Interact with AI agents
+qelos agent moshe --message "Hello, how can you help me?"
+echo "What's the weather?" | qelos agent weather-agent --stream
+qelos agent assistant --log conversation.json --export response.md
 ```
 
 ## Commands
@@ -118,6 +124,10 @@ qelos push all ./my-project --hard
   <div class="vp-feature">
     <h3><a href="/cli/generate">Generate Rules</a></h3>
     <p>Generate IDE-specific rules files to help AI assistants understand your Qelos project structure.</p>
+  </div>
+  <div class="vp-feature">
+    <h3><a href="/cli/agent">Agent</a></h3>
+    <p>Interact with AI agents using the Qelos SDK with support for conversation history, streaming, and response export.</p>
   </div>
 </div>
 
@@ -202,6 +212,7 @@ qelos get --help
 qelos pull --help
 qelos push --help
 qelos generate --help
+qelos agent --help
 ```
 
 ## Troubleshooting
@@ -232,7 +243,9 @@ If you encounter file permission errors:
 
 ## Related Resources
 
+- [Agent Command](/cli/agent) - Interact with AI agents via command line
 - [SDK Installation](/sdk/installation) - Install the Qelos SDK for programmatic access
 - [Plugin Development](/plugins/create) - Learn how to create plugins
 - [Components](/pre-designed-frontends/components/) - Learn about Qelos components
 - [Hard Push Flag](/cli/hard-push) - Learn about the --hard flag for synchronizing environments
+- [AI Integration](/ai/) - Learn about AI integrations in Qelos

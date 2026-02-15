@@ -111,7 +111,7 @@ function loadConnectionIdMap(basePath) {
   const connectionMap = new Map();
   
   // Check if connections directory exists
-  const connectionsPath = join(basePath, 'connections');
+  const connectionsPath = join(basePath, '../connections');
   if (!fs.existsSync(connectionsPath)) {
     logger.warning('Connections directory not found, connection references will not be mapped');
     return connectionMap;

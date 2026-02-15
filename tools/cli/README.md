@@ -115,6 +115,119 @@ Component pushed: new-component
 All components pushed
 ```
 
+### Agent
+
+Interact with AI agents using the Qelos SDK directly from your command line.
+
+**Syntax:**
+```bash
+qelos agent [integrationId] [options]
+```
+
+**Arguments:**
+- `integrationId` - Integration ObjectId or name (case-insensitive)
+
+**Key Options:**
+- `-m, --message` - Message to send (or pipe from stdin)
+- `-s, --stream` - Real-time streaming responses
+- `-j, --json` - JSON output format
+- `-l, --log` - Maintain conversation history in file
+- `-e, --export` - Save response to file
+- `-t, --thread` - Thread ID for conversation continuity
+- `-V, --verbose` - Detailed logging
+
+**Integration Identification:**
+
+You can specify integrations in two ways:
+
+1. **Using ObjectId** (24-character hex string):
+   ```bash
+   qelos agent 692876602b6e9881b2311514 --message "Hello"
+   ```
+
+2. **Using Integration Name** (case-insensitive):
+   ```bash
+   qelos agent moshe --message "Hello"
+   ```
+
+When using a name, the command automatically searches for an `integrations` folder in the current directory and up to 5 parent directories, looking for `.integration.json` files with matching `trigger.details.name` fields.
+
+**Examples:**
+
+Basic usage with integration name:
+```bash
+qelos agent moshe --message "Hello, how are you?"
+```
+
+Using ObjectId:
+```bash
+qelos agent 692876602b6e9881b2311514 --message "Hello"
+```
+
+From stdin:
+```bash
+echo "What's the weather?" | qelos agent moshe
+```
+
+Streaming with export:
+```bash
+qelos agent moshe --stream --export response.txt --message "Tell me a story"
+```
+
+Conversation logging (maintains context across messages):
+```bash
+echo "My name is David" | qelos agent moshe --log chat.json
+echo "What's my name?" | qelos agent moshe --log chat.json
+```
+
+JSON output:
+```bash
+qelos agent moshe --json --export api.json --message "API info"
+```
+
+Thread support:
+```bash
+qelos agent moshe --thread thread-123 --message "Continue conversation"
+```
+
+Verbose mode (shows name resolution process):
+```bash
+qelos agent moshe --verbose --message "Show me your verbose output"
+```
+
+**Features:**
+- **Smart Integration Resolution**: Use either ObjectIds or integration names
+- **Conversation History**: Maintain context across multiple messages with `--log`
+- **Streaming Support**: Real-time response streaming with `--stream`
+- **Export Options**: Save responses in various formats with `--export`
+- **Thread Support**: Continue specific conversation threads with `--thread`
+- **Flexible Input**: Use `--message` flag or pipe from stdin
+
+**Log File Format:**
+Conversation logs are stored as JSON arrays:
+```json
+[
+  {
+    "role": "user",
+    "content": "Hello, my name is David"
+  },
+  {
+    "role": "assistant", 
+    "content": "Hello David! Nice to meet you."
+  }
+]
+```
+
+**Error Handling:**
+If an integration name isn't found, you'll see:
+```
+Error: Could not find integration with name "nonexistent"
+Make sure:
+1. The integration name matches exactly (case-insensitive)
+2. You are in a project directory with an "integrations" folder
+3. The integration file has a .integration.json extension
+```
+
 ### Workflow Example
 
 A typical workflow for working with components:

@@ -12,6 +12,7 @@ import pullCommand from './commands/pull.mjs';
 import generateCommand from './commands/generate.mjs';
 import blueprintsCommand from './commands/blueprints.mjs';
 import getCommand from './commands/get.mjs';
+import agentCommand from './commands/agent.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const program = yargs(hideBin(process.argv));
@@ -30,5 +31,6 @@ pullCommand(program)
 generateCommand(program)
 blueprintsCommand(program)
 getCommand(program)
+agentCommand(program)
 
 program.help().argv;
