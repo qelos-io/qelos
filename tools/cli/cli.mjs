@@ -13,6 +13,8 @@ import generateCommand from './commands/generate.mjs';
 import blueprintsCommand from './commands/blueprints.mjs';
 import getCommand from './commands/get.mjs';
 import agentCommand from './commands/agent.mjs';
+import { loadEnv } from './services/load-env.mjs';
+import { loadConfig } from './services/load-config.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const program = yargs(hideBin(process.argv));
@@ -24,6 +26,30 @@ program.option('verbose', {
   type: 'boolean',
   description: 'Run with verbose logging'
 });
+
+program.option('env', {
+  alias: 'e',
+  type: 'string',
+  description: 'Load .env.[ENV] file (e.g. --env production loads .env.production)'
+});
+
+program.option('config', {
+  alias: 'C',
+  type: 'string',
+  description: 'Path to config file (auto-discovers qelos.config.json / qelos.config.yaml)'
+});
+
+program.option('save', {
+  alias: 'S',
+  type: 'boolean',
+  description: 'Save current command options to qelos.config.json'
+});
+
+// Auto-load .env files and config via middleware (runs before any command handler)
+program.middleware((argv) => {
+  loadEnv({ envSuffix: argv.env, verbose: argv.verbose });
+  loadConfig({ configPath: argv.config, verbose: argv.verbose });
+}, true); // true = run before validation
 
 createCommand(program)
 pushCommand(program)

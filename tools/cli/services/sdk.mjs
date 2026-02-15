@@ -1,11 +1,15 @@
 import { createJiti } from "jiti";
 import { logger } from "./logger.mjs";
+import { getConfig } from "./load-config.mjs";
 
 const jiti = createJiti(import.meta.url);
 
-export const appUrl = process.env.QELOS_URL || "http://localhost:3000";
+export function getAppUrl() {
+  return process.env.QELOS_URL || getConfig()?.qelosUrl || "http://localhost:3000";
+}
 
 export async function initializeSdk() {
+  const appUrl = getAppUrl();
   const username = process.env.QELOS_USERNAME || "test@test.com";
   const password = process.env.QELOS_PASSWORD || "admin";
   try {

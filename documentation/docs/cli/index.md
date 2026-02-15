@@ -34,14 +34,33 @@ qelos --version
 qplay --version
 ```
 
+## Global Options
+
+These options are available for all commands:
+
+| Option | Alias | Type | Description |
+|--------|-------|------|-------------|
+| `--verbose` | `-V` | boolean | Run with verbose logging |
+| `--env` | `-e` | string | Load `.env.[ENV]` file (e.g. `--env production`) |
+| `--config` | `-C` | string | Path to config file (auto-discovers by default) |
+| `--save` | `-S` | boolean | Save current command options to `qelos.config.json` |
+| `--help` | | boolean | Show help |
+| `--version` | | boolean | Show version |
+
 ## Configuration
+
+The CLI supports three layers of configuration, applied in this priority order:
+1. **CLI flags** (highest priority)
+2. **Environment variables**
+3. **Config file** (`qelos.config.json` / `qelos.config.yaml`)
+4. **Built-in defaults** (lowest priority)
 
 ### Environment Variables
 
 The CLI requires the following environment variables to connect to your Qelos instance:
 
 | Variable | Description | Default |
-|----------|-------------|---------|
+|----------|-------------|--------|
 | `QELOS_URL` | Your Qelos instance URL | `http://localhost:3000` |
 | `QELOS_USERNAME` | Your Qelos username | `test@test.com` |
 | `QELOS_PASSWORD` | Your Qelos password | `admin` |
@@ -54,11 +73,122 @@ export QELOS_USERNAME=your-username
 export QELOS_PASSWORD=your-password
 ```
 
+### Automatic `.env` Loading
+
+The CLI automatically loads `.env` files from the current working directory. No flags are needed — if a `.env` file exists, it is loaded before any command runs.
+
+The loading order (first file sets the value, later files do not override):
+
+1. `.env.local`
+2. `.env`
+
+Use the `--env` flag to load environment-specific files:
+
+```bash
+# Loads: .env.production.local → .env.production → .env.local → .env
+qelos --env production push components ./my-components
+
+# Loads: .env.staging.local → .env.staging → .env.local → .env
+qelos --env staging agent code-wizard -m "Hello"
+```
+
+Example `.env` file:
+```bash
+QELOS_URL=https://my-instance.qelos.io
+QELOS_USERNAME=admin@company.com
+QELOS_PASSWORD=secret
+```
+
+### Config File
+
+The CLI auto-discovers a config file from the current working directory. The following filenames are searched in order:
+
+1. `qelos.config.json`
+2. `qelos.config.yaml`
+3. `qelos.config.yml`
+
+You can also specify an explicit path with `--config`:
+
+```bash
+qelos --config ./my-config.json agent code-wizard -m "Hello"
+```
+
+#### Config File Schema
+
+::: code-group
+```json [qelos.config.json]
+{
+  "qelosUrl": "https://my-instance.qelos.io",
+  "agents": {
+    "code-wizard": {
+      "thread": "persistent-thread-id",
+      "log": "./logs/code-wizard.log",
+      "export": "./output/response.md",
+      "json": false,
+      "stream": true
+    },
+    "data-agent": {
+      "json": true,
+      "stream": false
+    }
+  }
+}
+```
+
+```yaml [qelos.config.yaml]
+qelosUrl: https://my-instance.qelos.io
+agents:
+  code-wizard:
+    thread: persistent-thread-id
+    log: ./logs/code-wizard.log
+    export: ./output/response.md
+    json: false
+    stream: true
+  data-agent:
+    json: true
+    stream: false
+```
+:::
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `qelosUrl` | string | Qelos instance URL (overridden by `QELOS_URL` env var) |
+| `agents` | object | Per-agent default options, keyed by agent name or ID |
+| `agents[name].thread` | string | Default thread ID |
+| `agents[name].log` | string | Default log file path |
+| `agents[name].export` | string | Default export file path |
+| `agents[name].json` | boolean | Default JSON output mode |
+| `agents[name].stream` | boolean | Default streaming mode |
+
+Config values are used as defaults — CLI flags always take precedence.
+
+### Saving Config with `--save`
+
+Use the `--save` (`-S`) flag to persist the current command's options into `qelos.config.json`:
+
+```bash
+# Creates/updates qelos.config.json with: {agents: {code-wizard: {json: true, export: "a.md"}}}
+qelos agent code-wizard --json --export a.md --save
+
+# Next time, just run — saved defaults apply automatically
+qelos agent code-wizard -m "Hello"
+```
+
+The `--save` flag:
+- **Creates** `qelos.config.json` if it doesn't exist
+- **Merges** with existing config (preserves other agents and settings)
+- **Only saves persistent options** (e.g. `thread`, `log`, `export`, `json`, `stream`) — transient options like `--message` are not saved
+
 ## Quick Start
 
 ```bash
 # Install the CLI
 npm install -g @qelos/plugins-cli
+
+# Set up a .env file for your instance
+echo 'QELOS_URL=https://my-instance.qelos.io' > .env
+echo 'QELOS_USERNAME=admin@company.com' >> .env
+echo 'QELOS_PASSWORD=secret' >> .env
 
 # Create a new plugin
 qplay create my-plugin
@@ -96,10 +226,17 @@ qelos push connections ./my-connections
 qelos push components ./my-components --hard
 qelos push all ./my-project --hard
 
+# Push to a different environment using --env
+qelos --env production push components ./my-components
+
 # Interact with AI agents
-qelos agent moshe --message "Hello, how can you help me?"
+qelos agent code-wizard --message "Hello, how can you help me?"
 echo "What's the weather?" | qelos agent weather-agent --stream
 qelos agent assistant --log conversation.json --export response.md
+
+# Save agent preferences for reuse
+qelos agent code-wizard --stream --log chat.json --save
+qelos agent code-wizard -m "Hello"  # uses saved defaults
 ```
 
 ## Commands

@@ -39,6 +39,7 @@ qelos agent [integrationId] [options]
 | `--log` | `-l` | string | Log file to maintain conversation history |
 | `--export` | `-e` | string | Export response content to specified file |
 | `--thread` | `-t` | string | Thread ID for conversation continuity |
+| `--save` | `-S` | boolean | Save current options to `qelos.config.json` |
 | `--verbose` | `-V` | boolean | Run with verbose logging |
 
 ## Integration Identification
@@ -56,7 +57,7 @@ qelos agent 692876602b6e9881b2311514 --message "Hello"
 A human-readable name that matches the `trigger.details.name` field in the integration configuration:
 
 ```bash
-qelos agent moshe --message "Hello"
+qelos agent code-wizard --message "Hello"
 ```
 
 When using a name, the command automatically:
@@ -71,72 +72,72 @@ When using a name, the command automatically:
 
 ```bash
 # Using integration name
-qelos agent moshe --message "Hello, how are you?"
+qelos agent code-wizard --message "Hello, how are you?"
 
 # Using ObjectId
 qelos agent 692876602b6e9881b2311514 --message "Hello"
 
 # Reading from stdin
-echo "What's the weather?" | qelos agent moshe
+echo "What's the weather?" | qelos agent code-wizard
 ```
 
 ### Streaming Mode
 
 ```bash
 # Real-time streaming responses
-qelos agent moshe --stream --message "Tell me a story"
+qelos agent code-wizard --stream --message "Tell me a story"
 
 # Streaming with JSON output
-qelos agent moshe --stream --json --message "Write code"
+qelos agent code-wizard --stream --json --message "Write code"
 ```
 
 ### Conversation Logging
 
 ```bash
 # Start a conversation with logging
-echo "My name is David" | qelos agent moshe --log conversation.json
+echo "My name is David" | qelos agent code-wizard --log conversation.json
 
 # Continue the conversation (context is maintained)
-echo "What's my name?" | qelos agent moshe --log conversation.json
+echo "What's my name?" | qelos agent code-wizard --log conversation.json
 
 # Works with streaming too
-echo "Remember this" | qelos agent moshe --log chat.json --stream
+echo "Remember this" | qelos agent code-wizard --log chat.json --stream
 ```
 
 ### Response Exporting
 
 ```bash
 # Export response to file
-qelos agent moshe --message "Write a poem" --export poem.txt
+qelos agent code-wizard --message "Write a poem" --export poem.txt
 
 # Export JSON response
-qelos agent moshe --message "API info" --json --export api.json
+qelos agent code-wizard --message "API info" --json --export api.json
 
 # Combine logging and exporting
-qelos agent moshe --log chat.json --export response.md --message "Summary"
+qelos agent code-wizard --log chat.json --export response.md --message "Summary"
 ```
 
 ### Thread Support
 
 ```bash
 # Use specific thread ID
-qelos agent moshe --thread thread-123 --message "Continue conversation"
+qelos agent code-wizard --thread thread-123 --message "Continue conversation"
 
 # Combine with other options
-qelos agent moshe --thread thread-123 --log chat.json --export result.md
+qelos agent code-wizard --thread thread-123 --log chat.json --export result.md
 ```
 
 ### Verbose Mode
 
 ```bash
 # See detailed information including name resolution
-qelos agent moshe --verbose --message "Hello"
+qelos agent code-wizard --verbose --message "Hello"
 ```
 
 Output example:
 ```
-Looking for integration with name: moshe
-Found integration: moshe (692876602b6e9881b2311514)
+Looking for integration with name: code-wizard
+Found integration: code-wizard (692876602b6e9881b2311514)
 [DEBUG] Initializing Qelos SDK...
 ```
 
@@ -144,7 +145,7 @@ Found integration: moshe (692876602b6e9881b2311514)
 
 ### Smart Integration Resolution
 - **Automatic Detection**: Distinguishes between ObjectIds and names
-- **Case-Insensitive**: `moshe`, `MOSHE`, and `Moshe` all work
+- **Case-Insensitive**: `code-wizard`, `CODE-WIZARD`, and `Code-Wizard` all work
 - **Directory Search**: Finds `integrations` folder in current or parent directories
 - **Clear Errors**: Helpful messages when integrations aren't found
 
@@ -179,16 +180,95 @@ Log file format:
   - Human-readable: Plain text content
   - JSON: Full API response objects or streaming chunks
 
+## Config File Defaults
+
+The agent command integrates with the [CLI config file](/cli/#config-file). When a `qelos.config.json` or `qelos.config.yaml` exists, agent-specific defaults are loaded automatically based on the `integrationId`.
+
+For example, with this config file:
+
+```json
+{
+  "agents": {
+    "code-wizard": {
+      "stream": true,
+      "log": "./logs/code-wizard.log",
+      "export": "./output/response.md"
+    }
+  }
+}
+```
+
+Running `qelos agent code-wizard -m "Hello"` is equivalent to:
+
+```bash
+qelos agent code-wizard --stream --log ./logs/code-wizard.log --export ./output/response.md -m "Hello"
+```
+
+CLI flags always take precedence over config defaults. For example:
+
+```bash
+# Config has stream: true, but this disables it
+qelos agent code-wizard --no-stream -m "Hello"
+```
+
+### Saving Defaults with `--save`
+
+Use `--save` (`-S`) to persist the current command's options into `qelos.config.json`:
+
+```bash
+# Save preferences for the "code-wizard" agent
+qelos agent code-wizard --json --export a.md --save
+```
+
+This creates or updates `qelos.config.json`:
+
+```json
+{
+  "agents": {
+    "code-wizard": {
+      "json": true,
+      "export": "a.md"
+    }
+  }
+}
+```
+
+From now on, running `qelos agent code-wizard -m "Hello"` will automatically use `--json` and `--export a.md`.
+
+The following options are saved: `thread`, `log`, `export`, `json`, `stream`.  
+Transient options like `--message` and `--save` itself are never saved.
+
+Saving merges with existing config — other agents and settings are preserved:
+
+```bash
+# First agent
+qelos agent code-wizard --stream --log code-wizard.log --save
+
+# Second agent — code-wizard's config is preserved
+qelos agent data-cruncher --json --export data-cruncher.md --save
+```
+
+Resulting `qelos.config.json`:
+
+```json
+{
+  "agents": {
+    "code-wizard": { "stream": true, "log": "code-wizard.log" },
+    "data-cruncher": { "json": true, "export": "data-cruncher.md" }
+  }
+}
+```
+
 ## Advanced Usage
 
 ### Pipeline Operations
 
 ```bash
 # Chain commands
-echo "Generate report" | qelos agent moshe --stream | tee response.txt
+echo "Generate report" | qelos agent code-wizard --stream | tee response.txt
 
 # Multiple conversations
-for name in moshe avi rami; do
+for name in code-wizard data-cruncher summarizer; do
   echo "Hello $name" | qelos agent "$name" --log "${name}-chat.json"
 done
 ```
@@ -199,7 +279,7 @@ done
 #!/bin/bash
 # chat.sh - Simple chat script
 
-INTEGRATION="moshe"
+INTEGRATION="code-wizard"
 LOG_FILE="conversation.json"
 
 echo "Starting chat with $INTEGRATION..."
@@ -236,6 +316,8 @@ Make sure:
 3. **Export Key Responses**: Use `--export` for important outputs like code or documentation
 4. **Verbose Mode for Debugging**: Use `--verbose` when troubleshooting integration issues
 5. **Streaming for Long Responses**: Use `--stream` for better user experience with lengthy responses
+6. **Save Repetitive Options**: Use `--save` once to avoid typing the same flags every time
+7. **Per-Agent Config**: Different agents can have different saved defaults in the same config file
 
 ## Integration File Structure
 
@@ -246,7 +328,7 @@ The command searches for integration files with this structure:
   "_id": "692876602b6e9881b2311514",
   "trigger": {
     "details": {
-      "name": "moshe"
+      "name": "code-wizard"
     }
   }
 }
@@ -257,8 +339,8 @@ The command searches for integration files with this structure:
 ```
 project/
 ├── integrations/
-│   ├── moshe.integration.json
-│   ├── avi.integration.json
+│   ├── code-wizard.integration.json
+│   ├── data-cruncher.integration.json
 │   └── ...
 └── logs/
     ├── conversation.json

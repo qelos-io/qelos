@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { join } from 'node:path';
 import { logger } from './logger.mjs';
-import { appUrl } from './sdk.mjs';
+import { getAppUrl } from './sdk.mjs';
 import { extractConfigContent, resolveReferences } from './file-refs.mjs';
 
 /**
@@ -52,7 +52,7 @@ export async function pushConfigurations(sdk, path, options = {}) {
       // Special handling for app-configuration: ensure QELOS_URL hostname is in websiteUrls
       if (key === 'app-configuration') {
         try {
-          const qelosUrl = new URL(appUrl);
+          const qelosUrl = new URL(getAppUrl());
           const hostname = qelosUrl.hostname;
           
           if (!configData.metadata.websiteUrls) {
