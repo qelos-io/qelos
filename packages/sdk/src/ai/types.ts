@@ -27,6 +27,12 @@ export interface IThread {
   workspace?: string;
 }
 
+export interface IClientTool {
+  name: string;
+  description: string;
+  schema?: any;
+}
+
 export interface IChatCompletionOptions {
   messages: IMessage[];
   model?: string;
@@ -40,6 +46,7 @@ export interface IChatCompletionOptions {
   context?: Record<string, any>;
   stream?: boolean;
   queryParams?: Record<string, any>;
+  clientTools?: IClientTool[];
 }
 
 export interface ISSEStreamProcessor extends AsyncIterable<any> {

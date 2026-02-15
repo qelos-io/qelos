@@ -439,7 +439,11 @@ async function processStreamingCompletion(
             }, 120000); // 2 minute timeout
           })
         ]);
-      } catch (functionError) {
+      } catch (functionError: any) {
+        // If client tool calls are pending, the SSE event was already sent — just return
+        if (functionError?.name === 'ClientToolCallsPending') {
+          return;
+        }
         logger.error('Error executing function calls in streaming completion', functionError);
         const isTimeout = functionError instanceof Error && functionError.name === 'TimeoutError';
         sendSSE({ 
@@ -563,7 +567,11 @@ async function processStreamingCompletion(
         autoContinueCount + 1, // Increment the counter
         context
       );
-    } catch (functionError) {
+    } catch (functionError: any) {
+      // If client tool calls are pending, the SSE event was already sent — just return
+      if (functionError?.name === 'ClientToolCallsPending') {
+        return;
+      }
       logger.error('Error executing incomplete function calls in streaming completion', functionError);
       const isTimeout = functionError instanceof Error && functionError.name === 'TimeoutError';
       sendSSE({ 
@@ -640,37 +648,51 @@ export async function handleNonStreamingChatCompletion(
       }
       // Execute all function calls
       // Add timeout protection for function execution in non-streaming mode
-      const functionResults = await Promise.race([
-        executeFunctionCallsHandler(
-          message.tool_calls,
-          null, // No SSE for non-streaming
-          ...additionalArgs
-        ),
-        new Promise((_, reject) => {
-          setTimeout(() => {
-            const timeoutError = new Error('Function execution timeout after 10 minutes');
-            // Emit platform event for function execution timeout
-            if (context?.tenant) {
-              emitAIProviderErrorEvent({
-                tenant: context.tenant,
-                userId: context.userId,
-                provider: aiService.source?.kind || 'unknown',
-                sourceId: aiService.source?._id,
-                stream: false,
-                model: chatOptions.model,
-                error: timeoutError,
-                context: {
-                  integrationId: context.integrationId,
-                  integrationName: context.integrationName,
-                  workspaceId: context.workspaceId,
-                  stage: 'function_execution'
-                }
-              });
-            }
-            reject(timeoutError);
-          }, 600000); // 10 minute timeout (same as NESTED_AGENT_TIMEOUT_MS)
-        })
-      ]);
+      let functionResults;
+      try {
+        functionResults = await Promise.race([
+          executeFunctionCallsHandler(
+            message.tool_calls,
+            null, // No SSE for non-streaming
+            ...additionalArgs
+          ),
+          new Promise((_, reject) => {
+            setTimeout(() => {
+              const timeoutError = new Error('Function execution timeout after 10 minutes');
+              // Emit platform event for function execution timeout
+              if (context?.tenant) {
+                emitAIProviderErrorEvent({
+                  tenant: context.tenant,
+                  userId: context.userId,
+                  provider: aiService.source?.kind || 'unknown',
+                  sourceId: aiService.source?._id,
+                  stream: false,
+                  model: chatOptions.model,
+                  error: timeoutError,
+                  context: {
+                    integrationId: context.integrationId,
+                    integrationName: context.integrationName,
+                    workspaceId: context.workspaceId,
+                    stage: 'function_execution'
+                  }
+                });
+              }
+              reject(timeoutError);
+            }, 600000); // 10 minute timeout (same as NESTED_AGENT_TIMEOUT_MS)
+          })
+        ]);
+      } catch (execError: any) {
+        // If client tool calls are pending, return them as a special response
+        if (execError?.name === 'ClientToolCallsPending') {
+          return {
+            type: 'client_tool_calls',
+            functionCalls: execError.clientCalls,
+            backendResults: execError.backendResults,
+            assistantToolCalls: execError.allToolCalls,
+          };
+        }
+        throw execError;
+      }
       
       if (onNewMessage) {
         onNewMessage({

@@ -31,6 +31,8 @@ The `<ai-chat>` component provides a complete AI chat interface with streaming s
 | `suggestions` | Array | [] | Array of suggestion strings or objects to display initially |
 | `fullScreen` | Boolean | false | Whether to display in full-screen mode |
 | `typingText` | String | "AI is typing..." | Custom text to show while AI is responding |
+| `tools` | Array | [] | Custom client tools with handlers (see [Client Tools](#client-tools)) |
+| `allowTools` | Array | [] | Enable predefined interactive tools: `"confirm"`, `"select"`, `"multi_select"`, `"form"`, `"date"`, `"time"`, `"datetime"`, `"number"` |
 
 ## Events
 
@@ -94,6 +96,7 @@ Customize how each message is rendered. Provides full control over message displ
 - `fileIconClass` - Function to get file icon: `(filename: string) => string`
 - `copiedMessageId` - ID of currently copied message (for UI feedback)
 - `loading` - Boolean indicating if AI is responding
+- `toolUI` - Tool UI state object when a predefined tool is active on this message (`{ toolName, args, resolved, resolve }`)
 
 ```html
 <ai-chat url="/api/ai/chat">
@@ -384,6 +387,148 @@ function handleFunctionCall({ name, arguments: args }) {
     });
   }
 }
+</script>
+```
+
+### Predefined Interactive Tools
+
+Enable built-in interactive UI tools that the AI can invoke during a conversation. When the AI calls one of these tools, an interactive widget appears inside the chat instead of requiring the user to type a response.
+
+```html
+<ai-chat
+  url="/api/ai/my-assistant/chat"
+  :allow-tools="['confirm', 'select', 'multi_select', 'form', 'date', 'time', 'datetime', 'number']"
+></ai-chat>
+```
+
+#### Available Predefined Tools
+
+| Tool | Description | UI Widget |
+|------|-------------|----------|
+| `confirm` | Yes/No confirmation | Two buttons (customizable labels) |
+| `select` | Pick one option | Clickable option buttons |
+| `multi_select` | Pick multiple options | Checkboxes + submit button |
+| `form` | Collect structured data | Mini form with text, number, and select fields |
+| `date` | Pick a date | Date picker with optional min/max constraints |
+| `time` | Pick a time | Time picker (HH:mm) |
+| `datetime` | Pick date and time | Datetime picker with optional min/max constraints |
+| `number` | Enter a number | Number input, or **slider** when both `min` and `max` are provided |
+
+Each tool shows its interactive widget inside the assistant's message bubble. After the user responds, the resolved value is shown as a tag, and the AI receives the result to continue the conversation.
+
+#### Predefined Tools with Specific Options
+
+```html
+<!-- Only enable confirm and select -->
+<ai-chat
+  url="/api/ai/my-assistant/chat"
+  :allow-tools="['confirm', 'select']"
+></ai-chat>
+```
+
+### Custom Client Tools
+
+Define your own tools with custom handlers. When the AI calls a custom tool, the handler executes on the client side and the result is sent back to the AI.
+
+```html
+<template>
+  <ai-chat
+    url="/api/ai/my-assistant/chat"
+    :tools="customTools"
+  ></ai-chat>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const customTools = [
+  {
+    name: 'get_current_location',
+    description: 'Get the user\'s current geographic location',
+    schema: {
+      type: 'object',
+      properties: {
+        accuracy: {
+          type: 'string',
+          enum: ['high', 'low'],
+          description: 'Desired accuracy level'
+        }
+      }
+    },
+    handler: async (args, chatMessage) => {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+      return JSON.stringify({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      });
+    }
+  },
+  {
+    name: 'copy_to_clipboard',
+    description: 'Copy text to the user\'s clipboard',
+    schema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string', description: 'Text to copy' }
+      },
+      required: ['text']
+    },
+    handler: async (args) => {
+      await navigator.clipboard.writeText(args.text);
+      return 'Copied to clipboard';
+    }
+  }
+];
+</script>
+```
+
+#### Tool Handler Signature
+
+```typescript
+handler: (
+  args: Record<string, any>,       // Parsed arguments from the AI
+  chatMessage: Ref<ChatMessage>     // Reactive ref to the current assistant message
+) => string | any | Promise<string | any>
+```
+
+- **`args`** — The arguments the AI provided when calling the tool
+- **`chatMessage`** — A Vue `Ref` to the assistant message object. You can modify it (e.g. update `content`) and changes will reflect in the UI
+- **Return value** — The result sent back to the AI. Objects are automatically JSON-stringified. Return empty string to skip re-calling the AI.
+
+### Combining Predefined and Custom Tools
+
+You can use both `allowTools` and `tools` together. They are merged into a single list of client tools.
+
+```html
+<template>
+  <ai-chat
+    url="/api/ai/my-assistant/chat"
+    :allow-tools="['confirm', 'select', 'date']"
+    :tools="customTools"
+  ></ai-chat>
+</template>
+
+<script setup>
+const customTools = [
+  {
+    name: 'get_weather',
+    description: 'Get current weather for a city',
+    schema: {
+      type: 'object',
+      properties: {
+        city: { type: 'string', description: 'City name' }
+      },
+      required: ['city']
+    },
+    handler: async (args) => {
+      const res = await fetch(`/api/weather?city=${args.city}`);
+      const data = await res.json();
+      return JSON.stringify(data);
+    }
+  }
+];
 </script>
 ```
 

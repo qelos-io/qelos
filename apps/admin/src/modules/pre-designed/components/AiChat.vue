@@ -72,85 +72,101 @@
       </div>
       <transition-group name="chat-bubble" tag="div">
         <template v-if="$slots.message">
-          <div v-for="(msg, idx) in messages" :key="msg.id">
-            <slot
-              name="message"
-              :message="msg"
-              :index="idx"
-              :is-streaming="
-                loading &&
-                msg.role === 'assistant' &&
-                idx === messages.length - 1
-              "
-              :format-time="formatTime"
-              :copy-message="copyMessage"
-              :render-markdown="renderMarkdown"
-              :file-icon-class="fileIconClass"
-              :copied-message-id="copiedMessageId"
-              :loading="loading"
-            />
-          </div>
-        </template>
-        <template v-else>
-          <div
-            v-for="(msg, idx) in messages"
-            :key="msg.id"
-            :class="[
-              'bubble',
-              msg.role,
-              {
-                message: true,
-                streaming:
+          <template v-for="(msg, idx) in messages" :key="msg.id">
+            <div v-if="msg.role !== 'tool'">
+              <slot
+                name="message"
+                :message="msg"
+                :index="idx"
+                :is-streaming="
                   loading &&
                   msg.role === 'assistant' &&
-                  idx === messages.length - 1,
-              },
-            ]"
-          >
-            <div class="bubble-header">
-              <span class="avatar">
-                <el-icon v-if="msg.role === 'user'"><UserFilled /></el-icon>
-                <font-awesome-icon v-else :icon="['fas', 'robot']" />
-              </span>
-              <div class="meta">
-                <span class="meta-text"
-                  >{{ msg.role === "user" ? "You" : "AI" }} ·
-                  {{ formatTime(msg.timestamp) }}</span
-                >
-                <span
-                  v-if="msg.status && msg.role === 'user'"
-                  class="message-status"
-                  :class="msg.status"
-                  aria-label="Message status"
-                >
-                  <font-awesome-icon
-                    :icon="['fas', msg.status === 'sent' ? 'check' : 'clock']"
-                  />
+                  idx === messages.length - 1
+                "
+                :format-time="formatTime"
+                :copy-message="copyMessage"
+                :render-markdown="renderMarkdown"
+                :file-icon-class="fileIconClass"
+                :copied-message-id="copiedMessageId"
+                :loading="loading"
+                :tool-u-i="msg.toolUI"
+              />
+              <AiChatToolUI
+                v-if="msg.toolUI"
+                :tool-name="msg.toolUI.toolName"
+                :args="msg.toolUI.args"
+                @resolved="msg.toolUI.resolve($event)"
+              />
+            </div>
+          </template>
+        </template>
+        <template v-else>
+          <template v-for="(msg, idx) in messages" :key="msg.id">
+            <div
+              v-if="msg.role !== 'tool'"
+              :class="[
+                'bubble',
+                msg.role,
+                {
+                  message: true,
+                  streaming:
+                    loading &&
+                    msg.role === 'assistant' &&
+                    idx === messages.length - 1,
+                },
+              ]"
+            >
+              <div class="bubble-header">
+                <span class="avatar">
+                  <el-icon v-if="msg.role === 'user'"><UserFilled /></el-icon>
+                  <font-awesome-icon v-else :icon="['fas', 'robot']" />
                 </span>
+                <div class="meta">
+                  <span class="meta-text"
+                    >{{ msg.role === "user" ? "You" : "AI" }} ·
+                    {{ formatTime(msg.timestamp) }}</span
+                  >
+                  <span
+                    v-if="msg.status && msg.role === 'user'"
+                    class="message-status"
+                    :class="msg.status"
+                    aria-label="Message status"
+                  >
+                    <font-awesome-icon
+                      :icon="['fas', msg.status === 'sent' ? 'check' : 'clock']"
+                    />
+                  </span>
+                </div>
+                <div
+                  class="copy-button"
+                  @click="copyMessage(msg)"
+                  v-if="msg.type === 'text'"
+                >
+                  <el-icon v-if="copiedMessageId === msg.id"><Check /></el-icon>
+                  <el-icon v-else><DocumentCopy /></el-icon>
+                </div>
               </div>
-              <div
-                class="copy-button"
-                @click="copyMessage(msg)"
-                v-if="msg.type === 'text'"
-              >
-                <el-icon v-if="copiedMessageId === msg.id"><Check /></el-icon>
-                <el-icon v-else><DocumentCopy /></el-icon>
-              </div>
-            </div>
-            <div class="bubble-content">
-              <div
-                v-if="msg.type === 'text'"
-                v-html="renderMarkdown(msg.content)"
-                ref="markdownContent"
-              ></div>
-              <div v-if="msg.type === 'file'" class="file-attachment-preview">
-                <font-awesome-icon
-                  :icon="['fas', fileIconClass(msg.filename)]"
+              <div class="bubble-content">
+                <div
+                  v-if="msg.type === 'text' && msg.content"
+                  v-html="renderMarkdown(msg.content)"
+                  ref="markdownContent"
+                ></div>
+                <div v-if="msg.type === 'file'" class="file-attachment-preview">
+                  <font-awesome-icon
+                    :icon="['fas', fileIconClass(msg.filename)]"
+                  />
+                  <span>{{ msg.filename }}</span>
+                </div>
+                <AiChatToolUI
+                  v-if="msg.toolUI"
+                  :tool-name="msg.toolUI.toolName"
+                  :args="msg.toolUI.args"
+                  @resolved="msg.toolUI.resolve($event)"
                 />
-                <span>{{ msg.filename }}</span>
               </div>
             </div>
-          </div>
+          </template>
         </template>
       </transition-group>
       <div v-if="loading" class="stream-indicator">
@@ -265,14 +281,7 @@
 </template>
 
 <script lang="ts" setup>
-import {
-  ref,
-  reactive,
-  nextTick,
-  watch,
-  computed,
-  onMounted,
-} from "vue";
+import { ref, reactive, nextTick, watch, computed, onMounted, Ref } from "vue";
 import { ElMessage } from "element-plus";
 import {
   UploadFilled,
@@ -287,6 +296,7 @@ import {
 import { Remarkable } from "remarkable";
 import { linkify } from "remarkable/linkify";
 import sdk from "@/services/sdk";
+import AiChatToolUI from "./AiChatToolUI.vue";
 
 const props = defineProps<{
   url: string;
@@ -300,6 +310,16 @@ const props = defineProps<{
   fullScreen?: boolean;
   typingText?: string;
   manager?: boolean;
+  tools?: Array<{
+    name: string;
+    description: string;
+    schema?: any;
+    handler?: (
+      args: any,
+      chatMessage: Ref<ChatMessage>,
+    ) => any | string | Promise<string | any>;
+  }>;
+  allowTools?: Array<"confirm" | "select" | "multi_select" | "form" | "date" | "time" | "datetime" | "number">;
 }>();
 
 const emit = defineEmits([
@@ -383,7 +403,7 @@ async function directStreamChat(
 }
 
 async function createThread() {
-  const newThread = await sdk.ai.createThread({
+  const newThread = await sdk.ai.threads.create({
     integration: props.integrationId || getIntegrationIdFromUrl(),
   });
 
@@ -397,7 +417,7 @@ async function createThread() {
 
 async function loadThread(threadId: string) {
   try {
-    const thread = await sdk.ai.getThread(threadId);
+    const thread = await sdk.ai.threads.getOne(threadId);
     currentThread.value = thread;
 
     // Load thread messages if they exist and we don't have messages already
@@ -432,14 +452,25 @@ async function loadThread(threadId: string) {
   }
 }
 
+interface ToolUIState {
+  toolName: string;
+  args: Record<string, any>;
+  resolve: (value: any) => void;
+  resolved: boolean;
+}
+
 interface ChatMessage {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "tool";
   content: string;
   timestamp: string;
   type: "text" | "file";
   filename?: string;
   status?: "sending" | "sent";
+  tool_call_id?: string;
+  tool_calls?: any[];
+  name?: string;
+  toolUI?: ToolUIState;
 }
 
 interface AttachedFile {
@@ -475,6 +506,319 @@ const loading = ref(false);
 const attachedFiles = reactive<AttachedFile[]>([]);
 const messages = reactive<ChatMessage[]>([]);
 const copiedMessageId = ref<string | null>(null);
+
+const PREDEFINED_TOOLS: Record<
+  string,
+  { name: string; description: string; schema: any }
+> = {
+  confirm: {
+    name: "confirm",
+    description:
+      "Ask the user for a yes/no confirmation. Use this when you need the user to approve or deny something.",
+    schema: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "The confirmation question to display",
+        },
+        confirmLabel: {
+          type: "string",
+          description: "Label for the confirm button (default: Yes)",
+        },
+        denyLabel: {
+          type: "string",
+          description: "Label for the deny button (default: No)",
+        },
+      },
+      required: ["message"],
+    },
+  },
+  select: {
+    name: "select",
+    description:
+      "Ask the user to pick one option from a list. Use this when the user needs to choose a single item.",
+    schema: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "The prompt message to display above the options",
+        },
+        options: {
+          type: "array",
+          items: {
+            oneOf: [
+              { type: "string" },
+              {
+                type: "object",
+                properties: {
+                  label: { type: "string" },
+                  value: { type: "string" },
+                },
+                required: ["label", "value"],
+              },
+            ],
+          },
+          description: "The list of options to choose from",
+        },
+      },
+      required: ["message", "options"],
+    },
+  },
+  multi_select: {
+    name: "multi_select",
+    description:
+      "Ask the user to pick one or more options from a list. Use this when the user can select multiple items.",
+    schema: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "The prompt message to display above the options",
+        },
+        options: {
+          type: "array",
+          items: {
+            oneOf: [
+              { type: "string" },
+              {
+                type: "object",
+                properties: {
+                  label: { type: "string" },
+                  value: { type: "string" },
+                },
+                required: ["label", "value"],
+              },
+            ],
+          },
+          description: "The list of options to choose from",
+        },
+        submitLabel: {
+          type: "string",
+          description: "Label for the submit button (default: Submit)",
+        },
+      },
+      required: ["message", "options"],
+    },
+  },
+  form: {
+    name: "form",
+    description:
+      "Ask the user to fill in a small form with multiple fields. Use this when you need to collect structured data.",
+    schema: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "The prompt message to display above the form",
+        },
+        fields: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string", description: "Field key name" },
+              label: { type: "string", description: "Display label" },
+              type: {
+                type: "string",
+                enum: ["text", "number", "select"],
+                description: "Field input type (default: text)",
+              },
+              placeholder: { type: "string" },
+              required: { type: "boolean", description: "default true" },
+              options: {
+                type: "array",
+                items: { type: "string" },
+                description: "Options for select type fields",
+              },
+            },
+            required: ["name"],
+          },
+          description: "The form fields to display",
+        },
+        submitLabel: {
+          type: "string",
+          description: "Label for the submit button (default: Submit)",
+        },
+      },
+      required: ["message", "fields"],
+    },
+  },
+  date: {
+    name: "date",
+    description:
+      "Ask the user to pick a date. Use this when you need a specific date from the user.",
+    schema: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "The prompt message to display",
+        },
+        min: {
+          type: "string",
+          description: "Minimum allowed date in YYYY-MM-DD format",
+        },
+        max: {
+          type: "string",
+          description: "Maximum allowed date in YYYY-MM-DD format",
+        },
+        defaultValue: {
+          type: "string",
+          description: "Default date in YYYY-MM-DD format",
+        },
+      },
+      required: ["message"],
+    },
+  },
+  time: {
+    name: "time",
+    description:
+      "Ask the user to pick a time. Use this when you need a specific time from the user.",
+    schema: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "The prompt message to display",
+        },
+        min: {
+          type: "string",
+          description: "Minimum allowed time in HH:mm format",
+        },
+        max: {
+          type: "string",
+          description: "Maximum allowed time in HH:mm format",
+        },
+        defaultValue: {
+          type: "string",
+          description: "Default time in HH:mm format",
+        },
+      },
+      required: ["message"],
+    },
+  },
+  datetime: {
+    name: "datetime",
+    description:
+      "Ask the user to pick a date and time. Use this when you need a specific date and time from the user.",
+    schema: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "The prompt message to display",
+        },
+        min: {
+          type: "string",
+          description:
+            "Minimum allowed datetime in YYYY-MM-DD HH:mm format",
+        },
+        max: {
+          type: "string",
+          description:
+            "Maximum allowed datetime in YYYY-MM-DD HH:mm format",
+        },
+        defaultValue: {
+          type: "string",
+          description: "Default datetime in YYYY-MM-DD HH:mm format",
+        },
+      },
+      required: ["message"],
+    },
+  },
+  number: {
+    name: "number",
+    description:
+      "Ask the user to enter a number. If both min and max are provided, a slider range is shown instead of a number input.",
+    schema: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "The prompt message to display",
+        },
+        min: {
+          type: "number",
+          description:
+            "Minimum allowed value. When both min and max are provided, a slider is shown.",
+        },
+        max: {
+          type: "number",
+          description:
+            "Maximum allowed value. When both min and max are provided, a slider is shown.",
+        },
+        step: {
+          type: "number",
+          description: "Step increment (default: 1)",
+        },
+        defaultValue: {
+          type: "number",
+          description: "Default number value",
+        },
+      },
+      required: ["message"],
+    },
+  },
+};
+
+function createPredefinedToolHandler(toolName: string) {
+  return (args: any, chatMessage: Ref<ChatMessage>): Promise<string> => {
+    return new Promise((resolve) => {
+      const msg = chatMessage.value;
+      msg.toolUI = {
+        toolName,
+        args,
+        resolved: false,
+        resolve: (value: any) => {
+          msg.toolUI!.resolved = true;
+          const idx = messages.findIndex((m) => m.id === msg.id);
+          if (idx !== -1) {
+            messages[idx] = { ...messages[idx], toolUI: msg.toolUI };
+          }
+          resolve(typeof value === "string" ? value : JSON.stringify(value));
+        },
+      };
+      // Trigger reactivity update so the UI renders
+      const idx = messages.findIndex((m) => m.id === msg.id);
+      if (idx !== -1) {
+        messages[idx] = { ...messages[idx], toolUI: msg.toolUI };
+        nextTick(() => scrollToBottom());
+      }
+    });
+  };
+}
+
+const allClientTools = computed(() => {
+  const tools: Array<{
+    name: string;
+    description: string;
+    schema?: any;
+    handler?: (
+      args: any,
+      chatMessage: Ref<ChatMessage>,
+    ) => any | string | Promise<string | any>;
+  }> = [];
+
+  if (props.allowTools?.length) {
+    for (const toolName of props.allowTools) {
+      const def = PREDEFINED_TOOLS[toolName];
+      if (def) {
+        tools.push({
+          ...def,
+          handler: createPredefinedToolHandler(toolName),
+        });
+      }
+    }
+  }
+
+  if (props.tools?.length) {
+    tools.push(...props.tools);
+  }
+
+  return tools;
+});
 const hoveredSuggestion = ref<number | null>(null);
 
 // Reference to markdown content elements
@@ -572,20 +916,20 @@ const md = new Remarkable({
   typographer: true, // Enable some language-neutral replacement + quotes beautification
 });
 
-md.renderer.rules.paragraph_open = function(tokens, idx, options, env) {
+md.renderer.rules.paragraph_open = function (tokens, idx, options, env) {
   return '<p class="md-para">';
 };
 
-md.renderer.rules.paragraph_close = function(tokens, idx, options, env) {
-  return '</p>\n';
+md.renderer.rules.paragraph_close = function (tokens, idx, options, env) {
+  return "</p>\n";
 };
 
-md.renderer.rules.hardbreak = function(tokens, idx, options) {
-  return '<br>\n';
+md.renderer.rules.hardbreak = function (tokens, idx, options) {
+  return "<br>\n";
 };
 
-md.renderer.rules.softbreak = function(tokens, idx, options) {
-  return '<br>\n';
+md.renderer.rules.softbreak = function (tokens, idx, options) {
+  return "<br>\n";
 };
 
 md.use(linkify);
@@ -791,6 +1135,211 @@ function insertSlashCommand() {
   inputRef.value?.focus();
 }
 
+async function streamChatCompletion(
+  integrationId: string,
+  chatOptions: any,
+  aiMsg: ChatMessage,
+) {
+  let stream;
+  if (isSourcesUrl.value) {
+    stream = await directStreamChat(chatCompletionUrl.value, chatOptions);
+  } else if (shouldRecordThread.value && localThreadId.value) {
+    stream = await sdk.ai.streamChatInThread(
+      integrationId,
+      localThreadId.value,
+      chatOptions,
+    );
+  } else {
+    stream = await sdk.ai.streamChat(integrationId, chatOptions);
+  }
+
+  let pendingClientToolCalls: any = null;
+
+  for await (const data of sdk.ai.parseSSEStream(stream)) {
+    if (data.type === "connection_established") {
+      continue;
+    }
+    if (data.type === "continuing_conversation") {
+      aiMsg.content = "";
+      continue;
+    }
+    if (data.type === "chunk" || data.type === "followup_chunk") {
+      if (data.content) {
+        aiMsg.content += data.content;
+        const idx = messages.findIndex((m) => m.id === aiMsg.id);
+        if (idx !== -1) {
+          setTimeout(() => {
+            messages[idx] = { ...messages[idx], content: aiMsg.content };
+            scrollToBottom();
+          }, 0);
+        }
+      }
+      if (data.chunk?.choices?.[0]?.finish_reason === "stop") {
+        break;
+      }
+    } else if (data.type === "function_executed") {
+      let args = {};
+      try {
+        args = JSON.parse(data.functionCall?.arguments || "{}");
+      } catch (e) {
+        // ignore
+      }
+      emit("function-executed", {
+        name: data.functionCall?.function?.name,
+        arguments: args,
+      });
+    } else if (data.type === "client_tool_calls") {
+      pendingClientToolCalls = data;
+    } else if (data.type === "done") {
+      break;
+    }
+  }
+
+  // Handle client tool calls after stream ends
+  if (pendingClientToolCalls && allClientTools.value.length) {
+    const { functionCalls, backendResults, assistantToolCalls } =
+      pendingClientToolCalls;
+
+    // Build a map of client tool handlers by name
+    const toolHandlers = new Map(
+      allClientTools.value
+        .filter((t) => t.handler)
+        .map((t) => [t.name, t.handler!]),
+    );
+
+    // Turn off loading while waiting for user interaction with tool UI
+    loading.value = false;
+
+    // Execute each client tool call handler
+    const toolResultMessages: any[] = [];
+    for (const fc of functionCalls) {
+      let args: any = {};
+      try {
+        args = JSON.parse(fc.function.arguments || "{}");
+      } catch (e) {
+        // ignore
+      }
+
+      const handler = toolHandlers.get(fc.function.name);
+      let result = "";
+      if (handler) {
+        try {
+          const aiMsgRef = ref(aiMsg);
+          result = await handler(args, aiMsgRef);
+          // Sync back any changes the handler made to aiMsg
+          Object.assign(aiMsg, aiMsgRef.value);
+        } catch (handlerError: any) {
+          result = JSON.stringify({
+            error: handlerError?.message || "Frontend tool execution failed",
+          });
+        }
+      } else {
+        result = JSON.stringify({
+          error: `No handler for tool ${fc.function.name}`,
+        });
+      }
+
+      emit("function-executed", {
+        name: fc.function.name,
+        arguments: args,
+      });
+
+      // Only re-call if handler returned non-empty data
+      if (result && typeof result === "object") {
+        result = JSON.stringify(result);
+      }
+
+      if (result) {
+        toolResultMessages.push({
+          tool_call_id: fc.id,
+          role: "tool",
+          name: fc.function.name,
+          content: String(result),
+        });
+      }
+    }
+
+    // If we have tool results, add them to messages and re-call chat completion
+    if (toolResultMessages.length > 0) {
+      // Mark the current aiMsg with tool_calls so it's included in message history
+      aiMsg.tool_calls = assistantToolCalls;
+      const aiMsgIdx = messages.findIndex((m) => m.id === aiMsg.id);
+      if (aiMsgIdx !== -1) {
+        messages[aiMsgIdx] = { ...messages[aiMsgIdx], tool_calls: assistantToolCalls };
+      }
+
+      // Add backend tool results if any
+      if (backendResults?.length) {
+        for (const br of backendResults) {
+          messages.push({
+            id: Math.random().toString(36).slice(2),
+            role: "tool",
+            content: br.content || "",
+            timestamp: new Date().toISOString(),
+            type: "text",
+            tool_call_id: br.tool_call_id,
+            name: br.name,
+          });
+        }
+      }
+
+      // Add client tool results
+      for (const tr of toolResultMessages) {
+        messages.push({
+          id: Math.random().toString(36).slice(2),
+          role: "tool",
+          content: tr.content,
+          timestamp: new Date().toISOString(),
+          type: "text",
+          tool_call_id: tr.tool_call_id,
+          name: tr.name,
+        });
+      }
+
+      // Re-call chat completion with updated messages including tool results
+      const updatedMessages = messages.map((m) => {
+        const msg: any = {
+          role: m.role,
+          content: m.content,
+        };
+        if (m.tool_call_id) msg.tool_call_id = m.tool_call_id;
+        if (m.tool_calls) msg.tool_calls = m.tool_calls;
+        if (m.name) msg.name = m.name;
+        return msg;
+      });
+
+      // Create a NEW assistant message for the follow-up response
+      // (keep the original aiMsg intact so its toolUI stays visible)
+      const followUpMsg: ChatMessage = {
+        id: Math.random().toString(36).slice(2),
+        role: "assistant",
+        content: "",
+        timestamp: new Date().toISOString(),
+        type: "text",
+      };
+      messages.push(followUpMsg);
+
+      const newChatOptions = {
+        ...chatOptions,
+        messages: updatedMessages,
+      };
+
+      // Resume loading indicator before re-calling
+      loading.value = true;
+
+      // Recursively stream the follow-up completion into the new message
+      await streamChatCompletion(integrationId, newChatOptions, followUpMsg);
+      return;
+    }
+  }
+
+  loading.value = false;
+  markUserMessagesAsSent();
+  nextTick(() => {
+    setTimeout(addTableCopyButtons, 100);
+  });
+}
+
 async function send() {
   if (!canSend()) return;
   for (const file of attachedFiles) {
@@ -809,15 +1358,21 @@ async function send() {
     status: "sending",
   });
   const payload = {
-    messages: messages
-      .map((m) => ({
+    messages: messages.map((m) => {
+      const msg: any = {
         role: m.role,
         content: m.content,
         type: m.type,
         filename: m.filename,
         timestamp: m.timestamp,
-      })),
+      };
+      if (m.tool_call_id) msg.tool_call_id = m.tool_call_id;
+      if (m.tool_calls) msg.tool_calls = m.tool_calls;
+      if (m.name) msg.name = m.name;
+      return msg;
+    }),
     context: props.chatContext,
+    clientTools: allClientTools.value.map(({ handler, ...rest }) => rest),
   };
   loading.value = true;
   let aiMsgId = Math.random().toString(36).slice(2);
@@ -835,86 +1390,16 @@ async function send() {
     }
 
     const integrationId = props.integrationId || getIntegrationIdFromUrl();
-    const chatOptions = {
+    const chatOptions: any = {
       messages: payload.messages,
       context: payload.context,
       stream: true,
+      clientTools: payload.clientTools,
     };
 
     // Try streaming first
     try {
-      let stream;
-      if (isSourcesUrl.value) {
-        // Use direct fetch for sources URLs
-        stream = await directStreamChat(chatCompletionUrl.value, chatOptions);
-      } else if (shouldRecordThread.value && localThreadId.value) {
-        // Use thread-based streaming
-        stream = await sdk.ai.streamChatInThread(
-          integrationId,
-          localThreadId.value,
-          chatOptions,
-        );
-      } else {
-        // Use regular streaming
-        stream = await sdk.ai.streamChat(integrationId, chatOptions);
-      }
-
-      // Process the stream using the SDK's parseSSEStream method
-      for await (const data of sdk.ai.parseSSEStream(stream)) {
-        if (data.type === "connection_established") {
-          continue;
-        }
-        if (data.type === "continuing_conversation") {
-          aiMsg.content = "";
-          continue;
-        }
-        if (data.type === "chunk") {
-          if (data.content) {
-            aiMsg.content += data.content;
-            const idx = messages.findIndex((m) => m.id === aiMsg.id);
-            if (idx !== -1) {
-              setTimeout(() => {
-                messages[idx] = { ...messages[idx], content: aiMsg.content };
-                scrollToBottom();
-              }, 0);
-            }
-          }
-          if (data.chunk?.choices?.[0]?.finish_reason === "stop") {
-            break;
-          }
-        } else if (data.type === "followup_chunk") {
-          if (data.content) {
-            aiMsg.content += data.content;
-            const idx = messages.findIndex((m) => m.id === aiMsg.id);
-            if (idx !== -1) {
-              setTimeout(() => {
-                messages[idx] = { ...messages[idx], content: aiMsg.content };
-                scrollToBottom();
-              }, 0);
-            }
-          }
-        } else if (data.type === "function_executed") {
-          let args = {};
-          try {
-            args = JSON.parse(data.functionCall?.arguments || "{}");
-          } catch (e) {
-            // ignore
-          }
-          emit("function-executed", {
-            name: data.functionCall?.function?.name,
-            arguments: args,
-          });
-        } else if (data.type === "done") {
-          break;
-        }
-      }
-
-      loading.value = false;
-      markUserMessagesAsSent();
-      // Only add table copy buttons after the assistant has finished typing
-      nextTick(() => {
-        setTimeout(addTableCopyButtons, 100);
-      });
+      await streamChatCompletion(integrationId, chatOptions, aiMsg);
     } catch (streamError) {
       // Fallback to non-streaming chat completion
       try {

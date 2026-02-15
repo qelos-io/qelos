@@ -91,6 +91,7 @@ export async function chatCompletion(req: any, res: any | null) {
   const thread: IThread | undefined = req.thread;
   let options = req.body || {};
   options.messages = options.messages instanceof Array ? options.messages : [];
+  const clientTools: Array<{name: string, description: string, schema?: any}> = options.clientTools instanceof Array ? options.clientTools : [];
   options.context = (options.context && typeof options.context === 'object') ? options.context : {};
   Object.keys(options.context).forEach(key => {
     const value = options.context[key];
@@ -128,9 +129,16 @@ export async function chatCompletion(req: any, res: any | null) {
       const lastThreadMessage = thread.messages[thread.messages.length - 1];
       const lastThreadTimestamp = lastThreadMessage.timestamp || new Date(0);
 
-      // Filter out user messages that were sent before the last thread message
+      // Filter out messages that were sent before the last thread message
+      // Keep new user messages, tool results, and assistant messages with tool_calls (from client tool re-calls)
       const newUserMessages = safeUserMessages.filter(msg => {
-        // Only keep user messages
+        // Keep tool role messages (client tool execution results)
+        if (msg.role === 'tool') return true;
+
+        // Keep assistant messages with tool_calls (from client tool re-calls)
+        if (msg.role === 'assistant' && msg.tool_calls) return true;
+
+        // Only keep user messages that are new
         if (msg.role !== 'user') return false;
 
         // If the message has a timestamp, check if it's after the last thread message
@@ -168,6 +176,7 @@ export async function chatCompletion(req: any, res: any | null) {
       context: options.context,
       systemContext: {},
       vectorStoreIds: [],
+      clientTools,
       webSearch: integration.trigger.details?.webSearch && source.kind === IntegrationSourceKind.OpenAI ? {
         type: "web_search",
         search_context_size: "medium",
@@ -325,6 +334,25 @@ export async function chatCompletion(req: any, res: any | null) {
     toolsIntegrations.push(...agentTools);
   }
 
+  // Add client tools to allTools array
+  const clientToolNames = new Set<string>();
+  if (clientTools.length > 0) {
+    for (const ct of clientTools) {
+      if (ct.name && ct.description) {
+        clientToolNames.add(ct.name);
+        allTools.push({
+          type: 'function',
+          function: {
+            name: ct.name,
+            description: ct.description,
+            parameters: ct.schema || { type: 'object', properties: {} },
+          },
+          isClientTool: true,
+        });
+      }
+    }
+  }
+
   // Use improved context-aware tool filtering
   const tools: Tool[] = await getRelevantToolsForAgent({
     tenant: integration.tenant,
@@ -425,15 +453,47 @@ export async function chatCompletion(req: any, res: any | null) {
       functionCalls: ChatCompletionService.FunctionCall[],
       ...args: any[]
     ) => {
-      return executeFunctionCalls(
-        req,
-        functionCalls,
-        toolsIntegrations,
-        integration.tenant,
-        args[0], // sendSSE if provided
-        '',
-        req.query.bypassAdmin === 'true'
-      );
+      const sendSSEArg = args[0];
+
+      // Separate client tool calls from backend tool calls
+      const clientCalls = functionCalls.filter(fc => clientToolNames.has(fc.function.name));
+      const backendCalls = functionCalls.filter(fc => !clientToolNames.has(fc.function.name));
+
+      let backendResults: any[] = [];
+
+      // Execute backend tool calls normally
+      if (backendCalls.length > 0) {
+        backendResults = await executeFunctionCalls(
+          req,
+          backendCalls,
+          toolsIntegrations,
+          integration.tenant,
+          sendSSEArg,
+          '',
+          req.query.bypassAdmin === 'true'
+        );
+      }
+
+      // If there are client tool calls, send them to the client and signal to stop
+      if (clientCalls.length > 0) {
+        if (sendSSEArg) {
+          sendSSEArg({
+            type: 'client_tool_calls',
+            functionCalls: clientCalls,
+            backendResults,
+            assistantToolCalls: functionCalls,
+          });
+        }
+        // Throw a special error to stop the recursive completion loop
+        const stopError = new Error('CLIENT_TOOL_CALLS_PENDING');
+        stopError.name = 'ClientToolCallsPending';
+        (stopError as any).clientCalls = clientCalls;
+        (stopError as any).backendResults = backendResults;
+        (stopError as any).allToolCalls = functionCalls;
+        throw stopError;
+      }
+
+      return backendResults;
     };
 
     const onNewMessage = thread ? (message: { type: 'function_calls_detected' | 'function_calls_executed' | 'assistant_last_content', content?: string, functionCalls?: ChatCompletionService.FunctionCall[], functionResults?: any }) => {
