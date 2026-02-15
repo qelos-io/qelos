@@ -127,7 +127,7 @@ function loadConnectionIdMap(basePath) {
         const connectionData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
         if (connectionData._id) {
           // Store relative path from the integrations directory
-          const relativePath = `./connections/${file}`;
+          const relativePath = `../connections/${file}`;
           connectionMap.set(connectionData._id, relativePath);
           logger.debug(`Mapped connection ID ${connectionData._id} to ${relativePath}`);
         }
@@ -183,10 +183,13 @@ function replaceConnectionIds(integration, connectionMap) {
 function resolveConnectionReferences(integration, basePath) {
   const updated = JSON.parse(JSON.stringify(integration));
   
+  // If basePath is a file path, extract the directory for resolving connections
+  const resolveBasePath = fs.statSync(basePath).isFile() ? path.dirname(basePath) : basePath;
+  
   // Resolve trigger.source if it's a $refId object
   if (updated.trigger?.source && typeof updated.trigger.source === 'object' && updated.trigger.source.$refId) {
     const connectionPath = updated.trigger.source.$refId;
-    const fullConnectionPath = join(basePath, connectionPath);
+    const fullConnectionPath = join(resolveBasePath, connectionPath);
     
     try {
       if (fs.existsSync(fullConnectionPath)) {
@@ -209,7 +212,7 @@ function resolveConnectionReferences(integration, basePath) {
   // Resolve target.source if it's a $refId object
   if (updated.target?.source && typeof updated.target.source === 'object' && updated.target.source.$refId) {
     const connectionPath = updated.target.source.$refId;
-    const fullConnectionPath = join(basePath, connectionPath);
+    const fullConnectionPath = join(resolveBasePath, connectionPath);
     
     try {
       if (fs.existsSync(fullConnectionPath)) {
@@ -316,7 +319,10 @@ export async function pushIntegrations(sdk, path, options = {}) {
       validateIntegrationPayload(integrationData, file);
       
       // Resolve $refId objects to actual connection IDs
-      const integrationWithResolvedRefs = resolveConnectionReferences(integrationData, path);
+      // Use the file path for resolving connections when pushing a single file,
+      // otherwise use the directory path
+      const resolveBasePath = targetFile ? filePath : path;
+      const integrationWithResolvedRefs = resolveConnectionReferences(integrationData, resolveBasePath);
       
       // Resolve any $ref references in the integration
       const resolvedIntegration = await resolveReferences(integrationWithResolvedRefs, path);

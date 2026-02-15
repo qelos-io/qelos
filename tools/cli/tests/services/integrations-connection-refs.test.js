@@ -26,13 +26,20 @@ describe('Integration Connection Reference Mapping', () => {
     if (testDir && fs.existsSync(testDir)) {
       fs.rmSync(testDir, { recursive: true, force: true });
     }
+    // Clean up sibling connections directory
+    const parentDir = path.dirname(testDir);
+    const connectionsDir = path.join(parentDir, 'connections');
+    if (fs.existsSync(connectionsDir)) {
+      fs.rmSync(connectionsDir, { recursive: true, force: true });
+    }
     jest.clearAllMocks();
   });
 
   describe('loadConnectionIdMap', () => {
     it('should load connection mappings from files', () => {
       // Create connections directory
-      const connectionsDir = path.join(testDir, 'connections');
+      const parentDir = path.dirname(testDir);
+      const connectionsDir = path.join(parentDir, 'connections');
       fs.mkdirSync(connectionsDir, { recursive: true });
       
       // Create test connection files
@@ -53,8 +60,8 @@ describe('Integration Connection Reference Mapping', () => {
       
       // Verify mappings
       expect(connectionMap.size).toBe(2);
-      expect(connectionMap.get('conn1')).toBe('./connections/conn1.connection.json');
-      expect(connectionMap.get('conn2')).toBe('./connections/conn2.connection.json');
+      expect(connectionMap.get('conn1')).toBe('../connections/conn1.connection.json');
+      expect(connectionMap.get('conn2')).toBe('../connections/conn2.connection.json');
     });
     
     it('should return empty map when connections directory does not exist', () => {
@@ -64,7 +71,8 @@ describe('Integration Connection Reference Mapping', () => {
     
     it('should skip files without _id', () => {
       // Create connections directory
-      const connectionsDir = path.join(testDir, 'connections');
+      const parentDir = path.dirname(testDir);
+      const connectionsDir = path.join(parentDir, 'connections');
       fs.mkdirSync(connectionsDir, { recursive: true });
       
       // Create connection file without _id
@@ -80,7 +88,8 @@ describe('Integration Connection Reference Mapping', () => {
     
     it('should handle invalid JSON files gracefully', () => {
       // Create connections directory
-      const connectionsDir = path.join(testDir, 'connections');
+      const parentDir = path.dirname(testDir);
+      const connectionsDir = path.join(parentDir, 'connections');
       fs.mkdirSync(connectionsDir, { recursive: true });
       
       // Create valid connection
@@ -98,15 +107,15 @@ describe('Integration Connection Reference Mapping', () => {
       
       const connectionMap = integrationsService.loadConnectionIdMap(testDir);
       expect(connectionMap.size).toBe(1);
-      expect(connectionMap.get('conn1')).toBe('./connections/conn1.connection.json');
+      expect(connectionMap.get('conn1')).toBe('../connections/conn1.connection.json');
     });
   });
 
   describe('replaceConnectionIds', () => {
     it('should replace trigger.source and target.source with $refId objects', () => {
       const connectionMap = new Map([
-        ['conn1', './connections/openai.connection.json'],
-        ['conn2', './connections/anthropic.connection.json']
+        ['conn1', '../connections/openai.connection.json'],
+        ['conn2', '../connections/anthropic.connection.json']
       ]);
       
       const integration = {
@@ -123,13 +132,13 @@ describe('Integration Connection Reference Mapping', () => {
       
       const result = integrationsService.replaceConnectionIds(integration, connectionMap);
       
-      expect(result.trigger.source).toEqual({ $refId: './connections/openai.connection.json' });
-      expect(result.target.source).toEqual({ $refId: './connections/anthropic.connection.json' });
+      expect(result.trigger.source).toEqual({ $refId: '../connections/openai.connection.json' });
+      expect(result.target.source).toEqual({ $refId: '../connections/anthropic.connection.json' });
     });
     
     it('should not replace sources that are not in the map', () => {
       const connectionMap = new Map([
-        ['conn1', './connections/openai.connection.json']
+        ['conn1', '../connections/openai.connection.json']
       ]);
       
       const integration = {
@@ -147,26 +156,26 @@ describe('Integration Connection Reference Mapping', () => {
       const result = integrationsService.replaceConnectionIds(integration, connectionMap);
       
       expect(result.trigger.source).toBe('conn2'); // Unchanged
-      expect(result.target.source).toEqual({ $refId: './connections/openai.connection.json' });
+      expect(result.target.source).toEqual({ $refId: '../connections/openai.connection.json' });
     });
     
     it('should handle missing trigger or target', () => {
       const connectionMap = new Map([
-        ['conn1', './connections/openai.connection.json']
+        ['conn1', '../connections/openai.connection.json']
       ]);
       
       const integration1 = { _id: 'int1', target: { source: 'conn1' } };
       const result1 = integrationsService.replaceConnectionIds(integration1, connectionMap);
-      expect(result1.target.source).toEqual({ $refId: './connections/openai.connection.json' });
+      expect(result1.target.source).toEqual({ $refId: '../connections/openai.connection.json' });
       
       const integration2 = { _id: 'int2', trigger: { source: 'conn1' } };
       const result2 = integrationsService.replaceConnectionIds(integration2, connectionMap);
-      expect(result2.trigger.source).toEqual({ $refId: './connections/openai.connection.json' });
+      expect(result2.trigger.source).toEqual({ $refId: '../connections/openai.connection.json' });
     });
     
     it('should not modify the original integration object', () => {
       const connectionMap = new Map([
-        ['conn1', './connections/openai.connection.json']
+        ['conn1', '../connections/openai.connection.json']
       ]);
       
       const integration = {
@@ -179,14 +188,15 @@ describe('Integration Connection Reference Mapping', () => {
       // Original should be unchanged
       expect(integration.trigger.source).toBe('conn1');
       // Result should have the replacement
-      expect(result.trigger.source).toEqual({ $refId: './connections/openai.connection.json' });
+      expect(result.trigger.source).toEqual({ $refId: '../connections/openai.connection.json' });
     });
   });
 
   describe('resolveConnectionReferences', () => {
     beforeEach(() => {
-      // Create connections directory
-      const connectionsDir = path.join(testDir, 'connections');
+      // Create connections directory as sibling to testDir (parent directory)
+      const parentDir = path.dirname(testDir);
+      const connectionsDir = path.join(parentDir, 'connections');
       fs.mkdirSync(connectionsDir, { recursive: true });
       
       // Create test connection files
@@ -207,11 +217,11 @@ describe('Integration Connection Reference Mapping', () => {
       const integration = {
         _id: 'int1',
         trigger: {
-          source: { $refId: './connections/conn1.connection.json' },
+          source: { $refId: '../connections/conn1.connection.json' },
           operation: 'chatCompletion'
         },
         target: {
-          source: { $refId: './connections/conn2.connection.json' },
+          source: { $refId: '../connections/conn2.connection.json' },
           operation: 'chatCompletion'
         }
       };
@@ -226,7 +236,7 @@ describe('Integration Connection Reference Mapping', () => {
       const integration = {
         _id: 'int1',
         trigger: {
-          source: { $refId: './connections/nonexistent.connection.json' },
+          source: { $refId: '../connections/nonexistent.connection.json' },
           operation: 'chatCompletion'
         }
       };
@@ -238,7 +248,8 @@ describe('Integration Connection Reference Mapping', () => {
     
     it('should throw error when connection file is missing _id', () => {
       // Create connection file without _id
-      const connectionsDir = path.join(testDir, 'connections');
+      const parentDir = path.dirname(testDir);
+      const connectionsDir = path.join(parentDir, 'connections');
       fs.writeFileSync(
         path.join(connectionsDir, 'no-id.connection.json'),
         JSON.stringify({ name: 'No ID', kind: 'openai' })
@@ -247,7 +258,7 @@ describe('Integration Connection Reference Mapping', () => {
       const integration = {
         _id: 'int1',
         trigger: {
-          source: { $refId: './connections/no-id.connection.json' },
+          source: { $refId: '../connections/no-id.connection.json' },
           operation: 'chatCompletion'
         }
       };
@@ -259,7 +270,8 @@ describe('Integration Connection Reference Mapping', () => {
     
     it('should handle invalid JSON in connection file', () => {
       // Create invalid JSON file
-      const connectionsDir = path.join(testDir, 'connections');
+      const parentDir = path.dirname(testDir);
+      const connectionsDir = path.join(parentDir, 'connections');
       fs.writeFileSync(
         path.join(connectionsDir, 'invalid.connection.json'),
         'invalid json content'
@@ -268,7 +280,7 @@ describe('Integration Connection Reference Mapping', () => {
       const integration = {
         _id: 'int1',
         trigger: {
-          source: { $refId: './connections/invalid.connection.json' },
+          source: { $refId: '../connections/invalid.connection.json' },
           operation: 'chatCompletion'
         }
       };
@@ -282,7 +294,7 @@ describe('Integration Connection Reference Mapping', () => {
       const integration = {
         _id: 'int1',
         trigger: {
-          source: { $refId: './connections/conn1.connection.json' },
+          source: { $refId: '../connections/conn1.connection.json' },
           operation: 'chatCompletion'
         }
       };
@@ -290,7 +302,7 @@ describe('Integration Connection Reference Mapping', () => {
       const result = integrationsService.resolveConnectionReferences(integration, testDir);
       
       // Original should be unchanged
-      expect(integration.trigger.source).toEqual({ $refId: './connections/conn1.connection.json' });
+      expect(integration.trigger.source).toEqual({ $refId: '../connections/conn1.connection.json' });
       // Result should have the resolved ID
       expect(result.trigger.source).toBe('resolved-conn1');
     });
@@ -299,7 +311,8 @@ describe('Integration Connection Reference Mapping', () => {
   describe('Integration End-to-End', () => {
     beforeEach(() => {
       // Create connections directory
-      const connectionsDir = path.join(testDir, 'connections');
+      const parentDir = path.dirname(testDir);
+      const connectionsDir = path.join(parentDir, 'connections');
       fs.mkdirSync(connectionsDir, { recursive: true });
       
       // Create test connection files
@@ -364,8 +377,8 @@ describe('Integration Connection Reference Mapping', () => {
       const pulledIntegration = JSON.parse(
         fs.readFileSync(path.join(testDir, integrationFiles[0]), 'utf-8')
       );
-      expect(pulledIntegration.trigger.source).toEqual({ $refId: './connections/openai.connection.json' });
-      expect(pulledIntegration.target.source).toEqual({ $refId: './connections/anthropic.connection.json' });
+      expect(pulledIntegration.trigger.source).toEqual({ $refId: '../connections/openai.connection.json' });
+      expect(pulledIntegration.target.source).toEqual({ $refId: '../connections/anthropic.connection.json' });
       
       // Push integrations back
       await integrationsService.pushIntegrations(mockSdk, testDir);
@@ -382,8 +395,8 @@ describe('Integration Connection Reference Mapping', () => {
       const updatedIntegration = JSON.parse(
         fs.readFileSync(path.join(testDir, integrationFiles[0]), 'utf-8')
       );
-      expect(updatedIntegration.trigger.source).toEqual({ $refId: './connections/openai.connection.json' });
-      expect(updatedIntegration.target.source).toEqual({ $refId: './connections/anthropic.connection.json' });
+      expect(updatedIntegration.trigger.source).toEqual({ $refId: '../connections/openai.connection.json' });
+      expect(updatedIntegration.target.source).toEqual({ $refId: '../connections/anthropic.connection.json' });
     });
     
     it('should handle integrations without connection references', async () => {
