@@ -117,9 +117,19 @@ async function handleHttpTarget(
     Object.entries(fetchData.query).forEach(([key, value]) => {
       fullPath.searchParams.append(key, value);
     });
+    // Format body based on content type
+    let requestBody: string | undefined;
+    if (fetchData.method === 'GET') {
+      requestBody = undefined;
+    } else if (fetchData.headers['Content-Type'] === 'application/x-www-form-urlencoded') {
+      requestBody = new URLSearchParams(fetchData.body).toString();
+    } else {
+      requestBody = JSON.stringify(fetchData.body);
+    }
+
     const res = await fetch(fullPath.toString(), {
       method: fetchData.method,
-      body: fetchData.method === 'GET' ? undefined : JSON.stringify(fetchData.body),
+      body: requestBody,
       agent: httpAgent,
       headers: fetchData.headers,
     });
@@ -418,7 +428,7 @@ async function handleSumitTarget(
   authentication: { apiKey?: string } = {},
   payload: any = {}
 ) {
-  const operation = integrationTarget.operation as SumitTargetOperation;
+  const operation = integrationTarget.operation as keyof typeof SumitTargetOperation;
 
   const { apiKey } = authentication;
   const { companyId } = source.metadata;
