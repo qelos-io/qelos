@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onErrorCaptured, ref } from 'vue';
 import { isPrivilegedUser } from '@/modules/core/store/auth';
+import analyticsService from '@/services/analytics'
 
 const emit = defineEmits(['error'])
 
@@ -10,6 +11,7 @@ onErrorCaptured((err) => {
   emit('error', err);
 
   console.error(err);
+  analyticsService.trackError('render-component', err.message, { stack: err.stack })
   return false;
 })
 </script>

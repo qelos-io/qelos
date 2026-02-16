@@ -37,6 +37,9 @@ class AnalyticsService {
     // Initialize Sentry
     this.initSentry(app, router)
 
+    // Set up global error tracking for Clarity & GA
+    this.setupErrorTracking()
+
     // Set up user tracking only if analytics are available
     this.setupUserTracking()
 
@@ -55,6 +58,55 @@ class AnalyticsService {
         Sentry.browserTracingIntegration({ router })
       ],
     })
+  }
+
+  private setupErrorTracking() {
+    const handleError = (error: Error | string, source?: string, details?: Record<string, any>) => {
+      const message = error instanceof Error ? error.message : String(error)
+      const stack = error instanceof Error ? error.stack : undefined
+
+      this.trackError('error', message, { source, stack })
+    }
+
+    window.addEventListener('error', (event) => {
+      handleError(event.error || event.message, event.filename, { filename: event.filename, stack: event.error?.stack })
+    })
+
+    window.addEventListener('unhandledrejection', (event) => {
+      handleError(event.reason || 'Unhandled Promise Rejection', 'unhandledrejection', { reason: event.reason, stack: event.reason?.stack })
+    })
+  }
+
+  trackError(errorName: string, message: string, details?: Record<string, any>) {
+    // Clarity error tracking
+    if (window.clarity) {
+      try {
+        window.clarity('event', `error-${errorName}`)
+        window.clarity('set', 'error_message', message)
+        if (details?.source) window.clarity('set', 'error_source', details.source)
+        if (details?.stack) window.clarity('set', 'error_stack', details.stack)
+      } catch (_) { /* noop */ }
+    }
+
+    // GA error tracking
+    if (window.gtag) {
+      try {
+        window.gtag('event', `exception-${errorName}`, {
+          description: message,
+          fatal: details?.fatal ?? false,
+          stack: details?.stack,
+          ...details
+        })
+      } catch (_) { /* noop */ }
+    } else if (window.ga) {
+      try {
+        (window.ga as any)('send', `exception-${errorName}`, {
+          exDescription: message,
+          exFatal: details?.fatal ?? false,
+          stack: details?.stack
+        })
+      } catch (_) { /* noop */ }
+    }
   }
 
   private setupUserTracking() {

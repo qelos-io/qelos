@@ -115,7 +115,7 @@ import { useUnsavedChanges } from '../../drafts/compositions/unsaved-changes'
 import { IBlock } from '../../../services/types/block';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import RuntimeTemplate from '@/modules/core/components/layout/RuntimeTemplate.vue';
-import ErrorBoundary from '@/modules/core/components/ErrorBoundary.vue';
+import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
 import WysiwygEditor from './WysiwygEditor.vue';
 
 const props = defineProps({
