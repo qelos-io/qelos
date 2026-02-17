@@ -210,6 +210,9 @@ export function getEntityQuery({ entityIdentifier, blueprint, req, permittedScop
         // Convert workspace ID to ObjectId for proper matching in aggregation queries
         query.workspace = new mongoose.Types.ObjectId(req.workspace._id);
       } else if (blueprint.permissionScope === PermissionScope.USER) {
+        if (!req.user) {
+          throw new ResponseError('you must be logged in to access', 401);
+        }
         query.user = req.user._id;
       }
     }

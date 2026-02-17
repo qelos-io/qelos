@@ -27,4 +27,5 @@ export const connect = (uri:string) => {
 	require('./user');
 	require('./user-internal-metadata');
   require('./workspace');
+  require('./api-token');
 };

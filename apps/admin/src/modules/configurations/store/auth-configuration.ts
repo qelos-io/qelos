@@ -46,7 +46,9 @@ export const useAuthConfiguration = defineStore('auth-configuration', () => {
     loginTitle: '',
     backgroundImage: undefined,
     verticalBackgroundImage: undefined,
-    disableUsernamePassword: false // Assumes IAuthConfigurationMetadata is updated
+    disableUsernamePassword: false, // Assumes IAuthConfigurationMetadata is updated
+    allowUserTokenAuthentication: false,
+    tokenAuthenticationPermissions: { roles: [], wsRoles: [] },
   };
 
   // Create a reactive reference to store the current tokenId

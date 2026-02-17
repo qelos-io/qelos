@@ -30,6 +30,11 @@ export interface IAuthConfigurationMetadata {
     github?: string,
   }
   allowSocialAutoRegistration?: boolean,
+  allowUserTokenAuthentication?: boolean,
+  tokenAuthenticationPermissions: {
+    roles: Array<string>,
+    wsRoles: Array<string>,
+  }
   additionalUserFields: Array<IUserAdditionalField>
 
   disableUsernamePassword?: boolean; 

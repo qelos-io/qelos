@@ -25,6 +25,11 @@ const usersRoutes = {
           path: 'payments',
           name: 'userPayments',
           component: async () => (await import('./tabs/PaymentsTab.vue')).default,
+        },
+        {
+          path: 'api-tokens',
+          name: 'userApiTokens',
+          component: async () => (await import('./tabs/ApiTokensTab.vue')).default,
         }
       ]
     },

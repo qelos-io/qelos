@@ -29,6 +29,11 @@
             :github-sources="githubSources"
           />
 
+          <ApiTokenSettingsSection
+            v-model:allow-user-token-authentication="edited.allowUserTokenAuthentication"
+            v-model:token-authentication-permissions="edited.tokenAuthenticationPermissions"
+          />
+
           <AdditionalUserFieldsSection
             v-model:additional-user-fields="edited.additionalUserFields"
           />
@@ -59,6 +64,7 @@ import GeneralSettingsSection from './auth-config-form/GeneralSettingsSection.vu
 import LoginPageAppearanceSection from './auth-config-form/LoginPageAppearanceSection.vue';
 import AuthenticationMethodsSection from './auth-config-form/AuthenticationMethodsSection.vue';
 import AdditionalUserFieldsSection from './auth-config-form/AdditionalUserFieldsSection.vue';
+import ApiTokenSettingsSection from './auth-config-form/ApiTokenSettingsSection.vue';
 
 const props = defineProps({
   kind: String,
@@ -76,7 +82,9 @@ const defaultMetadata: IAuthConfigurationMetadata = {
   additionalUserFields: [],
   socialLoginsSources: {},
   slots: {},
-  disableUsernamePassword: false // Default to false
+  disableUsernamePassword: false, // Default to false
+  allowUserTokenAuthentication: false,
+  tokenAuthenticationPermissions: { roles: [], wsRoles: [] },
 }
 
 const edited = ref<IAuthConfigurationMetadata>({

@@ -62,6 +62,7 @@ The CLI requires the following environment variables to connect to your Qelos in
 | Variable | Description | Default |
 |----------|-------------|--------|
 | `QELOS_URL` | Your Qelos instance URL | `http://localhost:3000` |
+| `QELOS_API_TOKEN` | API token (alternative to username/password) | — |
 | `QELOS_USERNAME` | Your Qelos username | `test@test.com` |
 | `QELOS_PASSWORD` | Your Qelos password | `admin` |
 
@@ -72,6 +73,31 @@ export QELOS_URL=https://your-qelos-instance.com
 export QELOS_USERNAME=your-username
 export QELOS_PASSWORD=your-password
 ```
+
+#### API Token Authentication
+
+Instead of username/password, you can use an API token for CLI authentication. This is the **recommended** approach for CI/CD pipelines and automated workflows.
+
+```bash
+export QELOS_URL=https://your-qelos-instance.com
+export QELOS_API_TOKEN=ql_your_api_token_here
+
+# No username/password needed
+qelos pull components ./my-components
+```
+
+When `QELOS_API_TOKEN` is set, `QELOS_USERNAME` and `QELOS_PASSWORD` are not required. The API token takes priority if all three are configured.
+
+You can also set it in the config file:
+
+```json
+{
+  "qelosUrl": "https://your-qelos-instance.com",
+  "qelosApiToken": "ql_your_api_token_here"
+}
+```
+
+Create an API token from the Qelos admin UI under **Profile → API Tokens**. See [SDK Authentication](/sdk/authentication#authentication-with-api-tokens) for details.
 
 ### Automatic `.env` Loading
 
@@ -92,12 +118,20 @@ qelos --env production push components ./my-components
 qelos --env staging agent code-wizard -m "Hello"
 ```
 
-Example `.env` file:
-```bash
-QELOS_URL=https://my-instance.qelos.io
+Example `.env` files:
+
+::: code-group
+```bash [.env (API Token)]
+QELOS_URL=https://my-instance.qelos.app
+QELOS_API_TOKEN=ql_your_api_token_here
+```
+
+```bash [.env (Username/Password)]
+QELOS_URL=https://my-instance.qelos.app
 QELOS_USERNAME=admin@company.com
 QELOS_PASSWORD=secret
 ```
+:::
 
 ### Config File
 
@@ -118,7 +152,7 @@ qelos --config ./my-config.json agent code-wizard -m "Hello"
 ::: code-group
 ```json [qelos.config.json]
 {
-  "qelosUrl": "https://my-instance.qelos.io",
+  "qelosUrl": "https://my-instance.qelos.app",
   "agents": {
     "code-wizard": {
       "thread": "persistent-thread-id",
@@ -136,7 +170,7 @@ qelos --config ./my-config.json agent code-wizard -m "Hello"
 ```
 
 ```yaml [qelos.config.yaml]
-qelosUrl: https://my-instance.qelos.io
+qelosUrl: https://my-instance.qelos.app
 agents:
   code-wizard:
     thread: persistent-thread-id
@@ -186,7 +220,7 @@ The `--save` flag:
 npm install -g @qelos/plugins-cli
 
 # Set up a .env file for your instance
-echo 'QELOS_URL=https://my-instance.qelos.io' > .env
+echo 'QELOS_URL=https://my-instance.qelos.app' > .env
 echo 'QELOS_USERNAME=admin@company.com' >> .env
 echo 'QELOS_PASSWORD=secret' >> .env
 
@@ -361,6 +395,8 @@ If you encounter authentication errors:
 1. Verify your environment variables are set correctly
 2. Ensure your credentials have the necessary permissions
 3. Check that your Qelos instance URL is accessible
+4. If using an API token, verify it has not expired or been revoked
+5. Use `--verbose` to see which authentication method is being used
 
 ### Connection Issues
 

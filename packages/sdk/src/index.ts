@@ -42,6 +42,9 @@ export default class QelosSDK extends BaseSDK {
 
     if (!options.extraHeaders) {
       options.extraHeaders = async (relativeUrl: string, forceRefresh?: boolean) => {
+        if (options.apiToken) {
+          return { 'x-api-key': options.apiToken, ...this.#customHeaders };
+        }
         if (isBrowser || noExtraHeadersUrls.has(relativeUrl)) {
           return { ...this.#customHeaders };
         }

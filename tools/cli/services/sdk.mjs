@@ -10,17 +10,17 @@ export function getAppUrl() {
 
 export async function initializeSdk() {
   const appUrl = getAppUrl();
+  const apiToken = process.env.QELOS_API_TOKEN || getConfig()?.qelosApiToken;
   const username = process.env.QELOS_USERNAME || "test@test.com";
   const password = process.env.QELOS_PASSWORD || "admin";
   try {
     logger.debug("Initializing Qelos SDK...");
 
     if (process.env.VERBOSE) {
-      logger.showConfig({
-        QELOS_URL: appUrl,
-        QELOS_USERNAME: username,
-        QELOS_PASSWORD: password,
-      });
+      logger.showConfig(apiToken
+        ? { QELOS_URL: appUrl, QELOS_API_TOKEN: apiToken.substring(0, 8) + '...' }
+        : { QELOS_URL: appUrl, QELOS_USERNAME: username, QELOS_PASSWORD: password }
+      );
     }
 
     const QelosAdministratorSDK = await jiti(
@@ -29,14 +29,19 @@ export async function initializeSdk() {
 
     const sdk = new QelosAdministratorSDK.default({
       appUrl,
+      ...(apiToken ? { apiToken } : {}),
     });
 
-    logger.debug(`Authenticating as ${username}...`);
-
-    await sdk.authentication.oAuthSignin({
-      username,
-      password,
-    });
+    if (apiToken) {
+      logger.debug("Authenticating with API token...");
+      await sdk.authentication.apiTokenSignin(apiToken);
+    } else {
+      logger.debug(`Authenticating as ${username}...`);
+      await sdk.authentication.oAuthSignin({
+        username,
+        password,
+      });
+    }
 
     logger.debug("Authentication successful");
     return sdk;

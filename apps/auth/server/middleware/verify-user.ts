@@ -17,6 +17,7 @@ import { AuthRequest } from '../../types';
 import { cacheManager } from '../services/cache-manager';
 import { getRequestHost } from '../services/req-host';
 import logger from '../services/logger';
+import { authenticateByApiToken } from '../services/api-tokens';
 
 function oAuthVerify(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   // get the last part from an authorization header string like "bearer token-value"
@@ -168,6 +169,46 @@ async function isCookieProcessed(tokenIdentifier: string) {
   }
 }
 
+async function apiKeyVerify(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  const apiKey = req.headers['x-api-key'] as string;
+  const tenant = (req.headers.tenant = req.headers.tenant as string || '0');
+
+  try {
+    const result = await authenticateByApiToken(tenant, apiKey);
+    if (!result) {
+      res.status(401).json({ message: 'Invalid or expired API token' }).end();
+      return;
+    }
+
+    const { user, workspace } = result;
+    const payload = {
+      sub: user._id.toString(),
+      tenant: user.tenant,
+      username: user.username,
+      email: user.email,
+      phone: user.phone,
+      name: user.fullName,
+      fullName: user.fullName,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      birthDate: user.birthDate,
+      profileImage: user.profileImage,
+      roles: user.roles,
+      workspace: workspace ? {
+        _id: workspace._id.toString(),
+        name: workspace.name,
+        roles: workspace.roles,
+        labels: workspace.labels,
+      } : undefined,
+      isApiToken: true,
+    };
+
+    setUserPayload(payload, req, res, next);
+  } catch (error) {
+    res.status(401).json({ message: 'API token authentication failed' }).end();
+  }
+}
+
 function setUserPayload(payload: any, req: AuthRequest, res: Response, next: NextFunction) {
   req.userPayload = payload;
   req.userPayload.isPrivileged = payload.roles.some((role: string) => {
@@ -189,9 +230,12 @@ function setUserPayload(payload: any, req: AuthRequest, res: Response, next: Nex
  *  The Auth Checker middleware function.
  */
 export default <RequestHandler>function verifyUser(req: AuthRequest, res: Response, next: NextFunction) {
+  const apiKey = req.headers['x-api-key'];
   const cookie = getCookieTokenValue(req);
   const token = req.headers.authorization || req.headers.Authorization
-  if (cookie) {
+  if (apiKey) {
+    return apiKeyVerify(req, res, next).catch(next);
+  } else if (cookie) {
     return cookieVerify(req, res, next).catch(next);
   } else if (token) {
     return oAuthVerify(req, res, next).catch(next);

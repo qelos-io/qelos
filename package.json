@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "install:prod-only": "pnpm install --prod",
-    "prebuild": "pnpm -r run prebuild",
-    "build": "pnpm run prebuild && pnpm -r --parallel --stream run build",
+    "prebuild": "pnpm -r run pre-build",
+    "build": "pnpm -r --parallel --stream run build",
     "clean": "pnpm -r exec -- rm -rf node_modules",
     "dev:run": "pnpm -r run db && pnpm -r --parallel --stream run dev",
     "dev": "env-cmd pnpm run dev:run",
@@ -33,5 +33,5 @@
     "esbuild": "0.25.4",
     "@langchain/core": "0.3.58"
   },
-  "packageManager": "pnpm@10.28.0"
+  "packageManager": "pnpm@10.29.3+sha512.498e1fb4cca5aa06c1dcf2611e6fafc50972ffe7189998c409e90de74566444298ffe43e6cd2acdc775ba1aa7cc5e092a8b7054c811ba8c5770f84693d33d2dc"
 }

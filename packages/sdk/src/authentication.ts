@@ -37,13 +37,28 @@ export interface ISignupInformation {
   birthDate: string;
 }
 
+export interface IApiToken {
+  _id: string;
+  nickname: string;
+  tokenPrefix: string;
+  expiresAt: string;
+  lastUsedAt?: string;
+  workspace?: string;
+  created: string;
+}
+
 export default class QlAuthentication extends BaseSDK {
 
   #refreshToken: string;
   #accessToken: string;
+  #apiToken: string;
 
   get accessToken() {
     return this.#accessToken;
+  }
+
+  get isApiTokenAuth(): boolean {
+    return !!this.#apiToken;
   }
 
   constructor(options: QelosSDKOptions) {
@@ -55,6 +70,9 @@ export default class QlAuthentication extends BaseSDK {
     if (options.refreshToken) {
       this.#refreshToken = options.refreshToken;
       delete options.refreshToken;
+    }
+    if (options.apiToken) {
+      this.#apiToken = options.apiToken;
     }
   }
 
@@ -135,6 +153,30 @@ export default class QlAuthentication extends BaseSDK {
         this.#refreshToken = data.payload.refreshToken;
         return data;
       })
+  }
+
+  async apiTokenSignin(apiToken: string): Promise<IUser> {
+    this.#apiToken = apiToken;
+    this.qlOptions.apiToken = apiToken;
+    return this.callJsonApi<IUser>('/api/me');
+  }
+
+  listApiTokens(): Promise<IApiToken[]> {
+    return this.callJsonApi<IApiToken[]>('/api/me/api-tokens');
+  }
+
+  createApiToken(data: { nickname: string; workspace?: string; expiresAt: string }): Promise<{ token: string; apiToken: IApiToken }> {
+    return this.callJsonApi<{ token: string; apiToken: IApiToken }>('/api/me/api-tokens', {
+      method: 'post',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  deleteApiToken(tokenId: string): Promise<void> {
+    return this.callJsonApi<void>(`/api/me/api-tokens/${tokenId}`, {
+      method: 'delete',
+    });
   }
 
   logout() {

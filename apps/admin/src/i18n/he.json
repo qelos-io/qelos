@@ -225,5 +225,6 @@
   "{count} active": "{count} פעילים",
   "{providers} providers · {connections} total": "{providers} ספקים · {connections} סך הכל",
   "API Key": "מפתח API",
-  "Company ID": "מזהה חברה"
+  "Company ID": "מזהה חברה",
+  "Revoke token \"{name}\" ({prefix}...)?": "לבטל את הטוקן \"{name}\" ({prefix}...)?"
 }

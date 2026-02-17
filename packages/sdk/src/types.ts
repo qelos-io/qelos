@@ -5,6 +5,7 @@ export interface QelosSDKOptions {
   fetch: FetchLike;
   accessToken?: string;
   refreshToken?: string;
+  apiToken?: string;
   getAccessToken?: () => undefined | string;
   extraHeaders?: (relativeUrl: string, forceRefresh?: boolean) => Promise<{ [key: string]: string }>;
   forceRefresh?: boolean;

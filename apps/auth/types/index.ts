@@ -11,6 +11,7 @@ export interface AuthRequest extends Request {
     tenanthost?: string,
     origin?: string,
     host?: string,
+    'x-api-key'?: string,
   }
   userPayload: {
     sub: string,
@@ -26,6 +27,7 @@ export interface AuthRequest extends Request {
     profileImage: string,
     roles: string[],
     isPrivileged: boolean,
+    isApiToken?: boolean,
     isImpersonating?: boolean,
     originalAdminId?: string,
     user: any,

@@ -192,7 +192,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
   );
 
   app.use(allServicesPrefixesExceptAuth, (req, res, next) => {
-    if (!(req.headers.authorization || (req.headers.cookie && req.headers.cookie.includes('qlt_')))) {
+    if (!(req.headers.authorization || req.headers['x-api-key'] || (req.headers.cookie && req.headers.cookie.includes('qlt_')))) {
       next();
       return;
     }
@@ -208,6 +208,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
         cookie: req.headers.cookie,
         tenanthost: req.headers.host,
         authorization: req.headers.authorization,
+        'x-api-key': req.headers['x-api-key'] || '',
         'x-impersonate-tenant': req.get('x-impersonate-tenant') || req.query.impersonateTenant?.toString() || '',
         'x-impersonate-user': req.get('x-impersonate-user') || req.query.impersonateUser?.toString() || '',
         'x-impersonate-workspace': req.get('x-impersonate-workspace') || req.query.impersonateWorkspace?.toString() || '',

@@ -225,5 +225,6 @@
   "{count} active": "{count} active",
   "{providers} providers · {connections} total": "{providers} providers · {connections} total",
   "API Key": "API Key",
-  "Company ID": "Company ID"
+  "Company ID": "Company ID",
+  "Revoke token \"{name}\" ({prefix}...)?": "Revoke token \"{name}\" ({prefix}...)?"
 }

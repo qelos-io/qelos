@@ -8,6 +8,9 @@ import logger from './logger';
 let localSdk: QelosAdministratorSDK<{ tokenIdentifier: string }>;
 
 export function authenticate() {
+  if (config.qelosApiToken) {
+    return localSdk.authentication.apiTokenSignin(config.qelosApiToken);
+  }
   return localSdk.authentication.oAuthSignin({
     username: config.qelosUsername,
     password: config.qelosPassword,
@@ -16,11 +19,16 @@ export function authenticate() {
 
 async function bootstrapAuthenticate() {
   try {
-    await localSdk.authentication.oAuthSignin({
-      username: config.qelosUsername,
-      password: config.qelosPassword,
-    });
-    console.log('authenticated successfully to ' + config.qelosUrl);
+    if (config.qelosApiToken) {
+      await localSdk.authentication.apiTokenSignin(config.qelosApiToken);
+      console.log('authenticated via API token to ' + config.qelosUrl);
+    } else {
+      await localSdk.authentication.oAuthSignin({
+        username: config.qelosUsername,
+        password: config.qelosPassword,
+      });
+      console.log('authenticated successfully to ' + config.qelosUrl);
+    }
   } catch (err) {
     console.log('could not authenticate to own qelos app');
     logger.error('connect to qelos error: ', err);
@@ -32,6 +40,7 @@ export interface GetSdkForUrlOptions {
   appUrl: string;
   refreshToken?: string;
   accessToken?: string;
+  apiToken?: string;
   username?: string;
   password?: string;
   onRefresh?: ({ refreshToken, token }: { refreshToken: string, token: string }) => void
@@ -41,6 +50,7 @@ export function getSdkForUrl<T = any>({
   appUrl,
   refreshToken,
   accessToken,
+  apiToken,
   username,
   password,
   onRefresh
@@ -48,9 +58,9 @@ export function getSdkForUrl<T = any>({
   let sdk: QelosAdministratorSDK;
   const options: QelosSDKOptions = {
     appUrl,
-    forceRefresh: true,
+    forceRefresh: !apiToken,
     fetch: globalThis.fetch || (undiciFetch as any as FetchLike),
-    onFailedRefreshToken: async () => {
+    onFailedRefreshToken: apiToken ? undefined : async () => {
       const res = await sdk.authentication.oAuthSignin({ username, password });
       if (onRefresh) {
         onRefresh(res.payload)
@@ -58,6 +68,9 @@ export function getSdkForUrl<T = any>({
     },
     ...(config.sdkOptions || {}),
   };
+  if (apiToken) {
+    options.apiToken = apiToken;
+  }
   if (refreshToken) {
     options.refreshToken = refreshToken;
   }
@@ -74,6 +87,7 @@ export function getSdk(): QelosAdministratorSDK {
   }
   localSdk = getSdkForUrl<{ tokenIdentifier: string }>({
     appUrl: config.qelosUrl,
+    apiToken: config.qelosApiToken,
     refreshToken: null,
     accessToken: null,
     username: config.qelosUsername,

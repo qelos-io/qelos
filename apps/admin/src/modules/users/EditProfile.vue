@@ -44,15 +44,27 @@
         </template>
       </el-tab-pane>
       
-      <el-tab-pane 
+      <el-tab-pane
         v-if="showPaymentsTab"
-        :label="$t('Payments')" 
+        :label="$t('Payments')"
         name="payments"
         :lazy="true"
       >
         <template #label>
           <font-awesome-icon :icon="['fas', 'credit-card']" class="tab-icon" />
           {{ $t('Payments') }}
+        </template>
+      </el-tab-pane>
+
+      <el-tab-pane
+        v-if="showApiTokensTab"
+        :label="$t('API Tokens')"
+        name="apiTokens"
+        :lazy="true"
+      >
+        <template #label>
+          <font-awesome-icon :icon="['fas', 'key']" class="tab-icon" />
+          {{ $t('API Tokens') }}
         </template>
       </el-tab-pane>
     </el-tabs>
@@ -79,6 +91,7 @@ import { ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '@/modules/core/compositions/authentication';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import { useAuthConfiguration } from '@/modules/configurations/store/auth-configuration';
 import { updateProfile } from '@/modules/core/store/auth';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { ElMessageBox, ElMessage } from 'element-plus';
@@ -87,6 +100,7 @@ const route = useRoute();
 const router = useRouter();
 const { user, isLoaded, logout } = useAuth();
 const wsConfig = useWsConfiguration();
+const authConfig = useAuthConfiguration();
 
 // For profile editing, we use the authenticated user directly
 // No need for useUpdateUser since we're editing the current user
@@ -101,13 +115,23 @@ const isLoggingOut = ref(false);
 // Map tab names to route names
 const tabRouteMap = {
   general: 'updateProfile',
-  payments: 'userPayments'
+  payments: 'userPayments',
+  apiTokens: 'userApiTokens',
 };
 
 // Control visibility of tabs
 const showPaymentsTab = computed(() => {
   // Show payments tab when workspace is not active (B2C mode)
   return !wsConfig.isActive;
+});
+
+const showApiTokensTab = computed(() => {
+  const config = authConfig.metadata;
+  if (!config?.allowUserTokenAuthentication) return false;
+  const perms = config.tokenAuthenticationPermissions;
+  if (!perms?.roles?.length) return false;
+  const userRoles = user.value?.roles || [];
+  return perms.roles.includes('*') || perms.roles.some(role => userRoles.includes(role));
 });
 
 // Watch for route changes to update active tab

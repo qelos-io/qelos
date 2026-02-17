@@ -1,6 +1,6 @@
 {
   "name": "@qelos/sdk",
-  "version": "3.11.6",
+  "version": "3.11.7",
   "description": "SDK for Qelos API",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -99,7 +99,8 @@
   "scripts": {
     "test": "node --import tsx --test **/**/*.test.ts",
     "type-check": "tsc --noEmit",
-    "build": "npm run type-check && tsc"
+    "build": "npm run type-check && tsc",
+    "pre-build": "pnpm run type-check && tsc"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
