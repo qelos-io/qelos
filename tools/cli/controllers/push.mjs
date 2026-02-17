@@ -181,7 +181,7 @@ export default async function pushController({ type, path: sourcePath, hard = fa
       
       // Get remote resources
       const remoteResources = await getRemoteResources(sdk, type);
-      const remoteIdentifiers = remoteResources.map(r => r.identifier);
+      const remoteIdentifiers = remoteResources.map(r => r.identifier || r.key || r.apiPath || r._id);
       
       // Find resources to remove (exist remotely but not locally)
       const toRemove = remoteIdentifiers
