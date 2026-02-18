@@ -8,6 +8,7 @@ import { IWorkspace } from '@qelos/sdk/workspaces';
 import pubsub from '@/services/pubsub';
 import { api } from '@/services/apis/api';
 import { isImpersonating, setImpersonation, impersonatedUser } from '@/modules/core/store/impersonation';
+import { impersonateUser } from '@/services/sdk';
 
 const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesList() {
   const { result, retry, loading, promise } = useDispatcher<IWorkspace[]>(() => workspacesService.getAll(), [])
@@ -26,7 +27,7 @@ const useWorkspacesList = defineStore('workspaces-list', function useWorkspacesL
   const activateSilently = async (workspace: IWorkspace) => {
     // If impersonating, just update localStorage instead of making API call
     if (isImpersonating.value) {
-      setImpersonation(impersonatedUser.value, {_id: workspace._id, name: workspace.name})
+      impersonateUser(impersonatedUser.value, {_id: workspace._id, name: workspace.name})
       fetchAuthUser(true).catch();
       return workspace;
     }
