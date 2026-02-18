@@ -1,3 +1,4 @@
+import sdk from '@/services/sdk';
 import { ref } from 'vue';
 
 const IMPERSONATION_USER_KEY = 'impersonationUser';
@@ -54,6 +55,7 @@ export function setImpersonation(user: { _id: string; name?: string; email?: str
   if (workspace) {
     localStorage.setItem(IMPERSONATION_WORKSPACE_KEY, JSON.stringify(workspace));
   }
+  sdk.impersonateUser(user._id, workspace?._id);
 }
 
 // Initialize immediately when this module is imported

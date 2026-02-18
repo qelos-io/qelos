@@ -297,6 +297,10 @@ qelos agent code-wizard -m "Hello"  # uses saved defaults
     <p>Generate IDE-specific rules files to help AI assistants understand your Qelos project structure.</p>
   </div>
   <div class="vp-feature">
+    <h3><a href="/cli/generate-connection">Generate Connection</a></h3>
+    <p>Create secure connection configuration files for external integrations with interactive setup and environment variable storage.</p>
+  </div>
+  <div class="vp-feature">
     <h3><a href="/cli/agent">Agent</a></h3>
     <p>Interact with AI agents using the Qelos SDK with support for conversation history, streaming, and response export.</p>
   </div>

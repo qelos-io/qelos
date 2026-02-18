@@ -141,8 +141,7 @@ import { IUser } from '@/modules/core/store/types/user';
 import { Edit, Delete, Check, User } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { isAdmin, authStore } from '@/modules/core/store/auth';
-import { isImpersonating, impersonatedUser, impersonatedWorkspace } from '@/modules/core/store/impersonation';
-import sdk, { impersonateUser } from '@/services/sdk';
+import { impersonateUser } from '@/services/sdk';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 
 import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
