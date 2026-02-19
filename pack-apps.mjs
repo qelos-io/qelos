@@ -99,30 +99,33 @@ function processApp(folder) {
           }
           
           // Now run pack separately
-          exec(packCommand, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
-            if (err) {
-              console.log(folder + ' npm pack failed');
-              console.log(err.message);
-              console.log(stdout.toString().slice(-10000));
-              reject();
-              return;
-            }
-            
-            // Then run rename-pack.js
-            exec(`cd apps/${folder} && node ../../tools/bundler/rename-pack.js`, { maxBuffer: 1024 * 1024 }, (err) => {
-              console.log(folder + ' packing ' + (err ? 'failed' : 'succeeded'))
+          // First create a dummy package-lock.json to satisfy npm pack
+          exec(`cd apps/${folder} && echo '{}' > package-lock.json`, { maxBuffer: 1024 * 1024 }, (err) => {
+            exec(packCommand, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
               if (err) {
+                console.log(folder + ' npm pack failed');
                 console.log(err.message);
+                console.log(stdout.toString().slice(-10000));
                 reject();
                 return;
               }
-
-              // git checkout to all package.json files
-              exec(`cd apps/${folder} && git checkout package.json`, { maxBuffer: 1024 * 1024 }, (err) => {
+              
+              // Then run rename-pack.js
+              exec(`cd apps/${folder} && node ../../tools/bundler/rename-pack.js`, { maxBuffer: 1024 * 1024 }, (err) => {
+                console.log(folder + ' packing ' + (err ? 'failed' : 'succeeded'))
                 if (err) {
-                  console.log(`Warning: Failed to checkout package.json for ${folder}:`, err.message);
+                  console.log(err.message);
+                  reject();
+                  return;
                 }
-                resolve();
+
+                // git checkout to all package.json files
+                exec(`cd apps/${folder} && git checkout package.json`, { maxBuffer: 1024 * 1024 }, (err) => {
+                  if (err) {
+                    console.log(`Warning: Failed to checkout package.json for ${folder}:`, err.message);
+                  }
+                  resolve();
+                })
               })
             })
           })
