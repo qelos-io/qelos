@@ -17,7 +17,7 @@ for (const folder of apps) {
 
   // pnpm deploy: copies app + installs prod deps + resolves workspace deps locally
   console.log(`\n=== Deploying ${pkg.name} ===`);
-  execSync(`pnpm --filter ${pkg.name} deploy ${deployDir} --prod`, {
+  execSync(`pnpm --filter ${pkg.name} deploy ${deployDir} --prod --legacy`, {
     stdio: 'inherit',
     timeout: 300000
   });
