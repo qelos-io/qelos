@@ -65,6 +65,11 @@ function processApp(folder) {
         if (pkg.devDependencies) {
           delete pkg.devDependencies;
         }
+
+        // Remove packageManager to prevent corepack issues in CI
+        if (pkg.packageManager) {
+          delete pkg.packageManager;
+        }
         
         // Write the modified package.json back
         writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
