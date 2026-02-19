@@ -1,5 +1,5 @@
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { exec } from "node:child_process";
+import { readdirSync, readFileSync, writeFileSync, existsSync, rmSync } from "node:fs";
+import { exec, execSync } from "node:child_process";
 import { getPackagesBasicInfo } from "./tools/bundler/packages-basic-info.mjs";
 import { bundleDependencies } from "./tools/bundle-dependencies-polyfix/index.js";
 
@@ -7,22 +7,29 @@ const packages = getPackagesBasicInfo();
 
 const ignoredApps = ['db', 'redis', 'local-mcp'];
 
-await Promise.all(
+Promise.all(
   readdirSync('./apps').map((folder) => {
     if (ignoredApps.includes(folder) || folder.startsWith('.')) {
       return;
     }
     const depsNames = bundleDependencies(folder);
     return new Promise((resolve, reject) => {
-      exec(`rm -rf apps/${folder}/node_modules/@qelos && \
-mkdir apps/${folder}/node_modules/@qelos`, (err) => {
+      console.log(`Removing local node_modules at ${folder}`);
+      if (existsSync(`apps/${folder}/package-lock.json`)) {
+        rmSync(`apps/${folder}/package-lock.json`)
+      }
+      exec(`rm -rf apps/${folder}/node_modules/@qelos`, (err) => {
+        execSync(`mkdir -p apps/${folder}/node_modules/@qelos`);
         if (err) {
+          console.log(`failed to remove apps/${folder}/node_modules/@qelos`);
+          console.log(err);
           reject();
         }
         resolve();
       });
     })
       .then(() => {
+        console.log('Copying local packages to apps/' + folder)
         return Promise.all(
           depsNames.map(dep => {
             if (!packages[dep]) {
@@ -45,6 +52,8 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
           // Modify package.json to replace workspace dependencies before packing
           const pkgPath = `apps/${folder}/package.json`;
           const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+
+          console.log('Replacing workspace dependency to remote at apps/' + folder)
           
           // Replace workspace dependencies with wildcard versions
           if (pkg.dependencies) {
@@ -61,6 +70,7 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
           // Write the modified package.json back
           writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
           
+          console.log(`Installing ${folder}`)
           // Run npm pack with the modified package.json
           exec(`cd apps/${folder} && npm install --ignore-scripts --omit=dev && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
             if (err) {
@@ -93,6 +103,7 @@ mkdir apps/${folder}/node_modules/@qelos`, (err) => {
       })
   })
 )
-  .catch(() => {
+  .catch((err) => {
+    console.log('failed!', err)
     process.exit(1)
   })
