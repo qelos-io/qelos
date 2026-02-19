@@ -50,11 +50,11 @@ function processApp(folder) {
     })
     .then(() => {
       return new Promise((resolve, reject) => {
-        // Remove packageManager field and scripts from http-proxy-middleware to prevent build failures
-        console.log('Removing packageManager and scripts from http-proxy-middleware to prevent build issues')
-        exec(`find apps/${folder}/node_modules -name "package.json" -path "*http-proxy-middleware*" -exec sed -i '/packageManager/d; /scripts/,/}/d' {} \\;`, (err) => {
+        // Remove packageManager field and scripts from http-proxy-middleware in pnpm store
+        console.log('Removing packageManager and scripts from http-proxy-middleware in pnpm store')
+        exec(`find node_modules/.pnpm -name "package.json" -path "*http-proxy-middleware*" -exec sed -i '/packageManager/d; /scripts/,/}/d' {} \\;`, (err) => {
           if (err) {
-            console.log('Warning: Failed to modify http-proxy-middleware package.json:', err.message);
+            console.log('Warning: Failed to modify http-proxy-middleware in pnpm store:', err.message);
           }
           resolve();
         });
