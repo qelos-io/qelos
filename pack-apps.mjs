@@ -50,11 +50,11 @@ function processApp(folder) {
     })
     .then(() => {
       return new Promise((resolve, reject) => {
-        // Remove scripts from http-proxy-middleware to prevent build failures
-        console.log('Removing scripts from http-proxy-middleware to prevent build issues')
-        exec(`find apps/${folder}/node_modules -name "package.json" -path "*http-proxy-middleware*" -exec sed -i '/scripts/,/}/d' {} \\;`, (err) => {
+        // Remove packageManager field and scripts from http-proxy-middleware to prevent build failures
+        console.log('Removing packageManager and scripts from http-proxy-middleware to prevent build issues')
+        exec(`find apps/${folder}/node_modules -name "package.json" -path "*http-proxy-middleware*" -exec sed -i '/packageManager/d; /scripts/,/}/d' {} \\;`, (err) => {
           if (err) {
-            console.log('Warning: Failed to remove http-proxy-middleware scripts:', err.message);
+            console.log('Warning: Failed to modify http-proxy-middleware package.json:', err.message);
           }
           resolve();
         });
@@ -85,10 +85,10 @@ function processApp(folder) {
         writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
         
         console.log(`Installing ${folder}`)
-        // Enable corepack to handle packageManager fields properly, then run npm
-        const command = `cd apps/${folder} && corepack enable && npm install --ignore-scripts --omit=dev && npm pack --ignore-scripts --verbose`;
+        // Force npm to ignore packageManager conflicts by setting environment variables
+        const command = `cd apps/${folder} && npm install --ignore-scripts --omit=dev --no-audit --no-fund && npm pack --ignore-scripts --verbose`;
           
-        exec(command, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true' } }, (err, stdout) => {
+        exec(command, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NODE_ENV: 'production' } }, (err, stdout) => {
           if (err) {
             console.log(folder + ' npm pack failed');
             console.log(err.message);
