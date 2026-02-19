@@ -72,8 +72,5 @@
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
   "overrides": {
     "esbuild": "0.25.4"
-  },
-  "bundleDependencies": [
-    "express"
-  ]
+  }
 }

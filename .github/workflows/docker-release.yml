@@ -5,7 +5,6 @@ on:
     workflows: ["Qelos CI/CD"]
     types:
       - completed
-    branches: [ main ]
 
 # Add permissions needed for GitHub Container Registry
 permissions:
@@ -15,7 +14,10 @@ permissions:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.head_branch == 'main' ||
+      github.event.workflow_run.event == 'pull_request') }}
     outputs:
       services: '["admin", "auth", "assets", "content", "drafts", "gateway", "plugins", "secrets", "no-code", "ai"]'
     steps:
@@ -44,7 +46,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       
       - name: Login to GitHub Container Registry
-        if: ${{ !contains(github.event.workflow_run.event, 'pull_request') }}
+        if: ${{ github.event.workflow_run.head_branch == 'main' }}
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -65,7 +67,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./apps/${{ matrix.service }}
-          push: ${{ !contains(github.event.workflow_run.event, 'pull_request') }}
+          push: ${{ github.event.workflow_run.head_branch == 'main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

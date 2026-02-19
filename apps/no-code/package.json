@@ -52,10 +52,5 @@
   },
   "overrides": {
     "esbuild": "0.25.4"
-  },
-  "bundleDependencies": [
-    "@qelos/api-kit",
-    "@qelos/cache-manager",
-    "@qelos/global-types"
-  ]
+  }
 }

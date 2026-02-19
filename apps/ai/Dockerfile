@@ -1,28 +1,15 @@
-FROM node:22.14-slim AS base 
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+FROM node:22.14-slim AS builder
+WORKDIR /app
 
-FROM base AS builder
-WORKDIR /build
-
-# Install only the necessary build dependencies
+# Install build dependencies for native modules
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3-minimal \
     libvips-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and extract the package
-COPY qelos-ai.tgz .
-# Extract the tarball directly to root with special flags to handle paths with '..' safely
-RUN cd /build && tar --absolute-names --no-same-owner --no-same-permissions -xzf qelos-ai.tgz
-
-# Set working directory to the package directory
-WORKDIR /build/package
-
-# Install dependencies
-RUN npm install --no-frozen-lockfile
+COPY qelos-ai.tgz /tmp/app.tgz
+RUN tar -xzf /tmp/app.tgz -C /app && rm /tmp/app.tgz
 
 # Rebuild Sharp for the current architecture and dynamically install esbuild for the current architecture
 RUN npm install -g prebuild-install && \
@@ -38,10 +25,10 @@ RUN npm install -g prebuild-install && \
     fi
 
 # Production image
-FROM base
-ENV NODE_ENV=production
+FROM node:22.14-slim
 ENV PORT=9007
 EXPOSE $PORT
+ENV NODE_ENV=production
 
 # Install only runtime dependencies, not build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -50,9 +37,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libstdc++6 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /
-
-# Copy only the necessary files from the builder stage
-COPY --from=builder /build/package /
-
-CMD pnpm start
+WORKDIR /app
+COPY --from=builder /app /app
+CMD ["npm", "start"]

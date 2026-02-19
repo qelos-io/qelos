@@ -439,7 +439,7 @@ This will load `.env.staging` and create variables like `QELOS_CONNECTION_OPENAI
 
 ## Related Resources
 
-- [Connections Overview](/sdk/connections_operations.md) - Working with connections in Qelos
+- [AI Operations](/sdk/ai_operations.md) - Working with connections and AI in Qelos
 - [Blueprint Integration](/sdk/blueprints_operations.md) - Using connections in blueprints
-- [Security Best Practices](/deployment/security.md) - General security guidelines
-- [Environment Variables](/deployment/environment-variables.md) - Managing environment configuration
+- [Security Best Practices](/deployment/production-guide.md) - Production deployment guidelines
+- [Configuration Management](/deployment/configuration.md) - Managing deployment configuration
