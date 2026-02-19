@@ -1,17 +1,8 @@
-FROM node:22.14-slim AS builder
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
-ENV NODE_ENV=production
+FROM node:22.14-slim
 ENV PORT=9001
 EXPOSE $PORT
-COPY qelos-content.tgz .
-# Extract the tarball directly to root with special flags to handle paths with '..' safely
-RUN cd / && tar --absolute-names --no-same-owner --no-same-permissions -xzf qelos-content.tgz
-
-# Set working directory to the package directory
-WORKDIR /package
-
-# Install dependencies
-RUN pnpm install --no-frozen-lockfile
-CMD pnpm start
+ENV NODE_ENV=production
+WORKDIR /app
+COPY qelos-content.tgz /tmp/app.tgz
+RUN tar -xzf /tmp/app.tgz -C /app && rm /tmp/app.tgz
+CMD ["npm", "start"]

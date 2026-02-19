@@ -39,8 +39,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
-          path: |
-            node_modules/
-            apps/
-            packages/
+          path: apps/**/*.tgz
           retention-days: 1
