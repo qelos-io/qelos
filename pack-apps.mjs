@@ -99,33 +99,31 @@ function processApp(folder) {
           }
           
           // Now run pack separately
-          // Generate a proper npm package-lock.json before packing
-          exec(`cd apps/${folder} && npm install --package-lock-only`, { maxBuffer: 10 * 1024 * 1024 }, (err) => {
-            exec(packCommand, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
+          // Skip package-lock.json validation by using --no-shrinkwrap
+          exec(`cd apps/${folder} && npm pack --ignore-scripts --verbose --no-shrinkwrap`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
+            if (err) {
+              console.log(folder + ' npm pack failed');
+              console.log(err.message);
+              console.log(stdout.toString().slice(-10000));
+              reject();
+              return;
+            }
+            
+            // Then run rename-pack.js
+            exec(`cd apps/${folder} && node ../../tools/bundler/rename-pack.js`, { maxBuffer: 1024 * 1024 }, (err) => {
+              console.log(folder + ' packing ' + (err ? 'failed' : 'succeeded'))
               if (err) {
-                console.log(folder + ' npm pack failed');
                 console.log(err.message);
-                console.log(stdout.toString().slice(-10000));
                 reject();
                 return;
               }
-              
-              // Then run rename-pack.js
-              exec(`cd apps/${folder} && node ../../tools/bundler/rename-pack.js`, { maxBuffer: 1024 * 1024 }, (err) => {
-                console.log(folder + ' packing ' + (err ? 'failed' : 'succeeded'))
-                if (err) {
-                  console.log(err.message);
-                  reject();
-                  return;
-                }
 
-                // git checkout to all package.json files
-                exec(`cd apps/${folder} && git checkout package.json`, { maxBuffer: 1024 * 1024 }, (err) => {
-                  if (err) {
-                    console.log(`Warning: Failed to checkout package.json for ${folder}:`, err.message);
-                  }
-                  resolve();
-                })
+              // git checkout to all package.json files
+              exec(`cd apps/${folder} && git checkout package.json`, { maxBuffer: 1024 * 1024 }, (err) => {
+                if (err) {
+                  console.log(`Warning: Failed to checkout package.json for ${folder}:`, err.message);
+                }
+                resolve();
               })
             })
           })
