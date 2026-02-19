@@ -86,7 +86,7 @@ function processApp(folder) {
         
         console.log(`Installing ${folder}`)
         // Install dependencies first, then pack separately
-        const installCommand = `cd apps/${folder} && npm install --ignore-scripts --omit=dev --no-audit --no-fund`;
+        const installCommand = `cd apps/${folder} && npm install --ignore-scripts --omit=dev --no-audit --no-fund --no-package-lock`;
         const packCommand = `cd apps/${folder} && npm pack --ignore-scripts --verbose`;
           
         exec(installCommand, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NODE_ENV: 'production' } }, (err, stdout) => {
@@ -99,8 +99,8 @@ function processApp(folder) {
           }
           
           // Now run pack separately
-          // Remove all package-lock.json files from pnpm store to avoid symlink issues
-          exec(`cd apps/${folder} && find node_modules -name "package-lock.json" -delete && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
+          // Pack without package-lock validation
+          exec(`cd apps/${folder} && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
             if (err) {
               console.log(folder + ' npm pack failed');
               console.log(err.message);
