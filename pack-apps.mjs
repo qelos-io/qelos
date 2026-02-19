@@ -99,8 +99,8 @@ function processApp(folder) {
           }
           
           // Now run pack separately
-          // Temporarily remove package-lock.json to avoid pnpm symlink issues
-          exec(`cd apps/${folder} && rm -f package-lock.json && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
+          // Remove all package-lock.json files from pnpm store to avoid symlink issues
+          exec(`cd apps/${folder} && find node_modules -name "package-lock.json" -delete && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
             if (err) {
               console.log(folder + ' npm pack failed');
               console.log(err.message);
