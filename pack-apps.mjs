@@ -50,22 +50,6 @@ function processApp(folder) {
     })
     .then(() => {
       return new Promise((resolve, reject) => {
-        // Only clean up packageManager fields and scripts in CI to avoid conflicts
-        if (isCI) {
-          console.log('CI detected: Removing packageManager fields and scripts from bundled dependencies')
-          exec(`find apps/${folder}/node_modules -name "package.json" -exec sed -i '/packageManager/d; /scripts/,/}/d' {} \\;`, (err) => {
-            if (err) {
-              console.log('Warning: Failed to remove packageManager fields and scripts:', err.message);
-            }
-            resolve();
-          });
-        } else {
-          resolve();
-        }
-      })
-    })
-    .then(() => {
-      return new Promise((resolve, reject) => {
 
         // Modify package.json to replace workspace dependencies before packing
         const pkgPath = `apps/${folder}/package.json`;
