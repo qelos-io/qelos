@@ -8,7 +8,7 @@ const packages = getPackagesBasicInfo();
 const ignoredApps = ['db', 'redis', 'local-mcp'];
 
 // Process apps one at a time to reduce memory usage in CI
-const BATCH_SIZE = 1;
+const BATCH_SIZE = 2;
 
 function processApp(folder) {
   const depsNames = bundleDependencies(folder);
@@ -99,8 +99,8 @@ function processApp(folder) {
           }
           
           // Now run pack separately
-          // First create a dummy package-lock.json to satisfy npm pack
-          exec(`cd apps/${folder} && echo '{}' > package-lock.json`, { maxBuffer: 1024 * 1024 }, (err) => {
+          // Generate a proper npm package-lock.json before packing
+          exec(`cd apps/${folder} && npm install --package-lock-only`, { maxBuffer: 10 * 1024 * 1024 }, (err) => {
             exec(packCommand, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
               if (err) {
                 console.log(folder + ' npm pack failed');
