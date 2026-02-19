@@ -12,6 +12,8 @@ const BATCH_SIZE = 1;
 
 function processApp(folder) {
   const depsNames = bundleDependencies(folder);
+  const isCI = process.env.CI === 'true'; // Check if running in CI environment
+  
   return new Promise((resolve, reject) => {
     console.log(`Removing local node_modules at ${folder}`);
     if (existsSync(`apps/${folder}/package-lock.json`)) {
@@ -48,32 +50,41 @@ function processApp(folder) {
     })
     .then(() => {
       return new Promise((resolve, reject) => {
-        // Clean up packageManager fields from bundled dependencies to avoid conflicts
-        console.log('Removing packageManager fields from bundled dependencies')
-        exec(`find apps/${folder}/node_modules -name "package.json" -exec sed -i '/packageManager/d' {} \\;`, (err) => {
-          if (err) {
-            console.log('Warning: Failed to remove packageManager fields:', err.message);
-          }
+        // Only clean up packageManager fields and scripts in CI to avoid conflicts
+        if (isCI) {
+          console.log('CI detected: Removing packageManager fields and scripts from bundled dependencies')
+          exec(`find apps/${folder}/node_modules -name "package.json" -exec sed -i '/packageManager/d; /scripts/,/}/d' {} \\;`, (err) => {
+            if (err) {
+              console.log('Warning: Failed to remove packageManager fields and scripts:', err.message);
+            }
+            resolve();
+          });
+        } else {
           resolve();
-        });
+        }
       })
     })
     .then(() => {
       return new Promise((resolve, reject) => {
-        // Temporarily remove packageManager from root package.json to avoid npm conflicts
-        console.log('Temporarily removing packageManager from root package.json')
-        const rootPkgPath = 'package.json';
-        const rootPkg = JSON.parse(readFileSync(rootPkgPath, 'utf8'));
-        const originalPackageManager = rootPkg.packageManager;
-        delete rootPkg.packageManager;
-        writeFileSync(rootPkgPath, JSON.stringify(rootPkg, null, 2));
+        // Only remove packageManager from root in CI
+        let restorePackageManager = () => {}; // no-op for non-CI
         
-        // Restore packageManager after packing
-        const restorePackageManager = () => {
-          const restoredPkg = JSON.parse(readFileSync(rootPkgPath, 'utf8'));
-          restoredPkg.packageManager = originalPackageManager;
-          writeFileSync(rootPkgPath, JSON.stringify(restoredPkg, null, 2));
-        };
+        if (isCI) {
+          // Temporarily remove packageManager from root package.json to avoid npm conflicts
+          console.log('Temporarily removing packageManager from root package.json')
+          const rootPkgPath = 'package.json';
+          const rootPkg = JSON.parse(readFileSync(rootPkgPath, 'utf8'));
+          const originalPackageManager = rootPkg.packageManager;
+          delete rootPkg.packageManager;
+          writeFileSync(rootPkgPath, JSON.stringify(rootPkg, null, 2));
+          
+          // Restore packageManager after packing
+          restorePackageManager = () => {
+            const restoredPkg = JSON.parse(readFileSync(rootPkgPath, 'utf8'));
+            restoredPkg.packageManager = originalPackageManager;
+            writeFileSync(rootPkgPath, JSON.stringify(restoredPkg, null, 2));
+          };
+        }
 
         // Modify package.json to replace workspace dependencies before packing
         const pkgPath = `apps/${folder}/package.json`;
@@ -97,9 +108,13 @@ function processApp(folder) {
         writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
         
         console.log(`Installing ${folder}`)
-        // Enable corepack and run npm pack with the modified package.json
-        // Use NPM_CONFIG_IGNORE_SCRIPTS env var for more robust script ignoring (handles nested deps)
-        exec(`cd apps/${folder} && corepack enable && npm install --ignore-scripts --omit=dev && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true' } }, (err, stdout) => {
+        // In CI, use npm with proper environment to avoid packageManager conflicts
+        // The key is to set NODE_ENV=production and use --force to bypass packageManager checks
+        const command = isCI 
+          ? `cd apps/${folder} && npm install --ignore-scripts --omit=dev --force && npm pack --ignore-scripts --verbose`
+          : `cd apps/${folder} && npm install --ignore-scripts --omit=dev && npm pack --ignore-scripts --verbose`;
+          
+        exec(command, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true' } }, (err, stdout) => {
           // Always restore packageManager field
           restorePackageManager();
           
