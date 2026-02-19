@@ -1,4 +1,4 @@
-import { start } from '@qelos/api-kit';
+import { start, config } from '@qelos/api-kit';
 import { connect } from './server/models';
 import { mongoUri } from './config';
 import { loadRoutes } from './server/routes';
@@ -11,5 +11,10 @@ process.on('uncaughtException', (err) => {
 connect(mongoUri)
 
 loadRoutes().then(async () => {
+  config({
+    bodyParserOptions: {
+      limit: '10mb'
+    }
+  })
   return start('AI Service', process.env.PORT || 9007, process.env.IP || '127.0.0.1')
 })

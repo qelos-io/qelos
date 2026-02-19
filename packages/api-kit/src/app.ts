@@ -44,7 +44,7 @@ function configureApp(app: Express) {
     app.use(require('cors')())
   }
   if (_config.bodyParser) {
-    app.use(express[_config.bodyParser]())
+    app.use(express[_config.bodyParser](_config.bodyParserOptions || {}))
   }
   app.get(HEALTH_PATH, (_, res) => {
     res.status(200).send('ok');

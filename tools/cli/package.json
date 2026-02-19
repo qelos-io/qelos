@@ -1,6 +1,6 @@
 {
   "name": "@qelos/plugins-cli",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "CLI to manage QELOS plugins",
   "main": "cli.mjs",
   "bin": {
@@ -14,7 +14,7 @@
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@qelos/sdk": "^3.11.7",
+    "@qelos/sdk": "^3.11.8",
     "dotenv": "^17.3.1",
     "cli-progress": "^3.12.0",
     "decompress-zip": "^0.3.3",
