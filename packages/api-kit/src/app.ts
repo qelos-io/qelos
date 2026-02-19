@@ -51,8 +51,8 @@ function configureApp(app: Express) {
   })
 }
 
-export function getBodyParser() {
-  return express.json();
+export function getBodyParser(options = {}) {
+  return express.json(options);
 }
 
 function startApp(serviceName = 'APP', port = _config.port, ip = _config.ip): Promise<void> {
