@@ -3,13 +3,6 @@ import express, { Express } from 'express';
 import type { ApiConfig, BodyParserType } from './types';
 import shutdown from './shutdown';
 
-export const config = (updatedConfig: any = _config): ApiConfig => {
-  _config = { ..._config, ...updatedConfig };
-  return _config;
-}
-export const app = () => _app || createApp();
-export const start = startApp;
-
 let _app: Express;
 let _config: ApiConfig = {
   cors: !!process.env.API_CORS || false,
@@ -19,6 +12,11 @@ let _config: ApiConfig = {
   ip: process.env.IP || '127.0.0.1'
 };
 
+export const config = (updatedConfig: any = _config): ApiConfig => {
+  _config = { ..._config, ...updatedConfig };
+  return _config;
+}
+
 function createApp() {
   _app = express()
 
@@ -26,6 +24,8 @@ function createApp() {
 
   return _app;
 }
+
+export const app = () => _app || createApp();
 
 const HEALTH_PATH = '/internal-api/health';
 
@@ -51,7 +51,7 @@ function configureApp(app: Express) {
   })
 }
 
-export function getBodyParser(options = {}) {
+export function getBodyParser(options = _config.bodyParserOptions || {}) {
   return express.json(options);
 }
 
@@ -66,4 +66,7 @@ function startApp(serviceName = 'APP', port = _config.port, ip = _config.ip): Pr
     });
   })
 }
+
+export const start = startApp;
+
 
