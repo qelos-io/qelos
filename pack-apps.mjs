@@ -48,6 +48,18 @@ function processApp(folder) {
     })
     .then(() => {
       return new Promise((resolve, reject) => {
+        // Clean up packageManager fields from bundled dependencies to avoid conflicts
+        console.log('Removing packageManager fields from bundled dependencies')
+        exec(`find apps/${folder}/node_modules -name "package.json" -exec sed -i '/packageManager/d' {} \\;`, (err) => {
+          if (err) {
+            console.log('Warning: Failed to remove packageManager fields:', err.message);
+          }
+          resolve();
+        });
+      })
+    })
+    .then(() => {
+      return new Promise((resolve, reject) => {
         // Modify package.json to replace workspace dependencies before packing
         const pkgPath = `apps/${folder}/package.json`;
         const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
@@ -72,8 +84,7 @@ function processApp(folder) {
         console.log(`Installing ${folder}`)
         // Enable corepack and run npm pack with the modified package.json
         // Use NPM_CONFIG_IGNORE_SCRIPTS env var for more robust script ignoring (handles nested deps)
-        // Also set yarn version to handle packageManager field conflicts
-        exec(`cd apps/${folder} && corepack enable && npm config set yarn-version 1.22.22 && npm install --ignore-scripts --omit=dev && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true' } }, (err, stdout) => {
+        exec(`cd apps/${folder} && corepack enable && npm install --ignore-scripts --omit=dev && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true' } }, (err, stdout) => {
           if (err) {
             console.log(folder + ' npm pack failed');
             console.log(err.message);
