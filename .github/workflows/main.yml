@@ -32,9 +32,6 @@ jobs:
       - name: Build apps
         run: pnpm --filter "./apps/**" build
       
-      - name: Enable Corepack
-        run: corepack enable
-      
       - name: Pack apps
         run: node pack-apps.mjs
       
