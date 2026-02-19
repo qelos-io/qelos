@@ -86,7 +86,7 @@ function processApp(folder) {
         
         console.log(`Installing ${folder}`)
         // Install dependencies first, then pack separately
-        const installCommand = `cd apps/${folder} && npm install --ignore-scripts --omit=dev --no-audit --no-fund --no-package-lock`;
+        const installCommand = `cd apps/${folder} && npm install --ignore-scripts --omit=dev --no-audit --no-fund`;
         const packCommand = `cd apps/${folder} && npm pack --ignore-scripts --verbose`;
           
         exec(installCommand, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NODE_ENV: 'production' } }, (err, stdout) => {
