@@ -85,33 +85,45 @@ function processApp(folder) {
         writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
         
         console.log(`Installing ${folder}`)
-        // Force npm to ignore packageManager conflicts by setting environment variables
-        const command = `cd apps/${folder} && npm install --ignore-scripts --omit=dev --no-audit --no-fund && npm pack --ignore-scripts --verbose`;
+        // Install dependencies first, then pack separately
+        const installCommand = `cd apps/${folder} && npm install --ignore-scripts --omit=dev --no-audit --no-fund`;
+        const packCommand = `cd apps/${folder} && npm pack --ignore-scripts --verbose`;
           
-        exec(command, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NODE_ENV: 'production' } }, (err, stdout) => {
+        exec(installCommand, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true', NODE_ENV: 'production' } }, (err, stdout) => {
           if (err) {
-            console.log(folder + ' npm pack failed');
+            console.log(folder + ' npm install failed');
             console.log(err.message);
             console.log(stdout.toString().slice(-10000));
             reject();
             return;
           }
           
-          // Then run rename-pack.js
-          exec(`cd apps/${folder} && node ../../tools/bundler/rename-pack.js`, { maxBuffer: 1024 * 1024 }, (err) => {
-            console.log(folder + ' packing ' + (err ? 'failed' : 'succeeded'))
+          // Now run pack separately
+          exec(packCommand, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
             if (err) {
+              console.log(folder + ' npm pack failed');
               console.log(err.message);
+              console.log(stdout.toString().slice(-10000));
               reject();
               return;
             }
-
-            // git checkout to all package.json files
-            exec(`cd apps/${folder} && git checkout package.json`, { maxBuffer: 1024 * 1024 }, (err) => {
+            
+            // Then run rename-pack.js
+            exec(`cd apps/${folder} && node ../../tools/bundler/rename-pack.js`, { maxBuffer: 1024 * 1024 }, (err) => {
+              console.log(folder + ' packing ' + (err ? 'failed' : 'succeeded'))
               if (err) {
-                console.log(`Warning: Failed to checkout package.json for ${folder}:`, err.message);
+                console.log(err.message);
+                reject();
+                return;
               }
-              resolve();
+
+              // git checkout to all package.json files
+              exec(`cd apps/${folder} && git checkout package.json`, { maxBuffer: 1024 * 1024 }, (err) => {
+                if (err) {
+                  console.log(`Warning: Failed to checkout package.json for ${folder}:`, err.message);
+                }
+                resolve();
+              })
             })
           })
         })
