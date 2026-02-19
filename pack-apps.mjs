@@ -50,6 +50,18 @@ function processApp(folder) {
     })
     .then(() => {
       return new Promise((resolve, reject) => {
+        // Remove scripts from http-proxy-middleware to prevent build failures
+        console.log('Removing scripts from http-proxy-middleware to prevent build issues')
+        exec(`find apps/${folder}/node_modules -name "package.json" -path "*http-proxy-middleware*" -exec sed -i '/scripts/,/}/d' {} \\;`, (err) => {
+          if (err) {
+            console.log('Warning: Failed to remove http-proxy-middleware scripts:', err.message);
+          }
+          resolve();
+        });
+      })
+    })
+    .then(() => {
+      return new Promise((resolve, reject) => {
 
         // Modify package.json to replace workspace dependencies before packing
         const pkgPath = `apps/${folder}/package.json`;
@@ -73,11 +85,8 @@ function processApp(folder) {
         writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
         
         console.log(`Installing ${folder}`)
-        // In CI, use npm with proper environment to avoid packageManager conflicts
-        // The key is to set NODE_ENV=production and use --force to bypass packageManager checks
-        const command = isCI 
-          ? `cd apps/${folder} && npm install --ignore-scripts --omit=dev --force && npm pack --ignore-scripts --verbose`
-          : `cd apps/${folder} && npm install --ignore-scripts --omit=dev && npm pack --ignore-scripts --verbose`;
+        // Enable corepack to handle packageManager fields properly, then run npm
+        const command = `cd apps/${folder} && corepack enable && npm install --ignore-scripts --omit=dev && npm pack --ignore-scripts --verbose`;
           
         exec(command, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true' } }, (err, stdout) => {
           if (err) {
