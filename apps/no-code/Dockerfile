@@ -10,8 +10,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+RUN npm install @esbuild/linux-x64 --no-save
 COPY qelos-no-code.tgz /tmp/app.tgz
 RUN tar -xzf /tmp/app.tgz -C /app && rm /tmp/app.tgz
-RUN npm install @esbuild/linux-x64 --no-save
 RUN npm rebuild node-jq
 CMD ["npm", "start"]
