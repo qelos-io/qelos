@@ -99,8 +99,8 @@ function processApp(folder) {
           }
           
           // Now run pack separately
-          // Skip package-lock.json validation by using --no-shrinkwrap
-          exec(`cd apps/${folder} && npm pack --ignore-scripts --verbose --no-shrinkwrap`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
+          // Temporarily remove package-lock.json to avoid pnpm symlink issues
+          exec(`cd apps/${folder} && rm -f package-lock.json && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
             if (err) {
               console.log(folder + ' npm pack failed');
               console.log(err.message);
