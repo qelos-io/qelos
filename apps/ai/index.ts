@@ -10,11 +10,12 @@ process.on('uncaughtException', (err) => {
 
 connect(mongoUri)
 
+config({
+  bodyParserOptions: {
+    limit: '10mb'
+  }
+})
 loadRoutes().then(async () => {
-  config({
-    bodyParserOptions: {
-      limit: '10mb'
-    }
-  })
+
   return start('AI Service', process.env.PORT || 9007, process.env.IP || '127.0.0.1')
 })
