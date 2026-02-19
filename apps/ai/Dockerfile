@@ -11,8 +11,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY qelos-ai.tgz /tmp/app.tgz
 RUN tar -xzf /tmp/app.tgz -C /app && rm /tmp/app.tgz
 
-# Rebuild Sharp for the current architecture (esbuild is already installed by pnpm deploy on Linux CI)
-RUN npm install -g prebuild-install && npm rebuild sharp
+# Rebuild Sharp for the current architecture and install esbuild for the target platform
+RUN npm install -g prebuild-install && \
+    npm rebuild sharp && \
+    ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then \
+      npm install @esbuild/linux-x64 --no-save; \
+    elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+      npm install @esbuild/linux-arm64 --no-save; \
+    else \
+      echo "Unsupported architecture: $ARCH"; \
+      exit 1; \
+    fi
 
 # Production image
 FROM node:22.14-slim
