@@ -3,6 +3,15 @@ import { exec, execSync } from "node:child_process";
 import { getPackagesBasicInfo } from "./tools/bundler/packages-basic-info.mjs";
 import { bundleDependencies } from "./tools/bundle-dependencies-polyfix/index.js";
 
+// Remove packageManager from root package.json to prevent corepack issues in CI
+const rootPkgPath = './package.json';
+const rootPkg = JSON.parse(readFileSync(rootPkgPath, 'utf8'));
+if (rootPkg.packageManager) {
+  delete rootPkg.packageManager;
+  writeFileSync(rootPkgPath, JSON.stringify(rootPkg, null, 2));
+  console.log('Removed packageManager from root package.json');
+}
+
 const packages = getPackagesBasicInfo();
 
 const ignoredApps = ['db', 'redis', 'local-mcp'];
@@ -125,4 +134,9 @@ processInBatches(apps, BATCH_SIZE)
   .catch((err) => {
     console.log('failed!', err)
     process.exit(1)
+  })
+  .finally(() => {
+    // Restore root package.json
+    execSync('git checkout package.json', { stdio: 'inherit' });
+    console.log('Restored root package.json');
   })
