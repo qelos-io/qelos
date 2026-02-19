@@ -60,6 +60,21 @@ function processApp(folder) {
     })
     .then(() => {
       return new Promise((resolve, reject) => {
+        // Temporarily remove packageManager from root package.json to avoid npm conflicts
+        console.log('Temporarily removing packageManager from root package.json')
+        const rootPkgPath = 'package.json';
+        const rootPkg = JSON.parse(readFileSync(rootPkgPath, 'utf8'));
+        const originalPackageManager = rootPkg.packageManager;
+        delete rootPkg.packageManager;
+        writeFileSync(rootPkgPath, JSON.stringify(rootPkg, null, 2));
+        
+        // Restore packageManager after packing
+        const restorePackageManager = () => {
+          const restoredPkg = JSON.parse(readFileSync(rootPkgPath, 'utf8'));
+          restoredPkg.packageManager = originalPackageManager;
+          writeFileSync(rootPkgPath, JSON.stringify(restoredPkg, null, 2));
+        };
+
         // Modify package.json to replace workspace dependencies before packing
         const pkgPath = `apps/${folder}/package.json`;
         const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
@@ -85,6 +100,9 @@ function processApp(folder) {
         // Enable corepack and run npm pack with the modified package.json
         // Use NPM_CONFIG_IGNORE_SCRIPTS env var for more robust script ignoring (handles nested deps)
         exec(`cd apps/${folder} && corepack enable && npm install --ignore-scripts --omit=dev && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true' } }, (err, stdout) => {
+          // Always restore packageManager field
+          restorePackageManager();
+          
           if (err) {
             console.log(folder + ' npm pack failed');
             console.log(err.message);
