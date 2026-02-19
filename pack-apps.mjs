@@ -70,9 +70,10 @@ function processApp(folder) {
         writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
         
         console.log(`Installing ${folder}`)
-        // Run npm pack with the modified package.json
+        // Enable corepack and run npm pack with the modified package.json
         // Use NPM_CONFIG_IGNORE_SCRIPTS env var for more robust script ignoring (handles nested deps)
-        exec(`cd apps/${folder} && npm install --ignore-scripts --omit=dev && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true' } }, (err, stdout) => {
+        // Also set yarn version to handle packageManager field conflicts
+        exec(`cd apps/${folder} && corepack enable && npm config set yarn-version 1.22.22 && npm install --ignore-scripts --omit=dev && npm pack --ignore-scripts --verbose`, { maxBuffer: 10 * 1024 * 1024, env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true' } }, (err, stdout) => {
           if (err) {
             console.log(folder + ' npm pack failed');
             console.log(err.message);
