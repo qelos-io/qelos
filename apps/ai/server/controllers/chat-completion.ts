@@ -426,7 +426,7 @@ export async function chatCompletion(req: any, res: any | null) {
       }
 
       // Setup code interpreter if enabled
-      if (options.codeInterpreter && thread && source.kind === IntegrationSourceKind.OpenAI) {
+      if (options.codeInterpreter && source.kind === IntegrationSourceKind.OpenAI) {
         try {
           // Create OpenAI client using same logic as AI service
           const apiKey = integrationSourceTargetAuthentication.token;
@@ -444,15 +444,42 @@ export async function chatCompletion(req: any, res: any | null) {
           });
 
           const codeInterpreterService = new CodeInterpreterService(openaiClient);
-          const containerId = await codeInterpreterService.getOrCreateContainer(thread);
-          tools.unshift({
-            type: "code_interpreter",
-            container: containerId
-          } as any);
-          logger.info('Code interpreter container setup completed', { 
-            threadId: thread._id, 
-            containerId 
-          });
+          let containerId: string;
+          
+          // Use thread-level container if thread exists, otherwise use user-level container
+          if (thread) {
+            containerId = await codeInterpreterService.getOrCreateContainer(thread);
+            logger.info('Code interpreter container setup completed (thread-level)', { 
+              threadId: thread._id, 
+              containerId 
+            });
+          } else {
+            // Use user-level container for non-recorded chats
+            const tenantId = req.headers.tenant as string;
+            const userId = req.user?._id?.toString();
+            
+            if (!userId) {
+              logger.warn('User ID not available, skipping code interpreter for non-recorded chat');
+              // Skip adding code interpreter tool and continue
+              return;
+            }
+            
+            containerId = await codeInterpreterService.getOrCreateUserContainer(tenantId, userId);
+            logger.info('Code interpreter container setup completed (user-level)', { 
+              tenantId, 
+              userId, 
+              containerId 
+            });
+          }
+          
+          // Add code interpreter tool with container ID
+          if (containerId) {
+            tools.unshift({
+              type: "code_interpreter",
+              container: containerId
+            } as any);
+          }
+
         } catch (error) {
           logger.error('Error setting up code interpreter container:', error);
           emitPlatformEvent({

@@ -2,6 +2,7 @@ import { Thread } from '../models/thread';
 import logger from './logger';
 import OpenAI from 'openai';
 import mongoose from 'mongoose';
+import { cacheManager } from './cache-manager';
 
 interface ContainerInfo {
   id: string;
@@ -63,6 +64,56 @@ export class CodeInterpreterService {
       return container.id;
     } catch (error) {
       logger.error('Failed to get or create code interpreter container', { threadId: thread._id, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get or create a code interpreter container for a user (non-recorded chats)
+   */
+  async getOrCreateUserContainer(tenantId: string, userId: string): Promise<string> {
+    try {
+      const cacheKey = `code-interpreter:${tenantId}:${userId}`;
+      
+      // Try to get existing container from cache
+      const cachedContainerId = await cacheManager.getItem(cacheKey);
+      if (cachedContainerId) {
+        const isValid = await this.validateContainer(cachedContainerId);
+        if (isValid) {
+          logger.info('Using existing cached code interpreter container', { 
+            tenantId, 
+            userId, 
+            containerId: cachedContainerId 
+          });
+          
+          // Reset cache TTL (20 minutes = 1200 seconds)
+          await cacheManager.setItem(cacheKey, cachedContainerId, { ttl: 1200 });
+          
+          return cachedContainerId;
+        } else {
+          logger.info('Cached container expired or invalid, creating new one', { 
+            tenantId, 
+            userId, 
+            oldContainerId: cachedContainerId 
+          });
+        }
+      }
+
+      // Create new container
+      const container = await this.createContainer();
+      
+      // Cache the container ID for 20 minutes (1200 seconds)
+      await cacheManager.setItem(cacheKey, container.id, { ttl: 1200 });
+
+      logger.info('Created new user code interpreter container', { 
+        tenantId, 
+        userId, 
+        containerId: container.id 
+      });
+
+      return container.id;
+    } catch (error) {
+      logger.error('Failed to get or create user code interpreter container', { tenantId, userId, error });
       throw error;
     }
   }
