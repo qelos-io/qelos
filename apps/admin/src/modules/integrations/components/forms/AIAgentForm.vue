@@ -176,6 +176,19 @@ const vectorStoreHardcodedIds = computed({
   }
 });
 
+const codeInterpreter = computed({
+  get: () => trigger.value?.details?.codeInterpreter || false,
+  set: (value: boolean) => {
+    if (!trigger.value) {
+      trigger.value = { source: '', operation: '', details: {} };
+    }
+    trigger.value.details = {
+      ...trigger.value.details,
+      codeInterpreter: value
+    };
+  }
+});
+
 const webSearch = computed({
   get: () => trigger.value?.details?.webSearch || false,
   set: (value: boolean) => {
@@ -619,6 +632,7 @@ const agentSchema = {
     recordThread: { type: "boolean", description: "Whether to record conversation threads" },
     vectorStore: { type: "boolean", description: "Whether to create a vector store for the thread" },
     webSearch: { type: "boolean", description: "Whether to enable web search capability" },
+    codeInterpreter: { type: "boolean", description: "Whether to enable code interpreter capability (OpenAI only)" },
     vectorStoreScope: { type: "string", description: "Scope of the vector store (thread, user, workspace, tenant)" },
     vectorStoreExpirationDays: { type: "number", description: "Number of days after last activity before the vector store expires" },
     vectorStoreHardcodedIds: { type: "array", items: { type: "string" }, description: "Additional OpenAI vector store IDs to include in file search" },
@@ -698,6 +712,11 @@ const handleAiGeneratedAgent = (result: any) => {
   // Update vector store hardcoded IDs
   if (Array.isArray(result.vectorStoreHardcodedIds)) {
     vectorStoreHardcodedIds.value = result.vectorStoreHardcodedIds.join('\n');
+  }
+
+  // Update code interpreter option
+  if (typeof result.codeInterpreter === 'boolean') {
+    codeInterpreter.value = result.codeInterpreter;
   }
 
   // Update context options
@@ -950,6 +969,18 @@ const handleSystemPromptImproved = (result: any) => {
                 </div>
                 <div class="capability-description">
                   {{ $t('Agent can search the web for current information and real-time data. (OpenAI only)') }}
+                </div>
+              </div>
+
+              <div class="capability-item">
+                <div class="capability-header">
+                  <el-checkbox v-model="codeInterpreter" size="large">
+                    <span class="capability-title">{{ $t('Enable code interpreter') }}</span>
+                  </el-checkbox>
+                  <el-tag v-if="codeInterpreter" type="success" size="small">{{ $t('Enabled') }}</el-tag>
+                </div>
+                <div class="capability-description">
+                  {{ $t('Agent can execute code in a sandboxed environment for data analysis, computation, and file processing. (OpenAI only)') }}
                 </div>
               </div>
             </div>

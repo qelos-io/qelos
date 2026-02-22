@@ -14,6 +14,7 @@ import { emitDataManipulationErrorEvent } from "../services/platform-events";
 import { emitPlatformEvent } from '@qelos/api-kit';
 import { analyzeChatCompletionError, createErrorResponse, logError } from "../services/error-analysis";
 import { VectorStoreService } from "../services/vector-store-service";
+import { CodeInterpreterService } from "../services/code-interpreter-service";
 import OpenAI from "openai";
 import mongoose from "mongoose";
 
@@ -181,6 +182,9 @@ export async function chatCompletion(req: any, res: any | null) {
         type: "web_search",
         search_context_size: "medium",
         user_location: { type: "approximate" }
+      } : undefined,
+      codeInterpreter: integration.trigger.details?.codeInterpreter && source.kind === IntegrationSourceKind.OpenAI ? {
+        type: "code_interpreter"
       } : undefined,
     }, integration.dataManipulation);
   } catch (error) {
@@ -417,6 +421,54 @@ export async function chatCompletion(req: any, res: any | null) {
           tools.unshift({
             type: "file_search",
             vector_store_ids: Array.from(new Set(vectorStoreIds)),
+          });
+        }
+      }
+
+      // Setup code interpreter if enabled
+      if (options.codeInterpreter && thread && source.kind === IntegrationSourceKind.OpenAI) {
+        try {
+          // Create OpenAI client using same logic as AI service
+          const apiKey = integrationSourceTargetAuthentication.token;
+          const organizationId = source.metadata.organizationId;
+          
+          if (!apiKey) {
+            throw new Error('OpenAI API key is required for code interpreter');
+          }
+
+          const openaiClient = new OpenAI({
+            apiKey: apiKey,
+            organization: organizationId,
+            baseURL: source.metadata.apiUrl,
+            timeout: 120000,
+          });
+
+          const codeInterpreterService = new CodeInterpreterService(openaiClient);
+          const containerId = await codeInterpreterService.getOrCreateContainer(thread);
+          tools.unshift({
+            type: "code_interpreter",
+            container: containerId
+          } as any);
+          logger.info('Code interpreter container setup completed', { 
+            threadId: thread._id, 
+            containerId 
+          });
+        } catch (error) {
+          logger.error('Error setting up code interpreter container:', error);
+          emitPlatformEvent({
+            tenant: integration.tenant,
+            source: integration._id,
+            kind: integration.target.source.kind,
+            eventName: 'ai_code_interpreter_failed',
+            description: `AI code interpreter failed: ${error}`,
+            user: req.user?._id?.toString(),
+            metadata: {
+              error: error instanceof Error ? error.message : String(error),
+              integrationId: integration._id,
+              integrationName: integration.name,
+              workspace: req.workspace?._id?.toString(),
+              threadId: thread?._id?.toString(),
+            }
           });
         }
       }

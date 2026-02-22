@@ -11,7 +11,7 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, { required:
     },
     chatCompletion: {
       required: [],
-      optional: ['recordThread', 'name', 'description', 'vectorStore', 'vectorStoreScope', 'vectorStoreExpirationDays', 'vectorStoreHardcodedIds', 'webSearch']
+      optional: ['recordThread', 'name', 'description', 'vectorStore', 'vectorStoreScope', 'vectorStoreExpirationDays', 'vectorStoreHardcodedIds', 'webSearch', 'codeInterpreter']
     },
     apiWebhook: {
       required: [],

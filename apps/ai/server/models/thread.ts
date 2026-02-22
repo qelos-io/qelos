@@ -28,6 +28,8 @@ export interface IThread extends Document {
   updated: Date;
   user: mongoose.Types.ObjectId;
   workspace?: mongoose.Types.ObjectId;
+  codeInterpreterContainerId?: string;
+  codeInterpreterContainerExpiresAt?: Date;
 }
 
 // Define the message schema
@@ -64,6 +66,8 @@ const ThreadSchema = new Schema<IThread>(
     messageSummaries: { type: [MessageSummarySchema], default: [] },
     user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
     workspace: { type: Schema.Types.ObjectId, ref: 'Workspace' },
+    codeInterpreterContainerId: { type: String, required: false },
+    codeInterpreterContainerExpiresAt: { type: Date, required: false },
     created: { type: Date, default: Date.now },
     updated: { type: Date, default: Date.now }
   },
