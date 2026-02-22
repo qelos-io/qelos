@@ -6,6 +6,7 @@ export type IDataProviderCallback = () => string | Promise<string>;
 export interface CacheManager {
     getItem: (key: string) => Promise<string>;
     setItem: (key: string, value: string, { ttl }?: CacheManagerOptions) => Promise<void>;
+    setIfNotExists: (key: string, value: string, { ttl }?: CacheManagerOptions) => Promise<boolean>;
     wrap: (key: string, fallback: IDataProviderCallback, setterOptions?: Partial<CacheManagerOptions>) => Promise<string>;
 }
 
@@ -15,6 +16,9 @@ export function createCacheManager(cacher: ICache, applicationOptions: CacheMana
         getItem: cacher.getItem,
         setItem(key: string, value: string, options: Partial<CacheManagerOptions> = {}) {
             return cacher.setItem(key, value, { ...applicationOptions, ...options });
+        },
+        setIfNotExists(key: string, value: string, options: Partial<CacheManagerOptions> = {}) {
+            return cacher.setIfNotExists(key, value, { ...applicationOptions, ...options });
         },
         async wrap(key: string, fallback: IDataProviderCallback, setterOptions: Partial<CacheManagerOptions> = {}) {
             let currentValue;

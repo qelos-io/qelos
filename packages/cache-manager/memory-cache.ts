@@ -27,5 +27,16 @@ export function createMemoryCache(): ICache {
         });
     }, 5000);
 
-    return { getItem, setItem };
+    const setIfNotExists = (key: string, value: string, { ttl }: CacheManagerOptions) => {
+        if (storage.has(key)) {
+            return Promise.resolve(false);
+        }
+        storage.set(key, value);
+        if (ttl) {
+            keysToRemove.set(key, Date.now() + (ttl * 1000));
+        }
+        return Promise.resolve(true);
+    }
+
+    return { getItem, setItem, setIfNotExists };
 }

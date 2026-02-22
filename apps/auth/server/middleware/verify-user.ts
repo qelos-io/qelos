@@ -38,7 +38,6 @@ function oAuthVerify(req: AuthRequest, res: Response, next: NextFunction): Promi
 }
 
 async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-  // get the last part from an authorization header string like "bearer token-value"
   const tenant = (req.headers.tenant = req.headers.tenant as string || '0');
   const token = getCookieTokenValue(req);
 
@@ -57,81 +56,44 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
   try {
     const payload: any = await verifyToken(token, tenant);
     const created = Number(payload.tokenIdentifier?.split(':')[0]);
-    
+
     // If token is still fresh, no need to verify further
     const tokenAge = Date.now() - created;
     if (tokenAge < cookieTokenVerificationTime) {
       setUserPayload(payload, req, res, next);
       return;
     }
-    
-    // Check if this token was already processed (token refresh happening)
-    if (await isCookieProcessed(payload.tokenIdentifier)) {
+
+    // Atomically try to acquire exclusive refresh lock for this token.
+    // Only one request wins — all others use the existing (valid) JWT payload.
+    const acquiredLock = await tryAcquireRefreshLock(payload.tokenIdentifier);
+    if (!acquiredLock) {
       setUserPayload(payload, req, res, next);
       return;
     }
-    
+
+    // We won the lock — proceed with token refresh
+    const user = await getUserIfTokenExists(
+      payload.tenant,
+      payload.sub,
+      payload.tokenIdentifier
+    );
+
     const newCookieIdentifier = getUniqueId();
-    
-    // Try to get user with the existing token
-    let user;
-    try {
-      user = await getUserIfTokenExists(
-        payload.tenant,
-        payload.sub,
-        payload.tokenIdentifier
-      );
-      // Mark as processed AFTER validating token exists but BEFORE updating
-      await setCookieAsProcessed(payload.tokenIdentifier);
-    } catch (e) {
-      // If user not found, check if token was processed by another request
-      if (await isCookieProcessed(payload.tokenIdentifier)) {
-        setUserPayload(payload, req, res, next);
-        return;
-      }
-      // Log the error for debugging
-      logger.log('Token refresh failed - user not found', {
-        error: e?.code || 'UNKNOWN',
-        tokenIdentifier: payload.tokenIdentifier,
-        userId: payload.sub,
-        tenant: payload.tenant
-      });
-      throw e;
-    }
-    
-    let newToken, newPayload;
-    try {
-      // Update the token in database
-      await updateToken(
-        user,
-        'cookie',
-        payload,
-        newCookieIdentifier
-      );
-      
-      // Generate new token and set cookie
-      const { token, payload: p } = getSignedToken(
-        user,
-        payload.workspace,
-        newCookieIdentifier,
-        String(cookieTokenExpiration)
-      );
-      newToken = token;
-      newPayload = p;
-    } catch (e) {
-      // If update fails, check if another request already processed it
-      if (await isCookieProcessed(payload.tokenIdentifier)) {
-        setUserPayload(payload, req, res, next);
-        return;
-      }
-      logger.log('Token update failed', {
-        error: e?.code || 'UNKNOWN',
-        tokenIdentifier: payload.tokenIdentifier,
-        userId: payload.sub,
-        tenant: payload.tenant
-      });
-      throw e;
-    }
+
+    await updateToken(
+      user,
+      'cookie',
+      payload,
+      newCookieIdentifier
+    );
+
+    const { token: newToken, payload: newPayload } = getSignedToken(
+      user,
+      payload.workspace,
+      newCookieIdentifier,
+      String(cookieTokenExpiration)
+    );
 
     if (newToken && newPayload) {
       setCookie(res, getCookieTokenName(req.headers.tenant), newToken, null, getRequestHost(req));
@@ -140,7 +102,6 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       throw new Error('could not create new token and new payload for user');
     }
   } catch (e) {
-    // Log the error but don't fail the request - let user continue with existing token
     logger.log('Cookie verification failed, continuing without auth', {
       error: e?.code || e?.message || 'UNKNOWN',
       url: req.url,
@@ -152,20 +113,16 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
   }
 }
 
-async function setCookieAsProcessed(tokenIdentifier: string) {
-  await cacheManager.setItem(tokenIdentifier, 'tokenIdentifier', { ttl: processedCookieExpiration });
-}
-
-async function isCookieProcessed(tokenIdentifier: string) {
+async function tryAcquireRefreshLock(tokenIdentifier: string): Promise<boolean> {
   try {
-    const res = await cacheManager.getItem(tokenIdentifier);
-    return !!res;
+    return await cacheManager.setIfNotExists(tokenIdentifier, 'locked', { ttl: processedCookieExpiration });
   } catch (err) {
-    logger.log('failed to check isCookieProcessed', {
+    logger.log('failed to acquire refresh lock', {
       error: err?.message || err,
       tokenIdentifier: tokenIdentifier.substring(0, 20) + '...'
     });
-    return false;
+    // If Redis is down, allow the refresh attempt to avoid blocking all users
+    return true;
   }
 }
 

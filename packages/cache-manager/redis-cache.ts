@@ -15,6 +15,10 @@ export function createRedisCache(redisUrl: string): ICache {
     const getItem = promisify(client.get).bind(client);
     const setItem = promisify(client.set).bind(client);
 
+    const setnxWithExpire = promisify((key: string, value: string, nx: string, ex: string, ttl: number, cb: (err: Error | null, reply: string | null) => void) => {
+        client.set(key, value, nx, ex, ttl, cb);
+    });
+
     return {
         getItem,
         async setItem(key: string, value: string, { ttl }: CacheManagerOptions): Promise<void> {
@@ -22,6 +26,14 @@ export function createRedisCache(redisUrl: string): ICache {
             if (ttl) {
                 client.expire(key, ttl);
             }
+        },
+        async setIfNotExists(key: string, value: string, { ttl }: CacheManagerOptions): Promise<boolean> {
+            if (ttl) {
+                const result = await setnxWithExpire(key, value, 'NX', 'EX', ttl);
+                return result === 'OK';
+            }
+            const result = await promisify(client.setnx).bind(client)(key, value);
+            return result === 1;
         }
     };
 }
