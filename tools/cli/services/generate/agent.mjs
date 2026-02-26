@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 import readline from 'readline';
-import { logger } from './logger.mjs';
-import { interactiveSelect } from './interactive-select.mjs';
+import { logger } from '../utils/logger.mjs';
+import { interactiveSelect } from '../utils/interactive-select.mjs';
 
 const AI_PROVIDER_KINDS = ['openai', 'claudeai', 'gemini'];
 

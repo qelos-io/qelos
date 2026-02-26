@@ -1,5 +1,5 @@
-import { generateRules } from '../services/generate-rules.mjs';
-import { logger } from '../services/logger.mjs';
+import { generateRules } from '../services/generate/rules.mjs';
+import { logger } from '../services/utils/logger.mjs';
 
 export default async function generateController({ type }) {
   try {

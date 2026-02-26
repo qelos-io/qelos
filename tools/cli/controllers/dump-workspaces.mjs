@@ -1,5 +1,5 @@
-import { initializeSdk } from '../services/sdk.mjs';
-import { logger } from '../services/logger.mjs';
+import { initializeSdk } from '../services/config/sdk.mjs';
+import { logger } from '../services/utils/logger.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 

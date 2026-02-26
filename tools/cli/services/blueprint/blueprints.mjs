@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { logger } from './logger.mjs';
-import { removeIdFromObject } from '../utils/object-utils.mjs';
+import { logger } from '../utils/logger.mjs';
+import { removeIdFromObject } from '../../utils/object-utils.mjs';
 
 /**
  * Push blueprints from local directory to remote

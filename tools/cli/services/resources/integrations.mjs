@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { logger } from './logger.mjs';
-import { extractIntegrationContent, resolveReferences } from './file-refs.mjs';
+import { logger } from '../utils/logger.mjs';
+import { extractIntegrationContent, resolveReferences } from '../utils/file-refs.mjs';
 
 const INTEGRATION_FILE_EXTENSION = '.integration.json';
 const INTEGRATIONS_API_PATH = '/api/integrations';

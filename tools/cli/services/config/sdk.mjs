@@ -1,5 +1,5 @@
 import { createJiti } from "jiti";
-import { logger } from "./logger.mjs";
+import { logger } from "../utils/logger.mjs";
 import { getConfig } from "./load-config.mjs";
 
 const jiti = createJiti(import.meta.url);

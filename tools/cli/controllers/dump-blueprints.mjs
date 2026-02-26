@@ -1,7 +1,7 @@
-import { initializeSdk } from '../services/sdk.mjs';
-import { dumpBlueprintEntities } from '../services/blueprint-entities.mjs';
-import { createDumpResolver } from '../services/identity-resolver.mjs';
-import { logger } from '../services/logger.mjs';
+import { initializeSdk } from '../services/config/sdk.mjs';
+import { dumpBlueprintEntities } from '../services/blueprint/entities.mjs';
+import { createDumpResolver } from '../services/utils/identity-resolver.mjs';
+import { logger } from '../services/utils/logger.mjs';
 import path from 'node:path';
 
 export default async function dumpBlueprintsController({ blueprints: blueprintsArg = 'all', filter: filterArg, group, path: targetPath = './dump' }) {

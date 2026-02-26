@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { logger } from './logger.mjs';
+import { logger } from '../utils/logger.mjs';
 import path from 'node:path';
 import fs from 'node:fs';
 

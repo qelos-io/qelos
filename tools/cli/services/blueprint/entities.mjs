@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { logger } from './logger.mjs';
+import { logger } from '../utils/logger.mjs';
 
 const PAGE_SIZE = 1000;
 const STRIP_KEYS = ['tenant', '__v', 'indexes', 'id'];

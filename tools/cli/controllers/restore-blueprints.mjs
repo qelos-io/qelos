@@ -1,7 +1,7 @@
-import { initializeSdk } from '../services/sdk.mjs';
-import { restoreBlueprintEntities } from '../services/blueprint-entities.mjs';
-import { createRestoreResolver } from '../services/identity-resolver.mjs';
-import { logger } from '../services/logger.mjs';
+import { initializeSdk } from '../services/config/sdk.mjs';
+import { restoreBlueprintEntities } from '../services/blueprint/entities.mjs';
+import { createRestoreResolver } from '../services/utils/identity-resolver.mjs';
+import { logger } from '../services/utils/logger.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 

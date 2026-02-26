@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import readline from 'node:readline';
-import { logger } from './logger.mjs';
-import { interactiveSelect } from './interactive-select.mjs';
+import { logger } from '../utils/logger.mjs';
+import { interactiveSelect } from '../utils/interactive-select.mjs';
 
 // Integration source kinds from global-types
 const IntegrationSourceKind = {

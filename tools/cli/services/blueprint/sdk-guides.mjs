@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { formatTitle, detectBlueprintType } from './blueprint-shared.mjs';
+import { formatTitle, detectBlueprintType } from './shared.mjs';
 
 export function generateSdkGuide({ blueprint, documents, targetDir }) {
   const guidePath = path.join(targetDir, `${blueprint.identifier}.sdk.md`);

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path, { join } from 'node:path';
-import { logger } from './logger.mjs';
+import { logger } from '../utils/logger.mjs';
 
 function normalizeRelativeIdentifier(value) {
   return String(value || '')

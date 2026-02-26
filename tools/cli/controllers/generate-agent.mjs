@@ -1,5 +1,5 @@
-import { generateAgent } from '../services/generate-agent.mjs';
-import { logger } from '../services/logger.mjs';
+import { generateAgent } from '../services/generate/agent.mjs';
+import { logger } from '../services/utils/logger.mjs';
 
 export default async function generateAgentController({ name }) {
   try {

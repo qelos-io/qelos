@@ -5,7 +5,7 @@ const os = require('node:os');
 // Import the functions we need to test
 // Since the service uses ES modules, we need to use jiti to load it
 const jiti = require('jiti')(__filename);
-const integrationsService = jiti(path.join(__dirname, '../../services/integrations.mjs'));
+const integrationsService = jiti(path.join(__dirname, '../../services/resources/integrations.mjs'));
 
 describe('Integration Connection Reference Mapping', () => {
   let testDir;

@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { logger } from './logger.mjs';
-import { getAppUrl } from './sdk.mjs';
-import { extractConfigContent, resolveReferences } from './file-refs.mjs';
+import { logger } from '../utils/logger.mjs';
+import { getAppUrl } from '../config/sdk.mjs';
+import { extractConfigContent, resolveReferences } from '../utils/file-refs.mjs';
 
 /**
  * Push configurations from local directory to remote

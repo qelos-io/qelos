@@ -15,8 +15,8 @@ import restoreCommand from './commands/restore.mjs';
 import getCommand from './commands/get.mjs';
 import agentCommand from './commands/agent.mjs';
 import generateCommand from './commands/generate.mjs';
-import { loadEnv } from './services/load-env.mjs';
-import { loadConfig } from './services/load-config.mjs';
+import { loadEnv } from './services/config/load-env.mjs';
+import { loadConfig } from './services/config/load-config.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const program = yargs(hideBin(process.argv));

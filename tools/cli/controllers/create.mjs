@@ -1,5 +1,5 @@
 import follow from "follow-redirects";
-import { interactiveSelect } from "../services/interactive-select.mjs";
+import { interactiveSelect } from "../services/utils/interactive-select.mjs";
 import { blue } from "../utils/colors.mjs";
 import DecompressZip from "decompress-zip";
 import { join } from "node:path";

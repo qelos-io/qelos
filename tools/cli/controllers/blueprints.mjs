@@ -1,9 +1,9 @@
 import path from "node:path";
-import { logger } from "../services/logger.mjs";
+import { logger } from "../services/utils/logger.mjs";
 import {
   SUPPORTED_PROTOCOL,
   generateBlueprintsFromMongo,
-} from "../services/blueprint-generator.mjs";
+} from "../services/blueprint/generator.mjs";
 
 export default async function blueprintsController({ uri, path: targetPath, guides = true }) {
   const connectionUri = uri || "mongodb://localhost:27017/db";

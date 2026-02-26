@@ -1,15 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { MongoClient } from 'mongodb';
-import { logger } from './logger.mjs';
-import { generateSdkGuide } from './blueprint-sdk-guides.mjs';
+import { logger } from '../utils/logger.mjs';
+import { generateSdkGuide } from './sdk-guides.mjs';
 import {
   formatTitle,
   toIdentifier,
   ensureSingular,
   detectBlueprintType,
   mapBlueprintTypeToJsonSchema
-} from './blueprint-shared.mjs';
+} from './shared.mjs';
 
 export const SUPPORTED_PROTOCOL = /^mongodb:\/\//i;
 const SAMPLE_SIZE = 50;

@@ -1,12 +1,12 @@
-import { logger } from '../services/logger.mjs';
-import { initializeSdk } from '../services/sdk.mjs';
-import { getAgentConfig, getConfig } from '../services/load-config.mjs';
-import { buildClientTools, loadContext } from '../services/agent-tools.mjs';
+import { logger } from '../services/utils/logger.mjs';
+import { initializeSdk } from '../services/config/sdk.mjs';
+import { getAgentConfig, getConfig } from '../services/config/load-config.mjs';
+import { buildClientTools, loadContext } from '../services/agent/tools.mjs';
 import { green, blue, yellow, red } from '../utils/colors.mjs';
 import { createStreamingRenderer } from '../utils/streaming-markdown.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
-import chalk from 'node:chalk';
+import chalk from 'chalk';
 
 // Helper function to check if a string is a valid MongoDB ObjectId
 function isValidObjectId(id) {

@@ -1,12 +1,12 @@
-import { initializeSdk } from '../services/sdk.mjs';
-import { pullComponents } from '../services/components.mjs';
-import { pullBlueprints } from '../services/blueprints.mjs';
-import { pullConfigurations } from '../services/configurations.mjs';
-import { pullPlugins } from '../services/plugins.mjs';
-import { pullBlocks } from '../services/blocks.mjs';
-import { pullIntegrations } from '../services/integrations.mjs';
-import { pullConnections } from '../services/connections.mjs';
-import { logger } from '../services/logger.mjs';
+import { initializeSdk } from '../services/config/sdk.mjs';
+import { pullComponents } from '../services/resources/components.mjs';
+import { pullBlueprints } from '../services/blueprint/blueprints.mjs';
+import { pullConfigurations } from '../services/resources/configurations.mjs';
+import { pullPlugins } from '../services/resources/plugins.mjs';
+import { pullBlocks } from '../services/resources/blocks.mjs';
+import { pullIntegrations } from '../services/resources/integrations.mjs';
+import { pullConnections } from '../services/resources/connections.mjs';
+import { logger } from '../services/utils/logger.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 

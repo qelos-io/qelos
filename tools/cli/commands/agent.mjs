@@ -1,5 +1,5 @@
 import agentController from "../controllers/agent.mjs";
-import { getAgentConfig, saveAgentConfig } from "../services/load-config.mjs";
+import { getAgentConfig, saveAgentConfig } from "../services/config/load-config.mjs";
 
 const SAVEABLE_AGENT_KEYS = ['thread', 'log', 'export', 'json', 'stream', 'tools'];
 

@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { yellow, blue, red } from '../utils/colors.mjs';
+import { yellow, blue, red } from '../../utils/colors.mjs';
 
 // ─── Tool output display ──────────────────────────────────────────────────────
 
@@ -197,6 +197,61 @@ export const BUILTIN_TOOLS = {
         fileLines.splice(args.line, 0, ...insertLines);
         fs.writeFileSync(filePath, fileLines.join('\n'), 'utf-8');
         return `Successfully inserted ${insertLines.length} line(s) at line ${args.line} in ${filePath}`;
+      } catch (err) {
+        return JSON.stringify({ error: err.message });
+      }
+    },
+  },
+  removeLines: {
+    name: 'removeLines',
+    description: 'Remove specific lines from a file. Supports removing single lines, ranges, or multiple specific line numbers.',
+    schema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Path to the file to modify (relative to cwd or absolute)' },
+        startLine: { type: 'number', description: 'Starting line number to remove (0-indexed)' },
+        endLine: { type: 'number', description: 'Ending line number to remove (0-indexed, inclusive). If not provided, only startLine is removed.' },
+      },
+      required: ['path', 'startLine', 'endLine'],
+    },
+    handler: async (args) => {
+      const filePath = path.isAbsolute(args.path) ? args.path : path.join(process.cwd(), args.path);
+      
+      try {
+        if (!fs.existsSync(filePath)) {
+          return JSON.stringify({ error: `File not found: ${filePath}` });
+        }
+
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const fileLines = content.split('\n');
+        const originalLength = fileLines.length;
+        
+        let linesToRemove = [];
+        
+        // Remove range or single line
+        const end = args.endLine !== undefined ? args.endLine : args.startLine;
+        if (args.startLine < 0 || args.endLine >= fileLines.length || args.startLine > end) {
+          return JSON.stringify({ error: `Invalid line range: ${args.startLine}-${args.endLine}. File has ${fileLines.length} lines (0-indexed).` });
+        }
+        for (let i = args.startLine; i <= end; i++) {
+          linesToRemove.push(i);
+        }
+        
+        // Sort lines in descending order to remove from end to start (preserves indices)
+        linesToRemove.sort((a, b) => b - a);
+        
+        // Remove lines
+        for (const lineNum of linesToRemove) {
+          if (lineNum >= 0 && lineNum < fileLines.length) {
+            fileLines.splice(lineNum, 1);
+          }
+        }
+        
+        fs.writeFileSync(filePath, fileLines.join('\n'), 'utf-8');
+        
+        const removedCount = originalLength - fileLines.length;
+        return `Successfully removed ${removedCount} line(s) from ${filePath}. File now has ${fileLines.length} lines.`;
+        
       } catch (err) {
         return JSON.stringify({ error: err.message });
       }

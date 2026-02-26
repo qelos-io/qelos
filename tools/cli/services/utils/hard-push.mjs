@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { red, yellow } from '../utils/colors.mjs';
+import { red, yellow } from '../../utils/colors.mjs';
 import { logger } from './logger.mjs';
 import { confirmDialog } from './interactive-select.mjs';
 

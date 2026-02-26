@@ -1,5 +1,5 @@
-import { generateConnection } from '../services/generate-connection.mjs';
-import { logger } from '../services/logger.mjs';
+import { generateConnection } from '../services/generate/connection.mjs';
+import { logger } from '../services/utils/logger.mjs';
 
 export default async function generateConnectionController({ name, kind }) {
   try {

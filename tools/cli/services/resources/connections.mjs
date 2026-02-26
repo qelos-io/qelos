@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { logger } from './logger.mjs';
+import { logger } from '../utils/logger.mjs';
 
 const CONNECTION_FILE_EXTENSION = '.connection.json';
 const AUTH_PLACEHOLDER_KEY = '$var';
