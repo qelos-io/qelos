@@ -3,9 +3,10 @@ import generateConnectionController from "../controllers/generate-connection.mjs
 import generateAgentController from "../controllers/generate-agent.mjs";
 
 export default function generateCommand(program) {
-  program
-    .command(
-      "generate rules <type>",
+
+  program.command('generate', 'Generate qelos related features', yargs => {
+    yargs.command(
+      "rules <type>",
       "Generate IDE-specific rules files for working with pulled Qelos resources.",
       (yargs) => {
         return yargs.positional("type", {
@@ -18,7 +19,7 @@ export default function generateCommand(program) {
       generateController,
     )
     .command(
-      "generate connection <name>",
+      "connection <name>",
       "Generate a secure connection configuration file for Qelos integrations.\n\n" +
         "Creates connection files with authentication stored in environment variables.\n" +
         "Supports 15+ integration types: OpenAI, AWS, GitHub, Google, Email, and more.\n\n" +
@@ -72,7 +73,7 @@ export default function generateCommand(program) {
       generateConnectionController,
     )
     .command(
-      "generate agent <name>",
+      "agent <name>",
       "Generate an AI agent integration configuration file for Qelos.\n\n" +
         "Creates agent integration files with trigger, target, and prompt configuration.\n" +
         "Supports OpenAI, Claude AI, and Gemini as target providers.\n\n" +
@@ -96,5 +97,8 @@ export default function generateCommand(program) {
           );
       },
       generateAgentController,
-    );
+    )
+    .demandCommand(1, 'Please specify a generate subcommand: rules, connection, or agent')
+  })
+    
 }

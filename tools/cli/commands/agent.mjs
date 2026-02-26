@@ -1,7 +1,7 @@
 import agentController from "../controllers/agent.mjs";
 import { getAgentConfig, saveAgentConfig } from "../services/load-config.mjs";
 
-const SAVEABLE_AGENT_KEYS = ['thread', 'log', 'export', 'json', 'stream'];
+const SAVEABLE_AGENT_KEYS = ['thread', 'log', 'export', 'json', 'stream', 'tools'];
 
 export default function agentCommand(program) {
   program
@@ -42,6 +42,24 @@ export default function agentCommand(program) {
             alias: 'l',
             type: 'string',
             description: 'Log file to maintain conversation history (stores both user and assistant messages)'
+          })
+          .option('context', {
+            alias: 'c',
+            type: 'string',
+            description: 'JSON string of context data to inject into the conversation (e.g. \'{"key":"value"}\')'
+          })
+          .option('context-file', {
+            type: 'string',
+            description: 'Path to a JSON file containing context data to inject into the conversation'
+          })
+          .option('tools', {
+            type: 'array',
+            description: 'Built-in terminal tools to enable (bash, node, read, write). Can specify multiple: --tools bash node'
+          })
+          .option('interactive', {
+            alias: 'i',
+            type: 'boolean',
+            description: 'Keep the session alive for multi-turn conversation (implies --stream)'
           })
           .middleware((argv) => {
             // Apply config defaults for undefined argv values

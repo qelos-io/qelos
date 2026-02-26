@@ -63,5 +63,8 @@ restoreCommand(program)
 getCommand(program)
 agentCommand(program)
 
+;(async () => {
+
 await program.help().parseAsync();
 process.exit(0);
+})();

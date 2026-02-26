@@ -2,6 +2,8 @@ import dotenv from 'dotenv';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 
+dotenv.configDotenv({quiet: true})
+
 /**
  * Returns the ordered list of .env files to attempt loading.
  * @param {string} [envSuffix] - Optional env suffix (e.g. "production")
