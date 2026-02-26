@@ -31,7 +31,7 @@ export function loadEnv({ envSuffix, cwd, verbose } = {}) {
   for (const envFile of envFiles) {
     const envPath = join(dir, envFile);
     if (existsSync(envPath)) {
-      dotenv.config({ path: envPath, silent: true });
+      dotenv.config({ path: envPath, quiet: true });
       if (verbose) console.log(`Loaded env file: ${envFile}`);
       loaded.push(envFile);
     }

@@ -10,6 +10,8 @@ import createCommand from './commands/create.mjs';
 import pushCommand from './commands/push.mjs';
 import pullCommand from './commands/pull.mjs';
 import blueprintsCommand from './commands/blueprints.mjs';
+import dumpCommand from './commands/dump.mjs';
+import restoreCommand from './commands/restore.mjs';
 import getCommand from './commands/get.mjs';
 import agentCommand from './commands/agent.mjs';
 import generateCommand from './commands/generate.mjs';
@@ -56,7 +58,10 @@ pushCommand(program)
 pullCommand(program)
 generateCommand(program)
 blueprintsCommand(program)
+dumpCommand(program)
+restoreCommand(program)
 getCommand(program)
 agentCommand(program)
 
-program.help().argv;
+await program.help().parseAsync();
+process.exit(0);

@@ -235,6 +235,8 @@ export async function getAllBlueprintEntities(req, res) {
     entities.forEach(entity => {
       // @ts-ignore
       delete entity['_id'];
+      // @ts-ignore
+      delete entity['__v'];
       entity.id = entity.identifier;
       if (shouldFlat) {
         flattenMetadata(entity);
@@ -377,7 +379,7 @@ export async function getAllBlueprintEntities(req, res) {
         })
       )
 
-      entities.forEach(entity => {
+      entities.forEach((entity: any) => {
         outerEntities.forEach(outerEntity => {
           if (!outerEntity) {
             return;

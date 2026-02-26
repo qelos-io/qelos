@@ -30,6 +30,7 @@ export async function initializeSdk() {
     const sdk = new QelosAdministratorSDK.default({
       appUrl,
       ...(apiToken ? { apiToken } : {}),
+      extraQueryParams: () => ({})
     });
 
     if (apiToken) {

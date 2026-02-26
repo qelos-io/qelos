@@ -105,7 +105,9 @@ export default defineConfig({
           { text: 'Pull Command', link: '/cli/pull' },
           { text: 'Push Command', link: '/cli/push' },
           { text: 'Generate Rules Command', link: '/cli/generate' },
-          { text: 'Blueprints Command', link: '/cli/blueprints' }
+          { text: 'Generate Blueprints', link: '/cli/blueprints' },
+          { text: 'Dump Command', link: '/cli/dump' },
+          { text: 'Restore Command', link: '/cli/restore' }
         ]
       },
       {
