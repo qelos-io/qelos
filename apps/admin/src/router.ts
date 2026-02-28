@@ -66,6 +66,14 @@ const router = createRouter({
       }
     },
     {
+      path: '/logout',
+      name: 'logout',
+      component: async () => (await import('./modules/core/Logout.vue')).default,
+      meta: {
+        guest: true
+      }
+    },
+    {
       path: '/auth/callback',
       component: async () => (await import('./modules/core/AuthCallback.vue')).default,
       meta: {

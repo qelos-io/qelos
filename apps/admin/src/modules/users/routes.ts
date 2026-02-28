@@ -1,6 +1,7 @@
 import EmptyRoute from '../core/components/layout/EmptyRoute.vue'
+import { RouteRecordRaw } from 'vue-router'
 
-const usersRoutes = {
+const usersRoutes: RouteRecordRaw = {
   path: 'users',
   redirect: { name: 'users' },
   component: EmptyRoute,
