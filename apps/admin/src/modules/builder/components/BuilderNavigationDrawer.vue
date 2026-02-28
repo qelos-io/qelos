@@ -113,12 +113,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, provide } from 'vue';
+import { computed, provide, toRef } from 'vue';
 import { useRouter } from 'vue-router';
 import { useNavigationDrawer } from '../composables/useNavigationDrawer';
 import { useBuilderTheme } from '../composables/useBuilderTheme';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import { isAdmin, logout } from '@/modules/core/store/auth';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import BuilderNavSection from './BuilderNavSection.vue';
 import BuilderNavItem from './BuilderNavItem.vue';
 import { storeToRefs } from 'pinia';
@@ -126,6 +127,9 @@ import { storeToRefs } from 'pinia';
 const { microFrontends } = storeToRefs(usePluginsMicroFrontends());
 const { shouldShowBuilderTheme } = useBuilderTheme(false);
 const router = useRouter();
+
+// Workspace configuration
+const isWorkspacesActive = toRef(useWsConfiguration(), 'isActive');
 
 // Provide drawer collapsed state to child components
 const { isCollapsed, isHidden } = useNavigationDrawer();
@@ -143,19 +147,28 @@ const {
 } = useNavigationDrawer();
 
 // Admin navigation items
-const adminNavItems = computed(() => [
-  { path: '/admin/components', label: 'Components', icon: 'fas fa-th' },
-  { path: '/admin/blocks', label: 'Content Boxes', icon: 'fas fa-box' },
-  { path: '/users', label: 'Users', icon: 'fas fa-user' },
-  { path: '/admin/workspaces', label: 'Workspaces', icon: 'fas fa-briefcase' },
-  { path: '/no-code/blueprints', label: 'Blueprints', icon: 'fas fa-database' },
-  { path: '/configurations', label: 'Configurations', icon: 'fas fa-gear' },
-  { path: '/drafts', label: 'Drafts', icon: 'fas fa-file-lines' },
-  { path: '/admin/log', label: 'Events Log', icon: 'fas fa-clipboard-list' },
-  { path: '/assets', label: 'Storage & Assets', icon: 'fas fa-folder-tree' },
-  { path: '/plugins', label: 'Plugins', icon: 'fas fa-plug' },
-  { path: '/integrations', label: 'Integrations', icon: 'fas fa-link' }
-]);
+const adminNavItems = computed(() => {
+  const items = [
+    { path: '/admin-dashboard', label: 'Dashboard', icon: 'fas fa-briefcase' },
+    { path: '/admin/components', label: 'Components', icon: 'fas fa-th' },
+    { path: '/admin/blocks', label: 'Content Boxes', icon: 'fas fa-box' },
+    { path: '/users', label: 'Users', icon: 'fas fa-user' },
+    { path: '/no-code/blueprints', label: 'Blueprints', icon: 'fas fa-database' },
+    { path: '/configurations', label: 'Configurations', icon: 'fas fa-gear' },
+    { path: '/drafts', label: 'Drafts', icon: 'fas fa-file-lines' },
+    { path: '/admin/log', label: 'Events Log', icon: 'fas fa-clipboard-list' },
+    { path: '/assets', label: 'Storage & Assets', icon: 'fas fa-folder-tree' },
+    { path: '/plugins', label: 'Plugins', icon: 'fas fa-plug' },
+    { path: '/integrations', label: 'Integrations', icon: 'fas fa-link' }
+  ];
+  
+  // Add Workspaces item only if workspace configuration is active
+  if (isWorkspacesActive.value) {
+    items.splice(3, 0, { path: '/admin/workspaces', label: 'Workspaces', icon: 'fas fa-briefcase' });
+  }
+  
+  return items;
+});
 
 // MFE navigation items (admin only)
 const mfeNavItems = computed(() => {

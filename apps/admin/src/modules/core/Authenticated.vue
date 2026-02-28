@@ -28,9 +28,14 @@
     </div>
     
     <!-- Regular navigation (always visible for regular users, shown alongside builder for admins) -->
-    <Navigation class="navigation" :opened="navigationOpened" @close="navigationOpened = false"/>
+    <component v-if="customComponents.loaded" :is="customComponents.NavigationComponent || Navigation" class="navigation" :opened="navigationOpened" @close="navigationOpened = false"/>
     <div class="admin-content" :class="{ 'has-builder-drawer': shouldShowBuilderComponents }">
-      <Header @toggle="navigationOpened = !navigationOpened" :is-navigation-opened="navigationOpened"/>
+      <component
+        v-if="customComponents.loaded"
+        :is="customComponents.headerComponent || Header"
+        @toggle="navigationOpened = !navigationOpened"
+        :is-navigation-opened="navigationOpened"
+      />
       <div class="main-wrapper">
         <div class="main">
           <router-view class="main-content"/>
@@ -45,7 +50,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeMount, ref, toRef, watch } from 'vue'
+import { computed, onBeforeMount, provide, ref, toRef, watch } from 'vue'
 import { onBeforeRouteUpdate, useRouter } from 'vue-router'
 import { useAuth, useAuthenticatedIntercept } from './compositions/authentication'
 import Header from './components/layout/Header.vue'
@@ -63,6 +68,7 @@ import { shouldShowBuilderTheme } from '@/modules/builder/store/builderTheme';
 import BuilderNavigationDrawer from '@/modules/builder/components/BuilderNavigationDrawer.vue';
 import BuilderEditingLayer from '@/modules/builder/components/BuilderEditingLayer.vue';
 import { useRoute } from 'vue-router';
+import { useStaticComponentsStore } from '../no-code/store/static-components'
 
 const router = useRouter()
 const route = useRoute();
@@ -71,6 +77,12 @@ const wsConfig = useWsConfiguration()
 const workspacesStore = useWorkspacesList()
 const invitesStore = useInvitesList()
 const { user } = useAuth();
+
+const customComponents = useStaticComponentsStore()
+
+provide('user', user.value);
+provide('appConfig', appConfig);
+provide('wsConfig', toRef(wsConfig, 'metadata'));
 
 const navigationOpened = ref(false)
 const { isLoaded } = useAuthenticatedIntercept();

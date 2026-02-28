@@ -17,7 +17,14 @@ export default async function generateController({ type }) {
       const result = await generateRules(ideType, cwd);
       
       if (result.success) {
-        logger.success(`Generated ${ideType} rules at: ${result.filePath}`);
+        if (result.files && result.files.length > 1) {
+          logger.success(`Generated ${ideType} rules files:`);
+          result.files.forEach(file => {
+            logger.info(`  - ${file}`);
+          });
+        } else if (result.files && result.files.length === 1) {
+          logger.success(`Generated ${ideType} rules at: ${result.files[0]}`);
+        }
       } else {
         logger.warning(`Skipped ${ideType}: ${result.message}`);
       }

@@ -1,6 +1,6 @@
 import { reactive, computed } from 'vue'
 import configurationsService from '../../../services/apis/configurations-service';
-import { IAppConfiguration } from '@qelos/sdk/dist/configurations';
+import { IAppConfiguration } from '@qelos/sdk/configurations';
 
 export const appConfigurationStore = reactive<{
   loaded: boolean,
