@@ -24,8 +24,8 @@ export const useStaticComponentsStore = defineStore('static-components', () => {
     })
   })) || [])
 
-  const headerComponent = computed(() => staticComponents.value.find(c => c.name === 'RootHeader'));
-  const NavigationComponent = computed(() => staticComponents.value.find(c => c.name === 'RootNavigation'));
+  const headerComponent = computed(() => staticComponents.value.find(c => c.name === 'RootHeader')?.component);
+  const NavigationComponent = computed(() => staticComponents.value.find(c => c.name === 'RootNavigation')?.component);
 
   return {
     promise,
