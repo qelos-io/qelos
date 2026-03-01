@@ -5,7 +5,7 @@ editLink: true
 
 # Agent Command
 
-The `qelos agent` command allows you to interact with AI agents using the Qelos SDK directly from your command line. It provides a powerful interface for chatting with AI integrations, maintaining conversation history, and exporting responses.
+The `qelos agent` command allows you to interact with AI agents using the Qelos SDK directly from your command line. It provides a powerful interface for chatting with AI integrations, maintaining conversation history, exporting responses, and (optionally) enabling local **client-side tools** that the agent can call.
 
 ## Overview
 
@@ -15,6 +15,8 @@ The agent command enables you to:
 - **Stream responses** in real-time for better user experience
 - **Export responses** to files in various formats
 - **Use conversation threads** for organized dialogues
+- **Inject context** into a conversation from inline JSON or a file
+- **Enable local tools** (like reading/writing files or running shell commands) that the agent can invoke
 - **Flexible input** via command line or stdin
 
 ## Syntax
@@ -40,6 +42,9 @@ qelos agent [integrationId] [options]
 | `--log` | `-l` | string | Log file to maintain conversation history |
 | `--export` | `-e` | string | Export response content to specified file |
 | `--thread` | `-t` | string | Thread ID for conversation continuity |
+| `--context` | `-c` | string | JSON string of context data to inject into the conversation (e.g. `'{"key":"value"}'`) |
+| `--context-file` |  | string | Path to a JSON file containing context data to inject into the conversation |
+| `--tools` |  | array | Enable built-in local tools for the agent. Can specify multiple: `--tools bash read` |
 | `--save` | `-S` | boolean | Save current options to `qelos.config.json` |
 | `--verbose` | `-V` | boolean | Run with verbose logging |
 
@@ -66,6 +71,66 @@ When using a name, the command automatically:
 - Reads all `.integration.json` files
 - Matches the `trigger.details.name` field (case-insensitive)
 - Uses the found integration's `_id` for the API call
+
+## Client-side tools (`--tools`)
+
+The agent can optionally be given access to **local tools** implemented by the CLI (in `tools/cli/services/agent/tools.mjs`).
+
+### Enabling tools
+
+```bash
+# Enable multiple tools
+qelos agent code-wizard --tools bash read --message "List files and show package.json"
+
+# Comma-separated also works
+qelos agent code-wizard --tools bash,read --message "List files and show package.json"
+```
+
+### Available built-in tools
+
+These are the built-in tool names you can pass to `--tools`:
+
+| Tool | What it does | Typical use |
+|------|--------------|-------------|
+| `bash` | Execute a shell command in the current working directory and return stdout/stderr | `ls`, `git diff`, `grep`, running scripts |
+| `node` | Execute Node.js code (written to a temporary `.mjs` file) and return stdout/stderr | quick parsing/transforms, JSON manipulation |
+| `read` | Read a file and return its contents (supports `startLine`/`endLine` slicing) | inspect project files, configs, logs |
+| `write` | Write a full file (creates parent directories if needed) | generate/update files deterministically |
+| `writeInLine` | Insert content into a file at a specific line index (0-indexed) without replacing the whole file | patch files, insert blocks |
+| `removeLines` | Remove a range of lines from a file (0-indexed) | delete sections safely |
+
+### Tool schemas (arguments)
+
+The agent calls tools with structured arguments.
+
+#### `bash`
+- Args: `{ command: string }`
+
+#### `node`
+- Args: `{ code: string }`
+
+#### `read`
+- Args: `{ path: string, startLine?: number, endLine?: number }`
+  - `startLine` is 0-indexed (default: `0`)
+  - `endLine` is 0-indexed **and exclusive** (default: `-1` meaning EOF)
+
+#### `write`
+- Args: `{ path: string, content: string }`
+
+#### `writeInLine`
+- Args: `{ path: string, line: number, content: string }`
+  - `line` is 0-indexed
+
+#### `removeLines`
+- Args: `{ path: string, startLine: number, endLine: number }`
+  - both are 0-indexed
+  - `endLine` is inclusive
+
+### Notes / gotchas
+
+- Tool output is **truncated in the terminal by default**; set `--verbose` to print full tool output.
+- Unknown tool names passed to `--tools` will be ignored with a warning, and the CLI will print the list of available tools.
+- Tools can also be enabled via config (see “Config File Defaults”).
 
 ## Examples
 
@@ -266,7 +331,7 @@ This creates or updates `qelos.config.json`:
 
 From now on, running `qelos agent code-wizard -m "Hello"` will automatically use `--json` and `--export a.md`.
 
-The following options are saved: `thread`, `log`, `export`, `json`, `stream`.  
+The following options are saved: `thread`, `log`, `export`, `json`, `stream`, `tools`.  
 Transient options like `--message` and `--save` itself are never saved.
 
 Saving merges with existing config — other agents and settings are preserved:

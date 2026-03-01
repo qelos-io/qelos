@@ -54,7 +54,7 @@ export default function agentCommand(program) {
           })
           .option('tools', {
             type: 'array',
-            description: 'Built-in terminal tools to enable (bash, node, read, write). Can specify multiple: --tools bash node'
+            description: 'Built-in terminal tools to enable (bash, node, read, write, writeInLine, removeLines). Can specify multiple: --tools bash node'
           })
           .option('interactive', {
             alias: 'i',

@@ -134,6 +134,10 @@ qelos agent [integrationId] [options]
 - `-l, --log` - Maintain conversation history in file
 - `-e, --export` - Save response to file
 - `-t, --thread` - Thread ID for conversation continuity
+- `-c, --context` - JSON string to inject context into the conversation
+- `--context-file` - Path to a JSON file with context to inject
+- `--tools` - Enable built-in terminal tools for the agent (bash, node, read, write)
+- `-i, --interactive` - Keep session alive for multi-turn chat (implies --stream)
 - `-V, --verbose` - Detailed logging
 
 **Integration Identification:**
@@ -216,77 +220,4 @@ Conversation logs are stored as JSON arrays:
     "content": "Hello David! Nice to meet you."
   }
 ]
-```
-
-**Error Handling:**
-If an integration name isn't found, you'll see:
-```
-Error: Could not find integration with name "nonexistent"
-Make sure:
-1. The integration name matches exactly (case-insensitive)
-2. You are in a project directory with an "integrations" folder
-3. The integration file has a .integration.json extension
-```
-
-### Workflow Example
-
-A typical workflow for working with components:
-
-```bash
-# Pull components from Qelos to work on them locally
-qelos pull components ./local-components
-
-# Make changes to the .vue files in ./local-components
-
-# Push the updated components back to Qelos
-qelos push components ./local-components
-```
-
-### Integrations
-
-- Pulled integrations are stored as `.integration.json` files that exclude server-only fields such as `tenant`, `user`, `created`, `updated`, and `__v`.  
-- When pushing, the CLI automatically recalculates backend-only properties (like `kind`) so you do not need to keep them in local files.
-
-### Connections (Integration Sources)
-
-Connections (integration sources) are now fully supported via `qelos pull connections <path>` and `qelos push connections <path>`.
-
-- Each connection is stored as `<name>.connection.json` containing `name`, `kind`, `labels`, `metadata`, and an `authentication` placeholder:
-
-```json
-{
-  "_id": "64f1...",
-  "name": "OpenAI",
-  "kind": "openai",
-  "labels": ["ai"],
-  "metadata": { "defaultModel": "gpt-4o" },
-  "authentication": {
-    "$var": "INTEGRATION_AUTH_OPENAI"
-  }
-}
-```
-
-- At push time, the CLI reads the referenced environment variable (e.g., `INTEGRATION_AUTH_OPENAI`) which must contain a JSON string with the real credentials:
-
-```bash
-export INTEGRATION_AUTH_OPENAI='{"token":"sk-..."}'
-```
-
-- If the env var is missing, the CLI skips updating the secure authentication payload and only syncs metadata.
-- When new connections are created, the CLI persists the returned `_id` so future pushes update the same record.
-
-## Help
-
-View all available commands and options:
-
-```bash
-qelos --help
-qplay --help
-```
-
-View help for a specific command:
-
-```bash
-qelos pull --help
-qelos push --help
 ```
