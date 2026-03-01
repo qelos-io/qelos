@@ -1,4 +1,7 @@
 import restoreBlueprintsController from "../controllers/restore-blueprints.mjs";
+import { getRestoreConfig, saveRestoreConfig } from "../services/config/load-config.mjs";
+
+const RESTORE_BLUEPRINTS_KEYS = ['include', 'exclude', 'override', 'replace', 'path'];
 
 export default function restoreCommand(program) {
   program
@@ -33,6 +36,21 @@ export default function restoreCommand(program) {
                 describe: 'Base path where dump data is stored',
                 type: 'string',
                 default: './dump'
+              })
+              .middleware((argv) => {
+                const defaults = getRestoreConfig('blueprints', argv.blueprints);
+                for (const key of RESTORE_BLUEPRINTS_KEYS) {
+                  if (argv[key] === undefined && defaults[key] !== undefined) {
+                    argv[key] = defaults[key];
+                  }
+                }
+                if (argv.save) {
+                  const opts = {};
+                  for (const key of RESTORE_BLUEPRINTS_KEYS) {
+                    if (argv[key] !== undefined) opts[key] = argv[key];
+                  }
+                  saveRestoreConfig('blueprints', argv.blueprints || 'all', opts, { verbose: argv.verbose });
+                }
               })
           },
           restoreBlueprintsController)

@@ -5,7 +5,7 @@ editLink: true
 hero:
   name: Qelos
   text: Build AI Agents & SaaS Applications
-  tagline: The ultimate AI-powered platform for creating intelligent agents, agent-to-agent communications, and multi-tenant SaaS applications using graphic builders, AI tooling, and visual workflows
+  tagline: Build intelligent agents, visual workflows, and multi-tenant SaaS apps—fast.
   image:
     src: /qelos-hq.png
     alt: Qelos
@@ -16,60 +16,96 @@ hero:
     - theme: alt
       text: Start Free Trial
       link: https://app.qelos.io
+    - theme: alt
+      text: View on GitHub
+      link: https://github.com/qelos-io/qelos
 features:
   - icon: 🤖
     title: AI Agents & Workflows
-    details: Deploy intelligent AI agents that handle customer support, data processing, and complex workflows
+    details: Deploy AI agents for support, data processing, and complex business workflows.
   - icon: 🎨
     title: Visual Builders
-    details: Create powerful applications with our no-code visual interface and WYSIWYG editors
+    details: Build with no-code editors, WYSIWYG UI, and visual workflows.
   - icon: 🔌
     title: Plugin System
-    details: Extend your application with plugins and micro-frontends
+    details: Extend your app with plugins, endpoints, and micro-frontends.
   - icon: 🚀
-    title: Launch in Days, Not Months
-    details: Go from concept to a fully functional SaaS with users, billing, and workflows in under a week
+    title: Launch in Days
+    details: Go from idea to a working SaaS with auth, billing, and workflows.
   - icon: 🌐
-    title: Multi-AI Support
-    details: Switch between OpenAI, Anthropic, Gemini, and other AI providers without changing your code
-  - icon: �
-    title: Scale Without Limits
-    details: Built for growth. Handle millions of users, process terabytes of data, and maintain 99.9% uptime
+    title: Multi-Model AI
+    details: Switch between providers (OpenAI, Anthropic, Gemini, etc.) without changing product architecture.
+  - icon: 📈
+    title: Scale with Confidence
+    details: Built for multi-tenant growth, high throughput, and production reliability.
 ---
 
-## Quick Start
+## Start here
 
-Get up and running with Qelos locally:
+Pick the path that matches what you're trying to do:
+
+<div class="vp-doc" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px;">
+
+<div class="custom-card">
+  <h3>🏁 New to Qelos</h3>
+  <p>Install, run locally, and understand the core concepts.</p>
+  <a href="/getting-started/intro">Go to Getting Started →</a>
+</div>
+
+<div class="custom-card">
+  <h3>🧩 Build a plugin</h3>
+  <p>Create plugins, endpoints, CRUD, and micro-frontends.</p>
+  <a href="/plugin-play/">Explore Plugin Play →</a>
+</div>
+
+<div class="custom-card">
+  <h3>💳 Payments</h3>
+  <p>Set up billing and payment flows.</p>
+  <a href="/payments/">Open Payments docs →</a>
+</div>
+
+<div class="custom-card">
+  <h3>🧰 Use the SDK</h3>
+  <p>Integrate Qelos programmatically in your apps and services.</p>
+  <a href="/sdk/sdk">Read the SDK reference →</a>
+</div>
+
+<div class="custom-card">
+  <h3>🧰 CLI</h3>
+  <p>Sync and manage resources between local and remote instances.</p>
+  <a href="/cli/">Go to the CLI docs →</a>
+</div>
+
+<div class="custom-card">
+  <h3>🎨 UI templates</h3>
+  <p>Pre-designed frontends, components, and PubSub events.</p>
+  <a href="/pre-designed-frontends/components/">Browse templates →</a>
+</div>
+
+</div>
+
+## Quick start (local)
 
 ```bash
-# Clone the repository
+# Clone
 git clone https://github.com/qelos-io/qelos.git
 
-# Install dependencies
+# Install deps
 pnpm install
 
-# Build the packages
+# Build packages
 pnpm build
 
-# Start the development environment (includes MongoDB)
+# Start dev environment (includes MongoDB)
 pnpm dev
 
-# Create initial data (in a new terminal)
+# Seed initial data (new terminal)
 pnpm populate-db
 ```
 
-This will create your first tenant and admin user to get started.
+## Popular guides
 
-To create a new plugin:
-
-```bash
-# Create a new Qelos plugin
-pnpm init play@latest my-plugin
-```
-
-## Popular Guides
-
-<div class="vp-doc" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px;">
+<div class="vp-doc" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 16px;">
 
 <div class="custom-card">
   <h3>🏗️ Installation</h3>
@@ -78,71 +114,59 @@ pnpm init play@latest my-plugin
 </div>
 
 <div class="custom-card">
-  <h3>🎯 Create Blueprints</h3>
+  <h3>🧭 Create blueprints</h3>
   <p>Design and implement your application's data models.</p>
   <a href="/getting-started/create-blueprints">Learn more →</a>
 </div>
 
 <div class="custom-card">
-  <h3>� Design System</h3>
-  <p>Learn about the Qelos design system and components.</p>
+  <h3>🎨 Design system</h3>
+  <p>Learn about the Qelos design system and UI components.</p>
   <a href="/getting-started/design-system">Learn more →</a>
 </div>
 
 <div class="custom-card">
-  <h3>�🎯 Design Products Faster</h3>
-  <p>Learn tips and patterns to accelerate your SaaS development.</p>
+  <h3>🔧 Patterns & speed</h3>
+  <p>Tips and patterns to accelerate SaaS development with Qelos.</p>
   <a href="/getting-started/design-products-faster">Learn more →</a>
 </div>
 
 <div class="custom-card">
-  <h3>🔌 Build Plugins</h3>
+  <h3>🔌 Build plugins</h3>
   <p>Extend your application with custom plugins.</p>
   <a href="/getting-started/create-your-first-plugin">Learn more →</a>
-</div>
-
-<div class="custom-card">
-  <h3>⚡ CLI Tool</h3>
-  <p>Manage and sync resources between local and remote instances.</p>
-  <a href="/cli/">Learn more →</a>
-</div>
-
-<div class="custom-card">
-  <h3>📚 SDK Reference</h3>
-  <p>Integrate QELOS into your applications programmatically.</p>
-  <a href="/sdk/sdk">Learn more →</a>
-</div>
-
-<div class="custom-card">
-  <h3>🌟 Template Ecosystem</h3>
-  <p>Build beautiful interfaces with pre-designed components and PubSub events.</p>
-  <a href="/pre-designed-frontends/components/">Learn more →</a>
 </div>
 
 </div>
 
 <style>
 .custom-card {
-  padding: 20px;
+  padding: 18px;
   border: 1px solid var(--vp-c-divider);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--vp-c-bg-soft);
-  transition: all 0.3s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .custom-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 2px 12px 0 var(--vp-c-divider);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
 .custom-card h3 {
-  margin-top: 0;
+  margin: 0 0 6px 0;
+  font-size: 16px;
+}
+
+.custom-card p {
+  margin: 0 0 10px 0;
+  color: var(--vp-c-text-2);
 }
 
 .custom-card a {
   color: var(--vp-c-brand);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .custom-card a:hover {

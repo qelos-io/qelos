@@ -145,6 +145,110 @@ export function saveAgentConfig(agentNameOrId, agentOpts, options = {}) {
 }
 
 /**
+ * Returns dump config defaults for a given subcommand and optional name.
+ * For 'blueprints', merges the 'all' defaults with the per-blueprint overrides.
+ * @param {'blueprints'|'users'|'workspaces'} subcommand
+ * @param {string} [name] - Blueprint name (only relevant for 'blueprints')
+ * @returns {object}
+ */
+export function getDumpConfig(subcommand, name) {
+  const section = _config?.dump?.[subcommand];
+  if (!section) return {};
+  if (subcommand === 'blueprints') {
+    const allDefaults = section.all || {};
+    const perName = (name && name !== 'all') ? (section[name] || {}) : {};
+    return { ...allDefaults, ...perName };
+  }
+  return { ...section };
+}
+
+/**
+ * Returns pull config defaults for a given resource type.
+ * @param {string} type
+ * @returns {object}
+ */
+export function getPullConfig(type) {
+  if (!_config?.pull || !type) return {};
+  return { ...(_config.pull[type] || {}) };
+}
+
+/**
+ * Returns push config defaults for a given resource type.
+ * @param {string} type
+ * @returns {object}
+ */
+export function getPushConfig(type) {
+  if (!_config?.push || !type) return {};
+  return { ...(_config.push[type] || {}) };
+}
+
+/**
+ * Returns restore config defaults for a given subcommand and optional name.
+ * For 'blueprints', merges the 'all' defaults with the per-blueprint overrides.
+ * @param {'blueprints'} subcommand
+ * @param {string} [name] - Blueprint name (only relevant for 'blueprints')
+ * @returns {object}
+ */
+export function getRestoreConfig(subcommand, name) {
+  const section = _config?.restore?.[subcommand];
+  if (!section) return {};
+  if (subcommand === 'blueprints') {
+    const allDefaults = section.all || {};
+    const perName = (name && name !== 'all') ? (section[name] || {}) : {};
+    return { ...allDefaults, ...perName };
+  }
+  return { ...section };
+}
+
+/**
+ * Saves dump config for a subcommand + name into qelos.config.json.
+ * @param {'blueprints'|'users'|'workspaces'} subcommand
+ * @param {string} name - 'all' or a specific name
+ * @param {object} opts
+ * @param {object} [options]
+ */
+export function saveDumpConfig(subcommand, name, opts, options = {}) {
+  if (subcommand === 'blueprints') {
+    return saveConfig({ dump: { blueprints: { [name]: opts } } }, options);
+  }
+  return saveConfig({ dump: { [subcommand]: opts } }, options);
+}
+
+/**
+ * Saves pull config for a resource type into qelos.config.json.
+ * @param {string} type
+ * @param {object} opts
+ * @param {object} [options]
+ */
+export function savePullConfig(type, opts, options = {}) {
+  return saveConfig({ pull: { [type]: opts } }, options);
+}
+
+/**
+ * Saves push config for a resource type into qelos.config.json.
+ * @param {string} type
+ * @param {object} opts
+ * @param {object} [options]
+ */
+export function savePushConfig(type, opts, options = {}) {
+  return saveConfig({ push: { [type]: opts } }, options);
+}
+
+/**
+ * Saves restore config for a subcommand + name into qelos.config.json.
+ * @param {'blueprints'} subcommand
+ * @param {string} name - 'all' or a specific name
+ * @param {object} opts
+ * @param {object} [options]
+ */
+export function saveRestoreConfig(subcommand, name, opts, options = {}) {
+  if (subcommand === 'blueprints') {
+    return saveConfig({ restore: { blueprints: { [name]: opts } } }, options);
+  }
+  return saveConfig({ restore: { [subcommand]: opts } }, options);
+}
+
+/**
  * Resets the internal config state (useful for testing).
  */
 export function resetConfig() {

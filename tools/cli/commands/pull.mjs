@@ -1,4 +1,7 @@
 import pullController from "../controllers/pull.mjs";
+import { getPullConfig, savePullConfig } from "../services/config/load-config.mjs";
+
+const PULL_KEYS = ['path'];
 
 export default function pullCommand(program) {
   program
@@ -15,6 +18,21 @@ export default function pullCommand(program) {
             describe: 'Path to store the pulled resources.',
             type: 'string',
             required: true
+          })
+          .middleware((argv) => {
+            const defaults = getPullConfig(argv.type);
+            for (const key of PULL_KEYS) {
+              if (argv[key] === undefined && defaults[key] !== undefined) {
+                argv[key] = defaults[key];
+              }
+            }
+            if (argv.save && argv.type) {
+              const opts = {};
+              for (const key of PULL_KEYS) {
+                if (argv[key] !== undefined) opts[key] = argv[key];
+              }
+              savePullConfig(argv.type, opts, { verbose: argv.verbose });
+            }
           })
       },
       pullController)

@@ -1,6 +1,7 @@
 import { logger } from '../services/utils/logger.mjs';
 import { initializeSdk } from '../services/config/sdk.mjs';
 import { getAgentConfig, getConfig } from '../services/config/load-config.mjs';
+import { getActiveGlobalDir } from '../services/config/global-env.mjs';
 import { buildClientTools, loadContext } from '../services/agent/tools.mjs';
 import { green, blue, yellow, red } from '../utils/colors.mjs';
 import { createStreamingRenderer } from '../utils/streaming-markdown.mjs';
@@ -308,7 +309,7 @@ export default async function agentController(argv) {
         console.log(blue(`Looking for integration with name: ${integrationId}`));
       }
 
-      const integration = findIntegrationByName(integrationId);
+      const integration = findIntegrationByName(integrationId, getActiveGlobalDir() || process.cwd());
       if (!integration) {
         console.error(red(`Error: Could not find integration with name "${integrationId}"`));
         console.error(yellow('Make sure:'));

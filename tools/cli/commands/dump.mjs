@@ -1,6 +1,10 @@
 import dumpBlueprintsController from "../controllers/dump-blueprints.mjs";
 import dumpUsersController from "../controllers/dump-users.mjs";
 import dumpWorkspacesController from "../controllers/dump-workspaces.mjs";
+import { getDumpConfig, saveDumpConfig } from "../services/config/load-config.mjs";
+
+const DUMP_BLUEPRINTS_KEYS = ['filter', 'group', 'path'];
+const DUMP_PATH_KEYS = ['path'];
 
 export default function dumpCommand(program) {
   program
@@ -27,6 +31,21 @@ export default function dumpCommand(program) {
                 type: 'string',
                 default: './dump'
               })
+              .middleware((argv) => {
+                const defaults = getDumpConfig('blueprints', argv.blueprints);
+                for (const key of DUMP_BLUEPRINTS_KEYS) {
+                  if (argv[key] === undefined && defaults[key] !== undefined) {
+                    argv[key] = defaults[key];
+                  }
+                }
+                if (argv.save) {
+                  const opts = {};
+                  for (const key of DUMP_BLUEPRINTS_KEYS) {
+                    if (argv[key] !== undefined) opts[key] = argv[key];
+                  }
+                  saveDumpConfig('blueprints', argv.blueprints || 'all', opts, { verbose: argv.verbose });
+                }
+              })
           },
           dumpBlueprintsController)
 
@@ -38,6 +57,21 @@ export default function dumpCommand(program) {
                 type: 'string',
                 default: './dump'
               })
+              .middleware((argv) => {
+                const defaults = getDumpConfig('users');
+                for (const key of DUMP_PATH_KEYS) {
+                  if (argv[key] === undefined && defaults[key] !== undefined) {
+                    argv[key] = defaults[key];
+                  }
+                }
+                if (argv.save) {
+                  const opts = {};
+                  for (const key of DUMP_PATH_KEYS) {
+                    if (argv[key] !== undefined) opts[key] = argv[key];
+                  }
+                  saveDumpConfig('users', 'all', opts, { verbose: argv.verbose });
+                }
+              })
           },
           dumpUsersController)
 
@@ -48,6 +82,21 @@ export default function dumpCommand(program) {
                 describe: 'Base path for the dump output',
                 type: 'string',
                 default: './dump'
+              })
+              .middleware((argv) => {
+                const defaults = getDumpConfig('workspaces');
+                for (const key of DUMP_PATH_KEYS) {
+                  if (argv[key] === undefined && defaults[key] !== undefined) {
+                    argv[key] = defaults[key];
+                  }
+                }
+                if (argv.save) {
+                  const opts = {};
+                  for (const key of DUMP_PATH_KEYS) {
+                    if (argv[key] !== undefined) opts[key] = argv[key];
+                  }
+                  saveDumpConfig('workspaces', 'all', opts, { verbose: argv.verbose });
+                }
               })
           },
           dumpWorkspacesController)

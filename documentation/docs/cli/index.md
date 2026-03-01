@@ -44,6 +44,7 @@ These options are available for all commands:
 | `--env` | `-e` | string | Load `.env.[ENV]` file (e.g. `--env production`) |
 | `--config` | `-C` | string | Path to config file (auto-discovers by default) |
 | `--save` | `-S` | boolean | Save current command options to `qelos.config.json` |
+| `--global` | `-g` | string | Use a registered global environment (see [Global Environments](/cli/global)). Omit value to use `"default"`. |
 | `--help` | | boolean | Show help |
 | `--version` | | boolean | Show version |
 
@@ -160,10 +161,27 @@ qelos --config ./my-config.json agent code-wizard -m "Hello"
       "export": "./output/response.md",
       "json": false,
       "stream": true
+    }
+  },
+  "dump": {
+    "blueprints": {
+      "all":      { "path": "./dump", "group": "status" },
+      "my-blueprint": { "filter": "{\"active\":true}", "path": "./dump/my-blueprint" }
     },
-    "data-agent": {
-      "json": true,
-      "stream": false
+    "users":      { "path": "./dump" },
+    "workspaces": { "path": "./dump" }
+  },
+  "pull": {
+    "components": { "path": "./src/components" },
+    "blueprints": { "path": "./blueprints" }
+  },
+  "push": {
+    "components": { "path": "./src/components", "hard": false }
+  },
+  "restore": {
+    "blueprints": {
+      "all":          { "replace": false, "path": "./dump" },
+      "my-blueprint": { "replace": true, "path": "./dump/my-blueprint" }
     }
   }
 }
@@ -175,24 +193,73 @@ agents:
   code-wizard:
     thread: persistent-thread-id
     log: ./logs/code-wizard.log
-    export: ./output/response.md
-    json: false
     stream: true
-  data-agent:
-    json: true
-    stream: false
+dump:
+  blueprints:
+    all:
+      path: ./dump
+      group: status
+    my-blueprint:
+      filter: '{"active":true}'
+      path: ./dump/my-blueprint
+  users:
+    path: ./dump
+pull:
+  components:
+    path: ./src/components
+push:
+  components:
+    path: ./src/components
+    hard: false
+restore:
+  blueprints:
+    all:
+      replace: false
+      path: ./dump
 ```
 :::
 
+**`agents`** — per-agent defaults for `qelos agent`:
+
 | Key | Type | Description |
 |-----|------|-------------|
-| `qelosUrl` | string | Qelos instance URL (overridden by `QELOS_URL` env var) |
-| `agents` | object | Per-agent default options, keyed by agent name or ID |
 | `agents[name].thread` | string | Default thread ID |
 | `agents[name].log` | string | Default log file path |
 | `agents[name].export` | string | Default export file path |
 | `agents[name].json` | boolean | Default JSON output mode |
 | `agents[name].stream` | boolean | Default streaming mode |
+
+**`dump`** — defaults for `qelos dump` subcommands:
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `dump.blueprints.all` | object | Default options applied to every `dump blueprints` run |
+| `dump.blueprints[name]` | object | Per-blueprint overrides (merged on top of `all`) |
+| `dump.blueprints[*].path` | string | Output directory |
+| `dump.blueprints[*].filter` | string | JSON filter string |
+| `dump.blueprints[*].group` | string | Group-by key |
+| `dump.users.path` | string | Output directory for `dump users` |
+| `dump.workspaces.path` | string | Output directory for `dump workspaces` |
+
+**`pull` / `push`** — per-type defaults:
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `pull[type].path` | string | Default path for `qelos pull <type>` |
+| `push[type].path` | string | Default path for `qelos push <type>` |
+| `push[type].hard` | boolean | Default `--hard` flag for `qelos push <type>` |
+
+**`restore`** — defaults for `qelos restore` subcommands:
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `restore.blueprints.all` | object | Default options applied to every `restore blueprints` run |
+| `restore.blueprints[name]` | object | Per-blueprint overrides (merged on top of `all`) |
+| `restore.blueprints[*].path` | string | Source directory |
+| `restore.blueprints[*].include` | string | Include filter |
+| `restore.blueprints[*].exclude` | string | Exclude filter |
+| `restore.blueprints[*].override` | string | JSON override merged into each entity |
+| `restore.blueprints[*].replace` | boolean | Replace local files with API response |
 
 Config values are used as defaults — CLI flags always take precedence.
 
@@ -304,6 +371,10 @@ qelos agent code-wizard -m "Hello"  # uses saved defaults
     <h3><a href="/cli/agent">Agent</a></h3>
     <p>Interact with AI agents using the Qelos SDK with support for conversation history, streaming, and response export.</p>
   </div>
+  <div class="vp-feature">
+    <h3><a href="/cli/global">Global Environments</a></h3>
+    <p>Register a project directory as a named global environment and run agent or data commands from anywhere on your machine using <code>--global</code>.</p>
+  </div>
 </div>
 
 <style>
@@ -388,6 +459,7 @@ qelos pull --help
 qelos push --help
 qelos generate --help
 qelos agent --help
+qelos global --help
 ```
 
 ## Troubleshooting
@@ -421,6 +493,7 @@ If you encounter file permission errors:
 ## Related Resources
 
 - [Agent Command](/cli/agent) - Interact with AI agents via command line
+- [Global Environments](/cli/global) - Register projects and run commands from anywhere
 - [SDK Installation](/sdk/installation) - Install the Qelos SDK for programmatic access
 - [Plugin Development](/plugins/create) - Learn how to create plugins
 - [Components](/pre-designed-frontends/components/) - Learn about Qelos components

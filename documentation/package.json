@@ -11,8 +11,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "vitepress": "^2.0.0-alpha.15",
-    "vue": "^3.5.13"
+    "vitepress": "^2.0.0-alpha.16",
+    "vue": "^3.5.29"
   },
   "type": "module"
 }

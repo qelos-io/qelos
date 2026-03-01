@@ -144,7 +144,9 @@ export default defineConfig({
           { text: 'Generate Rules Command', link: '/cli/generate' },
           { text: 'Generate Blueprints', link: '/cli/blueprints' },
           { text: 'Dump Command', link: '/cli/dump' },
-          { text: 'Restore Command', link: '/cli/restore' }
+          { text: 'Restore Command', link: '/cli/restore' },
+          { text: 'Agent Command', link: '/cli/agent' },
+          { text: 'Global Environments', link: '/cli/global' }
         ]
       },
       {
