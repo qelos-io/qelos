@@ -146,6 +146,7 @@ export default defineConfig({
           { text: 'Dump Command', link: '/cli/dump' },
           { text: 'Restore Command', link: '/cli/restore' },
           { text: 'Agent Command', link: '/cli/agent' },
+          { text: 'Agent Tools (clientTools)', link: '/cli/agent-tools' },
           { text: 'Global Environments', link: '/cli/global' }
         ]
       },

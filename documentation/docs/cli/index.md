@@ -160,7 +160,8 @@ qelos --config ./my-config.json agent code-wizard -m "Hello"
       "log": "./logs/code-wizard.log",
       "export": "./output/response.md",
       "json": false,
-      "stream": true
+      "stream": true,
+      "clientTools": ["bash", "read"]
     }
   },
   "dump": {
@@ -194,27 +195,12 @@ agents:
     thread: persistent-thread-id
     log: ./logs/code-wizard.log
     stream: true
+    clientTools:
+      - bash
+      - read
 dump:
   blueprints:
     all:
-      path: ./dump
-      group: status
-    my-blueprint:
-      filter: '{"active":true}'
-      path: ./dump/my-blueprint
-  users:
-    path: ./dump
-pull:
-  components:
-    path: ./src/components
-push:
-  components:
-    path: ./src/components
-    hard: false
-restore:
-  blueprints:
-    all:
-      replace: false
       path: ./dump
 ```
 :::
@@ -228,38 +214,7 @@ restore:
 | `agents[name].export` | string | Default export file path |
 | `agents[name].json` | boolean | Default JSON output mode |
 | `agents[name].stream` | boolean | Default streaming mode |
-
-**`dump`** — defaults for `qelos dump` subcommands:
-
-| Key | Type | Description |
-|-----|------|-------------|
-| `dump.blueprints.all` | object | Default options applied to every `dump blueprints` run |
-| `dump.blueprints[name]` | object | Per-blueprint overrides (merged on top of `all`) |
-| `dump.blueprints[*].path` | string | Output directory |
-| `dump.blueprints[*].filter` | string | JSON filter string |
-| `dump.blueprints[*].group` | string | Group-by key |
-| `dump.users.path` | string | Output directory for `dump users` |
-| `dump.workspaces.path` | string | Output directory for `dump workspaces` |
-
-**`pull` / `push`** — per-type defaults:
-
-| Key | Type | Description |
-|-----|------|-------------|
-| `pull[type].path` | string | Default path for `qelos pull <type>` |
-| `push[type].path` | string | Default path for `qelos push <type>` |
-| `push[type].hard` | boolean | Default `--hard` flag for `qelos push <type>` |
-
-**`restore`** — defaults for `qelos restore` subcommands:
-
-| Key | Type | Description |
-|-----|------|-------------|
-| `restore.blueprints.all` | object | Default options applied to every `restore blueprints` run |
-| `restore.blueprints[name]` | object | Per-blueprint overrides (merged on top of `all`) |
-| `restore.blueprints[*].path` | string | Source directory |
-| `restore.blueprints[*].include` | string | Include filter |
-| `restore.blueprints[*].exclude` | string | Exclude filter |
-| `restore.blueprints[*].override` | string | JSON override merged into each entity |
-| `restore.blueprints[*].replace` | boolean | Replace local files with API response |
+| `agents[name].clientTools` | (string\|object)[] | Client-side tools enabled by default for `qelos agent`. Can include built-in tool names (e.g. `"bash"`) and/or custom tool objects. See [Agent Tools](/cli/agent-tools). |
 
 Config values are used as defaults — CLI flags always take precedence.
 
