@@ -84,6 +84,18 @@ pnpm init play@latest my-plugin
 </div>
 
 <div class="custom-card">
+  <h3>� Design System</h3>
+  <p>Learn about the Qelos design system and components.</p>
+  <a href="/getting-started/design-system">Learn more →</a>
+</div>
+
+<div class="custom-card">
+  <h3>�🎯 Design Products Faster</h3>
+  <p>Learn tips and patterns to accelerate your SaaS development.</p>
+  <a href="/getting-started/design-products-faster">Learn more →</a>
+</div>
+
+<div class="custom-card">
   <h3>🔌 Build Plugins</h3>
   <p>Extend your application with custom plugins.</p>
   <a href="/getting-started/create-your-first-plugin">Learn more →</a>

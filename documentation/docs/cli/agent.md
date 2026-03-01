@@ -34,6 +34,7 @@ qelos agent [integrationId] [options]
 | Option | Alias | Type | Description |
 |--------|-------|------|-------------|
 | `--message` | `-m` | string | Message to send (if not provided, reads from stdin) |
+| `--interactive` | `-i` | boolean | Keep the session alive for multi-turn conversation (implies `--stream`) |
 | `--stream` | `-s` | boolean | Use streaming mode for real-time responses |
 | `--json` | `-j` | boolean | Output in JSON format |
 | `--log` | `-l` | string | Log file to maintain conversation history |
@@ -117,6 +118,29 @@ qelos agent code-wizard --message "API info" --json --export api.json
 qelos agent code-wizard --log chat.json --export response.md --message "Summary"
 ```
 
+### Interactive Mode
+
+Use `--interactive` (or `-i`) to start a live, multi-turn conversation that keeps the session open until you choose to end it. Streaming is enabled automatically.
+
+```bash
+# Start an interactive session
+qelos agent code-wizard -i
+
+# With an opening message, then continue in the loop
+qelos agent code-wizard -i --message "Let's talk about my API design"
+
+# Combined with logging (full history saved after every turn)
+qelos agent code-wizard -i --log conversation.json
+
+# With a specific thread for continuity across sessions
+qelos agent code-wizard -i --thread thread-123 --log chat.json
+```
+
+Inside an interactive session:
+- Type your message and press **Enter** to send.
+- Press **Enter** on an empty line to finish a multi-line message.
+- Type `/exit` or press **Ctrl+C** to end the conversation.
+
 ### Thread Support
 
 ```bash
@@ -142,6 +166,13 @@ Found integration: code-wizard (692876602b6e9881b2311514)
 ```
 
 ## Features
+
+### Interactive Mode
+- **Multi-Turn Loop**: Keeps the session alive so you can have a back-and-forth conversation without re-running the command
+- **Implied Streaming**: Automatically enables streaming for real-time output
+- **Multi-Line Input**: Press Enter on an empty line to send a multi-line message
+- **Graceful Exit**: Type `/exit` or press Ctrl+C to end the session
+- **Full Flag Compatibility**: Works alongside `--log`, `--export`, `--thread`, and `--save`
 
 ### Smart Integration Resolution
 - **Automatic Detection**: Distinguishes between ObjectIds and names
@@ -312,12 +343,13 @@ Make sure:
 ## Tips and Best Practices
 
 1. **Use Names for Readability**: Integration names are more memorable than ObjectIds
-2. **Log Important Conversations**: Use `--log` for conversations you might need to reference
-3. **Export Key Responses**: Use `--export` for important outputs like code or documentation
-4. **Verbose Mode for Debugging**: Use `--verbose` when troubleshooting integration issues
-5. **Streaming for Long Responses**: Use `--stream` for better user experience with lengthy responses
-6. **Save Repetitive Options**: Use `--save` once to avoid typing the same flags every time
-7. **Per-Agent Config**: Different agents can have different saved defaults in the same config file
+2. **Interactive for Conversations**: Use `-i` when you want a back-and-forth session without re-running the command
+3. **Log Important Conversations**: Use `--log` for conversations you might need to reference
+4. **Export Key Responses**: Use `--export` for important outputs like code or documentation
+5. **Verbose Mode for Debugging**: Use `--verbose` when troubleshooting integration issues
+6. **Streaming for Long Responses**: Use `--stream` for better user experience with lengthy responses
+7. **Save Repetitive Options**: Use `--save` once to avoid typing the same flags every time
+8. **Per-Agent Config**: Different agents can have different saved defaults in the same config file
 
 ## Integration File Structure
 

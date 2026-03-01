@@ -18,6 +18,7 @@ export default defineConfig({
     logo: '/qelos-hq.png',
     nav: [
       { text: 'Guide', link: '/getting-started/intro' },
+      { text: 'Tutorials', link: '/tutorials/' },
       { text: 'SDK', link: '/sdk/sdk' },
       { text: 'CLI', link: '/cli/' },
       { text: 'Plugins', link: '/plugins/create' },
@@ -36,12 +37,24 @@ export default defineConfig({
     },
     sidebar: [
       {
+        text: 'TUTORIALS',
+        items: [
+          { text: 'Overview', link: '/tutorials/' },
+          { text: 'Create an App & Add OpenAI Token', link: '/tutorials/create-app-openai-token' },
+          { text: 'Configure Your First AI Agent', link: '/tutorials/configure-first-ai-agent' },
+          { text: 'Build an Agentic Todo Machine', link: '/tutorials/agentic-todo-machine' },
+        ]
+      },
+      {
         text: 'GETTING STARTED',
         items: [
           { text: 'Intro to Qelos', link: '/getting-started/intro' },
           { text: 'Installation', link: '/getting-started/installation' },
+          { text: 'Design Products Faster', link: '/getting-started/design-products-faster' },
+          { text: 'Quick Reference', link: '/getting-started/quick-reference' },
           { text: 'Create your first plugin', link: '/getting-started/create-your-first-plugin' },
           { text: 'Create Blueprints', link: '/getting-started/create-blueprints' },
+          { text: 'Admin Architecture', link: '/getting-started/admin-architecture' },
           { text: 'Design Settings', link: '/getting-started/design-settings' },
           {
             text: 'Deployment',
@@ -61,6 +74,28 @@ export default defineConfig({
         ]
       },
       {
+        text: 'DESIGN',
+        collapsed: true,
+        items: [
+          { text: 'Design System Overview', link: '/getting-started/design-system' },
+          { text: 'Header & Navigation', link: '/getting-started/header-navigation-customization' },
+          { text: 'Component Guide', link: '/getting-started/component-guide' },
+          {
+            text: 'Components',
+            collapsed: true,
+            items: [
+              { text: 'AI Components', link: '/getting-started/components/ai-components' },
+              { text: 'Data Components', link: '/getting-started/components/data-components' },
+              { text: 'Form Components', link: '/getting-started/components/form-components' },
+              { text: 'Display Components', link: '/getting-started/components/display-components' },
+              { text: 'Layout Components', link: '/getting-started/components/layout-components' },
+              { text: 'Navigation Components', link: '/getting-started/components/navigation-components' },
+              { text: 'Feedback Components', link: '/getting-started/components/feedback-components' }
+            ]
+          }
+        ]
+      },
+      {
         text: 'PAYMENTS',
         collapsed: true,
         items: [
@@ -70,6 +105,7 @@ export default defineConfig({
       },
       {
         text: 'SDK',
+        collapsed: true,
         items: [
           { text: 'Introduction to the SDK', link: '/sdk/sdk' },
           { text: 'Installation', link: '/sdk/installation' },
@@ -99,6 +135,7 @@ export default defineConfig({
       },
       {
         text: 'CLI',
+        collapsed: true,
         items: [
           { text: 'Introduction', link: '/cli/' },
           { text: 'Create Command', link: '/cli/create' },
