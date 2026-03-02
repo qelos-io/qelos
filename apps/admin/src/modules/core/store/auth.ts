@@ -3,6 +3,7 @@ import { api } from '@/services/apis/api'
 import { IAuthStore } from './types/auth-store'
 import { IUser } from './types/user'
 import { isImpersonating, clearImpersonation } from './impersonation'
+import sdk from '@/services/sdk'
 
 const runIdle = typeof window["requestIdleCallback"] === "function" ? requestIdleCallback : setTimeout;
 const ADMIN_DATA_SCOPE_KEY = 'adminLoadingDataAsUser';
@@ -41,7 +42,7 @@ function handleAdminFeatures() {
   }
 }
 function loadUser() {
-  authStore.userPromise = api.get<IUser>('/api/me').then(res => res.data)
+  authStore.userPromise = sdk.authentication.getLoggedInUser()
   return authStore.userPromise
 }
 
@@ -61,7 +62,7 @@ export const logout = async () => {
   authStore.userPromise = null
 }
 export const updateProfile = async (changes: Partial<IUser>) => {
-  authStore.user = await api.post<IUser>('/api/me', changes).then(res => res.data)
+  authStore.user = await sdk.authentication.updateLoggedInUser(changes)
 }
 export const fetchAuthUser = async (force: boolean = false, optionalUser: boolean = false) => {
   if (!force && (authStore.user || authStore.userPromise)) {
@@ -107,7 +108,7 @@ export const login = async ({ username, password }: { username: string, password
   // Clear impersonation on new login
   clearImpersonation();
   
-  const { data: { payload } } = await api.post<{ payload: { user: IUser } }>('/api/signin', {
+  const {payload} = await sdk.authentication.signin({
     username,
     password,
   })

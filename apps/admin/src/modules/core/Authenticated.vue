@@ -81,7 +81,6 @@ const { user } = useAuth();
 const customComponents = useStaticComponentsStore()
 
 provide('user', user);
-provide('appConfig', appConfig);
 provide('wsConfig', toRef(wsConfig, 'metadata'));
 
 const navigationOpened = ref(false)

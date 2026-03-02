@@ -24,8 +24,10 @@ export const useStaticComponentsStore = defineStore('static-components', () => {
     })
   })) || [])
 
-  const headerComponent = computed(() => staticComponents.value.find(c => c.name === 'RootHeader')?.component);
-  const NavigationComponent = computed(() => staticComponents.value.find(c => c.name === 'RootNavigation')?.component);
+  const headerComponent = computed(() => staticComponents.value.find(c => c.name === 'RootHeader')?.component as ReturnType<typeof defineAsyncComponent>);
+  const NavigationComponent = computed(() => staticComponents.value.find(c => c.name === 'RootNavigation')?.component as ReturnType<typeof defineAsyncComponent>);
+  const LoginComponent = computed(() => staticComponents.value.find(c => c.name === 'RootLogin')?.component as ReturnType<typeof defineAsyncComponent>);
+
 
   return {
     promise,
@@ -35,6 +37,7 @@ export const useStaticComponentsStore = defineStore('static-components', () => {
     retry,
     staticComponents,
     headerComponent,
-    NavigationComponent
+    NavigationComponent,
+    LoginComponent
   }
 });

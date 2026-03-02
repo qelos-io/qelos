@@ -18,6 +18,7 @@ import noCodeRoutes from '@/modules/no-code/routes';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import { integrationsRoutes } from '@/modules/integrations/routes';
 import { adminLogRoutes } from '@/modules/admins/routes';
+import { useStaticComponentsStore } from './modules/no-code/store/static-components'
 
 // @ts-ignore
 const BASE = import.meta.env.BASE_URL || '/';
@@ -60,7 +61,11 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: async () => (await import('./modules/core/Login.vue')).default,
+      component: async () => {
+        const staticComponentsStore = useStaticComponentsStore();
+        await staticComponentsStore.promise;
+        return staticComponentsStore.LoginComponent || (await import('./modules/core/Login.vue')).default;
+      },
       meta: {
         guest: true
       }

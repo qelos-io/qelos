@@ -71,6 +71,8 @@ const { appConfig, loaded } = useAppConfiguration()
 const vm = getCurrentInstance();
 useUsersHeader()
 
+provide('appConfig', appConfig);
+
 // Initialize plugins injectables at setup time
 usePluginsInjectables();
 

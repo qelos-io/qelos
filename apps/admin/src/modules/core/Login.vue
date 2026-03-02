@@ -1,5 +1,5 @@
 <template>
-    <div class="login-page" v-if="loaded">
+  <div class="login-page" v-if="loaded">
     <div v-if="config.formPosition === 'center'" class="flex-container" :class="{'bg-image': !!bgImage}" centered>
       <LoginForm :auth-config="config">
         <template #header>
@@ -31,8 +31,8 @@
       </div>
     </template>
   </div>
-  <div v-else>
-      Loading configuration...
+  <div v-else class="loading-screen">
+    <div class="loading-spinner"></div>
   </div>
 </template>
 
@@ -62,7 +62,7 @@ watch(
   // Call the store action to load the configuration for this tenantId
     authStore.loadForToken(typeof tokenId === 'string' ? tokenId : null);
   },
-  { immediate: true } 
+  { immediate: true }
 );
 
 const config = computed(() => props.authConfig || metadata.value);
@@ -90,8 +90,6 @@ const useOrientation = () => {
 
 // Use the composition function
 const { isVertical } = useOrientation()
-
-const isMobile = computed(() => window.innerWidth <= 768)
 
 const bgImage = computed(() => {
   // Use vertical background image for mobile if available
@@ -170,5 +168,26 @@ img {
 .vertical-bg {
   background-position: center;
   background-size: cover;
+}
+
+.loading-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  background-color: var(--body-bg);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary-color, #4f46e5);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>
