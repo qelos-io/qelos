@@ -43,17 +43,15 @@ export async function verifyAccessToken(req: FastifyRequest, reply: FastifyReply
     // Parse user header with Base64 decoding support (similar to populateUser middleware)
     if (req.headers.user) {
       const userHeader = req.headers.user as string;
-      let userJson: string;
       
       try {
         // Try to decode from Base64 first
-        userJson = Buffer.from(userHeader, 'base64').toString('utf8');
+        const userJson = Buffer.from(userHeader, 'base64').toString('utf8');
+        req.user = JSON.parse(userJson) as RequestUser;
       } catch {
         // If decoding fails, assume it's plain JSON (for backward compatibility)
-        userJson = userHeader;
+        req.user = JSON.parse(userHeader);
       }
-      
-      req.user = JSON.parse(userJson) as RequestUser;
     } else {
       req.user = null;
     }
