@@ -41,13 +41,13 @@ watch(() => props.modelValue, (newValue) => {
 
 const onClientSecretChange = (value: string) => {
   clientSecretEdited.value = value !== '*****';
-  clientSecretMasked.value = value;
-
 }
 
 const submitForm = () => {
   const submissionData = { ...formModel.value };
-  submissionData.authentication = submissionData.authentication || {};
+  if (!submissionData.authentication) {
+    submissionData.authentication = {} as any;
+  }
 
   if (!isEditing.value || clientSecretEdited.value) {
     submissionData.authentication.clientSecret = clientSecretMasked.value;
