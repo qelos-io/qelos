@@ -44,10 +44,8 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
-const confirmRemove = (workspaceId: string, workspaceName: string) => {
-  if (confirm(t('Are you sure you want to remove workspace {0}?', [workspaceName]))) {
-    store.remove(workspaceId);
-  }
+const confirmRemove = (workspaceId: string) => {
+  store.remove(workspaceId);
 };
 
 const navigateToWorkspace = (workspaceId: string, event: MouseEvent) => {
