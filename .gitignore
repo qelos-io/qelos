@@ -1,3 +1,7 @@
+com.qelos.task-executor.plist
+install-task-executor.sh
+qelos-task-executor.sh
+
 node_modules
 .idea
 .vscode

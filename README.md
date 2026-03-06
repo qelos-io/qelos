@@ -13,6 +13,24 @@
 
 QELOS is a platform to create SaaS products with a set of tools for developers and non-developers to manage, edit, improve, and change SaaS products faster and easier.
 
+## Getting Started
+
+**Prerequisites**
+- [Node.js v20+](https://nodejs.org/)
+- [pnpm](https://pnpm.io/) — `npm install -g pnpm`
+- [Docker](https://www.docker.com/) (for local services)
+
+**Install & run**
+```bash
+git clone https://github.com/qelos-io/qelos.git
+cd qelos
+pnpm install      # install dependencies
+pnpm build        # build packages
+pnpm dev          # start in development mode
+```
+
+> First time? Run `pnpm populate-db` in a second terminal to seed initial data, then log in with `test@test.com` / `admin`.
+
 ### Key Features
 
 - 🚀 **Multi-Tenant Architecture** - Built-in support for multi-tenancy with isolated workspaces and configurations
