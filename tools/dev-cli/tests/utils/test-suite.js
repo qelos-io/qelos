@@ -1,3 +1,4 @@
+const { beforeEach, after } = require('node:test');
 const { rmdirSync, mkdirSync } = require('fs');
 const { execSync } = require('child_process');
 
@@ -16,7 +17,7 @@ function initTestSuite() {
     execSync("npm link");
   });
 
-  afterAll(() => {
+  after(() => {
     rmdirSync("tmp", { recursive: true });
   });
 }

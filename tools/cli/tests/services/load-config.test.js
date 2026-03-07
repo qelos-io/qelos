@@ -1,10 +1,12 @@
+const { describe, it, beforeEach, afterEach, mock } = require('node:test');
+const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const yaml = require('yaml');
 
 /**
- * Mirrors the logic from services/load-config.mjs for testability in CJS Jest.
+ * Mirrors the logic from services/load-config.mjs for testability in CJS.
  * Any changes to the source must be reflected here.
  */
 const CONFIG_FILES = ['qelos.config.json', 'qelos.config.yaml', 'qelos.config.yml'];
@@ -122,81 +124,81 @@ describe('load-config', () => {
     it('should find qelos.config.json in cwd', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), '{}');
       const result = resolveConfigFile({ cwd: testDir });
-      expect(result).not.toBeNull();
-      expect(result.path).toBe(path.join(testDir, 'qelos.config.json'));
+      assert.notStrictEqual(result, null);
+      assert.strictEqual(result.path, path.join(testDir, 'qelos.config.json'));
     });
 
     it('should find qelos.config.yaml in cwd', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.yaml'), 'key: value');
       const result = resolveConfigFile({ cwd: testDir });
-      expect(result).not.toBeNull();
-      expect(result.path).toBe(path.join(testDir, 'qelos.config.yaml'));
+      assert.notStrictEqual(result, null);
+      assert.strictEqual(result.path, path.join(testDir, 'qelos.config.yaml'));
     });
 
     it('should find qelos.config.yml in cwd', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.yml'), 'key: value');
       const result = resolveConfigFile({ cwd: testDir });
-      expect(result).not.toBeNull();
-      expect(result.path).toBe(path.join(testDir, 'qelos.config.yml'));
+      assert.notStrictEqual(result, null);
+      assert.strictEqual(result.path, path.join(testDir, 'qelos.config.yml'));
     });
 
     it('should prefer json over yaml (discovery order)', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), '{"source":"json"}');
       fs.writeFileSync(path.join(testDir, 'qelos.config.yaml'), 'source: yaml');
       const result = resolveConfigFile({ cwd: testDir });
-      expect(result.path).toBe(path.join(testDir, 'qelos.config.json'));
+      assert.strictEqual(result.path, path.join(testDir, 'qelos.config.json'));
     });
 
     it('should prefer yaml over yml (discovery order)', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.yaml'), 'source: yaml');
       fs.writeFileSync(path.join(testDir, 'qelos.config.yml'), 'source: yml');
       const result = resolveConfigFile({ cwd: testDir });
-      expect(result.path).toBe(path.join(testDir, 'qelos.config.yaml'));
+      assert.strictEqual(result.path, path.join(testDir, 'qelos.config.yaml'));
     });
 
     it('should return null when no config file exists', () => {
       const result = resolveConfigFile({ cwd: testDir });
-      expect(result).toBeNull();
+      assert.strictEqual(result, null);
     });
 
     it('should use explicit configPath when provided', () => {
       fs.writeFileSync(path.join(testDir, 'custom.json'), '{"custom":true}');
       const result = resolveConfigFile({ configPath: 'custom.json', cwd: testDir });
-      expect(result).not.toBeNull();
-      expect(result.path).toBe(path.join(testDir, 'custom.json'));
+      assert.notStrictEqual(result, null);
+      assert.strictEqual(result.path, path.join(testDir, 'custom.json'));
     });
 
     it('should return null when explicit configPath does not exist', () => {
       const result = resolveConfigFile({ configPath: 'nonexistent.json', cwd: testDir });
-      expect(result).toBeNull();
+      assert.strictEqual(result, null);
     });
 
     it('should prefer explicit configPath over auto-discovery', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), '{"auto":true}');
       fs.writeFileSync(path.join(testDir, 'my-config.json'), '{"explicit":true}');
       const result = resolveConfigFile({ configPath: 'my-config.json', cwd: testDir });
-      expect(JSON.parse(result.content)).toEqual({ explicit: true });
+      assert.deepStrictEqual(JSON.parse(result.content), { explicit: true });
     });
   });
 
   describe('parseConfigFile', () => {
     it('should parse JSON files', () => {
       const result = parseConfigFile('test.json', '{"key":"value"}');
-      expect(result).toEqual({ key: 'value' });
+      assert.deepStrictEqual(result, { key: 'value' });
     });
 
     it('should parse YAML files', () => {
       const result = parseConfigFile('test.yaml', 'key: value\nnested:\n  a: 1');
-      expect(result).toEqual({ key: 'value', nested: { a: 1 } });
+      assert.deepStrictEqual(result, { key: 'value', nested: { a: 1 } });
     });
 
     it('should parse YML files as YAML', () => {
       const result = parseConfigFile('test.yml', 'key: value');
-      expect(result).toEqual({ key: 'value' });
+      assert.deepStrictEqual(result, { key: 'value' });
     });
 
     it('should throw on invalid JSON', () => {
-      expect(() => parseConfigFile('test.json', '{invalid')).toThrow();
+      assert.throws(() => parseConfigFile('test.json', '{invalid'));
     });
   });
 
@@ -206,7 +208,7 @@ describe('load-config', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), JSON.stringify(config));
 
       const result = loadConfig({ cwd: testDir });
-      expect(result).toEqual(config);
+      assert.deepStrictEqual(result, config);
     });
 
     it('should load and parse a YAML config file', () => {
@@ -220,20 +222,20 @@ agents:
       fs.writeFileSync(path.join(testDir, 'qelos.config.yaml'), yamlContent);
 
       const result = loadConfig({ cwd: testDir });
-      expect(result.qelosUrl).toBe('https://example.com');
-      expect(result.agents['my-agent'].stream).toBe(true);
-      expect(result.agents['my-agent'].thread).toBe('abc123');
+      assert.strictEqual(result.qelosUrl, 'https://example.com');
+      assert.strictEqual(result.agents['my-agent'].stream, true);
+      assert.strictEqual(result.agents['my-agent'].thread, 'abc123');
     });
 
     it('should return null when no config file found', () => {
       const result = loadConfig({ cwd: testDir });
-      expect(result).toBeNull();
+      assert.strictEqual(result, null);
     });
 
     it('should return null on parse error', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), '{broken json!!!');
       const result = loadConfig({ cwd: testDir });
-      expect(result).toBeNull();
+      assert.strictEqual(result, null);
     });
 
     it('should set internal config state accessible via getConfig', () => {
@@ -241,53 +243,49 @@ agents:
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), JSON.stringify(config));
 
       loadConfig({ cwd: testDir });
-      expect(getConfig()).toEqual(config);
+      assert.deepStrictEqual(getConfig(), config);
     });
 
     it('should log when verbose and config loaded', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), '{}');
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = mock.method(console, 'log', () => {});
 
       loadConfig({ cwd: testDir, verbose: true });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Loaded config file:')
-      );
-      consoleSpy.mockRestore();
+      assert.ok(consoleSpy.mock.calls.some(c => typeof c.arguments[0] === 'string' && c.arguments[0].includes('Loaded config file:')));
+      consoleSpy.mock.restore();
     });
 
     it('should warn when verbose and explicit config not found', () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleSpy = mock.method(console, 'warn', () => {});
 
       loadConfig({ configPath: 'missing.json', cwd: testDir, verbose: true });
 
-      expect(consoleSpy).toHaveBeenCalledWith('Config file not found: missing.json');
-      consoleSpy.mockRestore();
+      assert.ok(consoleSpy.mock.calls.some(c => c.arguments[0] === 'Config file not found: missing.json'));
+      consoleSpy.mock.restore();
     });
 
     it('should warn when verbose and parse fails', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), '{broken');
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleSpy = mock.method(console, 'warn', () => {});
 
       loadConfig({ cwd: testDir, verbose: true });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to parse config file')
-      );
-      consoleSpy.mockRestore();
+      assert.ok(consoleSpy.mock.calls.some(c => typeof c.arguments[0] === 'string' && c.arguments[0].includes('Failed to parse config file')));
+      consoleSpy.mock.restore();
     });
 
     it('should not log when verbose is false', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), '{}');
-      const logSpy = jest.spyOn(console, 'log').mockImplementation();
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const logSpy = mock.method(console, 'log', () => {});
+      const warnSpy = mock.method(console, 'warn', () => {});
 
       loadConfig({ cwd: testDir, verbose: false });
 
-      expect(logSpy).not.toHaveBeenCalled();
-      expect(warnSpy).not.toHaveBeenCalled();
-      logSpy.mockRestore();
-      warnSpy.mockRestore();
+      assert.strictEqual(logSpy.mock.callCount(), 0);
+      assert.strictEqual(warnSpy.mock.callCount(), 0);
+      logSpy.mock.restore();
+      warnSpy.mock.restore();
     });
 
     it('should load explicit config path', () => {
@@ -295,46 +293,46 @@ agents:
       fs.writeFileSync(path.join(testDir, 'my.config.json'), JSON.stringify(config));
 
       const result = loadConfig({ configPath: 'my.config.json', cwd: testDir });
-      expect(result).toEqual(config);
+      assert.deepStrictEqual(result, config);
     });
   });
 
   describe('getConfig', () => {
     it('should return null before any config is loaded', () => {
-      expect(getConfig()).toBeNull();
+      assert.strictEqual(getConfig(), null);
     });
 
     it('should return loaded config after loadConfig', () => {
       const config = { qelosUrl: 'https://test.com' };
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), JSON.stringify(config));
       loadConfig({ cwd: testDir });
-      expect(getConfig()).toEqual(config);
+      assert.deepStrictEqual(getConfig(), config);
     });
 
     it('should return null after resetConfig', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), '{}');
       loadConfig({ cwd: testDir });
       resetConfig();
-      expect(getConfig()).toBeNull();
+      assert.strictEqual(getConfig(), null);
     });
   });
 
   describe('getAgentConfig', () => {
     it('should return empty object when no config loaded', () => {
-      expect(getAgentConfig('my-agent')).toEqual({});
+      assert.deepStrictEqual(getAgentConfig('my-agent'), {});
     });
 
     it('should return empty object when config has no agents', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), JSON.stringify({ qelosUrl: 'x' }));
       loadConfig({ cwd: testDir });
-      expect(getAgentConfig('my-agent')).toEqual({});
+      assert.deepStrictEqual(getAgentConfig('my-agent'), {});
     });
 
     it('should return empty object for unknown agent', () => {
       const config = { agents: { 'known-agent': { stream: true } } };
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), JSON.stringify(config));
       loadConfig({ cwd: testDir });
-      expect(getAgentConfig('unknown-agent')).toEqual({});
+      assert.deepStrictEqual(getAgentConfig('unknown-agent'), {});
     });
 
     it('should return agent config for known agent by name', () => {
@@ -347,7 +345,7 @@ agents:
       loadConfig({ cwd: testDir });
 
       const agentConfig = getAgentConfig('my-agent');
-      expect(agentConfig).toEqual({ stream: true, thread: 'thread-123', log: 'chat.log' });
+      assert.deepStrictEqual(agentConfig, { stream: true, thread: 'thread-123', log: 'chat.log' });
     });
 
     it('should return agent config for known agent by ID', () => {
@@ -360,7 +358,7 @@ agents:
       loadConfig({ cwd: testDir });
 
       const agentConfig = getAgentConfig('507f1f77bcf86cd799439011');
-      expect(agentConfig).toEqual({ json: true, export: 'output.txt' });
+      assert.deepStrictEqual(agentConfig, { json: true, export: 'output.txt' });
     });
 
     it('should return empty object when agentNameOrId is falsy', () => {
@@ -368,9 +366,9 @@ agents:
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), JSON.stringify(config));
       loadConfig({ cwd: testDir });
 
-      expect(getAgentConfig(undefined)).toEqual({});
-      expect(getAgentConfig(null)).toEqual({});
-      expect(getAgentConfig('')).toEqual({});
+      assert.deepStrictEqual(getAgentConfig(undefined), {});
+      assert.deepStrictEqual(getAgentConfig(null), {});
+      assert.deepStrictEqual(getAgentConfig(''), {});
     });
 
     it('should return all supported agent options', () => {
@@ -385,7 +383,7 @@ agents:
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), JSON.stringify(config));
       loadConfig({ cwd: testDir });
 
-      expect(getAgentConfig('full-agent')).toEqual(agentOpts);
+      assert.deepStrictEqual(getAgentConfig('full-agent'), agentOpts);
     });
   });
 
@@ -410,10 +408,10 @@ agents:
       }
 
       // CLI flag should win
-      expect(argv.thread).toBe('cli-thread');
+      assert.strictEqual(argv.thread, 'cli-thread');
       // Config defaults should fill in undefined values
-      expect(argv.stream).toBe(true);
-      expect(argv.log).toBe('config.log');
+      assert.strictEqual(argv.stream, true);
+      assert.strictEqual(argv.log, 'config.log');
     });
 
     it('should not override explicit false values from CLI', () => {
@@ -433,9 +431,9 @@ agents:
       }
 
       // Explicit false from CLI should not be overridden
-      expect(argv.stream).toBe(false);
+      assert.strictEqual(argv.stream, false);
       // Undefined should be filled from config
-      expect(argv.json).toBe(true);
+      assert.strictEqual(argv.json, true);
     });
   });
 
@@ -457,13 +455,13 @@ agents:
 
       const config = loadConfig({ cwd: testDir });
 
-      expect(config.qelosUrl).toBe('https://my-qelos.example.com');
-      expect(config.agents['code-assistant'].stream).toBe(true);
-      expect(config.agents['code-assistant'].thread).toBe('persistent-thread-id');
-      expect(config.agents['code-assistant'].log).toBe('./logs/code-assistant.log');
-      expect(config.agents['code-assistant'].export).toBe('./output/response.md');
-      expect(config.agents['data-agent'].json).toBe(true);
-      expect(config.agents['data-agent'].stream).toBe(false);
+      assert.strictEqual(config.qelosUrl, 'https://my-qelos.example.com');
+      assert.strictEqual(config.agents['code-assistant'].stream, true);
+      assert.strictEqual(config.agents['code-assistant'].thread, 'persistent-thread-id');
+      assert.strictEqual(config.agents['code-assistant'].log, './logs/code-assistant.log');
+      assert.strictEqual(config.agents['code-assistant'].export, './output/response.md');
+      assert.strictEqual(config.agents['data-agent'].json, true);
+      assert.strictEqual(config.agents['data-agent'].stream, false);
     });
   });
 
@@ -471,9 +469,9 @@ agents:
     it('should create qelos.config.json when it does not exist', () => {
       const result = saveConfig({ qelosUrl: 'https://new.com' }, { cwd: testDir });
 
-      expect(result).toEqual({ qelosUrl: 'https://new.com' });
+      assert.deepStrictEqual(result, { qelosUrl: 'https://new.com' });
       const written = JSON.parse(fs.readFileSync(path.join(testDir, 'qelos.config.json'), 'utf-8'));
-      expect(written.qelosUrl).toBe('https://new.com');
+      assert.strictEqual(written.qelosUrl, 'https://new.com');
     });
 
     it('should merge with existing config', () => {
@@ -484,9 +482,9 @@ agents:
 
       const result = saveConfig({ newKey: 'newVal' }, { cwd: testDir });
 
-      expect(result.qelosUrl).toBe('https://old.com');
-      expect(result.existing).toBe(true);
-      expect(result.newKey).toBe('newVal');
+      assert.strictEqual(result.qelosUrl, 'https://old.com');
+      assert.strictEqual(result.existing, true);
+      assert.strictEqual(result.newKey, 'newVal');
     });
 
     it('should override top-level keys', () => {
@@ -496,7 +494,7 @@ agents:
       );
 
       const result = saveConfig({ qelosUrl: 'https://new.com' }, { cwd: testDir });
-      expect(result.qelosUrl).toBe('https://new.com');
+      assert.strictEqual(result.qelosUrl, 'https://new.com');
     });
 
     it('should deep-merge agents per agent key', () => {
@@ -515,45 +513,45 @@ agents:
       }, { cwd: testDir });
 
       // agent-a: stream preserved, log overridden, export added
-      expect(result.agents['agent-a']).toEqual({ stream: true, log: 'new.log', export: 'out.md' });
+      assert.deepStrictEqual(result.agents['agent-a'], { stream: true, log: 'new.log', export: 'out.md' });
       // agent-b: untouched
-      expect(result.agents['agent-b']).toEqual({ json: true });
+      assert.deepStrictEqual(result.agents['agent-b'], { json: true });
     });
 
     it('should handle corrupt existing file gracefully', () => {
       fs.writeFileSync(path.join(testDir, 'qelos.config.json'), '{broken!!!');
 
       const result = saveConfig({ qelosUrl: 'https://fresh.com' }, { cwd: testDir });
-      expect(result.qelosUrl).toBe('https://fresh.com');
+      assert.strictEqual(result.qelosUrl, 'https://fresh.com');
     });
 
     it('should update internal config state', () => {
       saveConfig({ qelosUrl: 'https://saved.com' }, { cwd: testDir });
-      expect(getConfig()).toEqual({ qelosUrl: 'https://saved.com' });
+      assert.deepStrictEqual(getConfig(), { qelosUrl: 'https://saved.com' });
     });
 
     it('should log when verbose is true', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = mock.method(console, 'log', () => {});
 
       saveConfig({ key: 'val' }, { cwd: testDir, verbose: true });
 
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Saved config to:'));
-      consoleSpy.mockRestore();
+      assert.ok(consoleSpy.mock.calls.some(c => typeof c.arguments[0] === 'string' && c.arguments[0].includes('Saved config to:')));
+      consoleSpy.mock.restore();
     });
 
     it('should not log when verbose is false', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = mock.method(console, 'log', () => {});
 
       saveConfig({ key: 'val' }, { cwd: testDir, verbose: false });
 
-      expect(consoleSpy).not.toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      assert.strictEqual(consoleSpy.mock.callCount(), 0);
+      consoleSpy.mock.restore();
     });
 
     it('should write pretty-printed JSON with trailing newline', () => {
       saveConfig({ key: 'val' }, { cwd: testDir });
       const raw = fs.readFileSync(path.join(testDir, 'qelos.config.json'), 'utf-8');
-      expect(raw).toBe(JSON.stringify({ key: 'val' }, null, 2) + '\n');
+      assert.strictEqual(raw, JSON.stringify({ key: 'val' }, null, 2) + '\n');
     });
   });
 
@@ -562,7 +560,7 @@ agents:
       saveAgentConfig('moshe', { json: true, export: 'a.md' }, { cwd: testDir });
 
       const written = JSON.parse(fs.readFileSync(path.join(testDir, 'qelos.config.json'), 'utf-8'));
-      expect(written).toEqual({
+      assert.deepStrictEqual(written, {
         agents: { moshe: { json: true, export: 'a.md' } }
       });
     });
@@ -576,8 +574,8 @@ agents:
       saveAgentConfig('new-agent', { json: true }, { cwd: testDir });
 
       const written = JSON.parse(fs.readFileSync(path.join(testDir, 'qelos.config.json'), 'utf-8'));
-      expect(written.agents.existing).toEqual({ stream: true });
-      expect(written.agents['new-agent']).toEqual({ json: true });
+      assert.deepStrictEqual(written.agents.existing, { stream: true });
+      assert.deepStrictEqual(written.agents['new-agent'], { json: true });
     });
 
     it('should merge with existing agent options', () => {
@@ -589,7 +587,7 @@ agents:
       saveAgentConfig('moshe', { json: true, log: 'new.log' }, { cwd: testDir });
 
       const written = JSON.parse(fs.readFileSync(path.join(testDir, 'qelos.config.json'), 'utf-8'));
-      expect(written.agents.moshe).toEqual({ stream: true, json: true, log: 'new.log' });
+      assert.deepStrictEqual(written.agents.moshe, { stream: true, json: true, log: 'new.log' });
     });
 
     it('should preserve non-agent config keys', () => {
@@ -601,15 +599,15 @@ agents:
       saveAgentConfig('agent1', { stream: true }, { cwd: testDir });
 
       const written = JSON.parse(fs.readFileSync(path.join(testDir, 'qelos.config.json'), 'utf-8'));
-      expect(written.qelosUrl).toBe('https://keep.com');
-      expect(written.agents.agent1).toEqual({ stream: true });
+      assert.strictEqual(written.qelosUrl, 'https://keep.com');
+      assert.deepStrictEqual(written.agents.agent1, { stream: true });
     });
 
     it('should match the example: qelos agent moshe --json --export a.md --save', () => {
       saveAgentConfig('moshe', { json: true, export: 'a.md' }, { cwd: testDir });
 
       const written = JSON.parse(fs.readFileSync(path.join(testDir, 'qelos.config.json'), 'utf-8'));
-      expect(written).toEqual({
+      assert.deepStrictEqual(written, {
         agents: { moshe: { json: true, export: 'a.md' } }
       });
     });

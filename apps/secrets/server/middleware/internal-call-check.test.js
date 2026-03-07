@@ -1,57 +1,42 @@
+const { describe, test } = require('node:test');
+const assert = require('node:assert');
+
+const config = require('../../config');
+const middleware = require('./internal-call-check');
+
 describe('internal-call-check', () => {
-
-  let config;
-  beforeEach(() => {
-    jest.mock('../../config');
-    config = require('../../config');
-  });
-
-  afterEach(() => {
-    jest.unmock('../../config');
-    jest.clearAllMocks();
-  });
 
   describe('when request includes valid secret', () => {
     test('should continue with express middlewares', () => {
-      const next = jest.fn();
+      let called = false;
+      const next = () => { called = true; };
       const req = { headers: { internal_secret: config.internalSecret } };
 
-      require('./internal-call-check')(req, {}, next);
+      middleware(req, {}, next);
 
-      expect(next).toBeCalled();
+      assert.ok(called);
     });
   });
 
   describe('when request not includes valid secret', () => {
     test('should response not authorized to user', () => {
+      const req = { headers: { internal_secret: 'wrong-secret-value' } };
 
-      config.internalSecret = 'aaaa';
-
-      const req = { headers: { internal_secret: 'bbbb' } };
-
+      let statusCode;
+      let jsonBody;
+      let ended = false;
       const res = {
-        status: jest.fn().mockImplementation(() => res),
-        json: jest.fn().mockImplementation(() => res),
-        end: jest.fn().mockImplementation(() => res),
+        status(code) { statusCode = code; return this; },
+        json(body) { jsonBody = body; return this; },
+        end() { ended = true; return this; },
       };
 
-      require('./internal-call-check')(req, res);
+      middleware(req, res);
 
-      expect(res.status).toBeCalledTimes(1);
-      expect(res.status).toBeCalledWith(401);
-
-      expect(res.json).toBeCalledTimes(1);
-      expect(res.json).toBeCalledWith({ 'message': 'you are not allowed' });
-
-      expect(res.end).toBeCalledTimes(1);
-
-      expect({
-        status: res.status.mock.calls,
-        json: res.json.mock.calls,
-        end: res.end.mock.calls,
-      }).toMatchSnapshot();
+      assert.strictEqual(statusCode, 401);
+      assert.deepStrictEqual(jsonBody, { message: 'you are not allowed' });
+      assert.ok(ended);
     });
-
   });
 
-})
+});

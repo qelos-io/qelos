@@ -32,10 +32,6 @@
     "access": "public"
   },
   "scripts": {
-    "test": "NODE_OPTIONS='--experimental-vm-modules' jest --runInBand"
-  },
-  "devDependencies": {
-    "jest": "^27.5.1",
-    "jest-esm-transformer": "^1.0.0"
+    "test": "node --test 'tests/**/*.test.js'"
   }
 }
