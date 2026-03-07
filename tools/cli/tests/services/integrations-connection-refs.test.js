@@ -432,8 +432,8 @@ describe('Integration Connection Reference Mapping', () => {
       );
       
       // Sources should remain unchanged (not connection IDs)
-      expect(pulledIntegration.trigger.source).toBe('direct-source');
-      expect(pulledIntegration.target.source).toBe('direct-target');
+      assert.strictEqual(pulledIntegration.trigger.source, 'direct-source');
+      assert.strictEqual(pulledIntegration.target.source, 'direct-target');
     });
   });
 });
