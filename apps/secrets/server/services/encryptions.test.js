@@ -1,37 +1,31 @@
+const { describe, test } = require('node:test');
+const assert = require('node:assert');
+
+const encryptions = require('./encryptions');
+
 describe('encryptions', () => {
-
-  let config;
-  beforeEach(() => {
-    jest.mock('../../config');
-    config = require('../../config');
-  });
-
-  afterEach(() => {
-    jest.unmock('../../config');
-    jest.clearAllMocks();
-  });
 
   describe('encrypt function', () => {
     test('should encrypt objects without throwing an error', () => {
-      const result = require('./encryptions').encrypt({ a: 1, b: 2, c: true, d: "some text" }, 'abcdefg');
+      const result = encryptions.encrypt({ a: 1, b: 2, c: true, d: "some text" }, 'abcdefg');
 
-      expect(result).toBeDefined();
-      expect(typeof result).toBe('string');
+      assert.notStrictEqual(result, undefined);
+      assert.strictEqual(typeof result, 'string');
     });
 
     test('should encrypt when secret is null', () => {
-      const result = require('./encryptions').encrypt({ a: 1, b: 2, c: true, d: "some text" }, null);
+      const result = encryptions.encrypt({ a: 1, b: 2, c: true, d: "some text" }, null);
 
-      expect(result).toBeDefined();
-      expect(typeof result).toBe('string');
+      assert.notStrictEqual(result, undefined);
+      assert.strictEqual(typeof result, 'string');
     });
   });
-
 
   describe('hashSecretKey function', () => {
     test('should hash a string', () => {
-      const result = require('./encryptions').hashSecretKey('abcd');
-      expect(result).toBeDefined();
+      const result = encryptions.hashSecretKey('abcd');
+      assert.notStrictEqual(result, undefined);
     });
   });
-})
+
+});

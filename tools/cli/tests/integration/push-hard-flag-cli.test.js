@@ -1,3 +1,5 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
@@ -6,19 +8,19 @@ const { execSync } = require('node:child_process');
 describe('Push Command - Hard Flag Integration', () => {
   let testDir;
   let originalCwd;
-  
+
   beforeEach(() => {
     // Create a temporary directory for test files
     testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'push-hard-test-'));
     originalCwd = process.cwd();
-    
+
     // Create resource directories
     fs.mkdirSync(path.join(testDir, 'blueprints'));
     fs.mkdirSync(path.join(testDir, 'plugins'));
     fs.mkdirSync(path.join(testDir, 'components'));
     fs.mkdirSync(path.join(testDir, 'integrations'));
   });
-  
+
   afterEach(() => {
     // Clean up test directory
     process.chdir(originalCwd);
@@ -30,7 +32,7 @@ describe('Push Command - Hard Flag Integration', () => {
   const runPushCommand = (type, dir, hard = false) => {
     try {
       const hardFlag = hard ? ' --hard' : '';
-      const output = execSync(`node cli.mjs push ${type} ${dir}${hardFlag}`, { 
+      const output = execSync(`node cli.mjs push ${type} ${dir}${hardFlag}`, {
         cwd: path.join(__dirname, '../..'),
         encoding: 'utf8',
         stdio: 'pipe',
@@ -45,8 +47,8 @@ describe('Push Command - Hard Flag Integration', () => {
       });
       return { success: true, output };
     } catch (error) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         output: error.stderr || error.stdout || error.message
       };
     }
@@ -55,30 +57,30 @@ describe('Push Command - Hard Flag Integration', () => {
   describe('Hard flag validation', () => {
     it('should show error when using --hard with unsupported type', () => {
       const result = runPushCommand('configs', path.join(testDir, 'configs'), true);
-      expect(result.success).toBe(false);
-      expect(result.output).toContain('--hard flag is only available for');
+      assert.ok(!result.success);
+      assert.ok(result.output.includes('--hard flag is only available for'));
     });
 
     it('should show error when using --hard with single file', () => {
       // Create a single component file
       const componentFile = path.join(testDir, 'components', 'test-component.vue');
       fs.writeFileSync(componentFile, '<template><div>Test</div></template>');
-      
+
       const result = runPushCommand('components', componentFile, true);
-      expect(result.success).toBe(false);
-      expect(result.output).toContain('--hard flag can only be used when pushing a directory');
+      assert.ok(!result.success);
+      assert.ok(result.output.includes('--hard flag can only be used when pushing a directory'));
     });
 
     it('should accept --hard for supported types with directory', () => {
       // Test each supported type
       const supportedTypes = ['components', 'blueprints', 'plugins', 'integrations'];
-      
+
       supportedTypes.forEach(type => {
         const result = runPushCommand(type, path.join(testDir, type), true);
         // We expect it to fail due to network connection, but not due to flag validation
         if (!result.success) {
-          expect(result.output).not.toContain('--hard flag is only available for');
-          expect(result.output).not.toContain('--hard flag can only be used when pushing a directory');
+          assert.ok(!result.output.includes('--hard flag is only available for'));
+          assert.ok(!result.output.includes('--hard flag can only be used when pushing a directory'));
         }
       });
     });
@@ -87,7 +89,7 @@ describe('Push Command - Hard Flag Integration', () => {
       const result = runPushCommand('all', testDir, true);
       // We expect it to fail due to network connection, but not due to flag validation
       if (!result.success) {
-        expect(result.output).not.toContain('--hard flag is only available for');
+        assert.ok(!result.output.includes('--hard flag is only available for'));
       }
     });
   });
@@ -99,7 +101,7 @@ describe('Push Command - Hard Flag Integration', () => {
         path.join(testDir, 'components', 'local-component.vue'),
         '<template><div>Local Component</div></template>'
       );
-      
+
       fs.writeFileSync(
         path.join(testDir, 'blueprints', 'local-bp.blueprint.json'),
         JSON.stringify({
@@ -108,7 +110,7 @@ describe('Push Command - Hard Flag Integration', () => {
           description: 'A local blueprint'
         }, null, 2)
       );
-      
+
       fs.writeFileSync(
         path.join(testDir, 'plugins', 'local-plugin.plugin.json'),
         JSON.stringify({
@@ -117,7 +119,7 @@ describe('Push Command - Hard Flag Integration', () => {
           description: 'A local plugin'
         }, null, 2)
       );
-      
+
       fs.writeFileSync(
         path.join(testDir, 'integrations', 'local-integration.integration.json'),
         JSON.stringify({
@@ -135,7 +137,7 @@ describe('Push Command - Hard Flag Integration', () => {
       const result = runPushCommand('components', path.join(testDir, 'components'), true);
       // The command should attempt to run (and fail due to network)
       // but the flag should be accepted
-      expect(result.output).not.toContain('--hard flag is only available for');
+      assert.ok(!result.output.includes('--hard flag is only available for'));
     });
   });
 

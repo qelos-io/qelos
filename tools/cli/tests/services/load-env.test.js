@@ -1,10 +1,12 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
+const { describe, it, beforeEach, afterEach, mock } = require('node:test');
+const assert = require('node:assert');
 const dotenv = require('dotenv');
 
 /**
- * Mirrors the logic from services/load-env.mjs for testability in CJS Jest.
+ * Mirrors the logic from services/load-env.mjs for testability in CJS.
  * Any changes to the source must be reflected here.
  */
 function getEnvFiles(envSuffix) {
@@ -51,22 +53,22 @@ describe('load-env', () => {
   describe('getEnvFiles', () => {
     it('should return default files when no suffix provided', () => {
       const files = getEnvFiles();
-      expect(files).toEqual(['.env.local', '.env']);
+      assert.deepStrictEqual(files, ['.env.local', '.env']);
     });
 
     it('should return default files when suffix is undefined', () => {
       const files = getEnvFiles(undefined);
-      expect(files).toEqual(['.env.local', '.env']);
+      assert.deepStrictEqual(files, ['.env.local', '.env']);
     });
 
     it('should return default files when suffix is empty string', () => {
       const files = getEnvFiles('');
-      expect(files).toEqual(['.env.local', '.env']);
+      assert.deepStrictEqual(files, ['.env.local', '.env']);
     });
 
     it('should prepend suffix-specific files when suffix provided', () => {
       const files = getEnvFiles('production');
-      expect(files).toEqual([
+      assert.deepStrictEqual(files, [
         '.env.production.local',
         '.env.production',
         '.env.local',
@@ -76,7 +78,7 @@ describe('load-env', () => {
 
     it('should handle arbitrary suffix values', () => {
       const files = getEnvFiles('staging');
-      expect(files).toEqual([
+      assert.deepStrictEqual(files, [
         '.env.staging.local',
         '.env.staging',
         '.env.local',
@@ -91,8 +93,8 @@ describe('load-env', () => {
 
       const loaded = loadEnv({ cwd: testDir });
 
-      expect(loaded).toEqual(['.env']);
-      expect(process.env.LOAD_ENV_TEST_VAR).toBe('hello');
+      assert.deepStrictEqual(loaded, ['.env']);
+      assert.strictEqual(process.env.LOAD_ENV_TEST_VAR, 'hello');
     });
 
     it('should load .env.local file', () => {
@@ -100,8 +102,8 @@ describe('load-env', () => {
 
       const loaded = loadEnv({ cwd: testDir });
 
-      expect(loaded).toEqual(['.env.local']);
-      expect(process.env.LOAD_ENV_LOCAL_VAR).toBe('local_val');
+      assert.deepStrictEqual(loaded, ['.env.local']);
+      assert.strictEqual(process.env.LOAD_ENV_LOCAL_VAR, 'local_val');
     });
 
     it('should load suffix-specific env files when envSuffix provided', () => {
@@ -109,8 +111,8 @@ describe('load-env', () => {
 
       const loaded = loadEnv({ cwd: testDir, envSuffix: 'production' });
 
-      expect(loaded).toContain('.env.production');
-      expect(process.env.LOAD_ENV_PROD_VAR).toBe('prod_val');
+      assert.ok(loaded.includes('.env.production'));
+      assert.strictEqual(process.env.LOAD_ENV_PROD_VAR, 'prod_val');
     });
 
     it('should load suffix.local file when it exists', () => {
@@ -118,8 +120,8 @@ describe('load-env', () => {
 
       const loaded = loadEnv({ cwd: testDir, envSuffix: 'staging' });
 
-      expect(loaded).toContain('.env.staging.local');
-      expect(process.env.LOAD_ENV_STAGING_LOCAL).toBe('sl_val');
+      assert.ok(loaded.includes('.env.staging.local'));
+      assert.strictEqual(process.env.LOAD_ENV_STAGING_LOCAL, 'sl_val');
     });
 
     it('should load multiple files in priority order', () => {
@@ -128,9 +130,9 @@ describe('load-env', () => {
 
       const loaded = loadEnv({ cwd: testDir });
 
-      expect(loaded).toEqual(['.env.local', '.env']);
+      assert.deepStrictEqual(loaded, ['.env.local', '.env']);
       // .env.local is loaded first, dotenv does not override existing vars
-      expect(process.env.LOAD_ENV_MULTI).toBe('from_local');
+      assert.strictEqual(process.env.LOAD_ENV_MULTI, 'from_local');
     });
 
     it('should not override already-set vars (dotenv default behavior)', () => {
@@ -139,15 +141,15 @@ describe('load-env', () => {
 
       const loaded = loadEnv({ cwd: testDir, envSuffix: 'production' });
 
-      expect(loaded).toContain('.env.production');
-      expect(loaded).toContain('.env');
+      assert.ok(loaded.includes('.env.production'));
+      assert.ok(loaded.includes('.env'));
       // .env.production loaded first, .env should not override
-      expect(process.env.LOAD_ENV_PRIORITY).toBe('prod');
+      assert.strictEqual(process.env.LOAD_ENV_PRIORITY, 'prod');
     });
 
     it('should return empty array when no env files exist', () => {
       const loaded = loadEnv({ cwd: testDir });
-      expect(loaded).toEqual([]);
+      assert.deepStrictEqual(loaded, []);
     });
 
     it('should skip non-existent files without error', () => {
@@ -155,42 +157,42 @@ describe('load-env', () => {
 
       const loaded = loadEnv({ cwd: testDir });
 
-      expect(loaded).toEqual(['.env']);
-      expect(process.env.LOAD_ENV_SKIP_TEST).toBe('yes');
+      assert.deepStrictEqual(loaded, ['.env']);
+      assert.strictEqual(process.env.LOAD_ENV_SKIP_TEST, 'yes');
     });
 
     it('should log loaded files when verbose is true', () => {
       fs.writeFileSync(path.join(testDir, '.env'), 'LOAD_ENV_VERBOSE=1\n');
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = mock.method(console, 'log', () => {});
 
       loadEnv({ cwd: testDir, verbose: true });
 
-      expect(consoleSpy).toHaveBeenCalledWith('Loaded env file: .env');
-      consoleSpy.mockRestore();
+      assert.ok(consoleSpy.mock.calls.some(c => c.arguments[0] === 'Loaded env file: .env'));
+      consoleSpy.mock.restore();
     });
 
     it('should not log when verbose is false', () => {
       fs.writeFileSync(path.join(testDir, '.env'), 'LOAD_ENV_QUIET=1\n');
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = mock.method(console, 'log', () => {});
 
       loadEnv({ cwd: testDir, verbose: false });
 
-      expect(consoleSpy).not.toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      assert.strictEqual(consoleSpy.mock.callCount(), 0);
+      consoleSpy.mock.restore();
     });
 
     it('should not log when verbose is undefined', () => {
       fs.writeFileSync(path.join(testDir, '.env'), 'LOAD_ENV_NOLOG=1\n');
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = mock.method(console, 'log', () => {});
 
       loadEnv({ cwd: testDir });
 
-      expect(consoleSpy).not.toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      assert.strictEqual(consoleSpy.mock.callCount(), 0);
+      consoleSpy.mock.restore();
     });
 
     it('should work with no options (defaults)', () => {
-      expect(() => loadEnv()).not.toThrow();
+      assert.doesNotThrow(() => loadEnv());
     });
 
     it('should load all four files when all exist with suffix', () => {
@@ -201,7 +203,7 @@ describe('load-env', () => {
 
       const loaded = loadEnv({ cwd: testDir, envSuffix: 'test' });
 
-      expect(loaded).toEqual([
+      assert.deepStrictEqual(loaded, [
         '.env.test.local',
         '.env.test',
         '.env.local',
@@ -217,8 +219,8 @@ describe('load-env', () => {
 
       loadEnv({ cwd: testDir });
 
-      expect(process.env.LOAD_ENV_LINE1).toBe('first');
-      expect(process.env.LOAD_ENV_LINE2).toBe('second');
+      assert.strictEqual(process.env.LOAD_ENV_LINE1, 'first');
+      assert.strictEqual(process.env.LOAD_ENV_LINE2, 'second');
     });
 
     it('should handle quoted values in env files', () => {
@@ -229,7 +231,7 @@ describe('load-env', () => {
 
       loadEnv({ cwd: testDir });
 
-      expect(process.env.LOAD_ENV_QUOTED).toBe('hello world');
+      assert.strictEqual(process.env.LOAD_ENV_QUOTED, 'hello world');
     });
 
     it('should handle env files with comments', () => {
@@ -240,7 +242,7 @@ describe('load-env', () => {
 
       loadEnv({ cwd: testDir });
 
-      expect(process.env.LOAD_ENV_COMMENT_TEST).toBe('value');
+      assert.strictEqual(process.env.LOAD_ENV_COMMENT_TEST, 'value');
     });
   });
 });

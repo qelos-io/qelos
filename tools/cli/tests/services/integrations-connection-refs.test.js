@@ -1,3 +1,5 @@
+const { describe, it, beforeEach, afterEach, mock } = require('node:test');
+const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
@@ -17,7 +19,7 @@ describe('Integration Connection Reference Mapping', () => {
     
     // Mock SDK
     mockSdk = {
-      callJsonApi: jest.fn()
+      callJsonApi: mock.fn()
     };
   });
   
@@ -32,7 +34,6 @@ describe('Integration Connection Reference Mapping', () => {
     if (fs.existsSync(connectionsDir)) {
       fs.rmSync(connectionsDir, { recursive: true, force: true });
     }
-    jest.clearAllMocks();
   });
 
   describe('loadConnectionIdMap', () => {
@@ -59,14 +60,14 @@ describe('Integration Connection Reference Mapping', () => {
       const connectionMap = integrationsService.loadConnectionIdMap(testDir);
       
       // Verify mappings
-      expect(connectionMap.size).toBe(2);
-      expect(connectionMap.get('conn1')).toBe('../connections/conn1.connection.json');
-      expect(connectionMap.get('conn2')).toBe('../connections/conn2.connection.json');
+      assert.strictEqual(connectionMap.size, 2);
+      assert.strictEqual(connectionMap.get('conn1'), '../connections/conn1.connection.json');
+      assert.strictEqual(connectionMap.get('conn2'), '../connections/conn2.connection.json');
     });
     
     it('should return empty map when connections directory does not exist', () => {
       const connectionMap = integrationsService.loadConnectionIdMap(testDir);
-      expect(connectionMap.size).toBe(0);
+      assert.strictEqual(connectionMap.size, 0);
     });
     
     it('should skip files without _id', () => {
@@ -83,7 +84,7 @@ describe('Integration Connection Reference Mapping', () => {
       );
       
       const connectionMap = integrationsService.loadConnectionIdMap(testDir);
-      expect(connectionMap.size).toBe(0);
+      assert.strictEqual(connectionMap.size, 0);
     });
     
     it('should handle invalid JSON files gracefully', () => {
@@ -106,8 +107,8 @@ describe('Integration Connection Reference Mapping', () => {
       );
       
       const connectionMap = integrationsService.loadConnectionIdMap(testDir);
-      expect(connectionMap.size).toBe(1);
-      expect(connectionMap.get('conn1')).toBe('../connections/conn1.connection.json');
+      assert.strictEqual(connectionMap.size, 1);
+      assert.strictEqual(connectionMap.get('conn1'), '../connections/conn1.connection.json');
     });
   });
 
@@ -132,8 +133,8 @@ describe('Integration Connection Reference Mapping', () => {
       
       const result = integrationsService.replaceConnectionIds(integration, connectionMap);
       
-      expect(result.trigger.source).toEqual({ $refId: '../connections/openai.connection.json' });
-      expect(result.target.source).toEqual({ $refId: '../connections/anthropic.connection.json' });
+      assert.deepStrictEqual(result.trigger.source, { $refId: '../connections/openai.connection.json' });
+      assert.deepStrictEqual(result.target.source, { $refId: '../connections/anthropic.connection.json' });
     });
     
     it('should not replace sources that are not in the map', () => {
@@ -155,8 +156,8 @@ describe('Integration Connection Reference Mapping', () => {
       
       const result = integrationsService.replaceConnectionIds(integration, connectionMap);
       
-      expect(result.trigger.source).toBe('conn2'); // Unchanged
-      expect(result.target.source).toEqual({ $refId: '../connections/openai.connection.json' });
+      assert.strictEqual(result.trigger.source, 'conn2'); // Unchanged
+      assert.deepStrictEqual(result.target.source, { $refId: '../connections/openai.connection.json' });
     });
     
     it('should handle missing trigger or target', () => {
@@ -166,11 +167,11 @@ describe('Integration Connection Reference Mapping', () => {
       
       const integration1 = { _id: 'int1', target: { source: 'conn1' } };
       const result1 = integrationsService.replaceConnectionIds(integration1, connectionMap);
-      expect(result1.target.source).toEqual({ $refId: '../connections/openai.connection.json' });
+      assert.deepStrictEqual(result1.target.source, { $refId: '../connections/openai.connection.json' });
       
       const integration2 = { _id: 'int2', trigger: { source: 'conn1' } };
       const result2 = integrationsService.replaceConnectionIds(integration2, connectionMap);
-      expect(result2.trigger.source).toEqual({ $refId: '../connections/openai.connection.json' });
+      assert.deepStrictEqual(result2.trigger.source, { $refId: '../connections/openai.connection.json' });
     });
     
     it('should not modify the original integration object', () => {
@@ -186,9 +187,9 @@ describe('Integration Connection Reference Mapping', () => {
       const result = integrationsService.replaceConnectionIds(integration, connectionMap);
       
       // Original should be unchanged
-      expect(integration.trigger.source).toBe('conn1');
+      assert.strictEqual(integration.trigger.source, 'conn1');
       // Result should have the replacement
-      expect(result.trigger.source).toEqual({ $refId: '../connections/openai.connection.json' });
+      assert.deepStrictEqual(result.trigger.source, { $refId: '../connections/openai.connection.json' });
     });
   });
 
@@ -228,8 +229,8 @@ describe('Integration Connection Reference Mapping', () => {
       
       const result = integrationsService.resolveConnectionReferences(integration, testDir);
       
-      expect(result.trigger.source).toBe('resolved-conn1');
-      expect(result.target.source).toBe('resolved-conn2');
+      assert.strictEqual(result.trigger.source, 'resolved-conn1');
+      assert.strictEqual(result.target.source, 'resolved-conn2');
     });
     
     it('should throw error when referenced file does not exist', () => {
@@ -241,9 +242,9 @@ describe('Integration Connection Reference Mapping', () => {
         }
       };
       
-      expect(() => {
+      assert.throws(() => {
         integrationsService.resolveConnectionReferences(integration, testDir);
-      }).toThrow('Connection file not found');
+      }, { message: /Connection file not found/ });
     });
     
     it('should throw error when connection file is missing _id', () => {
@@ -263,9 +264,9 @@ describe('Integration Connection Reference Mapping', () => {
         }
       };
       
-      expect(() => {
+      assert.throws(() => {
         integrationsService.resolveConnectionReferences(integration, testDir);
-      }).toThrow('Connection file missing _id field');
+      }, { message: /Connection file missing _id field/ });
     });
     
     it('should handle invalid JSON in connection file', () => {
@@ -285,9 +286,9 @@ describe('Integration Connection Reference Mapping', () => {
         }
       };
       
-      expect(() => {
+      assert.throws(() => {
         integrationsService.resolveConnectionReferences(integration, testDir);
-      }).toThrow();
+      });
     });
     
     it('should not modify the original integration object', () => {
@@ -302,9 +303,9 @@ describe('Integration Connection Reference Mapping', () => {
       const result = integrationsService.resolveConnectionReferences(integration, testDir);
       
       // Original should be unchanged
-      expect(integration.trigger.source).toEqual({ $refId: '../connections/conn1.connection.json' });
+      assert.deepStrictEqual(integration.trigger.source, { $refId: '../connections/conn1.connection.json' });
       // Result should have the resolved ID
-      expect(result.trigger.source).toBe('resolved-conn1');
+      assert.strictEqual(result.trigger.source, 'resolved-conn1');
     });
   });
 
@@ -331,26 +332,8 @@ describe('Integration Connection Reference Mapping', () => {
     
     it('should complete full pull and push cycle with connection references', async () => {
       // Mock API responses
-      mockSdk.callJsonApi
-        .mockResolvedValueOnce([
-          {
-            _id: 'int-789',
-            kind: ['qelos', 'openai'],
-            active: true,
-            trigger: {
-              source: 'conn-123',
-              operation: 'chatCompletion',
-              details: { name: 'Test Integration' }
-            },
-            target: {
-              source: 'conn-456',
-              operation: 'chatCompletion',
-              details: { model: 'gpt-4' }
-            },
-            dataManipulation: []
-          }
-        ])
-        .mockResolvedValueOnce({
+      const pullResponse = [
+        {
           _id: 'int-789',
           kind: ['qelos', 'openai'],
           active: true,
@@ -365,42 +348,62 @@ describe('Integration Connection Reference Mapping', () => {
             details: { model: 'gpt-4' }
           },
           dataManipulation: []
-        });
+        }
+      ];
+      const pushResponse = {
+        _id: 'int-789',
+        kind: ['qelos', 'openai'],
+        active: true,
+        trigger: {
+          source: 'conn-123',
+          operation: 'chatCompletion',
+          details: { name: 'Test Integration' }
+        },
+        target: {
+          source: 'conn-456',
+          operation: 'chatCompletion',
+          details: { model: 'gpt-4' }
+        },
+        dataManipulation: []
+      };
+      let callIndex = 0;
+      const responses = [pullResponse, pushResponse];
+      mockSdk.callJsonApi = mock.fn(() => Promise.resolve(responses[callIndex++]));
       
       // Pull integrations
       await integrationsService.pullIntegrations(mockSdk, testDir);
       
       // Verify pulled file has $refId references
       const integrationFiles = fs.readdirSync(testDir).filter(f => f.endsWith('.integration.json'));
-      expect(integrationFiles).toHaveLength(1);
+      assert.strictEqual(integrationFiles.length, 1);
       
       const pulledIntegration = JSON.parse(
         fs.readFileSync(path.join(testDir, integrationFiles[0]), 'utf-8')
       );
-      expect(pulledIntegration.trigger.source).toEqual({ $refId: '../connections/openai.connection.json' });
-      expect(pulledIntegration.target.source).toEqual({ $refId: '../connections/anthropic.connection.json' });
+      assert.deepStrictEqual(pulledIntegration.trigger.source, { $refId: '../connections/openai.connection.json' });
+      assert.deepStrictEqual(pulledIntegration.target.source, { $refId: '../connections/anthropic.connection.json' });
       
       // Push integrations back
       await integrationsService.pushIntegrations(mockSdk, testDir);
       
       // Verify the API was called with resolved IDs
-      expect(mockSdk.callJsonApi).toHaveBeenCalledTimes(2);
+      assert.strictEqual(mockSdk.callJsonApi.mock.callCount(), 2);
       const pushCall = mockSdk.callJsonApi.mock.calls[1];
-      const pushedPayload = JSON.parse(pushCall[1].body);
+      const pushedPayload = JSON.parse(pushCall.arguments[1].body);
       
-      expect(pushedPayload.trigger.source).toBe('conn-123');
-      expect(pushedPayload.target.source).toBe('conn-456');
+      assert.strictEqual(pushedPayload.trigger.source, 'conn-123');
+      assert.strictEqual(pushedPayload.target.source, 'conn-456');
       
       // Verify the file was saved back with $refId references
       const updatedIntegration = JSON.parse(
         fs.readFileSync(path.join(testDir, integrationFiles[0]), 'utf-8')
       );
-      expect(updatedIntegration.trigger.source).toEqual({ $refId: '../connections/openai.connection.json' });
-      expect(updatedIntegration.target.source).toEqual({ $refId: '../connections/anthropic.connection.json' });
+      assert.deepStrictEqual(updatedIntegration.trigger.source, { $refId: '../connections/openai.connection.json' });
+      assert.deepStrictEqual(updatedIntegration.target.source, { $refId: '../connections/anthropic.connection.json' });
     });
     
     it('should handle integrations without connection references', async () => {
-      mockSdk.callJsonApi.mockResolvedValueOnce([
+      mockSdk.callJsonApi = mock.fn(() => Promise.resolve([
         {
           _id: 'int-simple',
           kind: ['qelos'],
@@ -417,7 +420,7 @@ describe('Integration Connection Reference Mapping', () => {
           },
           dataManipulation: []
         }
-      ]);
+      ]));
       
       // Pull integrations
       await integrationsService.pullIntegrations(mockSdk, testDir);
@@ -429,8 +432,8 @@ describe('Integration Connection Reference Mapping', () => {
       );
       
       // Sources should remain unchanged (not connection IDs)
-      expect(pulledIntegration.trigger.source).toBe('direct-source');
-      expect(pulledIntegration.target.source).toBe('direct-target');
+      assert.strictEqual(pulledIntegration.trigger.source, 'direct-source');
+      assert.strictEqual(pulledIntegration.target.source, 'direct-target');
     });
   });
 });
