@@ -24,3 +24,5 @@ Chart.lock
 .cloudfairy.build
 apps/admin/components.d.ts
 .env.*
+*.aidev.instructions.md
+*.aidev.task.json
