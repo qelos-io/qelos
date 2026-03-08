@@ -10,7 +10,8 @@ type OptionalKind = IntegrationSourceKind.ClaudeAi |
   IntegrationSourceKind.Google |
   IntegrationSourceKind.GitHub |
   IntegrationSourceKind.Gemini |
-  IntegrationSourceKind.Sumit;
+  IntegrationSourceKind.Sumit |
+  IntegrationSourceKind.PayPal;
 
 export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind }> {
   return {
@@ -78,6 +79,11 @@ export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind 
       logo: '/logos/sumit.png',
       name: 'Sumit',
       kind: IntegrationSourceKind.Sumit
+    },
+    [IntegrationSourceKind.PayPal]: {
+      logo: '/logos/paypal.svg',
+      name: 'PayPal',
+      kind: IntegrationSourceKind.PayPal
     }
   }
 }

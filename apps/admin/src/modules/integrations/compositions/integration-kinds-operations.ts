@@ -4,7 +4,8 @@ import {
   OpenAITargetOperation,
   QelosTargetOperation, QelosTriggerOperation, ClaudeAITargetOperation,
   EmailTargetOperation,
-  OpenAITriggerOperation
+  OpenAITriggerOperation,
+  PayPalTargetOperation
 } from '@qelos/global-types';
 
 export function useIntegrationKindsTargetOperations() {
@@ -55,6 +56,14 @@ export function useIntegrationKindsTargetOperations() {
     [IntegrationSourceKind.Cloudflare]: [],
     [IntegrationSourceKind.Sumit]: [],
     [IntegrationSourceKind.Gemini]: [],
+    [IntegrationSourceKind.PayPal]: [
+      { name: PayPalTargetOperation.createOrder, label: 'Create Order' },
+      { name: PayPalTargetOperation.captureOrder, label: 'Capture Order' },
+      { name: PayPalTargetOperation.refundPayment, label: 'Refund Payment' },
+      { name: PayPalTargetOperation.createProduct, label: 'Create Product' },
+      { name: PayPalTargetOperation.createSubscription, label: 'Create Subscription' },
+      { name: PayPalTargetOperation.listTransactions, label: 'List Transactions' },
+    ],
   }
   return operations
 }
@@ -139,6 +148,7 @@ export function useIntegrationKindsTriggerOperations() {
     [IntegrationSourceKind.Cloudflare]: [],
     [IntegrationSourceKind.Sumit]: [],
     [IntegrationSourceKind.Gemini]: [],
+    [IntegrationSourceKind.PayPal]: [],
   }
   return operations
 }
