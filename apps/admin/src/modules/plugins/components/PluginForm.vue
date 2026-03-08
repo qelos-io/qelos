@@ -207,9 +207,8 @@
   </el-form>
 </template>
 <script setup lang="ts">
-import { computed, provide, reactive, nextTick, ref, watch, type ComponentPublicInstance } from 'vue';
+import { computed, provide, reactive, nextTick, ref, watch, ComponentPublicInstance } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { IPlugin } from '@/services/types/plugin';
 import FooterActions from '@/modules/core/components/common/FooterActions.vue';
 

@@ -62,7 +62,7 @@ import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microf
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import HeaderUserWorkspacesSelection from '@/modules/core/components/layout/HeaderUserWorkspacesSelection.vue';
 import ImpersonationSelector from '@/modules/core/components/layout/ImpersonationSelector.vue';
-import { isAdmin, isManagingEnabled, isLoadingDataAsUser } from '@/modules/core/store/auth';
+import { isAdmin, isManagingEnabled } from '@/modules/core/store/auth';
 import { isImpersonating } from '@/modules/core/store/impersonation';
 
 const emit = defineEmits(['open']);

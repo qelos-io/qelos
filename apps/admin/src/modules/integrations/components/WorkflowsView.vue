@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElButton } from 'element-plus';
 import { ZoomIn, ZoomOut, Refresh } from '@element-plus/icons-vue';
 import SectionHeader from './shared/SectionHeader.vue';
 import EmptyState from './shared/EmptyState.vue';

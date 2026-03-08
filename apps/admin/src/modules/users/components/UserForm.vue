@@ -150,7 +150,6 @@ import { clearNulls } from '../../core/utils/clear-nulls'
 import { useEditedInputs } from '../../core/compositions/edited-inputs'
 import { IUser } from '../../core/store/types/user';
 import Monaco from './Monaco.vue';
-import EditHeader from '@/modules/pre-designed/components/EditHeader.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { ElMessage, FormInstance, FormRules } from 'element-plus';

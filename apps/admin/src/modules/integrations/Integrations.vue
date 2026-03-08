@@ -7,7 +7,6 @@ import WorkflowsView from '@/modules/integrations/components/WorkflowsView.vue';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElRadioGroup, ElRadioButton } from 'element-plus';
 import { List, Connection, Link } from '@element-plus/icons-vue';
 import { QelosTriggerOperation } from '@qelos/global-types';
 

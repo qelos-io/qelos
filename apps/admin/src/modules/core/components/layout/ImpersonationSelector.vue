@@ -25,10 +25,10 @@
 <script lang="ts" setup>
 import { ElMessage } from 'element-plus';
 import { impersonatedUser, impersonatedWorkspace } from '@/modules/core/store/impersonation';
-import { clearImpersonation as clearImpersonationFn } from '@/services/sdk';
+import { clearImpersonation } from '@/services/sdk';
 
 const handleClearImpersonation = () => {
-  clearImpersonationFn();
+  clearImpersonation();
   ElMessage.success('Stopped impersonating user');
   
   // Reload the page to ensure all data is refreshed

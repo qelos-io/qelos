@@ -12,7 +12,6 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue'
 import BreadcrumbIcon from './BreadcrumbIcon.vue'
 
 interface BreadcrumbItem {

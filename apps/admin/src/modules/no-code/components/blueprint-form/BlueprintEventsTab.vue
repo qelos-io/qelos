@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, inject, computed, onMounted } from 'vue';
+import { inject, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';

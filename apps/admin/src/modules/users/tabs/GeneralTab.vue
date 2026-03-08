@@ -90,8 +90,8 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { clearNulls } from '@/modules/core/utils/clear-nulls'
 import { IUser } from '@/modules/core/store/types/user';
-import { ElMessage, FormInstance, FormRules, UploadProps } from 'element-plus';
-import { User, UserFilled, Message, Lock, Check, InfoFilled, Plus } from '@element-plus/icons-vue';
+import { ElMessage, FormInstance, FormRules } from 'element-plus';
+import { User, UserFilled, Message, Lock, Check, InfoFilled } from '@element-plus/icons-vue';
 import { useI18n } from 'vue-i18n';
 import { useAuth } from '@/modules/core/compositions/authentication';
 import { updateProfile } from '@/modules/core/store/auth';

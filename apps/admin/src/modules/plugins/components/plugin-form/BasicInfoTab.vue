@@ -95,7 +95,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { FormInstance, FormRules } from 'element-plus';
+import { FormInstance, FormRules } from 'element-plus';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { IPlugin } from '@/services/types/plugin';

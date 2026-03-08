@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, getCurrentInstance, inject, nextTick, onBeforeUnmount, onMounted, ref, watch, type ComputedRef } from 'vue';
+import { computed, getCurrentInstance, inject, nextTick, onBeforeUnmount, onMounted, ref, watch, ComputedRef } from 'vue';
 import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
-import type { DragPosition, EditableManager } from '@/modules/no-code/compositions/edit-mfe-structure';
+import { DragPosition, EditableManager } from '@/modules/no-code/compositions/edit-mfe-structure';
 
 const editableManagerRef = inject<ComputedRef<EditableManager | false> | null>('editableManager', null);
 const show = ref(false);

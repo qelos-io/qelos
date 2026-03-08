@@ -4,7 +4,7 @@
 	</form-input-item>
 </template>
 <script lang="ts" setup>
-import { watchEffect, reactive, ref } from 'vue'
+import { watchEffect, ref } from 'vue'
 
 const props = defineProps({value: Object})
 const emit = defineEmits(['update:modelValue'])

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ElEmpty, ElButton } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 
 interface Props {

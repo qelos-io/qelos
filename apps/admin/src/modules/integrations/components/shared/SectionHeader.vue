@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ElBadge } from 'element-plus';
 
 interface Props {
   title: string;
