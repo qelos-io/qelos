@@ -19,6 +19,7 @@ const IntegrationSourceKind = {
   GitHub: 'github',
   Gemini: 'gemini',
   Sumit: 'sumit',
+  PayPal: 'paypal',
   AWS: 'aws',
   Cloudflare: 'cloudflare',
 };
@@ -140,6 +141,15 @@ const connectionTemplates = {
     },
     metadata: {
       companyId: ''
+    }
+  },
+  [IntegrationSourceKind.PayPal]: {
+    authentication: {
+      clientSecret: ''
+    },
+    metadata: {
+      clientId: '',
+      environment: 'sandbox'
     }
   },
   [IntegrationSourceKind.AWS]: {
