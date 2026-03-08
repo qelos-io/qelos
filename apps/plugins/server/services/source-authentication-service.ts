@@ -53,6 +53,15 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
     return authId;
   }
 
+  if (kind === IntegrationSourceKind.PayPal) {
+    const { clientSecret } = authentication;
+    if (!clientSecret) {
+      return;
+    }
+    await setSecret(tenant, `integration-source-${kind}-${authId}`, { clientSecret });
+    return authId;
+  }
+
   if (kind === IntegrationSourceKind.Http) {
     const { securedHeaders = {} } = authentication;
     if (Object.values(securedHeaders).some(v => typeof v !== 'string')) {

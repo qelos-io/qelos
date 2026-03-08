@@ -149,5 +149,19 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     }
   }
 
+  if (kind === IntegrationSourceKind.PayPal) {
+    const { clientId, environment } = metadata;
+    if (!clientId || typeof clientId !== 'string') {
+      throw new ResponseError('Invalid PayPal metadata: clientId is required.', 400);
+    }
+    if (environment && environment !== 'sandbox' && environment !== 'live') {
+      throw new ResponseError('Invalid PayPal metadata: environment must be "sandbox" or "live".', 400);
+    }
+    return {
+      clientId,
+      environment: environment || 'sandbox',
+    };
+  }
+
   return {};
 }

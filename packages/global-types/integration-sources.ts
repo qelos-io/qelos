@@ -12,6 +12,7 @@ export enum IntegrationSourceKind {
   GitHub = 'github',
   Gemini = 'gemini',
   Sumit = 'sumit',
+  PayPal = 'paypal',
   AWS = 'aws',
   Cloudflare = 'cloudflare',
 }
@@ -91,6 +92,15 @@ export const SumitTargetOperation = {
   deleteRecurringPayment: 'deleteRecurringPayment',
 }
 
+export const PayPalTargetOperation = {
+  createOrder: 'createOrder',
+  captureOrder: 'captureOrder',
+  refundPayment: 'refundPayment',
+  createProduct: 'createProduct',
+  createSubscription: 'createSubscription',
+  listTransactions: 'listTransactions',
+} as const;
+
 export const AWSTargetOperation = {
   callFunction: 'callFunction',
   getFunction: 'getFunction',
@@ -151,6 +161,18 @@ export interface ISumitSource extends IIntegrationSource {
   };
   metadata: {
     companyId: string;
+  };
+}
+
+export interface IPayPalSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.PayPal;
+  authentication: {
+    clientSecret: string;
+  };
+  metadata: {
+    clientId: string;
+    environment: 'sandbox' | 'live';
   };
 }
 
