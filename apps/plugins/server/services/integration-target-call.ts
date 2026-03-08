@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fetch from 'node-fetch';
-import { CloudflareTargetOperation, EmailTargetOperation, HttpTargetOperation, ICloudflareSource, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation, AWSTargetOperation, IAWSSource, OpenAIChatCompletionPayload, OpenAIClearStoragePayload, OpenAIUploadStoragePayload } from '@qelos/global-types';
+import { CloudflareTargetOperation, EmailTargetOperation, HttpTargetOperation, ICloudflareSource, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, IPayPalSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation, PayPalTargetOperation, AWSTargetOperation, IAWSSource, OpenAIChatCompletionPayload, OpenAIClearStoragePayload, OpenAIUploadStoragePayload } from '@qelos/global-types';
 import { IIntegrationEntity } from '../models/integration';
 import IntegrationSource from '../models/integration-source';
 import { getEncryptedSourceAuthentication } from './source-authentication-service';
@@ -484,6 +484,153 @@ async function handleSumitTarget(
     logger.error('Error calling Sumit API', error);
     throw error;
   }
+}
+
+async function getPayPalAccessToken(source: IPayPalSource, clientSecret: string): Promise<string> {
+  const baseUrl = source.metadata.environment === 'live'
+    ? 'https://api-m.paypal.com'
+    : 'https://api-m.sandbox.paypal.com';
+
+  const cacheKey = `paypal-token-${source._id}`;
+  const cached = await cacheManager.getItem<string>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const credentials = Buffer.from(`${source.metadata.clientId}:${clientSecret}`).toString('base64');
+  const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: 'grant_type=client_credentials',
+    agent: httpAgent,
+  });
+
+  const body = await response.json();
+  if (!response.ok || !body.access_token) {
+    throw new Error(`PayPal OAuth token exchange failed: ${JSON.stringify(body)}`);
+  }
+
+  await cacheManager.setItem(cacheKey, body.access_token, { ttl: 1800 });
+  return body.access_token;
+}
+
+async function handlePayPalTarget(
+  integrationTarget: IIntegrationEntity,
+  source: IPayPalSource,
+  authentication: { clientSecret?: string } = {},
+  payload: any = {}
+) {
+  const operation = integrationTarget.operation as keyof typeof PayPalTargetOperation;
+  const { clientSecret } = authentication;
+
+  if (!clientSecret) {
+    throw new Error('Missing client secret for PayPal integration');
+  }
+
+  const baseUrl = source.metadata.environment === 'live'
+    ? 'https://api-m.paypal.com'
+    : 'https://api-m.sandbox.paypal.com';
+
+  const accessToken = await getPayPalAccessToken(source, clientSecret);
+  const details = integrationTarget.details || {};
+
+  let endpoint = '';
+  let method = 'POST';
+
+  switch (operation) {
+    case PayPalTargetOperation.createOrder:
+      endpoint = '/v2/checkout/orders';
+      break;
+    case PayPalTargetOperation.captureOrder: {
+      const orderId = payload.orderId || details.orderId;
+      if (!orderId) {
+        throw new Error('orderId is required for captureOrder operation');
+      }
+      endpoint = `/v2/checkout/orders/${orderId}/capture`;
+      break;
+    }
+    case PayPalTargetOperation.refundPayment: {
+      const captureId = payload.captureId || details.captureId;
+      if (!captureId) {
+        throw new Error('captureId is required for refundPayment operation');
+      }
+      endpoint = `/v2/payments/captures/${captureId}/refund`;
+      break;
+    }
+    case PayPalTargetOperation.createProduct:
+      endpoint = '/v1/catalogs/products';
+      break;
+    case PayPalTargetOperation.createSubscription:
+      endpoint = '/v1/billing/subscriptions';
+      break;
+    case PayPalTargetOperation.listTransactions: {
+      method = 'GET';
+      endpoint = '/v1/reporting/transactions';
+      break;
+    }
+    default:
+      throw new Error(`Unsupported PayPal operation: ${operation}`);
+  }
+
+  const url = new URL(endpoint, baseUrl);
+
+  if (method === 'GET' && payload) {
+    Object.entries(payload).forEach(([key, value]) => {
+      if (key !== 'triggerResponse' && value !== undefined) {
+        url.searchParams.append(key, String(value));
+      }
+    });
+  }
+
+  const headers: Record<string, string> = {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+  };
+
+  const fetchOptions: any = {
+    method,
+    headers,
+    agent: httpAgent,
+  };
+
+  if (method !== 'GET') {
+    const { triggerResponse: _tr, orderId: _oid, captureId: _cid, ...bodyPayload } = payload || {};
+    fetchOptions.body = JSON.stringify({ ...details, ...bodyPayload });
+  }
+
+  const response = await fetch(url.toString(), fetchOptions);
+  const responseBody = await response.json();
+
+  if (!response.ok) {
+    throw new Error(`PayPal API request failed with status ${response.status}: ${JSON.stringify(responseBody)}`);
+  }
+
+  const triggerResponse = mergeTriggerResponses(
+    details.triggerResponse as TriggerResponseConfig,
+    payload.triggerResponse as TriggerResponseConfig,
+  );
+
+  if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+    const event = new PlatformEvent({
+      tenant: source.tenant,
+      source: triggerResponse.source,
+      kind: triggerResponse.kind,
+      eventName: triggerResponse.eventName,
+      description: triggerResponse.description,
+      metadata: {
+        ...triggerResponse.metadata,
+        operation,
+        status: response.status,
+        body: responseBody,
+      },
+    });
+    event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+  }
+
+  return responseBody;
 }
 
 async function handleAwsTarget(
@@ -1197,6 +1344,8 @@ export async function callIntegrationTarget(tenant: string, payload: any, integr
     return handleEmailTarget(integrationTarget, source as IEmailSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Sumit) {
     return handleSumitTarget(integrationTarget, source as ISumitSource, authentication || {}, payload);
+  } else if (source.kind === IntegrationSourceKind.PayPal) {
+    return handlePayPalTarget(integrationTarget, source as IPayPalSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.AWS) {
     return handleAwsTarget(integrationTarget, source as IAWSSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Cloudflare) {
