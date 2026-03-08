@@ -18,23 +18,30 @@ let createdPluginIdForCleanup: string | null = null;
 const API_PLUGIN_PORT = Number(process.env.PORT || '2040');
 const API_PLUGIN_URL = `http://127.0.0.1:${API_PLUGIN_PORT}`;
 
-nodeTest.describe('Plugin Play API Plugin E2E Tests', { timeout: 45000 }, () => {
-  nodeTest.before(async () => { 
-    
-    try {
-      qelosUrl = process.env.QELOS_URL || 'http://localhost:3000';
-      const qelosEmail = process.env.QELOS_USER || 'test@test.com';
-      const qelosPassword = process.env.QELOS_PASSWORD || 'admin';
+const e2eUrl = process.env.QELOS_E2E_URL;
+const e2eUsername = process.env.QELOS_E2E_USERNAME;
+const e2ePassword = process.env.QELOS_E2E_PASSWORD;
+const hasE2EEnv = Boolean(e2eUrl && e2eUsername && e2ePassword);
 
-      if (!qelosUrl || !qelosEmail || !qelosPassword) {
-        throw new Error('Missing QELOS_URL, QELOS_USER, or QELOS_PASSWORD environment variables');
-      }
+nodeTest.describe('Plugin Play API Plugin E2E Tests', { timeout: 45000, skip: !hasE2EEnv }, () => {
+  nodeTest.before(async () => {
+
+    try {
+      qelosUrl = e2eUrl!;
+      const qelosEmail = e2eUsername!;
+      const qelosPassword = e2ePassword!;
 
       const randomSuffix = crypto.randomBytes(4).toString('hex');
       uniquePluginName = `api-demo-e2e-${randomSuffix}`;
       uniquePluginApiPath = `api-demo-path-e2e-${randomSuffix}`;
 
-      await startServer(API_PLUGIN_PORT, { PLUGIN_NAME: uniquePluginName, API_PATH: uniquePluginApiPath });
+      await startServer(API_PLUGIN_PORT, {
+        PLUGIN_NAME: uniquePluginName,
+        API_PATH: uniquePluginApiPath,
+        QELOS_URL: e2eUrl!,
+        QELOS_USER: e2eUsername!,
+        QELOS_PASSWORD: e2ePassword!,
+      });
 
 
       sdk = new QelosSDK({ appUrl: qelosUrl, fetch: globalThis.fetch });

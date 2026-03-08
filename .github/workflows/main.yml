@@ -41,3 +41,30 @@ jobs:
           name: build-artifacts
           path: apps/**/*.tgz
           retention-days: 1
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build-monorepo
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.29.3
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests
+        run: pnpm -r run test
+        env:
+          QELOS_E2E_URL: ${{ secrets.QELOS_E2E_URL }}
+          QELOS_E2E_USERNAME: ${{ secrets.QELOS_E2E_USERNAME }}
+          QELOS_E2E_PASSWORD: ${{ secrets.QELOS_E2E_PASSWORD }}
