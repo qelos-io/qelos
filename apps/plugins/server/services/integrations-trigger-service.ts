@@ -36,6 +36,7 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, { required:
   [IntegrationSourceKind.Gemini]: null,
   [IntegrationSourceKind.Sumit]: null,
   [IntegrationSourceKind.PayPal]: null,
+  [IntegrationSourceKind.Paddle]: null,
   [IntegrationSourceKind.AWS]: null,
   [IntegrationSourceKind.Cloudflare]: null,
 } as const;

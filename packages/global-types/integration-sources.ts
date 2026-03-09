@@ -13,6 +13,7 @@ export enum IntegrationSourceKind {
   Gemini = 'gemini',
   Sumit = 'sumit',
   PayPal = 'paypal',
+  Paddle = 'paddle',
   AWS = 'aws',
   Cloudflare = 'cloudflare',
 }
@@ -101,6 +102,21 @@ export const PayPalTargetOperation = {
   listTransactions: 'listTransactions',
 } as const;
 
+export const PaddleTargetOperation = {
+  createProduct: 'createProduct',
+  listProducts: 'listProducts',
+  createPrice: 'createPrice',
+  listPrices: 'listPrices',
+  createSubscription: 'createSubscription',
+  getSubscription: 'getSubscription',
+  listSubscriptions: 'listSubscriptions',
+  cancelSubscription: 'cancelSubscription',
+  listTransactions: 'listTransactions',
+  getTransaction: 'getTransaction',
+  createCustomer: 'createCustomer',
+  listCustomers: 'listCustomers',
+} as const;
+
 export const AWSTargetOperation = {
   callFunction: 'callFunction',
   getFunction: 'getFunction',
@@ -172,6 +188,17 @@ export interface IPayPalSource extends IIntegrationSource {
   };
   metadata: {
     clientId: string;
+    environment: 'sandbox' | 'live';
+  };
+}
+
+export interface IPaddleSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.Paddle;
+  authentication: {
+    apiKey: string;
+  };
+  metadata: {
     environment: 'sandbox' | 'live';
   };
 }

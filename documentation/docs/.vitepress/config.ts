@@ -101,6 +101,7 @@ export default defineConfig({
         items: [
           { text: 'Introduction', link: '/payments/' },
           { text: 'Sumit', link: '/payments/sumit' },
+          { text: 'Paddle', link: '/payments/paddle' },
         ]
       },
       {

@@ -14,6 +14,7 @@ import GitHubForm from './components/forms/GitHubForm.vue';
 import GeminiForm from './components/forms/GeminiForm.vue';
 import SumitForm from './components/forms/SumitForm.vue';
 import PayPalForm from './components/forms/PayPalForm.vue';
+import PaddleForm from './components/forms/PaddleForm.vue';
 
 const props = defineProps<{
   modelValue: any;
@@ -37,7 +38,8 @@ const formComponentMap = {
   google: GoogleForm,
   github: GitHubForm,
   sumit: SumitForm,
-  paypal: PayPalForm
+  paypal: PayPalForm,
+  paddle: PaddleForm
 };
 
 const SelectedFormComponent = computed(() => formComponentMap[props.kind] || null);

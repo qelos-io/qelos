@@ -163,5 +163,15 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     };
   }
 
+  if (kind === IntegrationSourceKind.Paddle) {
+    const { environment } = metadata;
+    if (environment && environment !== 'sandbox' && environment !== 'live') {
+      throw new ResponseError('Invalid Paddle metadata: environment must be "sandbox" or "live".', 400);
+    }
+    return {
+      environment: environment || 'sandbox',
+    };
+  }
+
   return {};
 }

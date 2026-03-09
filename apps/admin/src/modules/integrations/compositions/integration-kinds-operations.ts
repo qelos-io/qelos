@@ -5,7 +5,8 @@ import {
   QelosTargetOperation, QelosTriggerOperation, ClaudeAITargetOperation,
   EmailTargetOperation,
   OpenAITriggerOperation,
-  PayPalTargetOperation
+  PayPalTargetOperation,
+  PaddleTargetOperation
 } from '@qelos/global-types';
 
 export function useIntegrationKindsTargetOperations() {
@@ -63,6 +64,20 @@ export function useIntegrationKindsTargetOperations() {
       { name: PayPalTargetOperation.createProduct, label: 'Create Product' },
       { name: PayPalTargetOperation.createSubscription, label: 'Create Subscription' },
       { name: PayPalTargetOperation.listTransactions, label: 'List Transactions' },
+    ],
+    [IntegrationSourceKind.Paddle]: [
+      { name: PaddleTargetOperation.createProduct, label: 'Create Product' },
+      { name: PaddleTargetOperation.listProducts, label: 'List Products' },
+      { name: PaddleTargetOperation.createPrice, label: 'Create Price' },
+      { name: PaddleTargetOperation.listPrices, label: 'List Prices' },
+      { name: PaddleTargetOperation.createSubscription, label: 'Create Subscription' },
+      { name: PaddleTargetOperation.getSubscription, label: 'Get Subscription' },
+      { name: PaddleTargetOperation.listSubscriptions, label: 'List Subscriptions' },
+      { name: PaddleTargetOperation.cancelSubscription, label: 'Cancel Subscription' },
+      { name: PaddleTargetOperation.listTransactions, label: 'List Transactions' },
+      { name: PaddleTargetOperation.getTransaction, label: 'Get Transaction' },
+      { name: PaddleTargetOperation.createCustomer, label: 'Create Customer' },
+      { name: PaddleTargetOperation.listCustomers, label: 'List Customers' },
     ],
   }
   return operations
@@ -149,6 +164,7 @@ export function useIntegrationKindsTriggerOperations() {
     [IntegrationSourceKind.Sumit]: [],
     [IntegrationSourceKind.Gemini]: [],
     [IntegrationSourceKind.PayPal]: [],
+    [IntegrationSourceKind.Paddle]: [],
   }
   return operations
 }

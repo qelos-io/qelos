@@ -53,6 +53,7 @@ export default function generateCommand(program) {
               "github",
               "gemini",
               "sumit",
+              "paddle",
               "aws",
               "cloudflare",
             ],

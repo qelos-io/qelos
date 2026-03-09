@@ -20,6 +20,7 @@ const IntegrationSourceKind = {
   Gemini: 'gemini',
   Sumit: 'sumit',
   PayPal: 'paypal',
+  Paddle: 'paddle',
   AWS: 'aws',
   Cloudflare: 'cloudflare',
 };
@@ -149,6 +150,14 @@ const connectionTemplates = {
     },
     metadata: {
       clientId: '',
+      environment: 'sandbox'
+    }
+  },
+  [IntegrationSourceKind.Paddle]: {
+    authentication: {
+      apiKey: ''
+    },
+    metadata: {
       environment: 'sandbox'
     }
   },
