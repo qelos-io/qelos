@@ -44,6 +44,7 @@ The following integration sources are supported:
 | `facebook` | Facebook/Meta APIs | Social media marketing, content management |
 | `gemini` | Google Gemini AI | AI services, multimodal AI |
 | `sumit` | Sumit platform | Business integration, ERP |
+| `paddle` | Paddle payments | Subscriptions, billing, payments |
 | `cloudflare` | Cloudflare services | CDN management, DNS, security |
 | `qelos` | Qelos platform | Internal Qelos connections, multi-tenant |
 

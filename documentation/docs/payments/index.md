@@ -9,5 +9,6 @@ Our platform supports integration with various payment providers to streamline y
 ## Supported Providers
 
 - [Sumit](./sumit.md)
+- [Paddle](./paddle.md)
 
 We are actively working on expanding our list of supported payment providers. If you have a specific provider you'd like to see supported, please [contact us](mailto:support@qelos.io).

@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fetch from 'node-fetch';
-import { CloudflareTargetOperation, EmailTargetOperation, HttpTargetOperation, ICloudflareSource, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, IPayPalSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation, PayPalTargetOperation, AWSTargetOperation, IAWSSource, OpenAIChatCompletionPayload, OpenAIClearStoragePayload, OpenAIUploadStoragePayload } from '@qelos/global-types';
+import { CloudflareTargetOperation, EmailTargetOperation, HttpTargetOperation, ICloudflareSource, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, IPayPalSource, IPaddleSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation, PayPalTargetOperation, PaddleTargetOperation, AWSTargetOperation, IAWSSource, OpenAIChatCompletionPayload, OpenAIClearStoragePayload, OpenAIUploadStoragePayload } from '@qelos/global-types';
 import { IIntegrationEntity } from '../models/integration';
 import IntegrationSource from '../models/integration-source';
 import { getEncryptedSourceAuthentication } from './source-authentication-service';
@@ -606,6 +606,149 @@ async function handlePayPalTarget(
 
   if (!response.ok) {
     throw new Error(`PayPal API request failed with status ${response.status}: ${JSON.stringify(responseBody)}`);
+  }
+
+  const triggerResponse = mergeTriggerResponses(
+    details.triggerResponse as TriggerResponseConfig,
+    payload.triggerResponse as TriggerResponseConfig,
+  );
+
+  if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+    const event = new PlatformEvent({
+      tenant: source.tenant,
+      source: triggerResponse.source,
+      kind: triggerResponse.kind,
+      eventName: triggerResponse.eventName,
+      description: triggerResponse.description,
+      metadata: {
+        ...triggerResponse.metadata,
+        operation,
+        status: response.status,
+        body: responseBody,
+      },
+    });
+    event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+  }
+
+  return responseBody;
+}
+
+async function handlePaddleTarget(
+  integrationTarget: IIntegrationEntity,
+  source: IPaddleSource,
+  authentication: { apiKey?: string } = {},
+  payload: any = {}
+) {
+  const operation = integrationTarget.operation as keyof typeof PaddleTargetOperation;
+  const { apiKey } = authentication;
+
+  if (!apiKey) {
+    throw new Error('Missing API key for Paddle integration');
+  }
+
+  const baseUrl = source.metadata.environment === 'live'
+    ? 'https://api.paddle.com'
+    : 'https://sandbox-api.paddle.com';
+
+  const details = integrationTarget.details || {};
+
+  let endpoint = '';
+  let method = 'POST';
+
+  switch (operation) {
+    case PaddleTargetOperation.createProduct:
+      endpoint = '/products';
+      break;
+    case PaddleTargetOperation.listProducts:
+      method = 'GET';
+      endpoint = '/products';
+      break;
+    case PaddleTargetOperation.createPrice:
+      endpoint = '/prices';
+      break;
+    case PaddleTargetOperation.listPrices:
+      method = 'GET';
+      endpoint = '/prices';
+      break;
+    case PaddleTargetOperation.createSubscription:
+      endpoint = '/subscriptions';
+      break;
+    case PaddleTargetOperation.getSubscription: {
+      const subscriptionId = payload.subscriptionId || details.subscriptionId;
+      if (!subscriptionId) {
+        throw new Error('subscriptionId is required for getSubscription operation');
+      }
+      method = 'GET';
+      endpoint = `/subscriptions/${subscriptionId}`;
+      break;
+    }
+    case PaddleTargetOperation.listSubscriptions:
+      method = 'GET';
+      endpoint = '/subscriptions';
+      break;
+    case PaddleTargetOperation.cancelSubscription: {
+      const subscriptionId = payload.subscriptionId || details.subscriptionId;
+      if (!subscriptionId) {
+        throw new Error('subscriptionId is required for cancelSubscription operation');
+      }
+      endpoint = `/subscriptions/${subscriptionId}/cancel`;
+      break;
+    }
+    case PaddleTargetOperation.listTransactions:
+      method = 'GET';
+      endpoint = '/transactions';
+      break;
+    case PaddleTargetOperation.getTransaction: {
+      const transactionId = payload.transactionId || details.transactionId;
+      if (!transactionId) {
+        throw new Error('transactionId is required for getTransaction operation');
+      }
+      method = 'GET';
+      endpoint = `/transactions/${transactionId}`;
+      break;
+    }
+    case PaddleTargetOperation.createCustomer:
+      endpoint = '/customers';
+      break;
+    case PaddleTargetOperation.listCustomers:
+      method = 'GET';
+      endpoint = '/customers';
+      break;
+    default:
+      throw new Error(`Unsupported Paddle operation: ${operation}`);
+  }
+
+  const url = new URL(endpoint, baseUrl);
+
+  if (method === 'GET' && payload) {
+    Object.entries(payload).forEach(([key, value]) => {
+      if (key !== 'triggerResponse' && key !== 'subscriptionId' && key !== 'transactionId' && value !== undefined) {
+        url.searchParams.append(key, String(value));
+      }
+    });
+  }
+
+  const headers: Record<string, string> = {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  };
+
+  const fetchOptions: any = {
+    method,
+    headers,
+    agent: httpAgent,
+  };
+
+  if (method !== 'GET') {
+    const { triggerResponse: _tr, subscriptionId: _sid, transactionId: _tid, ...bodyPayload } = payload || {};
+    fetchOptions.body = JSON.stringify({ ...details, ...bodyPayload });
+  }
+
+  const response = await fetch(url.toString(), fetchOptions);
+  const responseBody = await response.json();
+
+  if (!response.ok) {
+    throw new Error(`Paddle API request failed with status ${response.status}: ${JSON.stringify(responseBody)}`);
   }
 
   const triggerResponse = mergeTriggerResponses(
@@ -1346,6 +1489,8 @@ export async function callIntegrationTarget(tenant: string, payload: any, integr
     return handleSumitTarget(integrationTarget, source as ISumitSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.PayPal) {
     return handlePayPalTarget(integrationTarget, source as IPayPalSource, authentication || {}, payload);
+  } else if (source.kind === IntegrationSourceKind.Paddle) {
+    return handlePaddleTarget(integrationTarget, source as IPaddleSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.AWS) {
     return handleAwsTarget(integrationTarget, source as IAWSSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Cloudflare) {
