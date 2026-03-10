@@ -26,6 +26,10 @@ export async function getPublicPlans(req, res: Response) {
 export async function getPlan(req, res: Response) {
   try {
     const plan = await PlansService.getPlanById(req.headers.tenant, req.params.planId);
+    if (!req.user?.isPrivileged && !plan.isActive) {
+      res.status(404).json({ message: 'plan not found' }).end();
+      return;
+    }
     res.status(200).json(plan).end();
   } catch (e: any) {
     const status = e?.code === 'PLAN_NOT_FOUND' ? 404 : 500;

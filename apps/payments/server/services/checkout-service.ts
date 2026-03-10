@@ -162,11 +162,10 @@ export async function cancelCheckoutSubscription(tenant: string, subscriptionId:
   const subscription = await SubscriptionsService.getSubscriptionById(tenant, subscriptionId);
 
   if (subscription.externalSubscriptionId && subscription.providerKind && subscription.providerId) {
-    const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
     await ProviderAdapter.cancelProviderSubscription(
       tenant,
-      config.providerSourceId,
-      config.providerKind,
+      subscription.providerId,
+      subscription.providerKind,
       subscription.externalSubscriptionId,
     ).catch(() => {});
   }

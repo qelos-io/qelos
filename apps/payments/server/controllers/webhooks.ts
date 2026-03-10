@@ -21,6 +21,7 @@ export async function handleWebhook(req, res: Response) {
     const statusMap: Record<string, number> = {
       UNSUPPORTED_PROVIDER: 400,
       INVALID_WEBHOOK: 400,
+      INVALID_SIGNATURE: 401,
       TENANT_NOT_FOUND: 400,
     };
     const status = statusMap[e?.code] || 500;

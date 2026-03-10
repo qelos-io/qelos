@@ -1,7 +1,9 @@
+import crypto from 'crypto';
 import Subscription from '../models/subscription';
 import WebhookEvent from '../models/webhook-event';
 import * as SubscriptionsService from './subscriptions-service';
 import * as CheckoutService from './checkout-service';
+import * as ProviderAdapter from './provider-adapter';
 
 export async function isEventProcessed(tenant: string, externalEventId: string, providerKind: string): Promise<boolean> {
   const existing = await (WebhookEvent as any).findOne({
@@ -14,7 +16,7 @@ export async function isEventProcessed(tenant: string, externalEventId: string, 
 
 async function recordEvent(tenant: string, externalEventId: string, providerKind: string, eventType: string) {
   const event = new WebhookEvent({ tenant, externalEventId, providerKind, eventType });
-  await event.save().catch(() => {});
+  await event.save();
 }
 
 function extractTenantFromCustomData(customData: any): string | undefined {
@@ -24,10 +26,10 @@ function extractTenantFromCustomData(customData: any): string | undefined {
   return customData?.tenant;
 }
 
-export async function processWebhook(providerKind: string, headers: Record<string, any>, body: any) {
+export async function processWebhook(providerKind: string, headers: Record<string, any>, body: any, rawBody?: string) {
   switch (providerKind) {
     case 'paddle':
-      return processPaddleWebhook(headers, body);
+      return processPaddleWebhook(headers, body, rawBody || JSON.stringify(body));
     case 'paypal':
       return processPayPalWebhook(headers, body);
     case 'sumit':
@@ -44,9 +46,40 @@ async function findSubscriptionByExternalId(externalId: string, providerKind: st
   }).lean().exec();
 }
 
+// --- Signature Verification ---
+
+function verifyPaddleSignature(headers: Record<string, any>, rawBody: string, webhookSecret: string) {
+  const signature = headers['paddle-signature'];
+  if (!signature) throw { code: 'INVALID_SIGNATURE', message: 'Missing Paddle-Signature header' };
+
+  const parts: Record<string, string> = {};
+  for (const part of signature.split(';')) {
+    const [key, ...rest] = part.split('=');
+    parts[key] = rest.join('=');
+  }
+
+  const ts = parts['ts'];
+  const h1 = parts['h1'];
+  if (!ts || !h1) throw { code: 'INVALID_SIGNATURE', message: 'Invalid Paddle-Signature format' };
+
+  const signedPayload = `${ts}:${rawBody}`;
+  const expected = crypto.createHmac('sha256', webhookSecret).update(signedPayload).digest('hex');
+
+  if (!crypto.timingSafeEqual(Buffer.from(h1, 'hex'), Buffer.from(expected, 'hex'))) {
+    throw { code: 'INVALID_SIGNATURE', message: 'Paddle webhook signature verification failed' };
+  }
+}
+
+function verifySumitSignature(headers: Record<string, any>, webhookSecret: string) {
+  const token = headers['x-webhook-secret'] || headers['x-sumit-secret'];
+  if (token !== webhookSecret) {
+    throw { code: 'INVALID_SIGNATURE', message: 'Sumit webhook secret verification failed' };
+  }
+}
+
 // --- Paddle Webhooks ---
 
-async function processPaddleWebhook(headers: Record<string, any>, body: any) {
+async function processPaddleWebhook(headers: Record<string, any>, body: any, rawBody: string) {
   const eventId = body.event_id || body.notification_id;
   const eventType = body.event_type;
   const data = body.data || {};
@@ -60,6 +93,11 @@ async function processPaddleWebhook(headers: Record<string, any>, body: any) {
 
   if (!tenant) {
     throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from webhook data' };
+  }
+
+  const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
+  if (config.webhookSecret) {
+    verifyPaddleSignature(headers, rawBody, config.webhookSecret);
   }
 
   if (await isEventProcessed(tenant, eventId, 'paddle')) {
@@ -197,6 +235,16 @@ async function processPayPalWebhook(headers: Record<string, any>, body: any) {
     throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from webhook data' };
   }
 
+  const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
+  if (config.webhookSecret) {
+    const verified = await ProviderAdapter.verifyPayPalWebhook(
+      tenant, config.providerSourceId, headers, body, config.webhookSecret,
+    );
+    if (!verified) {
+      throw { code: 'INVALID_SIGNATURE', message: 'PayPal webhook signature verification failed' };
+    }
+  }
+
   if (await isEventProcessed(tenant, eventId, 'paypal')) {
     return { status: 'already_processed' };
   }
@@ -284,11 +332,23 @@ async function processSumitWebhook(headers: Record<string, any>, body: any) {
   const eventId = body.EventId || body.TransactionId || `sumit-${Date.now()}`;
   const eventType = body.EventType || body.Type || 'payment';
 
-  const customData = body.CustomData ? (typeof body.CustomData === 'string' ? JSON.parse(body.CustomData) : body.CustomData) : {};
+  let customData: any = {};
+  if (body.CustomData) {
+    if (typeof body.CustomData === 'string') {
+      try { customData = JSON.parse(body.CustomData); } catch { customData = {}; }
+    } else {
+      customData = body.CustomData;
+    }
+  }
   const tenant = customData.tenant;
 
   if (!tenant) {
     throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from webhook data' };
+  }
+
+  const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
+  if (config.webhookSecret) {
+    verifySumitSignature(headers, config.webhookSecret);
   }
 
   if (await isEventProcessed(tenant, eventId, 'sumit')) {

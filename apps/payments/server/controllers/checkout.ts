@@ -1,6 +1,11 @@
 import { Response } from 'express';
 import * as CheckoutService from '../services/checkout-service';
+import * as SubscriptionsService from '../services/subscriptions-service';
 import { BillingCycle, BillableEntityType } from '@qelos/global-types';
+
+function resolveUserEntityId(req): string | undefined {
+  return req.user?.workspace || req.user?._id;
+}
 
 export async function initiateCheckout(req, res: Response) {
   try {
@@ -67,6 +72,14 @@ export async function cancelSubscription(req, res: Response) {
   try {
     const tenant = req.headers.tenant;
     const { subscriptionId } = req.params;
+
+    if (!req.user?.isPrivileged) {
+      const subscription = await SubscriptionsService.getSubscriptionById(tenant, subscriptionId);
+      if (subscription.billableEntityId !== resolveUserEntityId(req)) {
+        res.status(403).json({ message: 'access denied' }).end();
+        return;
+      }
+    }
 
     const result = await CheckoutService.cancelCheckoutSubscription(tenant, subscriptionId);
     res.status(200).json(result).end();

@@ -9,6 +9,7 @@ export interface PaymentsConfiguration {
   providerKind: string;
   successUrl?: string;
   cancelUrl?: string;
+  webhookSecret?: string;
 }
 
 export interface CheckoutParams {
@@ -192,6 +193,25 @@ export async function cancelProviderSubscription(
 
   const result = await callIntegrationSource(tenant, sourceId, operation, {}, payload);
   return { success: true, providerData: result };
+}
+
+export async function verifyPayPalWebhook(
+  tenant: string,
+  sourceId: string,
+  headers: Record<string, any>,
+  body: any,
+  webhookId: string,
+): Promise<boolean> {
+  const result = await callIntegrationSource(tenant, sourceId, 'verifyWebhookSignature', {}, {
+    webhook_id: webhookId,
+    transmission_id: headers['paypal-transmission-id'],
+    transmission_time: headers['paypal-transmission-time'],
+    transmission_sig: headers['paypal-transmission-sig'],
+    cert_url: headers['paypal-cert-url'],
+    auth_algo: headers['paypal-auth-algo'],
+    webhook_event: body,
+  });
+  return result?.verification_status === 'SUCCESS';
 }
 
 export async function getProviderSubscription(
