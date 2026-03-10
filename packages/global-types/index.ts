@@ -14,3 +14,4 @@ export * from './integration-sources'
 export * from './integration'
 export * from './integration-targets'
 export * from './no-code-components';
+export * from './payments';
