@@ -1,0 +1,19 @@
+{
+  "name": "@qelos/plugin-netlify-api",
+  "version": "1.0.1",
+  "description": "Netlify build plugin: proxy /api/* to Qelos API and inject config",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "manifest.yml",
+    "functions"
+  ],
+  "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

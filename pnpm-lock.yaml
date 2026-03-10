@@ -650,6 +650,8 @@ importers:
 
   packages/global-types: {}
 
+  packages/plugin-netlify-api: {}
+
   packages/plugin-play:
     dependencies:
       '@fastify/cookie':

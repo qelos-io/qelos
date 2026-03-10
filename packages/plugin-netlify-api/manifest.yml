@@ -1,0 +1,6 @@
+name: "@qelos/plugin-netlify-api"
+inputs:
+  - name: api_url
+    required: false
+    description: "Qelos API base URL (e.g. http://159.203.152.168). Used as QELOS_API_IP and for /api/* proxy."
+    default: "http://159.203.152.168"

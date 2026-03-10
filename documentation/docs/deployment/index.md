@@ -14,6 +14,7 @@ Qelos uses Helm charts for deployment, providing a flexible and configurable way
 
 ## Deployment
 
+- [API Proxy (Netlify)](../plugins/api-proxy.md) - Deploy a Qelos frontend on Netlify and proxy `/api/*` to your Qelos API
 - [Chart Structure](./chart-structure.md) - Understanding the Helm chart organization
 - [Configuration](./configuration.md) - Configuring Qelos for your environment
 - [Deployment Process](./deployment-process.md) - Step-by-step deployment guide
