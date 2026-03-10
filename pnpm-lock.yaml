@@ -536,6 +536,9 @@ importers:
       mongoose:
         specifier: ^8.6.1
         version: 8.18.0
+      tsx:
+        specifier: ^4.20.4
+        version: 4.21.0
     devDependencies:
       '@types/express':
         specifier: ^4.17.11
