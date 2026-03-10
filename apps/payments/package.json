@@ -13,7 +13,7 @@
     "build": "tsc --skipLibCheck",
     "start": "node --use_strict dist/index.js",
     "dev": "npx tsx watch index.ts",
-    "test": "jest --config jest.config.ts --no-coverage"
+    "test": "node --test --experimental-test-module-mocks --import tsx 'server/services/tests/**/*.test.ts'"
   },
   "main": "dist/index.js",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
@@ -26,7 +26,6 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.11",
-    "ts-jest": "^29.4.6",
     "typescript": "^4.9.5"
   },
   "publishConfig": {

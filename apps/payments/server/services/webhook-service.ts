@@ -15,8 +15,15 @@ export async function isEventProcessed(tenant: string, externalEventId: string, 
 }
 
 async function recordEvent(tenant: string, externalEventId: string, providerKind: string, eventType: string) {
-  const event = new WebhookEvent({ tenant, externalEventId, providerKind, eventType });
-  await event.save();
+  try {
+    const event = new WebhookEvent({ tenant, externalEventId, providerKind, eventType });
+    await event.save();
+  } catch (err: any) {
+    if (err?.code === 11000) {
+      throw { code: 'DUPLICATE_EVENT', message: 'Event already recorded' };
+    }
+    throw err;
+  }
 }
 
 function extractTenantFromCustomData(customData: any): string | undefined {
@@ -77,6 +84,13 @@ function verifySumitSignature(headers: Record<string, any>, webhookSecret: strin
   }
 }
 
+function requireWebhookSecret(config: ProviderAdapter.PaymentsConfiguration): string {
+  if (!config.webhookSecret) {
+    throw { code: 'WEBHOOK_SECRET_NOT_CONFIGURED', message: 'Webhook secret is not configured for this tenant' };
+  }
+  return config.webhookSecret;
+}
+
 // --- Paddle Webhooks ---
 
 async function processPaddleWebhook(headers: Record<string, any>, body: any, rawBody: string) {
@@ -96,13 +110,14 @@ async function processPaddleWebhook(headers: Record<string, any>, body: any, raw
   }
 
   const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
-  if (config.webhookSecret) {
-    verifyPaddleSignature(headers, rawBody, config.webhookSecret);
-  }
+  const webhookSecret = requireWebhookSecret(config);
+  verifyPaddleSignature(headers, rawBody, webhookSecret);
 
   if (await isEventProcessed(tenant, eventId, 'paddle')) {
     return { status: 'already_processed' };
   }
+
+  await recordEvent(tenant, eventId, 'paddle', eventType);
 
   let result: any;
 
@@ -130,7 +145,6 @@ async function processPaddleWebhook(headers: Record<string, any>, body: any, raw
       result = { status: 'unhandled', eventType };
   }
 
-  await recordEvent(tenant, eventId, 'paddle', eventType);
   return result;
 }
 
@@ -236,18 +250,19 @@ async function processPayPalWebhook(headers: Record<string, any>, body: any) {
   }
 
   const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
-  if (config.webhookSecret) {
-    const verified = await ProviderAdapter.verifyPayPalWebhook(
-      tenant, config.providerSourceId, headers, body, config.webhookSecret,
-    );
-    if (!verified) {
-      throw { code: 'INVALID_SIGNATURE', message: 'PayPal webhook signature verification failed' };
-    }
+  const webhookSecret = requireWebhookSecret(config);
+  const verified = await ProviderAdapter.verifyPayPalWebhook(
+    tenant, config.providerSourceId, headers, body, webhookSecret,
+  );
+  if (!verified) {
+    throw { code: 'INVALID_SIGNATURE', message: 'PayPal webhook signature verification failed' };
   }
 
   if (await isEventProcessed(tenant, eventId, 'paypal')) {
     return { status: 'already_processed' };
   }
+
+  await recordEvent(tenant, eventId, 'paypal', eventType);
 
   let result: any;
 
@@ -272,7 +287,6 @@ async function processPayPalWebhook(headers: Record<string, any>, body: any) {
       result = { status: 'unhandled', eventType };
   }
 
-  await recordEvent(tenant, eventId, 'paypal', eventType);
   return result;
 }
 
@@ -347,13 +361,14 @@ async function processSumitWebhook(headers: Record<string, any>, body: any) {
   }
 
   const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
-  if (config.webhookSecret) {
-    verifySumitSignature(headers, config.webhookSecret);
-  }
+  const webhookSecret = requireWebhookSecret(config);
+  verifySumitSignature(headers, webhookSecret);
 
   if (await isEventProcessed(tenant, eventId, 'sumit')) {
     return { status: 'already_processed' };
   }
+
+  await recordEvent(tenant, eventId, 'sumit', eventType);
 
   let result: any;
 
@@ -374,7 +389,6 @@ async function processSumitWebhook(headers: Record<string, any>, body: any) {
       result = { status: 'unhandled', eventType };
   }
 
-  await recordEvent(tenant, eventId, 'sumit', eventType);
   return result;
 }
 

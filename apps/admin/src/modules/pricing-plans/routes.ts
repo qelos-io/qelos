@@ -2,7 +2,7 @@ import EmptyRoute from '@/modules/core/components/layout/EmptyRoute.vue';
 import { RouteRecordRaw } from 'vue-router';
 
 export const pricingPlansRoutes: RouteRecordRaw = {
-  path: 'pricing-plans',
+  path: 'admin/pricing-plans',
   component: EmptyRoute,
   redirect: { name: 'pricing-plans' },
   children: [

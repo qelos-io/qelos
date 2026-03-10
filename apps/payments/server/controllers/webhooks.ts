@@ -10,10 +10,13 @@ export async function handleWebhook(req, res: Response) {
       return;
     }
 
+    const rawBody = typeof req.rawBody === 'string' ? req.rawBody : JSON.stringify(req.body);
+
     const result = await WebhookService.processWebhook(
       providerKind,
       req.headers,
       req.body,
+      rawBody,
     );
 
     res.status(200).json(result).end();
@@ -23,6 +26,8 @@ export async function handleWebhook(req, res: Response) {
       INVALID_WEBHOOK: 400,
       INVALID_SIGNATURE: 401,
       TENANT_NOT_FOUND: 400,
+      WEBHOOK_SECRET_NOT_CONFIGURED: 500,
+      DUPLICATE_EVENT: 200,
     };
     const status = statusMap[e?.code] || 500;
     res.status(status).json({ code: e?.code, message: e?.message || 'webhook processing failed' }).end();
