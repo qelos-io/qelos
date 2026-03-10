@@ -19,7 +19,7 @@ jobs:
       (github.event.workflow_run.head_branch == 'main' ||
       github.event.workflow_run.event == 'pull_request') }}
     outputs:
-      services: '["admin", "auth", "assets", "content", "drafts", "gateway", "plugins", "secrets", "no-code", "ai"]'
+      services: '["admin", "auth", "assets", "content", "drafts", "gateway", "payments", "plugins", "secrets", "no-code", "ai"]'
     steps:
       - name: Set up services list
         run: echo "Services list prepared"

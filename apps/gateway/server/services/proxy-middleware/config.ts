@@ -72,6 +72,10 @@ export function getApiProxyConfig(): IApiProxyConfig {
       port: 9007,
       proxies: ['/api/ai'],
     }),
+    paymentsService: getServiceFromEnvVars('payments', 'PAYMENTS_SERVICE', {
+      port: 9008,
+      proxies: ['/api/plans', '/api/subscriptions', '/api/invoices', '/api/coupons', '/api/checkout', '/api/payments'],
+    }),
   };
 }
 

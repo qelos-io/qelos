@@ -522,6 +522,28 @@ importers:
         specifier: ^4.17.8
         version: 4.17.23
 
+  apps/payments:
+    dependencies:
+      '@qelos/api-kit':
+        specifier: workspace:^
+        version: link:../../packages/api-kit
+      '@qelos/cache-manager':
+        specifier: workspace:^
+        version: link:../../packages/cache-manager
+      '@qelos/global-types':
+        specifier: workspace:^
+        version: link:../../packages/global-types
+      mongoose:
+        specifier: ^8.6.1
+        version: 8.18.0
+    devDependencies:
+      '@types/express':
+        specifier: ^4.17.11
+        version: 4.17.23
+      typescript:
+        specifier: ^4.9.5
+        version: 4.9.5
+
   apps/plugins:
     dependencies:
       '@aws-sdk/client-lambda':
@@ -665,8 +687,8 @@ importers:
   packages/sdk:
     dependencies:
       '@qelos/global-types':
-        specifier: ^3.11.4
-        version: 3.11.4
+        specifier: workspace:^
+        version: link:../global-types
     devDependencies:
       tsx:
         specifier: ^4.21.0
@@ -2111,9 +2133,6 @@ packages:
 
   '@protobufjs/utf8@1.1.0':
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
-
-  '@qelos/global-types@3.11.4':
-    resolution: {integrity: sha512-DdzUfTPnRheZW+y3iHLKl7kyTCwQfCC3jjJN8NyRbrvi4ogfYaHdgNX18e3ulqBlfgPAozoMnCGduqTmdRtQGQ==}
 
   '@redis/bloom@1.2.0':
     resolution: {integrity: sha512-HG2DFjYKbpNmVXsa0keLHp/3leGJz1mjh09f2RLGGLQZzSHpkmZWuwJbAvo3QcRY8p80m5+ZdXZdYOSBLlp7Cg==}
@@ -8561,8 +8580,6 @@ snapshots:
   '@protobufjs/pool@1.1.0': {}
 
   '@protobufjs/utf8@1.1.0': {}
-
-  '@qelos/global-types@3.11.4': {}
 
   '@redis/bloom@1.2.0(@redis/client@1.6.1)':
     dependencies:

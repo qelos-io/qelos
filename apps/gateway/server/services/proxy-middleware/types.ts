@@ -20,4 +20,5 @@ export interface IApiProxyConfig {
   // frontService: IServiceProxyConfig;
   pluginsService: IServiceProxyConfig;
   aiService: IServiceProxyConfig;
+  paymentsService: IServiceProxyConfig;
 }

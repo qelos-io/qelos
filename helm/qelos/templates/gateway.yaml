@@ -84,6 +84,10 @@ spec:
               value: {{ .Values.ai.host }}
             - name: AI_SERVICE_PORT
               value: "{{ .Values.ai.port }}"
+            - name: PAYMENTS_SERVICE_URL
+              value: {{ .Values.payments.host }}
+            - name: PAYMENTS_SERVICE_PORT
+              value: "{{ .Values.payments.port }}"
             - name: SHOW_LOGS
               value: "true"
             - name: BASIC_TENANT
