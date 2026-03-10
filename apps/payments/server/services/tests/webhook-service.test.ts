@@ -1,5 +1,6 @@
 import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert';
+import crypto from 'node:crypto';
 
 const webhookEventSaveMock = mock.fn(async () => ({}));
 const webhookEventFindOneMock = mock.fn(() => ({
@@ -132,6 +133,13 @@ describe('webhook-service', async () => {
   });
 
   describe('Paddle webhooks', () => {
+    function makePaddleHeaders(body: any, secret = 'test-secret'): Record<string, string> {
+      const ts = '1700000000';
+      const rawBody = JSON.stringify(body);
+      const h1 = crypto.createHmac('sha256', secret).update(`${ts}:${rawBody}`).digest('hex');
+      return { 'paddle-signature': `ts=${ts};h1=${h1}` };
+    }
+
     const basePaddleEvent = {
       event_id: 'evt-paddle-1',
       event_type: 'subscription.activated',
@@ -175,7 +183,7 @@ describe('webhook-service', async () => {
         })),
       }));
 
-      const result = await WebhookService.processWebhook('paddle', {}, basePaddleEvent);
+      const result = await WebhookService.processWebhook('paddle', makePaddleHeaders(basePaddleEvent), basePaddleEvent);
       assert.deepStrictEqual(result, { status: 'already_processed' });
       assert.strictEqual(activateSubscriptionMock.mock.calls.length, 0);
     });
@@ -185,7 +193,7 @@ describe('webhook-service', async () => {
       mockSubscriptionFound(mockSub);
       activateSubscriptionMock.mock.mockImplementation(async () => ({ _id: 'sub-1', status: 'active' }));
 
-      await WebhookService.processWebhook('paddle', {}, basePaddleEvent);
+      await WebhookService.processWebhook('paddle', makePaddleHeaders(basePaddleEvent), basePaddleEvent);
 
       assert.strictEqual(activateSubscriptionMock.mock.calls.length, 1);
       assert.strictEqual(activateSubscriptionMock.mock.calls[0].arguments[0], 'tenant-1');
@@ -199,10 +207,8 @@ describe('webhook-service', async () => {
       mockSubscriptionFound(mockSub);
       updateSubscriptionStatusMock.mock.mockImplementation(async () => ({ _id: 'sub-1', status: 'canceled' }));
 
-      await WebhookService.processWebhook('paddle', {}, {
-        ...basePaddleEvent,
-        event_type: 'subscription.canceled',
-      });
+      const body = { ...basePaddleEvent, event_type: 'subscription.canceled' };
+      await WebhookService.processWebhook('paddle', makePaddleHeaders(body), body);
 
       assert.deepStrictEqual(updateSubscriptionStatusMock.mock.calls[0].arguments, ['tenant-1', 'sub-1', 'canceled']);
     });
@@ -212,10 +218,8 @@ describe('webhook-service', async () => {
       mockSubscriptionFound(mockSub);
       updateSubscriptionStatusMock.mock.mockImplementation(async () => ({ _id: 'sub-1', status: 'past_due' }));
 
-      await WebhookService.processWebhook('paddle', {}, {
-        ...basePaddleEvent,
-        event_type: 'subscription.past_due',
-      });
+      const body = { ...basePaddleEvent, event_type: 'subscription.past_due' };
+      await WebhookService.processWebhook('paddle', makePaddleHeaders(body), body);
 
       assert.deepStrictEqual(updateSubscriptionStatusMock.mock.calls[0].arguments, ['tenant-1', 'sub-1', 'past_due']);
     });
@@ -225,7 +229,7 @@ describe('webhook-service', async () => {
       mockSubscriptionFound(mockSub);
       createInvoiceForPaymentMock.mock.mockImplementation(async () => ({ _id: 'inv-1' }));
 
-      await WebhookService.processWebhook('paddle', {}, {
+      const body = {
         event_id: 'evt-paddle-2',
         event_type: 'transaction.completed',
         data: {
@@ -238,7 +242,8 @@ describe('webhook-service', async () => {
             ends_at: '2026-02-01T00:00:00Z',
           },
         },
-      });
+      };
+      await WebhookService.processWebhook('paddle', makePaddleHeaders(body), body);
 
       assert.strictEqual(createInvoiceForPaymentMock.mock.calls.length, 1);
       const paymentData = createInvoiceForPaymentMock.mock.calls[0].arguments[2];
@@ -252,27 +257,29 @@ describe('webhook-service', async () => {
       mockSubscriptionFound(mockSub);
       updateSubscriptionStatusMock.mock.mockImplementation(async () => ({ _id: 'sub-1', status: 'past_due' }));
 
-      await WebhookService.processWebhook('paddle', {}, {
+      const body = {
         event_id: 'evt-paddle-3',
         event_type: 'transaction.payment_failed',
         data: {
           id: 'txn_2',
           subscription_id: 'sub_paddle_1',
         },
-      });
+      };
+      await WebhookService.processWebhook('paddle', makePaddleHeaders(body), body);
 
       assert.deepStrictEqual(updateSubscriptionStatusMock.mock.calls[0].arguments, ['tenant-1', 'sub-1', 'past_due']);
     });
 
     it('should return subscription_not_found when subscription does not exist', async () => {
-      const result = await WebhookService.processWebhook('paddle', {}, {
+      const body = {
         event_id: 'evt-paddle-4',
         event_type: 'subscription.activated',
         data: {
           id: 'sub_nonexistent',
           custom_data: { tenant: 'tenant-1' },
         },
-      });
+      };
+      const result = await WebhookService.processWebhook('paddle', makePaddleHeaders(body), body);
 
       assert.deepStrictEqual(result, { status: 'subscription_not_found' });
     });
@@ -281,11 +288,12 @@ describe('webhook-service', async () => {
       const mockSub = { _id: 'sub-1', tenant: 'tenant-1', providerKind: 'paddle' };
       mockSubscriptionFound(mockSub);
 
-      const result = await WebhookService.processWebhook('paddle', {}, {
+      const body = {
         event_id: 'evt-paddle-5',
         event_type: 'unknown.event',
         data: { id: 'sub_paddle_1' },
-      });
+      };
+      const result = await WebhookService.processWebhook('paddle', makePaddleHeaders(body), body);
 
       assert.deepStrictEqual(result, { status: 'unhandled', eventType: 'unknown.event' });
     });
