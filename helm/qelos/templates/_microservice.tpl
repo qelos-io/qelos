@@ -55,8 +55,11 @@ spec:
               value: {{ .global.mongodb.url }}
             {{- with .values.environment }}
             {{- range $key, $value := . }}
+            {{- /* Skip reserved keys already set by the template to avoid duplicate env warnings and apply drops */}}
+            {{- if not (has $key (list "INTERNAL_SECRET" "SHOW_LOGS" "IP" "PORT" "REDIS_HOST" "REDIS_PORT" "MONGO_URI")) }}
             - name: {{ $key }}
               value: "{{ $value }}"
+            {{- end }}
             {{- end }}
             {{- end }}
           {{- if ne (.values.enableHealthProbes) false }}
