@@ -108,7 +108,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@qelos/global-types": "^3.11.4"
+    "@qelos/global-types": "workspace:^"
   },
   "devDependencies": {
     "tsx": "^4.21.0",

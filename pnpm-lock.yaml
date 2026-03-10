@@ -690,8 +690,8 @@ importers:
   packages/sdk:
     dependencies:
       '@qelos/global-types':
-        specifier: ^3.11.4
-        version: 3.11.4
+        specifier: workspace:^
+        version: link:../global-types
     devDependencies:
       tsx:
         specifier: ^4.21.0
@@ -2136,9 +2136,6 @@ packages:
 
   '@protobufjs/utf8@1.1.0':
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
-
-  '@qelos/global-types@3.11.4':
-    resolution: {integrity: sha512-DdzUfTPnRheZW+y3iHLKl7kyTCwQfCC3jjJN8NyRbrvi4ogfYaHdgNX18e3ulqBlfgPAozoMnCGduqTmdRtQGQ==}
 
   '@redis/bloom@1.2.0':
     resolution: {integrity: sha512-HG2DFjYKbpNmVXsa0keLHp/3leGJz1mjh09f2RLGGLQZzSHpkmZWuwJbAvo3QcRY8p80m5+ZdXZdYOSBLlp7Cg==}
@@ -8629,8 +8626,6 @@ snapshots:
   '@protobufjs/pool@1.1.0': {}
 
   '@protobufjs/utf8@1.1.0': {}
-
-  '@qelos/global-types@3.11.4': {}
 
   '@redis/bloom@1.2.0(@redis/client@1.6.1)':
     dependencies:
