@@ -1,5 +1,3 @@
-import * as ProviderAdapter from '../provider-adapter';
-
 const mockCallPluginsService = jest.fn();
 const mockCallContentService = jest.fn();
 
@@ -10,6 +8,8 @@ jest.mock('@qelos/api-kit', () => ({
     return jest.fn();
   },
 }));
+
+import * as ProviderAdapter from '../provider-adapter';
 
 describe('provider-adapter', () => {
   beforeEach(() => {

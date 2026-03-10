@@ -11,11 +11,11 @@ jest.mock('../invoices-service');
 jest.mock('../coupons-service');
 jest.mock('../provider-adapter');
 
-const MockPlans = PlansService as jest.Mocked<typeof PlansService>;
-const MockSubscriptions = SubscriptionsService as jest.Mocked<typeof SubscriptionsService>;
-const MockInvoices = InvoicesService as jest.Mocked<typeof InvoicesService>;
-const MockCoupons = CouponsService as jest.Mocked<typeof CouponsService>;
-const MockProvider = ProviderAdapter as jest.Mocked<typeof ProviderAdapter>;
+const MockPlans = PlansService as any;
+const MockSubscriptions = SubscriptionsService as any;
+const MockInvoices = InvoicesService as any;
+const MockCoupons = CouponsService as any;
+const MockProvider = ProviderAdapter as any;
 
 describe('checkout-service', () => {
   beforeEach(() => {

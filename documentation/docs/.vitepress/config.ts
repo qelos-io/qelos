@@ -100,6 +100,12 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Introduction', link: '/payments/' },
+          { text: 'Plans', link: '/payments/plans' },
+          { text: 'Subscriptions', link: '/payments/subscriptions' },
+          { text: 'Invoices', link: '/payments/invoices' },
+          { text: 'Coupons', link: '/payments/coupons' },
+          { text: 'Checkout', link: '/payments/checkout' },
+          { text: 'Configuration', link: '/payments/configuration' },
           { text: 'Sumit', link: '/payments/sumit' },
           { text: 'Paddle', link: '/payments/paddle' },
         ]

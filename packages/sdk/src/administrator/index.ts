@@ -12,6 +12,7 @@ import QlManagePlugins from './manage-plugins';
 import QlComponents from './components';
 import QlIntegrations from './integrations';
 import QlManageLambdas from './admin-lambdas';
+import QlPaymentsAdmin from './payments';
 
 
 export default class QelosAdministratorSDK<T = any> extends QelosSDK {
@@ -27,6 +28,7 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
   managePlugins: QlManagePlugins;
   components: QlComponents;
   integrations: QlIntegrations;
+  managePayments: QlPaymentsAdmin;
 
   constructor(options: QelosSDKOptions) {
     super(options);
@@ -42,6 +44,7 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
     this.managePlugins = new QlManagePlugins(options);
     this.components = new QlComponents(options);
     this.integrations = new QlIntegrations(options);
+    this.managePayments = new QlPaymentsAdmin(options);
 
     if (!options.extraQueryParams) {
       options.extraQueryParams = () => ({

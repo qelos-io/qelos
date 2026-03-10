@@ -11,8 +11,8 @@ jest.mock('../checkout-service');
 
 const MockSubscription = Subscription as any;
 const MockWebhookEvent = WebhookEvent as any;
-const MockSubscriptionsService = SubscriptionsService as jest.Mocked<typeof SubscriptionsService>;
-const MockCheckoutService = CheckoutService as jest.Mocked<typeof CheckoutService>;
+const MockSubscriptionsService = SubscriptionsService as any;
+const MockCheckoutService = CheckoutService as any;
 
 describe('webhook-service', () => {
   beforeEach(() => {
