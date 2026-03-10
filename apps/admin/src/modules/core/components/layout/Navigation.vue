@@ -106,6 +106,19 @@
         </router-link>
       </el-menu-item>
 
+      <el-menu-item
+        v-if="isAdmin && !shouldShowBuilderTheme"
+        index="/pricing-plans"
+        :data-title="$t('Pricing Plans')"
+      >
+        <router-link to="/pricing-plans">
+          <el-icon>
+          <font-awesome-icon :icon="['fas', 'tags']" />
+        </el-icon>
+        <span>{{ $t("Pricing Plans") }}</span>
+        </router-link>
+      </el-menu-item>
+
       <template v-for="group in filteredNavBar.bottom">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.key && group.key !== ''">{{ group.key }}</h4>

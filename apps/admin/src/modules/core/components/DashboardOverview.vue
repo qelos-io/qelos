@@ -272,6 +272,11 @@ const allQuickActions = [
     text: t('Manage Integrations'),
     icon: ['fas', 'arrows-turn-to-dots'],
     route: '/integrations'
+  },
+  {
+    text: t('Pricing Plans'),
+    icon: ['fas', 'tags'],
+    route: '/pricing-plans'
   }
 ];
 

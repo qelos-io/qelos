@@ -18,6 +18,7 @@ import noCodeRoutes from '@/modules/no-code/routes';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import { integrationsRoutes } from '@/modules/integrations/routes';
 import { adminLogRoutes } from '@/modules/admins/routes';
+import { pricingPlansRoutes } from '@/modules/pricing-plans/routes';
 import { useStaticComponentsStore } from './modules/no-code/store/static-components'
 
 // @ts-ignore
@@ -56,6 +57,7 @@ const router = createRouter({
         playRoutes,
         adminRoutesScreenEditor,
         adminLogRoutes,
+        pricingPlansRoutes,
       ]
     },
     {

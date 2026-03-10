@@ -70,6 +70,25 @@
               </router-link>
             </div>
             
+            <!-- Payments Configuration Card -->
+            <div class="unified-card">
+              <router-link :to="{name: 'paymentsConfiguration'}" class="config-card-link">
+                <div class="config-card-icon primary">
+                  <font-awesome-icon :icon="['fas', 'tags']" size="lg"/>
+                </div>
+                <div class="config-card-content">
+                  <h3>{{ $t('Payments & Plans') }}</h3>
+                  <p class="config-card-description">{{ $t('Configure pricing plans, coupons, and payment providers') }}</p>
+                </div>
+                <div class="config-card-action">
+                  <el-button type="primary" text>
+                    <font-awesome-icon :icon="['fas', 'edit']"/> 
+                    {{ $t('Configure') }}
+                  </el-button>
+                </div>
+              </router-link>
+            </div>
+
             <!-- Authentication Settings Card -->
             <div class="unified-card">
               <router-link :to="{name: 'editConfiguration', params: {key: 'auth-configuration'}}" class="config-card-link">
