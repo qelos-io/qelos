@@ -1,5 +1,5 @@
 export type BillableEntityType = 'user' | 'workspace';
-export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing' | 'expired';
+export type SubscriptionStatus = 'pending' | 'active' | 'canceled' | 'past_due' | 'trialing' | 'expired';
 export type BillingCycle = 'monthly' | 'yearly';
 export type InvoiceStatus = 'paid' | 'pending' | 'failed' | 'refunded';
 export type CouponDiscountType = 'percentage' | 'fixed';

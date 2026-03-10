@@ -21,4 +21,5 @@ export const connect = (uri: string) => {
   require('./subscription');
   require('./invoice');
   require('./coupon');
+  require('./webhook-event');
 };
