@@ -212,6 +212,19 @@ ai:
     PLUGINS_SERVICE_PORT: 9006
     NO_CODE_SERVICE_URL: nocode-service
     NO_CODE_SERVICE_PORT: 9004
+
+payments:
+  image:
+    repository: ghcr.io/{{ .Values.GITHUB_USERNAME }}/qelos/payments
+    tag: latest
+  replicas: 2
+  host: payments-service
+  port: 9008
+  environment:
+    PLUGINS_SERVICE_URL: plugins-service
+    PLUGINS_SERVICE_PORT: 9006
+    CONTENT_SERVICE_URL: content-service
+    CONTENT_SERVICE_PORT: 9001
     
 
 # Default resource settings for microservices

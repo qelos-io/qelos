@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useInvoices } from '../compositions/use-billing'
 import { BillableEntityType } from '@qelos/global-types'

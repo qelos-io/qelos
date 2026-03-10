@@ -1,9 +1,12 @@
 import * as CheckoutController from '../checkout';
 import * as CheckoutService from '../../services/checkout-service';
+import * as SubscriptionsService from '../../services/subscriptions-service';
 
 jest.mock('../../services/checkout-service');
+jest.mock('../../services/subscriptions-service');
 
 const MockCheckoutService = CheckoutService as any;
+const MockSubscriptionsService = SubscriptionsService as any;
 
 function mockReq(overrides: any = {}) {
   return {
@@ -211,8 +214,15 @@ describe('checkout controller', () => {
   });
 
   describe('cancelSubscription', () => {
+    const ownedSubscription = {
+      _id: 'sub-1',
+      billableEntityId: 'ws-1',
+      status: 'active',
+    };
+
     it('should cancel subscription and return 200', async () => {
       const result = { _id: 'sub-1', status: 'canceled' };
+      MockSubscriptionsService.getSubscriptionById.mockResolvedValue(ownedSubscription as any);
       MockCheckoutService.cancelCheckoutSubscription.mockResolvedValue(result as any);
 
       const req = mockReq({ params: { subscriptionId: 'sub-1' } });
@@ -223,8 +233,21 @@ describe('checkout controller', () => {
       expect(res.json).toHaveBeenCalledWith(result);
     });
 
+    it('should return 403 when user does not own subscription', async () => {
+      MockSubscriptionsService.getSubscriptionById.mockResolvedValue({
+        _id: 'sub-1',
+        billableEntityId: 'other-entity',
+      } as any);
+
+      const req = mockReq({ params: { subscriptionId: 'sub-1' } });
+      const res = mockRes();
+      await CheckoutController.cancelSubscription(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+    });
+
     it('should return 404 when subscription not found', async () => {
-      MockCheckoutService.cancelCheckoutSubscription.mockRejectedValue({
+      MockSubscriptionsService.getSubscriptionById.mockRejectedValue({
         code: 'SUBSCRIPTION_NOT_FOUND',
       });
 
@@ -236,6 +259,7 @@ describe('checkout controller', () => {
     });
 
     it('should return 500 on unexpected error', async () => {
+      MockSubscriptionsService.getSubscriptionById.mockResolvedValue(ownedSubscription as any);
       MockCheckoutService.cancelCheckoutSubscription.mockRejectedValue(new Error('fail'));
 
       const req = mockReq({ params: { subscriptionId: 'sub-1' } });

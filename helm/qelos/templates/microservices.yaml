@@ -24,3 +24,6 @@
 ---
 {{- /* AI Service */ -}}
 {{- include "qelos.microservice" (dict "name" "ai" "values" .Values.ai "global" .Values.global) }}
+---
+{{- /* Payments Service */ -}}
+{{- include "qelos.microservice" (dict "name" "payments" "values" .Values.payments "global" .Values.global) }}

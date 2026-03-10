@@ -83,7 +83,7 @@ describe('plans controller', () => {
 
   describe('getPlan', () => {
     it('should return plan with 200', async () => {
-      const plan = { _id: 'p1', name: 'Pro' };
+      const plan = { _id: 'p1', name: 'Pro', isActive: true };
       MockPlansService.getPlanById.mockResolvedValue(plan as any);
 
       const req = mockReq({ params: { planId: 'p1' } });

@@ -3,20 +3,28 @@ import Subscription from '../../models/subscription';
 import WebhookEvent from '../../models/webhook-event';
 import * as SubscriptionsService from '../subscriptions-service';
 import * as CheckoutService from '../checkout-service';
+import * as ProviderAdapter from '../provider-adapter';
 
 jest.mock('../../models/subscription');
 jest.mock('../../models/webhook-event');
 jest.mock('../subscriptions-service');
 jest.mock('../checkout-service');
+jest.mock('../provider-adapter');
 
 const MockSubscription = Subscription as any;
 const MockWebhookEvent = WebhookEvent as any;
 const MockSubscriptionsService = SubscriptionsService as any;
 const MockCheckoutService = CheckoutService as any;
+const MockProviderAdapter = ProviderAdapter as any;
 
 describe('webhook-service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    MockProviderAdapter.getPaymentsConfiguration.mockResolvedValue({
+      providerSourceId: 'source-1',
+      providerKind: 'paddle',
+    });
 
     MockWebhookEvent.findOne = jest.fn().mockReturnValue({
       lean: jest.fn().mockReturnValue({

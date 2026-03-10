@@ -3,7 +3,7 @@ import { ref, computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
-import type { FormInstance, FormRules } from 'element-plus';
+import type { FormRules } from 'element-plus';
 import couponsService from '@/services/apis/coupons-service';
 import { useCouponsStore } from '../store/coupons';
 import { usePlansStore } from '../store/plans';
