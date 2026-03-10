@@ -160,7 +160,7 @@ const adminNavItems = computed(() => {
     { path: '/assets', label: 'Storage & Assets', icon: 'fas fa-folder-tree' },
     { path: '/plugins', label: 'Plugins', icon: 'fas fa-plug' },
     { path: '/integrations', label: 'Integrations', icon: 'fas fa-link' },
-    { path: '/pricing-plans', label: 'Pricing Plans', icon: 'fas fa-tags' }
+    { path: '/admin/pricing-plans', label: 'Pricing Plans', icon: 'fas fa-tags' }
   ];
   
   // Add Workspaces item only if workspace configuration is active

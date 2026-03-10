@@ -276,7 +276,7 @@ const allQuickActions = [
   {
     text: t('Pricing Plans'),
     icon: ['fas', 'tags'],
-    route: '/pricing-plans'
+    route: '/admin/pricing-plans'
   }
 ];
 

@@ -108,10 +108,10 @@
 
       <el-menu-item
         v-if="isAdmin && !shouldShowBuilderTheme"
-        index="/pricing-plans"
+        index="/admin/pricing-plans"
         :data-title="$t('Pricing Plans')"
       >
-        <router-link to="/pricing-plans">
+        <router-link to="/admin/pricing-plans">
           <el-icon>
           <font-awesome-icon :icon="['fas', 'tags']" />
         </el-icon>
