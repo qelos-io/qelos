@@ -15,7 +15,7 @@ import {
   validateEntityRelations,
 } from '../services/entities.service';
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
-import { emitPlatformEvent, ResponseError } from '@qelos/api-kit';
+import { emitPlatformEvent, getBypassAdmin, ResponseError } from '@qelos/api-kit';
 import { getUsersByIds, getWorkspaces } from '../services/users';
 import type { Request } from 'express';
 import { hasGuestReachedLimit } from '../services/guest-request-limit';
@@ -164,7 +164,7 @@ const convertPropertyValueByType = (value: any, propertyType: string): any => {
 
 export async function getAllBlueprintEntities(req, res) {
   const blueprint = req.blueprint as IBlueprint;
-  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin);
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, getBypassAdmin(req));
 
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
@@ -335,7 +335,7 @@ export async function getAllBlueprintEntities(req, res) {
           if (!relation) {
             return;
           }
-          const permission = getUserPermittedScopes(req.user, queryBuilder.blueprint, CRUDOperation.READ, req.query.bypassAdmin);
+          const permission = getUserPermittedScopes(req.user, queryBuilder.blueprint, CRUDOperation.READ, getBypassAdmin(req));
           if (permission === true || permission.length > 0) {
             const entityQuery = getEntityQuery({ blueprint: queryBuilder.blueprint, req, permittedScopes: permission });
             if (queryBuilder.scope === PermissionScope.USER) {
@@ -403,7 +403,7 @@ export async function getAllBlueprintEntities(req, res) {
 export async function getSingleBlueprintEntity(req, res) {
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
-  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin === 'true');
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, getBypassAdmin(req));
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;
@@ -465,8 +465,7 @@ export async function createBlueprintEntity(req, res) {
   }
 
   const blueprint: IBlueprint = req.blueprint;
-  const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
-  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.CREATE, bypassAdmin);
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.CREATE, getBypassAdmin(req));
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;
@@ -548,8 +547,7 @@ export async function updateBlueprintEntity(req, res) {
 
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
-  const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
-  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.UPDATE, bypassAdmin);
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.UPDATE, getBypassAdmin(req));
   const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
@@ -633,7 +631,7 @@ export async function removeBlueprintEntity(req, res) {
   }
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
-  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.DELETE, req.query.bypassAdmin === 'true');
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.DELETE, getBypassAdmin(req));
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;
@@ -691,7 +689,7 @@ export async function removeAllBlueprintEntities(req, res) {
   const blueprintIdentifier = req.params.blueprintIdentifier.toString();
 
   const blueprint: IBlueprint = req.blueprint;
-  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.DELETE, req.query.bypassAdmin === 'true');
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.DELETE, getBypassAdmin(req));
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;

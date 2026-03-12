@@ -4,3 +4,7 @@ inputs:
     required: false
     description: "Qelos API base URL (e.g. http://159.203.152.168). Used as QELOS_API_IP and for /api/* proxy."
     default: "http://159.203.152.168"
+  - name: bypass_admin
+    required: false
+    description: "If true, the proxy adds header x-bypass-admin: true to every request (so admins are scoped as regular users)."
+    default: false

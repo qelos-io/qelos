@@ -8,6 +8,8 @@ const parsed =
     : { hostname: raw, port: "80" };
 const PROXY_HOST = parsed.hostname;
 const PROXY_PORT = parseInt(parsed.port || "80", 10);
+const ADD_BYPASS_ADMIN_HEADER =
+  process.env.QELOS_BYPASS_ADMIN_HEADER === "true";
 
 export const handler: Handler = (event) =>
   new Promise((resolve) => {
@@ -17,6 +19,9 @@ export const handler: Handler = (event) =>
       if (val) headers[key] = val;
     }
     headers["host"] = event.headers["host"] ?? PROXY_HOST;
+    if (ADD_BYPASS_ADMIN_HEADER) {
+      headers["x-bypass-admin"] = "true";
+    }
     // Lambda buffers the body, so chunked encoding is not applicable
     delete headers["transfer-encoding"];
 

@@ -3,6 +3,7 @@ import qs from 'qs'
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
 import { BlueprintPropertyType, CRUDOperation, PermissionScope } from '@qelos/global-types';
 import { IBlueprint } from '../models/blueprint';
+import { getBypassAdmin } from '@qelos/api-kit';
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
 import BlueprintEntity from '../models/blueprint-entity';
 import { getEntityQuery } from '../services/entities.service';
@@ -42,7 +43,7 @@ interface RequestWithBlueprint extends RequestWithUser {
 
 export function checkChartPermissions(req: RequestWithBlueprint, res: Response, next: Function) {
   const blueprint: IBlueprint = req.blueprint;
-  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, req.query.bypassAdmin === 'true');
+  const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.READ, getBypassAdmin(req));
 
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();

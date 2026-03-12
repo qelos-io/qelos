@@ -6,7 +6,7 @@ import { getIntegration, getSourceAuthentication } from '../services/plugins-ser
 import { verifyUserPermissions } from '../services/source-service';
 import { QelosTriggerOperation } from '@qelos/global-types';
 import logger from '../services/logger';
-import { emitPlatformEvent } from '@qelos/api-kit';
+import { emitPlatformEvent, getBypassAdmin } from '@qelos/api-kit';
 import { OpenAI } from 'openai';
 import { IntegrationSourceKind } from '@qelos/global-types';
 import { VectorStoreService } from '../services/vector-store-service';
@@ -163,7 +163,7 @@ export const getThreads = async (req: RequestWithUser, res: Response) => {
     }
 
     const filter: any = {};
-    const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
+    const bypassAdmin = getBypassAdmin(req);
 
     if (req.user.isPrivileged && !bypassAdmin) {
       if (req.query.user) {
@@ -203,7 +203,7 @@ export const getThread = async (req: RequestWithUser, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
-  const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
+  const bypassAdmin = getBypassAdmin(req);
 
   try {
     const { threadId } = req.params
@@ -244,7 +244,7 @@ export const getThread = async (req: RequestWithUser, res: Response) => {
  * Delete a thread
  */
 export const deleteThread = async (req: RequestWithUser, res: Response) => {
-  const bypassAdmin = typeof req.body?.bypassAdmin !== 'undefined' ? !!req.body?.bypassAdmin : req.query.bypassAdmin === 'true';
+  const bypassAdmin = getBypassAdmin(req);
 
   if (!req.user) {
     return res.status(401).json({ error: 'Authentication required' })

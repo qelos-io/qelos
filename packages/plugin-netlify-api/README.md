@@ -11,7 +11,7 @@ In your site’s `netlify.toml`:
   package = "@qelos/plugin-netlify-api"
 ```
 
-Optional: set the API URL (default `http://159.203.152.168`):
+Optional: set the API URL (default `http://159.203.152.168`) and/or enable bypass-admin header:
 
 ```toml
 [[plugins]]
@@ -19,9 +19,11 @@ Optional: set the API URL (default `http://159.203.152.168`):
 
   [plugins.inputs]
     api_url = "http://159.203.152.168"
+    bypass_admin = true
 ```
 
-Or set the `QELOS_API_IP` environment variable in the Netlify UI (build or runtime).
+- **api_url** — Target for the `/api/*` proxy. You can also set the `QELOS_API_IP` environment variable in the Netlify UI (build or runtime).
+- **bypass_admin** — If `true`, the proxy adds the header `x-bypass-admin: true` to every request so that admin users are scoped as regular users. See root docs: `documentation/docs/plugins/api-proxy.md` and `documentation/docs/sdk/token_refresh.md`.
 
 ## What it does
 

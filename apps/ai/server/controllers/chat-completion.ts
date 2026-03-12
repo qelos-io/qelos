@@ -11,7 +11,7 @@ import { verifyUserPermissions } from "../services/source-service";
 import { IThread, Thread } from "../models/thread";
 import { getAllBlueprints } from "../services/no-code-service";
 import { emitDataManipulationErrorEvent } from "../services/platform-events";
-import { emitPlatformEvent } from '@qelos/api-kit';
+import { emitPlatformEvent, getBypassAdmin } from '@qelos/api-kit';
 import { analyzeChatCompletionError, createErrorResponse, logError } from "../services/error-analysis";
 import { VectorStoreService } from "../services/vector-store-service";
 import { CodeInterpreterService } from "../services/code-interpreter-service";
@@ -319,7 +319,7 @@ export async function chatCompletion(req: any, res: any | null) {
         return chatCompletion({
           headers: { ...req.headers, tenant: req.headers.tenant, user: req.headers.user },
           query: {
-            bypassAdmin: req.query.bypassAdmin
+            bypassAdmin: getBypassAdmin(req) ? 'true' : undefined
           },
           body: {
             messages: args.messages
@@ -549,7 +549,7 @@ export async function chatCompletion(req: any, res: any | null) {
           integration.tenant,
           sendSSEArg,
           '',
-          req.query.bypassAdmin === 'true'
+          getBypassAdmin(req)
         );
       }
 

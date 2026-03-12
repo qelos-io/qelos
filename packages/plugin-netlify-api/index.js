@@ -5,12 +5,16 @@ const DEFAULT_API_URL = "http://159.203.152.168";
 module.exports = {
   async onPreBuild({ netlifyConfig, utils, inputs }) {
     const apiUrl = inputs.api_url ?? process.env.QELOS_API_IP ?? DEFAULT_API_URL;
+    const bypassAdmin = inputs.bypass_admin === true || inputs.bypass_admin === 'true';
 
     // Ensure build.environment exists
     if (!netlifyConfig.build.environment) {
       netlifyConfig.build.environment = {};
     }
     netlifyConfig.build.environment.QELOS_API_IP = apiUrl;
+    if (bypassAdmin) {
+      netlifyConfig.build.environment.QELOS_BYPASS_ADMIN_HEADER = 'true';
+    }
 
     // Add redirect: /api/* -> Netlify function (proxy)
     if (!netlifyConfig.redirects) {

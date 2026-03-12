@@ -65,6 +65,8 @@ If you don't specify the `bypassAdmin` option, it defaults to `false`, meaning t
 
 If you specify the `bypassAdmin` option to `true`, you will get only your own data, even if you're the admin.
 
+**How to pass bypassAdmin:** The backend accepts it via query (`?bypassAdmin=true`), body (`{ "bypassAdmin": true }` for POST/PUT), or header (`x-bypass-admin: true` or `x-bypass-admin: 1`). When using the Netlify API proxy plugin, you can set `bypass_admin = true` in plugin inputs so the proxy adds the header on every request (see [API Proxy](/docs/plugins/api-proxy.md#bypass-admin)).
+
 ```typescript
 // This request will NOT attempt to refresh the token if it receives a 401 response
 const data = await sdk.workspaces.getList();

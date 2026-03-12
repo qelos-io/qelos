@@ -58,6 +58,17 @@ If neither is set, the plugin uses `http://159.203.152.168`.
 
 The proxy accepts either a full URL (`http://...` or `https://...`) or a hostname; it will use the correct host and port when forwarding.
 
+**D. (Optional) Bypass admin header**
+
+To have the proxy send `x-bypass-admin: true` on every request (so admin users are scoped as regular users), set:
+
+```toml
+[plugins.inputs]
+  bypass_admin = true
+```
+
+See [Bypass admin](#bypass-admin) below.
+
 ### 3. Point your frontend at `/api`
 
 In your frontend code, configure the base URL for the Qelos API to the **same origin** and path `/api`, e.g.:
@@ -91,12 +102,23 @@ If you were to configure Netlify by hand, the plugin effectively does the follow
 **Function:**  
 A serverless function at `/.netlify/functions/qelos-api-proxy` that forwards the request to the host/port derived from `QELOS_API_IP` and returns the response. You don’t add this file yourself; the plugin injects it at build time.
 
+## Bypass admin
+
+Backend APIs accept a **bypass-admin** flag so that privileged users (e.g. admin) are treated as regular users for scope filtering. You can pass it in any of these ways:
+
+- **Query:** `?bypassAdmin=true`
+- **Body:** `{ "bypassAdmin": true }` (for POST/PUT)
+- **Header:** `x-bypass-admin: true` (or `x-bypass-admin: 1`)
+
+When using the Netlify plugin, you can set `bypass_admin = true` in `[plugins.inputs]` so the proxy adds the header `x-bypass-admin: true` to every request. That way the frontend does not need to send query or body; the proxy applies it globally for that deployment.
+
 ## Summary
 
 | What you do | What the plugin does |
 |-------------|----------------------|
 | Add `[[plugins]] package = "@qelos/plugin-netlify-api"` to `netlify.toml` | Sets `QELOS_API_IP`, adds `/api/*` → proxy redirect, injects `qelos-api-proxy` function |
 | Optionally set `api_url` in `[plugins.inputs]` or `QELOS_API_IP` in Netlify env | Uses that value as the proxy target |
+| Optionally set `bypass_admin = true` in `[plugins.inputs]` | Proxy adds `x-bypass-admin: true` to every request |
 | Use base URL `/api` in your frontend | Browser calls same origin; proxy forwards to Qelos API |
 
 No need to add redirects or function code to your repo; the plugin handles it so your Netlify-deployed Qelos frontend can talk to the Qelos API through `/api` on the same origin.
