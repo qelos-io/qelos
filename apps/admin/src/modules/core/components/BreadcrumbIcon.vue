@@ -22,7 +22,7 @@ const isElementPlusIcon = computed(() => {
 
 <style scoped>
 .breadcrumb-icon {
-  margin-right: 5px;
+  margin-inline-end: 5px;
   color: var(--main-color);
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <el-breadcrumb class="app-breadcrumb" :separator="separator">
+  <el-breadcrumb class="app-breadcrumb" :separator="separator" :dir="$t('appDirection')">
     <el-breadcrumb-item 
       v-for="(item, index) in items" 
       :key="index"
