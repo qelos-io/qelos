@@ -53,12 +53,15 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
     });
   }
 
+  let tokenAge: number;
+  let newCookieValue: string | undefined;
+
   try {
     const payload: any = await verifyToken(token, tenant);
     const created = Number(payload.tokenIdentifier?.split(':')[0]);
 
     // If token is still fresh, no need to verify further
-    const tokenAge = Date.now() - created;
+    tokenAge = Date.now() - created;
     if (tokenAge < cookieTokenVerificationTime) {
       setUserPayload(payload, req, res, next);
       return;
@@ -102,12 +105,31 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       throw new Error('could not create new token and new payload for user');
     }
   } catch (e) {
+    // If token was already replaced (race condition), try to verify the new token
+    if (e?.code === 'USER_WITH_TOKEN_NOT_EXISTS') {
+      // The token was already replaced by another request
+      // Try to get the new cookie value and verify it
+      newCookieValue = getCookieTokenValue(req);
+      if (newCookieValue && newCookieValue !== token) {
+        try {
+          const newPayload: any = await verifyToken(newCookieValue, tenant);
+          setUserPayload(newPayload, req, res, next);
+          return;
+        } catch (verifyErr) {
+          // New token is also invalid, continue without auth
+        }
+      }
+    }
+    
     logger.log('Cookie verification failed, continuing without auth', {
       error: e?.code || e?.message || 'UNKNOWN',
       url: req.url,
       tenant: req.headers.tenant,
       hasCookie: !!getCookieTokenValue(req),
-      hasAuth: !!(req.headers.authorization || req.headers.Authorization)
+      hasAuth: !!(req.headers.authorization || req.headers.Authorization),
+      tokenAge: tokenAge ? `${tokenAge}ms` : undefined,
+      wasRaceCondition: e?.code === 'USER_WITH_TOKEN_NOT_EXISTS',
+      cookieChanged: newCookieValue && newCookieValue !== token
     });
     next();
   }
