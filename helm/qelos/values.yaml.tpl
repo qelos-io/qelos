@@ -87,6 +87,8 @@ auth:
     SECRETS_SERVICE_PORT: 9002
     CONTENT_SERVICE_URL: content-service
     CONTENT_SERVICE_PORT: 9001
+    ASSETS_SERVICE_URL: assets-service
+    ASSETS_SERVICE_PORT: 9005
     BASIC_TENANT: 0
 
 content:
