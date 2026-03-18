@@ -5,6 +5,11 @@ import logger from '../services/logger';
 
 export const onlyAuthenticated = <RequestHandler>function onlyAuthenticated(req: AuthRequest, res: Response, next: NextFunction) {
   if (!req.userPayload) {
+    logger.log('onlyAuthenticated: userPayload is missing', {
+      url: req.url,
+      hasCookie: !!(req.headers?.['cookie'] as string),
+      timestamp: new Date().toISOString()
+    });
     res.status(401).json({ message: 'you are not authorized. must be logged in.' }).end();
     return;
   }
