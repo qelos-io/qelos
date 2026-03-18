@@ -4,69 +4,90 @@ import logger from '../services/logger';
 import { cacheManager } from '../services/cache-manager';
 
 const LIMIT = 50;
+const FILTER_OPTIONS_LIMIT = 200;
+
+function buildDateFilter(period, from, to) {
+  if (from || to) {
+    const created = {};
+    if (from) created.$gte = new Date(from);
+    if (to) created.$lte = new Date(to);
+    return Object.keys(created).length ? { created } : null;
+  }
+  if (period === 'all-time') return null;
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+  if (period === 'last-day') return { created: { $gte: new Date(now - day) } };
+  if (period === 'last-week') return { created: { $gte: new Date(now - 7 * day) } };
+  if (period === 'last-month') return { created: { $gte: new Date(new Date().setMonth(new Date().getMonth() - 1)) } };
+  if (period === 'last-year') return { created: { $gte: new Date(new Date().setFullYear(new Date().getFullYear() - 1)) } };
+  return { created: { $gte: new Date(now - 7 * day) } };
+}
+
+function buildEventsQuery(tenant, { kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week', from, to }) {
+  const dbQuery = { tenant };
+  if (kind !== '*') dbQuery.kind = kind;
+  if (eventName !== '*') dbQuery.eventName = eventName;
+  if (source !== '*') dbQuery.source = source;
+  if (user) dbQuery.user = user;
+  if (workspace) dbQuery.workspace = workspace;
+  const dateFilter = buildDateFilter(period, from, to);
+  if (dateFilter) Object.assign(dbQuery, dateFilter);
+  return dbQuery;
+}
 
 export async function getAllEvents(req, res) {
-  const {page = 0, kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week'} = req.query;
-  const skip = Number(page * LIMIT);
+  const { page = 0, kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week', from, to } = req.query;
+  const skip = Math.max(0, Number(page) * LIMIT);
+  const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, user, workspace, period, from, to });
 
-  const dbQuery: any = {
-    tenant: req.headers.tenant,
-  }
+  const [result] = await PlatformEvent.aggregate([
+    { $match: dbQuery },
+    {
+      $facet: {
+        events: [
+          { $sort: { created: -1 } },
+          { $skip: skip },
+          { $limit: LIMIT },
+          { $project: { metadata: 0 } },
+        ],
+        total: [{ $count: 'count' }],
+      },
+    },
+  ]);
 
-  if (kind !== '*') {
-    dbQuery.kind = kind;
-  }
+  const events = result.events || [];
+  const total = result.total?.[0]?.count ?? 0;
+  const totalPages = Math.ceil(total / LIMIT);
 
-  if (eventName !== '*') {
-    dbQuery.eventName = eventName;
-  }
+  res.json({
+    events,
+    total,
+    page: Number(page) || 0,
+    limit: LIMIT,
+    totalPages,
+  }).end();
+}
 
-  if (source !== '*') {
-    dbQuery.source = source;
-  }
+export async function getFilterOptions(req, res) {
+  const { kind = '*', eventName = '*', source = '*', period = 'last-week', from, to } = req.query;
+  const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, period, from, to });
 
-  if (user) {
-    dbQuery.user = user;
-  }
+  const [result] = await PlatformEvent.aggregate([
+    { $match: dbQuery },
+    {
+      $facet: {
+        kinds: [{ $group: { _id: '$kind' } }, { $limit: FILTER_OPTIONS_LIMIT }, { $sort: { _id: 1 } }],
+        eventNames: [{ $group: { _id: '$eventName' } }, { $limit: FILTER_OPTIONS_LIMIT }, { $sort: { _id: 1 } }],
+        sources: [{ $group: { _id: '$source' } }, { $limit: FILTER_OPTIONS_LIMIT }, { $sort: { _id: 1 } }],
+      },
+    },
+  ]);
 
-  if (workspace) {
-    dbQuery.workspace = workspace;
-  }
-
-  if (period !== 'all-time') {
-    if (period === 'last-week') {
-      dbQuery.created = {
-        $gte: new Date(new Date().setDate(new Date().getDate() - 7)),
-      }
-    }
-  
-    if (period === 'last-month') {
-      dbQuery.created = {
-        $gte: new Date(new Date().setMonth(new Date().getMonth() - 1)),
-      }
-    }
-  
-    if (period === 'last-year') {
-      dbQuery.created = {
-        $gte: new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
-      }
-    }
-
-    if (period === 'last-day') {
-      dbQuery.created = {
-        $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
-      }
-    }
-  }
-
-  const events = await PlatformEvent
-    .find(dbQuery)
-    .select('-metadata')
-    .sort('-created')
-    .skip(isNaN(skip) ? 0 : skip)
-    .limit(LIMIT)
-    .lean();
-  res.json(events).end();
+  res.json({
+    kinds: (result.kinds || []).map((r) => r._id).filter(Boolean),
+    eventNames: (result.eventNames || []).map((r) => r._id).filter(Boolean),
+    sources: (result.sources || []).map((r) => r._id).filter(Boolean),
+  }).end();
 }
 
 export async function getEvent(req, res) {
@@ -96,10 +117,10 @@ export async function createEvent(req, res) {
 }
 
 export async function getEventsCount(req, res) {
-  const {page = 0, kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week', 'no-cache': noCache} = req.query;
+  const { kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week', from, to, 'no-cache': noCache } = req.query;
 
-  const cacheKey = `events:count:${req.headers.tenant}:${JSON.stringify({kind, eventName, source, user, workspace, period})}`;
-  
+  const cacheKey = `events:count:${req.headers.tenant}:${JSON.stringify({ kind, eventName, source, user, workspace, period, from, to })}`;
+
   if (noCache !== 'true') {
     try {
       const cachedResult = await cacheManager.getItem(cacheKey);
@@ -111,77 +132,27 @@ export async function getEventsCount(req, res) {
     }
   }
 
-  const dbQuery: any = {
-    tenant: req.headers.tenant,
-  }
-
-  if (kind !== '*') {
-    dbQuery.kind = kind;
-  }
-
-  if (eventName !== '*') {
-    dbQuery.eventName = eventName;
-  }
-
-  if (source !== '*') {
-    dbQuery.source = source;
-  }
-
-  if (user) {
-    dbQuery.user = user;
-  }
-
-  if (workspace) {
-    dbQuery.workspace = workspace;
-  }
-
-  if (period !== 'all-time') {
-    if (period === 'last-week') {
-      dbQuery.created = {
-        $gte: new Date(new Date().setDate(new Date().getDate() - 7)),
-      }
-    }
-  
-    if (period === 'last-month') {
-      dbQuery.created = {
-        $gte: new Date(new Date().setMonth(new Date().getMonth() - 1)),
-      }
-    }
-  
-    if (period === 'last-year') {
-      dbQuery.created = {
-        $gte: new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
-      }
-    }
-
-    if (period === 'last-day') {
-      dbQuery.created = {
-        $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
-      }
-    }
-  }
-
+  const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, user, workspace, period, from, to });
   const count = await PlatformEvent.countDocuments(dbQuery);
   const result = { count };
-  
-  // Cache for 5 minutes (300 seconds)
+
   if (noCache !== 'true') {
     cacheManager.setItem(cacheKey, JSON.stringify(result), { ttl: 300 }).catch();
   }
-  
+
   res.json(result).end();
 }
 
 export async function getEventsSum(req, res) {
-  const { sum, groupBy, kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week', 'no-cache': noCache} = req.query;
+  const { sum, groupBy, kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week', from, to, 'no-cache': noCache } = req.query;
 
   if (!sum) {
     res.status(400).json({ message: 'sum property is required' }).end();
     return;
   }
 
-  const cacheKey = `events:sum:${req.headers.tenant}:${JSON.stringify({sum, groupBy, kind, eventName, source, user, workspace, period})}`;
-  
+  const cacheKey = `events:sum:${req.headers.tenant}:${JSON.stringify({ sum, groupBy, kind, eventName, source, user, workspace, period, from, to })}`;
+
   if (noCache !== 'true') {
     try {
       const cachedResult = await cacheManager.getItem(cacheKey);
@@ -193,55 +164,7 @@ export async function getEventsSum(req, res) {
     }
   }
 
-  const dbQuery: any = {
-    tenant: req.headers.tenant,
-  }
-
-  if (kind !== '*') {
-    dbQuery.kind = kind;
-  }
-
-  if (eventName !== '*') {
-    dbQuery.eventName = eventName;
-  }
-
-  if (source !== '*') {
-    dbQuery.source = source;
-  }
-
-  if (user) {
-    dbQuery.user = user;
-  }
-
-  if (workspace) {
-    dbQuery.workspace = workspace;
-  }
-
-  if (period !== 'all-time') {
-    if (period === 'last-week') {
-      dbQuery.created = {
-        $gte: new Date(new Date().setDate(new Date().getDate() - 7)),
-      }
-    }
-  
-    if (period === 'last-month') {
-      dbQuery.created = {
-        $gte: new Date(new Date().setMonth(new Date().getMonth() - 1)),
-      }
-    }
-  
-    if (period === 'last-year') {
-      dbQuery.created = {
-        $gte: new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
-      }
-    }
-
-    if (period === 'last-day') {
-      dbQuery.created = {
-        $gte: new Date(new Date().setDate(new Date().getDate() - 1)),
-      }
-    }
-  }
+  const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, user, workspace, period, from, to });
 
   // If no groupBy provided, return just the total sum
   if (!groupBy) {

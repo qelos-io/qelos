@@ -1,11 +1,16 @@
 <template>
   <div class="events-list">
+    <div class="pagination-summary" v-if="total > 0">
+      {{ $t('Page') }} {{ (currentPage ?? 0) + 1 }} {{ $t('of') }} {{ totalPages }} · {{ total }} {{ $t('events') }}
+    </div>
+
     <el-table
       :data="events"
       v-loading="loading"
       stripe
       style="width: 100%"
       :default-sort="{ prop: 'created', order: 'descending' }"
+      class="events-table"
     >
       <el-table-column prop="created" :label="$t('Date')" width="180" sortable>
         <template #default="{ row }">
@@ -49,12 +54,12 @@
       </el-table-column>
     </el-table>
 
-    <div class="pagination-container" v-if="events.length > 0">
+    <div class="pagination-container" v-if="totalPages > 1">
       <el-pagination
-        :current-page="currentPage + 1"
-        :page-size="50"
-        layout="prev, pager, next"
-        :total="(currentPage + 1) * 50 + (events.length === 50 ? 50 : 0)"
+        :current-page="(currentPage ?? 0) + 1"
+        :page-size="limit"
+        :total="total"
+        :layout="paginationLayout"
         @current-change="handlePageChange"
       />
     </div>
@@ -71,7 +76,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import EventDetailsDrawer from './EventDetailsDrawer.vue';
 import eventsService, { IEvent } from '@/services/apis/events-service';
@@ -79,12 +84,27 @@ import eventsService, { IEvent } from '@/services/apis/events-service';
 const router = useRouter();
 const route = useRoute();
 
-defineProps<{
-  events: IEvent[];
-  loading: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    events: IEvent[];
+    loading: boolean;
+    total?: number;
+    totalPages?: number;
+    limit?: number;
+    currentPage?: number;
+  }>(),
+  { total: 0, totalPages: 0, limit: 50, currentPage: 0 }
+);
 
-const currentPage = ref(Number(route.query.page) || 0);
+const MOBILE_BREAKPOINT = 768;
+const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT);
+const paginationLayout = computed(() => (isMobile.value ? 'prev, pager, next' : 'total, prev, pager, next, jumper'));
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', () => {
+    isMobile.value = window.innerWidth < MOBILE_BREAKPOINT;
+  });
+}
 const drawerVisible = ref(false);
 const selectedEvent = ref<IEvent | null>(null);
 const detailLoading = ref(false);
@@ -114,11 +134,10 @@ function getKindTagType(kind: string) {
 }
 
 function handlePageChange(page: number) {
-  currentPage.value = page - 1;
   router.push({
     query: {
       ...route.query,
-      page: currentPage.value.toString(),
+      page: String(Math.max(0, page - 1)),
     },
   });
 }
@@ -177,10 +196,27 @@ watch(
   margin-block-start: 20px;
 }
 
+.pagination-summary {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-bottom: 8px;
+}
+
 .pagination-container {
   display: flex;
   justify-content: center;
   margin-block-start: 20px;
   padding: 20px 0;
+}
+
+@media (max-width: 768px) {
+  .events-table {
+    font-size: 12px;
+  }
+
+  .pagination-container :deep(.el-pagination) {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 </style>
