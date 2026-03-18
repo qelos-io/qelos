@@ -3,7 +3,9 @@ import {emitPlatformEvent} from '../services/hook-events';
 import logger from '../services/logger';
 import { cacheManager } from '../services/cache-manager';
 
-const LIMIT = 50;
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 100;
+const TOTAL_CAP = 10000;
 const FILTER_OPTIONS_LIMIT = 200;
 
 function buildDateFilter(period, from, to) {
@@ -35,9 +37,15 @@ function buildEventsQuery(tenant, { kind = '*', eventName = '*', source = '*', u
   return dbQuery;
 }
 
+function parseLimit(limitParam) {
+  const n = Math.max(1, Math.min(MAX_LIMIT, Number(limitParam) || DEFAULT_LIMIT));
+  return Number.isFinite(n) ? n : DEFAULT_LIMIT;
+}
+
 export async function getAllEvents(req, res) {
-  const { page = 0, kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week', from, to } = req.query;
-  const skip = Math.max(0, Number(page) * LIMIT);
+  const { page = 0, limit: limitParam, kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week', from, to } = req.query;
+  const limit = parseLimit(limitParam);
+  const skip = Math.max(0, Number(page) * limit);
   const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, user, workspace, period, from, to });
 
   const [result] = await PlatformEvent.aggregate([
@@ -47,23 +55,29 @@ export async function getAllEvents(req, res) {
         events: [
           { $sort: { created: -1 } },
           { $skip: skip },
-          { $limit: LIMIT },
+          { $limit: limit },
           { $project: { metadata: 0 } },
         ],
-        total: [{ $count: 'count' }],
+        total: [
+          { $limit: TOTAL_CAP + 1 },
+          { $count: 'count' },
+        ],
       },
     },
   ]);
 
   const events = result.events || [];
-  const total = result.total?.[0]?.count ?? 0;
-  const totalPages = Math.ceil(total / LIMIT);
+  const rawCount = result.total?.[0]?.count ?? 0;
+  const totalCapped = rawCount > TOTAL_CAP;
+  const total = totalCapped ? TOTAL_CAP : rawCount;
+  const totalPages = Math.ceil(total / limit);
 
   res.json({
     events,
     total,
+    totalCapped: totalCapped || undefined,
     page: Number(page) || 0,
-    limit: LIMIT,
+    limit,
     totalPages,
   }).end();
 }

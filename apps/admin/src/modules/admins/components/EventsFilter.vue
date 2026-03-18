@@ -90,6 +90,17 @@
           </template>
           <span v-else class="date-range-label">{{ dateRangeLabel }}</span>
         </div>
+        <div v-if="!loading && (total > 0 || totalPages > 0)" class="events-range-summary">
+          {{ totalDisplay }}{{ totalPages > 1 ? ` · ${t('Page')} 1–${totalPages}` : '' }}
+        </div>
+        <el-button
+          v-if="isMobile"
+          type="primary"
+          class="apply-filters-btn"
+          @click="filterVisible = false"
+        >
+          {{ $t('Apply filters') }}
+        </el-button>
       </div>
     </el-collapse-transition>
   </div>
@@ -98,9 +109,11 @@
 <script lang="ts" setup>
 import { ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -111,8 +124,12 @@ const props = withDefaults(
     period?: string;
     from?: string;
     to?: string;
+    total?: number;
+    totalPages?: number;
+    totalCapped?: boolean;
+    loading?: boolean;
   }>(),
-  { filterOptionsLoading: false }
+  { filterOptionsLoading: false, total: 0, totalPages: 0, totalCapped: false, loading: false }
 );
 
 const MOBILE_BREAKPOINT = 768;
@@ -157,6 +174,16 @@ const dateRangeLabel = computed(() => {
     return `${props.from} – ${props.to}`;
   }
   return periodLabels[selectedPeriod.value] || selectedPeriod.value || '';
+});
+
+const totalDisplay = computed(() => {
+  const n = (props.total ?? 0).toLocaleString();
+  const eventsLabel = t('events');
+  const inPeriodLabel = t('in period');
+  if (props.totalCapped) {
+    return `${n}+ ${eventsLabel} ${inPeriodLabel}`;
+  }
+  return `${n} ${eventsLabel} ${inPeriodLabel}`;
 });
 
 watch(
@@ -223,6 +250,7 @@ function updateQuery() {
 
 .filters-trigger {
   width: 100%;
+  min-height: 40px;
   margin-bottom: 8px;
 }
 
@@ -263,10 +291,27 @@ function updateQuery() {
   color: var(--el-text-color-secondary);
 }
 
+.events-range-summary {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+}
+
+.apply-filters-btn {
+  margin-top: 12px;
+  min-height: 40px;
+  width: 100%;
+}
+
 @media (max-width: 768px) {
+  .events-filter-panel {
+    padding: 12px 0;
+  }
+
   .events-filter-row {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
 
   .filter-select,
@@ -275,8 +320,16 @@ function updateQuery() {
     width: 100%;
   }
 
+  .filter-select :deep(.el-input__wrapper) {
+    min-height: 40px;
+  }
+
   .period-select {
     max-width: none;
+  }
+
+  .filter-date-range :deep(.el-date-editor) {
+    width: 100%;
   }
 }
 </style>

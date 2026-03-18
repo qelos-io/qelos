@@ -11,7 +11,10 @@ interface Filters {
   from?: string
   to?: string
   page?: number
+  limit?: number
 }
+
+const DEFAULT_PAGE_SIZE = 50
 
 function queryParams(route: ReturnType<typeof useRoute>) {
   return {
@@ -22,6 +25,7 @@ function queryParams(route: ReturnType<typeof useRoute>) {
     from: (route.query.from as string) || undefined,
     to: (route.query.to as string) || undefined,
     page: route.query.page ? Number(route.query.page) : 0,
+    limit: route.query.limit ? Number(route.query.limit) : DEFAULT_PAGE_SIZE,
   }
 }
 
@@ -36,6 +40,9 @@ export function useEventsList() {
   const from = computed(() => (route.query.from as string) || undefined)
   const to = computed(() => (route.query.to as string) || undefined)
   const page = computed(() => (route.query.page ? Number(route.query.page) : 0))
+  const limitParam = computed(() =>
+    route.query.limit ? Number(route.query.limit) : DEFAULT_PAGE_SIZE
+  )
 
   function updateFilters(filters: Filters) {
     router.push({
@@ -50,6 +57,10 @@ export function useEventsList() {
         page:
           filters.page !== undefined && !Number.isNaN(filters.page)
             ? filters.page.toString()
+            : undefined,
+        limit:
+          filters.limit !== undefined && !Number.isNaN(filters.limit)
+            ? filters.limit.toString()
             : undefined,
       },
     })
@@ -69,6 +80,7 @@ export function useEventsList() {
         from: from.value,
         to: to.value,
         page: page.value,
+        limit: limitParam.value,
       })
     },
     [],
@@ -76,8 +88,9 @@ export function useEventsList() {
 
   const events = computed(() => listResult.value?.events ?? [])
   const total = computed(() => listResult.value?.total ?? 0)
+  const totalCapped = computed(() => listResult.value?.totalCapped ?? false)
   const totalPages = computed(() => listResult.value?.totalPages ?? 0)
-  const limit = computed(() => listResult.value?.limit ?? 50)
+  const limit = computed(() => listResult.value?.limit ?? DEFAULT_PAGE_SIZE)
 
   async function loadFilterOptions() {
     filterOptionsLoading.value = true
@@ -101,13 +114,14 @@ export function useEventsList() {
   const uniqueEventNames = computed(() => filterOptions.value.eventNames)
   const uniqueSources = computed(() => filterOptions.value.sources)
 
-  watch([kind, eventName, source, period, from, to, page], retry)
+  watch([kind, eventName, source, period, from, to, page, limitParam], retry)
   watch([period, from, to], () => loadFilterOptions(), { immediate: true })
 
   return {
     events,
     loading,
     total,
+    totalCapped,
     totalPages,
     limit,
     updateFilters,
@@ -124,6 +138,7 @@ export function useEventsList() {
       from,
       to,
       page,
+      limit,
     },
   }
 }

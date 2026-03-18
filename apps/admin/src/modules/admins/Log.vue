@@ -11,6 +11,10 @@
             :period="filters.period"
             :from="filters.from"
             :to="filters.to"
+            :total="total"
+            :total-pages="totalPages"
+            :total-capped="totalCapped"
+            :loading="loading"
           />
         </template>
       </ListPageTitle>
@@ -20,6 +24,7 @@
       :events="events"
       :loading="loading"
       :total="total"
+      :total-capped="totalCapped"
       :total-pages="totalPages"
       :limit="limit"
       :current-page="filters.page"
@@ -37,6 +42,7 @@ const {
   events,
   loading,
   total,
+  totalCapped,
   totalPages,
   limit,
   uniqueKinds,

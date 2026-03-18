@@ -16,6 +16,7 @@ export interface IEvent {
 export interface IEventsListResponse {
   events: IEvent[];
   total: number;
+  totalCapped?: boolean;
   page: number;
   limit: number;
   totalPages: number;
@@ -35,6 +36,7 @@ export interface IEventsQueryParams {
   from?: string;
   to?: string;
   page?: number;
+  limit?: number;
 }
 
 const crud = getCrud<IEvent>('/api/events')

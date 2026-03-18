@@ -1,7 +1,7 @@
 <template>
   <div class="events-list">
     <div class="pagination-summary" v-if="total > 0">
-      {{ $t('Page') }} {{ (currentPage ?? 0) + 1 }} {{ $t('of') }} {{ totalPages }} · {{ total }} {{ $t('events') }}
+      {{ $t('Page') }} {{ (currentPage ?? 0) + 1 }} {{ $t('of') }} {{ totalPages }} · {{ totalDisplay }} {{ $t('events') }}
     </div>
 
     <el-table
@@ -89,11 +89,12 @@ const props = withDefaults(
     events: IEvent[];
     loading: boolean;
     total?: number;
+    totalCapped?: boolean;
     totalPages?: number;
     limit?: number;
     currentPage?: number;
   }>(),
-  { total: 0, totalPages: 0, limit: 50, currentPage: 0 }
+  { total: 0, totalCapped: false, totalPages: 0, limit: 50, currentPage: 0 }
 );
 
 const MOBILE_BREAKPOINT = 768;
@@ -109,6 +110,10 @@ const drawerVisible = ref(false);
 const selectedEvent = ref<IEvent | null>(null);
 const detailLoading = ref(false);
 const lastLoadedEventId = ref<string | null>(null);
+
+const totalDisplay = computed(() =>
+  props.totalCapped ? `${(props.total ?? 0).toLocaleString()}+` : String(props.total ?? 0)
+);
 
 function formatDate(date: Date | string) {
   const d = new Date(date);
