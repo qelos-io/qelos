@@ -7,12 +7,29 @@
             :unique-kinds="uniqueKinds"
             :unique-event-names="uniqueEventNames"
             :unique-sources="uniqueSources"
+            :filter-options-loading="filterOptionsLoading"
+            :period="filters.period"
+            :from="filters.from"
+            :to="filters.to"
+            :current-page="filters.page"
+            :total="total"
+            :total-pages="totalPages"
+            :total-capped="totalCapped"
+            :loading="loading"
           />
         </template>
       </ListPageTitle>
     </div>
 
-    <EventsList :events="events" :loading="loading" />
+    <EventsList
+      :events="events"
+      :loading="loading"
+      :total="total"
+      :total-capped="totalCapped"
+      :total-pages="totalPages"
+      :limit="limit"
+      :current-page="filters.page"
+    />
   </div>
 </template>
 
@@ -22,7 +39,19 @@ import EventsFilter from './components/EventsFilter.vue';
 import ListPageTitle from '../core/components/semantics/ListPageTitle.vue';
 import { useEventsList } from './compositions/events';
 
-const { events, loading, uniqueKinds, uniqueEventNames, uniqueSources } = useEventsList();
+const {
+  events,
+  loading,
+  total,
+  totalCapped,
+  totalPages,
+  limit,
+  uniqueKinds,
+  uniqueEventNames,
+  uniqueSources,
+  filterOptionsLoading,
+  filters,
+} = useEventsList();
 </script>
 
 <style scoped lang="scss">

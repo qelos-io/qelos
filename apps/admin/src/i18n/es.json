@@ -325,5 +325,11 @@
   "Environment": "Environment",
   "Save Configuration": "Save Configuration",
   "Payments configuration saved": "Payments configuration saved",
-  "Failed to save configuration": "Failed to save configuration"
+  "Failed to save configuration": "Failed to save configuration",
+  "Page": "Página",
+  "of": "de",
+  "events": "eventos",
+  "in period": "en el período seleccionado",
+  "more pages ahead": "más páginas por delante",
+  "Total count is capped; refine filters": "El recuento total está limitado; refina los filtros"
 }

@@ -325,5 +325,11 @@
   "Environment": "Environment",
   "Save Configuration": "Save Configuration",
   "Payments configuration saved": "Payments configuration saved",
-  "Failed to save configuration": "Failed to save configuration"
+  "Failed to save configuration": "Failed to save configuration",
+  "Page": "עמוד",
+  "of": "מתוך",
+  "events": "אירועים",
+  "in period": "בתקופה הנבחרת",
+  "more pages ahead": "עמודים נוספים קדימה",
+  "Total count is capped; refine filters": "הספירה הכוללת מוגבלת; צמצם את המסננים"
 }
