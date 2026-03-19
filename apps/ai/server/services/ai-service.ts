@@ -609,8 +609,17 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
 
         const transformedInput = options.input || transformToInput(messages);
 
+        const responseFormat = convertResponseFormatToOpenAIText(options.response_format);
+
+
         // Ensure we always have a valid input for the Responses API
-        const finalInput = transformedInput || 'Please continue based on the system instructions.';
+        let finalInput = transformedInput || 'Please continue based on the system instructions.';
+
+
+        if (responseFormat.format?.type?.startsWith('json_') && !finalInput.includes('json')) {
+          finalInput += `\n\nexpected response: json`
+        }
+
 
         const response = await openai.responses.create({
           model,
@@ -620,7 +629,7 @@ function createOpenAIService(source: AIServiceSource, authentication: AIServiceA
           temperature: options.temperature,
           top_p: options.top_p,
           max_output_tokens: options.max_tokens,
-          text: convertResponseFormatToOpenAIText(options.response_format),
+          text: responseFormat,
           stream: false
         });
 
