@@ -340,8 +340,11 @@ function updateQuery() {
     width: 100%;
   }
 
-  .filter-select :deep(.el-input__wrapper) {
+  .filter-select :deep(.el-input__wrapper),
+  .filter-date-range :deep(.el-input__wrapper) {
+    height: 40px;
     min-height: 40px;
+    max-height: 40px;
   }
 
   .period-select {

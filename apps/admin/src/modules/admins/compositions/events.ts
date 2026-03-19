@@ -1,4 +1,4 @@
-import { computed, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDispatcher } from '../../core/compositions/dispatcher'
 import eventsService, { IEvent, IEventsListResponse, IEventsFilterOptions } from '@/services/apis/events-service'
@@ -130,7 +130,7 @@ export function useEventsList() {
     uniqueSources,
     filterOptionsLoading,
     loadFilterOptions,
-    filters: {
+    filters: reactive({
       kind,
       eventName,
       source,
@@ -139,6 +139,6 @@ export function useEventsList() {
       to,
       page,
       limit,
-    },
+    }),
   }
 }
