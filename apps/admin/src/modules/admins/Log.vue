@@ -11,6 +11,7 @@
             :period="filters.period"
             :from="filters.from"
             :to="filters.to"
+            :current-page="filters.page"
             :total="total"
             :total-pages="totalPages"
             :total-capped="totalCapped"

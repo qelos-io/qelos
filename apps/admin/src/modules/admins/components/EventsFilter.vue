@@ -91,7 +91,12 @@
           <span v-else class="date-range-label">{{ dateRangeLabel }}</span>
         </div>
         <div v-if="!loading && (total > 0 || totalPages > 0)" class="events-range-summary">
-          {{ totalDisplay }}{{ totalPages > 1 ? ` · ${t('Page')} 1–${totalPages}` : '' }}
+          {{ totalDisplay
+          }}<template v-if="totalPages > 0">
+            · {{ t('Page') }} {{ (currentPage ?? 0) + 1 }} {{ t('of') }} {{ totalPages
+            }}<template v-if="pagesAhead > 0"> · {{ pagesAhead }} {{ t('more pages ahead') }}</template>
+          </template>
+          <template v-if="totalCapped"> · {{ t('Total count is capped; refine filters') }}</template>
         </div>
         <el-button
           v-if="isMobile"
@@ -128,8 +133,16 @@ const props = withDefaults(
     totalPages?: number;
     totalCapped?: boolean;
     loading?: boolean;
+    currentPage?: number;
   }>(),
-  { filterOptionsLoading: false, total: 0, totalPages: 0, totalCapped: false, loading: false }
+  {
+    filterOptionsLoading: false,
+    total: 0,
+    totalPages: 0,
+    totalCapped: false,
+    loading: false,
+    currentPage: 0,
+  }
 );
 
 const MOBILE_BREAKPOINT = 768;
@@ -184,6 +197,13 @@ const totalDisplay = computed(() => {
     return `${n}+ ${eventsLabel} ${inPeriodLabel}`;
   }
   return `${n} ${eventsLabel} ${inPeriodLabel}`;
+});
+
+const pagesAhead = computed(() => {
+  const tp = props.totalPages ?? 0;
+  const cp = props.currentPage ?? 0;
+  if (tp <= 0) return 0;
+  return Math.max(0, tp - cp - 1);
 });
 
 watch(

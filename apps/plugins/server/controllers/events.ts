@@ -48,29 +48,27 @@ export async function getAllEvents(req, res) {
   const skip = Math.max(0, Number(page) * limit);
   const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, user, workspace, period, from, to });
 
-  const [result] = await PlatformEvent.aggregate([
-    { $match: dbQuery },
-    {
-      $facet: {
-        events: [
-          { $sort: { created: -1 } },
-          { $skip: skip },
-          { $limit: limit },
-          { $project: { metadata: 0 } },
-        ],
-        total: [
-          { $limit: TOTAL_CAP + 1 },
-          { $count: 'count' },
-        ],
-      },
-    },
+  // Two indexed queries: page slice + capped “how many match” probe (at most TOTAL_CAP+1 _id reads).
+  const [events, countProbe] = await Promise.all([
+    PlatformEvent.find(dbQuery)
+      .sort({ created: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select({ metadata: 0 })
+      .lean()
+      .exec(),
+    PlatformEvent.find(dbQuery)
+      .sort({ created: -1 })
+      .limit(TOTAL_CAP + 1)
+      .select('_id')
+      .lean()
+      .exec(),
   ]);
 
-  const events = result.events || [];
-  const rawCount = result.total?.[0]?.count ?? 0;
+  const rawCount = countProbe.length;
   const totalCapped = rawCount > TOTAL_CAP;
   const total = totalCapped ? TOTAL_CAP : rawCount;
-  const totalPages = Math.ceil(total / limit);
+  const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
   res.json({
     events,
@@ -86,13 +84,20 @@ export async function getFilterOptions(req, res) {
   const { kind = '*', eventName = '*', source = '*', period = 'last-week', from, to } = req.query;
   const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, period, from, to });
 
+  const facetBranch = (field) => [
+    { $group: { _id: `$${field}` } },
+    { $match: { _id: { $nin: [null, ''] } } },
+    { $sort: { _id: 1 } },
+    { $limit: FILTER_OPTIONS_LIMIT },
+  ];
+
   const [result] = await PlatformEvent.aggregate([
     { $match: dbQuery },
     {
       $facet: {
-        kinds: [{ $group: { _id: '$kind' } }, { $limit: FILTER_OPTIONS_LIMIT }, { $sort: { _id: 1 } }],
-        eventNames: [{ $group: { _id: '$eventName' } }, { $limit: FILTER_OPTIONS_LIMIT }, { $sort: { _id: 1 } }],
-        sources: [{ $group: { _id: '$source' } }, { $limit: FILTER_OPTIONS_LIMIT }, { $sort: { _id: 1 } }],
+        kinds: facetBranch('kind'),
+        eventNames: facetBranch('eventName'),
+        sources: facetBranch('source'),
       },
     },
   ]);
