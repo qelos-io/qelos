@@ -87,18 +87,24 @@ function toggleExpanded() {
 
 <style scoped lang="scss">
 .builder-nav-section {
-  margin-bottom: 8px;
-  
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--el-border-color-extra-light);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
   .section-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
-    font-weight: 600;
+    padding: 10px 12px 6px;
+    color: var(--el-color-primary);
+    font-size: 11px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     user-select: none;
     
     &.is-clickable {

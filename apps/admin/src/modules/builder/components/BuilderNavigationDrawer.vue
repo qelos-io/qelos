@@ -21,16 +21,32 @@
       <!-- Header -->
       <div class="drawer-header">
         <div v-if="isExpanded" class="header-content">
-          <h2 class="drawer-title">Builder Panel</h2>
+          <div class="header-brand">
+            <font-awesome-icon icon="fas fa-hammer" class="brand-icon" />
+            <h2 class="drawer-title">Builder</h2>
+          </div>
         </div>
-        <el-button
-          class="collapse-btn"
-          circle
-          size="small"
-          @click="toggleDrawer"
-        >
-          <font-awesome-icon :icon="isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'" />
-        </el-button>
+        <div class="header-actions">
+          <el-button
+            class="collapse-btn"
+            circle
+            size="small"
+            @click="toggleDrawer"
+            :title="isCollapsed ? 'Expand panel' : 'Collapse panel'"
+          >
+            <font-awesome-icon :icon="isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'" />
+          </el-button>
+          <el-button
+            v-if="isExpanded"
+            class="close-btn"
+            circle
+            size="small"
+            @click="hideDrawer"
+            title="Close panel"
+          >
+            <font-awesome-icon icon="fas fa-times" />
+          </el-button>
+        </div>
       </div>
       
       <!-- Search -->
@@ -53,14 +69,14 @@
       
       <!-- Navigation sections -->
       <div class="drawer-nav">
-        <!-- Admin navigation -->
+        <!-- Overview -->
         <BuilderNavSection
-          title="Admin Tools"
-          icon="fas fa-tools"
-          :collapsed-items="collapsedAdminItems"
+          title="Overview"
+          icon="fas fa-home"
+          :collapsed-items="collapsedOverviewItems"
         >
           <BuilderNavItem
-            v-for="item in adminNavItems"
+            v-for="item in overviewNavItems"
             :key="item.path"
             :icon="item.icon"
             :label="item.label"
@@ -68,7 +84,39 @@
             :active="$route.path === item.path"
           />
         </BuilderNavSection>
-        
+
+        <!-- Content & Structure -->
+        <BuilderNavSection
+          title="Content & Structure"
+          icon="fas fa-layer-group"
+          :collapsed-items="collapsedContentItems"
+        >
+          <BuilderNavItem
+            v-for="item in contentNavItems"
+            :key="item.path"
+            :icon="item.icon"
+            :label="item.label"
+            :to="item.path"
+            :active="$route.path === item.path"
+          />
+        </BuilderNavSection>
+
+        <!-- System & Config -->
+        <BuilderNavSection
+          title="System & Config"
+          icon="fas fa-sliders-h"
+          :collapsed-items="collapsedSystemItems"
+        >
+          <BuilderNavItem
+            v-for="item in systemNavItems"
+            :key="item.path"
+            :icon="item.icon"
+            :label="item.label"
+            :to="item.path"
+            :active="$route.path === item.path"
+          />
+        </BuilderNavSection>
+
         <!-- MFE navigation -->
         <BuilderNavSection
           v-if="mfeNavItems.length"
@@ -146,38 +194,45 @@ const {
   hideSearch
 } = useNavigationDrawer();
 
-// Admin navigation items
-const adminNavItems = computed(() => {
-  const items = [
+// Overview navigation items
+const overviewNavItems = computed(() => {
+  return [
     { path: '/admin-dashboard', label: 'Dashboard', icon: 'fas fa-briefcase' },
+    { path: '/users', label: 'Users', icon: 'fas fa-user' },
+    ...(isWorkspacesActive.value
+      ? [{ path: '/admin/workspaces', label: 'Workspaces', icon: 'fas fa-briefcase' }]
+      : []),
+    { path: '/admin/log', label: 'Events Log', icon: 'fas fa-clipboard-list' },
+  ];
+});
+
+// Content & Structure navigation items
+const contentNavItems = computed(() => {
+  return [
     { path: '/admin/components', label: 'Components', icon: 'fas fa-th' },
     { path: '/admin/blocks', label: 'Content Boxes', icon: 'fas fa-box' },
-    { path: '/users', label: 'Users', icon: 'fas fa-user' },
     { path: '/no-code/blueprints', label: 'Blueprints', icon: 'fas fa-database' },
-    { path: '/configurations', label: 'Configurations', icon: 'fas fa-gear' },
-    { path: '/drafts', label: 'Drafts', icon: 'fas fa-file-lines' },
-    { path: '/admin/log', label: 'Events Log', icon: 'fas fa-clipboard-list' },
     { path: '/assets', label: 'Storage & Assets', icon: 'fas fa-folder-tree' },
+  ];
+});
+
+// System & Config navigation items
+const systemNavItems = computed(() => {
+  return [
+    { path: '/configurations', label: 'Configurations', icon: 'fas fa-gear' },
     { path: '/plugins', label: 'Plugins', icon: 'fas fa-plug' },
     { path: '/integrations', label: 'Integrations', icon: 'fas fa-link' },
-    { path: '/admin/pricing-plans', label: 'Pricing Plans', icon: 'fas fa-tags' }
+    { path: '/admin/pricing-plans', label: 'Pricing Plans', icon: 'fas fa-tags' },
   ];
-  
-  // Add Workspaces item only if workspace configuration is active
-  if (isWorkspacesActive.value) {
-    items.splice(3, 0, { path: '/admin/workspaces', label: 'Workspaces', icon: 'fas fa-briefcase' });
-  }
-  
-  return items;
 });
 
 // MFE navigation items (admin only)
 const mfeNavItems = computed(() => {
   if (!isAdmin.value) return [];
-  
+
   const items = [];
   const mfe = microFrontends.value;
-  
+
   // Collect all MFE items with admin roles
   ['top', 'bottom'].forEach(position => {
     mfe.navBar[position].forEach(group => {
@@ -193,18 +248,30 @@ const mfeNavItems = computed(() => {
       });
     });
   });
-  
+
   return items;
 });
 
-// Collapsed mode items (show only most important)
-const collapsedAdminItems = computed(() => 
-  adminNavItems.value.filter(item => 
-    ['/admin/components', '/admin/blocks', '/users', '/plugins'].includes(item.path)
+// Collapsed mode items (show only most important per category)
+const collapsedOverviewItems = computed(() =>
+  overviewNavItems.value.filter(item =>
+    ['/admin-dashboard', '/users'].includes(item.path)
   )
 );
 
-const collapsedMfeItems = computed(() => 
+const collapsedContentItems = computed(() =>
+  contentNavItems.value.filter(item =>
+    ['/admin/components', '/admin/blocks'].includes(item.path)
+  )
+);
+
+const collapsedSystemItems = computed(() =>
+  systemNavItems.value.filter(item =>
+    ['/configurations', '/plugins'].includes(item.path)
+  )
+);
+
+const collapsedMfeItems = computed(() =>
   mfeNavItems.value.slice(0, 3)
 );
 
@@ -340,34 +407,49 @@ async function handleLogout() {
     align-items: center;
     justify-content: space-between;
     min-height: 64px;
-    
+    background: linear-gradient(135deg, #409eff 0%, #337ecc 100%);
+
     .header-content {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      
+
+      .header-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .brand-icon {
+          font-size: 20px;
+          color: rgba(255, 255, 255, 0.9);
+        }
+      }
+
       .drawer-title {
         margin: 0;
         font-size: 18px;
-        font-weight: 600;
-        color: var(--el-text-color-primary);
-      }
-      
-      .mode-indicator {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 12px;
-        font-weight: 500;
-        
-        .el-icon {
-          font-size: 14px;
-        }
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: 0.3px;
       }
     }
-    
-    .collapse-btn {
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .collapse-btn,
+    .close-btn {
       flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.15) !important;
+      border-color: rgba(255, 255, 255, 0.25) !important;
+      color: #ffffff !important;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3) !important;
+      }
     }
   }
   
@@ -425,12 +507,13 @@ async function handleLogout() {
   .drawer-header {
     padding: 16px 8px;
     justify-content: center;
-    
-    .collapse-btn {
-      margin: 0;
+
+    .header-actions {
+      flex-direction: column;
+      gap: 4px;
     }
   }
-  
+
   .drawer-nav {
     padding: 4px;
   }

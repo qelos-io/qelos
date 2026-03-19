@@ -70,8 +70,6 @@ export function setDrawerState(state: DrawerState) {
 export function toggleDrawer() {
   if (drawerState.value === 'expanded') {
     setDrawerState('collapsed');
-  } else if (drawerState.value === 'collapsed') {
-    setDrawerState('hidden');
   } else {
     setDrawerState('expanded');
   }
