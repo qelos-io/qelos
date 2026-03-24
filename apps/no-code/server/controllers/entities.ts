@@ -51,6 +51,10 @@ async function updateAllEntityMetadata(req: Full<RequestWithUser>, blueprint: IB
   await validateEntityRelations(req.headers.tenant, blueprint, entity);
 
   entity.indexes = getEntityIndexes(blueprint, entity);
+
+  // Mark metadata as modified so Mongoose detects changes in Mixed type fields,
+  // especially for nested object values that Mongoose cannot auto-detect
+  entity.markModified('metadata');
 }
 
 async function hasReachedLimitations(req: Full<RequestWithUser>, blueprint: IBlueprint, entity: any) {
