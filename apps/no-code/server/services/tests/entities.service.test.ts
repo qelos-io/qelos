@@ -429,7 +429,7 @@ describe('getValidBlueprintMetadata', () => {
       },
     };
 
-    const result = getValidBlueprintMetadata(metadata, blueprint as any);
+    const result = getValidBlueprintMetadata(metadata, blueprint as any) as Record<string, any>;
     assert.deepStrictEqual(result.config, { nested: { deep: 'value' } });
   });
 
