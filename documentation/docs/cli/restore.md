@@ -42,6 +42,7 @@ qelos restore blueprints [blueprints] [options]
 | `--override` | JSON object that is deep-merged into every entity before restoring. | — |
 | `--replace` | Replace local JSON files with API response data after each restore. | `false` |
 | `--path` | Base directory where dump data is stored. | `./dump` |
+| `--clone` | Clone mode: restore all data to a new environment, resolving blueprint relations recursively and remapping all IDs. | `false` |
 
 ### What the command does
 
@@ -104,6 +105,60 @@ qelos restore blueprints order --replace
 ```bash
 qelos restore blueprints all --path ./backup
 ```
+
+---
+
+### Clone mode (`--clone`)
+
+The `--clone` flag enables full environment cloning. Unlike the default restore (which updates existing entities by ID), clone mode **creates new entities** in the target environment and automatically remaps all cross-blueprint relations so references stay consistent.
+
+#### Prerequisites
+
+Clone mode requires both `users.json` and `workspaces.json` in the dump directory. Run these against the **source** environment first:
+
+```bash
+qelos dump users
+qelos dump workspaces
+qelos dump blueprints
+```
+
+#### How it works
+
+1. **Validates** that `users.json` and `workspaces.json` exist in the dump directory.
+2. **Fetches blueprint definitions** from the target environment to discover relations between blueprints.
+3. **Topologically sorts** blueprints by their relation dependencies (using Kahn's algorithm), so that referenced blueprints are restored before the blueprints that reference them.
+4. **Creates new entities** for each blueprint in dependency order:
+   - Strips `_id` and `identifier` from dumped entities so the target environment assigns fresh IDs.
+   - Resolves user/workspace references via identity resolution (same as default mode).
+   - Applies `--override` if provided.
+   - **Remaps relation fields** — replaces old-environment ObjectIDs with the newly created IDs using a running ID map.
+5. **Tracks all ID mappings** (old → new) across blueprints so downstream relations resolve correctly.
+
+If circular dependencies are detected, the affected blueprints are restored last with a warning (some relations may not resolve).
+
+#### Examples
+
+##### Clone entire environment
+
+```bash
+# Dump everything from source
+export QELOS_URL=https://source.example.com
+qelos dump users
+qelos dump workspaces
+qelos dump blueprints
+
+# Clone to a fresh target
+export QELOS_URL=https://target.example.com
+qelos restore blueprints --clone
+```
+
+##### Clone specific blueprints with filtering
+
+```bash
+qelos restore blueprints order,product --clone --exclude draft
+```
+
+---
 
 ### Identity resolution in detail
 
