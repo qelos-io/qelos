@@ -1,6 +1,6 @@
 import Component, { IComponent } from '../models/component';
 import logger from '../services/logger';
-import { compileVueComponent } from '../services/components-compiler.service';
+import { compileVueComponent, compileVueComponentsBulk } from '../services/components-compiler.service';
 import { cacheManager } from '../services/cache-manager';
 
 const LONG_TTL = 60 * 60 * 24;
@@ -228,5 +228,137 @@ export const getComponentsList = async (req, res) => {
     }).end();
   } catch (err: any) {
     res.status(400).json({ message: 'failed to get components lazy loader' }).end();
+  }
+};
+
+export const bulkCreateOrUpdateComponents = async (req, res) => {
+  const components: Array<{
+    identifier: string;
+    componentName: string;
+    description?: string;
+    content: string;
+  }> = req.body.components;
+
+  if (!Array.isArray(components) || components.length === 0) {
+    return res.status(400).json({ message: 'components array is required' }).end();
+  }
+
+  const tenant = req.headers.tenant;
+  const tenanthost = req.headers.tenanthost;
+
+  try {
+    const existingDbComponents = await Component.find({ tenant })
+      .select('identifier componentName content')
+      .lean()
+      .exec();
+    const componentNames = existingDbComponents.map(c => c.componentName);
+
+    // Determine which components need compilation (new or changed content)
+    const toCompile: Array<{ fileContent: string, identifier: string }> = [];
+    const skipped: Array<{ identifier: string, existingDoc: any }> = [];
+
+    for (const comp of components) {
+      const existing = existingDbComponents.find(
+        e => e.identifier === comp.identifier || e.componentName === comp.componentName
+      );
+      if (existing && comp.content.trim() === existing.content?.trim()) {
+        skipped.push({ identifier: comp.identifier, existingDoc: existing });
+      } else {
+        toCompile.push({ fileContent: comp.content, identifier: comp.identifier });
+      }
+    }
+
+    // Compile all changed components through the memory-managed queue
+    const compilationResults = toCompile.length > 0
+      ? await compileVueComponentsBulk(toCompile, tenanthost, componentNames)
+      : [];
+
+    const compilationMap = new Map(compilationResults.map(r => [r.identifier, r]));
+
+    const results: Array<{
+      identifier: string;
+      success: boolean;
+      component?: any;
+      error?: string;
+    }> = [];
+
+    for (const comp of components) {
+      const existing = existingDbComponents.find(
+        e => e.identifier === comp.identifier || e.componentName === comp.componentName
+      );
+
+      const wasSkipped = skipped.some(s => s.identifier === comp.identifier);
+
+      if (wasSkipped) {
+        // Content unchanged - update metadata only if needed
+        try {
+          const $set: Partial<IComponent> = { updated: new Date() };
+          if (comp.componentName) $set.componentName = comp.componentName;
+          if (comp.description) $set.description = comp.description;
+          if (comp.identifier) $set.identifier = comp.identifier;
+
+          const updated = await Component.findOneAndUpdate(
+            { _id: existing._id, tenant },
+            { $set },
+            { new: true }
+          );
+          results.push({ identifier: comp.identifier, success: true, component: updated });
+        } catch (err: any) {
+          results.push({ identifier: comp.identifier, success: false, error: err.message });
+        }
+        continue;
+      }
+
+      const compilation = compilationMap.get(comp.identifier);
+      if (!compilation || !compilation.success) {
+        const reason = compilation ? sanitizeCompilationError({ stderr: compilation.error }) : 'compilation not attempted';
+        results.push({ identifier: comp.identifier, success: false, error: reason });
+        continue;
+      }
+
+      try {
+        if (existing) {
+          const $set: Partial<IComponent> = {
+            updated: new Date(),
+            content: comp.content,
+            compiledContent: { js: compilation.result!.js, css: compilation.result!.css },
+            requiredProps: compilation.result!.props,
+          };
+          if (comp.componentName) $set.componentName = comp.componentName;
+          if (comp.description) $set.description = comp.description;
+          if (comp.identifier) $set.identifier = comp.identifier;
+
+          const updated = await Component.findOneAndUpdate(
+            { _id: existing._id, tenant },
+            { $set },
+            { new: true }
+          );
+          results.push({ identifier: comp.identifier, success: true, component: updated });
+        } else {
+          const newComponent = new Component({
+            identifier: comp.identifier,
+            componentName: comp.componentName,
+            description: comp.description,
+            content: comp.content,
+            requiredProps: compilation.result!.props,
+            compiledContent: { js: compilation.result!.js, css: compilation.result!.css },
+            tenant,
+          });
+          await newComponent.save();
+          results.push({ identifier: comp.identifier, success: true, component: newComponent });
+        }
+      } catch (err: any) {
+        const reason = err?.message?.includes('E11000') ? 'component identifier already exists' : err.message;
+        results.push({ identifier: comp.identifier, success: false, error: reason });
+      }
+    }
+
+    const succeeded = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
+
+    res.json({ total: results.length, succeeded, failed, results }).end();
+  } catch (err: any) {
+    logger.error('failed to bulk create/update components', err?.message);
+    res.status(500).json({ message: 'failed to bulk create/update components' }).end();
   }
 };

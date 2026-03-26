@@ -24,6 +24,20 @@ type IComponentCreateParams = Pick<IComponent, 'identifier' | 'componentName' | 
   description?: string;
 };
 
+interface IBulkComponentResult {
+  identifier: string;
+  success: boolean;
+  component?: IComponent;
+  error?: string;
+}
+
+interface IBulkComponentResponse {
+  total: number;
+  succeeded: number;
+  failed: number;
+  results: IBulkComponentResult[];
+}
+
 type IComponentUpdateParams = Partial<Pick<IComponent, 'identifier' | 'componentName' | 'description' | 'content'>>;
 
 export default class QlComponents extends BaseSDK {
@@ -61,6 +75,14 @@ export default class QlComponents extends BaseSDK {
       method: 'post',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(component)
+    });
+  }
+
+  bulkCreateOrUpdate(components: IComponentCreateParams[]): Promise<IBulkComponentResponse> {
+    return this.callJsonApi<IBulkComponentResponse>(`${this.relativePath}/bulk`, {
+      method: 'post',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ components })
     });
   }
 }

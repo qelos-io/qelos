@@ -10,7 +10,68 @@ const execPromise = promisify(exec);
 const DIST_DIR = path.join(__dirname, './components-compiler/dist');
 const SRC_DIR = path.join(__dirname, './components-compiler/src/components');
 
-let lastExecution;
+const MAX_QUEUE_SIZE = 50;
+const MEMORY_THRESHOLD_MB = 400;
+
+interface QueueItem {
+  task: () => Promise<any>;
+  resolve: (value: any) => void;
+  reject: (reason: any) => void;
+}
+
+const compilationQueue: QueueItem[] = [];
+let isProcessing = false;
+
+function tryGarbageCollect() {
+  if (global.gc) {
+    try { global.gc(); } catch {}
+  }
+}
+
+function getMemoryUsageMB(): number {
+  return process.memoryUsage().heapUsed / 1024 / 1024;
+}
+
+async function waitForMemory(): Promise<void> {
+  let memUsage = getMemoryUsageMB();
+  let attempts = 0;
+  while (memUsage > MEMORY_THRESHOLD_MB && attempts < 5) {
+    logger.log(`Memory usage high (${memUsage.toFixed(0)}MB), waiting before next compilation...`);
+    tryGarbageCollect();
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    memUsage = getMemoryUsageMB();
+    attempts++;
+  }
+}
+
+async function processQueue(): Promise<void> {
+  if (isProcessing) return;
+  isProcessing = true;
+
+  while (compilationQueue.length > 0) {
+    const item = compilationQueue.shift()!;
+    try {
+      await waitForMemory();
+      const result = await item.task();
+      item.resolve(result);
+    } catch (err) {
+      item.reject(err);
+    }
+    tryGarbageCollect();
+  }
+
+  isProcessing = false;
+}
+
+function enqueue<T>(task: () => Promise<T>): Promise<T> {
+  if (compilationQueue.length >= MAX_QUEUE_SIZE) {
+    return Promise.reject(new Error('Compilation queue is full. Please try again later.'));
+  }
+  return new Promise<T>((resolve, reject) => {
+    compilationQueue.push({ task, resolve, reject });
+    processQueue();
+  });
+}
 
 interface LocalComponentImport {
   importName: string;
@@ -276,32 +337,24 @@ function extractPropsFromRegularScript(scriptContent: string): Array<{type: stri
 
 
 /**
- * Compiles a Vue component into a client-side library that can be imported in the frontend
- * @param fileContent The Vue component content as a string
- * @param tenanthost The tenant host URL
- * @param existingComponents List of existing component names in the database
- * @returns An object with compiled js and css strings
+ * Runs the actual vite build for a single component (must be called sequentially)
  */
-export async function compileVueComponent(
-  fileContent: string, 
-  tenanthost: string = 'http://localhost',
-  existingComponents: string[] = []
+async function runViteBuild(
+  fileContent: string,
+  tenanthost: string,
+  existingComponents: string[]
 ): Promise<{js: string, css: string, props: Array<{type: string, prop: string}>}> {
   const hash = 'Comp' + crypto.createHash('sha256').update(fileContent).digest('hex').substring(0, 8);
-  
-  // Remove local component imports that exist in the database
+
   const { cleanedContent, removedImports } = extractAndRemoveLocalImports(fileContent, existingComponents);
-  
-  // Extract props from the original Vue component content before compilation
   const props = extractPropsFromVueComponent(cleanedContent);
-  
-  // Log the import removal process
+
   if (removedImports.length > 0) {
     logger.log(`Removed ${removedImports.length} local component imports from component ${hash}`, {
       removedImports: removedImports.map(imp => `${imp.importName} from ${imp.importPath}`)
     });
   }
-  
+
   const libJs = `import Component from './${hash}.vue';
 window['components:${hash}'] = Component;`;
   try {
@@ -310,14 +363,9 @@ window['components:${hash}'] = Component;`;
       fs.writeFile(path.join(SRC_DIR, hash + '.vue'), cleanedContent),
     ]);
 
-    if (lastExecution) {
-      await lastExecution;
-    }
-
-    lastExecution = execPromise(`../../../node_modules/.bin/vite build`, { 
-      cwd: path.join(__dirname, './components-compiler'), 
+    const execution = execPromise(`../../../node_modules/.bin/vite build`, {
+      cwd: path.join(__dirname, './components-compiler'),
       env: {
-        // Pass all environment variables needed for node execution
         PATH: process.env.PATH,
         HOME: process.env.HOME,
         USER: process.env.USER,
@@ -325,29 +373,24 @@ window['components:${hash}'] = Component;`;
         NVM_DIR: process.env.NVM_DIR,
         NVM_PATH: process.env.NVM_PATH,
         NVM_BIN: process.env.NVM_BIN,
-        // Only pass specific variables needed for Vite build
         NODE_ENV: 'production',
         VITE_USER_NODE_ENV: 'production',
-        // Standard Vite environment variables
         BASE_URL: tenanthost,
         MODE: 'production',
         DEV: 'false',
         PROD: 'true',
-        // Custom variables
         COMPONENT_HASH: hash,
-        // memory limit variable to node.js
-        NODE_OPTIONS: '--max-old-space-size=512',
+        NODE_OPTIONS: '--max-old-space-size=256',
       },
     });
 
-    const { stderr, stdout } = await lastExecution.finally(() => lastExecution = null);
+    const { stderr, stdout } = await execution;
 
     if (stderr || !stdout.includes('built in')) {
-      // Check if the output files actually exist to determine if compilation succeeded
       const jsFileExists = await fs.access(path.join(DIST_DIR, hash + '.umd.js'))
         .then(() => true)
         .catch(() => false);
-        
+
       if (!jsFileExists) {
         logger.error('Failed to compile component: output files not found');
         throw new Error('failed to compile component');
@@ -356,7 +399,7 @@ window['components:${hash}'] = Component;`;
 
     const [jsContent, cssContent] = await Promise.all([
       fs.readFile(path.join(DIST_DIR, hash + '.umd.js'), 'utf-8').catch(() => '{}'),
-      fs.readFile(path.join(DIST_DIR, hash + '.css'), 'utf-8').catch(() => '')  ,
+      fs.readFile(path.join(DIST_DIR, hash + '.css'), 'utf-8').catch(() => ''),
     ]);
 
     return {
@@ -368,10 +411,8 @@ window['components:${hash}'] = Component;`;
       props
     };
   } catch (err: any) {
-    // Re-throw the original error to preserve stderr and other details
     throw err;
   } finally {
-    // remove files
     await Promise.all([
       fs.unlink(path.join(DIST_DIR, hash + '.umd.js')).catch(() => {}),
       fs.unlink(path.join(DIST_DIR, hash + '.css')).catch(() => {}),
@@ -379,4 +420,51 @@ window['components:${hash}'] = Component;`;
       fs.unlink(path.join(SRC_DIR, hash + '.vue')).catch(() => {}),
     ]);
   }
+}
+
+/**
+ * Compiles a Vue component into a client-side library that can be imported in the frontend.
+ * Uses an internal queue to ensure only one compilation runs at a time, preventing OOM crashes.
+ */
+export async function compileVueComponent(
+  fileContent: string,
+  tenanthost: string = 'http://localhost',
+  existingComponents: string[] = []
+): Promise<{js: string, css: string, props: Array<{type: string, prop: string}>}> {
+  return enqueue(() => runViteBuild(fileContent, tenanthost, existingComponents));
+}
+
+/**
+ * Compiles multiple Vue components sequentially with memory management.
+ * Each component is compiled one at a time through the queue to avoid OOM.
+ * Returns results for each component (success or error).
+ */
+export async function compileVueComponentsBulk(
+  components: Array<{ fileContent: string, identifier: string }>,
+  tenanthost: string = 'http://localhost',
+  existingComponents: string[] = []
+): Promise<Array<{
+  identifier: string,
+  success: boolean,
+  result?: { js: string, css: string, props: Array<{type: string, prop: string}> },
+  error?: string
+}>> {
+  const results: Array<{
+    identifier: string,
+    success: boolean,
+    result?: { js: string, css: string, props: Array<{type: string, prop: string}> },
+    error?: string
+  }> = [];
+
+  for (const component of components) {
+    try {
+      const result = await enqueue(() => runViteBuild(component.fileContent, tenanthost, existingComponents));
+      results.push({ identifier: component.identifier, success: true, result });
+    } catch (err: any) {
+      const stderr = err?.stderr || err?.message || '';
+      results.push({ identifier: component.identifier, success: false, error: stderr });
+    }
+  }
+
+  return results;
 }
