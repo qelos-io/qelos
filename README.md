@@ -168,12 +168,56 @@ docker-compose -f docker-compose.scaled.yml up
   - `/api-kit` - API utilities for backend services
   - `/global-types` - Shared TypeScript types
   - `/cache-manager` - Cache management service
-  - `sdk` - SDK for frontend applications
+  - `sdk` - JavaScript/TypeScript SDK (`@qelos/sdk` on npm)
+  - `python-sdk` - Python SDK (`qelos-sdk` on PyPI)
   - `plugin-player` - Plugin sdk tool for plugin services
   - `web-sdk` - Web sdk tool for web micro-frontends and communication with qelos client side
 - `/documentation` - Project documentation
 - `/compose` - Docker Compose configuration
 - `/helm` - Kubernetes Helm charts
+
+## SDKs
+
+Qelos provides official SDKs for integrating with the platform API.
+
+### JavaScript / TypeScript
+
+```bash
+npm install @qelos/sdk
+```
+
+```typescript
+import QelosSDK from '@qelos/sdk';
+
+const sdk = new QelosSDK({ appUrl: 'https://yourdomain.com', fetch: window.fetch });
+const user = await sdk.authentication.getLoggedInUser();
+```
+
+See [packages/sdk/README.md](packages/sdk/README.md) for full documentation.
+
+### Python
+
+```bash
+pip install qelos-sdk
+```
+
+```python
+import asyncio
+from qelos_sdk import QelosSDK, QelosSDKOptions
+
+async def main():
+    sdk = QelosSDK(QelosSDKOptions(
+        app_url="https://yourdomain.com",
+        api_token="your-api-token",
+    ))
+    user = await sdk.authentication.get_logged_in_user()
+    print(user)
+    await sdk.close()
+
+asyncio.run(main())
+```
+
+See [packages/python-sdk/README.md](packages/python-sdk/README.md) for full documentation.
 
 ## Documentation
 
