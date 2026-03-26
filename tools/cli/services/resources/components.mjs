@@ -34,7 +34,9 @@ function listVueFilesRecursively(rootDir, currentDir = rootDir, out = []) {
 }
 
 /**
- * Push components from local directory to remote
+ * Push components from local directory to remote.
+ * Uses bulk endpoint when pushing multiple files to avoid crashing the server.
+ * Falls back to individual requests for single file pushes.
  * @param {Object} sdk - Initialized SDK instance
  * @param {string} path - Path to components directory
  */
@@ -46,7 +48,7 @@ export async function pushComponents(sdk, componentsPath, options = {}) {
   const vueFiles = vueFilePaths
     .filter(filePath => fs.existsSync(filePath))
     .filter(filePath => filePath.endsWith('.vue'));
-  
+
   if (vueFiles.length === 0) {
     if (targetFile) {
       logger.warning(`File ${targetFile} is not a .vue component. Skipping.`);
@@ -55,10 +57,10 @@ export async function pushComponents(sdk, componentsPath, options = {}) {
     }
     return;
   }
-  
+
   logger.info(`Found ${vueFiles.length} component(s) to push`);
   let componentsJson = {};
-  
+
   try {
     const jsonPath = join(componentsPath, 'components.json');
     if (fs.existsSync(jsonPath)) {
@@ -67,57 +69,100 @@ export async function pushComponents(sdk, componentsPath, options = {}) {
   } catch (error) {
     logger.debug('No components.json found or invalid format');
   }
-  
-  const existingComponents = await sdk.components.getList();
-  
-  await Promise.all(vueFiles.map(async (file) => {
-    if (file.endsWith('.vue')) {
-      const relativePath = normalizeRelativeIdentifier(path.relative(componentsPath, file));
-      const componentName = relativePath.split('/').pop().replace('.vue', '');
-      const info = componentsJson[componentName] || {};
-      const content = fs.readFileSync(file, 'utf-8');
-      const targetIdentifier = normalizeRelativeIdentifier(info.identifier || relativePath.replace('.vue', ''));
-      const targetDescription = info.description || 'Component description';
 
-      if (!isSafeRelativeIdentifier(targetIdentifier)) {
-        logger.error(`Skipping component with unsafe identifier: ${targetIdentifier}`);
-        return;
-      }
-      
-      logger.step(`Pushing component: ${componentName}`);
-      
-      const existingComponent = existingComponents.find(
-        component => component.identifier === targetIdentifier || component.componentName === componentName
-      );
-      
-      try {
-        if (existingComponent) {
-          await sdk.components.update(existingComponent._id, {
-            identifier: targetIdentifier,
-            componentName: componentName,
-            content,
-            description: info.description || existingComponent.description || 'Component description'
-          });
-          logger.success(`Updated: ${componentName}`);
+  // Build the components payload
+  const componentsPayload = [];
+  for (const file of vueFiles) {
+    const relativePath = normalizeRelativeIdentifier(path.relative(componentsPath, file));
+    const componentName = relativePath.split('/').pop().replace('.vue', '');
+    const info = componentsJson[componentName] || {};
+    const content = fs.readFileSync(file, 'utf-8');
+    const targetIdentifier = normalizeRelativeIdentifier(info.identifier || relativePath.replace('.vue', ''));
+    const targetDescription = info.description || 'Component description';
+
+    if (!isSafeRelativeIdentifier(targetIdentifier)) {
+      logger.error(`Skipping component with unsafe identifier: ${targetIdentifier}`);
+      continue;
+    }
+
+    componentsPayload.push({
+      identifier: targetIdentifier,
+      componentName,
+      content,
+      description: targetDescription,
+    });
+  }
+
+  if (componentsPayload.length === 0) {
+    logger.warning('No valid components to push');
+    return;
+  }
+
+  // Use bulk endpoint when pushing multiple components
+  if (componentsPayload.length > 1 && sdk.components.bulkCreateOrUpdate) {
+    logger.info(`Using bulk push for ${componentsPayload.length} components...`);
+    try {
+      const response = await sdk.components.bulkCreateOrUpdate(componentsPayload);
+      for (const result of response.results) {
+        if (result.success) {
+          logger.success(`Pushed: ${result.identifier}`);
         } else {
-          await sdk.components.create({
-            identifier: targetIdentifier,
-            componentName: componentName,
-            content,
-            description: targetDescription
-          });
-          logger.success(`Created: ${componentName}`);
+          logger.error(`Failed: ${result.identifier} - ${result.error}`);
         }
-      } catch (error) {
-        // Extract reason from error details if available
-        const reason = error.details?.reason || error.message;
-        logger.error(`Failed to push component: ${componentName} - ${reason}`);
+      }
+      logger.info(`Bulk push complete: ${response.succeeded} succeeded, ${response.failed} failed out of ${response.total}`);
+      if (response.failed > 0) {
+        throw new Error(`Failed to push ${response.failed} component(s)`);
+      }
+    } catch (error) {
+      if (error.message?.includes('Failed to push')) {
         throw error;
       }
+      // If bulk endpoint is not available, fall back to individual pushes
+      logger.warning('Bulk push failed, falling back to individual pushes...');
+      await pushComponentsIndividually(sdk, componentsPath, componentsPayload, componentsJson);
     }
-  }));
-  
-  logger.info(`Pushed ${vueFiles.length} component(s)`);
+  } else {
+    await pushComponentsIndividually(sdk, componentsPath, componentsPayload, componentsJson);
+  }
+
+  logger.info(`Pushed ${componentsPayload.length} component(s)`);
+}
+
+async function pushComponentsIndividually(sdk, componentsPath, componentsPayload, componentsJson) {
+  const existingComponents = await sdk.components.getList();
+
+  for (const comp of componentsPayload) {
+    logger.step(`Pushing component: ${comp.componentName}`);
+
+    const existingComponent = existingComponents.find(
+      component => component.identifier === comp.identifier || component.componentName === comp.componentName
+    );
+
+    try {
+      if (existingComponent) {
+        await sdk.components.update(existingComponent._id, {
+          identifier: comp.identifier,
+          componentName: comp.componentName,
+          content: comp.content,
+          description: comp.description || existingComponent.description || 'Component description'
+        });
+        logger.success(`Updated: ${comp.componentName}`);
+      } else {
+        await sdk.components.create({
+          identifier: comp.identifier,
+          componentName: comp.componentName,
+          content: comp.content,
+          description: comp.description
+        });
+        logger.success(`Created: ${comp.componentName}`);
+      }
+    } catch (error) {
+      const reason = error.details?.reason || error.message;
+      logger.error(`Failed to push component: ${comp.componentName} - ${reason}`);
+      throw error;
+    }
+  }
 }
 
 /**
