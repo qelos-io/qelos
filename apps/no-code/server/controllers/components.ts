@@ -289,7 +289,7 @@ export const bulkCreateOrUpdateComponents = async (req, res) => {
 
       const wasSkipped = skipped.some(s => s.identifier === comp.identifier);
 
-      if (wasSkipped) {
+      if (wasSkipped && existing) {
         // Content unchanged - update metadata only if needed
         try {
           const $set: Partial<IComponent> = { updated: new Date() };
