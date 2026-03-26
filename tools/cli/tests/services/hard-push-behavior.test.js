@@ -5,7 +5,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { execSync } = require('node:child_process');
 
-describe('Push Command - Hard Flag Behavior', () => {
+describe('Push Command - Hard Flag Behavior', { concurrency: 1 }, () => {
   let testDir;
   let originalCwd;
 
@@ -29,6 +29,8 @@ describe('Push Command - Hard Flag Behavior', () => {
     }
   });
 
+  const stripAnsi = (str) => str.replace(/\x1b\[[0-9;]*m/g, '');
+
   const runHardPushScript = (script) => {
     const scriptFile = path.join(testDir, 'test-hard-push.mjs');
     fs.writeFileSync(scriptFile, script);
@@ -39,11 +41,11 @@ describe('Push Command - Hard Flag Behavior', () => {
         encoding: 'utf8',
         stdio: 'pipe'
       });
-      return { success: true, output };
+      return { success: true, output: stripAnsi(output) };
     } catch (error) {
       return {
         success: false,
-        output: error.stderr || error.stdout || error.message
+        output: stripAnsi(error.stderr || error.stdout || error.message)
       };
     }
   };
