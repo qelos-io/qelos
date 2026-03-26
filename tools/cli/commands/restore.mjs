@@ -1,7 +1,7 @@
 import restoreBlueprintsController from "../controllers/restore-blueprints.mjs";
 import { getRestoreConfig, saveRestoreConfig } from "../services/config/load-config.mjs";
 
-const RESTORE_BLUEPRINTS_KEYS = ['include', 'exclude', 'override', 'replace', 'path'];
+const RESTORE_BLUEPRINTS_KEYS = ['include', 'exclude', 'override', 'replace', 'path', 'clone'];
 
 export default function restoreCommand(program) {
   program
@@ -36,6 +36,11 @@ export default function restoreCommand(program) {
                 describe: 'Base path where dump data is stored',
                 type: 'string',
                 default: './dump'
+              })
+              .option('clone', {
+                describe: 'Clone mode: restore all data to a new environment, resolving blueprint relations recursively and remapping all IDs',
+                type: 'boolean',
+                default: false
               })
               .middleware((argv) => {
                 const defaults = getRestoreConfig('blueprints', argv.blueprints);

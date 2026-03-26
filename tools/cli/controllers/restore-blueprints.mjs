@@ -1,11 +1,12 @@
 import { initializeSdk } from '../services/config/sdk.mjs';
 import { restoreBlueprintEntities } from '../services/blueprint/entities.mjs';
+import { cloneRestoreBlueprints } from '../services/blueprint/clone-restore.mjs';
 import { createRestoreResolver } from '../services/utils/identity-resolver.mjs';
 import { logger } from '../services/utils/logger.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export default async function restoreBlueprintsController({ blueprints: blueprintsArg = 'all', include, exclude, override: overrideArg, replace = false, path: targetPath = './dump' }) {
+export default async function restoreBlueprintsController({ blueprints: blueprintsArg = 'all', include, exclude, override: overrideArg, replace = false, clone = false, path: targetPath = './dump' }) {
   let override = null;
   if (overrideArg) {
     try {
@@ -49,20 +50,32 @@ export default async function restoreBlueprintsController({ blueprints: blueprin
       }
     }
 
-    for (const blueprintName of blueprintNames) {
-      logger.section(`Restoring entities for: ${blueprintName}`);
-      try {
-        await restoreBlueprintEntities(sdk, {
-          blueprintName,
-          targetPath: entitiesBasePath,
-          includePatterns,
-          excludePatterns,
-          override,
-          replace,
-          resolveEntity,
-        });
-      } catch (error) {
-        logger.error(`Failed to restore entities for ${blueprintName}`, error);
+    if (clone) {
+      await cloneRestoreBlueprints(sdk, {
+        blueprintNames,
+        entitiesBasePath,
+        dumpPath,
+        includePatterns,
+        excludePatterns,
+        override,
+        resolveEntity,
+      });
+    } else {
+      for (const blueprintName of blueprintNames) {
+        logger.section(`Restoring entities for: ${blueprintName}`);
+        try {
+          await restoreBlueprintEntities(sdk, {
+            blueprintName,
+            targetPath: entitiesBasePath,
+            includePatterns,
+            excludePatterns,
+            override,
+            replace,
+            resolveEntity,
+          });
+        } catch (error) {
+          logger.error(`Failed to restore entities for ${blueprintName}`, error);
+        }
       }
     }
 
