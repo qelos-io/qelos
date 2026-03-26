@@ -157,7 +157,7 @@ export function remapRelations(entity, relations, idMap) {
  * Clone-restore all blueprints to a new environment.
  *
  * This handles:
- * 1. Verifying users.json & workspaces.json exist
+ * 1. Verifying users.json exists & workspaces.json if entities use workspaces
  * 2. Fetching blueprint definitions to understand relations
  * 3. Topologically sorting blueprints by dependency order
  * 4. Restoring entities in order, remapping all IDs (old env → new env)
@@ -172,7 +172,7 @@ export async function cloneRestoreBlueprints(sdk, {
   override,
   resolveEntity,
 }) {
-  // 1. Verify users.json and workspaces.json exist
+  // 1. Verify users.json exists; workspaces.json is only required when entities use workspaces
   const usersFile = join(dumpPath, 'users.json');
   const workspacesFile = join(dumpPath, 'workspaces.json');
 
@@ -181,10 +181,20 @@ export async function cloneRestoreBlueprints(sdk, {
     logger.info('Run "qelos dump users" against the source environment first.');
     process.exit(1);
   }
-  if (!fs.existsSync(workspacesFile)) {
+
+  // Check if any entities in the dump have a workspace property
+  const hasWorkspaceEntities = blueprintNames.some(name => {
+    const entities = readBlueprintEntities(entitiesBasePath, name, includePatterns, excludePatterns);
+    return entities.some(e => e.workspace != null);
+  });
+
+  if (hasWorkspaceEntities && !fs.existsSync(workspacesFile)) {
     logger.error(`Clone mode requires workspaces dump. File not found: ${workspacesFile}`);
     logger.info('Run "qelos dump workspaces" against the source environment first.');
     process.exit(1);
+  }
+  if (!hasWorkspaceEntities && !fs.existsSync(workspacesFile)) {
+    logger.debug('No workspace properties found on entities — skipping workspaces verification');
   }
 
   logger.section('Clone mode: restoring all data to new environment');

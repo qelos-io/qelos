@@ -1021,8 +1021,15 @@ describe('Clone Restore', () => {
       assert.strictEqual(exitMock.mock.calls[0].arguments[0], 1);
     });
 
-    it('should exit when workspaces.json is missing', async () => {
+    it('should exit when workspaces.json is missing and entities have workspace property', async () => {
       fs.unlinkSync(path.join(dumpPath, 'workspaces.json'));
+
+      // Create entity with workspace property so the check triggers
+      const itemDir = path.join(entitiesPath, 'item');
+      fs.mkdirSync(itemDir, { recursive: true });
+      fs.writeFileSync(path.join(itemDir, 'page-1.json'), JSON.stringify([
+        { _id: 'aabbccddeeff001122330001', workspace: 'default', metadata: { name: 'Test' } },
+      ]));
 
       const exitMock = mock.method(process, 'exit', () => { throw new Error('EXIT'); });
       const mockSdk = createMockSdk({}, {});
@@ -1042,6 +1049,38 @@ describe('Clone Restore', () => {
 
       assert.strictEqual(exitMock.mock.callCount(), 1);
       assert.strictEqual(exitMock.mock.calls[0].arguments[0], 1);
+    });
+
+    it('should not exit when workspaces.json is missing and entities have no workspace property', async () => {
+      fs.unlinkSync(path.join(dumpPath, 'workspaces.json'));
+
+      const blueprintDefs = {
+        item: { identifier: 'item', relations: [] },
+      };
+
+      const itemDir = path.join(entitiesPath, 'item');
+      fs.mkdirSync(itemDir, { recursive: true });
+      fs.writeFileSync(path.join(itemDir, 'page-1.json'), JSON.stringify([
+        { _id: 'aabbccddeeff001122330001', user: 'john', metadata: { name: 'Test' } },
+      ]));
+
+      const mockSdk = createMockSdk(blueprintDefs, {
+        item: [{ _id: 'new_1' }],
+      });
+
+      await cloneRestore.cloneRestoreBlueprints(mockSdk, {
+        blueprintNames: ['item'],
+        entitiesBasePath: entitiesPath,
+        dumpPath,
+        includePatterns: null,
+        excludePatterns: null,
+        override: null,
+        resolveEntity: null,
+      });
+
+      // Should have created the entity successfully
+      assert.strictEqual(mockSdk._createCallLog.length, 1);
+      assert.strictEqual(mockSdk._createCallLog[0].data.user, 'john');
     });
 
     it('should handle empty entity array in dump file', async () => {
