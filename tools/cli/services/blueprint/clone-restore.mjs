@@ -185,7 +185,7 @@ export async function cloneRestoreBlueprints(sdk, {
   // Check if any entities in the dump have a workspace property
   const hasWorkspaceEntities = blueprintNames.some(name => {
     const entities = readBlueprintEntities(entitiesBasePath, name, includePatterns, excludePatterns);
-    return entities.some(e => e.workspace != null);
+    return entities.some(e => !!e.workspace);
   });
 
   if (hasWorkspaceEntities && !fs.existsSync(workspacesFile)) {
