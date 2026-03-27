@@ -112,6 +112,24 @@ export const OPENAI_MODELS: AIModel[] = [
     contextWindow: 1000000,
     provider: 'openai'
   },
+  {
+    label: 'GPT-5.4',
+    identifier: 'gpt-5.4',
+    value: 'gpt-5.4',
+    description: 'GPT-5.4 flagship model',
+    maxTokens: 200000,
+    contextWindow: 1000000,
+    provider: 'openai'
+  },
+  {
+    label: 'GPT-5.4 Nano',
+    identifier: 'gpt-5.4-nano',
+    value: 'gpt-5.4-nano',
+    description: 'GPT-5.4 smaller, faster variant',
+    maxTokens: 128000,
+    contextWindow: 128000,
+    provider: 'openai'
+  },
   
   // GPT-4o Series
   { 

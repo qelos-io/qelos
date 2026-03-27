@@ -52,7 +52,7 @@ const openCreateForm = (kind: IntegrationSourceKind) => {
   formVisible.value = true;
 };
 
-const { submit: saveConnection } = useSubmitting(
+const { submit: saveConnection, submitting: saveConnectionSubmitting } = useSubmitting(
   async (formData: any) => {
     const savedData = await integrationSourcesService.create(formData);
     await integrationSourcesStore.retry();
@@ -235,6 +235,7 @@ const handlePrimaryAddClick = (kind?: IntegrationSourceKind) => {
       v-model:visible="formVisible"
       :editing-integration="editingIntegration"
       :kind="selectedKind"
+      :save-loading="saveConnectionSubmitting"
       @save="saveConnection"
       @close="handleCloseForm"
     />

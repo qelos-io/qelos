@@ -149,7 +149,7 @@ const closeCreateModal = () => {
   modalDraft.value = undefined;
 };
 
-const { submit: saveConnection } = useSubmitting(
+const { submit: saveConnection, submitting: saveConnectionSubmitting } = useSubmitting(
   async (formData: any) => {
     const saved = await integrationSourcesService.create(formData);
     await store.retry();
@@ -359,6 +359,7 @@ function capitalize(value: string) {
     v-model:visible="createModalVisible"
     :editing-integration="modalDraft"
     :kind="selectedKind"
+    :save-loading="saveConnectionSubmitting"
     @save="saveConnection"
     @close="closeCreateModal"
   />

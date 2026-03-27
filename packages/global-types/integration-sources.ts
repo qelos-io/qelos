@@ -230,7 +230,11 @@ export interface IOpenAISource extends IIntegrationSource {
     token: string;
   },
   metadata: {
+    /** OpenAI organization id (optional). */
     organizationId?: string;
+    /**
+     * Custom base URL for OpenAI-compatible APIs. When omitted, the OpenAI client uses the default (api.openai.com).
+     */
     apiUrl?: string;
     defaultModel?: string | null;
     defaultTemperature?: number;
@@ -254,6 +258,10 @@ export interface IGeminiSource extends IIntegrationSource {
     token: string;
   };
   metadata: {
+    /**
+     * Custom API base URL when using a proxy or compatible endpoint. When omitted, the Gemini client uses the default Google endpoint.
+     */
+    apiUrl?: string;
     defaultModel?: string | null;
     initialMessages?: { role: string; content: string }[];
   };

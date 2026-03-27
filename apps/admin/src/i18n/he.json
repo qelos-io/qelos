@@ -331,5 +331,19 @@
   "events": "אירועים",
   "in period": "בתקופה הנבחרת",
   "more pages ahead": "עמודים נוספים קדימה",
-  "Total count is capped; refine filters": "הספירה הכוללת מוגבלת; צמצם את המסננים"
+  "Total count is capped; refine filters": "הספירה הכוללת מוגבלת; צמצם את המסננים",
+  "Edit Connection": "עריכת חיבור",
+  "Create Connection": "יצירת חיבור",
+  "Connection form subtitle": "הגדרת פרטי התחברות וברירות מחדל. בעריכה, השאר שדות סודיים ריקים כדי לשמור על הערכים השמורים.",
+  "Connection section identity": "זיהוי",
+  "Connection section identity hint": "איך החיבור מוצג ברשימות ובתהליכי עבודה.",
+  "Connection section modelEndpoint": "מודל וכתובת API",
+  "Connection section modelEndpoint hint": "ברירות מחדל לבקשות וכתובת בסיס אופציונלית שאינה OpenAI.",
+  "Connection section authentication": "אימות",
+  "Connection section authentication hint": "מפתח API או טוקן. בעריכה: השאר ריק כדי לשמור את הסוד השמור.",
+  "Connection API reference": "נתיבי API (התייחסות)",
+  "Connection API reference hint": "דוגמאות אחרי השמירה (החלף sourceId במזהה האמיתי).",
+  "Connection section modelGemini hint": "מודל ברירת מחדל וכתובת בסיס אופציונלית ל‑Gemini או פרוקסי.",
+  "Connection modal keyboard hint": "⌘ Enter או Ctrl+Enter שומרים. Escape סוגר.",
+  "No connection form for type": "אין טופס זמין לסוג חיבור זה."
 }

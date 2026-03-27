@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { IGeminiSource } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
+import ConnectionFormSection from '@/modules/integrations/components/forms/ConnectionFormSection.vue';
 import { ElMessage } from 'element-plus';
 import { QuestionFilled, Warning } from '@element-plus/icons-vue';
 
@@ -97,6 +98,8 @@ const submitForm = async () => {
     isSubmitting.value = false;
   }
 };
+
+defineExpose({ submitForm });
 </script>
 
 <template>
@@ -104,94 +107,103 @@ const submitForm = async () => {
     :model="formModel"
     :rules="rules"
     ref="formRef"
-    @submit.prevent="submitForm"
+    class="connection-provider-form"
     label-position="top"
+    @submit.prevent="submitForm"
   >
-    <FormInput
-      v-model="formModel.name"
-      title="Connection Name"
-      required
-      placeholder="Enter a descriptive name for this Gemini connection"
-    />
-
-    <LabelsInput
-      v-model="formModel.labels"
-      :availableLabels="availableLabels"
-      title="Labels"
-      placeholder="Select applicable labels"
+    <ConnectionFormSection
+      :title="$t('Connection section identity')"
+      :description="$t('Connection section identity hint')"
     >
-      <el-option v-for="label in availableLabels" :key="label" :label="label" :value="label" />
-    </LabelsInput>
+      <FormInput
+        v-model="formModel.name"
+        title="Connection Name"
+        required
+        placeholder="Enter a descriptive name for this Gemini connection"
+      />
+      <LabelsInput
+        v-model="formModel.labels"
+        :availableLabels="availableLabels"
+        title="Labels"
+        placeholder="Select applicable labels"
+      >
+        <el-option v-for="label in availableLabels" :key="label" :label="label" :value="label" />
+      </LabelsInput>
+    </ConnectionFormSection>
 
-    <FormInput
-      v-model="formModel.metadata.defaultModel"
-      title="Default Model"
-      required
-      placeholder="gemini-1.5-pro-latest"
-      description="Gemini model to use when a specific model isn't provided by workflows."
-    />
-
-    <el-form-item
-      label="API Token"
-      :required="isNewIntegration"
-      class="token-form-item"
+    <ConnectionFormSection
+      :title="$t('Connection section modelEndpoint')"
+      :description="$t('Connection section modelGemini hint')"
     >
-      <el-input
-        v-model="tokenInput"
-        placeholder="Enter your Gemini API token"
-        type="password"
-        show-password
-        size="large"
+      <FormInput
+        v-model="formModel.metadata.defaultModel"
+        title="Default Model"
+        required
+        placeholder="gemini-1.5-pro-latest"
+        description="Gemini model to use when a specific model isn't provided by workflows."
+      />
+      <FormInput
+        v-model="formModel.metadata.apiUrl"
+        title="API base URL"
+        type="url"
+        placeholder="https://generativelanguage.googleapis.com"
+        description="Optional. Leave empty to use Google's default Gemini API. Set this only if you use a compatible proxy or custom endpoint (http or https)."
+      />
+    </ConnectionFormSection>
+
+    <ConnectionFormSection
+      :title="$t('Connection section authentication')"
+      :description="$t('Connection section authentication hint')"
+    >
+      <el-form-item
+        label="API Token"
         :required="isNewIntegration"
-        :disabled="isSubmitting"
+        class="token-form-item token-form-item--flush"
       >
-        <template #append>
-          <el-button @click="toggleTokenHelp" type="info" plain>
-            <el-icon><QuestionFilled /></el-icon>
-          </el-button>
-        </template>
-      </el-input>
+        <el-input
+          v-model="tokenInput"
+          placeholder="Enter your Gemini API token"
+          type="password"
+          show-password
+          size="large"
+          :required="isNewIntegration"
+          :disabled="isSubmitting"
+        >
+          <template #append>
+            <el-button @click="toggleTokenHelp" type="info" plain>
+              <el-icon><QuestionFilled /></el-icon>
+            </el-button>
+          </template>
+        </el-input>
 
-      <div v-if="!isNewIntegration" class="token-hint">
-        Leave empty to keep the existing token
-      </div>
-
-      <div v-if="showTokenHelp" class="token-help-section">
-        <h4>How to get your Gemini API token:</h4>
-        <ol>
-          <li>
-            Go to the <el-link type="primary" @click="openGoogleAIConsole" :underline="false">Google AI Studio API Keys page</el-link>
-          </li>
-          <li>Create a new API key for your project</li>
-          <li>Name the key (e.g., "Qelos Gemini")</li>
-          <li>Copy the generated key (shown only once)</li>
-          <li>Paste it here and store it securely</li>
-        </ol>
-        <div class="token-warning">
-          <el-icon><Warning /></el-icon>
-          Your API token grants access to Gemini services and will incur usage under your Google Cloud project. Keep it secure.
+        <div v-if="!isNewIntegration" class="token-hint">
+          Leave empty to keep the existing token
         </div>
-      </div>
-    </el-form-item>
 
-    <el-form-item class="form-actions">
-      <el-button
-        type="primary"
-        nativeType="submit"
-        :loading="isSubmitting"
-      >
-        {{ $t('Save') }}
-      </el-button>
-      <el-button @click="$emit('close')" :disabled="isSubmitting">
-        {{ $t('Cancel') }}
-      </el-button>
-    </el-form-item>
+        <div v-if="showTokenHelp" class="token-help-section">
+          <h4>How to get your Gemini API token:</h4>
+          <ol>
+            <li>
+              Go to the <el-link type="primary" @click="openGoogleAIConsole" :underline="false">Google AI Studio API Keys page</el-link>
+            </li>
+            <li>Create a new API key for your project</li>
+            <li>Name the key (e.g., "Qelos Gemini")</li>
+            <li>Copy the generated key (shown only once)</li>
+            <li>Paste it here and store it securely</li>
+          </ol>
+          <div class="token-warning">
+            <el-icon><Warning /></el-icon>
+            Your API token grants access to Gemini services and will incur usage under your Google Cloud project. Keep it secure.
+          </div>
+        </div>
+      </el-form-item>
+    </ConnectionFormSection>
   </el-form>
 </template>
 
 <style scoped>
-.token-form-item {
-  margin-block-start: 16px;
+.token-form-item--flush {
+  margin-block-start: 0;
 }
 
 .token-hint {
@@ -230,7 +242,4 @@ const submitForm = async () => {
   gap: 8px;
 }
 
-.form-actions {
-  margin-block-start: 24px;
-}
 </style>

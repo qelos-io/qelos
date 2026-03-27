@@ -8,6 +8,8 @@ const AI_PROVIDER_KINDS = ['openai', 'claudeai', 'gemini'];
 
 const MODELS_BY_PROVIDER = {
   openai: [
+    'gpt-5.4',
+    'gpt-5.4-nano',
     'gpt-5.2',
     'gpt-5.2-codex',
     'gpt-5.2-nano',

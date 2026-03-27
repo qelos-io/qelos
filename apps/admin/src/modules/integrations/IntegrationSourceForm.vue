@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import LinkedInForm from './components/forms/LinkedInForm.vue';
 import QelosForm from './components/forms/QelosForm.vue';
 import OpenAIForm from './components/forms/OpenAIForm.vue';
@@ -43,16 +43,40 @@ const formComponentMap = {
 };
 
 const SelectedFormComponent = computed(() => formComponentMap[props.kind] || null);
+
+const innerFormRef = ref<{ submitForm?: () => void | Promise<void> } | null>(null);
+
+function submitFromModal() {
+  innerFormRef.value?.submitForm?.();
+}
+
+defineExpose({ submitFromModal });
 </script>
 
 <template>
-  <component
-    v-if="SelectedFormComponent"
-    :is="SelectedFormComponent"
-    :model-value="modelValue"
-    @update:model-value="$emit('update:modelValue', $event)"
-    @submit="$emit('submit', $event)"
-    @close="$emit('close')"
-  />
-  <p v-else>No form available for this integration type.</p>
+  <div v-if="SelectedFormComponent" class="connection-form-root">
+    <component
+      ref="innerFormRef"
+      :is="SelectedFormComponent"
+      :model-value="modelValue"
+      @update:model-value="$emit('update:modelValue', $event)"
+      @submit="$emit('submit', $event)"
+      @close="$emit('close')"
+    />
+  </div>
+  <p v-else class="integration-source-form-fallback">{{ $t('No connection form for type') }}</p>
 </template>
+
+<style scoped>
+.connection-form-root :deep(.el-form--label-top .el-form-item__label) {
+  margin-bottom: 4px;
+}
+
+.integration-source-form-fallback {
+  margin: 0;
+  padding: 12px 0;
+  font-size: 14px;
+  color: var(--el-text-color-secondary);
+  text-align: center;
+}
+</style>

@@ -88,7 +88,7 @@
         :size="size || 'large'"
         :disabled="disabled"
         :loading="loading"
-        v-on="listeners"
+        v-on="selectListeners"
         v-bind="selectOptions"
         @update:model-value="$emit('update:modelValue', $event)"
         :required="required"
@@ -703,6 +703,21 @@ export default {
       nextTick(validate);
     }
     
+    const selectListeners = {
+      change: (value) => {
+        emit('input', value);
+        emit('change', value);
+        if (props.validationTrigger === 'change') {
+          validate();
+        }
+      },
+      blur: () => {
+        if (props.validationTrigger === 'blur') {
+          validate();
+        }
+      }
+    };
+
     return {
       validationError,
       validated,
@@ -711,6 +726,7 @@ export default {
       displayValue,
       getMaskMaxLength,
       maskedListeners,
+      selectListeners,
       listeners: {
         input: (event) => {
           emit('input', event);

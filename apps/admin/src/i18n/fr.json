@@ -331,5 +331,19 @@
   "events": "événements",
   "in period": "sur la période sélectionnée",
   "more pages ahead": "pages supplémentaires",
-  "Total count is capped; refine filters": "Le total est plafonné ; affinez les filtres"
+  "Total count is capped; refine filters": "Le total est plafonné ; affinez les filtres",
+  "Edit Connection": "Modifier la connexion",
+  "Create Connection": "Créer une connexion",
+  "Connection form subtitle": "Définissez les identifiants et les valeurs par défaut. En édition, laissez les champs secrets vides pour conserver les valeurs enregistrées.",
+  "Connection section identity": "Identité",
+  "Connection section identity hint": "Affichage de cette connexion dans les listes et workflows.",
+  "Connection section modelEndpoint": "Modèle et point de terminaison",
+  "Connection section modelEndpoint hint": "Valeurs par défaut et URL de base autre qu’OpenAI si besoin.",
+  "Connection section authentication": "Authentification",
+  "Connection section authentication hint": "Clé API ou jeton. En édition : laissez vide pour garder le secret.",
+  "Connection API reference": "Chemins API (référence)",
+  "Connection API reference hint": "Exemples d’URL après enregistrement (remplacez sourceId par l’id réel).",
+  "Connection section modelGemini hint": "Modèle par défaut et URL de base Gemini ou proxy optionnelle.",
+  "Connection modal keyboard hint": "⌘ Entrée ou Ctrl+Entrée enregistre. Échap ferme.",
+  "No connection form for type": "Aucun formulaire pour ce type de connexion."
 }

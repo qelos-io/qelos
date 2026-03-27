@@ -15,6 +15,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:modelValue', 'submit', 'close']);
+const formRef = ref();
 const isEditing = computed(() => !!props.modelValue?._id);
 const securedHeadersEdited = ref(false);
 const securedHeadersOriginal = ref<Record<string, string>>(props.modelValue?.authentication?.securedHeaders || {});
@@ -97,10 +98,12 @@ const submitForm = () => {
   emit('submit', submissionData);
 
 };
+
+defineExpose({ submitForm });
 </script>
 
 <template>
-  <el-form :model="formModel" ref="formRef">
+  <el-form :model="formModel" ref="formRef" label-position="top" @submit.prevent="submitForm">
     <FormInput v-model="formModel.name" title="Name" />
 
     <LabelsInput v-model="formModel.labels" :availableLabels="['supplier', 'store', 'consumer']" title="Labels">
@@ -112,10 +115,5 @@ const submitForm = () => {
     <KeyValueInput v-model="formModel.metadata.headers" title="Headers" />
     <KeyValueInput v-model="formModel.metadata.query" title="Query Params" />
     <FormInput v-model="formModel.metadata.baseUrl" title="Base URL" />
-
-    <el-form-item>
-      <el-button type="primary" @click="submitForm">Save</el-button>
-      <el-button @click="$emit('close')">Cancel</el-button>
-    </el-form-item>
   </el-form>
 </template>

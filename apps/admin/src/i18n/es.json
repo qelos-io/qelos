@@ -331,5 +331,19 @@
   "events": "eventos",
   "in period": "en el período seleccionado",
   "more pages ahead": "más páginas por delante",
-  "Total count is capped; refine filters": "El recuento total está limitado; refina los filtros"
+  "Total count is capped; refine filters": "El recuento total está limitado; refina los filtros",
+  "Edit Connection": "Editar conexión",
+  "Create Connection": "Crear conexión",
+  "Connection form subtitle": "Configura credenciales y valores predeterminados. Al editar, deja los campos secretos en blanco para conservar los valores guardados.",
+  "Connection section identity": "Identidad",
+  "Connection section identity hint": "Cómo se muestra esta conexión en listas y flujos.",
+  "Connection section modelEndpoint": "Modelo y extremo",
+  "Connection section modelEndpoint hint": "Valores predeterminados y URL base opcional distinta de OpenAI.",
+  "Connection section authentication": "Autenticación",
+  "Connection section authentication hint": "Clave API o token. Al editar: deja en blanco para conservar el secreto.",
+  "Connection API reference": "Rutas API (referencia)",
+  "Connection API reference hint": "Ejemplos de rutas tras guardar (sustituye sourceId por el id real).",
+  "Connection section modelGemini hint": "Modelo predeterminado y URL base opcional de Gemini o proxy.",
+  "Connection modal keyboard hint": "⌘ Intro o Ctrl+Intro guarda. Escape cierra.",
+  "No connection form for type": "No hay formulario para este tipo de conexión."
 }

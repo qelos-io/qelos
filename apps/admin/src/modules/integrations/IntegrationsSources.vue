@@ -30,7 +30,7 @@ const editingIntegration = ref<any>(null);
 const isEditing = ref(false);
 
 
-const { submit: saveConnection } = useSubmitting(
+const { submit: saveConnection, submitting: saveConnectionSubmitting } = useSubmitting(
   async (formData: any) => {
     try {
 
@@ -205,8 +205,14 @@ const closeForm = () => {
     <el-button type="primary" @click="openCreateForm">{{ $t('Create Connection') }}</el-button>
   </EmptyState>
 
-  <IntegrationSourceFormModal v-model:visible="formVisible" v-model:editing-integration="editingIntegration"
-    :kind="kind" @save="saveConnection" @close="closeForm" />
+  <IntegrationSourceFormModal
+    v-model:visible="formVisible"
+    v-model:editing-integration="editingIntegration"
+    :kind="kind"
+    :save-loading="saveConnectionSubmitting"
+    @save="saveConnection"
+    @close="closeForm"
+  />
 </template>
 
 <style scoped>

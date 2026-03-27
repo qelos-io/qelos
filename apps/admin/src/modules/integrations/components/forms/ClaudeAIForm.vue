@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, defineProps, defineEmits } from 'vue';
+import { ref, computed } from 'vue';
 import { IClaudeAiSource } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
+import ConnectionFormSection from '@/modules/integrations/components/forms/ConnectionFormSection.vue';
 import { ElMessage } from 'element-plus';
 import { QuestionFilled, Warning } from '@element-plus/icons-vue';
 
@@ -88,79 +89,84 @@ const submitForm = async () => {
     isSubmitting.value = false;
   }
 };
+
+defineExpose({ submitForm });
 </script>
 
 <template>
-  <el-form :model="formModel" :rules="rules" ref="formRef" @submit.prevent="submitForm" label-position="top">
-    <FormInput 
-      v-model="formModel.name" 
-      title="Connection Name" 
-      required
-      placeholder="Enter a descriptive name for this Claude AI Connection"
-    />
-    
-    <LabelsInput 
-      v-model="formModel.labels" 
-      :availableLabels="availableLabels" 
-      title="Labels"
-      placeholder="Select applicable labels"
+  <el-form
+    :model="formModel"
+    :rules="rules"
+    ref="formRef"
+    class="connection-provider-form"
+    label-position="top"
+    @submit.prevent="submitForm"
+  >
+    <ConnectionFormSection
+      :title="$t('Connection section identity')"
+      :description="$t('Connection section identity hint')"
     >
-      <el-option v-for="label in availableLabels" :key="label" :label="label" :value="label" />
-    </LabelsInput>
-    
-    <el-form-item 
-      label="API Token" 
-      :required="isNewIntegration"
-      class="token-form-item"
-    >
-      <el-input 
-        v-model="tokenInput" 
-        placeholder="Enter your Claude API token" 
-        type="password" 
-        show-password
-        size="large"
+      <FormInput 
+        v-model="formModel.name" 
+        title="Connection Name" 
         required
-        :disabled="isSubmitting"
+        placeholder="Enter a descriptive name for this Claude AI Connection"
+      />
+      <LabelsInput 
+        v-model="formModel.labels" 
+        :availableLabels="availableLabels" 
+        title="Labels"
+        placeholder="Select applicable labels"
       >
+        <el-option v-for="label in availableLabels" :key="label" :label="label" :value="label" />
+      </LabelsInput>
+    </ConnectionFormSection>
+
+    <ConnectionFormSection
+      :title="$t('Connection section authentication')"
+      :description="$t('Connection section authentication hint')"
+    >
+      <el-form-item 
+        label="API Token" 
+        :required="isNewIntegration"
+        class="token-form-item token-form-item--flush"
+      >
+        <el-input 
+          v-model="tokenInput" 
+          placeholder="Enter your Claude API token" 
+          type="password" 
+          show-password
+          size="large"
+          required
+          :disabled="isSubmitting"
+        >
           <template #append>
             <el-button @click="toggleTokenHelp" type="info" plain>
               <el-icon><QuestionFilled /></el-icon>
             </el-button>
           </template>
-      </el-input>
-      
-      <div v-if="!isNewIntegration" class="token-hint">
-        Leave empty to keep the existing token
-      </div>
-      
-      <div v-if="showTokenHelp" class="token-help-section">
-        <h4>How to get your Claude API token:</h4>
-        <ol>
-          <li>Go to the <el-link type="primary" @click="openClaudeConsole" :underline="false">Anthropic Console</el-link></li>
-          <li>Navigate to the API Keys section</li>
-          <li>Click "Create API Key"</li>
-          <li>Give your key a name (e.g., "Qelos Integration")</li>
-          <li>Set appropriate permissions and expiration</li>
-          <li>Copy the generated token and paste it here</li>
-        </ol>
-        <div class="token-warning">
-          <el-icon><Warning /></el-icon> Your API token gives access to Claude AI services and will be charged according to your Anthropic account. Keep it secure.
+        </el-input>
+        
+        <div v-if="!isNewIntegration" class="token-hint">
+          Leave empty to keep the existing token
         </div>
-      </div>
-    </el-form-item>
-    
-    <el-form-item class="form-actions">
-      <el-button 
-        type="primary" 
-        nativeType="submit" 
-        :loading="isSubmitting"
-      >
-        {{ $t('Save') }}
-      </el-button>
-      <el-button @click="$emit('close')" :disabled="isSubmitting">
-        {{ $t('Cancel') }}
-      </el-button>
-    </el-form-item>
+        
+        <div v-if="showTokenHelp" class="token-help-section">
+          <h4>How to get your Claude API token:</h4>
+          <ol>
+            <li>Go to the <el-link type="primary" @click="openClaudeConsole" :underline="false">Anthropic Console</el-link></li>
+            <li>Navigate to the API Keys section</li>
+            <li>Click "Create API Key"</li>
+            <li>Give your key a name (e.g., "Qelos Integration")</li>
+            <li>Set appropriate permissions and expiration</li>
+            <li>Copy the generated token and paste it here</li>
+          </ol>
+          <div class="token-warning">
+            <el-icon><Warning /></el-icon> Your API token gives access to Claude AI services and will be charged according to your Anthropic account. Keep it secure.
+          </div>
+        </div>
+      </el-form-item>
+    </ConnectionFormSection>
   </el-form>
 </template>
 
@@ -229,8 +235,8 @@ const submitForm = async () => {
   align-items: flex-start;
   gap: 8px;
 }
-
-.form-actions {
-  margin-block-start: 24px;
+.token-form-item--flush {
+  margin-block-start: 0;
 }
+
 </style>

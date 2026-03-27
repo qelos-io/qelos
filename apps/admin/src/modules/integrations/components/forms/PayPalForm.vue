@@ -81,18 +81,6 @@
       </div>
     </el-form-item>
 
-    <el-form-item class="form-actions">
-      <el-button
-        type="primary"
-        nativeType="submit"
-        :loading="isSubmitting"
-      >
-        {{ $t('Save') }}
-      </el-button>
-      <el-button @click="$emit('close')" :disabled="isSubmitting">
-        {{ $t('Cancel') }}
-      </el-button>
-    </el-form-item>
   </el-form>
 </template>
 
@@ -192,6 +180,8 @@ const submitForm = async () => {
     isSubmitting.value = false;
   }
 };
+
+defineExpose({ submitForm });
 </script>
 
 <style scoped>
@@ -245,7 +235,4 @@ const submitForm = async () => {
   font-size: 13px;
 }
 
-.form-actions {
-  margin-block-start: 24px;
-}
 </style>

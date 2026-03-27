@@ -331,5 +331,19 @@
   "events": "events",
   "in period": "in selected period",
   "more pages ahead": "more pages ahead",
-  "Total count is capped; refine filters": "Total count is capped; refine filters"
+  "Total count is capped; refine filters": "Total count is capped; refine filters",
+  "Edit Connection": "Edit Connection",
+  "Create Connection": "Create Connection",
+  "Connection form subtitle": "Set credentials and defaults. When editing, leave secret fields blank to keep stored values.",
+  "Connection section identity": "Identity",
+  "Connection section identity hint": "How this connection appears in lists and workflows.",
+  "Connection section modelEndpoint": "Model & endpoint",
+  "Connection section modelEndpoint hint": "Defaults for requests and optional non-OpenAI base URL.",
+  "Connection section authentication": "Authentication",
+  "Connection section authentication hint": "API key or token. Editing: leave blank to keep the stored secret.",
+  "Connection API reference": "API paths (reference)",
+  "Connection API reference hint": "Example routes once this source is saved (replace sourceId with the real id).",
+  "Connection section modelGemini hint": "Default model and optional proxy or custom Gemini base URL.",
+  "Connection modal keyboard hint": "⌘ Enter or Ctrl+Enter saves. Escape closes.",
+  "No connection form for type": "No form is available for this connection type."
 }

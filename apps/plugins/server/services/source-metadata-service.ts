@@ -1,6 +1,44 @@
 import { ResponseError } from '@qelos/api-kit';
 import { IntegrationSourceKind } from '@qelos/global-types';
 
+function normalizeOptionalHttpApiUrl(raw: unknown, fieldLabel: string): string | null {
+  if (raw == null || raw === '') {
+    return null;
+  }
+  if (typeof raw !== 'string') {
+    throw new ResponseError(`Invalid ${fieldLabel}: must be a string.`, 400);
+  }
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return null;
+  }
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    try {
+      url = new URL(`https://${trimmed}`);
+    } catch {
+      throw new ResponseError(`Invalid ${fieldLabel}: must be a valid URL.`, 400);
+    }
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new ResponseError(`Invalid ${fieldLabel}: URL must use http or https.`, 400);
+  }
+  return url.href;
+}
+
+function normalizeOptionalOrganizationId(raw: unknown): string | null {
+  if (raw == null || raw === '') {
+    return null;
+  }
+  if (typeof raw !== 'string') {
+    throw new ResponseError('Invalid OpenAI metadata: organizationId must be a string.', 400);
+  }
+  const trimmed = raw.trim();
+  return trimmed || null;
+}
+
 export async function validateSourceMetadata(kind: IntegrationSourceKind, metadata: any = {}) {
   if (kind === IntegrationSourceKind.Qelos) {
     const { external = false, url, username } = metadata;
@@ -25,8 +63,25 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
   }
 
   if (kind === IntegrationSourceKind.OpenAI || kind === IntegrationSourceKind.Gemini) {
-    const { defaultModel, initialMessages, defaultTemperature, defaultTopP, defaultFrequencyPenalty, defaultPresencePenalty, defaultMaxTokens, defaultResponseFormat } = metadata;
-    return {
+    const {
+      defaultModel,
+      initialMessages,
+      defaultTemperature,
+      defaultTopP,
+      defaultFrequencyPenalty,
+      defaultPresencePenalty,
+      defaultMaxTokens,
+      defaultResponseFormat,
+      apiUrl,
+      organizationId,
+    } = metadata;
+
+    const normalizedApiUrl = normalizeOptionalHttpApiUrl(
+      apiUrl,
+      kind === IntegrationSourceKind.OpenAI ? 'OpenAI metadata: apiUrl' : 'Gemini metadata: apiUrl',
+    );
+
+    const base = {
       defaultModel: typeof defaultModel === 'string' ? defaultModel : null,
       initialMessages: initialMessages instanceof Array ? initialMessages.map(msg => {
         return {
@@ -39,8 +94,18 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
       defaultFrequencyPenalty: typeof defaultFrequencyPenalty === 'number' ? defaultFrequencyPenalty : null,
       defaultPresencePenalty: typeof defaultPresencePenalty === 'number' ? defaultPresencePenalty : null,
       defaultMaxTokens: typeof defaultMaxTokens === 'number' ? defaultMaxTokens : null,
-      defaultResponseFormat: typeof defaultResponseFormat === 'string' ? defaultResponseFormat : null
+      defaultResponseFormat: typeof defaultResponseFormat === 'string' ? defaultResponseFormat : null,
+      apiUrl: normalizedApiUrl,
     };
+
+    if (kind === IntegrationSourceKind.OpenAI) {
+      return {
+        ...base,
+        organizationId: normalizeOptionalOrganizationId(organizationId),
+      };
+    }
+
+    return base;
   }
 
   if (kind === IntegrationSourceKind.ClaudeAi) {

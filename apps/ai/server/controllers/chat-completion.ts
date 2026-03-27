@@ -426,7 +426,9 @@ export async function chatCompletion(req: any, res: any | null) {
       }
 
       // Setup code interpreter if enabled
-      if (options.codeInterpreter && source.kind === IntegrationSourceKind.OpenAI) {
+      if (options.codeInterpreter && 
+          source.kind === IntegrationSourceKind.OpenAI && 
+          (!source.metadata.apiUrl || source.metadata.apiUrl.includes('openai.com'))) {
         try {
           // Create OpenAI client using same logic as AI service
           const apiKey = integrationSourceTargetAuthentication.token;
