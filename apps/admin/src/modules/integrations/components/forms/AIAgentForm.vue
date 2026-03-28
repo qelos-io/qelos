@@ -202,6 +202,19 @@ const webSearch = computed({
   }
 });
 
+const allowRules = computed({
+  get: () => trigger.value?.details?.rules || false,
+  set: (value: boolean) => {
+    if (!trigger.value) {
+      trigger.value = { source: '', operation: '', details: {} };
+    }
+    trigger.value.details = {
+      ...trigger.value.details,
+      rules: value
+    };
+  }
+});
+
 const accessControlPermissions = computed({
   get: () => ({
     roles: trigger.value?.details?.roles || [],
@@ -633,6 +646,7 @@ const agentSchema = {
     vectorStore: { type: "boolean", description: "Whether to create a vector store for the thread" },
     webSearch: { type: "boolean", description: "Whether to enable web search capability" },
     codeInterpreter: { type: "boolean", description: "Whether to enable code interpreter capability (OpenAI only)" },
+    allowRules: { type: "boolean", description: "Whether to allow clients to pass custom rules as system messages" },
     vectorStoreScope: { type: "string", description: "Scope of the vector store (thread, user, workspace, tenant)" },
     vectorStoreExpirationDays: { type: "number", description: "Number of days after last activity before the vector store expires" },
     vectorStoreHardcodedIds: { type: "array", items: { type: "string" }, description: "Additional OpenAI vector store IDs to include in file search" },
@@ -717,6 +731,11 @@ const handleAiGeneratedAgent = (result: any) => {
   // Update code interpreter option
   if (typeof result.codeInterpreter === 'boolean') {
     codeInterpreter.value = result.codeInterpreter;
+  }
+
+  // Update allow rules option
+  if (typeof result.allowRules === 'boolean') {
+    allowRules.value = result.allowRules;
   }
 
   // Update context options
@@ -981,6 +1000,18 @@ const handleSystemPromptImproved = (result: any) => {
                 </div>
                 <div class="capability-description">
                   {{ $t('Agent can execute code in a sandboxed environment for data analysis, computation, and file processing. (OpenAI only)') }}
+                </div>
+              </div>
+
+              <div class="capability-item">
+                <div class="capability-header">
+                  <el-checkbox v-model="allowRules" size="large">
+                    <span class="capability-title">{{ $t('Allow rules') }}</span>
+                  </el-checkbox>
+                  <el-tag v-if="allowRules" type="success" size="small">{{ $t('Enabled') }}</el-tag>
+                </div>
+                <div class="capability-description">
+                  {{ $t('Allows clients to pass custom rules that are injected as system messages. Rules guide the agent\'s behavior and enforce conventions.') }}
                 </div>
               </div>
             </div>

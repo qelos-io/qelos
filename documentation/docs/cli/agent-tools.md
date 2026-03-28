@@ -40,6 +40,7 @@ Built-in tools are predefined in `BUILTIN_TOOLS`.
 | `read` | Read a file | `{ path: string, startLine?: number, endLine?: number }` |
 | `write` | Write a file | `{ path: string, content: string }` |
 | `writeInLine` | Insert content at line | `{ path: string, line: number, content: string }` |
+| `patch` | Replace a text block in a file | `{ path: string, search: string, replace: string }` |
 | `removeLines` | Remove line range | `{ path: string, startLine: number, endLine: number }` |
 | `git_status` | Structured working-tree status (branch, staged, modified, untracked) | `{}` |
 | `git_diff` | Show diff (unstaged, staged, or vs a base ref) | `{ staged?: bool, file?: string, stat?: bool, base?: string }` |
@@ -47,6 +48,41 @@ Built-in tools are predefined in `BUILTIN_TOOLS`.
 | `git_log` | Recent commits as structured JSON | `{ count?: number, file?: string, oneline?: bool }` |
 | `git_diff_files` | List changed file names with status | `{ staged?: bool, base?: string }` |
 | `git_show` | Show a commit's message and patch | `{ ref?: string, stat?: bool }` |
+
+---
+
+## The `patch` tool
+
+The `patch` tool is a **str_replace equivalent** — it replaces a specific block of text in a file by exact string matching. This is the recommended way to make targeted edits: safer and more token-efficient than rewriting entire files with `write`.
+
+### Usage
+
+```json
+{ "path": "src/app.js", "search": "old code block", "replace": "new code block" }
+```
+
+| Arg | Type | Description |
+|-----|------|-------------|
+| `path` | `string` (required) | File path (relative to cwd or absolute) |
+| `search` | `string` (required) | The exact text block to find — must match including whitespace and indentation |
+| `replace` | `string` (required) | Replacement text. Use `""` to delete the matched block |
+
+### Behaviour
+
+- **Exact matching** — the search string must appear verbatim in the file (including spaces, tabs, and newlines).
+- **Uniqueness check** — if the search string matches more than one location, the tool returns an error asking the caller to include more surrounding context.
+- **Error recovery** — when the search string is not found, the tool returns a preview of the file (first/last 10 lines) to help the AI fix its next attempt.
+- **Atomic** — the file is only written if a single unique match is found.
+
+### When to use `patch` vs other tools
+
+| Scenario | Recommended tool |
+|----------|-----------------|
+| Replace specific code block | `patch` |
+| Create a brand-new file | `write` |
+| Insert lines without replacing anything | `writeInLine` |
+| Delete lines by number | `removeLines` |
+| Complete file rewrite | `write` |
 
 ---
 

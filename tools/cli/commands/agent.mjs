@@ -1,7 +1,7 @@
 import agentController from "../controllers/agent.mjs";
 import { getAgentConfig, saveAgentConfig } from "../services/config/load-config.mjs";
 
-const SAVEABLE_AGENT_KEYS = ['thread', 'log', 'export', 'json', 'stream', 'tools'];
+const SAVEABLE_AGENT_KEYS = ['thread', 'log', 'export', 'json', 'stream', 'tools', 'rules'];
 
 export default function agentCommand(program) {
   program
@@ -55,6 +55,10 @@ export default function agentCommand(program) {
           .option('tools', {
             type: 'array',
             description: 'Built-in terminal tools to enable (bash, node, read, write, writeInLine, removeLines). Can specify multiple: --tools bash node'
+          })
+          .option('rules', {
+            type: 'boolean',
+            description: 'Enable cursor rules: reads .cursor/rules/*.mdc files and injects matching rules based on file glob patterns'
           })
           .option('interactive', {
             alias: 'i',

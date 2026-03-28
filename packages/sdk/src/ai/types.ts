@@ -47,6 +47,7 @@ export interface IChatCompletionOptions {
   stream?: boolean;
   queryParams?: Record<string, any>;
   clientTools?: IClientTool[];
+  rules?: string[];
 }
 
 export interface ISSEStreamProcessor extends AsyncIterable<any> {
