@@ -282,7 +282,7 @@ export const BUILTIN_TOOLS = {
     },
     handler: async (args) => {
       const filePath = path.isAbsolute(args.path) ? args.path : path.join(process.cwd(), args.path);
-      
+
       try {
         if (!fs.existsSync(filePath)) {
           return JSON.stringify({ error: `File not found: ${filePath}` });
@@ -291,9 +291,9 @@ export const BUILTIN_TOOLS = {
         const content = fs.readFileSync(filePath, 'utf-8');
         const fileLines = content.split('\n');
         const originalLength = fileLines.length;
-        
+
         let linesToRemove = [];
-        
+
         // Remove range or single line
         const end = args.endLine !== undefined ? args.endLine : args.startLine;
         if (args.startLine < 0 || args.endLine >= fileLines.length || args.startLine > end) {
@@ -302,24 +302,265 @@ export const BUILTIN_TOOLS = {
         for (let i = args.startLine; i <= end; i++) {
           linesToRemove.push(i);
         }
-        
+
         // Sort lines in descending order to remove from end to start (preserves indices)
         linesToRemove.sort((a, b) => b - a);
-        
+
         // Remove lines
         for (const lineNum of linesToRemove) {
           if (lineNum >= 0 && lineNum < fileLines.length) {
             fileLines.splice(lineNum, 1);
           }
         }
-        
+
         fs.writeFileSync(filePath, fileLines.join('\n'), 'utf-8');
-        
+
         const removedCount = originalLength - fileLines.length;
         return `Successfully removed ${removedCount} line(s) from ${filePath}. File now has ${fileLines.length} lines.`;
-        
+
       } catch (err) {
         return JSON.stringify({ error: err.message });
+      }
+    },
+  },
+
+  // ─── Git tools ───────────────────────────────────────────────────────────────
+
+  git_status: {
+    name: 'git_status',
+    description: 'Return the current git working-tree status as structured JSON. Includes branch name, staged files, modified (unstaged) files, and untracked files.',
+    schema: {
+      type: 'object',
+      properties: {},
+    },
+    handler: async () => {
+      try {
+        const branch = execSync('git rev-parse --abbrev-ref HEAD', {
+          encoding: 'utf-8', cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'],
+        }).trim();
+
+        const porcelain = execSync('git status --porcelain', {
+          encoding: 'utf-8', cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'],
+        });
+
+        const staged = [];
+        const modified = [];
+        const untracked = [];
+
+        for (const line of porcelain.split('\n')) {
+          if (!line) continue;
+          const index = line[0];
+          const worktree = line[1];
+          const file = line.slice(3);
+
+          if (index === '?') {
+            untracked.push(file);
+          } else {
+            if (index !== ' ' && index !== '?') staged.push({ status: index, file });
+            if (worktree !== ' ' && worktree !== '?') modified.push({ status: worktree, file });
+          }
+        }
+
+        const result = JSON.stringify({ branch, staged, modified, untracked });
+        printToolOutput(result, 'git_status');
+        return result;
+      } catch (err) {
+        const msg = err.stderr?.toString() || err.message;
+        printToolOutput(msg, 'git_status (error)');
+        return JSON.stringify({ error: msg });
+      }
+    },
+  },
+
+  git_diff: {
+    name: 'git_diff',
+    description: 'Show git diff output. By default shows unstaged changes. Use staged=true for staged changes. Optionally filter to a specific file path. Use stat=true for a compact summary instead of full patch.',
+    schema: {
+      type: 'object',
+      properties: {
+        staged: { type: 'boolean', description: 'If true, show staged (--cached) changes instead of unstaged changes', default: false },
+        file: { type: 'string', description: 'Optional file path to limit the diff to a single file' },
+        stat: { type: 'boolean', description: 'If true, return a short diffstat summary instead of the full patch', default: false },
+        base: { type: 'string', description: 'Optional base ref to diff against (e.g. "main", "HEAD~3", a commit SHA). Overrides staged flag when provided.' },
+      },
+    },
+    handler: async (args) => {
+      try {
+        const parts = ['git', 'diff'];
+        if (args.base) {
+          parts.push(args.base);
+        } else if (args.staged) {
+          parts.push('--cached');
+        }
+        if (args.stat) parts.push('--stat');
+        if (args.file) parts.push('--', args.file);
+
+        const result = execSync(parts.join(' '), {
+          encoding: 'utf-8', cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'],
+        });
+        const header = `git_diff${args.staged ? ' --cached' : ''}${args.base ? ` ${args.base}` : ''}${args.stat ? ' --stat' : ''}${args.file ? ` -- ${args.file}` : ''}`;
+        printToolOutput(result, header);
+        return result || '(no changes)';
+      } catch (err) {
+        const msg = err.stderr?.toString() || err.message;
+        printToolOutput(msg, 'git_diff (error)');
+        return JSON.stringify({ error: msg });
+      }
+    },
+  },
+
+  git_commit: {
+    name: 'git_commit',
+    description: 'Create a git commit. Stages the specified files (or all changes if files is omitted) and commits with the given message.',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', description: 'Commit message' },
+        files: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Optional list of file paths to stage before committing. If omitted, commits whatever is already staged.',
+        },
+      },
+      required: ['message'],
+    },
+    handler: async (args) => {
+      if (typeof args.message !== 'string' || !args.message.trim()) {
+        return JSON.stringify({ error: "git_commit: 'message' is required" });
+      }
+      try {
+        const execOpts = { encoding: 'utf-8', cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'] };
+
+        // Stage files if provided
+        if (Array.isArray(args.files) && args.files.length > 0) {
+          const filesToAdd = args.files.map(f => `"${f}"`).join(' ');
+          execSync(`git add ${filesToAdd}`, execOpts);
+        }
+
+        const result = execSync(`git commit -m ${JSON.stringify(args.message)}`, execOpts);
+        printToolOutput(result, 'git_commit');
+        return result || '(committed)';
+      } catch (err) {
+        const stderr = err.stderr?.toString() || '';
+        const stdout = err.stdout?.toString() || '';
+        const output = stdout + (stderr ? `\n${stderr}` : '');
+        printToolOutput(output, 'git_commit (error)');
+        return output || JSON.stringify({ error: err.message });
+      }
+    },
+  },
+
+  git_log: {
+    name: 'git_log',
+    description: 'Return recent git log entries as structured JSON. Each entry includes sha, author, date, and message.',
+    schema: {
+      type: 'object',
+      properties: {
+        count: { type: 'number', description: 'Number of commits to return (default 10)', default: 10 },
+        file: { type: 'string', description: 'Optional file path to filter commits that touched this file' },
+        oneline: { type: 'boolean', description: 'If true, return a compact one-line-per-commit format instead of structured JSON', default: false },
+      },
+    },
+    handler: async (args) => {
+      try {
+        const n = args.count || 10;
+        const execOpts = { encoding: 'utf-8', cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'] };
+
+        if (args.oneline) {
+          const parts = ['git', 'log', `--oneline`, `-n`, `${n}`];
+          if (args.file) parts.push('--', args.file);
+          const result = execSync(parts.join(' '), execOpts);
+          printToolOutput(result, `git_log --oneline -n ${n}`);
+          return result || '(no commits)';
+        }
+
+        // Structured JSON output using a delimiter format
+        const SEP = '---GIT_LOG_SEP---';
+        const format = `--format=${SEP}%n%H%n%an%n%aI%n%s`;
+        const parts = ['git', 'log', format, `-n`, `${n}`];
+        if (args.file) parts.push('--', args.file);
+
+        const raw = execSync(parts.join(' '), execOpts);
+        const entries = raw.split(SEP).filter(Boolean).map(block => {
+          const lines = block.trim().split('\n');
+          return { sha: lines[0], author: lines[1], date: lines[2], message: lines.slice(3).join('\n') };
+        });
+
+        const result = JSON.stringify(entries);
+        printToolOutput(result, `git_log -n ${n}`);
+        return result;
+      } catch (err) {
+        const msg = err.stderr?.toString() || err.message;
+        printToolOutput(msg, 'git_log (error)');
+        return JSON.stringify({ error: msg });
+      }
+    },
+  },
+
+  git_diff_files: {
+    name: 'git_diff_files',
+    description: 'List file names changed between two refs, or in the working tree. Returns a structured list of files with their change status (A=added, M=modified, D=deleted, R=renamed). More token-efficient than git_diff when you only need to know which files changed.',
+    schema: {
+      type: 'object',
+      properties: {
+        staged: { type: 'boolean', description: 'If true, list staged files only', default: false },
+        base: { type: 'string', description: 'Optional base ref to compare against (e.g. "main", "HEAD~3")' },
+      },
+    },
+    handler: async (args) => {
+      try {
+        const parts = ['git', 'diff', '--name-status'];
+        if (args.base) {
+          parts.push(args.base);
+        } else if (args.staged) {
+          parts.push('--cached');
+        }
+
+        const raw = execSync(parts.join(' '), {
+          encoding: 'utf-8', cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'],
+        });
+
+        const files = raw.split('\n').filter(Boolean).map(line => {
+          const [status, ...rest] = line.split('\t');
+          return { status: status.trim(), file: rest.join('\t').trim() };
+        });
+
+        const result = JSON.stringify(files);
+        printToolOutput(result, 'git_diff_files');
+        return result;
+      } catch (err) {
+        const msg = err.stderr?.toString() || err.message;
+        printToolOutput(msg, 'git_diff_files (error)');
+        return JSON.stringify({ error: msg });
+      }
+    },
+  },
+
+  git_show: {
+    name: 'git_show',
+    description: 'Show the contents of a specific git commit: its message and patch. Useful for inspecting what a particular commit changed.',
+    schema: {
+      type: 'object',
+      properties: {
+        ref: { type: 'string', description: 'Commit SHA, branch name, or ref to show (default "HEAD")', default: 'HEAD' },
+        stat: { type: 'boolean', description: 'If true, show only the diffstat summary instead of the full patch', default: false },
+      },
+    },
+    handler: async (args) => {
+      try {
+        const ref = args.ref || 'HEAD';
+        const parts = ['git', 'show', ref];
+        if (args.stat) parts.push('--stat');
+
+        const result = execSync(parts.join(' '), {
+          encoding: 'utf-8', cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'],
+        });
+        printToolOutput(result, `git_show ${ref}${args.stat ? ' --stat' : ''}`);
+        return result || '(empty)';
+      } catch (err) {
+        const msg = err.stderr?.toString() || err.message;
+        printToolOutput(msg, 'git_show (error)');
+        return JSON.stringify({ error: msg });
       }
     },
   },

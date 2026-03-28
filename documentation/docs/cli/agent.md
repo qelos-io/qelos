@@ -92,12 +92,18 @@ These are the built-in tool names you can pass to `--tools`:
 
 | Tool | What it does | Typical use |
 |------|--------------|-------------|
-| `bash` | Execute a shell command in the current working directory and return stdout/stderr | `ls`, `git diff`, `grep`, running scripts |
+| `bash` | Execute a shell command in the current working directory and return stdout/stderr | `ls`, `grep`, running scripts |
 | `node` | Execute Node.js code (written to a temporary `.mjs` file) and return stdout/stderr | quick parsing/transforms, JSON manipulation |
 | `read` | Read a file and return its contents (supports `startLine`/`endLine` slicing) | inspect project files, configs, logs |
 | `write` | Write a full file (creates parent directories if needed) | generate/update files deterministically |
 | `writeInLine` | Insert content into a file at a specific line index (0-indexed) without replacing the whole file | patch files, insert blocks |
 | `removeLines` | Remove a range of lines from a file (0-indexed) | delete sections safely |
+| `git_status` | Structured JSON with branch name, staged/modified/untracked files | check repo state before committing |
+| `git_diff` | Show diff output (unstaged, staged, or against a base ref) | review changes, compare branches |
+| `git_commit` | Stage files and create a commit with a message | commit workflow |
+| `git_log` | Recent commits as structured JSON (sha, author, date, message) | understand recent history |
+| `git_diff_files` | List changed file names with change status (A/M/D/R) | quick overview of what changed |
+| `git_show` | Show a commit's message and patch | inspect a specific commit |
 
 ### Tool schemas (arguments)
 
@@ -125,6 +131,40 @@ The agent calls tools with structured arguments.
 - Args: `{ path: string, startLine: number, endLine: number }`
   - both are 0-indexed
   - `endLine` is inclusive
+
+#### `git_status`
+- Args: `{}` (no arguments)
+- Returns JSON: `{ branch, staged: [{status, file}], modified: [{status, file}], untracked: [file] }`
+- Status codes: `A` = added, `M` = modified, `D` = deleted, `R` = renamed
+
+#### `git_diff`
+- Args: `{ staged?: boolean, file?: string, stat?: boolean, base?: string }`
+  - `staged` shows `--cached` (staged) changes
+  - `file` limits the diff to a single file
+  - `stat` returns a compact diffstat summary instead of the full patch
+  - `base` diffs against a specific ref (e.g. `"main"`, `"HEAD~3"`) — overrides `staged`
+
+#### `git_commit`
+- Args: `{ message: string, files?: string[] }`
+  - `message` is required
+  - `files` optionally stages the listed paths before committing; if omitted, commits whatever is already staged
+
+#### `git_log`
+- Args: `{ count?: number, file?: string, oneline?: boolean }`
+  - `count` defaults to `10`
+  - `file` filters to commits touching that file
+  - `oneline` returns compact one-line format instead of structured JSON
+- Default JSON output: `[{ sha, author, date, message }]`
+
+#### `git_diff_files`
+- Args: `{ staged?: boolean, base?: string }`
+- Returns JSON: `[{ status, file }]`
+- More token-efficient than `git_diff` when you only need the file list
+
+#### `git_show`
+- Args: `{ ref?: string, stat?: boolean }`
+  - `ref` defaults to `"HEAD"`
+  - `stat` shows only the diffstat summary
 
 ### Notes / gotchas
 
