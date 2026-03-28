@@ -1,7 +1,7 @@
 import agentController from "../controllers/agent.mjs";
 import { getAgentConfig, saveAgentConfig } from "../services/config/load-config.mjs";
 
-const SAVEABLE_AGENT_KEYS = ['thread', 'log', 'export', 'json', 'stream', 'tools', 'rules'];
+const SAVEABLE_AGENT_KEYS = ['thread', 'log', 'export', 'json', 'stream', 'tools', 'rules', 'allowedTools', 'deniedTools'];
 
 export default function agentCommand(program) {
   program

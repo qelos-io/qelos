@@ -2,7 +2,8 @@ import { logger } from '../services/utils/logger.mjs';
 import { initializeSdk } from '../services/config/sdk.mjs';
 import { getAgentConfig, getConfig } from '../services/config/load-config.mjs';
 import { getActiveGlobalDir } from '../services/config/global-env.mjs';
-import { buildClientTools, loadContext } from '../services/agent/tools.mjs';
+import { buildClientTools, buildAllClientTools, loadContext } from '../services/agent/tools.mjs';
+import { ToolApprovalManager } from '../services/agent/tool-approval.mjs';
 import { loadCursorRules, createRulesManager } from '../services/agent/rules.mjs';
 import { green, blue, yellow, red } from '../utils/colors.mjs';
 import { createStreamingRenderer } from '../utils/streaming-markdown.mjs';
@@ -112,7 +113,7 @@ function parseToolArguments(argStr) {
  *
  * @returns {{ fullResponse: string, allMessages: object[] }}
  */
-async function streamWithTools(sdk, integrationId, thread, chatOptions, clientTools, verbose, depth = 0, onMessages = null) {
+async function streamWithTools(sdk, integrationId, thread, chatOptions, clientTools, verbose, depth = 0, onMessages = null, approvalManager = null) {
   const MAX_TOOL_DEPTH = getConfig()?.maxToolDepth ?? 25;
   if (depth >= MAX_TOOL_DEPTH) {
     process.stdout.write(yellow(`\n[warning] Max tool call depth (${MAX_TOOL_DEPTH}) reached.\n\n`));
@@ -212,19 +213,36 @@ async function streamWithTools(sdk, integrationId, thread, chatOptions, clientTo
     const handler = toolHandlers.get(toolName);
     const results = [];
 
-    for (const args of argsList) {
-      let result = '';
-      if (handler) {
-        try {
-          result = await handler(args);
-          if (typeof result === 'object') result = JSON.stringify(result);
-        } catch (err) {
-          result = JSON.stringify({ error: err?.message || 'Tool execution failed' });
+    // Check tool approval if an approval manager is active
+    if (approvalManager) {
+      const status = approvalManager.check(toolName);
+      if (status === 'denied') {
+        results.push(JSON.stringify({ error: `Tool "${toolName}" was denied by the user. Do not attempt to use this tool again.` }));
+      } else if (status === 'ask') {
+        // Prompt user for approval (use first args set for display)
+        const decision = await approvalManager.prompt(toolName, argsList[0] || {});
+        if (decision === 'no' || decision === 'no_all') {
+          results.push(JSON.stringify({ error: `Tool "${toolName}" was denied by the user.${decision === 'no_all' ? ' Do not attempt to use this tool again.' : ''}` }));
         }
-      } else {
-        result = JSON.stringify({ error: `No handler registered for tool "${toolName}"` });
       }
-      if (result) results.push(result);
+    }
+
+    // Execute tool if no denial result was pushed
+    if (results.length === 0) {
+      for (const args of argsList) {
+        let result = '';
+        if (handler) {
+          try {
+            result = await handler(args);
+            if (typeof result === 'object') result = JSON.stringify(result);
+          } catch (err) {
+            result = JSON.stringify({ error: err?.message || 'Tool execution failed' });
+          }
+        } else {
+          result = JSON.stringify({ error: `No handler registered for tool "${toolName}"` });
+        }
+        if (result) results.push(result);
+      }
     }
 
     const combined = results.join('\n---\n');
@@ -274,7 +292,7 @@ async function streamWithTools(sdk, integrationId, thread, chatOptions, clientTo
   onMessages?.(newMessages);
 
   // Recursively stream the follow-up response
-  const followUp = await streamWithTools(sdk, integrationId, thread, newChatOptions, clientTools, verbose, depth + 1, onMessages);
+  const followUp = await streamWithTools(sdk, integrationId, thread, newChatOptions, clientTools, verbose, depth + 1, onMessages, approvalManager);
 
   const parts = [assistantContent, followUp.fullResponse].filter(s => s?.trim());
   return { fullResponse: parts.join('\n'), allMessages: followUp.allMessages };
@@ -340,7 +358,33 @@ export default async function agentController(argv) {
 
     // Build client tools (--tools flag + config clientTools)
     const configClientTools = agentConfig.clientTools || [];
-    const clientTools = buildClientTools(cliTools || [], configClientTools);
+    const explicitTools = buildClientTools(cliTools || [], configClientTools);
+
+    // In interactive mode, send ALL tools and use approval flow for non-pre-approved ones
+    const configAllowedTools = new Set(agentConfig.allowedTools || []);
+    const configDeniedTools = new Set(agentConfig.deniedTools || []);
+
+    // Pre-allowed = explicitly requested tools + config allowedTools
+    const preAllowedNames = new Set([
+      ...explicitTools.map(t => t.name),
+      ...configAllowedTools,
+    ]);
+
+    let clientTools;
+    let approvalManager = null;
+
+    if (interactive) {
+      // Interactive mode: offer all tools except config-denied ones
+      clientTools = buildAllClientTools(configClientTools, configDeniedTools);
+      approvalManager = new ToolApprovalManager({
+        preAllowed: preAllowedNames,
+        configDenied: configDeniedTools,
+        agentNameOrId: integrationName || integrationId,
+        verbose,
+      });
+    } else {
+      clientTools = explicitTools;
+    }
 
     // Initialize rules manager if --rules flag or QELOS_AGENT_RULES_ENABLED env var is set
     const rulesEnabled = rulesFlag || process.env.QELOS_AGENT_RULES_ENABLED === 'true';
@@ -429,13 +473,22 @@ export default async function agentController(argv) {
       }
     }
 
+    // Helper to get the active tools list (filtering out session-denied tools)
+    const getActiveTools = () => {
+      if (!approvalManager) return clientTools;
+      const denied = approvalManager.getDeniedTools();
+      if (denied.size === 0) return clientTools;
+      return clientTools.filter(t => !denied.has(t.name));
+    };
+
     // Helper to build chat options for a given message list
     const buildChatOptions = (messages) => {
+      const activeTools = getActiveTools();
       const opts = {
         messages,
         ...(context ? { context } : {}),
-        ...(clientTools.length
-          ? { clientTools: clientTools.map(({ handler, ...rest }) => rest) }
+        ...(activeTools.length
+          ? { clientTools: activeTools.map(({ handler, ...rest }) => rest) }
           : {}),
       };
 
@@ -453,7 +506,18 @@ export default async function agentController(argv) {
     if (integrationName) console.log(blue(`ID: ${resolvedIntegrationId}`));
     if (thread) console.log(blue(`Thread: ${thread}`));
     if (context) console.log(blue(`Context: ${JSON.stringify(context)}`));
-    if (clientTools.length) console.log(blue(`Tools: ${clientTools.map(t => t.name).join(', ')}`));
+    if (clientTools.length) {
+      if (approvalManager) {
+        const preApproved = clientTools.filter(t => approvalManager.check(t.name) === 'allowed').map(t => t.name);
+        const needsApproval = clientTools.filter(t => approvalManager.check(t.name) === 'ask').map(t => t.name);
+        console.log(blue(`Tools (pre-approved): ${preApproved.join(', ') || '(none)'}`));
+        if (needsApproval.length) {
+          console.log(blue(`Tools (requires approval): ${needsApproval.join(', ')}`));
+        }
+      } else {
+        console.log(blue(`Tools: ${clientTools.map(t => t.name).join(', ')}`));
+      }
+    }
     if (rulesManager) console.log(blue(`Rules: enabled (${rulesManager.getSentRulesCount() || 'cursor rules loaded'})`));
     if (interactive) console.log(blue(`Mode: interactive (type /exit to quit)`));
     else if (userMessage) console.log(blue(`Message: ${userMessage}`));
@@ -475,6 +539,7 @@ export default async function agentController(argv) {
             verbose,
             0,
             onMessages,
+            approvalManager,
           );
           currentMessages = allMessages;
           if (exportFile) exportToFile(exportFile, fullResponse);
@@ -568,6 +633,7 @@ export default async function agentController(argv) {
                 verbose,
                 0,
                 onMessages,
+                approvalManager,
               );
               currentMessages = allMessages;
               if (exportFile) exportToFile(exportFile, fullResponse);

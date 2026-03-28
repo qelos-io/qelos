@@ -614,6 +614,46 @@ export function createCustomToolHandler(toolName, handlerConfig) {
 }
 
 /**
+ * Returns ALL built-in tools plus any custom config tools.
+ * Used in interactive mode where all tools are offered and approval is handled at runtime.
+ *
+ * @param {Array<string|object>} configTools - clientTools from agent config
+ * @param {Set<string>} [excludeNames] - Tool names to exclude (e.g. denied tools)
+ * @returns {Array<{ name, description, schema, handler }>}
+ */
+export function buildAllClientTools(configTools = [], excludeNames = new Set()) {
+  const toolMap = new Map();
+
+  // Add ALL built-in tools
+  for (const [name, def] of Object.entries(BUILTIN_TOOLS)) {
+    if (!excludeNames.has(name)) {
+      toolMap.set(name, def);
+    }
+  }
+
+  // Add custom tools from config
+  for (const entry of configTools) {
+    if (typeof entry === 'string') {
+      // Already handled above (built-in)
+      continue;
+    } else if (entry && typeof entry === 'object' && entry.name) {
+      if (excludeNames.has(entry.name)) continue;
+      const { name, description, schema, properties, handler, ...rest } = entry;
+      const resolvedSchema = schema || (properties ? { type: 'object', properties } : undefined);
+      let resolvedHandler;
+      if (handler && typeof handler === 'object' && handler.bash) {
+        resolvedHandler = createCustomToolHandler(name, handler);
+      } else if (typeof handler === 'function') {
+        resolvedHandler = handler;
+      }
+      toolMap.set(name, { name, description, schema: resolvedSchema, handler: resolvedHandler });
+    }
+  }
+
+  return Array.from(toolMap.values());
+}
+
+/**
  * Builds the full list of client tools combining:
  * - Built-in tools requested via --tools CLI flag
  * - Tools from qelos.config.json agent clientTools array (built-in names or custom objects)
