@@ -202,6 +202,72 @@ export const BUILTIN_TOOLS = {
       }
     },
   },
+  patch: {
+    name: 'patch',
+    description:
+      'Replace a specific block of text in a file. The search string must match exactly (including whitespace and indentation). ' +
+      'Use this instead of rewriting entire files — it is safer and more token-efficient.',
+    schema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Path to the file to modify (relative to cwd or absolute)' },
+        search: { type: 'string', description: 'The exact text block to find in the file (must match exactly, including whitespace)' },
+        replace: { type: 'string', description: 'The text to replace the search block with. Use empty string to delete the matched block.' },
+      },
+      required: ['path', 'search', 'replace'],
+    },
+    handler: async (args) => {
+      const filePath = path.isAbsolute(args.path) ? args.path : path.join(process.cwd(), args.path);
+
+      if (typeof args.search !== 'string' || !args.search) {
+        return JSON.stringify({ error: "patch: 'search' must be a non-empty string" });
+      }
+      if (typeof args.replace !== 'string') {
+        return JSON.stringify({ error: "patch: 'replace' must be a string" });
+      }
+
+      try {
+        if (!fs.existsSync(filePath)) {
+          return JSON.stringify({ error: `File not found: ${filePath}` });
+        }
+
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const idx = content.indexOf(args.search);
+
+        if (idx === -1) {
+          // Provide context to help the AI fix the search string
+          const lines = content.split('\n');
+          const preview = lines.length <= 20
+            ? content
+            : lines.slice(0, 10).join('\n') + `\n... (${lines.length - 20} lines omitted) ...\n` + lines.slice(-10).join('\n');
+          return JSON.stringify({
+            error: 'Search string not found in file. Make sure it matches exactly, including whitespace and indentation.',
+            file_preview: preview,
+          });
+        }
+
+        // Ensure uniqueness — only one occurrence should match
+        const secondIdx = content.indexOf(args.search, idx + 1);
+        if (secondIdx !== -1) {
+          return JSON.stringify({
+            error: `Search string matches multiple locations in the file (at least positions ${idx} and ${secondIdx}). ` +
+              'Include more surrounding context in the search string to make it unique.',
+          });
+        }
+
+        const updated = content.slice(0, idx) + args.replace + content.slice(idx + args.search.length);
+        fs.writeFileSync(filePath, updated, 'utf-8');
+
+        const searchLines = args.search.split('\n').length;
+        const replaceLines = args.replace.split('\n').length;
+        const msg = `Successfully patched ${filePath}: replaced ${searchLines} line(s) with ${replaceLines} line(s).`;
+        process.stdout.write(blue(`[tool:patch] `) + msg + '\n');
+        return msg;
+      } catch (err) {
+        return JSON.stringify({ error: err.message });
+      }
+    },
+  },
   removeLines: {
     name: 'removeLines',
     description: 'Remove specific lines from a file. Supports removing single lines, ranges, or multiple specific line numbers.',
