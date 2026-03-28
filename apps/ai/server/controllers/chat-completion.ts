@@ -93,6 +93,7 @@ export async function chatCompletion(req: any, res: any | null) {
   let options = req.body || {};
   options.messages = options.messages instanceof Array ? options.messages : [];
   const clientTools: Array<{name: string, description: string, schema?: any}> = options.clientTools instanceof Array ? options.clientTools : [];
+  const rules: string[] = (integration.trigger.details?.rules && Array.isArray(options.rules)) ? options.rules.filter(r => typeof r === 'string' && r.trim()) : [];
   options.context = (options.context && typeof options.context === 'object') ? options.context : {};
   Object.keys(options.context).forEach(key => {
     const value = options.context[key];
@@ -279,8 +280,15 @@ export async function chatCompletion(req: any, res: any | null) {
     },
   };
 
+  // Build rules system messages if rules are enabled and provided
+  const rulesMessages = rules.length > 0 ? [{
+    role: 'system',
+    content: `The following rules MUST be followed:\n\n${rules.map((rule, i) => `Rule ${i + 1}:\n${rule}`).join('\n\n')}`
+  }] : [];
+
   const initialMessages = [
     ...(integration.target.details.pre_messages || []),
+    ...rulesMessages,
     ...options.messages,
   ].map(message => ingestSystemMessage(message, templateVariables));
 

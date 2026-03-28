@@ -3,6 +3,7 @@ import { initializeSdk } from '../services/config/sdk.mjs';
 import { getAgentConfig, getConfig } from '../services/config/load-config.mjs';
 import { getActiveGlobalDir } from '../services/config/global-env.mjs';
 import { buildClientTools, loadContext } from '../services/agent/tools.mjs';
+import { loadCursorRules, createRulesManager } from '../services/agent/rules.mjs';
 import { green, blue, yellow, red } from '../utils/colors.mjs';
 import { createStreamingRenderer } from '../utils/streaming-markdown.mjs';
 import fs from 'node:fs';
@@ -293,6 +294,7 @@ export default async function agentController(argv) {
     tools: cliTools,
     context: contextArg,
     contextFile,
+    rules: rulesFlag,
   } = argv;
 
   if (verbose) {
@@ -340,6 +342,21 @@ export default async function agentController(argv) {
     const configClientTools = agentConfig.clientTools || [];
     const clientTools = buildClientTools(cliTools || [], configClientTools);
 
+    // Initialize rules manager if --rules flag or QELOS_AGENT_RULES_ENABLED env var is set
+    const rulesEnabled = rulesFlag || process.env.QELOS_AGENT_RULES_ENABLED === 'true';
+    let rulesManager = null;
+    if (rulesEnabled) {
+      const allRules = loadCursorRules(getActiveGlobalDir() || process.cwd());
+      if (allRules.length > 0) {
+        rulesManager = createRulesManager(allRules);
+        if (verbose) {
+          console.log(blue(`Loaded ${allRules.length} cursor rule(s)`));
+        }
+      } else if (verbose) {
+        console.log(yellow('No cursor rules found in .cursor/rules/ directory'));
+      }
+    }
+
     if (verbose && clientTools.length) {
       console.log(blue(`Client tools enabled: ${clientTools.map(t => t.name).join(', ')}`));
     }
@@ -382,14 +399,54 @@ export default async function agentController(argv) {
       }
     }
 
+    // Collect pending rules to send with next request
+    let pendingRules = [];
+    if (rulesManager) {
+      // Collect alwaysApply rules for the first request
+      pendingRules = rulesManager.getAlwaysApplyRules();
+    }
+
+    // Wrap tool handlers to detect file paths and collect matching rules
+    if (rulesManager) {
+      const fileToolNames = new Set(['read', 'write', 'writeInLine', 'removeLines']);
+      for (const tool of clientTools) {
+        if (fileToolNames.has(tool.name) && tool.handler) {
+          const originalHandler = tool.handler;
+          tool.handler = async (args) => {
+            const filePath = args.path || args.file || '';
+            if (filePath) {
+              const matched = rulesManager.getMatchingRules(filePath);
+              if (matched.length > 0) {
+                pendingRules.push(...matched);
+                if (verbose) {
+                  console.log(blue(`[rules] ${matched.length} rule(s) matched for: ${filePath}`));
+                }
+              }
+            }
+            return originalHandler(args);
+          };
+        }
+      }
+    }
+
     // Helper to build chat options for a given message list
-    const buildChatOptions = (messages) => ({
-      messages,
-      ...(context ? { context } : {}),
-      ...(clientTools.length
-        ? { clientTools: clientTools.map(({ handler, ...rest }) => rest) }
-        : {}),
-    });
+    const buildChatOptions = (messages) => {
+      const opts = {
+        messages,
+        ...(context ? { context } : {}),
+        ...(clientTools.length
+          ? { clientTools: clientTools.map(({ handler, ...rest }) => rest) }
+          : {}),
+      };
+
+      // Attach any pending rules and clear the buffer
+      if (pendingRules.length > 0) {
+        opts.rules = [...pendingRules];
+        pendingRules = [];
+      }
+
+      return opts;
+    };
 
     console.log(blue(`\n=== Qelos AI Agent ===\n`));
     console.log(blue(`Integration: ${integrationName || resolvedIntegrationId}`));
@@ -397,6 +454,7 @@ export default async function agentController(argv) {
     if (thread) console.log(blue(`Thread: ${thread}`));
     if (context) console.log(blue(`Context: ${JSON.stringify(context)}`));
     if (clientTools.length) console.log(blue(`Tools: ${clientTools.map(t => t.name).join(', ')}`));
+    if (rulesManager) console.log(blue(`Rules: enabled (${rulesManager.getSentRulesCount() || 'cursor rules loaded'})`));
     if (interactive) console.log(blue(`Mode: interactive (type /exit to quit)`));
     else if (userMessage) console.log(blue(`Message: ${userMessage}`));
     console.log('');

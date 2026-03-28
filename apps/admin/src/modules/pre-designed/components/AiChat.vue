@@ -320,6 +320,7 @@ const props = defineProps<{
     ) => any | string | Promise<string | any>;
   }>;
   allowTools?: Array<"confirm" | "select" | "multi_select" | "form" | "date" | "time" | "datetime" | "number">;
+  rules?: string[];
 }>();
 
 const emit = defineEmits([
@@ -1373,6 +1374,7 @@ async function send() {
     }),
     context: props.chatContext,
     clientTools: allClientTools.value.map(({ handler, ...rest }) => rest),
+    ...(props.rules?.length ? { rules: props.rules } : {}),
   };
   loading.value = true;
   let aiMsgId = Math.random().toString(36).slice(2);
@@ -1395,6 +1397,7 @@ async function send() {
       context: payload.context,
       stream: true,
       clientTools: payload.clientTools,
+      ...(payload.rules?.length ? { rules: payload.rules } : {}),
     };
 
     // Try streaming first
