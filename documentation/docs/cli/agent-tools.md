@@ -41,6 +41,12 @@ Built-in tools are predefined in `BUILTIN_TOOLS`.
 | `write` | Write a file | `{ path: string, content: string }` |
 | `writeInLine` | Insert content at line | `{ path: string, line: number, content: string }` |
 | `removeLines` | Remove line range | `{ path: string, startLine: number, endLine: number }` |
+| `git_status` | Structured working-tree status (branch, staged, modified, untracked) | `{}` |
+| `git_diff` | Show diff (unstaged, staged, or vs a base ref) | `{ staged?: bool, file?: string, stat?: bool, base?: string }` |
+| `git_commit` | Stage files and commit | `{ message: string, files?: string[] }` |
+| `git_log` | Recent commits as structured JSON | `{ count?: number, file?: string, oneline?: bool }` |
+| `git_diff_files` | List changed file names with status | `{ staged?: bool, base?: string }` |
+| `git_show` | Show a commit's message and patch | `{ ref?: string, stat?: bool }` |
 
 ---
 
