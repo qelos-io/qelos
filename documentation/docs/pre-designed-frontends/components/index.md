@@ -32,23 +32,22 @@ The following components have detailed documentation:
 - [Empty State](./empty-state.md) - Component for empty state display
 - [Life Cycle](./life-cycle.md) - Component for displaying lifecycle stages
 - [Q Pre](./q-pre.md) - Pre-formatted text component with HTML escaping and line break handling
+- [Edit Header](./edit-header.md) - Header for edit pages
+- [Info Icon](./info-icon.md) - Icon with tooltip information
+- [Block Item](./block-item.md) - Block container for content
+- [List Page Title](./list-page-title.md) - Title component for list pages
+- [General Form](./general-form.md) - Generic form component
+- [Blueprint Entity Form](./blueprint-entity-form.md) - Form for blueprint entities
+- [Confirm Message](./confirm-message.md) - Confirmation dialog component
+- [Remove Button](./remove-button.md) - Button for deletion actions
+- [Editable Content](./editable-content.md) - Content that can be edited inline
+- [Remove Confirmation](./remove-confirmation.md) - Confirmation dialog for delete actions
+- [Stats Card](./stats-card.md) - Card for displaying statistics
+- [Q Rating](./q-rating.md) - Rating component
 
 ### Other Available Components
 
-The following components are also available in the Qelos template ecosystem (documentation coming soon):
-
-- Edit Header - Header for edit pages
-- Info Icon - Icon with tooltip information
-- Block Item - Block container for content
-- List Page Title - Title component for list pages
-- General Form - Generic form component
-- Blueprint Entity Form - Form for blueprint entities
-- Confirm Message - Confirmation dialog component
-- Remove Button - Button for deletion actions
-- Editable Content - Content that can be edited inline
-- Remove Confirmation - Confirmation dialog for delete actions
-- Stats Card - Card for displaying statistics
-- Q Rating - Rating component
+All available components in the Qelos template ecosystem are now documented above.
 
 ## Using Components
 
