@@ -1,7 +1,13 @@
 import pullController from "../controllers/pull.mjs";
 import { getPullConfig, savePullConfig } from "../services/config/load-config.mjs";
+import { createConfigMiddleware } from "../services/config/config-middleware.mjs";
 
-const PULL_KEYS = ['path'];
+const pullConfigMiddleware = createConfigMiddleware({
+  keys: ['path'],
+  getDefaults: (argv) => getPullConfig(argv.type),
+  saveDefaults: (argv, opts, options) => savePullConfig(argv.type, opts, options),
+  getSaveKey: (argv) => argv.type,
+});
 
 export default function pullCommand(program) {
   program
@@ -19,21 +25,7 @@ export default function pullCommand(program) {
             type: 'string',
             required: true
           })
-          .middleware((argv) => {
-            const defaults = getPullConfig(argv.type);
-            for (const key of PULL_KEYS) {
-              if (argv[key] === undefined && defaults[key] !== undefined) {
-                argv[key] = defaults[key];
-              }
-            }
-            if (argv.save && argv.type) {
-              const opts = {};
-              for (const key of PULL_KEYS) {
-                if (argv[key] !== undefined) opts[key] = argv[key];
-              }
-              savePullConfig(argv.type, opts, { verbose: argv.verbose });
-            }
-          })
+          .middleware(pullConfigMiddleware)
       },
       pullController)
 }

@@ -65,9 +65,9 @@ async function fetchQelosGlobalComponents() {
 }
 
 /**
- * Scan directory for pulled resources
+ * Scan directory for pulled resources and directory-specific context
  * @param {string} basePath - Base path to scan
- * @returns {Object} Object containing found resources
+ * @returns {Object} Object containing found resources and context
  */
 function scanPulledResources(basePath) {
   const resources = {
@@ -75,8 +75,52 @@ function scanPulledResources(basePath) {
     blocks: null,
     blueprints: [],
     plugins: [],
-    microFrontends: []
+    microFrontends: [],
+    connections: [],
+    configs: [],
+    integrations: []
   };
+
+  const directoryContext = {
+    hasCLAUDEmd: false,
+    claudeContent: null,
+    windsurfRules: false,
+    cursorRules: false,
+    claudeRules: false,
+    directorySpecificClaude: {}
+  };
+
+  // Check for CLAUDE.md in root
+  const claudePath = path.join(basePath, 'CLAUDE.md');
+  if (fs.existsSync(claudePath)) {
+    directoryContext.hasCLAUDEmd = true;
+    try {
+      directoryContext.claudeContent = fs.readFileSync(claudePath, 'utf-8');
+    } catch (error) {
+      logger.debug(`Failed to read CLAUDE.md: ${error.message}`);
+    }
+  }
+
+  // Check for existing IDE rules files
+  directoryContext.windsurfRules = fs.existsSync(path.join(basePath, '.windsurf', 'rules'));
+  directoryContext.cursorRules = fs.existsSync(path.join(basePath, '.cursorrules'));
+  directoryContext.claudeRules = fs.existsSync(path.join(basePath, '.clinerules'));
+
+  // Check for directory-specific CLAUDE.md files
+  const subdirs = ['components', 'blocks', 'blueprints', 'plugins', 'connections', 'configs', 'integrations'];
+  for (const subdir of subdirs) {
+    const subdirPath = path.join(basePath, subdir);
+    if (fs.existsSync(subdirPath)) {
+      const subdirClaudePath = path.join(subdirPath, 'CLAUDE.md');
+      if (fs.existsSync(subdirClaudePath)) {
+        try {
+          directoryContext.directorySpecificClaude[subdir] = fs.readFileSync(subdirClaudePath, 'utf-8');
+        } catch (error) {
+          logger.debug(`Failed to read ${subdir}/CLAUDE.md: ${error.message}`);
+        }
+      }
+    }
+  }
 
   // Check for components directory and components.json
   const componentsPath = path.join(basePath, 'components');
@@ -171,16 +215,86 @@ function scanPulledResources(basePath) {
     }
   }
 
-  return resources;
+  // Check for connections directory
+  const connectionsPath = path.join(basePath, 'connections');
+  if (fs.existsSync(connectionsPath)) {
+    const connectionFiles = fs.readdirSync(connectionsPath)
+      .filter(f => f.endsWith('.connection.json'));
+    
+    for (const file of connectionFiles) {
+      try {
+        const connection = JSON.parse(
+          fs.readFileSync(path.join(connectionsPath, file), 'utf-8')
+        );
+        resources.connections.push({
+          file,
+          name: connection.name,
+          kind: connection.kind,
+          apiPath: connection.apiPath
+        });
+      } catch (error) {
+        logger.debug(`Failed to parse ${file}: ${error.message}`);
+      }
+    }
+  }
+
+  // Check for configs directory
+  const configsPath = path.join(basePath, 'configs');
+  if (fs.existsSync(configsPath)) {
+    const configFiles = fs.readdirSync(configsPath)
+      .filter(f => f.endsWith('.config.json'));
+    
+    for (const file of configFiles) {
+      try {
+        const config = JSON.parse(
+          fs.readFileSync(path.join(configsPath, file), 'utf-8')
+        );
+        resources.configs.push({
+          file,
+          identifier: config.identifier,
+          name: config.name,
+          kind: config.kind
+        });
+      } catch (error) {
+        logger.debug(`Failed to parse ${file}: ${error.message}`);
+      }
+    }
+  }
+
+  // Check for integrations directory
+  const integrationsPath = path.join(basePath, 'integrations');
+  if (fs.existsSync(integrationsPath)) {
+    const integrationFiles = fs.readdirSync(integrationsPath)
+      .filter(f => f.endsWith('.integration.json'));
+    
+    for (const file of integrationFiles) {
+      try {
+        const integration = JSON.parse(
+          fs.readFileSync(path.join(integrationsPath, file), 'utf-8')
+        );
+        resources.integrations.push({
+          file,
+          name: integration.name,
+          trigger: integration.trigger,
+          target: integration.target
+        });
+      } catch (error) {
+        logger.debug(`Failed to parse ${file}: ${error.message}`);
+      }
+    }
+  }
+
+  return { resources, directoryContext };
 }
 
 /**
  * Generate rules content for components
  * @param {Object} resources - Scanned resources
  * @param {Object} qelosComponents - Qelos global components from docs
+ * @param {Object} directoryContext - Directory context information
  * @returns {string} Generated rules content
  */
-function generateComponentsContent(resources, qelosComponents) {
+function generateComponentsContent(resources, qelosComponents, directoryContext) {
   const sections = [];
 
   sections.push('---');
@@ -191,6 +305,14 @@ function generateComponentsContent(resources, qelosComponents) {
   sections.push('');
   sections.push('This file contains rules for working with Vue 3.5 Single File Components in the Qelos project.');
   sections.push('');
+
+  // Add directory-specific context if available
+  if (directoryContext && directoryContext.directorySpecificClaude.components) {
+    sections.push('## Project-Specific Context');
+    sections.push('');
+    sections.push(directoryContext.directorySpecificClaude.components);
+    sections.push('');
+  }
   sections.push('## Component Structure');
   sections.push('- Components are Vue 3.5 Single File Components (.vue files)');
   sections.push('- Each component has metadata stored in `components.json`');
@@ -582,11 +704,175 @@ function generatePluginsContent(resources) {
 }
 
 /**
- * Generate rules content for general guidelines
+ * Generate rules content for connections
  * @param {Object} resources - Scanned resources
  * @returns {string} Generated rules content
  */
-function generateGeneralContent(resources) {
+function generateConnectionsContent(resources) {
+  const sections = [];
+
+  sections.push('---');
+  sections.push('trigger: glob');
+  sections.push('globs: ["connections/**/*.connection.json"]');
+  sections.push('---');
+  sections.push('# Connections Rules');
+  sections.push('');
+  sections.push('This file contains rules for working with Qelos connections to external services.');
+  sections.push('');
+  sections.push('## Connection Structure');
+  sections.push('Connections define how to authenticate and interact with external services like OpenAI, AWS, GitHub, etc.');
+  sections.push('');
+  sections.push('## Authentication');
+  sections.push('Connection authentication uses environment variable references:');
+  sections.push('```json');
+  sections.push('{');
+  sections.push('  "auth": {');
+  sections.push('    "apiKey": { "$var": "INTEGRATION_AUTH_{connection_id}" }');
+  sections.push('  }');
+  sections.push('}');
+  sections.push('```');
+  sections.push('');
+  sections.push('The `$var` reference is resolved from the environment at runtime.');
+  sections.push('');
+  sections.push('## Common Connection Types');
+  sections.push('- **openai** - OpenAI API for AI services');
+  sections.push('- **aws** - Amazon Web Services');
+  sections.push('- **github** - GitHub repositories and API');
+  sections.push('- **google** - Google services');
+  sections.push('- **email** - Email service providers');
+  sections.push('- **supabase** - Supabase backend-as-a-service');
+  sections.push('- **n8n** - Workflow automation');
+  sections.push('');
+  sections.push('## Working with Connections');
+  sections.push('- Connection files are named as `{service}.connection.json`');
+  sections.push('- Never commit actual API keys - use environment variables');
+  sections.push('- Test connections after creating them');
+  sections.push('- Use `qelos-cli push connections <path>` to push changes back to Qelos');
+  sections.push('');
+
+  return sections.join('\n');
+}
+
+/**
+ * Generate rules content for configs
+ * @param {Object} resources - Scanned resources
+ * @returns {string} Generated rules content
+ */
+function generateConfigsContent(resources) {
+  const sections = [];
+
+  sections.push('---');
+  sections.push('trigger: glob');
+  sections.push('globs: ["configs/**/*.config.json"]');
+  sections.push('---');
+  sections.push('# Configurations Rules');
+  sections.push('');
+  sections.push('This file contains rules for working with Qelos platform configurations.');
+  sections.push('');
+  sections.push('## Configuration Structure');
+  sections.push('Configs define how the Qelos platform and applications behave:');
+  sections.push('- **app-configuration** - App name, logo, colors, fonts, layout');
+  sections.push('- **auth-configuration** - Login/register settings, social auth, token auth');
+  sections.push('- **workspace-configuration** - Workspace creation rules');
+  sections.push('- **users-header** - Custom HTML header for users');
+  sections.push('- **ssr-scripts** - SSR head scripts with template variables');
+  sections.push('');
+  sections.push('## SSR Template Variables');
+  sections.push('In ssr-scripts configuration, use these template variables:');
+  sections.push('- `{{name}}` - Application name');
+  sections.push('- `{{slogan}}` - Application slogan');
+  sections.push('- `{{description}}` - Application description');
+  sections.push('- `{{logoUrl}}` - URL to application logo');
+  sections.push('- `{{language}}` - Current language');
+  sections.push('');
+  sections.push('## HTML Templates');
+  sections.push('Some configurations may reference HTML templates in a `html/` subdirectory:');
+  sections.push('```json');
+  sections.push('{');
+  sections.push('  "template": { "$ref": "./html/custom-header.html" }');
+  sections.push('}');
+  sections.push('```');
+  sections.push('');
+  sections.push('## Working with Configs');
+  sections.push('- Config files are named as `{purpose}.config.json`');
+  sections.push('- Changes to configurations affect the entire platform');
+  sections.push('- Test configuration changes in a development environment first');
+  sections.push('- Use `qelos-cli push configs <path>` to push changes back to Qelos');
+  sections.push('');
+
+  return sections.join('\n');
+}
+
+/**
+ * Generate rules content for integrations
+ * @param {Object} resources - Scanned resources
+ * @returns {string} Generated rules content
+ */
+function generateIntegrationsContent(resources) {
+  const sections = [];
+
+  sections.push('---');
+  sections.push('trigger: glob');
+  sections.push('globs: ["integrations/**/*.integration.json"]');
+  sections.push('---');
+  sections.push('# Integrations Rules');
+  sections.push('');
+  sections.push('This file contains rules for working with Qelos automation integrations.');
+  sections.push('');
+  sections.push('## Integration Structure');
+  sections.push('Integrations define automated workflows: trigger → data manipulation → target');
+  sections.push('');
+  sections.push('## Integration Components');
+  sections.push('1. **Trigger** - What starts the automation');
+  sections.push('   - Webhook triggers');
+  sections.push('   - Schedule triggers');
+  sections.push('   - Event triggers (from blueprints)');
+  sections.push('   - Manual triggers');
+  sections.push('');
+  sections.push('2. **Data Manipulation** (optional) - Transform data between trigger and target');
+  sections.push('   - JavaScript data transformations');
+  sections.push('   - Field mapping');
+  sections.push('   - Filtering and validation');
+  sections.push('');
+  sections.push('3. **Target** - Where the processed data is sent');
+  sections.push('   - External APIs');
+  sections.push('   - Internal blueprints');
+  sections.push('   - Email notifications');
+  sections.push('   - Webhook calls');
+  sections.push('');
+  sections.push('## Integration Example');
+  sections.push('```json');
+  sections.push('{');
+  sections.push('  "name": "New User Welcome Email",');
+  sections.push('  "trigger": {');
+  sections.push('    "type": "blueprint-event",');
+  sections.push('    "blueprint": "user",');
+  sections.push('    "event": "create"');
+  sections.push('  },');
+  sections.push('  "target": {');
+  sections.push('    "type": "email",');
+  sections.push('    "template": "welcome-email"');
+  sections.push('  }');
+  sections.push('}');
+  sections.push('```');
+  sections.push('');
+  sections.push('## Working with Integrations');
+  sections.push('- Integration files are named as `{name}.integration.json`');
+  sections.push('- Test integrations thoroughly before deploying');
+  sections.push('- Monitor integration execution logs');
+  sections.push('- Use `qelos-cli push integrations <path>` to push changes back to Qelos');
+  sections.push('');
+
+  return sections.join('\n');
+}
+
+/**
+ * Generate rules content for general guidelines
+ * @param {Object} resources - Scanned resources
+ * @param {Object} directoryContext - Directory context information
+ * @returns {string} Generated rules content
+ */
+function generateGeneralContent(resources, directoryContext) {
   const sections = [];
 
   sections.push('---');
@@ -597,11 +883,40 @@ function generateGeneralContent(resources) {
   sections.push('');
   sections.push('This file contains general guidelines and best practices for working with the Qelos project.');
   sections.push('');
+
+  // Add project-specific context if CLAUDE.md exists
+  if (directoryContext && directoryContext.hasCLAUDEmd && directoryContext.claudeContent) {
+    // Extract key information from CLAUDE.md
+    const lines = directoryContext.claudeContent.split('\n');
+    let inStructureSection = false;
+    let inCurrentSection = false;
+    
+    for (const line of lines) {
+      if (line.startsWith('## Structure')) {
+        inStructureSection = true;
+        sections.push('## Project Structure');
+        sections.push('');
+      } else if (line.startsWith('## Current')) {
+        inCurrentSection = true;
+        inStructureSection = false;
+      } else if (line.startsWith('## ') && !line.startsWith('## Structure') && !line.startsWith('## Current')) {
+        inStructureSection = false;
+        inCurrentSection = false;
+      } else if (inStructureSection || inCurrentSection) {
+        sections.push(line);
+      }
+    }
+    sections.push('');
+  }
+
   sections.push('## File Naming Conventions');
   sections.push('- Components: `ComponentName.vue`');
   sections.push('- Blocks: `block-name.html` (kebab-case)');
   sections.push('- Blueprints: `identifier.blueprint.json`');
+  sections.push('- Configs: `{purpose}.config.json`');
+  sections.push('- Connections: `{service}.connection.json`');
   sections.push('- Plugins: `api-path.plugin.json`');
+  sections.push('- Integrations: `{name}.integration.json`');
   sections.push('- Micro-frontends: `route-name.html` (kebab-case)');
   sections.push('');
   sections.push('## Metadata Files');
@@ -610,12 +925,23 @@ function generateGeneralContent(resources) {
   sections.push('- Always keep metadata files in sync with their corresponding files');
   sections.push('- The `_id` field is crucial for syncing with the remote Qelos instance');
   sections.push('');
+  sections.push('## CLI Workflow');
+  sections.push('```bash');
+  sections.push('qelos pull                        # Pull all resources from remote');
+  sections.push('qelos push blueprints <path>      # Push blueprint changes');
+  sections.push('qelos push configs <path>         # Push config changes');
+  sections.push('qelos push connections <path>     # Push connection changes');
+  sections.push('qelos push integrations <path>    # Push integration changes');
+  sections.push('```');
+  sections.push('');
   sections.push('## Best Practices');
+  sections.push('- Always pull before editing to avoid conflicts');
   sections.push('- Use the Qelos CLI to pull and push resources');
   sections.push('- Maintain the directory structure created by the pull command');
   sections.push('- Reference blueprint structures when building components that display entities');
   sections.push('- Use micro-frontend route names and requirements to understand loading conditions');
   sections.push('- Test changes locally before pushing to the remote Qelos instance');
+  sections.push('- Never commit actual API keys - use environment variables');
   sections.push('');
 
   return sections.join('\n');
@@ -626,15 +952,16 @@ function generateGeneralContent(resources) {
  * @param {Object} resources - Scanned resources
  * @param {string} ideType - Type of IDE (windsurf, cursor, claude)
  * @param {Object} qelosComponents - Qelos global components from docs
+ * @param {Object} directoryContext - Directory context information
  * @returns {Array} Array of {filename, content} objects
  */
-function generateAllRulesContent(resources, ideType, qelosComponents) {
+function generateAllRulesContent(resources, ideType, qelosComponents, directoryContext) {
   const files = [];
 
   // Always generate general.md
   files.push({
     filename: 'general.md',
-    content: generateGeneralContent(resources)
+    content: generateGeneralContent(resources, directoryContext)
   });
 
   // Generate component rules if components exist
@@ -666,6 +993,38 @@ function generateAllRulesContent(resources, ideType, qelosComponents) {
     files.push({
       filename: 'plugins.md',
       content: generatePluginsContent(resources)
+    });
+  }
+
+  // Generate connection rules if connections exist
+  if (resources.connections.length > 0) {
+    files.push({
+      filename: 'connections.md',
+      content: generateConnectionsContent(resources)
+    });
+  }
+
+  // Generate config rules if configs exist
+  if (resources.configs.length > 0) {
+    files.push({
+      filename: 'configs.md',
+      content: generateConfigsContent(resources)
+    });
+  }
+
+  // Generate integration rules if integrations exist
+  if (resources.integrations.length > 0) {
+    files.push({
+      filename: 'integrations.md',
+      content: generateIntegrationsContent(resources)
+    });
+  }
+
+  // Generate CLAUDE.md if it exists or for Claude IDE
+  if ((ideType === 'claude' || directoryContext.hasCLAUDEmd) && directoryContext.claudeContent) {
+    files.push({
+      filename: 'CLAUDE.md',
+      content: directoryContext.claudeContent
     });
   }
 
@@ -723,17 +1082,20 @@ function getRulesFilePath(ideType, basePath, filename) {
  */
 export async function generateRules(ideType, basePath) {
   try {
-    // Scan for pulled resources
-    const resources = scanPulledResources(basePath);
+    // Scan for pulled resources and directory context
+    const { resources, directoryContext } = scanPulledResources(basePath);
 
     // Check if any resources were found
     const hasResources = 
       resources.components !== null ||
       resources.blocks !== null ||
       resources.blueprints.length > 0 ||
-      resources.plugins.length > 0;
+      resources.plugins.length > 0 ||
+      resources.connections.length > 0 ||
+      resources.configs.length > 0 ||
+      resources.integrations.length > 0;
 
-    if (!hasResources) {
+    if (!hasResources && !directoryContext.hasCLAUDEmd) {
       return {
         success: false,
         message: 'No pulled resources found. Run pull command first.'
@@ -748,7 +1110,7 @@ export async function generateRules(ideType, basePath) {
     }
 
     // Generate all rules content
-    const rulesFiles = generateAllRulesContent(resources, ideType, qelosComponents);
+    const rulesFiles = generateAllRulesContent(resources, ideType, qelosComponents, directoryContext);
     const writtenFiles = [];
 
     // Handle different IDE types
@@ -781,6 +1143,15 @@ export async function generateRules(ideType, basePath) {
 
       // Combine all content
       for (const file of rulesFiles) {
+        // Skip CLAUDE.md for combined files as it should stand alone
+        if (file.filename === 'CLAUDE.md') {
+          // Write CLAUDE.md as separate file
+          const claudePath = path.join(basePath, 'CLAUDE.md');
+          fs.writeFileSync(claudePath, file.content, 'utf-8');
+          writtenFiles.push(claudePath);
+          continue;
+        }
+        
         // Remove frontmatter from individual files
         const contentWithoutFrontmatter = file.content
           .replace(/^---\n[\s\S]*?\n---\n/, '')

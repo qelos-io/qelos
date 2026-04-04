@@ -1,7 +1,13 @@
 import pushController from "../controllers/push.mjs";
 import { getPushConfig, savePushConfig } from "../services/config/load-config.mjs";
+import { createConfigMiddleware } from "../services/config/config-middleware.mjs";
 
-const PUSH_KEYS = ['path', 'hard'];
+const pushConfigMiddleware = createConfigMiddleware({
+  keys: ['path', 'hard'],
+  getDefaults: (argv) => getPushConfig(argv.type),
+  saveDefaults: (argv, opts, options) => savePushConfig(argv.type, opts, options),
+  getSaveKey: (argv) => argv.type,
+});
 
 export default function pushCommand(program) {
   program
@@ -25,21 +31,7 @@ export default function pushCommand(program) {
             describe: 'Hard push: remove resources from Qelos that don\'t exist locally (only for components, integrations, plugins, blueprints when pushing a directory)',
             default: false
           })
-          .middleware((argv) => {
-            const defaults = getPushConfig(argv.type);
-            for (const key of PUSH_KEYS) {
-              if (argv[key] === undefined && defaults[key] !== undefined) {
-                argv[key] = defaults[key];
-              }
-            }
-            if (argv.save && argv.type) {
-              const opts = {};
-              for (const key of PUSH_KEYS) {
-                if (argv[key] !== undefined) opts[key] = argv[key];
-              }
-              savePushConfig(argv.type, opts, { verbose: argv.verbose });
-            }
-          })
+          .middleware(pushConfigMiddleware)
       },
       pushController)
 }

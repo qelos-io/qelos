@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { yellow, green, red, blue } from '../../utils/colors.mjs';
+import { yellow, green, red, blue } from '../utils/logger.mjs';
 import { saveAgentConfig, getAgentConfig } from '../config/load-config.mjs';
 
 /**

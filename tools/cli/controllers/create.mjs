@@ -1,10 +1,10 @@
 import follow from "follow-redirects";
 import { interactiveSelect } from "../services/utils/interactive-select.mjs";
-import { blue } from "../utils/colors.mjs";
+import { blue } from "../services/utils/logger.mjs";
 import DecompressZip from "decompress-zip";
 import { join } from "node:path";
 import { rimraf } from "rimraf";
-import ProgressBar from "../utils/progress-bar.mjs";
+import ProgressBar from "../services/ui/progress-bar.mjs";
 import * as readline from "node:readline";
 import { execSync } from "node:child_process";
 

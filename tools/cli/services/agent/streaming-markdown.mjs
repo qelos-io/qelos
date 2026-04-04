@@ -1,4 +1,4 @@
-import { green, blue, yellow, red } from './colors.mjs';
+import { green, blue, yellow, red } from '../utils/logger.mjs';
 
 const RESET = '\x1b[0m';
 const BOLD = '\x1b[1m';

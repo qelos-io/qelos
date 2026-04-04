@@ -1,11 +1,10 @@
-const fs = require("fs");
-const execute = require("../utils/execute");
-const { red } = require("../utils/colors");
+import { execSync } from 'node:child_process';
+import { red } from './logger.mjs';
 
-function installNodeDependencies(directoryName) {
+export function installNodeDependencies(directoryName) {
   console.log(process.cwd(), directoryName);
   try {
-    execute(`npm install`, "install dependencies", {
+    execSync(`npm install`, {
       cwd: directoryName,
       stdio: "inherit",
     });
@@ -14,7 +13,3 @@ function installNodeDependencies(directoryName) {
     process.exit(1);
   }
 }
-
-module.exports = {
-  installNodeDependencies,
-};

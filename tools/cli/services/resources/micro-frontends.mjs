@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { logger } from '../utils/logger.mjs';
 import { loadReference } from '../utils/file-refs.mjs';
-import { removeIdFromObject } from '../../utils/object-utils.mjs';
+import { removeIdFromObject } from '../utils/object-helpers.mjs';
 
 /**
  * Convert a string to kebab-case

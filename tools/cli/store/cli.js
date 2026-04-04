@@ -9,12 +9,9 @@ class CliStore {
 
 let store;
 
-
-module.exports = {
-  getCliStore() {
-    if (!store) {
-      store = new CliStore();
-    }
-    return store;
+export function getCliStore() {
+  if (!store) {
+    store = new CliStore();
   }
+  return store;
 }

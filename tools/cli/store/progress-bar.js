@@ -1,4 +1,4 @@
-const ProgressBar = require('../utils/progress-bar');
+import ProgressBar from '../services/ui/progress-bar.mjs';
 
 class ProgressBarStore {
 	state = {
@@ -31,16 +31,13 @@ class ProgressBarStore {
 
 let store;
 
-module.exports = {
-	/**
-	 *
-	 * @returns {ProgressBarStore}
-	 */
-	getProgressBarStore() {
-		if (!store) {
-			store = new ProgressBarStore();
-		}
-		return store;
+/**
+ * @returns {ProgressBarStore}
+ */
+export function getProgressBarStore() {
+	if (!store) {
+		store = new ProgressBarStore();
 	}
+	return store;
 }
 

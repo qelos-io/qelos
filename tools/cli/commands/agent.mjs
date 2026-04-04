@@ -1,7 +1,13 @@
 import agentController from "../controllers/agent.mjs";
 import { getAgentConfig, saveAgentConfig } from "../services/config/load-config.mjs";
+import { createConfigMiddleware } from "../services/config/config-middleware.mjs";
 
-const SAVEABLE_AGENT_KEYS = ['thread', 'log', 'export', 'json', 'stream', 'tools', 'rules', 'allowedTools', 'deniedTools'];
+const agentConfigMiddleware = createConfigMiddleware({
+  keys: ['thread', 'log', 'export', 'json', 'stream', 'tools', 'rules', 'allowedTools', 'deniedTools'],
+  getDefaults: (argv) => getAgentConfig(argv.integrationId),
+  saveDefaults: (argv, opts, options) => saveAgentConfig(argv.integrationId, opts, options),
+  getSaveKey: (argv) => argv.integrationId,
+});
 
 export default function agentCommand(program) {
   program
@@ -65,28 +71,7 @@ export default function agentCommand(program) {
             type: 'boolean',
             description: 'Keep the session alive for multi-turn conversation (implies --stream)'
           })
-          .middleware((argv) => {
-            // Apply config defaults for undefined argv values
-            const agentDefaults = getAgentConfig(argv.integrationId);
-            if (agentDefaults && Object.keys(agentDefaults).length) {
-              for (const [key, value] of Object.entries(agentDefaults)) {
-                if (argv[key] === undefined) {
-                  argv[key] = value;
-                }
-              }
-            }
-
-            // Save current options to config when --save is set
-            if (argv.save && argv.integrationId) {
-              const opts = {};
-              for (const key of SAVEABLE_AGENT_KEYS) {
-                if (argv[key] !== undefined) {
-                  opts[key] = argv[key];
-                }
-              }
-              saveAgentConfig(argv.integrationId, opts, { verbose: argv.verbose });
-            }
-          })
+          .middleware(agentConfigMiddleware)
       },
       agentController)
 }

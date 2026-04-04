@@ -14,6 +14,21 @@ const colors = {
   gray: '\x1b[90m',
 };
 
+/**
+ * Wraps text with an ANSI color code.
+ * @param {string} text
+ * @param {string} colorCode - ANSI code from `colors`
+ * @returns {string}
+ */
+function colorize(text, colorCode) {
+  return `${colorCode}${text}${colors.reset}`;
+}
+
+export const green = (text) => colorize(text, colors.green);
+export const blue = (text) => colorize(text, colors.cyan);
+export const yellow = (text) => colorize(text, colors.yellow);
+export const red = (text) => colorize(text, colors.red);
+
 export const logger = {
   success(message) {
     console.log(`${colors.green}✓${colors.reset} ${message}`);

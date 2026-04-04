@@ -1,6 +1,6 @@
 import { logger } from '../services/utils/logger.mjs';
 import { getGitFiles } from '../services/git/files.mjs';
-import { green, blue, yellow, red } from '../utils/colors.mjs';
+import { green, blue, yellow, red } from '../services/utils/logger.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 

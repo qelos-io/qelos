@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { yellow, blue, red } from '../../utils/colors.mjs';
+import { yellow, blue, red } from '../utils/logger.mjs';
 
 // ─── Tool output display ──────────────────────────────────────────────────────
 

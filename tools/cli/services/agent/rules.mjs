@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { blue, yellow } from '../../utils/colors.mjs';
+import { blue, yellow } from '../utils/logger.mjs';
 
 /**
  * Parses a .mdc cursor rules file and extracts the frontmatter (globs) and body content.
