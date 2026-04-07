@@ -1,13 +1,29 @@
 import http from "http";
+import https from "https";
 import type { Handler } from "@netlify/functions";
 
-const raw = process.env.QELOS_API_IP ?? "159.203.152.168";
-const parsed =
-  raw.startsWith("http://") || raw.startsWith("https://")
-    ? new URL(raw)
-    : { hostname: raw, port: "80" };
-const PROXY_HOST = parsed.hostname;
-const PROXY_PORT = parseInt(parsed.port || "80", 10);
+/** Same-origin proxy target; mirrors manual setups that use API_HOST (e.g. ai-words api-proxy). */
+const raw =
+  process.env.QELOS_API_IP ?? process.env.API_HOST ?? "159.203.152.168";
+
+let PROXY_HOST: string;
+let PROXY_PORT: number;
+let requestImpl: typeof http.request;
+
+if (raw.startsWith("http://") || raw.startsWith("https://")) {
+  const u = new URL(raw);
+  PROXY_HOST = u.hostname;
+  PROXY_PORT = u.port
+    ? parseInt(u.port, 10)
+    : u.protocol === "https:"
+      ? 443
+      : 80;
+  requestImpl = u.protocol === "https:" ? https.request : http.request;
+} else {
+  PROXY_HOST = raw;
+  PROXY_PORT = 80;
+  requestImpl = http.request;
+}
 const ADD_BYPASS_ADMIN_HEADER =
   process.env.QELOS_BYPASS_ADMIN_HEADER === "true";
 
@@ -33,7 +49,7 @@ export const handler: Handler = (event) =>
       ? Buffer.from(event.body, event.isBase64Encoded ? "base64" : "utf8")
       : undefined;
 
-    const proxyReq = http.request(
+    const proxyReq = requestImpl(
       {
         hostname: PROXY_HOST,
         port: PROXY_PORT,
