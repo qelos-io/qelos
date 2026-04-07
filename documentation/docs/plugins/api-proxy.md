@@ -13,7 +13,7 @@ The **@qelos/plugin-netlify-api** Netlify build plugin does exactly that: at bui
 1. **Build time (Netlify build)**  
    The plugin runs in the `onPreBuild` phase and:
    - Sets the **environment variable** `QELOS_API_IP` (used by the proxy at runtime). You can override it via plugin inputs or Netlify env.
-   - Adds a **redirect/rewrite**: `/api/*` → `/.netlify/functions/qelos-api-proxy` with status `200` and `force = true` (rewrite, not redirect).
+   - Adds a **redirect/rewrite**: `/api/*` → `/.netlify/functions/qelos-api-proxy` with status `200` and `force = true`, and **prepends** that rule to **`dist/_redirects`** after the framework build when present. Netlify evaluates `_redirects` **before** `netlify.toml`; static frameworks often add a catch‑all `/*` rule first, which would otherwise match `/api/...` and return the SPA 404 instead of the proxy.
    - Copies **`qelos-api-proxy.ts`** into your configured Netlify functions directory (default `netlify/functions`) so the normal functions bundler deploys it (the plugin ships the source; you don’t commit it yourself).
 
 2. **Runtime**  

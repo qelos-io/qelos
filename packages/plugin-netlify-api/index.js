@@ -3,6 +3,10 @@ const path = require('node:path');
 
 const DEFAULT_API_URL = 'http://159.203.152.168';
 
+/** Must appear before any `/*` rule in publish/_redirects — Netlify evaluates that file before netlify.toml. */
+const REDIRECTS_FILE_LINE =
+  '/api/* /.netlify/functions/qelos-api-proxy 200!\n';
+
 function resolveFunctionsDirectory(netlifyConfig) {
   const dir = netlifyConfig.functions?.directory ?? 'netlify/functions';
   return path.isAbsolute(dir) ? dir : path.join(process.cwd(), dir);
@@ -46,5 +50,24 @@ module.exports = {
       status: 200,
       force: true,
     });
+  },
+
+  /**
+   * Nuxt/static generators emit `dist/_redirects` with `/* → 404` first. Netlify runs
+   * `_redirects` rules before `netlify.toml`, so that catch-all wins unless `/api/*` is
+   * prepended here (after the framework build).
+   */
+  async onPostBuild({ constants }) {
+    const publishDir = constants.PUBLISH_DIR;
+    if (!publishDir) return;
+    const redirectsPath = path.join(publishDir, '_redirects');
+    let existing = '';
+    try {
+      existing = await fs.readFile(redirectsPath, 'utf8');
+    } catch (e) {
+      if (e.code !== 'ENOENT') throw e;
+    }
+    if (existing.includes('qelos-api-proxy')) return;
+    await fs.writeFile(redirectsPath, REDIRECTS_FILE_LINE + existing, 'utf8');
   },
 };
