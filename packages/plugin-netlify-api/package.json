@@ -1,6 +1,6 @@
 {
   "name": "@qelos/plugin-netlify-api",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Netlify build plugin: proxy /api/* to Qelos API and inject config",
   "main": "index.js",
   "files": [

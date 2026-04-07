@@ -44,8 +44,8 @@ Optional: set the API URL (default `http://159.203.152.168`) and/or enable bypas
 
 - **Environment:** Sets `QELOS_API_IP` for the build (and for the proxy function at runtime).
 - **Redirect:** Adds a rewrite so `/api/*` is served by `/.netlify/functions/qelos-api-proxy` (status 200, force).
-- **Function:** Injects a serverless function `qelos-api-proxy` that forwards requests to the host/port from `QELOS_API_IP` (supports a full URL like `http://159.203.152.168` or a hostname).
+- **Function:** Copies `qelos-api-proxy.ts` from the package into your Netlify **functions directory** (default `netlify/functions`, or `[functions] directory` in `netlify.toml`) during `onPreBuild`, so the bundler sees a normal function file. Forwards requests using `QELOS_API_IP` / `API_HOST` (full URL or hostname).
 
-No need to add redirects or the function file to your repo; the plugin does it at build time.
+No need to add redirects or commit the proxy yourself; the plugin writes it each build. Optional: add `netlify/functions/qelos-api-proxy.ts` to `.gitignore` if you run local Netlify builds and do not want the copy tracked.
 
 **Parity with a manual Netlify function** (e.g. `[[redirects]]` → `/.netlify/functions/api-proxy` and a function using `process.env.API_HOST`): use this plugin instead of those entries; set `QELOS_API_IP` or `API_HOST` to the same value you used for `API_HOST`, and set `bypass_admin = true` under `[plugins.inputs]` if your old proxy always sent `x-bypass-admin: true`.

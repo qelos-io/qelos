@@ -14,7 +14,7 @@ The **@qelos/plugin-netlify-api** Netlify build plugin does exactly that: at bui
    The plugin runs in the `onPreBuild` phase and:
    - Sets the **environment variable** `QELOS_API_IP` (used by the proxy at runtime). You can override it via plugin inputs or Netlify env.
    - Adds a **redirect/rewrite**: `/api/*` → `/.netlify/functions/qelos-api-proxy` with status `200` and `force = true` (rewrite, not redirect).
-   - Injects the **serverless function** `qelos-api-proxy` into your site’s functions (the plugin ships the function file; you don’t add it to your repo).
+   - Copies **`qelos-api-proxy.ts`** into your configured Netlify functions directory (default `netlify/functions`) so the normal functions bundler deploys it (the plugin ships the source; you don’t commit it yourself).
 
 2. **Runtime**  
    When a user hits `https://your-site.netlify.app/api/...`:
@@ -100,7 +100,7 @@ If you were to configure Netlify by hand, the plugin effectively does the follow
 ```
 
 **Function:**  
-A serverless function at `/.netlify/functions/qelos-api-proxy` that forwards the request to the host/port derived from `QELOS_API_IP` and returns the response. You don’t add this file yourself; the plugin injects it at build time.
+A serverless function at `/.netlify/functions/qelos-api-proxy` that forwards the request to the host/port derived from `QELOS_API_IP` and returns the response. You don’t add this file yourself; the plugin copies it into your functions directory at build time.
 
 ## Bypass admin
 
@@ -116,7 +116,7 @@ When using the Netlify plugin, you can set `bypass_admin = true` in `[plugins.in
 
 | What you do | What the plugin does |
 |-------------|----------------------|
-| Add `[[plugins]] package = "@qelos/plugin-netlify-api"` to `netlify.toml` | Sets `QELOS_API_IP`, adds `/api/*` → proxy redirect, injects `qelos-api-proxy` function |
+| Add `[[plugins]] package = "@qelos/plugin-netlify-api"` to `netlify.toml` | Sets `QELOS_API_IP`, adds `/api/*` → proxy redirect, copies `qelos-api-proxy` into the functions directory |
 | Optionally set `api_url` in `[plugins.inputs]` or `QELOS_API_IP` in Netlify env | Uses that value as the proxy target |
 | Optionally set `bypass_admin = true` in `[plugins.inputs]` | Proxy adds `x-bypass-admin: true` to every request |
 | Use base URL `/api` in your frontend | Browser calls same origin; proxy forwards to Qelos API |
