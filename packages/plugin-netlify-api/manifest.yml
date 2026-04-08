@@ -8,7 +8,11 @@ inputs:
     required: false
     description: "If true, the proxy adds header x-bypass-admin: true to every request (so admins are scoped as regular users)."
     default: false
+  - name: use_cdn_proxy
+    required: false
+    description: "If true, rewrite /api/* directly to api_url at the edge (no serverless function). Default is false — use the bundled qelos-api-proxy function so Host headers and bypass_admin work."
+    default: false
   - name: use_function_proxy
     required: false
-    description: "If true, use the bundled serverless function instead of Netlify CDN proxy to api_url (default is CDN rewrite to origin/api/:splat)."
-    default: false
+    description: "Deprecated alias: set false to get CDN direct-to-IP behavior (same as use_cdn_proxy true)."
+    default: true

@@ -6,20 +6,21 @@ editLink: true
 
 When you host a Qelos frontend (e.g. admin or a plugin UI) on **Netlify**, the browser makes requests to your Netlify domain. If the frontend calls the Qelos API on another origin (e.g. `https://api.yourqelos.com`), you run into **CORS** and often **cookie/same-origin** constraints. A simple way to avoid that is to have the frontend call **the same origin** and let the server proxy those requests to the real Qelos API.
 
-The **@qelos/plugin-netlify-api** Netlify build plugin does exactly that: at build time it configures your site so that `/api/*` is rewritten to a serverless function that forwards requests to your Qelos API. No CORS or cross-origin setup required; the browser only talks to your Netlify site.
+The **@qelos/plugin-netlify-api** Netlify build plugin configures your site so that `/api/*` is proxied to your Qelos API. **By default** it deploys the **bundled serverless function** `qelos-api-proxy` and rewrites `/api/*` to `/.netlify/functions/qelos-api-proxy`, so request headers (e.g. public `Host`) and `bypass_admin` are applied in Node. Optionally, **`use_cdn_proxy = true`** uses **Netlify’s CDN rewrite** straight to `${QELOS_API_IP}/api/:splat` (no function — see [Netlify proxy docs](https://docs.netlify.com/manage/routing/redirects/rewrites-proxies/#proxy-to-another-service)). No CORS or cross-origin setup is required; the browser only talks to your Netlify site.
 
 ## How it works
 
 1. **Build time (Netlify build)**  
    The plugin runs in the `onPreBuild` phase and:
-   - Sets the **environment variable** `QELOS_API_IP` (used by the proxy at runtime). You can override it via plugin inputs or Netlify env.
-   - Adds a **redirect/rewrite**: `/api/*` → `/.netlify/functions/qelos-api-proxy` with status `200` and `force = true`, and **prepends** that rule to **`dist/_redirects`** after the framework build when present. Netlify evaluates `_redirects` **before** `netlify.toml`; static frameworks often add a catch‑all `/*` rule first, which would otherwise match `/api/...` and return the SPA 404 instead of the proxy.
-   - Copies **`qelos-api-proxy.ts`** into your configured Netlify functions directory (default `netlify/functions`) so the normal functions bundler deploys it (the plugin ships the source; you don’t commit it yourself).
+   - Sets **`QELOS_API_IP`** (and proxy mode). You can override via plugin inputs or Netlify env.
+   - Adds a **rewrite** for `/api/*`: by default **`/.netlify/functions/qelos-api-proxy`**, or **`${origin}/api/:splat`** if **`use_cdn_proxy`** is enabled.
+   - **Prepends** the same rule to **`dist/_redirects`** via **`postbuild` → `qelos-netlify-patch-redirects`**. Netlify evaluates `_redirects` **before** `netlify.toml`; static frameworks (e.g. Nuxt `netlify-static`) add a catch‑all `/*` rule, so the API line must be **first** in that file—hence the post-build patch.
+   - **Unless CDN mode:** copies **`qelos-api-proxy.ts`** into your Netlify functions directory.
 
 2. **Runtime**  
    When a user hits `https://your-site.netlify.app/api/...`:
-   - Netlify matches the redirect and invokes `qelos-api-proxy`.
-   - The function reads `QELOS_API_IP` (e.g. `http://159.203.152.168` or just the hostname), forwards the same path and query to that host/port, and returns the response. So your frontend can call `/api/...` on the same origin and the request is proxied to the Qelos API.
+   - **Default (function):** Netlify invokes `qelos-api-proxy`, which forwards to `QELOS_API_IP` using the request URL and public host handling.
+   - **CDN mode:** Netlify’s edge proxies the request to your Qelos API host with path `/api/...` (no `qelos-api-proxy.ts` execution).
 
 ## Setup
 
@@ -89,7 +90,7 @@ If you were to configure Netlify by hand, the plugin effectively does the follow
   QELOS_API_IP = "http://159.203.152.168"
 ```
 
-**Redirect:**
+**Redirect (default — serverless function):**
 
 ```toml
 [[redirects]]
@@ -99,8 +100,7 @@ If you were to configure Netlify by hand, the plugin effectively does the follow
   force = true
 ```
 
-**Function:**  
-A serverless function at `/.netlify/functions/qelos-api-proxy` that forwards the request to the host/port derived from `QELOS_API_IP` and returns the response. You don’t add this file yourself; the plugin copies it into your functions directory at build time.
+**CDN mode (`use_cdn_proxy = true`):** rewrite to `http://YOUR_QELOS_HOST/api/:splat` at the edge (no function).
 
 ## Bypass admin
 
@@ -116,7 +116,7 @@ When using the Netlify plugin, you can set `bypass_admin = true` in `[plugins.in
 
 | What you do | What the plugin does |
 |-------------|----------------------|
-| Add `[[plugins]] package = "@qelos/plugin-netlify-api"` to `netlify.toml` | Sets `QELOS_API_IP`, adds `/api/*` → proxy redirect, copies `qelos-api-proxy` into the functions directory |
+| Add `[[plugins]] package = "@qelos/plugin-netlify-api"` to `netlify.toml` | Sets `QELOS_API_IP`, adds `/api/*` → `qelos-api-proxy` (or CDN if `use_cdn_proxy`), maintains `dist/_redirects` via `postbuild` |
 | Optionally set `api_url` in `[plugins.inputs]` or `QELOS_API_IP` in Netlify env | Uses that value as the proxy target |
 | Optionally set `bypass_admin = true` in `[plugins.inputs]` | Proxy adds `x-bypass-admin: true` to every request |
 | Use base URL `/api` in your frontend | Browser calls same origin; proxy forwards to Qelos API |

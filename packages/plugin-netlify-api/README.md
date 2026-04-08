@@ -33,15 +33,9 @@ If your publish directory is not `dist`, set `QELOS_NETLIFY_PUBLISH` to that fol
 
 ## How it proxies (default)
 
-By default the plugin uses **Netlify’s CDN rewrite** to your Qelos API (same pattern as [Netlify’s proxy docs](https://docs.netlify.com/manage/routing/redirects/rewrites-proxies/#proxy-to-another-service)):
+**Default:** the bundled serverless function **`qelos-api-proxy`** — `/api/*` is rewritten to `/.netlify/functions/qelos-api-proxy`. That runs your Node proxy (correct `Host` / `x-forwarded-host`, optional `x-bypass-admin`, etc.).
 
-- `/api/*` → `${QELOS_API_IP origin}/api/:splat` with status `200` and `force`
-
-So `/api/me` is proxied to `http://your-api-host/api/me` **at the edge**, without a serverless function. That avoids fragile `/.netlify/functions/...` rewrites and matches Nuxt’s `_redirects` behavior.
-
-Optional: **`use_function_proxy = true`** — uses the bundled `qelos-api-proxy` serverless function instead (for cases where you must run Node logic on each request).
-
-Optional plugin inputs:
+**Optional — CDN direct to API:** set **`use_cdn_proxy = true`** to rewrite `/api/*` → `${QELOS_API_IP}/api/:splat` at the edge **without** invoking the function (faster, but no per-request logic in `qelos-api-proxy.ts`).
 
 ```toml
 [[plugins]]
@@ -50,17 +44,18 @@ Optional plugin inputs:
   [plugins.inputs]
     api_url = "http://159.203.152.168"
     bypass_admin = true
-    use_function_proxy = false
+    use_cdn_proxy = false
 ```
 
 - **api_url** — Qelos API base URL (same as `QELOS_API_IP` / `API_HOST`).
-- **bypass_admin** — If `true`, adds header `x-bypass-admin: true` on proxied requests (CDN and function modes).
-- **use_function_proxy** — If `true`, deploy the bundled `qelos-api-proxy` function and rewrite to it instead of the CDN proxy.
+- **bypass_admin** — If `true`, adds header `x-bypass-admin: true` (function mode: in the proxy; CDN mode: on the redirect when supported).
+- **use_cdn_proxy** — If `true`, edge proxy only (no `qelos-api-proxy` function). Default **false**.
+- **use_function_proxy** — Deprecated; set **`false`** to get the same as `use_cdn_proxy = true`.
 
 ## What it does
 
-- **Environment:** Sets `QELOS_API_IP`, `QELOS_NETLIFY_PROXY_MODE` (`cdn` or `function`).
-- **Redirects:** Injects the `/api/*` rewrite into `netlify.toml` (and **`postbuild`** rewrites `publish/_redirects` so Nuxt’s catch‑all does not win).
-- **Function mode only:** Copies `qelos-api-proxy.ts` into your Netlify functions directory.
+- **Environment:** Sets `QELOS_API_IP`, `QELOS_NETLIFY_PROXY_MODE` (`function` unless CDN).
+- **Redirects:** Injects `/api/*` into `netlify.toml` and **`postbuild`** updates `publish/_redirects` so Nuxt’s catch‑all does not win.
+- **Unless `use_cdn_proxy`:** copies `qelos-api-proxy.ts` into your Netlify functions directory.
 
 No need to commit redirects yourself; the plugin and `postbuild` maintain them each build.

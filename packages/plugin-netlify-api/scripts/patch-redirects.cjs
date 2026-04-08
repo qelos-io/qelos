@@ -6,8 +6,8 @@
  * Netlify evaluates this file before netlify.toml; Nuxt `netlify-static` adds
  * `/* → /404.html` — that must come after `/api/*`.
  *
- * Default: CDN proxy to `${QELOS_API_IP}/api/:splat` (Netlify’s documented pattern).
- * Set QELOS_NETLIFY_PROXY_MODE=function to use the serverless function instead.
+ * Default: serverless function `/.netlify/functions/qelos-api-proxy` (QELOS_NETLIFY_PROXY_MODE unset or `function`).
+ * Set QELOS_NETLIFY_PROXY_MODE=cdn for edge direct-to-IP (no function).
  */
 
 const fs = require('node:fs');
@@ -88,7 +88,7 @@ function resolvePublishDirFromEnv() {
 if (require.main === module) {
   const abs = resolvePublishDirFromEnv();
   const mode =
-    process.env.QELOS_NETLIFY_PROXY_MODE === 'function' ? 'function' : 'cdn';
+    process.env.QELOS_NETLIFY_PROXY_MODE === 'cdn' ? 'cdn' : 'function';
   const apiUrl = process.env.QELOS_API_IP;
   const changed = patchRedirects(abs, apiUrl, mode);
   const target = path.join(abs, '_redirects');

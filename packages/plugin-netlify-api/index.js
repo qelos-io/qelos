@@ -42,8 +42,12 @@ module.exports = {
       inputs.api_url ?? process.env.QELOS_API_IP ?? DEFAULT_API_URL;
     const bypassAdmin =
       inputs.bypass_admin === true || inputs.bypass_admin === 'true';
-    const useFunctionProxy =
-      inputs.use_function_proxy === true || inputs.use_function_proxy === 'true';
+    const useCdnProxy =
+      inputs.use_cdn_proxy === true ||
+      inputs.use_cdn_proxy === 'true' ||
+      inputs.use_function_proxy === false ||
+      inputs.use_function_proxy === 'false';
+    const useFunctionProxy = !useCdnProxy;
 
     if (!netlifyConfig.build.environment) {
       netlifyConfig.build.environment = {};
@@ -100,9 +104,9 @@ module.exports = {
       process.env.QELOS_API_IP ??
       DEFAULT_API_URL;
     const mode =
-      netlifyConfig?.build?.environment?.QELOS_NETLIFY_PROXY_MODE === 'function'
-        ? 'function'
-        : 'cdn';
+      netlifyConfig?.build?.environment?.QELOS_NETLIFY_PROXY_MODE === 'cdn'
+        ? 'cdn'
+        : 'function';
     const changed = patchRedirects(publishDir, apiUrl, mode);
     console.log(
       `[@qelos/plugin-netlify-api] onPostBuild: ${changed ? 'patched' : 'unchanged'} ${path.join(publishDir, '_redirects')} (${mode})`,
