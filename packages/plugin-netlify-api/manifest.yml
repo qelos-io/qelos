@@ -8,3 +8,7 @@ inputs:
     required: false
     description: "If true, the proxy adds header x-bypass-admin: true to every request (so admins are scoped as regular users)."
     default: false
+  - name: use_function_proxy
+    required: false
+    description: "If true, use the bundled serverless function instead of Netlify CDN proxy to api_url (default is CDN rewrite to origin/api/:splat)."
+    default: false

@@ -1,12 +1,16 @@
 {
   "name": "@qelos/plugin-netlify-api",
-  "version": "1.0.4",
+  "version": "1.1.1",
   "description": "Netlify build plugin: proxy /api/* to Qelos API and inject config",
   "main": "index.js",
+  "bin": {
+    "qelos-netlify-patch-redirects": "./scripts/patch-redirects.cjs"
+  },
   "files": [
     "index.js",
     "manifest.yml",
-    "functions"
+    "functions",
+    "scripts"
   ],
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",

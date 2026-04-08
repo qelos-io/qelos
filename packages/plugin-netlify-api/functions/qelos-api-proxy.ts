@@ -29,12 +29,18 @@ const ADD_BYPASS_ADMIN_HEADER =
 
 export const handler: Handler = (event) =>
   new Promise((resolve) => {
-    // Build forwarded headers, preserving the original Host header
+    // Build forwarded headers. Upstream Qelos expects Host = public app domain (e.g. app.auto.qelos.io),
+    // not the raw API IP — use the visitor-facing host (case-insensitive headers; rawUrl fallback).
     const headers: Record<string, string> = {};
-    for (const [key, val] of Object.entries(event.headers)) {
-      if (val) headers[key] = val;
+    for (const [key, val] of Object.entries(event.headers ?? {})) {
+      if (val == null || val === "") continue;
+      if (Array.isArray(val)) {
+        headers[key] = val.join(", ");
+      } else if (typeof val === "string") {
+        headers[key] = val;
+      }
     }
-    headers["host"] = event.headers["host"] ?? PROXY_HOST;
+    headers["host"] = publicHostForUpstream(event);
     if (ADD_BYPASS_ADMIN_HEADER) {
       headers["x-bypass-admin"] = "true";
     }
@@ -86,3 +92,38 @@ export const handler: Handler = (event) =>
     if (body) proxyReq.write(body);
     proxyReq.end();
   });
+
+function publicHostForUpstream(event: {
+  headers: Record<string, string | string[] | undefined>;
+  rawUrl: string;
+}): string {
+  const forwarded = pickHeader(event.headers, "x-forwarded-host");
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+  const h = pickHeader(event.headers, "host");
+  if (h) {
+    return h;
+  }
+  try {
+    return new URL(event.rawUrl).hostname;
+  } catch {
+    return PROXY_HOST;
+  }
+}
+
+function pickHeader(
+  headers: Record<string, string | string[] | undefined>,
+  name: string,
+): string | undefined {
+  const want = name.toLowerCase();
+  for (const [k, v] of Object.entries(headers)) {
+    if (k.toLowerCase() !== want) continue;
+    if (v == null) continue;
+    const s = Array.isArray(v) ? v[0] : v;
+    if (typeof s === "string" && s.length > 0) {
+      return s;
+    }
+  }
+  return undefined;
+}
