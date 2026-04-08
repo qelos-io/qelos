@@ -90,7 +90,7 @@ module.exports = {
         force: true,
       };
       if (bypassAdmin) {
-        redirect.headers = { 'X-Bypass-Admin': 'true' };
+        redirect.headers = { 'x-bypass-admin': 'true' };
       }
       netlifyConfig.redirects.unshift(redirect);
     }
