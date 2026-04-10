@@ -97,7 +97,10 @@ export async function getWorkspaceEncryptedData(req, res) {
   try {
     const workspace = await getWorkspaceIdIfExists(req.params.workspaceId, tenant);
     if (!workspace) {
-      throw new Error('workspace not found');
+      res.status(404).json({
+        message: 'workspace does not exist'
+      }).end()
+      return;
     }
     const encryptedId = req.headers['x-encrypted-id'];
     const id = workspace._id + (encryptedId ? ('-' + encryptedId) : '');
