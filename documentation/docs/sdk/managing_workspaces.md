@@ -209,7 +209,7 @@ await sdkAdmin.authentication.oAuthSignin({
 
 // Get all workspaces (admin only)
 const allWorkspaces = await sdkAdmin.adminWorkspaces.getList();
-console.log(`Found ${allWorkspaces.length} workspaces across all tenants`);
+console.log(`Found ${allWorkspaces.length} workspaces in the tenant`);
 
 // Get workspaces filtered by member user ID
 const userWorkspaces = await sdkAdmin.adminWorkspaces.getList({ 'members.user': 'userId' });

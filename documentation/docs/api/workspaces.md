@@ -203,9 +203,117 @@ Returns `200 OK` on success.
 
 ---
 
+## Add Workspace Member
+
+Add a new member to a workspace. Requires workspace admin privileges.
+
+```
+POST /api/workspaces/{workspaceId}/members
+```
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `workspaceId` | `string` | The workspace ID |
+
+### Request Body
+
+```json
+{
+  "userId": "user-id",
+  "roles": ["member"]
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `userId` | `string` | Yes | The user ID to add |
+| `roles` | `string[]` | Yes | Roles to assign (e.g., `["admin", "user"]` or `["member"]`) |
+
+### Response
+
+```json
+{
+  "message": "Member added successfully.",
+  "workspace": { ... }
+}
+```
+
+---
+
+## Update Workspace Member
+
+Update the roles of an existing workspace member. Requires workspace admin privileges.
+
+```
+PUT /api/workspaces/{workspaceId}/members/{userId}
+```
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `workspaceId` | `string` | The workspace ID |
+| `userId` | `string` | The user ID to update |
+
+### Request Body
+
+```json
+{
+  "roles": ["admin", "user"]
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `roles` | `string[]` | Yes | New roles for the member |
+
+### Response
+
+```json
+{
+  "message": "Member roles updated successfully.",
+  "updatedMember": {
+    "user": "user-id",
+    "roles": ["admin", "user"]
+  },
+  "workspaceId": "workspace-id"
+}
+```
+
+---
+
+## Remove Workspace Member
+
+Remove a member from a workspace. Requires workspace admin privileges.
+
+```
+DELETE /api/workspaces/{workspaceId}/members/{userId}
+```
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `workspaceId` | `string` | The workspace ID |
+| `userId` | `string` | The user ID to remove |
+
+### Response
+
+```json
+{
+  "message": "Member removed from workspace.",
+  "removedMemberId": "user-id",
+  "userId": "user-id"
+}
+```
+
+---
+
 ## List All Workspaces (Admin)
 
-Retrieve all workspaces across all tenants with optional filtering. This endpoint requires administrator privileges.
+Retrieve all workspaces within the current tenant with optional filtering. This endpoint requires administrator privileges.
 
 ```
 GET /api/workspaces/all
@@ -250,3 +358,70 @@ This endpoint requires administrator authentication. Regular users should use `G
 :::
 
 > **SDK:** [`sdkAdmin.adminWorkspaces.getList(filters)`](/sdk/managing_workspaces#getting-list-of-all-workspaces-admin)
+
+---
+
+## Get Encrypted Workspace Data (Admin)
+
+Retrieve encrypted data stored for a workspace. Requires administrator privileges.
+
+```
+GET /api/workspaces/{workspaceId}/encrypted
+```
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `workspaceId` | `string` | The workspace ID |
+
+### Headers
+
+| Header | Type | Description |
+|---|---|---|
+| `x-encrypted-id` | `string` | Optional encrypted data identifier |
+
+### Response
+
+Returns the stored encrypted data as JSON, or `null` if no data is found.
+
+> **SDK:** [`sdkAdmin.adminWorkspaces.getEncryptedData(workspaceId, encryptedId)`](/sdk/managing_workspaces#working-with-encrypted-workspace-data)
+
+---
+
+## Set Encrypted Workspace Data (Admin)
+
+Store encrypted data for a workspace. Requires administrator privileges.
+
+```
+POST /api/workspaces/{workspaceId}/encrypted
+```
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `workspaceId` | `string` | The workspace ID |
+
+### Headers
+
+| Header | Type | Description |
+|---|---|---|
+| `x-encrypted-id` | `string` | Optional encrypted data identifier |
+
+### Request Body
+
+Any valid JSON object to be stored as encrypted data.
+
+```json
+{
+  "apiKey": "secret-key",
+  "webhookSecret": "webhook-secret"
+}
+```
+
+### Response
+
+Returns `200 OK` with empty object on success.
+
+> **SDK:** [`sdkAdmin.adminWorkspaces.setEncryptedData(workspaceId, encryptedId, data)`](/sdk/managing_workspaces#working-with-encrypted-workspace-data)

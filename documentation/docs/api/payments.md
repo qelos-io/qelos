@@ -6,7 +6,7 @@ editLink: true
 
 Endpoints for managing plans, subscriptions, invoices, checkout, and coupons.
 
-> **SDK equivalent:** [`sdk.payments`](/payments/)
+> **SDK equivalent:** [`sdk.payments`](/sdk/basic_usage)
 
 ## List Plans
 
@@ -37,7 +37,7 @@ GET /api/plans/public
 ]
 ```
 
-> **SDK:** [`sdk.payments.getPlans(query)`](/payments/)
+> **SDK:** [`sdk.payments.getPlans(query)`](/sdk/basic_usage)
 
 ---
 
@@ -59,7 +59,7 @@ GET /api/plans/{planId}
 
 Returns the plan object.
 
-> **SDK:** [`sdk.payments.getPlan(planId)`](/payments/)
+> **SDK:** [`sdk.payments.getPlan(planId)`](/sdk/basic_usage)
 
 ---
 
@@ -101,7 +101,7 @@ POST /api/checkout
 }
 ```
 
-> **SDK:** [`sdk.payments.checkout(params)`](/payments/)
+> **SDK:** [`sdk.payments.checkout(params)`](/sdk/basic_usage)
 
 ---
 
@@ -125,7 +125,7 @@ GET /api/subscriptions/me
 }
 ```
 
-> **SDK:** [`sdk.payments.getMySubscription()`](/payments/)
+> **SDK:** [`sdk.payments.getMySubscription()`](/sdk/basic_usage)
 
 ---
 
@@ -147,7 +147,7 @@ PUT /api/subscriptions/{subscriptionId}/cancel
 
 Returns the updated subscription object with cancelled status.
 
-> **SDK:** [`sdk.payments.cancelSubscription(subscriptionId)`](/payments/)
+> **SDK:** [`sdk.payments.cancelSubscription(subscriptionId)`](/sdk/basic_usage)
 
 ---
 
@@ -178,7 +178,7 @@ GET /api/invoices
 ]
 ```
 
-> **SDK:** [`sdk.payments.getInvoices(query)`](/payments/)
+> **SDK:** [`sdk.payments.getInvoices(query)`](/sdk/basic_usage)
 
 ---
 
@@ -200,7 +200,7 @@ GET /api/invoices/{invoiceId}
 
 Returns the invoice object.
 
-> **SDK:** [`sdk.payments.getInvoice(invoiceId)`](/payments/)
+> **SDK:** [`sdk.payments.getInvoice(invoiceId)`](/sdk/basic_usage)
 
 ---
 
@@ -240,4 +240,4 @@ Returns the coupon object if valid.
 }
 ```
 
-> **SDK:** [`sdk.payments.validateCoupon(code, planId)`](/payments/)
+> **SDK:** [`sdk.payments.validateCoupon(code, planId)`](/sdk/basic_usage)

@@ -107,8 +107,8 @@ Every SDK method corresponds to an API endpoint. Each API page links back to the
 | [`sdk.blueprints.entitiesOf()`](/sdk/blueprints_operations#working-with-blueprint-entities) | [Blueprint Entities API](/api/blueprint-entities) |
 | [`sdk.blocks`](/sdk/managing_blocks) | [Blocks API](/api/blocks) |
 | [`sdk.appConfigurations`](/sdk/managing_configurations) | [Configurations API](/api/configurations) |
-| [`sdk.lambdas`](/sdk/execute_lambdas) | [Webhooks / Lambdas API](/api/webhooks) |
-| [`sdk.payments`](/sdk/blueprints_operations) | [Payments API](/api/payments) |
+| [`sdk.lambdas`](/sdk/lambdas) | [Webhooks / Lambdas API](/api/webhooks) |
+| [`sdk.payments`](/sdk/basic_usage) | [Payments API](/api/payments) |
 | [`sdk.ai.threads`](/sdk/ai_operations#thread-operations) | [AI Threads API](/api/ai-threads) |
 | [`sdk.ai.chat`](/sdk/ai_operations#chat-completion-operations) | [AI Chat API](/api/ai-chat) |
 | [`sdk.ai.rag`](/sdk/ai_operations#rag-retrieval-augmented-generation-operations) | [AI RAG API](/api/ai-rag) |
