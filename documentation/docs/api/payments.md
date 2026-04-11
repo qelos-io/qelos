@@ -6,7 +6,7 @@ editLink: true
 
 Endpoints for managing plans, subscriptions, invoices, checkout, and coupons.
 
-> **SDK equivalent:** `sdk.payments`
+> **SDK equivalent:** [`sdk.payments`](/payments/)
 
 ## List Plans
 
@@ -76,18 +76,28 @@ POST /api/checkout
 ```json
 {
   "planId": "plan-id",
+  "billingCycle": "monthly",
   "successUrl": "https://your-app.com/success",
   "cancelUrl": "https://your-app.com/cancel",
   "couponCode": "SAVE20"
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `planId` | `string` | Yes | The plan to subscribe to |
+| `billingCycle` | `string` | Yes | Billing cycle (e.g., `"monthly"`, `"yearly"`) |
+| `successUrl` | `string` | No | Redirect URL on successful checkout |
+| `cancelUrl` | `string` | No | Redirect URL on cancelled checkout |
+| `couponCode` | `string` | No | Coupon code to apply |
+
 ### Response
 
 ```json
 {
+  "subscriptionId": "subscription-id",
   "checkoutUrl": "https://payment-provider.com/checkout/session-id",
-  "sessionId": "session-id"
+  "clientToken": "client-token"
 }
 ```
 
@@ -211,13 +221,22 @@ POST /api/coupons/validate
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `code` | `string` | Yes | The coupon code to validate |
+| `planId` | `string` | No | Plan ID to validate the coupon against |
+
 ### Response
+
+Returns the coupon object if valid.
 
 ```json
 {
-  "valid": true,
+  "_id": "coupon-id",
+  "code": "SAVE20",
   "discount": 20,
-  "discountType": "percentage"
+  "discountType": "percentage",
+  "isActive": true
 }
 ```
 

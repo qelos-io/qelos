@@ -8,7 +8,7 @@ Endpoints for user authentication, session management, token handling, and user 
 
 > **SDK equivalent:** [`sdk.authentication`](/sdk/authentication)
 
-## Sign In
+## Sign In (Session)
 
 Create a session using cookie-based authentication.
 
@@ -25,6 +25,11 @@ POST /api/signin
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `username` | `string` | Yes | User email or username |
+| `password` | `string` | Yes | User password |
+
 ### Response
 
 Returns user payload. Sets a secure HTTP-only session cookie.
@@ -32,18 +37,27 @@ Returns user payload. Sets a secure HTTP-only session cookie.
 ```json
 {
   "payload": {
-    "user": { "_id": "...", "username": "user@example.com", "fullName": "John Doe" }
+    "user": {
+      "_id": "user-id",
+      "username": "user@example.com",
+      "fullName": "John Doe",
+      "firstName": "John",
+      "lastName": "Doe",
+      "roles": ["user"]
+    }
   }
 }
 ```
+
+The response includes a `set-cookie` header with the session cookie.
 
 > **SDK:** [`sdk.authentication.signin(credentials)`](/sdk/authentication#authentication-with-signin-method)
 
 ---
 
-## OAuth Sign In
+## Sign In (OAuth)
 
-Authenticate and receive access and refresh tokens.
+Authenticate and receive access and refresh tokens for token-based authentication.
 
 ```
 POST /api/signin
@@ -54,23 +68,34 @@ POST /api/signin
 ```json
 {
   "username": "user@example.com",
-  "password": "password"
+  "password": "password",
+  "authType": "oauth"
 }
 ```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `username` | `string` | Yes | User email or username |
+| `password` | `string` | Yes | User password |
+| `authType` | `string` | Yes | Must be `"oauth"` for token-based auth |
 
 ### Response
 
 ```json
 {
   "payload": {
-    "user": { "_id": "...", "username": "user@example.com" },
+    "user": {
+      "_id": "user-id",
+      "username": "user@example.com",
+      "fullName": "John Doe"
+    },
     "token": "eyJhbGciOi...",
     "refreshToken": "eyJhbGciOi..."
   }
 }
 ```
 
-The `token` should be sent as `Authorization: Bearer <token>` on subsequent requests. When it expires, use the refresh endpoint to obtain a new one.
+The `token` should be sent as `Authorization: Bearer <token>` on subsequent requests. When it expires, use the [Refresh Token](#refresh-token) endpoint to obtain a new one.
 
 > **SDK:** [`sdk.authentication.oAuthSignin(credentials)`](/sdk/authentication#authentication-with-oauthsignin-method)
 
@@ -91,16 +116,35 @@ POST /api/signup
   "username": "newuser@example.com",
   "password": "securePassword123",
   "firstName": "John",
-  "lastName": "Doe"
+  "lastName": "Doe",
+  "email": "newuser@example.com",
+  "phone": "+1234567890",
+  "birthDate": "1990-01-01"
 }
 ```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `username` | `string` | Yes | Unique username or email |
+| `password` | `string` | Yes | Account password |
+| `firstName` | `string` | Yes | User's first name |
+| `lastName` | `string` | Yes | User's last name |
+| `email` | `string` | No | Email address |
+| `phone` | `string` | No | Phone number |
+| `fullName` | `string` | No | Full display name |
+| `birthDate` | `string` | Yes | Date of birth |
 
 ### Response
 
 ```json
 {
   "payload": {
-    "user": { "_id": "...", "username": "newuser@example.com" }
+    "user": {
+      "_id": "user-id",
+      "username": "newuser@example.com",
+      "firstName": "John",
+      "lastName": "Doe"
+    }
   }
 }
 ```
@@ -109,7 +153,7 @@ POST /api/signup
 
 ---
 
-## OAuth Sign Up
+## Sign Up (OAuth)
 
 Register a new user and receive tokens in one step.
 
@@ -119,12 +163,16 @@ POST /api/signup
 
 ### Request Body
 
+Same fields as [Sign Up](#sign-up), with the addition of `authType`:
+
 ```json
 {
   "username": "newuser@example.com",
   "password": "securePassword123",
   "firstName": "John",
-  "lastName": "Doe"
+  "lastName": "Doe",
+  "birthDate": "1990-01-01",
+  "authType": "oauth"
 }
 ```
 
@@ -133,7 +181,10 @@ POST /api/signup
 ```json
 {
   "payload": {
-    "user": { "_id": "...", "username": "newuser@example.com" },
+    "user": {
+      "_id": "user-id",
+      "username": "newuser@example.com"
+    },
     "token": "eyJhbGciOi...",
     "refreshToken": "eyJhbGciOi..."
   }
@@ -160,11 +211,19 @@ POST /api/token/refresh
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `refreshToken` | `string` | Yes | A valid refresh token |
+
 ### Response
 
 ```json
 {
   "payload": {
+    "user": {
+      "_id": "user-id",
+      "username": "user@example.com"
+    },
     "token": "eyJhbGciOi...",
     "refreshToken": "eyJhbGciOi..."
   }
@@ -177,7 +236,7 @@ POST /api/token/refresh
 
 ## Get Logged-In User
 
-Retrieve the currently authenticated user's profile.
+Retrieve the currently authenticated user's profile. Also used internally for API token authentication.
 
 ```
 GET /api/me
@@ -193,6 +252,8 @@ GET /api/me
   "fullName": "John Doe",
   "firstName": "John",
   "lastName": "Doe",
+  "phone": "+1234567890",
+  "birthDate": "1990-01-01",
   "roles": ["user"],
   "metadata": {}
 }
@@ -212,6 +273,8 @@ POST /api/me
 
 ### Request Body
 
+Accepts a partial user object — only the fields being changed need to be included.
+
 ```json
 {
   "firstName": "Jane",
@@ -219,6 +282,16 @@ POST /api/me
   "password": "newPassword123"
 }
 ```
+
+| Field | Type | Description |
+|---|---|---|
+| `firstName` | `string` | Updated first name |
+| `lastName` | `string` | Updated last name |
+| `fullName` | `string` | Updated display name |
+| `email` | `string` | Updated email |
+| `phone` | `string` | Updated phone number |
+| `password` | `string` | New password |
+| `metadata` | `object` | Custom metadata |
 
 ### Response
 
@@ -263,9 +336,10 @@ This endpoint is blocked for API token-authenticated requests. Use cookie or OAu
   {
     "_id": "token-id",
     "nickname": "CI Pipeline",
+    "tokenPrefix": "ql_abc...",
     "workspace": "workspace-id",
     "expiresAt": "2026-12-31T00:00:00.000Z",
-    "lastUsed": "2026-01-15T10:30:00.000Z",
+    "lastUsedAt": "2026-01-15T10:30:00.000Z",
     "created": "2025-06-01T00:00:00.000Z"
   }
 ]
@@ -292,6 +366,12 @@ POST /api/me/api-tokens
   "workspace": "optional-workspace-id"
 }
 ```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `nickname` | `string` | Yes | Human-readable name for the token |
+| `expiresAt` | `string` | Yes | ISO 8601 expiration date |
+| `workspace` | `string` | No | Scope the token to a specific workspace |
 
 ### Response
 

@@ -51,6 +51,11 @@ POST /api/invites
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `workspace` | `string` | Yes | The workspace ID to accept |
+| `kind` | `string` | Yes | Must be `"accept"` |
+
 ### Response
 
 Returns `200 OK` on success.
@@ -75,6 +80,11 @@ POST /api/invites
   "kind": "decline"
 }
 ```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `workspace` | `string` | Yes | The workspace ID to decline |
+| `kind` | `string` | Yes | Must be `"decline"` |
 
 ### Response
 

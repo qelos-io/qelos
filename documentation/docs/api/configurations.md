@@ -45,6 +45,8 @@ PUT /api/configurations/app-configuration
 
 ### Request Body
 
+Accepts a partial configuration object — only the fields being changed need to be included.
+
 ```json
 {
   "theme": "dark",
@@ -55,8 +57,6 @@ PUT /api/configurations/app-configuration
   }
 }
 ```
-
-Accepts a partial configuration object — only the fields being changed need to be included.
 
 ### Response
 

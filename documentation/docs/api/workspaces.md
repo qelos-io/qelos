@@ -112,6 +112,12 @@ POST /api/workspaces
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | Yes | The workspace name |
+| `logo` | `string` | No | URL to the workspace logo |
+| `labels` | `string[]` | No | Labels for categorization |
+
 ### Response
 
 Returns the created workspace object.
@@ -142,6 +148,8 @@ PUT /api/workspaces/{workspaceId}
   "logo": "https://example.com/new-logo.png"
 }
 ```
+
+Only the fields being changed need to be included.
 
 ### Response
 
