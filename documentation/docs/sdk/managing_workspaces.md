@@ -123,6 +123,44 @@ To retrieve a list of all workspaces as an administrator:
 const workspaces = await sdkAdmin.adminWorkspaces.getList();
 ```
 
+You can also filter workspaces by passing optional filters:
+
+```typescript
+// Filter by member user ID
+const workspaces = await sdkAdmin.adminWorkspaces.getList({ 'members.user': 'userId' });
+
+// Filter by labels
+const workspaces = await sdkAdmin.adminWorkspaces.getList({ labels: ['label1', 'label2'] });
+
+// Filter by name (case-insensitive)
+const workspaces = await sdkAdmin.adminWorkspaces.getList({ name: 'my workspace' });
+
+// Search by name or invite details
+const workspaces = await sdkAdmin.adminWorkspaces.getList({ q: 'search term' });
+
+// Filter by workspace IDs
+const workspaces = await sdkAdmin.adminWorkspaces.getList({ _id: ['id1', 'id2'] });
+
+// Select specific fields
+const workspaces = await sdkAdmin.adminWorkspaces.getList({ select: 'name,logo,labels' });
+
+// Combine multiple filters
+const workspaces = await sdkAdmin.adminWorkspaces.getList({
+  'members.user': 'userId',
+  labels: ['important'],
+  select: 'name,labels,members'
+});
+```
+
+| Filter | Type | Description |
+|--------|------|-------------|
+| `members.user` | `string` | Filter workspaces by member user ID |
+| `labels` | `string[]` | Filter workspaces that have any of the specified labels |
+| `name` | `string` | Filter workspaces by name (case-insensitive) |
+| `q` | `string` | Search workspaces by name or invite details |
+| `_id` | `string[]` | Filter by specific workspace IDs |
+| `select` | `string` | Comma-separated list of fields to return (default: `name logo tenant labels`) |
+
 ### Working with Encrypted Workspace Data
 
 The admin SDK provides methods to store and retrieve encrypted data for workspaces:
@@ -168,6 +206,10 @@ await sdkAdmin.authentication.oAuthSignin({
 // Get all workspaces (admin only)
 const allWorkspaces = await sdkAdmin.adminWorkspaces.getList();
 console.log(`Found ${allWorkspaces.length} workspaces across all tenants`);
+
+// Get workspaces filtered by member user ID
+const userWorkspaces = await sdkAdmin.adminWorkspaces.getList({ 'members.user': 'userId' });
+console.log(`User belongs to ${userWorkspaces.length} workspaces`);
 
 // Store encrypted data for a workspace
 await sdkAdmin.adminWorkspaces.setEncryptedData('workspaceId', 'api-credentials', {

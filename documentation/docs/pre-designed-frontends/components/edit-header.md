@@ -24,7 +24,7 @@ A header component specifically designed for edit pages, providing navigation an
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | title | string | Required | The main title displayed in the header |
-| breadcrumbItems | Array<BreadcrumbItem> | [] | Array of breadcrumb items for navigation |
+| breadcrumbItems | `Array<BreadcrumbItem>` | [] | Array of breadcrumb items for navigation |
 | showSave | boolean | false | Whether to show the save button |
 | showCancel | boolean | true | Whether to show the cancel button |
 | saveText | string | 'Save' | Text for the save button |
