@@ -71,6 +71,17 @@ export async function getEveryWorkspaces(req: AuthRequest, res: Response) {
       dbQuery._id = { $in: req.query._id.toString().split(',') }
     }
   }
+  if (req.query['members.user']) {
+    const userIds = req.query['members.user'].toString().split(',');
+    dbQuery['members.user'] = userIds.length === 1 ? userIds[0] : { $in: userIds };
+  }
+  if (req.query.labels) {
+    const labels = req.query.labels.toString().split(',');
+    dbQuery.labels = { $in: labels };
+  }
+  if (req.query.name) {
+    dbQuery.name = new RegExp(req.query.name.toString(), 'i');
+  }
   if (req.query.q) {
     const reg = new RegExp(req.query.q.toString(), 'i');
     dbQuery.$or = [
