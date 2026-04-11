@@ -192,3 +192,53 @@ DELETE /api/workspaces/{workspaceId}
 Returns `200 OK` on success.
 
 > **SDK:** [`sdk.workspaces.remove(workspaceId)`](/sdk/managing_workspaces#removing-a-workspace)
+
+---
+
+## List All Workspaces (Admin)
+
+Retrieve all workspaces across all tenants with optional filtering. This endpoint requires administrator privileges.
+
+```
+GET /api/workspaces/all
+```
+
+### Query Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `members.user` | `string` | Filter workspaces by member user ID (comma-separated for multiple) |
+| `labels` | `string` | Filter workspaces that have any of the specified labels (comma-separated) |
+| `name` | `string` | Filter workspaces by name (case-insensitive regex match) |
+| `q` | `string` | Search workspaces by name or invite details |
+| `_id` | `string` | Filter by specific workspace IDs (comma-separated) |
+| `select` | `string` | Comma-separated list of fields to return (default: `name logo tenant labels`) |
+
+### Example: Filtered Queries
+
+```
+GET /api/workspaces/all?members.user=user123
+GET /api/workspaces/all?labels=important,team
+GET /api/workspaces/all?name=engineering&select=name,labels,members
+GET /api/workspaces/all?q=search+term
+GET /api/workspaces/all?_id=id1,id2
+```
+
+### Response
+
+```json
+[
+  {
+    "_id": "workspace-id",
+    "name": "My Workspace",
+    "logo": "https://example.com/logo.png",
+    "labels": ["team", "project"]
+  }
+]
+```
+
+::: warning
+This endpoint requires administrator authentication. Regular users should use `GET /api/workspaces` instead.
+:::
+
+> **SDK:** [`sdkAdmin.adminWorkspaces.getList(filters)`](/sdk/managing_workspaces#getting-list-of-all-workspaces-admin)

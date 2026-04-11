@@ -37,7 +37,7 @@ GET /api/plans/public
 ]
 ```
 
-> **SDK:** [`sdk.payments.getPlans(query)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.getPlans(query)`](/payments/)
 
 ---
 
@@ -59,7 +59,7 @@ GET /api/plans/{planId}
 
 Returns the plan object.
 
-> **SDK:** [`sdk.payments.getPlan(planId)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.getPlan(planId)`](/payments/)
 
 ---
 
@@ -91,7 +91,7 @@ POST /api/checkout
 }
 ```
 
-> **SDK:** [`sdk.payments.checkout(params)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.checkout(params)`](/payments/)
 
 ---
 
@@ -115,7 +115,7 @@ GET /api/subscriptions/me
 }
 ```
 
-> **SDK:** [`sdk.payments.getMySubscription()`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.getMySubscription()`](/payments/)
 
 ---
 
@@ -137,7 +137,7 @@ PUT /api/subscriptions/{subscriptionId}/cancel
 
 Returns the updated subscription object with cancelled status.
 
-> **SDK:** [`sdk.payments.cancelSubscription(subscriptionId)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.cancelSubscription(subscriptionId)`](/payments/)
 
 ---
 
@@ -168,7 +168,7 @@ GET /api/invoices
 ]
 ```
 
-> **SDK:** [`sdk.payments.getInvoices(query)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.getInvoices(query)`](/payments/)
 
 ---
 
@@ -190,7 +190,7 @@ GET /api/invoices/{invoiceId}
 
 Returns the invoice object.
 
-> **SDK:** [`sdk.payments.getInvoice(invoiceId)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.getInvoice(invoiceId)`](/payments/)
 
 ---
 
@@ -221,4 +221,4 @@ POST /api/coupons/validate
 }
 ```
 
-> **SDK:** [`sdk.payments.validateCoupon(code, planId)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.validateCoupon(code, planId)`](/payments/)

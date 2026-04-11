@@ -108,7 +108,7 @@ Every SDK method corresponds to an API endpoint. Each API page links back to the
 | [`sdk.blocks`](/sdk/managing_blocks) | [Blocks API](/api/blocks) |
 | [`sdk.appConfigurations`](/sdk/managing_configurations) | [Configurations API](/api/configurations) |
 | [`sdk.lambdas`](/sdk/lambdas) | [Webhooks API](/api/webhooks) |
-| [`sdk.payments`](/sdk/managing_plugins) | [Payments API](/api/payments) |
+| [`sdk.payments`](/payments/) | [Payments API](/api/payments) |
 | [`sdk.ai.threads`](/sdk/ai_operations) | [AI Threads API](/api/ai-threads) |
 | [`sdk.ai.chat`](/sdk/ai_operations) | [AI Chat API](/api/ai-chat) |
 | [`sdk.ai.rag`](/sdk/ai_operations) | [AI RAG API](/api/ai-rag) |
