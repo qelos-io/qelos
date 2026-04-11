@@ -23,9 +23,9 @@ A title component specifically designed for list pages, providing page title, de
 |------|------|---------|-------------|
 | title | string | Required | The main page title |
 | description | string | '' | Optional description text |
-| actionButtons | Array<ActionButton> | [] | Array of action buttons to display |
+| actionButtons | `Array<ActionButton>` | [] | Array of action buttons to display |
 | showBreadcrumb | boolean | true | Whether to show breadcrumb navigation |
-| breadcrumbItems | Array<BreadcrumbItem> | [] | Breadcrumb items |
+| breadcrumbItems | `Array<BreadcrumbItem>` | [] | Breadcrumb items |
 
 ## Types
 
