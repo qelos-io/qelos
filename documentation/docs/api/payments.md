@@ -6,7 +6,7 @@ editLink: true
 
 Endpoints for managing plans, subscriptions, invoices, checkout, and coupons.
 
-> **SDK equivalent:** `sdk.payments`
+> **SDK equivalent:** [`sdk.payments`](/sdk/basic_usage)
 
 ## List Plans
 
@@ -37,7 +37,7 @@ GET /api/plans/public
 ]
 ```
 
-> **SDK:** [`sdk.payments.getPlans(query)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.getPlans(query)`](/sdk/basic_usage)
 
 ---
 
@@ -59,7 +59,7 @@ GET /api/plans/{planId}
 
 Returns the plan object.
 
-> **SDK:** [`sdk.payments.getPlan(planId)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.getPlan(planId)`](/sdk/basic_usage)
 
 ---
 
@@ -76,22 +76,32 @@ POST /api/checkout
 ```json
 {
   "planId": "plan-id",
+  "billingCycle": "monthly",
   "successUrl": "https://your-app.com/success",
   "cancelUrl": "https://your-app.com/cancel",
   "couponCode": "SAVE20"
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `planId` | `string` | Yes | The plan to subscribe to |
+| `billingCycle` | `string` | Yes | Billing cycle (e.g., `"monthly"`, `"yearly"`) |
+| `successUrl` | `string` | No | Redirect URL on successful checkout |
+| `cancelUrl` | `string` | No | Redirect URL on cancelled checkout |
+| `couponCode` | `string` | No | Coupon code to apply |
+
 ### Response
 
 ```json
 {
+  "subscriptionId": "subscription-id",
   "checkoutUrl": "https://payment-provider.com/checkout/session-id",
-  "sessionId": "session-id"
+  "clientToken": "client-token"
 }
 ```
 
-> **SDK:** [`sdk.payments.checkout(params)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.checkout(params)`](/sdk/basic_usage)
 
 ---
 
@@ -115,7 +125,7 @@ GET /api/subscriptions/me
 }
 ```
 
-> **SDK:** [`sdk.payments.getMySubscription()`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.getMySubscription()`](/sdk/basic_usage)
 
 ---
 
@@ -137,7 +147,7 @@ PUT /api/subscriptions/{subscriptionId}/cancel
 
 Returns the updated subscription object with cancelled status.
 
-> **SDK:** [`sdk.payments.cancelSubscription(subscriptionId)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.cancelSubscription(subscriptionId)`](/sdk/basic_usage)
 
 ---
 
@@ -168,7 +178,7 @@ GET /api/invoices
 ]
 ```
 
-> **SDK:** [`sdk.payments.getInvoices(query)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.getInvoices(query)`](/sdk/basic_usage)
 
 ---
 
@@ -190,7 +200,7 @@ GET /api/invoices/{invoiceId}
 
 Returns the invoice object.
 
-> **SDK:** [`sdk.payments.getInvoice(invoiceId)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.getInvoice(invoiceId)`](/sdk/basic_usage)
 
 ---
 
@@ -211,14 +221,23 @@ POST /api/coupons/validate
 }
 ```
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `code` | `string` | Yes | The coupon code to validate |
+| `planId` | `string` | No | Plan ID to validate the coupon against |
+
 ### Response
+
+Returns the coupon object if valid.
 
 ```json
 {
-  "valid": true,
+  "_id": "coupon-id",
+  "code": "SAVE20",
   "discount": 20,
-  "discountType": "percentage"
+  "discountType": "percentage",
+  "isActive": true
 }
 ```
 
-> **SDK:** [`sdk.payments.validateCoupon(code, planId)`](/sdk/managing_plugins)
+> **SDK:** [`sdk.payments.validateCoupon(code, planId)`](/sdk/basic_usage)

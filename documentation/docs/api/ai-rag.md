@@ -38,7 +38,7 @@ POST /api/ai/sources/{sourceId}/storage
 | `integrationId` | `string` | Yes | The AI integration ID |
 | `scope` | `string` | Yes | Storage scope: `thread`, `user`, `workspace`, or `tenant` |
 | `subjectId` | `string` | No | The subject ID (e.g., thread ID, user ID) |
-| `expirationAfterDays` | `number` | No | Auto-expire after N days |
+| `expirationAfterDays` | `number` | No | Auto-expire storage after N days |
 
 ### Response
 
@@ -47,8 +47,11 @@ POST /api/ai/sources/{sourceId}/storage
   "success": true,
   "message": "Vector store created",
   "vectorStore": {
-    "id": "vector-store-id",
+    "_id": "vector-store-id",
+    "scope": "thread",
+    "subjectId": "thread-id",
     "externalId": "external-id",
+    "expirationAfterDays": 30,
     "created": "2025-01-01T00:00:00.000Z"
   }
 }
@@ -129,13 +132,15 @@ POST /api/ai/sources/{sourceId}/storage/clear
 ```json
 {
   "integrationId": "integration-id",
+  "vectorStoreId": "vector-store-id",
   "fileIds": ["file-id-1", "file-id-2"]
 }
 ```
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `integrationId` | `string` | Yes | The AI integration ID |
+| `integrationId` | `string` | No | The AI integration ID |
+| `vectorStoreId` | `string` | No | The vector store to clear |
 | `fileIds` | `string[]` | No | Specific file IDs to remove. If omitted, clears all files. |
 
 ### Response

@@ -104,11 +104,11 @@ Every SDK method corresponds to an API endpoint. Each API page links back to the
 | [`sdk.workspaces`](/sdk/managing_workspaces) | [Workspaces API](/api/workspaces) |
 | [`sdk.invites`](/sdk/managing_invites) | [Invites API](/api/invites) |
 | [`sdk.blueprints`](/sdk/blueprints_operations) | [Blueprints API](/api/blueprints) |
-| [`sdk.blueprints.entitiesOf()`](/sdk/blueprints_operations) | [Blueprint Entities API](/api/blueprint-entities) |
+| [`sdk.blueprints.entitiesOf()`](/sdk/blueprints_operations#working-with-blueprint-entities) | [Blueprint Entities API](/api/blueprint-entities) |
 | [`sdk.blocks`](/sdk/managing_blocks) | [Blocks API](/api/blocks) |
 | [`sdk.appConfigurations`](/sdk/managing_configurations) | [Configurations API](/api/configurations) |
-| [`sdk.lambdas`](/sdk/lambdas) | [Webhooks API](/api/webhooks) |
-| [`sdk.payments`](/sdk/managing_plugins) | [Payments API](/api/payments) |
-| [`sdk.ai.threads`](/sdk/ai_operations) | [AI Threads API](/api/ai-threads) |
-| [`sdk.ai.chat`](/sdk/ai_operations) | [AI Chat API](/api/ai-chat) |
-| [`sdk.ai.rag`](/sdk/ai_operations) | [AI RAG API](/api/ai-rag) |
+| [`sdk.lambdas`](/sdk/lambdas) | [Webhooks / Lambdas API](/api/webhooks) |
+| [`sdk.payments`](/sdk/basic_usage) | [Payments API](/api/payments) |
+| [`sdk.ai.threads`](/sdk/ai_operations#thread-operations) | [AI Threads API](/api/ai-threads) |
+| [`sdk.ai.chat`](/sdk/ai_operations#chat-completion-operations) | [AI Chat API](/api/ai-chat) |
+| [`sdk.ai.rag`](/sdk/ai_operations#rag-retrieval-augmented-generation-operations) | [AI RAG API](/api/ai-rag) |

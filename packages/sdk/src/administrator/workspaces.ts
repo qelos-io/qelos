@@ -9,8 +9,16 @@ export default class QlAdminWorkspaces extends BaseSDK {
     super(options)
   }
 
-  getList() {
-    return this.callJsonApi<IWorkspace[]>(this.relativePath + '/all');
+  getList(filters?: { 'members.user'?: string; labels?: string[]; name?: string; q?: string; _id?: string[]; select?: string }) {
+    const queryParams = filters
+      ? `?${Object.entries(filters)
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) =>
+          Array.isArray(value) ? `${key}=${value.join(',')}` : `${key}=${value}`
+        ).join('&')}`
+      : '';
+
+    return this.callJsonApi<IWorkspace[]>(this.relativePath + '/all' + queryParams);
   }
 
   getEncryptedData<Z = any>(workspaceId: string, encryptedId: string = '') {

@@ -47,7 +47,7 @@ POST /api/ai/{integrationId}/chat-completion
 |---|---|---|---|
 | `messages` | `IMessage[]` | Yes | Array of conversation messages |
 | `model` | `string` | No | Model to use (defaults to integration setting) |
-| `temperature` | `number` | No | Sampling temperature (0-2) |
+| `temperature` | `number` | No | Sampling temperature (0–2) |
 | `top_p` | `number` | No | Nucleus sampling parameter |
 | `max_tokens` | `number` | No | Maximum tokens in the response |
 | `frequency_penalty` | `number` | No | Frequency penalty (-2 to 2) |
@@ -56,6 +56,9 @@ POST /api/ai/{integrationId}/chat-completion
 | `response_format` | `object` | No | Response format specification |
 | `context` | `object` | No | Additional context data |
 | `stream` | `boolean` | No | Set to `true` for streaming response |
+| `clientTools` | `IClientTool[]` | No | Client-side tool definitions |
+| `rules` | `string[]` | No | Additional rules for the AI |
+| `queryParams` | `object` | No | Additional query parameters |
 
 ### Message Format
 
@@ -134,6 +137,12 @@ Execute a streaming chat completion. Returns a Server-Sent Events (SSE) stream.
 POST /api/ai/{integrationId}/chat-completion
 ```
 
+### Headers
+
+| Header | Value | Description |
+|---|---|---|
+| `Accept` | `text/event-stream` | Required for streaming responses |
+
 ### Path Parameters
 
 | Parameter | Type | Description |
@@ -179,6 +188,12 @@ Execute a streaming chat completion with thread context.
 ```
 POST /api/ai/{integrationId}/chat-completion/{threadId}
 ```
+
+### Headers
+
+| Header | Value | Description |
+|---|---|---|
+| `Accept` | `text/event-stream` | Required for streaming responses |
 
 ### Path Parameters
 

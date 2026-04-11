@@ -6,7 +6,7 @@ editLink: true
 
 Endpoints for executing serverless functions (lambdas) and webhooks through Qelos integrations. Each integration is identified by its integration ID.
 
-> **SDK equivalent:** [`sdk.lambdas`](/sdk/lambdas)
+> **SDK equivalent:** [`sdk.lambdas`](/sdk/execute_lambdas)
 
 ## Execute (POST)
 
@@ -37,7 +37,7 @@ Any valid JSON payload to pass to the function.
 
 Returns the function's response. The shape depends on the lambda implementation.
 
-> **SDK:** [`sdk.lambdas.post(integrationId, data)`](/sdk/lambdas)
+> **SDK:** [`sdk.lambdas.post(integrationId, data)`](/sdk/execute_lambdas#post-request)
 
 ---
 
@@ -59,7 +59,7 @@ GET /api/webhooks/{integrationId}
 
 Returns the function's response.
 
-> **SDK:** [`sdk.lambdas.get(integrationId, data)`](/sdk/lambdas)
+> **SDK:** [`sdk.lambdas.get(integrationId, data)`](/sdk/execute_lambdas#get-request)
 
 ---
 
@@ -85,7 +85,7 @@ Any valid JSON payload to pass to the function.
 
 Returns the function's response.
 
-> **SDK:** [`sdk.lambdas.put(integrationId, data)`](/sdk/lambdas)
+> **SDK:** [`sdk.lambdas.put(integrationId, data)`](/sdk/execute_lambdas#put-request)
 
 ---
 
@@ -107,4 +107,4 @@ DELETE /api/webhooks/{integrationId}
 
 Returns the function's response.
 
-> **SDK:** [`sdk.lambdas.delete(integrationId, data)`](/sdk/lambdas)
+> **SDK:** [`sdk.lambdas.delete(integrationId, data)`](/sdk/execute_lambdas#delete-request)

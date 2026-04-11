@@ -106,18 +106,15 @@ GET /api/ai/threads
 ### Response
 
 ```json
-{
-  "threads": [
-    {
-      "_id": "thread-id",
-      "integration": "integration-id",
-      "title": "Customer Support Chat",
-      "messages": [],
-      "created": "2025-01-01T00:00:00.000Z"
-    }
-  ],
-  "total": 42
-}
+[
+  {
+    "_id": "thread-id",
+    "integration": "integration-id",
+    "title": "Customer Support Chat",
+    "messages": [],
+    "created": "2025-01-01T00:00:00.000Z"
+  }
+]
 ```
 
 > **SDK:** [`sdk.ai.threads.list(options)`](/sdk/ai_operations#listing-threads)

@@ -52,7 +52,7 @@ GET /api/blueprints/{key}
 
 ### Response
 
-Returns the blueprint object.
+Returns the blueprint object with its full field definitions.
 
 > **SDK:** [`sdk.blueprints.getBlueprint(key)`](/sdk/blueprints_operations#get-a-specific-blueprint-by-key)
 
@@ -81,7 +81,7 @@ GET /api/blueprints/{blueprintKey}/charts/{chartType}
 | `$limit` | `number` | No | Limit the number of entities considered |
 | `$skip` | `number` | No | Skip entities |
 
-Additional filter parameters are supported (same as entity listing).
+Additional filter parameters are supported (same as [entity listing](/api/blueprint-entities#list-entities)).
 
 ### Response
 
@@ -111,6 +111,8 @@ GET /api/blueprints/{blueprintKey}/charts/pie
 |---|---|---|---|
 | `x` | `string` | Yes | The metadata key to aggregate |
 
+Additional filter parameters are supported.
+
 ### Response
 
 Returns an ECharts-compatible pie chart option object.
@@ -135,7 +137,7 @@ GET /api/blueprints/{blueprintKey}/charts/count
 
 ### Query Parameters
 
-Standard filter parameters are supported.
+Standard filter parameters are supported (same as [entity listing](/api/blueprint-entities#list-entities)).
 
 ### Response
 
@@ -168,7 +170,7 @@ GET /api/blueprints/{blueprintKey}/charts/sum
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `sum` | `string` | Yes | The numeric property to sum |
-| `groupBy` | `string` | No | The property to group by |
+| `groupBy` | `string` | No | The property to group results by |
 
 Additional filter parameters are supported.
 
@@ -191,5 +193,11 @@ Additional filter parameters are supported.
   "sum": 27000
 }
 ```
+
+### Grouping Behavior
+
+- **String / Number / Boolean**: Groups by exact values
+- **Date / Datetime**: Groups by day of week (0 = Sunday, 6 = Saturday)
+- **Time**: Groups by hour of day (0–23)
 
 > **SDK:** [`sdk.blueprints.getSum(blueprintKey, sumProperty, groupByProperty, query)`](/sdk/blueprints_operations#sum-endpoint-details)

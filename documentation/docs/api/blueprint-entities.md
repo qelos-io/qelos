@@ -128,7 +128,7 @@ The request body should contain the entity fields as defined by the blueprint sc
 
 ### Response
 
-Returns the created entity object with generated `_id`.
+Returns the created entity object with generated `_id`, `created`, and `updated` timestamps.
 
 > **SDK:** [`sdk.blueprints.entitiesOf(blueprintKey).create(entity)`](/sdk/blueprints_operations#creating-a-new-entity)
 

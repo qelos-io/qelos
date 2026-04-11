@@ -113,6 +113,8 @@ PUT /api/blocks/{blockId}
 }
 ```
 
+Only the fields being changed need to be included.
+
 ### Response
 
 Returns the updated block object.
