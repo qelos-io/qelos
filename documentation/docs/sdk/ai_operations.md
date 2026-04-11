@@ -4,6 +4,8 @@ editLink: true
 ---
 # AI Operations
 
+> **API Reference:** See the [AI Threads API](/api/ai-threads), [AI Chat API](/api/ai-chat), and [AI RAG API](/api/ai-rag) for the raw HTTP endpoints documented here.
+
 The AI module provides comprehensive functionality for managing AI-powered conversations, threads, and chat completions within your Qelos application. This module enables you to build sophisticated AI-driven features with support for both streaming and non-streaming chat completions.
 
 ## SDK Structure

@@ -3,6 +3,8 @@ title: Authentication
 ---
 # Authentication
 
+> **API Reference:** See the [Authentication API](/api/authentication) for the raw HTTP endpoints documented here.
+
 Authentication is a crucial component of using the Qelos SDK. This section provides a detailed overview of the main authentication methods: `signin` and `oAuthSignin`.
 
 ## Authentication with `signin` Method

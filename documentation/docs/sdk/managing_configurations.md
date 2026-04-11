@@ -3,6 +3,8 @@ title: Managing Configurations
 ---
 # Managing Configurations
 
+> **API Reference:** See the [Configurations API](/api/configurations) for the raw HTTP endpoints documented here.
+
 This section provides an overview of managing configurations using the Qelos SDK. Configurations in Qelos allow you to store and retrieve application settings and metadata. The SDK provides methods for both regular users and administrators to work with configurations.
 
 ## App Configurations

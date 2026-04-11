@@ -1,5 +1,7 @@
 # Execute Lambdas and Webhooks
 
+> **API Reference:** See the [Webhooks / Lambdas API](/api/webhooks) for the raw HTTP endpoints documented here.
+
 The Qelos Lambdas SDK provides methods to interact with webhook integrations in the Qelos platform. This SDK allows you to trigger webhooks and execute integration targets.
 
 ## Initialization

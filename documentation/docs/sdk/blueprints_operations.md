@@ -3,6 +3,8 @@ title: Blueprints Operations
 ---
 # Blueprints Operations
 
+> **API Reference:** See the [Blueprints API](/api/blueprints) and [Blueprint Entities API](/api/blueprint-entities) for the raw HTTP endpoints documented here.
+
 This section provides an overview of managing blueprints using the Qelos SDK. Blueprints in Qelos represent data models that define the structure of your application's data. The SDK provides methods for creating, updating, removing, and retrieving blueprint information, as well as managing blueprint entities.
 
 ## Fetching Blueprints as a Regular User
