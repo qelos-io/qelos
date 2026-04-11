@@ -3,6 +3,8 @@ title: Managing Invites
 ---
 # Managing Invites
 
+> **API Reference:** See the [Invites API](/api/invites) for the raw HTTP endpoints documented here.
+
 This section covers how to manage workspace invites using the Qelos SDK. The invites module allows users to handle workspace invitations, including viewing, accepting, and declining them.
 
 ## Invite Methods

@@ -216,6 +216,10 @@ The Qelos SDK is organized into several modules, each providing specific functio
 ### AI & Intelligence
 - [AI Operations](./ai_operations.md) - AI chat completions, thread management, and streaming capabilities
 
+## API Reference
+
+Looking for the raw HTTP endpoints instead? See the [API Reference](/api/api) for complete REST API documentation. Every SDK method maps directly to an API endpoint, with cross-links between both sections.
+
 ## About Qelos
 
 Qelos is a SaaS platform developed by Velocitech LTD that enables you to create your own SaaS applications with multi-tenant capabilities. The platform provides a comprehensive set of tools and APIs to build, deploy, and manage your applications efficiently.

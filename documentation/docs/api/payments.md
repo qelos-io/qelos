@@ -1,0 +1,224 @@
+---
+title: Payments API
+editLink: true
+---
+# Payments API
+
+Endpoints for managing plans, subscriptions, invoices, checkout, and coupons.
+
+> **SDK equivalent:** `sdk.payments`
+
+## List Plans
+
+Retrieve available subscription plans.
+
+```
+GET /api/plans/public
+```
+
+### Query Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `isActive` | `boolean` | Filter by active/inactive plans |
+
+### Response
+
+```json
+[
+  {
+    "_id": "plan-id",
+    "name": "Pro Plan",
+    "price": 29.99,
+    "interval": "month",
+    "isActive": true,
+    "features": ["feature1", "feature2"]
+  }
+]
+```
+
+> **SDK:** [`sdk.payments.getPlans(query)`](/sdk/managing_plugins)
+
+---
+
+## Get Plan
+
+Retrieve a specific plan by ID.
+
+```
+GET /api/plans/{planId}
+```
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `planId` | `string` | The plan ID |
+
+### Response
+
+Returns the plan object.
+
+> **SDK:** [`sdk.payments.getPlan(planId)`](/sdk/managing_plugins)
+
+---
+
+## Checkout
+
+Initiate a checkout session for a subscription.
+
+```
+POST /api/checkout
+```
+
+### Request Body
+
+```json
+{
+  "planId": "plan-id",
+  "successUrl": "https://your-app.com/success",
+  "cancelUrl": "https://your-app.com/cancel",
+  "couponCode": "SAVE20"
+}
+```
+
+### Response
+
+```json
+{
+  "checkoutUrl": "https://payment-provider.com/checkout/session-id",
+  "sessionId": "session-id"
+}
+```
+
+> **SDK:** [`sdk.payments.checkout(params)`](/sdk/managing_plugins)
+
+---
+
+## Get My Subscription
+
+Retrieve the current user's active subscription.
+
+```
+GET /api/subscriptions/me
+```
+
+### Response
+
+```json
+{
+  "_id": "subscription-id",
+  "plan": "plan-id",
+  "status": "active",
+  "currentPeriodStart": "2025-01-01T00:00:00.000Z",
+  "currentPeriodEnd": "2025-02-01T00:00:00.000Z"
+}
+```
+
+> **SDK:** [`sdk.payments.getMySubscription()`](/sdk/managing_plugins)
+
+---
+
+## Cancel Subscription
+
+Cancel an active subscription.
+
+```
+PUT /api/subscriptions/{subscriptionId}/cancel
+```
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `subscriptionId` | `string` | The subscription ID |
+
+### Response
+
+Returns the updated subscription object with cancelled status.
+
+> **SDK:** [`sdk.payments.cancelSubscription(subscriptionId)`](/sdk/managing_plugins)
+
+---
+
+## List Invoices
+
+Retrieve invoices for the current user.
+
+```
+GET /api/invoices
+```
+
+### Query Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `status` | `string` | Filter by invoice status |
+
+### Response
+
+```json
+[
+  {
+    "_id": "invoice-id",
+    "amount": 29.99,
+    "status": "paid",
+    "created": "2025-01-01T00:00:00.000Z"
+  }
+]
+```
+
+> **SDK:** [`sdk.payments.getInvoices(query)`](/sdk/managing_plugins)
+
+---
+
+## Get Invoice
+
+Retrieve a specific invoice by ID.
+
+```
+GET /api/invoices/{invoiceId}
+```
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `invoiceId` | `string` | The invoice ID |
+
+### Response
+
+Returns the invoice object.
+
+> **SDK:** [`sdk.payments.getInvoice(invoiceId)`](/sdk/managing_plugins)
+
+---
+
+## Validate Coupon
+
+Validate a coupon code, optionally against a specific plan.
+
+```
+POST /api/coupons/validate
+```
+
+### Request Body
+
+```json
+{
+  "code": "SAVE20",
+  "planId": "plan-id"
+}
+```
+
+### Response
+
+```json
+{
+  "valid": true,
+  "discount": 20,
+  "discountType": "percentage"
+}
+```
+
+> **SDK:** [`sdk.payments.validateCoupon(code, planId)`](/sdk/managing_plugins)

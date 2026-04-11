@@ -20,6 +20,7 @@ export default defineConfig({
       { text: 'Guide', link: '/getting-started/intro' },
       { text: 'Tutorials', link: '/tutorials/' },
       { text: 'SDK', link: '/sdk/sdk' },
+      { text: 'API', link: '/api/api' },
       { text: 'CLI', link: '/cli/' },
       { text: 'Plugins', link: '/plugins/create' },
       { text: 'Deployment', link: '/deployment/' },
@@ -136,6 +137,31 @@ export default defineConfig({
             collapsed: true,
             items: [
               { text: 'Authentication Flow', link: '/sdk/tutorials/authentication_flow' }
+            ]
+          }
+        ]
+      },
+      {
+        text: 'API',
+        collapsed: true,
+        items: [
+          { text: 'API Reference', link: '/api/api' },
+          { text: 'Authentication', link: '/api/authentication' },
+          { text: 'Workspaces', link: '/api/workspaces' },
+          { text: 'Invites', link: '/api/invites' },
+          { text: 'Blueprints', link: '/api/blueprints' },
+          { text: 'Blueprint Entities', link: '/api/blueprint-entities' },
+          { text: 'Blocks', link: '/api/blocks' },
+          { text: 'Configurations', link: '/api/configurations' },
+          { text: 'Webhooks / Lambdas', link: '/api/webhooks' },
+          { text: 'Payments', link: '/api/payments' },
+          {
+            text: 'AI',
+            collapsed: true,
+            items: [
+              { text: 'AI Threads', link: '/api/ai-threads' },
+              { text: 'AI Chat', link: '/api/ai-chat' },
+              { text: 'AI RAG', link: '/api/ai-rag' },
             ]
           }
         ]

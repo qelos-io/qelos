@@ -3,6 +3,8 @@ title: Managing Blocks
 ---
 # Managing Blocks
 
+> **API Reference:** See the [Blocks API](/api/blocks) for the raw HTTP endpoints documented here.
+
 This section covers how to manage content blocks using the Qelos SDK. Blocks are reusable content components that can be used across your application.
 
 ## Block Methods

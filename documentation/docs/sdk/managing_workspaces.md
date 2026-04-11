@@ -3,6 +3,8 @@ title: Managing Workspaces
 ---
 # Managing Workspaces
 
+> **API Reference:** See the [Workspaces API](/api/workspaces) for the raw HTTP endpoints documented here.
+
 This section covers how to manage workspaces using the Qelos SDK. Workspaces in Qelos provide multi-tenant support, allowing you to organize users and resources efficiently.
 
 ## Workspace Methods
