@@ -1,6 +1,7 @@
 import { AuthRequest } from '../../../types';
 import { DecryptedSourceAuthentication } from '../../services/integration-source';
 import jwt from 'jsonwebtoken';
+import logger from '../../services/logger';
 import {
   createSourceMiddleware,
   buildRedirectUri,
@@ -103,6 +104,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
     // Complete authentication
     await completeAuthentication(req, res, user, tokenData, 'linkedin');
   } catch (error) {
+    logger.error('failed to login via linkedin', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
