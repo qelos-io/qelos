@@ -7,6 +7,8 @@ import { emitPlatformEvent } from "@qelos/api-kit";
 import logger from "../services/logger";
 import { handleImageOptimization } from "../services/image-optimizer";
 
+const { maxFileSize } = require('../../config');
+
 // Default file extension for unknown types
 const DEFAULT_EXTENSION = "jpg";
 
@@ -86,7 +88,17 @@ export async function uploadFile(req: any, res: any): Promise<any> {
         if (!response.ok)
           throw new Error(`URL fetch failed: ${response.statusText}`);
 
-        const buffer = await response.arrayBuffer();
+        const chunks: Buffer[] = [];
+        let receivedSize = 0;
+        for await (const chunk of response.body as any) {
+          receivedSize += chunk.length;
+          if (receivedSize > maxFileSize) {
+            return res.status(413).json({ message: 'File too large.', maxFileSize }).end();
+          }
+          chunks.push(Buffer.from(chunk));
+        }
+        const buffer = Buffer.concat(chunks);
+
         mimeType = response.headers.get("content-type") || undefined;
         fileData = await handleUpload(
           storage,
