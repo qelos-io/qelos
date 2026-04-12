@@ -1,6 +1,5 @@
 import { AuthRequest } from '../../../types';
 import { DecryptedSourceAuthentication } from '../../services/integration-source';
-import jwt from 'jsonwebtoken';
 import logger from '../../services/logger';
 import {
   createSourceMiddleware,
@@ -61,7 +60,7 @@ export async function authCallbackFromFacebook(req: AuthWithFacebookRequest, res
   const redirectUri = buildRedirectUri(req.headers.tenanthost, '/api/auth/facebook/callback', false);
 
   try {
-    // Exchange the authorization code for an access token and ID token
+    // Exchange the authorization code for an access token
     const tokenResponse = await fetch(FACEBOOK_TOKEN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -88,34 +87,14 @@ export async function authCallbackFromFacebook(req: AuthWithFacebookRequest, res
       return;
     }
 
-    if (!tokenData.id_token) {
-      res.status(400).json({ message: 'ID token is missing in the response' }).end();
-      return
-    }
-
     // Get user data from Facebook API
     const userDataResponse = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${tokenData.access_token}`);
     const fbUserData = await userDataResponse.json();
     
     // Extract email with fallback logic
     let email = fbUserData.email;
-    if (!email) {
-      // Try to get email from ID token if available
-      try {
-        if (tokenData.id_token) {
-          const decodedToken = jwt.decode(tokenData.id_token);
-          if (decodedToken && typeof decodedToken === 'object' && decodedToken.email) {
-            email = decodedToken.email;
-          }
-        }
-      } catch {
-        // ignore
-      }
-      
-      // Final fallback
-      if (!email && fbUserData.id) {
-        email = `${fbUserData.id}@facebook.user`;
-      }
+    if (!email && fbUserData.id) {
+      email = `${fbUserData.id}@facebook.user`;
     }
 
     // Parse name from Facebook data
