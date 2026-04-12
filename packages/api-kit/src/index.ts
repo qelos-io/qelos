@@ -5,4 +5,5 @@ export * from './internal-service'
 export * from './user-middlewares'
 export * from './emit-internal-event'
 export * from './response-error';
+export * from './error-handler';
 export * from './request-utils';

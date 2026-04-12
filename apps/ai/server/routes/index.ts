@@ -1,4 +1,4 @@
-import { app as getApp } from '@qelos/api-kit'
+import { app as getApp, errorHandler } from '@qelos/api-kit'
 import { chatCompletionRouter } from './chat-completion'
 import { sourcesChatCompletionRouter } from './sources-chat-completion'
 import { threadsRouter } from './threads'
@@ -8,4 +8,5 @@ export async function loadRoutes() {
   app.use(sourcesChatCompletionRouter())
   app.use(chatCompletionRouter())
   app.use(threadsRouter())
+  app.use(errorHandler)
 }
