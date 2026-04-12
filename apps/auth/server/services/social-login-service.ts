@@ -154,6 +154,7 @@ export async function findOrCreateUser(
       try {
         profileImage = await uploadProfileImage(tenant, tempUserId, userData.picture);
       } catch (error) {
+        logger.error('failed to upload profile image for new user', error);
         profileImage = userData.picture;
       }
     }
