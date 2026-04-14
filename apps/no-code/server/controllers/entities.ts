@@ -558,23 +558,13 @@ export async function updateBlueprintEntity(req, res) {
     return;
   }
   const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes });
-  if (permittedScopes === true) {
-    if (req.body.user) {
-      query.user = req.body.user;
-    }
-    if (req.body.workspace) {
-      query.workspace = req.body.workspace;
-    }
-  }
   let entity: IBlueprintEntity
   try {
     const givenEntity = await BlueprintEntity.findOne(query).exec()
 
     if (!givenEntity) {
-      if (!givenEntity) {
-        res.status(404).json({ message: 'entity not found' }).end();
-        return;
-      }
+      res.status(404).json({ message: 'entity not found' }).end();
+      return;
     }
     entity = givenEntity;
   } catch (err) {
@@ -583,6 +573,14 @@ export async function updateBlueprintEntity(req, res) {
     return;
   }
   try {
+    if (permittedScopes === true) {
+      if (req.body.user) {
+        entity.user = req.body.user;
+      }
+      if (req.body.workspace) {
+        entity.workspace = req.body.workspace;
+      }
+    }
     await updateAllEntityMetadata(req, blueprint, entity);
 
     const modifiedFields = blueprint.dispatchers?.update && entity.modifiedPaths({ includeChildren: true });
