@@ -383,7 +383,7 @@ async function handleLogout() {
   
   .drawer-content {
     position: relative;
-    height: 100vh;
+    height: 100%;
     background: var(--el-bg-color);
     border-right: 1px solid var(--el-border-color);
     pointer-events: all;
