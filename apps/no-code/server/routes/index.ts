@@ -1,4 +1,4 @@
-import { app as getApp, config } from '@qelos/api-kit'
+import { app as getApp, config, errorHandler } from '@qelos/api-kit'
 import blueprintsRouter from './blueprints';
 import entitiesRouter from './entities';
 import chartsRouter from './charts';
@@ -15,3 +15,5 @@ app.use(entitiesRouter);
 app.use(chartsRouter);
 app.use(blueprintsRouter);
 app.use(componentsRouter);
+
+app.use(errorHandler);

@@ -1,4 +1,5 @@
 const app = require('@qelos/api-kit').app()
+const { errorHandler } = require('@qelos/api-kit')
 const internalCheck = require('../middleware/internal-call-check')
 
 app.use(internalCheck)
@@ -6,3 +7,5 @@ app.use(internalCheck)
 app
   .post('/api/secrets/get', require('../controllers/get'))
   .post('/api/secrets/set', require('../controllers/set'))
+
+app.use(errorHandler)

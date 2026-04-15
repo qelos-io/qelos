@@ -1,4 +1,4 @@
-import { app as getApp } from '@qelos/api-kit'
+import { app as getApp, errorHandler } from '@qelos/api-kit'
 import { managePlugins } from './manage-plugins';
 import { playPlugins } from './play-plugins';
 import eventsRouter from './events';
@@ -20,4 +20,5 @@ export async function loadRoutes() {
   app.use(dataManipulationRouter());
   app.use(lambdasRouter());
   app.use(webhooksRouter());
+  app.use(errorHandler);
 }
