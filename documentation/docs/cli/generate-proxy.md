@@ -192,10 +192,10 @@ curl -X GET "https://your-qelos-instance.com/api/external/health"
 
 - [`qelos push`](/cli/push) - Deploy the proxy plugin to Qelos
 - [`qelos generate connection`](/cli/generate-connection) - Create secure connection configurations
-- [`qelos generate agent`](/cli/generate-agent) - Generate AI agent integrations
+- [`qelos agent`](/cli/agent) - Interact with AI agents
 
 ## Related Resources
 
 - [Plugin Development](/plugins/create) - Complete plugin development guide
-- [API Gateway Configuration](/plugins/configuration) - Advanced proxy settings
-- [Authentication in Plugins](/plugins/authentication) - OAuth and token management
+- [API Proxy Plugin](/plugins/api-proxy) - Advanced proxy configuration
+- [Authentication](/sdk/authentication) - OAuth and token management
