@@ -102,8 +102,45 @@ When a proxy plugin is active:
 1. Client makes request to `/api/external/some/endpoint`
 2. Qelos receives the request
 3. Request is forwarded to `https://api.example.com/some/endpoint`
-4. If a token is configured, it's added to the request headers
+4. Qelos automatically adds the following headers to the proxied request:
+   - `Authorization: Bearer [token]` - If a token is configured in the plugin
+   - `user: [JSON]` - Contains the authenticated user information (if available)
 5. Response from external API is returned to the client
+
+### Automatic Headers
+
+Qelos automatically enhances proxied requests with important authentication and user context:
+
+#### Authorization Header
+- **Format**: `Authorization: Bearer [plugin-token]`
+- **Source**: The token configured in the plugin (via `--token` flag or `QELOS_PROXY_TOKEN` env var)
+- **Purpose**: Allows the external API to authenticate the request
+- **Note**: Only added if a token is configured in the plugin
+
+#### User Header
+- **Format**: `user: [JSON-string]`
+- **Source**: The authenticated Qelos user making the request
+- **Purpose**: Provides user context to the external API
+- **Example**: 
+  ```json
+  {
+    "_id": "user123",
+    "username": "john.doe",
+    "email": "john@example.com",
+    "fullName": "John Doe",
+    "firstName": "John",
+    "lastName": "Doe",
+    "birthDate": "1990-01-01",
+    "roles": ["admin", "user"],
+    "workspace": {
+      "_id": "workspace456",
+      "name": "Acme Corp",
+      "roles": ["admin"],
+      "labels": ["enterprise"]
+    }
+  }
+  ```
+- **Note**: Only added if the user is authenticated in Qelos
 
 ## Updating Existing Proxies
 

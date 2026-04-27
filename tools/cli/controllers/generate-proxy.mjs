@@ -88,6 +88,10 @@ export default async function generateProxyController({ pathFrom, endpointTo, to
     console.log(`  API Path: ${pluginData.apiPath}`);
     console.log(`  Proxy URL: ${pluginData.proxyUrl}`);
     
+    console.log(`\n${green('Automatic headers:')}`);
+    console.log(`  - Authorization: Bearer [token]${pluginData.token ? ' (configured)' : ' (no token set)'}`);
+    console.log(`  - user: [JSON with authenticated user info]`);
+    
     console.log('\n' + '='.repeat(60));
 
   } catch (error) {
