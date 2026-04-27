@@ -1,6 +1,6 @@
 {
   "name": "@qelos/web-sdk",
-  "version": "3.11.10",
+  "version": "3.11.11",
   "description": "Frontend Web SDK for Qelos API",
   "main": "./dist/index.js",
   "scripts": {
