@@ -323,6 +323,10 @@ qelos agent code-wizard -m "Hello"  # uses saved defaults
     <p>Create secure connection configuration files for external integrations with interactive setup and environment variable storage.</p>
   </div>
   <div class="vp-feature">
+    <h3><a href="/cli/generate-proxy">Generate Proxy</a></h3>
+    <p>Create proxy plugin configurations to forward API requests from local paths to external endpoints with optional authentication.</p>
+  </div>
+  <div class="vp-feature">
     <h3><a href="/cli/agent">Agent</a></h3>
     <p>Interact with AI agents using the Qelos SDK with support for conversation history, streaming, and response export.</p>
   </div>

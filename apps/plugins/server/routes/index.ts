@@ -12,7 +12,6 @@ import { webhooksRouter } from './webhooks';
 export async function loadRoutes() {
   const app = getApp()
   app.use(managePlugins());
-  app.use(playPlugins());
   app.use(eventsRouter);
   app.use(integrationSourcesRouter());
   app.use(integrationsRouter());
@@ -20,4 +19,6 @@ export async function loadRoutes() {
   app.use(dataManipulationRouter());
   app.use(lambdasRouter());
   app.use(webhooksRouter());
+
+  app.use(playPlugins());
 }

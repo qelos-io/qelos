@@ -18,11 +18,21 @@ declare module 'express' {
   }
 }
 
+const ROOT_PROXY = '/api';
+
 export function playPlugins() {
   const router = getRouter();
 
   async function loadPluginRequest(req, res, next) {
-    const [_, apiPath] = req.originalUrl.slice(req.originalUrl.indexOf(proxyApiPrefix) + proxyApiPrefix.length).split('/');
+    const hasFullPrefix: boolean = (req.originalUrl || '').startsWith(proxyApiPrefix);
+    const pathPrefix = hasFullPrefix ? proxyApiPrefix : ROOT_PROXY;
+    const [_, apiPath] = req.originalUrl.slice(req.originalUrl.indexOf(pathPrefix) + pathPrefix.length).split('/');
+
+    if (!apiPath) {
+      res.status(404).json({message: 'api not found'});
+      return;
+    }
+
     const plugin = await getPluginProxy({
       tenant: req.headers.tenant,
       apiPath,
@@ -35,6 +45,7 @@ export function playPlugins() {
       return;
     }
 
+    req.pathPrefix = pathPrefix;
     req.plugin = plugin;
     req.apiPath = apiPath;
     req.pluginUrl = plugin.proxyUrl.startsWith('http') ? plugin.proxyUrl : `https://${plugin.proxyUrl}`;
@@ -42,11 +53,11 @@ export function playPlugins() {
     next();
   }
 
-  router.use(proxyApiPrefix, populateUser, loadPluginRequest, createProxyMiddleware({
+  router.use([proxyApiPrefix, ROOT_PROXY], populateUser, loadPluginRequest, createProxyMiddleware({
     changeOrigin: true,
     agent: httpAgent,
-    pathRewrite(path, req) {
-      return path.split(proxyApiPrefix + '/' + req.apiPath)[1];
+    pathRewrite(path, req: any) {
+      return path.split(req.pathPrefix + '/' + req.apiPath)[1];
     },
     router(req) {
       return req.pluginUrl;

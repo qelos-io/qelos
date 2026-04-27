@@ -65,7 +65,8 @@ export function getApiProxyConfig(): IApiProxyConfig {
         '/api/integration-sources',
         '/api/data-manipulation',
         '/api/lambdas',
-        '/api/webhooks'
+        '/api/webhooks',
+        '/api'
       ],
     }),
     aiService: getServiceFromEnvVars('ai', 'AI_SERVICE', {

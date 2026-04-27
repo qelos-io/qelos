@@ -1,6 +1,7 @@
 import generateController from "../controllers/generate.mjs";
 import generateConnectionController from "../controllers/generate-connection.mjs";
 import generateAgentController from "../controllers/generate-agent.mjs";
+import generateProxyController from "../controllers/generate-proxy.mjs";
 
 export default function generateCommand(program) {
 
@@ -99,7 +100,47 @@ export default function generateCommand(program) {
       },
       generateAgentController,
     )
-    .demandCommand(1, 'Please specify a generate subcommand: rules, connection, or agent')
+    .command(
+      "proxy <pathFrom> <endpointTo>",
+      "Generate a proxy plugin configuration for Qelos.\n\n" +
+        "Creates a plugin that proxies API requests from a local path to an external endpoint.\n" +
+        "Supports optional token authentication via --token flag or QELOS_PROXY_TOKEN env variable.\n" +
+        "Qelos automatically prefixes with /api/[path].\n\n" +
+        "Examples:\n" +
+        "  qelos generate proxy external https://api.example.com\n" +
+        "  qelos generate proxy external https://api.example.com --token my-secret-token\n" +
+        "  QELOS_PROXY_TOKEN=my-secret-token qelos generate proxy external https://api.example.com\n\n" +
+        "After generation, push with: qelos push plugins plugins/<pathFrom>.plugin.json",
+      (yargs) => {
+        return yargs
+          .positional("pathFrom", {
+            describe: "Local path to proxy (e.g., external)",
+            type: "string",
+          })
+          .positional("endpointTo", {
+            describe: "External endpoint URL to proxy to (e.g., https://api.example.com)",
+            type: "string",
+          })
+          .option("token", {
+            describe: "Optional authentication token for the proxy (can also use QELOS_PROXY_TOKEN env variable)",
+            type: "string",
+          })
+          .example(
+            "qelos generate proxy external https://api.example.com",
+            "Create a proxy without authentication",
+          )
+          .example(
+            "qelos generate proxy external https://api.example.com --token my-secret-token",
+            "Create a proxy with authentication token",
+          )
+          .example(
+            "QELOS_PROXY_TOKEN=my-secret-token qelos generate proxy external https://api.example.com",
+            "Create a proxy using environment variable",
+          );
+      },
+      generateProxyController,
+    )
+    .demandCommand(1, 'Please specify a generate subcommand: rules, connection, agent, or proxy')
   })
     
 }

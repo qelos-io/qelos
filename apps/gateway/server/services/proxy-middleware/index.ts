@@ -255,9 +255,9 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
   useProxy(app, draftsService);
   useProxy(app, assetsService);
   useProxy(app, noCodeService);
-  useProxy(app, pluginsService);
   useProxy(app, aiService);
   useProxy(app, paymentsService);
+  useProxy(app, pluginsService);
 
   const ignoreExtensions = ['js', 'json', 'jpg', 'svg', 'png', 'ico', 'ts', 'vue', 'css', 'map', 'scss', 'json', 'mjs']
 
