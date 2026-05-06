@@ -1,7 +1,5 @@
 <template>
   <div v-if="isLoaded" :class="['admin-panel', layoutClass]">
-    <!-- Builder theme components -->
-    <BuilderNavigationDrawer v-if="shouldShowBuilderComponents" />
     <BuilderEditingLayer
       v-if="shouldShowBuilderComponents"
       :page-name="currentPageName"
@@ -20,16 +18,15 @@
       @inspect-mode="handleInspectMode"
       @page-settings="handlePageSettings"
     />
-    
+
     <!-- Fixed impersonation exit button -->
     <div v-if="isImpersonating" class="impersonation-exit-btn" @click="handleExitImpersonation">
       <font-awesome-icon icon="fas fa-user-secret" />
       <span>Exit Impersonation</span>
     </div>
-    
-    <!-- Regular navigation (always visible for regular users, shown alongside builder for admins) -->
+
     <component v-if="customComponents.loaded" :is="customComponents.NavigationComponent || Navigation" class="navigation" :opened="navigationOpened" @close="navigationOpened = false"/>
-    <div class="admin-content" :class="{ 'has-builder-drawer': shouldShowBuilderComponents }">
+    <div class="admin-content">
       <component
         v-if="customComponents.loaded"
         :is="customComponents.headerComponent || Header"
@@ -65,7 +62,6 @@ import useInvitesList from '@/modules/workspaces/store/invites-list';
 import PrivilegedAddons from '@/modules/admins/components/PrivilegedAddons.vue';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import { shouldShowBuilderTheme } from '@/modules/builder/store/builderTheme';
-import BuilderNavigationDrawer from '@/modules/builder/components/BuilderNavigationDrawer.vue';
 import BuilderEditingLayer from '@/modules/builder/components/BuilderEditingLayer.vue';
 import { useRoute } from 'vue-router';
 import { useStaticComponentsStore } from '../no-code/store/static-components'
@@ -198,11 +194,6 @@ function handleExitImpersonation() {
   height: calc(100% - 60px);
   overflow: auto;
   order: 2;
-  
-  // Adjust for builder drawer
-  &.has-builder-drawer {
-    max-width: calc(100vw - var(--builder-drawer-width, 280px));
-  }
 }
 
 .admin-content {

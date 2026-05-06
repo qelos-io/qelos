@@ -45,7 +45,7 @@
       :class="`nav-layout-${appConfig.navigationLayout || 'icon-text'}`"
       :ellipsis="false"
     >
-      <div class="nav-group" v-if="(isEditingEnabled || (isAdmin && !hasPages)) && !shouldShowBuilderTheme">
+      <div class="nav-group" v-if="isEditingEnabled || (isAdmin && !hasPages)">
         <el-menu-item
           id="menu-item-create-new-page"
           @click="openDrawer"
@@ -59,7 +59,7 @@
 
         <QuicklyCreateMicrofrontends v-model="dialogVisible" />
       </div>
-      <template v-for="group in filteredNavBar.top">
+      <template v-for="group in navBar.top">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.key && group.key !== ''">{{ group.key }}</h4>
           <el-menu-item
@@ -80,46 +80,164 @@
           </el-menu-item>
         </div>
       </template>
-      <el-menu-item
-        v-if="isPrivilegedUser && !shouldShowBuilderTheme"
-        index="/admin-dashboard"
-        :data-title="$t('Admin Dashboard')"
-      >
-        <router-link to="/admin-dashboard">
-          <el-icon>
-          <font-awesome-icon :icon="['fas', 'chart-column']" />
-        </el-icon>
-        <span>{{ $t("Admin Dashboard") }}</span>
-        </router-link>
-      </el-menu-item>
 
-      <el-menu-item
-        v-if="isAdmin && !shouldShowBuilderTheme"
-        index="/admin/log"
-        :data-title="$t('Logs')"
-      >
-        <router-link to="/admin/log">
-          <el-icon>
-          <font-awesome-icon :icon="['fas', 'clipboard-list']" />
-        </el-icon>
-        <span>{{ $t("Logs") }}</span>
-        </router-link>
-      </el-menu-item>
+      <div class="nav-group" v-if="isPrivilegedUser">
+        <h4>{{ $t('Overview') }}</h4>
+        <el-menu-item
+          index="/admin-dashboard"
+          :data-title="$t('Admin Dashboard')"
+        >
+          <router-link to="/admin-dashboard">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'chart-column']" />
+            </el-icon>
+            <span>{{ $t("Admin Dashboard") }}</span>
+          </router-link>
+        </el-menu-item>
 
-      <el-menu-item
-        v-if="isAdmin && !shouldShowBuilderTheme"
-        index="/admin/pricing-plans"
-        :data-title="$t('Pricing Plans')"
-      >
-        <router-link to="/admin/pricing-plans">
-          <el-icon>
-          <font-awesome-icon :icon="['fas', 'tags']" />
-        </el-icon>
-        <span>{{ $t("Pricing Plans") }}</span>
-        </router-link>
-      </el-menu-item>
+        <el-menu-item
+          v-if="isAdmin"
+          index="/users"
+          :data-title="$t('Users')"
+        >
+          <router-link to="/users">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'user']" />
+            </el-icon>
+            <span>{{ $t("Users") }}</span>
+          </router-link>
+        </el-menu-item>
 
-      <template v-for="group in filteredNavBar.bottom">
+        <el-menu-item
+          v-if="isAdmin && isWorkspacesActive"
+          index="/admin/workspaces"
+          :data-title="$t('Workspaces')"
+        >
+          <router-link to="/admin/workspaces">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'briefcase']" />
+            </el-icon>
+            <span>{{ $t("Workspaces") }}</span>
+          </router-link>
+        </el-menu-item>
+
+        <el-menu-item
+          v-if="isAdmin"
+          index="/admin/log"
+          :data-title="$t('Events Log')"
+        >
+          <router-link to="/admin/log">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'clipboard-list']" />
+            </el-icon>
+            <span>{{ $t("Events Log") }}</span>
+          </router-link>
+        </el-menu-item>
+      </div>
+
+      <div class="nav-group" v-if="isAdmin">
+        <h4>{{ $t('Content & Structure') }}</h4>
+        <el-menu-item
+          index="/admin/components"
+          :data-title="$t('Components')"
+        >
+          <router-link to="/admin/components">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'th']" />
+            </el-icon>
+            <span>{{ $t("Components") }}</span>
+          </router-link>
+        </el-menu-item>
+
+        <el-menu-item
+          index="/admin/blocks"
+          :data-title="$t('Content Boxes')"
+        >
+          <router-link to="/admin/blocks">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'box']" />
+            </el-icon>
+            <span>{{ $t("Content Boxes") }}</span>
+          </router-link>
+        </el-menu-item>
+
+        <el-menu-item
+          index="/no-code/blueprints"
+          :data-title="$t('Blueprints')"
+        >
+          <router-link to="/no-code/blueprints">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'database']" />
+            </el-icon>
+            <span>{{ $t("Blueprints") }}</span>
+          </router-link>
+        </el-menu-item>
+
+        <el-menu-item
+          index="/assets"
+          :data-title="$t('Storage & Assets')"
+        >
+          <router-link to="/assets">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'folder-tree']" />
+            </el-icon>
+            <span>{{ $t("Storage & Assets") }}</span>
+          </router-link>
+        </el-menu-item>
+      </div>
+
+      <div class="nav-group" v-if="isAdmin">
+        <h4>{{ $t('System & Config') }}</h4>
+        <el-menu-item
+          index="/configurations"
+          :data-title="$t('Configurations')"
+        >
+          <router-link to="/configurations">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'gear']" />
+            </el-icon>
+            <span>{{ $t("Configurations") }}</span>
+          </router-link>
+        </el-menu-item>
+
+        <el-menu-item
+          index="/plugins"
+          :data-title="$t('Plugins')"
+        >
+          <router-link to="/plugins">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'plug']" />
+            </el-icon>
+            <span>{{ $t("Plugins") }}</span>
+          </router-link>
+        </el-menu-item>
+
+        <el-menu-item
+          index="/integrations"
+          :data-title="$t('Integrations')"
+        >
+          <router-link to="/integrations">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'link']" />
+            </el-icon>
+            <span>{{ $t("Integrations") }}</span>
+          </router-link>
+        </el-menu-item>
+
+        <el-menu-item
+          index="/admin/pricing-plans"
+          :data-title="$t('Pricing Plans')"
+        >
+          <router-link to="/admin/pricing-plans">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'tags']" />
+            </el-icon>
+            <span>{{ $t("Pricing Plans") }}</span>
+          </router-link>
+        </el-menu-item>
+      </div>
+
+      <template v-for="group in navBar.bottom">
         <div :key="group.key" class="nav-group" v-if="group.items.length">
           <h4 v-if="group.key && group.key !== ''">{{ group.key }}</h4>
           <el-menu-item
@@ -150,11 +268,9 @@ import { usePluginsMicroFrontends } from "@/modules/plugins/store/plugins-microf
 import {
   isAdmin,
   isEditingEnabled,
-  isManagingEnabled,
   isPrivilegedUser,
 } from "@/modules/core/store/auth";
 import { useAppConfiguration } from "@/modules/configurations/store/app-configuration";
-import { shouldShowBuilderTheme } from "@/modules/builder/store/builderTheme";
 
 import { ref, onMounted, toRef, computed } from "vue";
 
@@ -164,41 +280,6 @@ import QuicklyCreateMicrofrontends from "./navigation/QuicklyCreateMicrofrontend
 import { useWsConfiguration } from "@/modules/configurations/store/ws-configuration";
 
 const isStackedHeader = computed(() => appConfig.value.layoutStyle === "stacked-header");
-
-// Filter navigation items based on builder theme
-const filteredNavBar = computed(() => {
-  // If builder theme is not active, return all items
-  if (!shouldShowBuilderTheme.value) {
-    return navBar.value;
-  }
-  
-  // When builder theme is active, filter out admin-only MFEs
-  // These will appear in the builder drawer instead
-  const filterAdminMFEs = (items: any[]) => {
-    return items.filter(item => {
-      // Filter out items that have admin roles (these go to builder drawer)
-      if (item.roles?.includes('admin')) {
-        return false;
-      }
-      return true;
-    });
-  };
-  
-  return {
-    top: navBar.value.top.map(group => ({
-      ...group,
-      items: filterAdminMFEs(group.items)
-    })),
-    bottom: navBar.value.bottom.map(group => ({
-      ...group,
-      items: filterAdminMFEs(group.items)
-    })),
-    'user-dropdown': navBar.value['user-dropdown'].map(group => ({
-      ...group,
-      items: filterAdminMFEs(group.items)
-    }))
-  };
-});
 
 // Visibility state of the modal window
 const dialogVisible = ref(false);

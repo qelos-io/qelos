@@ -5,6 +5,22 @@
         <DashboardOverview />
       </el-tab-pane>
 
+      <el-tab-pane name="blueprints" :label="$t('Blueprints')">
+        <BlueprintsList/>
+      </el-tab-pane>
+
+      <el-tab-pane name="plugins" :label="$t('Plugins')">
+        <YourPluginsList/>
+      </el-tab-pane>
+
+      <el-tab-pane name="integrations" :label="$t('Integrations')">
+        <WorkflowsView />
+
+        <IntegrationFormModal :visible="$route.query.mode === 'create' || ($route.query.mode === 'edit' && !!editingIntegration)"
+          :editing-integration="editingIntegration"
+          @close="closeIntegrationFormModal" />
+      </el-tab-pane>
+
       <el-tab-pane name="metadata" :label="$t('Application Metadata')">
         <div class="metadata-dashboard">
           <!-- Configuration Cards Section -->
@@ -22,13 +38,13 @@
                 </div>
                 <div class="config-card-action">
                   <el-button type="primary" text>
-                    <font-awesome-icon :icon="['fas', 'edit']"/> 
+                    <font-awesome-icon :icon="['fas', 'edit']"/>
                     {{ $t('Edit') }}
                   </el-button>
                 </div>
               </router-link>
             </div>
-            
+
             <!-- SSR Scripts Card -->
             <div class="unified-card">
               <router-link :to="{name: 'editConfiguration', params: {key: 'ssr-scripts'}}" class="config-card-link">
@@ -46,7 +62,7 @@
                 </div>
               </router-link>
             </div>
-            
+
             <!-- Workspace Settings Card -->
             <div class="unified-card">
               <router-link :to="{name: 'editConfiguration', params: {key: 'workspace-configuration'}}" class="config-card-link">
@@ -69,7 +85,7 @@
                 </div>
               </router-link>
             </div>
-            
+
             <!-- Payments Configuration Card -->
             <div class="unified-card">
               <router-link :to="{name: 'paymentsConfiguration'}" class="config-card-link">
@@ -82,7 +98,7 @@
                 </div>
                 <div class="config-card-action">
                   <el-button type="primary" text>
-                    <font-awesome-icon :icon="['fas', 'edit']"/> 
+                    <font-awesome-icon :icon="['fas', 'edit']"/>
                     {{ $t('Configure') }}
                   </el-button>
                 </div>
@@ -110,7 +126,7 @@
         </div>
       </el-tab-pane>
 
-      <el-tab-pane name="colors" :label="$t('Color Palette & Design')">
+      <el-tab-pane name="colors" :label="$t('Design')">
         <div class="design-palettes">
           <div v-for="(p, index) in PALETTES" :key="index" @click="applyDesignPalette(p)" class="design-palette-card" :class="{ 'active': isActivePalette(p) }">
             <div class="palette-header">
@@ -133,17 +149,6 @@
         </div>
         <DesignConfiguration v-if="configLoaded"/>
       </el-tab-pane>
-
-      <el-tab-pane name="blueprints" :label="$t('Blueprints')">
-        <BlueprintsList/>
-      </el-tab-pane>
-      <el-tab-pane name="integrations" :label="$t('Integrations')">
-        <WorkflowsView />
-
-    <IntegrationFormModal :visible="$route.query.mode === 'create' || ($route.query.mode === 'edit' && !!editingIntegration)"
-      :editing-integration="editingIntegration"
-      @close="closeIntegrationFormModal" />
-      </el-tab-pane>
     </el-tabs>
   </div>
  <footer><QuickStartWizard/></footer>
@@ -156,6 +161,7 @@ import configurationsService from '@/services/apis/configurations-service';
 import { DesignPalette, PALETTES } from '@/modules/core/utils/colors-palettes';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import BlueprintsList from '@/modules/no-code/components/BlueprintsList.vue';
+import YourPluginsList from '@/modules/plugins/components/YourPluginsList.vue';
 import DesignConfiguration from '@/modules/configurations/components/DesignConfiguration.vue';
 import QuickStartWizard from '@/modules/admins/components/QuickStartWizard.vue';
 import DashboardOverview from '@/modules/core/components/DashboardOverview.vue';

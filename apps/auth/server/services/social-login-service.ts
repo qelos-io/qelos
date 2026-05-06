@@ -76,6 +76,14 @@ export function buildRedirectUri(tenantHost: string, redirectPath: string, useHt
 }
 
 /**
+ * Extract the OAuth state parameter (CSRF token / round-tripped client state) from a request.
+ */
+export function extractState(req: AuthRequest): string | null {
+  const state = Array.isArray(req.query.state) ? req.query.state[0] : req.query.state;
+  return state && typeof state === 'string' ? state : null;
+}
+
+/**
  * Emit failed social login event
  */
 export function emitFailedSocialLogin(tenant: string, provider: SocialProvider, error: any): void {

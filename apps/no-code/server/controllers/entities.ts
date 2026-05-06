@@ -130,6 +130,22 @@ function flattenMetadata(entity: any = {}) {
   });
 }
 
+// Blueprint entity responses default to the flat shape. Callers opt out of
+// flattening by passing $flat=false (or 0).
+function shouldFlattenResponse(value: any): boolean {
+  if (value === undefined || value === null) {
+    return true;
+  }
+  if (value === false || value === 0) {
+    return false;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.toLowerCase();
+    return normalized !== 'false' && normalized !== '0';
+  }
+  return true;
+}
+
 /**
  * Converts query values to appropriate types based on blueprint property type
  * @param value - The value to convert
@@ -200,7 +216,7 @@ export async function getAllBlueprintEntities(req, res) {
     const sort = getSortQuery(req);
     const limit = req.query.$limit && (parseInt(req.query.$limit) || DEFAULT_LIMIT);
     const page = req.query.$page && (parseInt(req.query.$page) || 1);
-    const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
+    const shouldFlat = shouldFlattenResponse(req.query.$flat);
 
     const generalSearch = req.query.$q ? {$regex: req.query.$q, $options: 'i'} : undefined;
     if (generalSearch) {
@@ -414,7 +430,7 @@ export async function getSingleBlueprintEntity(req, res) {
   }
   try {
     const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes })
-    const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
+    const shouldFlat = shouldFlattenResponse(req.query.$flat);
 
     const entity = await BlueprintEntity.findOne(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS)
       .lean()
@@ -523,7 +539,7 @@ export async function createBlueprintEntity(req, res) {
 
     const { auditInfo, _id, ...response } = entity.toObject();
     response.id = response.identifier;
-    const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
+    const shouldFlat = shouldFlattenResponse(req.query.$flat);
     if (shouldFlat) {
       flattenMetadata(response);
     }
@@ -552,7 +568,7 @@ export async function updateBlueprintEntity(req, res) {
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.UPDATE, getBypassAdmin(req));
-  const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
+  const shouldFlat = shouldFlattenResponse(req.query.$flat);
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;
@@ -676,7 +692,7 @@ export async function removeBlueprintEntity(req, res) {
 
     const { auditInfo, _id, ...response } = entity;
     response.id = response.identifier;
-    const shouldFlat = req.query.$flat && (req.query.$flat === 'true' || req.query.$flat === '1');
+    const shouldFlat = shouldFlattenResponse(req.query.$flat);
     if (shouldFlat) {
       flattenMetadata(response);
     }
