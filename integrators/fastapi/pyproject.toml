@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qelos-integrator-fastapi"
+version = "0.1.0"
+description = "FastAPI integrator for Qelos: middleware that identifies the user and active workspace from the Qelos SDK before your handlers run"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [
+    { name = "David Meir-Levy", email = "davidmeirlevy@gmail.com" }
+]
+keywords = ["qelos", "fastapi", "middleware", "integrator", "auth"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Framework :: FastAPI",
+    "Typing :: Typed",
+]
+dependencies = [
+    "qelos-sdk>=3.11.0",
+    "fastapi>=0.95.0",
+    "starlette>=0.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+]
+
+[project.urls]
+Homepage = "https://qelos.io"
+Documentation = "https://docs.qelos.io"
+Repository = "https://github.com/qelos-io/qelos"
+
+[tool.setuptools.packages.find]
+include = ["qelos_integrator_fastapi*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
