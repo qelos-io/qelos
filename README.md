@@ -164,7 +164,7 @@ docker-compose -f docker-compose.scaled.yml up
   - `/drafts` - Drafts management service
   - `/no-code` - No-code management service
   
-- `/packages` - Shared libraries and utilities
+- `/packages` - Shared libraries and utilities consumed by apps in this monorepo (and may also be published)
   - `/api-kit` - API utilities for backend services
   - `/global-types` - Shared TypeScript types
   - `/cache-manager` - Cache management service
@@ -172,6 +172,7 @@ docker-compose -f docker-compose.scaled.yml up
   - `python-sdk` - Python SDK (`qelos-sdk` on PyPI)
   - `plugin-player` - Plugin sdk tool for plugin services
   - `web-sdk` - Web sdk tool for web micro-frontends and communication with qelos client side
+- `/integrators` - Published packages built for **external** apps to install. They are NOT consumed by apps in this monorepo. See [integrators/README.md](integrators/README.md) for the convention.
 - `/documentation` - Project documentation
 - `/compose` - Docker Compose configuration
 - `/helm` - Kubernetes Helm charts
