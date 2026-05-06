@@ -7,6 +7,19 @@ from .base_sdk import BaseSDK
 from .types import QelosSDKOptions, RequestExtra
 
 
+def _with_flat_default(query: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Default ``$flat=true`` when callers omit it.
+
+    Blueprint entity responses default to the flat shape. Pass ``$flat=False``
+    (or ``0``) to opt back into the wrapped shape; this also keeps SDK behavior
+    consistent against older servers that defaulted to wrapped.
+    """
+    if query and "$flat" in query:
+        return query
+    merged: Dict[str, Any] = {**(query or {}), "$flat": True}
+    return merged
+
+
 class QlBlueprintEntities(BaseSDK):
     """CRUD operations on entities belonging to a specific blueprint."""
 
@@ -18,7 +31,7 @@ class QlBlueprintEntities(BaseSDK):
 
     async def get_entity(self, identifier: str, extra: Optional[RequestExtra] = None) -> Dict[str, Any]:
         """Get a single entity by identifier."""
-        qs = self.get_query_params(extra.query if extra else None)
+        qs = self.get_query_params(_with_flat_default(extra.query if extra else None))
         return await self.call_json_api(
             f"{self._relative_path}/{self._blueprint_key}/entities/{identifier}{qs}",
             headers=extra.headers if extra else None,
@@ -33,9 +46,10 @@ class QlBlueprintEntities(BaseSDK):
         """List entities with optional query filters.
 
         Supported query filters: ``$populate``, ``$sort``, ``$limit``, ``$page``, ``$flat``,
-        and any blueprint-specific property filters.
+        and any blueprint-specific property filters. Responses default to the flat shape;
+        pass ``$flat=False`` to receive the wrapped shape.
         """
-        qs = self.get_query_params(query)
+        qs = self.get_query_params(_with_flat_default(query))
         return await self.call_json_api(
             f"{self._relative_path}/{self._blueprint_key}/entities{qs}",
             headers=extra.headers if extra else None,
@@ -44,7 +58,7 @@ class QlBlueprintEntities(BaseSDK):
 
     async def remove(self, identifier: str, extra: Optional[RequestExtra] = None) -> Any:
         """Delete an entity by identifier."""
-        qs = self.get_query_params(extra.query if extra else None)
+        qs = self.get_query_params(_with_flat_default(extra.query if extra else None))
         return await self.call_api(
             f"{self._relative_path}/{self._blueprint_key}/entities/{identifier}{qs}",
             method="DELETE",
@@ -57,7 +71,7 @@ class QlBlueprintEntities(BaseSDK):
         extra: Optional[RequestExtra] = None,
     ) -> Dict[str, Any]:
         """Update an entity by identifier."""
-        qs = self.get_query_params(extra.query if extra else None)
+        qs = self.get_query_params(_with_flat_default(extra.query if extra else None))
         return await self.call_json_api(
             f"{self._relative_path}/{self._blueprint_key}/entities/{identifier}{qs}",
             method="PUT",
@@ -72,7 +86,7 @@ class QlBlueprintEntities(BaseSDK):
         extra: Optional[RequestExtra] = None,
     ) -> Dict[str, Any]:
         """Create a new entity."""
-        qs = self.get_query_params(extra.query if extra else None)
+        qs = self.get_query_params(_with_flat_default(extra.query if extra else None))
         return await self.call_json_api(
             f"{self._relative_path}/{self._blueprint_key}/entities{qs}",
             method="POST",

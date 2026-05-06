@@ -54,13 +54,30 @@ const filteredProducts = await productEntities.getList({
   $limit: 10,
   $skip: 0,
   $sort: 'created',
-  $flat: true,
   $populate: true,
   my_custom_property: 'value',
   "my_custom_numeric_property[$lt]": 10,
   "my_custom_numeric_property[$gt]": 5,
 });
 ```
+
+### Response Shape: Flat by Default
+
+All entity helpers (`getList`, `getEntity`, `create`, `update`, `remove`) return the **flat** shape by default — every metadata property is hoisted to the top of the returned entity alongside `identifier`, `created`, `updated`, `user`, and `workspace`. The original `metadata` sub-object is still present, so both `product.price` and `product.metadata.price` work.
+
+The SDK sends `$flat=true` automatically when you omit it. To opt back into the wrapped shape (metadata only under `entity.metadata`), pass `$flat: false`:
+
+```typescript
+const wrapped = await productEntities.getList({ $flat: false });
+const wrappedOne = await productEntities.getEntity('product_id', { query: { $flat: false } });
+```
+
+#### Migration Notes
+
+- **Before:** the server default was the wrapped shape, so SDK callers that did not pass `$flat: true` received `entity.metadata.foo` only.
+- **After:** the server default is the flat shape, and the SDK additionally sends `$flat=true` when callers omit it. `entity.foo` and `entity.metadata.foo` both work, regardless of server version.
+- Existing call signatures are unchanged — code that previously passed `$flat: true` keeps working.
+- Code that explicitly relies on the wrapped shape (e.g. only reading from `entity.metadata`) keeps working too, but if you need to *force* the wrapped shape (for example, to assert it on older servers via API tokens) pass `$flat: false`.
 
 To run a metadata search, pass `$q` (the search string) and `$qProps` (comma-separated metadata keys) through `getList`:
 
