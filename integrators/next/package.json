@@ -1,0 +1,84 @@
+{
+  "name": "@qelos/integrator-next",
+  "version": "0.1.0",
+  "description": "Qelos integrator middleware for Next.js (App Router and Pages Router): identifies the user and workspace via the Qelos SDK before the application's own handler runs.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./middleware": {
+      "types": "./dist/middleware.d.ts",
+      "import": "./dist/middleware.js",
+      "require": "./dist/middleware.js",
+      "default": "./dist/middleware.js"
+    },
+    "./context": {
+      "types": "./dist/context.d.ts",
+      "import": "./dist/context.js",
+      "require": "./dist/context.js",
+      "default": "./dist/context.js"
+    },
+    "./pages": {
+      "types": "./dist/pages.d.ts",
+      "import": "./dist/pages.js",
+      "require": "./dist/pages.js",
+      "default": "./dist/pages.js"
+    },
+    "./route": {
+      "types": "./dist/route.d.ts",
+      "import": "./dist/route.js",
+      "require": "./dist/route.js",
+      "default": "./dist/route.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.js",
+      "default": "./dist/types.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "build": "tsc",
+    "pre-build": "tsc",
+    "test": "node --import tsx --test \"src/**/*.test.ts\""
+  },
+  "peerDependencies": {
+    "next": ">=13.4.0",
+    "react": ">=18.2.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@qelos/sdk": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "next": "^14.2.5",
+    "react": "^18.3.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.4.5"
+  },
+  "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
