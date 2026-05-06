@@ -15,6 +15,10 @@ export default class BaseSDK {
     this.#fetch = qlOptions.fetch || globalThis.fetch;
   }
 
+  protected buildUrl(relativeUrl: string): string {
+    return (this.#appUrl || '') + relativeUrl;
+  }
+
   async callApi(relativeUrl: string, data?: RequestInit) {
     data = data || {};
     data.headers = data.headers || {};
