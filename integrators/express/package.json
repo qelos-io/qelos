@@ -1,0 +1,64 @@
+{
+  "name": "@qelos/integrator-express",
+  "version": "0.1.0",
+  "description": "Express middleware that identifies the Qelos user and active workspace before your route handlers run",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.js",
+      "default": "./dist/types.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "build": "tsc",
+    "pre-build": "tsc",
+    "test": "node --import tsx --test test/**/*.test.ts"
+  },
+  "keywords": [
+    "qelos",
+    "express",
+    "middleware",
+    "integrator",
+    "auth"
+  ],
+  "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "express": "^4.17.0 || ^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": false
+    }
+  },
+  "dependencies": {
+    "@qelos/sdk": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "express": "^4.21.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.6.3"
+  }
+}
