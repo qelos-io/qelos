@@ -122,12 +122,16 @@ function writeTokensToCookies(
       path: '/',
     };
     cookieRes.cookie(accessCookie, tokens.accessToken, cookieOptions);
-    cookieRes.cookie(refreshCookie, tokens.refreshToken, cookieOptions);
+    if (tokens.refreshToken) {
+      cookieRes.cookie(refreshCookie, tokens.refreshToken, cookieOptions);
+    }
     return;
   }
 
   appendSetCookie(res, serializeCookie(accessCookie, tokens.accessToken, secure));
-  appendSetCookie(res, serializeCookie(refreshCookie, tokens.refreshToken, secure));
+  if (tokens.refreshToken) {
+    appendSetCookie(res, serializeCookie(refreshCookie, tokens.refreshToken, secure));
+  }
 }
 
 function shouldSkip(req: Request, config: QelosExpressConfig): boolean {
