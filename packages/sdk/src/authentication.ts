@@ -47,6 +47,18 @@ export interface IApiToken {
   created: string;
 }
 
+export type SocialProvider = 'linkedin' | 'facebook' | 'google' | 'github';
+
+export interface SocialLoginOptions {
+  state?: string;
+  returnUrl?: string;
+}
+
+export interface SocialAuthCallbackPayload {
+  payload: BasicPayload & { workspace?: any };
+  headers: { 'set-cookie': string | null };
+}
+
 export default class QlAuthentication extends BaseSDK {
 
   #refreshToken: string;
@@ -181,6 +193,45 @@ export default class QlAuthentication extends BaseSDK {
 
   logout() {
     return this.callApi('/api/logout', { method: 'post' })
+  }
+
+  getSocialLoginUrl(provider: SocialProvider, options: SocialLoginOptions = {}): string {
+    const params: Record<string, string> = {};
+    if (options.state) params.state = options.state;
+    if (options.returnUrl) params.returnUrl = options.returnUrl;
+    const qs = Object.keys(params).length ? `?${new URLSearchParams(params)}` : '';
+    return this.buildUrl(`/api/auth/${provider}${qs}`);
+  }
+
+  getSocialCallbackUrl(provider: SocialProvider): string {
+    return this.buildUrl(`/api/auth/${provider}/callback`);
+  }
+
+  startSocialLogin(provider: SocialProvider, options?: SocialLoginOptions): void {
+    const location = (globalThis as any).location;
+    if (!location) {
+      throw new Error('startSocialLogin requires a browser environment');
+    }
+    location.href = this.getSocialLoginUrl(provider, options);
+  }
+
+  async exchangeAuthCallback(refreshToken: string): Promise<SocialAuthCallbackPayload> {
+    if (!refreshToken) {
+      throw new Error('refresh token is required');
+    }
+    const res = await this.callApi(`/api/auth/callback?rt=${encodeURIComponent(refreshToken)}`, {
+      method: 'post'
+    });
+    if (!res.ok) {
+      throw new Error('failed to exchange refresh token');
+    }
+    const body = (await res.json()) as { payload: BasicPayload & { workspace?: any } };
+    return {
+      ...body,
+      headers: {
+        'set-cookie': res.headers?.get('set-cookie')
+      }
+    };
   }
 
   getLoggedInUser() {
