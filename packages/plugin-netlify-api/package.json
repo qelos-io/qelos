@@ -6,10 +6,24 @@
   "bin": {
     "qelos-netlify-patch-redirects": "./scripts/patch-redirects.cjs"
   },
+  "exports": {
+    ".": {
+      "require": "./index.js",
+      "default": "./index.js"
+    },
+    "./integrators": {
+      "types": "./integrators/index.d.ts",
+      "import": "./integrators/index.js",
+      "require": "./integrators/index.js",
+      "default": "./integrators/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "index.js",
     "manifest.yml",
     "functions",
+    "integrators",
     "scripts"
   ],
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
