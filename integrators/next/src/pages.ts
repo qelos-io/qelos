@@ -102,7 +102,9 @@ function writeTokensToResponse(
   const refreshCookie = config.refreshTokenCookie || DEFAULT_REFRESH_COOKIE;
   const secure = !/^http:\/\//i.test(config.appUrl);
   appendSetCookie(res, serializeCookie(accessCookie, tokens.accessToken, secure));
-  appendSetCookie(res, serializeCookie(refreshCookie, tokens.refreshToken, secure));
+  if (tokens.refreshToken) {
+    appendSetCookie(res, serializeCookie(refreshCookie, tokens.refreshToken, secure));
+  }
 }
 
 function shouldSkip(req: RequestWithCookies, config: QelosNextConfig): boolean {

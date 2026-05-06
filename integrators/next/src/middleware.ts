@@ -87,7 +87,9 @@ function stagePendingCookies(
     path: '/',
   };
   pending.push({ name: accessCookie, value: tokens.accessToken, options });
-  pending.push({ name: refreshCookie, value: tokens.refreshToken, options });
+  if (tokens.refreshToken) {
+    pending.push({ name: refreshCookie, value: tokens.refreshToken, options });
+  }
 }
 
 function shouldSkip(req: NextRequest, config: QelosNextConfig): boolean {

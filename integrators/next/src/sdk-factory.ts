@@ -3,11 +3,13 @@ import type { QelosSDKOptions } from '@qelos/sdk/types';
 import type {
   QelosNextConfig,
   QelosTokenPair,
+  ResolvedTokens,
   TokenRefreshHook,
 } from './types';
 
 const NO_AUTH_URLS = new Set([
   '/api/token/refresh',
+  '/api/cookie/refresh',
   '/api/signin',
   '/api/signup',
 ]);
@@ -41,18 +43,26 @@ export function createRequestSdk<TRefreshTarget = unknown>({
   const baseOptions = config.sdkOptions || {};
 
   async function performRefresh(): Promise<void> {
-    if (!tokens.refreshToken) {
+    if (!tokens.refreshToken && !tokens.accessToken) {
       throw new Error('no refresh token available');
     }
     const previous: QelosTokenPair = {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };
-    const result = await sdk.authentication.refreshToken(tokens.refreshToken);
-    const refreshed = {
-      accessToken: result.payload.token,
-      refreshToken: result.payload.refreshToken,
-    };
+    let refreshed: ResolvedTokens;
+    if (tokens.refreshToken) {
+      const result = await sdk.authentication.refreshToken(tokens.refreshToken);
+      refreshed = {
+        accessToken: result.payload.token,
+        refreshToken: result.payload.refreshToken,
+      };
+    } else {
+      const result = await sdk.authentication.refreshCookieToken(tokens.accessToken);
+      refreshed = {
+        accessToken: result.payload.cookieToken,
+      };
+    }
     tokens.accessToken = refreshed.accessToken;
     tokens.refreshToken = refreshed.refreshToken;
     if (onTokenRefresh) {
@@ -95,7 +105,7 @@ export function createRequestSdk<TRefreshTarget = unknown>({
       if (NO_AUTH_URLS.has(relativeUrl)) {
         return headers;
       }
-      if (forceRefresh && tokens.refreshToken) {
+      if (forceRefresh && (tokens.refreshToken || tokens.accessToken)) {
         await ensureRefresh();
       }
       const token = sdk?.authentication?.accessToken || tokens.accessToken;
