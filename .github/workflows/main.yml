@@ -28,7 +28,10 @@ jobs:
       
       - name: Build packages
         run: pnpm --filter "./packages/**" build
-        
+
+      - name: Build integrators
+        run: pnpm --filter "./integrators/**" build
+
       - name: Build apps
         run: pnpm --filter "./apps/**" build
         

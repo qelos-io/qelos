@@ -1,0 +1,68 @@
+{
+  "name": "@qelos/integrator-nuxt",
+  "version": "0.1.0",
+  "description": "Nuxt integrator for Qelos: server middleware/module that identifies the user and workspace from the Qelos SDK before your handlers run.",
+  "main": "./dist/module.js",
+  "types": "./dist/module.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/module.d.ts",
+      "import": "./dist/module.js",
+      "require": "./dist/module.js",
+      "default": "./dist/module.js"
+    },
+    "./middleware": {
+      "types": "./dist/middleware.d.ts",
+      "import": "./dist/middleware.js",
+      "require": "./dist/middleware.js",
+      "default": "./dist/middleware.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.js",
+      "default": "./dist/types.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "build": "npm run type-check && tsc",
+    "pre-build": "pnpm run type-check && tsc"
+  },
+  "keywords": [
+    "qelos",
+    "nuxt",
+    "nuxt-module",
+    "middleware",
+    "auth",
+    "sdk"
+  ],
+  "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "h3": "^1.0.0",
+    "nuxt": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "nuxt": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@qelos/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@nuxt/kit": "^3.13.0",
+    "@nuxt/schema": "^3.13.0",
+    "h3": "^1.13.0",
+    "typescript": "^5.4.5"
+  }
+}

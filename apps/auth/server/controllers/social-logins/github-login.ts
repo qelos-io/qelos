@@ -6,6 +6,7 @@ import {
   buildRedirectUri,
   emitFailedSocialLogin,
   extractAuthCode,
+  extractState,
   findOrCreateUser,
   completeAuthentication,
   UserData,
@@ -23,7 +24,9 @@ export const getGithubSource = createSourceMiddleware('github');
 export async function loginWithGithub(req: AuthWithGithubRequest, res) {
   const { clientId, scope } = req.source.metadata;
   const redirectUri = buildRedirectUri(req.headers.tenanthost, '/api/auth/github/callback');
-  const githubAuthUrl = `${GITHUB_AUTH_URL}?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope || 'user:email')}`;
+  const state = extractState(req);
+  const stateParam = state ? `&state=${encodeURIComponent(state)}` : '';
+  const githubAuthUrl = `${GITHUB_AUTH_URL}?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope || 'user:email')}${stateParam}`;
   res.redirect(githubAuthUrl);
 }
 

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
+from urllib.parse import quote, urlencode
 
 from .base_sdk import BaseSDK
 from .types import QelosSDKOptions
+
+SocialProvider = Literal["linkedin", "facebook", "google", "github"]
 
 
 class QlAuthentication(BaseSDK):
@@ -144,6 +147,53 @@ class QlAuthentication(BaseSDK):
     async def logout(self) -> Any:
         """Log out the current user."""
         return await self.call_api("/api/logout", method="POST")
+
+    def get_social_login_url(
+        self,
+        provider: SocialProvider,
+        *,
+        state: Optional[str] = None,
+        return_url: Optional[str] = None,
+    ) -> str:
+        """Build the URL that initiates a social-auth flow for ``provider``.
+
+        Args:
+            provider: One of ``linkedin``, ``facebook``, ``google``, ``github``.
+            state: Optional OAuth state value forwarded to the provider.
+            return_url: Optional URL the callback page should redirect to after success.
+        """
+        params: Dict[str, str] = {}
+        if state:
+            params["state"] = state
+        if return_url:
+            params["returnUrl"] = return_url
+        qs = ("?" + urlencode(params)) if params else ""
+        return f"{self._app_url}/api/auth/{provider}{qs}"
+
+    def get_social_callback_url(self, provider: SocialProvider) -> str:
+        """The auth-service callback URL for ``provider``."""
+        return f"{self._app_url}/api/auth/{provider}/callback"
+
+    async def exchange_auth_callback(self, refresh_token: str) -> Dict[str, Any]:
+        """Exchange a provider-issued refresh token for a Qelos cookie session.
+
+        Calls ``POST /api/auth/callback?rt=<refresh_token>``. Returns the
+        decoded payload and the upstream ``set-cookie`` header so callers
+        can forward it to the end user.
+        """
+        if not refresh_token:
+            raise Exception("refresh token is required")
+        response = await self.call_api(
+            f"/api/auth/callback?rt={quote(refresh_token, safe='')}",
+            method="POST",
+        )
+        if not response.is_success:
+            raise Exception("failed to exchange refresh token")
+        body = response.json()
+        return {
+            **body,
+            "headers": {"set-cookie": response.headers.get("set-cookie")},
+        }
 
     async def get_logged_in_user(self) -> Dict[str, Any]:
         """Get the currently logged-in user."""
