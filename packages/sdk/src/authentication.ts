@@ -167,6 +167,32 @@ export default class QlAuthentication extends BaseSDK {
       })
   }
 
+  async refreshCookieToken(cookieToken?: string) {
+    const headers: Record<string, string> = {};
+    if (cookieToken) {
+      headers.authorization = 'Bearer ' + cookieToken;
+    }
+    const res = await this.callApi('/api/cookie/refresh', {
+      method: 'post',
+      headers,
+    });
+    if (!res.ok) {
+      throw new Error('failed to refresh cookie token');
+    }
+    const body = (await res.json()) as {
+      payload: BasicPayload & {
+        cookieToken: string;
+        workspace?: { _id: string } | null;
+      };
+    };
+    return {
+      ...body,
+      headers: {
+        'set-cookie': res.headers?.get('set-cookie'),
+      },
+    };
+  }
+
   async apiTokenSignin(apiToken: string): Promise<IUser> {
     this.#apiToken = apiToken;
     this.qlOptions.apiToken = apiToken;

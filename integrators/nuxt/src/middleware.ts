@@ -58,7 +58,7 @@ function readTokens(event: H3Event, config: QelosNuxtRuntimeConfig): QelosTokenP
 function writeTokensToCookies(
   event: H3Event,
   config: QelosNuxtRuntimeConfig,
-  tokens: { accessToken: string; refreshToken: string },
+  tokens: { accessToken: string; refreshToken?: string },
 ) {
   const accessCookie = config.accessTokenCookie || DEFAULT_ACCESS_COOKIE;
   const refreshCookie = config.refreshTokenCookie || DEFAULT_REFRESH_COOKIE;
@@ -69,7 +69,9 @@ function writeTokensToCookies(
     path: '/',
   };
   setCookie(event, accessCookie, tokens.accessToken, cookieOptions);
-  setCookie(event, refreshCookie, tokens.refreshToken, cookieOptions);
+  if (tokens.refreshToken) {
+    setCookie(event, refreshCookie, tokens.refreshToken, cookieOptions);
+  }
 }
 
 function shouldSkip(event: H3Event, config: QelosNuxtRuntimeConfig): boolean {

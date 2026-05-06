@@ -4,6 +4,7 @@ import verifyUser from '../middleware/verify-user';
 import { signin } from '../controllers/signin';
 import { signup } from '../controllers/signup';
 import { refreshToken } from '../controllers/refresh-token';
+import { refreshCookieToken } from '../controllers/refresh-cookie-token';
 import { logout } from '../controllers/logout';
 import { authCallback } from '../controllers/auth-callback';
 import {
@@ -34,6 +35,7 @@ router
   .post('/api/signin', signin)
   .post('/api/signup', signup)
   .post('/api/token/refresh', refreshToken)
+  .post('/api/cookie/refresh', refreshCookieToken)
   .post('/api/logout', verifyUser, onlyAuthenticated, logout)
   .post('/api/auth/callback', authCallback)
   .get('/api/auth/linkedin', authConfigCheck, getLinkedinSource, loginWithLinkedIn)
