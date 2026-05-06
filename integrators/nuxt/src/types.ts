@@ -48,7 +48,7 @@ export interface QelosNuxtRuntimeConfig {
 
 export interface ResolvedTokens {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
 }
 
 export interface TokenRefreshContext {
