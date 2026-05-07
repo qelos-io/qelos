@@ -1,4 +1,4 @@
-import { generateRules } from '../services/generate/rules.mjs';
+import { generateRules, formatIncludesSummary } from '../services/generate/rules.mjs';
 import { logger } from '../services/utils/logger.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -29,17 +29,16 @@ export default async function generateController({ type }) {
       const result = await generateRules(ideType, cwd);
       
       if (result.success) {
-        if (result.files && result.files.length > 1) {
-          logger.success(`Generated ${ideType} rules files:`);
-          result.files.forEach(file => {
-            const relativePath = path.relative(cwd, file);
-            logger.info(`  - ${relativePath}`);
-          });
-        } else if (result.files && result.files.length === 1) {
-          const relativePath = path.relative(cwd, result.files[0]);
-          logger.success(`Generated ${ideType} rules at: ${relativePath}`);
+        const primary =
+          result.primaryRelativePath ||
+          (result.files?.length ? path.relative(cwd, result.files[0]) : '');
+        if (primary) {
+          logger.success(`Generated ${primary}`);
         }
-        
+        if (result.summary) {
+          logger.info(`  Includes: ${formatIncludesSummary(result.summary)}`);
+        }
+
         // Show IDE-specific instructions
         showIDESpecificInstructions(ideType, cwd);
       } else {
