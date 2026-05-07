@@ -1,4 +1,5 @@
 import createCommand from './create.mjs';
+import initCommand from './init.mjs';
 import pushCommand from './push.mjs';
 import pullCommand from './pull.mjs';
 import generateCommand from './generate.mjs';
@@ -17,6 +18,7 @@ import authCommand from './auth.mjs';
  */
 export const commands = [
   createCommand,
+  initCommand,
   pushCommand,
   pullCommand,
   generateCommand,
