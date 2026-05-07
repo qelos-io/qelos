@@ -43,7 +43,8 @@ export function getApiProxyConfig(): IApiProxyConfig {
         '/api/logout',
         '/api/invites',
         '/api/workspaces',
-        '/api/auth'
+        '/api/auth',
+        '/api/roles',
       ],
     }),
     assetsService: getServiceFromEnvVars('assets', 'ASSETS_SERVICE', {

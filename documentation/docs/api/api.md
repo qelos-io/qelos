@@ -6,6 +6,8 @@ editLink: true
 
 The Qelos platform exposes a RESTful HTTP API that powers all platform functionality. Every operation available through the [TypeScript SDK](/sdk/sdk) maps directly to an API endpoint documented here.
 
+**New:** [Gateway endpoint reference](/api/gateway-endpoint-reference) — all major gateway paths in one place, with `curl` and SDK snippets (entities, auth, workspaces, AI, roles, events) and a routing overview aligned with `apps/gateway/server/services/proxy-middleware/config.ts`.
+
 ## Base URL
 
 All endpoints are relative to your Qelos application URL:
@@ -71,6 +73,9 @@ Many list endpoints support common query parameters:
 | `$populate` | `boolean` | Populate related references |
 
 ## API Sections
+
+### Gateway (all services, one entry point)
+- [Gateway endpoint reference](/api/gateway-endpoint-reference) — Route map, common headers, and per-domain `curl` + SDK for entities, auth, workspaces, AI, roles, and events
 
 ### Core
 - [Authentication](/api/authentication) — Sign in, sign up, token management, and user profile
