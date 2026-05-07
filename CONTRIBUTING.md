@@ -20,6 +20,7 @@ All types of contributions are encouraged and valued. See the [Table of Contents
     - [Reporting Bugs](#reporting-bugs)
     - [Suggesting Enhancements](#suggesting-enhancements)
     - [Your First Code Contribution](#your-first-code-contribution)
+    - [Developing integrator packages](#developing-integrator-packages)
     - [Improving The Documentation](#improving-the-documentation)
   - [Styleguides](#styleguides)
     - [Commit Messages](#commit-messages)
@@ -138,6 +139,76 @@ Enhancement suggestions are tracked as [GitHub issues](https://github.com/qelos-
 include Setup of env, IDE and typical getting started instructions?
 
 -->
+
+### Developing integrator packages
+
+Integrators live under [`integrators/`](integrators/) — npm packages that embed Qelos into **external** frameworks. Read [`integrators/README.md`](integrators/README.md) first: apps under `apps/*` must not depend on integrators; each package is versioned and published on its own.
+
+Use [`integrators/express/`](integrators/express/) (`@qelos/integrator-express`) as the reference TypeScript implementation.
+
+#### 1. What middleware must do
+
+Per incoming request, the integrator should:
+
+1. **Identify the user** — usually by calling the SDK’s authenticated user API after wiring tokens (or a static API token for service calls).
+2. **Resolve the active workspace** — typically from the user’s workspace list (`sdk.workspaces.getList()`), with an optional hook to pick one (headers, cookies, first match, etc.).
+3. **Attach context** — expose a single object on the framework’s request/context object so application code can read `user`, `workspace`, `workspaces`, `sdk`, and `tokens` without re-implementing auth.
+
+Skip paths like `/health` or framework internals via configuration (`skipPaths` in the shared config shape) so cold paths stay cheap.
+
+#### 2. Shared contract: `QelosContext`
+
+The canonical shape is [`QelosContext`](packages/global-types/qelos-integrator.ts) in `@qelos/global-types`. Integrators specialize it with concrete SDK types, e.g. `QelosContext<QelosSDK, IUser, IWorkspace>` (see [`integrators/express/src/types.ts`](integrators/express/src/types.ts)).
+
+Fields:
+
+| Field | Role |
+| ----- | ---- |
+| `user` | Authenticated user or `null` for anonymous requests |
+| `workspace` | Active workspace or `null` |
+| `workspaces` | All workspaces the user can access |
+| `sdk` | Per-request `QelosSDK` bound to the current tokens |
+| `tokens` | `QelosTokenPair` — read from the request; **mutated in place** when a refresh succeeds |
+
+Base configuration (`QelosConfig` in the same file) covers `appUrl`, optional `apiToken`, cookie names, `requireAuth`, and `skipPaths`.
+
+#### 3. Scaffolding a new integrator
+
+1. Create `integrators/<name>/` with `package.json` scoped as `@qelos/integrator-<name>` (see [`integrators/express/package.json`](integrators/express/package.json)).
+2. Ensure [`pnpm-workspace.yaml`](pnpm-workspace.yaml) includes `integrators/*` (already true in this repo).
+3. Add a **`build`** script — CI runs `pnpm --filter "./integrators/**" build` after building `packages/*` (see [`.github/workflows/main.yml`](.github/workflows/main.yml)).
+4. Typical layout: `src/` for implementation, `test/` for tests, `tsconfig.json` compiling `src` to `dist` with declarations (mirror [`integrators/express/tsconfig.json`](integrators/express/tsconfig.json)).
+5. Dependencies: at minimum `@qelos/global-types` and `@qelos/sdk` as `workspace:^`; declare the host framework (`express`, `next`, etc.) as a **peerDependency** where appropriate.
+6. Set `publishConfig.access: "public"` for public scoped packages.
+
+#### 4. Using `@qelos/sdk` inside an integrator
+
+Construct a **per-request** SDK instance with the resolved tokens and gateway URL. The Express integrator centralizes this in [`createRequestSdk`](integrators/express/src/sdk-factory.ts): merge `QelosExpressConfig` / `sdkOptions`, pass `appUrl`, wire `accessToken` / `refreshToken` or `apiToken`, and supply framework-specific hooks (`fetch`, `extraHeaders`, refresh callbacks).
+
+Application routes then call `sdk.authentication`, `sdk.entities`, `sdk.workspaces`, etc., on the instance stored on the request context — never share one global SDK for all requests when user credentials differ.
+
+#### 5. Token handling
+
+Follow the same semantics as the Express reference ([`middleware.ts`](integrators/express/src/middleware.ts) + [`sdk-factory.ts`](integrators/express/src/sdk-factory.ts)):
+
+- **Read** access token from `Authorization: Bearer …` (preferred when present) or the access-token cookie; read refresh token from its cookie. Defaults: `q_access_token`, `q_refresh_token` (configurable).
+- **`apiToken`** — static service authentication; skip cookie/refresh flows when set.
+- **Refresh** — the SDK coordinates refresh; the factory updates the shared `tokens` object in place and can invoke **`onTokenRefresh`** so the integrator writes new cookies or headers on the response (Express defaults to `Set-Cookie` with HttpOnly, SameSite=Lax, Secure when `appUrl` is HTTPS).
+- **Concurrency** — coalesce overlapping refreshes (the Express factory uses a single in-flight promise) to avoid thundering herds.
+
+#### 6. Testing
+
+- Run **`pnpm --filter @qelos/integrator-<name> test`** (or the repo-wide `pnpm -r run test` in CI).
+- **Mock HTTP, not the whole monorepo**: pass a stub `fetch` via `sdkOptions.fetch` and return JSON for `/api/me`, `/api/workspaces`, `/api/token/refresh`, etc., matching what the real gateway returns. See [`integrators/express/test/middleware.test.ts`](integrators/express/test/middleware.test.ts).
+- Cover anonymous vs authenticated flows, `requireAuth`, `skipPaths`, optional `resolveWorkspace`, Bearer vs cookie tokens, `apiToken` mode, and refresh + `onTokenRefresh` / cookie write-back.
+
+#### 7. Publishing and versioning
+
+- Each integrator has its **own semver** in its `package.json`; bump independently when the public API or behavior of that package changes.
+- CI **builds** all integrators but does not run an automated npm publish from this repository — release is a separate step (build, `npm publish` / `pnpm publish` from the package directory with registry auth).
+- Keep `files` in `package.json` limited to what ships (e.g. `dist`, `README.md`) like the Express package.
+
+For a non-TypeScript integrator (e.g. Python FastAPI), keep the same **context contract** and token lifecycle; CI runs pytest for [`integrators/fastapi`](integrators/fastapi) separately in the main workflow.
 
 ### Improving The Documentation
 <!-- TODO
