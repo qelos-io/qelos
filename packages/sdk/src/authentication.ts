@@ -57,6 +57,78 @@ export interface SocialLoginOptions {
 export interface SocialAuthCallbackPayload {
   payload: BasicPayload & { workspace?: any };
   headers: { 'set-cookie': string | null };
+  /**
+   * Present when the runtime exposes multiple `Set-Cookie` headers (Node fetch
+   * `getSetCookie()`). Use {@link getSocialAuthSetCookieParts} to apply cookies.
+   */
+  setCookieHeaders?: string[];
+}
+
+/** Callback URL or query bag carrying `rt` from `GET …/callback?rt=…`. */
+export type SocialCallbackInput =
+  | string
+  | URL
+  | URLSearchParams
+  | Record<string, string | string[] | undefined>;
+
+function collectSetCookieHeaders(res: Response): string[] | undefined {
+  const h = res.headers as Headers & { getSetCookie?: () => string[] };
+  if (typeof h.getSetCookie === 'function') {
+    const list = h.getSetCookie();
+    return list.length ? list : undefined;
+  }
+  const single = res.headers.get('set-cookie');
+  return single ? [single] : undefined;
+}
+
+/**
+ * Read the OAuth refresh token from a social callback request (query `rt`).
+ * Accepts a full URL, a {@link URL}, `URLSearchParams`, or a query object such
+ * as `req.query` from Next.js or Express.
+ */
+export function parseSocialCallbackRefreshToken(input: SocialCallbackInput): string | undefined {
+  if (input instanceof URL) {
+    return input.searchParams.get('rt') ?? undefined;
+  }
+  if (typeof input === 'string') {
+    try {
+      const u = new URL(input, 'http://qelos.social-callback.invalid');
+      return u.searchParams.get('rt') ?? undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  if (input instanceof URLSearchParams) {
+    return input.get('rt') ?? undefined;
+  }
+  const raw = input['rt'];
+  if (Array.isArray(raw)) {
+    return raw[0] && typeof raw[0] === 'string' ? raw[0] : undefined;
+  }
+  return typeof raw === 'string' ? raw : undefined;
+}
+
+/** Lists individual `Set-Cookie` values from an exchange result for writing to a response. */
+export function getSocialAuthSetCookieParts(result: SocialAuthCallbackPayload): string[] {
+  if (result.setCookieHeaders?.length) {
+    return result.setCookieHeaders;
+  }
+  const h = result.headers['set-cookie'];
+  return h ? [h] : [];
+}
+
+/**
+ * Copies session cookies from {@link QlAuthentication.exchangeAuthCallback} /
+ * {@link QlAuthentication.socialCallback} onto an HTTP response (Express,
+ * Next.js Pages `NextApiResponse`, Node `ServerResponse`, etc.).
+ */
+export function applySocialAuthCookiesToServerResponse(
+  res: { setHeader(name: string, value: string | string[]): void },
+  result: SocialAuthCallbackPayload,
+): void {
+  const parts = getSocialAuthSetCookieParts(result);
+  if (!parts.length) return;
+  res.setHeader('Set-Cookie', parts.length === 1 ? parts[0]! : parts);
 }
 
 export default class QlAuthentication extends BaseSDK {
@@ -246,18 +318,46 @@ export default class QlAuthentication extends BaseSDK {
       throw new Error('refresh token is required');
     }
     const res = await this.callApi(`/api/auth/callback?rt=${encodeURIComponent(refreshToken)}`, {
-      method: 'post'
+      method: 'post',
+      cache: 'no-store',
     });
     if (!res.ok) {
-      throw new Error('failed to exchange refresh token');
+      let detail = '';
+      try {
+        detail = (await res.text()).slice(0, 512);
+      } catch {
+        /* ignore */
+      }
+      throw new Error(
+        `failed to exchange refresh token: HTTP ${res.status}${detail ? ` — ${detail}` : ''}`,
+      );
     }
     const body = (await res.json()) as { payload: BasicPayload & { workspace?: any } };
+    const cookieParts = collectSetCookieHeaders(res);
+    const legacyCookie =
+      cookieParts?.[0] ?? res.headers?.get('set-cookie');
     return {
       ...body,
       headers: {
-        'set-cookie': res.headers?.get('set-cookie')
-      }
+        'set-cookie': legacyCookie ?? null,
+      },
+      ...(cookieParts && cookieParts.length > 1
+        ? { setCookieHeaders: cookieParts }
+        : {}),
     };
+  }
+
+  /**
+   * Full social callback: read `rt` from the request URL or query and exchange
+   * it for a session. Use with integrator routes that receive the provider
+   * callback with `?rt=` (refresh token) after OAuth.
+   */
+  async socialCallback(input: SocialCallbackInput): Promise<SocialAuthCallbackPayload> {
+    const refreshToken = parseSocialCallbackRefreshToken(input);
+    if (!refreshToken) {
+      throw new Error('missing rt query parameter');
+    }
+    return this.exchangeAuthCallback(refreshToken);
   }
 
   getLoggedInUser() {

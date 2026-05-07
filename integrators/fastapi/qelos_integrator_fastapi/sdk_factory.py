@@ -17,6 +17,7 @@ _NO_AUTH_URLS = frozenset(
         "/api/cookie/refresh",
         "/api/signin",
         "/api/signup",
+        "/api/auth/callback",
     ]
 )
 

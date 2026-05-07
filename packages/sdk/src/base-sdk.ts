@@ -1,5 +1,15 @@
 import { FetchLike, QelosSDKOptions } from './types';
 
+/** Path segment of a relative URL, without query or hash — used for auth routing in extraHeaders. */
+export function relativeUrlPath(relativeUrl: string): string {
+  const q = relativeUrl.indexOf('?');
+  const h = relativeUrl.indexOf('#');
+  let end = relativeUrl.length;
+  if (q !== -1) end = Math.min(end, q);
+  if (h !== -1) end = Math.min(end, h);
+  return end === relativeUrl.length ? relativeUrl : relativeUrl.slice(0, end);
+}
+
 const ERRORS = {
   EXTRA_HEADERS: 'could not get extra headers',
   FAILED_REFRESH_TOKEN: 'could not handle failed refresh token',
@@ -25,7 +35,7 @@ export default class BaseSDK {
     
     if (this.qlOptions.extraHeaders) {
       try {
-        const extraHeaders = await this.qlOptions.extraHeaders(relativeUrl);
+        const extraHeaders = await this.qlOptions.extraHeaders(relativeUrlPath(relativeUrl));
         Object.assign(data.headers, extraHeaders);
       } catch (e) {
         throw new Error(ERRORS.EXTRA_HEADERS);
@@ -85,7 +95,7 @@ export default class BaseSDK {
         
         if (this.qlOptions.extraHeaders) {
           try {
-            headers = await this.qlOptions.extraHeaders(relativeUrl, true);
+            headers = await this.qlOptions.extraHeaders(relativeUrlPath(relativeUrl), true);
           } catch {
             // Ignore error during refresh attempt
           }
