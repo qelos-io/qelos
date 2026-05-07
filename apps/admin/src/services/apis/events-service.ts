@@ -4,13 +4,14 @@ import { api, getCallData } from './api'
 export interface IEvent {
   _id: string;
   tenant: string;
-  user?: string;
+  user?: string | { _id?: string; email?: string; username?: string };
+  workspace?: string | { _id?: string; name?: string };
   source: string;
   kind: string;
   eventName: string;
   description: string;
   metadata: any;
-  created: Date;
+  created: Date | string;
 }
 
 export interface IEventsListResponse {
@@ -32,6 +33,9 @@ export interface IEventsQueryParams {
   kind?: string;
   eventName?: string;
   source?: string;
+  user?: string;
+  workspace?: string;
+  search?: string;
   period?: string;
   from?: string;
   to?: string;

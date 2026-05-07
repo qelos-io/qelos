@@ -19,8 +19,9 @@ class QlEvents(BaseSDK):
     async def get_list(self, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """List events with optional filters.
 
-        Supported filters: ``page``, ``kind``, ``eventName``, ``source``,
-        ``user``, ``workspace``, ``period``.
+        Supported filters: ``page``, ``limit``, ``kind``, ``eventName``,
+        ``source``, ``user``, ``workspace``, ``search``, ``period``,
+        ``from``, and ``to``.
         """
         qs = ""
         if params:

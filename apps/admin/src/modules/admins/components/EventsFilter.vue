@@ -90,6 +90,38 @@
           </template>
           <span v-else class="date-range-label">{{ dateRangeLabel }}</span>
         </div>
+
+        <div class="events-filter-row">
+          <el-input
+            v-model="selectedUser"
+            clearable
+            :placeholder="$t('Filter by user')"
+            @input="queueQueryUpdate"
+            @clear="updateQuery"
+            class="filter-input"
+            dir="ltr"
+          />
+
+          <el-input
+            v-model="selectedWorkspace"
+            clearable
+            :placeholder="$t('Filter by workspace')"
+            @input="queueQueryUpdate"
+            @clear="updateQuery"
+            class="filter-input"
+            dir="ltr"
+          />
+
+          <el-input
+            v-model="selectedSearch"
+            clearable
+            :placeholder="$t('Search metadata')"
+            @input="queueQueryUpdate"
+            @clear="updateQuery"
+            class="filter-input metadata-search"
+            dir="ltr"
+          />
+        </div>
         <div v-if="!loading && (total > 0 || totalPages > 0)" class="events-range-summary">
           {{ totalDisplay
           }}<template v-if="totalPages > 0">
@@ -112,7 +144,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
@@ -129,6 +161,9 @@ const props = withDefaults(
     period?: string;
     from?: string;
     to?: string;
+    user?: string;
+    workspace?: string;
+    search?: string;
     total?: number;
     totalPages?: number;
     totalCapped?: boolean;
@@ -150,25 +185,29 @@ const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < MOBILE
 const filterVisible = ref(!isMobile.value);
 
 if (typeof window !== 'undefined') {
-  window.addEventListener('resize', () => {
-    isMobile.value = window.innerWidth < MOBILE_BREAKPOINT;
-    if (!isMobile.value) filterVisible.value = true;
-  });
+  window.addEventListener('resize', updateIsMobile);
 }
 
 const selectedKind = ref<string | undefined>((route.query.kind as string) || undefined);
 const selectedEventName = ref<string | undefined>((route.query.eventName as string) || undefined);
 const selectedSource = ref<string | undefined>((route.query.source as string) || undefined);
+const selectedUser = ref<string>((route.query.user as string) || '');
+const selectedWorkspace = ref<string>((route.query.workspace as string) || '');
+const selectedSearch = ref<string>((route.query.search as string) || '');
 const selectedPeriod = ref<string>((route.query.from && route.query.to) ? 'custom' : ((route.query.period as string) || 'last-week'));
 const dateRange = ref<[string, string] | null>(
   props.from && props.to ? [props.from, props.to] : null
 );
+let queryUpdateTimer: ReturnType<typeof setTimeout> | undefined;
 
 const activeFiltersCount = computed(() => {
   let n = 0;
   if (selectedKind.value) n++;
   if (selectedEventName.value) n++;
   if (selectedSource.value) n++;
+  if (selectedUser.value.trim()) n++;
+  if (selectedWorkspace.value.trim()) n++;
+  if (selectedSearch.value.trim()) n++;
   if (selectedPeriod.value && selectedPeriod.value !== 'last-week') n++;
   return n;
 });
@@ -212,6 +251,9 @@ watch(
     selectedKind.value = (newQuery as Record<string, string>).kind || undefined;
     selectedEventName.value = (newQuery as Record<string, string>).eventName || undefined;
     selectedSource.value = (newQuery as Record<string, string>).source || undefined;
+    selectedUser.value = (newQuery as Record<string, string>).user || '';
+    selectedWorkspace.value = (newQuery as Record<string, string>).workspace || '';
+    selectedSearch.value = (newQuery as Record<string, string>).search || '';
     const q = newQuery as Record<string, string>;
     if (from && to) {
       selectedPeriod.value = 'custom';
@@ -223,6 +265,20 @@ watch(
   },
   { immediate: true }
 );
+
+onBeforeUnmount(() => {
+  if (queryUpdateTimer) {
+    clearTimeout(queryUpdateTimer);
+  }
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', updateIsMobile);
+  }
+});
+
+function updateIsMobile() {
+  isMobile.value = window.innerWidth < MOBILE_BREAKPOINT;
+  if (!isMobile.value) filterVisible.value = true;
+}
 
 function onPeriodChange() {
   if (selectedPeriod.value !== 'custom') {
@@ -245,7 +301,18 @@ function onDateRangeChange(range: [string, string] | null) {
   });
 }
 
+function queueQueryUpdate() {
+  if (queryUpdateTimer) {
+    clearTimeout(queryUpdateTimer);
+  }
+  queryUpdateTimer = setTimeout(updateQuery, 350);
+}
+
 function updateQuery() {
+  if (queryUpdateTimer) {
+    clearTimeout(queryUpdateTimer);
+    queryUpdateTimer = undefined;
+  }
   const isCustom = selectedPeriod.value === 'custom';
   router.push({
     name: 'log',
@@ -254,6 +321,9 @@ function updateQuery() {
       kind: selectedKind.value || undefined,
       eventName: selectedEventName.value || undefined,
       source: selectedSource.value || undefined,
+      user: selectedUser.value.trim() || undefined,
+      workspace: selectedWorkspace.value.trim() || undefined,
+      search: selectedSearch.value.trim() || undefined,
       period: isCustom ? undefined : selectedPeriod.value,
       from: isCustom ? (route.query.from as string) || undefined : undefined,
       to: isCustom ? (route.query.to as string) || undefined : undefined,
@@ -291,6 +361,16 @@ function updateQuery() {
   min-width: 140px;
   flex: 1 1 140px;
   max-width: 200px;
+}
+
+.filter-input {
+  min-width: 180px;
+  flex: 1 1 180px;
+  max-width: 240px;
+}
+
+.metadata-search {
+  max-width: 320px;
 }
 
 .period-select {
@@ -335,12 +415,14 @@ function updateQuery() {
   }
 
   .filter-select,
+  .filter-input,
   .filter-date-range {
     max-width: none;
     width: 100%;
   }
 
   .filter-select :deep(.el-input__wrapper),
+  .filter-input :deep(.el-input__wrapper),
   .filter-date-range :deep(.el-input__wrapper) {
     height: 40px;
     min-height: 40px;

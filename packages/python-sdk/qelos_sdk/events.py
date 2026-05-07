@@ -25,6 +25,7 @@ class QlEvents(BaseSDK):
         source: Optional[str] = None,
         user: Optional[str] = None,
         workspace: Optional[str] = None,
+        search: Optional[str] = None,
         period: Optional[str] = None,
         from_: Optional[str] = None,
         to: Optional[str] = None,
@@ -45,6 +46,8 @@ class QlEvents(BaseSDK):
             params["user"] = user
         if workspace is not None:
             params["workspace"] = workspace
+        if search is not None:
+            params["search"] = search
         if period is not None:
             params["period"] = period
         if from_ is not None:

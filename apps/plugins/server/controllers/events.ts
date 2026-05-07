@@ -25,13 +25,21 @@ function buildDateFilter(period, from, to) {
   return { created: { $gte: new Date(now - 7 * day) } };
 }
 
-function buildEventsQuery(tenant, { kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week', from, to }) {
+function buildEventsQuery(tenant, { kind = '*', eventName = '*', source = '*', user, workspace, search, period = 'last-week', from, to }) {
   const dbQuery = { tenant };
   if (kind !== '*') dbQuery.kind = kind;
   if (eventName !== '*') dbQuery.eventName = eventName;
   if (source !== '*') dbQuery.source = source;
   if (user) dbQuery.user = user;
-  if (workspace) dbQuery.workspace = workspace;
+  if (workspace) {
+    dbQuery.$or = [
+      { workspace },
+      { 'metadata.workspace': workspace },
+      { 'metadata.workspace._id': workspace },
+      { 'metadata.workspaceId': workspace },
+    ];
+  }
+  if (search) dbQuery.$text = { $search: search };
   const dateFilter = buildDateFilter(period, from, to);
   if (dateFilter) Object.assign(dbQuery, dateFilter);
   return dbQuery;
@@ -43,10 +51,10 @@ function parseLimit(limitParam) {
 }
 
 export async function getAllEvents(req, res) {
-  const { page = 0, limit: limitParam, kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week', from, to } = req.query;
+  const { page = 0, limit: limitParam, kind = '*', eventName = '*', source = '*', user, workspace, search, period = 'last-week', from, to } = req.query;
   const limit = parseLimit(limitParam);
   const skip = Math.max(0, Number(page) * limit);
-  const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, user, workspace, period, from, to });
+  const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, user, workspace, search, period, from, to });
 
   // Two indexed queries: page slice + capped “how many match” probe (at most TOTAL_CAP+1 _id reads).
   const [events, countProbe] = await Promise.all([
@@ -54,7 +62,6 @@ export async function getAllEvents(req, res) {
       .sort({ created: -1 })
       .skip(skip)
       .limit(limit)
-      .select({ metadata: 0 })
       .lean()
       .exec(),
     PlatformEvent.find(dbQuery)
@@ -81,8 +88,8 @@ export async function getAllEvents(req, res) {
 }
 
 export async function getFilterOptions(req, res) {
-  const { kind = '*', eventName = '*', source = '*', period = 'last-week', from, to } = req.query;
-  const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, period, from, to });
+  const { kind = '*', eventName = '*', source = '*', user, workspace, search, period = 'last-week', from, to } = req.query;
+  const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, user, workspace, search, period, from, to });
 
   const facetBranch = (field) => [
     { $group: { _id: `$${field}` } },
@@ -136,9 +143,9 @@ export async function createEvent(req, res) {
 }
 
 export async function getEventsCount(req, res) {
-  const { kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week', from, to, 'no-cache': noCache } = req.query;
+  const { kind = '*', eventName = '*', source = '*', user, workspace, search, period = 'last-week', from, to, 'no-cache': noCache } = req.query;
 
-  const cacheKey = `events:count:${req.headers.tenant}:${JSON.stringify({ kind, eventName, source, user, workspace, period, from, to })}`;
+  const cacheKey = `events:count:${req.headers.tenant}:${JSON.stringify({ kind, eventName, source, user, workspace, search, period, from, to })}`;
 
   if (noCache !== 'true') {
     try {
@@ -151,7 +158,7 @@ export async function getEventsCount(req, res) {
     }
   }
 
-  const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, user, workspace, period, from, to });
+  const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, user, workspace, search, period, from, to });
   const count = await PlatformEvent.countDocuments(dbQuery);
   const result = { count };
 
@@ -163,14 +170,14 @@ export async function getEventsCount(req, res) {
 }
 
 export async function getEventsSum(req, res) {
-  const { sum, groupBy, kind = '*', eventName = '*', source = '*', user, workspace, period = 'last-week', from, to, 'no-cache': noCache } = req.query;
+  const { sum, groupBy, kind = '*', eventName = '*', source = '*', user, workspace, search, period = 'last-week', from, to, 'no-cache': noCache } = req.query;
 
   if (!sum) {
     res.status(400).json({ message: 'sum property is required' }).end();
     return;
   }
 
-  const cacheKey = `events:sum:${req.headers.tenant}:${JSON.stringify({ sum, groupBy, kind, eventName, source, user, workspace, period, from, to })}`;
+  const cacheKey = `events:sum:${req.headers.tenant}:${JSON.stringify({ sum, groupBy, kind, eventName, source, user, workspace, search, period, from, to })}`;
 
   if (noCache !== 'true') {
     try {
@@ -183,7 +190,7 @@ export async function getEventsSum(req, res) {
     }
   }
 
-  const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, user, workspace, period, from, to });
+  const dbQuery = buildEventsQuery(req.headers.tenant, { kind, eventName, source, user, workspace, search, period, from, to });
 
   // If no groupBy provided, return just the total sum
   if (!groupBy) {

@@ -3,6 +3,7 @@ import mongoose, {Document} from 'mongoose'
 export interface IEvent extends Document {
   tenant: string;
   user?: string;
+  workspace?: string;
   source: string;
   kind: string;
   eventName: string;
@@ -17,6 +18,9 @@ const EventSchema = new mongoose.Schema<IEvent>({
     required: true
   },
   user: {
+    type: String,
+  },
+  workspace: {
     type: String,
   },
   source: {
@@ -50,6 +54,8 @@ EventSchema.index({ tenant: 1, created: -1 });
 
 // Supporting indexes for other query patterns
 EventSchema.index({ tenant: 1, source: 1, kind: 1, eventName: 1 });
+EventSchema.index({ tenant: 1, workspace: 1, created: -1 });
+EventSchema.index({ '$**': 'text' });
 
 const PlatformEvent = mongoose.model<IEvent>('Event', EventSchema);
 
