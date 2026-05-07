@@ -15,3 +15,4 @@ export * from './integration'
 export * from './integration-targets'
 export * from './no-code-components';
 export * from './payments';
+export * from './qelos-integrator';

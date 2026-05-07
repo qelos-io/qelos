@@ -624,6 +624,9 @@ importers:
 
   integrators/express:
     dependencies:
+      '@qelos/global-types':
+        specifier: workspace:^
+        version: link:../../packages/global-types
       '@qelos/sdk':
         specifier: workspace:^
         version: link:../../packages/sdk
@@ -687,6 +690,9 @@ importers:
 
   integrators/next:
     dependencies:
+      '@qelos/global-types':
+        specifier: workspace:^
+        version: link:../../packages/global-types
       '@qelos/sdk':
         specifier: workspace:^
         version: link:../../packages/sdk

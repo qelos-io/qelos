@@ -53,6 +53,7 @@
     }
   },
   "dependencies": {
+    "@qelos/global-types": "workspace:^",
     "@qelos/sdk": "workspace:^"
   },
   "devDependencies": {
