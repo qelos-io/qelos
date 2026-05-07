@@ -198,3 +198,59 @@ class QelosIntegratorMiddleware(BaseHTTPMiddleware):
             return response
         finally:
             await sdk.close()
+
+
+class QelosMiddleware(QelosIntegratorMiddleware):
+    """Same as :class:`QelosIntegratorMiddleware`, but accepts flat kwargs for
+    :func:`starlette.applications.Starlette.add_middleware`::
+
+        app.add_middleware(qelos_middleware, app_url="https://my.qelos.io", api_token="...")
+
+    Alternatively pass a ready-made :class:`~qelos_integrator_fastapi.config.QelosConfig`
+    as ``config=`` (do not mix with ``app_url`` / ``api_token``).
+    """
+
+    def __init__(
+        self,
+        app,
+        *,
+        config: Optional[QelosConfig] = None,
+        app_url: Optional[str] = None,
+        api_token: Optional[str] = None,
+        access_token_cookie: str = "q_access_token",
+        refresh_token_cookie: str = "q_refresh_token",
+        require_auth: bool = False,
+        skip_paths: Optional[List[str]] = None,
+        sdk_options: Optional[Dict[str, Any]] = None,
+        on_token_refresh: Optional[TokenRefreshHook] = None,
+        resolve_workspace: Optional[WorkspaceResolver] = None,
+    ) -> None:
+        if config is not None:
+            if app_url is not None or api_token is not None:
+                raise TypeError(
+                    "Pass either config=... or flat kwargs (app_url, api_token, ...), not both.",
+                )
+            resolved = config
+        else:
+            if app_url is None:
+                raise TypeError(
+                    "QelosMiddleware requires app_url=... or config=QelosConfig(...).",
+                )
+            resolved = QelosConfig(
+                app_url=app_url,
+                api_token=api_token,
+                access_token_cookie=access_token_cookie,
+                refresh_token_cookie=refresh_token_cookie,
+                require_auth=require_auth,
+                skip_paths=list(skip_paths or []),
+                sdk_options=dict(sdk_options or {}),
+            )
+        super().__init__(
+            app,
+            config=resolved,
+            on_token_refresh=on_token_refresh,
+            resolve_workspace=resolve_workspace,
+        )
+
+
+qelos_middleware = QelosMiddleware

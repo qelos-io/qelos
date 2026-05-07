@@ -4,10 +4,18 @@ from urllib.parse import urlparse
 
 import httpx
 import pytest
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from starlette.testclient import TestClient
 
-from qelos_integrator_fastapi import QelosConfig, QelosIntegratorMiddleware
+from qelos_sdk import QelosSDK
+
+from qelos_integrator_fastapi import (
+    QelosConfig,
+    QelosIntegratorMiddleware,
+    get_qelos_sdk,
+    get_qelos_user,
+    qelos_middleware,
+)
 
 MINIMAL_USER = {
     "_id": "user-1",
@@ -216,3 +224,66 @@ def test_on_token_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
     assert body["access"] == "new-access"
     assert refreshed["ok"] is True
     assert me_calls["n"] >= 2
+
+
+def test_qelos_middleware_flat_kwargs(mock_http: None) -> None:
+    app = FastAPI()
+    app.add_middleware(qelos_middleware, app_url="http://example.test")
+
+    @app.get("/ctx")
+    def ctx(request: Request):
+        q = request.state.qelos
+        return {
+            "userId": q.user.get("_id") if q.user else None,
+            "workspaceId": q.workspace.get("_id") if q.workspace else None,
+        }
+
+    client = TestClient(app)
+    res = client.get(
+        "/ctx",
+        headers={"cookie": "q_access_token=a; q_refresh_token=r"},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["userId"] == "user-1"
+    assert body["workspaceId"] == "ws-1"
+
+
+def test_get_qelos_user_and_sdk(mock_http: None) -> None:
+    app = FastAPI()
+    app.add_middleware(qelos_middleware, app_url="http://example.test")
+
+    @app.get("/typed")
+    def typed(
+        user=Depends(get_qelos_user),
+        sdk=Depends(get_qelos_sdk),
+    ):
+        return {
+            "full_name": user.full_name,
+            "user_id": user.id,
+            "sdk_is_qelos": isinstance(sdk, QelosSDK),
+        }
+
+    client = TestClient(app)
+    res = client.get(
+        "/typed",
+        headers={"cookie": "q_access_token=a; q_refresh_token=r"},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["full_name"] == "Alice Example"
+    assert body["user_id"] == "user-1"
+    assert body["sdk_is_qelos"] is True
+
+
+def test_get_qelos_sdk_requires_middleware(mock_http: None) -> None:
+    app = FastAPI()
+
+    @app.get("/orphan")
+    def orphan(sdk=Depends(get_qelos_sdk)):
+        return {"ok": sdk is not None}
+
+    client = TestClient(app)
+    res = client.get("/orphan")
+    assert res.status_code == 500
+    assert res.json()["detail"]["code"] == "QELOS_MIDDLEWARE_MISSING"
