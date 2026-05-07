@@ -4,6 +4,13 @@
  *
  * Next.js forwards trusted identity headers on the middleware response as
  * `x-middleware-request-*` (see Next.js `handleMiddlewareField`).
+ *
+ * The middleware is a plain function — there is no per-request server boot —
+ * so we construct the three middleware variants once at file scope and reuse
+ * them across tests:
+ *   `defaultMw` — no requireAuth, default workspace resolution
+ *   `authMw`    — requireAuth: true
+ *   `tenantMw`  — workspace resolved by the `x-tenant` request header
  */
 import { describe, it, before } from 'node:test';
 import * as assert from 'node:assert/strict';
@@ -13,19 +20,21 @@ import {
   createRequestSdk,
   QELOS_USER_HEADER,
   QELOS_WORKSPACE_HEADER,
+  type QelosMiddleware,
 } from '@qelos/integrator-next';
 import {
-  assertE2eEnabled,
   cookieHeader,
   ensureTestBlueprint,
+  getEnv,
   login,
   loginAdmin,
+  pickWorkspaceBySlug,
+  shouldSkip,
+  skipReason,
   type IntegratorTestEnv,
   type LoginResult,
 } from './setup.js';
-import { findCookie } from './helpers.js';
-
-const env = assertE2eEnabled();
+import { buildCookieHeader, parseSetCookies } from './helpers.js';
 
 function forwardedRequestHeader(res: Response, logicalName: string): string | null {
   const want = `x-middleware-request-${logicalName}`.toLowerCase();
@@ -35,24 +44,48 @@ function forwardedRequestHeader(res: Response, logicalName: string): string | nu
   return null;
 }
 
-describe('integrator-next e2e', { skip: !env }, () => {
-  if (!env) return;
-  const e: IntegratorTestEnv = env;
+function setCookiesFromResponse(res: Response): string[] {
+  const getter = (res.headers as Headers & { getSetCookie?: () => string[] })
+    .getSetCookie;
+  if (typeof getter === 'function') return getter();
+  const single = res.headers.get('set-cookie');
+  return single ? [single] : [];
+}
+
+describe('integrator-next e2e', { skip: shouldSkip ? skipReason : false }, () => {
+  if (shouldSkip) return;
+  const env: IntegratorTestEnv = getEnv();
   let session: LoginResult;
   let blueprintKey: string;
 
+  let defaultMw: QelosMiddleware;
+  let authMw: QelosMiddleware;
+  let tenantMw: QelosMiddleware;
+
   before(async () => {
-    const admin = await loginAdmin(e);
-    blueprintKey = await ensureTestBlueprint(e, admin);
-    session = await login(e);
+    const admin = await loginAdmin(env);
+    blueprintKey = await ensureTestBlueprint(env, admin);
+    session = await login(env);
+
+    defaultMw = createQelosMiddleware({ config: { appUrl: env.appUrl } });
+    authMw = createQelosMiddleware({
+      config: { appUrl: env.appUrl, requireAuth: true },
+    });
+    tenantMw = createQelosMiddleware({
+      config: { appUrl: env.appUrl },
+      resolveWorkspace: ({ req, workspaces }) => {
+        const slug = req.headers.get('x-tenant');
+        if (slug) return pickWorkspaceBySlug(workspaces, slug);
+        return null;
+      },
+    });
   });
 
-  it('attaches the authenticated user and workspace via forwarded request headers', async () => {
-    const mw = createQelosMiddleware({ config: { appUrl: e.appUrl } });
+  it('attaches the authenticated user and a workspace', async () => {
     const req = new NextRequest('http://localhost/me', {
       headers: { cookie: cookieHeader(session) },
     });
-    const res = await mw(req);
+    const res = await defaultMw(req);
     assert.equal(res.status, 200);
     assert.equal(
       forwardedRequestHeader(res, QELOS_USER_HEADER),
@@ -61,25 +94,21 @@ describe('integrator-next e2e', { skip: !env }, () => {
     assert.ok(forwardedRequestHeader(res, QELOS_WORKSPACE_HEADER));
   });
 
-  it('does not forward identity headers for anonymous request when requireAuth is off', async () => {
-    const mw = createQelosMiddleware({ config: { appUrl: e.appUrl } });
+  it('leaves user null on anonymous request when requireAuth is off', async () => {
     const req = new NextRequest('http://localhost/me');
-    const res = await mw(req);
+    const res = await defaultMw(req);
     assert.equal(res.status, 200);
     assert.equal(forwardedRequestHeader(res, QELOS_USER_HEADER), null);
+    assert.equal(forwardedRequestHeader(res, QELOS_WORKSPACE_HEADER), null);
   });
 
   it('returns 401 for anonymous request when requireAuth is on', async () => {
-    const mw = createQelosMiddleware({
-      config: { appUrl: e.appUrl, requireAuth: true },
-    });
     const req = new NextRequest('http://localhost/me');
-    const res = await mw(req);
+    const res = await authMw(req);
     assert.equal(res.status, 401);
   });
 
-  it('refreshes tokens and writes new cookies when access token is stale', async () => {
-    const mw = createQelosMiddleware({ config: { appUrl: e.appUrl } });
+  it('refreshes tokens, sets new cookies, and a follow-up call succeeds', async () => {
     const req = new NextRequest('http://localhost/me', {
       headers: {
         cookie: cookieHeader({
@@ -88,50 +117,68 @@ describe('integrator-next e2e', { skip: !env }, () => {
         }),
       },
     });
-    const res = await mw(req);
+    const res = await defaultMw(req);
     assert.equal(res.status, 200);
     assert.equal(
       forwardedRequestHeader(res, QELOS_USER_HEADER),
       session.user._id,
     );
-    const setCookies = (res.headers as any).getSetCookie?.() ?? [];
-    const newAccess = findCookie(setCookies, 'q_access_token');
+    const refreshed = parseSetCookies(setCookiesFromResponse(res));
+    const newAccess = refreshed.q_access_token;
     assert.ok(newAccess, 'expected a new q_access_token cookie after refresh');
     assert.notEqual(newAccess, 'definitely-not-a-valid-access-token');
-  });
 
-  it('resolveWorkspace receives all workspaces and its choice is forwarded', async () => {
-    let observed: string[] = [];
-    const mw = createQelosMiddleware({
-      config: { appUrl: e.appUrl },
-      resolveWorkspace: async ({ workspaces }) => {
-        observed = workspaces.map((w) => String(w._id));
-        return workspaces[workspaces.length - 1] ?? null;
-      },
+    const followUpReq = new NextRequest('http://localhost/me', {
+      headers: { cookie: buildCookieHeader(refreshed) },
     });
-    const req = new NextRequest('http://localhost/me', {
-      headers: { cookie: cookieHeader(session) },
-    });
-    const res = await mw(req);
-    assert.equal(res.status, 200);
-    assert.ok(observed.length >= 1, 'resolveWorkspace was not invoked');
+    const followUp = await defaultMw(followUpReq);
+    assert.equal(followUp.status, 200);
     assert.equal(
-      forwardedRequestHeader(res, QELOS_WORKSPACE_HEADER),
-      observed[observed.length - 1],
+      forwardedRequestHeader(followUp, QELOS_USER_HEADER),
+      session.user._id,
     );
   });
 
-  it('SDK entity operations work through the integrator SDK factory', async () => {
-    const tokens = {
-      accessToken: session.accessToken,
-      refreshToken: session.refreshToken,
-    };
+  it('resolveWorkspace picks the workspace named in the x-tenant header', async () => {
+    const req = new NextRequest('http://localhost/me', {
+      headers: {
+        cookie: cookieHeader(session),
+        'x-tenant': env.workspaceSlug,
+      },
+    });
+    const res = await tenantMw(req);
+    assert.equal(res.status, 200);
+    assert.equal(
+      forwardedRequestHeader(res, QELOS_WORKSPACE_HEADER),
+      session.workspaceId,
+    );
+  });
+
+  it('SDK entity CRUD via the integrator works end-to-end', async () => {
     const sdk = createRequestSdk({
-      config: { appUrl: e.appUrl },
-      tokens,
+      config: { appUrl: env.appUrl },
+      tokens: {
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+      },
       refreshTarget: null,
     });
+    const title = `e2e-next-${Date.now()}`;
+    const created = await sdk.entities(blueprintKey).create({ title } as any);
+    const id = (created as any)?.identifier;
+    assert.ok(id, 'create response must include identifier');
+
+    const fetched = await sdk.entities(blueprintKey).findOne(id);
+    assert.equal((fetched as any).identifier, id);
+    assert.equal((fetched as any).title, title);
+
     const list = await sdk.entities(blueprintKey).find();
     assert.ok(Array.isArray(list));
+    assert.ok(
+      list.some((e: any) => e.identifier === id),
+      'created entity should appear in the list',
+    );
+
+    await sdk.entities(blueprintKey).remove(id);
   });
 });

@@ -1,6 +1,12 @@
 /**
  * Integration tests for `@qelos/integrator-fastify` against a real Qelos stack.
  * See `express.test.ts` for the rationale and skip behavior.
+ *
+ * One Fastify instance hosts three encapsulated plugin scopes so the suite
+ * boots once per file rather than per test:
+ *   /default — no requireAuth, default workspace resolution
+ *   /auth    — requireAuth: true
+ *   /tenant  — workspace resolved by the `x-tenant` request header
  */
 import { describe, it, before, after } from 'node:test';
 import * as assert from 'node:assert/strict';
@@ -10,163 +16,216 @@ import {
   requireUser,
 } from '@qelos/integrator-fastify';
 import {
-  assertE2eEnabled,
   cookieHeader,
   ensureTestBlueprint,
+  getEnv,
   login,
   loginAdmin,
+  pickWorkspaceBySlug,
+  shouldSkip,
+  skipReason,
   type IntegratorTestEnv,
   type LoginResult,
 } from './setup.js';
-import { fetchJson, findCookie } from './helpers.js';
+import {
+  buildCookieHeader,
+  fetchJson,
+  parseSetCookies,
+} from './helpers.js';
 
-const env = assertE2eEnabled();
-
-interface AppHandle {
-  url: string;
-  close: () => Promise<void>;
-}
-
-describe('integrator-fastify e2e', { skip: !env }, () => {
-  if (!env) return;
-  const e: IntegratorTestEnv = env;
+describe('integrator-fastify e2e', { skip: shouldSkip ? skipReason : false }, () => {
+  if (shouldSkip) return;
+  const env: IntegratorTestEnv = getEnv();
   let session: LoginResult;
   let blueprintKey: string;
+  let app: FastifyInstance;
+  let baseUrl: string;
 
   before(async () => {
-    const admin = await loginAdmin(e);
-    blueprintKey = await ensureTestBlueprint(e, admin);
-    session = await login(e);
+    const admin = await loginAdmin(env);
+    blueprintKey = await ensureTestBlueprint(env, admin);
+    session = await login(env);
+
+    app = Fastify();
+    await app.register(scope({}), { prefix: '/default' });
+    await app.register(scope({ requireAuth: true }), { prefix: '/auth' });
+    await app.register(
+      scope({
+        resolveWorkspace: ({ request, workspaces }) => {
+          const slug = request.headers['x-tenant'];
+          if (typeof slug === 'string' && slug) {
+            return pickWorkspaceBySlug(workspaces, slug);
+          }
+          return null;
+        },
+      }),
+      { prefix: '/tenant' },
+    );
+
+    baseUrl = await app.listen({ port: 0, host: '127.0.0.1' });
   });
 
-  async function buildApp(opts?: {
+  after(async () => {
+    if (app) await app.close();
+  });
+
+  function scope(opts: {
     requireAuth?: boolean;
     resolveWorkspace?: (params: {
       request: any;
       user: any;
       workspaces: any[];
     }) => any;
-  }): Promise<AppHandle> {
-    const app: FastifyInstance = Fastify();
-    await app.register(qelosFastify as any, {
-      config: { appUrl: e.appUrl, requireAuth: opts?.requireAuth },
-      resolveWorkspace: opts?.resolveWorkspace,
-    });
-    app.get('/me', async (request) => {
-      const q = request.qelos;
-      return {
-        userId: q?.user?._id ?? null,
-        username: q?.user?.username ?? null,
-        workspaceId: q?.workspace?._id ?? null,
-        workspaceCount: q?.workspaces?.length ?? 0,
-      };
-    });
-    app.get('/secret', { preHandler: requireUser }, async () => ({ ok: true }));
-    app.get('/entities', async (request, reply) => {
-      try {
-        const list = await request.qelos.sdk.entities(blueprintKey).find();
-        return { ok: true, count: list?.length ?? 0 };
-      } catch (err: any) {
-        return reply
-          .code(500)
-          .send({ ok: false, error: String(err?.message || err) });
-      }
-    });
-    const url = await app.listen({ port: 0, host: '127.0.0.1' });
-    return { url, close: () => app.close() };
-  }
-
-  let active: AppHandle | null = null;
-  after(async () => {
-    if (active) await active.close();
-  });
-
-  async function withApp(
-    opts: Parameters<typeof buildApp>[0],
-    fn: (url: string) => Promise<void>,
-  ) {
-    active = await buildApp(opts);
-    try {
-      await fn(active.url);
-    } finally {
-      await active.close();
-      active = null;
-    }
+  }) {
+    return async (instance: FastifyInstance) => {
+      await instance.register(qelosFastify as any, {
+        config: { appUrl: env.appUrl, requireAuth: opts.requireAuth },
+        resolveWorkspace: opts.resolveWorkspace,
+      });
+      instance.get('/me', async (request) => {
+        const q = request.qelos;
+        return {
+          userId: q?.user?._id ?? null,
+          username: q?.user?.username ?? null,
+          workspaceId: q?.workspace?._id ?? null,
+          workspaceName: q?.workspace?.name ?? null,
+          workspaceCount: q?.workspaces?.length ?? 0,
+        };
+      });
+      instance.get('/secret', { preHandler: requireUser }, async () => ({ ok: true }));
+      instance.post('/entities', async (request, reply) => {
+        try {
+          const created = await request.qelos.sdk
+            .entities(blueprintKey)
+            .create(request.body as any);
+          return created;
+        } catch (err: any) {
+          return reply.code(500).send({ error: String(err?.message || err) });
+        }
+      });
+      instance.get('/entities', async (request, reply) => {
+        try {
+          return await request.qelos.sdk.entities(blueprintKey).find();
+        } catch (err: any) {
+          return reply.code(500).send({ error: String(err?.message || err) });
+        }
+      });
+      instance.get<{ Params: { id: string } }>('/entities/:id', async (request, reply) => {
+        try {
+          return await request.qelos.sdk
+            .entities(blueprintKey)
+            .findOne(request.params.id);
+        } catch (err: any) {
+          return reply.code(500).send({ error: String(err?.message || err) });
+        }
+      });
+      instance.delete<{ Params: { id: string } }>('/entities/:id', async (request, reply) => {
+        try {
+          await request.qelos.sdk.entities(blueprintKey).remove(request.params.id);
+          return reply.code(204).send();
+        } catch (err: any) {
+          return reply.code(500).send({ error: String(err?.message || err) });
+        }
+      });
+    };
   }
 
   it('attaches the authenticated user and a workspace', async () => {
-    await withApp(undefined, async (url) => {
-      const res = await fetchJson(`${url}/me`, {
-        headers: { cookie: cookieHeader(session) },
-      });
-      assert.equal(res.status, 200);
-      assert.equal(res.body.userId, session.user._id);
-      assert.ok(res.body.workspaceId);
-      assert.ok(res.body.workspaceCount >= 1);
+    const res = await fetchJson(`${baseUrl}/default/me`, {
+      headers: { cookie: cookieHeader(session) },
     });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.userId, session.user._id);
+    assert.equal(res.body.username, session.user.username);
+    assert.ok(res.body.workspaceId);
+    assert.ok(res.body.workspaceCount >= 1);
   });
 
   it('leaves user null on anonymous request when requireAuth is off', async () => {
-    await withApp(undefined, async (url) => {
-      const res = await fetchJson(`${url}/me`);
-      assert.equal(res.status, 200);
-      assert.equal(res.body.userId, null);
-    });
+    const res = await fetchJson(`${baseUrl}/default/me`);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.userId, null);
+    assert.equal(res.body.workspaceCount, 0);
   });
 
   it('returns 401 for anonymous request when requireAuth is on', async () => {
-    await withApp({ requireAuth: true }, async (url) => {
-      const res = await fetchJson(`${url}/me`);
-      assert.equal(res.status, 401);
-    });
+    const res = await fetchJson(`${baseUrl}/auth/me`);
+    assert.equal(res.status, 401);
   });
 
-  it('refreshes tokens and writes new cookies when access token is stale', async () => {
-    await withApp(undefined, async (url) => {
-      const res = await fetchJson(`${url}/me`, {
-        headers: {
-          cookie: cookieHeader({
-            accessToken: 'definitely-not-a-valid-access-token',
-            refreshToken: session.refreshToken,
-          }),
-        },
-      });
-      assert.equal(res.status, 200);
-      assert.equal(res.body.userId, session.user._id);
-      const newAccess = findCookie(res.setCookies, 'q_access_token');
-      assert.ok(newAccess, 'expected a new q_access_token cookie after refresh');
-      assert.notEqual(newAccess, 'definitely-not-a-valid-access-token');
+  it('refreshes tokens, sets new cookies, and a follow-up call succeeds', async () => {
+    const res = await fetchJson(`${baseUrl}/default/me`, {
+      headers: {
+        cookie: cookieHeader({
+          accessToken: 'definitely-not-a-valid-access-token',
+          refreshToken: session.refreshToken,
+        }),
+      },
     });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.userId, session.user._id);
+    const refreshed = parseSetCookies(res.setCookies);
+    const newAccess = refreshed.q_access_token;
+    assert.ok(newAccess, 'expected a new q_access_token cookie after refresh');
+    assert.notEqual(newAccess, 'definitely-not-a-valid-access-token');
+
+    const followUp = await fetchJson(`${baseUrl}/default/me`, {
+      headers: { cookie: buildCookieHeader(refreshed) },
+    });
+    assert.equal(followUp.status, 200);
+    assert.equal(followUp.body.userId, session.user._id);
   });
 
-  it('resolveWorkspace receives all workspaces and its choice is persisted', async () => {
-    let observed: string[] = [];
-    await withApp(
-      {
-        resolveWorkspace: ({ workspaces }) => {
-          observed = workspaces.map((w: any) => String(w._id));
-          return workspaces[workspaces.length - 1] ?? null;
-        },
+  it('resolveWorkspace picks the workspace named in the x-tenant header', async () => {
+    const res = await fetchJson(`${baseUrl}/tenant/me`, {
+      headers: {
+        cookie: cookieHeader(session),
+        'x-tenant': env.workspaceSlug,
       },
-      async (url) => {
-        const res = await fetchJson(`${url}/me`, {
-          headers: { cookie: cookieHeader(session) },
-        });
-        assert.equal(res.status, 200);
-        assert.ok(observed.length >= 1, 'resolveWorkspace was not invoked');
-        assert.equal(res.body.workspaceId, observed[observed.length - 1]);
+    });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.workspaceName, env.workspaceSlug);
+    assert.equal(res.body.workspaceId, session.workspaceId);
+  });
+
+  it('SDK entity CRUD via the integrator works end-to-end', async () => {
+    const title = `e2e-fastify-${Date.now()}`;
+    const created = await fetchJson(`${baseUrl}/default/entities`, {
+      method: 'POST',
+      headers: {
+        cookie: cookieHeader(session),
+        'content-type': 'application/json',
       },
+      body: JSON.stringify({ title }),
+    });
+    assert.equal(created.status, 200, `create failed: ${JSON.stringify(created.body)}`);
+    const id = created.body?.identifier;
+    assert.ok(id, 'create response must include identifier');
+
+    const fetched = await fetchJson(`${baseUrl}/default/entities/${id}`, {
+      headers: { cookie: cookieHeader(session) },
+    });
+    assert.equal(fetched.status, 200);
+    assert.equal(fetched.body?.identifier, id);
+    assert.equal(fetched.body?.title, title);
+
+    const list = await fetchJson(`${baseUrl}/default/entities`, {
+      headers: { cookie: cookieHeader(session) },
+    });
+    assert.equal(list.status, 200);
+    assert.ok(Array.isArray(list.body));
+    assert.ok(
+      list.body.some((e: any) => e.identifier === id),
+      'created entity should appear in the list',
     );
-  });
 
-  it('SDK entity operations succeed through the integrator', async () => {
-    await withApp(undefined, async (url) => {
-      const res = await fetchJson(`${url}/entities`, {
-        headers: { cookie: cookieHeader(session) },
-      });
-      assert.equal(res.status, 200, `body: ${JSON.stringify(res.body)}`);
-      assert.equal(res.body.ok, true);
-      assert.equal(typeof res.body.count, 'number');
+    const removed = await fetchJson(`${baseUrl}/default/entities/${id}`, {
+      method: 'DELETE',
+      headers: { cookie: cookieHeader(session) },
     });
+    assert.ok(
+      removed.status === 200 || removed.status === 204,
+      `delete failed: status=${removed.status}`,
+    );
   });
 });
