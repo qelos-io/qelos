@@ -1,8 +1,12 @@
 export {
   qelosFastify,
+  qelosPlugin,
   requireUser,
 } from './plugin';
-export type { QelosPluginOptions } from './plugin';
+export type {
+  QelosFastifyRegisterOptions,
+  QelosPluginOptions,
+} from './plugin';
 
 export { default } from './plugin';
 

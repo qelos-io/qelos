@@ -54,6 +54,7 @@
     }
   },
   "dependencies": {
+    "@qelos/global-types": "workspace:^",
     "@qelos/sdk": "workspace:^",
     "fastify-plugin": "^4.5.1 || ^5.0.0"
   },

@@ -38,6 +38,34 @@ export interface QelosPluginOptions {
   }) => IWorkspace | null | Promise<IWorkspace | null>;
 }
 
+export type QelosFastifyRegisterOptions =
+  | QelosPluginOptions
+  | (QelosFastifyConfig &
+      Partial<Pick<QelosPluginOptions, 'onTokenRefresh' | 'resolveWorkspace'>>);
+
+function normalizePluginOptions(
+  options: QelosFastifyRegisterOptions,
+): QelosPluginOptions {
+  if (
+    options &&
+    typeof options === 'object' &&
+    'config' in options &&
+    options.config &&
+    typeof options.config === 'object' &&
+    typeof options.config.appUrl === 'string'
+  ) {
+    return options as QelosPluginOptions;
+  }
+  const o = options as QelosFastifyConfig &
+    Partial<Pick<QelosPluginOptions, 'onTokenRefresh' | 'resolveWorkspace'>>;
+  const { onTokenRefresh, resolveWorkspace, ...configFields } = o;
+  return {
+    config: configFields as QelosFastifyConfig,
+    onTokenRefresh,
+    resolveWorkspace,
+  };
+}
+
 function readCookie(request: FastifyRequest, name: string): string | undefined {
   // Prefer @fastify/cookie's parsed output when available.
   const parsed = (request as FastifyRequest & {
@@ -155,22 +183,19 @@ function shouldSkip(
   return config.skipPaths.some((prefix) => path.startsWith(prefix));
 }
 
-const qelosFastifyPlugin: FastifyPluginAsync<QelosPluginOptions> = async (
+const qelosFastifyPlugin: FastifyPluginAsync<QelosFastifyRegisterOptions> = async (
   fastify: FastifyInstance,
-  options: QelosPluginOptions,
+  rawOptions: QelosFastifyRegisterOptions,
 ) => {
-  const { config, resolveWorkspace } = options;
+  const { config, resolveWorkspace, onTokenRefresh: userOnTokenRefresh } =
+    normalizePluginOptions(rawOptions);
   const onTokenRefresh: TokenRefreshHook =
-    options.onTokenRefresh ||
+    userOnTokenRefresh ||
     (async ({ reply, newTokens }) => {
       writeTokensToCookies(reply, config, newTokens);
     });
 
   fastify.addHook('preHandler', async (request, reply) => {
-    if (shouldSkip(request, config)) {
-      return;
-    }
-
     const tokens = readTokens(request, config);
     const sdk = createRequestSdk({ config, tokens, request, reply, onTokenRefresh });
 
@@ -183,13 +208,16 @@ const qelosFastifyPlugin: FastifyPluginAsync<QelosPluginOptions> = async (
     };
     request.qelos = ctx;
 
+    if (shouldSkip(request, config)) {
+      return;
+    }
+
     const hasAuthMaterial = Boolean(
       config.apiToken || tokens.accessToken || tokens.refreshToken,
     );
     if (!hasAuthMaterial) {
       if (config.requireAuth) {
-        reply.code(401).send({ code: 'UNAUTHORIZED' });
-        return reply;
+        return reply.code(401).send({ code: 'UNAUTHORIZED' });
       }
       return;
     }
@@ -198,8 +226,7 @@ const qelosFastifyPlugin: FastifyPluginAsync<QelosPluginOptions> = async (
       ctx.user = await sdk.authentication.getLoggedInUser();
     } catch {
       if (config.requireAuth) {
-        reply.code(401).send({ code: 'UNAUTHORIZED' });
-        return reply;
+        return reply.code(401).send({ code: 'UNAUTHORIZED' });
       }
       return;
     }
@@ -230,6 +257,9 @@ export const qelosFastify = fp(qelosFastifyPlugin, {
   fastify: '4.x || 5.x',
 });
 
+/** Alias for {@link qelosFastify} — matches the documented usage name. */
+export const qelosPlugin = qelosFastify;
+
 export default qelosFastify;
 
 /**
@@ -237,8 +267,7 @@ export default qelosFastify;
  * is not populated. Mount on a route after the plugin has been registered.
  */
 export const requireUser: preHandlerHookHandler = async (request, reply) => {
-  if (!request.qelos || !request.qelos.user) {
-    reply.code(401).send({ code: 'UNAUTHORIZED' });
-    return reply;
+  if (!request.qelos.user) {
+    return reply.code(401).send({ code: 'UNAUTHORIZED' });
   }
 };

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import Fastify from 'fastify';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
-import qelosFastify, { requireUser } from '../src/plugin';
+import qelosFastify, { qelosPlugin, requireUser } from '../src/plugin';
 
 function jsonResponse(status: number, data: unknown): Response {
   const res = new Response(JSON.stringify(data));
@@ -120,7 +120,7 @@ test('requireAuth returns 401 without credentials', async () => {
   }
 });
 
-test('skipPaths bypasses plugin', async () => {
+test('skipPaths bypasses user and workspace resolution', async () => {
   const mockFetch = async () => jsonResponse(500, { error: 'should not call' });
 
   const app = Fastify();
@@ -131,13 +131,48 @@ test('skipPaths bypasses plugin', async () => {
       sdkOptions: { fetch: mockFetch },
     },
   });
-  app.get('/health', async (request) => ({ hasQelos: Boolean(request.qelos) }));
+  app.get('/health', async (request) => ({
+    hasQelos: Boolean(request.qelos),
+    user: request.qelos.user,
+  }));
 
   try {
     const res = await app.inject({ method: 'GET', url: '/health' });
     assert.equal(res.statusCode, 200);
-    const body = res.json() as { hasQelos: boolean };
-    assert.equal(body.hasQelos, false);
+    const body = res.json() as { hasQelos: boolean; user: unknown };
+    assert.equal(body.hasQelos, true);
+    assert.equal(body.user, null);
+  } finally {
+    await app.close();
+  }
+});
+
+test('flat register options (appUrl at top level)', async () => {
+  const mockFetch = async (input: RequestInfo) => {
+    const url = String(input);
+    if (url.includes('/api/me')) {
+      return jsonResponse(200, minimalUser);
+    }
+    if (url.includes('/api/workspaces') && !url.includes('/api/workspaces/')) {
+      return jsonResponse(200, [workspaceA]);
+    }
+    return jsonResponse(404, { error: 'not found' });
+  };
+
+  const app = Fastify();
+  await app.register(qelosPlugin, {
+    appUrl: 'http://example.test',
+    apiToken: 'service-token',
+    sdkOptions: { fetch: mockFetch },
+  });
+  app.get('/me', async (request) => ({
+    id: request.qelos.user?._id ?? null,
+  }));
+
+  try {
+    const res = await app.inject({ method: 'GET', url: '/me' });
+    assert.equal(res.statusCode, 200);
+    assert.equal((res.json() as { id: string | null }).id, 'user-1');
   } finally {
     await app.close();
   }
