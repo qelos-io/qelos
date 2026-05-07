@@ -8,8 +8,11 @@ export interface IWorkspaceMember {
 }
 
 export interface IInvite {
+  _id?: string;
   name?: string;
   email: string;
+  phone?: string;
+  roles?: string[];
   created?: string | Date;
 }
 
@@ -75,5 +78,65 @@ export default class QlWorkspaces extends BaseSDK {
         headers: {'content-type': 'application/json'},
       }
     )
+  }
+
+  async inviteUser(
+    workspaceId: string,
+    email: string,
+    roles?: string[]
+  ): Promise<IWorkspace> {
+    const ws = await this.getWorkspace(workspaceId);
+    const inviteRoles = roles && roles.length > 0 ? roles : ['member'];
+    const invites: IInvite[] = [...(ws.invites || [])];
+    const normalized = email.trim().toLowerCase();
+    const index = invites.findIndex((i) => (i.email || '').trim().toLowerCase() === normalized);
+    if (index >= 0) {
+      invites[index] = {...invites[index], email: invites[index].email || email, roles: inviteRoles};
+    } else {
+      invites.push({email, roles: inviteRoles});
+    }
+    return this.update(workspaceId, {invites});
+  }
+
+  removeMember(workspaceId: string, userId: string): Promise<{
+    message: string;
+    removedMemberId?: string;
+    userId?: string;
+  }> {
+    const path = `${this.relativePath}/${workspaceId}/members/${encodeURIComponent(userId)}`;
+    return this.callJsonApi(path, {method: 'delete'});
+  }
+
+  updateMemberRoles(
+    workspaceId: string,
+    userId: string,
+    roles: string[]
+  ): Promise<{
+    message: string;
+    updatedMember?: IWorkspaceMember;
+    workspaceId?: string;
+  }> {
+    const path = `${this.relativePath}/${workspaceId}/members/${encodeURIComponent(userId)}`;
+    return this.callJsonApi(path, {
+      method: 'put',
+      headers: {'content-type': 'application/json'},
+      body: JSON.stringify({roles}),
+    });
+  }
+
+  async listInvites(workspaceId: string): Promise<IInvite[]> {
+    const ws = await this.getWorkspace(workspaceId);
+    return ws.invites ?? [];
+  }
+
+  async revokeInvite(workspaceId: string, inviteId: string): Promise<IWorkspace> {
+    const ws = await this.getWorkspace(workspaceId);
+    const prev = ws.invites || [];
+    const idStr = String(inviteId);
+    const invites = prev.filter((inv) => String(inv._id ?? '') !== idStr);
+    if (invites.length === prev.length) {
+      throw new Error('Invitation not found');
+    }
+    return this.update(workspaceId, {invites});
   }
 }
