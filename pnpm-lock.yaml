@@ -649,6 +649,9 @@ importers:
 
   integrators/fastify:
     dependencies:
+      '@qelos/global-types':
+        specifier: workspace:^
+        version: link:../../packages/global-types
       '@qelos/sdk':
         specifier: workspace:^
         version: link:../../packages/sdk
