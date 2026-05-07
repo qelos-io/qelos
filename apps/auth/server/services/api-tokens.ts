@@ -23,6 +23,13 @@ function generateRawToken(): string {
   return TOKEN_PREFIX + crypto.randomBytes(32).toString('hex');
 }
 
+function apiTokenAuthTouchUpdate(at: Date = new Date()) {
+  return {
+    $set: { lastUsedAt: at },
+    $inc: { usageCount: 1 },
+  };
+}
+
 export async function createApiToken(
   tenant: string,
   userId: string,
@@ -59,7 +66,8 @@ export async function listApiTokens(
   userId: string
 ): Promise<Array<Partial<ApiTokenDocument>>> {
   return ApiToken.find({ tenant, user: userId })
-    .select('nickname tokenPrefix expiresAt lastUsedAt workspace created')
+    .select('nickname tokenPrefix expiresAt lastUsedAt workspace created usageCount')
+    .populate({ path: 'workspace', select: 'name' })
     .sort({ created: -1 })
     .lean()
     .exec();
@@ -102,6 +110,9 @@ export async function authenticateByApiToken(
     if (cached) {
       const parsed = JSON.parse(cached);
       if (parsed && parsed.user) {
+        ApiToken.updateOne({ token: hashedToken, tenant }, apiTokenAuthTouchUpdate())
+          .exec()
+          .catch(err => logger.log('Failed to update API token usage (cache hit)', err));
         return { ...parsed, isTokenAuth: true };
       }
       // Empty or invalid cache entry (invalidated token)
@@ -121,10 +132,9 @@ export async function authenticateByApiToken(
     return null;
   }
 
-  ApiToken.updateOne(
-    { _id: apiToken._id },
-    { $set: { lastUsedAt: new Date() } }
-  ).exec().catch(err => logger.log('Failed to update lastUsedAt', err));
+  ApiToken.updateOne({ _id: apiToken._id }, apiTokenAuthTouchUpdate())
+    .exec()
+    .catch(err => logger.log('Failed to update API token usage', err));
 
   const user = await User.findOne({
     _id: apiToken.user,
