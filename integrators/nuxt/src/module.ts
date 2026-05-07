@@ -1,4 +1,10 @@
-import { defineNuxtModule, addServerHandler, createResolver, addTypeTemplate } from '@nuxt/kit';
+import {
+  defineNuxtModule,
+  addServerHandler,
+  addImportsDir,
+  createResolver,
+  addTypeTemplate,
+} from '@nuxt/kit';
 import type { QelosNuxtRuntimeConfig } from './types';
 
 export interface QelosNuxtModuleOptions extends QelosNuxtRuntimeConfig {
@@ -41,6 +47,8 @@ export default defineNuxtModule<QelosNuxtModuleOptions>({
       });
     }
 
+    addImportsDir(resolve('./runtime/composables'));
+
     addTypeTemplate({
       filename: 'types/qelos-nuxt.d.ts',
       getContents: () => `
@@ -60,6 +68,12 @@ export {};
 
 export { createQelosMiddleware } from './middleware';
 export { createRequestSdk } from './sdk-factory';
+export { defineQelosEventHandler } from './event-handler';
+export type {
+  DefineQelosEventHandlerOptions,
+  QelosEventContext,
+  QelosEventHandler,
+} from './event-handler';
 export type {
   QelosNuxtRuntimeConfig,
   QelosRequestContext,

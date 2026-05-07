@@ -7,7 +7,7 @@ import {
   buildRedirectUri,
   emitFailedSocialLogin,
   extractAuthCode,
-  extractState,
+  buildProviderState,
   findOrCreateUser,
   completeAuthentication,
   UserData,
@@ -23,7 +23,7 @@ export const getGoogleSource = createSourceMiddleware('google');
 export async function loginWithGoogle(req: AuthWithGoogleRequest, res) {
   const { clientId, scope } = req.source.metadata;
   const redirectUri = buildRedirectUri(req.headers.tenanthost, '/api/auth/google/callback');
-  const state = extractState(req);
+  const state = buildProviderState(req);
   const stateParam = state ? `&state=${encodeURIComponent(state)}` : '';
   const googleAuthUrl = `${GOOGLE_AUTH_URL}?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope || 'openid email profile')}&access_type=offline&prompt=consent${stateParam}`;
   res.redirect(googleAuthUrl);

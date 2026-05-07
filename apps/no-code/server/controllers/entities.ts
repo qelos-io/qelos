@@ -17,7 +17,7 @@ import {
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
 import { emitPlatformEvent, getBypassAdmin, ResponseError } from '@qelos/api-kit';
 import { getUsersByIds, getWorkspaces } from '../services/users';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { hasGuestReachedLimit } from '../services/guest-request-limit';
 import { getBlueprint } from '../services/blueprints.service';
 
@@ -131,8 +131,15 @@ function flattenMetadata(entity: any = {}) {
 }
 
 // Blueprint entity responses default to the flat shape. Callers opt out of
-// flattening by passing $flat=false (or 0).
-function shouldFlattenResponse(value: any): boolean {
+// flattening by passing $flat=false (or 0). Requests sending
+// `Accept-Version: v1` always receive the flat shape — v1 locks in the new
+// default so consumers that pin a version cannot be silently downgraded by a
+// stray `$flat=false`.
+function shouldFlattenResponse(req: Request): boolean {
+  if (requestsApiV1(req)) {
+    return true;
+  }
+  const value: any = req.query?.$flat;
   if (value === undefined || value === null) {
     return true;
   }
@@ -144,6 +151,33 @@ function shouldFlattenResponse(value: any): boolean {
     return normalized !== 'false' && normalized !== '0';
   }
   return true;
+}
+
+function requestsApiV1(req: Request): boolean {
+  const raw = req.headers['accept-version'];
+  if (!raw) {
+    return false;
+  }
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return value
+    .toLowerCase()
+    .split(',')
+    .some(part => part.trim() === 'v1');
+}
+
+const WRAPPED_DEPRECATION_LINK = '<https://docs.qelos.io/api/blueprint-entities#flat-response-shape>; rel="deprecation"; type="text/html"';
+
+// Wrapped (non-flat) blueprint-entity responses are scheduled for removal one
+// release after the flat default ships. Surface that to the caller via the
+// standard Deprecation/Link headers so HTTP clients can flag it, and log it
+// server-side so we can monitor remaining wrapped traffic before removal.
+function markWrappedResponseDeprecated(req: Request, res: Response) {
+  res.setHeader('Deprecation', 'true');
+  res.setHeader('Link', WRAPPED_DEPRECATION_LINK);
+  logger.log('blueprint-entity wrapped response is deprecated', {
+    path: req.originalUrl,
+    blueprint: (req as any).blueprint?.identifier,
+  });
 }
 
 /**
@@ -216,7 +250,10 @@ export async function getAllBlueprintEntities(req, res) {
     const sort = getSortQuery(req);
     const limit = req.query.$limit && (parseInt(req.query.$limit) || DEFAULT_LIMIT);
     const page = req.query.$page && (parseInt(req.query.$page) || 1);
-    const shouldFlat = shouldFlattenResponse(req.query.$flat);
+    const shouldFlat = shouldFlattenResponse(req);
+    if (!shouldFlat) {
+      markWrappedResponseDeprecated(req, res);
+    }
 
     const generalSearch = req.query.$q ? {$regex: req.query.$q, $options: 'i'} : undefined;
     if (generalSearch) {
@@ -430,7 +467,10 @@ export async function getSingleBlueprintEntity(req, res) {
   }
   try {
     const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes })
-    const shouldFlat = shouldFlattenResponse(req.query.$flat);
+    const shouldFlat = shouldFlattenResponse(req);
+    if (!shouldFlat) {
+      markWrappedResponseDeprecated(req, res);
+    }
 
     const entity = await BlueprintEntity.findOne(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS)
       .lean()
@@ -539,9 +579,11 @@ export async function createBlueprintEntity(req, res) {
 
     const { auditInfo, _id, ...response } = entity.toObject();
     response.id = response.identifier;
-    const shouldFlat = shouldFlattenResponse(req.query.$flat);
+    const shouldFlat = shouldFlattenResponse(req);
     if (shouldFlat) {
       flattenMetadata(response);
+    } else {
+      markWrappedResponseDeprecated(req, res);
     }
     res.status(200).json(response).end()
     return;
@@ -568,10 +610,13 @@ export async function updateBlueprintEntity(req, res) {
   const entityIdentifier = req.params.entityIdentifier;
   const blueprint: IBlueprint = req.blueprint;
   const permittedScopes = getUserPermittedScopes(req.user, blueprint, CRUDOperation.UPDATE, getBypassAdmin(req));
-  const shouldFlat = shouldFlattenResponse(req.query.$flat);
+  const shouldFlat = shouldFlattenResponse(req);
   if (!(permittedScopes === true || permittedScopes.length > 0)) {
     res.status(403).json({ message: 'not permitted' }).end();
     return;
+  }
+  if (!shouldFlat) {
+    markWrappedResponseDeprecated(req, res);
   }
   const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes });
   let entity: IBlueprintEntity
@@ -692,9 +737,11 @@ export async function removeBlueprintEntity(req, res) {
 
     const { auditInfo, _id, ...response } = entity;
     response.id = response.identifier;
-    const shouldFlat = shouldFlattenResponse(req.query.$flat);
+    const shouldFlat = shouldFlattenResponse(req);
     if (shouldFlat) {
       flattenMetadata(response);
+    } else {
+      markWrappedResponseDeprecated(req, res);
     }
     res.json(response).end();
   } catch (err) {

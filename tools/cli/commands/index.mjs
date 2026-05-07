@@ -8,6 +8,7 @@ import restoreCommand from './restore.mjs';
 import getCommand from './get.mjs';
 import agentCommand from './agent.mjs';
 import globalCommand from './global.mjs';
+import authCommand from './auth.mjs';
 
 /**
  * Ordered list of all CLI commands.
@@ -25,6 +26,7 @@ export const commands = [
   getCommand,
   agentCommand,
   globalCommand,
+  authCommand,
 ];
 
 /**

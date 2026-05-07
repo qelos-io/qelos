@@ -6,44 +6,66 @@ import {
   type ModuleMetadata,
   type NestModule,
   type Provider,
+  Scope,
   type Type,
 } from '@nestjs/common';
-import { QELOS_MODULE_OPTIONS } from './constants';
+import { REQUEST } from '@nestjs/core';
+import { QELOS_MODULE_OPTIONS, QELOS_SDK } from './constants';
+import { normalizeModuleOptions } from './module-options';
 import { QelosMiddleware } from './middleware';
-import type { QelosModuleOptions } from './types';
+import type { AnyRequest, QelosModuleOptions, QelosNestConfig } from './types';
 
 export interface QelosModuleAsyncOptions
   extends Pick<ModuleMetadata, 'imports'> {
   useFactory: (
     ...args: unknown[]
-  ) => Promise<QelosModuleOptions> | QelosModuleOptions;
+  ) =>
+    | Promise<QelosNestConfig | QelosModuleOptions>
+    | QelosNestConfig
+    | QelosModuleOptions;
   inject?: FactoryProvider['inject'];
   useExisting?: Type<QelosOptionsFactory>;
   useClass?: Type<QelosOptionsFactory>;
 }
 
 export interface QelosOptionsFactory {
-  createQelosOptions(): Promise<QelosModuleOptions> | QelosModuleOptions;
+  createQelosOptions():
+    | Promise<QelosNestConfig | QelosModuleOptions>
+    | QelosNestConfig
+    | QelosModuleOptions;
 }
 
 @Module({})
 export class QelosModule implements NestModule {
+  private static readonly sdkProvider: Provider = {
+    provide: QELOS_SDK,
+    scope: Scope.REQUEST,
+    useFactory: (request: AnyRequest) => request.qelos?.sdk,
+    inject: [REQUEST],
+  };
+
   /**
    * Register the module with statically-known options.
+   *
+   * Pass either a full {@link QelosModuleOptions} object or a shorthand
+   * {@link QelosNestConfig} (e.g. `{ appUrl, apiToken }`).
    *
    * The middleware is wired to `forRoutes('*')` by default. Override by
    * importing the module without `forRoot` and applying `QelosMiddleware`
    * directly inside your own `MiddlewareConsumer`.
    */
-  static forRoot(options: QelosModuleOptions): DynamicModule {
+  static forRoot(config: QelosNestConfig): DynamicModule;
+  static forRoot(options: QelosModuleOptions): DynamicModule;
+  static forRoot(configOrOptions: QelosNestConfig | QelosModuleOptions): DynamicModule {
+    const options = normalizeModuleOptions(configOrOptions);
     const optionsProvider: Provider = {
       provide: QELOS_MODULE_OPTIONS,
       useValue: options,
     };
     return {
       module: QelosModule,
-      providers: [optionsProvider, QelosMiddleware],
-      exports: [optionsProvider, QelosMiddleware],
+      providers: [optionsProvider, QelosMiddleware, QelosModule.sdkProvider],
+      exports: [optionsProvider, QelosMiddleware, QELOS_SDK],
       global: true,
     };
   }
@@ -56,12 +78,13 @@ export class QelosModule implements NestModule {
     const providers: Provider[] = [
       ...this.createAsyncProviders(options),
       QelosMiddleware,
+      QelosModule.sdkProvider,
     ];
     return {
       module: QelosModule,
       imports: options.imports || [],
       providers,
-      exports: [QELOS_MODULE_OPTIONS, QelosMiddleware],
+      exports: [QELOS_MODULE_OPTIONS, QelosMiddleware, QELOS_SDK],
       global: true,
     };
   }
@@ -70,11 +93,10 @@ export class QelosModule implements NestModule {
     options: QelosModuleAsyncOptions,
   ): Provider[] {
     if (options.useFactory) {
-      const factoryProvider: FactoryProvider<
-        Promise<QelosModuleOptions> | QelosModuleOptions
-      > = {
+      const factoryProvider: FactoryProvider<QelosModuleOptions> = {
         provide: QELOS_MODULE_OPTIONS,
-        useFactory: options.useFactory,
+        useFactory: async (...args: unknown[]) =>
+          normalizeModuleOptions(await options.useFactory!(...args)),
         inject: options.inject || [],
       };
       return [factoryProvider];
@@ -85,11 +107,10 @@ export class QelosModule implements NestModule {
         '@qelos/integrator-nest: forRootAsync requires useFactory, useClass or useExisting',
       );
     }
-    const optionsProvider: FactoryProvider<
-      Promise<QelosModuleOptions> | QelosModuleOptions
-    > = {
+    const optionsProvider: FactoryProvider<QelosModuleOptions> = {
       provide: QELOS_MODULE_OPTIONS,
-      useFactory: (factory: QelosOptionsFactory) => factory.createQelosOptions(),
+      useFactory: async (factory: QelosOptionsFactory) =>
+        normalizeModuleOptions(await factory.createQelosOptions()),
       inject: [factoryClass],
     };
     if (options.useClass) {

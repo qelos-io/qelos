@@ -23,6 +23,7 @@ export default defineConfig({
       { text: 'API', link: '/api/api' },
       { text: 'CLI', link: '/cli/' },
       { text: 'Plugins', link: '/plugins/create' },
+      { text: 'Integrators', link: '/integrators/' },
       { text: 'Deployment', link: '/deployment/' },
     ],
     socialLinks: [
@@ -50,6 +51,7 @@ export default defineConfig({
         text: 'GETTING STARTED',
         items: [
           { text: 'Intro to Qelos', link: '/getting-started/intro' },
+          { text: 'Getting Started as an Integrator', link: '/getting-started/integrators' },
           { text: 'Installation', link: '/getting-started/installation' },
           { text: 'Design Products Faster', link: '/getting-started/design-products-faster' },
           { text: 'Quick Reference', link: '/getting-started/quick-reference' },
@@ -97,6 +99,20 @@ export default defineConfig({
         ]
       },
       {
+        text: 'AUTH',
+        collapsed: true,
+        items: [
+          { text: 'Overview', link: '/auth/' },
+          { text: 'Email & Password', link: '/auth/email-password' },
+          { text: 'Social Authentication', link: '/auth/social-auth' },
+          { text: 'Cookie Token Lifecycle', link: '/auth/cookie-tokens' },
+          { text: 'API Token Management', link: '/auth/api-tokens' },
+          { text: 'Permissions & Roles', link: '/auth/permissions-roles' },
+          { text: 'Workspace-Scoped Auth', link: '/auth/workspaces' },
+          { text: 'Security Best Practices', link: '/auth/security' },
+        ]
+      },
+      {
         text: 'PAYMENTS',
         collapsed: true,
         items: [
@@ -117,6 +133,7 @@ export default defineConfig({
         items: [
           { text: 'Introduction to the SDK', link: '/sdk/sdk' },
           { text: 'Installation', link: '/sdk/installation' },
+          { text: 'SDK Reference', link: '/sdk/sdk_reference' },
           { text: 'Authentication', link: '/sdk/authentication' },
           { text: 'Token Refresh Functionality', link: '/sdk/token_refresh' },
           { text: 'Error Handling Guide', link: '/sdk/error_handling' },
@@ -183,6 +200,19 @@ export default defineConfig({
           { text: 'Agent Command', link: '/cli/agent' },
           { text: 'Agent Tools (clientTools)', link: '/cli/agent-tools' },
           { text: 'Global Environments', link: '/cli/global' }
+        ]
+      },
+      {
+        text: 'INTEGRATORS',
+        collapsed: true,
+        items: [
+          { text: 'Overview', link: '/integrators/' },
+          { text: 'Express', link: '/integrators/express' },
+          { text: 'Next.js', link: '/integrators/next' },
+          { text: 'Nuxt', link: '/integrators/nuxt' },
+          { text: 'Fastify', link: '/integrators/fastify' },
+          { text: 'NestJS', link: '/integrators/nest' },
+          { text: 'FastAPI', link: '/integrators/fastapi' },
         ]
       },
       {

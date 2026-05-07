@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import { applyQelosForwardHeaders } from './forward-headers';
+import { getDefaultQelosConfig } from './env-config';
 import { createRequestSdk } from './sdk-factory';
 import type {
   QelosNextConfig,
@@ -188,3 +189,27 @@ export function createQelosMiddleware(
     return response;
   };
 }
+
+let defaultMiddleware: QelosMiddleware | null = null;
+
+/**
+ * Pre-configured Next.js edge middleware that reads its config from the
+ * environment (see {@link loadQelosConfigFromEnv}). Re-export it from your
+ * `middleware.ts` to opt into Qelos identification with zero setup:
+ *
+ * ```ts
+ * // middleware.ts
+ * export { qelosMiddleware as middleware } from '@qelos/integrator-next/middleware';
+ * export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'] };
+ * ```
+ *
+ * Each invocation lazily instantiates the middleware on the first call so
+ * importing this module does not throw when env vars are not yet loaded.
+ * For full control, call {@link createQelosMiddleware} with an explicit config.
+ */
+export const qelosMiddleware: QelosMiddleware = (req) => {
+  if (!defaultMiddleware) {
+    defaultMiddleware = createQelosMiddleware({ config: getDefaultQelosConfig() });
+  }
+  return defaultMiddleware(req);
+};

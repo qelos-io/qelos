@@ -22,6 +22,58 @@ function withFlatDefault<Q extends Record<string, any> | undefined>(query?: Q): 
   return { ...(query || {}), $flat: true };
 }
 
+export type BlueprintEntityFilters = Record<string, any>;
+
+export class QlBlueprintEntitiesQuery<T = any> {
+  #filters: BlueprintEntityFilters = {};
+  #options: Record<string, any> = {};
+
+  constructor(private entities: QlBlueprintEntities<T>) {}
+
+  where(filters: BlueprintEntityFilters): this {
+    Object.assign(this.#filters, filters);
+    return this;
+  }
+
+  limit(value: number): this {
+    this.#options.$limit = value;
+    return this;
+  }
+
+  skip(value: number): this {
+    this.#options.$skip = value;
+    return this;
+  }
+
+  sort(value: string): this {
+    this.#options.$sort = value;
+    return this;
+  }
+
+  select(fields: string | string[]): this {
+    this.#options.$select = Array.isArray(fields) ? fields.join(',') : fields;
+    return this;
+  }
+
+  toQuery(): ICommonQueryFilters & BlueprintEntityFilters {
+    return { ...this.#filters, ...this.#options };
+  }
+
+  find(extra?: RequestExtra): Promise<(IBaseBlueprintEntity & T)[]> {
+    return this.entities.getList(this.toQuery(), extra);
+  }
+
+  findOne(extra?: RequestExtra): Promise<(IBaseBlueprintEntity & T) | undefined> {
+    return this.entities
+      .getList({ ...this.toQuery(), $limit: 1 }, extra)
+      .then((results) => results?.[0]);
+  }
+
+  count(extra?: RequestExtra): Promise<number> {
+    return this.entities.count(this.toQuery(), extra);
+  }
+}
+
 export default class QlBlueprintEntities<T = any> extends BaseSDK {
   private relativePath = '/api/blueprints';
 
@@ -60,5 +112,51 @@ export default class QlBlueprintEntities<T = any> extends BaseSDK {
       body: JSON.stringify(entity),
       ...(extra || {}),
     })
+  }
+
+  query(): QlBlueprintEntitiesQuery<T> {
+    return new QlBlueprintEntitiesQuery<T>(this);
+  }
+
+  where(filters: BlueprintEntityFilters): QlBlueprintEntitiesQuery<T> {
+    return this.query().where(filters);
+  }
+
+  limit(value: number): QlBlueprintEntitiesQuery<T> {
+    return this.query().limit(value);
+  }
+
+  skip(value: number): QlBlueprintEntitiesQuery<T> {
+    return this.query().skip(value);
+  }
+
+  sort(value: string): QlBlueprintEntitiesQuery<T> {
+    return this.query().sort(value);
+  }
+
+  select(fields: string | string[]): QlBlueprintEntitiesQuery<T> {
+    return this.query().select(fields);
+  }
+
+  find(extra?: RequestExtra): Promise<(IBaseBlueprintEntity & T)[]> {
+    return this.getList(undefined, extra);
+  }
+
+  findOne(identifier: string, extra?: RequestExtra): Promise<IBaseBlueprintEntity & T> {
+    return this.getEntity(identifier, extra);
+  }
+
+  count(query?: BlueprintEntityFilters, extra?: RequestExtra): Promise<number> {
+    return this
+      .callJsonApi<{ count: number }>(`${this.relativePath}/${this.blueprintKey}/charts/count${this.getQueryParams(query)}`, extra)
+      .then((res) => res?.count ?? 0);
+  }
+
+  updateOne(identifier: string, changes: Partial<T & IBaseBlueprintEntity>, extra?: RequestExtra): Promise<IBaseBlueprintEntity & T> {
+    return this.update(identifier, changes, extra);
+  }
+
+  deleteOne(identifier: string, extra?: RequestExtra): Promise<any> {
+    return this.remove(identifier, extra);
   }
 }

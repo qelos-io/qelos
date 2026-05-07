@@ -17,6 +17,12 @@
       "require": "./dist/middleware.js",
       "default": "./dist/middleware.js"
     },
+    "./event-handler": {
+      "types": "./dist/event-handler.d.ts",
+      "import": "./dist/event-handler.js",
+      "require": "./dist/event-handler.js",
+      "default": "./dist/event-handler.js"
+    },
     "./types": {
       "types": "./dist/types.d.ts",
       "import": "./dist/types.js",

@@ -78,8 +78,8 @@ designed to be standalone so they can ship in any order.
 
 ### 3. The Qelos CLI
 
-The CLI (`tools/cli`) is being renamed from `@qelos/plugins-cli` to
-`@qelos/cli`. It becomes the single developer tool for working with Qelos:
+The CLI (`tools/cli`) is published as `@qelos/cli`. It becomes the single
+developer tool for working with Qelos:
 
 - `qelos init` — detect framework, scaffold config, install integrator
 - `qelos auth login|logout|token|status` — developer authentication

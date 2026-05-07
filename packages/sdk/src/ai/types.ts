@@ -107,3 +107,25 @@ export interface IVectorStore {
   expirationAfterDays?: number;
   created: Date;
 }
+
+export interface IAgent {
+  _id: string;
+  name: string;
+  description?: string;
+  model?: string;
+  kind?: string[];
+  active?: boolean;
+  tenant?: string;
+  user?: string;
+  workspace?: string;
+  created?: Date;
+  updated?: Date;
+}
+
+export interface IAgentChatOptions extends Partial<Omit<IChatCompletionOptions, 'messages'>> {
+  /**
+   * Additional messages to prepend before the user message
+   * (e.g. system prompt overrides, prior context)
+   */
+  history?: IMessage[];
+}

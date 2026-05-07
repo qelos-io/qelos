@@ -192,6 +192,9 @@ const response = await sdk.ai.chat('your-ai-integration-id', {
 
 The Qelos SDK is organized into several modules, each providing specific functionality for your SaaS application. Below is a comprehensive list of all available SDK modules and their documentation:
 
+### Reference
+- [SDK Reference](./sdk_reference.md) - Single-stop reference for every public module: signatures, parameters, return types, examples, and the query builder cheat sheet
+
 ### Core SDK
 - [Core Functionality](./core_functionality.md) - SDK initialization, custom headers, and base features
 - [Token Refresh](./token_refresh.md) - Automatic token refresh functionality

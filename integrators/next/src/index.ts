@@ -1,10 +1,16 @@
 export {
   createQelosMiddleware,
+  qelosMiddleware,
   type CreateMiddlewareOptions,
   type MiddlewareRefreshTarget,
   type PendingCookie,
   type QelosMiddleware,
 } from './middleware';
+
+export {
+  loadQelosConfigFromEnv,
+  getDefaultQelosConfig,
+} from './env-config';
 
 export {
   createRequestSdk,

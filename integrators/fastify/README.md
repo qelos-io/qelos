@@ -63,10 +63,17 @@ The plugin never throws for anonymous requests by default — it just leaves
 
 ## Token refresh
 
-When the access token is rejected, the SDK tries the refresh token. After a
-successful refresh the plugin fires the `onTokenRefresh` hook. The default
-implementation writes the new tokens back to the response cookies (`HttpOnly`,
-`SameSite=Lax`, `Secure` whenever `appUrl` is `https://...`).
+When the access token is rejected, the SDK tries to recover, in order:
+
+1. The **refresh token** (`q_refresh_token`) via
+   `sdk.authentication.refreshToken()` — issues a new access + refresh pair.
+2. The **cookie token** (the access token cookie itself) via
+   `sdk.authentication.refreshCookieToken()` — used for cookie-only sessions
+   that do not carry a separate refresh token (e.g. social-auth flows).
+
+After a successful refresh the plugin fires the `onTokenRefresh` hook. The
+default implementation writes the new tokens back to the response cookies
+(`HttpOnly`, `SameSite=Lax`, `Secure` whenever `appUrl` is `https://...`).
 
 You can supply your own — for example, to mint your own session cookie or push
 the new tokens into a session store:
@@ -82,6 +89,17 @@ await app.register(qelosFastify, {
 
 The hook receives `{ request, reply, oldTokens, newTokens, sdk }`. Throwing
 aborts the in-flight request.
+
+### Manual cookie refresh
+
+Long-lived integrator-hosted sessions can also call the SDK directly to
+proactively refresh the cookie token:
+
+```ts
+const result = await request.qelos!.sdk.authentication.refreshCookieToken();
+// result.headers['set-cookie'] — fresh cookie value to forward
+// result.payload.user        — refreshed user
+```
 
 ## Configuration
 

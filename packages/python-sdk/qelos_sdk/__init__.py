@@ -6,13 +6,13 @@ Example::
     from qelos_sdk import QelosSDK, QelosSDKOptions
 
     async def main():
-        sdk = QelosSDK(QelosSDKOptions(
+        opts = QelosSDKOptions(
             app_url="https://yourdomain.com",
             api_token="your-api-token",
-        ))
-        user = await sdk.authentication.get_logged_in_user()
-        print(user)
-        await sdk.close()
+        )
+        async with QelosSDK(opts) as sdk:
+            user = await sdk.authentication.get_logged_in_user()
+            print(user)
 
     asyncio.run(main())
 """
@@ -23,12 +23,14 @@ from .ai import QlAI
 from .authentication import QlAuthentication
 from .base_sdk import BaseSDK, QelosAPIError
 from .blocks import QlBlocks
-from .blueprint_entities import QlBlueprintEntities
+from .blueprint_entities import QlBlueprintEntities, QlBlueprintEntitiesQuery
 from .blueprints import QlBlueprints
 from .configurations import QlAppConfigurations
+from .events import QlEvents
 from .invites import QlInvites
 from .lambdas import QlLambdas
 from .payments import QlPayments
+from .permissions import QlPermissions
 from .types import QelosSDKOptions, RequestExtra
 from .workspaces import QlWorkspaces
 
@@ -52,10 +54,16 @@ class QelosSDK(BaseSDK):
         workspaces = await sdk.workspaces.get_list()
 
         # Blueprint entities
-        entities = await sdk.blueprints.entities_of("my-blueprint").get_list()
+        products = await sdk.entities("products").find({"status": "active"})
 
-        # AI chat
+        # AI agents
+        reply = await sdk.ai.agents.chat("agent-id", "Hello")
+
+        # AI chat (integration id)
         response = await sdk.ai.chat.chat("integration-id", {"messages": [...]})
+
+        async with QelosSDK(QelosSDKOptions(app_url="...", api_token="...")) as sdk:
+            allowed = await sdk.permissions.check("products:write")
     """
 
     def __init__(self, options: QelosSDKOptions) -> None:
@@ -71,6 +79,8 @@ class QelosSDK(BaseSDK):
         self.ai = QlAI(options)
         self.lambdas = QlLambdas(options)
         self.payments = QlPayments(options)
+        self.permissions = QlPermissions(options)
+        self.events = QlEvents(options)
 
         # Set up default access token getter
         if not options.get_access_token:
@@ -102,6 +112,10 @@ class QelosSDK(BaseSDK):
         """Remove a custom header."""
         self._custom_headers.pop(key, None)
 
+    def entities(self, blueprint_key: str) -> QlBlueprintEntities:
+        """Return a :class:`QlBlueprintEntities` manager for ``blueprint_key`` (TS ``sdk.entities``)."""
+        return self.blueprints.entities_of(blueprint_key)
+
 
 __all__ = [
     "QelosSDK",
@@ -115,6 +129,9 @@ __all__ = [
     "QlBlocks",
     "QlBlueprints",
     "QlBlueprintEntities",
+    "QlBlueprintEntitiesQuery",
+    "QlEvents",
+    "QlPermissions",
     "QlInvites",
     "QlLambdas",
     "QlPayments",
