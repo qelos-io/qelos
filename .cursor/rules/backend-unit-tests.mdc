@@ -1,0 +1,16 @@
+---
+description: Backend changes must include or extend unit tests with Node test runner
+globs:
+  - apps/*/server/**/*.ts
+---
+
+# Unit tests for backend work
+
+When adding or changing HTTP controllers, services, or routing in `apps/*/server/`:
+
+1. **Prefer** extracting deterministic logic (mapping, validation branches, query shaping) into small pure modules so they can be tested without MongoDB, Redis, or HTTP.
+2. **Add** tests under `server/services/tests/` or colocated `*.test.ts` next to the module when that matches existing patterns in the app (see `@qelos/ai`: `node:test` + `node:assert`).
+3. **Run** the package test script before finishing (`pnpm -F @qelos/ai test`, etc.).
+4. Do **not** merge behavior-only changes without test coverage when the package already uses unit tests for that area.
+
+Integration/e2e tests are optional unless the task explicitly requires them.

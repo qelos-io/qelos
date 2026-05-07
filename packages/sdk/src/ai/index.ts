@@ -17,7 +17,10 @@ import {
   IClearStorageRequest,
   IVectorStore,
   IAgent,
-  IAgentChatOptions
+  IAgentChatOptions,
+  IAgentTool,
+  ICreateAgentRequest,
+  IUpdateAgentRequest,
 } from './types';
 
 export * from './types';
@@ -36,7 +39,10 @@ export {
   IClearStorageRequest,
   IVectorStore,
   IAgent,
-  IAgentChatOptions
+  IAgentChatOptions,
+  IAgentTool,
+  ICreateAgentRequest,
+  IUpdateAgentRequest,
 };
 
 /**
@@ -101,7 +107,7 @@ export default class QlAI extends BaseSDK {
     this.threads = new ThreadsSDK(options);
     this.chat = new ChatSDK(options);
     this.rag = new RagSDK(options);
-    this.agents = new AgentsSDK(options, this.chat, this.threads);
+    this.agents = new AgentsSDK(options, this.chat);
   }
 
   // Legacy methods for backward compatibility

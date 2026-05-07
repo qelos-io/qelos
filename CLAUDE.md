@@ -81,3 +81,9 @@ qelos generate rules <type> — IDE rules for AI assistants
 qelos dev               — local development proxy
 qelos pull|push|dump|restore — resource management
 ```
+
+## Testing
+
+- **`@qelos/ai`**: unit tests live under `apps/ai/server/**/*.test.ts`; run `pnpm -F @qelos/ai test` (Node `node:test` + `tsx`).
+- **`@qelos/sdk`**: `pnpm -F @qelos/sdk test`.
+- New REST handlers or service logic in backend apps should add or extend tests when that package already uses unit tests for similar code (see `.cursor/rules/backend-unit-tests.mdc`).
