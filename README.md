@@ -1,4 +1,4 @@
-# QELOS - Build SaaS Applications with Ease
+# Qelos — AI-First Application Layer Gateway
 
 [![Qelos CI/CD](https://github.com/qelos-io/qelos/actions/workflows/main.yml/badge.svg)](https://github.com/qelos-io/qelos/actions/workflows/main.yml)
 
@@ -6,21 +6,59 @@
   <a href="https://qelos.io" target="_blank">
     <img src="https://qelos.io/qelos-hq.png" alt="Qelos Logo" width="200">
   </a>
-  <p><strong>A powerful platform for creating multi-tenant SaaS applications with a built-in plugin system</strong></p>
+  <p><strong>The backend layer your app plugs into — API gateway, AI agents, auth, workspaces, permissions, and events log out of the box.</strong></p>
 </div>
 
 ## What is Qelos?
 
-QELOS is a platform to create SaaS products with a set of tools for developers and non-developers to manage, edit, improve, and change SaaS products faster and easier.
+Qelos is an **AI-first application layer gateway**. It gives your application a
+fully managed backend with a RESTful API, AI agent management, authentication,
+multi-tenant workspaces, permissions, and an events log — all accessible via a
+unified SDK and per-framework middleware.
 
-## Getting Started
+| Role | What it means |
+|---|---|
+| **Admin panel** | Dashboard to manage data models, AI agents, users, workspaces, permissions, events |
+| **API gateway** | RESTful endpoints backed by MongoDB; define your data model with blueprints, get CRUD + AI + auth instantly |
+| **Framework plugin** | One middleware import (`@qelos/integrator-*`) makes Qelos *the* API for your Next.js, Nuxt, Express, Fastify, NestJS, or FastAPI app |
 
-**Prerequisites**
-- [Node.js v20+](https://nodejs.org/)
-- [pnpm](https://pnpm.io/) — `npm install -g pnpm`
-- [Docker](https://www.docker.com/) (for local services)
+## Quick Start
 
-**Install & run**
+### For integrators (use Qelos in your app)
+
+```bash
+# 1. Install the CLI
+npm install -g @qelos/cli
+
+# 2. Initialize in your project (detects framework, scaffolds config)
+qelos init
+
+# 3. Install the integrator for your framework
+npm install @qelos/integrator-next   # or express, nuxt, fastify, nest
+
+# 4. Use the SDK
+npm install @qelos/sdk
+```
+
+```typescript
+import QelosSDK from '@qelos/sdk';
+
+const sdk = new QelosSDK({ appUrl: 'https://your-qelos-instance.com', apiToken: 'your-api-token' });
+
+// Query entities defined in your blueprints
+const products = await sdk.entities('products').find({ status: 'active' });
+
+// Chat with an AI agent
+const response = await sdk.ai.agents.chat('agent-id', 'How can I help?');
+
+// Check permissions
+const allowed = await sdk.permissions.check('products:write');
+```
+
+### For contributors (run Qelos locally)
+
+**Prerequisites:** [Node.js v20+](https://nodejs.org/) · [pnpm](https://pnpm.io/) · [Docker](https://www.docker.com/)
+
 ```bash
 git clone https://github.com/qelos-io/qelos.git
 cd qelos
@@ -31,155 +69,60 @@ pnpm dev          # start in development mode
 
 > First time? Run `pnpm populate-db` in a second terminal to seed initial data, then log in with `test@test.com` / `admin`.
 
-### Key Features
+## Key Capabilities
 
-- 🚀 **Multi-Tenant Architecture** - Built-in support for multi-tenancy with isolated workspaces and configurations
-- 🔌 **Plugin System** - Extend your application with plugins and micro-frontends
-- 🎨 **No-Code Builder** - Create and customize blueprints without writing code
-- 🔒 **Built-in Security** - Authentication, authorization, and secrets management out of the box
-- 📦 **Modern Tech Stack** - Vue 3, Node.js, MongoDB, Redis, and more
-- 🌐 **API-First Design** - RESTful APIs and SDK for seamless integration
-
-## Prerequisites
-
-- **Node.js v20+**: The JavaScript runtime environment required to run QELOS
-- **Docker**: For containerized development and deployment
-- **MongoDB**: Database for storing application data (can be run via Docker)
-- **Redis** (Optional): For caching and session management
-
-## Quick Start
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/qelos-io/qelos.git
-
-# Install dependencies
-pnpm install
-
-# Build the packages
-pnpm build
-```
-
-### Development Mode
-
-```bash
-# With local MongoDB instance
-pnpm dev
-
-# Create initial data (in a new terminal)
-pnpm populate-db
-```
-
-### Production Mode
-
-```bash
-pnpm start
-```
-
-### Default Login Credentials
-
-| **Field**    | **Value**       |
-| ------------ | --------------- |
-| **Username** | `test@test.com` |
-| **Password** | `admin`         |
-
-## Dockerized Usage
-
-### Setup Environment
-
-```bash
-cd compose
-
-# For Linux or macOS
-cp .env.example .env
-
-# For all operating systems
-pnpm run create-env
-```
-
-### Run with Docker Compose
-
-```bash
-cd compose
-docker-compose up
-```
-
-### Scaling with Docker Compose
-
-For scaled deployments with separate services:
-
-```bash
-cd compose
-docker-compose -f docker-compose.scaled.yml up
-```
-
-## Kubernetes Deployment
-
-### Prerequisites
-- Docker Desktop with Kubernetes enabled
-- kubectl
-- Helm 3.x
-
-### Local Development Setup
-
-1. **Set up a Local Kubernetes Cluster**
-   ```bash
-   # Verify cluster is running
-   kubectl cluster-info
-   ```
-
-2. **Install Helm (macOS)**
-   ```bash
-   brew install helm
-   ```
-
-3. **Deploy QELOS**
-   ```bash
-   # Generate Helm values
-   node --env-file .env tools/ingest-helm-values/index.js
-   
-   # Deploy or upgrade
-   helm upgrade --install qelos -f ./helm/qelos/values-env.yaml ./helm/qelos
-   
-   # Forward the gateway service port
-   kubectl port-forward svc/gateway-service 3000:80
-   ```
-
-4. **Access the admin interface** at http://localhost:3000
+- **RESTful API with DB** — define data models via blueprints, get full CRUD automatically
+- **AI Agents** — create and manage chatbots, configure tools/functions, embed via SDK or widget
+- **Authentication & Authorization** — social login, token management, session handling
+- **Multi-Tenant Workspaces** — isolated environments with member management
+- **Permissions & Roles** — resource-level access control enforced at the gateway
+- **Events / Audit Log** — track all platform activity, forward to webhooks
+- **CLI** — `@qelos/cli` for project scaffolding, agent management, IDE rules generation
+- **Per-Framework Middleware** — Express, Next.js, Nuxt, Fastify, NestJS, FastAPI
 
 ## Project Structure
 
-- `/apps` - Microservices and frontend applications
-  - `/admin` - Admin frontend (Vue 3)
-  - `/ai` - AI service for chat completion and AI integration
-  - `/auth` - Authentication service
-  - `/content` - Content management service
-  - `/plugins` - Plugin management service
-  - `/redis` - Redis service
-  - `/db` - Database service
-  - `/gateway` - Gateway service
-  - `/secrets` - Secrets management service
-  - `/drafts` - Drafts management service
-  - `/no-code` - No-code management service
-  
-- `/packages` - Shared libraries and utilities consumed by apps in this monorepo (and may also be published)
-  - `/api-kit` - API utilities for backend services
-  - `/global-types` - Shared TypeScript types
-  - `/cache-manager` - Cache management service
-  - `sdk` - JavaScript/TypeScript SDK (`@qelos/sdk` on npm)
-  - `python-sdk` - Python SDK (`qelos-sdk` on PyPI)
-  - `plugin-player` - Plugin sdk tool for plugin services
-  - `web-sdk` - Web sdk tool for web micro-frontends and communication with qelos client side
-- `/integrators` - Published packages built for **external** apps to install. They are NOT consumed by apps in this monorepo. See [integrators/README.md](integrators/README.md) for the convention.
-- `/documentation` - Project documentation
-- `/compose` - Docker Compose configuration
-- `/helm` - Kubernetes Helm charts
+```
+apps/                    Microservices & frontend
+  gateway/               API gateway — entry point for all requests
+  admin/                 Admin dashboard (Vue 3)
+  ai/                    AI service — agents, chat completion, provider integration
+  auth/                  Authentication & authorization service
+  content/               Content management
+  no-code/               Blueprint builder (no-code)
+  plugins/               Plugin management
+  secrets/               Secrets vault
+  drafts/                Draft management
+  db/                    MongoDB config (dev)
+  redis/                 Redis config
+
+packages/                Shared libraries (consumed internally + published)
+  sdk/                   @qelos/sdk — TypeScript SDK
+  python-sdk/            qelos-sdk — Python SDK
+  api-kit/               Backend service utilities (Express, Axios, Morgan)
+  global-types/          Shared TypeScript types
+  cache-manager/         Cache management
+  web-sdk/               Browser SDK & embeddable widgets
+  plugin-play/           Plugin runtime
+  plugin-netlify-api/    Netlify build plugin
+
+integrators/             Framework middleware (published for external apps ONLY)
+  express/               @qelos/integrator-express
+  next/                  @qelos/integrator-next
+  nuxt/                  @qelos/integrator-nuxt
+  fastify/               @qelos/integrator-fastify
+  nest/                  @qelos/integrator-nest
+  fastapi/               @qelos/integrator-fastapi (Python)
+
+tools/
+  cli/                   @qelos/cli — the Qelos developer CLI
+
+documentation/           Docs site (VitePress)
+compose/                 Docker Compose configs
+helm/                    Kubernetes Helm charts
+```
 
 ## SDKs
-
-Qelos provides official SDKs for integrating with the platform API.
 
 ### JavaScript / TypeScript
 
@@ -190,8 +133,16 @@ npm install @qelos/sdk
 ```typescript
 import QelosSDK from '@qelos/sdk';
 
-const sdk = new QelosSDK({ appUrl: 'https://yourdomain.com', fetch: window.fetch });
-const user = await sdk.authentication.getLoggedInUser();
+const sdk = new QelosSDK({ appUrl: 'https://your-instance.com', apiToken: 'token' });
+
+// Entities
+const users = await sdk.entities('users').find({ role: 'admin' });
+
+// AI agents
+const reply = await sdk.ai.agents.chat('agent-id', 'Hello');
+
+// Auth
+const me = await sdk.authentication.getLoggedInUser();
 ```
 
 See [packages/sdk/README.md](packages/sdk/README.md) for full documentation.
@@ -208,7 +159,7 @@ from qelos_sdk import QelosSDK, QelosSDKOptions
 
 async def main():
     sdk = QelosSDK(QelosSDKOptions(
-        app_url="https://yourdomain.com",
+        app_url="https://your-instance.com",
         api_token="your-api-token",
     ))
     user = await sdk.authentication.get_logged_in_user()
@@ -220,14 +171,59 @@ asyncio.run(main())
 
 See [packages/python-sdk/README.md](packages/python-sdk/README.md) for full documentation.
 
+## The Qelos CLI
+
+```bash
+npm install -g @qelos/cli
+
+qelos init                    # Scaffold integrator config for your framework
+qelos auth login              # Authenticate with your Qelos instance
+qelos agents list             # List AI agents
+qelos generate rules windsurf # Generate IDE rules for AI coding assistants
+qelos pull / push             # Sync resources (blueprints, plugins, blocks)
+```
+
+## Deployment
+
+### Docker Compose
+
+```bash
+cd compose
+cp .env.example .env
+docker-compose up
+```
+
+### Kubernetes (Helm)
+
+```bash
+node --env-file .env tools/ingest-helm-values/index.js
+helm upgrade --install qelos -f ./helm/qelos/values-env.yaml ./helm/qelos
+kubectl port-forward svc/gateway-service 3000:80
+```
+
+Access the admin at http://localhost:3000
+
+### Default Login
+
+| Field | Value |
+|---|---|
+| Username | `test@test.com` |
+| Password | `admin` |
+
 ## Documentation
 
-For comprehensive documentation, visit [docs.qelos.io](https://docs.qelos.io):
-
+- [docs.qelos.io](https://docs.qelos.io) — full documentation
 - [Installation Guide](https://docs.qelos.io/getting-started/installation.html)
 - [Create Blueprints](https://docs.qelos.io/getting-started/create-blueprints.html)
-- [Plugin Development](https://docs.qelos.io/getting-started/create-your-first-plugin.html)
+- [Integrator Guide](https://docs.qelos.io/getting-started/integrators.html)
+- [AI Agents](https://docs.qelos.io/ai/agents.html)
+- [CLI Reference](https://docs.qelos.io/cli/)
 - [Deployment Guide](https://docs.qelos.io/getting-started/deployment.html)
+
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for the full direction — AI agents, integrator
+middleware, CLI enhancements, permissions, events log, and more.
 
 ## Resources
 

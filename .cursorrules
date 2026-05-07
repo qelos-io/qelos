@@ -1,6 +1,4 @@
----
-trigger: always_on
----
+# Qelos — AI-First Application Layer Gateway
 
 ## What is Qelos
 
