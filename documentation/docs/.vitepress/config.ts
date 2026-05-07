@@ -117,6 +117,7 @@ export default defineConfig({
         items: [
           { text: 'Introduction to the SDK', link: '/sdk/sdk' },
           { text: 'Installation', link: '/sdk/installation' },
+          { text: 'SDK Reference', link: '/sdk/sdk_reference' },
           { text: 'Authentication', link: '/sdk/authentication' },
           { text: 'Token Refresh Functionality', link: '/sdk/token_refresh' },
           { text: 'Error Handling Guide', link: '/sdk/error_handling' },
