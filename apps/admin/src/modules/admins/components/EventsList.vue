@@ -4,14 +4,34 @@
       {{ $t('Page') }} {{ (currentPage ?? 0) + 1 }} {{ $t('of') }} {{ totalPages }} · {{ totalDisplay }} {{ $t('events') }}
     </div>
 
+    <div class="events-list-actions" v-if="events.length">
+      <el-button size="small" @click="downloadExport('csv')">
+        {{ $t('Export CSV') }}
+      </el-button>
+      <el-button size="small" @click="downloadExport('json')">
+        {{ $t('Export JSON') }}
+      </el-button>
+    </div>
+
     <el-table
+      ref="tableRef"
       :data="events"
       v-loading="loading"
+      row-key="_id"
       stripe
       style="width: 100%"
       :default-sort="{ prop: 'created', order: 'descending' }"
       class="events-table"
+      @row-click="toggleEventDetails"
     >
+      <el-table-column type="expand" width="48">
+        <template #default="{ row }">
+          <div class="event-expanded-details">
+            <pre dir="ltr">{{ formatEventDetails(row) }}</pre>
+          </div>
+        </template>
+      </el-table-column>
+
       <el-table-column prop="created" :label="$t('Date')" width="180" sortable>
         <template #default="{ row }">
           {{ formatDate(row.created) }}
@@ -30,13 +50,25 @@
 
       <el-table-column prop="source" :label="$t('Source')" width="200" sortable>
         <template #default="{ row }">
-          <el-text truncated>{{ row.source }}</el-text>
+          <el-text truncated>{{ row.source || '-' }}</el-text>
         </template>
       </el-table-column>
 
-      <el-table-column prop="description" :label="$t('Description')" min-width="250">
+      <el-table-column prop="user" :label="$t('User')" min-width="170">
         <template #default="{ row }">
-          <el-text truncated>{{ row.description }}</el-text>
+          <el-text truncated dir="ltr">{{ getEventUserLabel(row) || '-' }}</el-text>
+        </template>
+      </el-table-column>
+
+      <el-table-column prop="workspace" :label="$t('Workspace')" min-width="170">
+        <template #default="{ row }">
+          <el-text truncated dir="ltr">{{ getEventWorkspaceLabel(row) || '-' }}</el-text>
+        </template>
+      </el-table-column>
+
+      <el-table-column prop="metadata" :label="$t('Metadata')" min-width="260">
+        <template #default="{ row }">
+          <el-text truncated dir="ltr">{{ getMetadataPreview(row) || '-' }}</el-text>
         </template>
       </el-table-column>
 
@@ -46,7 +78,7 @@
             type="primary"
             size="small"
             text
-            @click="viewDetails(row._id)"
+            @click.stop="viewDetails(row._id)"
           >
             Details
           </el-button>
@@ -76,10 +108,17 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { ElMessage } from 'element-plus';
 import EventDetailsDrawer from './EventDetailsDrawer.vue';
 import eventsService, { IEvent } from '@/services/apis/events-service';
+import {
+  createEventsExport,
+  EventsExportFormat,
+  getEventUserId,
+  getEventWorkspaceId,
+} from '../services/event-export';
 
 const router = useRouter();
 const route = useRoute();
@@ -100,12 +139,24 @@ const props = withDefaults(
 const MOBILE_BREAKPOINT = 768;
 const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT);
 const paginationLayout = computed(() => (isMobile.value ? 'prev, pager, next' : 'total, prev, pager, next, jumper'));
+const tableRef = ref<any>(null);
 
 if (typeof window !== 'undefined') {
-  window.addEventListener('resize', () => {
-    isMobile.value = window.innerWidth < MOBILE_BREAKPOINT;
-  });
+  window.addEventListener('resize', updateIsMobile);
 }
+
+onBeforeUnmount(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', updateIsMobile);
+  }
+});
+
+function updateIsMobile() {
+  if (typeof window !== 'undefined') {
+    isMobile.value = window.innerWidth < MOBILE_BREAKPOINT;
+  }
+}
+
 const drawerVisible = ref(false);
 const selectedEvent = ref<IEvent | null>(null);
 const detailLoading = ref(false);
@@ -128,7 +179,7 @@ function formatDate(date: Date | string) {
 }
 
 function getKindTagType(kind: string) {
-  const typeMap: Record<string, any> = {
+  const typeMap: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
     'openai': 'primary',
     'anthropic': 'success',
     'plugin': 'warning',
@@ -136,6 +187,76 @@ function getKindTagType(kind: string) {
     'error': 'danger',
   };
   return typeMap[kind] || 'info';
+}
+
+function getEventUserLabel(event: IEvent) {
+  if (!event.user || typeof event.user === 'string') {
+    return getEventUserId(event);
+  }
+
+  return event.user.username || event.user.email || event.user._id || '';
+}
+
+function getEventWorkspaceLabel(event: IEvent) {
+  if (!event.workspace || typeof event.workspace === 'string') {
+    return getEventWorkspaceId(event);
+  }
+
+  return event.workspace.name || event.workspace._id || '';
+}
+
+function getMetadataPreview(event: IEvent) {
+  const metadata = event.metadata;
+  if (!metadata) {
+    return '';
+  }
+
+  if (typeof metadata !== 'object') {
+    return String(metadata);
+  }
+
+  const entries = Object.entries(metadata).slice(0, 4);
+  return entries.map(([key, value]) => `${key}: ${formatMetadataPreviewValue(value)}`).join(', ');
+}
+
+function formatMetadataPreviewValue(value: unknown) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+
+  return String(value);
+}
+
+function formatEventDetails(event: IEvent) {
+  return JSON.stringify({
+    ...event,
+    user: getEventUserLabel(event) || event.user,
+    workspace: getEventWorkspaceLabel(event) || event.workspace,
+    metadata: event.metadata,
+  }, null, 2);
+}
+
+function toggleEventDetails(row: IEvent) {
+  tableRef.value?.toggleRowExpansion(row);
+}
+
+function downloadExport(format: EventsExportFormat) {
+  const file = createEventsExport(props.events, format);
+  const blob = new Blob([file.content], { type: file.mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+  link.href = url;
+  link.download = `events-${timestamp}.${file.extension}`;
+  link.click();
+  URL.revokeObjectURL(url);
+
+  ElMessage.success(`Exported ${props.events.length} events as ${format.toUpperCase()}`);
 }
 
 function handlePageChange(page: number) {
@@ -205,6 +326,33 @@ watch(
   font-size: 12px;
   color: var(--el-text-color-secondary);
   margin-bottom: 8px;
+}
+
+.events-list-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-block-end: 8px;
+}
+
+.events-table :deep(.el-table__row) {
+  cursor: pointer;
+}
+
+.event-expanded-details {
+  padding: 12px 16px;
+  background: var(--negative-color);
+  border: 1px solid var(--el-border-color, #e4e7ed);
+  border-radius: 4px;
+
+  pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--main-color);
+  }
 }
 
 .pagination-container {

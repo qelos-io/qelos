@@ -30,26 +30,26 @@
           <el-descriptions-item :label="$t('Description')">
             {{ event.description }}
           </el-descriptions-item>
-          <el-descriptions-item :label="$t('User')" v-if="event.user">
+          <el-descriptions-item :label="$t('User')" v-if="eventUserId">
             <router-link
               class="user-link"
-              :to="{ name: 'editUser', params: { userId: event.user } }"
+              :to="{ name: 'editUser', params: { userId: eventUserId } }"
             >
               {{ userDisplayName }}
             </router-link>
           </el-descriptions-item>
           <el-descriptions-item
             :label="$t('Workspace')"
-            v-if="event.metadata?.workspace"
+            v-if="eventWorkspaceId"
           >
             <router-link
               class="user-link"
               :to="{
                 name: 'adminEditWorkspace',
-                params: { id: event.metadata.workspace._id },
+                params: { id: eventWorkspaceId },
               }"
             >
-              {{ event.metadata.workspace._id }}
+              {{ eventWorkspaceId }}
             </router-link>
           </el-descriptions-item>
         </el-descriptions>
@@ -132,6 +132,7 @@ import type { IEvent } from "@/services/apis/events-service";
 import type { IUser } from "@/modules/core/store/types/user";
 import usersService from "@/services/apis/users-service";
 import sdk from "@/services/sdk";
+import { getEventUserId, getEventWorkspaceId } from "../services/event-export";
 
 const visible = defineModel<boolean>("visible");
 
@@ -155,6 +156,8 @@ const blueprintEntityLoading = ref(false);
 const blueprintEntityError = ref<string | null>(null);
 let lastBlueprintRequestKey: string | null = null;
 const isMobile = ref(false);
+const eventUserId = computed(() => props.event ? getEventUserId(props.event) : "");
+const eventWorkspaceId = computed(() => props.event ? getEventWorkspaceId(props.event) : "");
 
 const updateIsMobile = () => {
   isMobile.value = window.innerWidth <= 768;
@@ -201,7 +204,7 @@ const isBlueprintEntityEvent = computed(() => {
 });
 
 watch(
-  () => props.event?.user,
+  () => eventUserId.value,
   async (userId) => {
     lastRequestedUserId = userId ?? null;
 
@@ -275,19 +278,20 @@ watch(
 );
 
 const userDisplayName = computed(() => {
-  if (!props.event?.user) {
+  if (!eventUserId.value) {
     return "";
   }
 
   const user = userDetails.value;
   if (!user || userDetailsLoading.value) {
-    return props.event.user;
+    return eventUserId.value;
   }
 
   return user.firstName
     ? `${user.firstName} ${user.lastName}`
-    : user.username || user.email || props.event.user;
+    : user.username || user.email || eventUserId.value;
 });
+
 </script>
 
 <style scoped lang="scss">
