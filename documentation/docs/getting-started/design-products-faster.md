@@ -8,7 +8,7 @@ This guide provides practical tips, common patterns, and best practices to accel
 Before building any UI, define your data structure:
 ```bash
 # Create a blueprint for your core entity
-qelos-cli create blueprint Product
+qelos create blueprint Product
 ```
 
 **Why?** Blueprints automatically generate:
@@ -62,16 +62,16 @@ const appConfig = {
 1. **CLI-First Development**
    ```bash
    # Generate entire CRUD interfaces
-   qelos-cli generate crud Product --with-listing --with-forms
+   qelos generate crud Product --with-listing --with-forms
    
    # Create plugin pages quickly
-   qelos-cli create page product-management --template=crud
+   qelos create page product-management --template=crud
    ```
 
 2. **Template-Based Development**
    ```bash
    # Start from proven templates
-   qelos-cli create plugin --template=saas-starter
+   qelos create plugin --template=saas-starter
    ```
 
 3. **Schema-Driven UI**
