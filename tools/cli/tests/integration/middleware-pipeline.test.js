@@ -29,7 +29,7 @@ describe('Middleware pipeline', () => {
       });
     }
 
-    const commandsWithoutConfig = ['create.mjs', 'blueprints.mjs', 'get.mjs', 'global.mjs', 'generate.mjs'];
+    const commandsWithoutConfig = ['create.mjs', 'blueprints.mjs', 'get.mjs', 'global.mjs', 'generate.mjs', 'auth.mjs', 'init.mjs'];
 
     for (const file of commandsWithoutConfig) {
       it(`${file} does not need config middleware`, () => {
