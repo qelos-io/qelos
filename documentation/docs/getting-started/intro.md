@@ -105,6 +105,12 @@ Getting started with QELOS is simple. Follow these steps to install and set up y
 2. **[Create Your First Plugin](./create-your-first-plugin.md)**: Discover how to create and manage your first plugin.
 3. **[Deployment](./deployment.md)**: Find out how to deploy your application to a production environment.
 
+## HTTP API and the gateway
+
+Every product app talks to Qelos through a single **gateway**: browser traffic and API calls hit one origin; paths such as `/api/me`, `/api/blueprints/.../entities`, `/api/ai/...`, and `/api/events` are proxied to internal services (auth, no-code, AI, plugins, and others). You do not call those microservices directly from client code.
+
+For a concise map of those routes, request headers, example **`curl`** commands, and **`@qelos/sdk`** equivalents organized by domain, see the **[Gateway endpoint reference](/api/gateway-endpoint-reference)**. The full topic pages under [API Reference](/api/api) expand request and response shapes for each area.
+
 ## Additional Resources
 
 Explore more about QELOS through these resources:

@@ -164,6 +164,7 @@ export default defineConfig({
         text: 'API',
         collapsed: true,
         items: [
+          { text: 'Gateway endpoint reference', link: '/api/gateway-endpoint-reference' },
           { text: 'API Reference', link: '/api/api' },
           { text: 'Authentication', link: '/api/authentication' },
           { text: 'Workspaces', link: '/api/workspaces' },
