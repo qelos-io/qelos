@@ -32,6 +32,18 @@ jobs:
       - name: Build integrators
         run: pnpm --filter "./integrators/**" build
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test FastAPI integrator
+        run: |
+          python -m pip install -U pip
+          python -m pip install -e "./packages/python-sdk"
+          python -m pip install -e "./integrators/fastapi[dev]"
+          python -m pytest integrators/fastapi/tests -q
+
       - name: Build apps
         run: pnpm --filter "./apps/**" build
         
