@@ -2,6 +2,7 @@ packages:
   - apps/*
   - packages/*
   - integrators/*
+  - e2e
   - documentation
 
 onlyBuiltDependencies:
