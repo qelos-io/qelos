@@ -17,7 +17,7 @@
     "@qelos/integrator-nuxt": "workspace:*",
     "@qelos/sdk": "workspace:*",
     "express": "^4.21.2",
-    "fastify": "^4.28.1",
+    "fastify": "~4.15.0",
     "h3": "^1.13.0",
     "next": "^14.2.5",
     "react": "^18.3.1"
