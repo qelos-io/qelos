@@ -121,8 +121,9 @@ createQelosMiddleware({
 
 ## TypeScript
 
-Importing from `@qelos/integrator-express` augments `Express.Request` so
-`req.qelos` is typed everywhere in your app. The shape is:
+Importing from `@qelos/integrator-express` augments the Express `Request` type
+(via `declare module 'express'` and `declare module 'express-serve-static-core'`)
+so `req.qelos` is typed everywhere in your app. The shape is:
 
 ```ts
 interface QelosRequestContext {
@@ -133,6 +134,9 @@ interface QelosRequestContext {
   tokens: QelosTokenPair; // mutated in place when a refresh occurs
 }
 ```
+
+`req.qelos` is typed as non-optional. If you use `skipPaths`, the property is
+unset for skipped requests — guard with `if (req.qelos) { ... }` in those routes.
 
 ## Requirements
 
