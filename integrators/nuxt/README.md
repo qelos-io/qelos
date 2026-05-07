@@ -6,8 +6,9 @@ identifies the current user and active workspace via the
 Nitro/Nuxt route handlers run, and exposes them through the H3 event context.
 
 A token-refresh hook keeps the access token fresh: when the SDK detects an
-expired access token, it transparently refreshes it using the request's refresh
-token and writes the rotated cookie pair back on the response.
+expired access token, it transparently refreshes it — either through the
+request's refresh token or, for cookie-only sessions, through the access
+cookie itself — and writes the rotated cookie pair back on the response.
 
 ## Install
 
@@ -115,6 +116,36 @@ If you need direct browser access to the Qelos API, use
 [`@qelos/web-sdk`](https://www.npmjs.com/package/@qelos/web-sdk) instead — the
 server-side SDK in this package is bound to per-request cookies and isn't
 intended for client use.
+
+## Token refresh
+
+When the access token is rejected, the SDK tries to recover, in order:
+
+1. The **refresh token** (`q_refresh_token`) via
+   `sdk.authentication.refreshToken()` — issues a new access + refresh pair.
+2. The **cookie token** (the access token cookie itself) via
+   `sdk.authentication.refreshCookieToken()` — used for cookie-only sessions
+   that do not carry a separate refresh token (e.g. social-auth flows).
+
+After a successful refresh the middleware fires the `onTokenRefresh` hook.
+The default implementation writes the new tokens back to the response cookies
+(`HttpOnly`, `SameSite=Lax`).
+
+### Manual cookie refresh
+
+Long-lived integrator-hosted sessions can also call the SDK directly to
+proactively refresh the cookie token, e.g. from a Nitro route handler:
+
+```ts
+// server/api/session/refresh.post.ts
+import { defineQelosEventHandler } from '@qelos/integrator-nuxt';
+
+export default defineQelosEventHandler(async ({ qelos }) => {
+  const result = await qelos.sdk.authentication.refreshCookieToken();
+  // result.headers['set-cookie'] — fresh cookie value to forward
+  return { user: result.payload.user };
+});
+```
 
 ## Custom workspace resolution / refresh hook
 

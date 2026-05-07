@@ -114,10 +114,17 @@ the per-route `QelosAuthGuard` for finer-grained control.
 
 ## Token refresh
 
-When the access token is rejected, the SDK tries the refresh token. After a
-successful refresh the middleware fires the `onTokenRefresh` hook. The default
-implementation writes the new tokens back to the response cookies (`HttpOnly`,
-`SameSite=Lax`, `Secure` whenever `appUrl` is `https://...`).
+When the access token is rejected, the SDK tries to recover, in order:
+
+1. The **refresh token** (`q_refresh_token`) via
+   `sdk.authentication.refreshToken()` — issues a new access + refresh pair.
+2. The **cookie token** (the access token cookie itself) via
+   `sdk.authentication.refreshCookieToken()` — used for cookie-only sessions
+   that do not carry a separate refresh token (e.g. social-auth flows).
+
+After a successful refresh the middleware fires the `onTokenRefresh` hook.
+The default implementation writes the new tokens back to the response cookies
+(`HttpOnly`, `SameSite=Lax`, `Secure` whenever `appUrl` is `https://...`).
 
 You can supply your own — for example, to mint your own session cookie or
 push the new tokens into a session store:
@@ -134,6 +141,20 @@ QelosModule.forRoot({
 The hook receives `{ request, response, oldTokens, newTokens, sdk }`. The
 `request` and `response` types are intentionally generic since Nest can run
 on either Express or Fastify.
+
+### Manual cookie refresh
+
+Long-lived integrator-hosted sessions can also call the SDK directly to
+proactively refresh the cookie token:
+
+```ts
+@Get('refresh-session')
+async refresh(@QelosCtx() ctx: QelosRequestContext) {
+  const result = await ctx.sdk.authentication.refreshCookieToken();
+  // result.headers['set-cookie'] — fresh cookie value to forward
+  return { user: result.payload.user };
+}
+```
 
 ## Async configuration
 

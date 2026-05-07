@@ -179,11 +179,19 @@ export const getServerSideProps = withQelosSSR(
 
 ## Token refresh
 
-When a request arrives with an expired access token but a valid refresh
-token, the SDK's failed-auth path triggers a refresh through
-`/api/token/refresh`. The new pair is then written back to cookies using the
-configured `accessTokenCookie` / `refreshTokenCookie` names — automatically
-in App Router middleware (`response.cookies.set`), Pages Router API routes
+When a request arrives with an expired access token, the SDK's failed-auth
+path triggers a refresh, in order:
+
+1. If a refresh token is present, calls
+   `sdk.authentication.refreshToken()` (`POST /api/token/refresh`) — issues a
+   new access + refresh pair.
+2. Otherwise, calls `sdk.authentication.refreshCookieToken()`
+   (`POST /api/cookie/refresh`) — used for cookie-only sessions that do not
+   carry a separate refresh token (e.g. social-auth flows).
+
+The new pair is then written back to cookies using the configured
+`accessTokenCookie` / `refreshTokenCookie` names — automatically in App
+Router middleware (`response.cookies.set`), Pages Router API routes
 (`Set-Cookie` header), and `getServerSideProps` responses.
 
 App Router server components and route handlers cannot mutate cookies after
@@ -202,6 +210,24 @@ interface TokenRefreshContext<T> {
   newTokens: { accessToken: string; refreshToken?: string };
   sdk: QelosSDK;
 }
+```
+
+### Manual cookie refresh
+
+Long-lived integrator-hosted sessions can also call the SDK directly to
+proactively refresh the cookie token. From a route handler that owns the
+response (so it can mutate cookies):
+
+```ts
+// app/api/session/refresh/route.ts
+import { NextResponse } from 'next/server';
+import { withQelosRoute } from '@qelos/integrator-next/route';
+
+export const POST = withQelosRoute(async (_req, _ctx, qelos) => {
+  const result = await qelos.sdk.authentication.refreshCookieToken();
+  // result.headers['set-cookie'] — fresh cookie value to forward
+  return NextResponse.json({ user: result.payload.user });
+});
 ```
 
 ## Configuration
