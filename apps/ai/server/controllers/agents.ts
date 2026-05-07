@@ -1,12 +1,7 @@
 import { Response } from 'express';
 import mongoose from 'mongoose';
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
-import {
-  IIntegration,
-  IIntegrationEntity,
-  QelosTargetOperation,
-  QelosTriggerOperation,
-} from '@qelos/global-types';
+import { IIntegration, QelosTriggerOperation } from '@qelos/global-types';
 import {
   calPublicPluginsService,
   getIntegration,
@@ -16,99 +11,13 @@ import { verifyUserPermissions } from '../services/source-service';
 import { Thread } from '../models/thread';
 import { chatCompletion } from './chat-completion';
 import logger from '../services/logger';
-
-interface IAgentTool {
-  name: string;
-  description: string;
-  schema?: object;
-}
-
-interface IAgentPayload {
-  name?: string;
-  model?: string;
-  systemPrompt?: string;
-  tools?: IAgentTool[];
-  temperature?: number;
-  maxTokens?: number;
-  workspace?: string;
-  triggerSource?: string;
-  targetSource?: string;
-  active?: boolean;
-}
-
-function integrationToAgent(integration: IIntegration & { active?: boolean }) {
-  const triggerDetails = integration.trigger?.details || {};
-  const targetDetails = integration.target?.details || {};
-
-  return {
-    _id: integration._id,
-    name: triggerDetails.name || '',
-    model: targetDetails.model || '',
-    systemPrompt: triggerDetails.systemPrompt || '',
-    tools: Array.isArray(triggerDetails.tools) ? triggerDetails.tools : [],
-    temperature: targetDetails.temperature,
-    maxTokens: targetDetails.max_tokens,
-    tenant: integration.tenant,
-    workspace: triggerDetails.workspace,
-    triggerSource:
-      typeof integration.trigger?.source === 'object'
-        ? (integration.trigger.source as any)?._id
-        : integration.trigger?.source,
-    targetSource:
-      typeof integration.target?.source === 'object'
-        ? (integration.target.source as any)?._id
-        : integration.target?.source,
-    active: integration.active !== false,
-    created: (integration as any).created,
-  };
-}
-
-function agentPayloadToTrigger(payload: IAgentPayload, existing?: IIntegrationEntity): IIntegrationEntity {
-  const details = { ...(existing?.details || {}) };
-  if (payload.name !== undefined) details.name = payload.name;
-  if (payload.systemPrompt !== undefined) details.systemPrompt = payload.systemPrompt;
-  if (payload.tools !== undefined) details.tools = payload.tools;
-  if (payload.workspace !== undefined) details.workspace = payload.workspace;
-
-  return {
-    source: payload.triggerSource || existing?.source,
-    operation: QelosTriggerOperation.chatCompletion,
-    details,
-  };
-}
-
-function agentPayloadToTarget(payload: IAgentPayload, existing?: IIntegrationEntity): IIntegrationEntity {
-  const details = { ...(existing?.details || {}) };
-  if (payload.model !== undefined) details.model = payload.model;
-  if (payload.temperature !== undefined) details.temperature = payload.temperature;
-  if (payload.maxTokens !== undefined) details.max_tokens = payload.maxTokens;
-
-  if (payload.systemPrompt !== undefined) {
-    const preMessages = Array.isArray(details.pre_messages) ? [...details.pre_messages] : [];
-    const sysIndex = preMessages.findIndex((m: any) => m && m.role === 'system' && m.__agentSystemPrompt);
-    const sysMessage = { role: 'system', content: payload.systemPrompt, __agentSystemPrompt: true };
-    if (sysIndex >= 0) {
-      if (payload.systemPrompt) {
-        preMessages[sysIndex] = sysMessage;
-      } else {
-        preMessages.splice(sysIndex, 1);
-      }
-    } else if (payload.systemPrompt) {
-      preMessages.unshift(sysMessage);
-    }
-    details.pre_messages = preMessages;
-  }
-
-  return {
-    source: payload.targetSource || existing?.source,
-    operation: QelosTargetOperation.chatCompletion,
-    details,
-  };
-}
-
-function isAgentIntegration(integration: IIntegration | undefined | null): boolean {
-  return !!integration && integration.trigger?.operation === QelosTriggerOperation.chatCompletion;
-}
+import {
+  agentPayloadToTarget,
+  agentPayloadToTrigger,
+  IAgentPayload,
+  integrationToAgent,
+  isAgentIntegration,
+} from './agent-integration-mapping';
 
 export const listAgents = async (req: RequestWithUser, res: Response) => {
   try {
@@ -123,7 +32,7 @@ export const listAgents = async (req: RequestWithUser, res: Response) => {
     const integrations: IIntegration[] = await calPublicPluginsService(
       `/api/integrations?${queryParts.join('&')}`,
       { tenant: req.headers.tenant as string, user: req.headers.user },
-      { method: 'GET' }
+      { method: 'GET' },
     );
 
     const agents = (integrations || [])
@@ -131,7 +40,7 @@ export const listAgents = async (req: RequestWithUser, res: Response) => {
       .map(integrationToAgent);
 
     return res.json(agents).end();
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Error listing agents:', error);
     return res.status(500).json({ message: 'Failed to list agents' }).end();
   }
@@ -147,7 +56,7 @@ export const getAgent = async (req: RequestWithUser, res: Response) => {
     const integration: IIntegration = await calPublicPluginsService(
       `/api/integrations/${id}`,
       { tenant: req.headers.tenant as string, user: req.headers.user },
-      { method: 'GET' }
+      { method: 'GET' },
     );
 
     if (!integration) {
@@ -158,9 +67,9 @@ export const getAgent = async (req: RequestWithUser, res: Response) => {
     }
 
     return res.json(integrationToAgent(integration)).end();
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Error getting agent:', error);
-    const status = error?.response?.status || 500;
+    const status = (error as { response?: { status?: number } })?.response?.status || 500;
     return res.status(status).json({ message: 'Failed to get agent' }).end();
   }
 };
@@ -186,14 +95,15 @@ export const createAgent = async (req: RequestWithUser, res: Response) => {
     const created: IIntegration = await calPublicPluginsService(
       `/api/integrations`,
       { tenant: req.headers.tenant as string, user: req.headers.user },
-      { method: 'POST', data: integration }
+      { method: 'POST', data: integration },
     );
 
     return res.status(201).json(integrationToAgent(created)).end();
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Error creating agent:', error);
-    const status = error?.response?.status || 500;
-    const message = error?.response?.data?.message || 'Failed to create agent';
+    const status = (error as { response?: { status?: number; data?: { message?: string } } })?.response?.status || 500;
+    const message =
+      (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create agent';
     return res.status(status).json({ message }).end();
   }
 };
@@ -208,7 +118,7 @@ export const updateAgent = async (req: RequestWithUser, res: Response) => {
     const existing: IIntegration = await calPublicPluginsService(
       `/api/integrations/${id}`,
       { tenant: req.headers.tenant as string, user: req.headers.user },
-      { method: 'GET' }
+      { method: 'GET' },
     );
 
     if (!existing || !isAgentIntegration(existing)) {
@@ -227,14 +137,15 @@ export const updateAgent = async (req: RequestWithUser, res: Response) => {
     const updated: IIntegration = await calPublicPluginsService(
       `/api/integrations/${id}`,
       { tenant: req.headers.tenant as string, user: req.headers.user },
-      { method: 'PUT', data: updates }
+      { method: 'PUT', data: updates },
     );
 
     return res.json(integrationToAgent(updated)).end();
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Error updating agent:', error);
-    const status = error?.response?.status || 500;
-    const message = error?.response?.data?.message || 'Failed to update agent';
+    const status = (error as { response?: { status?: number } })?.response?.status || 500;
+    const message =
+      (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update agent';
     return res.status(status).json({ message }).end();
   }
 };
@@ -249,7 +160,7 @@ export const deleteAgent = async (req: RequestWithUser, res: Response) => {
     const existing: IIntegration = await calPublicPluginsService(
       `/api/integrations/${id}`,
       { tenant: req.headers.tenant as string, user: req.headers.user },
-      { method: 'GET' }
+      { method: 'GET' },
     );
 
     if (!existing || !isAgentIntegration(existing)) {
@@ -259,14 +170,15 @@ export const deleteAgent = async (req: RequestWithUser, res: Response) => {
     await calPublicPluginsService(
       `/api/integrations/${id}`,
       { tenant: req.headers.tenant as string, user: req.headers.user },
-      { method: 'DELETE' }
+      { method: 'DELETE' },
     );
 
     return res.json({ success: true, message: 'Agent deleted' }).end();
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Error deleting agent:', error);
-    const status = error?.response?.status || 500;
-    const message = error?.response?.data?.message || 'Failed to delete agent';
+    const status = (error as { response?: { status?: number } })?.response?.status || 500;
+    const message =
+      (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to delete agent';
     return res.status(status).json({ message }).end();
   }
 };
@@ -297,13 +209,13 @@ export const agentChat = async (req: any, res: Response) => {
     }
 
     const isSSE = req.method === 'GET';
-    const body = isSSE ? {} : (req.body || {});
+    const body = isSSE ? {} : req.body || {};
 
     let messages = Array.isArray(body.messages) ? body.messages : [];
     if (isSSE) {
       if (typeof req.query.messages === 'string') {
         try {
-          const parsed = JSON.parse(req.query.messages);
+          const parsed = JSON.parse(req.query.messages as string);
           if (Array.isArray(parsed)) messages = parsed;
         } catch {
           // ignore parse errors, fall through to message handling
@@ -321,7 +233,11 @@ export const agentChat = async (req: any, res: Response) => {
     let thread = null;
     const threadIdParam = (isSSE ? req.query.threadId : body.threadId) as string | undefined;
     if (threadIdParam && mongoose.Types.ObjectId.isValid(threadIdParam)) {
-      const filters: any = { _id: threadIdParam, user: req.user._id, integration: integration._id };
+      const filters: Record<string, unknown> = {
+        _id: threadIdParam,
+        user: req.user._id,
+        integration: integration._id,
+      };
       if (req.workspace) filters.workspace = req.workspace._id;
       thread = await Thread.findOne(filters).exec();
       if (!thread) {
@@ -337,7 +253,7 @@ export const agentChat = async (req: any, res: Response) => {
       await thread.save();
     }
 
-    const source = integration.target.source as any;
+    const source = integration.target.source as { _id?: string } | string;
     const sourceId = typeof source === 'string' ? source : source?._id || source;
     const sourceData = await getSourceAuthentication(req.headers.tenant, sourceId);
 
@@ -355,7 +271,7 @@ export const agentChat = async (req: any, res: Response) => {
     }
 
     return chatCompletion(req, res);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Error in agent chat:', error);
     if (!res.headersSent) {
       return res.status(500).json({ message: 'Failed to chat with agent' }).end();

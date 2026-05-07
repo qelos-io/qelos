@@ -108,6 +108,12 @@ export interface IVectorStore {
   created: Date;
 }
 
+export interface IAgentTool {
+  name: string;
+  description: string;
+  schema?: object;
+}
+
 export interface IAgent {
   _id: string;
   name: string;
@@ -118,8 +124,42 @@ export interface IAgent {
   tenant?: string;
   user?: string;
   workspace?: string;
+  systemPrompt?: string;
+  tools?: IAgentTool[];
+  temperature?: number;
+  maxTokens?: number;
+  triggerSource?: string;
+  targetSource?: string;
   created?: Date;
   updated?: Date;
+}
+
+/** Payload for `sdk.ai.agents.create()` — maps to a chat-completion integration */
+export interface ICreateAgentRequest {
+  name: string;
+  model: string;
+  triggerSource: string;
+  targetSource: string;
+  systemPrompt?: string;
+  tools?: IAgentTool[];
+  temperature?: number;
+  maxTokens?: number;
+  workspace?: string;
+  active?: boolean;
+}
+
+/** Partial update for `sdk.ai.agents.update()` */
+export interface IUpdateAgentRequest {
+  name?: string;
+  model?: string;
+  triggerSource?: string;
+  targetSource?: string;
+  systemPrompt?: string;
+  tools?: IAgentTool[];
+  temperature?: number;
+  maxTokens?: number;
+  workspace?: string;
+  active?: boolean;
 }
 
 export interface IAgentChatOptions extends Partial<Omit<IChatCompletionOptions, 'messages'>> {
@@ -128,4 +168,8 @@ export interface IAgentChatOptions extends Partial<Omit<IChatCompletionOptions, 
    * (e.g. system prompt overrides, prior context)
    */
   history?: IMessage[];
+  /**
+   * When set, reuses an existing thread created by a prior agent chat call.
+   */
+  threadId?: string;
 }
