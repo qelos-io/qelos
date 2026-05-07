@@ -10,6 +10,7 @@ import getCommand from './get.mjs';
 import agentCommand from './agent.mjs';
 import globalCommand from './global.mjs';
 import authCommand from './auth.mjs';
+import devCommand from './dev.mjs';
 
 /**
  * Ordered list of all CLI commands.
@@ -29,6 +30,7 @@ export const commands = [
   agentCommand,
   globalCommand,
   authCommand,
+  devCommand,
 ];
 
 /**
