@@ -8,4 +8,7 @@ export {
   unAuthorize
 }
 
+export { QelosChatWidget } from './chat-widget';
+export type { QelosChatWidgetOptions } from './chat-widget';
+
 loadStyles();
