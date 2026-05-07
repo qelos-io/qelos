@@ -1,0 +1,65 @@
+{
+  "name": "@qelos/integrator-fastify",
+  "version": "0.1.0",
+  "description": "Fastify plugin that identifies the Qelos user and active workspace before your route handlers run",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.js",
+      "default": "./dist/types.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "build": "tsc",
+    "pre-build": "tsc",
+    "test": "node --import tsx --test test/**/*.test.ts"
+  },
+  "keywords": [
+    "qelos",
+    "fastify",
+    "fastify-plugin",
+    "middleware",
+    "integrator",
+    "auth"
+  ],
+  "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "fastify": "^4.0.0 || ^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "fastify": {
+      "optional": false
+    }
+  },
+  "dependencies": {
+    "@qelos/sdk": "workspace:^",
+    "fastify-plugin": "^4.5.1 || ^5.0.0"
+  },
+  "devDependencies": {
+    "fastify": "~4.15.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.6.3"
+  }
+}

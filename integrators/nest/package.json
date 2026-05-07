@@ -1,0 +1,72 @@
+{
+  "name": "@qelos/integrator-nest",
+  "version": "0.1.0",
+  "description": "NestJS module that identifies the Qelos user and active workspace before your route handlers run",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.js",
+      "default": "./dist/types.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "build": "tsc",
+    "pre-build": "tsc",
+    "test": "node --import tsx --test test/**/*.test.ts"
+  },
+  "keywords": [
+    "qelos",
+    "nest",
+    "nestjs",
+    "middleware",
+    "guard",
+    "integrator",
+    "auth"
+  ],
+  "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^9.0.0 || ^10.0.0 || ^11.0.0",
+    "@nestjs/core": "^9.0.0 || ^10.0.0 || ^11.0.0",
+    "reflect-metadata": "^0.1.13 || ^0.2.0",
+    "rxjs": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/common": { "optional": false },
+    "@nestjs/core": { "optional": false },
+    "reflect-metadata": { "optional": false },
+    "rxjs": { "optional": false }
+  },
+  "dependencies": {
+    "@qelos/sdk": "workspace:^"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^10.4.5",
+    "@nestjs/core": "^10.4.5",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.6.3"
+  }
+}
