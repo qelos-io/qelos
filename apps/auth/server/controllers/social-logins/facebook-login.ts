@@ -7,7 +7,7 @@ import {
   buildRedirectUri,
   emitFailedSocialLogin,
   extractAuthCode,
-  extractState,
+  buildProviderState,
   findOrCreateUser,
   completeAuthentication,
   UserData,
@@ -43,7 +43,7 @@ export async function loginWithFacebook(req: AuthWithFacebookRequest, res) {
   
   
   const redirectUri = buildRedirectUri(req.headers.tenanthost, '/api/auth/facebook/callback', false);
-  const state = extractState(req);
+  const state = buildProviderState(req);
   const stateParam = state ? `&state=${encodeURIComponent(state)}` : '';
   // Add auth_type=rerequest to prompt user for email permission again
   const facebookAuthUrl = `${FACEBOOK_AUTH_URL}?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(finalScope)}&auth_type=rerequest${stateParam}`;
