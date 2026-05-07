@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ..base_sdk import BaseSDK
 from ..types import QelosSDKOptions
+from .agents import AgentsSDK
 from .chat import ChatSDK, SSEStreamProcessor
 from .rag import RagSDK
 from .threads import ThreadsSDK
@@ -9,12 +10,15 @@ from .types import ClientTool, Message
 
 
 class QlAI(BaseSDK):
-    """Qelos AI SDK with three sub-SDKs: threads, chat, and rag.
+    """Qelos AI SDK with threads, chat, rag, and agents.
 
     Example::
 
         # Create a thread
         thread = await sdk.ai.threads.create({"integration": "id"})
+
+        # Agent chat
+        reply = await sdk.ai.agents.chat("agent-id", "Hello")
 
         # Stream chat
         processor = await sdk.ai.chat.stream("id", {"messages": [...]})
@@ -30,10 +34,12 @@ class QlAI(BaseSDK):
         self.threads = ThreadsSDK(options)
         self.chat = ChatSDK(options)
         self.rag = RagSDK(options)
+        self.agents = AgentsSDK(options, self.chat)
 
 
 __all__ = [
     "QlAI",
+    "AgentsSDK",
     "ThreadsSDK",
     "ChatSDK",
     "RagSDK",
