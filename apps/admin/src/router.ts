@@ -20,6 +20,7 @@ import { integrationsRoutes } from '@/modules/integrations/routes';
 import { adminLogRoutes } from '@/modules/admins/routes';
 import { pricingPlansRoutes } from '@/modules/pricing-plans/routes';
 import { useStaticComponentsStore } from './modules/no-code/store/static-components'
+import appearanceRoutes from '@/modules/configurations/appearance-routes';
 
 // @ts-ignore
 const BASE = import.meta.env.BASE_URL || '/';
@@ -44,6 +45,7 @@ const router = createRouter({
           component: async () => (await import('./modules/core/PrivilegedHome.vue')).default,
         },
         configurationsRoutes,
+        appearanceRoutes,
         assetsRoutes,
         usersRoutes,
         draftsRoutes,

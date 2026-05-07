@@ -201,6 +201,18 @@
         </el-menu-item>
 
         <el-menu-item
+          index="/admin/appearance"
+          :data-title="$t('Appearance')"
+        >
+          <router-link to="/admin/appearance">
+            <el-icon>
+              <font-awesome-icon :icon="['fas', 'palette']" />
+            </el-icon>
+            <span>{{ $t("Appearance") }}</span>
+          </router-link>
+        </el-menu-item>
+
+        <el-menu-item
           index="/plugins"
           :data-title="$t('Plugins')"
         >

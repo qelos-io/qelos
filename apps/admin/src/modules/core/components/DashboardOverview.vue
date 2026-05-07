@@ -1,204 +1,291 @@
 <template>
   <div class="dashboard-overview">
-
     <OpenAiAlert v-if="!groupedSources.openai?.length" />
 
-    <!-- System Status Overview -->
-    <div class="status-overview">
-      <h2 class="section-title">{{ $t('System Status') }}</h2>
-      <div class="status-row-container">
-        <el-row :gutter="20" justify="center">
-          <!-- System Status Cards -->
-          <el-col :xs="24" :sm="12" :md="8" :lg="8" v-for="(status, index) in systemStatus" :key="index" class="status-col">
-            <div class="unified-card" :class="status.status">
-              <div class="status-content">
-                <div class="status-icon">
-                  <font-awesome-icon :icon="status.icon" size="2x" />
-                </div>
-                <div class="status-info">
-                  <h3>{{ status.name }}</h3>
-                  <div class="status-badge">{{ status.status }}</div>
-                </div>
-              </div>
-            </div>
-          </el-col>
-        </el-row>
+    <!-- 1. Entity data overview -->
+    <section class="dash-section">
+      <div class="section-head">
+        <h2 class="section-title section-title-left">{{ $t('Entity data') }}</h2>
+        <p class="section-sub">{{ $t('Document counts and recent blueprint entity activity') }}</p>
       </div>
-    </div>
 
-    <!-- Key Metrics -->
-    <div class="metrics-section">
-      <div class="metrics-header">
-        <h2 class="section-title">{{ $t('Key Metrics') }}</h2>
-        <div class="blueprint-selector" v-if="availableBlueprints.length">
-          <el-popover
-            placement="bottom-end"
-            :width="380"
-            trigger="click"
-            v-model:visible="selectorPopoverVisible"
-          >
-            <template #reference>
-              <el-button
-                type="primary"
-                :icon="Plus"
-                circle
-                class="add-blueprint-btn"
-                :disabled="availableBlueprints.length === 0"
-              >
-              </el-button>
-            </template>
-            <div class="popover-content">
-              <div class="popover-header">
-                <h4>{{ $t('Add Blueprint to Dashboard') }}</h4>
-                <p>{{ $t('Track document counts for your blueprints') }}</p>
-              </div>
-              <el-select
-                v-model="selectedBlueprintToAdd"
-                :placeholder="$t('Choose a blueprint to track...')"
-                clearable
-                filterable
-                @change="addBlueprintToDashboard"
-                class="blueprint-select-popover"
-                size="default"
-                :loading="loadingBlueprints"
-                style="width: 100%"
-              >
-                <template #prefix>
-                  <font-awesome-icon :icon="['fas', 'search']" class="select-prefix-icon" />
-                </template>
-                <el-option
-                  v-for="blueprint in availableBlueprints"
-                  :key="blueprint.identifier"
-                  :label="blueprint.name"
-                  :value="blueprint.identifier"
-                  class="blueprint-option"
+      <div class="metrics-section inner-metrics">
+        <div class="metrics-header">
+          <span />
+          <div class="blueprint-selector" v-if="availableBlueprints.length">
+            <el-popover
+              placement="bottom-end"
+              :width="380"
+              trigger="click"
+              v-model:visible="selectorPopoverVisible"
+            >
+              <template #reference>
+                <el-button
+                  type="primary"
+                  :icon="Plus"
+                  circle
+                  class="add-blueprint-btn"
+                  :disabled="availableBlueprints.length === 0"
+                />
+              </template>
+              <div class="popover-content">
+                <div class="popover-header">
+                  <h4>{{ $t('Add Blueprint to Dashboard') }}</h4>
+                  <p>{{ $t('Track document counts for your blueprints') }}</p>
+                </div>
+                <el-select
+                  v-model="selectedBlueprintToAdd"
+                  :placeholder="$t('Choose a blueprint to track...')"
+                  clearable
+                  filterable
+                  @change="addBlueprintToDashboard"
+                  class="blueprint-select-popover"
+                  size="default"
+                  :loading="loadingBlueprints"
+                  style="width: 100%"
                 >
-                  <div class="option-content">
-                    <div class="option-text">
-                      <span class="option-name">{{ blueprint.name }}</span>
+                  <template #prefix>
+                    <font-awesome-icon :icon="['fas', 'search']" class="select-prefix-icon" />
+                  </template>
+                  <el-option
+                    v-for="blueprint in availableBlueprints"
+                    :key="blueprint.identifier"
+                    :label="blueprint.name"
+                    :value="blueprint.identifier"
+                    class="blueprint-option"
+                  >
+                    <div class="option-content">
+                      <div class="option-text">
+                        <span class="option-name">{{ blueprint.name }}</span>
+                      </div>
                     </div>
-                  </div>
-                </el-option>
-                <template #empty>
-                  <div class="empty-state">
-                    <font-awesome-icon :icon="['fas', 'check-circle']" class="empty-icon" />
-                    <span>{{ $t('All blueprints are already added') }}</span>
-                  </div>
-                </template>
-              </el-select>
-            </div>
-          </el-popover>
-        </div>
-      </div>
-      <div class="metrics-grid">
-        <div class="unified-card" v-if="!loadingBlocks">
-          <StatsCard
-            color="cyan"
-            :value="blocks?.length"
-            title="Total Content Boxes"
-            actionText="View Content Boxes"
-            actionRoute="/blocks"
-            icon="box"
-          />
-        </div>
-        <div class="unified-card" v-if="!loadingStats">
-          <StatsCard
-            color="blue"
-            :value="stats.users"
-            title="Total Users"
-            actionText="View Users"
-            actionRoute="/users"
-            :fa-icon="['fas', 'users']"
-          />
-        </div>
-        <div class="unified-card" v-if="!loadingStats && wsConfig.isActive">
-          <StatsCard
-            :value="stats.workspaces"
-            color="purple"
-            title="Total Workspaces"
-            actionText="View Workspaces"
-            actionRoute="/admin/workspaces"
-            :fa-icon="['fas', 'briefcase']"
-          />
-        </div>
-        <div class="unified-card" v-if="!loadingPlugins">
-          <StatsCard
-            :value="plugins.length"
-            color="green"
-            title="Active Plugins"
-            actionText="Manage Plugins"
-            actionRoute="/plugins"
-            :fa-icon="['fas', 'puzzle-piece']"
-          />
-        </div>
-        
-        <!-- Blueprint Metrics Cards -->
-        <div class="unified-card blueprint-metric" v-for="(blueprintStatus, index) in blueprintStatusCards" :key="`blueprint-${index}`">
-          <div class="blueprint-card-content">
-            <div class="blueprint-header">
-              <div class="blueprint-icon">
-                <font-awesome-icon :icon="['fas', 'database']" />
+                  </el-option>
+                  <template #empty>
+                    <div class="empty-state">
+                      <font-awesome-icon :icon="['fas', 'check-circle']" class="empty-icon" />
+                      <span>{{ $t('All blueprints are already added') }}</span>
+                    </div>
+                  </template>
+                </el-select>
               </div>
-              <el-button 
-                type="danger" 
-                size="small" 
-                text 
-                @click="removeBlueprintFromDashboard(blueprintStatus.identifier)"
-                class="remove-button"
-              >
-                <font-awesome-icon :icon="['fas', 'times']" />
-              </el-button>
-            </div>
-            <div class="blueprint-info">
-              <h3>{{ blueprintStatus.name }}</h3>
-              <p class="blueprint-description" v-if="blueprintStatus.description">{{ blueprintStatus.description }}</p>
-              <div class="blueprint-count">
-                {{ blueprintStatus.loading ? $t('Loading...') : blueprintStatus.count }}
+            </el-popover>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="unified-card" v-if="!loadingBlocks">
+            <StatsCard
+              color="cyan"
+              :value="blocks?.length"
+              title="Total Content Boxes"
+              actionText="View Content Boxes"
+              actionRoute="/blocks"
+              icon="box"
+            />
+          </div>
+          <div class="unified-card" v-if="!loadingStats">
+            <StatsCard
+              color="blue"
+              :value="stats.users"
+              title="Total Users"
+              actionText="View Users"
+              actionRoute="/users"
+              :fa-icon="['fas', 'users']"
+            />
+          </div>
+          <div class="unified-card" v-if="!loadingStats && wsConfig.isActive">
+            <StatsCard
+              :value="stats.workspaces"
+              color="purple"
+              title="Total Workspaces"
+              actionText="View Workspaces"
+              actionRoute="/admin/workspaces"
+              :fa-icon="['fas', 'briefcase']"
+            />
+          </div>
+          <div class="unified-card" v-if="!loadingPlugins">
+            <StatsCard
+              :value="plugins.length"
+              color="green"
+              title="Active Plugins"
+              actionText="Manage Plugins"
+              actionRoute="/plugins"
+              :fa-icon="['fas', 'puzzle-piece']"
+            />
+          </div>
+
+          <div class="unified-card blueprint-metric" v-for="(blueprintStatus, index) in blueprintStatusCards" :key="`blueprint-${index}`">
+            <div class="blueprint-card-content">
+              <div class="blueprint-header">
+                <div class="blueprint-icon">
+                  <font-awesome-icon :icon="['fas', 'database']" />
+                </div>
+                <el-button
+                  type="danger"
+                  size="small"
+                  text
+                  @click="removeBlueprintFromDashboard(blueprintStatus.identifier)"
+                  class="remove-button"
+                >
+                  <font-awesome-icon :icon="['fas', 'times']" />
+                </el-button>
               </div>
-              <p class="blueprint-label">{{ $t('Documents') }}</p>
+              <div class="blueprint-info">
+                <h3>{{ blueprintStatus.name }}</h3>
+                <p class="blueprint-description" v-if="blueprintStatus.description">{{ blueprintStatus.description }}</p>
+                <div class="blueprint-count">
+                  {{ blueprintStatus.loading ? $t('Loading...') : blueprintStatus.count }}
+                </div>
+                <p class="blueprint-label">{{ $t('Documents') }}</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Activity Chart -->
-    <div class="chart-container">
-      <div class="unified-card" v-if="activityChartOption">
-        <VChart :option="activityChartOption" autoresize />
+      <div class="unified-card entity-events-card">
+        <h3 class="table-card-title">{{ $t('Recent entity activity') }}</h3>
+        <el-table v-loading="loadingEntityEvents" :data="entityActivityEvents" stripe empty-text="—" class="compact-table" dir="ltr">
+          <el-table-column prop="created" :label="$t('When')" width="160">
+            <template #default="{ row }">{{ formatEventTime(row.created) }}</template>
+          </el-table-column>
+          <el-table-column prop="kind" :label="$t('Blueprint')" min-width="140">
+            <template #default="{ row }">{{ blueprintLabel(row.kind) }}</template>
+          </el-table-column>
+          <el-table-column prop="eventName" :label="$t('Action')" width="120" />
+          <el-table-column prop="description" :label="$t('Summary')" min-width="200" show-overflow-tooltip />
+        </el-table>
       </div>
-      <div class="chart-filters">
-        <el-radio-group v-model="activityTimeframe" size="small">
-          <el-radio-button label="day">{{ $t('24h') }}</el-radio-button>
-          <el-radio-button label="week">{{ $t('Week') }}</el-radio-button>
-          <el-radio-button label="month">{{ $t('Month') }}</el-radio-button>
-        </el-radio-group>
-      </div>
-    </div>
+    </section>
 
-    <!-- Quick Actions -->
-    <div class="quick-actions-grid">
-      <router-link 
-        v-for="(action, index) in quickActions" 
-        :key="index" 
-        :to="action.route" 
-        class="quick-action-link"
-      >
-        <div class="quick-action-card">
-          <div class="action-icon-container">
-            <div class="action-icon">
-              <font-awesome-icon :icon="action.icon" />
+    <!-- 2. AI activity -->
+    <section class="dash-section">
+      <div class="section-head">
+        <h2 class="section-title section-title-left">{{ $t('AI activity') }}</h2>
+        <p class="section-sub">{{ $t('Conversation threads and recorded token usage') }}</p>
+      </div>
+
+      <el-row :gutter="16" class="token-row">
+        <el-col :xs="24" :sm="12">
+          <div class="unified-card token-card">
+            <div class="token-label">{{ $t('Tokens (7 days)') }}</div>
+            <div class="token-value">{{ formatNum(tokensWeek) }}</div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12">
+          <div class="unified-card token-card">
+            <div class="token-label">{{ $t('Tokens (24 hours)') }}</div>
+            <div class="token-value">{{ formatNum(tokensDay) }}</div>
+          </div>
+        </el-col>
+      </el-row>
+
+      <div class="unified-card threads-card">
+        <h3 class="table-card-title">{{ $t('Recent conversations') }}</h3>
+        <el-table v-loading="loadingThreads" :data="recentThreads" stripe empty-text="—" class="compact-table" dir="ltr">
+          <el-table-column prop="title" :label="$t('Thread')" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="updated" :label="$t('Updated')" width="170">
+            <template #default="{ row }">{{ formatEventTime(row.updated) }}</template>
+          </el-table-column>
+          <el-table-column prop="integration" :label="$t('Integration')" width="120" show-overflow-tooltip />
+        </el-table>
+      </div>
+    </section>
+
+    <!-- 3. Recent platform events -->
+    <section class="dash-section">
+      <div class="section-head">
+        <h2 class="section-title section-title-left">{{ $t('Recent platform events') }}</h2>
+        <router-link class="section-link" :to="{ name: 'log' }">{{ $t('Events log') }}</router-link>
+      </div>
+      <div class="unified-card">
+        <el-table v-loading="loadingRecentEvents" :data="recentPlatformEvents" stripe empty-text="—" class="compact-table" dir="ltr">
+          <el-table-column prop="created" :label="$t('When')" width="160">
+            <template #default="{ row }">{{ formatEventTime(row.created) }}</template>
+          </el-table-column>
+          <el-table-column prop="source" :label="$t('Source')" width="120" show-overflow-tooltip />
+          <el-table-column prop="kind" :label="$t('Kind')" width="120" show-overflow-tooltip />
+          <el-table-column prop="eventName" :label="$t('Event')" width="140" show-overflow-tooltip />
+          <el-table-column prop="description" :label="$t('Description')" min-width="200" show-overflow-tooltip />
+        </el-table>
+      </div>
+    </section>
+
+    <!-- 4. Quick actions -->
+    <section class="dash-section">
+      <div class="section-head">
+        <h2 class="section-title section-title-left">{{ $t('Quick actions') }}</h2>
+      </div>
+      <div class="quick-actions-grid">
+        <router-link v-for="(action, index) in quickActions" :key="index" :to="action.route" class="quick-action-link">
+          <div class="quick-action-card">
+            <div class="action-icon-container">
+              <div class="action-icon">
+                <font-awesome-icon :icon="action.icon" />
+              </div>
+            </div>
+            <div class="action-content">
+              <h3 class="action-title">{{ action.text }}</h3>
+              <div class="action-arrow">
+                <font-awesome-icon :icon="['fas', 'arrow-right']" />
+              </div>
             </div>
           </div>
-          <div class="action-content">
-            <h3 class="action-title">{{ action.text }}</h3>
-            <div class="action-arrow">
-              <font-awesome-icon :icon="['fas', 'arrow-right']" />
-            </div>
+        </router-link>
+      </div>
+    </section>
+
+    <!-- 5. API & platform health (from platform event throughput — gateway traffic is reflected in the events stream) -->
+    <section class="dash-section">
+      <div class="section-head">
+        <h2 class="section-title section-title-left">{{ $t('API & platform health') }}</h2>
+        <p class="section-sub">
+          {{ $t('Signals derived from platform events (last 24 hours), including provider and auth failures.') }}
+        </p>
+      </div>
+      <el-row :gutter="16">
+        <el-col :xs="24" :sm="8">
+          <div class="unified-card health-card" v-loading="loadingHealth">
+            <div class="health-label">{{ $t('Platform events (24h)') }}</div>
+            <div class="health-value">{{ formatNum(throughput24h) }}</div>
+            <p class="health-hint">{{ $t('Total recorded events — correlates with API and subsystem activity') }}</p>
           </div>
+        </el-col>
+        <el-col :xs="24" :sm="8">
+          <div class="unified-card health-card" v-loading="loadingHealth">
+            <div class="health-label">{{ $t('Error signals (24h)') }}</div>
+            <div class="health-value">{{ formatNum(errorSignals24h) }}</div>
+            <p class="health-hint">{{ $t('AI provider failures and failed social logins') }}</p>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="8">
+          <div class="unified-card health-card" v-loading="loadingHealth">
+            <div class="health-label">{{ $t('Error rate (estimate)') }}</div>
+            <div class="health-value">{{ errorRateDisplay }}</div>
+            <p class="health-hint">{{ $t('Error signals divided by platform events in the same window') }}</p>
+          </div>
+        </el-col>
+      </el-row>
+    </section>
+
+    <!-- Trends: signups & workspace activity -->
+    <section class="dash-section">
+      <div class="section-head">
+        <h2 class="section-title section-title-left">{{ $t('Signups & workspace activity') }}</h2>
+      </div>
+      <div class="chart-container">
+        <div class="unified-card" v-if="activityChartOption">
+          <VChart :option="activityChartOption" autoresize />
         </div>
-      </router-link>
-    </div>
+        <div class="chart-filters">
+          <el-radio-group v-model="activityTimeframe" size="small">
+            <el-radio-button label="day">{{ $t('24h') }}</el-radio-button>
+            <el-radio-button label="week">{{ $t('Week') }}</el-radio-button>
+            <el-radio-button label="month">{{ $t('Month') }}</el-radio-button>
+          </el-radio-group>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -219,125 +306,206 @@ import OpenAiAlert from '@/modules/core/components/forms/OpenAiAlert.vue';
 import { Plus } from '@element-plus/icons-vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
+import sdk from '@/services/sdk';
+import eventsService, { type IEvent } from '@/services/apis/events-service';
+import type { IThread } from '@qelos/sdk/ai';
 
 const { loading: loadingBlocks, blocks } = toRefs(useBlocksList());
 const { loading: loadingStats, stats } = useUsersStats();
-const { systemStatus, activityChartOption, activityTimeframe } = toRefs(useAdminEvents());
+const { activityChartOption, activityTimeframe } = toRefs(useAdminEvents());
 const { t } = useI18n();
 
 const wsConfig = useWsConfiguration();
 const { groupedSources } = toRefs(useIntegrationSourcesStore());
 
-// Load plugins data
 const pluginsStore = usePluginsList();
 const { loading: loadingPlugins, plugins } = toRefs(pluginsStore);
 
-// Load blueprints data
 const blueprintsStore = useBlueprintsStore();
 const { loading: loadingBlueprints, blueprints } = toRefs(blueprintsStore);
 
-// Quick actions - defined as array of all possible actions
-const allQuickActions = [
-  { 
-    text: t('Create Blueprint'), 
-    icon: ['fas', 'plus-circle'], 
-    route: { name: 'createBlueprint' }
-  },
-  { 
-    text: t('Manage Users'), 
-    icon: ['fas', 'users-cog'], 
-    route: '/users'
-  },
-  { 
-    text: t('App Settings'), 
-    icon: ['fas', 'cog'], 
-    route: { name: 'editConfiguration', params: { key: 'app-configuration' }}
-  },
-  { 
-    text: t('Manage Workspaces'), 
-    icon: ['fas', 'briefcase'], 
-    route: '/admin/workspaces'
-  },
-  { 
-    text: t('Manage Plugins'), 
-    icon: ['fas', 'puzzle-piece'], 
-    route: '/plugins'
-  },
-  { 
-    text: t('View Content Boxes'), 
-    icon: ['fas', 'cubes'], 
-    route: '/admin/blocks'
-  },
-  {
-    text: t('Manage Integrations'),
-    icon: ['fas', 'arrows-turn-to-dots'],
-    route: '/integrations'
-  },
-  {
-    text: t('Pricing Plans'),
-    icon: ['fas', 'tags'],
-    route: '/admin/pricing-plans'
-  }
+const quickActions = [
+  { text: t('Create entity'), icon: ['fas', 'cube'], route: '/no-code/blueprints' },
+  { text: t('Manage AI & integrations'), icon: ['fas', 'robot'], route: '/integrations' },
+  { text: t('API keys'), icon: ['fas', 'key'], route: '/users/me/api-tokens' },
+  { text: t('Events Log'), icon: ['fas', 'clipboard-list'], route: '/admin/log' },
+  { text: t('Create Blueprint'), icon: ['fas', 'plus-circle'], route: { name: 'createBlueprint' } },
+  { text: t('Manage Users'), icon: ['fas', 'users-cog'], route: '/users' },
 ];
 
-// Computed property that filters out Manage Workspaces when wsConfig.isActive is false
-const quickActions = computed(() => {
-  return allQuickActions.filter(action => {
-    // Filter out Manage Workspaces when wsConfig.isActive is false
-    if (action.route === '/admin/workspaces' && !wsConfig.isActive) {
-      return false;
-    }
-    return true;
-  });
-});
-
-// Blueprint selection functionality
 const selectedBlueprintToAdd = ref('');
 const blueprintCounts = ref<Record<string, { loading: boolean; count: number }>>({});
 const userMetadataStore = useUserMetadataStore();
 const selectorPopoverVisible = ref(false);
 
-// Load user's selected blueprints from internal metadata
+const loadingEntityEvents = ref(false);
+const entityActivityEvents = ref<IEvent[]>([]);
+
+const loadingThreads = ref(false);
+const recentThreads = ref<IThread[]>([]);
+
+const tokensWeek = ref(0);
+const tokensDay = ref(0);
+
+const loadingRecentEvents = ref(false);
+const recentPlatformEvents = ref<IEvent[]>([]);
+
+const loadingHealth = ref(false);
+const throughput24h = ref(0);
+const aiProviderErrors24h = ref(0);
+const authFailures24h = ref(0);
+
+const errorSignals24h = computed(() => aiProviderErrors24h.value + authFailures24h.value);
+
+const errorRateDisplay = computed(() => {
+  const d = throughput24h.value;
+  if (!d) return '—';
+  const pct = (errorSignals24h.value / d) * 100;
+  return `${pct < 0.01 ? pct.toFixed(3) : pct.toFixed(2)}%`;
+});
+
+function formatNum(n: number) {
+  if (n === undefined || n === null || Number.isNaN(n)) return '—';
+  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(n);
+}
+
+function formatEventTime(value: Date | string | undefined) {
+  if (!value) return '—';
+  const d = typeof value === 'string' ? new Date(value) : value;
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'short' }).format(d);
+}
+
+function blueprintLabel(identifier: string) {
+  const bp = blueprints.value.find((b) => b.identifier === identifier);
+  return bp?.name || identifier;
+}
+
+async function loadEntityActivity() {
+  loadingEntityEvents.value = true;
+  try {
+    const res = await eventsService.getAll({
+      source: 'blueprints',
+      period: 'last-week',
+      limit: 20,
+      page: 0,
+    });
+    entityActivityEvents.value = res.events || [];
+  } catch {
+    entityActivityEvents.value = [];
+  } finally {
+    loadingEntityEvents.value = false;
+  }
+}
+
+async function loadAiActivity() {
+  loadingThreads.value = true;
+  try {
+    const [threads, sumWeek, sumDay] = await Promise.all([
+      sdk.ai.threads.list({ limit: 12, sort: '-updated' }),
+      eventsService.getSum({
+        sum: 'usage.total_tokens',
+        kind: 'ai_service',
+        eventName: 'token_usage',
+        period: 'last-week',
+      }),
+      eventsService.getSum({
+        sum: 'usage.total_tokens',
+        kind: 'ai_service',
+        eventName: 'token_usage',
+        period: 'last-day',
+      }),
+    ]);
+    recentThreads.value = Array.isArray(threads) ? threads : [];
+    tokensWeek.value = 'sum' in sumWeek ? sumWeek.sum : 0;
+    tokensDay.value = 'sum' in sumDay ? sumDay.sum : 0;
+  } catch {
+    recentThreads.value = [];
+    tokensWeek.value = 0;
+    tokensDay.value = 0;
+  } finally {
+    loadingThreads.value = false;
+  }
+}
+
+async function loadRecentPlatformEvents() {
+  loadingRecentEvents.value = true;
+  try {
+    const res = await eventsService.getAll({
+      period: 'last-week',
+      limit: 15,
+      page: 0,
+    });
+    recentPlatformEvents.value = res.events || [];
+  } catch {
+    recentPlatformEvents.value = [];
+  } finally {
+    loadingRecentEvents.value = false;
+  }
+}
+
+async function loadHealth() {
+  loadingHealth.value = true;
+  try {
+    const [through, aiErr, authFail] = await Promise.all([
+      eventsService.getCount({ period: 'last-day' }),
+      eventsService.getCount({ period: 'last-day', kind: 'ai_provider' }),
+      eventsService.getCount({ period: 'last-day', kind: 'failed-social-login', source: 'auth' }),
+    ]);
+    throughput24h.value = through.count;
+    aiProviderErrors24h.value = aiErr.count;
+    authFailures24h.value = authFail.count;
+  } catch {
+    throughput24h.value = 0;
+    aiProviderErrors24h.value = 0;
+    authFailures24h.value = 0;
+  } finally {
+    loadingHealth.value = false;
+  }
+}
+
 onMounted(async () => {
   if (authStore.user) {
     await userMetadataStore.promise;
-    
-    // Load counts for selected blueprints
     for (const identifier of userMetadataStore.selectedDashboardBlueprints) {
       await loadBlueprintCount(identifier);
     }
   }
+
+  await Promise.all([
+    loadEntityActivity(),
+    loadAiActivity(),
+    loadRecentPlatformEvents(),
+    loadHealth(),
+  ]);
 });
 
 const availableBlueprints = computed(() => {
-  return blueprints.value.filter(blueprint => 
-    !userMetadataStore.selectedDashboardBlueprints.includes(blueprint.identifier)
-  );
+  return blueprints.value.filter((blueprint) => !userMetadataStore.selectedDashboardBlueprints.includes(blueprint.identifier));
 });
 
 const blueprintStatusCards = computed(() => {
-  return userMetadataStore.selectedDashboardBlueprints.map(identifier => {
-    const blueprint = blueprints.value.find(bp => bp.identifier === identifier);
+  return userMetadataStore.selectedDashboardBlueprints.map((identifier) => {
+    const blueprint = blueprints.value.find((bp) => bp.identifier === identifier);
     const countData = blueprintCounts.value[identifier] || { loading: true, count: 0 };
-    
+
     return {
       identifier,
       name: blueprint?.name || identifier,
       description: blueprint?.description || '',
       loading: countData.loading,
-      count: countData.count
+      count: countData.count,
     };
   });
 });
 
 async function loadBlueprintCount(identifier: string) {
   blueprintCounts.value[identifier] = { loading: true, count: 0 };
-  
+
   try {
     const response = await api.get(`/api/blueprints/${identifier}/charts/count`);
-    blueprintCounts.value[identifier] = { 
-      loading: false, 
-      count: response.data.count || 0 
+    blueprintCounts.value[identifier] = {
+      loading: false,
+      count: response.data.count || 0,
     };
   } catch (error) {
     console.error(`Failed to load count for blueprint ${identifier}:`, error);
@@ -347,15 +515,14 @@ async function loadBlueprintCount(identifier: string) {
 
 async function addBlueprintToDashboard(identifier: string) {
   if (!identifier || !authStore.user) return;
-  
+
   const updatedBlueprints = [...userMetadataStore.selectedDashboardBlueprints, identifier];
-  
+
   try {
     await userMetadataStore.updateSelectedDashboardBlueprints(updatedBlueprints);
     selectedBlueprintToAdd.value = '';
-    selectorPopoverVisible.value = false; // Close the popover
-    
-    // Load count for the new blueprint
+    selectorPopoverVisible.value = false;
+
     await loadBlueprintCount(identifier);
   } catch (error) {
     console.error('Failed to add blueprint to dashboard:', error);
@@ -364,13 +531,12 @@ async function addBlueprintToDashboard(identifier: string) {
 
 async function removeBlueprintFromDashboard(identifier: string) {
   if (!authStore.user) return;
-  
-  const updatedBlueprints = userMetadataStore.selectedDashboardBlueprints.filter(id => id !== identifier);
-  
+
+  const updatedBlueprints = userMetadataStore.selectedDashboardBlueprints.filter((id) => id !== identifier);
+
   try {
     await userMetadataStore.updateSelectedDashboardBlueprints(updatedBlueprints);
-    
-    // Remove count data
+
     delete blueprintCounts.value[identifier];
   } catch (error) {
     console.error('Failed to remove blueprint from dashboard:', error);
@@ -379,9 +545,21 @@ async function removeBlueprintFromDashboard(identifier: string) {
 </script>
 
 <style scoped lang="scss">
-/* Dashboard Overview Styles */
 .dashboard-overview {
   padding: 0 20px 30px;
+}
+
+.dash-section {
+  margin-bottom: 36px;
+}
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .section-title {
@@ -389,70 +567,92 @@ async function removeBlueprintFromDashboard(identifier: string) {
   font-weight: 600;
   color: #2c3e50;
   margin: 0;
-  text-align: center;
 }
 
-/* System Status Styles */
-.status-overview {
-  margin-bottom: 40px;
+.section-title-left {
+  text-align: start;
+  width: 100%;
 }
 
-.status-row-container {
-  max-width: 1200px;
-  margin: 0 auto;
+.section-sub {
+  margin: 4px 0 0;
+  width: 100%;
+  font-size: 14px;
+  color: #64748b;
 }
 
-.status-col {
+.section-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--main-color);
+}
+
+.inner-metrics {
   margin-bottom: 20px;
 }
 
-.status-content {
-  display: flex;
-  align-items: center;
-  padding: 20px;
-  min-width: 240px;
-  gap: 16px;
+.entity-events-card,
+.threads-card {
+  padding: 16px 20px 20px;
 }
 
-.status-icon {
-  color: var(--main-color);
-  min-width: 48px;
-}
-
-.status-info h3 {
-  margin: 0 0 8px 0;
+.table-card-title {
+  margin: 0 0 12px;
   font-size: 16px;
   font-weight: 600;
   color: #2c3e50;
 }
 
-.status-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
+.compact-table {
+  width: 100%;
+}
+
+.token-row {
+  margin-bottom: 16px;
+}
+
+.token-card {
+  padding: 20px;
+}
+
+.token-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.token-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--main-color);
+}
+
+.health-card {
+  padding: 20px;
+  min-height: 140px;
+}
+
+.health-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.health-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.health-hint {
+  margin: 12px 0 0;
   font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: #94a3b8;
+  line-height: 1.4;
 }
 
-.unified-card.operational .status-badge {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.unified-card.degraded .status-badge {
-  background-color: #fff3cd;
-  color: #856404;
-}
-
-.unified-card.outage .status-badge {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-/* Metrics Section */
 .metrics-section {
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 }
 
 .metrics-header {
@@ -607,7 +807,6 @@ async function removeBlueprintFromDashboard(identifier: string) {
   color: #28a745;
 }
 
-/* Metrics Grid - Updated to use unified cards */
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -624,7 +823,6 @@ async function removeBlueprintFromDashboard(identifier: string) {
   }
 }
 
-/* Blueprint Metrics Cards */
 .blueprint-metric .blueprint-card-content {
   padding: 20px;
 }
@@ -685,7 +883,6 @@ async function removeBlueprintFromDashboard(identifier: string) {
   letter-spacing: 0.5px;
 }
 
-/* Chart Container - Updated styling */
 .chart-container {
   margin: 20px auto 30px auto;
   max-width: 1200px;
@@ -698,7 +895,6 @@ async function removeBlueprintFromDashboard(identifier: string) {
   padding: 0 4px;
 }
 
-/* Quick Actions Grid */
 .quick-actions-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -809,7 +1005,6 @@ async function removeBlueprintFromDashboard(identifier: string) {
   transform: translateX(0);
 }
 
-/* Unified Card System */
 .unified-card {
   background: linear-gradient(145deg, #ffffff, #f8f9fa);
   border: 1px solid rgba(0, 0, 0, 0.06);
@@ -843,69 +1038,51 @@ async function removeBlueprintFromDashboard(identifier: string) {
   opacity: 1;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .metrics-grid,
   .quick-actions-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .chart-container {
     margin: 16px auto 24px auto;
   }
-  
+
   .unified-card {
     margin-bottom: 16px;
   }
-  
+
   .quick-action-card {
     height: 160px;
     padding: 24px 20px;
   }
-  
+
   .action-icon {
     width: 48px;
     height: 48px;
     font-size: 20px;
   }
-  
+
   .action-title {
     font-size: 15px;
   }
-  
+
   .metrics-header {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
   }
-  
+
   .section-title {
     text-align: left;
     font-size: 20px;
     margin: 0;
   }
-  
+
   .blueprint-selector {
     flex-shrink: 0;
-  }
-
-  .selector-container {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    min-width: auto;
-    padding: 12px;
-  }
-
-  .selector-label {
-    justify-content: center;
-    font-size: 13px;
-  }
-
-  .blueprint-select {
-    min-width: auto;
   }
 }
 
@@ -914,28 +1091,27 @@ async function removeBlueprintFromDashboard(identifier: string) {
   .metrics-grid {
     gap: 12px;
   }
-  
+
   .quick-action-card {
     height: 140px;
     padding: 20px 16px;
   }
-  
+
   .action-icon {
     width: 44px;
     height: 44px;
     font-size: 18px;
   }
-  
+
   .action-title {
     font-size: 14px;
   }
-  
+
   .dashboard-overview {
     padding: 0 12px 20px;
   }
 }
 
-/* Popover Styles */
 .el-popover {
   padding: 0;
   border: none;
