@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
+import { getDefaultQelosConfig } from './env-config';
 import { createRequestSdk } from './sdk-factory';
 import type {
   QelosNextConfig,
@@ -53,13 +54,21 @@ export interface GetQelosContextOptions {
   }) => IWorkspace | null | Promise<IWorkspace | null>;
 }
 
+interface CookieJar {
+  get: (name: string) => { value: string } | undefined;
+}
+interface HeaderBag {
+  get: (name: string) => string | null;
+}
+
+/**
+ * `next/headers` typing differs between Next 14 (sync return) and Next 15
+ * (Promise return). Both shapes are accepted — we always `await` the result
+ * so the call site does not need to branch on the Next.js version.
+ */
 interface NextHeadersModule {
-  cookies: () => {
-    get: (name: string) => { value: string } | undefined;
-  };
-  headers: () => {
-    get: (name: string) => string | null;
-  };
+  cookies: () => CookieJar | Promise<CookieJar>;
+  headers: () => HeaderBag | Promise<HeaderBag>;
 }
 
 let nextHeadersModulePromise: Promise<NextHeadersModule> | null = null;
@@ -79,8 +88,8 @@ async function readTokensFromHeaders(
   const { cookies, headers } = await loadNextHeaders();
   const accessCookie = config.accessTokenCookie || DEFAULT_ACCESS_COOKIE;
   const refreshCookie = config.refreshTokenCookie || DEFAULT_REFRESH_COOKIE;
-  const jar = await Promise.resolve(cookies());
-  const hdr = await Promise.resolve(headers());
+  const jar = await cookies();
+  const hdr = await headers();
   const cookieAccess = jar.get(accessCookie)?.value;
   const cookieRefresh = jar.get(refreshCookie)?.value;
   const authHeader = hdr.get('authorization');
@@ -99,17 +108,22 @@ async function readTokensFromHeaders(
  * return the Qelos context. Safe to call multiple times within the same
  * request — each call performs its own SDK round-trip, so wrap it with
  * React's `cache()` if you want a single resolution per render.
+ *
+ * Calling without arguments uses the env-derived config (see
+ * {@link loadQelosConfigFromEnv}); pass `{ config }` explicitly when you
+ * need full control or want to override resolution behavior.
  */
 export async function getQelosContext(
-  options: GetQelosContextOptions
+  options?: GetQelosContextOptions
 ): Promise<QelosRequestContext> {
-  const { config, resolveWorkspace } = options;
+  const resolved: GetQelosContextOptions = options ?? { config: getDefaultQelosConfig() };
+  const { config, resolveWorkspace } = resolved;
   const tokens = await readTokensFromHeaders(config);
   const sdk = createRequestSdk<null>({
     config,
     tokens,
     refreshTarget: null,
-    onTokenRefresh: options.onTokenRefresh,
+    onTokenRefresh: resolved.onTokenRefresh,
   });
   const ctx: QelosRequestContext = {
     user: null,

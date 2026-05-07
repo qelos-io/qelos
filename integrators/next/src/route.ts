@@ -23,14 +23,16 @@ export type QelosAppRouteHandler<TContext = unknown> = (
  * via `getStoredQelosContext()` from anywhere in the handler's async stack.
  * Anonymous requests pass through with `qelos.user = null` unless
  * `options.config.requireAuth` is set.
+ *
+ * Omit `options` to use the env-derived default config.
  */
 export function withQelosRoute<TContext = unknown>(
   handler: QelosAppRouteHandler<TContext>,
-  options: GetQelosContextOptions
+  options?: GetQelosContextOptions
 ): AppRouteHandler<TContext> {
   return async function qelosRouteHandler(req, ctx) {
     const qelos = await getQelosContext(options);
-    if (options.config.requireAuth && !qelos.user) {
+    if (options?.config.requireAuth && !qelos.user) {
       return NextResponse.json({ code: 'UNAUTHORIZED' }, { status: 401 });
     }
     return await runWithQelosContext(qelos, () =>
