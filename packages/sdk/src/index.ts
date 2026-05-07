@@ -6,6 +6,7 @@ import QlAuthentication from './authentication';
 import QlWorkspaces from './workspaces';
 import QlInvites from './invites';
 import QlBlueprints from './blueprints';
+import QlBlueprintEntities from './blueprints-entities';
 import QlAI from './ai';
 import QlLambdas from './lambdas';
 import QlPayments from './payments';
@@ -62,6 +63,10 @@ export default class QelosSDK extends BaseSDK {
         return { ...this.#customHeaders }
       }
     }
+  }
+
+  entities<T = any>(blueprintKey: string): QlBlueprintEntities<T> {
+    return this.blueprints.entitiesOf<T>(blueprintKey);
   }
 
   setCustomHeader(key: string, value: string) {
