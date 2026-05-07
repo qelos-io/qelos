@@ -9,7 +9,7 @@ A command-line interface to help you create and manage your Qelos plugins.
 Install the CLI globally using npm:
 
 ```bash
-npm install -g @qelos/plugins-cli
+npm install -g @qelos/cli
 ```
 
 After installation, the CLI will be available as both `qelos` and `qplay` commands:

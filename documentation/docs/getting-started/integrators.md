@@ -58,7 +58,7 @@ QELOS_API_TOKEN=ql_your_api_token_here
 Install the Qelos CLI globally:
 
 ```bash
-npm install -g @qelos/plugins-cli
+npm install -g @qelos/cli
 ```
 
 After installation, both `qelos` and `qplay` commands are available:
