@@ -6,27 +6,19 @@ user and their active workspace before your handlers run, exposing them on
 
 Example::
 
-    from fastapi import FastAPI, Depends
+    from fastapi import Depends, FastAPI
     from qelos_integrator_fastapi import (
-        QelosIntegratorMiddleware,
-        QelosConfig,
-        get_qelos,
-        require_user,
+        qelos_middleware,
+        get_qelos_user,
+        QelosUser,
     )
 
     app = FastAPI()
-    app.add_middleware(
-        QelosIntegratorMiddleware,
-        config=QelosConfig(app_url="https://yourdomain.com"),
-    )
+    app.add_middleware(qelos_middleware, app_url="https://my.qelos.io", api_token="...")
 
     @app.get("/me")
-    async def me(qelos = Depends(get_qelos)):
-        return {"user": qelos.user, "workspace": qelos.workspace}
-
-    @app.get("/private")
-    async def private(qelos = Depends(require_user)):
-        return qelos.user
+    async def me(user: QelosUser = Depends(get_qelos_user)):
+        return {"name": user.full_name}
 """
 
 from __future__ import annotations
@@ -39,14 +31,23 @@ from .context import (
     TokenRefreshContext,
     TokenRefreshHook,
 )
-from .dependencies import get_qelos, require_user
-from .middleware import QelosIntegratorMiddleware, WorkspaceResolver
+from .dependencies import get_qelos, get_qelos_sdk, get_qelos_user, require_user
+from .middleware import (
+    QelosIntegratorMiddleware,
+    QelosMiddleware,
+    WorkspaceResolver,
+    qelos_middleware,
+)
+from .models import QelosUser, QelosWorkspace
 from .sdk_factory import create_request_sdk
 
 __all__ = [
     "QelosConfig",
     "QelosIntegratorMiddleware",
+    "QelosMiddleware",
     "QelosRequestContext",
+    "QelosUser",
+    "QelosWorkspace",
     "ResolvedTokens",
     "TokenPair",
     "TokenRefreshContext",
@@ -54,5 +55,8 @@ __all__ = [
     "WorkspaceResolver",
     "create_request_sdk",
     "get_qelos",
+    "get_qelos_sdk",
+    "get_qelos_user",
+    "qelos_middleware",
     "require_user",
 ]

@@ -867,6 +867,189 @@ function generateIntegrationsContent(resources) {
 }
 
 /**
+ * Count pulled resources for CLI summaries.
+ * @param {Object} resources - Scanned resources from {@link scanPulledResources}
+ * @returns {{ components: number, blocks: number, blueprints: number }}
+ */
+/**
+ * Human-readable "Includes: …" line for CLI output after `qelos generate rules`.
+ * @param {{ components: number, blocks: number, blueprints: number }} summary
+ * @returns {string}
+ */
+export function formatIncludesSummary(summary) {
+  const parts = [];
+  if (summary.components > 0) {
+    parts.push(`${summary.components} component${summary.components === 1 ? '' : 's'}`);
+  }
+  if (summary.blocks > 0) {
+    parts.push(`${summary.blocks} block${summary.blocks === 1 ? '' : 's'}`);
+  }
+  if (summary.blueprints > 0) {
+    parts.push(`${summary.blueprints} blueprint${summary.blueprints === 1 ? '' : 's'}`);
+  }
+  parts.push('SDK reference');
+  return parts.join(', ');
+}
+
+export function getResourceSummary(resources) {
+  const components =
+    resources.components?.metadata && typeof resources.components.metadata === 'object'
+      ? Object.keys(resources.components.metadata).length
+      : 0;
+  const blocks =
+    resources.blocks?.metadata && typeof resources.blocks.metadata === 'object'
+      ? Object.keys(resources.blocks.metadata).length
+      : 0;
+  const blueprints = resources.blueprints?.length ?? 0;
+  return { components, blocks, blueprints };
+}
+
+/**
+ * IDE rules: Qelos `@qelos/sdk` API surface, auth flows, entity CRUD, and pulled blueprint hints.
+ * @param {Object} resources - Scanned resources
+ * @returns {string} Markdown body (with Windsurf frontmatter)
+ */
+function generateQelosResourcesContent(resources) {
+  const sections = [];
+  const summary = getResourceSummary(resources);
+
+  sections.push('---');
+  sections.push('trigger: glob');
+  sections.push('globs: ["*"]');
+  sections.push('description: Qelos SDK API surface and integration reference');
+  sections.push('---');
+  sections.push('# Qelos — SDK & API surface');
+  sections.push('');
+  sections.push(
+    'Use the **`@qelos/sdk`** package (`QelosSDK`) as the primary API for browser and server apps integrated with Qelos.',
+  );
+  sections.push('Official docs: https://docs.qelos.io/sdk/sdk');
+  sections.push('');
+  sections.push('## Constructing the SDK');
+  sections.push('');
+  sections.push('```typescript');
+  sections.push(`import QelosSDK from '@qelos/sdk';`);
+  sections.push('');
+  sections.push(`const sdk = new QelosSDK({`);
+  sections.push(`  appUrl: 'https://your-qelos-gateway.example.com',`);
+  sections.push(`  // Optional: apiToken for machine-to-machine, or use cookie/session auth`);
+  sections.push(`});`);
+  sections.push('```');
+  sections.push('');
+  sections.push(
+    'The SDK attaches `Authorization: Bearer …` on requests when `getAccessToken` / refresh tokens are configured (see authentication). Cookie-based sessions omit the header on auth endpoints such as `/api/token/refresh`.',
+  );
+  sections.push('');
+  sections.push('## Top-level namespaces');
+  sections.push('');
+  sections.push('| Namespace | Role |');
+  sections.push('|-----------|------|');
+  sections.push('| `sdk.entities(blueprintKey)` | Shortcut for `sdk.blueprints.entitiesOf(blueprintKey)` — CRUD & queries on blueprint data |');
+  sections.push('| `sdk.blueprints` | List/get blueprint definitions, charts, entity accessors |');
+  sections.push('| `sdk.authentication` | Sign-in, sign-up, token refresh, social OAuth, API tokens, `/api/me` |');
+  sections.push('| `sdk.ai` | Agents, threads, chat completions, RAG (`sdk.ai.agents`, `threads`, `chat`, `rag`) |');
+  sections.push('| `sdk.workspaces` / `sdk.invites` | Workspace and invitation APIs |');
+  sections.push('| `sdk.blocks` | Content blocks API |');
+  sections.push('| `sdk.appConfigurations` | App configuration payloads |');
+  sections.push('| `sdk.lambdas` | Serverless / lambda helpers |');
+  sections.push('| `sdk.payments` | Payments integration |');
+  sections.push('');
+  sections.push('## Blueprint entities (data model CRUD)');
+  sections.push('');
+  sections.push('Resolve the blueprint **identifier** (same string as in `*.blueprint.json` `identifier` field).');
+  sections.push('');
+  sections.push('```typescript');
+  sections.push(`const products = sdk.entities<Product>('product'); // blueprint identifier`);
+  sections.push('');
+  sections.push('// Direct CRUD');
+  sections.push(`await products.create({ /* fields */ } as any);`);
+  sections.push(`await products.getEntity(id);`);
+  sections.push(`await products.update(id, { name: 'Updated' });`);
+  sections.push(`await products.remove(id);`);
+  sections.push('');
+  sections.push('// Query builder');
+  sections.push(`const rows = await products`);
+  sections.push(`  .where({ inStock: true })`);
+  sections.push(`  .sort('-updated')`);
+  sections.push(`  .limit(20)`);
+  sections.push(`  .find();`);
+  sections.push('');
+  sections.push(`const one = await products.findOne(extra);`);
+  sections.push(`const n = await products.where({}).count();`);
+  sections.push('```');
+  sections.push('');
+  sections.push('REST shape: `/api/blueprints/{blueprintKey}/entities`. List responses default to **flat** entities (`$flat` defaults in the SDK).');
+  sections.push('');
+  sections.push('## Authentication flows');
+  sections.push('');
+  sections.push('### Email / password');
+  sections.push('- `sdk.authentication.signin({ username, password })` → sets cookies on response (browser) or read `set-cookie` server-side.');
+  sections.push('- `sdk.authentication.signup({ … })` — registration.');
+  sections.push('- `sdk.authentication.oAuthSignin` / `oAuthSignup` — JSON token payload (`authType: oauth`).');
+  sections.push('');
+  sections.push('### Session refresh');
+  sections.push('- `sdk.authentication.refreshToken(refreshToken?)` → `POST /api/token/refresh` with `Bearer` refresh token.');
+  sections.push('- `sdk.authentication.refreshCookieToken(cookieToken?)` → `POST /api/cookie/refresh` for cookie sessions.');
+  sections.push('');
+  sections.push('### Social OAuth (Google, GitHub, …)');
+  sections.push('- Browser: `sdk.authentication.startSocialLogin(provider)` or build URL with `getSocialLoginUrl(provider)`.');
+  sections.push('- Callback route: `sdk.authentication.socialCallback(requestUrl)` reads `?rt=` refresh token and calls `exchangeAuthCallback`.');
+  sections.push('- Helpers: `parseSocialCallbackRefreshToken`, `getSocialAuthSetCookieParts`, `applySocialAuthCookiesToServerResponse` (see sdk exports).');
+  sections.push('');
+  sections.push('### API tokens');
+  sections.push('- `sdk.authentication.apiTokenSignin(token)` — treat SDK as machine user.');
+  sections.push('- `createApiToken` / `listApiTokens` / `deleteApiToken` for managing tokens.');
+  sections.push('');
+  sections.push('### Current user');
+  sections.push('- `sdk.authentication.getLoggedInUser()` → `GET /api/me`.');
+  sections.push('- `sdk.authentication.logout()` → `POST /api/logout`.');
+  sections.push('');
+  sections.push('## Blueprint metadata & charts');
+  sections.push('');
+  sections.push('```typescript');
+  sections.push(`await sdk.blueprints.getList();`);
+  sections.push(`await sdk.blueprints.getBlueprint('product');`);
+  sections.push(`await sdk.blueprints.getCount('product', { /* filters */ });`);
+  sections.push('```');
+  sections.push('');
+  sections.push('## AI');
+  sections.push('');
+  sections.push(
+    'Prefer **`sdk.ai.agents`** for agent definitions and chat; see also `sdk.ai.chat`, `sdk.ai.threads`, `sdk.ai.rag` for completions, threads, and vector stores.',
+  );
+  sections.push('');
+  sections.push('## Integrator middleware (external apps)');
+  sections.push('');
+  sections.push(
+    'Framework packages (`@qelos/integrator-express`, `integrator-next`, etc.) proxy requests and attach credentials — use them in **external** apps; monorepo gateway code does not depend on integrators.',
+  );
+  sections.push('');
+
+  if (summary.blueprints > 0 && resources.blueprints?.length) {
+    sections.push('## Blueprints in this project (pulled)');
+    sections.push('');
+    sections.push(
+      'Use these identifiers with `sdk.entities(\'<identifier>\')` and when reading `blueprints/*.blueprint.json`:',
+    );
+    sections.push('');
+    for (const bp of resources.blueprints) {
+      const id = bp.identifier ?? bp.name ?? bp.file ?? '?';
+      const label = bp.name && bp.name !== id ? `${bp.name} (\`${id}\`)` : `\`${id}\``;
+      sections.push(`- ${label}`);
+    }
+    sections.push('');
+  }
+
+  sections.push('---');
+  sections.push('');
+  sections.push(
+    `*Generated summary: ${summary.components} component(s), ${summary.blocks} block(s), ${summary.blueprints} blueprint(s) in this workspace — plus this SDK reference.*`,
+  );
+
+  return sections.join('\n');
+}
+
+/**
  * Generate rules content for general guidelines
  * @param {Object} resources - Scanned resources
  * @param {Object} directoryContext - Directory context information
@@ -958,6 +1141,12 @@ function generateGeneralContent(resources, directoryContext) {
 function generateAllRulesContent(resources, ideType, qelosComponents, directoryContext) {
   const files = [];
 
+  // SDK / API surface + pulled blueprint hints (always)
+  files.push({
+    filename: 'qelos-resources.md',
+    content: generateQelosResourcesContent(resources),
+  });
+
   // Always generate general.md
   files.push({
     filename: 'general.md',
@@ -968,7 +1157,7 @@ function generateAllRulesContent(resources, ideType, qelosComponents, directoryC
   if (resources.components) {
     files.push({
       filename: 'components.md',
-      content: generateComponentsContent(resources, qelosComponents)
+      content: generateComponentsContent(resources, qelosComponents, directoryContext)
     });
   }
 
@@ -1085,28 +1274,18 @@ export async function generateRules(ideType, basePath) {
     // Scan for pulled resources and directory context
     const { resources, directoryContext } = scanPulledResources(basePath);
 
-    // Check if any resources were found
-    const hasResources = 
-      resources.components !== null ||
-      resources.blocks !== null ||
-      resources.blueprints.length > 0 ||
-      resources.plugins.length > 0 ||
-      resources.connections.length > 0 ||
-      resources.configs.length > 0 ||
-      resources.integrations.length > 0;
+    const summary = getResourceSummary(resources);
 
-    if (!hasResources && !directoryContext.hasCLAUDEmd) {
-      return {
-        success: false,
-        message: 'No pulled resources found. Run pull command first.'
-      };
-    }
-
-    // Fetch Qelos global components from documentation
-    logger.debug('Fetching Qelos global components from documentation...');
-    const qelosComponents = await fetchQelosGlobalComponents();
-    if (qelosComponents) {
-      logger.debug(`Fetched ${qelosComponents.components.length} components and ${qelosComponents.directives.length} directives`);
+    // Fetch global component list when component rules are generated (optional network)
+    let qelosComponents = null;
+    if (resources.components) {
+      logger.debug('Fetching Qelos global components from documentation...');
+      qelosComponents = await fetchQelosGlobalComponents();
+      if (qelosComponents) {
+        logger.debug(
+          `Fetched ${qelosComponents.components.length} components and ${qelosComponents.directives.length} directives`,
+        );
+      }
     }
 
     // Generate all rules content
@@ -1170,10 +1349,19 @@ export async function generateRules(ideType, basePath) {
       logger.debug(`Created combined rules file`);
     }
 
+    const primaryRelativePath =
+      ideType === 'windsurf'
+        ? '.windsurf/rules/qelos-resources.md'
+        : ideType === 'cursor'
+          ? '.cursorrules'
+          : '.clinerules';
+
     return {
       success: true,
       files: writtenFiles,
-      count: writtenFiles.length
+      count: writtenFiles.length,
+      summary,
+      primaryRelativePath,
     };
 
   } catch (error) {
