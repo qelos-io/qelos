@@ -1,6 +1,6 @@
 import * as assert from 'node:assert/strict';
 import { test } from 'node:test';
-import BaseSDK from '../src/base-sdk';
+import BaseSDK, { relativeUrlPath } from '../src/base-sdk';
 import { QelosSDKOptions } from '../src/types';
 
 test('BaseSDK', async (t) => {
@@ -76,5 +76,30 @@ test('BaseSDK', async (t) => {
     
     const queryString = sdkWithExtraParams.getQueryParams({ local: 'param' });
     assert.equal(queryString, '?global=param&local=param');
+  });
+
+  await t.test('relativeUrlPath strips query and hash', () => {
+    assert.equal(relativeUrlPath('/api/auth/callback?rt=x'), '/api/auth/callback');
+    assert.equal(relativeUrlPath('/path#frag'), '/path');
+    assert.equal(relativeUrlPath('/plain'), '/plain');
+  });
+
+  await t.test('extraHeaders receives path without query string', async () => {
+    const seen: string[] = [];
+    options = {
+      appUrl: 'http://localhost:3000',
+      fetch: async (url) => {
+        const res = new Response(JSON.stringify({ ok: true }));
+        res.headers.set('Content-Type', 'application/json');
+        return res;
+      },
+      extraHeaders: async (relativeUrl) => {
+        seen.push(relativeUrl);
+        return {};
+      },
+    };
+    const s = new BaseSDK(options);
+    await s.callApi('/api/auth/callback?rt=tok');
+    assert.deepEqual(seen, ['/api/auth/callback']);
   });
 });

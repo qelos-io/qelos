@@ -11,7 +11,25 @@ import QlAI from './ai';
 import QlLambdas from './lambdas';
 import QlPayments from './payments';
 
-const noExtraHeadersUrls = new Set(['/api/token/refresh', '/api/signin', '/api/signup'])
+const noExtraHeadersUrls = new Set([
+  '/api/token/refresh',
+  '/api/signin',
+  '/api/signup',
+  '/api/auth/callback',
+])
+
+export type {
+  SocialCallbackInput,
+  SocialAuthCallbackPayload,
+  SocialProvider,
+  SocialLoginOptions,
+} from './authentication';
+
+export {
+  parseSocialCallbackRefreshToken,
+  getSocialAuthSetCookieParts,
+  applySocialAuthCookiesToServerResponse,
+} from './authentication';
 
 export default class QelosSDK extends BaseSDK {
   #customHeaders = {}

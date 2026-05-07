@@ -49,3 +49,12 @@ export {
   type TokenRefreshContext,
   type TokenRefreshHook,
 } from './types';
+
+export {
+  completeSocialAuthCallback,
+  applySocialAuthCookiesToServerResponse,
+  getSocialAuthSetCookieParts,
+  parseSocialCallbackRefreshToken,
+  type SocialAuthCallbackPayload,
+  type SocialCallbackInput,
+} from './social-auth';

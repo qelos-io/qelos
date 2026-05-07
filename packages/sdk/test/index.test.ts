@@ -62,7 +62,8 @@ test('QelosSDK', async (t) => {
     const noAuthUrls = [
       '/api/token/refresh',
       '/api/signin',
-      '/api/signup'
+      '/api/signup',
+      '/api/auth/callback',
     ];
 
     for (const url of noAuthUrls) {
