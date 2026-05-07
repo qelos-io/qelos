@@ -50,6 +50,7 @@ export default defineConfig({
         text: 'GETTING STARTED',
         items: [
           { text: 'Intro to Qelos', link: '/getting-started/intro' },
+          { text: 'Getting Started as an Integrator', link: '/getting-started/integrators' },
           { text: 'Installation', link: '/getting-started/installation' },
           { text: 'Design Products Faster', link: '/getting-started/design-products-faster' },
           { text: 'Quick Reference', link: '/getting-started/quick-reference' },
