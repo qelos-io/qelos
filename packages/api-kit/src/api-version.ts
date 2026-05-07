@@ -114,9 +114,11 @@ export function onProxyResSetApiVersion(
   setApiVersionResponseHeader(req, res);
 }
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    /** Resolved API version (e.g. `v1`) after gateway middleware runs. */
-    apiVersion?: string;
+declare global {
+  namespace Express {
+    interface Request {
+      /** Resolved API version (e.g. `v1`) after gateway middleware runs. */
+      apiVersion?: string;
+    }
   }
 }
