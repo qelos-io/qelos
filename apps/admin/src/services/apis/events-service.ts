@@ -43,6 +43,19 @@ export interface IEventsQueryParams {
   limit?: number;
 }
 
+export interface IEventsCountResponse {
+  count: number;
+}
+
+export interface IEventsSumResponse {
+  sum: number;
+}
+
+export interface IEventsGroupedSumResponse {
+  groups: { group: string | null; sum: number }[];
+  sum: number;
+}
+
 const crud = getCrud<IEvent>('/api/events')
 
 const eventsService = {
@@ -52,6 +65,18 @@ const eventsService = {
   },
   getFilterOptions(params?: IEventsQueryParams): Promise<IEventsFilterOptions> {
     return api.get('/api/events/filter-options', { params }).then(getCallData)
+  },
+  getCount(params?: IEventsQueryParams & { 'no-cache'?: string }): Promise<IEventsCountResponse> {
+    return api.get('/api/events/count', { params }).then(getCallData)
+  },
+  getSum(
+    params: IEventsQueryParams & {
+      sum: string;
+      groupBy?: string;
+      'no-cache'?: string;
+    },
+  ): Promise<IEventsSumResponse | IEventsGroupedSumResponse> {
+    return api.get('/api/events/sum', { params }).then(getCallData)
   },
 }
 
