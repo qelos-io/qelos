@@ -37,6 +37,31 @@ runtime-config conventions apply).
 
 ## Use in server routes
 
+The recommended wrapper, `defineQelosEventHandler`, gives you a typed `qelos`
+context as a second argument and asserts the middleware ran:
+
+```ts
+// server/api/products.ts
+import { defineQelosEventHandler } from '@qelos/integrator-nuxt';
+
+export default defineQelosEventHandler(async ({ qelos }) => {
+  return qelos.sdk.entities('products').getList();
+});
+```
+
+Pass `{ requireAuth: true }` to short-circuit anonymous requests with `401`:
+
+```ts
+// server/api/me.ts
+import { defineQelosEventHandler } from '@qelos/integrator-nuxt';
+
+export default defineQelosEventHandler(({ qelos }) => {
+  return { user: qelos.user, workspace: qelos.workspace };
+}, { requireAuth: true });
+```
+
+Or use `defineEventHandler` directly — `event.context.qelos` is also populated:
+
 ```ts
 // server/api/me.ts
 export default defineEventHandler((event) => {
@@ -57,6 +82,39 @@ export default defineEventHandler((event) => {
 | `workspaces` | All workspaces the user has access to.                      |
 | `sdk`        | A request-scoped `QelosSDK` instance bound to the tokens.   |
 | `tokens`     | The current access/refresh token pair (mutated on refresh). |
+
+## Use in components / pages
+
+`useQelos()` is auto-imported in your Vue components and reads the identity
+that was resolved by the server middleware. Values are seeded during SSR and
+hydrated on the client through the Nuxt payload, so no extra round-trip is
+needed.
+
+```vue
+<script setup lang="ts">
+const { user, workspace, workspaces, isAuthenticated } = useQelos();
+</script>
+
+<template>
+  <div v-if="isAuthenticated">
+    Hi {{ user.firstName }} — workspace: {{ workspace?.name }}
+  </div>
+</template>
+```
+
+For data calls from the browser, prefer hitting your own server routes (so
+refresh-token rotation stays on the server):
+
+```vue
+<script setup lang="ts">
+const { data: products } = await useFetch('/api/products');
+</script>
+```
+
+If you need direct browser access to the Qelos API, use
+[`@qelos/web-sdk`](https://www.npmjs.com/package/@qelos/web-sdk) instead — the
+server-side SDK in this package is bound to per-request cookies and isn't
+intended for client use.
 
 ## Custom workspace resolution / refresh hook
 
