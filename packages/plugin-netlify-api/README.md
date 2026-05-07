@@ -60,34 +60,77 @@ If your publish directory is not `dist`, set `QELOS_NETLIFY_PUBLISH` to that fol
 
 No need to commit redirects yourself; the plugin and `postbuild` maintain them each build.
 
-## Integrator API (`event.qelos.user` / `event.qelos.workspace`)
+## Integrator API (`@qelos/plugin-netlify-api/integrators`)
 
-This package is the Netlify implementation of the Qelos integrator contract that framework adapters expose as `req.qelos.user` / `req.qelos.workspace`. Use it in your own Netlify Functions to identify the calling visitor and their active workspace by hitting the same `/api/me` endpoint the gateway uses.
+This package implements the same **middleware contract** as other Qelos integrators (e.g. `@qelos/integrator-express`): each wrapped handler receives `event.qelos` shaped as **`QelosRequestContext`** — `QelosContext<QelosSDK, IUser, IWorkspace>` from `@qelos/global-types`, with:
+
+| Field | Meaning |
+| --- | --- |
+| `user` | Authenticated user, or `null` |
+| `workspace` | Active workspace, or `null` |
+| `workspaces` | All workspaces for the user (from `sdk.workspaces.getList()`) |
+| `sdk` | `@qelos/sdk` instance bound to this request’s tokens |
+| `tokens` | `QelosTokenPair`; updated in place if a refresh runs |
+
+Configuration follows **`QelosConfig`** / **`QelosNetlifyConfig`** (same base as Express): use **`appUrl`** as the Qelos backend base URL. For backward compatibility, **`apiHost`** is still accepted and normalized the same way as `QELOS_API_IP`.
+
+Token refresh matches **`@qelos/integrator-express`**: the SDK may refresh access/refresh tokens; by default, refreshed cookies are collected as `Set-Cookie` header values and **merged into your function’s response** so the browser stays in sync. Override with **`onTokenRefresh`** (see `TokenRefreshContext` in the published types).
+
+Peer dependency: **`@netlify/functions`** (declare handler types and install in the project that contains Netlify functions).
+
+```bash
+npm install @netlify/functions @qelos/sdk
+```
 
 ```ts
 // netlify/functions/whoami.ts
-import { withQelos, requireUser } from '@qelos/plugin-netlify-api/integrators';
+import {
+  withQelos,
+  requireUser,
+  type QelosRequestContext,
+} from '@qelos/plugin-netlify-api/integrators';
 
-export const handler = withQelos(async (event) => {
-  const { user, workspace } = event.qelos; // user/workspace are null when unauthenticated
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ user, workspace }),
-  };
-});
+export const handler = withQelos(
+  async (event) => {
+    const q: QelosRequestContext = event.qelos!;
+    const { user, workspace, workspaces, sdk, tokens } = q;
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ user, workspace, workspaces, tokenPair: tokens }),
+    };
+  },
+  {
+    appUrl: process.env.QELOS_API_IP!,
+  },
+);
 
-// Or short-circuit with 401 when there is no authenticated user:
-export const handlerProtected = requireUser(async (event) => {
-  return { statusCode: 200, body: JSON.stringify(event.qelos.user) };
-});
+export const handlerProtected = requireUser(
+  async (event) => {
+    return { statusCode: 200, body: JSON.stringify(event.qelos!.user) };
+  },
+  { appUrl: process.env.QELOS_API_IP! },
+);
 ```
 
-Both helpers forward the visitor's `cookie`, `authorization`, `x-api-key` and `x-impersonate-*` headers, plus a `tenanthost` derived from `x-forwarded-host`/`host`, to the API at `QELOS_API_IP`. They use a 2s timeout by default (override via the `timeoutMs` option) and require `globalThis.fetch` (Node 18+).
+**`skipPaths`:** when the function path matches a prefix in `skipPaths`, the wrapper does **not** attach `event.qelos` (same idea as Express skipping middleware for `/health`, etc.).
 
-Lower-level helper, if you prefer to wire identification yourself:
+Lower-level helpers:
 
 ```ts
-import { identifyUser } from '@qelos/plugin-netlify-api/integrators';
+import {
+  identifyUser,
+  createRequestSdk,
+  readTokensFromEvent,
+  normalizeIntegratorConfig,
+} from '@qelos/plugin-netlify-api/integrators';
 
-const identity = await identifyUser(event); // { user, workspace } | null
+const identity = await identifyUser(event, { appUrl: 'https://api.example.com' });
+// identity includes user, workspace, workspaces, sdk, tokens, refreshedCookies
+
+const config = normalizeIntegratorConfig({ appUrl: 'https://api.example.com' });
+const tokens = readTokensFromEvent(event, config);
 ```
+
+### Package layout
+
+The Netlify plugin stays under **`packages/plugin-netlify-api`** (historical location before the `integrators/*` convention). Types and behavior are aligned with **`@qelos/integrator-express`**; only the transport differs (Netlify `HandlerEvent` / response object vs Express `req` / `res`).
