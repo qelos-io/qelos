@@ -3,6 +3,7 @@ import BaseSDK from '../base-sdk';
 import ThreadsSDK from './threads';
 import ChatSDK from './chat';
 import RagSDK from './rag';
+import AgentsSDK from './agents';
 import {
   IMessage,
   IMessageSummary,
@@ -14,7 +15,9 @@ import {
   ICreateVectorStorageRequest,
   IUploadContentRequest,
   IClearStorageRequest,
-  IVectorStore
+  IVectorStore,
+  IAgent,
+  IAgentChatOptions
 } from './types';
 
 export * from './types';
@@ -31,13 +34,16 @@ export {
   ICreateVectorStorageRequest,
   IUploadContentRequest,
   IClearStorageRequest,
-  IVectorStore
+  IVectorStore,
+  IAgent,
+  IAgentChatOptions
 };
 
 /**
  * Qelos AI SDK - Main SDK class with three sub-SDKs
  * 
- * This class provides access to AI functionality through three sub-SDKs:
+ * This class provides access to AI functionality through sub-SDKs:
+ * - `agents`: Agent management and agent-centric chat (recommended entry point)
  * - `threads`: Thread CRUD operations for managing conversation threads
  * - `chat`: Chat completion operations (streaming and non-streaming)
  * - `rag`: Vector storage management for Retrieval-Augmented Generation
@@ -81,8 +87,13 @@ export default class QlAI extends BaseSDK {
   public rag: RagSDK;
 
   /**
+   * Agents sub-SDK for managing AI agents and agent-centric chat
+   */
+  public agents: AgentsSDK;
+
+  /**
    * Initialize the AI SDK with sub-SDKs
-   * 
+   *
    * @param options - SDK configuration options
    */
   constructor(options: QelosSDKOptions) {
@@ -90,6 +101,7 @@ export default class QlAI extends BaseSDK {
     this.threads = new ThreadsSDK(options);
     this.chat = new ChatSDK(options);
     this.rag = new RagSDK(options);
+    this.agents = new AgentsSDK(options, this.chat, this.threads);
   }
 
   // Legacy methods for backward compatibility
