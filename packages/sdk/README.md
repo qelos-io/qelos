@@ -86,4 +86,35 @@ function MyPostsList() {
 }
 ```
 
+### Authentication
+
+The `sdk.authentication` namespace exposes signin/signup, token refresh,
+social-auth, and the current-user accessor.
+
+```typescript
+// Username + password
+const { payload, headers } = await sdk.authentication.signin({
+  username: 'jane',
+  password: 'secret',
+});
+// headers['set-cookie'] — auth cookie issued by Qelos
+
+// Refresh an access + refresh token pair (oauth-style)
+await sdk.authentication.refreshToken();
+
+// Refresh a cookie-token session (used by integrator-hosted apps that keep
+// the user signed in via an HttpOnly cookie). Returns the rotated cookie
+// and the refreshed user — forward `set-cookie` to your downstream response.
+const result = await sdk.authentication.refreshCookieToken();
+// result.headers['set-cookie'] — new cookie value to forward
+// result.payload.user           — refreshed user
+// result.payload.cookieToken    — raw token (also embedded in set-cookie)
+```
+
+When a server-side host (`integrator-express`, `-next`, `-nuxt`, `-fastify`,
+`-nest`) wraps the SDK, `refreshCookieToken()` is called automatically on
+expired cookie-only sessions and the rotated cookie is written back to the
+outbound response. Call it directly only when you need to refresh
+proactively — e.g. before handing the session off to another service.
+
 Enjoy!

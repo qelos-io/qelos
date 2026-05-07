@@ -1,4 +1,9 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import {
+  createParamDecorator,
+  ExecutionContext,
+  Inject,
+} from '@nestjs/common';
+import { QELOS_SDK } from './constants';
 import type { AnyRequest, QelosRequestContext } from './types';
 
 /**
@@ -36,3 +41,17 @@ export const QelosWorkspace = createParamDecorator(
     return request?.qelos?.workspace ?? null;
   },
 );
+
+/**
+ * Inject the per-request Qelos SDK (`request.qelos.sdk`). Requires
+ * `QelosModule.forRoot` / `forRootAsync`. For constructor injection into your
+ * own providers, set `scope: Scope.REQUEST` on that provider (Nest propagates
+ * request scope from controllers).
+ *
+ * ```ts
+ * constructor(@QelosSdk() private readonly sdk: QelosSDK) {}
+ * ```
+ */
+export function QelosSdk(): ReturnType<typeof Inject> {
+  return Inject(QELOS_SDK);
+}

@@ -33,5 +33,18 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test integrators/read-tokens.test.cjs"
+  },
+  "dependencies": {
+    "@qelos/global-types": "workspace:^",
+    "@qelos/sdk": "workspace:^"
+  },
+  "peerDependencies": {
+    "@netlify/functions": ">=2.0.0"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^2.8.2"
   }
 }

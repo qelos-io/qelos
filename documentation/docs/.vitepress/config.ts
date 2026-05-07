@@ -23,6 +23,7 @@ export default defineConfig({
       { text: 'API', link: '/api/api' },
       { text: 'CLI', link: '/cli/' },
       { text: 'Plugins', link: '/plugins/create' },
+      { text: 'Integrators', link: '/integrators/' },
       { text: 'Deployment', link: '/deployment/' },
     ],
     socialLinks: [
@@ -95,6 +96,20 @@ export default defineConfig({
               { text: 'Feedback Components', link: '/getting-started/components/feedback-components' }
             ]
           }
+        ]
+      },
+      {
+        text: 'AUTH',
+        collapsed: true,
+        items: [
+          { text: 'Overview', link: '/auth/' },
+          { text: 'Email & Password', link: '/auth/email-password' },
+          { text: 'Social Authentication', link: '/auth/social-auth' },
+          { text: 'Cookie Token Lifecycle', link: '/auth/cookie-tokens' },
+          { text: 'API Token Management', link: '/auth/api-tokens' },
+          { text: 'Permissions & Roles', link: '/auth/permissions-roles' },
+          { text: 'Workspace-Scoped Auth', link: '/auth/workspaces' },
+          { text: 'Security Best Practices', link: '/auth/security' },
         ]
       },
       {
@@ -185,6 +200,19 @@ export default defineConfig({
           { text: 'Agent Command', link: '/cli/agent' },
           { text: 'Agent Tools (clientTools)', link: '/cli/agent-tools' },
           { text: 'Global Environments', link: '/cli/global' }
+        ]
+      },
+      {
+        text: 'INTEGRATORS',
+        collapsed: true,
+        items: [
+          { text: 'Overview', link: '/integrators/' },
+          { text: 'Express', link: '/integrators/express' },
+          { text: 'Next.js', link: '/integrators/next' },
+          { text: 'Nuxt', link: '/integrators/nuxt' },
+          { text: 'Fastify', link: '/integrators/fastify' },
+          { text: 'NestJS', link: '/integrators/nest' },
+          { text: 'FastAPI', link: '/integrators/fastapi' },
         ]
       },
       {

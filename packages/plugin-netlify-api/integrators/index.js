@@ -1,36 +1,18 @@
 'use strict';
 
 /**
- * Netlify implementation of the Qelos integrator contract.
- *
- * Framework integrators (Express/Fastify/etc.) populate `req.qelos.user` and
- * `req.qelos.workspace` from the gateway-injected `user` header. Netlify Functions
- * sit outside the gateway, so this module calls the Qelos auth `/api/me` endpoint
- * with the visitor's credentials and exposes the same shape on `event.qelos`.
+ * Netlify implementation of the Qelos integrator contract — same per-request
+ * {@link QelosRequestContext} shape as `@qelos/integrator-express` (`user`,
+ * `workspace`, `workspaces`, `sdk`, `tokens`).
  */
 
-const DEFAULT_API_URL = 'http://159.203.152.168';
-
-function resolveApiHost(override) {
-  const raw =
-    override ?? process.env.QELOS_API_IP ?? process.env.API_HOST ?? DEFAULT_API_URL;
-  const trimmed = String(raw).trim().replace(/\/$/, '');
-  if (!trimmed) return DEFAULT_API_URL;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `http://${trimmed}`;
-}
-
-function pickHeader(headers, name) {
-  if (!headers) return undefined;
-  const want = name.toLowerCase();
-  for (const [k, v] of Object.entries(headers)) {
-    if (k.toLowerCase() !== want) continue;
-    if (v == null) continue;
-    const value = Array.isArray(v) ? v[0] : v;
-    if (typeof value === 'string' && value.length > 0) return value;
-  }
-  return undefined;
-}
+const { createRequestSdk } = require('./sdk-factory');
+const {
+  resolveApiHost,
+  normalizeIntegratorConfig,
+  pickHeader,
+  readTokensFromEvent,
+} = require('./request-parse');
 
 function publicHostForEvent(event) {
   const forwarded = pickHeader(event.headers, 'x-forwarded-host');
@@ -47,23 +29,12 @@ function publicHostForEvent(event) {
   return '';
 }
 
-function hasAuthCredentials(headers) {
-  const auth = pickHeader(headers, 'authorization');
-  const apiKey = pickHeader(headers, 'x-api-key');
-  const cookie = pickHeader(headers, 'cookie');
-  if (auth || apiKey) return true;
-  return Boolean(cookie && cookie.includes('qlt_'));
-}
-
-function buildIdentityHeaders(event, options) {
-  const headers = { 'content-type': 'application/json' };
-  const cookie = pickHeader(event.headers, 'cookie');
-  const authorization = pickHeader(event.headers, 'authorization');
-  const apiKey = pickHeader(event.headers, 'x-api-key');
-  if (cookie) headers.cookie = cookie;
-  if (authorization) headers.authorization = authorization;
-  if (apiKey) headers['x-api-key'] = apiKey;
-
+/**
+ * Headers forwarded on every SDK request for multi-tenant / impersonation
+ * (matches the former `/api/me` integration identity headers).
+ */
+function buildStaticRequestHeaders(event, options) {
+  const headers = {};
   const tenantHost = options.tenantHost || publicHostForEvent(event);
   if (tenantHost) headers.tenanthost = tenantHost;
 
@@ -85,50 +56,36 @@ function buildIdentityHeaders(event, options) {
   return headers;
 }
 
-async function fetchMe(apiHost, headers, signal) {
-  const fetchImpl = globalThis.fetch;
-  if (typeof fetchImpl !== 'function') {
-    throw new Error(
-      '@qelos/plugin-netlify-api/integrators requires a global fetch (Node >= 18).',
-    );
+function shouldSkip(event, config) {
+  if (!config.skipPaths?.length) return false;
+  let path = event.path;
+  if (!path && event.rawUrl) {
+    try {
+      path = new URL(event.rawUrl).pathname;
+    } catch {
+      path = '';
+    }
   }
-  const res = await fetchImpl(`${apiHost}/api/me`, { headers, signal });
-  if (res.status !== 200) return null;
-  return res.json();
+  return config.skipPaths.some((prefix) => path.startsWith(prefix));
 }
 
-/**
- * Resolve the calling visitor's user and active workspace by hitting the Qelos
- * auth service. Returns `null` when the request carries no Qelos credentials or
- * the credentials are rejected.
- */
-async function identifyUser(event, options = {}) {
-  if (!event || !hasAuthCredentials(event.headers)) return null;
-
-  const apiHost = resolveApiHost(options.apiHost);
-  const headers = buildIdentityHeaders(event, options);
-
-  const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : 2000;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const user = await fetchMe(apiHost, headers, controller.signal);
-    if (!user || typeof user !== 'object') return null;
-    return { user, workspace: user.workspace || null };
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timer);
-  }
+function mergeResponseCookies(result, responseCookies) {
+  if (!responseCookies.length) return result;
+  const base = result && typeof result === 'object' ? result : {};
+  const headers = { ...(base.headers || {}) };
+  const existing = headers['set-cookie'];
+  const merged = Array.isArray(existing)
+    ? [...existing, ...responseCookies]
+    : existing
+      ? [existing, ...responseCookies]
+      : [...responseCookies];
+  headers['set-cookie'] = merged;
+  return { ...base, headers };
 }
 
-function attachQelos(event, identity) {
+function attachQelosContext(event, ctx) {
   Object.defineProperty(event, 'qelos', {
-    value: {
-      user: identity?.user || null,
-      workspace: identity?.workspace || null,
-    },
+    value: ctx,
     enumerable: true,
     configurable: true,
     writable: true,
@@ -136,34 +93,195 @@ function attachQelos(event, identity) {
   return event;
 }
 
-/**
- * Wrap a Netlify Function handler so `event.qelos.user` / `event.qelos.workspace`
- * are populated before the handler runs. Unauthenticated requests still reach the
- * handler with `event.qelos.user === null`.
- */
-function withQelos(handler, options = {}) {
-  return async function qelosWrappedHandler(event, context) {
-    const identity = await identifyUser(event, options);
-    attachQelos(event, identity);
-    return handler(event, context);
-  };
+async function populateUserAndWorkspaces(ctx, event, options) {
+  try {
+    ctx.user = await ctx.sdk.authentication.getLoggedInUser();
+  } catch {
+    ctx.user = null;
+    return false;
+  }
+
+  try {
+    ctx.workspaces = await ctx.sdk.workspaces.getList();
+  } catch {
+    ctx.workspaces = [];
+  }
+
+  if (ctx.user && ctx.workspaces.length) {
+    if (options.resolveWorkspace) {
+      ctx.workspace =
+        (await options.resolveWorkspace({
+          event,
+          user: ctx.user,
+          workspaces: ctx.workspaces,
+        })) || null;
+    } else {
+      ctx.workspace = ctx.workspaces[0] || null;
+    }
+  }
+  return true;
 }
 
 /**
- * Like `withQelos`, but short-circuits with 401 when no user can be identified.
+ * Resolve user/workspace/workspaces using the same SDK flow as Express.
+ * Returns `null` when there is no auth material or identity cannot be resolved.
  */
+async function identifyUser(event, options = {}) {
+  if (!event) return null;
+
+  const config = normalizeIntegratorConfig(options);
+  const tokens = readTokensFromEvent(event, config);
+  const responseCookies = [];
+  const staticRequestHeaders = buildStaticRequestHeaders(event, options);
+
+  const hasAuthMaterial = Boolean(
+    config.apiToken || tokens.accessToken || tokens.refreshToken,
+  );
+  if (!hasAuthMaterial) return null;
+
+  const sdk = createRequestSdk({
+    config,
+    tokens,
+    event,
+    responseCookies,
+    onTokenRefresh: options.onTokenRefresh,
+    staticRequestHeaders,
+  });
+
+  const ctx = {
+    user: null,
+    workspace: null,
+    workspaces: [],
+    sdk,
+    tokens,
+  };
+
+  await populateUserAndWorkspaces(ctx, event, options);
+  if (!ctx.user) return null;
+
+  return {
+    user: ctx.user,
+    workspace: ctx.workspace,
+    workspaces: ctx.workspaces,
+    sdk: ctx.sdk,
+    tokens: ctx.tokens,
+    refreshedCookies: responseCookies,
+  };
+}
+
+function withQelos(handler, options = {}) {
+  return async function qelosWrappedHandler(event, context) {
+    if (shouldSkip(event, normalizeIntegratorConfig(options))) {
+      return handler(event, context);
+    }
+
+    const config = normalizeIntegratorConfig(options);
+    const tokens = readTokensFromEvent(event, config);
+    const responseCookies = [];
+    const staticRequestHeaders = buildStaticRequestHeaders(event, options);
+
+    const sdk = createRequestSdk({
+      config,
+      tokens,
+      event,
+      responseCookies,
+      onTokenRefresh: options.onTokenRefresh,
+      staticRequestHeaders,
+    });
+
+    const ctx = {
+      user: null,
+      workspace: null,
+      workspaces: [],
+      sdk,
+      tokens,
+    };
+    attachQelosContext(event, ctx);
+
+    const hasAuthMaterial = Boolean(
+      config.apiToken || tokens.accessToken || tokens.refreshToken,
+    );
+
+    if (!hasAuthMaterial) {
+      if (config.requireAuth) {
+        return {
+          statusCode: 401,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ code: 'UNAUTHORIZED' }),
+        };
+      }
+      return mergeResponseCookies(
+        await handler(event, context),
+        responseCookies,
+      );
+    }
+
+    const ok = await populateUserAndWorkspaces(ctx, event, options);
+    if (!ok) {
+      if (config.requireAuth) {
+        return {
+          statusCode: 401,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ code: 'UNAUTHORIZED' }),
+        };
+      }
+      return mergeResponseCookies(
+        await handler(event, context),
+        responseCookies,
+      );
+    }
+
+    return mergeResponseCookies(
+      await handler(event, context),
+      responseCookies,
+    );
+  };
+}
+
 function requireUser(handler, options = {}) {
   return async function qelosRequireUserHandler(event, context) {
-    const identity = await identifyUser(event, options);
-    if (!identity || !identity.user) {
+    if (shouldSkip(event, normalizeIntegratorConfig(options))) {
+      return handler(event, context);
+    }
+
+    const config = normalizeIntegratorConfig(options);
+    const tokens = readTokensFromEvent(event, config);
+    const responseCookies = [];
+    const staticRequestHeaders = buildStaticRequestHeaders(event, options);
+
+    const sdk = createRequestSdk({
+      config,
+      tokens,
+      event,
+      responseCookies,
+      onTokenRefresh: options.onTokenRefresh,
+      staticRequestHeaders,
+    });
+
+    const ctx = {
+      user: null,
+      workspace: null,
+      workspaces: [],
+      sdk,
+      tokens,
+    };
+    attachQelosContext(event, ctx);
+
+    const hasAuthMaterial = Boolean(
+      config.apiToken || tokens.accessToken || tokens.refreshToken,
+    );
+    if (!hasAuthMaterial || !(await populateUserAndWorkspaces(ctx, event, options))) {
       return {
         statusCode: 401,
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ code: 'UNAUTHORIZED' }),
       };
     }
-    attachQelos(event, identity);
-    return handler(event, context);
+
+    return mergeResponseCookies(
+      await handler(event, context),
+      responseCookies,
+    );
   };
 }
 
@@ -172,4 +290,7 @@ module.exports = {
   withQelos,
   requireUser,
   resolveApiHost,
+  normalizeIntegratorConfig,
+  readTokensFromEvent,
+  createRequestSdk,
 };

@@ -418,7 +418,7 @@ function generateComponentsContent(resources, qelosComponents, directoryContext)
   sections.push('- When modifying a component, update both the `.vue` file and its entry in `components.json`');
   sections.push('- The `_id` field in `components.json` is used to sync with the remote Qelos instance');
   sections.push('- Component files are named exactly as their `componentName` property (e.g., `VideoPlayer.vue`)');
-  sections.push('- Use `qelos-cli push components <path>` to push changes back to Qelos');
+  sections.push('- Use `qelos push components <path>` to push changes back to Qelos');
   sections.push('');
 
   return sections.join('\n');
@@ -476,7 +476,7 @@ function generateBlocksContent(resources) {
   sections.push('- Each block has metadata stored in `blocks.json`');
   sections.push('- When modifying a block, update both the `.html` file and its entry in `blocks.json`');
   sections.push('- The `_id` field in `blocks.json` is used to sync with the remote Qelos instance');
-  sections.push('- Use `qelos-cli push blocks <path>` to push changes back to Qelos');
+  sections.push('- Use `qelos push blocks <path>` to push changes back to Qelos');
   sections.push('');
 
   return sections.join('\n');
@@ -591,7 +591,7 @@ function generateBlueprintsContent(resources) {
   sections.push('- When building components that display blueprint entities, reference the properties structure');
   sections.push('- Use relations to understand how to fetch related entity data');
   sections.push('- Consider dispatchers when implementing entity lifecycle hooks');
-  sections.push('- Use `qelos-cli push blueprints <path>` to push changes back to Qelos');
+  sections.push('- Use `qelos push blueprints <path>` to push changes back to Qelos');
   sections.push('');
 
   return sections.join('\n');
@@ -697,7 +697,7 @@ function generatePluginsContent(resources) {
   sections.push('- The plugin JSON file references these HTML files using `$ref`');
   sections.push('- Route names and paths are defined in the plugin configuration');
   sections.push('- Requirements specify what conditions must be met for the micro-frontend to load');
-  sections.push('- Use `qelos-cli push plugins <path>` to push changes back to Qelos');
+  sections.push('- Use `qelos push plugins <path>` to push changes back to Qelos');
   sections.push('');
 
   return sections.join('\n');
@@ -747,7 +747,7 @@ function generateConnectionsContent(resources) {
   sections.push('- Connection files are named as `{service}.connection.json`');
   sections.push('- Never commit actual API keys - use environment variables');
   sections.push('- Test connections after creating them');
-  sections.push('- Use `qelos-cli push connections <path>` to push changes back to Qelos');
+  sections.push('- Use `qelos push connections <path>` to push changes back to Qelos');
   sections.push('');
 
   return sections.join('\n');
@@ -797,7 +797,7 @@ function generateConfigsContent(resources) {
   sections.push('- Config files are named as `{purpose}.config.json`');
   sections.push('- Changes to configurations affect the entire platform');
   sections.push('- Test configuration changes in a development environment first');
-  sections.push('- Use `qelos-cli push configs <path>` to push changes back to Qelos');
+  sections.push('- Use `qelos push configs <path>` to push changes back to Qelos');
   sections.push('');
 
   return sections.join('\n');
@@ -860,7 +860,7 @@ function generateIntegrationsContent(resources) {
   sections.push('- Integration files are named as `{name}.integration.json`');
   sections.push('- Test integrations thoroughly before deploying');
   sections.push('- Monitor integration execution logs');
-  sections.push('- Use `qelos-cli push integrations <path>` to push changes back to Qelos');
+  sections.push('- Use `qelos push integrations <path>` to push changes back to Qelos');
   sections.push('');
 
   return sections.join('\n');

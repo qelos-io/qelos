@@ -5,19 +5,19 @@
 ### Project Setup
 ```bash
 # Create new plugin
-qelos-cli create plugin my-plugin
+qelos create plugin my-plugin
 
 # Create new blueprint
-qelos-cli create blueprint Product
+qelos create blueprint Product
 
 # Generate CRUD with UI
-qelos-cli generate crud Product --with-listing --with-forms
+qelos generate crud Product --with-listing --with-forms
 
 # Pull remote resources
-qelos-cli pull
+qelos pull
 
 # Push changes
-qelos-cli push
+qelos push
 ```
 
 ### Development Workflow

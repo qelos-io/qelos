@@ -4,7 +4,7 @@ editLink: true
 ---
 # CLI Tool
 
-The Qelos CLI (`@qelos/plugins-cli`) is a command-line interface tool that helps developers manage and synchronize Qelos resources between their local development environment and their Qelos instance.
+The Qelos CLI (`@qelos/cli`) is a command-line interface tool that helps developers manage and synchronize Qelos resources between their local development environment and their Qelos instance.
 
 ## Overview
 
@@ -24,7 +24,7 @@ The CLI provides powerful commands to:
 Install the CLI globally using npm:
 
 ```bash
-npm install -g @qelos/plugins-cli
+npm install -g @qelos/cli
 ```
 
 After installation, the CLI will be available as both `qelos` and `qplay` commands:
@@ -239,7 +239,7 @@ The `--save` flag:
 
 ```bash
 # Install the CLI
-npm install -g @qelos/plugins-cli
+npm install -g @qelos/cli
 
 # Set up a .env file for your instance
 echo 'QELOS_URL=https://my-instance.qelos.app' > .env
