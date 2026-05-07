@@ -1,4 +1,5 @@
 import { createProxyMiddleware as proxy } from 'http-proxy-middleware';
+import { apiVersionMiddleware, onProxyResSetApiVersion, setApiVersionResponseHeader } from '@qelos/api-kit';
 import { IApiProxyConfig, IServiceProxyConfig } from './types';
 import { getApiProxyConfig, internalServicesSecret } from './config';
 import { setTimeout } from 'timers/promises';
@@ -15,6 +16,7 @@ function getProxy(target: string) {
   return proxy({
     target,
     changeOrigin: true,
+    onProxyRes: onProxyResSetApiVersion,
   });
 }
 
@@ -41,6 +43,8 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
     internalUrl,
     excludedServices,
   } = { ...getApiProxyConfig(), ...config };
+
+  app.use(apiVersionMiddleware());
 
   function useProxy(app, service: IServiceProxyConfig) {
     if (excludedServices.includes(service.name)) {
@@ -270,6 +274,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
 
     const html = await getTenantHTML(req.headers.tenant);
 
+    setApiVersionResponseHeader(req, res);
     res.set('Content-Security-Policy', `default-src ${CSP.default}; img-src ${CSP.img}; connect-src ${CSP.connect}; frame-src ${CSP.frame}; style-src-elem ${CSP.style};`);
     res.set('content-type', 'text/html').send(html).end()
   })

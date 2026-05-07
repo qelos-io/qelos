@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "node --import tsx --test \"src/**/*.test.ts\""
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
@@ -21,6 +22,7 @@
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
   "devDependencies": {
     "@types/node": "^22.5.4",
+    "tsx": "^4.20.4",
     "typescript": "^5.4.5"
   }
 }
