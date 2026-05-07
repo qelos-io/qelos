@@ -7,19 +7,19 @@ import {
 import type { AnyRequest } from './types';
 
 /**
- * Route-level guard that requires `request.qelos.user` to be populated.
- * Mount on routes that should only run for authenticated users:
+ * Route-level guard that requires `request.qelos.user` to be populated
+ * (same contract as Express `requireUser`).
  *
  * ```ts
- * @UseGuards(QelosAuthGuard)
+ * @UseGuards(QelosGuard)
  * @Get('me')
  * me() { ... }
  * ```
  *
- * Requires the QelosMiddleware to have run first.
+ * Requires `QelosMiddleware` to have run first.
  */
 @Injectable()
-export class QelosAuthGuard implements CanActivate {
+export class QelosGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<AnyRequest>();
     if (!request?.qelos || !request.qelos.user) {
@@ -28,3 +28,6 @@ export class QelosAuthGuard implements CanActivate {
     return true;
   }
 }
+
+/** Previous name for {@link QelosGuard}; kept for compatibility. */
+export { QelosGuard as QelosAuthGuard };
