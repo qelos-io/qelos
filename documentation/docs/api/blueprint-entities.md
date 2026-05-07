@@ -14,10 +14,23 @@ Blueprint entity endpoints return the **flat** shape by default — every metada
 
 To opt out and receive the wrapped shape (metadata only available under `entity.metadata`), pass `$flat=false` (or `$flat=0`) on the request.
 
+### Pinning the Flat Shape with `Accept-Version`
+
+Send `Accept-Version: v1` on the request to lock in the flat shape regardless of `$flat`. `v1` is the contract version that ships with the new flat default — once you pin it, a stray `$flat=false` (e.g., from a shared HTTP client config) cannot silently downgrade the response to the wrapped shape.
+
+```
+GET /api/blueprints/product/entities
+Accept-Version: v1
+```
+
+### Wrapped Responses Are Deprecated
+
+Responses returned in the wrapped shape carry the standard `Deprecation: true` and `Link: <…>; rel="deprecation"` headers. The wrapped shape is scheduled for removal one release after the flat default ships — migrate consumers to the flat shape (or pin `Accept-Version: v1`) before then.
+
 ### Migration Notes
 
 - **Before:** entity responses were wrapped by default. Callers had to pass `$flat=true` (or `$flat=1`) to get the flat shape.
-- **After:** entity responses are flat by default. Callers that explicitly relied on the wrapped shape must now pass `$flat=false`.
+- **After:** entity responses are flat by default. Callers that explicitly relied on the wrapped shape must now pass `$flat=false`, and will receive a `Deprecation` header until the wrapped shape is removed.
 - The Qelos SDKs (`@qelos/sdk` and `qelos_sdk`) automatically send `$flat=true` when callers omit it, so the behavior is consistent across server versions. Existing call signatures keep working.
 - Code that already passed `$flat=true` is unaffected.
 - Code that read entity properties through the wrapped path (`entity.metadata.foo`) keeps working — the `metadata` object is still present in flat responses.
@@ -43,7 +56,7 @@ GET /api/blueprints/{blueprintKey}/entities
 | `$limit` | `number` | Maximum number of results |
 | `$skip` | `number` | Number of results to skip |
 | `$sort` | `string` | Sort field (prefix with `-` for descending) |
-| `$flat` | `boolean` | Return flat entity structure. **Default `true`** — pass `$flat=false` (or `0`) to receive the wrapped shape with metadata nested under `metadata`. |
+| `$flat` | `boolean` | Return flat entity structure. **Default `true`** — pass `$flat=false` (or `0`) to receive the wrapped (deprecated) shape with metadata nested under `metadata`. Ignored when `Accept-Version: v1` is sent (always flat). |
 | `$populate` | `boolean` | Populate related references |
 | `$q` | `string` | Search string for metadata search |
 | `$qProps` | `string` | Comma-separated metadata keys to search within |
