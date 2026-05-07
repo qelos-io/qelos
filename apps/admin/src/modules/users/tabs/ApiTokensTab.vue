@@ -14,11 +14,16 @@
         </div>
       </template>
 
-      <el-table :data="tokens" v-loading="loading" :empty-text="$t('No API tokens created yet')">
-        <el-table-column :label="$t('Name')" prop="nickname" min-width="140" />
-        <el-table-column :label="$t('Token')" min-width="120">
+      <el-table :data="tokens" v-loading="loading" :empty-text="$t('No API tokens created yet')" table-layout="auto">
+        <el-table-column :label="$t('Name')" prop="nickname" min-width="140" show-overflow-tooltip />
+        <el-table-column :label="$t('Token')" min-width="140">
           <template #default="{ row }">
-            <code class="token-prefix">{{ row.tokenPrefix }}********</code>
+            <code class="token-prefix" dir="ltr">{{ maskTokenPrefix(row.tokenPrefix) }}</code>
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('Created')" min-width="150">
+          <template #default="{ row }">
+            {{ formatDateTime(row.created) }}
           </template>
         </el-table-column>
         <el-table-column :label="$t('Expires')" min-width="110">
@@ -28,12 +33,22 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('Last Used')" min-width="110">
+        <el-table-column :label="$t('Last Used')" min-width="150">
           <template #default="{ row }">
-            {{ row.lastUsedAt ? formatDate(row.lastUsedAt) : $t('Never') }}
+            {{ row.lastUsedAt ? formatDateTime(row.lastUsedAt) : $t('Never') }}
           </template>
         </el-table-column>
-        <el-table-column :label="$t('Actions')" width="80" align="center">
+        <el-table-column :label="$t('Workspace')" min-width="140" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ workspaceScopeLabel(row) }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('Uses')" width="88" align="right">
+          <template #default="{ row }">
+            <span :title="$t('Successful authentications with this API key')">{{ usageCount(row) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('Actions')" width="88" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="danger" size="small" plain @click="confirmDelete(row)">
               <font-awesome-icon :icon="['fas', 'trash']" />
@@ -44,10 +59,27 @@
     </el-card>
 
     <!-- Create Token Dialog -->
-    <el-dialog v-model="showCreateDialog" :title="$t('Create API Token')" width="500px" @closed="resetCreateForm">
+    <el-dialog v-model="showCreateDialog" :title="$t('Create API Token')" width="520px" @closed="resetCreateForm">
       <el-form :model="createForm" label-position="top">
         <el-form-item :label="$t('Token Name')" required>
           <el-input v-model="createForm.nickname" :placeholder="$t('e.g., CI/CD Pipeline')" />
+        </el-form-item>
+        <el-form-item :label="$t('Workspace scope')">
+          <el-select
+            v-model="createForm.workspaceId"
+            clearable
+            filterable
+            :loading="workspacesLoading"
+            :placeholder="$t('All workspaces')"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="ws in workspaces"
+              :key="ws._id"
+              :label="ws.name"
+              :value="ws._id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item :label="$t('Expiration')">
           <div class="expiration-presets">
@@ -79,7 +111,7 @@
         {{ $t('Copy this token now. It will not be shown again.') }}
       </el-alert>
       <div class="token-reveal">
-        <el-input :model-value="revealedToken" readonly>
+        <el-input :model-value="revealedToken" readonly dir="ltr">
           <template #append>
             <el-button @click="copyToken">
               <font-awesome-icon :icon="['fas', 'copy']" />
@@ -97,8 +129,11 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
 import { api, getCallData } from '@/services/apis/api';
+import workspacesService from '@/services/apis/workspaces-service';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
+import type { IApiToken } from '@qelos/sdk/authentication';
+import type { IWorkspace } from '@qelos/sdk/workspaces';
 
 const { t } = useI18n();
 
@@ -108,7 +143,9 @@ defineProps({
   submitting: Boolean,
 });
 
-const tokens = ref<any[]>([]);
+const tokens = ref<IApiToken[]>([]);
+const workspaces = ref<IWorkspace[]>([]);
+const workspacesLoading = ref(false);
 const loading = ref(false);
 const creating = ref(false);
 const showCreateDialog = ref(false);
@@ -118,6 +155,7 @@ const selectedPreset = ref('');
 
 const createForm = ref({
   nickname: '',
+  workspaceId: '' as string,
   expiresAt: null as Date | null,
 });
 
@@ -135,8 +173,35 @@ function setExpiration(preset: { label: string; days: number }) {
 }
 
 function resetCreateForm() {
-  createForm.value = { nickname: '', expiresAt: null };
+  createForm.value = { nickname: '', workspaceId: '', expiresAt: null };
   selectedPreset.value = '';
+}
+
+function maskTokenPrefix(prefix: string) {
+  const safe = prefix || '';
+  return `${safe}••••••••`;
+}
+
+function workspaceScopeLabel(row: IApiToken): string {
+  const ws = row.workspace;
+  if (ws == null) return t('All workspaces');
+  if (typeof ws === 'string') return ws;
+  return ws.name || ws._id || '—';
+}
+
+function usageCount(row: IApiToken) {
+  return row.usageCount ?? 0;
+}
+
+async function loadWorkspaces() {
+  workspacesLoading.value = true;
+  try {
+    workspaces.value = await workspacesService.getAll();
+  } catch {
+    ElMessage.error(t('Failed to load workspaces'));
+  } finally {
+    workspacesLoading.value = false;
+  }
 }
 
 async function loadTokens() {
@@ -157,10 +222,15 @@ async function handleCreate() {
   }
   creating.value = true;
   try {
-    const result = await api.post('/api/me/api-tokens', {
+    const body: Record<string, unknown> = {
       nickname: createForm.value.nickname,
       expiresAt: createForm.value.expiresAt.toISOString(),
-    }).then(getCallData);
+    };
+    if (createForm.value.workspaceId) {
+      body.workspace = createForm.value.workspaceId;
+    }
+
+    const result = await api.post('/api/me/api-tokens', body).then(getCallData) as { token: string };
 
     revealedToken.value = result.token;
     showCreateDialog.value = false;
@@ -173,7 +243,7 @@ async function handleCreate() {
   }
 }
 
-async function confirmDelete(token: any) {
+async function confirmDelete(token: IApiToken) {
   try {
     await ElMessageBox.confirm(
       t('Revoke token "{name}" ({prefix}...)?', { name: token.nickname, prefix: token.tokenPrefix }),
@@ -208,11 +278,24 @@ function formatDate(dateStr: string) {
   });
 }
 
+function formatDateTime(dateStr: string) {
+  return new Date(dateStr).toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function isExpired(dateStr: string) {
   return new Date(dateStr) < new Date();
 }
 
-onMounted(loadTokens);
+onMounted(() => {
+  loadWorkspaces();
+  loadTokens();
+});
 </script>
 
 <style scoped>
@@ -257,6 +340,7 @@ onMounted(loadTokens);
 .expiration-presets {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .token-reveal {

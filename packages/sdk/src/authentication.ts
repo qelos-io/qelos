@@ -43,7 +43,10 @@ export interface IApiToken {
   tokenPrefix: string;
   expiresAt: string;
   lastUsedAt?: string;
-  workspace?: string;
+  /** Workspace scope when set; may be an id string or a populated `{ _id, name }` from list responses */
+  workspace?: string | { _id: string; name?: string } | null;
+  /** Successful API-token authentications (server-maintained). */
+  usageCount?: number;
   created: string;
 }
 

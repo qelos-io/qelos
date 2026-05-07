@@ -10,6 +10,8 @@ export interface IApiToken {
   tokenPrefix: string;
   expiresAt: Date;
   lastUsedAt?: Date;
+  /** Incremented on each successful API-token authentication. */
+  usageCount?: number;
   created: Date;
 }
 
@@ -24,6 +26,7 @@ const ApiTokenSchema = new Schema({
   tokenPrefix: { type: String, required: true },
   expiresAt: { type: Date, required: true },
   lastUsedAt: { type: Date, default: null },
+  usageCount: { type: Number, default: 0 },
   created: { type: Date, default: Date.now },
 });
 
