@@ -83,11 +83,14 @@ export interface QelosRequestContext {
   tokens: QelosTokenPair;
 }
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Express {
-    interface Request {
-      qelos?: QelosRequestContext;
-    }
+declare module 'express' {
+  interface Request {
+    qelos: QelosRequestContext;
+  }
+}
+
+declare module 'express-serve-static-core' {
+  interface Request {
+    qelos: QelosRequestContext;
   }
 }
