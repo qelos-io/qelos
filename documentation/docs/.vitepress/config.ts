@@ -23,6 +23,7 @@ export default defineConfig({
       { text: 'API', link: '/api/api' },
       { text: 'CLI', link: '/cli/' },
       { text: 'Plugins', link: '/plugins/create' },
+      { text: 'Integrators', link: '/integrators/' },
       { text: 'Deployment', link: '/deployment/' },
     ],
     socialLinks: [
@@ -199,6 +200,19 @@ export default defineConfig({
           { text: 'Agent Command', link: '/cli/agent' },
           { text: 'Agent Tools (clientTools)', link: '/cli/agent-tools' },
           { text: 'Global Environments', link: '/cli/global' }
+        ]
+      },
+      {
+        text: 'INTEGRATORS',
+        collapsed: true,
+        items: [
+          { text: 'Overview', link: '/integrators/' },
+          { text: 'Express', link: '/integrators/express' },
+          { text: 'Next.js', link: '/integrators/next' },
+          { text: 'Nuxt', link: '/integrators/nuxt' },
+          { text: 'Fastify', link: '/integrators/fastify' },
+          { text: 'NestJS', link: '/integrators/nest' },
+          { text: 'FastAPI', link: '/integrators/fastapi' },
         ]
       },
       {
