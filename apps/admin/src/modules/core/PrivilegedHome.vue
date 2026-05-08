@@ -21,6 +21,10 @@
           @close="closeIntegrationFormModal" />
       </el-tab-pane>
 
+      <el-tab-pane name="connect" :label="$t('Connect your app')">
+        <IntegratorsSuggestions />
+      </el-tab-pane>
+
       <el-tab-pane name="metadata" :label="$t('Settings')">
         <div class="metadata-dashboard">
           <!-- Configuration Cards Section -->
@@ -155,6 +159,7 @@ import BlueprintsList from '@/modules/no-code/components/BlueprintsList.vue';
 import YourPluginsList from '@/modules/plugins/components/YourPluginsList.vue';
 import QuickStartWizard from '@/modules/admins/components/QuickStartWizard.vue';
 import DashboardOverview from '@/modules/core/components/DashboardOverview.vue';
+import IntegratorsSuggestions from '@/modules/core/components/IntegratorsSuggestions.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import WorkflowsView from '../integrations/components/WorkflowsView.vue';
 import IntegrationFormModal from '../integrations/components/IntegrationFormModal.vue';
