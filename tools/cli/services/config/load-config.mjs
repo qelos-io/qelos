@@ -235,6 +235,26 @@ export function savePushConfig(type, opts, options = {}) {
 }
 
 /**
+ * Returns interfaces (build) config defaults. Reads `interfaces` first, falling
+ * back to `build.interfaces` so users can scope under a generic `build` section.
+ * @returns {object}
+ */
+export function getInterfacesConfig() {
+  if (!_config) return {};
+  const direct = _config.interfaces || _config.build?.interfaces;
+  return direct ? { ...direct } : {};
+}
+
+/**
+ * Saves interfaces (build) config into qelos.config.json under the `interfaces` key.
+ * @param {object} opts
+ * @param {object} [options]
+ */
+export function saveInterfacesConfig(opts, options = {}) {
+  return saveConfig({ interfaces: opts }, options);
+}
+
+/**
  * Saves restore config for a subcommand + name into qelos.config.json.
  * @param {'blueprints'} subcommand
  * @param {string} name - 'all' or a specific name
