@@ -3,6 +3,11 @@ import BaseSDK from './base-sdk';
 import type { IBlueprint } from '@qelos/global-types';
 import QlBlueprintEntities from './blueprints-entities';
 
+// Empty by design — extended via TypeScript declaration merging from
+// generated `.d.ts` files (`qelos interfaces build`) so `entitiesOf("todo")`
+// resolves to the typed entity without callers passing a generic.
+export interface BlueprintEntitiesRegistry {}
+
 export default class QlBlueprints extends BaseSDK {
   private relativePath = '/api/blueprints';
 
@@ -20,9 +25,11 @@ export default class QlBlueprints extends BaseSDK {
     return this.callJsonApi<IBlueprint[]>(this.relativePath);
   }
 
-  entitiesOf<T = any>(blueprintKey: string): QlBlueprintEntities<T> {
+  entitiesOf<K extends keyof BlueprintEntitiesRegistry>(blueprintKey: K): QlBlueprintEntities<BlueprintEntitiesRegistry[K]>;
+  entitiesOf<T = any>(blueprintKey: string): QlBlueprintEntities<T>;
+  entitiesOf(blueprintKey: string): QlBlueprintEntities {
     if (!this.#entities.has(blueprintKey)) {
-      this.#entities.set(blueprintKey, new QlBlueprintEntities<T>(this.options, blueprintKey));
+      this.#entities.set(blueprintKey, new QlBlueprintEntities(this.options, blueprintKey));
     }
     return this.#entities.get(blueprintKey);
   }
