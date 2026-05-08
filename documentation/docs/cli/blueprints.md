@@ -110,4 +110,5 @@ qelos push blueprints ./blueprints
 
 - [`qelos pull`](/cli/pull) – Retrieve existing blueprints from Qelos
 - [`qelos push`](/cli/push) – Upload generated or edited blueprints back to Qelos
+- [`qelos interfaces build`](/cli/interfaces) – Generate TypeScript / Python interfaces from `*.blueprint.json` files
 - [`qelos generate rules`](/cli/generate) – Produce IDE rules that explain your blueprint structure
