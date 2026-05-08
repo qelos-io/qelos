@@ -1,109 +1,130 @@
 ---
-title: Intro to QELOS
+title: Intro to Qelos
 editLink: true
 ---
-# Intro to QELOS
+# Intro to Qelos
 
-![QELOS Logo](/qelos-hq.png)
+![Qelos Logo](/qelos-hq.png)
 
-## What is QELOS?
+## What is Qelos?
 
-Qelos is a platform to create SaaS products, and it has set of tools for developers and non-developers to manage, edit, improve and change the SaaS product faster and easier.
+Qelos is an **AI-first application layer gateway**. It is the single backend layer that any application plugs into to get a fully managed REST API, AI agents, authentication, multi-tenant workspaces, permissions, and an events log — all accessible through a unified SDK and per-framework integrator middleware.
 
-## Why Use QELOS?
+Your app stays in your own framework. You define your data model with **blueprints** in the admin panel, and the gateway generates CRUD endpoints, permission enforcement, and audit logging for you.
 
-QELOS offers a range of benefits for both developers and businesses, aimed at improving the development and deployment of SaaS solutions:
+## The three roles Qelos plays
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
 
-  <!-- Accelerated Product Development -->
   <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
     <div style="background-color: #E8F5E9; padding: 20px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-      <img src="/rocket_icon.svg" alt="Accelerated Product Development" style="width: 50px; height: 50px;">
+      <img src="/manage_icon.svg" alt="Admin Panel" style="width: 50px; height: 50px;">
     </div>
-    <p><strong>🚀 Accelerated Product Development</strong></p>
-    <p>With our automated solutions and dedicated team, you will achieve your product goals faster than ever before. Our approach ensures that you move from concept to reality quickly and efficiently.</p>
+    <p><strong>🛠️ Admin panel for applications</strong></p>
+    <p>A dashboard where developers and operators manage their app's data model, AI agents, users, workspaces, permissions, and events.</p>
   </div>
 
-  <!-- Open-Source Automation Tools -->
   <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
     <div style="background-color: #E1F5FE; padding: 20px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-      <img src="/code_icon.svg" alt="Open-Source Automation Tools" style="width: 50px; height: 50px;">
+      <img src="/cloud_done_icon.svg" alt="API Gateway" style="width: 50px; height: 50px;">
     </div>
-    <p><strong>🌍 Open-Source Automation Tools</strong></p>
-    <p>Our open-source tools streamline the publishing process, making it easier and faster to bring your product to market. Benefit from a transparent and community-driven development environment.</p>
+    <p><strong>🌐 API gateway for apps</strong></p>
+    <p>A RESTful API backed by MongoDB that apps consume via the SDK. Blueprints define the data model; the gateway exposes CRUD, AI chat, auth, and more.</p>
   </div>
 
-  <!-- Focused on SaaS Product Delivery -->
   <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
     <div style="background-color: #FFF3E0; padding: 20px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-      <img src="/cloud_upload_icon.svg" alt="Focused on SaaS Product Delivery" style="width: 50px; height: 50px;">
+      <img src="/extension_2icon.svg" alt="Framework Plugin" style="width: 50px; height: 50px;">
     </div>
-    <p><strong>💡 Focused on SaaS Product Delivery</strong></p>
-    <p>We specialize in SaaS product delivery. By leveraging our automated tools, we help you reduce costs and deliver secure, scalable, and high-quality products efficiently.</p>
-  </div>
-
-  <!-- Self-Maintenance with Open-Source Tools -->
-  <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
-    <div style="background-color: #FBE9E7; padding: 20px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-      <img src="/tools_icon.svg" alt="Self-Maintenance with Open-Source Tools" style="width: 50px; height: 50px;">
-    </div>
-    <p><strong>🔧 Self-Maintenance with Open-Source Tools</strong></p>
-    <p>All our tools are open-source, providing you with the flexibility to maintain and customize your product on your own once it’s up and running.</p>
+    <p><strong>🧩 A plugin for every framework</strong></p>
+    <p>Integrator middleware (<code>@qelos/integrator-*</code>) makes the Qelos API <em>the</em> API for your app with a single import.</p>
   </div>
 
 </div>
 
-## Key Features and Capabilities
-
-QELOS provides a variety of features to support your SaaS development needs:
+## What Qelos brings to your app
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px;">
-  <!-- Plugin Management -->
+
   <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
     <div style="background-color: #E8F5E9; padding: 20px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-      <img src="/extension_2icon.svg" alt="Plugin Management" style="width: 50px; height: 50px; filter: grayscale(100%);">
+      <img src="/code_icon.svg" alt="Blueprints" style="width: 50px; height: 50px;">
     </div>
-    <p><strong>🧩 Plugin Management</strong></p>
-    <p>Effortlessly create, configure, and manage plugins. Our intuitive plugin management system makes it simple to extend your product's functionality.</p>
+    <p><strong>🧱 Blueprints → REST API</strong></p>
+    <p>Define your data model in the admin panel; get full CRUD endpoints, validation, and permission checks generated automatically.</p>
   </div>
 
-  <!-- Automated Screen Building -->
   <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
     <div style="background-color: #E1F5FE; padding: 20px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-      <img src="/desktop_mac_icon.svg" alt="Automated Screen Building" style="width: 50px; height: 50px; filter: grayscale(100%);">
+      <img src="/rocket_icon.svg" alt="AI Agents" style="width: 50px; height: 50px;">
     </div>
-    <p><strong>🖥️ Automated Screen Building</strong></p>
-    <p>Customize your product with a visual “What You See Is What You Get” (WYSIWYG) editor. Easily modify screens and interfaces without coding.</p>
+    <p><strong>🤖 AI agents & chatbots</strong></p>
+    <p>Create, configure, and embed AI agents. Switch providers (OpenAI, Anthropic, Gemini) without changing your product architecture.</p>
   </div>
 
-  <!-- Self-Hosted or Managed Solutions -->
   <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
     <div style="background-color: #FFF3E0; padding: 20px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-      <img src="/cloud_done_icon.svg" alt="Self-Hosted or Managed Solutions" style="width: 50px; height: 50px; filter: grayscale(100%);">
+      <img src="/desktop_mac_icon.svg" alt="Auth & Workspaces" style="width: 50px; height: 50px;">
     </div>
-    <p><strong>🌐 Self-Hosted or Managed Solutions</strong></p>
-    <p>Choose between a fully managed service or self-hosting options. You can host the entire SaaS solution on your servers or select specific microservices to manage yourself.</p>
+    <p><strong>🔐 Auth, permissions & workspaces</strong></p>
+    <p>Multi-tenant workspaces, social login, cookie/token lifecycle, roles, and resource-level permissions enforced at the gateway.</p>
   </div>
 
-  <!-- Customized Development Solutions -->
   <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
     <div style="background-color: #FBE9E7; padding: 20px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-      <img src="/manage_icon.svg" alt="Customized Development Solutions" style="width: 50px; height: 50px; filter: grayscale(100%);">
+      <img src="/tools_icon.svg" alt="SDK & CLI" style="width: 50px; height: 50px;">
     </div>
-    <p><strong>🛠️ Customized Development Solutions</strong></p>
-    <p>Our expert team delivers tailored software solutions to meet your unique needs. Whether you require new features or custom integrations, we use our tools and expertise to bring your vision to life.</p>
+    <p><strong>🧰 Unified SDK + CLI</strong></p>
+    <p>One TypeScript or Python SDK for every capability, plus <code>@qelos/cli</code> for scaffolding, agents, and IDE rules generation.</p>
   </div>
+
+  <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+    <div style="background-color: #E8F5E9; padding: 20px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+      <img src="/extension_2icon.svg" alt="Integrator Middleware" style="width: 50px; height: 50px;">
+    </div>
+    <p><strong>🔌 Per-framework middleware</strong></p>
+    <p>Drop-in integrators for Next.js, Nuxt, Express, Fastify, NestJS, and FastAPI — one import wires up auth, workspace, and SDK on every request.</p>
+  </div>
+
+  <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+    <div style="background-color: #E1F5FE; padding: 20px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+      <img src="/cloud_upload_icon.svg" alt="Events & Audit" style="width: 50px; height: 50px;">
+    </div>
+    <p><strong>📜 Events & audit log</strong></p>
+    <p>Every API call, auth event, and AI interaction is recorded. Forward to webhooks or query through the SDK.</p>
+  </div>
+
 </div>
 
+## How developers use Qelos
 
-## How to Get Started with QELOS
+1. Install the CLI: `npm install -g @qelos/cli`
+2. Initialize in their project: `qelos init` (detects framework, scaffolds config)
+3. Install the integrator: `npm install @qelos/integrator-next` (or express, nuxt, fastify, nest, fastapi)
+4. Use the SDK in their code: `sdk.entities('products').find()`, `sdk.ai.agents.chat()`, etc.
+5. Manage everything from the admin panel or the CLI.
 
-Getting started with QELOS is simple. Follow these steps to install and set up your development environment:
+```typescript
+import QelosSDK from '@qelos/sdk';
 
-1. **[Installation](./installation.md)**: Learn how to install QELOS on your system.
-2. **[Create Your First Plugin](./create-your-first-plugin.md)**: Discover how to create and manage your first plugin.
-3. **[Deployment](./deployment.md)**: Find out how to deploy your application to a production environment.
+const sdk = new QelosSDK({
+  appUrl: process.env.QELOS_APP_URL!,
+  apiToken: process.env.QELOS_API_TOKEN!,
+});
+
+const products = await sdk.entities('products').find({ status: 'active' });
+const reply = await sdk.ai.agents.chat('agent-id', 'How can I help?');
+```
+
+## How to get started
+
+Pick the path that matches what you're trying to do:
+
+1. **[Getting Started as an Integrator](./integrators.md)** — plug an existing app into a Qelos instance using the CLI, the integrator for your framework, and the SDK.
+2. **[Installation](./installation.md)** — clone the repo and run Qelos itself locally (for contributors and self-hosting).
+3. **[Create Blueprints](./create-blueprints.md)** — model your application's data and get CRUD endpoints automatically.
+4. **[Configure Your First AI Agent](../tutorials/configure-first-ai-agent.md)** — wire up an agent end-to-end and call it from your app.
+5. **[Deployment](./deployment.md)** — ship Qelos to production with Docker Compose or Kubernetes / Helm.
 
 ## HTTP API and the gateway
 
@@ -111,10 +132,9 @@ Every product app talks to Qelos through a single **gateway**: browser traffic a
 
 For a concise map of those routes, request headers, example **`curl`** commands, and **`@qelos/sdk`** equivalents organized by domain, see the **[Gateway endpoint reference](/api/gateway-endpoint-reference)**. The full topic pages under [API Reference](/api/api) expand request and response shapes for each area.
 
-## Additional Resources
-
-Explore more about QELOS through these resources:
+## Additional resources
 
 - [Official Website](https://qelos.io/)
-- [Follow Us on LinkedIn](https://www.linkedin.com/company/qelos/about/)
+- [Roadmap](https://github.com/qelos-io/qelos/blob/main/ROADMAP.md)
 - [GitHub Repository](https://github.com/qelos-io/qelos)
+- [Follow Us on LinkedIn](https://www.linkedin.com/company/qelos/about/)
