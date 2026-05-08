@@ -26,14 +26,19 @@ function mapPrimitive(type) {
   switch (type) {
     case 'number':
       return 'float';
+    case 'integer':
+      return 'int';
     case 'boolean':
       return 'bool';
     case 'object':
       return 'Dict[str, Any]';
-    case 'string':
     case 'date':
+      return 'datetime.date';
     case 'datetime':
+      return 'datetime.datetime';
     case 'time':
+      return 'datetime.time';
+    case 'string':
     case 'file':
       return 'str';
     default:
@@ -92,21 +97,25 @@ function resolvePascalNames(blueprints) {
   return map;
 }
 
-function buildTypedDict(name, blueprint, identifierToPascal) {
+function wrapOptional(pyType) {
+  return `NotRequired[${pyType}]`;
+}
+
+function buildClasses(name, blueprint, identifierToPascal) {
   const properties = blueprint.properties && typeof blueprint.properties === 'object'
     ? blueprint.properties
     : {};
   const relations = Array.isArray(blueprint.relations) ? blueprint.relations : [];
 
-  const lines = [];
   const fields = [];
 
   for (const [key, descriptor] of Object.entries(properties)) {
     if (!descriptor || typeof descriptor !== 'object') continue;
     const safeKey = safePyKey(key);
     if (!safeKey) continue;
-    const tsType = mapDescriptorToPyType(descriptor);
-    fields.push(`    ${safeKey}: ${tsType}`);
+    const baseType = mapDescriptorToPyType(descriptor);
+    const pyType = descriptor.required ? baseType : wrapOptional(baseType);
+    fields.push(`    ${safeKey}: ${pyType}`);
   }
 
   for (const relation of relations) {
@@ -114,11 +123,12 @@ function buildTypedDict(name, blueprint, identifierToPascal) {
     const safeKey = safePyKey(relation.key);
     if (!safeKey) continue;
     const targetPascal = identifierToPascal.get(relation.target);
-    const tsType = targetPascal ? `Union["${targetPascal}Entity", str]` : 'str';
-    fields.push(`    ${safeKey}: ${tsType}`);
+    const targetType = targetPascal ? `Union["${targetPascal}Entity", str]` : 'str';
+    fields.push(`    ${safeKey}: ${wrapOptional(targetType)}`);
   }
 
-  lines.push(`class ${name}Properties(TypedDict, total=False):`);
+  const lines = [];
+  lines.push(`class ${name}Properties(TypedDict):`);
   if (fields.length === 0) {
     lines.push('    pass');
   } else {
@@ -126,10 +136,21 @@ function buildTypedDict(name, blueprint, identifierToPascal) {
   }
 
   lines.push('');
-  lines.push(`class ${name}Entity(${name}Properties, total=False):`);
+  lines.push(`class ${name}Entity(${name}Properties):`);
   lines.push('    _id: str');
   lines.push('    identifier: str');
 
+  return lines.join('\n');
+}
+
+function buildRegistryComment(blueprints, identifierToPascal) {
+  if (blueprints.length === 0) return null;
+  const lines = ['# Registry of blueprint identifiers → Entity TypedDict:'];
+  for (const blueprint of blueprints) {
+    const pascal = identifierToPascal.get(blueprint.identifier);
+    if (!pascal) continue;
+    lines.push(`#   ${JSON.stringify(blueprint.identifier)} -> ${pascal}Entity`);
+  }
   return lines.join('\n');
 }
 
@@ -139,12 +160,21 @@ export function generatePyDeclarations(blueprints) {
 
   const sections = [
     BANNER,
-    'from typing import Any, Dict, List, Literal, TypedDict, Union',
+    [
+      'import datetime',
+      'from typing import Any, Dict, List, Literal, TypedDict, Union',
+      'from typing_extensions import NotRequired',
+    ].join('\n'),
   ];
 
   for (const blueprint of safeBlueprints) {
     const name = identifierToPascal.get(blueprint.identifier);
-    sections.push(buildTypedDict(name, blueprint, identifierToPascal));
+    sections.push(buildClasses(name, blueprint, identifierToPascal));
+  }
+
+  const registryComment = buildRegistryComment(safeBlueprints, identifierToPascal);
+  if (registryComment) {
+    sections.push(registryComment);
   }
 
   return sections.join('\n\n') + '\n';

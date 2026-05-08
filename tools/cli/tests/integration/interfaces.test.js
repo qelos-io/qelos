@@ -156,8 +156,79 @@ describe('qelos interfaces build (integration)', () => {
     assert.ok(fs.existsSync(generated), `expected generated python file at ${generated}`);
 
     const content = fs.readFileSync(generated, 'utf-8');
-    assert.ok(content.includes('class TodoProperties(TypedDict, total=False):'));
-    assert.ok(content.includes('class TodoEntity(TodoProperties, total=False):'));
+    assert.ok(content.startsWith('# AUTO-GENERATED — DO NOT EDIT'));
+    assert.ok(content.includes('import datetime'));
     assert.ok(content.includes('from typing import'));
+    assert.ok(content.includes('from typing_extensions import NotRequired'));
+    assert.ok(content.includes('class TodoProperties(TypedDict):'));
+    assert.ok(content.includes('class TodoEntity(TodoProperties):'));
+    assert.ok(content.includes('    title: str'));
+    assert.ok(content.includes('    completed: NotRequired[bool]'));
+    assert.ok(content.includes('    status: Literal["open", "done"]'));
+    assert.ok(content.includes('    project: NotRequired[Union["ProjectEntity", str]]'));
+  });
+
+  it('skips tsconfig injection in --lang py mode', () => {
+    const tsconfigPath = path.join(testDir, 'tsconfig.json');
+    fs.writeFileSync(tsconfigPath, JSON.stringify({
+      compilerOptions: { strict: true },
+      include: ['src/**/*'],
+    }, null, 2));
+
+    const before = fs.readFileSync(tsconfigPath, 'utf-8');
+    const result = runCli('interfaces build --lang py', { cwd: testDir });
+    assert.ok(result.success, `command failed:\n${result.output}`);
+    const after = fs.readFileSync(tsconfigPath, 'utf-8');
+    assert.strictEqual(before, after, 'tsconfig.json must not be touched in py mode');
+  });
+
+  it('produces a structurally valid Python module for --lang py', () => {
+    const result = runCli('interfaces build --lang py', { cwd: testDir });
+    assert.ok(result.success, `command failed:\n${result.output}`);
+
+    const generated = path.join(testDir, 'types', 'qelos_blueprints.py');
+    const content = fs.readFileSync(generated, 'utf-8');
+
+    // If python is available on PATH, prefer ast.parse (the gold-standard validity check).
+    // On Windows, `python`/`python3` may resolve to an app-execution-alias stub that
+    // exits with 9009 and prints "Python was not found"; treat that as missing.
+    const pythonBins = ['python3', 'python'];
+    let pyChecked = false;
+    for (const bin of pythonBins) {
+      const sniff = spawnSync(bin, ['-c', 'import sys; sys.stdout.write(sys.version)'], {
+        encoding: 'utf8',
+      });
+      if (sniff.error || sniff.status !== 0 || !/^\d+\.\d+/.test(sniff.stdout || '')) continue;
+
+      const probe = spawnSync(bin, ['-c', 'import ast,sys; ast.parse(sys.stdin.read())'], {
+        input: content,
+        encoding: 'utf8',
+      });
+      pyChecked = true;
+      assert.strictEqual(probe.status, 0, `python ast.parse rejected the module:\n${probe.stderr}`);
+      break;
+    }
+
+    if (!pyChecked) {
+      // Structural fallback: balanced parens/brackets, no tab indentation, every class
+      // header followed by an indented body, no trailing whitespace artifacts.
+      const lines = content.split('\n');
+      assert.ok(lines.length > 5, 'expected a non-trivial module');
+      assert.ok(!content.includes('\t'), 'python output must not use tab indentation');
+
+      const counts = { '(': 0, ')': 0, '[': 0, ']': 0, '{': 0, '}': 0 };
+      for (const ch of content) if (ch in counts) counts[ch]++;
+      assert.strictEqual(counts['('], counts[')'], 'unbalanced parens');
+      assert.strictEqual(counts['['], counts[']'], 'unbalanced brackets');
+      assert.strictEqual(counts['{'], counts['}'], 'unbalanced braces');
+
+      for (let i = 0; i < lines.length; i++) {
+        if (/^class\s+\w+/.test(lines[i])) {
+          assert.match(lines[i], /:\s*$/, `class header missing colon: ${lines[i]}`);
+          const next = lines[i + 1] || '';
+          assert.ok(/^\s{4}\S/.test(next), `class body must be indented: "${lines[i]}" → "${next}"`);
+        }
+      }
+    }
   });
 });
