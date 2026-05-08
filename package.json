@@ -14,7 +14,8 @@
     "postdev": "pnpm stop",
     "stop": "kill-port 3000 3001 9000 9001 9002 9003 9004 9005 9006 9007 9008 && docker rm -f qelos-db qelos-redis",
     "populate-db": "pnpm -F @qelos/auth run init",
-    "test": "pnpm -r run test"
+    "e2e:integrators": "pnpm -F e2e test",
+    "test": "pnpm -r --filter \"!e2e\" run test"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "engines": {

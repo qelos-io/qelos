@@ -54,6 +54,13 @@ jobs:
           QELOS_E2E_USERNAME: ${{ secrets.QELOS_E2E_USERNAME }}
           QELOS_E2E_PASSWORD: ${{ secrets.QELOS_E2E_PASSWORD }}
 
+      - name: Integrator E2E (requires QELOS_E2E_URL / runs skipped otherwise)
+        run: pnpm -F e2e test
+        env:
+          QELOS_INTEGRATOR_E2E_URL: ${{ secrets.QELOS_E2E_URL }}
+          QELOS_INTEGRATOR_E2E_USERNAME: ${{ secrets.QELOS_E2E_USERNAME }}
+          QELOS_INTEGRATOR_E2E_PASSWORD: ${{ secrets.QELOS_E2E_PASSWORD }}
+
       - name: Pack apps
         run: node pack-apps.mjs
       
