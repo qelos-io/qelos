@@ -4,137 +4,194 @@ title: Qelos Documentation
 editLink: true
 hero:
   name: Qelos
-  text: Build AI Agents & SaaS Applications
-  tagline: Build intelligent agents, visual workflows, and multi-tenant SaaS apps—fast.
+  text: AI-First Application Layer Gateway
+  tagline: The backend layer your app plugs into — REST API, AI agents, auth, workspaces, permissions, and events log out of the box.
   image:
     src: /qelos-hq.png
     alt: Qelos
   actions:
     - theme: brand
-      text: Get Started
-      link: /getting-started/intro
+      text: Get Started as an Integrator
+      link: /getting-started/integrators
     - theme: alt
-      text: Start Free Trial
-      link: https://app.qelos.io
+      text: Run Qelos Locally
+      link: /getting-started/installation
     - theme: alt
       text: View on GitHub
       link: https://github.com/qelos-io/qelos
 features:
+  - icon: 🧱
+    title: Blueprints → REST API
+    details: Define your data model in the admin panel; get full CRUD endpoints, validation, and permission checks for free.
   - icon: 🤖
-    title: AI Agents & Workflows
-    details: Deploy AI agents for support, data processing, and complex business workflows.
-  - icon: 🎨
-    title: Visual Builders
-    details: Build with no-code editors, WYSIWYG UI, and visual workflows.
+    title: AI Agents
+    details: Create, configure, and embed AI agents. Switch providers (OpenAI, Anthropic, Gemini) without changing product architecture.
+  - icon: 🔐
+    title: Auth, Permissions & Workspaces
+    details: Multi-tenant workspaces, social login, cookie/token lifecycle, roles, and resource-level permissions enforced at the gateway.
+  - icon: 🧰
+    title: Unified SDK
+    details: One TypeScript or Python SDK for entities, AI, auth, permissions, events, and workspaces.
   - icon: 🔌
-    title: Plugin System
-    details: Extend your app with plugins, endpoints, and micro-frontends.
-  - icon: 🚀
-    title: Launch in Days
-    details: Go from idea to a working SaaS with auth, billing, and workflows.
-  - icon: 🌐
-    title: Multi-Model AI
-    details: Switch between providers (OpenAI, Anthropic, Gemini, etc.) without changing product architecture.
-  - icon: 📈
-    title: Scale with Confidence
-    details: Built for multi-tenant growth, high throughput, and production reliability.
+    title: Per-Framework Middleware
+    details: Drop-in integrators for Next.js, Nuxt, Express, Fastify, NestJS, and FastAPI — one import and you're wired in.
+  - icon: 📜
+    title: Events & Audit Log
+    details: Every API call, auth event, and AI interaction is recorded. Forward to webhooks or query via the SDK.
 ---
 
-## Start here
+## What is Qelos?
 
-Pick the path that matches what you're trying to do:
+Qelos is the **AI-first application layer gateway**. It plays three roles for your app:
 
 <div class="vp-doc" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px;">
 
 <div class="custom-card">
-  <h3>🏁 New to Qelos</h3>
-  <p>Install, run locally, and understand the core concepts.</p>
-  <a href="/getting-started/intro">Go to Getting Started →</a>
+  <h3>🛠️ Admin panel</h3>
+  <p>Manage data models, AI agents, users, workspaces, permissions, and events from a single dashboard.</p>
 </div>
 
 <div class="custom-card">
-  <h3>🧩 Build a plugin</h3>
-  <p>Create plugins, endpoints, CRUD, and micro-frontends.</p>
-  <a href="/plugin-play/">Explore Plugin Play →</a>
+  <h3>🌐 API gateway</h3>
+  <p>RESTful endpoints backed by MongoDB. Blueprints define the data model; CRUD, AI chat, and auth come for free.</p>
 </div>
 
 <div class="custom-card">
-  <h3>💳 Payments</h3>
-  <p>Set up billing and payment flows.</p>
-  <a href="/payments/">Open Payments docs →</a>
+  <h3>🧩 Plugin for every framework</h3>
+  <p><code>@qelos/integrator-*</code> middleware makes Qelos <em>the</em> API for your Next.js, Nuxt, Express, Fastify, NestJS, or FastAPI app.</p>
+</div>
+
+</div>
+
+## Pick your path
+
+<div class="vp-doc" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px;">
+
+<div class="custom-card">
+  <h3>🚀 Integrate Qelos into your app</h3>
+  <p>Install the CLI, drop in the integrator for your framework, and start calling the SDK.</p>
+  <a href="/getting-started/integrators">Getting Started as an Integrator →</a>
+</div>
+
+<div class="custom-card">
+  <h3>🏁 Run Qelos locally</h3>
+  <p>Clone the repo, start the dev environment, and explore the admin panel.</p>
+  <a href="/getting-started/installation">Installation guide →</a>
 </div>
 
 <div class="custom-card">
   <h3>🧰 Use the SDK</h3>
-  <p>Integrate Qelos programmatically in your apps and services.</p>
+  <p>Entities, AI agents, auth, permissions, workspaces, and events — one client surface.</p>
   <a href="/sdk/sdk">Read the SDK reference →</a>
 </div>
 
 <div class="custom-card">
-  <h3>🧰 CLI</h3>
-  <p>Sync and manage resources between local and remote instances.</p>
+  <h3>⌨️ Use the CLI</h3>
+  <p><code>qelos init</code>, <code>qelos generate rules</code>, <code>qelos dev</code>, <code>qelos pull/push</code> — your day-to-day developer tool.</p>
   <a href="/cli/">Go to the CLI docs →</a>
 </div>
 
 <div class="custom-card">
-  <h3>🎨 UI templates</h3>
-  <p>Pre-designed frontends, components, and PubSub events.</p>
-  <a href="/pre-designed-frontends/components/">Browse templates →</a>
+  <h3>🤖 Build with AI agents</h3>
+  <p>Create agents in the admin panel, then embed them in your app via the SDK or web widget.</p>
+  <a href="/ai/agents">Open the AI agents guide →</a>
+</div>
+
+<div class="custom-card">
+  <h3>🔌 Browse integrators</h3>
+  <p>Per-framework setup guides for Express, Next.js, Nuxt, Fastify, NestJS, and FastAPI.</p>
+  <a href="/integrators/">See available integrators →</a>
 </div>
 
 </div>
 
-## Quick start (local)
+## Quick start
+
+### Integrate Qelos in an existing app
 
 ```bash
-# Clone
-git clone https://github.com/qelos-io/qelos.git
+# 1. Install the CLI
+npm install -g @qelos/cli
 
-# Install deps
-pnpm install
+# 2. Initialize in your project (detects framework, scaffolds config)
+qelos init
 
-# Build packages
-pnpm build
+# 3. Install the integrator for your framework
+npm install @qelos/integrator-next   # or express, nuxt, fastify, nest
 
-# Start dev environment (includes MongoDB)
-pnpm dev
-
-# Seed initial data (new terminal)
-pnpm populate-db
+# 4. Install the SDK
+npm install @qelos/sdk
 ```
+
+```typescript
+import QelosSDK from '@qelos/sdk';
+
+const sdk = new QelosSDK({
+  appUrl: 'https://your-qelos-instance.com',
+  apiToken: 'ql_your_api_token_here',
+});
+
+// Query entities defined in your blueprints
+const products = await sdk.entities('products').find({ status: 'active' });
+
+// Chat with an AI agent
+const reply = await sdk.ai.agents.chat('agent-id', 'How can I help?');
+
+// Check permissions
+const allowed = await sdk.permissions.check('products:write');
+```
+
+### Run Qelos locally
+
+```bash
+git clone https://github.com/qelos-io/qelos.git
+cd qelos
+pnpm install      # install dependencies
+pnpm build        # build packages
+pnpm dev          # start the dev environment (includes MongoDB)
+pnpm populate-db  # seed initial data (in a new terminal)
+```
+
+Log in at `http://localhost:3000/` with `test@test.com` / `admin`.
 
 ## Popular guides
 
 <div class="vp-doc" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 16px;">
 
 <div class="custom-card">
-  <h3>🏗️ Installation</h3>
-  <p>Set up your development environment and install Qelos.</p>
-  <a href="/getting-started/installation">Learn more →</a>
-</div>
-
-<div class="custom-card">
   <h3>🧭 Create blueprints</h3>
-  <p>Design and implement your application's data models.</p>
+  <p>Design data models that turn into REST resources automatically.</p>
   <a href="/getting-started/create-blueprints">Learn more →</a>
 </div>
 
 <div class="custom-card">
-  <h3>🎨 Design system</h3>
-  <p>Learn about the Qelos design system and UI components.</p>
-  <a href="/getting-started/design-system">Learn more →</a>
+  <h3>🤖 Configure your first AI agent</h3>
+  <p>Wire up an agent end-to-end and chat with it from your app.</p>
+  <a href="/tutorials/configure-first-ai-agent">Open the tutorial →</a>
 </div>
 
 <div class="custom-card">
-  <h3>🔧 Patterns & speed</h3>
-  <p>Tips and patterns to accelerate SaaS development with Qelos.</p>
-  <a href="/getting-started/design-products-faster">Learn more →</a>
+  <h3>🔐 Auth & permissions</h3>
+  <p>Email/password, social login, cookie tokens, roles, and resource-level access.</p>
+  <a href="/auth/">Browse auth docs →</a>
 </div>
 
 <div class="custom-card">
-  <h3>🔌 Build plugins</h3>
-  <p>Extend your application with custom plugins.</p>
-  <a href="/getting-started/create-your-first-plugin">Learn more →</a>
+  <h3>📡 Gateway endpoint reference</h3>
+  <p>Every gateway route mapped to its SDK call and a curl example.</p>
+  <a href="/api/gateway-endpoint-reference">Open the reference →</a>
+</div>
+
+<div class="custom-card">
+  <h3>🧩 Build a plugin</h3>
+  <p>Plugins, custom endpoints, and micro-frontends for your Qelos instance.</p>
+  <a href="/plugins/create">Create a plugin →</a>
+</div>
+
+<div class="custom-card">
+  <h3>🚢 Deploy</h3>
+  <p>Docker Compose, Kubernetes / Helm, and the production checklist.</p>
+  <a href="/deployment/">Deployment guide →</a>
 </div>
 
 </div>
