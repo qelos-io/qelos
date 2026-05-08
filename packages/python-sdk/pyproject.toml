@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qelos-sdk"
-version = "3.11.9"
+version = "4.0.0"
 description = "Python SDK for Qelos API - Build SaaS applications with ease"
 readme = "README.md"
 license = { text = "MIT" }

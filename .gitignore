@@ -27,3 +27,4 @@ apps/admin/components.d.ts
 *.aidev.instructions.md
 *.aidev.task.json
 aidev.tasks.json
+*.egg-info/
