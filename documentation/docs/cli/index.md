@@ -327,6 +327,10 @@ qelos agent code-wizard -m "Hello"  # uses saved defaults
     <p>Create proxy plugin configurations to forward API requests from local paths to external endpoints with optional authentication.</p>
   </div>
   <div class="vp-feature">
+    <h3><a href="/cli/interfaces">Build Blueprint Interfaces</a></h3>
+    <p>Generate typed TypeScript declarations or Python TypedDicts from local <code>*.blueprint.json</code> files so <code>sdk.blueprints.entitiesOf(...)</code> is fully typed.</p>
+  </div>
+  <div class="vp-feature">
     <h3><a href="/cli/agent">Agent</a></h3>
     <p>Interact with AI agents using the Qelos SDK with support for conversation history, streaming, and response export.</p>
   </div>

@@ -196,6 +196,7 @@ export default defineConfig({
           { text: 'Push Command', link: '/cli/push' },
           { text: 'Generate Rules Command', link: '/cli/generate' },
           { text: 'Generate Blueprints', link: '/cli/blueprints' },
+          { text: 'Build Blueprint Interfaces', link: '/cli/interfaces' },
           { text: 'Dump Command', link: '/cli/dump' },
           { text: 'Restore Command', link: '/cli/restore' },
           { text: 'Agent Command', link: '/cli/agent' },
