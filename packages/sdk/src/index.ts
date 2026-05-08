@@ -25,6 +25,8 @@ export type {
   SocialLoginOptions,
 } from './authentication';
 
+export type { BlueprintEntitiesRegistry } from './blueprints';
+
 export {
   parseSocialCallbackRefreshToken,
   getSocialAuthSetCookieParts,

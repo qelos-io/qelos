@@ -49,17 +49,17 @@ describe('Command Registry', () => {
     }
   });
 
-  it('should have the expected number of commands (12)', () => {
+  it('should have the expected number of commands (15)', () => {
     const commandFiles = fs.readdirSync(commandsDir)
       .filter(f => f.endsWith('.mjs') && f !== 'index.mjs');
 
-    assert.strictEqual(commandFiles.length, 12, 'Should have 12 command files');
+    assert.strictEqual(commandFiles.length, 15, 'Should have 15 command files');
   });
 
   it('should include all expected command names', () => {
     const expectedCommands = [
-      'agent', 'auth', 'blueprints', 'create', 'dump', 'generate',
-      'get', 'global', 'init', 'pull', 'push', 'restore',
+      'agent', 'auth', 'blueprints', 'create', 'dev', 'dump', 'generate',
+      'get', 'global', 'init', 'interfaces', 'pull', 'push', 'restore', 'test',
     ];
 
     const commandFiles = fs.readdirSync(commandsDir)
