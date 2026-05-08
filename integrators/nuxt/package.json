@@ -1,6 +1,6 @@
 {
   "name": "@qelos/integrator-nuxt",
-  "version": "0.1.0",
+  "version": "4.0.0",
   "type": "module",
   "description": "Nuxt integrator for Qelos: server middleware/module that identifies the user and workspace from the Qelos SDK before your handlers run.",
   "main": "./dist/module.js",

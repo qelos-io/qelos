@@ -15,7 +15,9 @@
     "stop": "kill-port 3000 3001 9000 9001 9002 9003 9004 9005 9006 9007 9008 && docker rm -f qelos-db qelos-redis",
     "populate-db": "pnpm -F @qelos/auth run init",
     "e2e:integrators": "pnpm -F e2e test",
-    "test": "pnpm -r --filter \"!e2e\" run test"
+    "test": "pnpm -r --filter \"!e2e\" run test",
+    "release": "node scripts/publish.mjs",
+    "release:dry": "node scripts/publish.mjs --dry-run"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "engines": {

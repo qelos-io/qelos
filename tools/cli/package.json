@@ -1,6 +1,6 @@
 {
   "name": "@qelos/cli",
-  "version": "0.6.2",
+  "version": "4.0.0",
   "description": "Qelos developer CLI",
   "main": "cli.mjs",
   "bin": {
@@ -15,7 +15,7 @@
   "license": "MIT",
   "dependencies": {
     "@inquirer/prompts": "^8.3.0",
-    "@qelos/sdk": "^3.11.8",
+    "@qelos/sdk": "^4.0.0",
     "chalk": "^5.6.2",
     "cli-progress": "^3.12.0",
     "decompress-zip": "^0.3.3",
