@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test --import tsx ./integrators/*.test.ts",
+    "test": "node --test --import tsx integrators/express.test.ts integrators/fastify.test.ts integrators/nest.test.ts integrators/next.test.ts integrators/nuxt.test.ts",
     "test:login": "node --test --import tsx ./login.e2e.test.ts"
   },
   "dependencies": {

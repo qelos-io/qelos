@@ -18,6 +18,12 @@
       "require": "./dist/middleware.js",
       "default": "./dist/middleware.js"
     },
+    "./sdk-factory": {
+      "types": "./dist/sdk-factory.d.ts",
+      "import": "./dist/sdk-factory.js",
+      "require": "./dist/sdk-factory.js",
+      "default": "./dist/sdk-factory.js"
+    },
     "./context": {
       "types": "./dist/context.d.ts",
       "import": "./dist/context.js",

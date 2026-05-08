@@ -17,11 +17,13 @@ import * as assert from 'node:assert/strict';
 import { NextRequest } from 'next/server';
 import {
   createQelosMiddleware,
-  createRequestSdk,
+  type QelosMiddleware,
+} from '@qelos/integrator-next/middleware';
+import { createRequestSdk } from '@qelos/integrator-next/sdk-factory';
+import {
   QELOS_USER_HEADER,
   QELOS_WORKSPACE_HEADER,
-  type QelosMiddleware,
-} from '@qelos/integrator-next';
+} from '@qelos/integrator-next/types';
 import {
   cookieHeader,
   ensureTestBlueprint,
