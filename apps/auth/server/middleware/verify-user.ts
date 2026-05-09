@@ -19,6 +19,13 @@ import { getRequestHost } from '../services/req-host';
 import logger from '../services/logger';
 import { authenticateByApiToken } from '../services/api-tokens';
 
+function syncTenantHeaderFromPayload(req: AuthRequest, payload: { tenant?: unknown }): void {
+  const t = payload?.tenant;
+  if (t !== undefined && t !== null && String(t).length > 0) {
+    req.headers.tenant = String(t);
+  }
+}
+
 function oAuthVerify(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   // get the last part from an authorization header string like "bearer token-value"
   const tokenHeader = req.headers.authorization || req.headers.Authorization
@@ -27,7 +34,10 @@ function oAuthVerify(req: AuthRequest, res: Response, next: NextFunction): Promi
   const tenant = (req.headers.tenant = req.headers.tenant as string || '0');
 
   return verifyToken(token, tenant)
-    .then((payload) => setUserPayload(payload, req, res, next))
+    .then((payload) => {
+      syncTenantHeaderFromPayload(req, payload as { tenant?: unknown });
+      return setUserPayload(payload, req, res, next);
+    })
     .catch(() => {
       if (token && tenant) {
         res.status(401).json({ message: 'authorization token is not valid.' }).end();
@@ -57,6 +67,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
 
   try {
     const payload: any = await verifyToken(token, tenant);
+    syncTenantHeaderFromPayload(req, payload);
     const created = Number(payload.tokenIdentifier?.split(':')[0]);
 
     // If token is still fresh, no need to verify further
@@ -98,6 +109,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
     );
 
     if (newToken && newPayload) {
+      syncTenantHeaderFromPayload(req, newPayload);
       setCookie(res, getCookieTokenName(req.headers.tenant), newToken, null, getRequestHost(req));
       setUserPayload(newPayload, req, res, next);
     } else {
@@ -111,6 +123,7 @@ async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction)
       // Use the original payload that we already verified
       try {
         const payload: any = await verifyToken(token, tenant);
+        syncTenantHeaderFromPayload(req, payload);
         setUserPayload(payload, req, res, next);
         return;
       } catch (verifyErr) {

@@ -16,13 +16,14 @@ export function verifyRefreshToken(refreshToken: string, tenant: string) {
   return verify(refreshToken, tenant, refreshTokenSecret)
 }
 
-function verify(token: string, tenant: string, secret: Secret) {
+function verify(token: string, _tenant: string, secret: Secret) {
   return new Promise((resolve, reject) => {
     jwt.verify(token, secret, (err, decoded) => {
-      if (err || !decoded || (decoded as any).tenant !== tenant) {
-        // the 401 code is for unauthorized status
+      if (err || !decoded) {
         return reject(err || { message: 'token is empty' })
       }
+      // Tenant is bound by the signed JWT payload; do not reject when `tenant` header
+      // disagrees (e.g. gateway defaulted BASIC_TENANT vs prod tenant id).
       return resolve(decoded)
     })
   })

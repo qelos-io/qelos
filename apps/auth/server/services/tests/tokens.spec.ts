@@ -21,11 +21,12 @@ describe('tokens service', () => {
       await expect(verifyToken('invalid-token', 'tenant-1')).rejects.toBeDefined();
     });
 
-    it('should reject for a token with wrong tenant', async () => {
+    it('should resolve when tenant header disagrees with JWT (JWT tenant is authoritative)', async () => {
       const payload = { sub: 'user-1', tenant: 'tenant-1', name: 'Test' };
       const token = jwt.sign(payload, jwtSecret);
 
-      await expect(verifyToken(token, 'wrong-tenant')).rejects.toBeDefined();
+      const decoded = await verifyToken(token, 'wrong-tenant') as any;
+      expect(decoded.tenant).toBe('tenant-1');
     });
 
     it('should reject for an empty token', async () => {
@@ -70,11 +71,12 @@ describe('tokens service', () => {
       await expect(verifyRefreshToken(token, 'tenant-1')).rejects.toBeDefined();
     });
 
-    it('should reject when tenant does not match', async () => {
+    it('should resolve refresh token when tenant header disagrees with JWT', async () => {
       const payload = { sub: 'user-1', tenant: 'tenant-1' };
       const token = jwt.sign(payload, refreshTokenSecret);
 
-      await expect(verifyRefreshToken(token, 'tenant-2')).rejects.toBeDefined();
+      const decoded = await verifyRefreshToken(token, 'tenant-2') as any;
+      expect(decoded.tenant).toBe('tenant-1');
     });
   });
 
