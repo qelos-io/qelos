@@ -14,7 +14,7 @@ module.exports = function (app) {
   } = require('../controllers/tenants-configurations')
 
   function onlyMainTenant(req, res, next) {
-    if (req.headers.tenant === basicTenant) {
+    if (req.headers.tenant === basicTenant || req.user?.tenant === basicTenant) {
       next()
     } else {
       res.status(403).json({ message: 'not permitted' }).end()
@@ -22,9 +22,9 @@ module.exports = function (app) {
   }
 
   app
-    .get('/api/tenants-configurations', onlyMainTenant, populateUser, onlyAdmin, getConfigurationsList)
-    .get('/api/tenants-configurations/:tenant/:configKey', onlyMainTenant, populateUser, onlyAdmin, getConfiguration)
-    .put('/api/tenants-configurations/:tenant/:configKey', onlyMainTenant, populateUser, onlyAdmin, updateConfiguration)
-    .delete('/api/tenants-configurations/:tenant/:configKey', onlyMainTenant, populateUser, onlyAdmin, removeConfiguration)
-    .post('/api/tenants-configurations', onlyMainTenant, populateUser, onlyAdmin, createConfiguration)
+    .get('/api/tenants-configurations', populateUser, onlyMainTenant, onlyAdmin, getConfigurationsList)
+    .get('/api/tenants-configurations/:tenant/:configKey', populateUser, onlyMainTenant, onlyAdmin, getConfiguration)
+    .put('/api/tenants-configurations/:tenant/:configKey', populateUser, onlyMainTenant, onlyAdmin, updateConfiguration)
+    .delete('/api/tenants-configurations/:tenant/:configKey', populateUser, onlyMainTenant, onlyAdmin, removeConfiguration)
+    .post('/api/tenants-configurations', populateUser, onlyMainTenant, onlyAdmin, createConfiguration)
 }

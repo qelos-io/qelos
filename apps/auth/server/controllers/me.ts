@@ -27,6 +27,7 @@ export async function getImpersonate(req: AuthRequest, res: Response) {
     const fullName = userObj.fullName || `${firstName} ${lastName}`;
     res.status(200).json({
       _id: userObj._id,
+      tenant: userObj.tenant,
       username: userObj.username,
       email: userObj.email,
       name: fullName,
@@ -60,6 +61,7 @@ export async function getMe(req: AuthRequest, res: Response) {
   const fullName = req.userPayload.fullName || req.userPayload.name || `${firstName} ${lastName}`;
   res.status(200).json({
     _id: req.userPayload.sub,
+    tenant: req.userPayload.tenant,
     username: req.userPayload.username,
     email: req.userPayload.email,
     name: fullName,
