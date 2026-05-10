@@ -209,6 +209,7 @@ function setUserPayload(payload: any, req: AuthRequest, res: Response, next: Nex
     logger.log('impersonating tenant', impersonatedTenant);
     req.headers.tenant = impersonatedTenant;
     res.set('x-qelos-tenant', impersonatedTenant);
+    req.userPayload.tenant = impersonatedTenant;
   }
 
   next();

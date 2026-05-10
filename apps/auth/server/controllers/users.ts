@@ -7,6 +7,7 @@ import { getEncryptedData, setEncryptedData } from '../services/encrypted-data';
 import logger from '../services/logger';
 import { isObjectId } from '../../helpers/mongo-utils';
 import * as UsersService from '../services/users';
+import { splitAdminCreateUserBody } from '../services/admin-create-user-body';
 import { Types, Schema } from 'mongoose';
 
 import ObjectId = Types.ObjectId
@@ -194,7 +195,7 @@ export async function setUserEncryptedData(req: AuthRequest, res: Response) {
 }
 
 export async function createUser(req: AuthRequest, res: Response) {
-  const { tenant, name, internalMetadata, metadata, ...userData } = req.body
+  const { name, internalMetadata, metadata, requestedRoles, userData } = splitAdminCreateUserBody(req.body as Record<string, unknown>);
   const user = new User(userData);
 
   if (req.authConfig.treatUsernameAs === 'email') {
@@ -207,8 +208,11 @@ export async function createUser(req: AuthRequest, res: Response) {
   }
 
   user.tenant = req.headers.tenant;
+  if (Array.isArray(requestedRoles) && requestedRoles.length > 0) {
+    user.roles = requestedRoles;
+  }
   if (!user.fullName && name) {
-    user.fullName = name;
+    user.fullName = name as string;
   }
   if (metadata) {
     try {
