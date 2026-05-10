@@ -59,7 +59,10 @@ async function createConfiguration(req, res) {
     .then(() => {
       res.status(200).json(configuration).end()
     })
-    .catch(() => {
+    .catch((err) => {
+      if (err.code === 11000) {
+        return res.status(409).json({ message: `Configuration with key '${body.key}' already exists for this tenant` }).end()
+      }
       res.status(400).json({ message: 'configuration creation failed' }).end()
     })
 }
