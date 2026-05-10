@@ -15,7 +15,7 @@
     "start": "node --use_strict dist/index.js",
     "dev": "npx tsx watch index.ts",
     "init": "node helpers/init.js",
-    "test": "node --test --import tsx/esm 'tests/**/*.test.ts'"
+    "test": "tsx --test \"server/**/tests/**/*.test.ts\" \"tests/**/*.test.ts\""
   },
   "main": "dist/index.js",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
@@ -39,6 +39,7 @@
     "@types/passport": "^1.0.6",
     "@types/passport-local": "^1.0.33",
     "@types/validator": "^13.1.3",
+    "tsx": "^4.20.4",
     "typescript": "^4.9.5"
   },
   "publishConfig": {
