@@ -98,7 +98,4 @@ export type {
   QelosNuxtRuntimeConfig,
   QelosRequestContext,
   QelosTokenPair,
-  ResolvedTokens,
-  TokenRefreshContext,
-  TokenRefreshHook,
 } from './types';

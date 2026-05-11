@@ -58,20 +58,6 @@ export interface QelosNuxtRuntimeConfig {
   disableProxy?: boolean;
 }
 
-export interface ResolvedTokens {
-  accessToken: string;
-  refreshToken?: string;
-}
-
-export interface TokenRefreshContext {
-  event: import('h3').H3Event;
-  oldTokens: QelosTokenPair;
-  newTokens: ResolvedTokens;
-  sdk: QelosSDK;
-}
-
-export type TokenRefreshHook = (ctx: TokenRefreshContext) => void | Promise<void>;
-
 export interface QelosRequestContext {
   /**
    * The authenticated user, or `null` when anonymous.
@@ -87,13 +73,11 @@ export interface QelosRequestContext {
    */
   workspaces: IWorkspace[];
   /**
-   * SDK instance bound to the current request's tokens.
+   * SDK instance bound to the current request's cookies. `extraHeaders`
+   * re-reads cookies live on each call, so cookie rotations applied by the
+   * middleware are picked up automatically.
    */
   sdk: QelosSDK;
-  /**
-   * Tokens read from the request. Mutated when a refresh occurs.
-   */
-  tokens: QelosTokenPair;
 }
 
 declare module 'h3' {

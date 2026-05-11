@@ -2,7 +2,6 @@ import {
   appendResponseHeader,
   createError,
   defineEventHandler,
-  getCookie,
   getRequestHeader,
   type H3Event,
 } from 'h3';
@@ -11,24 +10,10 @@ import type { IWorkspace } from '@qelos/sdk/workspaces';
 import { rewriteSetCookieDomain } from './cookies';
 import { resolveQelosProxyTarget } from './proxy-target';
 import { createRequestSdk } from './sdk-factory';
-import type {
-  QelosNuxtRuntimeConfig,
-  QelosRequestContext,
-  QelosTokenPair,
-  TokenRefreshHook,
-} from './types';
-
-const DEFAULT_ACCESS_COOKIE = 'q_access_token';
-const DEFAULT_REFRESH_COOKIE = 'q_refresh_token';
+import type { QelosNuxtRuntimeConfig, QelosRequestContext } from './types';
 
 export interface CreateMiddlewareOptions {
   config: QelosNuxtRuntimeConfig;
-  /**
-   * @deprecated The middleware now lets Qelos rotate session cookies via the
-   * upstream `Set-Cookie` response from `/api/me`; this hook is no longer
-   * invoked. Retained for backwards compatibility with the v4.0 surface.
-   */
-  onTokenRefresh?: TokenRefreshHook;
   /**
    * Resolve the active workspace for a request. Defaults to picking the first
    * workspace returned from `sdk.workspaces.getList()`.
@@ -38,24 +23,6 @@ export interface CreateMiddlewareOptions {
     user: IUser;
     workspaces: IWorkspace[];
   }) => IWorkspace | null | Promise<IWorkspace | null>;
-}
-
-function readTokens(event: H3Event, config: QelosNuxtRuntimeConfig): QelosTokenPair {
-  const accessCookie = config.accessTokenCookie || DEFAULT_ACCESS_COOKIE;
-  const refreshCookie = config.refreshTokenCookie || DEFAULT_REFRESH_COOKIE;
-
-  const cookieAccess = getCookie(event, accessCookie);
-  const cookieRefresh = getCookie(event, refreshCookie);
-
-  const authHeader = getRequestHeader(event, 'authorization');
-  const headerAccess = authHeader && authHeader.toLowerCase().startsWith('bearer ')
-    ? authHeader.slice(7).trim()
-    : undefined;
-
-  return {
-    accessToken: headerAccess || cookieAccess || undefined,
-    refreshToken: cookieRefresh || undefined,
-  };
 }
 
 function shouldSkip(event: H3Event, config: QelosNuxtRuntimeConfig): boolean {
@@ -78,15 +45,13 @@ export function createQelosMiddleware(options: CreateMiddlewareOptions) {
       return;
     }
 
-    const tokens = readTokens(event, config);
-    const sdk = createRequestSdk({ config, tokens, event });
+    const sdk = createRequestSdk({ config, event });
 
     const ctx: QelosRequestContext = {
       user: null,
       workspace: null,
       workspaces: [],
       sdk,
-      tokens,
     };
     event.context.qelos = ctx;
 
