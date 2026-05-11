@@ -3,16 +3,6 @@ import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import type { QelosSDKOptions } from '@qelos/sdk/types';
 
-export interface QelosTokenPair {
-  accessToken?: string;
-  refreshToken?: string;
-}
-
-export interface ResolvedTokens {
-  accessToken: string;
-  refreshToken?: string;
-}
-
 /**
  * A request-like object. NestJS can run on either Express or Fastify, so we
  * type the bits we touch generically and feature-detect at runtime.
@@ -20,8 +10,8 @@ export interface ResolvedTokens {
 export interface AnyRequest {
   url?: string;
   path?: string;
+  method?: string;
   headers: Record<string, string | string[] | undefined>;
-  cookies?: Record<string, string | undefined>;
   qelos?: QelosRequestContext;
   [key: string]: unknown;
 }
@@ -30,16 +20,6 @@ export interface AnyRequest {
  * A response-like object (Express `Response` or Fastify `FastifyReply`).
  */
 export interface AnyResponse {
-  cookie?: (
-    name: string,
-    value: string,
-    options?: Record<string, unknown>,
-  ) => unknown;
-  setCookie?: (
-    name: string,
-    value: string,
-    options?: Record<string, unknown>,
-  ) => unknown;
   setHeader?: (name: string, value: string | string[]) => unknown;
   header?: (name: string, value: string | string[]) => unknown;
   getHeader?: (name: string) => string | string[] | number | undefined;
@@ -53,17 +33,9 @@ export interface QelosNestConfig {
   appUrl: string;
   /**
    * Static API token used for service-to-service calls. When provided, no
-   * cookie/refresh-token handling is performed.
+   * cookie-based authentication is performed.
    */
   apiToken?: string;
-  /**
-   * Cookie name carrying the Qelos access token. Defaults to `q_access_token`.
-   */
-  accessTokenCookie?: string;
-  /**
-   * Cookie name carrying the Qelos refresh token. Defaults to `q_refresh_token`.
-   */
-  refreshTokenCookie?: string;
   /**
    * If true, the middleware short-circuits with 401 when the user cannot be
    * resolved. Defaults to `false` — anonymous requests pass through with
@@ -79,6 +51,11 @@ export interface QelosNestConfig {
    */
   skipPaths?: string[];
   /**
+   * If true, the catch-all `/api/**` proxy middleware is not registered.
+   * Defaults to `false`.
+   */
+  disableProxy?: boolean;
+  /**
    * Optional extra options merged into the per-request SDK instance.
    */
   sdkOptions?: Partial<QelosSDKOptions>;
@@ -89,18 +66,6 @@ export type WorkspaceResolver = (params: {
   user: IUser;
   workspaces: IWorkspace[];
 }) => IWorkspace | null | Promise<IWorkspace | null>;
-
-export interface TokenRefreshContext {
-  request: AnyRequest;
-  response: AnyResponse;
-  oldTokens: QelosTokenPair;
-  newTokens: ResolvedTokens;
-  sdk: QelosSDK;
-}
-
-export type TokenRefreshHook = (
-  ctx: TokenRefreshContext,
-) => void | Promise<void>;
 
 export interface QelosRequestContext {
   /**
@@ -117,26 +82,19 @@ export interface QelosRequestContext {
    */
   workspaces: IWorkspace[];
   /**
-   * SDK instance bound to the current request's tokens.
+   * SDK instance bound to the current request's cookies. `extraHeaders`
+   * re-reads cookies live on each call, so cookie rotations applied by the
+   * middleware are picked up automatically.
    */
   sdk: QelosSDK;
-  /**
-   * Tokens read from the request. Mutated in place when a refresh occurs so
-   * later code can read the current pair.
-   */
-  tokens: QelosTokenPair;
 }
 
 export interface QelosModuleOptions {
   config: QelosNestConfig;
   /**
-   * Hook invoked after a successful token refresh. The default implementation
-   * writes the new tokens back to the response cookies.
-   */
-  onTokenRefresh?: TokenRefreshHook;
-  /**
-   * Resolve the active workspace for a request. Defaults to picking the first
-   * workspace returned from `sdk.workspaces.getList()`.
+   * Resolve the active workspace for a request. Defaults to whatever
+   * `/api/me` reports on `user.workspace` (the user's currently activated
+   * workspace, or `null` when none is active).
    */
   resolveWorkspace?: WorkspaceResolver;
 }

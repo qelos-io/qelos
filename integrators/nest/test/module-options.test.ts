@@ -14,9 +14,26 @@ test('normalizeModuleOptions wraps shorthand Nest config', () => {
 
 test('normalizeModuleOptions passes through full module options', () => {
   const full = {
-    config: { appUrl: 'https://full.example' },
+    config: { appUrl: 'https://full.example', disableProxy: true },
     resolveWorkspace: async () => null,
   };
   const out = normalizeModuleOptions(full);
   assert.strictEqual(out, full);
+});
+
+test('normalizeModuleOptions prepends /api/ to skipPaths when proxy is enabled', () => {
+  const out = normalizeModuleOptions({
+    appUrl: 'https://app.example',
+    skipPaths: ['/health'],
+  });
+  assert.deepEqual(out.config.skipPaths, ['/api/', '/health']);
+});
+
+test('normalizeModuleOptions does not prepend /api/ when disableProxy is true', () => {
+  const out = normalizeModuleOptions({
+    appUrl: 'https://app.example',
+    skipPaths: ['/health'],
+    disableProxy: true,
+  });
+  assert.deepEqual(out.config.skipPaths, ['/health']);
 });

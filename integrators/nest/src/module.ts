@@ -1,4 +1,5 @@
 import {
+  Inject,
   type DynamicModule,
   type FactoryProvider,
   type MiddlewareConsumer,
@@ -6,6 +7,7 @@ import {
   type ModuleMetadata,
   type NestModule,
   type Provider,
+  RequestMethod,
   Scope,
   type Type,
 } from '@nestjs/common';
@@ -13,6 +15,7 @@ import { REQUEST } from '@nestjs/core';
 import { QELOS_MODULE_OPTIONS, QELOS_SDK } from './constants';
 import { normalizeModuleOptions } from './module-options';
 import { QelosMiddleware } from './middleware';
+import { QelosProxyMiddleware } from './proxy.middleware';
 import type { AnyRequest, QelosModuleOptions, QelosNestConfig } from './types';
 
 export interface QelosModuleAsyncOptions
@@ -37,6 +40,11 @@ export interface QelosOptionsFactory {
 
 @Module({})
 export class QelosModule implements NestModule {
+  constructor(
+    @Inject(QELOS_MODULE_OPTIONS)
+    private readonly moduleOptions: QelosModuleOptions,
+  ) {}
+
   private static readonly sdkProvider: Provider = {
     provide: QELOS_SDK,
     scope: Scope.REQUEST,
@@ -50,9 +58,10 @@ export class QelosModule implements NestModule {
    * Pass either a full {@link QelosModuleOptions} object or a shorthand
    * {@link QelosNestConfig} (e.g. `{ appUrl, apiToken }`).
    *
-   * The middleware is wired to `forRoutes('*')` by default. Override by
-   * importing the module without `forRoot` and applying `QelosMiddleware`
-   * directly inside your own `MiddlewareConsumer`.
+   * By default, {@link QelosMiddleware} runs on `forRoutes('*')` and
+   * {@link QelosProxyMiddleware} on `api/*splat` unless `disableProxy: true`.
+   * Override by importing the module without `forRoot` and applying the
+   * middlewares yourself in `MiddlewareConsumer`.
    */
   static forRoot(config: QelosNestConfig): DynamicModule;
   static forRoot(options: QelosModuleOptions): DynamicModule;
@@ -64,8 +73,18 @@ export class QelosModule implements NestModule {
     };
     return {
       module: QelosModule,
-      providers: [optionsProvider, QelosMiddleware, QelosModule.sdkProvider],
-      exports: [optionsProvider, QelosMiddleware, QELOS_SDK],
+      providers: [
+        optionsProvider,
+        QelosMiddleware,
+        QelosProxyMiddleware,
+        QelosModule.sdkProvider,
+      ],
+      exports: [
+        optionsProvider,
+        QelosMiddleware,
+        QelosProxyMiddleware,
+        QELOS_SDK,
+      ],
       global: true,
     };
   }
@@ -78,13 +97,19 @@ export class QelosModule implements NestModule {
     const providers: Provider[] = [
       ...this.createAsyncProviders(options),
       QelosMiddleware,
+      QelosProxyMiddleware,
       QelosModule.sdkProvider,
     ];
     return {
       module: QelosModule,
       imports: options.imports || [],
       providers,
-      exports: [QELOS_MODULE_OPTIONS, QelosMiddleware, QELOS_SDK],
+      exports: [
+        QELOS_MODULE_OPTIONS,
+        QelosMiddleware,
+        QelosProxyMiddleware,
+        QELOS_SDK,
+      ],
       global: true,
     };
   }
@@ -124,5 +149,11 @@ export class QelosModule implements NestModule {
 
   configure(consumer: MiddlewareConsumer): void {
     consumer.apply(QelosMiddleware).forRoutes('*');
+    if (this.moduleOptions.config.disableProxy !== true) {
+      consumer.apply(QelosProxyMiddleware).forRoutes({
+        path: 'api/*splat',
+        method: RequestMethod.ALL,
+      });
+    }
   }
 }

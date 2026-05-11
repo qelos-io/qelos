@@ -5,19 +5,18 @@ export type {
   QelosOptionsFactory,
 } from './module';
 export { QelosMiddleware } from './middleware';
+export { QelosProxyMiddleware } from './proxy.middleware';
 export { QelosAuthGuard, QelosGuard } from './guard';
 export { QelosCtx, QelosSdk, QelosUser, QelosWorkspace } from './decorators';
 export { createRequestSdk } from './sdk-factory';
 export type { CreateSdkParams } from './sdk-factory';
+export { rewriteSetCookieDomain, rewriteSetCookieDomains } from './cookies';
+export { resolveQelosProxyTarget } from './proxy-target';
 export type {
   AnyRequest,
   AnyResponse,
   QelosModuleOptions,
   QelosNestConfig,
   QelosRequestContext,
-  QelosTokenPair,
-  ResolvedTokens,
-  TokenRefreshContext,
-  TokenRefreshHook,
   WorkspaceResolver,
 } from './types';

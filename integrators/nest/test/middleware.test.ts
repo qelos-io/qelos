@@ -5,14 +5,48 @@ import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 
 import { QelosMiddleware } from '../src/middleware';
+import { normalizeModuleOptions } from '../src/module-options';
 import type { AnyRequest } from '../src/types';
 
 function jsonResponse(status: number, data: unknown): Response {
-  const res = new Response(JSON.stringify(data));
-  Object.defineProperty(res, 'status', { value: status });
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/json');
+  const res = new Response(JSON.stringify(data), { status, headers });
   Object.defineProperty(res, 'ok', { value: status >= 200 && status < 300 });
-  res.headers.set('Content-Type', 'application/json');
   return res;
+}
+
+function jsonMeResponse(user: unknown, setCookies?: string[]): Response {
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/json');
+  if (setCookies) {
+    for (const c of setCookies) {
+      headers.append('set-cookie', c);
+    }
+  }
+  const res = new Response(JSON.stringify(user), { status: 200, headers });
+  Object.defineProperty(res, 'ok', { value: true });
+  return res;
+}
+
+function createMockResponse(): {
+  cookies: string[];
+  setHeader: (name: string, value: string | string[]) => void;
+  getHeader: () => undefined;
+} {
+  const cookies: string[] = [];
+  return {
+    cookies,
+    setHeader(name: string, value: string | string[]) {
+      if (name.toLowerCase() === 'set-cookie') {
+        const vals = Array.isArray(value) ? value : [value];
+        cookies.push(...vals);
+      }
+    },
+    getHeader() {
+      return undefined;
+    },
+  };
 }
 
 const minimalUser: IUser = {
@@ -37,7 +71,7 @@ function mockFetchOk(): typeof fetch {
   return async (input: RequestInfo) => {
     const url = String(input);
     if (url.includes('/api/me')) {
-      return jsonResponse(200, minimalUser);
+      return jsonMeResponse({ ...minimalUser, workspace: workspaceA });
     }
     if (url.includes('/api/workspaces') && !url.includes('/api/workspaces/')) {
       return jsonResponse(200, [workspaceA]);
@@ -47,15 +81,15 @@ function mockFetchOk(): typeof fetch {
 }
 
 test('QelosMiddleware attaches user, workspace, and workspaces', async () => {
-  const mw = new QelosMiddleware({
-    config: {
+  const mw = new QelosMiddleware(
+    normalizeModuleOptions({
       appUrl: 'http://example.test',
       sdkOptions: { fetch: mockFetchOk() },
-    },
-  });
+    }),
+  );
 
   const req: AnyRequest = {
-    headers: { cookie: 'q_access_token=access-test; q_refresh_token=refresh-test' },
+    headers: { cookie: 'session=opaque', host: 'example.test' },
     path: '/ctx',
     url: '/ctx',
   };
@@ -72,15 +106,57 @@ test('QelosMiddleware attaches user, workspace, and workspaces', async () => {
   assert.equal(req.qelos?.workspaces?.length, 1);
 });
 
+test('forwards Set-Cookie from /api/me with Domain rewritten to inbound Host', async () => {
+  const mw = new QelosMiddleware(
+    normalizeModuleOptions({
+      appUrl: 'http://example.test',
+      sdkOptions: {
+        fetch: async (input: RequestInfo) => {
+          const url = String(input);
+          if (url.includes('/api/me')) {
+            return jsonMeResponse(
+              { ...minimalUser, workspace: workspaceA },
+              ['sid=x; Path=/; Domain=.qelos.app; HttpOnly'],
+            );
+          }
+          if (url.includes('/api/workspaces') && !url.includes('/api/workspaces/')) {
+            return jsonResponse(200, [workspaceA]);
+          }
+          return jsonResponse(404, {});
+        },
+      },
+    }),
+  );
+
+  const mockRes = createMockResponse();
+  const req: AnyRequest = {
+    headers: { cookie: 'session=opaque', host: 'app.example.test' },
+    path: '/',
+    url: '/',
+  };
+
+  await new Promise<void>((resolve, reject) => {
+    void mw.use(req, mockRes, (err?: unknown) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+
+  assert.ok(
+    mockRes.cookies.some((c) => c.includes('Domain=app.example.test')),
+    mockRes.cookies.join(' | '),
+  );
+});
+
 test('anonymous request leaves user null when requireAuth is false', async () => {
-  const mw = new QelosMiddleware({
-    config: {
+  const mw = new QelosMiddleware(
+    normalizeModuleOptions({
       appUrl: 'http://example.test',
       sdkOptions: {
         fetch: async () => jsonResponse(500, { error: 'should not call api' }),
       },
-    },
-  });
+    }),
+  );
 
   const req: AnyRequest = {
     headers: {},
@@ -99,15 +175,15 @@ test('anonymous request leaves user null when requireAuth is false', async () =>
 });
 
 test('requireAuth calls next with UnauthorizedException without credentials', async () => {
-  const mw = new QelosMiddleware({
-    config: {
+  const mw = new QelosMiddleware(
+    normalizeModuleOptions({
       appUrl: 'http://example.test',
       requireAuth: true,
       sdkOptions: {
         fetch: async () => jsonResponse(500, {}),
       },
-    },
-  });
+    }),
+  );
 
   const req: AnyRequest = {
     headers: {},
@@ -128,15 +204,15 @@ test('requireAuth calls next with UnauthorizedException without credentials', as
 });
 
 test('skipPaths bypasses middleware', async () => {
-  const mw = new QelosMiddleware({
-    config: {
+  const mw = new QelosMiddleware(
+    normalizeModuleOptions({
       appUrl: 'http://example.test',
       skipPaths: ['/health'],
       sdkOptions: {
         fetch: async () => jsonResponse(500, { error: 'should not call' }),
       },
-    },
-  });
+    }),
+  );
 
   const req: AnyRequest = {
     headers: {},
@@ -160,7 +236,7 @@ test('resolveWorkspace can pick a workspace', async () => {
   const mockFetchList = async (input: RequestInfo) => {
     const url = String(input);
     if (url.includes('/api/me')) {
-      return jsonResponse(200, minimalUser);
+      return jsonMeResponse({ ...minimalUser, workspace: workspaceA });
     }
     if (url.includes('/api/workspaces') && !url.includes('/api/workspaces/')) {
       return jsonResponse(200, [workspaceA, wsB]);
@@ -168,17 +244,19 @@ test('resolveWorkspace can pick a workspace', async () => {
     return jsonResponse(404, {});
   };
 
-  const mw2 = new QelosMiddleware({
-    config: {
-      appUrl: 'http://example.test',
-      sdkOptions: { fetch: mockFetchList },
-    },
-    resolveWorkspace: async ({ workspaces }) =>
-      workspaces.find((w) => w._id === 'ws-2') ?? null,
-  });
+  const mw2 = new QelosMiddleware(
+    normalizeModuleOptions({
+      config: {
+        appUrl: 'http://example.test',
+        sdkOptions: { fetch: mockFetchList },
+      },
+      resolveWorkspace: async ({ workspaces }) =>
+        workspaces.find((w) => w._id === 'ws-2') ?? null,
+    }),
+  );
 
   const req: AnyRequest = {
-    headers: { cookie: 'q_access_token=a; q_refresh_token=r' },
+    headers: { cookie: 'session=opaque' },
     path: '/',
     url: '/',
   };
@@ -193,50 +271,32 @@ test('resolveWorkspace can pick a workspace', async () => {
   assert.equal(req.qelos?.workspace?._id, 'ws-2');
 });
 
-test('onTokenRefresh runs after automatic token refresh', async () => {
-  let meCalls = 0;
-  const mockFetch = async (input: RequestInfo, init?: RequestInit) => {
-    const url = String(input);
-    if (url.includes('/api/token/refresh')) {
-      assert.ok(init?.method?.toLowerCase() === 'post');
-      return jsonResponse(200, {
-        payload: {
-          token: 'new-access',
-          refreshToken: 'new-refresh',
-          user: minimalUser,
-        },
-      });
-    }
-    if (url.includes('/api/me')) {
-      meCalls += 1;
-      if (meCalls === 1) {
-        return jsonResponse(401, { error: 'Unauthorized' });
-      }
-      return jsonResponse(200, minimalUser);
-    }
-    if (url.includes('/api/workspaces') && !url.includes('/api/workspaces/')) {
-      return jsonResponse(200, [workspaceA]);
-    }
-    return jsonResponse(404, {});
-  };
-
-  let refreshed = false;
-  const mw = new QelosMiddleware({
-    config: {
+test('active workspace defaults to user.workspace, not workspaces[0]', async () => {
+  const mw = new QelosMiddleware(
+    normalizeModuleOptions({
       appUrl: 'http://example.test',
-      sdkOptions: { fetch: mockFetch },
-    },
-    onTokenRefresh: async ({ newTokens }) => {
-      refreshed = true;
-      assert.equal(newTokens.accessToken, 'new-access');
-      assert.equal(newTokens.refreshToken, 'new-refresh');
-    },
-  });
+      sdkOptions: {
+        fetch: async (input: RequestInfo) => {
+          const url = String(input);
+          if (url.includes('/api/me')) {
+            return jsonMeResponse({
+              ...minimalUser,
+              workspace: null,
+            } as IUser & { workspace: null });
+          }
+          if (url.includes('/api/workspaces') && !url.includes('/api/workspaces/')) {
+            return jsonResponse(200, [workspaceA]);
+          }
+          return jsonResponse(404, {});
+        },
+      },
+    }),
+  );
 
   const req: AnyRequest = {
-    headers: { cookie: 'q_access_token=stale; q_refresh_token=refresh-ok' },
-    path: '/',
-    url: '/',
+    headers: { cookie: 'session=opaque' },
+    path: '/page',
+    url: '/page',
   };
 
   await new Promise<void>((resolve, reject) => {
@@ -246,8 +306,6 @@ test('onTokenRefresh runs after automatic token refresh', async () => {
     });
   });
 
-  assert.equal(req.qelos?.user?._id, 'user-1');
-  assert.equal(req.qelos?.tokens.accessToken, 'new-access');
-  assert.equal(refreshed, true);
-  assert.ok(meCalls >= 2);
+  assert.equal(req.qelos?.workspace, null);
+  assert.equal(req.qelos?.workspaces?.length, 1);
 });
