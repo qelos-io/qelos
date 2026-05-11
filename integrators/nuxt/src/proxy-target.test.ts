@@ -35,21 +35,7 @@ describe('resolveQelosProxyTarget', () => {
     }
   });
 
-  it('uses config.proxyTarget when set, even if env vars and appUrl exist', () => {
-    process.env.NUXT_QELOS_PROXY_TARGET = 'https://from-nuxt-env.example';
-    process.env.QELOS_IP = 'https://from-qelos-ip.example';
-    process.env.QELOS_API_IP = 'https://from-qelos-api-ip.example';
-    const config: QelosNuxtRuntimeConfig = {
-      appUrl: 'https://from-app-url.example',
-      proxyTarget: 'https://from-config.example',
-    };
-    assert.equal(
-      resolveQelosProxyTarget(config),
-      'https://from-config.example',
-    );
-  });
-
-  it('falls back to NUXT_QELOS_PROXY_TARGET when config.proxyTarget is empty', () => {
+  it('uses NUXT_QELOS_PROXY_TARGET when set, even if other env vars and appUrl exist', () => {
     process.env.NUXT_QELOS_PROXY_TARGET = 'https://from-nuxt-env.example';
     process.env.QELOS_IP = 'https://from-qelos-ip.example';
     process.env.QELOS_API_IP = 'https://from-qelos-api-ip.example';
@@ -85,7 +71,7 @@ describe('resolveQelosProxyTarget', () => {
     );
   });
 
-  it('falls back to config.appUrl when no proxy target is configured', () => {
+  it('falls back to config.appUrl when no env var is set', () => {
     const config: QelosNuxtRuntimeConfig = {
       appUrl: 'https://from-app-url.example',
     };
@@ -105,7 +91,6 @@ describe('resolveQelosProxyTarget', () => {
     process.env.QELOS_IP = '\t';
     const config: QelosNuxtRuntimeConfig = {
       appUrl: 'https://from-app-url.example',
-      proxyTarget: '   ',
     };
     assert.equal(
       resolveQelosProxyTarget(config),
@@ -115,8 +100,7 @@ describe('resolveQelosProxyTarget', () => {
 
   it('trims surrounding whitespace from resolved values', () => {
     const config: QelosNuxtRuntimeConfig = {
-      appUrl: 'https://from-app-url.example',
-      proxyTarget: '  https://trimmed.example  ',
+      appUrl: '  https://trimmed.example  ',
     };
     assert.equal(
       resolveQelosProxyTarget(config),

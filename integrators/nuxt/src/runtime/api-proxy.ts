@@ -21,7 +21,7 @@ export default defineEventHandler((event) => {
     throw createError({
       statusCode: 503,
       statusMessage:
-        '[@qelos/integrator-nuxt] Qelos API proxy is not configured. Set qelos.proxyTarget (or NUXT_QELOS_PROXY_TARGET / QELOS_IP / QELOS_API_IP in development).',
+        '[@qelos/integrator-nuxt] Qelos API proxy is not configured. Set qelos.appUrl (or NUXT_QELOS_PROXY_TARGET / QELOS_IP / QELOS_API_IP in development).',
     });
   }
 
@@ -31,6 +31,6 @@ export default defineEventHandler((event) => {
 
   return proxyRequest(event, target, {
     fetch: globalThis.fetch,
-    cookieDomainRewrite: { '*.qelos.app': originalHost ?? '' },
+    cookieDomainRewrite: { '*': originalHost ?? '' },
   });
 });

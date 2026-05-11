@@ -29,7 +29,6 @@ export default defineNuxtConfig({
     refreshTokenCookie: 'q_refresh_token',
     requireAuth: false,
     skipPaths: ['/api/_auth', '/health'],
-    proxyTarget: 'https://your-app.qelos.app',
   },
 });
 ```
@@ -53,19 +52,21 @@ take precedence — the proxy only catches requests no other handler matched.
 
 The proxy forwards the incoming `Cookie` header as-is (the Qelos session
 cookie name is treated as opaque) and forwards upstream `Set-Cookie`
-headers back to the client, rewriting the `Domain=` attribute from the
-Qelos origin (e.g. `*.qelos.app`) to the inbound request's own host. That
-way the session cookie set by Qelos is valid on the Nuxt app's domain.
+headers back to the client, rewriting the `Domain=` attribute on every
+upstream cookie to the inbound request's own host. That way the session
+cookie set by Qelos is valid on the Nuxt app's domain regardless of which
+host Qelos issues cookies from.
 
 ### Resolving the proxy target
 
-The target origin is resolved in this order:
+The managed Qelos app URL (`qelos.appUrl`) is the proxy target. Env vars are
+only dev-time overrides for when the configured `appUrl` isn't reachable from
+the local host:
 
-1. `qelos.proxyTarget` in `nuxt.config.ts`.
-2. `NUXT_QELOS_PROXY_TARGET` env var.
-3. `QELOS_IP` env var (dev fallback).
-4. `QELOS_API_IP` env var (dev fallback).
-5. `qelos.appUrl`.
+1. `NUXT_QELOS_PROXY_TARGET` env var.
+2. `QELOS_IP` env var (dev fallback).
+3. `QELOS_API_IP` env var (dev fallback).
+4. `qelos.appUrl`.
 
 If none of these are set, the handler responds with `503` so misconfiguration
 fails loudly.
@@ -84,8 +85,8 @@ On every non-`/api/` request, the server middleware identifies the current
 user by calling the managed Qelos app directly:
 
 1. Resolve the upstream origin the same way the `/api/**` proxy does
-   (`qelos.proxyTarget` → `NUXT_QELOS_PROXY_TARGET` → `QELOS_IP` →
-   `QELOS_API_IP` → `qelos.appUrl`).
+   (`NUXT_QELOS_PROXY_TARGET` → `QELOS_IP` → `QELOS_API_IP` →
+   `qelos.appUrl`).
 2. Issue `fetch('${upstream}/api/me')` with the incoming request's `Cookie`
    header forwarded verbatim — the Qelos session cookie name is opaque to
    the integrator, so the whole header is piped through unchanged. Any

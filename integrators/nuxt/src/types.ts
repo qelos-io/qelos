@@ -45,13 +45,6 @@ export interface QelosNuxtRuntimeConfig {
    */
   sdkOptions?: Partial<QelosSDKOptions>;
   /**
-   * Origin of the managed Qelos app that `/api/**` requests are proxied to
-   * (e.g. https://your-app.qelos.app). When unset, the proxy handler resolves
-   * the target from, in order: `NUXT_QELOS_PROXY_TARGET`, `QELOS_IP`,
-   * `QELOS_API_IP`, then `appUrl`.
-   */
-  proxyTarget?: string;
-  /**
    * If true, the catch-all `/api/**` proxy handler is not registered.
    * Defaults to `false`.
    */
