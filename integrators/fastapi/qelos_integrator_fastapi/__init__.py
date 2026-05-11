@@ -1,8 +1,9 @@
 """FastAPI integrator for Qelos.
 
-Adds a request middleware that calls the Qelos SDK to identify the current
-user and their active workspace before your handlers run, exposing them on
-``request.state.qelos``.
+Adds Starlette middleware that resolves the current user via the managed Qelos
+app (``GET /api/me`` with same-origin cookie pass-through) and exposes context
+on ``request.state.qelos``. Optionally mount :func:`create_qelos_proxy_router` to
+proxy ``/api/**`` to Qelos.
 
 Example::
 
@@ -14,7 +15,7 @@ Example::
     )
 
     app = FastAPI()
-    app.add_middleware(qelos_middleware, app_url="https://my.qelos.io", api_token="...")
+    app.add_middleware(qelos_middleware, app_url="https://my.qelos.io")
 
     @app.get("/me")
     async def me(user: QelosUser = Depends(get_qelos_user)):
@@ -24,13 +25,8 @@ Example::
 from __future__ import annotations
 
 from .config import QelosConfig
-from .context import (
-    QelosRequestContext,
-    ResolvedTokens,
-    TokenPair,
-    TokenRefreshContext,
-    TokenRefreshHook,
-)
+from .context import QelosRequestContext
+from .cookies import rewrite_set_cookie_domain, rewrite_set_cookie_domains
 from .dependencies import get_qelos, get_qelos_sdk, get_qelos_user, require_user
 from .middleware import (
     QelosIntegratorMiddleware,
@@ -39,6 +35,8 @@ from .middleware import (
     qelos_middleware,
 )
 from .models import QelosUser, QelosWorkspace
+from .proxy import create_qelos_proxy_router
+from .proxy_target import resolve_qelos_proxy_target
 from .sdk_factory import create_request_sdk
 
 __all__ = [
@@ -48,15 +46,15 @@ __all__ = [
     "QelosRequestContext",
     "QelosUser",
     "QelosWorkspace",
-    "ResolvedTokens",
-    "TokenPair",
-    "TokenRefreshContext",
-    "TokenRefreshHook",
     "WorkspaceResolver",
+    "create_qelos_proxy_router",
     "create_request_sdk",
     "get_qelos",
     "get_qelos_sdk",
     "get_qelos_user",
     "qelos_middleware",
     "require_user",
+    "resolve_qelos_proxy_target",
+    "rewrite_set_cookie_domain",
+    "rewrite_set_cookie_domains",
 ]

@@ -3,19 +3,15 @@ from __future__ import annotations
 import inspect
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 
-from qelos_sdk import QelosAPIError
+import httpx
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from .config import QelosConfig
-from .context import (
-    QelosRequestContext,
-    ResolvedTokens,
-    TokenPair,
-    TokenRefreshContext,
-    TokenRefreshHook,
-)
+from .context import QelosRequestContext
+from .cookies import rewrite_set_cookie_domain
+from .proxy_target import resolve_qelos_proxy_target
 from .sdk_factory import create_request_sdk
 
 
@@ -28,80 +24,24 @@ WorkspaceResolver = Callable[
 ]
 
 
-class CookieBuffer:
-    """Collects ``Set-Cookie`` until a real :class:`Response` exists."""
-
-    __slots__ = ("_ops",)
-
-    def __init__(self) -> None:
-        self._ops: list[tuple[str, str, dict[str, Any]]] = []
-
-    def set_cookie(self, name: str, value: str, **kwargs: Any) -> None:
-        self._ops.append((name, value, kwargs))
-
-    def apply(self, response: Response) -> None:
-        for name, value, kw in self._ops:
-            response.set_cookie(name, value, **kw)
+def effective_skip_paths(config: QelosConfig) -> list[str]:
+    paths = list(config.skip_paths or [])
+    if config.disable_proxy:
+        return paths
+    if any("/api/".startswith(prefix) for prefix in paths):
+        return paths
+    return ["/api/", *paths]
 
 
-def _read_cookie_header(header_val: Optional[str], name: str) -> Optional[str]:
-    if not header_val:
-        return None
-    prefix = name + "="
-    for part in header_val.split(";"):
-        trimmed = part.strip()
-        if trimmed.startswith(prefix):
-            try:
-                from urllib.parse import unquote
-
-                return unquote(trimmed[len(prefix) :])
-            except Exception:
-                return trimmed[len(prefix) :]
-    return None
-
-
-def read_tokens(request: Request, config: QelosConfig) -> TokenPair:
-    cookie_access = request.cookies.get(config.access_token_cookie) or _read_cookie_header(
-        request.headers.get("cookie"),
-        config.access_token_cookie,
-    )
-    cookie_refresh = request.cookies.get(config.refresh_token_cookie) or _read_cookie_header(
-        request.headers.get("cookie"),
-        config.refresh_token_cookie,
-    )
-    raw_auth = request.headers.get("authorization")
-    auth_header = raw_auth[0] if isinstance(raw_auth, list) else raw_auth
-    header_access: Optional[str] = None
-    if auth_header and auth_header.lower().startswith("bearer "):
-        header_access = auth_header[7:].strip()
-    return TokenPair(
-        access_token=header_access or cookie_access or None,
-        refresh_token=cookie_refresh or None,
-    )
-
-
-def write_tokens_to_response_like(
-    target: Any,
-    config: QelosConfig,
-    tokens: ResolvedTokens,
-) -> None:
-    secure = not config.app_url.lower().startswith("http://")
-    opts: dict[str, Any] = {
-        "httponly": True,
-        "secure": secure,
-        "samesite": "lax",
-        "path": "/",
-    }
-    target.set_cookie(config.access_token_cookie, tokens.access_token, **opts)
-    if tokens.refresh_token:
-        target.set_cookie(config.refresh_token_cookie, tokens.refresh_token, **opts)
-
-
-def should_skip(request: Request, config: QelosConfig) -> bool:
-    if not config.skip_paths:
+def should_skip(request: Request, skip_paths: list[str]) -> bool:
+    if not skip_paths:
         return False
     path = request.url.path or ""
-    return any(path.startswith(prefix) for prefix in config.skip_paths)
+    return any(path.startswith(prefix) for prefix in skip_paths)
+
+
+def _me_url(base: str) -> str:
+    return f"{base.rstrip('/')}/api/me"
 
 
 async def _maybe_resolve_workspace(
@@ -110,12 +50,18 @@ async def _maybe_resolve_workspace(
     user: Dict[str, Any],
     workspaces: List[Dict[str, Any]],
 ) -> Optional[Dict[str, Any]]:
-    if not resolve_workspace:
-        return workspaces[0] if workspaces else None
-    result = resolve_workspace(request, user, workspaces)
-    if inspect.isawaitable(result):
-        return await result  # type: ignore[no-any-return]
-    return result  # type: ignore[no-any-return]
+    if resolve_workspace:
+        result = resolve_workspace(request, user, workspaces)
+        if inspect.isawaitable(result):
+            return await result  # type: ignore[no-any-return]
+        return result  # type: ignore[no-any-return]
+    ws = user.get("workspace")
+    return ws if isinstance(ws, dict) else None
+
+
+def _apply_set_cookies(response: Response, values: list[str]) -> None:
+    for value in values:
+        response.headers.append("set-cookie", value)
 
 
 class QelosIntegratorMiddleware(BaseHTTPMiddleware):
@@ -126,75 +72,97 @@ class QelosIntegratorMiddleware(BaseHTTPMiddleware):
         app,
         *,
         config: QelosConfig,
-        on_token_refresh: Optional[TokenRefreshHook] = None,
         resolve_workspace: Optional[WorkspaceResolver] = None,
     ) -> None:
         super().__init__(app)
         self._config = config
-        self._on_token_refresh = on_token_refresh
         self._resolve_workspace = resolve_workspace
+        self._skip_paths = effective_skip_paths(config)
 
     async def dispatch(
         self,
         request: Request,
         call_next: RequestResponseEndpoint,
     ) -> Response:
-        if should_skip(request, self._config):
+        if should_skip(request, self._skip_paths):
             return await call_next(request)
 
-        cookie_buffer = CookieBuffer()
-
-        async def default_on_refresh(ctx: TokenRefreshContext) -> None:
-            write_tokens_to_response_like(cookie_buffer, ctx.config, ctx.new_tokens)
-
-        hook: TokenRefreshHook = self._on_token_refresh or default_on_refresh
-
-        tokens = read_tokens(request, self._config)
-        sdk = create_request_sdk(
-            self._config,
-            tokens,
-            request,
-            cookie_buffer,
-            hook,
-        )
-        ctx = QelosRequestContext(sdk=sdk, tokens=tokens)
+        sdk = create_request_sdk(self._config, request)
+        ctx = QelosRequestContext(sdk=sdk)
         request.state.qelos = ctx
 
         try:
-            has_auth = bool(
-                self._config.api_token or tokens.access_token or tokens.refresh_token,
-            )
-            if not has_auth:
+            base = resolve_qelos_proxy_target(self._config)
+            if not base and not self._config.api_token:
                 if self._config.require_auth:
                     return JSONResponse({"code": "UNAUTHORIZED"}, status_code=401)
                 response = await call_next(request)
-                cookie_buffer.apply(response)
                 return response
 
-            try:
-                ctx.user = await sdk.authentication.get_logged_in_user()
-            except QelosAPIError:
+            pending_set_cookies: list[str] = []
+            original_host = request.headers.get("host")
+
+            if base:
+                me_headers: dict[str, str] = {}
+                if request.headers.get("cookie"):
+                    me_headers["cookie"] = request.headers["cookie"]
+                if request.headers.get("authorization"):
+                    me_headers["authorization"] = request.headers["authorization"]
+
+                try:
+                    async with httpx.AsyncClient() as client:
+                        me_resp = await client.get(
+                            _me_url(base),
+                            headers=me_headers,
+                            follow_redirects=False,
+                        )
+                except httpx.RequestError:
+                    if self._config.require_auth:
+                        return JSONResponse({"code": "UNAUTHORIZED"}, status_code=401)
+                    response = await call_next(request)
+                    return response
+
+                try:
+                    raw_cookies = me_resp.headers.get_list("set-cookie")
+                except AttributeError:
+                    sc = me_resp.headers.get("set-cookie")
+                    raw_cookies = [sc] if sc else []
+                for raw in raw_cookies:
+                    pending_set_cookies.append(
+                        rewrite_set_cookie_domain(raw, original_host),
+                    )
+
+                if me_resp.is_success:
+                    try:
+                        ctx.user = me_resp.json()
+                    except Exception:
+                        ctx.user = None
+                else:
+                    ctx.user = None
+
+            if not ctx.user:
                 if self._config.require_auth:
-                    return JSONResponse({"code": "UNAUTHORIZED"}, status_code=401)
+                    r = JSONResponse({"code": "UNAUTHORIZED"}, status_code=401)
+                    _apply_set_cookies(r, pending_set_cookies)
+                    return r
                 response = await call_next(request)
-                cookie_buffer.apply(response)
+                _apply_set_cookies(response, pending_set_cookies)
                 return response
 
             try:
                 ctx.workspaces = await sdk.workspaces.get_list()
-            except QelosAPIError:
+            except Exception:
                 ctx.workspaces = []
 
-            if ctx.user and ctx.workspaces:
-                ctx.workspace = await _maybe_resolve_workspace(
-                    self._resolve_workspace,
-                    request,
-                    ctx.user,
-                    ctx.workspaces,
-                )
+            ctx.workspace = await _maybe_resolve_workspace(
+                self._resolve_workspace,
+                request,
+                ctx.user,
+                ctx.workspaces,
+            )
 
             response = await call_next(request)
-            cookie_buffer.apply(response)
+            _apply_set_cookies(response, pending_set_cookies)
             return response
         finally:
             await sdk.close()
@@ -217,12 +185,10 @@ class QelosMiddleware(QelosIntegratorMiddleware):
         config: Optional[QelosConfig] = None,
         app_url: Optional[str] = None,
         api_token: Optional[str] = None,
-        access_token_cookie: str = "q_access_token",
-        refresh_token_cookie: str = "q_refresh_token",
         require_auth: bool = False,
         skip_paths: Optional[List[str]] = None,
+        disable_proxy: bool = False,
         sdk_options: Optional[Dict[str, Any]] = None,
-        on_token_refresh: Optional[TokenRefreshHook] = None,
         resolve_workspace: Optional[WorkspaceResolver] = None,
     ) -> None:
         if config is not None:
@@ -239,16 +205,14 @@ class QelosMiddleware(QelosIntegratorMiddleware):
             resolved = QelosConfig(
                 app_url=app_url,
                 api_token=api_token,
-                access_token_cookie=access_token_cookie,
-                refresh_token_cookie=refresh_token_cookie,
                 require_auth=require_auth,
                 skip_paths=list(skip_paths or []),
+                disable_proxy=disable_proxy,
                 sdk_options=dict(sdk_options or {}),
             )
         super().__init__(
             app,
             config=resolved,
-            on_token_refresh=on_token_refresh,
             resolve_workspace=resolve_workspace,
         )
 
