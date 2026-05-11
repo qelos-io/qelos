@@ -1,12 +1,12 @@
 import QelosSDK from '@qelos/sdk';
 import type { QelosSDKOptions, FetchLike } from '@qelos/sdk/types';
+import { getRequestHeader, type H3Event } from 'h3';
 import type {
   QelosNuxtRuntimeConfig,
   QelosTokenPair,
   ResolvedTokens,
   TokenRefreshHook,
 } from './types';
-import type { H3Event } from 'h3';
 
 export interface CreateSdkParams {
   config: QelosNuxtRuntimeConfig;
@@ -94,11 +94,16 @@ export function createRequestSdk({ config, tokens, event, onTokenRefresh }: Crea
       if (forceRefresh && tokens.refreshToken) {
         await ensureRefresh();
       }
+      const headers: Record<string, string> = {};
+      const cookie = getRequestHeader(event, 'cookie');
+      if (cookie) {
+        headers.cookie = cookie;
+      }
       const token = sdk?.authentication?.accessToken || tokens.accessToken;
       if (token) {
-        return { authorization: 'Bearer ' + token };
+        headers.authorization = 'Bearer ' + token;
       }
-      return {};
+      return headers;
     };
 
     options.onFailedRefreshToken = async () => {

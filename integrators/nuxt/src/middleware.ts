@@ -1,13 +1,15 @@
 import {
+  appendResponseHeader,
+  createError,
   defineEventHandler,
   getCookie,
   getRequestHeader,
-  setCookie,
-  createError,
   type H3Event,
 } from 'h3';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
+import { rewriteSetCookieDomain } from './cookies';
+import { resolveQelosProxyTarget } from './proxy-target';
 import { createRequestSdk } from './sdk-factory';
 import type {
   QelosNuxtRuntimeConfig,
@@ -22,8 +24,9 @@ const DEFAULT_REFRESH_COOKIE = 'q_refresh_token';
 export interface CreateMiddlewareOptions {
   config: QelosNuxtRuntimeConfig;
   /**
-   * Hook invoked after a successful token refresh. The default implementation
-   * writes the new tokens back to the response cookies.
+   * @deprecated The middleware now lets Qelos rotate session cookies via the
+   * upstream `Set-Cookie` response from `/api/me`; this hook is no longer
+   * invoked. Retained for backwards compatibility with the v4.0 surface.
    */
   onTokenRefresh?: TokenRefreshHook;
   /**
@@ -55,25 +58,6 @@ function readTokens(event: H3Event, config: QelosNuxtRuntimeConfig): QelosTokenP
   };
 }
 
-function writeTokensToCookies(
-  event: H3Event,
-  config: QelosNuxtRuntimeConfig,
-  tokens: { accessToken: string; refreshToken?: string },
-) {
-  const accessCookie = config.accessTokenCookie || DEFAULT_ACCESS_COOKIE;
-  const refreshCookie = config.refreshTokenCookie || DEFAULT_REFRESH_COOKIE;
-  const cookieOptions = {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax' as const,
-    path: '/',
-  };
-  setCookie(event, accessCookie, tokens.accessToken, cookieOptions);
-  if (tokens.refreshToken) {
-    setCookie(event, refreshCookie, tokens.refreshToken, cookieOptions);
-  }
-}
-
 function shouldSkip(event: H3Event, config: QelosNuxtRuntimeConfig): boolean {
   if (!config.skipPaths?.length) {
     return false;
@@ -82,12 +66,12 @@ function shouldSkip(event: H3Event, config: QelosNuxtRuntimeConfig): boolean {
   return config.skipPaths.some((prefix) => path.startsWith(prefix));
 }
 
+function buildMeUrl(base: string): string {
+  return `${base.replace(/\/+$/, '')}/api/me`;
+}
+
 export function createQelosMiddleware(options: CreateMiddlewareOptions) {
   const { config, resolveWorkspace } = options;
-  const onTokenRefresh: TokenRefreshHook = options.onTokenRefresh
-    || (async ({ event, newTokens }) => {
-      writeTokensToCookies(event, config, newTokens);
-    });
 
   return defineEventHandler(async (event) => {
     if (shouldSkip(event, config)) {
@@ -95,7 +79,7 @@ export function createQelosMiddleware(options: CreateMiddlewareOptions) {
     }
 
     const tokens = readTokens(event, config);
-    const sdk = createRequestSdk({ config, tokens, event, onTokenRefresh });
+    const sdk = createRequestSdk({ config, tokens, event });
 
     const ctx: QelosRequestContext = {
       user: null,
@@ -106,17 +90,52 @@ export function createQelosMiddleware(options: CreateMiddlewareOptions) {
     };
     event.context.qelos = ctx;
 
-    const hasAuthMaterial = Boolean(config.apiToken || tokens.accessToken || tokens.refreshToken);
-    if (!hasAuthMaterial) {
+    const base = resolveQelosProxyTarget(config);
+    if (!base && !config.apiToken) {
       if (config.requireAuth) {
         throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
       }
       return;
     }
 
-    try {
-      ctx.user = await sdk.authentication.getLoggedInUser();
-    } catch (err) {
+    if (base) {
+      const headers: Record<string, string> = {};
+      const cookieHeader = getRequestHeader(event, 'cookie');
+      if (cookieHeader) headers.cookie = cookieHeader;
+      const authHeader = getRequestHeader(event, 'authorization');
+      if (authHeader) headers.authorization = authHeader;
+
+      const originalHost = getRequestHeader(event, 'host');
+
+      let response: Response | undefined;
+      try {
+        response = await fetch(buildMeUrl(base), {
+          method: 'GET',
+          headers,
+          redirect: 'manual',
+        });
+      } catch {
+        if (config.requireAuth) {
+          throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
+        }
+        return;
+      }
+
+      const setCookieValues = response.headers.getSetCookie?.() ?? [];
+      for (const value of setCookieValues) {
+        appendResponseHeader(event, 'set-cookie', rewriteSetCookieDomain(value, originalHost));
+      }
+
+      if (response.ok) {
+        try {
+          ctx.user = (await response.json()) as IUser;
+        } catch {
+          ctx.user = null;
+        }
+      }
+    }
+
+    if (!ctx.user) {
       if (config.requireAuth) {
         throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
       }
@@ -129,7 +148,7 @@ export function createQelosMiddleware(options: CreateMiddlewareOptions) {
       ctx.workspaces = [];
     }
 
-    if (ctx.user && ctx.workspaces.length) {
+    if (ctx.workspaces.length) {
       if (resolveWorkspace) {
         ctx.workspace = await resolveWorkspace({
           event,
