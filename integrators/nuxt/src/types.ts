@@ -3,11 +3,6 @@ import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import type { QelosSDKOptions } from '@qelos/sdk/types';
 
-export interface QelosTokenPair {
-  accessToken?: string;
-  refreshToken?: string;
-}
-
 export interface QelosNuxtRuntimeConfig {
   /**
    * Base URL of the Qelos backend (e.g. https://yourdomain.com).
@@ -15,17 +10,9 @@ export interface QelosNuxtRuntimeConfig {
   appUrl: string;
   /**
    * Static API token used for service-to-service calls. When provided, no
-   * cookie/refresh-token handling is performed.
+   * cookie-based authentication is performed.
    */
   apiToken?: string;
-  /**
-   * Cookie name carrying the Qelos access token. Defaults to `q_access_token`.
-   */
-  accessTokenCookie?: string;
-  /**
-   * Cookie name carrying the Qelos refresh token. Defaults to `q_refresh_token`.
-   */
-  refreshTokenCookie?: string;
   /**
    * Path to mount the server middleware on. Defaults to `''` (every request).
    */

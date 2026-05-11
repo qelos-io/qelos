@@ -25,8 +25,6 @@ export default defineNuxtConfig({
   qelos: {
     appUrl: 'https://your-qelos-app.com',
     // Optional — defaults shown:
-    accessTokenCookie: 'q_access_token',
-    refreshTokenCookie: 'q_refresh_token',
     requireAuth: false,
     skipPaths: ['/api/_auth', '/health'],
   },

@@ -104,5 +104,4 @@ export type {
 export type {
   QelosNuxtRuntimeConfig,
   QelosRequestContext,
-  QelosTokenPair,
 } from './types';
