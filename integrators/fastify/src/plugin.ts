@@ -5,31 +5,36 @@ import type {
   FastifyRequest,
   preHandlerHookHandler,
 } from 'fastify';
+import * as http from 'node:http';
+import * as https from 'node:https';
+import { URL } from 'node:url';
 import fp from 'fastify-plugin';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
+import { rewriteSetCookieDomain } from './cookies';
+import { resolveQelosProxyTarget } from './proxy-target';
 import { createRequestSdk } from './sdk-factory';
-import type {
-  QelosFastifyConfig,
-  QelosRequestContext,
-  QelosTokenPair,
-  ResolvedTokens,
-  TokenRefreshHook,
-} from './types';
+import type { QelosFastifyConfig, QelosRequestContext } from './types';
 
-const DEFAULT_ACCESS_COOKIE = 'q_access_token';
-const DEFAULT_REFRESH_COOKIE = 'q_refresh_token';
+const HOP_BY_HOP = new Set([
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade',
+  'host',
+  'content-length',
+]);
 
 export interface QelosPluginOptions {
   config: QelosFastifyConfig;
   /**
-   * Hook invoked after a successful token refresh. The default implementation
-   * writes the new tokens back to the response cookies.
-   */
-  onTokenRefresh?: TokenRefreshHook;
-  /**
-   * Resolve the active workspace for a request. Defaults to picking the first
-   * workspace returned from `sdk.workspaces.getList()`.
+   * Resolve the active workspace for a request. Defaults to whatever
+   * `/api/me` reports on `user.workspace` (the user's currently activated
+   * workspace, or `null` when none is active).
    */
   resolveWorkspace?: (params: {
     request: FastifyRequest;
@@ -40,8 +45,7 @@ export interface QelosPluginOptions {
 
 export type QelosFastifyRegisterOptions =
   | QelosPluginOptions
-  | (QelosFastifyConfig &
-      Partial<Pick<QelosPluginOptions, 'onTokenRefresh' | 'resolveWorkspace'>>);
+  | (QelosFastifyConfig & Partial<Pick<QelosPluginOptions, 'resolveWorkspace'>>);
 
 function normalizePluginOptions(
   options: QelosFastifyRegisterOptions,
@@ -57,119 +61,12 @@ function normalizePluginOptions(
     return options as QelosPluginOptions;
   }
   const o = options as QelosFastifyConfig &
-    Partial<Pick<QelosPluginOptions, 'onTokenRefresh' | 'resolveWorkspace'>>;
-  const { onTokenRefresh, resolveWorkspace, ...configFields } = o;
+    Partial<Pick<QelosPluginOptions, 'resolveWorkspace'>>;
+  const { resolveWorkspace, ...configFields } = o;
   return {
     config: configFields as QelosFastifyConfig,
-    onTokenRefresh,
     resolveWorkspace,
   };
-}
-
-function readCookie(request: FastifyRequest, name: string): string | undefined {
-  // Prefer @fastify/cookie's parsed output when available.
-  const parsed = (request as FastifyRequest & {
-    cookies?: Record<string, string | undefined>;
-  }).cookies;
-  if (parsed && typeof parsed[name] === 'string') {
-    return parsed[name];
-  }
-  const header = request.headers.cookie;
-  if (!header) return undefined;
-  const prefix = name + '=';
-  for (const part of header.split(';')) {
-    const trimmed = part.trim();
-    if (trimmed.startsWith(prefix)) {
-      try {
-        return decodeURIComponent(trimmed.slice(prefix.length));
-      } catch {
-        return trimmed.slice(prefix.length);
-      }
-    }
-  }
-  return undefined;
-}
-
-function readTokens(
-  request: FastifyRequest,
-  config: QelosFastifyConfig,
-): QelosTokenPair {
-  const accessCookie = config.accessTokenCookie || DEFAULT_ACCESS_COOKIE;
-  const refreshCookie = config.refreshTokenCookie || DEFAULT_REFRESH_COOKIE;
-  const cookieAccess = readCookie(request, accessCookie);
-  const cookieRefresh = readCookie(request, refreshCookie);
-  const authHeader = request.headers.authorization;
-  const headerAccess =
-    authHeader && authHeader.toLowerCase().startsWith('bearer ')
-      ? authHeader.slice(7).trim()
-      : undefined;
-  return {
-    accessToken: headerAccess || cookieAccess || undefined,
-    refreshToken: cookieRefresh || undefined,
-  };
-}
-
-function serializeCookie(name: string, value: string, secure: boolean): string {
-  const parts = [
-    `${name}=${encodeURIComponent(value)}`,
-    'Path=/',
-    'HttpOnly',
-    'SameSite=Lax',
-  ];
-  if (secure) parts.push('Secure');
-  return parts.join('; ');
-}
-
-function appendSetCookie(reply: FastifyReply, value: string): void {
-  const existing = reply.getHeader('set-cookie');
-  if (Array.isArray(existing)) {
-    reply.header('set-cookie', [...existing, value]);
-  } else if (typeof existing === 'string') {
-    reply.header('set-cookie', [existing, value]);
-  } else if (typeof existing === 'number') {
-    reply.header('set-cookie', [String(existing), value]);
-  } else {
-    reply.header('set-cookie', [value]);
-  }
-}
-
-function writeTokensToCookies(
-  reply: FastifyReply,
-  config: QelosFastifyConfig,
-  tokens: ResolvedTokens,
-): void {
-  const accessCookie = config.accessTokenCookie || DEFAULT_ACCESS_COOKIE;
-  const refreshCookie = config.refreshTokenCookie || DEFAULT_REFRESH_COOKIE;
-  const secure = !/^http:\/\//i.test(config.appUrl);
-
-  // Prefer @fastify/cookie's reply.setCookie when present so consumer
-  // cookie settings/middleware (e.g. signed cookies) keep working.
-  type CookieReply = FastifyReply & {
-    setCookie?: (
-      name: string,
-      value: string,
-      options: Record<string, unknown>,
-    ) => FastifyReply;
-  };
-  const cookieReply = reply as CookieReply;
-  if (typeof cookieReply.setCookie === 'function') {
-    const cookieOptions = {
-      httpOnly: true,
-      secure,
-      sameSite: 'lax' as const,
-      path: '/',
-    };
-    cookieReply.setCookie(accessCookie, tokens.accessToken, cookieOptions);
-    if (tokens.refreshToken) {
-      cookieReply.setCookie(refreshCookie, tokens.refreshToken, cookieOptions);
-    }
-    return;
-  }
-
-  appendSetCookie(reply, serializeCookie(accessCookie, tokens.accessToken, secure));
-  if (tokens.refreshToken) {
-    appendSetCookie(reply, serializeCookie(refreshCookie, tokens.refreshToken, secure));
-  }
 }
 
 function shouldSkip(
@@ -183,48 +80,97 @@ function shouldSkip(
   return config.skipPaths.some((prefix) => path.startsWith(prefix));
 }
 
+function buildMeUrl(base: string): string {
+  return `${base.replace(/\/+$/, '')}/api/me`;
+}
+
+function appendSetCookie(reply: FastifyReply, value: string): void {
+  // Fastify accumulates `set-cookie` values when `reply.header` is called
+  // repeatedly, so a single append is enough — don't re-pass existing values.
+  reply.header('set-cookie', value);
+}
+
 const qelosFastifyPlugin: FastifyPluginAsync<QelosFastifyRegisterOptions> = async (
   fastify: FastifyInstance,
   rawOptions: QelosFastifyRegisterOptions,
 ) => {
-  const { config, resolveWorkspace, onTokenRefresh: userOnTokenRefresh } =
-    normalizePluginOptions(rawOptions);
-  const onTokenRefresh: TokenRefreshHook =
-    userOnTokenRefresh ||
-    (async ({ reply, newTokens }) => {
-      writeTokensToCookies(reply, config, newTokens);
-    });
+  const { config: rawConfig, resolveWorkspace } = normalizePluginOptions(rawOptions);
+
+  const proxyEnabled = rawConfig.disableProxy !== true;
+  let config = rawConfig;
+  if (proxyEnabled) {
+    const existingSkipPaths = rawConfig.skipPaths ?? [];
+    const alreadyCovered = existingSkipPaths.some((prefix) =>
+      '/api/'.startsWith(prefix),
+    );
+    if (!alreadyCovered) {
+      config = { ...rawConfig, skipPaths: ['/api/', ...existingSkipPaths] };
+    }
+  }
+
+  const sdkFetch = (config.sdkOptions?.fetch ?? globalThis.fetch) as typeof globalThis.fetch;
 
   fastify.addHook('preHandler', async (request, reply) => {
-    const tokens = readTokens(request, config);
-    const sdk = createRequestSdk({ config, tokens, request, reply, onTokenRefresh });
+    if (shouldSkip(request, config)) {
+      return;
+    }
+
+    const sdk = createRequestSdk({ config, request });
 
     const ctx: QelosRequestContext = {
       user: null,
       workspace: null,
       workspaces: [],
       sdk,
-      tokens,
     };
     request.qelos = ctx;
 
-    if (shouldSkip(request, config)) {
-      return;
-    }
-
-    const hasAuthMaterial = Boolean(
-      config.apiToken || tokens.accessToken || tokens.refreshToken,
-    );
-    if (!hasAuthMaterial) {
+    const base = resolveQelosProxyTarget(config);
+    if (!base && !config.apiToken) {
       if (config.requireAuth) {
         return reply.code(401).send({ code: 'UNAUTHORIZED' });
       }
       return;
     }
 
-    try {
-      ctx.user = await sdk.authentication.getLoggedInUser();
-    } catch {
+    if (base) {
+      const headers: Record<string, string> = {};
+      if (request.headers.cookie) headers.cookie = request.headers.cookie;
+      if (request.headers.authorization) {
+        headers.authorization = request.headers.authorization;
+      }
+
+      const originalHost = request.headers.host;
+
+      let upstream: globalThis.Response | undefined;
+      try {
+        upstream = await sdkFetch(buildMeUrl(base), {
+          method: 'GET',
+          headers,
+          redirect: 'manual',
+        });
+      } catch {
+        if (config.requireAuth) {
+          return reply.code(401).send({ code: 'UNAUTHORIZED' });
+        }
+        return;
+      }
+
+      const setCookieValues = upstream.headers.getSetCookie?.() ?? [];
+      for (const value of setCookieValues) {
+        appendSetCookie(reply, rewriteSetCookieDomain(value, originalHost));
+      }
+
+      if (upstream.ok) {
+        try {
+          ctx.user = (await upstream.json()) as IUser;
+        } catch {
+          ctx.user = null;
+        }
+      }
+    }
+
+    if (!ctx.user) {
       if (config.requireAuth) {
         return reply.code(401).send({ code: 'UNAUTHORIZED' });
       }
@@ -237,20 +183,113 @@ const qelosFastifyPlugin: FastifyPluginAsync<QelosFastifyRegisterOptions> = asyn
       ctx.workspaces = [];
     }
 
-    if (ctx.user && ctx.workspaces.length) {
-      if (resolveWorkspace) {
-        ctx.workspace =
-          (await resolveWorkspace({
-            request,
-            user: ctx.user,
-            workspaces: ctx.workspaces,
-          })) || null;
-      } else {
-        ctx.workspace = ctx.workspaces[0] || null;
-      }
+    if (resolveWorkspace) {
+      ctx.workspace =
+        (await resolveWorkspace({
+          request,
+          user: ctx.user,
+          workspaces: ctx.workspaces,
+        })) || null;
+    } else {
+      // `/api/me` carries `user.workspace` (`{ _id, name, roles }`) only when
+      // the user has activated a workspace. Null means the frontend must
+      // prompt to activate/create one — don't silently pick workspaces[0].
+      ctx.workspace =
+        (ctx.user as unknown as { workspace?: IWorkspace | null }).workspace || null;
     }
   });
+
+  if (proxyEnabled) {
+    fastify.all('/api/*', (request, reply) => {
+      proxyApiRequest(request, reply, config);
+    });
+  }
 };
+
+function proxyApiRequest(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  config: QelosFastifyConfig,
+): void {
+  const base = resolveQelosProxyTarget(config);
+  if (!base) {
+    reply.code(503).send({
+      code: 'QELOS_PROXY_NOT_CONFIGURED',
+      message:
+        '[@qelos/integrator-fastify] Qelos API proxy is not configured. ' +
+        'Set config.appUrl (or QELOS_PROXY_TARGET / QELOS_IP / QELOS_API_IP in development).',
+    });
+    return;
+  }
+
+  let target: URL;
+  try {
+    const baseUrl = new URL(base);
+    target = new URL(request.url, baseUrl);
+  } catch {
+    reply.code(502).send({
+      code: 'QELOS_PROXY_BAD_TARGET',
+      message: '[@qelos/integrator-fastify] Invalid proxy target URL.',
+    });
+    return;
+  }
+
+  const client = target.protocol === 'https:' ? https : http;
+  const originalHost = request.headers.host;
+
+  const forwardedHeaders: http.OutgoingHttpHeaders = {};
+  for (const [name, value] of Object.entries(request.headers)) {
+    if (value === undefined) continue;
+    if (HOP_BY_HOP.has(name.toLowerCase())) continue;
+    forwardedHeaders[name] = value as string | string[];
+  }
+  forwardedHeaders.host = target.host;
+
+  const upstreamReq = client.request(
+    {
+      protocol: target.protocol,
+      hostname: target.hostname,
+      port: target.port || (target.protocol === 'https:' ? 443 : 80),
+      method: request.method,
+      path: target.pathname + target.search,
+      headers: forwardedHeaders,
+    },
+    (upstreamRes) => {
+      const status = upstreamRes.statusCode ?? 502;
+      const raw = reply.raw;
+      for (const [name, value] of Object.entries(upstreamRes.headers)) {
+        if (value === undefined) continue;
+        const lower = name.toLowerCase();
+        if (HOP_BY_HOP.has(lower)) continue;
+        if (lower === 'set-cookie') {
+          const values = Array.isArray(value) ? value : [value];
+          raw.setHeader(
+            'set-cookie',
+            values.map((v) => rewriteSetCookieDomain(v, originalHost)),
+          );
+          continue;
+        }
+        raw.setHeader(name, value);
+      }
+      raw.statusCode = status;
+      upstreamRes.pipe(raw);
+    },
+  );
+
+  upstreamReq.on('error', (err) => {
+    if (!reply.raw.headersSent) {
+      reply.code(502).send({
+        code: 'QELOS_PROXY_UPSTREAM_ERROR',
+        message: err.message,
+      });
+    } else {
+      reply.raw.end();
+    }
+  });
+
+  request.raw.on('aborted', () => upstreamReq.destroy());
+  request.raw.pipe(upstreamReq);
+}
 
 export const qelosFastify = fp(qelosFastifyPlugin, {
   name: '@qelos/integrator-fastify',
@@ -263,11 +302,11 @@ export const qelosPlugin = qelosFastify;
 export default qelosFastify;
 
 /**
- * Build a `preHandler` hook that responds with 401 when `request.qelos.user`
- * is not populated. Mount on a route after the plugin has been registered.
+ * `preHandler` that responds with 401 when `request.qelos.user` is not
+ * populated. Mount on a route after the plugin has been registered.
  */
 export const requireUser: preHandlerHookHandler = async (request, reply) => {
-  if (!request.qelos.user) {
+  if (!request.qelos?.user) {
     return reply.code(401).send({ code: 'UNAUTHORIZED' });
   }
 };
