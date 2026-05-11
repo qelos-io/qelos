@@ -15,8 +15,9 @@ import type { QelosNuxtRuntimeConfig, QelosRequestContext } from './types';
 export interface CreateMiddlewareOptions {
   config: QelosNuxtRuntimeConfig;
   /**
-   * Resolve the active workspace for a request. Defaults to picking the first
-   * workspace returned from `sdk.workspaces.getList()`.
+   * Resolve the active workspace for a request. Defaults to whatever
+   * `/api/me` reports on `user.workspace` (the user's currently activated
+   * workspace, or `null` when none is active).
    */
   resolveWorkspace?: (params: {
     event: H3Event;
@@ -113,16 +114,18 @@ export function createQelosMiddleware(options: CreateMiddlewareOptions) {
       ctx.workspaces = [];
     }
 
-    if (ctx.workspaces.length) {
-      if (resolveWorkspace) {
-        ctx.workspace = await resolveWorkspace({
-          event,
-          user: ctx.user,
-          workspaces: ctx.workspaces,
-        }) || null;
-      } else {
-        ctx.workspace = ctx.workspaces[0] || null;
-      }
+    if (resolveWorkspace) {
+      ctx.workspace = (await resolveWorkspace({
+        event,
+        user: ctx.user,
+        workspaces: ctx.workspaces,
+      })) || null;
+    } else {
+      // `/api/me` carries `user.workspace` (`{ _id, name, roles }`) only when
+      // the user has activated a workspace. Null means the frontend must
+      // prompt to activate/create one — don't silently pick workspaces[0].
+      ctx.workspace =
+        (ctx.user as unknown as { workspace?: IWorkspace | null }).workspace || null;
     }
   });
 }

@@ -195,11 +195,18 @@ If you need direct browser access to the Qelos API, use
 server-side SDK in this package is bound to per-request cookies and isn't
 intended for client use.
 
-## Custom workspace resolution
+## Workspace resolution
 
-If the default behavior (first workspace from `sdk.workspaces.getList()`)
-doesn't fit your app, register your own middleware instead of (or in
-addition to) the module's default handler:
+`event.context.qelos.workspace` defaults to whatever the managed Qelos app
+reports on `user.workspace` from `/api/me`. That field is non-null only when
+the user has already activated a workspace on the Qelos side; when it is
+`null`, the frontend is expected to prompt the user to either activate an
+existing workspace or create a new one. The middleware deliberately does
+**not** auto-pick `workspaces[0]` — that would silently put the user into
+the wrong workspace.
+
+To override the default (e.g. force a particular workspace per request),
+register your own middleware:
 
 ```ts
 // server/middleware/qelos.ts
@@ -208,7 +215,9 @@ import { createQelosMiddleware } from '@qelos/integrator-nuxt';
 export default createQelosMiddleware({
   config: useRuntimeConfig().qelos,
   resolveWorkspace: ({ user, workspaces }) =>
-    workspaces.find(w => w._id === user.metadata?.activeWorkspace) || workspaces[0] || null,
+    workspaces.find(w => w._id === user.metadata?.activeWorkspace)
+      || user.workspace
+      || null,
 });
 ```
 
