@@ -49,14 +49,18 @@ await app.register(qelosFastify, {
 
 The plugin runs as a `preHandler` hook and:
 
-1. Reads the access token from `Authorization: Bearer …` or the
-   `q_access_token` cookie, and the refresh token from `q_refresh_token`.
-2. Builds a per-request `QelosSDK` instance bound to those tokens.
-3. Calls `sdk.authentication.getLoggedInUser()` and
+1. Resolves the managed Qelos origin (same rules as the bundled `/api/**`
+   proxy).
+2. Calls `GET {upstream}/api/me` with inbound `Cookie` and `Authorization`
+   forwarded.
+3. Rewrites upstream `Set-Cookie` `Domain=` to the inbound host.
+4. Sets `user` from JSON on success; loads `workspaces` via
    `sdk.workspaces.getList()`.
-4. Picks the active workspace (first by default — override with
-   `resolveWorkspace`).
-5. Attaches everything to `request.qelos`.
+5. Sets `workspace` from `user.workspace` or `resolveWorkspace` — **not**
+   from `workspaces[0]`.
+
+When `disableProxy` is not `true`, the plugin also registers a catch-all
+`/api/*` proxy (see package README).
 
 ### All configuration options
 
@@ -65,33 +69,24 @@ await app.register(qelosFastify, {
   config: {
     appUrl: 'https://your-qelos-instance.com', // required
 
-    // Service-to-service: use a static API token instead of cookies/refresh.
     apiToken: process.env.QELOS_API_TOKEN,
 
-    // Cookie names. Defaults shown.
-    accessTokenCookie: 'q_access_token',
-    refreshTokenCookie: 'q_refresh_token',
-
-    // Reject anonymous requests with 401. Defaults to false.
     requireAuth: false,
 
-    // Skip the plugin entirely for these path prefixes.
     skipPaths: ['/health', '/metrics'],
 
-    // Anything you want passed through to the per-request SDK.
+    disableProxy: false,
+
     sdkOptions: {},
   },
 
-  // Override workspace selection. Defaults to `workspaces[0]`.
   resolveWorkspace: ({ request, user, workspaces }) => {
     const headerId = request.headers['x-qelos-workspace'];
-    return workspaces.find((w) => w._id === headerId) || workspaces[0] || null;
-  },
-
-  // Hook fired after a successful refresh. Defaults to writing the rotated
-  // tokens back to cookies.
-  onTokenRefresh: async ({ request, reply, oldTokens, newTokens, sdk }) => {
-    // ...
+    return (
+      workspaces.find((w) => w._id === headerId) ||
+      user.workspace ||
+      null
+    );
   },
 });
 ```
@@ -106,8 +101,7 @@ interface QelosRequestContext {
   user: IUser | null;          // null for anonymous requests
   workspace: IWorkspace | null;
   workspaces: IWorkspace[];
-  sdk: QelosSDK;               // bound to the current request's tokens
-  tokens: QelosTokenPair;      // mutated in place when a refresh occurs
+  sdk: QelosSDK;               // forwards Cookie / Authorization per call
 }
 ```
 
@@ -188,26 +182,12 @@ app.get('/auth/callback', async (request, reply) => {
 });
 ```
 
-### Token refresh
+### Cookies and SDK calls
 
-When the access token is rejected the SDK transparently retries with the
-refresh token. After a successful refresh the plugin fires the
-`onTokenRefresh` hook. The default implementation writes the new pair back
-to cookies (`HttpOnly`, `SameSite=Lax`, `Secure` whenever `appUrl` is
-`https://…`) — using `reply.setCookie` if `@fastify/cookie` is registered,
-or `Set-Cookie` headers otherwise.
+Rotations from Qelos arrive as `Set-Cookie` on the `/api/me` probe and on SDK
+responses. The request-scoped SDK forwards cookies on each call.
 
-```ts
-await app.register(qelosFastify, {
-  config: { appUrl: process.env.QELOS_APP_URL! },
-  onTokenRefresh: async ({ request, reply, newTokens }) => {
-    await sessionStore.rotate(request.session.id, newTokens);
-  },
-});
-```
-
-The hook receives `{ request, reply, oldTokens, newTokens, sdk }`. Throwing
-aborts the in-flight request.
+See [Cookie Token Lifecycle](../auth/cookie-tokens.md).
 
 ### Service-to-service (no end user)
 
@@ -264,18 +244,11 @@ the [Blueprints Operations reference](../sdk/blueprints_operations.md).
   `request.qelos.workspace` will simply be `null`. Switch to
   `config.requireAuth: true` or per-route `{ preHandler: requireUser }`
   when you want a hard `401`.
-- **Cookies use `reply.setCookie` when available.** If you register
-  `@fastify/cookie`, your cookie options (signing, domain, etc.) keep
-  working transparently. Otherwise the plugin writes plain `Set-Cookie`
-  headers.
-- **`Secure` is set automatically based on `appUrl`.** In local
-  development with an `http://` `appUrl`, cookies are written without
-  `Secure` so browsers accept them. Production HTTPS instances get
-  `Secure` for free.
-- **Workspace selection defaults to the first workspace.** Supply
-  `resolveWorkspace` if your users belong to multiple workspaces — the
-  integrator does not read the active workspace from user metadata for
-  you.
-- **Don't reuse the per-request SDK across requests.** It is bound to a
-  specific token pair. Build a fresh SDK with `apiToken` for cron jobs or
-  workers.
+- **Cookies:** upstream `Set-Cookie` from `/api/me` and from proxied `/api/**`
+  responses are forwarded with `Domain=` rewritten to your host.
+- **`Secure` cookies:** the proxy does not strip `Secure` — configure Qelos /
+  TLS for local HTTP if browsers drop cookies.
+- **Active workspace comes from `/api/me`’s `user.workspace`, not
+  `workspaces[0]`.** Supply `resolveWorkspace` when you need another rule.
+- **Don't reuse the per-request SDK across requests.** Build a fresh SDK with
+  `apiToken` for cron jobs or workers.

@@ -28,6 +28,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
+    "httpx>=0.24.0",
     "qelos-sdk>=4.0.0",
     "fastapi>=0.95.0",
     "pydantic>=2.4.0",

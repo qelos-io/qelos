@@ -42,6 +42,12 @@
       "require": "./dist/route.js",
       "default": "./dist/route.js"
     },
+    "./runtime/api-proxy": {
+      "types": "./dist/runtime/api-proxy.d.ts",
+      "import": "./dist/runtime/api-proxy.js",
+      "require": "./dist/runtime/api-proxy.js",
+      "default": "./dist/runtime/api-proxy.js"
+    },
     "./types": {
       "types": "./dist/types.d.ts",
       "import": "./dist/types.js",
@@ -70,8 +76,7 @@
     }
   },
   "dependencies": {
-    "@qelos/global-types": "workspace:^",
-    "@qelos/sdk": "workspace:^"
+    "@qelos/sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.5.4",

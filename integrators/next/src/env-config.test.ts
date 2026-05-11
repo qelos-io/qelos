@@ -17,16 +17,14 @@ test('loadQelosConfigFromEnv parses optional fields', () => {
   const config = loadQelosConfigFromEnv({
     QELOS_APP_URL: 'https://example.com',
     QELOS_API_TOKEN: 'svc-token',
-    QELOS_ACCESS_TOKEN_COOKIE: 'access',
-    QELOS_REFRESH_TOKEN_COOKIE: 'refresh',
     QELOS_REQUIRE_AUTH: 'true',
     QELOS_SKIP_PATHS: '/_next, /favicon.ico,/api/_health',
+    QELOS_DISABLE_PROXY: 'true',
   });
   assert.equal(config.appUrl, 'https://example.com');
   assert.equal(config.apiToken, 'svc-token');
-  assert.equal(config.accessTokenCookie, 'access');
-  assert.equal(config.refreshTokenCookie, 'refresh');
   assert.equal(config.requireAuth, true);
+  assert.equal(config.disableProxy, true);
   assert.deepEqual(config.skipPaths, ['/_next', '/favicon.ico', '/api/_health']);
 });
 

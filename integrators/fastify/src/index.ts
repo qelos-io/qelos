@@ -13,11 +13,10 @@ export { default } from './plugin';
 export { createRequestSdk } from './sdk-factory';
 export type { CreateSdkParams } from './sdk-factory';
 
+export { rewriteSetCookieDomain, rewriteSetCookieDomains } from './cookies';
+export { resolveQelosProxyTarget } from './proxy-target';
+
 export type {
   QelosFastifyConfig,
   QelosRequestContext,
-  QelosTokenPair,
-  ResolvedTokens,
-  TokenRefreshContext,
-  TokenRefreshHook,
 } from './types';

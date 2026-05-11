@@ -2,42 +2,44 @@ import type QelosSDK from '@qelos/sdk';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import type { QelosSDKOptions } from '@qelos/sdk/types';
-import type {
-  QelosConfig,
-  QelosContext,
-  QelosTokenPair,
-  ResolvedTokens,
-} from '@qelos/global-types';
 
-export type { QelosTokenPair, ResolvedTokens } from '@qelos/global-types';
-
-export interface QelosNextConfig extends QelosConfig {
+export interface QelosNextConfig {
+  /**
+   * Base URL of the Qelos backend (e.g. https://yourdomain.com).
+   */
+  appUrl: string;
+  /**
+   * Static API token used for service-to-service calls. When provided, no
+   * cookie-based `/api/me` identification is required for anonymous access.
+   */
+  apiToken?: string;
+  /**
+   * If true, the request is rejected (401) when the user cannot be resolved.
+   * Defaults to `false` — anonymous requests pass through with `user = null`.
+   */
+  requireAuth?: boolean;
+  /**
+   * Skip the middleware / resolver entirely for requests matching any of these
+   * path prefixes. Useful for `/_next`, `/favicon.ico`, `/health`, etc.
+   */
+  skipPaths?: string[];
   /**
    * Optional extra options merged into the per-request SDK instance.
    */
   sdkOptions?: Partial<QelosSDKOptions>;
+  /**
+   * When `false` (default), Edge middleware prepends `/api/` to `skipPaths` so
+   * the catch-all BFF proxy route is not shadowed by the `/api/me` probe.
+   */
+  disableProxy?: boolean;
 }
 
-export interface TokenRefreshContext<TRefreshTarget = unknown> {
-  /**
-   * The transport-specific carrier for the refresh hook. For App Router edge
-   * middleware this is the outbound `NextResponse`; for Pages Router API
-   * routes it is the `NextApiResponse`; for `getServerSideProps` it is the
-   * raw `ServerResponse`. App Router server components / route handlers do
-   * not call this hook because cookies cannot be set after the response has
-   * started — the refreshed tokens are only mutated on the in-memory pair.
-   */
-  target: TRefreshTarget;
-  oldTokens: QelosTokenPair;
-  newTokens: ResolvedTokens;
+export interface QelosRequestContext {
+  user: IUser | null;
+  workspace: IWorkspace | null;
+  workspaces: IWorkspace[];
   sdk: QelosSDK;
 }
-
-export type TokenRefreshHook<TRefreshTarget = unknown> = (
-  ctx: TokenRefreshContext<TRefreshTarget>
-) => void | Promise<void>;
-
-export type QelosRequestContext = QelosContext<QelosSDK, IUser, IWorkspace>;
 
 /**
  * Header name used to forward the resolved user id from edge middleware to

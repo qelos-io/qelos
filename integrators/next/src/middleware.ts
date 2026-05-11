@@ -1,52 +1,20 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
+import { rewriteSetCookieDomain } from './cookies';
 import { applyQelosForwardHeaders } from './forward-headers';
 import { getDefaultQelosConfig } from './env-config';
+import { fetchMeIdentity } from './me-client';
+import { resolveQelosProxyTarget } from './proxy-target';
 import { createRequestSdk } from './sdk-factory';
-import type {
-  QelosNextConfig,
-  QelosTokenPair,
-  ResolvedTokens,
-  TokenRefreshHook,
-} from './types';
-
-const DEFAULT_ACCESS_COOKIE = 'q_access_token';
-const DEFAULT_REFRESH_COOKIE = 'q_refresh_token';
-
-export interface PendingCookie {
-  name: string;
-  value: string;
-  options: {
-    httpOnly: boolean;
-    secure: boolean;
-    sameSite: 'lax' | 'strict' | 'none';
-    path: string;
-  };
-}
-
-/**
- * Carrier passed to the App Router middleware token-refresh hook. Cookies
- * pushed onto `pendingCookies` are written to the outbound `NextResponse`
- * after identification completes — Next.js does not let us mutate the
- * response headers after `NextResponse.next()` has been constructed, so we
- * stage them here and flush them once the response object exists.
- */
-export interface MiddlewareRefreshTarget {
-  req: NextRequest;
-  pendingCookies: PendingCookie[];
-}
+import type { QelosNextConfig } from './types';
 
 export interface CreateMiddlewareOptions {
   config: QelosNextConfig;
   /**
-   * Hook invoked after a successful token refresh. The default implementation
-   * stages new cookies for the outbound response.
-   */
-  onTokenRefresh?: TokenRefreshHook<MiddlewareRefreshTarget>;
-  /**
-   * Resolve the active workspace for a request. Defaults to picking the first
-   * workspace returned from `sdk.workspaces.getList()`.
+   * Resolve the active workspace for a request. Defaults to whatever
+   * `/api/me` reports on `user.workspace` (the user's currently activated
+   * workspace, or `null` when none is active).
    */
   resolveWorkspace?: (params: {
     req: NextRequest;
@@ -57,46 +25,23 @@ export interface CreateMiddlewareOptions {
 
 export type QelosMiddleware = (req: NextRequest) => Promise<NextResponse>;
 
-function readTokens(req: NextRequest, config: QelosNextConfig): QelosTokenPair {
-  const accessCookie = config.accessTokenCookie || DEFAULT_ACCESS_COOKIE;
-  const refreshCookie = config.refreshTokenCookie || DEFAULT_REFRESH_COOKIE;
-  const cookieAccess = req.cookies.get(accessCookie)?.value;
-  const cookieRefresh = req.cookies.get(refreshCookie)?.value;
-  const authHeader = req.headers.get('authorization');
-  const headerAccess =
-    authHeader && authHeader.toLowerCase().startsWith('bearer ')
-      ? authHeader.slice(7).trim()
-      : undefined;
-  return {
-    accessToken: headerAccess || cookieAccess || undefined,
-    refreshToken: cookieRefresh || undefined,
-  };
-}
-
-function stagePendingCookies(
-  pending: PendingCookie[],
-  config: QelosNextConfig,
-  tokens: ResolvedTokens
-): void {
-  const accessCookie = config.accessTokenCookie || DEFAULT_ACCESS_COOKIE;
-  const refreshCookie = config.refreshTokenCookie || DEFAULT_REFRESH_COOKIE;
-  const secure = !/^http:\/\//i.test(config.appUrl);
-  const options = {
-    httpOnly: true,
-    secure,
-    sameSite: 'lax' as const,
-    path: '/',
-  };
-  pending.push({ name: accessCookie, value: tokens.accessToken, options });
-  if (tokens.refreshToken) {
-    pending.push({ name: refreshCookie, value: tokens.refreshToken, options });
+function mergeProxySkipPaths(config: QelosNextConfig): string[] | undefined {
+  const merged = [...(config.skipPaths ?? [])];
+  if (config.disableProxy !== true) {
+    const hasApiPrefix = merged.some(
+      (p) => p === '/api' || p === '/api/' || p.startsWith('/api/'),
+    );
+    if (!hasApiPrefix) {
+      merged.unshift('/api/');
+    }
   }
+  return merged.length ? merged : undefined;
 }
 
-function shouldSkip(req: NextRequest, config: QelosNextConfig): boolean {
-  if (!config.skipPaths?.length) return false;
+function shouldSkip(req: NextRequest, skipPaths: string[] | undefined): boolean {
+  if (!skipPaths?.length) return false;
   const path = req.nextUrl.pathname;
-  return config.skipPaths.some((prefix) => path.startsWith(prefix));
+  return skipPaths.some((prefix) => path.startsWith(prefix));
 }
 
 function unauthorized(): NextResponse {
@@ -108,85 +53,101 @@ function unauthorized(): NextResponse {
 
 /**
  * Create a Next.js (App Router) edge middleware that identifies the user and
- * the active workspace via the Qelos SDK before the request reaches the
- * application's own handler. Resolved identity is forwarded to downstream
- * handlers via request headers (`x-qelos-user-id`, `x-qelos-workspace-id`);
- * use `getQelosContext()` from `@qelos/integrator-next/context` to obtain the
- * full user / workspace objects inside server components or route handlers.
+ * the active workspace via a same-origin BFF round-trip to Qelos `GET /api/me`
+ * before the request reaches the application's own handler. Resolved identity
+ * is forwarded to downstream handlers via request headers (`x-qelos-user-id`,
+ * `x-qelos-workspace-id`); use `getQelosContext()` from
+ * `@qelos/integrator-next/context` to obtain the full user / workspace objects
+ * inside server components or route handlers.
  */
 export function createQelosMiddleware(
   options: CreateMiddlewareOptions
 ): QelosMiddleware {
   const { config, resolveWorkspace } = options;
-  const onTokenRefresh: TokenRefreshHook<MiddlewareRefreshTarget> =
-    options.onTokenRefresh ||
-    (async ({ target, newTokens }) => {
-      stagePendingCookies(target.pendingCookies, config, newTokens);
-    });
+  const skipPathsEffective = mergeProxySkipPaths(config);
 
   return async function qelosMiddleware(req) {
-    if (shouldSkip(req, config)) {
+    if (shouldSkip(req, skipPathsEffective)) {
       return NextResponse.next();
     }
 
-    const tokens = readTokens(req, config);
-    const pendingCookies: PendingCookie[] = [];
-    const forwardedHeaders = new Headers(req.headers);
-
-    const sdk = createRequestSdk<MiddlewareRefreshTarget>({
-      config,
-      tokens,
-      refreshTarget: { req, pendingCookies },
-      onTokenRefresh,
+    const getHeaders = () => ({
+      cookie: req.headers.get('cookie') ?? undefined,
+      authorization: req.headers.get('authorization') ?? undefined,
     });
 
-    const hasAuthMaterial = Boolean(
-      config.apiToken || tokens.accessToken || tokens.refreshToken
-    );
+    const sdk = createRequestSdk({ config, getHeaders });
+
+    const base = resolveQelosProxyTarget(config);
+    if (!base && !config.apiToken) {
+      if (config.requireAuth) {
+        return unauthorized();
+      }
+      const forwardedHeaders = new Headers(req.headers);
+      applyQelosForwardHeaders(forwardedHeaders, null, null);
+      return NextResponse.next({ request: { headers: forwardedHeaders } });
+    }
 
     let user: IUser | null = null;
-    let workspaces: IWorkspace[] = [];
+    let setCookieValues: string[] = [];
+    const originalHost = req.headers.get('host');
+
+    if (base) {
+      const h = getHeaders();
+      const { response, user: meUser } = await fetchMeIdentity({
+        base,
+        cookie: h.cookie,
+        authorization: h.authorization,
+      });
+      user = meUser;
+      setCookieValues = response.headers.getSetCookie?.() ?? [];
+    }
+
     let workspace: IWorkspace | null = null;
-    let identifyFailed = false;
+    let workspaces: IWorkspace[] = [];
 
-    if (hasAuthMaterial) {
+    if (user) {
       try {
-        user = await sdk.authentication.getLoggedInUser();
+        workspaces = await sdk.workspaces.getList();
       } catch {
-        identifyFailed = true;
+        workspaces = [];
       }
-      if (user) {
-        try {
-          workspaces = await sdk.workspaces.getList();
-        } catch {
-          workspaces = [];
-        }
-        if (workspaces.length) {
-          if (resolveWorkspace) {
-            workspace =
-              (await resolveWorkspace({ req, user, workspaces })) || null;
-          } else {
-            workspace = workspaces[0] || null;
-          }
-        }
+      if (resolveWorkspace) {
+        workspace =
+          (await resolveWorkspace({ req, user, workspaces })) || null;
+      } else {
+        workspace =
+          (user as unknown as { workspace?: IWorkspace | null }).workspace ||
+          null;
       }
     }
 
-    if (config.requireAuth && (!hasAuthMaterial || identifyFailed)) {
-      return unauthorized();
+    if (!user) {
+      if (config.requireAuth) {
+        return unauthorized();
+      }
+      const forwardedHeaders = new Headers(req.headers);
+      applyQelosForwardHeaders(forwardedHeaders, null, null);
+      const res = NextResponse.next({ request: { headers: forwardedHeaders } });
+      for (const value of setCookieValues) {
+        res.headers.append(
+          'set-cookie',
+          rewriteSetCookieDomain(value, originalHost ?? undefined),
+        );
+      }
+      return res;
     }
 
+    const forwardedHeaders = new Headers(req.headers);
     applyQelosForwardHeaders(forwardedHeaders, user, workspace);
-
-    const response = NextResponse.next({
-      request: { headers: forwardedHeaders },
-    });
-
-    for (const cookie of pendingCookies) {
-      response.cookies.set(cookie.name, cookie.value, cookie.options);
+    const res = NextResponse.next({ request: { headers: forwardedHeaders } });
+    for (const value of setCookieValues) {
+      res.headers.append(
+        'set-cookie',
+        rewriteSetCookieDomain(value, originalHost ?? undefined),
+      );
     }
-
-    return response;
+    return res;
   };
 }
 

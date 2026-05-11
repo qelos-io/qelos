@@ -9,18 +9,12 @@ import type {
 } from 'next';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
+import { rewriteSetCookieDomain } from './cookies';
+import { fetchMeIdentity } from './me-client';
+import { resolveQelosProxyTarget } from './proxy-target';
 import { createRequestSdk } from './sdk-factory';
 import { runWithQelosContext } from './context';
-import type {
-  QelosNextConfig,
-  QelosRequestContext,
-  QelosTokenPair,
-  ResolvedTokens,
-  TokenRefreshHook,
-} from './types';
-
-const DEFAULT_ACCESS_COOKIE = 'q_access_token';
-const DEFAULT_REFRESH_COOKIE = 'q_refresh_token';
+import type { QelosNextConfig, QelosRequestContext } from './types';
 
 type CookieMap = Partial<Record<string, string>>;
 
@@ -28,58 +22,17 @@ interface RequestWithCookies extends IncomingMessage {
   cookies?: CookieMap;
 }
 
-function readCookieFromHeader(header: string | undefined, name: string): string | undefined {
-  if (!header) return undefined;
-  const prefix = name + '=';
-  for (const part of header.split(';')) {
-    const trimmed = part.trim();
-    if (trimmed.startsWith(prefix)) {
-      try {
-        return decodeURIComponent(trimmed.slice(prefix.length));
-      } catch {
-        return trimmed.slice(prefix.length);
-      }
-    }
-  }
-  return undefined;
-}
-
-function readTokens(
-  req: RequestWithCookies,
-  config: QelosNextConfig
-): QelosTokenPair {
-  const accessCookie = config.accessTokenCookie || DEFAULT_ACCESS_COOKIE;
-  const refreshCookie = config.refreshTokenCookie || DEFAULT_REFRESH_COOKIE;
-  const parsed = req.cookies;
-  const cookieAccess =
-    (parsed && typeof parsed[accessCookie] === 'string'
-      ? parsed[accessCookie]
-      : undefined) || readCookieFromHeader(req.headers.cookie, accessCookie);
-  const cookieRefresh =
-    (parsed && typeof parsed[refreshCookie] === 'string'
-      ? parsed[refreshCookie]
-      : undefined) || readCookieFromHeader(req.headers.cookie, refreshCookie);
+function getAuthorization(req: RequestWithCookies): string | undefined {
   const authHeaderRaw = req.headers.authorization;
   const authHeader = Array.isArray(authHeaderRaw) ? authHeaderRaw[0] : authHeaderRaw;
-  const headerAccess =
-    authHeader && authHeader.toLowerCase().startsWith('bearer ')
-      ? authHeader.slice(7).trim()
-      : undefined;
-  return {
-    accessToken: headerAccess || cookieAccess || undefined,
-    refreshToken: cookieRefresh || undefined,
-  };
+  return authHeader ?? undefined;
 }
 
-function serializeCookie(name: string, value: string, secure: boolean): string {
-  const parts = [
-    `${name}=${encodeURIComponent(value)}`,
-    'Path=/',
-    'HttpOnly',
-    'SameSite=Lax',
-  ];
-  if (secure) parts.push('Secure');
-  return parts.join('; ');
+function getCookieHeader(req: RequestWithCookies): string | undefined {
+  const raw = req.headers.cookie;
+  if (typeof raw === 'string') return raw;
+  if (Array.isArray(raw)) return (raw as string[]).join('; ');
+  return undefined;
 }
 
 function appendSetCookie(res: ServerResponse, value: string): void {
@@ -90,20 +43,6 @@ function appendSetCookie(res: ServerResponse, value: string): void {
     res.setHeader('set-cookie', [existing, value]);
   } else {
     res.setHeader('set-cookie', [value]);
-  }
-}
-
-function writeTokensToResponse(
-  res: ServerResponse,
-  config: QelosNextConfig,
-  tokens: ResolvedTokens
-): void {
-  const accessCookie = config.accessTokenCookie || DEFAULT_ACCESS_COOKIE;
-  const refreshCookie = config.refreshTokenCookie || DEFAULT_REFRESH_COOKIE;
-  const secure = !/^http:\/\//i.test(config.appUrl);
-  appendSetCookie(res, serializeCookie(accessCookie, tokens.accessToken, secure));
-  if (tokens.refreshToken) {
-    appendSetCookie(res, serializeCookie(refreshCookie, tokens.refreshToken, secure));
   }
 }
 
@@ -122,13 +61,9 @@ declare module 'http' {
 export interface PagesIntegratorOptions {
   config: QelosNextConfig;
   /**
-   * Hook invoked after a successful token refresh. The default implementation
-   * writes the new tokens back to the response cookies.
-   */
-  onTokenRefresh?: TokenRefreshHook<ServerResponse>;
-  /**
-   * Resolve the active workspace for a request. Defaults to picking the first
-   * workspace returned from `sdk.workspaces.getList()`.
+   * Resolve the active workspace for a request. Defaults to whatever
+   * `/api/me` reports on `user.workspace` (the user's currently activated
+   * workspace, or `null` when none is active).
    */
   resolveWorkspace?: (params: {
     req: RequestWithCookies;
@@ -137,49 +72,57 @@ export interface PagesIntegratorOptions {
   }) => IWorkspace | null | Promise<IWorkspace | null>;
 }
 
+function requestHost(req: RequestWithCookies): string | null {
+  const h = req.headers.host;
+  return Array.isArray(h) ? h[0] ?? null : h ?? null;
+}
+
 async function buildContext(
   req: RequestWithCookies,
   res: ServerResponse,
   options: PagesIntegratorOptions
-): Promise<{ ctx: QelosRequestContext; identifyFailed: boolean }> {
+): Promise<{ ctx: QelosRequestContext }> {
   const { config, resolveWorkspace } = options;
-  const onTokenRefresh: TokenRefreshHook<ServerResponse> =
-    options.onTokenRefresh ||
-    (async ({ target, newTokens }) => {
-      writeTokensToResponse(target, config, newTokens);
-    });
 
-  const tokens = readTokens(req, config);
-  const sdk = createRequestSdk<ServerResponse>({
-    config,
-    tokens,
-    refreshTarget: res,
-    onTokenRefresh,
+  const getHeaders = () => ({
+    cookie: getCookieHeader(req),
+    authorization: getAuthorization(req),
   });
+
+  const sdk = createRequestSdk({ config, getHeaders });
   const ctx: QelosRequestContext = {
     user: null,
     workspace: null,
     workspaces: [],
     sdk,
-    tokens,
   };
 
-  const hasAuthMaterial = Boolean(
-    config.apiToken || tokens.accessToken || tokens.refreshToken
-  );
-  if (!hasAuthMaterial) {
-    return { ctx, identifyFailed: false };
+  const base = resolveQelosProxyTarget(config);
+  if (!base && !config.apiToken) {
+    return { ctx };
   }
 
-  let identifyFailed = false;
-  try {
-    ctx.user = await sdk.authentication.getLoggedInUser();
-  } catch {
-    identifyFailed = true;
-    return { ctx, identifyFailed };
+  if (!base) {
+    return { ctx };
   }
 
-  if (!ctx.user) return { ctx, identifyFailed };
+  const h = getHeaders();
+  const { response, user } = await fetchMeIdentity({
+    base,
+    cookie: h.cookie,
+    authorization: h.authorization,
+  });
+
+  const host = requestHost(req);
+  const setCookieValues = response.headers.getSetCookie?.() ?? [];
+  for (const value of setCookieValues) {
+    appendSetCookie(res, rewriteSetCookieDomain(value, host ?? undefined));
+  }
+
+  ctx.user = user;
+  if (!ctx.user) {
+    return { ctx };
+  }
 
   try {
     ctx.workspaces = await sdk.workspaces.getList();
@@ -187,20 +130,20 @@ async function buildContext(
     ctx.workspaces = [];
   }
 
-  if (ctx.workspaces.length) {
-    if (resolveWorkspace) {
-      ctx.workspace =
-        (await resolveWorkspace({
-          req,
-          user: ctx.user,
-          workspaces: ctx.workspaces,
-        })) || null;
-    } else {
-      ctx.workspace = ctx.workspaces[0] || null;
-    }
+  if (resolveWorkspace) {
+    ctx.workspace =
+      (await resolveWorkspace({
+        req,
+        user: ctx.user,
+        workspaces: ctx.workspaces,
+      })) || null;
+  } else {
+    ctx.workspace =
+      (ctx.user as unknown as { workspace?: IWorkspace | null }).workspace ||
+      null;
   }
 
-  return { ctx, identifyFailed };
+  return { ctx };
 }
 
 /**
@@ -221,10 +164,10 @@ export function withQelosApi(
       return handler(req, res);
     }
 
-    const { ctx, identifyFailed } = await buildContext(req, res, options);
+    const { ctx } = await buildContext(req, res, options);
     req.qelos = ctx;
 
-    if (config.requireAuth && (!ctx.user || identifyFailed)) {
+    if (config.requireAuth && !ctx.user) {
       res.status(401).json({ code: 'UNAUTHORIZED' });
       return;
     }
@@ -263,23 +206,22 @@ export function withQelosSSR<P extends { [key: string]: any } = { [key: string]:
     const res = context.res as ServerResponse;
 
     if (shouldSkip(req, config)) {
-      return runWithQelosContext(
-        { user: null, workspace: null, workspaces: [], sdk: null as never, tokens: {} },
-        () =>
-          handler(context, {
-            user: null,
-            workspace: null,
-            workspaces: [],
-            sdk: null as never,
-            tokens: {},
-          })
+      const emptySdk = null as unknown as QelosRequestContext['sdk'];
+      const emptyCtx: QelosRequestContext = {
+        user: null,
+        workspace: null,
+        workspaces: [],
+        sdk: emptySdk,
+      };
+      return runWithQelosContext(emptyCtx, () =>
+        handler(context, emptyCtx)
       ) as Promise<GetServerSidePropsResult<P>>;
     }
 
-    const { ctx, identifyFailed } = await buildContext(req, res, options);
+    const { ctx } = await buildContext(req, res, options);
     req.qelos = ctx;
 
-    if (config.requireAuth && (!ctx.user || identifyFailed)) {
+    if (config.requireAuth && !ctx.user) {
       return { redirect: { destination: '/login', permanent: false } };
     }
 

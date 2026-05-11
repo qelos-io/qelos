@@ -7,7 +7,8 @@ editLink: true
 
 FastAPI / Starlette middleware that resolves the current Qelos user, active
 workspace, and a per-request SDK client *before* your handlers run, and
-exposes them on `request.state.qelos`.
+exposes them on `request.state.qelos`. Optional `create_qelos_proxy_router`
+proxies `/api/**` to the managed Qelos app with `Set-Cookie` domain rewrite.
 
 This is the Python implementation of the Qelos integrator contract — the
 same shape exposed by `@qelos/integrator-express`,
@@ -34,26 +35,43 @@ Requirements:
 
 ```python
 from fastapi import FastAPI
-from qelos_integrator_fastapi import QelosConfig, QelosIntegratorMiddleware
-
-app = FastAPI()
-app.add_middleware(
+from qelos_integrator_fastapi import (
+    QelosConfig,
     QelosIntegratorMiddleware,
-    config=QelosConfig(app_url="https://your-qelos-instance.com"),
+    create_qelos_proxy_router,
 )
+
+cfg = QelosConfig(
+    app_url="https://your-qelos-instance.com",
+    require_auth=False,
+    skip_paths=["/health"],
+)
+app = FastAPI()
+app.add_middleware(QelosIntegratorMiddleware, config=cfg)
+app.include_router(create_qelos_proxy_router(cfg))
+```
+
+Or with the Starlette-friendly alias:
+
+```python
+from qelos_integrator_fastapi import qelos_middleware
+
+app.add_middleware(qelos_middleware, app_url="https://your-qelos-instance.com")
 ```
 
 The middleware:
 
-1. Reads the access token from `Authorization: Bearer …` or
-   `q_access_token`, and the refresh token from `q_refresh_token`.
-2. Builds a per-request `QelosSDK` instance bound to those tokens
-   (`create_request_sdk`).
-3. Calls `authentication.get_logged_in_user()` and
-   `workspaces.get_list()`.
-4. Picks the active workspace (first by default, or your
-   `resolve_workspace` callable).
-5. Attaches everything to `request.state.qelos`.
+1. Builds a request-scoped `QelosSDK` (`create_request_sdk`).
+2. Resolves the upstream origin the same way as the proxy (`QELOS_PROXY_TARGET`
+   → `QELOS_IP` → `QELOS_API_IP` → `app_url`).
+3. If neither a proxy target nor `api_token` is configured, anonymous requests
+   pass through (or **401** when `require_auth` is true).
+4. When a target exists, issues `GET {target}/api/me` with inbound `Cookie` and
+   `Authorization` forwarded; rewrites each upstream `Set-Cookie` `Domain=` to
+   the inbound `Host`.
+5. On **2xx** JSON, sets `user`; loads `workspaces` via `sdk.workspaces.get_list()`.
+6. Sets `workspace` from `resolve_workspace` or from `user["workspace"]` —
+   **not** from `workspaces[0]`.
 
 ### All configuration options
 
@@ -61,12 +79,8 @@ The middleware:
 QelosConfig(
     app_url="https://your-qelos-instance.com",   # required
 
-    # Service-to-service: skip cookies/refresh entirely.
+    # Service-to-service: skip cookie forwarding on the SDK.
     api_token="...",
-
-    # Cookie names. Defaults shown.
-    access_token_cookie="q_access_token",
-    refresh_token_cookie="q_refresh_token",
 
     # Reject anonymous requests with 401. Defaults to False.
     require_auth=False,
@@ -74,18 +88,26 @@ QelosConfig(
     # Skip the middleware entirely for these path prefixes.
     skip_paths=["/health", "/metrics"],
 
-    # Anything you want passed through to the per-request SDK.
+    # When False (default), /api/ is prepended to skip_paths when using the
+    # proxy router so /api/** is not double-handled by user resolution.
+    disable_proxy=False,
+
+    # Extra options merged into the per-request SDK (camelCase normalized).
     sdk_options={},
 )
 ```
 
-You can also pass `resolve_workspace=` and `on_token_refresh=` to
-`add_middleware`:
+Optional workspace override:
 
 ```python
 async def resolve_workspace(request, user, workspaces):
     target_id = request.headers.get("x-qelos-workspace")
-    return next((w for w in workspaces if w["_id"] == target_id), workspaces[0] if workspaces else None)
+    if target_id:
+        for w in workspaces:
+            if w.get("_id") == target_id:
+                return w
+    ws = user.get("workspace")
+    return ws if isinstance(ws, dict) else None
 
 
 app.add_middleware(
@@ -95,6 +117,9 @@ app.add_middleware(
 )
 ```
 
+See the package README (`README.md` inside `qelos-integrator-fastapi`) for
+proxy routing, env overrides, and WebSocket behavior.
+
 ## 3. Access user and workspace in your routes
 
 The context is a `QelosRequestContext`:
@@ -102,8 +127,7 @@ The context is a `QelosRequestContext`:
 ```python
 @dataclass
 class QelosRequestContext:
-    sdk: QelosSDK                      # bound to this request's tokens
-    tokens: TokenPair                  # mutated in place when refreshed
+    sdk: QelosSDK                      # bound to this request's cookies / headers
     user: Optional[Dict[str, Any]]     # None for anonymous requests
     workspace: Optional[Dict[str, Any]]
     workspaces: List[Dict[str, Any]]
@@ -157,9 +181,9 @@ not host the login UI.
 
 Most flows let users sign in directly against the Qelos backend (admin
 panel, hosted login page, or a frontend that calls
-`sdk.authentication.signin`). Qelos sets `q_access_token` and
-`q_refresh_token` cookies on the user's browser; the middleware reads them
-on subsequent requests.
+`sdk.authentication.signin`). Qelos sets session cookies on the user's browser;
+subsequent requests carry them and the middleware forwards the full `Cookie`
+header to `/api/me` and to the SDK.
 
 You can also drive the login from a FastAPI route. The `qelos-sdk`
 package returns the `Set-Cookie` header so you can forward it:
@@ -204,44 +228,13 @@ async def callback(rt: str):
     return response
 ```
 
-### Token refresh
+### Cookies and refresh
 
-When tokens rotate, the optional `on_token_refresh` hook runs. The default
-implementation schedules `Set-Cookie` headers on the outgoing response
-(HTTP-only, `SameSite=Lax`, `Secure` when `app_url` is HTTPS).
-
-Because Starlette does not expose the final `Response` until after inner
-middleware runs, the default hook records cookies on an internal
-`CookieBuffer` that is flushed onto the real response when the request
-completes. Custom hooks receive the same buffer as
-`TokenRefreshContext.response`; call `set_cookie` on it if you write
-cookies from the hook.
-
-```python
-from qelos_integrator_fastapi import TokenRefreshContext
-
-async def my_refresh_hook(ctx: TokenRefreshContext) -> None:
-    # ctx.response is a CookieBuffer until the real response exists.
-    ctx.response.set_cookie(
-        "q_access_token",
-        ctx.new_tokens.access_token,
-        httponly=True,
-        samesite="lax",
-    )
-    if ctx.new_tokens.refresh_token:
-        ctx.response.set_cookie(
-            "q_refresh_token",
-            ctx.new_tokens.refresh_token,
-            httponly=True,
-            samesite="lax",
-        )
-
-app.add_middleware(
-    QelosIntegratorMiddleware,
-    config=QelosConfig(app_url="https://your-qelos-instance.com"),
-    on_token_refresh=my_refresh_hook,
-)
-```
+Session rotations issued by Qelos reach your app as `Set-Cookie` on the
+`/api/me` response (middleware) or on responses from SDK calls your handlers
+make. The middleware appends rewritten cookies to the outgoing ASGI response.
+For additional refresh behavior when constructing the SDK yourself, see
+[Cookie Token Lifecycle](../auth/cookie-tokens.md) and the SDK reference.
 
 Anonymous requests leave `user` / `workspace` as `None` unless
 `require_auth=True`, which responds with `401` and body
@@ -249,9 +242,14 @@ Anonymous requests leave `user` / `workspace` as `None` unless
 
 ### Service-to-service (no end user)
 
-Set `api_token` to skip cookies and refresh entirely:
+Set `api_token` so the SDK authenticates with a static token instead of
+forwarding browser cookies. User resolution still uses `GET /api/me` when a
+proxy target can be resolved unless you rely on anonymous middleware with
+token-only SDK usage.
 
 ```python
+import os
+
 QelosConfig(
     app_url="https://your-qelos-instance.com",
     api_token=os.environ["QELOS_API_TOKEN"],
@@ -287,27 +285,20 @@ snake_case in Python).
 - **The integrator package is for external apps only.** Apps inside the
   Qelos monorepo MUST NOT depend on `qelos-integrator-fastapi` — they
   talk to the gateway directly.
-- **`request.state.qelos` is `None` on `skip_paths`.** Always go through
+- **`request.state.qelos` can be absent on `skip_paths`.** Always go through
   `Depends(get_qelos)` (which returns `Optional[...]`) or
   `Depends(require_user)` (which raises `401`) instead of accessing the
   attribute blindly.
 - **Anonymous requests don't raise by default.** `qelos.user` and
   `qelos.workspace` will simply be `None`. Switch to `require_auth=True`
   or use `Depends(require_user)` when you want a hard `401`.
-- **Cookie writes are buffered.** A `CookieBuffer` collects
-  `Set-Cookie` operations during the request; the real response receives
-  them once Starlette resolves it. If you write a custom
-  `on_token_refresh`, use `ctx.response.set_cookie(...)` rather than
-  trying to grab the underlying `Response` directly.
-- **`Secure` cookies are based on `app_url`.** Local `http://` instances
-  get cookies without `Secure` so browsers accept them; production
-  `https://` instances get `Secure` automatically.
-- **Workspace selection defaults to the first workspace.** Supply
-  `resolve_workspace=` if your users belong to multiple workspaces.
-- **`sdk_options` is normalized.** Camel-case keys from a Node-style
-  config (e.g. `accessToken`) are mapped to the snake_case fields the
-  Python SDK expects, so you can pass the same shape your other
-  integrator services use.
-- **Don't reuse the per-request SDK across requests.** It is bound to a
-  specific token pair. Build a fresh `QelosSDK(api_token=...)` for
-  background workers and scripts.
+- **`Secure` cookies:** the middleware does not strip `Secure` from rotated
+  cookies. Over plain HTTP, browsers may drop them — terminate TLS on your
+  host or configure Qelos for local dev.
+- **Workspace selection defaults to `user["workspace"]` from `/api/me`, not
+  the first list entry.** Supply `resolve_workspace=` when you need another
+  rule (for example an `x-qelos-workspace` header).
+- **`sdk_options`:** camelCase keys from a Node-style config are normalized
+  to snake_case for the Python SDK.
+- **Don't reuse the per-request SDK across requests.** Build a fresh
+  `QelosSDK(api_token=...)` for background workers and scripts.

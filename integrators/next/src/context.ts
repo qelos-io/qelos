@@ -1,17 +1,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
+import { rewriteSetCookieDomain } from './cookies';
 import { getDefaultQelosConfig } from './env-config';
+import { fetchMeIdentity } from './me-client';
+import { resolveQelosProxyTarget } from './proxy-target';
 import { createRequestSdk } from './sdk-factory';
-import type {
-  QelosNextConfig,
-  QelosRequestContext,
-  QelosTokenPair,
-  TokenRefreshHook,
-} from './types';
-
-const DEFAULT_ACCESS_COOKIE = 'q_access_token';
-const DEFAULT_REFRESH_COOKIE = 'q_refresh_token';
+import type { QelosNextConfig, QelosRequestContext } from './types';
 
 const storage = new AsyncLocalStorage<QelosRequestContext>();
 
@@ -38,15 +33,9 @@ export function getStoredQelosContext(): QelosRequestContext | null {
 export interface GetQelosContextOptions {
   config: QelosNextConfig;
   /**
-   * Hook invoked after a successful token refresh. App Router server
-   * components and route handlers cannot mutate cookies after rendering
-   * starts, so the default is a no-op. Callers handling refresh through a
-   * route handler can override this to call `cookies().set(...)`.
-   */
-  onTokenRefresh?: TokenRefreshHook<null>;
-  /**
-   * Resolve the active workspace for a request. Defaults to picking the first
-   * workspace returned from `sdk.workspaces.getList()`.
+   * Resolve the active workspace for a request. Defaults to whatever
+   * `/api/me` reports on `user.workspace` (the user's currently activated
+   * workspace, or `null` when none is active).
    */
   resolveWorkspace?: (params: {
     user: IUser;
@@ -54,9 +43,6 @@ export interface GetQelosContextOptions {
   }) => IWorkspace | null | Promise<IWorkspace | null>;
 }
 
-interface CookieJar {
-  get: (name: string) => { value: string } | undefined;
-}
 interface HeaderBag {
   get: (name: string) => string | null;
 }
@@ -67,7 +53,6 @@ interface HeaderBag {
  * so the call site does not need to branch on the Next.js version.
  */
 interface NextHeadersModule {
-  cookies: () => CookieJar | Promise<CookieJar>;
   headers: () => HeaderBag | Promise<HeaderBag>;
 }
 
@@ -82,31 +67,57 @@ function loadNextHeaders(): Promise<NextHeadersModule> {
   return nextHeadersModulePromise;
 }
 
-async function readTokensFromHeaders(
-  config: QelosNextConfig
-): Promise<QelosTokenPair> {
-  const { cookies, headers } = await loadNextHeaders();
-  const accessCookie = config.accessTokenCookie || DEFAULT_ACCESS_COOKIE;
-  const refreshCookie = config.refreshTokenCookie || DEFAULT_REFRESH_COOKIE;
-  const jar = await cookies();
-  const hdr = await headers();
-  const cookieAccess = jar.get(accessCookie)?.value;
-  const cookieRefresh = jar.get(refreshCookie)?.value;
-  const authHeader = hdr.get('authorization');
-  const headerAccess =
-    authHeader && authHeader.toLowerCase().startsWith('bearer ')
-      ? authHeader.slice(7).trim()
-      : undefined;
+async function getInboundAuthHeaders(): Promise<{
+  cookie?: string;
+  authorization?: string;
+  host: string | null;
+}> {
+  const { headers } = await loadNextHeaders();
+  const hdr = await Promise.resolve(headers());
   return {
-    accessToken: headerAccess || cookieAccess || undefined,
-    refreshToken: cookieRefresh || undefined,
+    cookie: hdr.get('cookie') ?? undefined,
+    authorization: hdr.get('authorization') ?? undefined,
+    host: hdr.get('host'),
   };
+}
+
+async function forwardSetCookieThroughNextCookies(
+  rawLines: string[],
+  originalHost: string | null,
+): Promise<void> {
+  const rewritten = rawLines.map((v) =>
+    rewriteSetCookieDomain(v, originalHost ?? undefined),
+  );
+  try {
+    const { cookies } = await import('next/headers');
+    const jar = await Promise.resolve(cookies());
+    for (const line of rewritten) {
+      const semi = line.indexOf(';');
+      const nv = (semi === -1 ? line : line.slice(0, semi)).trim();
+      const eq = nv.indexOf('=');
+      if (eq <= 0) continue;
+      const name = nv.slice(0, eq).trim();
+      const value = nv.slice(eq + 1).trim();
+      if (!name) continue;
+      try {
+        (jar as { set: (n: string, v: string, o?: object) => void }).set(
+          name,
+          value,
+          { path: '/' },
+        );
+      } catch {
+        // not writable in this context
+      }
+    }
+  } catch {
+    //
+  }
 }
 
 /**
  * Identify the user / workspace for the current App Router request and
  * return the Qelos context. Safe to call multiple times within the same
- * request — each call performs its own SDK round-trip, so wrap it with
+ * request — each call performs its own `/api/me` round-trip, so wrap it with
  * React's `cache()` if you want a single resolution per render.
  *
  * Calling without arguments uses the env-derived config (see
@@ -116,37 +127,40 @@ async function readTokensFromHeaders(
 export async function getQelosContext(
   options?: GetQelosContextOptions
 ): Promise<QelosRequestContext> {
-  const resolved: GetQelosContextOptions = options ?? { config: getDefaultQelosConfig() };
+  const resolved = options ?? { config: getDefaultQelosConfig() };
   const { config, resolveWorkspace } = resolved;
-  const tokens = await readTokensFromHeaders(config);
-  const sdk = createRequestSdk<null>({
-    config,
-    tokens,
-    refreshTarget: null,
-    onTokenRefresh: resolved.onTokenRefresh,
-  });
+
+  const getHeaders = () => getInboundAuthHeaders();
+
+  const sdk = createRequestSdk({ config, getHeaders });
+
   const ctx: QelosRequestContext = {
     user: null,
     workspace: null,
     workspaces: [],
     sdk,
-    tokens,
   };
 
-  const hasAuthMaterial = Boolean(
-    config.apiToken || tokens.accessToken || tokens.refreshToken
-  );
-  if (!hasAuthMaterial) {
+  const base = resolveQelosProxyTarget(config);
+  if (!base && !config.apiToken) {
     return ctx;
   }
 
-  try {
-    ctx.user = await sdk.authentication.getLoggedInUser();
-  } catch {
-    return ctx;
+  if (base) {
+    const h = await getInboundAuthHeaders();
+    const { response, user } = await fetchMeIdentity({
+      base,
+      cookie: h.cookie,
+      authorization: h.authorization,
+    });
+    const setCookieValues = response.headers.getSetCookie?.() ?? [];
+    await forwardSetCookieThroughNextCookies(setCookieValues, h.host);
+    ctx.user = user;
   }
 
-  if (!ctx.user) return ctx;
+  if (!ctx.user) {
+    return ctx;
+  }
 
   try {
     ctx.workspaces = await sdk.workspaces.getList();
@@ -154,16 +168,16 @@ export async function getQelosContext(
     ctx.workspaces = [];
   }
 
-  if (ctx.workspaces.length) {
-    if (resolveWorkspace) {
-      ctx.workspace =
-        (await resolveWorkspace({
-          user: ctx.user,
-          workspaces: ctx.workspaces,
-        })) || null;
-    } else {
-      ctx.workspace = ctx.workspaces[0] || null;
-    }
+  if (resolveWorkspace) {
+    ctx.workspace =
+      (await resolveWorkspace({
+        user: ctx.user,
+        workspaces: ctx.workspaces,
+      })) || null;
+  } else {
+    ctx.workspace =
+      (ctx.user as unknown as { workspace?: IWorkspace | null }).workspace ||
+      null;
   }
 
   return ctx;

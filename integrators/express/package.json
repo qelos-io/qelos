@@ -27,7 +27,7 @@
     "type-check": "tsc --noEmit",
     "build": "tsc",
     "pre-build": "tsc",
-    "test": "node --import tsx --test test/**/*.test.ts"
+    "test": "node --import tsx --test src/**/*.test.ts test/**/*.test.ts"
   },
   "keywords": [
     "qelos",
@@ -53,8 +53,8 @@
     }
   },
   "dependencies": {
-    "@qelos/global-types": "workspace:^",
-    "@qelos/sdk": "workspace:^"
+    "@qelos/global-types": "workspace:*",
+    "@qelos/sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

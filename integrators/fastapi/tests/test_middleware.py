@@ -27,6 +27,7 @@ MINIMAL_USER = {
     "birthDate": "1990-01-01",
     "roles": [],
     "metadata": {},
+    "workspace": {"_id": "ws-1", "name": "Primary", "labels": []},
 }
 
 WORKSPACE_A = {"_id": "ws-1", "name": "Primary", "labels": []}
@@ -36,17 +37,38 @@ def _path(url: object) -> str:
     return urlparse(str(url)).path
 
 
+def _set_cookie_values(response: object) -> list[str]:
+    h = response.headers
+    if hasattr(h, "get_list"):
+        return list(h.get_list("set-cookie"))
+    raw = h.get("set-cookie")
+    return [raw] if raw else []
+
+
 @pytest.fixture
 def mock_http(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def request(self: httpx.AsyncClient, method: str, url, **kwargs):  # type: ignore[no-untyped-def]
+    async def _fake_request(self: httpx.AsyncClient, method: str, url, **kwargs):  # type: ignore[no-untyped-def]
         path = _path(url)
+        headers = kwargs.get("headers") or {}
+        cookie = None
+        for k, v in headers.items():
+            if str(k).lower() == "cookie":
+                cookie = v
+                break
+
         if path.endswith("/api/me"):
-            return httpx.Response(200, json=MINIMAL_USER)
+            if not cookie:
+                return httpx.Response(401, json={"error": "Unauthorized"})
+            return httpx.Response(
+                200,
+                json=MINIMAL_USER,
+                headers={"set-cookie": "sid=1; Domain=.upstream.test; Path=/"},
+            )
         if path.rstrip("/").endswith("/api/workspaces"):
             return httpx.Response(200, json=[WORKSPACE_A])
         return httpx.Response(404, json={"error": "not found"})
 
-    monkeypatch.setattr(httpx.AsyncClient, "request", request)
+    monkeypatch.setattr(httpx.AsyncClient, "request", _fake_request)
 
 
 def test_middleware_attaches_user_workspace(mock_http: None) -> None:
@@ -66,15 +88,31 @@ def test_middleware_attaches_user_workspace(mock_http: None) -> None:
         }
 
     client = TestClient(app)
-    res = client.get(
-        "/ctx",
-        headers={"cookie": "q_access_token=a; q_refresh_token=r"},
-    )
+    res = client.get("/ctx", headers={"cookie": "session=abc"})
     assert res.status_code == 200
     body = res.json()
     assert body["userId"] == "user-1"
     assert body["workspaceId"] == "ws-1"
     assert body["workspaceCount"] == 1
+
+
+def test_forwards_set_cookie_from_me_with_domain_rewrite(mock_http: None) -> None:
+    app = FastAPI()
+    app.add_middleware(
+        QelosIntegratorMiddleware,
+        config=QelosConfig(app_url="http://example.test"),
+    )
+
+    @app.get("/x")
+    def _x() -> dict[str, str]:
+        return {"ok": "1"}
+
+    client = TestClient(app)
+    res = client.get("/x", headers={"cookie": "session=abc"})
+    assert res.status_code == 200
+    cookies = _set_cookie_values(res)
+    assert cookies
+    assert any("Domain=testserver" in c for c in cookies)
 
 
 def test_anonymous_without_credentials(mock_http: None) -> None:
@@ -126,18 +164,39 @@ def test_skip_paths(mock_http: None) -> None:
     assert res.json()["has"] is False
 
 
+def test_skip_under_api_when_proxy_enabled(mock_http: None) -> None:
+    app = FastAPI()
+    app.add_middleware(
+        QelosIntegratorMiddleware,
+        config=QelosConfig(app_url="http://example.test"),
+    )
+
+    @app.get("/api/ping")
+    def ping(request: Request):
+        return {"has": hasattr(request.state, "qelos")}
+
+    client = TestClient(app)
+    res = client.get("/api/ping")
+    assert res.status_code == 200
+    assert res.json()["has"] is False
+
+
 def test_resolve_workspace(monkeypatch: pytest.MonkeyPatch) -> None:
     ws_b = {"_id": "ws-2", "name": "Second", "labels": []}
 
-    async def request(self: httpx.AsyncClient, method: str, url, **kwargs):  # type: ignore[no-untyped-def]
+    async def _fake_request(self: httpx.AsyncClient, method: str, url, **kwargs):  # type: ignore[no-untyped-def]
         path = _path(url)
+        headers = kwargs.get("headers") or {}
+        cookie = next((v for k, v in headers.items() if str(k).lower() == "cookie"), None)
         if path.endswith("/api/me"):
-            return httpx.Response(200, json=MINIMAL_USER)
+            if not cookie:
+                return httpx.Response(401, json={})
+            return httpx.Response(200, json={**MINIMAL_USER, "workspace": WORKSPACE_A})
         if path.rstrip("/").endswith("/api/workspaces"):
             return httpx.Response(200, json=[WORKSPACE_A, ws_b])
         return httpx.Response(404, json={})
 
-    monkeypatch.setattr(httpx.AsyncClient, "request", request)
+    monkeypatch.setattr(httpx.AsyncClient, "request", _fake_request)
 
     app = FastAPI()
     app.add_middleware(
@@ -155,75 +214,9 @@ def test_resolve_workspace(monkeypatch: pytest.MonkeyPatch) -> None:
         return {"id": q.workspace.get("_id") if q.workspace else None}
 
     client = TestClient(app)
-    res = client.get(
-        "/w",
-        headers={"cookie": "q_access_token=a; q_refresh_token=r"},
-    )
+    res = client.get("/w", headers={"cookie": "session=1"})
     assert res.status_code == 200
     assert res.json()["id"] == "ws-2"
-
-
-def test_on_token_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
-    me_calls = {"n": 0}
-
-    async def request(self: httpx.AsyncClient, method: str, url, **kwargs):  # type: ignore[no-untyped-def]
-        path = _path(url)
-        if path.endswith("/api/token/refresh"):
-            assert method.lower() == "post"
-            return httpx.Response(
-                200,
-                json={
-                    "payload": {
-                        "token": "new-access",
-                        "refreshToken": "new-refresh",
-                        "user": MINIMAL_USER,
-                    },
-                },
-            )
-        if path.endswith("/api/me"):
-            me_calls["n"] += 1
-            if me_calls["n"] == 1:
-                return httpx.Response(401, json={"error": "Unauthorized"})
-            return httpx.Response(200, json=MINIMAL_USER)
-        if path.rstrip("/").endswith("/api/workspaces"):
-            return httpx.Response(200, json=[WORKSPACE_A])
-        return httpx.Response(404, json={})
-
-    monkeypatch.setattr(httpx.AsyncClient, "request", request)
-
-    refreshed = {"ok": False}
-
-    async def on_refresh(ctx):  # type: ignore[no-untyped-def]
-        refreshed["ok"] = True
-        assert ctx.new_tokens.access_token == "new-access"
-        assert ctx.new_tokens.refresh_token == "new-refresh"
-
-    app = FastAPI()
-    app.add_middleware(
-        QelosIntegratorMiddleware,
-        config=QelosConfig(app_url="http://example.test"),
-        on_token_refresh=on_refresh,
-    )
-
-    @app.get("/z")
-    def z(request: Request):
-        q = request.state.qelos
-        return {
-            "userId": q.user.get("_id") if q.user else None,
-            "access": q.tokens.access_token,
-        }
-
-    client = TestClient(app)
-    res = client.get(
-        "/z",
-        headers={"cookie": "q_access_token=stale; q_refresh_token=refresh-ok"},
-    )
-    assert res.status_code == 200
-    body = res.json()
-    assert body["userId"] == "user-1"
-    assert body["access"] == "new-access"
-    assert refreshed["ok"] is True
-    assert me_calls["n"] >= 2
 
 
 def test_qelos_middleware_flat_kwargs(mock_http: None) -> None:
@@ -239,10 +232,7 @@ def test_qelos_middleware_flat_kwargs(mock_http: None) -> None:
         }
 
     client = TestClient(app)
-    res = client.get(
-        "/ctx",
-        headers={"cookie": "q_access_token=a; q_refresh_token=r"},
-    )
+    res = client.get("/ctx", headers={"cookie": "session=1"})
     assert res.status_code == 200
     body = res.json()
     assert body["userId"] == "user-1"
@@ -265,10 +255,7 @@ def test_get_qelos_user_and_sdk(mock_http: None) -> None:
         }
 
     client = TestClient(app)
-    res = client.get(
-        "/typed",
-        headers={"cookie": "q_access_token=a; q_refresh_token=r"},
-    )
+    res = client.get("/typed", headers={"cookie": "session=1"})
     assert res.status_code == 200
     body = res.json()
     assert body["full_name"] == "Alice Example"

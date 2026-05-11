@@ -27,7 +27,7 @@
     "type-check": "tsc --noEmit",
     "build": "tsc",
     "pre-build": "tsc",
-    "test": "node --import tsx --test test/**/*.test.ts"
+    "test": "node --import tsx --test test/**/*.test.ts src/**/*.test.ts"
   },
   "keywords": [
     "qelos",
@@ -59,7 +59,7 @@
     "rxjs": { "optional": false }
   },
   "dependencies": {
-    "@qelos/sdk": "workspace:^"
+    "@qelos/sdk": "workspace:*"
   },
   "devDependencies": {
     "@nestjs/common": "^10.4.5",

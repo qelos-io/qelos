@@ -1,14 +1,18 @@
 # @qelos/integrator-next
 
-Qelos integrator middleware for **Next.js** — supports both the **App Router**
-and the **Pages Router**, on Next.js **14** and **15**. Drop it into your
-Next.js app to identify the user and active workspace via the Qelos SDK
-*before* your own handlers run, and to keep refresh-token cookies fresh on
-every request.
+Next.js integrator for [Qelos](https://qelos.io). It turns your Next.js host into
+a same-origin BFF for a managed Qelos app: Edge middleware resolves the current
+user via `GET /api/me` with inbound cookies forwarded verbatim, a Node catch-all
+route proxies `/api/**` to Qelos with `Set-Cookie` domain rewriting, and the
+SDK reads live `Cookie` / `Authorization` headers on every call — no
+integrator-managed access or refresh tokens.
 
-The package is a sibling of `@qelos/integrator-express` and
-`@qelos/integrator-nuxt` — they all expose the same `QelosRequestContext`
-shape (`{ user, workspace, workspaces, sdk, tokens }`).
+Supports the **App Router** and the **Pages Router** on Next.js **14** and
+**15**.
+
+> Requires **Node 18+** — the middleware and proxy use
+> [`Response.headers.getSetCookie()`](https://developer.mozilla.org/docs/Web/API/Headers/getSetCookie)
+> to forward individual upstream `Set-Cookie` headers.
 
 ## Install
 
@@ -16,13 +20,11 @@ shape (`{ user, workspace, workspaces, sdk, tokens }`).
 pnpm add @qelos/integrator-next @qelos/sdk
 ```
 
-`next` (>=13.4) and `react` are peer dependencies. Tested with Next.js 14.2
-and 15.x on both the App Router and the Pages Router.
+`next` (>=13.4) and `react` are peer dependencies.
 
 ## Quick start
 
-Set `QELOS_APP_URL` (and any optional vars below) in your environment, then
-re-export the pre-built middleware and use the no-arg context loader:
+Set `QELOS_APP_URL`, then wire Edge middleware and a catch-all API proxy route.
 
 ```ts
 // middleware.ts
@@ -33,6 +35,16 @@ export const config = {
 };
 ```
 
+```ts
+// app/api/[...qelos]/route.ts
+import { createQelosApiProxyHandlers } from '@qelos/integrator-next/runtime/api-proxy';
+
+const { runtime, GET, POST, PUT, PATCH, DELETE, OPTIONS } =
+  createQelosApiProxyHandlers({ appUrl: process.env.QELOS_APP_URL! });
+
+export { runtime, GET, POST, PUT, PATCH, DELETE, OPTIONS };
+```
+
 ```tsx
 // app/dashboard/page.tsx
 import { getQelosContext } from '@qelos/integrator-next/context';
@@ -41,86 +53,86 @@ export default async function Dashboard() {
   const { user, sdk } = await getQelosContext();
   if (!user) return <p>Please sign in.</p>;
   const products = await sdk.entities('products').getList();
-  return <div>Welcome {user.fullName}, you have {products.length} products</div>;
+  return (
+    <div>
+      Welcome {user.fullName}, you have {products.length} products
+    </div>
+  );
 }
 ```
 
 ### Environment variables
 
 | Variable | Default | Description |
-|---|---|---|
-| `QELOS_APP_URL` | — (required) | Qelos backend base URL |
-| `QELOS_API_TOKEN` | — | Service-to-service token (skips refresh logic) |
-| `QELOS_ACCESS_TOKEN_COOKIE` | `q_access_token` | Cookie name for the access token |
-| `QELOS_REFRESH_TOKEN_COOKIE` | `q_refresh_token` | Cookie name for the refresh token |
-| `QELOS_REQUIRE_AUTH` | `false` | Set `true` to reject anonymous requests with 401 |
-| `QELOS_SKIP_PATHS` | — | Comma-separated path prefixes to bypass entirely |
+|----------|---------|-------------|
+| `QELOS_APP_URL` | — (required for default exports) | Qelos managed-app base URL |
+| `QELOS_API_TOKEN` | — | Service-to-service token (skips cookie identity for anonymous resolution) |
+| `QELOS_REQUIRE_AUTH` | `false` | `true` / `1` → anonymous requests get `401` from middleware |
+| `QELOS_SKIP_PATHS` | — | Comma-separated path prefixes to bypass middleware |
+| `QELOS_DISABLE_PROXY` | `false` | `true` when you are **not** using the catch-all `/api/**` proxy — skips auto `/api/` in middleware `skipPaths` |
 
-## Explicit configuration (App Router)
+Dev-time proxy target overrides (same resolution order as the proxy):
 
-When you need control over `resolveWorkspace`, `onTokenRefresh`, or any other
-option, call the factory yourself.
+1. `NEXT_QELOS_PROXY_TARGET`
+2. `QELOS_IP`
+3. `QELOS_API_IP`
+4. `appUrl` from config / `QELOS_APP_URL`
 
-### 1. Edge middleware
+## BFF proxy (`/api/**`)
 
-```ts
-// middleware.ts
-import { createQelosMiddleware } from '@qelos/integrator-next/middleware';
+Register a catch-all App Router handler (see above) that exports the handlers
+from `createQelosApiProxyHandlers`. Every request your app does not handle
+itself is forwarded to the configured Qelos origin; the response body streams
+back and upstream `Set-Cookie` headers are rewritten so `Domain=` matches the
+inbound `Host` (port stripped).
 
-export default createQelosMiddleware({
-  config: {
-    appUrl: process.env.QELOS_APP_URL!,
-    skipPaths: ['/_next', '/favicon.ico'],
-    requireAuth: false,
-  },
-  resolveWorkspace: ({ req, workspaces }) => {
-    const slug = req.nextUrl.searchParams.get('workspace');
-    return workspaces.find((w) => (w as any).slug === slug) ?? workspaces[0] ?? null;
-  },
-});
+User-defined routes under `app/api/...` still take precedence over the catch-all
+segment — the proxy only runs for paths nothing else matched.
 
-export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
-};
-```
+### Opting out (`disableProxy`)
 
-The middleware:
+Set `disableProxy: true` on `QelosNextConfig` when you do not use the catch-all
+proxy. Middleware will then **not** auto-prepend `/api/` to `skipPaths`, so you
+can run your own `/api/*` handlers without the integrator skipping them for the
+proxy.
 
-- Reads tokens from cookies (`q_access_token`, `q_refresh_token`) or the
-  `Authorization` header.
-- Calls the Qelos SDK to resolve the user and the active workspace.
-- Forwards the resolved ids to downstream handlers via the
-  `x-qelos-user-id` and `x-qelos-workspace-id` request headers.
-- Refreshes the access/refresh token pair when needed and writes the new
-  cookies onto the outbound response.
-- Returns `401` early when `config.requireAuth: true` and the user cannot be
-  resolved.
+WebSocket upgrades are not proxied.
 
-### 2. Server components (RSC)
+## Edge middleware
 
-`getQelosContext()` is safe to call inside React Server Components on both
-Next.js 14 (sync `cookies()` / `headers()`) and Next.js 15 (async). Wrap it
-with React's `cache()` so re-renders within the same request reuse the result:
+On each matched request, middleware:
 
-```tsx
-// lib/qelos.ts
-import { cache } from 'react';
-import { getQelosContext } from '@qelos/integrator-next/context';
+1. Resolves the upstream origin (`NEXT_QELOS_PROXY_TARGET` → `QELOS_IP` →
+   `QELOS_API_IP` → `appUrl`). If neither that nor `apiToken` is configured and
+   `requireAuth` is false, identity headers are cleared and the request
+   continues anonymously.
+2. When an upstream origin exists, issues `fetch('${origin}/api/me', { redirect:
+   'manual' })` with the inbound `Cookie` and `Authorization` headers forwarded.
+3. Appends every upstream `Set-Cookie` to the outgoing response after rewriting
+   `Domain=` to the inbound `Host`.
+4. On `200` JSON, uses that body as `IUser`, loads workspaces via the SDK, and
+   sets the active workspace from `user.workspace` (or your `resolveWorkspace`
+   callback) — **not** `workspaces[0]`.
+5. Forwards `x-qelos-user-id` and `x-qelos-workspace-id` on the rewritten request
+   headers for downstream App Router code.
 
-export const loadQelos = cache(() => getQelosContext());
-```
+When the proxy is enabled (`disableProxy !== true`), `/api/` is prepended to
+`skipPaths` so middleware does not run the `/api/me` probe on proxied API
+traffic (avoids double upstream calls).
 
-```tsx
-// app/page.tsx
-import { loadQelos } from '../lib/qelos';
+> Edge middleware runs in the Edge runtime. The `/api/me` round-trip uses the
+> standard `fetch` API with `redirect: 'manual'`. In local dev over plain HTTP,
+> browsers may drop upstream `Secure` cookies — use HTTPS locally or configure
+> Qelos for non-`Secure` cookies in development.
 
-export default async function Page() {
-  const { user, workspace } = await loadQelos();
-  return <p>Hello {user?.fullName ?? 'guest'} — {workspace?.name}</p>;
-}
-```
+## App Router server code
 
-### 3. Route handlers (`app/api/**/route.ts`)
+Wrap `getQelosContext()` with React `cache()` if you want one resolution per
+request. It performs the same `/api/me` identification as middleware (with live
+headers) and attempts to apply upstream `Set-Cookie` values through
+`next/headers` `cookies().set` when the runtime allows it.
+
+### Route handlers
 
 ```ts
 // app/api/me/route.ts
@@ -133,25 +145,7 @@ export const GET = withQelosRoute((_req, _ctx, qelos) => {
 });
 ```
 
-Anywhere downstream — including modules outside the React tree — can read the
-active context from AsyncLocalStorage via `getStoredQelosContext()`, provided
-execution went through `withQelosRoute`, `withQelosContext`, or one of the
-Pages Router wrappers.
-
-```ts
-// services/products.ts
-import { getStoredQelosContext } from '@qelos/integrator-next/context';
-
-export async function listProducts() {
-  const qelos = getStoredQelosContext();
-  if (!qelos?.sdk) throw new Error('no qelos context');
-  return qelos.sdk.entities('products').getList();
-}
-```
-
 ## Pages Router
-
-### API routes
 
 ```ts
 // pages/api/me.ts
@@ -165,92 +159,43 @@ export default withQelosApi(
 );
 ```
 
-### `getServerSideProps`
-
 ```ts
 // pages/dashboard.tsx
 import { withQelosSSR } from '@qelos/integrator-next/pages';
 
 export const getServerSideProps = withQelosSSR(
-  async (_ctx, qelos) => ({ props: { user: qelos.user, workspace: qelos.workspace } }),
+  async (_ctx, qelos) => ({
+    props: { user: qelos.user, workspace: qelos.workspace },
+  }),
   { config: { appUrl: process.env.QELOS_APP_URL!, requireAuth: true } },
 );
 ```
 
-## Token refresh
+## Configuration (`QelosNextConfig`)
 
-When a request arrives with an expired access token, the SDK's failed-auth
-path triggers a refresh, in order:
-
-1. If a refresh token is present, calls
-   `sdk.authentication.refreshToken()` (`POST /api/token/refresh`) — issues a
-   new access + refresh pair.
-2. Otherwise, calls `sdk.authentication.refreshCookieToken()`
-   (`POST /api/cookie/refresh`) — used for cookie-only sessions that do not
-   carry a separate refresh token (e.g. social-auth flows).
-
-The new pair is then written back to cookies using the configured
-`accessTokenCookie` / `refreshTokenCookie` names — automatically in App
-Router middleware (`response.cookies.set`), Pages Router API routes
-(`Set-Cookie` header), and `getServerSideProps` responses.
-
-App Router server components and route handlers cannot mutate cookies after
-rendering starts, so the default refresh hook there is a no-op — the new
-tokens are still applied to the in-memory pair so subsequent SDK calls in the
-same request use the fresh access token. To persist the refreshed pair, hand
-the request off to a route handler that calls `cookies().set(...)`.
-
-Override the behaviour by passing `onTokenRefresh` to any of the wrappers.
-The hook receives:
-
-```ts
-interface TokenRefreshContext<T> {
-  target: T;          // NextResponse | NextApiResponse | ServerResponse | null
-  oldTokens: { accessToken?: string; refreshToken?: string };
-  newTokens: { accessToken: string; refreshToken?: string };
-  sdk: QelosSDK;
-}
-```
-
-### Manual cookie refresh
-
-Long-lived integrator-hosted sessions can also call the SDK directly to
-proactively refresh the cookie token. From a route handler that owns the
-response (so it can mutate cookies):
-
-```ts
-// app/api/session/refresh/route.ts
-import { NextResponse } from 'next/server';
-import { withQelosRoute } from '@qelos/integrator-next/route';
-
-export const POST = withQelosRoute(async (_req, _ctx, qelos) => {
-  const result = await qelos.sdk.authentication.refreshCookieToken();
-  // result.headers['set-cookie'] — fresh cookie value to forward
-  return NextResponse.json({ user: result.payload.user });
-});
-```
-
-## Configuration
-
-```ts
-interface QelosNextConfig {
-  appUrl: string;                 // Qelos backend base URL
-  apiToken?: string;              // service-to-service token (skips refresh logic)
-  accessTokenCookie?: string;     // default 'q_access_token'
-  refreshTokenCookie?: string;    // default 'q_refresh_token'
-  requireAuth?: boolean;          // 401/redirect on anonymous (default false)
-  skipPaths?: string[];           // path prefixes to bypass entirely
-  sdkOptions?: Partial<QelosSDKOptions>;
-}
-```
+| Field | Description |
+|-------|-------------|
+| `appUrl` | Qelos managed-app base URL |
+| `apiToken` | Static token — no `/api/me` cookie identity |
+| `requireAuth` | Reject anonymous requests (`401` / redirect) |
+| `skipPaths` | Path prefixes to bypass middleware (and `/api/` is auto-prepended when the proxy is enabled) |
+| `disableProxy` | Opt out of auto `/api/` skip for middleware |
+| `sdkOptions` | Extra `QelosSDK` constructor options |
 
 ## Subpath exports
 
 | Import | Purpose |
-|---|---|
-| `@qelos/integrator-next` | Everything (re-exports of all subpaths) |
-| `@qelos/integrator-next/middleware` | Edge middleware (`qelosMiddleware`, `createQelosMiddleware`) |
-| `@qelos/integrator-next/context` | Server-component / route-handler context (`getQelosContext`, `getStoredQelosContext`) |
-| `@qelos/integrator-next/route` | App Router route wrapper (`withQelosRoute`) |
-| `@qelos/integrator-next/pages` | Pages Router wrappers (`withQelosApi`, `withQelosSSR`) |
-| `@qelos/integrator-next/types` | Shared types |
+|--------|---------|
+| `@qelos/integrator-next` | Barrel |
+| `@qelos/integrator-next/middleware` | Edge middleware |
+| `@qelos/integrator-next/context` | `getQelosContext`, AsyncLocalStorage helpers |
+| `@qelos/integrator-next/route` | `withQelosRoute` |
+| `@qelos/integrator-next/pages` | Pages Router wrappers |
+| `@qelos/integrator-next/runtime/api-proxy` | Catch-all proxy handlers (`runtime = 'nodejs'`) |
+| `@qelos/integrator-next/types` | Types and header name constants |
+
+## Social auth
+
+`completeSocialAuthCallback` and the re-exported SDK helpers forward Qelos
+session cookies from `socialCallback` onto your Node response — use them from
+a route handler that owns the response object.

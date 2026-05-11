@@ -8,7 +8,7 @@ editLink: true
 Qelos integrators are thin per-framework packages that plug your
 application into a Qelos instance. They all expose the **same
 contract** — a `QelosRequestContext` with `{ user, workspace,
-workspaces, sdk, tokens }` — so once you've learned one, the others are
+workspaces, sdk }` — so once you've learned one, the others are
 immediate.
 
 If you haven't already, start with
@@ -41,19 +41,21 @@ Every guide covers the same six steps:
 Independent of framework, all integrators run the same pipeline before
 your handler:
 
-1. Read the access token from `Authorization: Bearer …` or the
-   `q_access_token` cookie, and the refresh token from
-   `q_refresh_token`.
-2. Build a per-request `QelosSDK` instance bound to those tokens.
-3. Call `sdk.authentication.getLoggedInUser()` and
-   `sdk.workspaces.getList()`.
-4. Pick the active workspace (first by default — overridable via a
-   `resolveWorkspace` callable).
-5. Attach the result on the framework-specific request object
-   (`req.qelos`, `request.qelos`, `event.context.qelos`,
-   `request.state.qelos`).
-6. Refresh tokens transparently when the access token expires; rotate
-   cookies onto the response (overridable via `onTokenRefresh`).
+1. Resolve the managed Qelos origin (proxy target): framework-specific env
+   overrides, then `appUrl` / `app_url`.
+2. Build a per-request `QelosSDK` that forwards the inbound `Cookie` and
+   `Authorization` headers on every call (`extra_headers` / `extraHeaders`),
+   unless `apiToken` / `api_token` is set.
+3. When a proxy target exists, call `GET {origin}/api/me` with those headers
+   and forward upstream `Set-Cookie` with `Domain=` rewritten to the inbound
+   host (same-origin BFF).
+4. Populate `user` from the `/api/me` JSON on success; load
+   `workspaces` via `sdk.workspaces.getList()`.
+5. Set `workspace` from `user.workspace` when present, or from an optional
+   `resolveWorkspace` callback — **not** from `workspaces[0]`.
+6. Attach the result on the framework-specific request object (`req.qelos`,
+   `request.qelos`, `event.context.qelos`, `request.state.qelos`, or forwarded
+   headers in Next.js edge middleware).
 
 ::: warning
 The integrator packages are for **external apps only**. Apps inside the
@@ -66,17 +68,16 @@ the gateway directly.
 ```ts
 {
   appUrl: string,                 // required — Qelos backend base URL
-  apiToken?: string,              // service-to-service token (skips refresh)
-  accessTokenCookie?: string,     // default 'q_access_token'
-  refreshTokenCookie?: string,    // default 'q_refresh_token'
+  apiToken?: string,              // service-to-service token (skips cookie forwarding)
   requireAuth?: boolean,          // 401 on anonymous (default false)
   skipPaths?: string[],           // path prefixes to bypass entirely
+  disableProxy?: boolean,         // disable catch-all /api proxy where applicable
   sdkOptions?: Partial<QelosSDKOptions>,
 }
 ```
 
-The Python integrator uses snake_case for the same fields
-(`app_url`, `api_token`, `access_token_cookie`, etc.).
+The Python integrator uses snake_case for the same fields (`app_url`,
+`api_token`, `require_auth`, `skip_paths`, `disable_proxy`, `sdk_options`).
 
 ## Picking the right one
 
@@ -89,5 +90,5 @@ The Python integrator uses snake_case for the same fields
   [`@qelos/web-sdk`](../web-sdk/) instead of an integrator — the
   integrators are server-side only.
 - **Integrating into a framework that's not listed?** Open an issue or
-  port the contract — the Express implementation
-  (`integrators/express/src`) is the simplest reference and is < 250 lines.
+  port the contract — the Express implementation (`integrators/express/src`)
+  is the simplest reference.
