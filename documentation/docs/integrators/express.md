@@ -31,67 +31,74 @@ Requirements:
 
 ## 2. Configure the middleware
 
+Typical setup uses `createQelosIntegrator`, which registers user-resolution
+middleware and a catch-all `/api/**` reverse proxy (unless `disableProxy` is
+set). Mount **your** `/api` routes before the proxy so they stay authoritative.
+
 ```ts
 // app.ts
 import express from 'express';
-import { createQelosMiddleware } from '@qelos/integrator-express';
+import { createQelosIntegrator } from '@qelos/integrator-express';
 
 const app = express();
 
-app.use(
-  createQelosMiddleware({
-    config: {
-      appUrl: process.env.QELOS_APP_URL!, // e.g. https://your-qelos-instance.com
-    },
-  }),
-);
+const qelos = createQelosIntegrator({
+  config: {
+    appUrl: process.env.QELOS_APP_URL!, // e.g. https://your-qelos-instance.com
+  },
+});
+
+app.use(qelos.middleware);
+
+app.get('/me', (req, res) => {
+  res.json({ user: req.qelos.user, workspace: req.qelos.workspace });
+});
+
+if (qelos.proxy) {
+  app.use('/api', qelos.proxy);
+}
 ```
+
+Lower-level `createQelosMiddleware` and `createQelosProxy` are exported if you
+prefer to wire each piece yourself.
 
 The middleware:
 
-1. Reads the access token from `Authorization: Bearer …` or the
-   `q_access_token` cookie, and the refresh token from `q_refresh_token`.
-2. Builds a per-request `QelosSDK` instance bound to those tokens.
-3. Calls `sdk.authentication.getLoggedInUser()` and
-   `sdk.workspaces.getList()`.
-4. Picks the active workspace (first by default — override with
-   `resolveWorkspace`).
-5. Attaches everything to `req.qelos` and calls `next()`.
+1. Resolves the managed Qelos origin (same rules as the `/api/**` proxy).
+2. Calls `fetch` on `{upstream}/api/me` with inbound `Cookie` and
+   `Authorization` forwarded.
+3. Forwards upstream `Set-Cookie` from that response with `Domain=` rewritten
+   to the inbound host.
+4. Sets `req.qelos.user` from the JSON body on success; loads `workspaces`
+   via `sdk.workspaces.getList()`.
+5. Sets `workspace` from `user.workspace` or from `resolveWorkspace` —
+   **not** from `workspaces[0]`.
 
 ### All configuration options
 
 ```ts
-createQelosMiddleware({
+createQelosIntegrator({
   config: {
     appUrl: 'https://your-qelos-instance.com', // required
 
-    // Service-to-service: use a static API token instead of cookies/refresh.
     apiToken: process.env.QELOS_API_TOKEN,
 
-    // Cookie names. Defaults shown.
-    accessTokenCookie: 'q_access_token',
-    refreshTokenCookie: 'q_refresh_token',
-
-    // Reject anonymous requests with 401. Defaults to false.
     requireAuth: false,
 
-    // Skip the middleware entirely for these path prefixes.
     skipPaths: ['/health', '/metrics'],
 
-    // Anything you want passed through to the per-request SDK.
+    disableProxy: false,
+
     sdkOptions: {},
   },
 
-  // Override workspace selection. Defaults to `workspaces[0]`.
   resolveWorkspace: ({ req, user, workspaces }) => {
     const headerId = req.headers['x-qelos-workspace'];
-    return workspaces.find((w) => w._id === headerId) || workspaces[0] || null;
-  },
-
-  // Hook fired after a successful refresh. Defaults to writing the rotated
-  // tokens back to cookies.
-  onTokenRefresh: async ({ req, res, oldTokens, newTokens, sdk }) => {
-    // ...
+    return (
+      workspaces.find((w) => w._id === headerId) ||
+      user.workspace ||
+      null
+    );
   },
 });
 ```
@@ -106,8 +113,7 @@ interface QelosRequestContext {
   user: IUser | null;          // null for anonymous requests
   workspace: IWorkspace | null;
   workspaces: IWorkspace[];
-  sdk: QelosSDK;               // bound to the current request's tokens
-  tokens: QelosTokenPair;      // mutated in place when a refresh occurs
+  sdk: QelosSDK;               // forwards Cookie / Authorization per call
 }
 ```
 
@@ -201,28 +207,15 @@ app.get('/auth/callback', async (req, res) => {
 });
 ```
 
-### Token refresh
+### Cookies and SDK calls
 
-When the access token is rejected the SDK transparently retries with the
-refresh token. After a successful refresh, the middleware fires the
-`onTokenRefresh` hook. The default implementation writes the new pair back to
-cookies (`HttpOnly`, `SameSite=Lax`, `Secure` whenever `appUrl` is `https://…`).
+Rotated session cookies from Qelos reach the browser via `Set-Cookie` on the
+`/api/me` probe and on responses from SDK calls your handlers make. The
+request-scoped `req.qelos.sdk` uses `extraHeaders` so each call sees the
+current `Cookie` / `Authorization` values for that request.
 
-Override the hook to use your own session store:
-
-```ts
-app.use(
-  createQelosMiddleware({
-    config: { appUrl: process.env.QELOS_APP_URL! },
-    onTokenRefresh: async ({ req, res, newTokens }) => {
-      await sessionStore.rotate(req.sessionID, newTokens);
-    },
-  }),
-);
-```
-
-The hook receives `{ req, res, oldTokens, newTokens, sdk }`. Throwing aborts
-the in-flight request.
+For `refreshCookieToken()` and other explicit refresh APIs, see
+[Cookie Token Lifecycle](../auth/cookie-tokens.md).
 
 ### Service-to-service (no end user)
 
@@ -288,30 +281,15 @@ const sdk = new QelosSDK({
 - **The integrator package is for external apps only.** Apps inside the
   Qelos monorepo MUST NOT depend on `@qelos/integrator-*` — they talk to the
   gateway directly.
-- **`req.qelos` is optional in the type signature.** It will be `undefined`
-  on routes matched by `skipPaths`, and TypeScript will not let you forget
-  it. Use `req.qelos!` only after a `createQelosMiddleware` mount or
-  `requireUser` wrapper.
+- **`req.qelos` is omitted when `skipPaths` matches.** On skipped routes the
+  middleware does not attach context; use optional chaining or gate routes.
 - **Anonymous requests don't throw by default.** `req.qelos.user` and
   `req.qelos.workspace` will simply be `null`. Switch to
   `config.requireAuth: true` or per-route `requireUser` when you want a
   hard `401`.
-- **Mount the middleware once, near the top of the chain.** The integrator
-  needs to run before any handler that reads `req.qelos`. Use `skipPaths`
-  for endpoints that should bypass identity resolution (`/health`,
-  `/metrics`).
-- **Workspace selection defaults to the first workspace.** If your users
-  belong to multiple workspaces, supply `resolveWorkspace` — typically
-  reading an `x-qelos-workspace` header or a cookie. The integrator does
-  not read the active workspace from user metadata for you.
-- **Cookies are written via `res.cookie` when available.** If you use
-  `cookie-parser` or another cookie middleware, your cookie options
-  (signing, domain, etc.) keep working transparently.
-- **`Secure` is set automatically based on `appUrl`.** In local development
-  with an `http://` `appUrl`, cookies are written without `Secure` so
-  browsers accept them. Production HTTPS instances get `Secure` for free.
-- **Don't reuse the per-request SDK across requests.** It is bound to a
-  specific token pair. Use `req.qelos.sdk` inside a handler; build a
-  fresh SDK with `apiToken` for cron jobs or workers.
-- **`req.qelos.tokens` mutates in place** after a refresh, so any code that
-  reads it later in the chain sees the rotated pair.
+- **Mount user-resolution middleware before handlers that read `req.qelos`.**
+  Use `skipPaths` for `/health`, `/metrics`, etc.
+- **Active workspace comes from `/api/me`’s `user.workspace`, not
+  `workspaces[0]`.** Supply `resolveWorkspace` when you need another rule.
+- **Don't reuse the per-request SDK across requests.** Use `req.qelos.sdk`
+  inside a handler; build a fresh SDK with `apiToken` for cron jobs or workers.

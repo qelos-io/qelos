@@ -76,7 +76,7 @@
     }
   },
   "dependencies": {
-    "@qelos/sdk": "workspace:^"
+    "@qelos/sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.5.4",

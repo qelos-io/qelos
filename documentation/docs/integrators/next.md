@@ -8,8 +8,8 @@ editLink: true
 Qelos integrator for **Next.js**. Supports both the **App Router** and the
 **Pages Router** on Next.js **14** and **15**, drops in as edge middleware,
 and exposes the same `QelosRequestContext` shape (`{ user, workspace,
-workspaces, sdk, tokens }`) as the Express, Fastify, NestJS, Nuxt, and
-FastAPI integrators.
+workspaces, sdk }`) as the Express, Fastify, NestJS, Nuxt, and FastAPI
+integrators.
 
 If you are new to Qelos, read
 [Getting Started as an Integrator](../getting-started/integrators.md) first
@@ -32,11 +32,10 @@ The factory reads these by default — you can also pass them inline via
 | Variable | Default | Description |
 |---|---|---|
 | `QELOS_APP_URL` | — (required) | Qelos backend base URL |
-| `QELOS_API_TOKEN` | — | Service-to-service token (skips refresh logic) |
-| `QELOS_ACCESS_TOKEN_COOKIE` | `q_access_token` | Cookie name for the access token |
-| `QELOS_REFRESH_TOKEN_COOKIE` | `q_refresh_token` | Cookie name for the refresh token |
+| `QELOS_API_TOKEN` | — | Service-to-service token |
 | `QELOS_REQUIRE_AUTH` | `false` | Set `true` to reject anonymous requests with 401 |
 | `QELOS_SKIP_PATHS` | — | Comma-separated path prefixes to bypass entirely |
+| `QELOS_DISABLE_PROXY` | `false` | Set `true` to disable auto `/api/` skip when not using the BFF proxy pattern |
 
 ## 2. Configure the middleware
 
@@ -51,8 +50,8 @@ export const config = {
 };
 ```
 
-When you need explicit control over `resolveWorkspace`, `onTokenRefresh`,
-or any other option, call the factory yourself:
+When you need explicit control over `resolveWorkspace` or other options,
+call the factory yourself:
 
 ```ts
 // middleware.ts
@@ -64,9 +63,10 @@ export default createQelosMiddleware({
     skipPaths: ['/_next', '/favicon.ico'],
     requireAuth: false,
   },
-  resolveWorkspace: ({ req, workspaces }) => {
+  resolveWorkspace: ({ req, user, workspaces }) => {
     const slug = req.nextUrl.searchParams.get('workspace');
-    return workspaces.find((w) => (w as any).slug === slug) ?? workspaces[0] ?? null;
+    const bySlug = workspaces.find((w) => (w as { slug?: string }).slug === slug);
+    return bySlug || user.workspace || null;
   },
 });
 
@@ -77,29 +77,30 @@ export const config = {
 
 The middleware:
 
-- Reads tokens from cookies (`q_access_token`, `q_refresh_token`) or the
-  `Authorization` header.
-- Calls the Qelos SDK to resolve the user and the active workspace.
-- Forwards the resolved ids to downstream handlers via the
-  `x-qelos-user-id` and `x-qelos-workspace-id` request headers — that's
-  how server components and route handlers reuse the work without
-  re-fetching.
-- Refreshes the access/refresh token pair when needed and writes the new
-  cookies onto the outbound response.
+- Resolves the managed Qelos origin (proxy target env overrides, then `appUrl`).
+- Calls `GET /api/me` on that origin with inbound `Cookie` and `Authorization`,
+  and forwards upstream `Set-Cookie` with `Domain=` rewritten to the inbound
+  host.
+- Loads `workspaces` via the request-scoped SDK; sets `workspace` from
+  `user.workspace` or `resolveWorkspace` — **not** `workspaces[0]`.
+- Forwards resolved ids to downstream handlers via `x-qelos-user-id` and
+  `x-qelos-workspace-id` headers for App Router consumers (`getQelosContext`).
 - Returns `401` early when `config.requireAuth: true` and the user cannot be
   resolved.
+
+Mount the App Router catch-all API proxy route from `@qelos/integrator-next`
+when you want `/api/**` same-origin proxying (see package README).
 
 ### Configuration shape
 
 ```ts
 interface QelosNextConfig {
-  appUrl: string;                 // Qelos backend base URL
-  apiToken?: string;              // service-to-service token (skips refresh logic)
-  accessTokenCookie?: string;     // default 'q_access_token'
-  refreshTokenCookie?: string;    // default 'q_refresh_token'
-  requireAuth?: boolean;          // 401 on anonymous (default false)
-  skipPaths?: string[];           // path prefixes to bypass entirely
+  appUrl: string;
+  apiToken?: string;
+  requireAuth?: boolean;
+  skipPaths?: string[];
   sdkOptions?: Partial<QelosSDKOptions>;
+  disableProxy?: boolean;
 }
 ```
 
@@ -119,7 +120,6 @@ interface QelosRequestContext {
   workspace: IWorkspace | null;
   workspaces: IWorkspace[];
   sdk: QelosSDK;
-  tokens: QelosTokenPair;
 }
 ```
 
@@ -276,36 +276,13 @@ export async function GET(req: Request) {
 }
 ```
 
-### Token refresh
+### Cookies and `/api/me`
 
-When a request arrives with an expired access token but a valid refresh
-token, the SDK's failed-auth path triggers a refresh through
-`/api/token/refresh`. The new pair is then written back to cookies using the
-configured `accessTokenCookie` / `refreshTokenCookie` names — automatically
-in App Router middleware (`response.cookies.set`), Pages Router API routes
-(`Set-Cookie` header), and `getServerSideProps` responses.
-
-::: warning
-App Router server components and route handlers cannot mutate cookies after
-rendering starts, so the default refresh hook there is a **no-op** — the
-new tokens are still applied to the in-memory pair so subsequent SDK calls
-in the same request use the fresh access token. To **persist** the refreshed
-pair, hand the request off to a route handler that calls
-`cookies().set(...)` (e.g. an internal `/api/refresh` route the client hits
-when it sees `401`).
-:::
-
-Override the behavior by passing `onTokenRefresh` to any of the wrappers.
-The hook receives:
-
-```ts
-interface TokenRefreshContext<T> {
-  target: T;          // NextResponse | NextApiResponse | ServerResponse | null
-  oldTokens: { accessToken?: string; refreshToken?: string };
-  newTokens: { accessToken: string; refreshToken?: string };
-  sdk: QelosSDK;
-}
-```
+Edge middleware identifies the user via **`GET /api/me`** on the resolved Qelos
+origin and forwards `Set-Cookie` from that response (with `Domain=` rewritten).
+The request-scoped SDK forwards cookies on downstream SDK calls. For
+`refreshCookieToken()` and manual refresh flows, see
+[Cookie Token Lifecycle](../auth/cookie-tokens.md).
 
 ### Service-to-service (no end user)
 
@@ -363,10 +340,9 @@ the [Blueprints Operations reference](../sdk/blueprints_operations.md).
 - **The middleware runs on the edge.** Don't import Node-only APIs into
   `middleware.ts` — keep heavy work in route handlers, server components,
   or `getServerSideProps`.
-- **App Router refresh is a no-op for cookie writes.** Server components
-  can't set cookies after rendering. The middleware *does* refresh
-  cookies, so route through it whenever possible. For long-lived RSCs,
-  hand off to a route handler when you detect a stale token.
+- **Cookie rotations from Qelos** reach the browser via `Set-Cookie` on the
+  middleware's `/api/me` round-trip and on API responses when you use the
+  catch-all BFF proxy pattern.
 - **`getStoredQelosContext()` only works inside `withQelosRoute` /
   `withQelosContext`** (or the Pages Router wrappers). Outside that
   AsyncLocalStorage scope it returns `undefined` — call `getQelosContext()`
@@ -377,8 +353,7 @@ the [Blueprints Operations reference](../sdk/blueprints_operations.md).
   not redirect to a login page; if you want a redirect, write a custom
   middleware or guard the page in a server component with
   `requireQelosUser()` and `redirect('/login')`.
-- **Workspace selection defaults to the first workspace.** Supply
-  `resolveWorkspace` if your users belong to multiple workspaces.
-- **Don't reuse the per-request SDK across requests.** It is bound to
-  request-specific tokens. Build a fresh `QelosSDK` with `apiToken` for
-  cron jobs and workers.
+- **Active workspace comes from `/api/me`’s `user.workspace`, not
+  `workspaces[0]`.** Supply `resolveWorkspace` when you need another rule.
+- **Don't reuse the per-request SDK across requests.** Build a fresh
+  `QelosSDK` with `apiToken` for cron jobs and workers.

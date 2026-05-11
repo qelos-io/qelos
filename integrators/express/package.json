@@ -53,8 +53,8 @@
     }
   },
   "dependencies": {
-    "@qelos/global-types": "workspace:^",
-    "@qelos/sdk": "workspace:^"
+    "@qelos/global-types": "workspace:*",
+    "@qelos/sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

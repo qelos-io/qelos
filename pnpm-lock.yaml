@@ -680,10 +680,10 @@ importers:
   integrators/express:
     dependencies:
       '@qelos/global-types':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/global-types
       '@qelos/sdk':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/sdk
     devDependencies:
       '@types/express':
@@ -705,10 +705,10 @@ importers:
   integrators/fastify:
     dependencies:
       '@qelos/global-types':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/global-types
       '@qelos/sdk':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/sdk
       fastify-plugin:
         specifier: ^4.5.1 || ^5.0.0
@@ -727,7 +727,7 @@ importers:
   integrators/nest:
     dependencies:
       '@qelos/sdk':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/sdk
     devDependencies:
       '@nestjs/common':
@@ -752,7 +752,7 @@ importers:
   integrators/next:
     dependencies:
       '@qelos/sdk':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/sdk
     devDependencies:
       '@types/node':

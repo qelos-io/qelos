@@ -116,33 +116,24 @@ QelosModule.forRoot({
   config: {
     appUrl: 'https://your-qelos-instance.com', // required
 
-    // Service-to-service: use a static API token instead of cookies/refresh.
     apiToken: process.env.QELOS_API_TOKEN,
 
-    // Cookie names. Defaults shown.
-    accessTokenCookie: 'q_access_token',
-    refreshTokenCookie: 'q_refresh_token',
-
-    // Reject anonymous requests with 401. Defaults to false.
     requireAuth: false,
 
-    // Skip the middleware entirely for these path prefixes.
     skipPaths: ['/health', '/metrics'],
 
-    // Anything you want passed through to the per-request SDK.
+    disableProxy: false,
+
     sdkOptions: {},
   },
 
-  // Override workspace selection. Defaults to `workspaces[0]`.
   resolveWorkspace: ({ request, user, workspaces }) => {
     const headerId = request.headers['x-qelos-workspace'];
-    return workspaces.find((w) => w._id === headerId) || workspaces[0] || null;
-  },
-
-  // Hook fired after a successful refresh. Defaults to writing the rotated
-  // tokens back to cookies.
-  onTokenRefresh: async ({ request, response, oldTokens, newTokens, sdk }) => {
-    // ...
+    return (
+      workspaces.find((w) => w._id === headerId) ||
+      user.workspace ||
+      null
+    );
   },
 });
 ```
@@ -193,8 +184,7 @@ interface QelosRequestContext {
   user: IUser | null;          // null for anonymous requests
   workspace: IWorkspace | null;
   workspaces: IWorkspace[];
-  sdk: QelosSDK;               // bound to the current request's tokens
-  tokens: QelosTokenPair;      // mutated in place when a refresh occurs
+  sdk: QelosSDK;               // forwards Cookie / Authorization per call
 }
 ```
 
@@ -258,27 +248,12 @@ async callback(@Req() req: any, @Res() res: any) {
 }
 ```
 
-### Token refresh
+### Cookies and SDK calls
 
-When the access token is rejected the SDK transparently retries with the
-refresh token. After a successful refresh the middleware fires the
-`onTokenRefresh` hook. The default implementation writes the new pair
-back to cookies (`HttpOnly`, `SameSite=Lax`, `Secure` whenever `appUrl`
-is `https://…`).
+Rotations from Qelos arrive as `Set-Cookie` on the `/api/me` probe and on SDK
+responses. The request-scoped SDK forwards cookies on each call.
 
-Override the hook to use your own session store:
-
-```ts
-QelosModule.forRoot({
-  config: { appUrl: process.env.QELOS_APP_URL! },
-  onTokenRefresh: async ({ request, response, newTokens }) => {
-    await sessionStore.rotate(request.session.id, newTokens);
-  },
-});
-```
-
-The hook receives `{ request, response, oldTokens, newTokens, sdk }`.
-Throwing aborts the in-flight request.
+See [Cookie Token Lifecycle](../auth/cookie-tokens.md).
 
 ### Service-to-service (no end user)
 
@@ -338,14 +313,10 @@ the [Blueprints Operations reference](../sdk/blueprints_operations.md).
   `config.requireAuth: true` (or `QelosAuthGuard` per-route) for a hard
   `401`.
 - **Adapter-agnostic.** The same module works on
-  `NestExpressApplication` and `NestFastifyApplication`. The
-  `onTokenRefresh` hook receives a generic `request` / `response` —
-  cast to your adapter's types if you need adapter-specific APIs.
-- **Workspace selection defaults to the first workspace.** Supply
-  `resolveWorkspace` if your users belong to multiple workspaces.
-- **`Secure` cookies are based on `appUrl`.** Local `http://` instances
-  get cookies without `Secure` so browsers accept them; production
-  `https://` instances get `Secure` automatically.
-- **Don't reuse the per-request SDK across requests.** It is bound to a
-  specific token pair. Build a fresh SDK with `apiToken` for cron jobs
-  or workers.
+  `NestExpressApplication` and `NestFastifyApplication`.
+- **Active workspace comes from `/api/me`’s `user.workspace`, not
+  `workspaces[0]`.** Supply `resolveWorkspace` when you need another rule.
+- **`Secure` cookies:** the middleware does not strip `Secure` from rotated
+  cookies — configure Qelos / TLS for local dev if browsers drop cookies.
+- **Don't reuse the per-request SDK across requests.** Build a fresh SDK with
+  `apiToken` for cron jobs or workers.

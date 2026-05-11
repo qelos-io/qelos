@@ -51,68 +51,39 @@ cookie token:
 await sdk.authentication.refreshCookieToken(currentCookieToken);
 ```
 
-Most application code never calls this directly — the integrator
-middleware handles it.
+Most application code never calls this directly — session updates from Qelos
+often arrive as `Set-Cookie` on `/api/me` or SDK responses when using an
+integrator (see below).
 
-## Automatic refresh in the integrator middleware
+## Automatic identity and cookies in integrator middleware
 
-The Express integrator (and its sibling packages for Next, Nuxt,
-Fastify, NestJS, FastAPI) wraps every request with a fresh, per-request
-SDK that refreshes tokens transparently.
+Server-side integrators (Express, Next.js, Nuxt, Fastify, NestJS, FastAPI)
+identify the user by calling the managed Qelos app’s **`GET /api/me`**
+through the resolved proxy target (same origin as your BFF). They forward the
+inbound **`Cookie`** and **`Authorization`** headers, then forward any
+upstream **`Set-Cookie`** headers from that response with the **`Domain=`**
+attribute rewritten to your app’s host so the browser keeps a first-party
+session.
 
-What the middleware does on each request (see
-`integrators/express/src/middleware.ts`):
+They then create a **request-scoped SDK** whose `extraHeaders` hook forwards
+the current cookies on every SDK call — so cookie rotations applied earlier in
+the pipeline are visible to subsequent API calls in the same request.
 
-1. **Read tokens.** Pull the access token from the `q_access_token`
-   cookie or from an `Authorization: Bearer …` header, and the refresh
-   token from `q_refresh_token`.
-2. **Build a request-scoped SDK.** The SDK is created with
-   `forceRefresh: true` and a fetch hook that injects the current
-   bearer token, plus a refresh callback that runs on `401` responses.
-3. **Refresh on 401.** When any SDK call returns `401`, the SDK
-   transparently calls `refreshToken` (OAuth pair) or
-   `refreshCookieToken` (cookie pair), retries the original request,
-   and then…
-4. **Write the new cookies back.** The default `onTokenRefresh` hook
-   serializes the rotated tokens as `Set-Cookie` headers on the
-   outgoing response, so the browser receives them on the same response
-   that carries the page or API result.
+This replaces older middleware patterns that wired `forceRefresh` and
+`onTokenRefresh` inside the integrator. For low-level SDK refresh options when
+you construct `QelosSDK` yourself, see [Token refresh](../sdk/token_refresh.md).
 
-You get this for free — your route handlers just call
-`req.qelos.sdk.<...>` and never see the refresh.
+### Custom persistence
 
-### Customizing refresh
-
-Pass `onTokenRefresh` to override how rotated tokens are persisted (for
-example, to write them to a session store instead of cookies):
-
-```ts
-import { createQelosMiddleware } from '@qelos/integrator-express';
-
-app.use(createQelosMiddleware({
-  config: {
-    appUrl: process.env.QELOS_APP_URL!,
-    accessTokenCookie: 'app_at',     // override default 'q_access_token'
-    refreshTokenCookie: 'app_rt',
-    requireAuth: false,              // 401 unauthenticated requests
-    skipPaths: ['/healthz', '/public'],
-  },
-  onTokenRefresh: async ({ req, res, newTokens }) => {
-    await req.session.save({ tokens: newTokens });
-  },
-}));
-```
-
-If you supply `onTokenRefresh`, the middleware will not write cookies
-itself — make sure your hook persists `newTokens.accessToken` and
-`newTokens.refreshToken` somewhere your next request can read.
+If you **do not** use an integrator and instead instantiate `QelosSDK`
+directly, you can pass `onTokenRefresh` / cookie hooks as documented in the
+SDK — that path is independent from integrator middleware.
 
 ### Concurrent requests
 
-When several SDK calls fire in parallel and all hit a `401`, the SDK
-coalesces them into a single refresh: only one
-`refreshToken` / `refreshCookieToken` request goes out, every queued
-call resumes with the new token, and `onTokenRefresh` runs once.
+When several SDK calls hit a `401`, the SDK may coalesce refresh work (see SDK
+docs). Integrators rely on the shared `/api/me` probe plus per-request SDK
+instances rather than mutable token pairs on the context object.
 
 ## When refresh fails
 

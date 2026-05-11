@@ -207,29 +207,29 @@ export default defineEventHandler(async (event) => {
 });
 ```
 
-### Token refresh
+### Cookies and `/api/me`
 
-When the access token is rejected, the SDK tries the refresh token. After
-a successful refresh the module fires the `onTokenRefresh` hook. The
-default implementation writes the rotated tokens back as cookies
-(`HttpOnly`, `SameSite=Lax`, `Secure` whenever `appUrl` is `https://…`).
+The module registers server middleware that calls **`GET /api/me`** on the
+managed Qelos origin (same proxy-target rules as the `/api/**` Nitro proxy)
+and forwards `Set-Cookie` with `Domain=` rewritten. The request-scoped SDK
+forwards cookies on each call.
 
-Override the behavior — and/or the workspace selection — by registering
-your own middleware:
+For custom workspace rules, pass `resolveWorkspace` to `createQelosMiddleware`
+(if you disabled the default middleware). See [Cookie Token Lifecycle](../auth/cookie-tokens.md).
 
 ```ts
-// server/middleware/qelos.ts
+// server/middleware/qelos.ts — optional manual registration
 import { createQelosMiddleware } from '@qelos/integrator-nuxt';
 
 export default createQelosMiddleware({
   config: useRuntimeConfig().qelos,
-  resolveWorkspace: ({ user, workspaces }) =>
-    workspaces.find(w => w._id === user.metadata?.activeWorkspace) || workspaces[0] || null,
-  onTokenRefresh: async ({ event, newTokens }) => {
-    setCookie(event, 'q_access_token', newTokens.accessToken, { httpOnly: true });
-    if (newTokens.refreshToken) {
-      setCookie(event, 'q_refresh_token', newTokens.refreshToken, { httpOnly: true });
+  resolveWorkspace: ({ user, workspaces }) => {
+    const wanted = user.metadata?.activeWorkspace as string | undefined;
+    if (wanted) {
+      const match = workspaces.find((w) => w._id === wanted);
+      if (match) return match;
     }
+    return user.workspace || null;
   },
 });
 ```
@@ -271,8 +271,8 @@ the [Blueprints Operations reference](../sdk/blueprints_operations.md).
 - **`useQelos()` is read-only** — it reflects the identity resolved on the
   server during SSR. Mutating its refs on the client won't change what the
   server sees on the next request; that's driven by cookies.
-- **Workspace selection defaults to the first workspace.** Supply a custom
-  `resolveWorkspace` if your users belong to multiple workspaces.
+- **Active workspace comes from `/api/me`’s `user.workspace`, not
+  `workspaces[0]`.** Supply `resolveWorkspace` when you need another rule.
 - **`requireAuth` returns `401`, not a redirect.** Add a `definePageMeta`
   middleware or check `useQelos().isAuthenticated` in your layout if you
   want a login redirect on the client.

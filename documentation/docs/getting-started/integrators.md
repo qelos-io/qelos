@@ -262,10 +262,11 @@ pip install qelos-integrator-fastapi qelos-sdk
 
 :::
 
-Every integrator accepts the same `config` shape — `appUrl`, an optional
+Every integrator accepts the same core `config` shape — `appUrl`, an optional
 `apiToken` for service-to-service calls, `requireAuth` to reject
-unauthenticated requests globally, and `skipPaths` to bypass routes like
-`/health`. After the middleware runs, the request carries:
+unauthenticated requests globally, `skipPaths` to bypass routes like
+`/health`, and (where applicable) `disableProxy` when you do not use the
+catch-all `/api/**` BFF proxy. After the middleware runs, the request carries:
 
 | Field | What it is |
 |---|---|
@@ -273,7 +274,6 @@ unauthenticated requests globally, and `skipPaths` to bypass routes like
 | `workspace` | The active workspace for the request |
 | `workspaces` | All workspaces the user is a member of |
 | `sdk` | A `QelosSDK` instance scoped to the user's session |
-| `tokens` | The access / refresh token pair |
 
 > The integrator packages are for external apps **only**. Apps inside this
 > monorepo MUST NOT depend on `@qelos/integrator-*` — they talk to the
