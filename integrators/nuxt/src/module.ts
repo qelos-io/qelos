@@ -41,6 +41,13 @@ export default defineNuxtModule<QelosNuxtModuleOptions>({
     const { disableMiddleware, disableProxy, ...runtimeConfig } = options;
 
     if (!disableProxy) {
+      // When the catch-all `/api/**` proxy is enabled, the user-resolution
+      // middleware MUST skip `/api/` requests. The middleware itself calls
+      // `${proxyTarget}/api/me` to identify the user, so without this skip
+      // every inbound `/api/me` would be both proxied AND used as the
+      // identification probe — a duplicate upstream hit and a potential
+      // cookie-rewrite loop. Users can extend `skipPaths` further but
+      // `/api/` must remain covered whenever `disableProxy` is false.
       const existingSkipPaths = runtimeConfig.skipPaths ?? [];
       const alreadyCovered = existingSkipPaths.some((prefix) => '/api/'.startsWith(prefix));
       if (!alreadyCovered) {
