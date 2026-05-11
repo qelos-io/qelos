@@ -29,12 +29,54 @@ export default defineNuxtConfig({
     refreshTokenCookie: 'q_refresh_token',
     requireAuth: false,
     skipPaths: ['/api/_auth', '/health'],
+    proxyTarget: 'https://your-app.qelos.app',
   },
 });
 ```
 
 You can also override any field at runtime via `NUXT_QELOS_*` env vars (Nuxt
 runtime-config conventions apply).
+
+## API proxy
+
+The module registers a catch-all `/api/**` Nitro server handler that
+transparently proxies any request the consuming Nuxt app does not handle
+itself to the configured Qelos managed-app origin. This lets the Nuxt app
+act as a same-origin BFF: `@qelos/sdk` calls from the browser, server, or
+the Qelos web SDK can all hit `/api/...` on the Nuxt host and reach Qelos
+without CORS or cross-site cookie pain.
+
+User-defined `server/api/*.ts` (and `server/routes/*.ts`) routes still
+take precedence — the proxy only catches requests no other handler matched.
+
+### Cookie domain rewrite
+
+The proxy forwards the incoming `Cookie` header as-is (the Qelos session
+cookie name is treated as opaque) and forwards upstream `Set-Cookie`
+headers back to the client, rewriting the `Domain=` attribute from the
+Qelos origin (e.g. `*.qelos.app`) to the inbound request's own host. That
+way the session cookie set by Qelos is valid on the Nuxt app's domain.
+
+### Resolving the proxy target
+
+The target origin is resolved in this order:
+
+1. `qelos.proxyTarget` in `nuxt.config.ts`.
+2. `NUXT_QELOS_PROXY_TARGET` env var.
+3. `QELOS_IP` env var (dev fallback).
+4. `QELOS_API_IP` env var (dev fallback).
+5. `qelos.appUrl`.
+
+If none of these are set, the handler responds with `503` so misconfiguration
+fails loudly.
+
+### Opting out
+
+Set `qelos.disableProxy: true` in `nuxt.config.ts` to skip registration of
+the proxy handler — useful when the Nuxt app implements every `/api/*`
+route itself or terminates the proxy elsewhere (CDN, reverse proxy, etc.).
+
+WebSocket upgrades are not proxied; route them explicitly if needed.
 
 ## Use in server routes
 
