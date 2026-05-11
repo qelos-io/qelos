@@ -2,8 +2,6 @@ export {
   createQelosMiddleware,
   qelosMiddleware,
   type CreateMiddlewareOptions,
-  type MiddlewareRefreshTarget,
-  type PendingCookie,
   type QelosMiddleware,
 } from './middleware';
 
@@ -12,10 +10,7 @@ export {
   getDefaultQelosConfig,
 } from './env-config';
 
-export {
-  createRequestSdk,
-  type CreateSdkParams,
-} from './sdk-factory';
+export { createRequestSdk, type CreateSdkParams } from './sdk-factory';
 
 export {
   getQelosContext,
@@ -44,11 +39,11 @@ export {
   QELOS_WORKSPACE_HEADER,
   type QelosNextConfig,
   type QelosRequestContext,
-  type QelosTokenPair,
-  type ResolvedTokens,
-  type TokenRefreshContext,
-  type TokenRefreshHook,
 } from './types';
+
+export { rewriteSetCookieDomain, rewriteSetCookieDomains } from './cookies';
+export { resolveQelosProxyTarget } from './proxy-target';
+export { createQelosApiProxyHandlers } from './runtime/api-proxy';
 
 export {
   completeSocialAuthCallback,

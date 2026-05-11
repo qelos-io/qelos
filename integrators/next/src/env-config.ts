@@ -9,11 +9,11 @@ import type { QelosNextConfig } from './types';
  * Recognized variables:
  *
  * - `QELOS_APP_URL` (required) — Qelos backend base URL.
- * - `QELOS_API_TOKEN` — service-to-service token (skips refresh logic).
- * - `QELOS_ACCESS_TOKEN_COOKIE` — defaults to `q_access_token`.
- * - `QELOS_REFRESH_TOKEN_COOKIE` — defaults to `q_refresh_token`.
+ * - `QELOS_API_TOKEN` — service-to-service token (skips cookie identity).
  * - `QELOS_REQUIRE_AUTH` — `"true"` to reject anonymous requests.
  * - `QELOS_SKIP_PATHS` — comma-separated path prefixes to bypass.
+ * - `QELOS_DISABLE_PROXY` — `"true"` to disable auto `/api/` skip in middleware
+ *   (when you are not using the BFF catch-all proxy).
  */
 export function loadQelosConfigFromEnv(env: NodeJS.ProcessEnv = process.env): QelosNextConfig {
   const appUrl = env.QELOS_APP_URL;
@@ -26,10 +26,11 @@ export function loadQelosConfigFromEnv(env: NodeJS.ProcessEnv = process.env): Qe
   }
   const config: QelosNextConfig = { appUrl };
   if (env.QELOS_API_TOKEN) config.apiToken = env.QELOS_API_TOKEN;
-  if (env.QELOS_ACCESS_TOKEN_COOKIE) config.accessTokenCookie = env.QELOS_ACCESS_TOKEN_COOKIE;
-  if (env.QELOS_REFRESH_TOKEN_COOKIE) config.refreshTokenCookie = env.QELOS_REFRESH_TOKEN_COOKIE;
   if (env.QELOS_REQUIRE_AUTH === 'true' || env.QELOS_REQUIRE_AUTH === '1') {
     config.requireAuth = true;
+  }
+  if (env.QELOS_DISABLE_PROXY === 'true' || env.QELOS_DISABLE_PROXY === '1') {
+    config.disableProxy = true;
   }
   if (env.QELOS_SKIP_PATHS) {
     config.skipPaths = env.QELOS_SKIP_PATHS.split(',')
