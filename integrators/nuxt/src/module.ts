@@ -13,6 +13,11 @@ export interface QelosNuxtModuleOptions extends QelosNuxtRuntimeConfig {
    * want to call `createQelosMiddleware` yourself from your own server route.
    */
   disableMiddleware?: boolean;
+  /**
+   * Disable registration of the catch-all `/api/**` proxy server handler.
+   * Defaults to `false`.
+   */
+  disableProxy?: boolean;
 }
 
 export default defineNuxtModule<QelosNuxtModuleOptions>({
@@ -33,7 +38,22 @@ export default defineNuxtModule<QelosNuxtModuleOptions>({
 
     const { resolve } = createResolver(import.meta.url);
 
-    const { disableMiddleware, ...runtimeConfig } = options;
+    const { disableMiddleware, disableProxy, ...runtimeConfig } = options;
+
+    if (!disableProxy) {
+      // When the catch-all `/api/**` proxy is enabled, the user-resolution
+      // middleware MUST skip `/api/` requests. The middleware itself calls
+      // `${appUrl}/api/me` to identify the user, so without this skip
+      // every inbound `/api/me` would be both proxied AND used as the
+      // identification probe — a duplicate upstream hit and a potential
+      // cookie-rewrite loop. Users can extend `skipPaths` further but
+      // `/api/` must remain covered whenever `disableProxy` is false.
+      const existingSkipPaths = runtimeConfig.skipPaths ?? [];
+      const alreadyCovered = existingSkipPaths.some((prefix) => '/api/'.startsWith(prefix));
+      if (!alreadyCovered) {
+        runtimeConfig.skipPaths = ['/api/', ...existingSkipPaths];
+      }
+    }
 
     nuxt.options.runtimeConfig.qelos = {
       ...(nuxt.options.runtimeConfig.qelos as Record<string, unknown> | undefined),
@@ -44,6 +64,13 @@ export default defineNuxtModule<QelosNuxtModuleOptions>({
       addServerHandler({
         handler: resolve('./runtime/server-handler'),
         middleware: true,
+      });
+    }
+
+    if (!disableProxy) {
+      addServerHandler({
+        route: '/api/**',
+        handler: resolve('./runtime/api-proxy'),
       });
     }
 
@@ -77,8 +104,4 @@ export type {
 export type {
   QelosNuxtRuntimeConfig,
   QelosRequestContext,
-  QelosTokenPair,
-  ResolvedTokens,
-  TokenRefreshContext,
-  TokenRefreshHook,
 } from './types';

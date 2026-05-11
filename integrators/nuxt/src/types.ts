@@ -3,11 +3,6 @@ import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import type { QelosSDKOptions } from '@qelos/sdk/types';
 
-export interface QelosTokenPair {
-  accessToken?: string;
-  refreshToken?: string;
-}
-
 export interface QelosNuxtRuntimeConfig {
   /**
    * Base URL of the Qelos backend (e.g. https://yourdomain.com).
@@ -15,17 +10,9 @@ export interface QelosNuxtRuntimeConfig {
   appUrl: string;
   /**
    * Static API token used for service-to-service calls. When provided, no
-   * cookie/refresh-token handling is performed.
+   * cookie-based authentication is performed.
    */
   apiToken?: string;
-  /**
-   * Cookie name carrying the Qelos access token. Defaults to `q_access_token`.
-   */
-  accessTokenCookie?: string;
-  /**
-   * Cookie name carrying the Qelos refresh token. Defaults to `q_refresh_token`.
-   */
-  refreshTokenCookie?: string;
   /**
    * Path to mount the server middleware on. Defaults to `''` (every request).
    */
@@ -44,21 +31,12 @@ export interface QelosNuxtRuntimeConfig {
    * Optional extra options merged into the per-request SDK instance.
    */
   sdkOptions?: Partial<QelosSDKOptions>;
+  /**
+   * If true, the catch-all `/api/**` proxy handler is not registered.
+   * Defaults to `false`.
+   */
+  disableProxy?: boolean;
 }
-
-export interface ResolvedTokens {
-  accessToken: string;
-  refreshToken?: string;
-}
-
-export interface TokenRefreshContext {
-  event: import('h3').H3Event;
-  oldTokens: QelosTokenPair;
-  newTokens: ResolvedTokens;
-  sdk: QelosSDK;
-}
-
-export type TokenRefreshHook = (ctx: TokenRefreshContext) => void | Promise<void>;
 
 export interface QelosRequestContext {
   /**
@@ -75,13 +53,11 @@ export interface QelosRequestContext {
    */
   workspaces: IWorkspace[];
   /**
-   * SDK instance bound to the current request's tokens.
+   * SDK instance bound to the current request's cookies. `extraHeaders`
+   * re-reads cookies live on each call, so cookie rotations applied by the
+   * middleware are picked up automatically.
    */
   sdk: QelosSDK;
-  /**
-   * Tokens read from the request. Mutated when a refresh occurs.
-   */
-  tokens: QelosTokenPair;
 }
 
 declare module 'h3' {

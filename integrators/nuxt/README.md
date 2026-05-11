@@ -1,20 +1,20 @@
 # @qelos/integrator-nuxt
 
-Nuxt 3 integrator for [Qelos](https://qelos.io). Adds a server middleware that
-identifies the current user and active workspace via the
-[`@qelos/sdk`](https://www.npmjs.com/package/@qelos/sdk) before your own
-Nitro/Nuxt route handlers run, and exposes them through the H3 event context.
-
-A token-refresh hook keeps the access token fresh: when the SDK detects an
-expired access token, it transparently refreshes it — either through the
-request's refresh token or, for cookie-only sessions, through the access
-cookie itself — and writes the rotated cookie pair back on the response.
+Nuxt 3 integrator for [Qelos](https://qelos.io). It plugs into a Nuxt app's
+Nitro server to make the Nuxt host act as a same-origin BFF for a managed
+Qelos app: requests under `/api/**` are proxied to Qelos, and every other
+request resolves the current user up front so your route handlers and Vue
+components can use them directly.
 
 ## Install
 
 ```bash
 pnpm add @qelos/integrator-nuxt
 ```
+
+> Requires Node 18+ — the middleware uses
+> [`Response.headers.getSetCookie()`](https://developer.mozilla.org/docs/Web/API/Headers/getSetCookie)
+> to pipe individual upstream `Set-Cookie` headers back to the client.
 
 ## Configure
 
@@ -25,8 +25,6 @@ export default defineNuxtConfig({
   qelos: {
     appUrl: 'https://your-qelos-app.com',
     // Optional — defaults shown:
-    accessTokenCookie: 'q_access_token',
-    refreshTokenCookie: 'q_refresh_token',
     requireAuth: false,
     skipPaths: ['/api/_auth', '/health'],
   },
@@ -35,6 +33,83 @@ export default defineNuxtConfig({
 
 You can also override any field at runtime via `NUXT_QELOS_*` env vars (Nuxt
 runtime-config conventions apply).
+
+## API proxy
+
+The module registers a catch-all `/api/**` Nitro server handler that
+transparently proxies any request the consuming Nuxt app does not handle
+itself to the configured Qelos managed-app origin. This lets the Nuxt app
+act as a same-origin BFF: `@qelos/sdk` calls from the browser, server, or
+the Qelos web SDK can all hit `/api/...` on the Nuxt host and reach Qelos
+without CORS or cross-site cookie pain.
+
+User-defined `server/api/*.ts` (and `server/routes/*.ts`) routes still
+take precedence — the proxy only catches requests no other handler matched.
+
+### Cookie domain rewrite
+
+The proxy forwards the incoming `Cookie` header as-is (the Qelos session
+cookie name is treated as opaque) and forwards upstream `Set-Cookie`
+headers back to the client, rewriting the `Domain=` attribute on every
+upstream cookie to the inbound request's own host. That way the session
+cookie set by Qelos is valid on the Nuxt app's domain regardless of which
+host Qelos issues cookies from.
+
+### Resolving the proxy target
+
+The managed Qelos app URL (`qelos.appUrl`) is the proxy target. Env vars are
+only dev-time overrides for when the configured `appUrl` isn't reachable from
+the local host:
+
+1. `NUXT_QELOS_PROXY_TARGET` env var.
+2. `QELOS_IP` env var (dev fallback).
+3. `QELOS_API_IP` env var (dev fallback).
+4. `qelos.appUrl`.
+
+If none of these are set, the handler responds with `503` so misconfiguration
+fails loudly.
+
+### Opting out
+
+Set `qelos.disableProxy: true` in `nuxt.config.ts` to skip registration of
+the proxy handler — useful when the Nuxt app implements every `/api/*`
+route itself or terminates the proxy elsewhere (CDN, reverse proxy, etc.).
+
+WebSocket upgrades are not proxied; route them explicitly if needed.
+
+## Middleware
+
+On every non-`/api/` request, the server middleware identifies the current
+user by calling the managed Qelos app directly:
+
+1. Resolve the upstream origin the same way the `/api/**` proxy does
+   (`NUXT_QELOS_PROXY_TARGET` → `QELOS_IP` → `QELOS_API_IP` →
+   `qelos.appUrl`).
+2. Issue `fetch('${upstream}/api/me')` with the incoming request's `Cookie`
+   header forwarded verbatim — the Qelos session cookie name is opaque to
+   the integrator, so the whole header is piped through unchanged. Any
+   incoming `Authorization` header is forwarded too.
+3. For every `Set-Cookie` header on the upstream response, rewrite the
+   `Domain=` attribute to the inbound request's `Host` (port stripped) and
+   append it to the outgoing response. This is how session rotations from
+   Qelos reach the browser when the managed app and the Nuxt host live on
+   different origins.
+4. On `2xx`, parse the JSON body and expose it as
+   `event.context.qelos.user`. On any other status (or a network error),
+   leave `user = null` — and respond with `401` if `qelos.requireAuth` is
+   set.
+
+The middleware is independent from the `/api/**` proxy: the proxy handles
+forwarding of API calls themselves, while the middleware identifies the
+user on every page/non-API request before your route handlers run. To
+avoid double-hitting Qelos for `/api/me` (once for proxying, once for user
+resolution), the module adds `/api/` to `skipPaths` automatically when the
+proxy is enabled.
+
+> The middleware does not attempt to strip the `Secure` attribute from
+> rotated cookies. In local dev over plain HTTP, browsers will drop
+> `Secure` cookies — configure the managed Qelos app to issue non-`Secure`
+> cookies in that environment, or run the Nuxt host over HTTPS.
 
 ## Use in server routes
 
@@ -76,13 +151,16 @@ export default defineEventHandler((event) => {
 
 `event.context.qelos` is typed as `QelosRequestContext`:
 
-| field        | description                                                |
-|--------------|------------------------------------------------------------|
-| `user`       | `IUser` from `@qelos/sdk` or `null` when anonymous.         |
-| `workspace`  | The active `IWorkspace` for the request, or `null`.         |
-| `workspaces` | All workspaces the user has access to.                      |
-| `sdk`        | A request-scoped `QelosSDK` instance bound to the tokens.   |
-| `tokens`     | The current access/refresh token pair (mutated on refresh). |
+| field        | description                                                      |
+|--------------|------------------------------------------------------------------|
+| `user`       | The `IUser` body returned by `/api/me`, or `null` when anonymous. |
+| `workspace`  | The active `IWorkspace` for the request, or `null`.               |
+| `workspaces` | All workspaces the user has access to.                            |
+| `sdk`        | A request-scoped `QelosSDK` instance bound to the live cookies.   |
+
+The `sdk` reads cookies from the current `H3Event` on every call, so any
+session rotation piped through by the middleware is picked up automatically
+by subsequent SDK requests in the same handler.
 
 ## Use in components / pages
 
@@ -104,7 +182,7 @@ const { user, workspace, workspaces, isAuthenticated } = useQelos();
 ```
 
 For data calls from the browser, prefer hitting your own server routes (so
-refresh-token rotation stays on the server):
+session cookies stay on the server):
 
 ```vue
 <script setup lang="ts">
@@ -117,41 +195,18 @@ If you need direct browser access to the Qelos API, use
 server-side SDK in this package is bound to per-request cookies and isn't
 intended for client use.
 
-## Token refresh
+## Workspace resolution
 
-When the access token is rejected, the SDK tries to recover, in order:
+`event.context.qelos.workspace` defaults to whatever the managed Qelos app
+reports on `user.workspace` from `/api/me`. That field is non-null only when
+the user has already activated a workspace on the Qelos side; when it is
+`null`, the frontend is expected to prompt the user to either activate an
+existing workspace or create a new one. The middleware deliberately does
+**not** auto-pick `workspaces[0]` — that would silently put the user into
+the wrong workspace.
 
-1. The **refresh token** (`q_refresh_token`) via
-   `sdk.authentication.refreshToken()` — issues a new access + refresh pair.
-2. The **cookie token** (the access token cookie itself) via
-   `sdk.authentication.refreshCookieToken()` — used for cookie-only sessions
-   that do not carry a separate refresh token (e.g. social-auth flows).
-
-After a successful refresh the middleware fires the `onTokenRefresh` hook.
-The default implementation writes the new tokens back to the response cookies
-(`HttpOnly`, `SameSite=Lax`).
-
-### Manual cookie refresh
-
-Long-lived integrator-hosted sessions can also call the SDK directly to
-proactively refresh the cookie token, e.g. from a Nitro route handler:
-
-```ts
-// server/api/session/refresh.post.ts
-import { defineQelosEventHandler } from '@qelos/integrator-nuxt';
-
-export default defineQelosEventHandler(async ({ qelos }) => {
-  const result = await qelos.sdk.authentication.refreshCookieToken();
-  // result.headers['set-cookie'] — fresh cookie value to forward
-  return { user: result.payload.user };
-});
-```
-
-## Custom workspace resolution / refresh hook
-
-If the default behavior (first workspace from `sdk.workspaces.getList()` and a
-cookie-based refresh writeback) doesn't fit your app, register your own
-middleware instead of (or in addition to) the module's default handler:
+To override the default (e.g. force a particular workspace per request),
+register your own middleware:
 
 ```ts
 // server/middleware/qelos.ts
@@ -160,12 +215,9 @@ import { createQelosMiddleware } from '@qelos/integrator-nuxt';
 export default createQelosMiddleware({
   config: useRuntimeConfig().qelos,
   resolveWorkspace: ({ user, workspaces }) =>
-    workspaces.find(w => w._id === user.metadata?.activeWorkspace) || workspaces[0] || null,
-  onTokenRefresh: async ({ event, newTokens }) => {
-    // your own persistence — DB, signed cookie, KV, etc.
-    setCookie(event, 'q_access_token', newTokens.accessToken, { httpOnly: true });
-    setCookie(event, 'q_refresh_token', newTokens.refreshToken, { httpOnly: true });
-  },
+    workspaces.find(w => w._id === user.metadata?.activeWorkspace)
+      || user.workspace
+      || null,
 });
 ```
 
@@ -175,7 +227,8 @@ in `nuxt.config.ts`.
 ## API token mode
 
 For service-to-service deployments where every request shares one Qelos API
-token, set `apiToken` and the middleware will skip the cookie/refresh flow:
+token, set `apiToken` and the middleware will skip the cookie flow entirely
+and build an SDK that authenticates with the static token:
 
 ```ts
 qelos: {
