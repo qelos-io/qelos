@@ -228,6 +228,7 @@ export default defineConfig({
           { text: 'Plugin Lifecycle', link: '/plugins/lifecycle' },
           { text: 'Deploy your Plugin', link: '/plugins/deploy' },
           { text: 'Hooks and Events', link: '/plugins/hooks' },
+          { text: 'Proxy Workflow', link: '/plugins/proxy-workflow' },
           { text: 'API Proxy', link: '/plugins/api-proxy' },
           { text: 'Micro-Frontend', link: '/plugins/micro-frontend' },
           { text: 'Pre-Designed Frontends', link: '/plugins/pre-designed-frontends' },
