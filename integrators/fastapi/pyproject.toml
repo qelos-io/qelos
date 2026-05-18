@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qelos-integrator-fastapi"
-version = "4.0.0"
+version = "4.0.1"
 description = "FastAPI integrator for Qelos: middleware that identifies the user and active workspace from the Qelos SDK before your handlers run"
 readme = "README.md"
 license = { text = "MIT" }

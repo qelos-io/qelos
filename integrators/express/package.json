@@ -1,6 +1,6 @@
 {
   "name": "@qelos/integrator-express",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Express middleware that identifies the Qelos user and active workspace before your route handlers run",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
