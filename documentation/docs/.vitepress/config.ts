@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress'
+import llmstxt, { copyOrDownloadAsMarkdownButtons } from 'vitepress-plugin-llms'
 
 export default defineConfig({
   title: 'Qelos',
@@ -13,6 +14,22 @@ export default defineConfig({
     ['meta', { name: 'og:title', content: 'Qelos Documentation' }],
     ['meta', { name: 'og:description', content: 'Build AI Agents & SaaS Applications With Visual Builders' }],
   ],
+  vite: {
+    plugins: [
+      llmstxt({
+        title: 'Qelos',
+        description: 'AI-First Application Layer Gateway — build AI Agents & SaaS Applications With Visual Builders',
+        ignoreFiles: [
+          'public/**',
+        ],
+      }),
+    ],
+  },
+  markdown: {
+    config(md) {
+      md.use(copyOrDownloadAsMarkdownButtons)
+    },
+  },
   themeConfig: {
     siteTitle: false,
     logo: '/qelos-hq.png',

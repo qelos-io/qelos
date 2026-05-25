@@ -12,6 +12,7 @@
   "license": "MIT",
   "devDependencies": {
     "vitepress": "^2.0.0-alpha.16",
+    "vitepress-plugin-llms": "^1.13.0",
     "vue": "^3.5.29"
   },
   "type": "module"
