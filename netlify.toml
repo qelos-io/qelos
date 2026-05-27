@@ -1,0 +1,9 @@
+[build]
+  base = "documentation"
+  command = "pnpm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  PNPM_VERSION = "11.1.2"
+  NPM_FLAGS = "--version"
