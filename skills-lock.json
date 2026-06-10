@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "product-handover": {
+      "source": "/Users/davidmeirlevy/dev/qelos/product-skills",
+      "sourceType": "local",
+      "computedHash": "2e587da07bbf2f2d77ee8a9f173584c63cc705db20386ff1a0a535b6db097e7f"
+    }
+  }
+}
