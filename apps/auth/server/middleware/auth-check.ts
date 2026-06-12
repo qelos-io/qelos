@@ -17,7 +17,8 @@ export const onlyAuthenticated = <RequestHandler>function onlyAuthenticated(req:
 }
 
 export const onlyPrivileged = <RequestHandler>function onlyPrivileged(req: AuthRequest, res: Response, next: NextFunction) {
-  if (!(req.userPayload && req.userPayload.isPrivileged)) {
+  const isPrivileged = !!(req.userPayload?.isPrivileged || req.originalUserPayload?.isPrivileged);
+  if (!(req.userPayload && isPrivileged)) {
     const message = req.userPayload ? 'you are not privileged.' : 'you are not authorized. must be logged in.';
     res.status(401).json({ message }).end();
     if (showLogs) {
