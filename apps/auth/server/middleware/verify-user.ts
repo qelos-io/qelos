@@ -18,6 +18,12 @@ import { cacheManager } from '../services/cache-manager';
 import { getRequestHost } from '../services/req-host';
 import logger from '../services/logger';
 import { authenticateByApiToken } from '../services/api-tokens';
+import {
+  applyTenantImpersonation,
+  getImpersonatedTenant,
+  resolveAuthTenant,
+  shouldApplyTenantImpersonation,
+} from '../services/tenant-impersonation';
 
 function syncTenantHeaderFromPayload(req: AuthRequest, payload: { tenant?: unknown }): void {
   const t = payload?.tenant;
@@ -31,7 +37,8 @@ function oAuthVerify(req: AuthRequest, res: Response, next: NextFunction): Promi
   const tokenHeader = req.headers.authorization || req.headers.Authorization
 
   const token = tokenHeader!.split(' ')[1];
-  const tenant = (req.headers.tenant = req.headers.tenant as string || '0');
+  const impersonatedTenant = getImpersonatedTenant(req);
+  const tenant = (req.headers.tenant = resolveAuthTenant(req.headers.tenant, basicTenant, impersonatedTenant));
 
   return verifyToken(token, tenant)
     .then((payload) => {
@@ -48,7 +55,8 @@ function oAuthVerify(req: AuthRequest, res: Response, next: NextFunction): Promi
 }
 
 async function cookieVerify(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-  const tenant = (req.headers.tenant = req.headers.tenant as string || '0');
+  const impersonatedTenant = getImpersonatedTenant(req);
+  const tenant = (req.headers.tenant = resolveAuthTenant(req.headers.tenant, basicTenant, impersonatedTenant));
   const token = getCookieTokenValue(req);
 
   if (!token) {
@@ -159,7 +167,8 @@ async function tryAcquireRefreshLock(tokenIdentifier: string): Promise<boolean> 
 
 async function apiKeyVerify(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   const apiKey = req.headers['x-api-key'] as string;
-  const tenant = (req.headers.tenant = req.headers.tenant as string || '0');
+  const impersonatedTenant = getImpersonatedTenant(req);
+  const tenant = (req.headers.tenant = resolveAuthTenant(req.headers.tenant, basicTenant, impersonatedTenant));
 
   try {
     const result = await authenticateByApiToken(tenant, apiKey);
@@ -204,12 +213,10 @@ function setUserPayload(payload: any, req: AuthRequest, res: Response, next: Nex
   });
   req.activeWorkspace = payload.workspace;
 
-  if (req.headers.tenant === basicTenant && req.userPayload.isPrivileged &&(req.get('x-impersonate-tenant') || req.query.impersonateTenant)) {
-    const impersonatedTenant = req.get('x-impersonate-tenant') || req.query.impersonateTenant?.toString();
+  const impersonatedTenant = getImpersonatedTenant(req);
+  if (shouldApplyTenantImpersonation(payload.tenant, basicTenant, req.userPayload.isPrivileged, impersonatedTenant)) {
     logger.log('impersonating tenant', impersonatedTenant);
-    req.headers.tenant = impersonatedTenant;
-    res.set('x-qelos-tenant', impersonatedTenant);
-    req.userPayload.tenant = impersonatedTenant;
+    applyTenantImpersonation(req, res, impersonatedTenant!);
   }
 
   next();
