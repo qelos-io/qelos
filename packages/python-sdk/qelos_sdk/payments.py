@@ -25,21 +25,25 @@ class QlPayments(BaseSDK):
         """Get a plan by ID."""
         return await self.call_json_api(f"{self._relative_path}/plans/{plan_id}")
 
-    async def checkout(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def checkout(self, params: Dict[str, Any], *, amount: Optional[float] = None) -> Dict[str, Any]:
         """Create a checkout session.
 
         Args:
             params: Dict with ``planId``, ``billingCycle``, and optional
                 ``couponCode``, ``successUrl``, ``cancelUrl``.
+            amount: Required for dynamic plans; the caller-supplied price to charge.
 
         Returns:
             Dict with ``subscriptionId`` and optional ``checkoutUrl``, ``clientToken``.
         """
+        payload = dict(params)
+        if amount is not None:
+            payload["amount"] = amount
         return await self.call_json_api(
             f"{self._relative_path}/checkout",
             method="POST",
             headers={"content-type": "application/json"},
-            body=json.dumps(params),
+            body=json.dumps(payload),
         )
 
     async def get_my_subscription(self) -> Dict[str, Any]:
