@@ -13,6 +13,7 @@ export interface InitiateCheckoutParams {
   couponCode?: string;
   successUrl?: string;
   cancelUrl?: string;
+  amount?: number;
 }
 
 export function calculateDiscountedPrice(
@@ -34,7 +35,19 @@ export async function initiateCheckout(tenant: string, params: InitiateCheckoutP
     throw { code: 'PLAN_NOT_ACTIVE', message: 'This plan is not currently available' };
   }
 
-  const basePrice = params.billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
+  if (plan.dynamic) {
+    const amount = params.amount;
+    if (
+      amount == null
+      || typeof amount !== 'number'
+      || !Number.isFinite(amount)
+      || amount <= 0
+    ) {
+      throw { code: 'AMOUNT_REQUIRED', message: 'amount must be a positive number for dynamic plans' };
+    }
+  }
+
+  const basePrice = plan.dynamic ? params.amount! : (params.billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice);
 
   let coupon: any = null;
   let finalPrice = basePrice;
@@ -53,6 +66,13 @@ export async function initiateCheckout(tenant: string, params: InitiateCheckoutP
   }
 
   const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
+
+  if (plan.dynamic && config.providerKind !== 'sumit') {
+    throw {
+      code: 'DYNAMIC_PLAN_UNSUPPORTED_PROVIDER',
+      message: 'Dynamic pricing plans require the Sumit payment provider (Paddle/PayPal use fixed catalog prices).',
+    };
+  }
 
   const successUrl = params.successUrl || config.successUrl;
   const cancelUrl = params.cancelUrl || config.cancelUrl;

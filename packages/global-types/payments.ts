@@ -49,6 +49,13 @@ export interface IPlan {
   isActive: boolean;
   /** Controls display order — lower numbers appear first. */
   sortOrder: number;
+  /**
+   * When `true`, the price is not fixed — it is calculated at checkout time
+   * (e.g. per-user, per-item, or otherwise variable). `monthlyPrice` /
+   * `yearlyPrice` are ignored for dynamic plans; the caller must supply an
+   * `amount` at checkout instead.
+   */
+  dynamic?: boolean;
   limits?: IPlanLimits;
   externalIds?: IPlanExternalIds;
   metadata?: Record<string, any>;

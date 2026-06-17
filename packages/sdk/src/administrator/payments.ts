@@ -2,8 +2,27 @@ import { QelosSDKOptions } from '../types';
 import BaseSDK from '../base-sdk';
 import {
   IPlan, ISubscription, IInvoice, ICoupon,
-  BillableEntityType, SubscriptionStatus, InvoiceStatus,
+  BillableEntityType, SubscriptionStatus, InvoiceStatus, BillingCycle,
 } from '@qelos/global-types';
+
+export interface AdminCheckoutRequest {
+  planId: string;
+  billingCycle: BillingCycle;
+  /** When omitted, the authenticated user / default billable entity is used (same as public checkout). */
+  billableEntityType?: BillableEntityType;
+  billableEntityId?: string;
+  couponCode?: string;
+  successUrl?: string;
+  cancelUrl?: string;
+  /** Required when the plan has `dynamic: true` — the amount to charge for this checkout. */
+  amount?: number;
+}
+
+export interface AdminCheckoutResponse {
+  subscriptionId: string;
+  checkoutUrl?: string;
+  clientToken?: string;
+}
 
 export default class QlPaymentsAdmin extends BaseSDK {
   constructor(private options: QelosSDKOptions) {
@@ -39,6 +58,18 @@ export default class QlPaymentsAdmin extends BaseSDK {
 
   deletePlan(planId: string) {
     return this.callJsonApi<IPlan>(`/api/plans/${planId}`, { method: 'delete' });
+  }
+
+  /**
+   * Start subscription checkout (same as `sdk.payments.checkout`, plus optional billable-entity overrides for admins).
+   * For plans with `dynamic: true`, `amount` is required.
+   */
+  checkout(params: AdminCheckoutRequest) {
+    return this.callJsonApi<AdminCheckoutResponse>('/api/checkout', {
+      method: 'post',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(params),
+    });
   }
 
   // --- Subscriptions ---

@@ -145,6 +145,7 @@ describe('checkout controller', () => {
           couponCode: 'SAVE20',
           successUrl: 'https://example.com/ok',
           cancelUrl: 'https://example.com/cancel',
+          amount: 199,
         },
       });
       const res = mockRes();
@@ -156,8 +157,29 @@ describe('checkout controller', () => {
           couponCode: 'SAVE20',
           successUrl: 'https://example.com/ok',
           cancelUrl: 'https://example.com/cancel',
+          amount: 199,
         }),
       );
+    });
+
+    it('should return 400 for AMOUNT_REQUIRED', async () => {
+      MockCheckoutService.initiateCheckout.mockRejectedValue({ code: 'AMOUNT_REQUIRED' });
+
+      const req = mockReq({ body: { planId: 'plan-1', billingCycle: 'monthly' } });
+      const res = mockRes();
+      await CheckoutController.initiateCheckout(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it('should return 400 for DYNAMIC_PLAN_UNSUPPORTED_PROVIDER', async () => {
+      MockCheckoutService.initiateCheckout.mockRejectedValue({ code: 'DYNAMIC_PLAN_UNSUPPORTED_PROVIDER' });
+
+      const req = mockReq({ body: { planId: 'plan-1', billingCycle: 'monthly', amount: 10 } });
+      const res = mockRes();
+      await CheckoutController.initiateCheckout(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
     });
 
     it('should return 404 for PLAN_NOT_FOUND', async () => {

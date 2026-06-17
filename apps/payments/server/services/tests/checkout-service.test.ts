@@ -251,6 +251,51 @@ describe('checkout-service', async () => {
       assert.strictEqual(checkoutArgs.successUrl, 'https://custom.example.com/done');
       assert.strictEqual(checkoutArgs.cancelUrl, 'https://custom.example.com/back');
     });
+
+    it('should throw AMOUNT_REQUIRED when dynamic plan has no amount', async () => {
+      getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
+
+      await assert.rejects(() => CheckoutService.initiateCheckout('tenant-1', defaultParams), (e: any) => {
+        assert.strictEqual(e.code, 'AMOUNT_REQUIRED');
+        return true;
+      });
+    });
+
+    it('should throw AMOUNT_REQUIRED when dynamic plan amount is not positive', async () => {
+      getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
+
+      await assert.rejects(
+        () => CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, amount: 0 }),
+        (e: any) => {
+          assert.strictEqual(e.code, 'AMOUNT_REQUIRED');
+          return true;
+        },
+      );
+    });
+
+    it('should throw DYNAMIC_PLAN_UNSUPPORTED_PROVIDER for dynamic plan with Paddle', async () => {
+      getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
+
+      await assert.rejects(
+        () => CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, amount: 50 }),
+        (e: any) => {
+          assert.strictEqual(e.code, 'DYNAMIC_PLAN_UNSUPPORTED_PROVIDER');
+          return true;
+        },
+      );
+    });
+
+    it('should use caller amount for dynamic plan with Sumit provider', async () => {
+      getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
+      getPaymentsConfigurationMock.mock.mockImplementation(async () => ({
+        ...mockConfig,
+        providerKind: 'sumit',
+      }));
+
+      await CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, amount: 42 });
+
+      assert.strictEqual(createCheckoutMock.mock.calls[0].arguments[3].amount, 42);
+    });
   });
 
   describe('activateSubscription', () => {

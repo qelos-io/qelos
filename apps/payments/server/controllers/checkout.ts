@@ -18,6 +18,7 @@ export async function initiateCheckout(req, res: Response) {
       couponCode,
       successUrl,
       cancelUrl,
+      amount,
     } = req.body;
 
     if (!planId || !billingCycle) {
@@ -46,6 +47,7 @@ export async function initiateCheckout(req, res: Response) {
       couponCode,
       successUrl,
       cancelUrl,
+      amount,
     });
 
     res.status(200).json(result).end();
@@ -53,6 +55,8 @@ export async function initiateCheckout(req, res: Response) {
     const statusMap: Record<string, number> = {
       PLAN_NOT_FOUND: 404,
       PLAN_NOT_ACTIVE: 400,
+      AMOUNT_REQUIRED: 400,
+      DYNAMIC_PLAN_UNSUPPORTED_PROVIDER: 400,
       ACTIVE_SUBSCRIPTION_EXISTS: 409,
       PAYMENTS_NOT_CONFIGURED: 500,
       MISSING_EXTERNAL_PRICE_ID: 400,
