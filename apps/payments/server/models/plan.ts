@@ -11,6 +11,7 @@ export interface PlanDocument extends Document {
   currency: string;
   isActive: boolean;
   sortOrder: number;
+  dynamic: boolean;
   limits: Record<string, any>;
   externalIds: Record<string, any>;
   metadata: Record<string, any>;
@@ -52,6 +53,10 @@ const PlanSchema = new mongoose.Schema<any, any>({
   isActive: {
     type: Boolean,
     default: true,
+  },
+  dynamic: {
+    type: Boolean,
+    default: false,
   },
   sortOrder: {
     type: Number,
