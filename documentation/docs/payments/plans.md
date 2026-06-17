@@ -20,6 +20,7 @@ Plans define the pricing tiers available to your users or workspaces. Each plan 
 | `sortOrder` | `number` | Display order (lower first) |
 | `limits` | `object` | Optional key-value usage limits |
 | `externalIds` | `object` | Provider-specific product/price IDs |
+| `dynamic` | `boolean` | If `true`, the plan has no fixed price — amount must be provided at checkout time |
 | `metadata` | `object` | Arbitrary metadata |
 
 ## API Endpoints
@@ -132,6 +133,24 @@ await adminSdk.managePayments.updatePlan('plan-id', {
 // Deactivate a plan
 await adminSdk.managePayments.deletePlan('plan-id');
 ```
+
+## Dynamic Pricing Plans
+
+Some plans do not have a fixed price. These are called **dynamic plans** — the amount is calculated at checkout time based on factors like number of users, items, or custom billing logic.
+
+To create a dynamic plan, set `dynamic: true`. When `dynamic` is enabled, `monthlyPrice` and `yearlyPrice` are ignored and do not need to be set.
+
+```json
+{
+  "name": "Enterprise",
+  "features": ["Unlimited seats", "Custom SLA"],
+  "dynamic": true,
+  "currency": "USD",
+  "isActive": true
+}
+```
+
+When checking out a dynamic plan, the `amount` field becomes **required** in the checkout request — see the [Checkout](./checkout.md) docs.
 
 ## External IDs
 

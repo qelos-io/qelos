@@ -33,6 +33,7 @@ POST /api/checkout
   "planId": "plan-id",
   "billingCycle": "monthly",
   "couponCode": "SAVE20",
+  "amount": 150,
   "successUrl": "https://your-app.com/billing/success",
   "cancelUrl": "https://your-app.com/billing"
 }
@@ -43,6 +44,7 @@ POST /api/checkout
 | `planId` | `string` | Yes | ID of the plan to subscribe to |
 | `billingCycle` | `"monthly"` \| `"yearly"` | Yes | Billing interval |
 | `couponCode` | `string` | No | Discount coupon code |
+| `amount` | `number` | Conditional | Required when the plan is `dynamic: true` — the amount to charge in the plan's currency |
 | `successUrl` | `string` | No | Redirect URL after successful payment |
 | `cancelUrl` | `string` | No | Redirect URL if user cancels |
 
@@ -65,6 +67,7 @@ POST /api/checkout
 | `ACTIVE_SUBSCRIPTION_EXISTS` | 409 | User/workspace already has an active subscription |
 | `PAYMENTS_NOT_CONFIGURED` | 500 | No payment provider configured |
 | `MISSING_EXTERNAL_PRICE_ID` | 400 | Plan lacks provider-specific price IDs |
+| `AMOUNT_REQUIRED` | 400 | Plan is dynamic but no `amount` was provided |
 | `COUPON_*` | 400 | Various coupon validation errors |
 
 ## Webhooks
@@ -112,11 +115,18 @@ All webhook events are tracked by their external event ID. Duplicate events are 
 ## SDK Usage
 
 ```typescript
-// Start checkout
+// Start checkout (static plan)
 const { checkoutUrl } = await sdk.payments.checkout({
   planId: 'plan-pro',
   billingCycle: 'yearly',
   couponCode: 'WELCOME',
+});
+
+// Start checkout (dynamic plan — amount is required)
+const { checkoutUrl } = await sdk.payments.checkout({
+  planId: 'plan-enterprise',
+  billingCycle: 'monthly',
+  amount: 250, // calculated based on seat count, usage, etc.
 });
 
 // Redirect user
