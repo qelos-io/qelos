@@ -47,15 +47,17 @@ qplay create my-app
 
 ### Pull
 
-Pull resources from your Qelos instance to your local filesystem. This allows you to work on components, blueprints, configs, plugins, blocks, integrations, and connections locally.
+Pull resources from your Qelos instance to your local filesystem. This allows you to work on components, blueprints, configs, plugins, blocks, integrations, connections, and pricing plans locally.
 
 **Syntax:**
 ```bash
 qelos pull <type> <path>
 ```
 
+**Supported types:** `components`, `blueprints`, `configs`, `plugins`, `blocks`, `integrations`, `connections`, `pricing-plans`
+
 **Arguments:**
-- `type` - Type of resource to pull (e.g., `components`, `plugins`, `integrations`, `connections`, `blueprints`)
+- `type` - Type of resource to pull
 - `path` - Local directory path where resources will be saved
 
 **Example - Pull Components:**
@@ -80,17 +82,26 @@ Pulled component: sidebar-component
 All 5 components pulled to ./my-components
 ```
 
+**Example - Pull Pricing Plans:**
+```bash
+qelos pull pricing-plans ./pricing-plans
+```
+
+Each plan is saved as `{slugified-name}.pricing-plan.json`. Server-only fields (`tenant`, `created`) are stripped automatically.
+
 ### Push
 
-Push local resources to your Qelos instance. This allows you to update or create components, blueprints, configs, plugins, blocks, integrations, and connections from your local filesystem.
+Push local resources to your Qelos instance. This allows you to update or create components, blueprints, configs, plugins, blocks, integrations, connections, and pricing plans from your local filesystem.
 
 **Syntax:**
 ```bash
 qelos push <type> <path>
 ```
 
+**Supported types:** `components`, `blueprints`, `configs`, `plugins`, `blocks`, `integrations`, `connections`, `pricing-plans`
+
 **Arguments:**
-- `type` - Type of resource to push (e.g., `components`, `plugins`, `integrations`, `connections`, `blueprints`)
+- `type` - Type of resource to push
 - `path` - Local directory path containing the resources to push
 
 **Example - Push Components:**
@@ -113,6 +124,61 @@ Component updated: header-component
 Pushing component: new-component
 Component pushed: new-component
 All components pushed
+```
+
+**Example - Push Pricing Plans:**
+```bash
+qelos push pricing-plans ./pricing-plans
+```
+
+- Files with `_id` → plan is **updated** via `updatePlan`
+- Files without `_id` → plan is **created** via `createPlan`
+- Use `--hard` to also delete remote plans that have no corresponding local file
+
+### Pricing Plans
+
+Manage your Qelos pricing plans as version-controlled JSON files.
+
+**File format:** `{slugified-name}.pricing-plan.json`
+
+```json
+{
+  "_id": "66f1a2b3c4d5e6f7a8b9c0d1",
+  "name": "Pro",
+  "description": "For growing teams",
+  "features": ["Unlimited projects", "Priority support"],
+  "monthlyPrice": 29,
+  "yearlyPrice": 290,
+  "currency": "USD",
+  "isActive": true,
+  "sortOrder": 2,
+  "dynamic": false,
+  "limits": { "seats": 10 },
+  "externalIds": {},
+  "metadata": {}
+}
+```
+
+**Fields:**
+- `_id` — Server-assigned identifier. Keep this in the file so pushes update the correct plan. Omit it to create a new plan.
+- `name` — Required. Display name used as the basis for the file name.
+- `tenant`, `created` — Server-only fields, stripped automatically on pull.
+
+**Typical workflow:**
+```bash
+# 1. Pull existing plans
+qelos pull pricing-plans ./pricing-plans
+
+# 2. Edit or create plan files locally
+
+# 3. Push changes
+qelos push pricing-plans ./pricing-plans
+
+# 4. Re-pull to get server-assigned _id for newly created plans
+qelos pull pricing-plans ./pricing-plans
+
+# 5. Hard push — removes remote plans not present locally (prompts for confirmation)
+qelos push pricing-plans ./pricing-plans --hard
 ```
 
 ### Agent
