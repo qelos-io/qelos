@@ -30,6 +30,7 @@ Currently supported resource types:
 - **blocks** - Pre-designed frontend blocks
 - **integrations** / **integration** - Workflow or agent integrations (stored as `.integration.json`)
 - **connections** / **connection** - Integration sources (stored as `.connection.json`)
+- **pricing-plans** / **pricing-plan** - Pricing plan definitions (stored as `.pricing-plan.json`)
 - **committed** - Push all files from the last git commit
 - **staged** - Push all staged git files
 - **all** / **\*** - Push all resource types from organized subdirectories
@@ -143,6 +144,30 @@ Pushing blocks from ./my-blocks
 ℹ Pushed 3 block(s)
 ✓ Successfully pushed blocks
 ```
+
+### Push Pricing Plans
+
+```bash
+qelos push pricing-plans ./pricing-plans
+```
+
+**Output:**
+```
+Pushing pricing-plans from ./pricing-plans
+ℹ Found 3 plan(s) to push
+→ Pushing plan: Starter
+✓ Updated: Starter
+→ Pushing plan: Pro
+✓ Updated: Pro
+→ Pushing plan: Enterprise
+✓ Created: Enterprise
+ℹ Pushed 3 plan(s)
+✓ Successfully pushed pricing-plans
+```
+
+- Files **with** `_id` → plan is **updated** via `updatePlan`
+- Files **without** `_id` → plan is **created** via `createPlan`; re-pull afterwards to persist the assigned `_id`
+- Use `--hard` to also delete remote plans that have no corresponding local file
 
 ### Push All Resources
 
@@ -653,7 +678,7 @@ The `--hard` flag synchronizes your Qelos environment with your local repository
 4. Pushing local changes first
 5. Removing excess remote resources
 
-**Only available for**: `components`, `blueprints`, `plugins`, `integrations`, `all`, `*`
+**Only available for**: `components`, `blueprints`, `plugins`, `integrations`, `pricing-plans`, `all`, `*`
 **Only works with**: Directories (not single files)
 
 ```bash
@@ -846,12 +871,14 @@ Before pushing, ensure:
   - Plugin directories with proper structure
   - `.integration.json` for integrations
   - `.connection.json` for connections
+  - `.pricing-plan.json` for pricing plans
 - ✅ File names match the required pattern:
   - Components: `{identifier}.vue`
   - Blueprints: `{identifier}.blueprint.json`
   - Configurations: `{key}.config.json`
   - Blocks: `{identifier}.vue`
   - Plugins: Directory structure with `plugin.json`
+  - Pricing Plans: `{slugified-name}.pricing-plan.json`
 - ✅ JSON files are valid and properly formatted
 - ✅ Required fields are present (identifier, key, etc.)
 - ✅ You're connected to the correct Qelos instance

@@ -23,6 +23,7 @@ The `--hard` flag only works with the following resource types:
 - `blueprints` - Blueprint definitions
 - `plugins` - Plugin configurations
 - `integrations` - Integration configurations
+- `pricing-plans` - Pricing plan definitions
 - `all` or `*` - All supported types
 
 ## Requirements
@@ -154,6 +155,7 @@ Check network connection and permissions. The resource might be in use by other 
 - **Blueprints**: Identified by filename (without .blueprint.json extension)
 - **Plugins**: Identified by the `key` field in the JSON
 - **Integrations**: Identified by the `identifier` field in the JSON
+- **Pricing Plans**: Identified by the `_id` field in the JSON
 
 ### Environment Variables
 The command uses `QELOS_HARD_PUSH_REMOVE` internally to track resources to be removed after the push completes.
