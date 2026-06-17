@@ -27,17 +27,22 @@ const form = reactive({
   isActive: true,
   sortOrder: 0,
   limits: [] as Array<{ key: string; value: string }>,
+  dynamic: false,
 });
 
 const newFeature = ref('');
 const newLimitKey = ref('');
 const newLimitValue = ref('');
 
-const rules = reactive<FormRules>({
+const rules = computed<FormRules>(() => ({
   name: [{ required: true, message: t('Plan name is required'), trigger: 'blur' }],
-  monthlyPrice: [{ required: true, message: t('Monthly price is required'), trigger: 'blur' }],
-  yearlyPrice: [{ required: true, message: t('Yearly price is required'), trigger: 'blur' }],
-});
+  ...(form.dynamic
+    ? {}
+    : {
+        monthlyPrice: [{ required: true, message: t('Monthly price is required'), trigger: 'blur' }],
+        yearlyPrice: [{ required: true, message: t('Yearly price is required'), trigger: 'blur' }],
+      }),
+}));
 
 const currencies = ['USD', 'EUR', 'GBP', 'ILS', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL'];
 
@@ -54,6 +59,7 @@ onMounted(async () => {
       form.currency = plan.currency || 'USD';
       form.isActive = plan.isActive;
       form.sortOrder = plan.sortOrder || 0;
+      form.dynamic = plan.dynamic ?? false;
       form.limits = Object.entries(plan.limits || {}).map(([key, value]) => ({
         key,
         value: String(value),
@@ -113,6 +119,7 @@ async function submit() {
     isActive: form.isActive,
     sortOrder: form.sortOrder,
     limits: limitsObj,
+    dynamic: form.dynamic,
   };
 
   try {
@@ -190,13 +197,20 @@ const planPreview = computed(() => ({
               <span>{{ t('Pricing') }}</span>
             </template>
 
+            <el-form-item :label="t('Dynamic Pricing')">
+              <el-switch v-model="form.dynamic" :active-text="t('Enabled')" :inactive-text="t('Disabled')" />
+              <div v-if="form.dynamic" class="dynamic-hint">
+                {{ t('The amount will be calculated at payment time') }}
+              </div>
+            </el-form-item>
+
             <el-form-item :label="t('Currency')">
               <el-select v-model="form.currency" style="width: 160px">
                 <el-option v-for="c in currencies" :key="c" :label="c" :value="c" />
               </el-select>
             </el-form-item>
 
-            <el-row :gutter="16">
+            <el-row v-if="!form.dynamic" :gutter="16">
               <el-col :span="12">
                 <el-form-item :label="t('Monthly Price')" prop="monthlyPrice">
                   <el-input-number
@@ -364,6 +378,12 @@ const planPreview = computed(() => ({
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.dynamic-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .form-actions {
