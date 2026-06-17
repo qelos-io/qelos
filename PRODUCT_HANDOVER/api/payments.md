@@ -5,8 +5,8 @@ Subscription plans, checkout, coupons, invoices, and payment provider webhooks.
 ## What Users Can Do
 
 - **Browse plans**: View public plan catalog for pricing/signup pages
-- **Manage plans (admin)**: Create, update, deactivate subscription tiers
-- **Start checkout**: Provider-hosted checkout for monthly/yearly subscriptions with coupons
+- **Manage plans (admin)**: Create, update, deactivate subscription tiers — including dynamic pricing plans where the charge amount is set at checkout time
+- **Start checkout**: Provider-hosted checkout for monthly/yearly subscriptions with coupons; dynamic plans require a caller-supplied amount
 - **Manage subscriptions**: View, cancel own subscription or admin-manage all
 - **View invoices**: List and retrieve billing records
 - **Manage coupons (admin)**: Create percentage or fixed discount codes
@@ -25,8 +25,10 @@ Retrieve plan details.
 ### POST /api/plans
 Admin create plan (prices, features, limits, provider IDs).
 
+**New field**: `dynamic` (boolean, default `false`) — marks the plan as variable-price. When `true`, `monthlyPrice` and `yearlyPrice` are ignored; the checkout caller must supply `amount` instead.
+
 ### PUT /api/plans/:planId
-Admin update plan.
+Admin update plan. Supports updating `dynamic`.
 
 ### DELETE /api/plans/:planId
 Soft-deactivate plan.
@@ -51,9 +53,13 @@ Cancel subscription record.
 ## Checkout Endpoints
 
 ### POST /api/checkout
-Start provider checkout; returns checkout URL.
+Start provider checkout; returns checkout URL. Authenticated callers only (end users or admins using the same route).
 
-**Request**: planId, billingCycle (monthly/yearly), optional couponCode
+**Request**: `planId`, `billingCycle` (monthly/yearly), optional `couponCode`, optional `successUrl`/`cancelUrl`, optional `billableEntityType` / `billableEntityId` (when an admin or integration needs to start checkout for a specific user or workspace).
+
+**`amount` (number)**: Required when the plan has `dynamic: true`. Must be a **positive** finite number. Ignored for fixed-price plans (those use `monthlyPrice` / `yearlyPrice` from the plan). Omitting `amount`, passing zero, or passing a non-numeric value for a dynamic plan returns **`AMOUNT_REQUIRED`** (HTTP 400).
+
+**Dynamic plans and providers**: Variable-amount checkout is implemented for **Sumit** (the integration passes `Amount` through). **Paddle** and **PayPal** rely on fixed catalog price IDs; starting checkout for a dynamic plan while the tenant is configured for Paddle or PayPal returns **`DYNAMIC_PLAN_UNSUPPORTED_PROVIDER`** (HTTP 400). Use Sumit in Payments Configuration for dynamic plans, or use fixed-price plans with Paddle/PayPal.
 
 ### PUT /api/checkout/:subscriptionId/cancel
 Cancel at payment provider and update local state.

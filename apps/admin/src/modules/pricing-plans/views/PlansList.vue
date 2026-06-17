@@ -103,12 +103,14 @@ function formatPrice(amount: number, currency: string) {
         </el-table-column>
         <el-table-column :label="t('Monthly Price')" width="140" sortable sort-by="monthlyPrice">
           <template #default="{ row }">
-            {{ formatPrice(row.monthlyPrice, row.currency) }}
+            <span v-if="row.dynamic">{{ t('Dynamic') }}</span>
+            <span v-else>{{ formatPrice(row.monthlyPrice, row.currency) }}</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('Yearly Price')" width="140" sortable sort-by="yearlyPrice">
           <template #default="{ row }">
-            {{ formatPrice(row.yearlyPrice, row.currency) }}
+            <span v-if="row.dynamic">—</span>
+            <span v-else>{{ formatPrice(row.yearlyPrice, row.currency) }}</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('Features')" min-width="200">

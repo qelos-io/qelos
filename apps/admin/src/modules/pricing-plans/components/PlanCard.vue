@@ -13,6 +13,7 @@ const props = defineProps<{
     yearlyPrice: number;
     currency?: string;
     isActive?: boolean;
+    dynamic?: boolean;
   };
   billingCycle?: 'monthly' | 'yearly';
 }>();
@@ -20,6 +21,9 @@ const props = defineProps<{
 const cycle = computed(() => props.billingCycle || 'monthly');
 
 const displayPrice = computed(() => {
+  if (props.plan.dynamic) {
+    return t('Priced at checkout');
+  }
   const amount = cycle.value === 'yearly' ? props.plan.yearlyPrice : props.plan.monthlyPrice;
   const currency = props.plan.currency || 'USD';
   return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
@@ -30,6 +34,7 @@ const periodLabel = computed(() =>
 );
 
 const monthlySavings = computed(() => {
+  if (props.plan.dynamic) return 0;
   if (!props.plan.monthlyPrice || !props.plan.yearlyPrice) return 0;
   const yearlyMonthly = props.plan.yearlyPrice / 12;
   return Math.round((1 - yearlyMonthly / props.plan.monthlyPrice) * 100);
@@ -49,7 +54,7 @@ const monthlySavings = computed(() => {
 
     <div class="plan-price">
       <span class="price-amount">{{ displayPrice }}</span>
-      <span class="price-period">{{ periodLabel }}</span>
+      <span v-if="!plan.dynamic" class="price-period">{{ periodLabel }}</span>
     </div>
 
     <div v-if="monthlySavings > 0 && cycle === 'yearly'" class="savings-badge">

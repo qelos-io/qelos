@@ -11,7 +11,7 @@ export async function listPlans(tenant: string, filters: { isActive?: boolean } 
 
 export async function getPublicPlans(tenant: string) {
   return (Plan as any).find({ tenant, isActive: true })
-    .select('name description features monthlyPrice yearlyPrice currency sortOrder limits metadata')
+    .select('name description features monthlyPrice yearlyPrice currency sortOrder limits metadata dynamic')
     .sort({ sortOrder: 1 })
     .lean()
     .exec();
@@ -26,22 +26,30 @@ export async function getPlanById(tenant: string, planId: string) {
 }
 
 export async function createPlan(tenant: string, data: Partial<IPlan>) {
+  const isDynamic = data.dynamic === true;
+  const monthlyPrice = isDynamic ? (data.monthlyPrice ?? 0) : data.monthlyPrice;
+  const yearlyPrice = isDynamic ? (data.yearlyPrice ?? 0) : data.yearlyPrice;
+
   const plan = new Plan({
     tenant,
     name: data.name,
     description: data.description || '',
     features: data.features || [],
-    monthlyPrice: data.monthlyPrice,
-    yearlyPrice: data.yearlyPrice,
+    monthlyPrice,
+    yearlyPrice,
     currency: data.currency || 'USD',
     isActive: data.isActive !== false,
     sortOrder: data.sortOrder || 0,
+    dynamic: isDynamic,
     limits: data.limits || {},
     externalIds: data.externalIds || {},
     metadata: data.metadata || {},
   });
 
-  if (!plan.name || plan.monthlyPrice == null || plan.yearlyPrice == null) {
+  if (!plan.name) {
+    throw { code: 'INVALID_PLAN_DATA', message: 'name is required' };
+  }
+  if (!isDynamic && (data.monthlyPrice == null || data.yearlyPrice == null)) {
     throw { code: 'INVALID_PLAN_DATA', message: 'name, monthlyPrice, and yearlyPrice are required' };
   }
 
@@ -52,7 +60,7 @@ export async function updatePlan(tenant: string, planId: string, data: Partial<I
   const updates: Record<string, any> = {};
   const allowedFields = [
     'name', 'description', 'features', 'monthlyPrice', 'yearlyPrice',
-    'currency', 'isActive', 'sortOrder', 'limits', 'externalIds', 'metadata'
+    'currency', 'isActive', 'sortOrder', 'dynamic', 'limits', 'externalIds', 'metadata'
   ];
 
   for (const field of allowedFields) {

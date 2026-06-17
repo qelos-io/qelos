@@ -144,6 +144,7 @@ const planPreview = computed(() => ({
   yearlyPrice: form.yearlyPrice,
   currency: form.currency,
   isActive: form.isActive,
+  dynamic: form.dynamic,
 }));
 </script>
 

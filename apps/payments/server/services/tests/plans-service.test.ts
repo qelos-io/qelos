@@ -129,18 +129,29 @@ describe('plans-service', async () => {
       });
     });
 
-    it('should throw INVALID_PLAN_DATA when monthlyPrice is missing', async () => {
+    it('should throw INVALID_PLAN_DATA when monthlyPrice is missing for fixed-price plan', async () => {
       await assert.rejects(() => PlansService.createPlan('tenant-1', { name: 'Basic', yearlyPrice: 100 } as any), (e: any) => {
         assert.strictEqual(e.code, 'INVALID_PLAN_DATA');
         return true;
       });
     });
 
-    it('should throw INVALID_PLAN_DATA when yearlyPrice is missing', async () => {
+    it('should throw INVALID_PLAN_DATA when yearlyPrice is missing for fixed-price plan', async () => {
       await assert.rejects(() => PlansService.createPlan('tenant-1', { name: 'Basic', monthlyPrice: 10 } as any), (e: any) => {
         assert.strictEqual(e.code, 'INVALID_PLAN_DATA');
         return true;
       });
+    });
+
+    it('should create dynamic plan without fixed prices in payload', async () => {
+      const result = await PlansService.createPlan('tenant-1', {
+        name: 'Enterprise',
+        dynamic: true,
+      } as any);
+      assert.ok(result);
+      assert.strictEqual(result.dynamic, true);
+      assert.strictEqual(result.monthlyPrice, 0);
+      assert.strictEqual(result.yearlyPrice, 0);
     });
 
     it('should create plan with valid data', async () => {
@@ -174,6 +185,19 @@ describe('plans-service', async () => {
       assert.strictEqual(result.name, 'Updated');
       assert.deepStrictEqual(findOneAndUpdateMock.mock.calls[0].arguments[0], { _id: 'plan-1', tenant: 'tenant-1' });
       assert.deepStrictEqual(findOneAndUpdateMock.mock.calls[0].arguments[1], { $set: { name: 'Updated' } });
+    });
+
+    it('should update plan including dynamic flag', async () => {
+      const mockPlan = { _id: 'plan-1', name: 'Plan', tenant: 'tenant-1', dynamic: true };
+      findOneAndUpdateMock.mock.mockImplementationOnce(() => ({
+        lean: mock.fn(() => ({
+          exec: mock.fn(async () => mockPlan),
+        })),
+      }));
+
+      const result = await PlansService.updatePlan('tenant-1', 'plan-1', { dynamic: true });
+      assert.strictEqual(result.dynamic, true);
+      assert.deepStrictEqual(findOneAndUpdateMock.mock.calls[0].arguments[1], { $set: { dynamic: true } });
     });
 
     it('should ignore fields not in allowed list', async () => {

@@ -9,7 +9,7 @@ TypeScript SDK that lets external developers call a Qelos app's REST API for dat
 - **Authenticate users**: Sign in/up, refresh sessions, social OAuth, API tokens
 - **Manage workspaces**: Create, invite, switch, manage members
 - **Run AI**: Agents, chat, threads, vector storage
-- **Handle billing**: Plans, checkout, subscriptions, coupons, invoices
+- **Handle billing**: Plans, checkout, subscriptions, coupons, invoices — including dynamic plans where the charge amount is passed at checkout time
 - **Administer tenants**: Separate administrator export for full platform management
 
 ## Core Modules
@@ -38,6 +38,25 @@ sdk.entities('todos')
 ```
 
 Also: `findOne`, `count`, `chart`, `pieChart`, `sum`
+
+## Payments — CheckoutRequest
+
+The `sdk.payments.checkout` `CheckoutRequest` type includes an optional `amount` field:
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `planId` | string | Yes | |
+| `billingCycle` | `'monthly' \| 'yearly'` | Yes | |
+| `couponCode` | string | No | |
+| `successUrl` | string | No | |
+| `cancelUrl` | string | No | |
+| `amount` | number | No* | *Required (positive number) when the plan has `dynamic: true` |
+
+For dynamic plans, omitting `amount`, or passing a non-positive value, returns HTTP 400 with code `AMOUNT_REQUIRED`. If the tenant’s payment provider is Paddle or PayPal, dynamic plans return **`DYNAMIC_PLAN_UNSUPPORTED_PROVIDER`** — use Sumit for variable amounts.
+
+### Administrator SDK — `managePayments.checkout`
+
+`QelosAdministratorSDK` exposes **`sdk.managePayments.checkout`** with the same payload as public checkout, plus optional **`billableEntityType`** and **`billableEntityId`** so an admin can start checkout for a chosen user or workspace. For dynamic plans, **`amount`** is still mandatory on this call.
 
 ## Package Exports
 
