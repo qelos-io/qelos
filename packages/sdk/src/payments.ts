@@ -8,6 +8,7 @@ export interface CheckoutRequest {
   couponCode?: string;
   successUrl?: string;
   cancelUrl?: string;
+  amount?: number;
 }
 
 export interface CheckoutResponse {
