@@ -45,6 +45,7 @@ export async function createSubscription(tenant: string, data: {
   providerId?: string;
   providerKind?: string;
   couponId?: string;
+  dynamicAmount?: number;
   metadata?: Record<string, any>;
 }) {
   const subscription = new Subscription({
@@ -60,10 +61,29 @@ export async function createSubscription(tenant: string, data: {
     providerId: data.providerId,
     providerKind: data.providerKind,
     couponId: data.couponId,
+    dynamicAmount: data.dynamicAmount,
     metadata: data.metadata || {},
   });
 
   return subscription.save();
+}
+
+export async function setDynamicAmount(tenant: string, subscriptionId: string, amount: number) {
+  if (amount <= 0) {
+    throw { code: 'INVALID_AMOUNT' };
+  }
+
+  const subscription = await (Subscription as any).findOneAndUpdate(
+    { _id: subscriptionId, tenant },
+    { $set: { dynamicAmount: amount } },
+    { new: true }
+  ).lean().exec();
+
+  if (!subscription) {
+    throw { code: 'SUBSCRIPTION_NOT_FOUND' };
+  }
+
+  return subscription;
 }
 
 export async function updateSubscriptionStatus(

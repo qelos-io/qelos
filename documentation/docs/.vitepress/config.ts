@@ -166,6 +166,7 @@ export default defineConfig({
           { text: 'Managing Workspaces', link: '/sdk/managing_workspaces' },
           { text: 'Managing Blocks', link: '/sdk/managing_blocks' },
           { text: 'Managing Invites', link: '/sdk/managing_invites' },
+          { text: 'Payments', link: '/sdk/payments' },
           { text: 'AI SDK Structure', link: '/sdk/ai_sdk_structure' },
           { text: 'AI Operations', link: '/sdk/ai_operations' },
           {

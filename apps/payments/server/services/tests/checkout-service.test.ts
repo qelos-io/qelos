@@ -32,6 +32,7 @@ mock.module('../subscriptions-service', {
     getSubscriptionById: getSubscriptionByIdMock,
     listSubscriptions: mock.fn(),
     cancelSubscription: mock.fn(),
+    setDynamicAmount: mock.fn(),
   },
 });
 
@@ -91,6 +92,16 @@ describe('checkout-service', async () => {
     cancelUrl: 'https://app.example.com/cancel',
   };
 
+  const mockPendingSubscription = {
+    _id: 'sub-pending-1',
+    planId: 'plan-1',
+    billingCycle: 'monthly',
+    billableEntityType: 'user',
+    billableEntityId: 'user-1',
+    status: 'pending',
+    metadata: {},
+  };
+
   const defaultParams: any = {
     planId: 'plan-1',
     billingCycle: 'monthly',
@@ -121,6 +132,11 @@ describe('checkout-service', async () => {
     }));
     createSubscriptionMock.mock.mockImplementation(async () => ({
       _id: 'sub-1',
+      planId: 'plan-1',
+      status: 'pending',
+    }));
+    updateSubscriptionStatusMock.mock.mockImplementation(async () => ({
+      _id: 'sub-pending-1',
       planId: 'plan-1',
       status: 'pending',
     }));
@@ -159,142 +175,234 @@ describe('checkout-service', async () => {
   });
 
   describe('initiateCheckout', () => {
-    it('should initiate checkout successfully', async () => {
-      const result = await CheckoutService.initiateCheckout('tenant-1', defaultParams);
+    describe('inline path (static plan)', () => {
+      it('should initiate checkout successfully', async () => {
+        const result = await CheckoutService.initiateCheckout('tenant-1', defaultParams);
 
-      assert.strictEqual(result.subscriptionId, 'sub-1');
-      assert.strictEqual(result.checkoutUrl, 'https://checkout.paddle.com/xxx');
-      assert.strictEqual(getPlanByIdMock.mock.calls.length, 1);
-      assert.deepStrictEqual(getPlanByIdMock.mock.calls[0].arguments, ['tenant-1', 'plan-1']);
-    });
-
-    it('should use monthly price for monthly billing cycle', async () => {
-      await CheckoutService.initiateCheckout('tenant-1', defaultParams);
-      const checkoutArgs = createCheckoutMock.mock.calls[0].arguments;
-      assert.strictEqual(checkoutArgs[3].amount, 29);
-    });
-
-    it('should use yearly price for yearly billing cycle', async () => {
-      await CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, billingCycle: 'yearly' });
-      const checkoutArgs = createCheckoutMock.mock.calls[0].arguments;
-      assert.strictEqual(checkoutArgs[3].amount, 290);
-    });
-
-    it('should throw PLAN_NOT_ACTIVE when plan is inactive', async () => {
-      getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, isActive: false }));
-
-      await assert.rejects(() => CheckoutService.initiateCheckout('tenant-1', defaultParams), (e: any) => {
-        assert.strictEqual(e.code, 'PLAN_NOT_ACTIVE');
-        return true;
+        assert.strictEqual(result.subscriptionId, 'sub-1');
+        assert.strictEqual(result.checkoutUrl, 'https://checkout.paddle.com/xxx');
+        assert.strictEqual(getPlanByIdMock.mock.calls.length, 1);
+        assert.deepStrictEqual(getPlanByIdMock.mock.calls[0].arguments, ['tenant-1', 'plan-1']);
       });
-    });
 
-    it('should throw ACTIVE_SUBSCRIPTION_EXISTS when there is an active subscription', async () => {
-      getActiveSubscriptionMock.mock.mockImplementation(async () => ({ _id: 'existing-sub' }));
-
-      await assert.rejects(() => CheckoutService.initiateCheckout('tenant-1', defaultParams), (e: any) => {
-        assert.strictEqual(e.code, 'ACTIVE_SUBSCRIPTION_EXISTS');
-        return true;
+      it('should use monthly price for monthly billing cycle', async () => {
+        await CheckoutService.initiateCheckout('tenant-1', defaultParams);
+        const checkoutArgs = createCheckoutMock.mock.calls[0].arguments;
+        assert.strictEqual(checkoutArgs[3].amount, 29);
       });
-    });
 
-    it('should validate and apply coupon when provided', async () => {
-      validateCouponMock.mock.mockImplementation(async () => ({ _id: 'coupon-1', discountType: 'percentage', discountValue: 50 }));
-
-      await CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, couponCode: 'HALF_OFF' });
-
-      assert.strictEqual(validateCouponMock.mock.calls.length, 1);
-      assert.deepStrictEqual(validateCouponMock.mock.calls[0].arguments, ['tenant-1', 'HALF_OFF', 'plan-1']);
-      assert.strictEqual(createCheckoutMock.mock.calls[0].arguments[3].amount, 14.5);
-    });
-
-    it('should store coupon metadata in subscription', async () => {
-      validateCouponMock.mock.mockImplementation(async () => ({ _id: 'coupon-1', discountType: 'fixed', discountValue: 5 }));
-
-      await CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, couponCode: 'SAVE5' });
-
-      const subArgs = createSubscriptionMock.mock.calls[0].arguments[1];
-      assert.strictEqual(subArgs.couponId, 'coupon-1');
-      assert.strictEqual(subArgs.metadata.originalPrice, 29);
-      assert.strictEqual(subArgs.metadata.finalPrice, 24);
-      assert.strictEqual(subArgs.metadata.couponCode, 'SAVE5');
-    });
-
-    it('should create subscription with pending status', async () => {
-      await CheckoutService.initiateCheckout('tenant-1', defaultParams);
-      assert.strictEqual(createSubscriptionMock.mock.calls[0].arguments[1].status, 'pending');
-    });
-
-    it('should propagate coupon validation errors', async () => {
-      validateCouponMock.mock.mockImplementation(async () => { throw { code: 'COUPON_EXPIRED', message: 'coupon has expired' }; });
-
-      await assert.rejects(() => CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, couponCode: 'EXPIRED' }), (e: any) => {
-        assert.strictEqual(e.code, 'COUPON_EXPIRED');
-        return true;
+      it('should use yearly price for yearly billing cycle', async () => {
+        await CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, billingCycle: 'yearly' });
+        const checkoutArgs = createCheckoutMock.mock.calls[0].arguments;
+        assert.strictEqual(checkoutArgs[3].amount, 290);
       });
-    });
 
-    it('should use config URLs when request URLs not provided', async () => {
-      await CheckoutService.initiateCheckout('tenant-1', defaultParams);
-      const checkoutArgs = createCheckoutMock.mock.calls[0].arguments[3];
-      assert.strictEqual(checkoutArgs.successUrl, 'https://app.example.com/success');
-      assert.strictEqual(checkoutArgs.cancelUrl, 'https://app.example.com/cancel');
-    });
-
-    it('should prefer request URLs over config URLs', async () => {
-      await CheckoutService.initiateCheckout('tenant-1', {
-        ...defaultParams,
-        successUrl: 'https://custom.example.com/done',
-        cancelUrl: 'https://custom.example.com/back',
+      it('should create subscription with pending status', async () => {
+        await CheckoutService.initiateCheckout('tenant-1', defaultParams);
+        assert.strictEqual(createSubscriptionMock.mock.calls[0].arguments[1].status, 'pending');
       });
-      const checkoutArgs = createCheckoutMock.mock.calls[0].arguments[3];
-      assert.strictEqual(checkoutArgs.successUrl, 'https://custom.example.com/done');
-      assert.strictEqual(checkoutArgs.cancelUrl, 'https://custom.example.com/back');
-    });
 
-    it('should throw AMOUNT_REQUIRED when dynamic plan has no amount', async () => {
-      getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
+      it('should throw PLAN_NOT_ACTIVE when plan is inactive', async () => {
+        getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, isActive: false }));
 
-      await assert.rejects(() => CheckoutService.initiateCheckout('tenant-1', defaultParams), (e: any) => {
-        assert.strictEqual(e.code, 'AMOUNT_REQUIRED');
-        return true;
-      });
-    });
-
-    it('should throw AMOUNT_REQUIRED when dynamic plan amount is not positive', async () => {
-      getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
-
-      await assert.rejects(
-        () => CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, amount: 0 }),
-        (e: any) => {
-          assert.strictEqual(e.code, 'AMOUNT_REQUIRED');
+        await assert.rejects(() => CheckoutService.initiateCheckout('tenant-1', defaultParams), (e: any) => {
+          assert.strictEqual(e.code, 'PLAN_NOT_ACTIVE');
           return true;
-        },
-      );
-    });
+        });
+      });
 
-    it('should throw DYNAMIC_PLAN_UNSUPPORTED_PROVIDER for dynamic plan with Paddle', async () => {
-      getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
+      it('should throw ACTIVE_SUBSCRIPTION_EXISTS when there is an active subscription', async () => {
+        getActiveSubscriptionMock.mock.mockImplementation(async () => ({ _id: 'existing-sub' }));
 
-      await assert.rejects(
-        () => CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, amount: 50 }),
-        (e: any) => {
-          assert.strictEqual(e.code, 'DYNAMIC_PLAN_UNSUPPORTED_PROVIDER');
+        await assert.rejects(() => CheckoutService.initiateCheckout('tenant-1', defaultParams), (e: any) => {
+          assert.strictEqual(e.code, 'ACTIVE_SUBSCRIPTION_EXISTS');
           return true;
-        },
-      );
+        });
+      });
+
+      it('should throw DYNAMIC_PLAN_REQUIRES_SUBSCRIPTION for dynamic plan on inline path', async () => {
+        getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
+
+        await assert.rejects(() => CheckoutService.initiateCheckout('tenant-1', defaultParams), (e: any) => {
+          assert.strictEqual(e.code, 'DYNAMIC_PLAN_REQUIRES_SUBSCRIPTION');
+          return true;
+        });
+      });
+
+      it('should validate and apply coupon when provided', async () => {
+        validateCouponMock.mock.mockImplementation(async () => ({ _id: 'coupon-1', discountType: 'percentage', discountValue: 50 }));
+
+        await CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, couponCode: 'HALF_OFF' });
+
+        assert.strictEqual(validateCouponMock.mock.calls.length, 1);
+        assert.deepStrictEqual(validateCouponMock.mock.calls[0].arguments, ['tenant-1', 'HALF_OFF', 'plan-1']);
+        assert.strictEqual(createCheckoutMock.mock.calls[0].arguments[3].amount, 14.5);
+      });
+
+      it('should store coupon metadata in subscription', async () => {
+        validateCouponMock.mock.mockImplementation(async () => ({ _id: 'coupon-1', discountType: 'fixed', discountValue: 5 }));
+
+        await CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, couponCode: 'SAVE5' });
+
+        const subArgs = createSubscriptionMock.mock.calls[0].arguments[1];
+        assert.strictEqual(subArgs.couponId, 'coupon-1');
+        assert.strictEqual(subArgs.metadata.originalPrice, 29);
+        assert.strictEqual(subArgs.metadata.finalPrice, 24);
+        assert.strictEqual(subArgs.metadata.couponCode, 'SAVE5');
+      });
+
+      it('should propagate coupon validation errors', async () => {
+        validateCouponMock.mock.mockImplementation(async () => { throw { code: 'COUPON_EXPIRED', message: 'coupon has expired' }; });
+
+        await assert.rejects(() => CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, couponCode: 'EXPIRED' }), (e: any) => {
+          assert.strictEqual(e.code, 'COUPON_EXPIRED');
+          return true;
+        });
+      });
+
+      it('should use config URLs when request URLs not provided', async () => {
+        await CheckoutService.initiateCheckout('tenant-1', defaultParams);
+        const checkoutArgs = createCheckoutMock.mock.calls[0].arguments[3];
+        assert.strictEqual(checkoutArgs.successUrl, 'https://app.example.com/success');
+        assert.strictEqual(checkoutArgs.cancelUrl, 'https://app.example.com/cancel');
+      });
+
+      it('should prefer request URLs over config URLs', async () => {
+        await CheckoutService.initiateCheckout('tenant-1', {
+          ...defaultParams,
+          successUrl: 'https://custom.example.com/done',
+          cancelUrl: 'https://custom.example.com/back',
+        });
+        const checkoutArgs = createCheckoutMock.mock.calls[0].arguments[3];
+        assert.strictEqual(checkoutArgs.successUrl, 'https://custom.example.com/done');
+        assert.strictEqual(checkoutArgs.cancelUrl, 'https://custom.example.com/back');
+      });
     });
 
-    it('should use caller amount for dynamic plan with Sumit provider', async () => {
-      getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
-      getPaymentsConfigurationMock.mock.mockImplementation(async () => ({
-        ...mockConfig,
-        providerKind: 'sumit',
-      }));
+    describe('subscriptionId path', () => {
+      it('should initiate checkout using an existing pending subscription', async () => {
+        getSubscriptionByIdMock.mock.mockImplementation(async () => mockPendingSubscription);
 
-      await CheckoutService.initiateCheckout('tenant-1', { ...defaultParams, amount: 42 });
+        const result = await CheckoutService.initiateCheckout('tenant-1', { subscriptionId: 'sub-pending-1' });
 
-      assert.strictEqual(createCheckoutMock.mock.calls[0].arguments[3].amount, 42);
+        assert.strictEqual(result.subscriptionId, 'sub-pending-1');
+        assert.strictEqual(result.checkoutUrl, 'https://checkout.paddle.com/xxx');
+        assert.strictEqual(createSubscriptionMock.mock.calls.length, 0);
+        assert.strictEqual(updateSubscriptionStatusMock.mock.calls.length, 1);
+      });
+
+      it('should derive plan and entity info from the existing subscription', async () => {
+        getSubscriptionByIdMock.mock.mockImplementation(async () => mockPendingSubscription);
+
+        await CheckoutService.initiateCheckout('tenant-1', { subscriptionId: 'sub-pending-1' });
+
+        assert.deepStrictEqual(getPlanByIdMock.mock.calls[0].arguments, ['tenant-1', 'plan-1']);
+        const checkoutArgs = createCheckoutMock.mock.calls[0].arguments[3];
+        assert.strictEqual(checkoutArgs.billingCycle, 'monthly');
+        assert.strictEqual(checkoutArgs.billableEntityType, 'user');
+        assert.strictEqual(checkoutArgs.billableEntityId, 'user-1');
+      });
+
+      it('should throw SUBSCRIPTION_NOT_FOUND when subscription does not exist', async () => {
+        getSubscriptionByIdMock.mock.mockImplementation(async () => { throw { code: 'SUBSCRIPTION_NOT_FOUND' }; });
+
+        await assert.rejects(
+          () => CheckoutService.initiateCheckout('tenant-1', { subscriptionId: 'nonexistent' }),
+          (e: any) => {
+            assert.strictEqual(e.code, 'SUBSCRIPTION_NOT_FOUND');
+            return true;
+          },
+        );
+      });
+
+      it('should throw SUBSCRIPTION_NOT_PENDING when subscription is not pending', async () => {
+        getSubscriptionByIdMock.mock.mockImplementation(async () => ({ ...mockPendingSubscription, status: 'active' }));
+
+        await assert.rejects(
+          () => CheckoutService.initiateCheckout('tenant-1', { subscriptionId: 'sub-pending-1' }),
+          (e: any) => {
+            assert.strictEqual(e.code, 'SUBSCRIPTION_NOT_PENDING');
+            return true;
+          },
+        );
+      });
+
+      it('should throw DYNAMIC_AMOUNT_NOT_SET for dynamic plan with no dynamicAmount', async () => {
+        getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
+        getSubscriptionByIdMock.mock.mockImplementation(async () => ({
+          ...mockPendingSubscription,
+          planId: 'plan-1',
+        }));
+        getPaymentsConfigurationMock.mock.mockImplementation(async () => ({ ...mockConfig, providerKind: 'sumit' }));
+
+        await assert.rejects(
+          () => CheckoutService.initiateCheckout('tenant-1', { subscriptionId: 'sub-pending-1' }),
+          (e: any) => {
+            assert.strictEqual(e.code, 'DYNAMIC_AMOUNT_NOT_SET');
+            return true;
+          },
+        );
+      });
+
+      it('should throw DYNAMIC_AMOUNT_NOT_SET for dynamic plan when dynamicAmount is zero', async () => {
+        getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
+        getSubscriptionByIdMock.mock.mockImplementation(async () => ({
+          ...mockPendingSubscription,
+          dynamicAmount: 0,
+        }));
+        getPaymentsConfigurationMock.mock.mockImplementation(async () => ({ ...mockConfig, providerKind: 'sumit' }));
+
+        await assert.rejects(
+          () => CheckoutService.initiateCheckout('tenant-1', { subscriptionId: 'sub-pending-1' }),
+          (e: any) => {
+            assert.strictEqual(e.code, 'DYNAMIC_AMOUNT_NOT_SET');
+            return true;
+          },
+        );
+      });
+
+      it('should throw DYNAMIC_PLAN_UNSUPPORTED_PROVIDER for dynamic plan with non-sumit provider', async () => {
+        getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
+        getSubscriptionByIdMock.mock.mockImplementation(async () => ({
+          ...mockPendingSubscription,
+          dynamicAmount: 75,
+        }));
+
+        await assert.rejects(
+          () => CheckoutService.initiateCheckout('tenant-1', { subscriptionId: 'sub-pending-1' }),
+          (e: any) => {
+            assert.strictEqual(e.code, 'DYNAMIC_PLAN_UNSUPPORTED_PROVIDER');
+            return true;
+          },
+        );
+      });
+
+      it('should use dynamicAmount from subscription for dynamic plan with Sumit provider', async () => {
+        getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
+        getSubscriptionByIdMock.mock.mockImplementation(async () => ({
+          ...mockPendingSubscription,
+          dynamicAmount: 75,
+        }));
+        getPaymentsConfigurationMock.mock.mockImplementation(async () => ({ ...mockConfig, providerKind: 'sumit' }));
+
+        await CheckoutService.initiateCheckout('tenant-1', { subscriptionId: 'sub-pending-1' });
+
+        assert.strictEqual(createCheckoutMock.mock.calls[0].arguments[3].amount, 75);
+      });
+
+      it('should update existing subscription (not create a new one) after provider checkout', async () => {
+        getSubscriptionByIdMock.mock.mockImplementation(async () => mockPendingSubscription);
+
+        await CheckoutService.initiateCheckout('tenant-1', { subscriptionId: 'sub-pending-1' });
+
+        assert.strictEqual(createSubscriptionMock.mock.calls.length, 0);
+        assert.strictEqual(updateSubscriptionStatusMock.mock.calls.length, 1);
+        const updateArgs = updateSubscriptionStatusMock.mock.calls[0].arguments;
+        assert.strictEqual(updateArgs[1], 'sub-pending-1');
+        assert.strictEqual(updateArgs[2], 'pending');
+        assert.strictEqual(updateArgs[3].externalSubscriptionId, 'sub-ext-1');
+        assert.strictEqual(updateArgs[3].providerKind, 'paddle');
+      });
     });
   });
 

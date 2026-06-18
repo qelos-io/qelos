@@ -14,6 +14,7 @@ export interface SubscriptionDocument extends Document {
   providerId: string;
   providerKind: string;
   couponId: mongoose.Types.ObjectId;
+  dynamicAmount: number;
   metadata: Record<string, any>;
   created: Date;
 }
@@ -55,6 +56,9 @@ const SubscriptionSchema = new mongoose.Schema<any, any>({
   couponId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Coupon',
+  },
+  dynamicAmount: {
+    type: Number,
   },
   metadata: {
     type: mongoose.Schema.Types.Mixed,

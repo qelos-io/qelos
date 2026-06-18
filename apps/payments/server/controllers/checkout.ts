@@ -11,6 +11,7 @@ export async function initiateCheckout(req, res: Response) {
   try {
     const tenant = req.headers.tenant;
     const {
+      subscriptionId,
       planId,
       billingCycle,
       billableEntityType,
@@ -18,22 +19,65 @@ export async function initiateCheckout(req, res: Response) {
       couponCode,
       successUrl,
       cancelUrl,
-      amount,
     } = req.body;
 
-    if (!planId || !billingCycle) {
-      res.status(400).json({ message: 'planId and billingCycle are required' }).end();
+    const isPrivileged = req.user?.isPrivileged;
+    const amount = isPrivileged ? req.body.amount : undefined;
+
+    if (!subscriptionId && !planId) {
+      res.status(400).json({ message: 'subscriptionId or planId is required' }).end();
       return;
     }
 
-    if (!['monthly', 'yearly'].includes(billingCycle)) {
+    if (billingCycle && !['monthly', 'yearly'].includes(billingCycle)) {
       res.status(400).json({ message: 'billingCycle must be monthly or yearly' }).end();
+      return;
+    }
+
+    let resolvedSubscriptionId: string | undefined = subscriptionId;
+
+    if (!resolvedSubscriptionId && isPrivileged && planId && amount) {
+      // Admin convenience: create pending subscription with dynamicAmount, then checkout
+      if (!billingCycle) {
+        res.status(400).json({ message: 'billingCycle is required' }).end();
+        return;
+      }
+      const entityType: BillableEntityType = billableEntityType || req.user?.billableEntityType || 'user';
+      const entityId: string = billableEntityId || (entityType === 'user' ? req.user?._id : req.user?.workspace);
+      if (!entityId) {
+        res.status(400).json({ message: 'Could not determine billable entity' }).end();
+        return;
+      }
+      const pendingSub = await SubscriptionsService.createSubscription(tenant, {
+        planId,
+        billingCycle: billingCycle as BillingCycle,
+        billableEntityType: entityType,
+        billableEntityId: entityId,
+        status: 'pending',
+        dynamicAmount: amount,
+      });
+      resolvedSubscriptionId = pendingSub._id.toString();
+    }
+
+    if (resolvedSubscriptionId) {
+      const result = await CheckoutService.initiateCheckout(tenant, {
+        subscriptionId: resolvedSubscriptionId,
+        couponCode,
+        successUrl,
+        cancelUrl,
+      });
+      res.status(200).json(result).end();
+      return;
+    }
+
+    // Inline checkout path for static plans
+    if (!billingCycle) {
+      res.status(400).json({ message: 'billingCycle is required' }).end();
       return;
     }
 
     const entityType: BillableEntityType = billableEntityType || req.user?.billableEntityType || 'user';
     const entityId: string = billableEntityId || (entityType === 'user' ? req.user?._id : req.user?.workspace);
-
     if (!entityId) {
       res.status(400).json({ message: 'Could not determine billable entity' }).end();
       return;
@@ -47,7 +91,6 @@ export async function initiateCheckout(req, res: Response) {
       couponCode,
       successUrl,
       cancelUrl,
-      amount,
     });
 
     res.status(200).json(result).end();
@@ -56,7 +99,10 @@ export async function initiateCheckout(req, res: Response) {
       PLAN_NOT_FOUND: 404,
       PLAN_NOT_ACTIVE: 400,
       AMOUNT_REQUIRED: 400,
+      DYNAMIC_PLAN_REQUIRES_SUBSCRIPTION: 400,
+      DYNAMIC_AMOUNT_NOT_SET: 400,
       DYNAMIC_PLAN_UNSUPPORTED_PROVIDER: 400,
+      SUBSCRIPTION_NOT_PENDING: 400,
       ACTIVE_SUBSCRIPTION_EXISTS: 409,
       PAYMENTS_NOT_CONFIGURED: 500,
       MISSING_EXTERNAL_PRICE_ID: 400,
