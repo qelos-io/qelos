@@ -229,6 +229,44 @@ describe('subscriptions-service', async () => {
     });
   });
 
+  describe('setDynamicAmount', () => {
+    it('should update dynamicAmount on the subscription', async () => {
+      const mockSub = { _id: 'sub-1', tenant: 'tenant-1', dynamicAmount: 99 };
+      findOneAndUpdateMock.mock.mockImplementationOnce(() => ({
+        lean: mock.fn(() => ({
+          exec: mock.fn(async () => mockSub),
+        })),
+      }));
+
+      const result = await SubscriptionsService.setDynamicAmount('tenant-1', 'sub-1', 99);
+      assert.strictEqual(result.dynamicAmount, 99);
+      assert.deepStrictEqual(findOneAndUpdateMock.mock.calls[0].arguments[0], { _id: 'sub-1', tenant: 'tenant-1' });
+      assert.deepStrictEqual(findOneAndUpdateMock.mock.calls[0].arguments[1], { $set: { dynamicAmount: 99 } });
+      assert.deepStrictEqual(findOneAndUpdateMock.mock.calls[0].arguments[2], { new: true });
+    });
+
+    it('should throw SUBSCRIPTION_NOT_FOUND when subscription does not exist', async () => {
+      await assert.rejects(() => SubscriptionsService.setDynamicAmount('tenant-1', 'nonexistent', 50), (e: any) => {
+        assert.strictEqual(e.code, 'SUBSCRIPTION_NOT_FOUND');
+        return true;
+      });
+    });
+
+    it('should throw INVALID_AMOUNT when amount is zero', async () => {
+      await assert.rejects(() => SubscriptionsService.setDynamicAmount('tenant-1', 'sub-1', 0), (e: any) => {
+        assert.strictEqual(e.code, 'INVALID_AMOUNT');
+        return true;
+      });
+    });
+
+    it('should throw INVALID_AMOUNT when amount is negative', async () => {
+      await assert.rejects(() => SubscriptionsService.setDynamicAmount('tenant-1', 'sub-1', -10), (e: any) => {
+        assert.strictEqual(e.code, 'INVALID_AMOUNT');
+        return true;
+      });
+    });
+  });
+
   describe('cancelSubscription', () => {
     it('should set status to canceled', async () => {
       const mockSub = { _id: 'sub-1', status: 'canceled' };
