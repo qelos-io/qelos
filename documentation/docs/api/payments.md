@@ -2,242 +2,388 @@
 title: Payments API
 editLink: true
 ---
+
 # Payments API
 
 Endpoints for managing plans, subscriptions, invoices, checkout, and coupons.
 
-> **SDK equivalent:** [`sdk.payments`](/sdk/basic_usage)
+> **SDK guide:** [Payments SDK](/sdk/payments) · **Detailed docs:** [Payments](/payments/)
 
-## List Plans
+## Authentication
 
-Retrieve available subscription plans.
+All endpoints require a `tenant` header identifying the tenant.
+
+- **Authenticated** — any logged-in user (workspace member or individual user).
+- **Admin / Privileged** — only users with `isPrivileged: true` (admins, service accounts).
+
+---
+
+## Two-Phase Flow
+
+Subscribing and paying are two separate operations:
+
+1. **Subscribe** — create a `pending` subscription record (`POST /api/subscriptions`).
+2. **Checkout** — initiate a provider payment session (`POST /api/checkout`).
+
+For **static plans** the steps can be collapsed into a single `POST /api/checkout` call.
+For **dynamic plans** step 1 is mandatory and an admin must set the amount before step 2 can proceed.
 
 ```
-GET /api/plans/public
+User  →  POST /api/subscriptions                       creates pending subscription
+Admin →  PUT  /api/subscriptions/:id/dynamic-amount    sets the charge amount
+User  →  POST /api/checkout { subscriptionId }         initiates payment
 ```
 
-### Query Parameters
+---
 
-| Parameter | Type | Description |
+## Plans
+
+### `GET /api/plans/public`
+
+Returns plans visible to the public (no authentication required).
+
+**Query parameters**
+
+| Name | Type | Description |
 |---|---|---|
-| `isActive` | `boolean` | Filter by active/inactive plans |
+| `isActive` | boolean | Filter by active status |
 
-### Response
-
+**Response `200`**
 ```json
 [
   {
-    "_id": "plan-id",
-    "name": "Pro Plan",
-    "price": 29.99,
-    "interval": "month",
-    "isActive": true,
-    "features": ["feature1", "feature2"]
+    "_id": "plan_id",
+    "name": "Pro",
+    "monthlyPrice": 29,
+    "yearlyPrice": 290,
+    "currency": "USD",
+    "dynamic": false,
+    "isActive": true
   }
 ]
 ```
 
-> **SDK:** [`sdk.payments.getPlans(query)`](/sdk/basic_usage)
+> **SDK:** `sdk.payments.getPlans(query)`
 
 ---
 
-## Get Plan
+### `GET /api/plans/:planId`
 
-Retrieve a specific plan by ID.
+Returns a single plan. **Auth**: authenticated.
 
-```
-GET /api/plans/{planId}
-```
+**Errors**
 
-### Path Parameters
-
-| Parameter | Type | Description |
+| Code | HTTP | Description |
 |---|---|---|
-| `planId` | `string` | The plan ID |
+| `PLAN_NOT_FOUND` | 404 | No plan with the given ID |
 
-### Response
+> **SDK:** `sdk.payments.getPlan(planId)`
 
-Returns the plan object.
+---
 
-> **SDK:** [`sdk.payments.getPlan(planId)`](/sdk/basic_usage)
+### `POST /api/plans` <Badge type="warning" text="admin" />
+
+Create a plan. **Auth**: admin.
+
+**Request body** — plan fields (see `IPlan` type in [global-types](/api/api)).
+
+**Response `200`** — created plan object.
+
+> **SDK:** `adminSdk.managePayments.createPlan(data)`
+
+---
+
+### `PUT /api/plans/:planId` <Badge type="warning" text="admin" />
+
+Update a plan. **Auth**: admin.
+
+**Response `200`** — updated plan object.
+
+> **SDK:** `adminSdk.managePayments.updatePlan(planId, data)`
+
+---
+
+### `DELETE /api/plans/:planId` <Badge type="warning" text="admin" />
+
+Delete a plan. **Auth**: admin.
+
+> **SDK:** `adminSdk.managePayments.deletePlan(planId)`
+
+---
+
+## Subscriptions
+
+### `GET /api/subscriptions/me`
+
+Returns the current user's active or trialing subscription. **Auth**: authenticated.
+
+**Response `200`** — subscription object or `null`.
+
+> **SDK:** `sdk.payments.getMySubscription()`
+
+---
+
+### `GET /api/subscriptions`
+
+List subscriptions. **Auth**: authenticated. Regular users see only their own entity's subscriptions. Admins can filter by any entity.
+
+**Query parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `billableEntityType` | `user` \| `workspace` | Filter by entity type (admin only) |
+| `billableEntityId` | string | Filter by entity ID (admin only) |
+| `status` | `pending` \| `active` \| `trialing` \| `canceled` \| `past_due` | Filter by status |
+
+> **SDK:** `adminSdk.managePayments.getSubscriptions(query)`
+
+---
+
+### `GET /api/subscriptions/:id`
+
+Returns a single subscription. **Auth**: authenticated (non-admins can only access their own entity's subscriptions).
+
+**Errors**
+
+| Code | HTTP | Description |
+|---|---|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | No subscription with the given ID |
+| — | 403 | Access denied |
+
+> **SDK:** `adminSdk.managePayments.getSubscription(subscriptionId)`
+
+---
+
+### `POST /api/subscriptions`
+
+Create a pending subscription. **Auth**: authenticated.
+
+Regular users can only create subscriptions for their own entity. Fields `dynamicAmount`, `providerKind`, `billableEntityType`, and `billableEntityId` are ignored from the request body for non-admins — the server derives them from the authenticated user.
+
+**Request body (regular user)**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `planId` | string | yes | ID of the plan to subscribe to |
+| `billingCycle` | `monthly` \| `yearly` | yes | Billing frequency |
+| `couponCode` | string | no | Coupon to apply |
+
+**Request body (admin)**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `planId` | string | yes | |
+| `billingCycle` | `monthly` \| `yearly` | yes | |
+| `billableEntityType` | `user` \| `workspace` | yes | |
+| `billableEntityId` | string | yes | |
+| `dynamicAmount` | number | no | Pre-set dynamic amount (dynamic plans only) |
+| `couponCode` | string | no | |
+
+**Response `200`** — created subscription object with `status: "pending"`.
+
+> **SDK (user):** `sdk.payments.subscribeToPlan(planId, billingCycle, couponCode?)`  
+> **SDK (admin):** `adminSdk.managePayments.createSubscription(data)`
+
+---
+
+### `PUT /api/subscriptions/:id/dynamic-amount` <Badge type="warning" text="admin" />
+
+Set or update the dynamic amount on a pending subscription. Must be called before checkout for dynamic plans. Can also update the amount on an active subscription to reprice the next billing cycle.
+
+**Auth**: admin.
+
+**Request body**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `amount` | number | yes | Positive number representing the charge amount |
+
+**Errors**
+
+| Code | HTTP | Description |
+|---|---|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | No subscription with the given ID |
+| `INVALID_AMOUNT` | 400 | Amount must be a positive number |
+
+> **SDK:** `adminSdk.managePayments.setSubscriptionDynamicAmount(subscriptionId, amount)`
+
+---
+
+### `PUT /api/subscriptions/:id/cancel`
+
+Cancel a subscription. **Auth**: authenticated (non-admins can only cancel their own entity's subscriptions).
+
+**Response `200`** — updated subscription object with `status: "canceled"`.
+
+> **SDK (user):** `sdk.payments.cancelSubscription(subscriptionId)`  
+> **SDK (admin):** `adminSdk.managePayments.cancelSubscription(subscriptionId)`
 
 ---
 
 ## Checkout
 
-Initiate a checkout session for a subscription.
+### `POST /api/checkout`
 
-```
-POST /api/checkout
-```
+Initiate a payment provider checkout session. **Auth**: authenticated.
 
-### Request Body
+Returns a `checkoutUrl` (redirect-based providers: Paddle, PayPal) or a `clientToken` (SDK-based providers: Sumit) along with the `subscriptionId`.
 
-```json
-{
-  "planId": "plan-id",
-  "billingCycle": "monthly",
-  "successUrl": "https://your-app.com/success",
-  "cancelUrl": "https://your-app.com/cancel",
-  "couponCode": "SAVE20"
-}
-```
+Either `subscriptionId` **or** `planId` is required.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `planId` | `string` | Yes | The plan to subscribe to |
-| `billingCycle` | `string` | Yes | Billing cycle (e.g., `"monthly"`, `"yearly"`) |
-| `successUrl` | `string` | No | Redirect URL on successful checkout |
-| `cancelUrl` | `string` | No | Redirect URL on cancelled checkout |
-| `couponCode` | `string` | No | Coupon code to apply |
+| `subscriptionId` | string | conditional | ID of an existing `pending` subscription. Required for dynamic plans. All plan/entity data is read from the subscription. |
+| `planId` | string | conditional | Plan ID for inline checkout of static plans. Ignored when `subscriptionId` is provided. |
+| `billingCycle` | `monthly` \| `yearly` | conditional | Required when using the `planId` path. |
+| `billableEntityType` | `user` \| `workspace` | no | Admin-only override. |
+| `billableEntityId` | string | no | Admin-only override. |
+| `couponCode` | string | no | Discount coupon code. |
+| `successUrl` | string | no | Override the redirect URL on success. Falls back to tenant payment configuration. |
+| `cancelUrl` | string | no | Override the redirect URL on cancellation. |
+| `amount` | number | no | **Admin only.** For dynamic plans: creates a pending subscription with this amount and immediately initiates checkout. |
 
-### Response
-
-```json
-{
-  "subscriptionId": "subscription-id",
-  "checkoutUrl": "https://payment-provider.com/checkout/session-id",
-  "clientToken": "client-token"
-}
-```
-
-> **SDK:** [`sdk.payments.checkout(params)`](/sdk/basic_usage)
-
----
-
-## Get My Subscription
-
-Retrieve the current user's active subscription.
-
-```
-GET /api/subscriptions/me
-```
-
-### Response
+**Response `200`**
 
 ```json
 {
-  "_id": "subscription-id",
-  "plan": "plan-id",
-  "status": "active",
-  "currentPeriodStart": "2025-01-01T00:00:00.000Z",
-  "currentPeriodEnd": "2025-02-01T00:00:00.000Z"
+  "subscriptionId": "sub_id",
+  "checkoutUrl": "https://checkout.provider.com/session/xxx",
+  "clientToken": null
 }
 ```
 
-> **SDK:** [`sdk.payments.getMySubscription()`](/sdk/basic_usage)
+**Errors**
 
----
-
-## Cancel Subscription
-
-Cancel an active subscription.
-
-```
-PUT /api/subscriptions/{subscriptionId}/cancel
-```
-
-### Path Parameters
-
-| Parameter | Type | Description |
+| Code | HTTP | Description |
 |---|---|---|
-| `subscriptionId` | `string` | The subscription ID |
+| `PLAN_NOT_FOUND` | 404 | Plan does not exist |
+| `PLAN_NOT_ACTIVE` | 400 | Plan is inactive |
+| `DYNAMIC_PLAN_REQUIRES_SUBSCRIPTION` | 400 | Dynamic plan checkout requires a pre-created subscription with `dynamicAmount` set by an admin |
+| `DYNAMIC_AMOUNT_NOT_SET` | 400 | The subscription's `dynamicAmount` is missing or ≤ 0 |
+| `SUBSCRIPTION_NOT_PENDING` | 400 | The referenced subscription is not in `pending` status |
+| `ACTIVE_SUBSCRIPTION_EXISTS` | 409 | The entity already has an active or trialing subscription |
+| `PAYMENTS_NOT_CONFIGURED` | 500 | Tenant has no payment provider configured |
+| `MISSING_EXTERNAL_PRICE_ID` | 400 | Plan has no external price ID for the configured provider |
+| `UNSUPPORTED_PROVIDER` | 400 | The configured payment provider is not supported |
+| `COUPON_NOT_FOUND` | 400 | Coupon code does not exist |
+| `COUPON_EXPIRED` | 400 | Coupon has passed its expiry date |
+| `COUPON_NOT_YET_VALID` | 400 | Coupon is not yet valid |
+| `COUPON_MAX_REDEMPTIONS` | 400 | Coupon has reached its redemption limit |
+| `COUPON_NOT_APPLICABLE` | 400 | Coupon does not apply to this plan |
 
-### Response
-
-Returns the updated subscription object with cancelled status.
-
-> **SDK:** [`sdk.payments.cancelSubscription(subscriptionId)`](/sdk/basic_usage)
+> **SDK (user):** `sdk.payments.checkout(params)`  
+> **SDK (admin):** `adminSdk.managePayments.checkout(params)`
 
 ---
 
-## List Invoices
+### `PUT /api/checkout/:subscriptionId/cancel`
 
-Retrieve invoices for the current user.
+Cancel a subscription initiated through checkout. Attempts provider-side cancellation before marking it locally. **Auth**: authenticated (non-admins can only cancel their own entity's subscriptions).
 
-```
-GET /api/invoices
-```
+---
 
-### Query Parameters
+## Invoices
 
-| Parameter | Type | Description |
+### `GET /api/invoices`
+
+List invoices. **Auth**: authenticated. Non-admins see only their own entity's invoices.
+
+**Query parameters (admin only)**
+
+| Name | Type | Description |
 |---|---|---|
-| `status` | `string` | Filter by invoice status |
+| `billableEntityType` | `user` \| `workspace` | |
+| `billableEntityId` | string | |
+| `status` | `paid` \| `open` \| `void` | |
 
-### Response
-
-```json
-[
-  {
-    "_id": "invoice-id",
-    "amount": 29.99,
-    "status": "paid",
-    "created": "2025-01-01T00:00:00.000Z"
-  }
-]
-```
-
-> **SDK:** [`sdk.payments.getInvoices(query)`](/sdk/basic_usage)
+> **SDK (user):** `sdk.payments.getInvoices(query)`  
+> **SDK (admin):** `adminSdk.managePayments.getInvoices(query)`
 
 ---
 
-## Get Invoice
+### `GET /api/invoices/:invoiceId`
 
-Retrieve a specific invoice by ID.
+Returns a single invoice. **Auth**: authenticated.
 
-```
-GET /api/invoices/{invoiceId}
-```
-
-### Path Parameters
-
-| Parameter | Type | Description |
-|---|---|---|
-| `invoiceId` | `string` | The invoice ID |
-
-### Response
-
-Returns the invoice object.
-
-> **SDK:** [`sdk.payments.getInvoice(invoiceId)`](/sdk/basic_usage)
+> **SDK:** `sdk.payments.getInvoice(invoiceId)`
 
 ---
 
-## Validate Coupon
+## Coupons
 
-Validate a coupon code, optionally against a specific plan.
+### `POST /api/coupons/validate`
 
-```
-POST /api/coupons/validate
-```
+Validate a coupon code before checkout. **Auth**: authenticated.
 
-### Request Body
-
-```json
-{
-  "code": "SAVE20",
-  "planId": "plan-id"
-}
-```
+**Request body**
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `code` | `string` | Yes | The coupon code to validate |
-| `planId` | `string` | No | Plan ID to validate the coupon against |
+| `code` | string | yes | Coupon code |
+| `planId` | string | no | Validates that the coupon applies to this plan |
 
-### Response
+**Errors**
 
-Returns the coupon object if valid.
+| Code | HTTP | Description |
+|---|---|---|
+| `COUPON_NOT_FOUND` | 400 | |
+| `COUPON_EXPIRED` | 400 | |
+| `COUPON_NOT_YET_VALID` | 400 | |
+| `COUPON_MAX_REDEMPTIONS` | 400 | |
+| `COUPON_NOT_APPLICABLE` | 400 | Coupon does not apply to the given plan |
 
-```json
-{
-  "_id": "coupon-id",
-  "code": "SAVE20",
-  "discount": 20,
-  "discountType": "percentage",
-  "isActive": true
-}
-```
+> **SDK:** `sdk.payments.validateCoupon(code, planId?)`
 
-> **SDK:** [`sdk.payments.validateCoupon(code, planId)`](/sdk/basic_usage)
+---
+
+### `GET /api/coupons` <Badge type="warning" text="admin" />
+
+List coupons. **Auth**: admin.
+
+| Name | Type | Description |
+|---|---|---|
+| `isActive` | boolean | Filter by active status |
+
+> **SDK:** `adminSdk.managePayments.getCoupons(query)`
+
+---
+
+### `POST /api/coupons` <Badge type="warning" text="admin" />
+
+Create a coupon. **Auth**: admin.
+
+> **SDK:** `adminSdk.managePayments.createCoupon(data)`
+
+---
+
+### `PUT /api/coupons/:couponId` <Badge type="warning" text="admin" />
+
+Update a coupon. **Auth**: admin.
+
+> **SDK:** `adminSdk.managePayments.updateCoupon(couponId, data)`
+
+---
+
+### `DELETE /api/coupons/:couponId` <Badge type="warning" text="admin" />
+
+Delete a coupon. **Auth**: admin.
+
+> **SDK:** `adminSdk.managePayments.deleteCoupon(couponId)`
+
+---
+
+## Webhooks
+
+### `POST /api/payments/webhooks/:providerKind`
+
+Receives payment provider webhook events. Verifies the webhook signature and updates subscription/invoice state.
+
+**Auth**: none (provider-signed payload).
+
+| `:providerKind` | Description |
+|---|---|
+| `sumit` | Sumit recurring payment events |
+| `paypal` | PayPal Billing subscription events |
+| `paddle` | Paddle subscription and transaction events |
+
+All events are tracked for idempotency — duplicates are safely ignored.

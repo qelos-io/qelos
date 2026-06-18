@@ -8,11 +8,25 @@ Qelos includes a full billing system that supports pricing plans, subscriptions,
 
 ## Core Concepts
 
-- **Plans** — Define your pricing tiers with monthly and yearly prices, feature lists, and usage limits.
-- **Subscriptions** — Track which user or workspace is subscribed to which plan, including lifecycle status.
+- **Plans** — Define your pricing tiers with monthly and yearly prices, feature lists, and usage limits. Plans can be **static** (fixed price) or **dynamic** (amount set per-subscription by an admin).
+- **Subscriptions** — Track which user or workspace is subscribed to which plan, including lifecycle status and dynamic amount.
 - **Invoices** — Automatically generated payment records with provider-specific details and download links.
 - **Coupons** — Discount codes with percentage or fixed-amount discounts, expiry dates, and usage limits.
-- **Checkout** — Unified flow that creates a provider-side payment session and returns a checkout URL.
+- **Checkout** — Two-phase flow: create a pending subscription first, then initiate a provider payment session.
+
+## Two-Phase Flow
+
+Subscribing and paying are separate processes. The subscription is created first (`pending` status), and the checkout step initiates the provider payment session:
+
+```
+User  →  POST /api/subscriptions                       creates pending subscription
+Admin →  PUT  /api/subscriptions/:id/dynamic-amount    sets amount (dynamic plans only)
+User  →  POST /api/checkout { subscriptionId }         initiates payment
+```
+
+For static plans, both steps can be collapsed into a single `POST /api/checkout` call.
+
+Users cannot set their own checkout amount — only admins can set the `dynamicAmount` on a subscription.
 
 ## B2B vs B2C
 
@@ -41,26 +55,31 @@ Payments are processed through existing integration sources. Currently supported
 
 ## SDK Quick Start
 
-```typescript
-import QelosSDK from '@qelos/sdk';
+See the [Payments SDK guide](/sdk/payments) for a complete reference.
 
-const sdk = new QelosSDK({ appUrl: 'https://your-app.com', fetch });
+```typescript
+import { QelosSDK } from '@qelos/sdk';
+import { QelosAdministratorSDK } from '@qelos/sdk/administrator';
+
+const sdk = new QelosSDK({ baseUrl: 'https://your-app.com' });
+const adminSdk = new QelosAdministratorSDK({ baseUrl: 'https://your-app.com' });
 
 // List available plans
-const plans = await sdk.payments.getPlans();
+const plans = await sdk.payments.getPlans({ isActive: true });
 
-// Start a checkout
+// Static plan — subscribe and pay in one step
 const { checkoutUrl } = await sdk.payments.checkout({
   planId: 'plan-id',
   billingCycle: 'monthly',
-  couponCode: 'SAVE20',
+  successUrl: 'https://myapp.com/success',
 });
+window.location.href = checkoutUrl;
 
-// Redirect user to checkoutUrl...
-
-// Check current subscription
-const subscription = await sdk.payments.getMySubscription();
-
-// View invoices
-const invoices = await sdk.payments.getInvoices();
+// Dynamic plan — two-phase flow
+const sub = await sdk.payments.subscribeToPlan('dynamic-plan-id', 'monthly');
+// Admin sets the amount:
+await adminSdk.managePayments.setSubscriptionDynamicAmount(sub._id, 149.00);
+// User initiates checkout:
+const { checkoutUrl: url } = await sdk.payments.checkout({ subscriptionId: sub._id });
+window.location.href = url;
 ```
