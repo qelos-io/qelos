@@ -41,6 +41,8 @@ export async function processWebhook(providerKind: string, headers: Record<strin
       return processPayPalWebhook(headers, body);
     case 'sumit':
       return processSumitWebhook(headers, body);
+    case 'dodopayments':
+      return processDodoPaymentsWebhook(headers, body, rawBody || JSON.stringify(body));
     default:
       throw { code: 'UNSUPPORTED_PROVIDER', message: `Webhook provider '${providerKind}' is not supported` };
   }
@@ -431,4 +433,189 @@ async function handleSumitRecurringCanceled(tenant: string, body: any) {
   if (!subscription) return { status: 'subscription_not_found' };
 
   return SubscriptionsService.updateSubscriptionStatus(tenant, subscription._id.toString(), 'canceled');
+}
+
+// --- DodoPayments Webhooks ---
+
+function verifyDodoPaymentsSignature(headers: Record<string, any>, rawBody: string, webhookSecret: string) {
+  const webhookId = headers['webhook-id'];
+  const webhookTimestamp = headers['webhook-timestamp'];
+  const webhookSignature = headers['webhook-signature'];
+
+  if (!webhookId || !webhookTimestamp || !webhookSignature) {
+    throw { code: 'INVALID_SIGNATURE', message: 'Missing DodoPayments webhook signature headers' };
+  }
+
+  const signedContent = `${webhookId}.${webhookTimestamp}.${rawBody}`;
+
+  // DodoPayments secrets are prefixed with "whsec_"; strip prefix before base64 decoding
+  const secretBase64 = webhookSecret.includes('_') ? webhookSecret.split('_').slice(1).join('_') : webhookSecret;
+  const secretBytes = Buffer.from(secretBase64, 'base64');
+
+  const computedSignature = crypto.createHmac('sha256', secretBytes).update(signedContent).digest('base64');
+
+  // Signature header may contain multiple space-separated "v1,<sig>" entries
+  const signatures = webhookSignature.split(' ');
+  const valid = signatures.some((sig: string) => {
+    const [version, value] = sig.split(',');
+    if (version !== 'v1' || !value) return false;
+    try {
+      return crypto.timingSafeEqual(Buffer.from(value, 'base64'), Buffer.from(computedSignature, 'base64'));
+    } catch {
+      return false;
+    }
+  });
+
+  if (!valid) {
+    throw { code: 'INVALID_SIGNATURE', message: 'DodoPayments webhook signature verification failed' };
+  }
+}
+
+async function processDodoPaymentsWebhook(headers: Record<string, any>, body: any, rawBody: string) {
+  const eventId = body.webhook_id || headers['webhook-id'];
+  const eventType = body.type || body.event_type;
+  const data = body.data || {};
+
+  if (!eventId || !eventType) {
+    throw { code: 'INVALID_WEBHOOK', message: 'Missing webhook_id or type in DodoPayments webhook' };
+  }
+
+  const externalSubscriptionId = data.subscription_id || data.id;
+  const subscription = externalSubscriptionId
+    ? await findSubscriptionByExternalId(externalSubscriptionId, 'dodopayments')
+    : null;
+  const tenant = subscription?.tenant || extractTenantFromCustomData(data.metadata);
+
+  if (!tenant) {
+    throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from DodoPayments webhook data' };
+  }
+
+  const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
+  const webhookSecret = requireWebhookSecret(config);
+  verifyDodoPaymentsSignature(headers, rawBody, webhookSecret);
+
+  if (await isEventProcessed(tenant, eventId, 'dodopayments')) {
+    return { status: 'already_processed' };
+  }
+
+  await recordEvent(tenant, eventId, 'dodopayments', eventType);
+
+  let result: any;
+
+  switch (eventType) {
+    case 'subscription.active':
+    case 'subscription.created':
+      result = await handleDodoSubscriptionActivated(tenant, data);
+      break;
+    case 'subscription.cancelled':
+      result = await handleDodoSubscriptionCancelled(tenant, data);
+      break;
+    case 'subscription.past_due':
+      result = await handleDodoSubscriptionPastDue(tenant, data);
+      break;
+    case 'subscription.on_hold':
+      result = await handleDodoSubscriptionOnHold(tenant, data);
+      break;
+    case 'subscription.renewed':
+      result = await handleDodoSubscriptionRenewed(tenant, data);
+      break;
+    case 'payment.succeeded':
+      result = await handleDodoPaymentSucceeded(tenant, data);
+      break;
+    case 'payment.failed':
+      result = await handleDodoPaymentFailed(tenant, data);
+      break;
+    default:
+      result = { status: 'unhandled', eventType };
+  }
+
+  return result;
+}
+
+async function handleDodoSubscriptionActivated(tenant: string, data: any) {
+  const externalId = data.subscription_id || data.id;
+  const subscription = await findSubscriptionByExternalId(externalId, 'dodopayments');
+  if (!subscription) return { status: 'subscription_not_found' };
+
+  const periodStart = data.current_period_start ? new Date(data.current_period_start) : undefined;
+  const periodEnd = data.current_period_end ? new Date(data.current_period_end) : undefined;
+
+  return CheckoutService.activateSubscription(tenant, subscription._id.toString(), {
+    externalSubscriptionId: externalId,
+    currentPeriodStart: periodStart,
+    currentPeriodEnd: periodEnd,
+  });
+}
+
+async function handleDodoSubscriptionCancelled(tenant: string, data: any) {
+  const externalId = data.subscription_id || data.id;
+  const subscription = await findSubscriptionByExternalId(externalId, 'dodopayments');
+  if (!subscription) return { status: 'subscription_not_found' };
+
+  return SubscriptionsService.updateSubscriptionStatus(tenant, subscription._id.toString(), 'canceled');
+}
+
+async function handleDodoSubscriptionPastDue(tenant: string, data: any) {
+  const externalId = data.subscription_id || data.id;
+  const subscription = await findSubscriptionByExternalId(externalId, 'dodopayments');
+  if (!subscription) return { status: 'subscription_not_found' };
+
+  return SubscriptionsService.updateSubscriptionStatus(tenant, subscription._id.toString(), 'past_due');
+}
+
+async function handleDodoSubscriptionOnHold(tenant: string, data: any) {
+  const externalId = data.subscription_id || data.id;
+  const subscription = await findSubscriptionByExternalId(externalId, 'dodopayments');
+  if (!subscription) return { status: 'subscription_not_found' };
+
+  return SubscriptionsService.updateSubscriptionStatus(tenant, subscription._id.toString(), 'past_due');
+}
+
+async function handleDodoSubscriptionRenewed(tenant: string, data: any) {
+  const externalId = data.subscription_id || data.id;
+  const subscription = await findSubscriptionByExternalId(externalId, 'dodopayments');
+  if (!subscription) return { status: 'subscription_not_found' };
+
+  const periodStart = data.current_period_start ? new Date(data.current_period_start) : undefined;
+  const periodEnd = data.current_period_end ? new Date(data.current_period_end) : undefined;
+
+  await SubscriptionsService.updateSubscriptionStatus(tenant, subscription._id.toString(), 'active', {
+    currentPeriodStart: periodStart,
+    currentPeriodEnd: periodEnd,
+  });
+
+  return CheckoutService.createInvoiceForPayment(tenant, subscription, {
+    amount: data.amount ? data.amount / 100 : 0,
+    currency: data.currency || subscription.currency,
+    externalInvoiceId: data.payment_id || data.id,
+    periodStart,
+    periodEnd,
+  });
+}
+
+async function handleDodoPaymentSucceeded(tenant: string, data: any) {
+  const subscriptionId = data.subscription_id;
+  if (subscriptionId) {
+    const subscription = await findSubscriptionByExternalId(subscriptionId, 'dodopayments');
+    if (!subscription) return { status: 'subscription_not_found' };
+
+    return CheckoutService.createInvoiceForPayment(tenant, subscription, {
+      amount: data.amount ? data.amount / 100 : 0,
+      currency: data.currency || subscription.currency,
+      externalInvoiceId: data.payment_id || data.id,
+    });
+  }
+
+  // One-time payment without a subscription
+  return { status: 'payment_recorded', paymentId: data.payment_id || data.id };
+}
+
+async function handleDodoPaymentFailed(tenant: string, data: any) {
+  const subscriptionId = data.subscription_id;
+  if (!subscriptionId) return { status: 'no_subscription' };
+
+  const subscription = await findSubscriptionByExternalId(subscriptionId, 'dodopayments');
+  if (!subscription) return { status: 'subscription_not_found' };
+
+  return SubscriptionsService.updateSubscriptionStatus(tenant, subscription._id.toString(), 'past_due');
 }
