@@ -54,10 +54,44 @@ export async function getMySubscription(req, res: Response) {
 
 export async function createSubscription(req, res: Response) {
   try {
-    const subscription = await SubscriptionsService.createSubscription(req.headers.tenant, req.body);
+    let data: any;
+
+    if (req.user?.isPrivileged) {
+      data = req.body;
+    } else {
+      const { planId, billingCycle, couponCode } = req.body;
+      if (!planId || !billingCycle) {
+        res.status(400).json({ message: 'planId and billingCycle are required' }).end();
+        return;
+      }
+      const entityType = req.user?.workspace ? 'workspace' : 'user';
+      const entityId = resolveUserEntityId(req);
+      if (!entityId) {
+        res.status(400).json({ message: 'Could not determine billable entity' }).end();
+        return;
+      }
+      data = { planId, billingCycle, couponCode, billableEntityType: entityType, billableEntityId: entityId, status: 'pending' };
+    }
+
+    const subscription = await SubscriptionsService.createSubscription(req.headers.tenant, data);
     res.status(200).json(subscription).end();
   } catch (e: any) {
     res.status(500).json({ message: e?.message || 'failed to create subscription' }).end();
+  }
+}
+
+export async function setDynamicAmount(req, res: Response) {
+  try {
+    const { amount } = req.body;
+    if (typeof amount !== 'number' || amount <= 0) {
+      res.status(400).json({ message: 'amount must be a positive number' }).end();
+      return;
+    }
+    const subscription = await SubscriptionsService.setDynamicAmount(req.headers.tenant, req.params.id, amount);
+    res.status(200).json(subscription).end();
+  } catch (e: any) {
+    const status = e?.code === 'SUBSCRIPTION_NOT_FOUND' ? 404 : e?.code === 'INVALID_AMOUNT' ? 400 : 500;
+    res.status(status).json({ code: e?.code, message: e?.message || 'failed to set dynamic amount' }).end();
   }
 }
 
