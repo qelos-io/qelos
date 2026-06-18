@@ -72,7 +72,9 @@ Remove source and purge credentials.
 
 ## Supported Integration Kinds
 
-OpenAI, Gemini, Claude, HTTP, Email, Google, GitHub, LinkedIn, Facebook, Paddle, PayPal, Sumit, N8n, Supabase, AWS, Cloudflare Workers, Qelos internal
+OpenAI, Gemini, Claude, HTTP, Email, Google, GitHub, LinkedIn, Facebook, Paddle, PayPal, Sumit, DodoPayments, N8n, Supabase, AWS, Cloudflare Workers, Qelos internal
+
+**DodoPayments target operations** (`DodoPaymentsTargetOperation`): `createPayment`, `getPayment`, `listPayments`, `createSubscription`, `getSubscription`, `updateSubscription`, `cancelSubscription`, `listSubscriptions`, `createProduct`, `getProduct`, `listProducts`, `createCustomer`, `getCustomer`, `listCustomers`
 
 ## Related
 
