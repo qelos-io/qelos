@@ -1,6 +1,6 @@
 import { IntegrationSourceKind } from '@qelos/global-types';
 
-type OptionalKind = IntegrationSourceKind.ClaudeAi | 
+type OptionalKind = IntegrationSourceKind.ClaudeAi |
   IntegrationSourceKind.Email |
   IntegrationSourceKind.Facebook |
   IntegrationSourceKind.Http |
@@ -12,7 +12,8 @@ type OptionalKind = IntegrationSourceKind.ClaudeAi |
   IntegrationSourceKind.Gemini |
   IntegrationSourceKind.Sumit |
   IntegrationSourceKind.PayPal |
-  IntegrationSourceKind.Paddle;
+  IntegrationSourceKind.Paddle |
+  IntegrationSourceKind.DodoPayments;
 
 export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind }> {
   return {
@@ -90,6 +91,11 @@ export function useIntegrationKinds(): Record<OptionalKind, { logo?, name, kind 
       logo: '/logos/paddle.svg',
       name: 'Paddle',
       kind: IntegrationSourceKind.Paddle
+    },
+    [IntegrationSourceKind.DodoPayments]: {
+      logo: '/logos/dodopayments.svg',
+      name: 'DodoPayments',
+      kind: IntegrationSourceKind.DodoPayments
     }
   }
 }
