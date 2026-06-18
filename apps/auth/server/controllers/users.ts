@@ -8,6 +8,7 @@ import logger from '../services/logger';
 import { isObjectId } from '../../helpers/mongo-utils';
 import * as UsersService from '../services/users';
 import { splitAdminCreateUserBody } from '../services/admin-create-user-body';
+import { normalizeEmailUsername } from '../services/email-username';
 import { Types, Schema } from 'mongoose';
 
 import ObjectId = Types.ObjectId
@@ -199,12 +200,13 @@ export async function createUser(req: AuthRequest, res: Response) {
   const user = new User(userData);
 
   if (req.authConfig.treatUsernameAs === 'email') {
-    user.username = user.username.toLowerCase().trim().replace(/ /g, '+');
-    user.email = user.username;
-    if (!user.username.includes('@')) {
-      res.status(400).json({ message: 'username should be an email address' }).end();
+    const result = normalizeEmailUsername(user.username);
+    if (!result.valid) {
+      res.status(400).json({ message: result.error }).end();
       return;
     }
+    user.username = result.username;
+    user.email = result.username;
   }
 
   user.tenant = req.headers.tenant;
