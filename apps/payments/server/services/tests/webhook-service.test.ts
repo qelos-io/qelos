@@ -471,4 +471,140 @@ describe('webhook-service', async () => {
       );
     });
   });
+
+  describe('DodoPayments webhooks', () => {
+    const DODO_SECRET = 'whsec_dGVzdA=='; // secretBytes = "test"
+
+    function makeDodoHeaders(body: any, webhookId: string): Record<string, string> {
+      const ts = '1700000000';
+      const rawBody = JSON.stringify(body);
+      const signedContent = `${webhookId}.${ts}.${rawBody}`;
+      const secretBase64 = DODO_SECRET.split('_').slice(1).join('_');
+      const secretBytes = Buffer.from(secretBase64, 'base64');
+      const sig = crypto.createHmac('sha256', secretBytes).update(signedContent).digest('base64');
+      return {
+        'webhook-id': webhookId,
+        'webhook-timestamp': ts,
+        'webhook-signature': `v1,${sig}`,
+      };
+    }
+
+    beforeEach(() => {
+      getPaymentsConfigurationMock.mock.mockImplementation(async () => ({
+        providerSourceId: 'source-1',
+        providerKind: 'dodopayments',
+        webhookSecret: DODO_SECRET,
+      }));
+    });
+
+    const baseDodoEvent = {
+      webhook_id: 'evt-dodo-1',
+      type: 'subscription.active',
+      data: {
+        subscription_id: 'sub_dodo_1',
+        current_period_start: '2026-01-01T00:00:00Z',
+        current_period_end: '2026-02-01T00:00:00Z',
+      },
+    };
+
+    it('should accept a valid DodoPayments signature', async () => {
+      const mockSub = { _id: 'sub-1', tenant: 'tenant-1', providerKind: 'dodopayments' };
+      mockSubscriptionFound(mockSub);
+      activateSubscriptionMock.mock.mockImplementation(async () => ({ _id: 'sub-1', status: 'active' }));
+
+      const headers = makeDodoHeaders(baseDodoEvent, baseDodoEvent.webhook_id);
+      await WebhookService.processWebhook('dodopayments', headers, baseDodoEvent);
+
+      assert.strictEqual(activateSubscriptionMock.mock.calls.length, 1);
+    });
+
+    it('should throw INVALID_SIGNATURE for a tampered DodoPayments signature', async () => {
+      const mockSub = { _id: 'sub-1', tenant: 'tenant-1', providerKind: 'dodopayments' };
+      mockSubscriptionFound(mockSub);
+
+      const headers = {
+        'webhook-id': baseDodoEvent.webhook_id,
+        'webhook-timestamp': '1700000000',
+        'webhook-signature': 'v1,dGVzdA==', // wrong signature (too short)
+      };
+
+      await assert.rejects(
+        () => WebhookService.processWebhook('dodopayments', headers, baseDodoEvent),
+        (e: any) => {
+          assert.strictEqual(e.code, 'INVALID_SIGNATURE');
+          return true;
+        },
+      );
+    });
+
+    it('should handle subscription.active event', async () => {
+      const mockSub = { _id: 'sub-1', tenant: 'tenant-1', providerKind: 'dodopayments' };
+      mockSubscriptionFound(mockSub);
+      activateSubscriptionMock.mock.mockImplementation(async () => ({ _id: 'sub-1', status: 'active' }));
+
+      const headers = makeDodoHeaders(baseDodoEvent, baseDodoEvent.webhook_id);
+      await WebhookService.processWebhook('dodopayments', headers, baseDodoEvent);
+
+      assert.strictEqual(activateSubscriptionMock.mock.calls.length, 1);
+      assert.strictEqual(activateSubscriptionMock.mock.calls[0].arguments[1], 'sub-1');
+      const updates = activateSubscriptionMock.mock.calls[0].arguments[2];
+      assert.strictEqual(updates.externalSubscriptionId, 'sub_dodo_1');
+    });
+
+    it('should handle subscription.cancelled event', async () => {
+      const mockSub = { _id: 'sub-1', tenant: 'tenant-1', providerKind: 'dodopayments' };
+      mockSubscriptionFound(mockSub);
+      updateSubscriptionStatusMock.mock.mockImplementation(async () => ({ _id: 'sub-1', status: 'canceled' }));
+
+      const body = { ...baseDodoEvent, webhook_id: 'evt-dodo-2', type: 'subscription.cancelled' };
+      const headers = makeDodoHeaders(body, body.webhook_id);
+      await WebhookService.processWebhook('dodopayments', headers, body);
+
+      assert.deepStrictEqual(updateSubscriptionStatusMock.mock.calls[0].arguments, ['tenant-1', 'sub-1', 'canceled']);
+    });
+
+    it('should handle subscription.renewed event and create invoice', async () => {
+      const mockSub = { _id: 'sub-1', tenant: 'tenant-1', providerKind: 'dodopayments', currency: 'USD' };
+      mockSubscriptionFound(mockSub);
+      updateSubscriptionStatusMock.mock.mockImplementation(async () => ({ _id: 'sub-1', status: 'active' }));
+      createInvoiceForPaymentMock.mock.mockImplementation(async () => ({ _id: 'inv-1' }));
+
+      const body = {
+        webhook_id: 'evt-dodo-3',
+        type: 'subscription.renewed',
+        data: {
+          subscription_id: 'sub_dodo_1',
+          amount: 2900,
+          currency: 'USD',
+          payment_id: 'pay-1',
+          current_period_start: '2026-02-01T00:00:00Z',
+          current_period_end: '2026-03-01T00:00:00Z',
+        },
+      };
+      const headers = makeDodoHeaders(body, body.webhook_id);
+      await WebhookService.processWebhook('dodopayments', headers, body);
+
+      assert.strictEqual(createInvoiceForPaymentMock.mock.calls.length, 1);
+      const paymentData = createInvoiceForPaymentMock.mock.calls[0].arguments[2];
+      assert.strictEqual(paymentData.amount, 29);
+      assert.strictEqual(paymentData.currency, 'USD');
+      assert.strictEqual(paymentData.externalInvoiceId, 'pay-1');
+    });
+
+    it('should skip already processed events (idempotency)', async () => {
+      const mockSub = { _id: 'sub-1', tenant: 'tenant-1', providerKind: 'dodopayments' };
+      mockSubscriptionFound(mockSub);
+      webhookEventFindOneMock.mock.mockImplementation(() => ({
+        lean: mock.fn(() => ({
+          exec: mock.fn(async () => ({ externalEventId: 'evt-dodo-1' })),
+        })),
+      }));
+
+      const headers = makeDodoHeaders(baseDodoEvent, baseDodoEvent.webhook_id);
+      const result = await WebhookService.processWebhook('dodopayments', headers, baseDodoEvent);
+
+      assert.deepStrictEqual(result, { status: 'already_processed' });
+      assert.strictEqual(activateSubscriptionMock.mock.calls.length, 0);
+    });
+  });
 });
