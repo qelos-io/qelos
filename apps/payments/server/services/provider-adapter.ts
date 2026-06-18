@@ -19,6 +19,8 @@ export interface CheckoutParams {
   billableEntityId: string;
   amount: number;
   currency: string;
+  customerEmail?: string;
+  customerName?: string;
   successUrl?: string;
   cancelUrl?: string;
 }
@@ -126,6 +128,34 @@ async function createPayPalCheckout(tenant: string, sourceId: string, params: Ch
   };
 }
 
+async function createDodoPaymentsCheckout(tenant: string, sourceId: string, params: CheckoutParams): Promise<CheckoutResult> {
+  const externalIds = params.plan.externalIds?.dodopayments || {};
+  const priceId = params.billingCycle === 'monthly' ? externalIds.monthlyPriceId : externalIds.yearlyPriceId;
+
+  if (!priceId) {
+    throw { code: 'MISSING_EXTERNAL_PRICE_ID', message: `No DodoPayments ${params.billingCycle} price ID configured for this plan` };
+  }
+
+  const result = await callIntegrationSource(tenant, sourceId, 'createSubscription', {}, {
+    payment_link: true,
+    product_id: priceId,
+    quantity: 1,
+    metadata: {
+      billableEntityType: params.billableEntityType,
+      billableEntityId: params.billableEntityId,
+      planId: params.plan._id.toString(),
+    },
+    customer: params.customerEmail ? { email: params.customerEmail, name: params.customerName } : undefined,
+    return_url: params.successUrl,
+  });
+
+  return {
+    checkoutUrl: result?.payment_link,
+    externalSubscriptionId: result?.subscription_id,
+    providerData: result,
+  };
+}
+
 async function createSumitCheckout(tenant: string, sourceId: string, params: CheckoutParams): Promise<CheckoutResult> {
   const result = await callIntegrationSource(tenant, sourceId, 'createRecurringPayment', {}, {
     Amount: params.amount,
@@ -160,6 +190,8 @@ export async function createCheckout(
       return createPayPalCheckout(tenant, sourceId, params);
     case 'sumit':
       return createSumitCheckout(tenant, sourceId, params);
+    case 'dodopayments':
+      return createDodoPaymentsCheckout(tenant, sourceId, params);
     default:
       throw { code: 'UNSUPPORTED_PROVIDER', message: `Payment provider '${providerKind}' is not supported` };
   }
@@ -186,6 +218,10 @@ export async function cancelProviderSubscription(
     case 'sumit':
       operation = 'deleteRecurringPayment';
       payload = { RecurringPaymentId: externalSubscriptionId };
+      break;
+    case 'dodopayments':
+      operation = 'cancelSubscription';
+      payload = { subscription_id: externalSubscriptionId };
       break;
     default:
       throw { code: 'UNSUPPORTED_PROVIDER', message: `Payment provider '${providerKind}' is not supported` };
@@ -227,6 +263,10 @@ export async function getProviderSubscription(
     case 'paddle':
       operation = 'getSubscription';
       payload = { subscriptionId: externalSubscriptionId };
+      break;
+    case 'dodopayments':
+      operation = 'getSubscription';
+      payload = { subscription_id: externalSubscriptionId };
       break;
     default:
       throw { code: 'UNSUPPORTED_PROVIDER', message: `getSubscription not supported for '${providerKind}'` };
