@@ -14,6 +14,7 @@ export enum IntegrationSourceKind {
   Sumit = 'sumit',
   PayPal = 'paypal',
   Paddle = 'paddle',
+  DodoPayments = 'dodopayments',
   AWS = 'aws',
   Cloudflare = 'cloudflare',
 }
@@ -117,6 +118,27 @@ export const PaddleTargetOperation = {
   listCustomers: 'listCustomers',
 } as const;
 
+export const DodoPaymentsTargetOperation = {
+  // Payments
+  createPayment: 'createPayment',
+  getPayment: 'getPayment',
+  listPayments: 'listPayments',
+  // Subscriptions
+  createSubscription: 'createSubscription',
+  getSubscription: 'getSubscription',
+  updateSubscription: 'updateSubscription',
+  cancelSubscription: 'cancelSubscription',
+  listSubscriptions: 'listSubscriptions',
+  // Products
+  createProduct: 'createProduct',
+  getProduct: 'getProduct',
+  listProducts: 'listProducts',
+  // Customers
+  createCustomer: 'createCustomer',
+  getCustomer: 'getCustomer',
+  listCustomers: 'listCustomers',
+} as const;
+
 export const AWSTargetOperation = {
   callFunction: 'callFunction',
   getFunction: 'getFunction',
@@ -200,6 +222,17 @@ export interface IPaddleSource extends IIntegrationSource {
   };
   metadata: {
     environment: 'sandbox' | 'live';
+  };
+}
+
+export interface IDodoPaymentsSource extends IIntegrationSource {
+  _id?: string;
+  kind: IntegrationSourceKind.DodoPayments;
+  authentication: {
+    apiKey: string;
+  };
+  metadata: {
+    environment: 'test' | 'live';
   };
 }
 
