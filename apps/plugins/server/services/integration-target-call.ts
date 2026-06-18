@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fetch from 'node-fetch';
-import { CloudflareTargetOperation, EmailTargetOperation, HttpTargetOperation, ICloudflareSource, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, IPayPalSource, IPaddleSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation, PayPalTargetOperation, PaddleTargetOperation, AWSTargetOperation, IAWSSource, OpenAIChatCompletionPayload, OpenAIClearStoragePayload, OpenAIUploadStoragePayload } from '@qelos/global-types';
+import { CloudflareTargetOperation, EmailTargetOperation, HttpTargetOperation, ICloudflareSource, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, IPayPalSource, IPaddleSource, IDodoPaymentsSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation, PayPalTargetOperation, PaddleTargetOperation, DodoPaymentsTargetOperation, AWSTargetOperation, IAWSSource, OpenAIChatCompletionPayload, OpenAIClearStoragePayload, OpenAIUploadStoragePayload } from '@qelos/global-types';
 import { IIntegrationEntity } from '../models/integration';
 import IntegrationSource from '../models/integration-source';
 import { getEncryptedSourceAuthentication } from './source-authentication-service';
@@ -1469,6 +1469,172 @@ async function handleCloudflareTarget(
 }
 
 
+async function handleDodoPaymentsTarget(
+  integrationTarget: IIntegrationEntity,
+  source: IDodoPaymentsSource,
+  authentication: { apiKey?: string } = {},
+  payload: any = {}
+) {
+  const operation = integrationTarget.operation as keyof typeof DodoPaymentsTargetOperation;
+  const { apiKey } = authentication;
+
+  if (!apiKey) {
+    throw new Error('Missing API key for DodoPayments integration');
+  }
+
+  const baseUrl = source.metadata.environment === 'live'
+    ? 'https://live.dodopayments.com'
+    : 'https://test.dodopayments.com';
+
+  const details = integrationTarget.details || {};
+
+  let endpoint = '';
+  let method = 'POST';
+
+  switch (operation) {
+    case DodoPaymentsTargetOperation.createPayment:
+      endpoint = '/payments';
+      break;
+    case DodoPaymentsTargetOperation.getPayment: {
+      const paymentId = payload.payment_id || details.payment_id;
+      if (!paymentId) {
+        throw new Error('payment_id is required for getPayment operation');
+      }
+      method = 'GET';
+      endpoint = `/payments/${paymentId}`;
+      break;
+    }
+    case DodoPaymentsTargetOperation.listPayments:
+      method = 'GET';
+      endpoint = '/payments';
+      break;
+    case DodoPaymentsTargetOperation.createSubscription:
+      endpoint = '/subscriptions';
+      break;
+    case DodoPaymentsTargetOperation.getSubscription: {
+      const subscriptionId = payload.subscription_id || details.subscription_id;
+      if (!subscriptionId) {
+        throw new Error('subscription_id is required for getSubscription operation');
+      }
+      method = 'GET';
+      endpoint = `/subscriptions/${subscriptionId}`;
+      break;
+    }
+    case DodoPaymentsTargetOperation.updateSubscription: {
+      const subscriptionId = payload.subscription_id || details.subscription_id;
+      if (!subscriptionId) {
+        throw new Error('subscription_id is required for updateSubscription operation');
+      }
+      method = 'PATCH';
+      endpoint = `/subscriptions/${subscriptionId}`;
+      break;
+    }
+    case DodoPaymentsTargetOperation.cancelSubscription: {
+      const subscriptionId = payload.subscription_id || details.subscription_id;
+      if (!subscriptionId) {
+        throw new Error('subscription_id is required for cancelSubscription operation');
+      }
+      endpoint = `/subscriptions/${subscriptionId}/cancel`;
+      break;
+    }
+    case DodoPaymentsTargetOperation.listSubscriptions:
+      method = 'GET';
+      endpoint = '/subscriptions';
+      break;
+    case DodoPaymentsTargetOperation.createProduct:
+      endpoint = '/products';
+      break;
+    case DodoPaymentsTargetOperation.getProduct: {
+      const productId = payload.product_id || details.product_id;
+      if (!productId) {
+        throw new Error('product_id is required for getProduct operation');
+      }
+      method = 'GET';
+      endpoint = `/products/${productId}`;
+      break;
+    }
+    case DodoPaymentsTargetOperation.listProducts:
+      method = 'GET';
+      endpoint = '/products';
+      break;
+    case DodoPaymentsTargetOperation.createCustomer:
+      endpoint = '/customers';
+      break;
+    case DodoPaymentsTargetOperation.getCustomer: {
+      const customerId = payload.customer_id || details.customer_id;
+      if (!customerId) {
+        throw new Error('customer_id is required for getCustomer operation');
+      }
+      method = 'GET';
+      endpoint = `/customers/${customerId}`;
+      break;
+    }
+    case DodoPaymentsTargetOperation.listCustomers:
+      method = 'GET';
+      endpoint = '/customers';
+      break;
+    default:
+      throw new Error(`Unsupported DodoPayments operation: ${operation}`);
+  }
+
+  const url = new URL(endpoint, baseUrl);
+
+  if (method === 'GET' && payload) {
+    Object.entries(payload).forEach(([key, value]) => {
+      if (key !== 'triggerResponse' && key !== 'payment_id' && key !== 'subscription_id' && key !== 'product_id' && key !== 'customer_id' && value !== undefined) {
+        url.searchParams.append(key, String(value));
+      }
+    });
+  }
+
+  const headers: Record<string, string> = {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  };
+
+  const fetchOptions: any = {
+    method,
+    headers,
+    agent: httpAgent,
+  };
+
+  if (method !== 'GET') {
+    const { triggerResponse: _tr, payment_id: _pid, subscription_id: _sid, product_id: _prid, customer_id: _cid, ...bodyPayload } = payload || {};
+    fetchOptions.body = JSON.stringify({ ...details, ...bodyPayload });
+  }
+
+  const response = await fetch(url.toString(), fetchOptions);
+  const responseBody = await response.json();
+
+  if (!response.ok) {
+    throw new Error(`DodoPayments API request failed with status ${response.status}: ${JSON.stringify(responseBody)}`);
+  }
+
+  const triggerResponse = mergeTriggerResponses(
+    details.triggerResponse as TriggerResponseConfig,
+    payload.triggerResponse as TriggerResponseConfig,
+  );
+
+  if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+    const event = new PlatformEvent({
+      tenant: source.tenant,
+      source: triggerResponse.source,
+      kind: triggerResponse.kind,
+      eventName: triggerResponse.eventName,
+      description: triggerResponse.description,
+      metadata: {
+        ...triggerResponse.metadata,
+        operation,
+        status: response.status,
+        body: responseBody,
+      },
+    });
+    event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+  }
+
+  return responseBody;
+}
+
 export async function callIntegrationTarget(tenant: string, payload: any, integrationTarget: IIntegrationEntity) {
   // load integration source data
   const source = await IntegrationSource.findOne({ tenant, _id: integrationTarget.source }).lean().exec();
@@ -1495,5 +1661,7 @@ export async function callIntegrationTarget(tenant: string, payload: any, integr
     return handleAwsTarget(integrationTarget, source as IAWSSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Cloudflare) {
     return handleCloudflareTarget(integrationTarget, source as ICloudflareSource, authentication || {}, payload);
+  } else if (source.kind === IntegrationSourceKind.DodoPayments) {
+    return handleDodoPaymentsTarget(integrationTarget, source as IDodoPaymentsSource, authentication || {}, payload);
   }
 }
