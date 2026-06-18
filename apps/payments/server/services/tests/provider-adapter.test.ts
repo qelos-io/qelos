@@ -198,6 +198,61 @@ describe('provider-adapter', async () => {
       });
     });
 
+    describe('dodopayments', () => {
+      const dodoBasePlan = {
+        ...basePlan,
+        externalIds: {
+          ...basePlan.externalIds,
+          dodopayments: { monthlyPriceId: 'dodo-monthly-price', yearlyPriceId: 'dodo-yearly-price' },
+        },
+      };
+
+      it('should call plugins service with createSubscription for monthly billing', async () => {
+        mockCallPluginsService.mock.mockImplementation(async () => ({
+          data: { payment_link: 'https://checkout.dodopayments.com/xxx', subscription_id: 'sub_dodo_1' },
+        }));
+
+        const result = await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'dodopayments', {
+          ...baseCheckoutParams,
+          plan: dodoBasePlan,
+        });
+
+        assert.strictEqual(result.checkoutUrl, 'https://checkout.dodopayments.com/xxx');
+        assert.strictEqual(result.externalSubscriptionId, 'sub_dodo_1');
+
+        const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+        assert.strictEqual(callArgs.data.operation, 'createSubscription');
+        assert.strictEqual(callArgs.data.payload.product_id, 'dodo-monthly-price');
+      });
+
+      it('should use yearly price ID for yearly billing', async () => {
+        mockCallPluginsService.mock.mockImplementation(async () => ({
+          data: { payment_link: 'https://checkout.dodopayments.com/yyy', subscription_id: 'sub_dodo_2' },
+        }));
+
+        await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'dodopayments', {
+          ...baseCheckoutParams,
+          plan: dodoBasePlan,
+          billingCycle: 'yearly',
+        });
+
+        const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+        assert.strictEqual(callArgs.data.payload.product_id, 'dodo-yearly-price');
+      });
+
+      it('should throw MISSING_EXTERNAL_PRICE_ID when price ID is not configured', async () => {
+        const noPricePlan = { ...basePlan, externalIds: {} };
+
+        await assert.rejects(() => ProviderAdapter.createCheckout('tenant-1', 'src-1', 'dodopayments', {
+          ...baseCheckoutParams,
+          plan: noPricePlan,
+        }), (e: any) => {
+          assert.strictEqual(e.code, 'MISSING_EXTERNAL_PRICE_ID');
+          return true;
+        });
+      });
+    });
+
     it('should throw UNSUPPORTED_PROVIDER for unknown provider', async () => {
       await assert.rejects(() => ProviderAdapter.createCheckout('tenant-1', 'src-1', 'stripe', baseCheckoutParams), (e: any) => {
         assert.strictEqual(e.code, 'UNSUPPORTED_PROVIDER');
@@ -222,11 +277,45 @@ describe('provider-adapter', async () => {
       assert.strictEqual(callArgs.data.payload.effective_from, 'next_billing_period');
     });
 
+    it('should call dodopayments cancel with correct params', async () => {
+      mockCallPluginsService.mock.mockImplementation(async () => ({ data: {} }));
+
+      await ProviderAdapter.cancelProviderSubscription('tenant-1', 'src-1', 'dodopayments', 'sub_dodo_1');
+
+      const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+      assert.strictEqual(callArgs.data.operation, 'cancelSubscription');
+      assert.strictEqual(callArgs.data.payload.subscription_id, 'sub_dodo_1');
+    });
+
     it('should throw UNSUPPORTED_PROVIDER for unknown provider', async () => {
       await assert.rejects(() => ProviderAdapter.cancelProviderSubscription('tenant-1', 'src-1', 'stripe', 'sub-1'), (e: any) => {
         assert.strictEqual(e.code, 'UNSUPPORTED_PROVIDER');
         return true;
       });
+    });
+  });
+
+  describe('getProviderSubscription', () => {
+    it('should call dodopayments getSubscription with correct params', async () => {
+      mockCallPluginsService.mock.mockImplementation(async () => ({
+        data: { id: 'sub_dodo_1', status: 'active' },
+      }));
+
+      await ProviderAdapter.getProviderSubscription('tenant-1', 'src-1', 'dodopayments', 'sub_dodo_1');
+
+      const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+      assert.strictEqual(callArgs.data.operation, 'getSubscription');
+      assert.strictEqual(callArgs.data.payload.subscription_id, 'sub_dodo_1');
+    });
+
+    it('should throw UNSUPPORTED_PROVIDER for unsupported provider', async () => {
+      await assert.rejects(
+        () => ProviderAdapter.getProviderSubscription('tenant-1', 'src-1', 'paypal', 'sub-1'),
+        (e: any) => {
+          assert.strictEqual(e.code, 'UNSUPPORTED_PROVIDER');
+          return true;
+        },
+      );
     });
   });
 });
