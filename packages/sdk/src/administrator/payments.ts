@@ -14,8 +14,22 @@ export interface AdminCheckoutRequest {
   couponCode?: string;
   successUrl?: string;
   cancelUrl?: string;
-  /** Required when the plan has `dynamic: true` — the amount to charge for this checkout. */
+  /**
+   * Admin-only. For plans with `dynamic: true`, sets the `dynamicAmount` on the
+   * pending subscription before initiating checkout. Regular users cannot set this;
+   * use `setSubscriptionDynamicAmount()` + a separate `checkout()` call instead.
+   */
   amount?: number;
+}
+
+export interface CreateSubscriptionData {
+  planId: string;
+  billingCycle: BillingCycle;
+  billableEntityType: BillableEntityType;
+  billableEntityId: string;
+  /** Required for plans with `dynamic: true` before checkout can be initiated. */
+  dynamicAmount?: number;
+  couponCode?: string;
 }
 
 export interface AdminCheckoutResponse {
@@ -87,10 +101,38 @@ export default class QlPaymentsAdmin extends BaseSDK {
     return this.callJsonApi<ISubscription>(`/api/subscriptions/${subscriptionId}`);
   }
 
+  /**
+   * Creates a pending subscription on behalf of any billable entity. Admins can
+   * also set `dynamicAmount` here for dynamic plans, making the subscription
+   * immediately ready for checkout.
+   */
+  createSubscription(data: CreateSubscriptionData) {
+    return this.callJsonApi<ISubscription>('/api/subscriptions', {
+      method: 'post',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
   cancelSubscription(subscriptionId: string) {
     return this.callJsonApi<ISubscription>(
       `/api/subscriptions/${subscriptionId}/cancel`,
       { method: 'put' },
+    );
+  }
+
+  /**
+   * Sets or updates the dynamic amount for a pending subscription. Only admins
+   * can call this. Must be done before a user can complete checkout on a dynamic plan.
+   */
+  setSubscriptionDynamicAmount(subscriptionId: string, amount: number) {
+    return this.callJsonApi<ISubscription>(
+      `/api/subscriptions/${subscriptionId}/dynamic-amount`,
+      {
+        method: 'put',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ amount }),
+      },
     );
   }
 
