@@ -6,6 +6,7 @@ import { pullPlugins } from '../services/resources/plugins.mjs';
 import { pullBlocks } from '../services/resources/blocks.mjs';
 import { pullIntegrations } from '../services/resources/integrations.mjs';
 import { pullConnections } from '../services/resources/connections.mjs';
+import { pullPricingPlans } from '../services/resources/pricing-plans.mjs';
 import { logger } from '../services/utils/logger.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -41,6 +42,7 @@ export default async function pullController({ type, path: targetPath = './' }) 
         { name: 'blocks', fn: pullBlocks },
         { name: 'connections', fn: pullConnections },
         { name: 'integrations', fn: pullIntegrations },
+        { name: 'pricing-plans', fn: pullPricingPlans },
       ];
 
       for (const { name, fn } of types) {
@@ -74,9 +76,11 @@ export default async function pullController({ type, path: targetPath = './' }) 
       await pullConnections(sdk, targetPath);
     } else if (type === 'config' || type === 'configs' || type === 'configuration') {
       await pullConfigurations(sdk, targetPath);
+    } else if (type === 'pricing-plans' || type === 'pricing-plan') {
+      await pullPricingPlans(sdk, targetPath);
     } else {
       logger.error(`Unknown type: ${type}`);
-      logger.info('Supported types: components, blueprints, plugins, blocks, integrations, connections, config, configs, configuration, all');
+      logger.info('Supported types: components, blueprints, plugins, blocks, integrations, connections, pricing-plans, config, configs, configuration, all');
       process.exit(1);
     }
 

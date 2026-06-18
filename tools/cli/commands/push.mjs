@@ -17,7 +17,7 @@ export default function pushCommand(program) {
           .positional('type', {
             describe: 'Type of the resource to push. Can be components, blueprints, configurations, plugins, blocks, integrations, connections, committed, staged, or all.',
             type: 'string',
-            choices: ['components', 'blueprints', 'configs', 'plugins', 'blocks', 'integrations', 'connections', 'committed', 'staged', 'all', '*'],
+            choices: ['components', 'blueprints', 'configs', 'plugins', 'blocks', 'integrations', 'connections', 'pricing-plans', 'committed', 'staged', 'all', '*'],
             required: true
           })
           .positional('path', {

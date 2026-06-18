@@ -6,6 +6,7 @@ import { pushPlugins } from '../services/resources/plugins.mjs';
 import { pushBlocks } from '../services/resources/blocks.mjs';
 import { pushIntegrations } from '../services/resources/integrations.mjs';
 import { pushConnections } from '../services/resources/connections.mjs';
+import { pushPricingPlans } from '../services/resources/pricing-plans.mjs';
 import { getGitFiles, prepareTempDirectories } from '../services/git/files.mjs';
 import { checkDuplicateIdentifiers, displayDuplicateConflicts } from '../services/utils/duplicate-checker.mjs';
 import { logger } from '../services/utils/logger.mjs';
@@ -20,7 +21,7 @@ export default async function pushController({ type, path: sourcePath, hard = fa
   
   // Validate hard flag usage
   if (hard) {
-    const validTypes = ['components', 'blueprints', 'plugins', 'integrations', 'all', '*'];
+    const validTypes = ['components', 'blueprints', 'plugins', 'integrations', 'pricing-plans', 'all', '*'];
     if (!validTypes.includes(type)) {
       logger.error('--hard flag is only available for: components, blueprints, plugins, integrations, or all');
       process.exit(1);
@@ -156,6 +157,7 @@ export default async function pushController({ type, path: sourcePath, hard = fa
           if (type === 'plugins') return file.endsWith('.plugin.json');
           if (type === 'integrations' || type === 'integration') return file.endsWith('.integration.json');
           if (type === 'connections' || type === 'connection') return file.endsWith('.connection.json');
+          if (type === 'pricing-plans' || type === 'pricing-plan') return file.endsWith('.pricing-plan.json');
           return false;
         });
         
@@ -165,6 +167,54 @@ export default async function pushController({ type, path: sourcePath, hard = fa
           displayDuplicateConflicts(duplicates, type);
           process.exit(1);
         }
+      }
+    }
+
+    // Handle hard push logic for pricing-plans (identifier is _id in file content)
+    if (hard && !targetFile && (type === 'pricing-plans' || type === 'pricing-plan')) {
+      logger.info('Checking for pricing plans to remove...');
+
+      const sdk = await initializeSdk();
+      const typePath = basePath;
+
+      const localIds = new Set();
+      if (fs.existsSync(typePath)) {
+        for (const file of fs.readdirSync(typePath)) {
+          if (!file.endsWith('.pricing-plan.json')) continue;
+          try {
+            const data = JSON.parse(fs.readFileSync(path.join(typePath, file), 'utf8'));
+            if (data._id) localIds.add(data._id);
+          } catch { /* skip unreadable files */ }
+        }
+      }
+
+      let remotePlans = [];
+      try {
+        remotePlans = await sdk.managePayments.getPlans();
+      } catch (error) {
+        logger.error('Failed to fetch remote pricing plans:', error);
+      }
+
+      const toRemove = remotePlans
+        .filter(p => !localIds.has(p._id))
+        .map(p => ({ type: 'pricing-plans', identifier: p._id, name: p.name }));
+
+      if (toRemove.length > 0) {
+        const confirmed = await confirmHardPush(toRemove.map(r => ({ type: r.type, identifier: `${r.name} (${r.identifier})` })));
+        if (!confirmed) {
+          logger.info('Operation cancelled by user.');
+          process.exit(0);
+        }
+        for (const { identifier, name } of toRemove) {
+          try {
+            await sdk.managePayments.deletePlan(identifier);
+            logger.info(`Removed pricing plan: ${name} (${identifier})`);
+          } catch (error) {
+            logger.error(`Failed to remove pricing plan: ${name} (${identifier})`, error);
+          }
+        }
+      } else {
+        logger.info('No pricing plans to remove');
       }
     }
 
@@ -219,18 +269,19 @@ export default async function pushController({ type, path: sourcePath, hard = fa
         { name: 'plugins', fn: pushPlugins },
         { name: 'blocks', fn: pushBlocks },
         { name: 'integrations', fn: pushIntegrations },
-        { name: 'connections', fn: pushConnections }
+        { name: 'connections', fn: pushConnections },
+        { name: 'pricing-plans', fn: pushPricingPlans }
       ];
 
       for (const { name, fn } of types) {
         const typePath = path.join(basePath, name);
-        
+
         // Skip if directory doesn't exist
         if (!fs.existsSync(typePath)) {
           logger.info(`Skipping ${name} (directory not found: ${typePath})`);
           continue;
         }
-        
+
         // Get all files in the directory
         const files = fs.readdirSync(typePath);
         const resourceFiles = files.filter(file => {
@@ -241,6 +292,7 @@ export default async function pushController({ type, path: sourcePath, hard = fa
           if (name === 'plugins') return file.endsWith('.plugin.json');
           if (name === 'integrations') return file.endsWith('.integration.json');
           if (name === 'connections') return file.endsWith('.connection.json');
+          if (name === 'pricing-plans') return file.endsWith('.pricing-plan.json');
           return false;
         });
         
@@ -287,15 +339,52 @@ export default async function pushController({ type, path: sourcePath, hard = fa
           toRemoveAll.push(...toRemove);
         }
         
+        // Pricing plans: identifier is _id in file content
+        const pricingPlansPath = path.join(basePath, 'pricing-plans');
+        if (fs.existsSync(pricingPlansPath)) {
+          const localPlanIds = new Set();
+          for (const file of fs.readdirSync(pricingPlansPath)) {
+            if (!file.endsWith('.pricing-plan.json')) continue;
+            try {
+              const data = JSON.parse(fs.readFileSync(path.join(pricingPlansPath, file), 'utf8'));
+              if (data._id) localPlanIds.add(data._id);
+            } catch { /* skip unreadable files */ }
+          }
+          let remotePlans = [];
+          try {
+            remotePlans = await sdk.managePayments.getPlans();
+          } catch (error) {
+            logger.error('Failed to fetch remote pricing plans:', error);
+          }
+          const pricingPlansToRemove = remotePlans
+            .filter(p => !localPlanIds.has(p._id))
+            .map(p => ({ type: 'pricing-plans', identifier: p._id, name: p.name }));
+          toRemoveAll.push(...pricingPlansToRemove.map(r => ({ type: r.type, identifier: `${r.name} (${r.identifier})`, _id: r.identifier })));
+        }
+
         if (toRemoveAll.length > 0) {
           const confirmed = await confirmHardPush(toRemoveAll);
           if (!confirmed) {
             logger.info('Operation cancelled by user.');
             process.exit(0);
           }
-          
-          // Store the removal list for later (after push)
-          process.env.QELOS_HARD_PUSH_REMOVE = JSON.stringify(toRemoveAll);
+
+          // Remove pricing-plans directly (need _id, not display string)
+          const pricingPlansToDelete = toRemoveAll.filter(r => r.type === 'pricing-plans' && r._id);
+          for (const { _id, identifier } of pricingPlansToDelete) {
+            try {
+              await sdk.managePayments.deletePlan(_id);
+              logger.info(`Removed pricing plan: ${identifier}`);
+            } catch (error) {
+              logger.error(`Failed to remove pricing plan: ${identifier}`, error);
+            }
+          }
+
+          // Store non-pricing-plans removal for the finally block
+          const standardToRemove = toRemoveAll.filter(r => r.type !== 'pricing-plans');
+          if (standardToRemove.length > 0) {
+            process.env.QELOS_HARD_PUSH_REMOVE = JSON.stringify(standardToRemove);
+          }
           logger.info(`Will remove ${toRemoveAll.length} resources after push completes`);
         } else {
           logger.info('No resources to remove');
@@ -343,9 +432,11 @@ export default async function pushController({ type, path: sourcePath, hard = fa
       await pushConnections(sdk, basePath, { targetFile });
     } else if (type === 'config' || type === 'configs' || type === 'configuration') {
       await pushConfigurations(sdk, basePath, { targetFile });
+    } else if (type === 'pricing-plans' || type === 'pricing-plan') {
+      await pushPricingPlans(sdk, basePath, { targetFile });
     } else {
       logger.error(`Unknown type: ${type}`);
-      logger.info('Supported types: components, blueprints, plugins, blocks, integrations, connections, config, configs, configuration, committed, staged, all');
+      logger.info('Supported types: components, blueprints, plugins, blocks, integrations, connections, pricing-plans, config, configs, configuration, committed, staged, all');
       process.exit(1);
     }
 

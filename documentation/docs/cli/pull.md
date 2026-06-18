@@ -30,6 +30,7 @@ Currently supported resource types:
 - **blocks** - Pre-designed frontend blocks
 - **integrations** / **integration** - Workflow or agent integrations (stored as `.integration.json`)
 - **connections** / **connection** - Integration sources (stored as `.connection.json`)
+- **pricing-plans** / **pricing-plan** - Pricing plan definitions (stored as `.pricing-plan.json`)
 - **all** / **\*** - Pull all resource types into organized subdirectories
 
 ## How It Works
@@ -227,6 +228,33 @@ Connections are saved as `<name>.connection.json` files that include `name`, `ki
 > 👉 **Authentication values are never written to disk.**  
 > Set an environment variable with the name in `$var` (e.g. `INTEGRATION_AUTH_OPENAI`) containing the JSON credentials. The CLI reads that env var during `qelos push connections ...`. If the env var is missing, metadata is synced but the encrypted authentication secret is left unchanged.
 
+### Pull Pricing Plans
+
+```bash
+qelos pull pricing-plans ./pricing-plans
+```
+
+**Output:**
+```
+Created directory: ./pricing-plans
+Found 3 plan(s) to pull
+→ Pulled: starter
+→ Pulled: pro
+→ Pulled: enterprise
+ℹ Pulled 3 plan(s)
+✓ Successfully pulled pricing-plans to ./pricing-plans
+```
+
+**Result:**
+```
+pricing-plans/
+├── starter.pricing-plan.json
+├── pro.pricing-plan.json
+└── enterprise.pricing-plan.json
+```
+
+Each plan is saved as `{slugified-name}.pricing-plan.json`. Server-only fields (`tenant`, `created`) are stripped automatically. The `_id` field is preserved so subsequent pushes update the correct plan.
+
 ### Pull All Resources
 
 ```bash
@@ -282,6 +310,14 @@ Pulling blocks to ./my-resources/blocks
 ...
 ✓ Successfully pulled blocks
 
+Pulling pricing-plans to ./my-resources/pricing-plans
+ℹ Created directory: ./my-resources/pricing-plans
+ℹ Found 2 plan(s) to pull
+→ Pulled: starter
+→ Pulled: pro
+...
+✓ Successfully pulled pricing-plans
+
 ✓ Successfully pulled all resources to ./my-resources
 ```
 
@@ -303,11 +339,14 @@ my-resources/
 ├── plugins/
 │   ├── payment-gateway/
 │   └── analytics-tracker/
-└── blocks/
-    ├── hero-section.vue
-    ├── contact-form.vue
-    ├── testimonials.vue
-    └── blocks.json
+├── blocks/
+│   ├── hero-section.vue
+│   ├── contact-form.vue
+│   ├── testimonials.vue
+│   └── blocks.json
+└── pricing-plans/
+    ├── starter.pricing-plan.json
+    └── pro.pricing-plan.json
 ```
 
 ### Pull to Specific Directory

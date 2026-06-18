@@ -159,3 +159,60 @@ To connect plans with payment providers, you must configure `externalIds` with t
 - **Paddle**: `productId`, `monthlyPriceId`, `yearlyPriceId`
 - **PayPal**: `productId` (PayPal plan ID)
 - **Sumit**: No external IDs needed — Sumit uses amount-based recurring payments
+
+## CLI Management
+
+Pricing plans can be version-controlled as local JSON files using the Qelos CLI. This lets you manage plans in your repository like any other resource.
+
+### File Format
+
+Each plan is stored as `{slugified-name}.pricing-plan.json` in a `pricing-plans/` directory:
+
+```json
+{
+  "_id": "66f1a2b3c4d5e6f7a8b9c0d1",
+  "name": "Pro",
+  "description": "For growing teams",
+  "features": ["Unlimited projects", "Priority support"],
+  "monthlyPrice": 29,
+  "yearlyPrice": 290,
+  "currency": "USD",
+  "isActive": true,
+  "sortOrder": 2,
+  "dynamic": false,
+  "limits": { "seats": 10 },
+  "externalIds": {},
+  "metadata": {}
+}
+```
+
+The `_id` field is preserved on pull so subsequent pushes update the correct remote plan. The server-managed fields `tenant` and `created` are stripped automatically.
+
+### Typical Workflow
+
+```bash
+# 1. Pull existing plans from your Qelos instance
+qelos pull pricing-plans ./pricing-plans
+
+# 2. Edit plan files locally (prices, features, limits, etc.)
+
+# 3. Push changes back
+qelos push pricing-plans ./pricing-plans
+
+# 4. Re-pull to capture server-assigned _id for any newly created plans
+qelos pull pricing-plans ./pricing-plans
+
+# 5. Hard push — removes remote plans not present in local files (prompts for confirmation)
+qelos push pricing-plans ./pricing-plans --hard
+```
+
+### IDE Rules Generation
+
+When pricing plan files are present, the CLI generates an IDE rules file documenting the plans and SDK usage:
+
+```bash
+qelos generate rules windsurf   # → .windsurf/rules/pricing-plans.md
+qelos generate rules cursor     # → .cursorrules (combined)
+```
+
+See the [CLI Pull](/cli/pull) and [CLI Push](/cli/push) documentation for full details.

@@ -8,12 +8,13 @@ The `generate rules` command creates IDE-specific rules files that help AI assis
 
 ## Overview
 
-When working with pulled Qelos resources (components, blocks, blueprints, plugins), AI assistants and IDEs benefit from understanding:
+When working with pulled Qelos resources (components, blocks, blueprints, plugins, pricing plans), AI assistants and IDEs benefit from understanding:
 - How components map to their metadata files
 - Naming conventions (PascalCase files → kebab-case usage)
 - Available global components and their APIs
 - Blueprint structures and entity mappings
 - Block and micro-frontend limitations
+- Pricing plan structure and CLI workflow
 
 The `generate rules` command automatically scans your pulled resources and creates comprehensive documentation files tailored for your IDE.
 
@@ -61,6 +62,7 @@ qelos pull components ./components
 qelos pull blocks ./blocks
 qelos pull blueprints ./blueprints
 qelos pull plugins ./plugins
+qelos pull pricing-plans ./pricing-plans
 
 # Generate IDE rules to help with development
 qelos generate rules all
@@ -70,6 +72,7 @@ qelos generate rules all
 # - Available global components
 # - Blueprint structures
 # - Block/micro-frontend limitations
+# - Pricing plan structure and SDK usage
 ```
 
 ## Generated Rules Content
@@ -108,6 +111,15 @@ The generated rules file includes:
 - **Critical Limitations**: 
   - ❌ **Micro-frontend HTML cannot contain `<script>` tags**
   - ✅ Must use Vue components for JavaScript functionality
+
+### 6. Pricing Plan Information
+Generated when `pricing-plans/*.pricing-plan.json` files are present (from `qelos pull pricing-plans`).
+
+- **Structure**: `IPlan` TypeScript interface (name, monthlyPrice, yearlyPrice, currency, isActive, dynamic, limits, etc.)
+- **File Conventions**: Named `{slugified-name}.pricing-plan.json`; `_id` is kept for update vs. create matching on push; `tenant` and `created` fields are stripped on pull
+- **CLI Workflow**: Documents `qelos pull pricing-plans` / `qelos push pricing-plans` with create/update logic
+- **SDK Usage**: `sdk.managePayments.getPlans()`, `createPlan()`, `updatePlan()`, `deletePlan()` via `@qelos/sdk/administrator`
+- **Pulled Plan Table**: If plans are present, a summary table of name, monthly price, yearly price, currency, active status, and dynamic flag is included
 
 ## Key Rules Highlighted
 
@@ -175,10 +187,12 @@ Regenerate rules when:
 - Component structure changes
 - You switch to a different IDE
 - Qelos global components are updated
+- Pricing plans are added or updated
 
 ```bash
 # After pulling new resources
 qelos pull components ./components
+qelos pull pricing-plans ./pricing-plans
 qelos generate rules all
 ```
 

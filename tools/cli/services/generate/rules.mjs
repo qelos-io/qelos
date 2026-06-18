@@ -78,7 +78,8 @@ function scanPulledResources(basePath) {
     microFrontends: [],
     connections: [],
     configs: [],
-    integrations: []
+    integrations: [],
+    pricingPlans: []
   };
 
   const directoryContext = {
@@ -107,7 +108,7 @@ function scanPulledResources(basePath) {
   directoryContext.claudeRules = fs.existsSync(path.join(basePath, '.clinerules'));
 
   // Check for directory-specific CLAUDE.md files
-  const subdirs = ['components', 'blocks', 'blueprints', 'plugins', 'connections', 'configs', 'integrations'];
+  const subdirs = ['components', 'blocks', 'blueprints', 'plugins', 'connections', 'configs', 'integrations', 'pricing-plans'];
   for (const subdir of subdirs) {
     const subdirPath = path.join(basePath, subdir);
     if (fs.existsSync(subdirPath)) {
@@ -277,6 +278,33 @@ function scanPulledResources(basePath) {
           name: integration.name,
           trigger: integration.trigger,
           target: integration.target
+        });
+      } catch (error) {
+        logger.debug(`Failed to parse ${file}: ${error.message}`);
+      }
+    }
+  }
+
+  // Check for pricing-plans directory
+  const pricingPlansPath = path.join(basePath, 'pricing-plans');
+  if (fs.existsSync(pricingPlansPath)) {
+    const pricingPlanFiles = fs.readdirSync(pricingPlansPath)
+      .filter(f => f.endsWith('.pricing-plan.json'));
+
+    for (const file of pricingPlanFiles) {
+      try {
+        const plan = JSON.parse(
+          fs.readFileSync(path.join(pricingPlansPath, file), 'utf-8')
+        );
+        resources.pricingPlans.push({
+          file,
+          _id: plan._id,
+          name: plan.name,
+          monthlyPrice: plan.monthlyPrice,
+          yearlyPrice: plan.yearlyPrice,
+          currency: plan.currency,
+          isActive: plan.isActive,
+          dynamic: plan.dynamic
         });
       } catch (error) {
         logger.debug(`Failed to parse ${file}: ${error.message}`);
@@ -1050,6 +1078,91 @@ function generateQelosResourcesContent(resources) {
 }
 
 /**
+ * Generate rules content for pricing plans
+ * @param {Object} resources - Scanned resources
+ * @returns {string} Generated rules content
+ */
+function generatePricingPlansContent(resources) {
+  const sections = [];
+
+  sections.push('---');
+  sections.push('trigger: glob');
+  sections.push('globs: ["pricing-plans/**/*.pricing-plan.json"]');
+  sections.push('---');
+  sections.push('# Pricing Plans Rules');
+  sections.push('');
+  sections.push('This file contains rules for working with Qelos pricing plans.');
+  sections.push('');
+  sections.push('## Plan Structure');
+  sections.push('Each pricing plan file contains:');
+  sections.push('');
+  sections.push('```typescript');
+  sections.push('interface IPlan {');
+  sections.push('  _id?: string;          // Server-generated; keep in file for push/update matching');
+  sections.push('  name: string;          // Display name');
+  sections.push('  description?: string;  // Plan description');
+  sections.push('  features?: string[];   // List of included features');
+  sections.push('  monthlyPrice?: number; // Monthly price');
+  sections.push('  yearlyPrice?: number;  // Yearly price');
+  sections.push('  currency?: string;     // e.g. "USD"');
+  sections.push('  isActive?: boolean;    // Whether the plan is publicly active');
+  sections.push('  sortOrder?: number;    // Display order');
+  sections.push('  dynamic?: boolean;     // Dynamic pricing flag');
+  sections.push('  limits?: object;       // Usage limits');
+  sections.push('  externalIds?: object;  // IDs in external billing systems');
+  sections.push('  metadata?: object;     // Arbitrary metadata');
+  sections.push('}');
+  sections.push('```');
+  sections.push('');
+  sections.push('## File Conventions');
+  sections.push('- Files are named `{slugified-name}.pricing-plan.json` (e.g. `pro.pricing-plan.json`)');
+  sections.push('- The `_id` field is kept in the file and used to match the plan on push (update vs. create)');
+  sections.push('- Fields `tenant` and `created` are server-only and stripped on pull');
+  sections.push('');
+  sections.push('## CLI Workflow');
+  sections.push('```bash');
+  sections.push('qelos pull pricing-plans   # Pull all plans from the remote instance');
+  sections.push('qelos push pricing-plans   # Push local plan files back to the remote instance');
+  sections.push('```');
+  sections.push('');
+  sections.push('- If a file has `_id` → the plan is **updated** via `updatePlan(_id, data)`');
+  sections.push('- If a file has no `_id` → a new plan is **created** via `createPlan(data)`');
+  sections.push('- Re-pull after creating to get the server-assigned `_id` into the file');
+  sections.push('');
+  sections.push('## SDK Usage');
+  sections.push('```typescript');
+  sections.push('import QelosAdministratorSDK from \'@qelos/sdk/administrator\';');
+  sections.push('');
+  sections.push('const sdk = new QelosAdministratorSDK({ appUrl: \'...\' });');
+  sections.push('');
+  sections.push('await sdk.managePayments.getPlans();');
+  sections.push('await sdk.managePayments.getPlan(id);');
+  sections.push('await sdk.managePayments.createPlan(data);');
+  sections.push('await sdk.managePayments.updatePlan(id, data);');
+  sections.push('await sdk.managePayments.deletePlan(id);');
+  sections.push('```');
+  sections.push('');
+
+  if (resources.pricingPlans.length > 0) {
+    sections.push('## Pricing Plans in this project (pulled)');
+    sections.push('');
+    sections.push('| Name | Monthly | Yearly | Currency | Active | Dynamic |');
+    sections.push('|------|---------|--------|----------|--------|---------|');
+    for (const plan of resources.pricingPlans) {
+      const monthly = plan.monthlyPrice != null ? plan.monthlyPrice : '-';
+      const yearly = plan.yearlyPrice != null ? plan.yearlyPrice : '-';
+      const currency = plan.currency ?? '-';
+      const active = plan.isActive != null ? String(plan.isActive) : '-';
+      const dynamic = plan.dynamic != null ? String(plan.dynamic) : '-';
+      sections.push(`| ${plan.name ?? plan.file} | ${monthly} | ${yearly} | ${currency} | ${active} | ${dynamic} |`);
+    }
+    sections.push('');
+  }
+
+  return sections.join('\n');
+}
+
+/**
  * Generate rules content for general guidelines
  * @param {Object} resources - Scanned resources
  * @param {Object} directoryContext - Directory context information
@@ -1206,6 +1319,14 @@ function generateAllRulesContent(resources, ideType, qelosComponents, directoryC
     files.push({
       filename: 'integrations.md',
       content: generateIntegrationsContent(resources)
+    });
+  }
+
+  // Generate pricing plan rules if pricing plans exist
+  if (resources.pricingPlans.length > 0) {
+    files.push({
+      filename: 'pricing-plans.md',
+      content: generatePricingPlansContent(resources)
     });
   }
 

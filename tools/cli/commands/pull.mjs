@@ -17,7 +17,7 @@ export default function pullCommand(program) {
           .positional('type', {
             describe: 'Type of the resource to pull. Can be components, blueprints, configurations, plugins, blocks, or all.',
             type: 'string',
-            choices: ['components', 'blueprints', 'configs', 'plugins', 'blocks', 'integrations', 'connections', 'all', '*'],
+            choices: ['components', 'blueprints', 'configs', 'plugins', 'blocks', 'integrations', 'connections', 'pricing-plans', 'all', '*'],
             required: true
           })
           .positional('path', {

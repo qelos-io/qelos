@@ -6,7 +6,7 @@ Developer CLI (`qelos` / `qplay`) for scaffolding apps, syncing Qelos resources,
 
 - **Authenticate**: Login/logout against Qelos environments
 - **Scaffold projects**: Create apps and write integrator config
-- **Sync resources**: Pull/push components, blueprints, plugins, integrations
+- **Sync resources**: Pull/push components, blueprints, plugins, integrations, pricing plans
 - **Migrate data**: Dump/restore blueprint entities and users
 - **Generate code**: IDE rules, connections, agents, API proxies, TypeScript interfaces
 - **Dev locally**: Proxy `/api/*` to Qelos while running local app
@@ -36,7 +36,7 @@ Developer CLI (`qelos` / `qplay`) for scaffolding apps, syncing Qelos resources,
 | `qelos push <type> <path> [--hard]` | Push local files to Qelos |
 | `qelos get <type> <path> [--json]` | Inspect local resources |
 
-Types: `components`, `blueprints`, `configs`, `plugins`, `blocks`, `integrations`, `connections`, `all`, `committed`, `staged`
+Types: `components`, `blueprints`, `configs`, `plugins`, `blocks`, `integrations`, `connections`, `pricing-plans`, `all`, `committed`, `staged`
 
 ### Data migration
 | Command | Purpose |
