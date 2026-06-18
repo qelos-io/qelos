@@ -13,7 +13,7 @@
     "build": "tsc --noEmit --skipLibCheck",
     "start": "node --import tsx --use_strict index.ts",
     "dev": "node --import tsx --watch index.ts",
-    "test": "node --test --experimental-test-module-mocks --import tsx server/services/tests/checkout-service.test.ts server/services/tests/coupons-service.test.ts server/services/tests/invoices-service.test.ts server/services/tests/plans-service.test.ts server/services/tests/provider-adapter.test.ts server/services/tests/subscriptions-service.test.ts server/services/tests/webhook-service.test.ts"
+    "test": "node --test --experimental-test-module-mocks --import tsx server/services/tests/checkout-service.test.ts server/services/tests/coupons-service.test.ts server/services/tests/invoices-service.test.ts server/services/tests/plans-service.test.ts server/services/tests/provider-adapter.test.ts server/services/tests/subscriptions-service.test.ts server/services/tests/webhook-service.test.ts server/controllers/tests/checkout.test.ts server/controllers/tests/plans.test.ts"
   },
   "main": "index.ts",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
