@@ -238,5 +238,13 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     };
   }
 
+  if (kind === IntegrationSourceKind.DodoPayments) {
+    const { environment } = metadata;
+    if (environment && environment !== 'test' && environment !== 'live') {
+      throw new ResponseError('Invalid DodoPayments metadata: environment must be "test" or "live".', 400);
+    }
+    return { environment: environment || 'test' };
+  }
+
   return {};
 }

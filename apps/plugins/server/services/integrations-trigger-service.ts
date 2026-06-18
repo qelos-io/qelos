@@ -37,9 +37,10 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, { required:
   [IntegrationSourceKind.Sumit]: null,
   [IntegrationSourceKind.PayPal]: null,
   [IntegrationSourceKind.Paddle]: null,
+  [IntegrationSourceKind.DodoPayments]: null,
   [IntegrationSourceKind.AWS]: null,
   [IntegrationSourceKind.Cloudflare]: null,
-} as const;
+};
 
 const COMMON_OPTIONAL_PARAMS = ['roles', 'workspaceRoles', 'workspaceLabels'];
 

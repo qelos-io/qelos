@@ -44,6 +44,13 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
     return authId;
   }
 
+  if (kind === IntegrationSourceKind.DodoPayments) {
+    const { apiKey } = authentication;
+    if (!apiKey) return;
+    await setSecret(tenant, `integration-source-${kind}-${authId}`, { apiKey });
+    return authId;
+  }
+
   if (kind === IntegrationSourceKind.LinkedIn || kind === IntegrationSourceKind.Facebook || kind === IntegrationSourceKind.Google || kind === IntegrationSourceKind.GitHub) {
     const { clientSecret } = authentication;
     if (!clientSecret) {
