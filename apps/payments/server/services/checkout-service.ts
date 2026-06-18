@@ -6,14 +6,14 @@ import * as CouponsService from './coupons-service';
 import * as ProviderAdapter from './provider-adapter';
 
 export interface InitiateCheckoutParams {
-  planId: string;
-  billingCycle: BillingCycle;
-  billableEntityType: BillableEntityType;
-  billableEntityId: string;
+  subscriptionId?: string;
+  planId?: string;
+  billingCycle?: BillingCycle;
+  billableEntityType?: BillableEntityType;
+  billableEntityId?: string;
   couponCode?: string;
   successUrl?: string;
   cancelUrl?: string;
-  amount?: number;
 }
 
 export function calculateDiscountedPrice(
@@ -30,37 +30,58 @@ export function calculateDiscountedPrice(
 }
 
 export async function initiateCheckout(tenant: string, params: InitiateCheckoutParams) {
-  const plan = await PlansService.getPlanById(tenant, params.planId);
+  let existingSubscription: any = null;
+  let plan: any;
+  let billingCycle: BillingCycle;
+  let billableEntityType: BillableEntityType;
+  let billableEntityId: string;
+
+  if (params.subscriptionId) {
+    existingSubscription = await SubscriptionsService.getSubscriptionById(tenant, params.subscriptionId);
+    if (existingSubscription.status !== 'pending') {
+      throw { code: 'SUBSCRIPTION_NOT_PENDING', message: 'Subscription is not in pending status' };
+    }
+    plan = await PlansService.getPlanById(tenant, existingSubscription.planId);
+    billingCycle = existingSubscription.billingCycle;
+    billableEntityType = existingSubscription.billableEntityType;
+    billableEntityId = existingSubscription.billableEntityId;
+  } else {
+    plan = await PlansService.getPlanById(tenant, params.planId!);
+    billingCycle = params.billingCycle!;
+    billableEntityType = params.billableEntityType!;
+    billableEntityId = params.billableEntityId!;
+
+    if (plan.dynamic) {
+      throw {
+        code: 'DYNAMIC_PLAN_REQUIRES_SUBSCRIPTION',
+        message: 'Dynamic plans require a pre-created subscription; ask an admin to set the amount first',
+      };
+    }
+  }
+
   if (!plan.isActive) {
     throw { code: 'PLAN_NOT_ACTIVE', message: 'This plan is not currently available' };
   }
 
+  let basePrice: number;
   if (plan.dynamic) {
-    const amount = params.amount;
-    if (
-      amount == null
-      || typeof amount !== 'number'
-      || !Number.isFinite(amount)
-      || amount <= 0
-    ) {
-      throw { code: 'AMOUNT_REQUIRED', message: 'amount must be a positive number for dynamic plans' };
+    const dynamicAmount = existingSubscription.dynamicAmount;
+    if (!dynamicAmount || dynamicAmount <= 0) {
+      throw { code: 'DYNAMIC_AMOUNT_NOT_SET', message: 'Admin must set the dynamic amount on this subscription before checkout' };
     }
+    basePrice = dynamicAmount;
+  } else {
+    basePrice = billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
   }
-
-  const basePrice = plan.dynamic ? params.amount! : (params.billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice);
 
   let coupon: any = null;
   let finalPrice = basePrice;
   if (params.couponCode) {
-    coupon = await CouponsService.validateCoupon(tenant, params.couponCode, params.planId);
+    coupon = await CouponsService.validateCoupon(tenant, params.couponCode, plan._id.toString());
     finalPrice = calculateDiscountedPrice(basePrice, coupon);
   }
 
-  const existing = await SubscriptionsService.getActiveSubscription(
-    tenant,
-    params.billableEntityType,
-    params.billableEntityId,
-  );
+  const existing = await SubscriptionsService.getActiveSubscription(tenant, billableEntityType, billableEntityId);
   if (existing) {
     throw { code: 'ACTIVE_SUBSCRIPTION_EXISTS', message: 'An active subscription already exists' };
   }
@@ -83,9 +104,9 @@ export async function initiateCheckout(tenant: string, params: InitiateCheckoutP
     config.providerKind,
     {
       plan,
-      billingCycle: params.billingCycle,
-      billableEntityType: params.billableEntityType,
-      billableEntityId: params.billableEntityId,
+      billingCycle,
+      billableEntityType,
+      billableEntityId,
       amount: finalPrice,
       currency: plan.currency,
       successUrl,
@@ -93,22 +114,38 @@ export async function initiateCheckout(tenant: string, params: InitiateCheckoutP
     },
   );
 
-  const subscription = await SubscriptionsService.createSubscription(tenant, {
-    planId: params.planId,
-    billableEntityType: params.billableEntityType,
-    billableEntityId: params.billableEntityId,
-    billingCycle: params.billingCycle,
-    status: 'pending',
-    externalSubscriptionId: providerResult.externalSubscriptionId || providerResult.externalOrderId,
-    providerId: config.providerSourceId,
-    providerKind: config.providerKind,
-    couponId: coupon?._id?.toString(),
-    metadata: {
-      originalPrice: basePrice,
-      finalPrice,
-      couponCode: params.couponCode,
-    },
-  });
+  let subscription: any;
+  if (existingSubscription) {
+    subscription = await SubscriptionsService.updateSubscriptionStatus(tenant, params.subscriptionId!, 'pending', {
+      externalSubscriptionId: providerResult.externalSubscriptionId || providerResult.externalOrderId,
+      providerId: config.providerSourceId,
+      providerKind: config.providerKind,
+      couponId: coupon?._id?.toString(),
+      metadata: {
+        ...(existingSubscription.metadata || {}),
+        originalPrice: basePrice,
+        finalPrice,
+        couponCode: params.couponCode,
+      },
+    });
+  } else {
+    subscription = await SubscriptionsService.createSubscription(tenant, {
+      planId: params.planId!,
+      billableEntityType,
+      billableEntityId,
+      billingCycle,
+      status: 'pending',
+      externalSubscriptionId: providerResult.externalSubscriptionId || providerResult.externalOrderId,
+      providerId: config.providerSourceId,
+      providerKind: config.providerKind,
+      couponId: coupon?._id?.toString(),
+      metadata: {
+        originalPrice: basePrice,
+        finalPrice,
+        couponCode: params.couponCode,
+      },
+    });
+  }
 
   return {
     subscriptionId: subscription._id,
