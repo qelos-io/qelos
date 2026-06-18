@@ -20,7 +20,9 @@ Connect external services, build workflows, and configure AI agents.
 
 ## Integration Source Providers
 
-OpenAI, Claude, Gemini, HTTP, Email, Google, GitHub, LinkedIn, Facebook, Paddle, PayPal, Sumit, Qelos
+OpenAI, Claude, Gemini, HTTP, Email, Google, GitHub, LinkedIn, Facebook, Paddle, PayPal, Sumit, DodoPayments, Qelos
+
+**DodoPayments connection fields**: Connection Name, Labels, Environment (`test` | `live`), API Key
 
 Routes: `/integrations/:kind/sources`
 

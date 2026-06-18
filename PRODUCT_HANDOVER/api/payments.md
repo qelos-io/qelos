@@ -121,9 +121,25 @@ Admin coupon CRUD.
 
 ## Payment Providers
 
-Paddle, PayPal, Sumit — configured via integration sources in Plugins service.
+Paddle, PayPal, Sumit, DodoPayments — configured via integration sources in Plugins service.
 
-**Provider constraints for dynamic plans**: Dynamic amounts are only supported by **Sumit**. Paddle and PayPal rely on fixed catalog price IDs; using a dynamic plan with those providers returns `DYNAMIC_PLAN_UNSUPPORTED_PROVIDER`.
+**Provider constraints for dynamic plans**: Dynamic amounts are only supported by **Sumit**. Paddle, PayPal, and DodoPayments rely on fixed catalog price IDs; using a dynamic plan with those providers returns `DYNAMIC_PLAN_UNSUPPORTED_PROVIDER`.
+
+### DodoPayments
+
+Global payments platform with sandbox (`test`) and live environments.
+
+**Integration source configuration**: `authentication.apiKey` (required), `metadata.environment` (`test` | `live`).
+
+**Webhook**: Configure the webhook secret in payment settings. Signatures use Svix-style HMAC-SHA256.
+
+**Plan external IDs**: Plans must have `externalIds.dodopayments.monthlyPriceId` and `externalIds.dodopayments.yearlyPriceId` set (catalog price IDs, similar to Paddle).
+
+**Supported operations**:
+- Payments: `createPayment`, `getPayment`, `listPayments`
+- Subscriptions: `createSubscription`, `getSubscription`, `updateSubscription`, `cancelSubscription`, `listSubscriptions`
+- Products: `createProduct`, `getProduct`, `listProducts`
+- Customers: `createCustomer`, `getCustomer`, `listCustomers`
 
 ## Related
 

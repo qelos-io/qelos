@@ -41,6 +41,7 @@ Payments are processed through existing integration sources. Currently supported
 - [**Paddle**](./paddle.md) — Subscription management with sandbox support
 - [**Sumit**](./sumit.md) — Israeli payment processing with recurring payments
 - **PayPal** — Subscription billing via PayPal REST API
+- **DodoPayments** — Modern global payments platform supporting one-time payments and subscriptions with sandbox (`test`) and live environments. Uses catalog prices: plans must have `externalIds.dodopayments.monthlyPriceId` and `externalIds.dodopayments.yearlyPriceId` set.
 
 ## Documentation
 
