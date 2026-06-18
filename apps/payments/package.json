@@ -13,7 +13,7 @@
     "build": "tsc --noEmit --skipLibCheck",
     "start": "node --import tsx --use_strict index.ts",
     "dev": "node --import tsx --watch index.ts",
-    "test": "node --experimental-test-module-mocks --import tsx --test server/controllers/tests/*.test.ts server/services/tests/*.test.ts"
+    "test": "node --experimental-test-module-mocks --import tsx --test 'server/**/*.test.ts'"
   },
   "main": "index.ts",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",

@@ -9,7 +9,7 @@ TypeScript SDK that lets external developers call a Qelos app's REST API for dat
 - **Authenticate users**: Sign in/up, refresh sessions, social OAuth, API tokens
 - **Manage workspaces**: Create, invite, switch, manage members
 - **Run AI**: Agents, chat, threads, vector storage
-- **Handle billing**: Plans, checkout, subscriptions, coupons, invoices — including dynamic plans where the charge amount is passed at checkout time
+- **Handle billing**: Plans, subscriptions, checkout, coupons, invoices — including dynamic plans where an admin sets the charge amount on the subscription before the user completes checkout
 - **Administer tenants**: Separate administrator export for full platform management
 
 ## Core Modules
@@ -39,24 +39,48 @@ sdk.entities('todos')
 
 Also: `findOne`, `count`, `chart`, `pieChart`, `sum`
 
-## Payments — CheckoutRequest
+## Payments — Two-Phase Flow
 
-The `sdk.payments.checkout` `CheckoutRequest` type includes an optional `amount` field:
+Payments use a two-phase model: plan selection first, payment second.
+
+### Phase 1 — Subscribe to plan
+
+```typescript
+const subscription = await sdk.payments.subscribeToPlan(planId, ‘monthly’);
+// subscription.status === ‘pending’
+```
+
+Creates a pending subscription. No payment details are collected. For dynamic plans, an admin must call `sdk.managePayments.setSubscriptionDynamicAmount()` before the user can proceed to checkout.
+
+### Phase 2 — Checkout
+
+```typescript
+const { checkoutUrl } = await sdk.payments.checkout({ subscriptionId: subscription._id });
+// redirect user to checkoutUrl
+```
+
+For fixed-price plans the subscription step can be skipped — pass `planId` + `billingCycle` directly to `checkout()` for an inline flow.
+
+### CheckoutRequest
 
 | Field | Type | Required | Notes |
 |-------|------|----------|-------|
-| `planId` | string | Yes | |
-| `billingCycle` | `'monthly' \| 'yearly'` | Yes | |
+| `subscriptionId` | string | No* | *Preferred path; required for dynamic plans |
+| `planId` | string | No* | *Inline path for fixed-price plans only |
+| `billingCycle` | `’monthly’ \| ‘yearly’` | No* | *Required on inline path |
 | `couponCode` | string | No | |
 | `successUrl` | string | No | |
 | `cancelUrl` | string | No | |
-| `amount` | number | No* | *Required (positive number) when the plan has `dynamic: true` |
 
-For dynamic plans, omitting `amount`, or passing a non-positive value, returns HTTP 400 with code `AMOUNT_REQUIRED`. If the tenant’s payment provider is Paddle or PayPal, dynamic plans return **`DYNAMIC_PLAN_UNSUPPORTED_PROVIDER`** — use Sumit for variable amounts.
+### Administrator SDK — `managePayments`
 
-### Administrator SDK — `managePayments.checkout`
+`QelosAdministratorSDK` exposes **`sdk.managePayments`** with full subscription and plan management:
 
-`QelosAdministratorSDK` exposes **`sdk.managePayments.checkout`** with the same payload as public checkout, plus optional **`billableEntityType`** and **`billableEntityId`** so an admin can start checkout for a chosen user or workspace. For dynamic plans, **`amount`** is still mandatory on this call.
+- **`checkout(params)`** — same as public checkout plus optional `billableEntityType`/`billableEntityId` overrides, and `amount` for a one-call dynamic-plan shortcut (creates pending subscription with `dynamicAmount` set, then proceeds to checkout)
+- **`setSubscriptionDynamicAmount(subscriptionId, amount)`** — sets the charge amount on a pending subscription; required before a user can complete checkout on a dynamic plan
+- **`createSubscription(data)`** — creates a subscription for any billable entity; accepts `dynamicAmount` for dynamic plans
+
+Dynamic plans require the **Sumit** payment provider. Paddle and PayPal use fixed catalog prices and return `DYNAMIC_PLAN_UNSUPPORTED_PROVIDER` for dynamic plans.
 
 ## Package Exports
 
