@@ -81,6 +81,12 @@ export interface ISubscription {
   /** Payment provider kind (e.g. "paddle", "paypal", "sumit"). */
   providerKind?: string;
   couponId?: string;
+  /**
+   * Admin-configured charge amount for dynamic-priced plans. Only admins may
+   * set this field; it is read by the checkout service when `IPlan.dynamic` is
+   * `true`. Must be set before checkout can proceed on a dynamic plan.
+   */
+  dynamicAmount?: number;
   metadata?: Record<string, any>;
   created?: Date;
 }
