@@ -1,6 +1,8 @@
 const multer = require('multer');
+const { maxFileSize } = require('../../config');
 
-// Configure multer with our custom streaming storage engine
-const upload = multer();
+const upload = multer({
+  limits: { fileSize: maxFileSize },
+});
 
 module.exports = upload;
