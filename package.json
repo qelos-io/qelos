@@ -17,7 +17,9 @@
     "e2e:integrators": "pnpm -F e2e test",
     "test": "pnpm -r --filter \"!e2e\" run test",
     "release": "node scripts/publish.mjs",
-    "release:dry": "node scripts/publish.mjs --dry-run"
+    "release:dry": "node scripts/publish.mjs --dry-run",
+    "publish:packages": "node scripts/publish-packages.mjs",
+    "publish:packages:list": "node scripts/publish-packages.mjs --list"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "engines": {
