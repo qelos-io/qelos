@@ -26,6 +26,7 @@ enabled, the SDK exposes a uniform flow regardless of provider.
     │ ───────────────────────► │                           │
     │ │ /api/auth/<provider>   │                           │
     │ │ ?state&returnUrl       │                           │
+    │ │ &redirectUrl           │                           │
     │ ◄─────────────────────── │                           │
     │                          │                           │
     │ 2. browser navigates to /api/auth/<provider>         │
@@ -61,13 +62,15 @@ proper cookie session and the URL parameter is discarded.
 const url = sdk.authentication.getSocialLoginUrl('google', {
   state: crypto.randomUUID(),       // CSRF token (recommended)
   returnUrl: 'https://app.example.com/auth/finish',
+  redirectUrl: 'https://app.example.com', // optional — see below
 });
 ```
 
 | Option | Purpose |
 |---|---|
 | `state` | Opaque CSRF value. Persist it client-side (e.g. `sessionStorage`) and verify on return. |
-| `returnUrl` | Where Qelos should redirect after step 7. Defaults to the configured app origin. The host must be allow-listed in the auth service. |
+| `returnUrl` | Where Qelos redirects after step 7 with `?rt=<refreshToken>`. Required for the SDK flow. Absolute URLs must use a host listed in app-configuration `metadata.websiteUrls`; relative paths starting with `/` are also allowed. When omitted, Qelos sets a cookie and redirects to `/`. |
+| `redirectUrl` | Optional absolute URL whose **host** must appear in app-configuration `metadata.websiteUrls`. When accepted, the OAuth provider callback is `<origin>/api/auth/<provider>/callback` on that host. When omitted or not allow-listed, the callback URI is built from the request tenant host. Register every callback origin with the OAuth provider. |
 
 `getSocialLoginUrl()` returns an absolute URL — it does not redirect. To
 trigger the navigation, either set `location.href` yourself or use the
@@ -77,10 +80,28 @@ shorthand:
 sdk.authentication.startSocialLogin('google', {
   state,
   returnUrl: 'https://app.example.com/auth/finish',
+  redirectUrl: 'https://app.example.com',
 });
 ```
 
 `startSocialLogin()` throws if called outside a browser environment.
+
+### OAuth callback URI resolution
+
+On `GET /api/auth/:provider` and `GET /api/auth/:provider/callback`, Qelos
+loads the tenant's app-configuration and resolves the `redirect_uri` sent to
+the OAuth provider as follows:
+
+1. If `redirectUrl` is present (query on login, or packed in signed OAuth
+   `state` on callback) **and** its host matches an entry in
+   `metadata.websiteUrls`, use
+   `<redirectUrl origin>/api/auth/:provider/callback`.
+2. Otherwise use `<tenanthost>/api/auth/:provider/callback` (HTTPS by default;
+   Facebook uses HTTP).
+
+Multi-domain tenants should list every hostname in **Admin → App configuration →
+Hostnames** (`metadata.websiteUrls`) and whitelist the matching callback URLs
+with each OAuth provider.
 
 ## Step 7/8 — Handle the callback
 
@@ -118,14 +139,36 @@ so it does not leak into history, analytics, or the Referer header:
 history.replaceState({}, '', location.pathname);
 ```
 
+## HTTP API reference
+
+### `GET /api/auth/:provider`
+
+| Query param | Required | Description |
+|---|---|---|
+| `state` | no | Opaque value echoed on return. |
+| `returnUrl` | no | Post-auth redirect for the SDK flow (see table above). |
+| `redirectUrl` | no | Override OAuth callback origin when host is in `websiteUrls`. |
+
+### `GET /api/auth/:provider/callback`
+
+OAuth provider redirect target. Uses the same callback URI resolution as the
+login step (including `redirectUrl` recovered from signed `state`).
+
+### `POST /api/auth/callback?rt=<refreshToken>`
+
+Exchanges the refresh token from step 7 for a cookie session. Used by
+`exchangeAuthCallback()`.
+
 ## Errors
 
 | Symptom | Cause |
 |---|---|
 | Redirect loop ending at `/api/auth/<p>?error=disabled` | Provider not enabled in the auth config |
+| 400 `No website URL configured for tenant` | Could not resolve OAuth callback URI (missing `tenanthost` and no valid `redirectUrl`) |
 | 400 from `exchangeAuthCallback` | Missing `rt` parameter |
 | 401 from `exchangeAuthCallback` | Refresh token invalid, expired, or already exchanged |
 | Stuck on provider page | Callback URL not whitelisted with the provider |
+| Browser lands on `/` instead of `returnUrl` | `returnUrl` host not listed in `metadata.websiteUrls` |
 
 ## What the user gets
 

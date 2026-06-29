@@ -3,17 +3,20 @@ import { DecryptedSourceAuthentication } from '../../services/integration-source
 import jwt from 'jsonwebtoken';
 import {
   createSourceMiddleware,
-  buildRedirectUri,
   emitFailedSocialLogin,
-  extractAuthCode,
-  buildProviderState,
   findOrCreateUser,
   completeAuthentication,
   UserData,
 } from '../../services/social-login-service';
+import {
+  extractAuthCode,
+  buildProviderState,
+  getOAuthCallbackRedirectUri,
+} from '../../services/social-login-redirect';
 
 const LINKEDIN_AUTH_URL = 'https://www.linkedin.com/oauth/v2/authorization'
 const LINKEDIN_TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken'
+const LINKEDIN_CALLBACK_PATH = '/api/auth/linkedin/callback';
 
 type AuthWithLinkedinRequest = AuthRequest & { source: DecryptedSourceAuthentication };
 
@@ -21,7 +24,10 @@ export const getLinkedinSource = createSourceMiddleware('linkedin');
 
 export async function loginWithLinkedIn(req: AuthWithLinkedinRequest, res) {
   const { clientId, scope } = req.source.metadata;
-  const redirectUri = buildRedirectUri(req.headers.tenanthost, '/api/auth/linkedin/callback');
+  const redirectUri = getOAuthCallbackRedirectUri(req, LINKEDIN_CALLBACK_PATH);
+  if (!redirectUri) {
+    return res.status(400).json({ message: 'No website URL configured for tenant' });
+  }
   const state = buildProviderState(req);
   const stateParam = state ? `&state=${encodeURIComponent(state)}` : '';
   const linkedinAuthUrl = `${LINKEDIN_AUTH_URL}?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}${stateParam}`;
@@ -39,7 +45,10 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
     return res.status(400).json({ message: 'Invalid authorization code' });
   }
 
-  const redirectUri = buildRedirectUri(req.headers.tenanthost, '/api/auth/linkedin/callback');
+  const redirectUri = getOAuthCallbackRedirectUri(req, LINKEDIN_CALLBACK_PATH);
+  if (!redirectUri) {
+    return res.status(400).json({ message: 'No website URL configured for tenant' });
+  }
 
   try {
     // Exchange the authorization code for an access token and ID token

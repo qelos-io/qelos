@@ -4,17 +4,20 @@ import jwt from 'jsonwebtoken';
 import logger from '../../services/logger';
 import {
   createSourceMiddleware,
-  buildRedirectUri,
   emitFailedSocialLogin,
-  extractAuthCode,
-  buildProviderState,
   findOrCreateUser,
   completeAuthentication,
   UserData,
 } from '../../services/social-login-service';
+import {
+  extractAuthCode,
+  buildProviderState,
+  getOAuthCallbackRedirectUri,
+} from '../../services/social-login-redirect';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
+const GOOGLE_CALLBACK_PATH = '/api/auth/google/callback';
 
 type AuthWithGoogleRequest = AuthRequest & { source: DecryptedSourceAuthentication };
 
@@ -22,7 +25,10 @@ export const getGoogleSource = createSourceMiddleware('google');
 
 export async function loginWithGoogle(req: AuthWithGoogleRequest, res) {
   const { clientId, scope } = req.source.metadata;
-  const redirectUri = buildRedirectUri(req.headers.tenanthost, '/api/auth/google/callback');
+  const redirectUri = getOAuthCallbackRedirectUri(req, GOOGLE_CALLBACK_PATH);
+  if (!redirectUri) {
+    return res.status(400).json({ message: 'No website URL configured for tenant' });
+  }
   const state = buildProviderState(req);
   const stateParam = state ? `&state=${encodeURIComponent(state)}` : '';
   const googleAuthUrl = `${GOOGLE_AUTH_URL}?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope || 'openid email profile')}&access_type=offline&prompt=consent${stateParam}`;
@@ -40,7 +46,10 @@ export async function authCallbackFromGoogle(req: AuthWithGoogleRequest, res) {
     return res.status(400).json({ message: 'Invalid authorization code' });
   }
 
-  const redirectUri = buildRedirectUri(req.headers.tenanthost, '/api/auth/google/callback');
+  const redirectUri = getOAuthCallbackRedirectUri(req, GOOGLE_CALLBACK_PATH);
+  if (!redirectUri) {
+    return res.status(400).json({ message: 'No website URL configured for tenant' });
+  }
 
   try {
     // Exchange the authorization code for an access token and ID token

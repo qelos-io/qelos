@@ -4,17 +4,20 @@ import jwt from 'jsonwebtoken';
 import logger from '../../services/logger';
 import {
   createSourceMiddleware,
-  buildRedirectUri,
   emitFailedSocialLogin,
-  extractAuthCode,
-  buildProviderState,
   findOrCreateUser,
   completeAuthentication,
   UserData,
 } from '../../services/social-login-service';
+import {
+  extractAuthCode,
+  buildProviderState,
+  getOAuthCallbackRedirectUri,
+} from '../../services/social-login-redirect';
 
 const FACEBOOK_AUTH_URL = 'https://www.facebook.com/v15.0/dialog/oauth'
 const FACEBOOK_TOKEN_URL = 'https://graph.facebook.com/v15.0/oauth/access_token'
+const FACEBOOK_CALLBACK_PATH = '/api/auth/facebook/callback';
 
 type AuthWithFacebookRequest = AuthRequest & { source: DecryptedSourceAuthentication };
 
@@ -42,7 +45,10 @@ export async function loginWithFacebook(req: AuthWithFacebookRequest, res) {
   }
   
   
-  const redirectUri = buildRedirectUri(req.headers.tenanthost, '/api/auth/facebook/callback', false);
+  const redirectUri = getOAuthCallbackRedirectUri(req, FACEBOOK_CALLBACK_PATH, false);
+  if (!redirectUri) {
+    return res.status(400).json({ message: 'No website URL configured for tenant' });
+  }
   const state = buildProviderState(req);
   const stateParam = state ? `&state=${encodeURIComponent(state)}` : '';
   // Add auth_type=rerequest to prompt user for email permission again
@@ -61,7 +67,10 @@ export async function authCallbackFromFacebook(req: AuthWithFacebookRequest, res
     return res.status(400).json({ message: 'Invalid authorization code' });
   }
 
-  const redirectUri = buildRedirectUri(req.headers.tenanthost, '/api/auth/facebook/callback', false);
+  const redirectUri = getOAuthCallbackRedirectUri(req, FACEBOOK_CALLBACK_PATH, false);
+  if (!redirectUri) {
+    return res.status(400).json({ message: 'No website URL configured for tenant' });
+  }
 
   try {
     // Exchange the authorization code for an access token and ID token

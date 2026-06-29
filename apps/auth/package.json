@@ -15,7 +15,7 @@
     "start": "node --use_strict dist/index.js",
     "dev": "npx tsx watch index.ts",
     "init": "node helpers/init.js",
-    "test": "tsx --test \"server/**/tests/**/*.test.ts\" \"tests/**/*.test.ts\""
+    "test": "tsx --test --test-force-exit \"server/**/tests/**/*.test.ts\" \"tests/**/*.test.ts\""
   },
   "main": "dist/index.js",
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",

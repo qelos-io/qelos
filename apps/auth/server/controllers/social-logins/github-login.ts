@@ -3,19 +3,22 @@ import { DecryptedSourceAuthentication } from '../../services/integration-source
 import logger from '../../services/logger';
 import {
   createSourceMiddleware,
-  buildRedirectUri,
   emitFailedSocialLogin,
-  extractAuthCode,
-  buildProviderState,
   findOrCreateUser,
   completeAuthentication,
   UserData,
 } from '../../services/social-login-service';
+import {
+  extractAuthCode,
+  buildProviderState,
+  getOAuthCallbackRedirectUri,
+} from '../../services/social-login-redirect';
 
 const GITHUB_AUTH_URL = 'https://github.com/login/oauth/authorize'
 const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
 const GITHUB_USER_URL = 'https://api.github.com/user'
 const GITHUB_USER_EMAILS_URL = 'https://api.github.com/user/emails'
+const GITHUB_CALLBACK_PATH = '/api/auth/github/callback';
 
 type AuthWithGithubRequest = AuthRequest & { source: DecryptedSourceAuthentication };
 
@@ -23,7 +26,10 @@ export const getGithubSource = createSourceMiddleware('github');
 
 export async function loginWithGithub(req: AuthWithGithubRequest, res) {
   const { clientId, scope } = req.source.metadata;
-  const redirectUri = buildRedirectUri(req.headers.tenanthost, '/api/auth/github/callback');
+  const redirectUri = getOAuthCallbackRedirectUri(req, GITHUB_CALLBACK_PATH);
+  if (!redirectUri) {
+    return res.status(400).json({ message: 'No website URL configured for tenant' });
+  }
   const state = buildProviderState(req);
   const stateParam = state ? `&state=${encodeURIComponent(state)}` : '';
   const githubAuthUrl = `${GITHUB_AUTH_URL}?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope || 'user:email')}${stateParam}`;
@@ -41,7 +47,10 @@ export async function authCallbackFromGithub(req: AuthWithGithubRequest, res) {
     return res.status(400).json({ message: 'Invalid authorization code' });
   }
 
-  const redirectUri = buildRedirectUri(req.headers.tenanthost, '/api/auth/github/callback');
+  const redirectUri = getOAuthCallbackRedirectUri(req, GITHUB_CALLBACK_PATH);
+  if (!redirectUri) {
+    return res.status(400).json({ message: 'No website URL configured for tenant' });
+  }
 
   try {
     // Exchange the authorization code for an access token

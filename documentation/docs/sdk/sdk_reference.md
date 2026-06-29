@@ -342,20 +342,50 @@ Social sign-in is a redirect dance. The SDK provides helpers for every step:
 ```typescript
 // 1. Browser: kick off the redirect
 sdk.authentication.startSocialLogin('google', {
-  returnUrl: '/app/dashboard',
+  returnUrl: 'https://app.example.com/auth/finish',
+  redirectUrl: 'https://app.example.com', // optional — OAuth callback origin
+  state: crypto.randomUUID(),
 });
 
 // (or build the URL yourself)
-const url = sdk.authentication.getSocialLoginUrl('github', { state: 'xyz' });
+const url = sdk.authentication.getSocialLoginUrl('github', {
+  state: 'xyz',
+  returnUrl: '/app/dashboard',
+});
+```
 
-// 2. After Qelos calls back, your server receives a refresh token (`rt` query param).
-//    Exchange it for the user payload + a session cookie:
+#### `getSocialLoginUrl(provider, options?)`
+
+| | |
+|---|---|
+| **Signature** | `getSocialLoginUrl(provider: SocialProvider, options?: SocialLoginOptions): string` |
+| **Returns** | Absolute URL to `GET /api/auth/<provider>` on the configured `appUrl`. Does not perform a redirect. |
+
+`SocialLoginOptions`:
+
+| Field | Type | Description |
+|---|---|---|
+| `state` | `string` | Optional CSRF token. Echoed in the signed OAuth `state` and on `returnUrl` after login. |
+| `returnUrl` | `string` | Where Qelos redirects with `?rt=<refreshToken>` after OAuth. Absolute URLs must use a host in app-configuration `metadata.websiteUrls`; paths starting with `/` are allowed. Omit for browser cookie flow (`/`). |
+| `redirectUrl` | `string` | Optional absolute URL whose host is in `metadata.websiteUrls`. Sets the OAuth provider callback to `<origin>/api/auth/<provider>/callback`. Defaults to the tenant request host. |
+
+`startSocialLogin(provider, options?)` navigates the browser to the same URL (browser only).
+
+#### After OAuth — `exchangeAuthCallback` / `socialCallback`
+
+```typescript
+// 2. Your app receives ?rt= on returnUrl; exchange for session + user:
 const result = await sdk.authentication.exchangeAuthCallback(req.query.rt as string);
 res.setHeader('set-cookie', result.headers['set-cookie']!);
 const user = result.payload.user;
+
+// Or parse rt from a URL / query object:
+const result2 = await sdk.authentication.socialCallback(req.query);
 ```
 
 Supported providers: `'linkedin' | 'facebook' | 'google' | 'github'`.
+
+See also: [Social authentication (API)](/auth/social-auth) for callback URI resolution and `websiteUrls` allow-listing.
 
 ### API Tokens
 

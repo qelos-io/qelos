@@ -54,7 +54,18 @@ export type SocialProvider = 'linkedin' | 'facebook' | 'google' | 'github';
 
 export interface SocialLoginOptions {
   state?: string;
+  /**
+   * Where Qelos redirects after OAuth with `?rt=<refreshToken>` (SDK flow).
+   * Absolute URLs must use a host listed in app-configuration `metadata.websiteUrls`.
+   */
   returnUrl?: string;
+  /**
+   * Overrides the OAuth provider callback origin when its host is listed in
+   * app-configuration `metadata.websiteUrls`. The callback path stays
+   * `/api/auth/<provider>/callback` on that origin. When omitted, Qelos uses
+   * the request tenant host (`tenanthost`).
+   */
+  redirectUrl?: string;
 }
 
 export interface SocialAuthCallbackPayload {
@@ -300,6 +311,7 @@ export default class QlAuthentication extends BaseSDK {
     const params: Record<string, string> = {};
     if (options.state) params.state = options.state;
     if (options.returnUrl) params.returnUrl = options.returnUrl;
+    if (options.redirectUrl) params.redirectUrl = options.redirectUrl;
     const qs = Object.keys(params).length ? `?${new URLSearchParams(params)}` : '';
     return this.buildUrl(`/api/auth/${provider}${qs}`);
   }

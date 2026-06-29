@@ -28,6 +28,7 @@ import {
   loginWithGithub
 } from '../controllers/social-logins/github-login';
 import { authConfigCheck } from '../middleware/auth-config-check';
+import { appConfigCheck } from '../middleware/app-config-check';
 
 const router = getRouter()
 
@@ -38,13 +39,13 @@ router
   .post('/api/cookie/refresh', refreshCookieToken)
   .post('/api/logout', verifyUser, onlyAuthenticated, logout)
   .post('/api/auth/callback', authCallback)
-  .get('/api/auth/linkedin', authConfigCheck, getLinkedinSource, loginWithLinkedIn)
-  .get('/api/auth/linkedin/callback', authConfigCheck, getLinkedinSource, authCallbackFromLinkedIn)
-  .get('/api/auth/facebook', authConfigCheck, getFacebookSource, loginWithFacebook)
-  .use('/api/auth/facebook/callback', authConfigCheck, getFacebookSource, authCallbackFromFacebook)
-  .get('/api/auth/google', authConfigCheck, getGoogleSource, loginWithGoogle)
-  .get('/api/auth/google/callback', authConfigCheck, getGoogleSource, authCallbackFromGoogle)
-  .get('/api/auth/github', authConfigCheck, getGithubSource, loginWithGithub)
-  .get('/api/auth/github/callback', authConfigCheck, getGithubSource, authCallbackFromGithub)
+  .get('/api/auth/linkedin', authConfigCheck, appConfigCheck, getLinkedinSource, loginWithLinkedIn)
+  .get('/api/auth/linkedin/callback', authConfigCheck, appConfigCheck, getLinkedinSource, authCallbackFromLinkedIn)
+  .get('/api/auth/facebook', authConfigCheck, appConfigCheck, getFacebookSource, loginWithFacebook)
+  .use('/api/auth/facebook/callback', authConfigCheck, appConfigCheck, getFacebookSource, authCallbackFromFacebook)
+  .get('/api/auth/google', authConfigCheck, appConfigCheck, getGoogleSource, loginWithGoogle)
+  .get('/api/auth/google/callback', authConfigCheck, appConfigCheck, getGoogleSource, authCallbackFromGoogle)
+  .get('/api/auth/github', authConfigCheck, appConfigCheck, getGithubSource, loginWithGithub)
+  .get('/api/auth/github/callback', authConfigCheck, appConfigCheck, getGithubSource, authCallbackFromGithub)
 
 export default router;

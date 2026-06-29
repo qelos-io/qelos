@@ -1,17 +1,39 @@
-import jwt from 'jsonwebtoken';
 import { AuthRequest } from '../../types';
 import User from '../models/user';
 import { DecryptedSourceAuthentication, getIntegrationSource } from './integration-source';
 import { getRequestHost } from './req-host';
 import { getCookieTokenName, getUser } from './users';
 import { getSignedToken, getUniqueId, setCookie } from './tokens';
-import { cookieTokenExpiration, refreshTokenSecret } from '../../config';
+import { cookieTokenExpiration } from '../../config';
 import { setEncryptedData } from './encrypted-data';
 import { emitPlatformEvent } from '@qelos/api-kit';
 import { getWorkspaceConfiguration } from './workspace-configuration';
 import { getWorkspaceForUser } from './workspaces';
 import { uploadProfileImage } from './assets-service-api';
 import logger from './logger';
+
+export {
+  normalizeWebsiteHost,
+  isUrlHostInWebsiteUrls,
+  buildRedirectUri,
+  buildOAuthCallbackRedirectUri,
+  getOAuthCallbackRedirectUri,
+  extractState,
+  extractRedirectUrl,
+  extractReturnUrl,
+  extractAuthCode,
+  buildProviderState,
+  unpackProviderState,
+  isReturnUrlSafe,
+  appendCallbackParams,
+} from './social-login-redirect';
+import {
+  appendCallbackParams,
+  buildProviderState,
+  getOAuthCallbackRedirectUri,
+  isReturnUrlSafe,
+  unpackProviderState,
+} from './social-login-redirect';
 
 export type SocialProvider = 'linkedin' | 'facebook' | 'google' | 'github';
 
@@ -65,106 +87,6 @@ export function createSourceMiddleware(provider: SocialProvider) {
 }
 
 /**
- * Generate redirect URI for OAuth callback
- */
-export function buildRedirectUri(tenantHost: string, redirectPath: string, useHttps: boolean = true): string {
-  const protocol = useHttps ? 'https' : 'http';
-  const fullTenantHost = tenantHost.startsWith('http://') || tenantHost.startsWith('https://')
-    ? tenantHost
-    : `${protocol}://${tenantHost}`;
-
-  return `${fullTenantHost}${redirectPath}`;
-}
-
-/**
- * Extract the raw OAuth state parameter (CSRF token / round-tripped client state) from a request.
- */
-export function extractState(req: AuthRequest): string | null {
-  const state = Array.isArray(req.query.state) ? req.query.state[0] : req.query.state;
-  return state && typeof state === 'string' ? state : null;
-}
-
-/**
- * Extract the optional returnUrl parameter from a request. Used by SDK callers to
- * receive the issued refresh token after the OAuth round-trip.
- */
-export function extractReturnUrl(req: AuthRequest): string | null {
-  const value = Array.isArray(req.query.returnUrl) ? req.query.returnUrl[0] : req.query.returnUrl;
-  return value && typeof value === 'string' ? value : null;
-}
-
-interface OAuthStatePayload {
-  s?: string;
-  ru?: string;
-}
-
-/**
- * Pack the user-supplied state and returnUrl into a single signed token to be
- * round-tripped through the OAuth provider as the `state` parameter. Returns the
- * raw user state when there is nothing extra to carry, preserving the original
- * browser-only behaviour.
- */
-export function buildProviderState(req: AuthRequest): string | null {
-  const userState = extractState(req);
-  const returnUrl = extractReturnUrl(req);
-  if (!returnUrl) {
-    return userState;
-  }
-  const payload: OAuthStatePayload = { ru: returnUrl };
-  if (userState) payload.s = userState;
-  return jwt.sign(payload, refreshTokenSecret, { expiresIn: '10m' });
-}
-
-/**
- * Reverse of {@link buildProviderState}. Falls back to treating an unsigned value
- * as raw user state for backward compatibility with the original browser flow.
- */
-export function unpackProviderState(req: AuthRequest): { userState: string | null; returnUrl: string | null } {
-  const raw = extractState(req);
-  if (!raw) {
-    return { userState: null, returnUrl: null };
-  }
-  try {
-    const decoded = jwt.verify(raw, refreshTokenSecret) as OAuthStatePayload;
-    return { userState: decoded.s ?? null, returnUrl: decoded.ru ?? null };
-  } catch {
-    return { userState: raw, returnUrl: null };
-  }
-}
-
-/**
- * Validate a returnUrl against the request's tenant host so that we never act as
- * an open redirector. Accepts:
- *  - relative paths beginning with `/` (but not protocol-relative `//`)
- *  - absolute URLs whose hostname matches `tenanthost`
- */
-export function isReturnUrlSafe(returnUrl: string, tenantHost?: string): boolean {
-  if (!returnUrl) return false;
-  if (returnUrl.startsWith('/') && !returnUrl.startsWith('//')) return true;
-  if (!tenantHost) return false;
-  try {
-    const target = new URL(returnUrl);
-    const tenantHostname = tenantHost.replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
-    return target.hostname === tenantHostname;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Append the issued refresh token (and any user-supplied state) to the returnUrl
- * as query parameters.
- */
-export function appendCallbackParams(returnUrl: string, refreshToken: string, userState?: string | null): string {
-  const separator = returnUrl.includes('?') ? '&' : '?';
-  let result = `${returnUrl}${separator}rt=${encodeURIComponent(refreshToken)}`;
-  if (userState) {
-    result += `&state=${encodeURIComponent(userState)}`;
-  }
-  return result;
-}
-
-/**
  * Emit failed social login event
  */
 export function emitFailedSocialLogin(tenant: string, provider: SocialProvider, error: any): void {
@@ -177,14 +99,6 @@ export function emitFailedSocialLogin(tenant: string, provider: SocialProvider, 
     description: `Failed to login via ${capitalize(provider)}`,
     metadata: { error },
   });
-}
-
-/**
- * Extract authorization code from request query
- */
-export function extractAuthCode(req: AuthRequest): string | null {
-  const authCode = Array.isArray(req.query.code) ? req.query.code[0] : req.query.code;
-  return authCode && typeof authCode === 'string' ? authCode : null;
 }
 
 /**
@@ -327,7 +241,7 @@ export async function completeAuthentication(
 
   const { userState, returnUrl } = unpackProviderState(req);
 
-  if (returnUrl && isReturnUrlSafe(returnUrl, req.headers.tenanthost)) {
+  if (returnUrl && isReturnUrlSafe(returnUrl, req.appConfig.websiteUrls)) {
     // SDK flow: issue a refresh token and hand it off via the returnUrl.
     const oauthToken = user.getToken({ authType: 'oauth', workspace });
     const refreshToken = user.getRefreshToken(oauthToken, workspace);

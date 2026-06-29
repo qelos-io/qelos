@@ -47,11 +47,12 @@ tenant's configured `socialLoginsSources` and redirects the browser to it.
 | Query param | Required | Purpose |
 |---|---|---|
 | `state`     | optional | Caller-supplied opaque value, echoed back to the callback. |
-| `returnUrl` | optional | Where to deliver the issued refresh token after a successful login. Required for the SDK / server-to-server flow. Restricted to relative paths or the same hostname as the tenant. |
+| `returnUrl` | optional | Where to deliver the issued refresh token after a successful login (SDK flow). Absolute URLs must use a host listed in app-configuration `metadata.websiteUrls`; relative paths starting with `/` are also allowed. |
+| `redirectUrl` | optional | Absolute URL whose **host** must appear in app-configuration `metadata.websiteUrls`. When accepted, the OAuth provider callback is registered as `<origin>/api/auth/:provider/callback` for that host instead of the default tenant-host callback. Packed into the signed OAuth `state` so the same URI is used on callback. When omitted or not allow-listed, the callback URI is built from the request `tenanthost`. |
 
-When `returnUrl` is supplied it is packed together with the user `state` into a
+When `returnUrl` and/or `redirectUrl` is supplied, values are packed together with the user `state` into a
 short-lived (10 min) signed JWT that is sent as the OAuth `state` parameter, so
-that both values survive the provider round-trip without trusting the client.
+they survive the provider round-trip without trusting the client.
 
 ### `GET /api/auth/:provider/callback`
 The OAuth provider's redirect target. Exchanges the authorization code for an
@@ -85,11 +86,12 @@ The caller can then call any authenticated endpoint with the cookie or refresh
 the cookie token via `POST /api/cookie/refresh`.
 
 ### Integration flow (SDK)
-1. App calls `sdk.authentication.getSocialLoginUrl('google', { returnUrl })` and
+1. App calls `sdk.authentication.getSocialLoginUrl('google', { returnUrl, redirectUrl? })` and
    redirects the user to the URL.
 2. User completes OAuth at the provider.
-3. The provider redirects to `/api/auth/google/callback`, which redirects to
-   `<returnUrl>?rt=<refreshToken>`.
+3. The provider redirects to `/api/auth/google/callback` on the resolved origin
+   (from `redirectUrl` when allow-listed, otherwise the tenant host), which
+   redirects to `<returnUrl>?rt=<refreshToken>`.
 4. App reads `rt` and calls `sdk.authentication.exchangeAuthCallback(rt)` to
    obtain the session cookie.
 
