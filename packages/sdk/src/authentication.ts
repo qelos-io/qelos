@@ -1,5 +1,6 @@
 import { QelosSDKOptions } from './types';
 import BaseSDK from './base-sdk';
+import { decodeMeUser } from './services/decode-uri-fields';
 
 export interface IUser {
   _id: string;
@@ -282,7 +283,7 @@ export default class QlAuthentication extends BaseSDK {
   async apiTokenSignin(apiToken: string): Promise<IUser> {
     this.#apiToken = apiToken;
     this.qlOptions.apiToken = apiToken;
-    return this.callJsonApi<IUser>('/api/me');
+    return this.callJsonApi<IUser>('/api/me').then(decodeMeUser);
   }
 
   listApiTokens(): Promise<IApiToken[]> {
@@ -376,7 +377,7 @@ export default class QlAuthentication extends BaseSDK {
   }
 
   getLoggedInUser() {
-    return this.callJsonApi<IUser>('/api/me')
+    return this.callJsonApi<IUser>('/api/me').then(decodeMeUser);
   }
 
   updateLoggedInUser(changes: Partial<IUser & { password?: string }>): Promise<IUser> {
@@ -384,6 +385,6 @@ export default class QlAuthentication extends BaseSDK {
       method: 'post',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(changes)
-    })
+    }).then(decodeMeUser);
   }
 }
