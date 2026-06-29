@@ -35,7 +35,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test integrators/read-tokens.test.cjs"
+    "test": "node --import tsx --test \"**/*.test.ts\""
   },
   "dependencies": {
     "@qelos/global-types": "workspace:^",
@@ -45,6 +45,7 @@
     "@netlify/functions": ">=2.0.0"
   },
   "devDependencies": {
-    "@netlify/functions": "^2.8.2"
+    "@netlify/functions": "^2.8.2",
+    "tsx": "^4.20.4"
   }
 }

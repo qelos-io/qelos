@@ -176,7 +176,25 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
         .end();
       return;
     }
-    req.headers.tenanthost = req.headers.host;
+
+    const tenanthost = await resolveTenanthost({
+      requestHost: originalHost,
+      requestHostname: host,
+      forwardedHostHeader: req.headers['x-forwarded-host'],
+      tenant: req.headers.tenant,
+      defaultTenant,
+      defaultApplicationHost,
+      internalUrl,
+      getTenantByHost,
+    });
+    if (!tenanthost) {
+      res
+        .status(400)
+        .json({ message: 'invalid host for tenant' })
+        .end();
+      return;
+    }
+    req.headers.tenanthost = tenanthost;
     req.headers.user = '';
     next();
   });
@@ -280,4 +298,76 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
   })
 
   useProxy(app, adminPanel);
+}
+
+function normalizeHostHeader(value: string | string[] | undefined): string | null {
+  if (value == null) return null;
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== 'string') return null;
+  const trimmed = raw.split(',')[0].trim();
+  return trimmed || null;
+}
+
+async function isHostForTenant(
+  hostValue: string,
+  tenant: string,
+  defaultTenant: string,
+  defaultApplicationHost: string,
+  internalUrl: string,
+  getTenantByHost: (hostUrl: string) => Promise<string>,
+): Promise<boolean> {
+  const hostname = hostValue.split(':')[0];
+  if (hostname === defaultApplicationHost || hostValue === internalUrl) {
+    return tenant === defaultTenant;
+  }
+  try {
+    const resolvedTenant = await getTenantByHost(hostValue);
+    return resolvedTenant === tenant;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveTenanthost(options: {
+  requestHost: string | undefined;
+  requestHostname: string | undefined;
+  forwardedHostHeader: string | string[] | undefined;
+  tenant: string;
+  defaultTenant: string;
+  defaultApplicationHost: string;
+  internalUrl: string;
+  getTenantByHost: (hostUrl: string) => Promise<string>;
+}): Promise<string | null> {
+  const {
+    requestHost,
+    requestHostname,
+    forwardedHostHeader,
+    tenant,
+    defaultTenant,
+    defaultApplicationHost,
+    internalUrl,
+    getTenantByHost,
+  } = options;
+
+  const requestHostValue = normalizeHostHeader(requestHost);
+  const requestHostnameValue = normalizeHostHeader(requestHostname);
+  if (!requestHostValue || !requestHostnameValue) return null;
+
+  const hostCheck = (hostValue: string) =>
+    isHostForTenant(hostValue, tenant, defaultTenant, defaultApplicationHost, internalUrl, getTenantByHost);
+
+  const forwardedHost = normalizeHostHeader(forwardedHostHeader);
+  if (!forwardedHost) {
+    return (await hostCheck(requestHostnameValue)) ? requestHostValue : null;
+  }
+
+  const [requestValid, forwardedValid] = await Promise.all([
+    hostCheck(requestHostnameValue),
+    hostCheck(forwardedHost),
+  ]);
+  if (!requestValid || !forwardedValid) {
+    return null;
+  }
+
+  return forwardedHost;
 }

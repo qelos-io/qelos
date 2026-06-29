@@ -71,9 +71,12 @@ module.exports = {
       }
       const destDir = resolveFunctionsDirectory(netlifyConfig);
       const destFile = path.join(destDir, 'qelos-api-proxy.ts');
+      const destHelper = path.join(destDir, 'proxy-request.ts');
       const srcFile = path.join(__dirname, 'functions', 'qelos-api-proxy.ts');
+      const srcHelper = path.join(__dirname, 'functions', 'proxy-request.ts');
       await fs.mkdir(destDir, { recursive: true });
       await fs.copyFile(srcFile, destFile);
+      await fs.copyFile(srcHelper, destHelper);
 
       netlifyConfig.redirects.unshift({
         from: '/api/*',
@@ -88,6 +91,9 @@ module.exports = {
         to: `${origin}/api/:splat`,
         status: 200,
         force: true,
+        headers: {
+          'x-forwarded-host': ':host',
+        },
       };
       if (bypassAdmin) {
         redirect.headers = { 'x-bypass-admin': 'true' };

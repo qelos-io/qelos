@@ -1,11 +1,9 @@
-'use strict';
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const {
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {
   readTokensFromEvent,
   normalizeIntegratorConfig,
-} = require('./request-parse.js');
+} from './request-parse.js';
 
 test('readTokensFromEvent prefers Authorization bearer over cookie token', () => {
   const event = {

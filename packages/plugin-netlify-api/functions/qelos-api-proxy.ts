@@ -1,6 +1,12 @@
 import http from "http";
 import https from "https";
 import type { Handler } from "@netlify/functions";
+import {
+  buildHtmlRedirectResponse,
+  buildTargetPath,
+  isExternalOAuthLocation,
+  publicHostForUpstream,
+} from "./proxy-request";
 
 /** Same-origin proxy target; mirrors manual setups that use API_HOST (e.g. ai-words api-proxy). */
 const raw =
@@ -29,8 +35,7 @@ const ADD_BYPASS_ADMIN_HEADER =
 
 export const handler: Handler = (event) =>
   new Promise((resolve) => {
-    // Build forwarded headers. Upstream Qelos expects Host = public app domain (e.g. app.auto.qelos.io),
-    // not the raw API IP — use the visitor-facing host (case-insensitive headers; rawUrl fallback).
+    const publicHost = publicHostForUpstream(event, PROXY_HOST);
     const headers: Record<string, string> = {};
     for (const [key, val] of Object.entries(event.headers ?? {})) {
       if (val == null || val === "") continue;
@@ -40,16 +45,14 @@ export const handler: Handler = (event) =>
         headers[key] = val;
       }
     }
-    headers["host"] = publicHostForUpstream(event);
+    headers["host"] = publicHost;
+    headers["x-forwarded-host"] = publicHost;
     if (ADD_BYPASS_ADMIN_HEADER) {
       headers["x-bypass-admin"] = "true";
     }
-    // Lambda buffers the body, so chunked encoding is not applicable
     delete headers["transfer-encoding"];
 
-    const targetPath =
-      new URL(event.rawUrl).pathname +
-      (event.rawQuery ? `?${event.rawQuery}` : "");
+    const targetPath = buildTargetPath(event);
 
     const body = event.body
       ? Buffer.from(event.body, event.isBase64Encoded ? "base64" : "utf8")
@@ -64,6 +67,18 @@ export const handler: Handler = (event) =>
         headers,
       },
       (proxyRes) => {
+        const status = proxyRes.statusCode ?? 200;
+        const location = proxyRes.headers.location;
+        if (
+          status >= 300 &&
+          status < 400 &&
+          typeof location === "string" &&
+          isExternalOAuthLocation(location)
+        ) {
+          resolve(buildHtmlRedirectResponse(location));
+          return;
+        }
+
         const chunks: Buffer[] = [];
         proxyRes.on("data", (chunk: Buffer) => chunks.push(chunk));
         proxyRes.on("end", () => {
@@ -74,7 +89,7 @@ export const handler: Handler = (event) =>
             }
           }
           resolve({
-            statusCode: proxyRes.statusCode ?? 200,
+            statusCode: status,
             headers: resHeaders,
             body: Buffer.concat(chunks).toString("base64"),
             isBase64Encoded: true,
@@ -92,38 +107,3 @@ export const handler: Handler = (event) =>
     if (body) proxyReq.write(body);
     proxyReq.end();
   });
-
-function publicHostForUpstream(event: {
-  headers: Record<string, string | string[] | undefined>;
-  rawUrl: string;
-}): string {
-  const forwarded = pickHeader(event.headers, "x-forwarded-host");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
-  const h = pickHeader(event.headers, "host");
-  if (h) {
-    return h;
-  }
-  try {
-    return new URL(event.rawUrl).hostname;
-  } catch {
-    return PROXY_HOST;
-  }
-}
-
-function pickHeader(
-  headers: Record<string, string | string[] | undefined>,
-  name: string,
-): string | undefined {
-  const want = name.toLowerCase();
-  for (const [k, v] of Object.entries(headers)) {
-    if (k.toLowerCase() !== want) continue;
-    if (v == null) continue;
-    const s = Array.isArray(v) ? v[0] : v;
-    if (typeof s === "string" && s.length > 0) {
-      return s;
-    }
-  }
-  return undefined;
-}
