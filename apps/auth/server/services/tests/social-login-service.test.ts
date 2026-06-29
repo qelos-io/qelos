@@ -90,6 +90,30 @@ describe('buildOAuthCallbackRedirectUri', () => {
     );
   });
 
+  it('uses full redirectUrl callback when provided (proxied app flow)', () => {
+    assert.equal(
+      buildOAuthCallbackRedirectUri(
+        '/api/auth/linkedin/callback',
+        ['admin.example.com'],
+        'https://app.example.com/api/auth/linkedin/callback',
+        'admin.example.com',
+      ),
+      'https://app.example.com/api/auth/linkedin/callback',
+    );
+  });
+
+  it('preserves alternate callback paths from redirectUrl', () => {
+    assert.equal(
+      buildOAuthCallbackRedirectUri(
+        '/api/auth/linkedin/callback',
+        websiteUrls,
+        'https://app.example.com/auth/linkedin/callback',
+        'app.example.com',
+      ),
+      'https://app.example.com/auth/linkedin/callback',
+    );
+  });
+
   it('falls back to tenanthost when redirectUrl host is not allowed', () => {
     assert.equal(
       buildOAuthCallbackRedirectUri(

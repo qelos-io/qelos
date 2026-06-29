@@ -48,6 +48,29 @@ export function buildRedirectUri(tenantHost: string, redirectPath: string, useHt
   return `${fullTenantHost}${redirectPath}`;
 }
 
+function isAbsoluteHttpUrl(url: string): boolean {
+  try {
+    const protocol = new URL(url).protocol;
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function isOAuthCallbackUrl(url: string): boolean {
+  try {
+    return /\/callback\/?$/.test(new URL(url).pathname);
+  } catch {
+    return false;
+  }
+}
+
+function normalizeOAuthCallbackUrl(url: string): string {
+  const parsed = new URL(url);
+  const path = parsed.pathname.replace(/\/$/, '') || '/';
+  return `${parsed.origin}${path}`;
+}
+
 export function buildOAuthCallbackRedirectUri(
   callbackPath: string,
   websiteUrls: string[],
@@ -55,8 +78,13 @@ export function buildOAuthCallbackRedirectUri(
   tenantHost?: string,
   useHttps: boolean = true,
 ): string | null {
-  if (redirectUrl && isUrlHostInWebsiteUrls(redirectUrl, websiteUrls)) {
-    return new URL(callbackPath, new URL(redirectUrl).origin).toString();
+  if (redirectUrl && isAbsoluteHttpUrl(redirectUrl)) {
+    if (isOAuthCallbackUrl(redirectUrl)) {
+      return normalizeOAuthCallbackUrl(redirectUrl);
+    }
+    if (isUrlHostInWebsiteUrls(redirectUrl, websiteUrls)) {
+      return new URL(callbackPath, new URL(redirectUrl).origin).toString();
+    }
   }
   if (!tenantHost) return null;
   return buildRedirectUri(tenantHost, callbackPath, useHttps);
@@ -64,7 +92,8 @@ export function buildOAuthCallbackRedirectUri(
 
 /**
  * OAuth callback redirect URI registered with the provider.
- * Uses `redirectUrl` query param when its host is in websiteUrls; otherwise tenanthost.
+ * Uses `redirectUrl` from the query (or signed OAuth state on callback) when present;
+ * otherwise falls back to the request tenanthost.
  */
 export function getOAuthCallbackRedirectUri(req: AuthRequest, callbackPath: string, useHttps: boolean = true): string | null {
   const redirectUrl = extractRedirectUrl(req) ?? unpackProviderState(req).redirectUrl;

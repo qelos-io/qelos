@@ -128,6 +128,24 @@ describe('social login controllers', () => {
         'https://app.example.com/api/auth/linkedin/callback',
       );
     });
+
+    it('uses redirectUrl query param as OAuth callback when it is a full callback URL', async () => {
+      const mock = createResMock();
+      await loginWithLinkedIn(
+        createSocialReq({
+          headers: { tenant: 'tenant-1', tenanthost: 'admin.example.com' },
+          query: {
+            redirectUrl: 'https://app.example.com/api/auth/linkedin/callback',
+          },
+        }) as any,
+        mock.res,
+      );
+
+      assert.equal(
+        getQueryParamFromRedirect(mock.redirectUrl!, 'redirect_uri'),
+        'https://app.example.com/api/auth/linkedin/callback',
+      );
+    });
   });
 
   describe('authCallbackFromLinkedIn', () => {
