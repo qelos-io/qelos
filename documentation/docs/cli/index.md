@@ -15,6 +15,7 @@ The CLI provides powerful commands to:
 - **Push** local changes back to your Qelos instance
 - **Generate** IDE-specific rules files for better AI assistance
 - **Agent** interact with AI agents via command line with conversation support
+- **SDK** invoke any SDK method from the shell (blueprints, entities, users, events, …)
 - Manage components, blueprints, configurations, integrations, connections, plugins, and blocks
 
 ## Installation
@@ -285,6 +286,11 @@ qelos push all ./my-project --hard
 # Push to a different environment using --env
 qelos --env production push components ./my-components
 
+# Invoke the SDK directly
+qelos sdk blueprints getList
+qelos sdk blueprints entitiesOf todo create '{"title":"Buy milk"}'
+echo '{"done":false}' | qelos sdk entities todo getList
+
 # Interact with AI agents
 qelos agent code-wizard --message "Hello, how can you help me?"
 echo "What's the weather?" | qelos agent weather-agent --stream
@@ -329,6 +335,10 @@ qelos agent code-wizard -m "Hello"  # uses saved defaults
   <div class="vp-feature">
     <h3><a href="/cli/interfaces">Build Blueprint Interfaces</a></h3>
     <p>Generate typed TypeScript declarations or Python TypedDicts from local <code>*.blueprint.json</code> files so <code>sdk.blueprints.entitiesOf(...)</code> is fully typed.</p>
+  </div>
+  <div class="vp-feature">
+    <h3><a href="/cli/sdk">SDK</a></h3>
+    <p>Invoke the Qelos SDK from the shell — mirror <code>sdk.blueprints.entitiesOf(...).create(...)</code> as <code>qelos sdk blueprints entitiesOf todo create '{...}'</code> with stdin piping support.</p>
   </div>
   <div class="vp-feature">
     <h3><a href="/cli/agent">Agent</a></h3>
@@ -421,6 +431,7 @@ qelos get --help
 qelos pull --help
 qelos push --help
 qelos generate --help
+qelos sdk --help
 qelos agent --help
 qelos global --help
 ```
@@ -455,6 +466,7 @@ If you encounter file permission errors:
 
 ## Related Resources
 
+- [SDK Command](/cli/sdk) - Invoke SDK methods from the command line
 - [Agent Command](/cli/agent) - Interact with AI agents via command line
 - [Global Environments](/cli/global) - Register projects and run commands from anywhere
 - [SDK Installation](/sdk/installation) - Install the Qelos SDK for programmatic access

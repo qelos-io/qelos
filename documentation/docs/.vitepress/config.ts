@@ -217,6 +217,7 @@ export default defineConfig({
           { text: 'Build Blueprint Interfaces', link: '/cli/interfaces' },
           { text: 'Dump Command', link: '/cli/dump' },
           { text: 'Restore Command', link: '/cli/restore' },
+          { text: 'SDK Command', link: '/cli/sdk' },
           { text: 'Agent Command', link: '/cli/agent' },
           { text: 'Agent Tools (clientTools)', link: '/cli/agent-tools' },
           { text: 'Global Environments', link: '/cli/global' }
