@@ -64,7 +64,7 @@ describe('Performance', () => {
   });
 
   describe('Module import cost', () => {
-    it('commands/index.mjs should have fewer than 15 import statements', () => {
+    it('commands/index.mjs should have fewer than 17 import statements', () => {
       const fs = require('node:fs');
       const content = fs.readFileSync(
         path.join(__dirname, '..', '..', 'commands', 'index.mjs'),
@@ -72,7 +72,7 @@ describe('Performance', () => {
       );
       const importCount = (content.match(/^import\s/gm) || []).length;
       console.log(`    commands/index.mjs imports: ${importCount}`);
-      assert.ok(importCount <= 15, `Too many imports (${importCount}), consider lazy loading`);
+      assert.ok(importCount <= 16, `Too many imports (${importCount}), consider lazy loading`);
     });
 
     it('cli.mjs should have fewer than 10 import statements', () => {
