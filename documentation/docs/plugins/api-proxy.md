@@ -79,6 +79,46 @@ In your frontend code, configure the base URL for the Qelos API to the **same or
 
 Then all requests to `/api/*` go to the proxy, which forwards them to the Qelos API.
 
+## Social login (OAuth)
+
+When your frontend implements [social authentication](../auth/social-auth.md)
+through the proxy, the browser calls same-origin URLs like
+`/api/auth/linkedin?returnUrl=/auth/callback&redirectUrl=…`. The proxy
+**must** forward the full query string and set `Host` / `x-forwarded-host`
+to your public site domain (e.g. `app.example.com`), not the Qelos
+upstream host.
+
+### Required setup
+
+1. **`@qelos/plugin-netlify-api` ≥ 4.1.2** — preserves OAuth query params and
+   resolves the public host correctly.
+2. **`postbuild` script** in `package.json`:
+
+   ```json
+   { "scripts": { "postbuild": "qelos-netlify-patch-redirects" } }
+   ```
+
+3. **`[[plugins]]`** entry in `netlify.toml` (see [Setup](#setup) above).
+4. **`QELOS_API_IP`** in Netlify env — your Qelos gateway target.
+5. **Qelos admin** — add your app domain to `metadata.websiteUrls`.
+6. **OAuth provider** — register
+   `https://<your-app-domain>/api/auth/<provider>/callback`.
+
+Use the **function proxy** (default). CDN-only mode does not run
+`qelos-api-proxy` and may not set headers needed for multi-domain OAuth.
+
+### What the proxy forwards
+
+| Request from browser | Proxy sends to Qelos |
+|---|---|
+| `GET /api/auth/linkedin?returnUrl=/auth/callback&redirectUrl=https://app.example.com/api/auth/linkedin/callback&state=…` | Same path + query; `Host: app.example.com`; `x-forwarded-host: app.example.com` |
+| `POST /api/auth/callback?rt=…` | Same; session `Set-Cookie` rewritten to your domain |
+
+If `redirectUrl` or `returnUrl` are missing in auth service logs, the proxy
+is not forwarding the query string — verify the plugin version and
+`postbuild` step. See
+[Social auth troubleshooting](../auth/social-auth.md#common-mistakes).
+
 ## What the plugin adds (equivalent config)
 
 If you were to configure Netlify by hand, the plugin effectively does the following.
@@ -120,5 +160,6 @@ When using the Netlify plugin, you can set `bypass_admin = true` in `[plugins.in
 | Optionally set `api_url` in `[plugins.inputs]` or `QELOS_API_IP` in Netlify env | Uses that value as the proxy target |
 | Optionally set `bypass_admin = true` in `[plugins.inputs]` | Proxy adds `x-bypass-admin: true` to every request |
 | Use base URL `/api` in your frontend | Browser calls same origin; proxy forwards to Qelos API |
+| Implement social login | Ensure plugin ≥ 4.1.2, `postbuild` script, and `websiteUrls` + provider callback URLs are configured — see [Social login (OAuth)](#social-login-oauth) |
 
 No need to add redirects or function code to your repo; the plugin handles it so your Netlify-deployed Qelos frontend can talk to the Qelos API through `/api` on the same origin.

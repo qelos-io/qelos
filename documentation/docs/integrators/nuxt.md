@@ -180,7 +180,151 @@ export default defineEventHandler(async (event) => {
 });
 ```
 
-### Social login
+### Social login (Nuxt + Netlify)
+
+For a **custom-domain Nuxt app** deployed to Netlify (the most common
+integrator setup), use the same-origin BFF pattern proven in production by
+[Flaminga](https://app.flaminga.earth). The full walkthrough — admin
+config, Netlify plugin, composable, and troubleshooting — is in
+[Social Authentication → Nuxt + Netlify](../auth/social-auth.md#nuxt-netlify-reference-implementation).
+
+Summary:
+
+1. Proxy `/api/*` to Qelos with `@qelos/plugin-netlify-api` and
+   `postbuild: qelos-netlify-patch-redirects`.
+2. Point the browser SDK at `location.origin`, not the Qelos tenant URL.
+3. Start login with `returnUrl: '/auth/callback'` and
+   `redirectUrl: '<origin>/api/auth/<provider>/callback'`.
+4. On `/auth/callback`, call `exchangeAuthCallback(rt)` then redirect to
+   the user's final destination.
+
+**Auth composable** (browser, same-origin):
+
+```ts
+// composables/useQelosAuth.ts
+import QelosSDK from '@qelos/sdk';
+import type { SocialProvider } from '@qelos/sdk/src/authentication';
+
+const OAUTH_STATE_KEY = 'oauth-state';
+const OAUTH_RETURN_KEY = 'oauth-return';
+
+export function useQelosAuth() {
+  const config = useRuntimeConfig();
+
+  function appUrl() {
+    if (import.meta.client) return globalThis.location.origin;
+    return (config.public.siteUrl as string) || 'http://localhost:3000';
+  }
+
+  function createSdk() {
+    return new QelosSDK({
+      appUrl: appUrl(),
+      fetch: (input, init) =>
+        globalThis.fetch(input, { ...init, credentials: 'include' }),
+    });
+  }
+
+  function startSocialLogin(provider: SocialProvider, returnPath = '/') {
+    const state = crypto.randomUUID();
+    sessionStorage.setItem(OAUTH_STATE_KEY, state);
+    sessionStorage.setItem(OAUTH_RETURN_KEY, returnPath);
+
+    const loginUrl = new URL(
+      createSdk().authentication.getSocialLoginUrl(provider, {
+        state,
+        returnUrl: '/auth/callback',
+      }),
+    );
+    loginUrl.searchParams.set(
+      'redirectUrl',
+      `${appUrl()}/api/auth/${provider}/callback`,
+    );
+    window.location.href = loginUrl.toString();
+  }
+
+  async function completeSocialCallback(): Promise<string> {
+    const params = new URLSearchParams(globalThis.location.search);
+    const rt = params.get('rt');
+    const returnedState = params.get('state');
+    if (returnedState !== sessionStorage.getItem(OAUTH_STATE_KEY)) {
+      throw new Error('Invalid OAuth state');
+    }
+    sessionStorage.removeItem(OAUTH_STATE_KEY);
+    if (!rt) throw new Error('Missing refresh token');
+
+    await createSdk().authentication.exchangeAuthCallback(rt);
+    history.replaceState({}, '', globalThis.location.pathname);
+
+    const returnPath = sessionStorage.getItem(OAUTH_RETURN_KEY) || '/';
+    sessionStorage.removeItem(OAUTH_RETURN_KEY);
+    return returnPath;
+  }
+
+  return { createSdk, startSocialLogin, completeSocialCallback };
+}
+```
+
+**Login page** — store the post-login destination separately from
+`returnUrl`:
+
+```vue
+<!-- pages/login.vue -->
+<script setup lang="ts">
+const route = useRoute();
+const { startSocialLogin } = useQelosAuth();
+const returnPath =
+  typeof route.query.return === 'string' && route.query.return.startsWith('/')
+    ? route.query.return
+    : '/';
+
+function onSocialLogin(provider: 'linkedin' | 'google' | 'github' | 'facebook') {
+  startSocialLogin(provider, returnPath);
+}
+</script>
+```
+
+**Callback page** — exchange the refresh token for a session cookie:
+
+```vue
+<!-- pages/auth/callback.vue -->
+<script setup lang="ts">
+definePageMeta({ layout: false });
+const { completeSocialCallback } = useQelosAuth();
+
+onMounted(async () => {
+  const returnPath = await completeSocialCallback();
+  await navigateTo(returnPath);
+});
+</script>
+```
+
+**`netlify.toml` + `package.json`:**
+
+```toml
+[[plugins]]
+  package = "@qelos/plugin-netlify-api"
+```
+
+```json
+{
+  "scripts": {
+    "build": "nuxt build",
+    "postbuild": "qelos-netlify-patch-redirects"
+  }
+}
+```
+
+::: warning `returnUrl` is not your dashboard URL
+`returnUrl` is where Qelos delivers `?rt=<refreshToken>`. It must be the
+route that calls `exchangeAuthCallback()` (e.g. `/auth/callback`). Putting
+`/feed` or `/dashboard` here means the token lands on a page that never
+exchanges it, and the user stays logged out.
+:::
+
+#### Server-side alternative (SSR / non-Netlify)
+
+If your Nuxt app runs as a full Nitro server (not static Netlify), you can
+redirect from a Nitro route instead of the browser composable above:
 
 ```ts
 // server/api/auth/google.get.ts
@@ -189,7 +333,7 @@ import QelosSDK from '@qelos/sdk';
 export default defineEventHandler(async (event) => {
   const sdk = new QelosSDK({ appUrl: useRuntimeConfig().qelos.appUrl });
   return sendRedirect(event, sdk.authentication.getSocialLoginUrl('google', {
-    returnUrl: 'https://your-app.com/dashboard',
+    returnUrl: '/auth/callback',
   }));
 });
 ```
@@ -202,10 +346,16 @@ export default defineEventHandler(async (event) => {
   const rt = String(getQuery(event).rt);
   const sdk = new QelosSDK({ appUrl: useRuntimeConfig().qelos.appUrl });
   const { headers } = await sdk.authentication.exchangeAuthCallback(rt);
-  if (headers['set-cookie']) appendResponseHeader(event, 'set-cookie', headers['set-cookie']);
+  if (headers['set-cookie']) {
+    appendResponseHeader(event, 'set-cookie', headers['set-cookie']);
+  }
   return sendRedirect(event, '/');
 });
 ```
+
+On Netlify static deploys, prefer the browser composable — the Nitro
+`/api/**` handler is not available at runtime; `/api/*` is proxied by the
+Netlify function instead.
 
 ### Cookies and `/api/me`
 
