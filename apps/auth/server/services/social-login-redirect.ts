@@ -71,6 +71,50 @@ function normalizeOAuthCallbackUrl(url: string): string {
   return `${parsed.origin}${path}`;
 }
 
+export type OAuthCallbackRedirectResolution =
+  | 'redirectUrl-callback'
+  | 'redirectUrl-origin'
+  | 'tenanthost-fallback'
+  | 'redirectUrl-rejected-fallback-tenanthost'
+  | 'missing-tenanthost';
+
+export function resolveOAuthCallbackRedirectUri(
+  callbackPath: string,
+  websiteUrls: string[],
+  redirectUrl?: string | null,
+  tenantHost?: string,
+  useHttps: boolean = true,
+): { redirectUri: string | null; resolution: OAuthCallbackRedirectResolution } {
+  if (redirectUrl && isAbsoluteHttpUrl(redirectUrl)) {
+    if (isOAuthCallbackUrl(redirectUrl)) {
+      return {
+        redirectUri: normalizeOAuthCallbackUrl(redirectUrl),
+        resolution: 'redirectUrl-callback',
+      };
+    }
+    if (isUrlHostInWebsiteUrls(redirectUrl, websiteUrls)) {
+      return {
+        redirectUri: new URL(callbackPath, new URL(redirectUrl).origin).toString(),
+        resolution: 'redirectUrl-origin',
+      };
+    }
+    if (tenantHost) {
+      return {
+        redirectUri: buildRedirectUri(tenantHost, callbackPath, useHttps),
+        resolution: 'redirectUrl-rejected-fallback-tenanthost',
+      };
+    }
+    return { redirectUri: null, resolution: 'missing-tenanthost' };
+  }
+  if (!tenantHost) {
+    return { redirectUri: null, resolution: 'missing-tenanthost' };
+  }
+  return {
+    redirectUri: buildRedirectUri(tenantHost, callbackPath, useHttps),
+    resolution: 'tenanthost-fallback',
+  };
+}
+
 export function buildOAuthCallbackRedirectUri(
   callbackPath: string,
   websiteUrls: string[],
@@ -78,16 +122,13 @@ export function buildOAuthCallbackRedirectUri(
   tenantHost?: string,
   useHttps: boolean = true,
 ): string | null {
-  if (redirectUrl && isAbsoluteHttpUrl(redirectUrl)) {
-    if (isOAuthCallbackUrl(redirectUrl)) {
-      return normalizeOAuthCallbackUrl(redirectUrl);
-    }
-    if (isUrlHostInWebsiteUrls(redirectUrl, websiteUrls)) {
-      return new URL(callbackPath, new URL(redirectUrl).origin).toString();
-    }
-  }
-  if (!tenantHost) return null;
-  return buildRedirectUri(tenantHost, callbackPath, useHttps);
+  return resolveOAuthCallbackRedirectUri(
+    callbackPath,
+    websiteUrls,
+    redirectUrl,
+    tenantHost,
+    useHttps,
+  ).redirectUri;
 }
 
 /**

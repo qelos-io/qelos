@@ -8,10 +8,14 @@ import {
   completeAuthentication,
   UserData,
 } from '../../services/social-login-service';
+import logger from '../../services/logger';
 import {
   extractAuthCode,
+  extractRedirectUrl,
+  extractReturnUrl,
   buildProviderState,
   getOAuthCallbackRedirectUri,
+  resolveOAuthCallbackRedirectUri,
 } from '../../services/social-login-redirect';
 
 const LINKEDIN_AUTH_URL = 'https://www.linkedin.com/oauth/v2/authorization'
@@ -22,15 +26,51 @@ type AuthWithLinkedinRequest = AuthRequest & { source: DecryptedSourceAuthentica
 
 export const getLinkedinSource = createSourceMiddleware('linkedin');
 
+function logLinkedInOAuthRedirect(
+  phase: 'start' | 'callback',
+  req: AuthWithLinkedinRequest,
+  redirectUri: string | null,
+  extra: Record<string, unknown> = {},
+): void {
+  const redirectUrl = extractRedirectUrl(req);
+  const { resolution } = resolveOAuthCallbackRedirectUri(
+    LINKEDIN_CALLBACK_PATH,
+    req.appConfig?.websiteUrls ?? [],
+    redirectUrl,
+    req.headers.tenanthost,
+  );
+
+  logger.log(`linkedinOAuth:${phase}`, {
+    tenant: req.headers.tenant,
+    tenanthost: req.headers.tenanthost,
+    host: req.headers.host,
+    forwardedHost: req.headers['x-forwarded-host'],
+    originalUrl: req.originalUrl,
+    redirectUrlQuery: redirectUrl,
+    returnUrlQuery: extractReturnUrl(req),
+    redirectUri,
+    redirectUriResolution: resolution,
+    websiteUrls: req.appConfig?.websiteUrls,
+    clientId: req.source?.metadata?.clientId,
+    ...extra,
+  });
+}
+
 export async function loginWithLinkedIn(req: AuthWithLinkedinRequest, res) {
   const { clientId, scope } = req.source.metadata;
   const redirectUri = getOAuthCallbackRedirectUri(req, LINKEDIN_CALLBACK_PATH);
+  logLinkedInOAuthRedirect('start', req, redirectUri);
   if (!redirectUri) {
     return res.status(400).json({ message: 'No website URL configured for tenant' });
   }
   const state = buildProviderState(req);
   const stateParam = state ? `&state=${encodeURIComponent(state)}` : '';
   const linkedinAuthUrl = `${LINKEDIN_AUTH_URL}?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}${stateParam}`;
+  logger.log('linkedinOAuth:redirectToProvider', {
+    tenant: req.headers.tenant,
+    redirectUri,
+    linkedinAuthUrl,
+  });
   res.redirect(linkedinAuthUrl);
 }
 
@@ -46,6 +86,7 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
   }
 
   const redirectUri = getOAuthCallbackRedirectUri(req, LINKEDIN_CALLBACK_PATH);
+  logLinkedInOAuthRedirect('callback', req, redirectUri, { hasAuthCode: Boolean(authCode) });
   if (!redirectUri) {
     return res.status(400).json({ message: 'No website URL configured for tenant' });
   }
@@ -67,6 +108,12 @@ export async function authCallbackFromLinkedIn(req: AuthWithLinkedinRequest, res
     const tokenData = await tokenResponse.json();
 
     if (!tokenResponse.ok) {
+      logger.log('linkedinOAuth:tokenExchangeFailed', {
+        tenant: req.headers.tenant,
+        redirectUri,
+        status: tokenResponse.status,
+        tokenData,
+      });
       emitFailedSocialLogin(req.headers.tenant, 'linkedin', tokenData);
       res.status(tokenResponse.status).json({ message: 'Failed to get access token', details: tokenData }).end();
       return;
