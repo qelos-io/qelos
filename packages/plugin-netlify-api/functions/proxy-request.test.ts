@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
   buildTargetPath,
   isExternalOAuthLocation,
+  isUpstreamApiHost,
   publicHostForUpstream,
 } from './proxy-request.ts';
 
@@ -10,6 +11,7 @@ describe('buildTargetPath', () => {
   it('uses rawQuery when present', () => {
     assert.equal(
       buildTargetPath({
+        path: '/.netlify/functions/qelos-api-proxy',
         rawUrl: '/api/auth/linkedin',
         rawQuery: 'redirectUrl=https%3A%2F%2Fapp.example.com%2Fcallback&state=abc',
       }),
@@ -38,6 +40,18 @@ describe('buildTargetPath', () => {
       '/api/auth/linkedin?redirectUrl=https%3A%2F%2Fapp.example.com%2Fapi%2Fauth%2Flinkedin%2Fcallback&state=abc',
     );
   });
+
+  it('prefers /api path and query from event.path when rawUrl targets the function', () => {
+    assert.equal(
+      buildTargetPath({
+        path: '/api/auth/linkedin?redirectUrl=https%3A%2F%2Fapp.example.com%2Fapi%2Fauth%2Flinkedin%2Fcallback&state=abc',
+        rawUrl: 'https://app.example.com/.netlify/functions/qelos-api-proxy',
+        rawQuery: '',
+        queryStringParameters: null,
+      }),
+      '/api/auth/linkedin?redirectUrl=https%3A%2F%2Fapp.example.com%2Fapi%2Fauth%2Flinkedin%2Fcallback&state=abc',
+    );
+  });
 });
 
 describe('publicHostForUpstream', () => {
@@ -55,6 +69,28 @@ describe('publicHostForUpstream', () => {
       ),
       'app.example.com',
     );
+  });
+
+  it('prefers rawUrl host over upstream API host header', () => {
+    assert.equal(
+      publicHostForUpstream(
+        {
+          headers: {
+            host: 'admin.example.com',
+          },
+          rawUrl: 'https://app.example.com/api/auth/linkedin',
+        },
+        'admin.example.com',
+      ),
+      'app.example.com',
+    );
+  });
+});
+
+describe('isUpstreamApiHost', () => {
+  it('treats configured upstream host as internal', () => {
+    assert.equal(isUpstreamApiHost('admin.example.com', 'https://admin.example.com'), true);
+    assert.equal(isUpstreamApiHost('app.example.com', 'https://admin.example.com'), false);
   });
 });
 

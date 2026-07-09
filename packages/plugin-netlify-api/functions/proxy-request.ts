@@ -24,6 +24,25 @@ export function pickHeader(
   return undefined;
 }
 
+export function isUpstreamApiHost(host: string, upstreamFallback: string): boolean {
+  const normalized = host.split(',')[0].trim().split(':')[0].toLowerCase();
+  if (!normalized) return true;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(normalized)) return true;
+  if (normalized.includes('auth-service') || normalized.includes('gateway')) return true;
+
+  const upstream = upstreamFallback.trim();
+  if (!upstream) return false;
+
+  try {
+    const upstreamHost = (
+      upstream.includes('://') ? new URL(upstream).hostname : upstream.split('/')[0].split(':')[0]
+    ).toLowerCase();
+    return normalized === upstreamHost;
+  } catch {
+    return normalized === upstream.toLowerCase();
+  }
+}
+
 export function publicHostForUpstream(
   event: Pick<HandlerEvent, 'headers' | 'rawUrl'>,
   fallbackHost: string,
@@ -32,15 +51,22 @@ export function publicHostForUpstream(
   if (forwarded) {
     return forwarded.split(',')[0].trim();
   }
+
+  try {
+    const fromRawUrl = new URL(event.rawUrl || '/', 'http://qelos.local').host;
+    if (fromRawUrl && !isUpstreamApiHost(fromRawUrl, fallbackHost)) {
+      return fromRawUrl;
+    }
+  } catch {
+    // fall through
+  }
+
   const host = pickHeader(event.headers, 'host');
-  if (host) {
+  if (host && !isUpstreamApiHost(host, fallbackHost)) {
     return host;
   }
-  try {
-    return new URL(event.rawUrl, 'http://qelos.local').hostname;
-  } catch {
-    return fallbackHost;
-  }
+
+  return fallbackHost;
 }
 
 function queryStringFromParameters(
@@ -54,27 +80,58 @@ function queryStringFromParameters(
   return search.toString();
 }
 
+function queryStringFromMultiValue(
+  params: Record<string, string[] | undefined> | null | undefined,
+): string {
+  if (!params) return '';
+  const search = new URLSearchParams();
+  for (const [key, values] of Object.entries(params)) {
+    if (!values) continue;
+    for (const value of values) {
+      if (value != null) search.append(key, value);
+    }
+  }
+  return search.toString();
+}
+
+function queryFromPath(path: string | undefined): { pathname: string; query: string } {
+  if (!path) return { pathname: '', query: '' };
+  const qIndex = path.indexOf('?');
+  if (qIndex === -1) return { pathname: path, query: '' };
+  return {
+    pathname: path.slice(0, qIndex),
+    query: path.slice(qIndex + 1),
+  };
+}
+
 /**
  * Preserve the inbound query string when forwarding to the Qelos API.
- * Netlify may provide `rawQuery`, embed search in `rawUrl`, or only expose
+ * Netlify may provide `rawQuery`, embed search in `rawUrl` or `path`, or only expose
  * `queryStringParameters` — OAuth social-login flows require `redirectUrl`.
  */
 export function buildTargetPath(
-  event: Pick<HandlerEvent, 'rawUrl' | 'rawQuery' | 'queryStringParameters'>,
+  event: Pick<
+    HandlerEvent,
+    'path' | 'rawUrl' | 'rawQuery' | 'queryStringParameters' | 'multiValueQueryStringParameters'
+  >,
 ): string {
+  const fromPath = queryFromPath(typeof event.path === 'string' ? event.path : '');
   const parsed = new URL(event.rawUrl || '/', 'http://qelos.local');
-  const pathname = parsed.pathname;
 
-  const fromRawQuery = event.rawQuery?.trim();
-  if (fromRawQuery) {
-    return `${pathname}?${fromRawQuery}`;
-  }
-  if (parsed.search) {
-    return `${pathname}${parsed.search}`;
-  }
+  const pathname =
+    (fromPath.pathname.startsWith('/api') ? fromPath.pathname : '') ||
+    (parsed.pathname.startsWith('/api') ? parsed.pathname : '') ||
+    fromPath.pathname ||
+    parsed.pathname;
 
-  const fromParams = queryStringFromParameters(event.queryStringParameters);
-  return fromParams ? `${pathname}?${fromParams}` : pathname;
+  const query =
+    event.rawQuery?.trim() ||
+    fromPath.query ||
+    (parsed.search ? parsed.search.slice(1) : '') ||
+    queryStringFromParameters(event.queryStringParameters) ||
+    queryStringFromMultiValue(event.multiValueQueryStringParameters);
+
+  return query ? `${pathname}?${query}` : pathname;
 }
 
 export function isExternalOAuthLocation(location: string): boolean {
