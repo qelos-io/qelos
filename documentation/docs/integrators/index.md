@@ -36,6 +36,10 @@ Every guide covers the same six steps:
 5. **Query** entities through the request-scoped SDK.
 6. **Common patterns and gotchas.**
 
+Hitting an error during setup? See **[Integrator Troubleshooting](./troubleshooting.md)**
+for frequent issues (e.g. `no website for host: <IP>`, missing env vars,
+cookie / BFF misconfiguration) — especially for Next.js and Nuxt.
+
 ## What every integrator does
 
 Independent of framework, all integrators run the same pipeline before
