@@ -228,6 +228,7 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Overview', link: '/integrators/' },
+          { text: 'Troubleshooting', link: '/integrators/troubleshooting' },
           { text: 'Express', link: '/integrators/express' },
           { text: 'Next.js', link: '/integrators/next' },
           { text: 'Nuxt', link: '/integrators/nuxt' },

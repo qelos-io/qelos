@@ -412,6 +412,10 @@ the [Blueprints Operations reference](../sdk/blueprints_operations.md).
 
 ## 6. Common patterns and gotchas
 
+- **`no website for host: <IP>` on `/api/me`.** Usually `qelos.appUrl` points
+  at a raw IP via `QELOS_IP` / `QELOS_API_IP` instead of the tenant domain, or
+  your app hostname is missing from `websiteUrls`. See
+  [Integrator Troubleshooting](./troubleshooting.md#no-website-for-host-ip-address).
 - **The integrator package is for external apps only.** Apps inside the
   Qelos monorepo MUST NOT depend on `@qelos/integrator-*` — they talk to
   the gateway directly.
