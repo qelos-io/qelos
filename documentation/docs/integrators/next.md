@@ -360,3 +360,10 @@ the [Blueprints Operations reference](../sdk/blueprints_operations.md).
   `workspaces[0]`.** Supply `resolveWorkspace` when you need another rule.
 - **Don't reuse the per-request SDK across requests.** Build a fresh
   `QelosSDK` with `apiToken` for cron jobs and workers.
+- **Don't override the proxy target with a raw IP in production.** The
+  proxy target env overrides described above take priority over `appUrl`,
+  but Qelos routes tenants by the `Host` header — an IP-based target sends
+  `Host: <ip>` upstream on both the `/api/me` round-trip and the BFF `/api/**`
+  proxy, and Qelos replies `{"message":"no website for host: <ip>"}`.
+  Reserve IP overrides for local/dev access; use a real hostname in
+  production.

@@ -302,3 +302,10 @@ snake_case in Python).
   to snake_case for the Python SDK.
 - **Don't reuse the per-request SDK across requests.** Build a fresh
   `QelosSDK(api_token=...)` for background workers and scripts.
+- **Don't point `QELOS_PROXY_TARGET` / `QELOS_IP` / `QELOS_API_IP` at a raw
+  IP in production.** These take priority over `app_url`, but Qelos routes
+  tenants by the `Host` header — an IP target means the `/api/me`
+  round-trip (and any proxied calls) go out with `Host: <ip>`, and Qelos
+  replies `{"message": "no website for host: <ip>"}`. Treat them as
+  dev-only fallbacks; use a real hostname (or leave them unset) in
+  production.

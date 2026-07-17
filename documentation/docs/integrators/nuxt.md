@@ -437,3 +437,16 @@ the [Blueprints Operations reference](../sdk/blueprints_operations.md).
   module register the default handler, or set `disableMiddleware: true`
   and register `createQelosMiddleware` yourself — running both adds
   needless duplicate SDK calls per request.
+- **Never point `NUXT_QELOS_PROXY_TARGET` / `QELOS_IP` / `QELOS_API_IP` at a
+  raw IP in production.** `resolveQelosProxyTarget` prefers these over
+  `appUrl`, but the package does not rewrite the outbound `Host` header for
+  IP targets. Qelos routes tenants by `Host`, so the request arrives with
+  `Host: <ip>` and Qelos replies `{"message":"no website for host: <ip>"}` —
+  on both the `/api/**` Nitro proxy and the `/api/me` identity round-trip.
+  Treat these vars as **dev-only** overrides (e.g. reaching a Qelos instance
+  that has no DNS name yet) and leave them unset — or point them at a real
+  hostname — in production. If you must proxy through a raw IP, you have to
+  rewrite `Host` yourself; note that `fetch`/`undici` treat `Host` as a
+  forbidden header and silently ignore attempts to set it via `headers`, so
+  a `fetch`-based `proxyRequest` override won't work — use a lower-level
+  HTTP client instead.
