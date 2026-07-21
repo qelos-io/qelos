@@ -3,6 +3,7 @@ import assert from 'node:assert';
 
 const mockCallPluginsService = mock.fn();
 const mockCallContentService = mock.fn();
+const mockEmitPlatformEvent = mock.fn();
 
 mock.module('@qelos/api-kit', {
   namedExports: {
@@ -11,6 +12,7 @@ mock.module('@qelos/api-kit', {
       if (name === 'CONTENT') return mockCallContentService;
       return mock.fn();
     },
+    emitPlatformEvent: mockEmitPlatformEvent,
     getRouter: mock.fn(() => ({
       get: mock.fn().mockReturnThis(),
       post: mock.fn().mockReturnThis(),
@@ -26,6 +28,7 @@ describe('provider-adapter', async () => {
   beforeEach(() => {
     mockCallPluginsService.mock.resetCalls();
     mockCallContentService.mock.resetCalls();
+    mockEmitPlatformEvent.mock.resetCalls();
   });
 
   const basePlan = {
@@ -74,6 +77,13 @@ describe('provider-adapter', async () => {
         assert.strictEqual(e.code, 'PAYMENTS_NOT_CONFIGURED');
         return true;
       });
+
+      assert.strictEqual(mockEmitPlatformEvent.mock.callCount(), 1);
+      const event = mockEmitPlatformEvent.mock.calls[0].arguments[0];
+      assert.strictEqual(event.eventName, 'provider-call-failed');
+      assert.strictEqual(event.source, 'payments:unknown');
+      assert.strictEqual(event.metadata.operation, 'getPaymentsConfiguration');
+      assert.strictEqual(event.metadata.code, 'PAYMENTS_NOT_CONFIGURED');
     });
 
     it('should throw when providerSourceId is missing', async () => {
@@ -129,6 +139,32 @@ describe('provider-adapter', async () => {
           assert.strictEqual(e.code, 'MISSING_EXTERNAL_PRICE_ID');
           return true;
         });
+
+        assert.strictEqual(mockEmitPlatformEvent.mock.callCount(), 1);
+        const event = mockEmitPlatformEvent.mock.calls[0].arguments[0];
+        assert.strictEqual(event.eventName, 'checkout-failed');
+        assert.strictEqual(event.source, 'payments:paddle');
+        assert.strictEqual(event.metadata.code, 'MISSING_EXTERNAL_PRICE_ID');
+      });
+
+      it('should emit provider-call-failed when plugins trigger call rejects', async () => {
+        const providerError = { code: 'PROVIDER_ERROR', message: 'Integration call failed', status: 502 };
+        mockCallPluginsService.mock.mockImplementation(async () => {
+          throw providerError;
+        });
+
+        await assert.rejects(() => ProviderAdapter.createCheckout('tenant-1', 'src-1', 'paddle', baseCheckoutParams), (e: any) => {
+          assert.strictEqual(e.code, 'PROVIDER_ERROR');
+          return true;
+        });
+
+        assert.strictEqual(mockEmitPlatformEvent.mock.callCount(), 1);
+        const event = mockEmitPlatformEvent.mock.calls[0].arguments[0];
+        assert.strictEqual(event.eventName, 'provider-call-failed');
+        assert.strictEqual(event.source, 'payments:paddle');
+        assert.strictEqual(event.metadata.operation, 'createSubscription');
+        assert.strictEqual(event.metadata.providerResponse.sourceId, 'src-1');
+        assert.deepStrictEqual(event.metadata.providerResponse.payloadSummary, { keys: ['items', 'custom_data'] });
       });
     });
 

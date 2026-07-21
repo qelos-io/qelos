@@ -1,4 +1,5 @@
 import { service } from '@qelos/api-kit';
+import { emitCheckoutFailedEvent, emitProviderCallFailedEvent } from './platform-events.js';
 
 const callPluginsService = service('PLUGINS', { port: process.env.PLUGINS_SERVICE_PORT || 9006 });
 const callContentService = service('CONTENT', { port: process.env.CONTENT_SERVICE_PORT || 9001 });
@@ -42,20 +43,36 @@ function internalHeaders(tenant: string) {
   return { tenant, internal_secret: internalSecret };
 }
 
+function summarizePayload(payload: Record<string, any>) {
+  return { keys: Object.keys(payload) };
+}
+
 async function callIntegrationSource(
   tenant: string,
   sourceId: string,
+  providerKind: string,
   operation: string,
   details: Record<string, any>,
   payload: Record<string, any>,
 ) {
-  const response = await callPluginsService({
-    method: 'POST',
-    url: `/internal-api/integration-sources/${sourceId}/trigger`,
-    headers: internalHeaders(tenant),
-    data: { operation, details, payload },
-  });
-  return response.data;
+  try {
+    const response = await callPluginsService({
+      method: 'POST',
+      url: `/internal-api/integration-sources/${sourceId}/trigger`,
+      headers: internalHeaders(tenant),
+      data: { operation, details, payload },
+    });
+    return response.data;
+  } catch (error) {
+    emitProviderCallFailedEvent({
+      tenant,
+      providerKind,
+      operation,
+      error,
+      providerResponse: { sourceId, payloadSummary: summarizePayload(payload) },
+    });
+    throw error;
+  }
 }
 
 export async function getPaymentsConfiguration(tenant: string): Promise<PaymentsConfiguration> {
@@ -67,7 +84,15 @@ export async function getPaymentsConfiguration(tenant: string): Promise<Payments
 
   const config = response.data?.value || response.data;
   if (!config?.providerSourceId || !config?.providerKind) {
-    throw { code: 'PAYMENTS_NOT_CONFIGURED', message: 'Payments provider is not configured' };
+    const error = { code: 'PAYMENTS_NOT_CONFIGURED', message: 'Payments provider is not configured' };
+    emitProviderCallFailedEvent({
+      tenant,
+      providerKind: config?.providerKind || 'unknown',
+      operation: 'getPaymentsConfiguration',
+      code: error.code,
+      error,
+    });
+    throw error;
   }
   return config;
 }
@@ -77,10 +102,20 @@ async function createPaddleCheckout(tenant: string, sourceId: string, params: Ch
   const priceId = params.billingCycle === 'monthly' ? externalIds.monthlyPriceId : externalIds.yearlyPriceId;
 
   if (!priceId) {
-    throw { code: 'MISSING_EXTERNAL_PRICE_ID', message: `No Paddle ${params.billingCycle} price ID configured for this plan` };
+    const error = { code: 'MISSING_EXTERNAL_PRICE_ID', message: `No Paddle ${params.billingCycle} price ID configured for this plan` };
+    emitCheckoutFailedEvent({
+      tenant,
+      providerKind: 'paddle',
+      code: error.code,
+      planId: params.plan._id.toString(),
+      billableEntityType: params.billableEntityType,
+      billableEntityId: params.billableEntityId,
+      error,
+    });
+    throw error;
   }
 
-  const result = await callIntegrationSource(tenant, sourceId, 'createSubscription', {}, {
+  const result = await callIntegrationSource(tenant, sourceId, 'paddle', 'createSubscription', {}, {
     items: [{ price_id: priceId, quantity: 1 }],
     custom_data: {
       billableEntityType: params.billableEntityType,
@@ -101,10 +136,20 @@ async function createPayPalCheckout(tenant: string, sourceId: string, params: Ch
   const planId = externalIds.productId;
 
   if (!planId) {
-    throw { code: 'MISSING_EXTERNAL_PRICE_ID', message: 'No PayPal product ID configured for this plan' };
+    const error = { code: 'MISSING_EXTERNAL_PRICE_ID', message: 'No PayPal product ID configured for this plan' };
+    emitCheckoutFailedEvent({
+      tenant,
+      providerKind: 'paypal',
+      code: error.code,
+      planId: params.plan._id.toString(),
+      billableEntityType: params.billableEntityType,
+      billableEntityId: params.billableEntityId,
+      error,
+    });
+    throw error;
   }
 
-  const result = await callIntegrationSource(tenant, sourceId, 'createSubscription', {}, {
+  const result = await callIntegrationSource(tenant, sourceId, 'paypal', 'createSubscription', {}, {
     plan_id: planId,
     application_context: {
       return_url: params.successUrl,
@@ -133,10 +178,20 @@ async function createDodoPaymentsCheckout(tenant: string, sourceId: string, para
   const priceId = params.billingCycle === 'monthly' ? externalIds.monthlyPriceId : externalIds.yearlyPriceId;
 
   if (!priceId) {
-    throw { code: 'MISSING_EXTERNAL_PRICE_ID', message: `No DodoPayments ${params.billingCycle} price ID configured for this plan` };
+    const error = { code: 'MISSING_EXTERNAL_PRICE_ID', message: `No DodoPayments ${params.billingCycle} price ID configured for this plan` };
+    emitCheckoutFailedEvent({
+      tenant,
+      providerKind: 'dodopayments',
+      code: error.code,
+      planId: params.plan._id.toString(),
+      billableEntityType: params.billableEntityType,
+      billableEntityId: params.billableEntityId,
+      error,
+    });
+    throw error;
   }
 
-  const result = await callIntegrationSource(tenant, sourceId, 'createSubscription', {}, {
+  const result = await callIntegrationSource(tenant, sourceId, 'dodopayments', 'createSubscription', {}, {
     payment_link: true,
     product_id: priceId,
     quantity: 1,
@@ -157,7 +212,7 @@ async function createDodoPaymentsCheckout(tenant: string, sourceId: string, para
 }
 
 async function createSumitCheckout(tenant: string, sourceId: string, params: CheckoutParams): Promise<CheckoutResult> {
-  const result = await callIntegrationSource(tenant, sourceId, 'createRecurringPayment', {}, {
+  const result = await callIntegrationSource(tenant, sourceId, 'sumit', 'createRecurringPayment', {}, {
     Amount: params.amount,
     Currency: params.currency,
     Description: params.plan.name,
@@ -192,8 +247,19 @@ export async function createCheckout(
       return createSumitCheckout(tenant, sourceId, params);
     case 'dodopayments':
       return createDodoPaymentsCheckout(tenant, sourceId, params);
-    default:
-      throw { code: 'UNSUPPORTED_PROVIDER', message: `Payment provider '${providerKind}' is not supported` };
+    default: {
+      const error = { code: 'UNSUPPORTED_PROVIDER', message: `Payment provider '${providerKind}' is not supported` };
+      emitCheckoutFailedEvent({
+        tenant,
+        providerKind,
+        code: error.code,
+        planId: params.plan._id?.toString(),
+        billableEntityType: params.billableEntityType,
+        billableEntityId: params.billableEntityId,
+        error,
+      });
+      throw error;
+    }
   }
 }
 
@@ -223,11 +289,21 @@ export async function cancelProviderSubscription(
       operation = 'cancelSubscription';
       payload = { subscription_id: externalSubscriptionId };
       break;
-    default:
-      throw { code: 'UNSUPPORTED_PROVIDER', message: `Payment provider '${providerKind}' is not supported` };
+    default: {
+      const error = { code: 'UNSUPPORTED_PROVIDER', message: `Payment provider '${providerKind}' is not supported` };
+      emitProviderCallFailedEvent({
+        tenant,
+        providerKind,
+        operation: 'cancelSubscription',
+        code: error.code,
+        externalSubscriptionId: externalSubscriptionId,
+        error,
+      });
+      throw error;
+    }
   }
 
-  const result = await callIntegrationSource(tenant, sourceId, operation, {}, payload);
+  const result = await callIntegrationSource(tenant, sourceId, providerKind, operation, {}, payload);
   return { success: true, providerData: result };
 }
 
@@ -238,7 +314,7 @@ export async function verifyPayPalWebhook(
   body: any,
   webhookId: string,
 ): Promise<boolean> {
-  const result = await callIntegrationSource(tenant, sourceId, 'verifyWebhookSignature', {}, {
+  const result = await callIntegrationSource(tenant, sourceId, 'paypal', 'verifyWebhookSignature', {}, {
     webhook_id: webhookId,
     transmission_id: headers['paypal-transmission-id'],
     transmission_time: headers['paypal-transmission-time'],
@@ -272,5 +348,5 @@ export async function getProviderSubscription(
       throw { code: 'UNSUPPORTED_PROVIDER', message: `getSubscription not supported for '${providerKind}'` };
   }
 
-  return callIntegrationSource(tenant, sourceId, operation, {}, payload);
+  return callIntegrationSource(tenant, sourceId, providerKind, operation, {}, payload);
 }
