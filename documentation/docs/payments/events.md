@@ -237,6 +237,243 @@ await sdkAdmin.events.getList({
 - `metadata.operation` — `verifySignature`, `resolveTenant`, `handleEvent`, etc.
 - `metadata.externalEventId` — provider event ID for deduplication review (duplicate webhooks are ignored for processing but first-failure events are still emitted)
 
+## Paddle troubleshooting
+
+Paddle handles **hosted checkout** for fixed plans. Filter by `payments:paddle` to isolate Paddle-specific failures.
+
+### Checkout validation failure (`checkout-failed`)
+
+**Symptoms:** `POST /api/checkout` returns an error before the user is redirected to Paddle Checkout.
+
+**Filter:**
+
+```typescript
+await sdkAdmin.events.getList({
+  source: 'payments:paddle',
+  kind: 'checkout',
+  eventName: 'checkout-failed',
+});
+```
+
+**What to inspect:**
+
+- `metadata.operation` — usually `initiateCheckout` or `cancelCheckoutSubscription`
+- `metadata.code` — e.g. `MISSING_EXTERNAL_PRICE_ID` (plan missing `externalIds.paddle.monthlyPriceId` / `yearlyPriceId`), `PLAN_NOT_ACTIVE`, `SUBSCRIPTION_NOT_PENDING`, `ACTIVE_SUBSCRIPTION_EXISTS`, `PAYMENTS_NOT_CONFIGURED`, coupon validation codes
+- `metadata.planId`, `metadata.billableEntityId` — identify the affected customer and plan
+
+**Common causes:** Plan external price IDs not configured in Admin, inactive plan, or checkout preconditions not met.
+
+### Provider API failure during subscription setup (`provider-call-failed`)
+
+**Symptoms:** Validation passed but the Paddle integration call failed; user never receives a checkout URL.
+
+**Filter:**
+
+```typescript
+await sdkAdmin.events.getList({
+  source: 'payments:paddle',
+  kind: 'provider',
+  eventName: 'provider-call-failed',
+});
+```
+
+**What to inspect:**
+
+- `metadata.operation` — `createSubscription` (checkout) or `cancelSubscription` (checkout cancellation)
+- `metadata.error.status` / `metadata.error.responseData` — Paddle API error body (credentials stripped)
+- `metadata.providerResponse` — sanitized summary of the integration trigger payload
+
+**Common causes:** Invalid Paddle price ID, sandbox/live environment mismatch, or Paddle API outage.
+
+### Webhook-reported payment failure (`payment-failed`)
+
+**Symptoms:** Initial checkout succeeded but a recurring charge failed; subscription moves to `past_due`. Emitted when Paddle sends a `transaction.payment_failed` webhook.
+
+**Filter:**
+
+```typescript
+await sdkAdmin.events.getList({
+  source: 'payments:paddle',
+  eventName: 'payment-failed',
+});
+```
+
+**What to inspect:**
+
+- `metadata.externalSubscriptionId` — Paddle subscription ID (`data.subscription_id` in the webhook)
+- `metadata.externalEventId` — Paddle `event_id`; correlate with Paddle webhook delivery logs
+- `metadata.providerResponse` — sanitized transaction payload from the webhook
+- `metadata.subscriptionId`, `metadata.planId`, `metadata.billableEntityId` — identify the affected customer
+
+### Webhook processing failure (`webhook-processing-failed`)
+
+**Symptoms:** Paddle sends a webhook but Qelos cannot verify or handle it.
+
+**Filter:**
+
+```typescript
+await sdkAdmin.events.getList({
+  source: 'payments:paddle',
+  eventName: 'webhook-processing-failed',
+});
+```
+
+**What to inspect:**
+
+- `metadata.operation` — `verifySignature` (invalid or missing `paddle-signature`), `resolveTenant` (no subscription or `custom_data.tenant`), `getWebhookSecret`, `validateWebhook` (missing `event_id` / `event_type`), `handleEvent` (unrecognised `event_type`), or `processWebhook` (other handler errors)
+- `metadata.externalEventId` — Paddle event ID for deduplication review
+- `metadata.code` — e.g. `INVALID_SIGNATURE`, `TENANT_NOT_FOUND`, `UNHANDLED_EVENT_TYPE`
+
+## PayPal troubleshooting
+
+PayPal uses **subscription approval URLs** for fixed plans. Filter by `payments:paypal` for PayPal-specific events.
+
+### Checkout and subscription setup failure (`checkout-failed` or `provider-call-failed`)
+
+**Symptoms:** `POST /api/checkout` fails; user never reaches the PayPal approval page.
+
+**Filters:**
+
+```typescript
+// Validation / plan issues before calling PayPal
+await sdkAdmin.events.getList({
+  source: 'payments:paypal',
+  kind: 'checkout',
+  eventName: 'checkout-failed',
+});
+
+// PayPal API rejected createSubscription
+await sdkAdmin.events.getList({
+  source: 'payments:paypal',
+  kind: 'provider',
+  eventName: 'provider-call-failed',
+});
+```
+
+**What to inspect:**
+
+- `checkout-failed` — check `metadata.code` (`MISSING_EXTERNAL_PRICE_ID` when `externalIds.paypal.productId` is missing, `PLAN_NOT_ACTIVE`, etc.)
+- `provider-call-failed` with `metadata.operation` = `createSubscription` — PayPal rejected subscription creation; inspect `metadata.error.responseData` for PayPal error details (e.g. invalid `plan_id`)
+- `provider-call-failed` with `metadata.operation` = `cancelSubscription` — provider-side cancellation failed during checkout cancel
+
+**Common causes:** PayPal product/plan ID not linked on the Qelos plan, misconfigured return/cancel URLs, or PayPal REST API errors.
+
+### Webhook-reported payment failure (`payment-failed`)
+
+**Symptoms:** Subscription was active but a billing cycle payment failed; subscription moves to `past_due`. Emitted when PayPal sends `BILLING.SUBSCRIPTION.PAYMENT.FAILED`.
+
+**Filter:**
+
+```typescript
+await sdkAdmin.events.getList({
+  source: 'payments:paypal',
+  eventName: 'payment-failed',
+});
+```
+
+**What to inspect:**
+
+- `metadata.externalSubscriptionId` — PayPal subscription ID from the webhook resource
+- `metadata.externalEventId` — PayPal webhook `id`; correlate with PayPal webhook event history
+- `metadata.providerResponse` — sanitized resource payload
+- `metadata.subscriptionId`, `metadata.planId`, `metadata.billableEntityId` — identify the affected customer
+
+### Webhook processing failure (`webhook-processing-failed`)
+
+**Symptoms:** PayPal webhook delivery fails verification or tenant resolution.
+
+**Filter:**
+
+```typescript
+await sdkAdmin.events.getList({
+  source: 'payments:paypal',
+  eventName: 'webhook-processing-failed',
+});
+```
+
+**What to inspect:**
+
+- `metadata.operation` — `verifySignature` when PayPal signature verification fails (via `verifyWebhookSignature` integration call), `resolveTenant` when neither a matching subscription nor `custom_id.tenant` is found, `getWebhookSecret`, `validateWebhook`, `handleEvent` (unrecognised `event_type`), or `processWebhook`
+- `metadata.externalEventId` — PayPal webhook event ID
+- `metadata.code` — e.g. `INVALID_SIGNATURE`, `TENANT_NOT_FOUND`, `UNHANDLED_EVENT_TYPE`
+
+**Common causes:** Webhook ID / secret mismatch in payments configuration, subscription not yet linked with `externalSubscriptionId`, or PayPal sending an event type Qelos does not handle.
+
+## DodoPayments troubleshooting
+
+DodoPayments uses **payment links** for fixed plans. Filter by `payments:dodopayments` for DodoPayments-specific events.
+
+### Checkout failure (`checkout-failed` or `provider-call-failed`)
+
+**Symptoms:** `POST /api/checkout` fails; user never receives a DodoPayments payment link.
+
+**Filters:**
+
+```typescript
+// Validation / plan issues before calling DodoPayments
+await sdkAdmin.events.getList({
+  source: 'payments:dodopayments',
+  kind: 'checkout',
+  eventName: 'checkout-failed',
+});
+
+// DodoPayments API rejected createSubscription
+await sdkAdmin.events.getList({
+  source: 'payments:dodopayments',
+  kind: 'provider',
+  eventName: 'provider-call-failed',
+});
+```
+
+**What to inspect:**
+
+- `checkout-failed` — check `metadata.code` (`MISSING_EXTERNAL_PRICE_ID` when `externalIds.dodopayments.monthlyPriceId` / `yearlyPriceId` is missing, `PLAN_NOT_ACTIVE`, etc.)
+- `provider-call-failed` with `metadata.operation` = `createSubscription` — DodoPayments rejected payment-link creation; inspect `metadata.error.responseData`
+- `provider-call-failed` with `metadata.operation` = `cancelSubscription` — provider-side cancellation failed
+
+**Common causes:** DodoPayments product/price ID not configured on the plan, invalid API credentials, or DodoPayments API errors.
+
+### Webhook-reported payment failure (`payment-failed`)
+
+**Symptoms:** Recurring charge failed; subscription moves to `past_due`. Emitted when DodoPayments sends a `payment.failed` webhook.
+
+**Filter:**
+
+```typescript
+await sdkAdmin.events.getList({
+  source: 'payments:dodopayments',
+  eventName: 'payment-failed',
+});
+```
+
+**What to inspect:**
+
+- `metadata.externalSubscriptionId` — DodoPayments `subscription_id` from the webhook `data`
+- `metadata.externalEventId` — webhook ID (`webhook_id` / `webhook-id` header)
+- `metadata.providerResponse` — sanitized payment failure payload
+- `metadata.subscriptionId`, `metadata.planId`, `metadata.billableEntityId` — identify the affected customer
+
+### Webhook processing failure (`webhook-processing-failed`)
+
+**Symptoms:** DodoPayments webhook cannot be verified or the tenant cannot be resolved.
+
+**Filter:**
+
+```typescript
+await sdkAdmin.events.getList({
+  source: 'payments:dodopayments',
+  eventName: 'webhook-processing-failed',
+});
+```
+
+**What to inspect:**
+
+- `metadata.operation` — `verifySignature` (missing or invalid `webhook-id` / `webhook-timestamp` / `webhook-signature` headers), `resolveTenant` (no subscription match and no `metadata.tenant` in payload), `getWebhookSecret`, `validateWebhook` (missing `webhook_id` or `type`), `handleEvent` (unrecognised event type), or `processWebhook`
+- `metadata.externalEventId` — DodoPayments webhook ID
+- `metadata.code` — e.g. `INVALID_SIGNATURE`, `TENANT_NOT_FOUND`, `UNHANDLED_EVENT_TYPE`
+
+**Common causes:** Webhook secret misconfiguration (remember DodoPayments secrets use the `whsec_` prefix), subscription not yet stored with `externalSubscriptionId`, or payload missing tenant metadata.
+
 ## Related documentation
 
 - [Checkout flow](./checkout.md) — API, error codes, and webhook event types
