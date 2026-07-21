@@ -119,5 +119,65 @@ export const PLATFORM_EVENTS: PlatformEventDefinition[] = [
     kind: 'threads',
     eventName: 'delete',
     description: 'AI thread deleted'
+  },
+  {
+    source: 'payments',
+    kind: 'checkout',
+    eventName: 'checkout-failed',
+    description: 'Checkout initiation or validation failed'
+  },
+  {
+    source: 'payments',
+    kind: 'provider',
+    eventName: 'provider-call-failed',
+    description: 'Payment provider API call failed'
+  },
+  {
+    source: 'payments',
+    kind: 'provider',
+    eventName: 'payment-method-save-failed',
+    description: 'Failed to save customer payment method'
+  },
+  {
+    source: 'payments',
+    kind: 'webhook',
+    eventName: 'payment-failed',
+    description: 'Webhook reported a payment failure'
+  },
+  {
+    source: 'payments',
+    kind: 'webhook',
+    eventName: 'webhook-processing-failed',
+    description: 'Payment webhook processing failed'
+  },
+  {
+    source: 'payments:sumit',
+    kind: 'checkout',
+    eventName: 'checkout-failed',
+    description: 'Sumit checkout initiation or validation failed'
+  },
+  {
+    source: 'payments:sumit',
+    kind: 'provider',
+    eventName: 'provider-call-failed',
+    description: 'Sumit provider API call failed'
+  },
+  {
+    source: 'payments:sumit',
+    kind: 'provider',
+    eventName: 'payment-method-save-failed',
+    description: 'Failed to save credit card via Sumit'
+  },
+  {
+    source: 'payments:sumit',
+    kind: 'webhook',
+    eventName: 'payment-failed',
+    description: 'Sumit webhook reported a payment failure'
+  },
+  {
+    source: 'payments:sumit',
+    kind: 'webhook',
+    eventName: 'webhook-processing-failed',
+    description: 'Sumit webhook processing failed'
   }
 ];
