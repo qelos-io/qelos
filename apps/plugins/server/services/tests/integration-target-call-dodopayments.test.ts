@@ -30,6 +30,7 @@ function createMockTarget(operation: string, details: any = {}) {
 let fetchResponses: Array<{ ok: boolean; status: number; body: any }> = [];
 let fetchCallIndex = 0;
 let fetchCalls: Array<{ url: string; options: any }> = [];
+let savedEvents: any[] = [];
 
 const fetchMock = mock.fn(async (url: string, options: any) => {
   fetchCalls.push({ url, options });
@@ -47,7 +48,9 @@ let mockSource = createMockSource();
 
 mock.module('node-fetch', { defaultExport: fetchMock });
 mock.module('../http-agent', { defaultExport: undefined });
-mock.module('../hook-events', { namedExports: { emitPlatformEvent: mock.fn() } });
+const emitPlatformEventMock = mock.fn();
+
+mock.module('../hook-events', { namedExports: { emitPlatformEvent: emitPlatformEventMock } });
 mock.module('../../../config', { namedExports: { redisUrl: null } });
 mock.module('../logger', { defaultExport: { log: mock.fn(), error: mock.fn() } });
 
@@ -83,7 +86,11 @@ mock.module('../cache-manager', {
 
 mock.module('../../models/event', {
   defaultExport: class {
-    constructor(public data: any) {}
+    data: any;
+    constructor(data: any) {
+      this.data = data;
+      savedEvents.push(data);
+    }
     save() { return Promise.resolve(this); }
   },
 });
@@ -116,6 +123,8 @@ describe('handleDodoPaymentsTarget', async () => {
 
   beforeEach(() => {
     mockSource = createMockSource();
+    savedEvents = [];
+    emitPlatformEventMock.mock.resetCalls();
     setupFetch();
   });
 
@@ -473,6 +482,65 @@ describe('handleDodoPaymentsTarget', async () => {
         return true;
       }
     );
+
+    assert.strictEqual(savedEvents.length, 0);
+  });
+
+  it('should emit provider-call-failed when createSubscription returns 4xx', async () => {
+    setupFetch(
+      { ok: false, status: 400, body: { error: 'invalid_request', message: 'Invalid subscription payload', apiKey: 'secret-key' } },
+    );
+
+    await assert.rejects(
+      () => callIntegrationTarget(
+        'tenant-1',
+        { customer: { customer_id: 'cust_1' }, product_id: 'prod_1' },
+        createMockTarget('createSubscription') as any,
+      ),
+      (err: any) => {
+        assert.match(err.message, /DodoPayments API request failed/);
+        assert.match(err.message, /400/);
+        return true;
+      },
+    );
+
+    assert.strictEqual(savedEvents.length, 1);
+    assert.strictEqual(savedEvents[0].source, 'payments:dodopayments');
+    assert.strictEqual(savedEvents[0].kind, 'provider');
+    assert.strictEqual(savedEvents[0].eventName, 'provider-call-failed');
+    assert.strictEqual(savedEvents[0].metadata.operation, 'createSubscription');
+    assert.strictEqual(savedEvents[0].metadata.providerKind, 'dodopayments');
+    assert.strictEqual(savedEvents[0].metadata.status, 400);
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.message, 'Invalid subscription payload');
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.apiKey, undefined);
+    assert.match(savedEvents[0].metadata.error.message, /400/);
+    assert.ok(emitPlatformEventMock.mock.calls.length >= 1);
+  });
+
+  it('should emit provider-call-failed when cancelSubscription returns 5xx', async () => {
+    setupFetch(
+      { ok: false, status: 502, body: { error: 'gateway_error', message: 'Upstream unavailable', authorization: 'Bearer secret' } },
+    );
+
+    await assert.rejects(
+      () => callIntegrationTarget(
+        'tenant-1',
+        { subscription_id: 'sub_123' },
+        createMockTarget('cancelSubscription') as any,
+      ),
+      (err: any) => {
+        assert.match(err.message, /502/);
+        return true;
+      },
+    );
+
+    assert.strictEqual(savedEvents.length, 1);
+    assert.strictEqual(savedEvents[0].source, 'payments:dodopayments');
+    assert.strictEqual(savedEvents[0].eventName, 'provider-call-failed');
+    assert.strictEqual(savedEvents[0].metadata.operation, 'cancelSubscription');
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.message, 'Upstream unavailable');
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.authorization, undefined);
+    assert.match(savedEvents[0].metadata.error.message, /502/);
   });
 
   it('should propagate 404 error from DodoPayments API', async () => {
