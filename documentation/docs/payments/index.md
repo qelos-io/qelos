@@ -52,6 +52,7 @@ Payments are processed through existing integration sources. Currently supported
 | [Invoices](./invoices.md) | Invoice retrieval and structure |
 | [Coupons](./coupons.md) | Creating and validating discount codes |
 | [Checkout](./checkout.md) | Initiating payment flows |
+| [Platform Events](./events.md) | Failure events in the Events log (checkout, provider, webhooks) |
 | [Configuration](./configuration.md) | Admin setup and provider configuration |
 
 ## SDK Quick Start

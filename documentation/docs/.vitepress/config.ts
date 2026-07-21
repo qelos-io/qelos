@@ -139,6 +139,7 @@ export default defineConfig({
           { text: 'Invoices', link: '/payments/invoices' },
           { text: 'Coupons', link: '/payments/coupons' },
           { text: 'Checkout', link: '/payments/checkout' },
+          { text: 'Platform Events', link: '/payments/events' },
           { text: 'Configuration', link: '/payments/configuration' },
           { text: 'Sumit', link: '/payments/sumit' },
           { text: 'Paddle', link: '/payments/paddle' },
