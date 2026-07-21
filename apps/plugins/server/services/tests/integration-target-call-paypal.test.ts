@@ -33,6 +33,7 @@ function createMockTarget(operation: string, details: any = {}) {
 let fetchResponses: Array<{ ok: boolean; status: number; body: any }> = [];
 let fetchCallIndex = 0;
 let fetchCalls: Array<{ url: string; options: any }> = [];
+let savedEvents: any[] = [];
 
 const fetchMock = mock.fn(async (url: string, options: any) => {
   fetchCalls.push({ url, options });
@@ -46,6 +47,8 @@ const fetchMock = mock.fn(async (url: string, options: any) => {
   };
 });
 
+const emitPlatformEventMock = mock.fn();
+
 let cachedToken: string | null = null;
 const cacheSetItemMock = mock.fn(async () => {});
 
@@ -53,7 +56,7 @@ let mockSource = createMockSource();
 
 mock.module('node-fetch', { defaultExport: fetchMock });
 mock.module('../http-agent', { defaultExport: undefined });
-mock.module('../hook-events', { namedExports: { emitPlatformEvent: mock.fn() } });
+mock.module('../hook-events', { namedExports: { emitPlatformEvent: emitPlatformEventMock } });
 mock.module('../../../config', { namedExports: { redisUrl: null } });
 mock.module('../logger', { defaultExport: { log: mock.fn(), error: mock.fn() } });
 
@@ -89,7 +92,11 @@ mock.module('../cache-manager', {
 
 mock.module('../../models/event', {
   defaultExport: class {
-    constructor(public data: any) {}
+    data: any;
+    constructor(data: any) {
+      this.data = data;
+      savedEvents.push(data);
+    }
     save() { return Promise.resolve(this); }
   },
 });
@@ -124,6 +131,8 @@ describe('handlePayPalTarget', async () => {
     cachedToken = null;
     cacheSetItemMock.mock.resetCalls();
     mockSource = createMockSource();
+    savedEvents = [];
+    emitPlatformEventMock.mock.resetCalls();
     setupFetch();
   });
 
@@ -320,11 +329,102 @@ describe('handlePayPalTarget', async () => {
         return true;
       }
     );
+
+    assert.strictEqual(savedEvents.length, 1);
+    assert.strictEqual(savedEvents[0].source, 'payments:paypal');
+    assert.strictEqual(savedEvents[0].eventName, 'provider-call-failed');
+    assert.strictEqual(savedEvents[0].metadata.operation, 'createOrder');
+  });
+
+  it('should emit provider-call-failed when createSubscription returns 4xx', async () => {
+    setupFetch(
+      { ok: true, status: 200, body: TOKEN_RESPONSE },
+      {
+        ok: false,
+        status: 422,
+        body: {
+          name: 'UNPROCESSABLE_ENTITY',
+          message: 'Invalid plan',
+          clientSecret: 'must-not-persist',
+          access_token: 'must-not-persist',
+        },
+      },
+    );
+
+    await assert.rejects(
+      () => callIntegrationTarget(
+        'tenant-1',
+        { plan_id: 'PLAN-1' },
+        createMockTarget('createSubscription') as any,
+      ),
+      (err: any) => {
+        assert.match(err.message, /PayPal API request failed/);
+        assert.match(err.message, /422/);
+        return true;
+      },
+    );
+
+    assert.strictEqual(savedEvents.length, 1);
+    assert.strictEqual(savedEvents[0].source, 'payments:paypal');
+    assert.strictEqual(savedEvents[0].kind, 'provider');
+    assert.strictEqual(savedEvents[0].eventName, 'provider-call-failed');
+    assert.strictEqual(savedEvents[0].metadata.operation, 'createSubscription');
+    assert.strictEqual(savedEvents[0].metadata.providerKind, 'paypal');
+    assert.strictEqual(savedEvents[0].metadata.status, 422);
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.message, 'Invalid plan');
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.clientSecret, undefined);
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.access_token, undefined);
+    assert.ok(emitPlatformEventMock.mock.calls.length >= 1);
+  });
+
+  it('should emit provider-call-failed when createSubscription returns 5xx', async () => {
+    setupFetch(
+      { ok: true, status: 200, body: TOKEN_RESPONSE },
+      { ok: false, status: 503, body: { name: 'SERVICE_UNAVAILABLE', message: 'Gateway error' } },
+    );
+
+    await assert.rejects(
+      () => callIntegrationTarget(
+        'tenant-1',
+        { plan_id: 'PLAN-1' },
+        createMockTarget('createSubscription') as any,
+      ),
+      /503/,
+    );
+
+    assert.strictEqual(savedEvents.length, 1);
+    assert.strictEqual(savedEvents[0].eventName, 'provider-call-failed');
+    assert.strictEqual(savedEvents[0].metadata.operation, 'createSubscription');
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.message, 'Gateway error');
+    assert.match(savedEvents[0].metadata.error.message, /503/);
+  });
+
+  it('should not emit platform event when refundPayment fails', async () => {
+    setupFetch(
+      { ok: true, status: 200, body: TOKEN_RESPONSE },
+      { ok: false, status: 404, body: { name: 'NOT_FOUND', message: 'Capture not found' } },
+    );
+
+    await assert.rejects(
+      () => callIntegrationTarget(
+        'tenant-1',
+        { captureId: 'CAP-456' },
+        createMockTarget('refundPayment') as any,
+      ),
+      /PayPal API request failed/,
+    );
+
+    assert.strictEqual(savedEvents.length, 0);
+    assert.strictEqual(emitPlatformEventMock.mock.calls.length, 0);
   });
 
   it('should throw when OAuth token exchange fails', async () => {
     setupFetch(
-      { ok: false, status: 401, body: { error: 'invalid_client' } },
+      {
+        ok: false,
+        status: 401,
+        body: { error: 'invalid_client', clientSecret: 'must-not-persist', access_token: 'must-not-persist' },
+      },
     );
 
     await assert.rejects(
@@ -334,6 +434,17 @@ describe('handlePayPalTarget', async () => {
         return true;
       }
     );
+
+    assert.strictEqual(savedEvents.length, 1);
+    assert.strictEqual(savedEvents[0].source, 'payments:paypal');
+    assert.strictEqual(savedEvents[0].kind, 'provider');
+    assert.strictEqual(savedEvents[0].eventName, 'provider-call-failed');
+    assert.strictEqual(savedEvents[0].metadata.operation, 'getAccessToken');
+    assert.strictEqual(savedEvents[0].metadata.status, 401);
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.error, 'invalid_client');
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.clientSecret, undefined);
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.access_token, undefined);
+    assert.ok(emitPlatformEventMock.mock.calls.length >= 1);
   });
 
   it('should cache the OAuth token after exchange', async () => {

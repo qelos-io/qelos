@@ -428,6 +428,12 @@ const SUMIT_PAYMENTS_FAILURE_OPERATIONS = new Set<string>([
   SumitTargetOperation.createRecurringPayment,
 ]);
 
+const PAYPAL_PAYMENTS_FAILURE_OPERATIONS = new Set<string>([
+  PayPalTargetOperation.createSubscription,
+  PayPalTargetOperation.createOrder,
+  PayPalTargetOperation.captureOrder,
+]);
+
 async function handleSumitTarget(
   integrationTarget: IIntegrationEntity,
   source: ISumitSource,
@@ -512,7 +518,7 @@ async function handleSumitTarget(
   }
 }
 
-async function getPayPalAccessToken(source: IPayPalSource, clientSecret: string): Promise<string> {
+async function getPayPalAccessToken(source: IPayPalSource, clientSecret: string, tenant?: string): Promise<string> {
   const baseUrl = source.metadata.environment === 'live'
     ? 'https://api-m.paypal.com'
     : 'https://api-m.sandbox.paypal.com';
@@ -524,23 +530,43 @@ async function getPayPalAccessToken(source: IPayPalSource, clientSecret: string)
   }
 
   const credentials = Buffer.from(`${source.metadata.clientId}:${clientSecret}`).toString('base64');
-  const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${credentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-    agent: httpAgent,
-  });
 
-  const body = await response.json();
-  if (!response.ok || !body.access_token) {
-    throw new Error(`PayPal OAuth token exchange failed: ${JSON.stringify(body)}`);
+  try {
+    const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'grant_type=client_credentials',
+      agent: httpAgent,
+    });
+
+    let body: any = null;
+    try {
+      body = await response.json();
+    } catch {
+      body = null;
+    }
+
+    if (!response.ok || !body?.access_token) {
+      const error: any = new Error(`PayPal OAuth token exchange failed: ${JSON.stringify(body)}`);
+      error.status = response.status;
+      error.responseBody = body;
+      throw error;
+    }
+
+    await cacheManager.setItem(cacheKey, body.access_token, { ttl: 1800 });
+    return body.access_token;
+  } catch (error) {
+    logger.error('PayPal OAuth token exchange failed', error);
+    emitPaymentsProviderFailureEvent(tenant ?? source.tenant, 'paypal', 'getAccessToken', {
+      status: (error as any)?.status,
+      providerResponse: (error as any)?.responseBody,
+      error,
+    });
+    throw error;
   }
-
-  await cacheManager.setItem(cacheKey, body.access_token, { ttl: 1800 });
-  return body.access_token;
 }
 
 async function handlePayPalTarget(
@@ -560,7 +586,7 @@ async function handlePayPalTarget(
     ? 'https://api-m.paypal.com'
     : 'https://api-m.sandbox.paypal.com';
 
-  const accessToken = await getPayPalAccessToken(source, clientSecret);
+  const accessToken = await getPayPalAccessToken(source, clientSecret, source.tenant);
   const details = integrationTarget.details || {};
 
   let endpoint = '';
@@ -627,36 +653,57 @@ async function handlePayPalTarget(
     fetchOptions.body = JSON.stringify({ ...details, ...bodyPayload });
   }
 
-  const response = await fetch(url.toString(), fetchOptions);
-  const responseBody = await response.json();
+  try {
+    const response = await fetch(url.toString(), fetchOptions);
 
-  if (!response.ok) {
-    throw new Error(`PayPal API request failed with status ${response.status}: ${JSON.stringify(responseBody)}`);
+    let responseBody: any = null;
+    try {
+      responseBody = await response.json();
+    } catch {
+      responseBody = null;
+    }
+
+    if (!response.ok) {
+      const error: any = new Error(`PayPal API request failed with status ${response.status}: ${JSON.stringify(responseBody)}`);
+      error.status = response.status;
+      error.responseBody = responseBody;
+      throw error;
+    }
+
+    const triggerResponse = mergeTriggerResponses(
+      details.triggerResponse as TriggerResponseConfig,
+      payload.triggerResponse as TriggerResponseConfig,
+    );
+
+    if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+      const event = new PlatformEvent({
+        tenant: source.tenant,
+        source: triggerResponse.source,
+        kind: triggerResponse.kind,
+        eventName: triggerResponse.eventName,
+        description: triggerResponse.description,
+        metadata: {
+          ...triggerResponse.metadata,
+          operation,
+          status: response.status,
+          body: responseBody,
+        },
+      });
+      event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+    }
+
+    return responseBody;
+  } catch (error) {
+    logger.error('Error calling PayPal API', error);
+    if (PAYPAL_PAYMENTS_FAILURE_OPERATIONS.has(operation)) {
+      emitPaymentsProviderFailureEvent(source.tenant, 'paypal', operation, {
+        status: (error as any)?.status,
+        providerResponse: (error as any)?.responseBody,
+        error,
+      });
+    }
+    throw error;
   }
-
-  const triggerResponse = mergeTriggerResponses(
-    details.triggerResponse as TriggerResponseConfig,
-    payload.triggerResponse as TriggerResponseConfig,
-  );
-
-  if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
-    const event = new PlatformEvent({
-      tenant: source.tenant,
-      source: triggerResponse.source,
-      kind: triggerResponse.kind,
-      eventName: triggerResponse.eventName,
-      description: triggerResponse.description,
-      metadata: {
-        ...triggerResponse.metadata,
-        operation,
-        status: response.status,
-        body: responseBody,
-      },
-    });
-    event.save().then(event => emitPlatformEvent(event)).catch(() => {});
-  }
-
-  return responseBody;
 }
 
 const PADDLE_PAYMENTS_FAILURE_OPERATIONS = new Set<string>([
