@@ -55,6 +55,90 @@
         </el-descriptions>
 
         <div
+          v-if="isPaymentsEvent && paymentsMetadata"
+          class="metadata-section"
+        >
+          <div class="section-header">
+            <h3>{{ $t("Payment Details") }}</h3>
+            <el-tag v-if="paymentsMetadata.providerKind" size="small" type="warning">
+              {{ paymentsMetadata.providerKind }}
+            </el-tag>
+          </div>
+          <div class="metadata-content">
+            <el-descriptions :column="1" border>
+              <el-descriptions-item
+                v-if="paymentsMetadata.providerKind"
+                :label="$t('Provider')"
+              >
+                {{ paymentsMetadata.providerKind }}
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="paymentsMetadata.operation"
+                :label="$t('Operation')"
+              >
+                {{ paymentsMetadata.operation }}
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="paymentsMetadata.code"
+                :label="$t('Code')"
+              >
+                {{ paymentsMetadata.code }}
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="paymentsErrorMessage"
+                :label="$t('Error')"
+              >
+                {{ paymentsErrorMessage }}
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="paymentsMetadata.subscriptionId"
+                :label="$t('Subscription')"
+              >
+                {{ paymentsMetadata.subscriptionId }}
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="paymentsMetadata.externalSubscriptionId"
+                :label="$t('External Subscription')"
+              >
+                {{ paymentsMetadata.externalSubscriptionId }}
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="paymentsMetadata.planId"
+                :label="$t('Plan')"
+              >
+                {{ paymentsMetadata.planId }}
+              </el-descriptions-item>
+              <el-descriptions-item
+                v-if="paymentsMetadata.externalEventId"
+                :label="$t('External Event')"
+              >
+                {{ paymentsMetadata.externalEventId }}
+              </el-descriptions-item>
+            </el-descriptions>
+
+            <div
+              v-if="paymentsMetadata.error && typeof paymentsMetadata.error === 'object'"
+              class="metadata-subsection"
+            >
+              <h4>{{ $t("Error Details") }}</h4>
+              <pre dir="ltr">{{
+                JSON.stringify(paymentsMetadata.error, null, 2)
+              }}</pre>
+            </div>
+
+            <div
+              v-if="paymentsMetadata.providerResponse"
+              class="metadata-subsection"
+            >
+              <h4>{{ $t("Provider Response") }}</h4>
+              <pre dir="ltr">{{
+                JSON.stringify(paymentsMetadata.providerResponse, null, 2)
+              }}</pre>
+            </div>
+          </div>
+        </div>
+
+        <div
           v-if="
             isBlueprintEntityEvent &&
             (blueprintEntityLoading || blueprintEntity || blueprintEntityError)
@@ -201,6 +285,29 @@ const isBlueprintEntityEvent = computed(() => {
     ["create", "update"].includes(normalizedEventName) &&
     !!blueprintIdentifiers.value
   );
+});
+
+const isPaymentsEvent = computed(() => {
+  return props.event?.source?.startsWith("payments") ?? false;
+});
+
+const paymentsMetadata = computed(() => {
+  const metadata = props.event?.metadata;
+  if (!metadata || typeof metadata !== "object" || !isPaymentsEvent.value) {
+    return null;
+  }
+
+  return metadata as Record<string, unknown>;
+});
+
+const paymentsErrorMessage = computed(() => {
+  const error = paymentsMetadata.value?.error;
+  if (!error || typeof error !== "object") {
+    return "";
+  }
+
+  const message = (error as Record<string, unknown>).message;
+  return typeof message === "string" ? message : "";
 });
 
 watch(
