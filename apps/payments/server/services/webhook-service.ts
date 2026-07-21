@@ -4,6 +4,10 @@ import WebhookEvent from '../models/webhook-event';
 import * as SubscriptionsService from './subscriptions-service';
 import * as CheckoutService from './checkout-service';
 import * as ProviderAdapter from './provider-adapter';
+import {
+  emitWebhookPaymentFailedEvent,
+  emitWebhookProcessingFailedEvent,
+} from './platform-events.js';
 
 export async function isEventProcessed(tenant: string, externalEventId: string, providerKind: string): Promise<boolean> {
   const existing = await (WebhookEvent as any).findOne({
@@ -55,6 +59,34 @@ async function findSubscriptionByExternalId(externalId: string, providerKind: st
   }).lean().exec();
 }
 
+function subscriptionEventMetadata(subscription: any) {
+  return {
+    subscriptionId: subscription._id?.toString(),
+    planId: subscription.planId?.toString(),
+    billableEntityType: subscription.billableEntityType,
+    billableEntityId: subscription.billableEntityId,
+  };
+}
+
+function emitWebhookProcessingFailure(params: {
+  tenant?: string;
+  providerKind: string;
+  operation?: string;
+  externalEventId?: string;
+  providerResponse?: unknown;
+  error: any;
+}) {
+  emitWebhookProcessingFailedEvent({
+    tenant: params.tenant,
+    providerKind: params.providerKind,
+    operation: params.operation,
+    code: params.error?.code,
+    externalEventId: params.externalEventId,
+    providerResponse: params.providerResponse,
+    error: params.error,
+  });
+}
+
 // --- Signature Verification ---
 
 function verifyPaddleSignature(headers: Record<string, any>, rawBody: string, webhookSecret: string) {
@@ -86,6 +118,21 @@ function verifySumitSignature(headers: Record<string, any>, webhookSecret: strin
   }
 }
 
+function resolveWebhookFailureOperation(error: any) {
+  switch (error?.code) {
+    case 'INVALID_SIGNATURE':
+      return 'verifySignature';
+    case 'TENANT_NOT_FOUND':
+      return 'resolveTenant';
+    case 'WEBHOOK_SECRET_NOT_CONFIGURED':
+      return 'getWebhookSecret';
+    case 'INVALID_WEBHOOK':
+      return 'validateWebhook';
+    default:
+      return 'processWebhook';
+  }
+}
+
 function requireWebhookSecret(config: ProviderAdapter.PaymentsConfiguration): string {
   if (!config.webhookSecret) {
     throw { code: 'WEBHOOK_SECRET_NOT_CONFIGURED', message: 'Webhook secret is not configured for this tenant' };
@@ -96,58 +143,80 @@ function requireWebhookSecret(config: ProviderAdapter.PaymentsConfiguration): st
 // --- Paddle Webhooks ---
 
 async function processPaddleWebhook(headers: Record<string, any>, body: any, rawBody: string) {
-  const eventId = body.event_id || body.notification_id;
-  const eventType = body.event_type;
-  const data = body.data || {};
+  let tenant: string | undefined;
+  let eventId: string | undefined;
 
-  if (!eventId || !eventType) {
-    throw { code: 'INVALID_WEBHOOK', message: 'Missing event_id or event_type' };
+  try {
+    eventId = body.event_id || body.notification_id;
+    const eventType = body.event_type;
+    const data = body.data || {};
+
+    if (!eventId || !eventType) {
+      throw { code: 'INVALID_WEBHOOK', message: 'Missing event_id or event_type' };
+    }
+
+    const subscription = data.id ? await findSubscriptionByExternalId(data.id, 'paddle') : null;
+    tenant = subscription?.tenant || extractTenantFromCustomData(data.custom_data);
+
+    if (!tenant) {
+      throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from webhook data' };
+    }
+
+    const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
+    const webhookSecret = requireWebhookSecret(config);
+    verifyPaddleSignature(headers, rawBody, webhookSecret);
+
+    if (await isEventProcessed(tenant, eventId, 'paddle')) {
+      return { status: 'already_processed' };
+    }
+
+    await recordEvent(tenant, eventId, 'paddle', eventType);
+
+    let result: any;
+
+    switch (eventType) {
+      case 'subscription.created':
+      case 'subscription.activated':
+        result = await handlePaddleSubscriptionActivated(tenant, data);
+        break;
+      case 'subscription.updated':
+        result = await handlePaddleSubscriptionUpdated(tenant, data);
+        break;
+      case 'subscription.canceled':
+        result = await handlePaddleSubscriptionCanceled(tenant, data);
+        break;
+      case 'subscription.past_due':
+        result = await handlePaddleSubscriptionPastDue(tenant, data);
+        break;
+      case 'transaction.completed':
+        result = await handlePaddleTransactionCompleted(tenant, data);
+        break;
+      case 'transaction.payment_failed':
+        result = await handlePaddlePaymentFailed(tenant, data, eventId);
+        break;
+      default:
+        emitWebhookProcessingFailure({
+          tenant,
+          providerKind: 'paddle',
+          operation: 'handleEvent',
+          externalEventId: eventId,
+          providerResponse: { eventType },
+          error: { code: 'UNHANDLED_EVENT_TYPE', message: `Unhandled Paddle event type: ${eventType}` },
+        });
+        result = { status: 'unhandled', eventType };
+    }
+
+    return result;
+  } catch (error: any) {
+    emitWebhookProcessingFailure({
+      tenant,
+      providerKind: 'paddle',
+      operation: resolveWebhookFailureOperation(error),
+      externalEventId: eventId,
+      error,
+    });
+    throw error;
   }
-
-  const subscription = data.id ? await findSubscriptionByExternalId(data.id, 'paddle') : null;
-  const tenant = subscription?.tenant || extractTenantFromCustomData(data.custom_data);
-
-  if (!tenant) {
-    throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from webhook data' };
-  }
-
-  const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
-  const webhookSecret = requireWebhookSecret(config);
-  verifyPaddleSignature(headers, rawBody, webhookSecret);
-
-  if (await isEventProcessed(tenant, eventId, 'paddle')) {
-    return { status: 'already_processed' };
-  }
-
-  await recordEvent(tenant, eventId, 'paddle', eventType);
-
-  let result: any;
-
-  switch (eventType) {
-    case 'subscription.created':
-    case 'subscription.activated':
-      result = await handlePaddleSubscriptionActivated(tenant, data);
-      break;
-    case 'subscription.updated':
-      result = await handlePaddleSubscriptionUpdated(tenant, data);
-      break;
-    case 'subscription.canceled':
-      result = await handlePaddleSubscriptionCanceled(tenant, data);
-      break;
-    case 'subscription.past_due':
-      result = await handlePaddleSubscriptionPastDue(tenant, data);
-      break;
-    case 'transaction.completed':
-      result = await handlePaddleTransactionCompleted(tenant, data);
-      break;
-    case 'transaction.payment_failed':
-      result = await handlePaddlePaymentFailed(tenant, data);
-      break;
-    default:
-      result = { status: 'unhandled', eventType };
-  }
-
-  return result;
 }
 
 async function handlePaddleSubscriptionActivated(tenant: string, data: any) {
@@ -222,12 +291,21 @@ async function handlePaddleTransactionCompleted(tenant: string, data: any) {
   });
 }
 
-async function handlePaddlePaymentFailed(tenant: string, data: any) {
+async function handlePaddlePaymentFailed(tenant: string, data: any, externalEventId?: string) {
   const subscriptionId = data.subscription_id;
   if (!subscriptionId) return { status: 'no_subscription' };
 
   const subscription = await findSubscriptionByExternalId(subscriptionId, 'paddle');
   if (!subscription) return { status: 'subscription_not_found' };
+
+  emitWebhookPaymentFailedEvent({
+    tenant,
+    providerKind: 'paddle',
+    externalSubscriptionId: subscriptionId,
+    externalEventId,
+    providerResponse: data,
+    ...subscriptionEventMetadata(subscription),
+  });
 
   return SubscriptionsService.updateSubscriptionStatus(tenant, subscription._id.toString(), 'past_due');
 }
@@ -235,61 +313,83 @@ async function handlePaddlePaymentFailed(tenant: string, data: any) {
 // --- PayPal Webhooks ---
 
 async function processPayPalWebhook(headers: Record<string, any>, body: any) {
-  const eventId = body.id;
-  const eventType = body.event_type;
-  const resource = body.resource || {};
+  let tenant: string | undefined;
+  let eventId: string | undefined;
 
-  if (!eventId || !eventType) {
-    throw { code: 'INVALID_WEBHOOK', message: 'Missing id or event_type' };
+  try {
+    eventId = body.id;
+    const eventType = body.event_type;
+    const resource = body.resource || {};
+
+    if (!eventId || !eventType) {
+      throw { code: 'INVALID_WEBHOOK', message: 'Missing id or event_type' };
+    }
+
+    const subscriptionId = resource.id || resource.billing_agreement_id;
+    const subscription = subscriptionId ? await findSubscriptionByExternalId(subscriptionId, 'paypal') : null;
+    tenant = subscription?.tenant || extractTenantFromCustomData(resource.custom_id);
+
+    if (!tenant) {
+      throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from webhook data' };
+    }
+
+    const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
+    const webhookSecret = requireWebhookSecret(config);
+    const verified = await ProviderAdapter.verifyPayPalWebhook(
+      tenant, config.providerSourceId, headers, body, webhookSecret,
+    );
+    if (!verified) {
+      throw { code: 'INVALID_SIGNATURE', message: 'PayPal webhook signature verification failed' };
+    }
+
+    if (await isEventProcessed(tenant, eventId, 'paypal')) {
+      return { status: 'already_processed' };
+    }
+
+    await recordEvent(tenant, eventId, 'paypal', eventType);
+
+    let result: any;
+
+    switch (eventType) {
+      case 'BILLING.SUBSCRIPTION.ACTIVATED':
+        result = await handlePayPalSubscriptionActivated(tenant, resource);
+        break;
+      case 'BILLING.SUBSCRIPTION.CANCELLED':
+      case 'BILLING.SUBSCRIPTION.SUSPENDED':
+        result = await handlePayPalSubscriptionCanceled(tenant, resource);
+        break;
+      case 'BILLING.SUBSCRIPTION.EXPIRED':
+        result = await handlePayPalSubscriptionExpired(tenant, resource);
+        break;
+      case 'PAYMENT.SALE.COMPLETED':
+        result = await handlePayPalPaymentCompleted(tenant, resource);
+        break;
+      case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED':
+        result = await handlePayPalPaymentFailed(tenant, resource, eventId);
+        break;
+      default:
+        emitWebhookProcessingFailure({
+          tenant,
+          providerKind: 'paypal',
+          operation: 'handleEvent',
+          externalEventId: eventId,
+          providerResponse: { eventType },
+          error: { code: 'UNHANDLED_EVENT_TYPE', message: `Unhandled PayPal event type: ${eventType}` },
+        });
+        result = { status: 'unhandled', eventType };
+    }
+
+    return result;
+  } catch (error: any) {
+    emitWebhookProcessingFailure({
+      tenant,
+      providerKind: 'paypal',
+      operation: resolveWebhookFailureOperation(error),
+      externalEventId: eventId,
+      error,
+    });
+    throw error;
   }
-
-  const subscriptionId = resource.id || resource.billing_agreement_id;
-  const subscription = subscriptionId ? await findSubscriptionByExternalId(subscriptionId, 'paypal') : null;
-  const tenant = subscription?.tenant || extractTenantFromCustomData(resource.custom_id);
-
-  if (!tenant) {
-    throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from webhook data' };
-  }
-
-  const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
-  const webhookSecret = requireWebhookSecret(config);
-  const verified = await ProviderAdapter.verifyPayPalWebhook(
-    tenant, config.providerSourceId, headers, body, webhookSecret,
-  );
-  if (!verified) {
-    throw { code: 'INVALID_SIGNATURE', message: 'PayPal webhook signature verification failed' };
-  }
-
-  if (await isEventProcessed(tenant, eventId, 'paypal')) {
-    return { status: 'already_processed' };
-  }
-
-  await recordEvent(tenant, eventId, 'paypal', eventType);
-
-  let result: any;
-
-  switch (eventType) {
-    case 'BILLING.SUBSCRIPTION.ACTIVATED':
-      result = await handlePayPalSubscriptionActivated(tenant, resource);
-      break;
-    case 'BILLING.SUBSCRIPTION.CANCELLED':
-    case 'BILLING.SUBSCRIPTION.SUSPENDED':
-      result = await handlePayPalSubscriptionCanceled(tenant, resource);
-      break;
-    case 'BILLING.SUBSCRIPTION.EXPIRED':
-      result = await handlePayPalSubscriptionExpired(tenant, resource);
-      break;
-    case 'PAYMENT.SALE.COMPLETED':
-      result = await handlePayPalPaymentCompleted(tenant, resource);
-      break;
-    case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED':
-      result = await handlePayPalPaymentFailed(tenant, resource);
-      break;
-    default:
-      result = { status: 'unhandled', eventType };
-  }
-
-  return result;
 }
 
 async function handlePayPalSubscriptionActivated(tenant: string, resource: any) {
@@ -335,9 +435,18 @@ async function handlePayPalPaymentCompleted(tenant: string, resource: any) {
   });
 }
 
-async function handlePayPalPaymentFailed(tenant: string, resource: any) {
+async function handlePayPalPaymentFailed(tenant: string, resource: any, externalEventId?: string) {
   const subscription = await findSubscriptionByExternalId(resource.id, 'paypal');
   if (!subscription) return { status: 'subscription_not_found' };
+
+  emitWebhookPaymentFailedEvent({
+    tenant,
+    providerKind: 'paypal',
+    externalSubscriptionId: resource.id,
+    externalEventId,
+    providerResponse: resource,
+    ...subscriptionEventMetadata(subscription),
+  });
 
   return SubscriptionsService.updateSubscriptionStatus(tenant, subscription._id.toString(), 'past_due');
 }
@@ -345,53 +454,75 @@ async function handlePayPalPaymentFailed(tenant: string, resource: any) {
 // --- Sumit Webhooks ---
 
 async function processSumitWebhook(headers: Record<string, any>, body: any) {
-  const eventId = body.EventId || body.TransactionId || `sumit-${Date.now()}`;
-  const eventType = body.EventType || body.Type || 'payment';
+  let tenant: string | undefined;
+  let eventId: string | undefined;
 
-  let customData: any = {};
-  if (body.CustomData) {
-    if (typeof body.CustomData === 'string') {
-      try { customData = JSON.parse(body.CustomData); } catch { customData = {}; }
-    } else {
-      customData = body.CustomData;
+  try {
+    eventId = body.EventId || body.TransactionId || `sumit-${Date.now()}`;
+    const eventType = body.EventType || body.Type || 'payment';
+
+    let customData: any = {};
+    if (body.CustomData) {
+      if (typeof body.CustomData === 'string') {
+        try { customData = JSON.parse(body.CustomData); } catch { customData = {}; }
+      } else {
+        customData = body.CustomData;
+      }
     }
+    tenant = customData.tenant;
+
+    if (!tenant) {
+      throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from webhook data' };
+    }
+
+    const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
+    const webhookSecret = requireWebhookSecret(config);
+    verifySumitSignature(headers, webhookSecret);
+
+    if (await isEventProcessed(tenant, eventId, 'sumit')) {
+      return { status: 'already_processed' };
+    }
+
+    await recordEvent(tenant, eventId, 'sumit', eventType);
+
+    let result: any;
+
+    switch (eventType) {
+      case 'payment_success':
+      case 'RecurringPaymentCharged':
+        result = await handleSumitPaymentSuccess(tenant, body);
+        break;
+      case 'payment_failed':
+      case 'RecurringPaymentFailed':
+        result = await handleSumitPaymentFailed(tenant, body, eventId);
+        break;
+      case 'recurring_canceled':
+      case 'RecurringPaymentCanceled':
+        result = await handleSumitRecurringCanceled(tenant, body);
+        break;
+      default:
+        emitWebhookProcessingFailure({
+          tenant,
+          providerKind: 'sumit',
+          operation: 'handleEvent',
+          externalEventId: eventId,
+          providerResponse: { eventType },
+          error: { code: 'UNHANDLED_EVENT_TYPE', message: `Unhandled Sumit event type: ${eventType}` },
+        });
+        result = { status: 'unhandled', eventType };
+    }
+
+    return result;
+  } catch (error: any) {
+    emitWebhookProcessingFailure({
+      tenant,
+      providerKind: 'sumit',
+      operation: resolveWebhookFailureOperation(error),
+      externalEventId: eventId,
+      error,
+    });
+    throw error;
   }
-  const tenant = customData.tenant;
-
-  if (!tenant) {
-    throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from webhook data' };
-  }
-
-  const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
-  const webhookSecret = requireWebhookSecret(config);
-  verifySumitSignature(headers, webhookSecret);
-
-  if (await isEventProcessed(tenant, eventId, 'sumit')) {
-    return { status: 'already_processed' };
-  }
-
-  await recordEvent(tenant, eventId, 'sumit', eventType);
-
-  let result: any;
-
-  switch (eventType) {
-    case 'payment_success':
-    case 'RecurringPaymentCharged':
-      result = await handleSumitPaymentSuccess(tenant, body);
-      break;
-    case 'payment_failed':
-    case 'RecurringPaymentFailed':
-      result = await handleSumitPaymentFailed(tenant, body);
-      break;
-    case 'recurring_canceled':
-    case 'RecurringPaymentCanceled':
-      result = await handleSumitRecurringCanceled(tenant, body);
-      break;
-    default:
-      result = { status: 'unhandled', eventType };
-  }
-
-  return result;
 }
 
 async function handleSumitPaymentSuccess(tenant: string, body: any) {
@@ -415,12 +546,21 @@ async function handleSumitPaymentSuccess(tenant: string, body: any) {
   });
 }
 
-async function handleSumitPaymentFailed(tenant: string, body: any) {
+async function handleSumitPaymentFailed(tenant: string, body: any, externalEventId?: string) {
   const recurringPaymentId = body.RecurringPaymentId?.toString();
   if (!recurringPaymentId) return { status: 'no_subscription' };
 
   const subscription = await findSubscriptionByExternalId(recurringPaymentId, 'sumit');
   if (!subscription) return { status: 'subscription_not_found' };
+
+  emitWebhookPaymentFailedEvent({
+    tenant,
+    providerKind: 'sumit',
+    externalSubscriptionId: recurringPaymentId,
+    externalEventId,
+    providerResponse: body,
+    ...subscriptionEventMetadata(subscription),
+  });
 
   return SubscriptionsService.updateSubscriptionStatus(tenant, subscription._id.toString(), 'past_due');
 }
@@ -472,64 +612,86 @@ function verifyDodoPaymentsSignature(headers: Record<string, any>, rawBody: stri
 }
 
 async function processDodoPaymentsWebhook(headers: Record<string, any>, body: any, rawBody: string) {
-  const eventId = body.webhook_id || headers['webhook-id'];
-  const eventType = body.type || body.event_type;
-  const data = body.data || {};
+  let tenant: string | undefined;
+  let eventId: string | undefined;
 
-  if (!eventId || !eventType) {
-    throw { code: 'INVALID_WEBHOOK', message: 'Missing webhook_id or type in DodoPayments webhook' };
+  try {
+    eventId = body.webhook_id || headers['webhook-id'];
+    const eventType = body.type || body.event_type;
+    const data = body.data || {};
+
+    if (!eventId || !eventType) {
+      throw { code: 'INVALID_WEBHOOK', message: 'Missing webhook_id or type in DodoPayments webhook' };
+    }
+
+    const externalSubscriptionId = data.subscription_id || data.id;
+    const subscription = externalSubscriptionId
+      ? await findSubscriptionByExternalId(externalSubscriptionId, 'dodopayments')
+      : null;
+    tenant = subscription?.tenant || extractTenantFromCustomData(data.metadata);
+
+    if (!tenant) {
+      throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from DodoPayments webhook data' };
+    }
+
+    const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
+    const webhookSecret = requireWebhookSecret(config);
+    verifyDodoPaymentsSignature(headers, rawBody, webhookSecret);
+
+    if (await isEventProcessed(tenant, eventId, 'dodopayments')) {
+      return { status: 'already_processed' };
+    }
+
+    await recordEvent(tenant, eventId, 'dodopayments', eventType);
+
+    let result: any;
+
+    switch (eventType) {
+      case 'subscription.active':
+      case 'subscription.created':
+        result = await handleDodoSubscriptionActivated(tenant, data);
+        break;
+      case 'subscription.cancelled':
+        result = await handleDodoSubscriptionCancelled(tenant, data);
+        break;
+      case 'subscription.past_due':
+        result = await handleDodoSubscriptionPastDue(tenant, data);
+        break;
+      case 'subscription.on_hold':
+        result = await handleDodoSubscriptionOnHold(tenant, data);
+        break;
+      case 'subscription.renewed':
+        result = await handleDodoSubscriptionRenewed(tenant, data);
+        break;
+      case 'payment.succeeded':
+        result = await handleDodoPaymentSucceeded(tenant, data);
+        break;
+      case 'payment.failed':
+        result = await handleDodoPaymentFailed(tenant, data, eventId);
+        break;
+      default:
+        emitWebhookProcessingFailure({
+          tenant,
+          providerKind: 'dodopayments',
+          operation: 'handleEvent',
+          externalEventId: eventId,
+          providerResponse: { eventType },
+          error: { code: 'UNHANDLED_EVENT_TYPE', message: `Unhandled DodoPayments event type: ${eventType}` },
+        });
+        result = { status: 'unhandled', eventType };
+    }
+
+    return result;
+  } catch (error: any) {
+    emitWebhookProcessingFailure({
+      tenant,
+      providerKind: 'dodopayments',
+      operation: resolveWebhookFailureOperation(error),
+      externalEventId: eventId,
+      error,
+    });
+    throw error;
   }
-
-  const externalSubscriptionId = data.subscription_id || data.id;
-  const subscription = externalSubscriptionId
-    ? await findSubscriptionByExternalId(externalSubscriptionId, 'dodopayments')
-    : null;
-  const tenant = subscription?.tenant || extractTenantFromCustomData(data.metadata);
-
-  if (!tenant) {
-    throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from DodoPayments webhook data' };
-  }
-
-  const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
-  const webhookSecret = requireWebhookSecret(config);
-  verifyDodoPaymentsSignature(headers, rawBody, webhookSecret);
-
-  if (await isEventProcessed(tenant, eventId, 'dodopayments')) {
-    return { status: 'already_processed' };
-  }
-
-  await recordEvent(tenant, eventId, 'dodopayments', eventType);
-
-  let result: any;
-
-  switch (eventType) {
-    case 'subscription.active':
-    case 'subscription.created':
-      result = await handleDodoSubscriptionActivated(tenant, data);
-      break;
-    case 'subscription.cancelled':
-      result = await handleDodoSubscriptionCancelled(tenant, data);
-      break;
-    case 'subscription.past_due':
-      result = await handleDodoSubscriptionPastDue(tenant, data);
-      break;
-    case 'subscription.on_hold':
-      result = await handleDodoSubscriptionOnHold(tenant, data);
-      break;
-    case 'subscription.renewed':
-      result = await handleDodoSubscriptionRenewed(tenant, data);
-      break;
-    case 'payment.succeeded':
-      result = await handleDodoPaymentSucceeded(tenant, data);
-      break;
-    case 'payment.failed':
-      result = await handleDodoPaymentFailed(tenant, data);
-      break;
-    default:
-      result = { status: 'unhandled', eventType };
-  }
-
-  return result;
 }
 
 async function handleDodoSubscriptionActivated(tenant: string, data: any) {
@@ -610,12 +772,21 @@ async function handleDodoPaymentSucceeded(tenant: string, data: any) {
   return { status: 'payment_recorded', paymentId: data.payment_id || data.id };
 }
 
-async function handleDodoPaymentFailed(tenant: string, data: any) {
+async function handleDodoPaymentFailed(tenant: string, data: any, externalEventId?: string) {
   const subscriptionId = data.subscription_id;
   if (!subscriptionId) return { status: 'no_subscription' };
 
   const subscription = await findSubscriptionByExternalId(subscriptionId, 'dodopayments');
   if (!subscription) return { status: 'subscription_not_found' };
+
+  emitWebhookPaymentFailedEvent({
+    tenant,
+    providerKind: 'dodopayments',
+    externalSubscriptionId: subscriptionId,
+    externalEventId,
+    providerResponse: data,
+    ...subscriptionEventMetadata(subscription),
+  });
 
   return SubscriptionsService.updateSubscriptionStatus(tenant, subscription._id.toString(), 'past_due');
 }

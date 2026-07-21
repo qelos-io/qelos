@@ -26,6 +26,8 @@ const activateSubscriptionMock = mock.fn();
 const createInvoiceForPaymentMock = mock.fn();
 const getPaymentsConfigurationMock = mock.fn();
 const verifyPayPalWebhookMock = mock.fn();
+const emitWebhookPaymentFailedEventMock = mock.fn();
+const emitWebhookProcessingFailedEventMock = mock.fn();
 
 mock.module('../../models/webhook-event', { defaultExport: WebhookEventConstructor });
 mock.module('../../models/subscription', { defaultExport: SubscriptionMock });
@@ -61,6 +63,13 @@ mock.module('../provider-adapter', {
   },
 });
 
+mock.module('../platform-events.js', {
+  namedExports: {
+    emitWebhookPaymentFailedEvent: emitWebhookPaymentFailedEventMock,
+    emitWebhookProcessingFailedEvent: emitWebhookProcessingFailedEventMock,
+  },
+});
+
 describe('webhook-service', async () => {
   const WebhookService = await import('../webhook-service');
 
@@ -81,6 +90,8 @@ describe('webhook-service', async () => {
     createInvoiceForPaymentMock.mock.resetCalls();
     getPaymentsConfigurationMock.mock.resetCalls();
     verifyPayPalWebhookMock.mock.resetCalls();
+    emitWebhookPaymentFailedEventMock.mock.resetCalls();
+    emitWebhookProcessingFailedEventMock.mock.resetCalls();
 
     getPaymentsConfigurationMock.mock.mockImplementation(async () => ({
       providerSourceId: 'source-1',
@@ -253,7 +264,14 @@ describe('webhook-service', async () => {
     });
 
     it('should handle transaction.payment_failed event', async () => {
-      const mockSub = { _id: 'sub-1', tenant: 'tenant-1', providerKind: 'paddle' };
+      const mockSub = {
+        _id: 'sub-1',
+        tenant: 'tenant-1',
+        providerKind: 'paddle',
+        planId: 'plan-1',
+        billableEntityType: 'user',
+        billableEntityId: 'user-1',
+      };
       mockSubscriptionFound(mockSub);
       updateSubscriptionStatusMock.mock.mockImplementation(async () => ({ _id: 'sub-1', status: 'past_due' }));
 
@@ -263,11 +281,20 @@ describe('webhook-service', async () => {
         data: {
           id: 'txn_2',
           subscription_id: 'sub_paddle_1',
+          status: 'past_due',
         },
       };
       await WebhookService.processWebhook('paddle', makePaddleHeaders(body), body);
 
       assert.deepStrictEqual(updateSubscriptionStatusMock.mock.calls[0].arguments, ['tenant-1', 'sub-1', 'past_due']);
+      assert.strictEqual(emitWebhookPaymentFailedEventMock.mock.calls.length, 1);
+      const emitArgs = emitWebhookPaymentFailedEventMock.mock.calls[0].arguments[0];
+      assert.strictEqual(emitArgs.tenant, 'tenant-1');
+      assert.strictEqual(emitArgs.providerKind, 'paddle');
+      assert.strictEqual(emitArgs.subscriptionId, 'sub-1');
+      assert.strictEqual(emitArgs.externalSubscriptionId, 'sub_paddle_1');
+      assert.strictEqual(emitArgs.externalEventId, 'evt-paddle-3');
+      assert.deepStrictEqual(emitArgs.providerResponse, body.data);
     });
 
     it('should return subscription_not_found when subscription does not exist', async () => {
@@ -296,6 +323,13 @@ describe('webhook-service', async () => {
       const result = await WebhookService.processWebhook('paddle', makePaddleHeaders(body), body);
 
       assert.deepStrictEqual(result, { status: 'unhandled', eventType: 'unknown.event' });
+      assert.strictEqual(emitWebhookProcessingFailedEventMock.mock.calls.length, 1);
+      const emitArgs = emitWebhookProcessingFailedEventMock.mock.calls[0].arguments[0];
+      assert.strictEqual(emitArgs.tenant, 'tenant-1');
+      assert.strictEqual(emitArgs.providerKind, 'paddle');
+      assert.strictEqual(emitArgs.operation, 'handleEvent');
+      assert.strictEqual(emitArgs.externalEventId, 'evt-paddle-5');
+      assert.strictEqual(emitArgs.code, 'UNHANDLED_EVENT_TYPE');
     });
 
     it('should throw WEBHOOK_SECRET_NOT_CONFIGURED when webhook secret is missing', async () => {
@@ -469,6 +503,62 @@ describe('webhook-service', async () => {
           return true;
         },
       );
+
+      assert.strictEqual(emitWebhookProcessingFailedEventMock.mock.calls.length, 1);
+      const emitArgs = emitWebhookProcessingFailedEventMock.mock.calls[0].arguments[0];
+      assert.strictEqual(emitArgs.tenant, 'tenant-1');
+      assert.strictEqual(emitArgs.providerKind, 'sumit');
+      assert.strictEqual(emitArgs.operation, 'verifySignature');
+      assert.strictEqual(emitArgs.externalEventId, 'evt-sumit-3');
+      assert.strictEqual(emitArgs.code, 'INVALID_SIGNATURE');
+    });
+
+    it('should handle payment_failed event and emit payment-failed platform event', async () => {
+      const mockSub = {
+        _id: 'sub-1',
+        tenant: 'tenant-1',
+        providerKind: 'sumit',
+        planId: 'plan-1',
+        billableEntityType: 'user',
+        billableEntityId: 'user-1',
+      };
+      mockSubscriptionFound(mockSub);
+      updateSubscriptionStatusMock.mock.mockImplementation(async () => ({ _id: 'sub-1', status: 'past_due' }));
+
+      await WebhookService.processWebhook('sumit', { 'x-webhook-secret': 'test-secret' }, {
+        EventId: 'evt-sumit-fail-1',
+        EventType: 'payment_failed',
+        RecurringPaymentId: 'rp-1',
+        FailureReason: 'Card declined',
+        CustomData: JSON.stringify({ tenant: 'tenant-1' }),
+      });
+
+      assert.deepStrictEqual(updateSubscriptionStatusMock.mock.calls[0].arguments, ['tenant-1', 'sub-1', 'past_due']);
+      assert.strictEqual(emitWebhookPaymentFailedEventMock.mock.calls.length, 1);
+      const emitArgs = emitWebhookPaymentFailedEventMock.mock.calls[0].arguments[0];
+      assert.strictEqual(emitArgs.tenant, 'tenant-1');
+      assert.strictEqual(emitArgs.providerKind, 'sumit');
+      assert.strictEqual(emitArgs.subscriptionId, 'sub-1');
+      assert.strictEqual(emitArgs.externalSubscriptionId, 'rp-1');
+      assert.strictEqual(emitArgs.externalEventId, 'evt-sumit-fail-1');
+      assert.strictEqual(emitArgs.providerResponse.FailureReason, 'Card declined');
+    });
+
+    it('should handle RecurringPaymentFailed event and emit payment-failed platform event', async () => {
+      const mockSub = { _id: 'sub-1', tenant: 'tenant-1', providerKind: 'sumit' };
+      mockSubscriptionFound(mockSub);
+      updateSubscriptionStatusMock.mock.mockImplementation(async () => ({ _id: 'sub-1', status: 'past_due' }));
+
+      await WebhookService.processWebhook('sumit', { 'x-webhook-secret': 'test-secret' }, {
+        EventId: 'evt-sumit-fail-2',
+        EventType: 'RecurringPaymentFailed',
+        RecurringPaymentId: 'rp-1',
+        ErrorMessage: 'Insufficient funds',
+        CustomData: JSON.stringify({ tenant: 'tenant-1' }),
+      });
+
+      assert.strictEqual(emitWebhookPaymentFailedEventMock.mock.calls.length, 1);
+      assert.strictEqual(emitWebhookPaymentFailedEventMock.mock.calls[0].arguments[0].externalEventId, 'evt-sumit-fail-2');
     });
   });
 
