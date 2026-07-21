@@ -2,9 +2,30 @@ import { Response } from 'express';
 import * as CheckoutService from '../services/checkout-service';
 import * as SubscriptionsService from '../services/subscriptions-service';
 import { BillingCycle, BillableEntityType } from '@qelos/global-types';
+import { emitCheckoutFailedEvent } from '../services/platform-events.js';
 
 function resolveUserEntityId(req): string | undefined {
   return req.user?.workspace || req.user?._id;
+}
+
+function checkoutContext(req) {
+  return { userId: req.user?._id };
+}
+
+function emitControllerCheckoutValidationFailed(req, code: string, message: string) {
+  const error = { code, message };
+  emitCheckoutFailedEvent({
+    tenant: req.headers.tenant,
+    userId: req.user?._id,
+    operation: 'initiateCheckout',
+    code,
+    planId: req.body.planId,
+    subscriptionId: req.body.subscriptionId,
+    billableEntityType: req.body.billableEntityType,
+    billableEntityId: req.body.billableEntityId,
+    couponCode: req.body.couponCode,
+    error,
+  });
 }
 
 export async function initiateCheckout(req, res: Response) {
@@ -25,11 +46,13 @@ export async function initiateCheckout(req, res: Response) {
     const amount = isPrivileged ? req.body.amount : undefined;
 
     if (!subscriptionId && !planId) {
+      emitControllerCheckoutValidationFailed(req, 'MISSING_CHECKOUT_TARGET', 'subscriptionId or planId is required');
       res.status(400).json({ message: 'subscriptionId or planId is required' }).end();
       return;
     }
 
     if (billingCycle && !['monthly', 'yearly'].includes(billingCycle)) {
+      emitControllerCheckoutValidationFailed(req, 'INVALID_BILLING_CYCLE', 'billingCycle must be monthly or yearly');
       res.status(400).json({ message: 'billingCycle must be monthly or yearly' }).end();
       return;
     }
@@ -39,12 +62,14 @@ export async function initiateCheckout(req, res: Response) {
     if (!resolvedSubscriptionId && isPrivileged && planId && amount) {
       // Admin convenience: create pending subscription with dynamicAmount, then checkout
       if (!billingCycle) {
+        emitControllerCheckoutValidationFailed(req, 'MISSING_BILLING_CYCLE', 'billingCycle is required');
         res.status(400).json({ message: 'billingCycle is required' }).end();
         return;
       }
       const entityType: BillableEntityType = billableEntityType || req.user?.billableEntityType || 'user';
       const entityId: string = billableEntityId || (entityType === 'user' ? req.user?._id : req.user?.workspace);
       if (!entityId) {
+        emitControllerCheckoutValidationFailed(req, 'MISSING_BILLABLE_ENTITY', 'Could not determine billable entity');
         res.status(400).json({ message: 'Could not determine billable entity' }).end();
         return;
       }
@@ -65,13 +90,14 @@ export async function initiateCheckout(req, res: Response) {
         couponCode,
         successUrl,
         cancelUrl,
-      });
+      }, checkoutContext(req));
       res.status(200).json(result).end();
       return;
     }
 
     // Inline checkout path for static plans
     if (!billingCycle) {
+      emitControllerCheckoutValidationFailed(req, 'MISSING_BILLING_CYCLE', 'billingCycle is required');
       res.status(400).json({ message: 'billingCycle is required' }).end();
       return;
     }
@@ -79,6 +105,7 @@ export async function initiateCheckout(req, res: Response) {
     const entityType: BillableEntityType = billableEntityType || req.user?.billableEntityType || 'user';
     const entityId: string = billableEntityId || (entityType === 'user' ? req.user?._id : req.user?.workspace);
     if (!entityId) {
+      emitControllerCheckoutValidationFailed(req, 'MISSING_BILLABLE_ENTITY', 'Could not determine billable entity');
       res.status(400).json({ message: 'Could not determine billable entity' }).end();
       return;
     }
@@ -91,7 +118,7 @@ export async function initiateCheckout(req, res: Response) {
       couponCode,
       successUrl,
       cancelUrl,
-    });
+    }, checkoutContext(req));
 
     res.status(200).json(result).end();
   } catch (e: any) {
@@ -126,12 +153,20 @@ export async function cancelSubscription(req, res: Response) {
     if (!req.user?.isPrivileged) {
       const subscription = await SubscriptionsService.getSubscriptionById(tenant, subscriptionId);
       if (subscription.billableEntityId !== resolveUserEntityId(req)) {
+        emitCheckoutFailedEvent({
+          tenant,
+          userId: req.user?._id,
+          operation: 'cancelCheckoutSubscription',
+          subscriptionId,
+          code: 'ACCESS_DENIED',
+          error: { code: 'ACCESS_DENIED', message: 'access denied' },
+        });
         res.status(403).json({ message: 'access denied' }).end();
         return;
       }
     }
 
-    const result = await CheckoutService.cancelCheckoutSubscription(tenant, subscriptionId);
+    const result = await CheckoutService.cancelCheckoutSubscription(tenant, subscriptionId, checkoutContext(req));
     res.status(200).json(result).end();
   } catch (e: any) {
     const status = e?.code === 'SUBSCRIPTION_NOT_FOUND' ? 404 : 500;

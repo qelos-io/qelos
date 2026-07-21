@@ -15,6 +15,7 @@ export type PaymentMetadata = {
   billableEntityId?: string;
   externalSubscriptionId?: string;
   externalEventId?: string;
+  couponCode?: string;
   providerResponse?: unknown;
   error?: ReturnType<typeof serializeError> | null;
 };
@@ -100,16 +101,24 @@ function emitSafePlatformEvent(event: PlatformEvent) {
 
 export function emitCheckoutFailedEvent(params: BaseEventParams & {
   providerKind?: string;
+  operation?: string;
   code?: string;
   planId?: string;
   subscriptionId?: string;
   billableEntityType?: string;
   billableEntityId?: string;
+  externalSubscriptionId?: string;
+  couponCode?: string;
   error: any;
 }) {
   if (!params.tenant) {
     return;
   }
+
+  const operation = params.operation ?? 'initiateCheckout';
+  const description = operation === 'initiateCheckout'
+    ? 'Checkout initiation failed'
+    : `Checkout ${operation} failed`;
 
   emitSafePlatformEvent({
     tenant: params.tenant,
@@ -117,15 +126,17 @@ export function emitCheckoutFailedEvent(params: BaseEventParams & {
     source: resolveSource(params.providerKind),
     kind: 'checkout',
     eventName: 'checkout-failed',
-    description: 'Checkout initiation failed',
+    description,
     metadata: sanitizePaymentMetadata({
       providerKind: params.providerKind,
-      operation: 'initiateCheckout',
+      operation,
       code: params.code ?? params.error?.code,
       planId: params.planId,
       subscriptionId: params.subscriptionId,
       billableEntityType: params.billableEntityType,
       billableEntityId: params.billableEntityId,
+      externalSubscriptionId: params.externalSubscriptionId,
+      couponCode: params.couponCode,
       error: serializeError(params.error),
     }),
   });
