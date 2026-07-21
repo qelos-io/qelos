@@ -187,3 +187,7 @@ All webhook events are tracked by their external event ID. Duplicate events are 
 | `payment_success` / `RecurringPaymentCharged` | Activate subscription + create invoice |
 | `payment_failed` / `RecurringPaymentFailed` | Mark as past due |
 | `recurring_canceled` / `RecurringPaymentCanceled` | Cancel subscription |
+
+## Platform events
+
+Checkout validation errors, provider API failures, and webhook payment failures are recorded as platform events in **Admin → Events**. See [Platform Events](./events.md) for the full event taxonomy, metadata fields, SDK filtering examples, and Sumit troubleshooting notes.
