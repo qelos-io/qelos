@@ -30,6 +30,7 @@ function createMockTarget(operation: string, details: any = {}) {
 let fetchResponses: Array<{ ok: boolean; status: number; body: any }> = [];
 let fetchCallIndex = 0;
 let fetchCalls: Array<{ url: string; options: any }> = [];
+let savedEvents: any[] = [];
 
 const fetchMock = mock.fn(async (url: string, options: any) => {
   fetchCalls.push({ url, options });
@@ -43,11 +44,13 @@ const fetchMock = mock.fn(async (url: string, options: any) => {
   };
 });
 
+const emitPlatformEventMock = mock.fn();
+
 let mockSource = createMockSource();
 
 mock.module('node-fetch', { defaultExport: fetchMock });
 mock.module('../http-agent', { defaultExport: undefined });
-mock.module('../hook-events', { namedExports: { emitPlatformEvent: mock.fn() } });
+mock.module('../hook-events', { namedExports: { emitPlatformEvent: emitPlatformEventMock } });
 mock.module('../../../config', { namedExports: { redisUrl: null } });
 mock.module('../logger', { defaultExport: { log: mock.fn(), error: mock.fn() } });
 
@@ -83,7 +86,11 @@ mock.module('../cache-manager', {
 
 mock.module('../../models/event', {
   defaultExport: class {
-    constructor(public data: any) {}
+    data: any;
+    constructor(data: any) {
+      this.data = data;
+      savedEvents.push(data);
+    }
     save() { return Promise.resolve(this); }
   },
 });
@@ -116,6 +123,8 @@ describe('handlePaddleTarget', async () => {
 
   beforeEach(() => {
     mockSource = createMockSource();
+    savedEvents = [];
+    emitPlatformEventMock.mock.resetCalls();
     setupFetch();
   });
 
@@ -322,5 +331,110 @@ describe('handlePaddleTarget', async () => {
         return true;
       }
     );
+
+    assert.strictEqual(savedEvents.length, 0);
+    assert.strictEqual(emitPlatformEventMock.mock.calls.length, 0);
+  });
+
+  it('should emit provider-call-failed when createSubscription returns 4xx', async () => {
+    setupFetch(
+      {
+        ok: false,
+        status: 422,
+        body: {
+          error: {
+            type: 'validation_error',
+            detail: 'Invalid price',
+            api_key: 'secret-paddle-key',
+          },
+        },
+      },
+    );
+
+    await assert.rejects(
+      () => callIntegrationTarget(
+        'tenant-1',
+        { items: [{ price_id: 'pri_invalid', quantity: 1 }] },
+        createMockTarget('createSubscription') as any,
+      ),
+      (err: any) => {
+        assert.match(err.message, /Paddle API request failed/);
+        assert.match(err.message, /422/);
+        return true;
+      },
+    );
+
+    assert.strictEqual(savedEvents.length, 1);
+    assert.strictEqual(savedEvents[0].source, 'payments:paddle');
+    assert.strictEqual(savedEvents[0].kind, 'provider');
+    assert.strictEqual(savedEvents[0].eventName, 'provider-call-failed');
+    assert.strictEqual(savedEvents[0].metadata.operation, 'createSubscription');
+    assert.strictEqual(savedEvents[0].metadata.providerKind, 'paddle');
+    assert.strictEqual(savedEvents[0].metadata.status, 422);
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.error.detail, 'Invalid price');
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.error.api_key, undefined);
+    assert.strictEqual(savedEvents[0].metadata.error.responseData.error.api_key, undefined);
+    assert.ok(emitPlatformEventMock.mock.calls.length >= 1);
+  });
+
+  it('should emit provider-call-failed when createSubscription returns 5xx', async () => {
+    setupFetch(
+      { ok: false, status: 503, body: { error: { type: 'api_error', detail: 'Service unavailable' } } },
+    );
+
+    await assert.rejects(
+      () => callIntegrationTarget(
+        'tenant-1',
+        { items: [{ price_id: 'pri_123', quantity: 1 }] },
+        createMockTarget('createSubscription') as any,
+      ),
+      (err: any) => {
+        assert.match(err.message, /503/);
+        return true;
+      },
+    );
+
+    assert.strictEqual(savedEvents.length, 1);
+    assert.strictEqual(savedEvents[0].source, 'payments:paddle');
+    assert.strictEqual(savedEvents[0].eventName, 'provider-call-failed');
+    assert.strictEqual(savedEvents[0].metadata.operation, 'createSubscription');
+    assert.match(savedEvents[0].metadata.error.message, /503/);
+  });
+
+  it('should emit provider-call-failed when cancelSubscription fails', async () => {
+    setupFetch(
+      {
+        ok: false,
+        status: 404,
+        body: {
+          error: {
+            type: 'not_found_error',
+            detail: 'Subscription not found',
+            authorization: 'Bearer secret-token',
+          },
+        },
+      },
+    );
+
+    await assert.rejects(
+      () => callIntegrationTarget(
+        'tenant-1',
+        { subscriptionId: 'sub_missing' },
+        createMockTarget('cancelSubscription') as any,
+      ),
+      (err: any) => {
+        assert.match(err.message, /404/);
+        return true;
+      },
+    );
+
+    assert.strictEqual(savedEvents.length, 1);
+    assert.strictEqual(savedEvents[0].source, 'payments:paddle');
+    assert.strictEqual(savedEvents[0].kind, 'provider');
+    assert.strictEqual(savedEvents[0].eventName, 'provider-call-failed');
+    assert.strictEqual(savedEvents[0].metadata.operation, 'cancelSubscription');
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.error.detail, 'Subscription not found');
+    assert.strictEqual(savedEvents[0].metadata.providerResponse.error.authorization, undefined);
+    assert.strictEqual(savedEvents[0].metadata.error.responseData.error.authorization, undefined);
   });
 });

@@ -659,6 +659,12 @@ async function handlePayPalTarget(
   return responseBody;
 }
 
+const PADDLE_PAYMENTS_FAILURE_OPERATIONS = new Set<string>([
+  PaddleTargetOperation.createSubscription,
+  PaddleTargetOperation.cancelSubscription,
+  PaddleTargetOperation.getSubscription,
+]);
+
 async function handlePaddleTarget(
   integrationTarget: IIntegrationEntity,
   source: IPaddleSource,
@@ -770,36 +776,57 @@ async function handlePaddleTarget(
     fetchOptions.body = JSON.stringify({ ...details, ...bodyPayload });
   }
 
-  const response = await fetch(url.toString(), fetchOptions);
-  const responseBody = await response.json();
+  try {
+    const response = await fetch(url.toString(), fetchOptions);
 
-  if (!response.ok) {
-    throw new Error(`Paddle API request failed with status ${response.status}: ${JSON.stringify(responseBody)}`);
+    let responseBody: any = null;
+    try {
+      responseBody = await response.json();
+    } catch {
+      responseBody = null;
+    }
+
+    if (!response.ok) {
+      const error: any = new Error(`Paddle API request failed with status ${response.status}: ${JSON.stringify(responseBody)}`);
+      error.status = response.status;
+      error.responseBody = responseBody;
+      throw error;
+    }
+
+    const triggerResponse = mergeTriggerResponses(
+      details.triggerResponse as TriggerResponseConfig,
+      payload.triggerResponse as TriggerResponseConfig,
+    );
+
+    if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
+      const event = new PlatformEvent({
+        tenant: source.tenant,
+        source: triggerResponse.source,
+        kind: triggerResponse.kind,
+        eventName: triggerResponse.eventName,
+        description: triggerResponse.description,
+        metadata: {
+          ...triggerResponse.metadata,
+          operation,
+          status: response.status,
+          body: responseBody,
+        },
+      });
+      event.save().then(event => emitPlatformEvent(event)).catch(() => {});
+    }
+
+    return responseBody;
+  } catch (error) {
+    logger.error('Error calling Paddle API', error);
+    if (PADDLE_PAYMENTS_FAILURE_OPERATIONS.has(operation)) {
+      emitPaymentsProviderFailureEvent(source.tenant, 'paddle', operation, {
+        status: (error as any)?.status,
+        providerResponse: (error as any)?.responseBody,
+        error,
+      });
+    }
+    throw error;
   }
-
-  const triggerResponse = mergeTriggerResponses(
-    details.triggerResponse as TriggerResponseConfig,
-    payload.triggerResponse as TriggerResponseConfig,
-  );
-
-  if (triggerResponse?.source && triggerResponse?.kind && triggerResponse?.eventName) {
-    const event = new PlatformEvent({
-      tenant: source.tenant,
-      source: triggerResponse.source,
-      kind: triggerResponse.kind,
-      eventName: triggerResponse.eventName,
-      description: triggerResponse.description,
-      metadata: {
-        ...triggerResponse.metadata,
-        operation,
-        status: response.status,
-        body: responseBody,
-      },
-    });
-    event.save().then(event => emitPlatformEvent(event)).catch(() => {});
-  }
-
-  return responseBody;
 }
 
 async function handleAwsTarget(
