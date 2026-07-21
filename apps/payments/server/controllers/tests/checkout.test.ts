@@ -5,6 +5,7 @@ const initiateCheckoutMock = mock.fn();
 const cancelCheckoutSubscriptionMock = mock.fn();
 const getSubscriptionByIdMock = mock.fn();
 const createSubscriptionMock = mock.fn();
+const emitCheckoutFailedEventMock = mock.fn();
 
 mock.module('../../services/checkout-service', {
   namedExports: {
@@ -13,6 +14,15 @@ mock.module('../../services/checkout-service', {
     calculateDiscountedPrice: mock.fn(),
     activateSubscription: mock.fn(),
     createInvoiceForPayment: mock.fn(),
+  },
+});
+
+mock.module('../../services/platform-events.js', {
+  namedExports: {
+    emitCheckoutFailedEvent: emitCheckoutFailedEventMock,
+    emitProviderCallFailedEvent: mock.fn(),
+    emitWebhookPaymentFailedEvent: mock.fn(),
+    emitWebhookProcessingFailedEvent: mock.fn(),
   },
 });
 
@@ -55,6 +65,7 @@ describe('checkout controller', async () => {
     cancelCheckoutSubscriptionMock.mock.resetCalls();
     getSubscriptionByIdMock.mock.resetCalls();
     createSubscriptionMock.mock.resetCalls();
+    emitCheckoutFailedEventMock.mock.resetCalls();
   });
 
   describe('initiateCheckout', () => {
@@ -77,6 +88,9 @@ describe('checkout controller', async () => {
 
       assert.strictEqual(res.status.mock.calls[0].arguments[0], 400);
       assert.strictEqual(initiateCheckoutMock.mock.calls.length, 0);
+      assert.strictEqual(emitCheckoutFailedEventMock.mock.calls.length, 1);
+      assert.strictEqual(emitCheckoutFailedEventMock.mock.calls[0].arguments[0].code, 'MISSING_CHECKOUT_TARGET');
+      assert.strictEqual(emitCheckoutFailedEventMock.mock.calls[0].arguments[0].userId, 'user-1');
     });
 
     it('should return 400 when billingCycle is missing for inline checkout', async () => {
@@ -103,9 +117,12 @@ describe('checkout controller', async () => {
       await CheckoutController.initiateCheckout(req, res);
 
       assert.strictEqual(initiateCheckoutMock.mock.calls.length, 1);
+      assert.strictEqual(initiateCheckoutMock.mock.calls[0].arguments[0], 'tenant-1');
       const params = initiateCheckoutMock.mock.calls[0].arguments[1];
+      const context = initiateCheckoutMock.mock.calls[0].arguments[2];
       assert.strictEqual(params.billableEntityType, 'user');
       assert.strictEqual(params.billableEntityId, 'user-1');
+      assert.deepStrictEqual(context, { userId: 'user-1' });
     });
 
     it('should accept explicit billable entity', async () => {
@@ -133,6 +150,8 @@ describe('checkout controller', async () => {
       await CheckoutController.initiateCheckout(req, res);
 
       assert.strictEqual(res.status.mock.calls[0].arguments[0], 400);
+      assert.strictEqual(emitCheckoutFailedEventMock.mock.calls.length, 1);
+      assert.strictEqual(emitCheckoutFailedEventMock.mock.calls[0].arguments[0].code, 'MISSING_BILLABLE_ENTITY');
     });
 
     it('should pass couponCode and URLs to service', async () => {
@@ -245,6 +264,7 @@ describe('checkout controller', async () => {
       const res = mockRes();
       await CheckoutController.initiateCheckout(req, res);
       assert.strictEqual(res.status.mock.calls[0].arguments[0], 409);
+      assert.deepStrictEqual(initiateCheckoutMock.mock.calls[0].arguments[2], { userId: 'user-1' });
     });
 
     it('should return 400 for COUPON_EXPIRED', async () => {
@@ -286,6 +306,7 @@ describe('checkout controller', async () => {
 
       assert.strictEqual(res.status.mock.calls[0].arguments[0], 200);
       assert.deepStrictEqual(res.json.mock.calls[0].arguments[0], result);
+      assert.deepStrictEqual(cancelCheckoutSubscriptionMock.mock.calls[0].arguments, ['tenant-1', 'sub-1', { userId: 'user-1' }]);
     });
 
     it('should return 403 when user does not own subscription', async () => {
@@ -299,6 +320,8 @@ describe('checkout controller', async () => {
       await CheckoutController.cancelSubscription(req, res);
 
       assert.strictEqual(res.status.mock.calls[0].arguments[0], 403);
+      assert.strictEqual(emitCheckoutFailedEventMock.mock.calls.length, 1);
+      assert.strictEqual(emitCheckoutFailedEventMock.mock.calls[0].arguments[0].code, 'ACCESS_DENIED');
     });
 
     it('should return 404 when subscription not found', async () => {

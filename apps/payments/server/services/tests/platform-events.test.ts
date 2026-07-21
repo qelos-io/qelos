@@ -134,6 +134,8 @@ describe('platform-events', async () => {
           subscriptionId: undefined,
           billableEntityType: 'user',
           billableEntityId: 'user-1',
+          externalSubscriptionId: undefined,
+          couponCode: undefined,
           error: {
             message: 'Plan inactive',
             code: 'PLAN_NOT_ACTIVE',
