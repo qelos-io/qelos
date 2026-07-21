@@ -179,5 +179,77 @@ export const PLATFORM_EVENTS: PlatformEventDefinition[] = [
     kind: 'webhook',
     eventName: 'webhook-processing-failed',
     description: 'Sumit webhook processing failed'
+  },
+  {
+    source: 'payments:paddle',
+    kind: 'checkout',
+    eventName: 'checkout-failed',
+    description: 'Paddle checkout initiation or validation failed'
+  },
+  {
+    source: 'payments:paddle',
+    kind: 'provider',
+    eventName: 'provider-call-failed',
+    description: 'Paddle provider API call failed'
+  },
+  {
+    source: 'payments:paddle',
+    kind: 'webhook',
+    eventName: 'payment-failed',
+    description: 'Paddle webhook reported a payment failure'
+  },
+  {
+    source: 'payments:paddle',
+    kind: 'webhook',
+    eventName: 'webhook-processing-failed',
+    description: 'Paddle webhook processing failed'
+  },
+  {
+    source: 'payments:paypal',
+    kind: 'checkout',
+    eventName: 'checkout-failed',
+    description: 'PayPal checkout initiation or validation failed'
+  },
+  {
+    source: 'payments:paypal',
+    kind: 'provider',
+    eventName: 'provider-call-failed',
+    description: 'PayPal provider API call failed'
+  },
+  {
+    source: 'payments:paypal',
+    kind: 'webhook',
+    eventName: 'payment-failed',
+    description: 'PayPal webhook reported a payment failure'
+  },
+  {
+    source: 'payments:paypal',
+    kind: 'webhook',
+    eventName: 'webhook-processing-failed',
+    description: 'PayPal webhook processing failed'
+  },
+  {
+    source: 'payments:dodopayments',
+    kind: 'checkout',
+    eventName: 'checkout-failed',
+    description: 'DodoPayments checkout initiation or validation failed'
+  },
+  {
+    source: 'payments:dodopayments',
+    kind: 'provider',
+    eventName: 'provider-call-failed',
+    description: 'DodoPayments provider API call failed'
+  },
+  {
+    source: 'payments:dodopayments',
+    kind: 'webhook',
+    eventName: 'payment-failed',
+    description: 'DodoPayments webhook reported a payment failure'
+  },
+  {
+    source: 'payments:dodopayments',
+    kind: 'webhook',
+    eventName: 'webhook-processing-failed',
+    description: 'DodoPayments webhook processing failed'
   }
 ];
