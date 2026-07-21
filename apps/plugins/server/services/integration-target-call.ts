@@ -7,6 +7,7 @@ import { getEncryptedSourceAuthentication } from './source-authentication-servic
 import httpAgent from './http-agent';
 import { emitPlatformEvent } from './hook-events';
 import PlatformEvent from '../models/event';
+import { emitPaymentsProviderFailureEvent } from './payments-platform-events.js';
 import { createUser, updateUser } from './users';
 import logger from '../services/logger';
 import { createBlueprintEntity, updateBlueprintEntity } from './no-code-service';
@@ -427,110 +428,6 @@ const SUMIT_PAYMENTS_FAILURE_OPERATIONS = new Set<string>([
   SumitTargetOperation.createRecurringPayment,
 ]);
 
-const SUMIT_SENSITIVE_METADATA_KEYS = new Set([
-  'credentials',
-  'apikey',
-  'companyid',
-  'webhooksecret',
-  'clientsecret',
-  'secret',
-  'internal_secret',
-  'cardnumber',
-  'card_number',
-  'creditcardnumber',
-  'cvv',
-  'cvc',
-  'securitycode',
-  'expirationmonth',
-  'expirationyear',
-  'access_token',
-  'accesstoken',
-  'refresh_token',
-  'refreshtoken',
-  'password',
-  'authorization',
-  'singleusetoken',
-]);
-
-function isSumitSensitiveMetadataKey(key: string) {
-  const normalized = key.replace(/[_-]/g, '').toLowerCase();
-  return SUMIT_SENSITIVE_METADATA_KEYS.has(normalized) || normalized === 'card';
-}
-
-function sanitizeSumitMetadata(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(sanitizeSumitMetadata);
-  }
-
-  if (!value || typeof value !== 'object') {
-    return value;
-  }
-
-  const sanitized: Record<string, unknown> = {};
-  for (const [key, nestedValue] of Object.entries(value as Record<string, unknown>)) {
-    if (isSumitSensitiveMetadataKey(key)) {
-      continue;
-    }
-    sanitized[key] = sanitizeSumitMetadata(nestedValue);
-  }
-  return sanitized;
-}
-
-function serializeSumitError(error: any) {
-  if (!error) {
-    return null;
-  }
-
-  return {
-    message: error.message,
-    code: error.code,
-    type: error.type,
-    status: error.status ?? error.response?.status,
-    responseData: sanitizeSumitMetadata(error.responseBody ?? error.response?.data),
-    stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
-  };
-}
-
-function emitSumitPaymentsFailureEvent(
-  tenant: string | undefined,
-  operation: string,
-  params: {
-    status?: number;
-    providerResponse?: unknown;
-    error: any;
-  },
-) {
-  if (!tenant || !SUMIT_PAYMENTS_FAILURE_OPERATIONS.has(operation)) {
-    return;
-  }
-
-  const eventName = operation === SumitTargetOperation.setPaymentDetails
-    ? 'payment-method-save-failed'
-    : 'provider-call-failed';
-
-  const description = eventName === 'payment-method-save-failed'
-    ? 'Failed to save payment method via sumit'
-    : `Provider call failed: ${operation}`;
-
-  const event = new PlatformEvent({
-    tenant,
-    source: 'payments:sumit',
-    kind: 'provider',
-    eventName,
-    description,
-    metadata: sanitizeSumitMetadata({
-      providerKind: 'sumit',
-      operation,
-      code: params.error?.code ?? (params.providerResponse as any)?.Status,
-      status: params.status ?? params.error?.status,
-      providerResponse: params.providerResponse,
-      error: serializeSumitError(params.error),
-    }),
-  });
-
-  event.save().then(savedEvent => emitPlatformEvent(savedEvent)).catch(() => {});
-}
-
 async function handleSumitTarget(
   integrationTarget: IIntegrationEntity,
   source: ISumitSource,
@@ -604,11 +501,13 @@ async function handleSumitTarget(
     return responseBody;
   } catch (error) {
     logger.error('Error calling Sumit API', error);
-    emitSumitPaymentsFailureEvent(source.tenant, operation, {
-      status: (error as any)?.status,
-      providerResponse: (error as any)?.responseBody,
-      error,
-    });
+    if (SUMIT_PAYMENTS_FAILURE_OPERATIONS.has(operation)) {
+      emitPaymentsProviderFailureEvent(source.tenant, 'sumit', operation, {
+        status: (error as any)?.status,
+        providerResponse: (error as any)?.responseBody,
+        error,
+      });
+    }
     throw error;
   }
 }
