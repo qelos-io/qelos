@@ -130,7 +130,17 @@ describe('handleSumitTarget', async () => {
 
   it('should call createRecurringPayment endpoint with credentials in body', async () => {
     setupFetch(
-      { ok: true, status: 200, body: { PaymentUrl: 'https://sumit.co.il/pay/xxx', RecurringPaymentId: 123 } },
+      {
+        ok: true,
+        status: 200,
+        body: {
+          Status: 'Success',
+          Data: {
+            RecurringCustomerItemIDs: [123],
+            CustomerID: 456,
+          },
+        },
+      },
     );
 
     const result = await callIntegrationTarget(
@@ -141,37 +151,80 @@ describe('handleSumitTarget', async () => {
         Description: 'Pro Plan',
         RecurringInterval: 1,
         RecurringIntervalType: 'month',
+        ExternalIdentifier: 'user:abc',
+        Name: 'Test User',
+        SingleUseToken: 'token-123',
       },
       createMockTarget('createRecurringPayment') as any,
     );
 
-    assert.deepStrictEqual(result, { PaymentUrl: 'https://sumit.co.il/pay/xxx', RecurringPaymentId: 123 });
-    assert.ok(fetchCalls[0].url.includes('app.sumit.co.il/v1/recurring-payments/add'));
+    assert.strictEqual(result.RecurringCustomerItemIDs[0], 123);
+    assert.ok(fetchCalls[0].url.includes('api.sumit.co.il/billing/recurring/charge/'));
     assert.strictEqual(fetchCalls[0].options.method, 'POST');
 
     const requestBody = JSON.parse(fetchCalls[0].options.body);
-    assert.strictEqual(requestBody.Amount, 29);
+    assert.strictEqual(requestBody.Items[0].UnitPrice, 29);
     assert.strictEqual(requestBody.Credentials.CompanyID, 12345678);
     assert.strictEqual(requestBody.Credentials.APIKey, 'test-sumit-key');
+    assert.strictEqual(requestBody.SingleUseToken, 'token-123');
     assert.strictEqual(savedEvents.length, 0);
+  });
+
+  it('should call beginCheckoutRedirect endpoint', async () => {
+    setupFetch(
+      {
+        ok: true,
+        status: 200,
+        body: {
+          Status: 'Success',
+          Data: {
+            RedirectURL: 'https://sumit.co.il/pay/xxx',
+          },
+        },
+      },
+    );
+
+    const result = await callIntegrationTarget(
+      'tenant-1',
+      {
+        Customer: {
+          ExternalIdentifier: 'user:1',
+          SearchMode: 2,
+          Name: 'User One',
+        },
+        Items: [{
+          Item: { Name: 'Pro Plan', Description: 'Pro Plan' },
+          Quantity: 1,
+          UnitPrice: 29,
+          Currency: 'ILS',
+        }],
+        RedirectURL: 'https://example.com/success',
+        CancelRedirectURL: 'https://example.com/cancel',
+        ExternalIdentifier: '{"tenant":"tenant-1"}',
+      },
+      createMockTarget('beginCheckoutRedirect') as any,
+    );
+
+    assert.strictEqual(result.RedirectURL, 'https://sumit.co.il/pay/xxx');
+    assert.ok(fetchCalls[0].url.includes('api.sumit.co.il/billing/payments/beginredirect/'));
   });
 
   it('should call deleteRecurringPayment endpoint', async () => {
     setupFetch(
-      { ok: true, status: 200, body: { Success: true } },
+      { ok: true, status: 200, body: { Status: 'Success', Data: {} } },
     );
 
     await callIntegrationTarget(
       'tenant-1',
-      { RecurringPaymentId: 'rp-123' },
+      { RecurringPaymentId: 123, ExternalIdentifier: 'user:abc' },
       createMockTarget('deleteRecurringPayment') as any,
     );
 
-    assert.ok(fetchCalls[0].url.includes('app.sumit.co.il/v1/recurring-payments/delete'));
+    assert.ok(fetchCalls[0].url.includes('api.sumit.co.il/billing/recurring/cancel/'));
     assert.strictEqual(fetchCalls[0].options.method, 'POST');
 
     const requestBody = JSON.parse(fetchCalls[0].options.body);
-    assert.strictEqual(requestBody.RecurringPaymentId, 'rp-123');
+    assert.strictEqual(requestBody.RecurringCustomerItemID, 123);
     assert.strictEqual(savedEvents.length, 0);
   });
 
@@ -183,7 +236,13 @@ describe('handleSumitTarget', async () => {
     await assert.rejects(
       () => callIntegrationTarget(
         'tenant-1',
-        { Amount: 0, Currency: 'ILS' },
+        {
+          Amount: 0,
+          Currency: 'ILS',
+          ExternalIdentifier: 'user:abc',
+          Name: 'Test User',
+          SingleUseToken: 'token-123',
+        },
         createMockTarget('createRecurringPayment') as any,
       ),
       (err: any) => {
@@ -237,7 +296,7 @@ describe('handleSumitTarget', async () => {
     await assert.rejects(
       () => callIntegrationTarget(
         'tenant-1',
-        { RecurringPaymentId: 'missing' },
+        { RecurringPaymentId: 999, ExternalIdentifier: 'user:abc' },
         createMockTarget('deleteRecurringPayment') as any,
       ),
       /Sumit API request failed/,

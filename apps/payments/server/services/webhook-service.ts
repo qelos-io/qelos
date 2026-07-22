@@ -37,6 +37,65 @@ function extractTenantFromCustomData(customData: any): string | undefined {
   return customData?.tenant;
 }
 
+function parseSumitExternalIdentifier(value: unknown): Record<string, any> | undefined {
+  if (!value || typeof value !== 'string') {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function resolveSumitTenant(body: any): string | undefined {
+  let customData: any = {};
+  if (body.CustomData) {
+    if (typeof body.CustomData === 'string') {
+      try { customData = JSON.parse(body.CustomData); } catch { customData = {}; }
+    } else {
+      customData = body.CustomData;
+    }
+  }
+
+  if (customData.tenant) {
+    return customData.tenant;
+  }
+
+  return parseSumitExternalIdentifier(body.ExternalIdentifier)?.tenant;
+}
+
+async function findSumitSubscription(tenant: string, body: any) {
+  const recurringPaymentId = body.RecurringPaymentId?.toString()
+    || body.RecurringItemID?.toString()
+    || body.RecurringCustomerItemID?.toString();
+  if (recurringPaymentId) {
+    return findSubscriptionByExternalId(recurringPaymentId, 'sumit');
+  }
+
+  const externalIdentifier = body.ExternalIdentifier?.toString();
+  if (externalIdentifier) {
+    const byExternalId = await findSubscriptionByExternalId(externalIdentifier, 'sumit');
+    if (byExternalId) {
+      return byExternalId;
+    }
+  }
+
+  const parsed = parseSumitExternalIdentifier(body.ExternalIdentifier);
+  if (parsed?.billableEntityType && parsed?.billableEntityId) {
+    return (Subscription as any).findOne({
+      tenant,
+      providerKind: 'sumit',
+      billableEntityType: parsed.billableEntityType,
+      billableEntityId: parsed.billableEntityId,
+      status: 'pending',
+    }).sort({ created: -1 }).lean().exec();
+  }
+
+  return null;
+}
+
 export async function processWebhook(providerKind: string, headers: Record<string, any>, body: any, rawBody?: string) {
   switch (providerKind) {
     case 'paddle':
@@ -461,15 +520,7 @@ async function processSumitWebhook(headers: Record<string, any>, body: any) {
     eventId = body.EventId || body.TransactionId || `sumit-${Date.now()}`;
     const eventType = body.EventType || body.Type || 'payment';
 
-    let customData: any = {};
-    if (body.CustomData) {
-      if (typeof body.CustomData === 'string') {
-        try { customData = JSON.parse(body.CustomData); } catch { customData = {}; }
-      } else {
-        customData = body.CustomData;
-      }
-    }
-    tenant = customData.tenant;
+    tenant = resolveSumitTenant(body);
 
     if (!tenant) {
       throw { code: 'TENANT_NOT_FOUND', message: 'Could not determine tenant from webhook data' };
@@ -526,37 +577,39 @@ async function processSumitWebhook(headers: Record<string, any>, body: any) {
 }
 
 async function handleSumitPaymentSuccess(tenant: string, body: any) {
-  const recurringPaymentId = body.RecurringPaymentId?.toString();
-  if (!recurringPaymentId) return { status: 'no_subscription' };
+  const recurringPaymentId = body.RecurringPaymentId?.toString()
+    || body.RecurringItemID?.toString()
+    || body.RecurringCustomerItemID?.toString();
 
-  const subscription = await findSubscriptionByExternalId(recurringPaymentId, 'sumit');
+  const subscription = await findSumitSubscription(tenant, body);
   if (!subscription) return { status: 'subscription_not_found' };
 
   if (subscription.status === 'pending') {
     await CheckoutService.activateSubscription(tenant, subscription._id.toString(), {
-      externalSubscriptionId: recurringPaymentId,
+      externalSubscriptionId: recurringPaymentId || subscription.externalSubscriptionId,
     });
   }
 
   return CheckoutService.createInvoiceForPayment(tenant, subscription, {
     amount: body.Amount || 0,
     currency: body.Currency,
-    externalInvoiceId: body.TransactionId?.toString(),
-    invoiceUrl: body.InvoiceUrl,
+    externalInvoiceId: body.TransactionId?.toString() || body.PaymentID?.toString(),
+    invoiceUrl: body.InvoiceUrl || body.DocumentDownloadURL,
   });
 }
 
 async function handleSumitPaymentFailed(tenant: string, body: any, externalEventId?: string) {
-  const recurringPaymentId = body.RecurringPaymentId?.toString();
-  if (!recurringPaymentId) return { status: 'no_subscription' };
+  const recurringPaymentId = body.RecurringPaymentId?.toString()
+    || body.RecurringItemID?.toString()
+    || body.RecurringCustomerItemID?.toString();
 
-  const subscription = await findSubscriptionByExternalId(recurringPaymentId, 'sumit');
+  const subscription = await findSumitSubscription(tenant, body);
   if (!subscription) return { status: 'subscription_not_found' };
 
   emitWebhookPaymentFailedEvent({
     tenant,
     providerKind: 'sumit',
-    externalSubscriptionId: recurringPaymentId,
+    externalSubscriptionId: recurringPaymentId || subscription.externalSubscriptionId,
     externalEventId,
     providerResponse: body,
     ...subscriptionEventMetadata(subscription),
@@ -566,10 +619,7 @@ async function handleSumitPaymentFailed(tenant: string, body: any, externalEvent
 }
 
 async function handleSumitRecurringCanceled(tenant: string, body: any) {
-  const recurringPaymentId = body.RecurringPaymentId?.toString();
-  if (!recurringPaymentId) return { status: 'no_subscription' };
-
-  const subscription = await findSubscriptionByExternalId(recurringPaymentId, 'sumit');
+  const subscription = await findSumitSubscription(tenant, body);
   if (!subscription) return { status: 'subscription_not_found' };
 
   return SubscriptionsService.updateSubscriptionStatus(tenant, subscription._id.toString(), 'canceled');
