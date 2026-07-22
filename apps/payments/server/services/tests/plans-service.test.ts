@@ -108,7 +108,7 @@ describe('plans-service', async () => {
     });
 
     it('should return plan when found', async () => {
-      const mockPlan = { _id: 'plan-1', name: 'Basic', tenant: 'tenant-1' };
+      const mockPlan = { _id: 'plan-1', name: 'Basic', tenant: 'tenant-1', __v: 1 };
       findOneMock.mock.mockImplementationOnce(() => ({
         lean: mock.fn(() => ({
           exec: mock.fn(async () => mockPlan),
@@ -116,7 +116,7 @@ describe('plans-service', async () => {
       }));
 
       const result = await PlansService.getPlanById('tenant-1', 'plan-1');
-      assert.deepStrictEqual(result, mockPlan);
+      assert.deepStrictEqual(result, { _id: 'plan-1', name: 'Basic', tenant: 'tenant-1' });
       assert.deepStrictEqual(findOneMock.mock.calls[0].arguments[0], { _id: 'plan-1', tenant: 'tenant-1' });
     });
   });
@@ -155,6 +155,10 @@ describe('plans-service', async () => {
     });
 
     it('should create plan with valid data', async () => {
+      saveMock.mock.mockImplementationOnce(async function (this: any) {
+        return { ...this, __v: 0 };
+      });
+
       const result = await PlansService.createPlan('tenant-1', {
         name: 'Pro',
         monthlyPrice: 29,
@@ -162,6 +166,7 @@ describe('plans-service', async () => {
       });
       assert.ok(result);
       assert.strictEqual(result._id, 'plan-1');
+      assert.ok(!('__v' in result));
     });
   });
 
