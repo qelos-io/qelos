@@ -78,6 +78,8 @@ const PlanSchema = new mongoose.Schema<any, any>({
     type: Date,
     default: Date.now,
   },
+}, {
+  versionKey: false,
 });
 
 PlanSchema.index({ tenant: 1, isActive: 1 });

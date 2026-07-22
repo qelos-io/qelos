@@ -1,20 +1,23 @@
 import Plan from '../models/plan';
 import { IPlan } from '@qelos/global-types';
+import { sanitizePlan, sanitizePlans } from './plan-serializer';
 
 export async function listPlans(tenant: string, filters: { isActive?: boolean } = {}) {
   const query: any = { tenant };
   if (typeof filters.isActive === 'boolean') {
     query.isActive = filters.isActive;
   }
-  return (Plan as any).find(query).sort({ sortOrder: 1, created: -1 }).lean().exec();
+  const plans = await (Plan as any).find(query).sort({ sortOrder: 1, created: -1 }).lean().exec();
+  return sanitizePlans(plans);
 }
 
 export async function getPublicPlans(tenant: string) {
-  return (Plan as any).find({ tenant, isActive: true })
+  const plans = await (Plan as any).find({ tenant, isActive: true })
     .select('name description features monthlyPrice yearlyPrice currency sortOrder limits metadata dynamic')
     .sort({ sortOrder: 1 })
     .lean()
     .exec();
+  return sanitizePlans(plans);
 }
 
 export async function getPlanById(tenant: string, planId: string) {
@@ -22,7 +25,7 @@ export async function getPlanById(tenant: string, planId: string) {
   if (!plan) {
     throw { code: 'PLAN_NOT_FOUND' };
   }
-  return plan;
+  return sanitizePlan(plan);
 }
 
 export async function createPlan(tenant: string, data: Partial<IPlan>) {
@@ -53,7 +56,8 @@ export async function createPlan(tenant: string, data: Partial<IPlan>) {
     throw { code: 'INVALID_PLAN_DATA', message: 'name, monthlyPrice, and yearlyPrice are required' };
   }
 
-  return plan.save();
+  const saved = await plan.save();
+  return sanitizePlan(saved);
 }
 
 export async function updatePlan(tenant: string, planId: string, data: Partial<IPlan>) {
@@ -79,7 +83,7 @@ export async function updatePlan(tenant: string, planId: string, data: Partial<I
     throw { code: 'PLAN_NOT_FOUND' };
   }
 
-  return plan;
+  return sanitizePlan(plan);
 }
 
 export async function deactivatePlan(tenant: string, planId: string) {
@@ -93,5 +97,5 @@ export async function deactivatePlan(tenant: string, planId: string) {
     throw { code: 'PLAN_NOT_FOUND' };
   }
 
-  return plan;
+  return sanitizePlan(plan);
 }
