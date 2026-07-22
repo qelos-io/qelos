@@ -3,8 +3,12 @@ const { allowedToChangeWebsiteUrls } = require("../../config");
 
 const BASIC_APP_CONFIGURATION_KEY = 'app-configuration'
 
+function canReadNonPublicConfiguration(req) {
+  return req.user && (req.user.isAdmin || req.user.type === 'internal')
+}
+
 function getConfigurationByKey(req, res, next) {
-  Configuration.getWithCache(req.headers.tenant, req.params.configKey, req.user && req.user.isAdmin)
+  Configuration.getWithCache(req.headers.tenant, req.params.configKey, canReadNonPublicConfiguration(req))
     .then(configuration => {
       if (!configuration) {
         return Promise.reject(null)

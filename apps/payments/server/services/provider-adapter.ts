@@ -39,12 +39,51 @@ export interface CancelResult {
   providerData: any;
 }
 
+const PAYMENTS_CONFIG_KEY = 'payments-configuration';
+
 function internalHeaders(tenant: string) {
   return { tenant, internal_secret: internalSecret };
 }
 
 function summarizePayload(payload: Record<string, any>) {
   return { keys: Object.keys(payload) };
+}
+
+function extractConfigurationMetadata(responseData: any) {
+  if (!responseData || typeof responseData !== 'object') {
+    return null;
+  }
+
+  if (responseData.metadata && typeof responseData.metadata === 'object') {
+    return responseData.metadata;
+  }
+
+  if (responseData.value && typeof responseData.value === 'object') {
+    return responseData.value;
+  }
+
+  if (!responseData.key) {
+    return responseData;
+  }
+
+  return null;
+}
+
+function paymentsNotConfiguredError(message: string) {
+  return { code: 'PAYMENTS_NOT_CONFIGURED', message };
+}
+
+async function resolveProviderKind(tenant: string, sourceId: string): Promise<string | undefined> {
+  try {
+    const response = await callPluginsService({
+      method: 'GET',
+      url: `/internal-api/integration-sources/${sourceId}`,
+      headers: internalHeaders(tenant),
+    });
+    return response.data?.kind;
+  } catch {
+    return undefined;
+  }
 }
 
 async function callIntegrationSource(
@@ -76,25 +115,119 @@ async function callIntegrationSource(
 }
 
 export async function getPaymentsConfiguration(tenant: string): Promise<PaymentsConfiguration> {
-  const response = await callContentService({
-    method: 'GET',
-    url: '/api/configurations/payments-configuration',
-    headers: internalHeaders(tenant),
-  });
+  let responseData: any;
 
-  const config = response.data?.value || response.data;
-  if (!config?.providerSourceId || !config?.providerKind) {
-    const error = { code: 'PAYMENTS_NOT_CONFIGURED', message: 'Payments provider is not configured' };
+  try {
+    const response = await callContentService({
+      method: 'GET',
+      url: `/internal-api/configurations/${PAYMENTS_CONFIG_KEY}`,
+      headers: internalHeaders(tenant),
+    });
+    responseData = response.data;
+  } catch (error: any) {
+    const status = error.response?.status;
+    const contentMessage = error.response?.data?.message;
+    let configError: { code: string; message: string };
+
+    if (status === 404) {
+      configError = paymentsNotConfiguredError(
+        `Payments configuration "${PAYMENTS_CONFIG_KEY}" was not found for this tenant. Add it in Admin → Pricing Plans → Configuration.`,
+      );
+    } else if (status === 401) {
+      configError = {
+        code: 'PAYMENTS_CONFIG_ACCESS_DENIED',
+        message: 'Could not load payments configuration: payments service is not authorized to read tenant configuration',
+      };
+    } else {
+      configError = {
+        code: 'PAYMENTS_CONFIG_LOAD_FAILED',
+        message: contentMessage
+          ? `Could not load payments configuration: ${contentMessage}`
+          : `Could not load payments configuration from content service${status ? ` (HTTP ${status})` : ''}`,
+      };
+    }
+
     emitProviderCallFailedEvent({
       tenant,
-      providerKind: config?.providerKind || 'unknown',
+      providerKind: 'unknown',
+      operation: 'getPaymentsConfiguration',
+      code: configError.code,
+      error: { ...configError, status, responseData: contentMessage },
+    });
+    throw configError;
+  }
+
+  const metadata = extractConfigurationMetadata(responseData);
+  if (!metadata) {
+    const error = paymentsNotConfiguredError(
+      `Payments configuration "${PAYMENTS_CONFIG_KEY}" exists but has no metadata. Re-save it in Admin → Pricing Plans → Configuration.`,
+    );
+    emitProviderCallFailedEvent({
+      tenant,
+      providerKind: 'unknown',
       operation: 'getPaymentsConfiguration',
       code: error.code,
       error,
     });
     throw error;
   }
-  return config;
+
+  if (metadata.isEnabled === false) {
+    const error = paymentsNotConfiguredError(
+      'Payments are disabled in payments-configuration. Enable them in Admin → Pricing Plans → Configuration.',
+    );
+    emitProviderCallFailedEvent({
+      tenant,
+      providerKind: metadata.providerKind || 'unknown',
+      operation: 'getPaymentsConfiguration',
+      code: error.code,
+      error,
+    });
+    throw error;
+  }
+
+  const providerSourceId = metadata.providerSourceId || metadata.paymentSourceId;
+  let providerKind = metadata.providerKind;
+
+  if (providerSourceId && !providerKind) {
+    providerKind = await resolveProviderKind(tenant, providerSourceId);
+  }
+
+  if (!providerSourceId) {
+    const error = paymentsNotConfiguredError(
+      'Payments configuration is missing a payment provider integration source. Select a provider in Admin → Pricing Plans → Configuration.',
+    );
+    emitProviderCallFailedEvent({
+      tenant,
+      providerKind: 'unknown',
+      operation: 'getPaymentsConfiguration',
+      code: error.code,
+      error,
+    });
+    throw error;
+  }
+
+  if (!providerKind) {
+    const error = paymentsNotConfiguredError(
+      `Payments configuration references integration source "${providerSourceId}" but the provider type could not be determined. Verify the integration source exists and re-save payments-configuration.`,
+    );
+    emitProviderCallFailedEvent({
+      tenant,
+      providerKind: 'unknown',
+      operation: 'getPaymentsConfiguration',
+      code: error.code,
+      error,
+    });
+    throw error;
+  }
+
+  return {
+    providerSourceId,
+    providerKind,
+    successUrl: metadata.successUrl,
+    cancelUrl: metadata.cancelUrl,
+    webhookSecret: metadata.webhookSecret,
+  };
 }
 
 async function createPaddleCheckout(tenant: string, sourceId: string, params: CheckoutParams): Promise<CheckoutResult> {

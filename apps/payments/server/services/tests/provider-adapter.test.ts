@@ -55,14 +55,37 @@ describe('provider-adapter', async () => {
   };
 
   describe('getPaymentsConfiguration', () => {
-    it('should return config from content service', async () => {
+    it('should return config from content service internal API', async () => {
       mockCallContentService.mock.mockImplementation(async () => ({
         data: {
-          value: {
+          key: 'payments-configuration',
+          metadata: {
             providerSourceId: 'src-1',
             providerKind: 'paddle',
           },
         },
+      }));
+
+      const config = await ProviderAdapter.getPaymentsConfiguration('tenant-1');
+      assert.strictEqual(config.providerSourceId, 'src-1');
+      assert.strictEqual(config.providerKind, 'paddle');
+
+      const callArgs = mockCallContentService.mock.calls[0].arguments[0];
+      assert.strictEqual(callArgs.url, '/internal-api/configurations/payments-configuration');
+    });
+
+    it('should normalize admin UI paymentSourceId and resolve providerKind from integration source', async () => {
+      mockCallContentService.mock.mockImplementation(async () => ({
+        data: {
+          key: 'payments-configuration',
+          metadata: {
+            isEnabled: true,
+            paymentSourceId: 'src-1',
+          },
+        },
+      }));
+      mockCallPluginsService.mock.mockImplementation(async () => ({
+        data: { kind: 'paddle' },
       }));
 
       const config = await ProviderAdapter.getPaymentsConfiguration('tenant-1');
@@ -75,6 +98,7 @@ describe('provider-adapter', async () => {
 
       await assert.rejects(() => ProviderAdapter.getPaymentsConfiguration('tenant-1'), (e: any) => {
         assert.strictEqual(e.code, 'PAYMENTS_NOT_CONFIGURED');
+        assert.match(e.message, /missing a payment provider integration source/);
         return true;
       });
 
@@ -86,9 +110,44 @@ describe('provider-adapter', async () => {
       assert.strictEqual(event.metadata.code, 'PAYMENTS_NOT_CONFIGURED');
     });
 
+    it('should throw PAYMENTS_NOT_CONFIGURED when content service returns 404', async () => {
+      mockCallContentService.mock.mockImplementation(async () => {
+        throw {
+          response: {
+            status: 404,
+            data: { message: 'configuration not exists' },
+          },
+        };
+      });
+
+      await assert.rejects(() => ProviderAdapter.getPaymentsConfiguration('tenant-1'), (e: any) => {
+        assert.strictEqual(e.code, 'PAYMENTS_NOT_CONFIGURED');
+        assert.match(e.message, /payments-configuration/);
+        return true;
+      });
+    });
+
+    it('should throw when payments are disabled', async () => {
+      mockCallContentService.mock.mockImplementation(async () => ({
+        data: {
+          metadata: {
+            isEnabled: false,
+            paymentSourceId: 'src-1',
+            providerKind: 'paddle',
+          },
+        },
+      }));
+
+      await assert.rejects(() => ProviderAdapter.getPaymentsConfiguration('tenant-1'), (e: any) => {
+        assert.strictEqual(e.code, 'PAYMENTS_NOT_CONFIGURED');
+        assert.match(e.message, /disabled/);
+        return true;
+      });
+    });
+
     it('should throw when providerSourceId is missing', async () => {
       mockCallContentService.mock.mockImplementation(async () => ({
-        data: { value: { providerKind: 'paddle' } },
+        data: { metadata: { providerKind: 'paddle' } },
       }));
 
       await assert.rejects(() => ProviderAdapter.getPaymentsConfiguration('tenant-1'), (e: any) => {
