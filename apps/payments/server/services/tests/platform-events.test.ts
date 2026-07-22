@@ -11,6 +11,7 @@ mock.module('@qelos/api-kit', {
 
 describe('platform-events', async () => {
   const PlatformEvents = await import('../platform-events');
+  const { resolvePaymentProviderPublicContext } = await import('@qelos/global-types');
   const originalNodeEnv = process.env.NODE_ENV;
 
   beforeEach(() => {
@@ -55,6 +56,8 @@ describe('platform-events', async () => {
           ErrorCode: 'CARD_DECLINED',
           Message: 'Card was declined',
         },
+        providerError: undefined,
+        adminSuggestions: undefined,
         stack: error.stack,
       });
     });
@@ -111,6 +114,7 @@ describe('platform-events', async () => {
         tenant: 'tenant-1',
         userId: 'user-1',
         providerKind: 'sumit',
+        providerContext: resolvePaymentProviderPublicContext('sumit', { companyId: '476778618' }, 'source-1'),
         code: 'PLAN_NOT_ACTIVE',
         planId: 'plan-1',
         billableEntityType: 'user',
@@ -128,6 +132,8 @@ describe('platform-events', async () => {
         description: 'Checkout initiation failed',
         metadata: {
           providerKind: 'sumit',
+          providerSourceId: 'source-1',
+          providerPublicAccountId: '476778618',
           operation: 'initiateCheckout',
           code: 'PLAN_NOT_ACTIVE',
           planId: 'plan-1',
@@ -136,12 +142,16 @@ describe('platform-events', async () => {
           billableEntityId: 'user-1',
           externalSubscriptionId: undefined,
           couponCode: undefined,
+          providerError: null,
+          adminSuggestions: [],
           error: {
             message: 'Plan inactive',
             code: 'PLAN_NOT_ACTIVE',
             type: undefined,
             status: undefined,
             responseData: undefined,
+            providerError: undefined,
+            adminSuggestions: undefined,
             stack: undefined,
           },
         },

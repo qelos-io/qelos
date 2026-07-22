@@ -1,5 +1,13 @@
 import PlatformEvent from '../models/event.js';
 import { emitPlatformEvent } from './hook-events.js';
+import {
+  appendPaymentProviderContext,
+  buildPaymentAdminSuggestions,
+  buildPaymentEventDescription,
+  extractSumitProviderError,
+  resolvePaymentProviderPublicContext,
+  type PaymentProviderPublicContext,
+} from '@qelos/global-types';
 
 const SENSITIVE_METADATA_KEYS = new Set([
   'credentials',
@@ -65,6 +73,17 @@ export function serializePaymentsError(error: any) {
   };
 }
 
+export function buildPaymentsTriggerEventMetadata(
+  providerKind: string,
+  source: { metadata?: Record<string, unknown>; _id?: { toString(): string } },
+  metadata: Record<string, unknown>,
+): Record<string, unknown> {
+  return sanitizePaymentsMetadata(appendPaymentProviderContext(
+    metadata,
+    resolvePaymentProviderPublicContext(providerKind, source.metadata, source._id?.toString()),
+  )) as Record<string, unknown>;
+}
+
 export function emitPaymentsProviderFailureEvent(
   tenant: string | undefined,
   providerKind: string,
@@ -74,6 +93,7 @@ export function emitPaymentsProviderFailureEvent(
     providerResponse?: unknown;
     error: any;
     eventName?: string;
+    providerContext?: PaymentProviderPublicContext;
   },
 ) {
   if (!tenant) {
@@ -89,20 +109,40 @@ export function emitPaymentsProviderFailureEvent(
       ? `Failed to save payment method via ${providerKind}`
       : `Provider call failed: ${operation}`;
 
+    const providerResponse = params.providerResponse;
+    const providerError = providerKind === 'sumit'
+      ? extractSumitProviderError(providerResponse)
+      : (providerResponse && typeof providerResponse === 'object'
+        ? providerResponse as Record<string, unknown>
+        : null);
+    const adminSuggestions = buildPaymentAdminSuggestions({
+      providerKind,
+      operation,
+      code: params.error?.code ?? (providerResponse as any)?.Status,
+      status: params.status ?? params.error?.status,
+      message: params.error?.message,
+      providerError,
+    });
+
+    const providerContext = params.providerContext
+      ?? resolvePaymentProviderPublicContext(providerKind);
+
     const event = new PlatformEvent({
       tenant,
       source: `payments:${providerKind}`,
       kind: 'provider',
       eventName,
-      description,
-      metadata: sanitizePaymentsMetadata({
+      description: buildPaymentEventDescription(description, providerError),
+      metadata: sanitizePaymentsMetadata(appendPaymentProviderContext({
         providerKind,
         operation,
-        code: params.error?.code ?? (params.providerResponse as any)?.Status,
+        code: params.error?.code ?? (providerResponse as any)?.Status,
         status: params.status ?? params.error?.status,
-        providerResponse: params.providerResponse,
+        providerResponse,
+        providerError,
+        adminSuggestions,
         error: serializePaymentsError(params.error),
-      }),
+      }, providerContext)),
     });
 
     event.save()

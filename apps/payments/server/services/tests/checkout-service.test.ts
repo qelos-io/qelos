@@ -11,6 +11,7 @@ const redeemCouponMock = mock.fn();
 const getPaymentsConfigurationMock = mock.fn();
 const createCheckoutMock = mock.fn();
 const cancelProviderSubscriptionMock = mock.fn();
+const resolveProviderPublicContextMock = mock.fn();
 const getSubscriptionByIdMock = mock.fn();
 const emitCheckoutFailedEventMock = mock.fn();
 
@@ -64,6 +65,7 @@ mock.module('../provider-adapter', {
     getPaymentsConfiguration: getPaymentsConfigurationMock,
     createCheckout: createCheckoutMock,
     cancelProviderSubscription: cancelProviderSubscriptionMock,
+    resolveProviderPublicContext: resolveProviderPublicContextMock,
     verifyPayPalWebhook: mock.fn(),
     getProviderSubscription: mock.fn(),
   },
@@ -100,6 +102,10 @@ describe('checkout-service', async () => {
   const mockConfig = {
     providerSourceId: 'source-1',
     providerKind: 'paddle',
+    providerContext: {
+      providerSourceId: 'source-1',
+      providerEnvironment: 'sandbox',
+    },
     successUrl: 'https://app.example.com/success',
     cancelUrl: 'https://app.example.com/cancel',
   };
@@ -132,6 +138,7 @@ describe('checkout-service', async () => {
     getPaymentsConfigurationMock.mock.resetCalls();
     createCheckoutMock.mock.resetCalls();
     cancelProviderSubscriptionMock.mock.resetCalls();
+    resolveProviderPublicContextMock.mock.resetCalls();
     getSubscriptionByIdMock.mock.resetCalls();
     emitCheckoutFailedEventMock.mock.resetCalls();
 
@@ -148,6 +155,7 @@ describe('checkout-service', async () => {
       planId: 'plan-1',
       status: 'pending',
     }));
+    resolveProviderPublicContextMock.mock.mockImplementation(async () => mockConfig.providerContext);
     updateSubscriptionStatusMock.mock.mockImplementation(async () => ({
       _id: 'sub-pending-1',
       planId: 'plan-1',
@@ -231,6 +239,7 @@ describe('checkout-service', async () => {
           tenant: 'tenant-1',
           userId: 'user-1',
           providerKind: undefined,
+          providerContext: undefined,
           operation: 'initiateCheckout',
           code: 'PLAN_NOT_ACTIVE',
           planId: 'plan-1',

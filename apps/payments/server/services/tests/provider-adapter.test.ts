@@ -54,6 +54,57 @@ describe('provider-adapter', async () => {
     cancelUrl: 'https://example.com/cancel',
   };
 
+  function mockIntegrationSourceMetadata(kind: string) {
+    switch (kind) {
+      case 'sumit':
+        return { companyId: '476778618' };
+      case 'paypal':
+        return { clientId: 'paypal-client', environment: 'sandbox' };
+      case 'paddle':
+        return { environment: 'sandbox' };
+      case 'dodopayments':
+        return { environment: 'test' };
+      default:
+        return {};
+    }
+  }
+
+  function mockPluginsWithIntegrationSource(kind: string, triggerResponse: any) {
+    mockCallPluginsService.mock.mockImplementation(async (opts: any) => {
+      if (opts.method === 'GET') {
+        return {
+          data: {
+            kind,
+            metadata: mockIntegrationSourceMetadata(kind),
+          },
+        };
+      }
+
+      return { data: triggerResponse };
+    });
+  }
+
+  function mockPluginsRejectOnTrigger(kind: string, error: unknown) {
+    mockCallPluginsService.mock.mockImplementation(async (opts: any) => {
+      if (opts.method === 'GET') {
+        return {
+          data: {
+            kind,
+            metadata: mockIntegrationSourceMetadata(kind),
+          },
+        };
+      }
+
+      throw error;
+    });
+  }
+
+  function getTriggerCallArgs() {
+    const triggerCall = mockCallPluginsService.mock.calls.find((call) => call.arguments[0].method === 'POST');
+    assert.ok(triggerCall, 'expected POST trigger call to plugins service');
+    return triggerCall.arguments[0];
+  }
+
   describe('getPaymentsConfiguration', () => {
     it('should return config from content service internal API', async () => {
       mockCallContentService.mock.mockImplementation(async () => ({
@@ -85,12 +136,17 @@ describe('provider-adapter', async () => {
         },
       }));
       mockCallPluginsService.mock.mockImplementation(async () => ({
-        data: { kind: 'paddle' },
+        data: {
+          kind: 'paddle',
+          metadata: { environment: 'sandbox' },
+        },
       }));
 
       const config = await ProviderAdapter.getPaymentsConfiguration('tenant-1');
       assert.strictEqual(config.providerSourceId, 'src-1');
       assert.strictEqual(config.providerKind, 'paddle');
+      assert.strictEqual(config.providerContext.providerSourceId, 'src-1');
+      assert.strictEqual(config.providerContext.providerEnvironment, 'sandbox');
     });
 
     it('should throw PAYMENTS_NOT_CONFIGURED when config is missing', async () => {
@@ -160,16 +216,16 @@ describe('provider-adapter', async () => {
   describe('createCheckout', () => {
     describe('paddle', () => {
       it('should call plugins service with correct paddle params for monthly', async () => {
-        mockCallPluginsService.mock.mockImplementation(async () => ({
-          data: { data: { id: 'sub_ext', checkout: { url: 'https://checkout.paddle.com/xxx' } } },
-        }));
+        mockPluginsWithIntegrationSource('paddle', {
+          data: { id: 'sub_ext', checkout: { url: 'https://checkout.paddle.com/xxx' } },
+        });
 
         const result = await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'paddle', baseCheckoutParams);
 
         assert.strictEqual(result.checkoutUrl, 'https://checkout.paddle.com/xxx');
         assert.strictEqual(result.externalSubscriptionId, 'sub_ext');
 
-        const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+        const callArgs = getTriggerCallArgs();
         assert.strictEqual(callArgs.method, 'POST');
         assert.strictEqual(callArgs.url, '/internal-api/integration-sources/src-1/trigger');
         assert.strictEqual(callArgs.data.operation, 'createSubscription');
@@ -177,19 +233,20 @@ describe('provider-adapter', async () => {
       });
 
       it('should use yearly price ID for yearly billing', async () => {
-        mockCallPluginsService.mock.mockImplementation(async () => ({ data: { data: { id: 'sub_ext' } } }));
+        mockPluginsWithIntegrationSource('paddle', { data: { id: 'sub_ext' } });
 
         await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'paddle', {
           ...baseCheckoutParams,
           billingCycle: 'yearly',
         });
 
-        const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+        const callArgs = getTriggerCallArgs();
         assert.deepStrictEqual(callArgs.data.payload.items, [{ price_id: 'pri-yearly', quantity: 1 }]);
       });
 
       it('should throw MISSING_EXTERNAL_PRICE_ID when price ID is not configured', async () => {
         const noPricePlan = { ...basePlan, externalIds: {} };
+        mockPluginsWithIntegrationSource('paddle', {});
 
         await assert.rejects(() => ProviderAdapter.createCheckout('tenant-1', 'src-1', 'paddle', {
           ...baseCheckoutParams,
@@ -204,13 +261,13 @@ describe('provider-adapter', async () => {
         assert.strictEqual(event.eventName, 'checkout-failed');
         assert.strictEqual(event.source, 'payments:paddle');
         assert.strictEqual(event.metadata.code, 'MISSING_EXTERNAL_PRICE_ID');
+        assert.strictEqual(event.metadata.providerSourceId, 'src-1');
+        assert.strictEqual(event.metadata.providerEnvironment, 'sandbox');
       });
 
       it('should emit provider-call-failed when plugins trigger call rejects', async () => {
         const providerError = { code: 'PROVIDER_ERROR', message: 'Integration call failed', status: 502 };
-        mockCallPluginsService.mock.mockImplementation(async () => {
-          throw providerError;
-        });
+        mockPluginsRejectOnTrigger('paddle', providerError);
 
         await assert.rejects(() => ProviderAdapter.createCheckout('tenant-1', 'src-1', 'paddle', baseCheckoutParams), (e: any) => {
           assert.strictEqual(e.code, 'PROVIDER_ERROR');
@@ -223,25 +280,24 @@ describe('provider-adapter', async () => {
         assert.strictEqual(event.source, 'payments:paddle');
         assert.strictEqual(event.metadata.operation, 'createSubscription');
         assert.strictEqual(event.metadata.providerResponse.sourceId, 'src-1');
+        assert.strictEqual(event.metadata.providerEnvironment, 'sandbox');
         assert.deepStrictEqual(event.metadata.providerResponse.payloadSummary, { keys: ['items', 'custom_data'] });
       });
     });
 
     describe('paypal', () => {
       it('should call plugins service with correct paypal params', async () => {
-        mockCallPluginsService.mock.mockImplementation(async () => ({
-          data: {
-            id: 'sub_pp_1',
-            links: [{ rel: 'approve', href: 'https://paypal.com/approve/xxx' }],
-          },
-        }));
+        mockPluginsWithIntegrationSource('paypal', {
+          id: 'sub_pp_1',
+          links: [{ rel: 'approve', href: 'https://paypal.com/approve/xxx' }],
+        });
 
         const result = await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'paypal', baseCheckoutParams);
 
         assert.strictEqual(result.checkoutUrl, 'https://paypal.com/approve/xxx');
         assert.strictEqual(result.externalSubscriptionId, 'sub_pp_1');
 
-        const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+        const callArgs = getTriggerCallArgs();
         assert.strictEqual(callArgs.data.operation, 'createSubscription');
         assert.strictEqual(callArgs.data.payload.plan_id, 'paypal-plan-1');
         assert.strictEqual(callArgs.data.payload.application_context.return_url, 'https://example.com/success');
@@ -249,6 +305,7 @@ describe('provider-adapter', async () => {
 
       it('should throw MISSING_EXTERNAL_PRICE_ID when paypal product ID is missing', async () => {
         const noPricePlan = { ...basePlan, externalIds: {} };
+        mockPluginsWithIntegrationSource('paypal', {});
 
         await assert.rejects(() => ProviderAdapter.createCheckout('tenant-1', 'src-1', 'paypal', {
           ...baseCheckoutParams,
@@ -262,18 +319,16 @@ describe('provider-adapter', async () => {
 
     describe('sumit', () => {
       it('should call plugins service with beginCheckoutRedirect params', async () => {
-        mockCallPluginsService.mock.mockImplementation(async () => ({
-          data: {
-            RedirectURL: 'https://sumit.co.il/pay/xxx',
-          },
-        }));
+        mockPluginsWithIntegrationSource('sumit', {
+          RedirectURL: 'https://sumit.co.il/pay/xxx',
+        });
 
         const result = await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'sumit', baseCheckoutParams);
 
         assert.strictEqual(result.checkoutUrl, 'https://sumit.co.il/pay/xxx');
         assert.ok(result.externalSubscriptionId);
 
-        const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+        const callArgs = getTriggerCallArgs();
         assert.strictEqual(callArgs.data.operation, 'beginCheckoutRedirect');
         assert.strictEqual(callArgs.data.payload.Items[0].UnitPrice, 29);
         assert.strictEqual(callArgs.data.payload.Items[0].Currency, 'USD');
@@ -281,11 +336,11 @@ describe('provider-adapter', async () => {
       });
 
       it('should include tenant in ExternalIdentifier payload', async () => {
-        mockCallPluginsService.mock.mockImplementation(async () => ({ data: { RedirectURL: 'https://sumit.co.il/pay/yyy' } }));
+        mockPluginsWithIntegrationSource('sumit', { RedirectURL: 'https://sumit.co.il/pay/yyy' });
 
         await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'sumit', baseCheckoutParams);
 
-        const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+        const callArgs = getTriggerCallArgs();
         const externalIdentifier = JSON.parse(callArgs.data.payload.ExternalIdentifier);
         assert.strictEqual(externalIdentifier.tenant, 'tenant-1');
         assert.strictEqual(externalIdentifier.planId, 'plan-1');
@@ -302,9 +357,10 @@ describe('provider-adapter', async () => {
       };
 
       it('should call plugins service with createSubscription for monthly billing', async () => {
-        mockCallPluginsService.mock.mockImplementation(async () => ({
-          data: { payment_link: 'https://checkout.dodopayments.com/xxx', subscription_id: 'sub_dodo_1' },
-        }));
+        mockPluginsWithIntegrationSource('dodopayments', {
+          payment_link: 'https://checkout.dodopayments.com/xxx',
+          subscription_id: 'sub_dodo_1',
+        });
 
         const result = await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'dodopayments', {
           ...baseCheckoutParams,
@@ -314,15 +370,16 @@ describe('provider-adapter', async () => {
         assert.strictEqual(result.checkoutUrl, 'https://checkout.dodopayments.com/xxx');
         assert.strictEqual(result.externalSubscriptionId, 'sub_dodo_1');
 
-        const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+        const callArgs = getTriggerCallArgs();
         assert.strictEqual(callArgs.data.operation, 'createSubscription');
         assert.strictEqual(callArgs.data.payload.product_id, 'dodo-monthly-price');
       });
 
       it('should use yearly price ID for yearly billing', async () => {
-        mockCallPluginsService.mock.mockImplementation(async () => ({
-          data: { payment_link: 'https://checkout.dodopayments.com/yyy', subscription_id: 'sub_dodo_2' },
-        }));
+        mockPluginsWithIntegrationSource('dodopayments', {
+          payment_link: 'https://checkout.dodopayments.com/yyy',
+          subscription_id: 'sub_dodo_2',
+        });
 
         await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'dodopayments', {
           ...baseCheckoutParams,
@@ -330,12 +387,13 @@ describe('provider-adapter', async () => {
           billingCycle: 'yearly',
         });
 
-        const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+        const callArgs = getTriggerCallArgs();
         assert.strictEqual(callArgs.data.payload.product_id, 'dodo-yearly-price');
       });
 
       it('should throw MISSING_EXTERNAL_PRICE_ID when price ID is not configured', async () => {
         const noPricePlan = { ...basePlan, externalIds: {} };
+        mockPluginsWithIntegrationSource('dodopayments', {});
 
         await assert.rejects(() => ProviderAdapter.createCheckout('tenant-1', 'src-1', 'dodopayments', {
           ...baseCheckoutParams,
@@ -348,6 +406,8 @@ describe('provider-adapter', async () => {
     });
 
     it('should throw UNSUPPORTED_PROVIDER for unknown provider', async () => {
+      mockPluginsWithIntegrationSource('stripe', {});
+
       await assert.rejects(() => ProviderAdapter.createCheckout('tenant-1', 'src-1', 'stripe', baseCheckoutParams), (e: any) => {
         assert.strictEqual(e.code, 'UNSUPPORTED_PROVIDER');
         return true;
@@ -357,7 +417,7 @@ describe('provider-adapter', async () => {
 
   describe('cancelProviderSubscription', () => {
     it('should call paddle cancel with correct params', async () => {
-      mockCallPluginsService.mock.mockImplementation(async () => ({ data: { success: true } }));
+      mockPluginsWithIntegrationSource('paddle', { success: true });
 
       const result = await ProviderAdapter.cancelProviderSubscription(
         'tenant-1', 'src-1', 'paddle', 'sub_ext_1',
@@ -365,23 +425,25 @@ describe('provider-adapter', async () => {
 
       assert.strictEqual(result.success, true);
 
-      const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+      const callArgs = getTriggerCallArgs();
       assert.strictEqual(callArgs.data.operation, 'cancelSubscription');
       assert.strictEqual(callArgs.data.payload.subscriptionId, 'sub_ext_1');
       assert.strictEqual(callArgs.data.payload.effective_from, 'next_billing_period');
     });
 
     it('should call dodopayments cancel with correct params', async () => {
-      mockCallPluginsService.mock.mockImplementation(async () => ({ data: {} }));
+      mockPluginsWithIntegrationSource('dodopayments', {});
 
       await ProviderAdapter.cancelProviderSubscription('tenant-1', 'src-1', 'dodopayments', 'sub_dodo_1');
 
-      const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+      const callArgs = getTriggerCallArgs();
       assert.strictEqual(callArgs.data.operation, 'cancelSubscription');
       assert.strictEqual(callArgs.data.payload.subscription_id, 'sub_dodo_1');
     });
 
     it('should throw UNSUPPORTED_PROVIDER for unknown provider', async () => {
+      mockPluginsWithIntegrationSource('stripe', {});
+
       await assert.rejects(() => ProviderAdapter.cancelProviderSubscription('tenant-1', 'src-1', 'stripe', 'sub-1'), (e: any) => {
         assert.strictEqual(e.code, 'UNSUPPORTED_PROVIDER');
         return true;
@@ -391,18 +453,18 @@ describe('provider-adapter', async () => {
 
   describe('getProviderSubscription', () => {
     it('should call dodopayments getSubscription with correct params', async () => {
-      mockCallPluginsService.mock.mockImplementation(async () => ({
-        data: { id: 'sub_dodo_1', status: 'active' },
-      }));
+      mockPluginsWithIntegrationSource('dodopayments', { id: 'sub_dodo_1', status: 'active' });
 
       await ProviderAdapter.getProviderSubscription('tenant-1', 'src-1', 'dodopayments', 'sub_dodo_1');
 
-      const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
+      const callArgs = getTriggerCallArgs();
       assert.strictEqual(callArgs.data.operation, 'getSubscription');
       assert.strictEqual(callArgs.data.payload.subscription_id, 'sub_dodo_1');
     });
 
     it('should throw UNSUPPORTED_PROVIDER for unsupported provider', async () => {
+      mockPluginsWithIntegrationSource('paypal', {});
+
       await assert.rejects(
         () => ProviderAdapter.getProviderSubscription('tenant-1', 'src-1', 'paypal', 'sub-1'),
         (e: any) => {

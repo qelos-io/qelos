@@ -165,6 +165,7 @@ describe('handleSumitTarget', async () => {
     const requestBody = JSON.parse(fetchCalls[0].options.body);
     assert.strictEqual(requestBody.Items[0].UnitPrice, 29);
     assert.strictEqual(requestBody.Credentials.CompanyID, 12345678);
+    assert.strictEqual(typeof requestBody.Credentials.CompanyID, 'number');
     assert.strictEqual(requestBody.Credentials.APIKey, 'test-sumit-key');
     assert.strictEqual(requestBody.SingleUseToken, 'token-123');
     assert.strictEqual(savedEvents.length, 0);

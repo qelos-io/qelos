@@ -133,6 +133,7 @@ function emitWebhookProcessingFailure(params: {
   operation?: string;
   externalEventId?: string;
   providerResponse?: unknown;
+  providerContext?: ProviderAdapter.PaymentsConfiguration['providerContext'];
   error: any;
 }) {
   emitWebhookProcessingFailedEvent({
@@ -142,6 +143,7 @@ function emitWebhookProcessingFailure(params: {
     code: params.error?.code,
     externalEventId: params.externalEventId,
     providerResponse: params.providerResponse,
+    providerContext: params.providerContext,
     error: params.error,
   });
 }
@@ -251,7 +253,7 @@ async function processPaddleWebhook(headers: Record<string, any>, body: any, raw
         result = await handlePaddleTransactionCompleted(tenant, data);
         break;
       case 'transaction.payment_failed':
-        result = await handlePaddlePaymentFailed(tenant, data, eventId);
+        result = await handlePaddlePaymentFailed(tenant, data, eventId, config.providerContext);
         break;
       default:
         emitWebhookProcessingFailure({
@@ -260,6 +262,7 @@ async function processPaddleWebhook(headers: Record<string, any>, body: any, raw
           operation: 'handleEvent',
           externalEventId: eventId,
           providerResponse: { eventType },
+          providerContext: config.providerContext,
           error: { code: 'UNHANDLED_EVENT_TYPE', message: `Unhandled Paddle event type: ${eventType}` },
         });
         result = { status: 'unhandled', eventType };
@@ -350,7 +353,12 @@ async function handlePaddleTransactionCompleted(tenant: string, data: any) {
   });
 }
 
-async function handlePaddlePaymentFailed(tenant: string, data: any, externalEventId?: string) {
+async function handlePaddlePaymentFailed(
+  tenant: string,
+  data: any,
+  externalEventId: string | undefined,
+  providerContext: ProviderAdapter.PaymentsConfiguration['providerContext'],
+) {
   const subscriptionId = data.subscription_id;
   if (!subscriptionId) return { status: 'no_subscription' };
 
@@ -363,6 +371,7 @@ async function handlePaddlePaymentFailed(tenant: string, data: any, externalEven
     externalSubscriptionId: subscriptionId,
     externalEventId,
     providerResponse: data,
+    providerContext,
     ...subscriptionEventMetadata(subscription),
   });
 
@@ -424,7 +433,7 @@ async function processPayPalWebhook(headers: Record<string, any>, body: any) {
         result = await handlePayPalPaymentCompleted(tenant, resource);
         break;
       case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED':
-        result = await handlePayPalPaymentFailed(tenant, resource, eventId);
+        result = await handlePayPalPaymentFailed(tenant, resource, eventId, config.providerContext);
         break;
       default:
         emitWebhookProcessingFailure({
@@ -433,6 +442,7 @@ async function processPayPalWebhook(headers: Record<string, any>, body: any) {
           operation: 'handleEvent',
           externalEventId: eventId,
           providerResponse: { eventType },
+          providerContext: config.providerContext,
           error: { code: 'UNHANDLED_EVENT_TYPE', message: `Unhandled PayPal event type: ${eventType}` },
         });
         result = { status: 'unhandled', eventType };
@@ -494,7 +504,12 @@ async function handlePayPalPaymentCompleted(tenant: string, resource: any) {
   });
 }
 
-async function handlePayPalPaymentFailed(tenant: string, resource: any, externalEventId?: string) {
+async function handlePayPalPaymentFailed(
+  tenant: string,
+  resource: any,
+  externalEventId: string | undefined,
+  providerContext: ProviderAdapter.PaymentsConfiguration['providerContext'],
+) {
   const subscription = await findSubscriptionByExternalId(resource.id, 'paypal');
   if (!subscription) return { status: 'subscription_not_found' };
 
@@ -504,6 +519,7 @@ async function handlePayPalPaymentFailed(tenant: string, resource: any, external
     externalSubscriptionId: resource.id,
     externalEventId,
     providerResponse: resource,
+    providerContext,
     ...subscriptionEventMetadata(subscription),
   });
 
@@ -545,7 +561,7 @@ async function processSumitWebhook(headers: Record<string, any>, body: any) {
         break;
       case 'payment_failed':
       case 'RecurringPaymentFailed':
-        result = await handleSumitPaymentFailed(tenant, body, eventId);
+        result = await handleSumitPaymentFailed(tenant, body, eventId, config.providerContext);
         break;
       case 'recurring_canceled':
       case 'RecurringPaymentCanceled':
@@ -558,6 +574,7 @@ async function processSumitWebhook(headers: Record<string, any>, body: any) {
           operation: 'handleEvent',
           externalEventId: eventId,
           providerResponse: { eventType },
+          providerContext: config.providerContext,
           error: { code: 'UNHANDLED_EVENT_TYPE', message: `Unhandled Sumit event type: ${eventType}` },
         });
         result = { status: 'unhandled', eventType };
@@ -598,7 +615,12 @@ async function handleSumitPaymentSuccess(tenant: string, body: any) {
   });
 }
 
-async function handleSumitPaymentFailed(tenant: string, body: any, externalEventId?: string) {
+async function handleSumitPaymentFailed(
+  tenant: string,
+  body: any,
+  externalEventId: string | undefined,
+  providerContext: ProviderAdapter.PaymentsConfiguration['providerContext'],
+) {
   const recurringPaymentId = body.RecurringPaymentId?.toString()
     || body.RecurringItemID?.toString()
     || body.RecurringCustomerItemID?.toString();
@@ -612,6 +634,7 @@ async function handleSumitPaymentFailed(tenant: string, body: any, externalEvent
     externalSubscriptionId: recurringPaymentId || subscription.externalSubscriptionId,
     externalEventId,
     providerResponse: body,
+    providerContext,
     ...subscriptionEventMetadata(subscription),
   });
 
@@ -717,7 +740,7 @@ async function processDodoPaymentsWebhook(headers: Record<string, any>, body: an
         result = await handleDodoPaymentSucceeded(tenant, data);
         break;
       case 'payment.failed':
-        result = await handleDodoPaymentFailed(tenant, data, eventId);
+        result = await handleDodoPaymentFailed(tenant, data, eventId, config.providerContext);
         break;
       default:
         emitWebhookProcessingFailure({
@@ -726,6 +749,7 @@ async function processDodoPaymentsWebhook(headers: Record<string, any>, body: an
           operation: 'handleEvent',
           externalEventId: eventId,
           providerResponse: { eventType },
+          providerContext: config.providerContext,
           error: { code: 'UNHANDLED_EVENT_TYPE', message: `Unhandled DodoPayments event type: ${eventType}` },
         });
         result = { status: 'unhandled', eventType };
@@ -822,7 +846,12 @@ async function handleDodoPaymentSucceeded(tenant: string, data: any) {
   return { status: 'payment_recorded', paymentId: data.payment_id || data.id };
 }
 
-async function handleDodoPaymentFailed(tenant: string, data: any, externalEventId?: string) {
+async function handleDodoPaymentFailed(
+  tenant: string,
+  data: any,
+  externalEventId: string | undefined,
+  providerContext: ProviderAdapter.PaymentsConfiguration['providerContext'],
+) {
   const subscriptionId = data.subscription_id;
   if (!subscriptionId) return { status: 'no_subscription' };
 
@@ -835,6 +864,7 @@ async function handleDodoPaymentFailed(tenant: string, data: any, externalEventI
     externalSubscriptionId: subscriptionId,
     externalEventId,
     providerResponse: data,
+    providerContext,
     ...subscriptionEventMetadata(subscription),
   });
 

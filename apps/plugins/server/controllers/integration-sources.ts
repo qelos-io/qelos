@@ -11,6 +11,12 @@ import {
 import { validateSourceMetadata } from '../services/source-metadata-service';
 import { callIntegrationTarget } from '../services/integration-target-call';
 import { isValidObjectId, Types } from 'mongoose';
+import {
+  buildPaymentAdminSuggestions,
+  buildPaymentEventDescription,
+  extractSumitProviderError,
+  sanitizeProviderErrorBody,
+} from '@qelos/global-types';
 
 const PUBLIC_FIELDS = '-authentication';
 
@@ -213,38 +219,99 @@ export async function removeIntegrationSource(req, res) {
 }
 
 export async function triggerIntegrationSource(req, res) {
+  const sourceId: string = req.params.sourceId;
+  const tenant = req.headers.tenant as string;
+  let sourceKind: string | undefined;
+
   try {
-    const sourceId: string = req.params.sourceId;
     const { payload, operation, details } = req.body as { payload: any, operation: string, details: any };
-    const tenant = req.headers.tenant as string;
 
     if (!isValidObjectId(sourceId)) {
-      res.status(400).json({ message: 'invalid source id' }).end();
+      res.status(400).json({ message: 'invalid source id', code: 'INVALID_SOURCE_ID' }).end();
       return;
     }
     if (!operation || typeof operation !== 'string') {
-      res.status(400).json({ message: 'operation is required' }).end();
+      res.status(400).json({ message: 'operation is required', code: 'MISSING_OPERATION' }).end();
       return;
     }
     if (!details || typeof details !== 'object') {
-      res.status(400).json({ message: 'details is required' }).end();
+      res.status(400).json({ message: 'details is required', code: 'MISSING_DETAILS' }).end();
       return;
     }
     if (!payload || typeof payload !== 'object') {
-      res.status(400).json({ message: 'payload is required' }).end();
+      res.status(400).json({ message: 'payload is required', code: 'MISSING_PAYLOAD' }).end();
       return;
     }
+
+    const source = await IntegrationSource
+      .findOne({ _id: sourceId, tenant })
+      .select('kind')
+      .lean()
+      .exec();
+
+    if (!source) {
+      res.status(404).json({
+        message: 'Integration source not found',
+        code: 'INTEGRATION_SOURCE_NOT_FOUND',
+        adminSuggestions: buildPaymentAdminSuggestions({
+          code: 'INTEGRATION_SOURCE_NOT_FOUND',
+        }),
+      }).end();
+      return;
+    }
+
+    sourceKind = source.kind;
 
     const target = {
       source: new Types.ObjectId(sourceId),
       operation,
       details,
-    }
-    
+    };
+
     const result = await callIntegrationTarget(tenant, payload, target as any);
+    if (result === undefined) {
+      res.status(404).json({
+        message: 'Integration source not found',
+        code: 'INTEGRATION_SOURCE_NOT_FOUND',
+        adminSuggestions: buildPaymentAdminSuggestions({
+          code: 'INTEGRATION_SOURCE_NOT_FOUND',
+        }),
+      }).end();
+      return;
+    }
+
     res.json(result).end();
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Error calling integration target', error);
-    res.status(500).json({ message: 'Error calling integration target' }).end();
+
+    const providerKind = error?.providerKind || sourceKind;
+    const providerError = providerKind === 'sumit'
+      ? extractSumitProviderError(error?.responseBody)
+      : sanitizeProviderErrorBody(error?.responseBody);
+    const status = typeof error?.status === 'number' && error.status >= 400 && error.status < 600
+      ? error.status
+      : 500;
+    const code = error?.code || 'INTEGRATION_TARGET_FAILED';
+    const adminSuggestions = buildPaymentAdminSuggestions({
+      providerKind,
+      operation: req.body?.operation,
+      code,
+      status,
+      message: error?.message,
+      providerError,
+    });
+
+    res.status(status).json({
+      message: error?.message || 'Error calling integration target',
+      code,
+      providerKind,
+      operation: req.body?.operation,
+      providerError,
+      adminSuggestions,
+      description: buildPaymentEventDescription(
+        `Provider call failed: ${req.body?.operation || 'integration target'}`,
+        providerError,
+      ),
+    }).end();
   }
 }

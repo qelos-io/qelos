@@ -111,6 +111,10 @@ describe('payments-platform-events', async () => {
         status: 400,
         providerResponse: { Status: 'Error', UserErrorMessage: 'Invalid amount', Credentials: { APIKey: 'secret' } },
         error: { message: 'Sumit API request failed', status: 400 },
+        providerContext: {
+          providerSourceId: 'source-1',
+          providerPublicAccountId: '476778618',
+        },
       });
 
       await new Promise(resolve => setImmediate(resolve));
@@ -120,10 +124,13 @@ describe('payments-platform-events', async () => {
       assert.strictEqual(savedEvents[0].source, 'payments:sumit');
       assert.strictEqual(savedEvents[0].kind, 'provider');
       assert.strictEqual(savedEvents[0].eventName, 'provider-call-failed');
-      assert.strictEqual(savedEvents[0].description, 'Provider call failed: createRecurringPayment');
+      assert.strictEqual(savedEvents[0].description, 'Provider call failed: createRecurringPayment: Invalid amount');
+      assert.ok(Array.isArray(savedEvents[0].metadata.adminSuggestions));
       assert.strictEqual(savedEvents[0].metadata.providerKind, 'sumit');
       assert.strictEqual(savedEvents[0].metadata.operation, 'createRecurringPayment');
       assert.strictEqual(savedEvents[0].metadata.status, 400);
+      assert.strictEqual(savedEvents[0].metadata.providerPublicAccountId, '476778618');
+      assert.strictEqual(savedEvents[0].metadata.providerSourceId, 'source-1');
       assert.strictEqual(savedEvents[0].metadata.providerResponse.UserErrorMessage, 'Invalid amount');
       assert.strictEqual(savedEvents[0].metadata.providerResponse.Credentials, undefined);
       assert.ok(emitPlatformEventMock.mock.calls.length >= 1);

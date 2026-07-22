@@ -1,4 +1,5 @@
 import { service } from '@qelos/api-kit';
+import { resolvePaymentProviderPublicContext, type PaymentProviderPublicContext } from '@qelos/global-types';
 import { emitCheckoutFailedEvent, emitProviderCallFailedEvent } from './platform-events.js';
 
 const callPluginsService = service('PLUGINS', { port: process.env.PLUGINS_SERVICE_PORT || 9006 });
@@ -8,6 +9,7 @@ const internalSecret = process.env.INTERNAL_SECRET || '';
 export interface PaymentsConfiguration {
   providerSourceId: string;
   providerKind: string;
+  providerContext: PaymentProviderPublicContext;
   successUrl?: string;
   cancelUrl?: string;
   webhookSecret?: string;
@@ -73,17 +75,39 @@ function paymentsNotConfiguredError(message: string) {
   return { code: 'PAYMENTS_NOT_CONFIGURED', message };
 }
 
-async function resolveProviderKind(tenant: string, sourceId: string): Promise<string | undefined> {
+async function resolveProviderSource(
+  tenant: string,
+  sourceId: string,
+  providerKind?: string,
+): Promise<{
+  kind?: string;
+  providerContext: PaymentProviderPublicContext;
+}> {
   try {
     const response = await callPluginsService({
       method: 'GET',
       url: `/internal-api/integration-sources/${sourceId}`,
       headers: internalHeaders(tenant),
     });
-    return response.data?.kind;
+    const kind = providerKind || response.data?.kind;
+    return {
+      kind,
+      providerContext: resolvePaymentProviderPublicContext(kind, response.data?.metadata, sourceId),
+    };
   } catch {
-    return undefined;
+    return {
+      providerContext: resolvePaymentProviderPublicContext(providerKind, undefined, sourceId),
+    };
   }
+}
+
+export async function resolveProviderPublicContext(
+  tenant: string,
+  providerSourceId: string,
+  providerKind?: string,
+): Promise<PaymentProviderPublicContext> {
+  const { providerContext } = await resolveProviderSource(tenant, providerSourceId, providerKind);
+  return providerContext;
 }
 
 async function callIntegrationSource(
@@ -93,7 +117,11 @@ async function callIntegrationSource(
   operation: string,
   details: Record<string, any>,
   payload: Record<string, any>,
+  providerContext?: PaymentProviderPublicContext,
 ) {
+  const resolvedProviderContext = providerContext
+    ?? resolvePaymentProviderPublicContext(providerKind, undefined, sourceId);
+
   try {
     const response = await callPluginsService({
       method: 'POST',
@@ -102,15 +130,34 @@ async function callIntegrationSource(
       data: { operation, details, payload },
     });
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
+    const responseData = error.response?.data;
+    const enrichedError = {
+      message: responseData?.description || responseData?.message || error.message,
+      code: responseData?.code || error.code || 'INTEGRATION_TARGET_FAILED',
+      status: error.response?.status || error.status,
+      providerKind: responseData?.providerKind || providerKind,
+      providerError: responseData?.providerError,
+      adminSuggestions: responseData?.adminSuggestions,
+      response: error.response,
+      responseData,
+    };
+
     emitProviderCallFailedEvent({
       tenant,
-      providerKind,
+      providerKind: enrichedError.providerKind,
       operation,
-      error,
-      providerResponse: { sourceId, payloadSummary: summarizePayload(payload) },
+      code: enrichedError.code,
+      error: enrichedError,
+      providerContext: resolvedProviderContext,
+      providerResponse: {
+        sourceId,
+        payloadSummary: summarizePayload(payload),
+        providerError: responseData?.providerError,
+        operation: responseData?.operation,
+      },
     });
-    throw error;
+    throw enrichedError;
   }
 }
 
@@ -188,9 +235,18 @@ export async function getPaymentsConfiguration(tenant: string): Promise<Payments
 
   const providerSourceId = metadata.providerSourceId || metadata.paymentSourceId;
   let providerKind = metadata.providerKind;
+  let providerContext: PaymentProviderPublicContext = resolvePaymentProviderPublicContext(
+    providerKind,
+    undefined,
+    providerSourceId,
+  );
 
   if (providerSourceId && !providerKind) {
-    providerKind = await resolveProviderKind(tenant, providerSourceId);
+    const resolvedSource = await resolveProviderSource(tenant, providerSourceId);
+    providerKind = resolvedSource.kind;
+    providerContext = resolvedSource.providerContext;
+  } else if (providerSourceId && providerKind) {
+    providerContext = (await resolveProviderSource(tenant, providerSourceId, providerKind)).providerContext;
   }
 
   if (!providerSourceId) {
@@ -224,13 +280,19 @@ export async function getPaymentsConfiguration(tenant: string): Promise<Payments
   return {
     providerSourceId,
     providerKind,
+    providerContext,
     successUrl: metadata.successUrl,
     cancelUrl: metadata.cancelUrl,
     webhookSecret: metadata.webhookSecret,
   };
 }
 
-async function createPaddleCheckout(tenant: string, sourceId: string, params: CheckoutParams): Promise<CheckoutResult> {
+async function createPaddleCheckout(
+  tenant: string,
+  sourceId: string,
+  params: CheckoutParams,
+  providerContext: PaymentProviderPublicContext,
+): Promise<CheckoutResult> {
   const externalIds = params.plan.externalIds?.paddle || {};
   const priceId = params.billingCycle === 'monthly' ? externalIds.monthlyPriceId : externalIds.yearlyPriceId;
 
@@ -243,6 +305,7 @@ async function createPaddleCheckout(tenant: string, sourceId: string, params: Ch
       planId: params.plan._id.toString(),
       billableEntityType: params.billableEntityType,
       billableEntityId: params.billableEntityId,
+      providerContext,
       error,
     });
     throw error;
@@ -255,7 +318,7 @@ async function createPaddleCheckout(tenant: string, sourceId: string, params: Ch
       billableEntityId: params.billableEntityId,
       planId: params.plan._id.toString(),
     },
-  });
+  }, providerContext);
 
   return {
     checkoutUrl: result?.data?.checkout?.url,
@@ -264,7 +327,12 @@ async function createPaddleCheckout(tenant: string, sourceId: string, params: Ch
   };
 }
 
-async function createPayPalCheckout(tenant: string, sourceId: string, params: CheckoutParams): Promise<CheckoutResult> {
+async function createPayPalCheckout(
+  tenant: string,
+  sourceId: string,
+  params: CheckoutParams,
+  providerContext: PaymentProviderPublicContext,
+): Promise<CheckoutResult> {
   const externalIds = params.plan.externalIds?.paypal || {};
   const planId = externalIds.productId;
 
@@ -277,6 +345,7 @@ async function createPayPalCheckout(tenant: string, sourceId: string, params: Ch
       planId: params.plan._id.toString(),
       billableEntityType: params.billableEntityType,
       billableEntityId: params.billableEntityId,
+      providerContext,
       error,
     });
     throw error;
@@ -296,7 +365,7 @@ async function createPayPalCheckout(tenant: string, sourceId: string, params: Ch
       billableEntityId: params.billableEntityId,
       planId: params.plan._id.toString(),
     }),
-  });
+  }, providerContext);
 
   const approvalLink = result?.links?.find((l: any) => l.rel === 'approve');
   return {
@@ -306,7 +375,12 @@ async function createPayPalCheckout(tenant: string, sourceId: string, params: Ch
   };
 }
 
-async function createDodoPaymentsCheckout(tenant: string, sourceId: string, params: CheckoutParams): Promise<CheckoutResult> {
+async function createDodoPaymentsCheckout(
+  tenant: string,
+  sourceId: string,
+  params: CheckoutParams,
+  providerContext: PaymentProviderPublicContext,
+): Promise<CheckoutResult> {
   const externalIds = params.plan.externalIds?.dodopayments || {};
   const priceId = params.billingCycle === 'monthly' ? externalIds.monthlyPriceId : externalIds.yearlyPriceId;
 
@@ -319,6 +393,7 @@ async function createDodoPaymentsCheckout(tenant: string, sourceId: string, para
       planId: params.plan._id.toString(),
       billableEntityType: params.billableEntityType,
       billableEntityId: params.billableEntityId,
+      providerContext,
       error,
     });
     throw error;
@@ -335,7 +410,7 @@ async function createDodoPaymentsCheckout(tenant: string, sourceId: string, para
     },
     customer: params.customerEmail ? { email: params.customerEmail, name: params.customerName } : undefined,
     return_url: params.successUrl,
-  });
+  }, providerContext);
 
   return {
     checkoutUrl: result?.payment_link,
@@ -344,7 +419,48 @@ async function createDodoPaymentsCheckout(tenant: string, sourceId: string, para
   };
 }
 
-async function createSumitCheckout(tenant: string, sourceId: string, params: CheckoutParams): Promise<CheckoutResult> {
+async function createSumitCheckout(
+  tenant: string,
+  sourceId: string,
+  params: CheckoutParams,
+  providerContext: PaymentProviderPublicContext,
+): Promise<CheckoutResult> {
+  if (!params.amount || params.amount <= 0) {
+    const error = {
+      code: 'INVALID_CHECKOUT_AMOUNT',
+      message: 'Checkout amount must be greater than zero before calling Sumit',
+    };
+    emitCheckoutFailedEvent({
+      tenant,
+      providerKind: 'sumit',
+      code: error.code,
+      planId: params.plan._id.toString(),
+      billableEntityType: params.billableEntityType,
+      billableEntityId: params.billableEntityId,
+      providerContext,
+      error,
+    });
+    throw error;
+  }
+
+  if (!params.successUrl || !params.cancelUrl) {
+    const error = {
+      code: 'MISSING_REDIRECT_URLS',
+      message: 'Sumit checkout requires both successUrl and cancelUrl',
+    };
+    emitCheckoutFailedEvent({
+      tenant,
+      providerKind: 'sumit',
+      code: error.code,
+      planId: params.plan._id.toString(),
+      billableEntityType: params.billableEntityType,
+      billableEntityId: params.billableEntityId,
+      providerContext,
+      error,
+    });
+    throw error;
+  }
+
   const externalIdentifier = JSON.stringify({
     tenant,
     billableEntityType: params.billableEntityType,
@@ -372,7 +488,7 @@ async function createSumitCheckout(tenant: string, sourceId: string, params: Che
     CancelRedirectURL: params.cancelUrl,
     ExternalIdentifier: externalIdentifier,
     VATIncluded: true,
-  });
+  }, providerContext);
 
   const recurringItemId = result?.RecurringCustomerItemIDs?.[0]?.toString()
     || result?.RecurringPaymentId?.toString();
@@ -390,15 +506,17 @@ export async function createCheckout(
   providerKind: string,
   params: CheckoutParams,
 ): Promise<CheckoutResult> {
+  const { providerContext } = await resolveProviderSource(tenant, sourceId, providerKind);
+
   switch (providerKind) {
     case 'paddle':
-      return createPaddleCheckout(tenant, sourceId, params);
+      return createPaddleCheckout(tenant, sourceId, params, providerContext);
     case 'paypal':
-      return createPayPalCheckout(tenant, sourceId, params);
+      return createPayPalCheckout(tenant, sourceId, params, providerContext);
     case 'sumit':
-      return createSumitCheckout(tenant, sourceId, params);
+      return createSumitCheckout(tenant, sourceId, params, providerContext);
     case 'dodopayments':
-      return createDodoPaymentsCheckout(tenant, sourceId, params);
+      return createDodoPaymentsCheckout(tenant, sourceId, params, providerContext);
     default: {
       const error = { code: 'UNSUPPORTED_PROVIDER', message: `Payment provider '${providerKind}' is not supported` };
       emitCheckoutFailedEvent({
@@ -408,6 +526,7 @@ export async function createCheckout(
         planId: params.plan._id?.toString(),
         billableEntityType: params.billableEntityType,
         billableEntityId: params.billableEntityId,
+        providerContext,
         error,
       });
       throw error;
@@ -421,6 +540,7 @@ export async function cancelProviderSubscription(
   providerKind: string,
   externalSubscriptionId: string,
 ): Promise<CancelResult> {
+  const { providerContext } = await resolveProviderSource(tenant, sourceId, providerKind);
   let operation: string;
   let payload: Record<string, any>;
 
@@ -449,13 +569,14 @@ export async function cancelProviderSubscription(
         operation: 'cancelSubscription',
         code: error.code,
         externalSubscriptionId: externalSubscriptionId,
+        providerContext,
         error,
       });
       throw error;
     }
   }
 
-  const result = await callIntegrationSource(tenant, sourceId, providerKind, operation, {}, payload);
+  const result = await callIntegrationSource(tenant, sourceId, providerKind, operation, {}, payload, providerContext);
   return { success: true, providerData: result };
 }
 
@@ -466,6 +587,7 @@ export async function verifyPayPalWebhook(
   body: any,
   webhookId: string,
 ): Promise<boolean> {
+  const { providerContext } = await resolveProviderSource(tenant, sourceId, 'paypal');
   const result = await callIntegrationSource(tenant, sourceId, 'paypal', 'verifyWebhookSignature', {}, {
     webhook_id: webhookId,
     transmission_id: headers['paypal-transmission-id'],
@@ -474,7 +596,7 @@ export async function verifyPayPalWebhook(
     cert_url: headers['paypal-cert-url'],
     auth_algo: headers['paypal-auth-algo'],
     webhook_event: body,
-  });
+  }, providerContext);
   return result?.verification_status === 'SUCCESS';
 }
 
@@ -484,6 +606,7 @@ export async function getProviderSubscription(
   providerKind: string,
   externalSubscriptionId: string,
 ) {
+  const { providerContext } = await resolveProviderSource(tenant, sourceId, providerKind);
   let operation: string;
   let payload: Record<string, any>;
 
@@ -500,5 +623,5 @@ export async function getProviderSubscription(
       throw { code: 'UNSUPPORTED_PROVIDER', message: `getSubscription not supported for '${providerKind}'` };
   }
 
-  return callIntegrationSource(tenant, sourceId, providerKind, operation, {}, payload);
+  return callIntegrationSource(tenant, sourceId, providerKind, operation, {}, payload, providerContext);
 }

@@ -5,12 +5,30 @@ export type SumitCredentials = {
   APIKey: string;
 };
 
+export function parseSumitCompanyId(companyId: string | number): number {
+  const parsed = typeof companyId === 'number'
+    ? companyId
+    : Number(String(companyId).trim());
+
+  if (!Number.isFinite(parsed) || parsed <= 0 || !Number.isInteger(parsed)) {
+    const error: any = new Error(`Invalid Sumit Company ID: ${companyId}`);
+    error.status = 400;
+    error.code = 'INVALID_SUMIT_COMPANY_ID';
+    throw error;
+  }
+
+  return parsed;
+}
+
 export function currencyToSumitCode(currency: string | number): 0 | 1 | 2 {
   const normalized = String(currency).toUpperCase();
   if (normalized === 'ILS' || normalized === '0') return 0;
   if (normalized === 'USD' || normalized === '1') return 1;
   if (normalized === 'EUR' || normalized === '2') return 2;
-  throw new Error(`Unsupported Sumit currency: ${currency}`);
+  const error: any = new Error(`Unsupported Sumit currency: ${currency}`);
+  error.status = 400;
+  error.code = 'UNSUPPORTED_SUMIT_CURRENCY';
+  throw error;
 }
 
 function isFailedSumitStatus(status: unknown) {

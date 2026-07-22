@@ -7,13 +7,15 @@ import { getEncryptedSourceAuthentication } from './source-authentication-servic
 import httpAgent from './http-agent';
 import { emitPlatformEvent } from './hook-events';
 import PlatformEvent from '../models/event';
-import { emitPaymentsProviderFailureEvent } from './payments-platform-events.js';
+import { buildPaymentsTriggerEventMetadata, emitPaymentsProviderFailureEvent } from './payments-platform-events.js';
 import {
   SUMIT_API_BASE,
   SUMIT_OPERATION_ENDPOINTS,
   buildSumitRequestBody,
+  parseSumitCompanyId,
   parseSumitResponse,
 } from './sumit-api.js';
+import { resolvePaymentProviderPublicContext } from '@qelos/global-types';
 import { createUser, updateUser } from './users';
 import logger from '../services/logger';
 import { createBlueprintEntity, updateBlueprintEntity } from './no-code-service';
@@ -453,11 +455,14 @@ async function handleSumitTarget(
   const { companyId } = source.metadata;
 
   if (!apiKey || !companyId) {
-    throw new Error('Missing API key or Company ID for Sumit integration');
+    const error: any = new Error('Missing API key or Company ID for Sumit integration');
+    error.status = 400;
+    error.code = 'MISSING_SUMIT_CREDENTIALS';
+    throw error;
   }
 
   const credentials = {
-    CompanyID: companyId,
+    CompanyID: parseSumitCompanyId(companyId),
     APIKey: apiKey,
   };
 
@@ -498,11 +503,13 @@ async function handleSumitTarget(
     return parseSumitResponse(responseBody);
   } catch (error) {
     logger.error('Error calling Sumit API', error);
+    (error as any).providerKind = 'sumit';
     if (SUMIT_PAYMENTS_FAILURE_OPERATIONS.has(operation)) {
       emitPaymentsProviderFailureEvent(source.tenant, 'sumit', operation, {
         status: (error as any)?.status,
         providerResponse: (error as any)?.responseBody,
         error,
+        providerContext: resolvePaymentProviderPublicContext('sumit', source.metadata, source._id?.toString()),
       });
     }
     throw error;
@@ -555,6 +562,7 @@ async function getPayPalAccessToken(source: IPayPalSource, clientSecret: string,
       status: (error as any)?.status,
       providerResponse: (error as any)?.responseBody,
       error,
+      providerContext: resolvePaymentProviderPublicContext('paypal', source.metadata, source._id?.toString()),
     });
     throw error;
   }
@@ -673,12 +681,12 @@ async function handlePayPalTarget(
         kind: triggerResponse.kind,
         eventName: triggerResponse.eventName,
         description: triggerResponse.description,
-        metadata: {
+        metadata: buildPaymentsTriggerEventMetadata('paypal', source, {
           ...triggerResponse.metadata,
           operation,
           status: response.status,
           body: responseBody,
-        },
+        }),
       });
       event.save().then(event => emitPlatformEvent(event)).catch(() => {});
     }
@@ -691,6 +699,7 @@ async function handlePayPalTarget(
         status: (error as any)?.status,
         providerResponse: (error as any)?.responseBody,
         error,
+        providerContext: resolvePaymentProviderPublicContext('paypal', source.metadata, source._id?.toString()),
       });
     }
     throw error;
@@ -843,12 +852,12 @@ async function handlePaddleTarget(
         kind: triggerResponse.kind,
         eventName: triggerResponse.eventName,
         description: triggerResponse.description,
-        metadata: {
+        metadata: buildPaymentsTriggerEventMetadata('paddle', source, {
           ...triggerResponse.metadata,
           operation,
           status: response.status,
           body: responseBody,
-        },
+        }),
       });
       event.save().then(event => emitPlatformEvent(event)).catch(() => {});
     }
@@ -861,6 +870,7 @@ async function handlePaddleTarget(
         status: (error as any)?.status,
         providerResponse: (error as any)?.responseBody,
         error,
+        providerContext: resolvePaymentProviderPublicContext('paddle', source.metadata, source._id?.toString()),
       });
     }
     throw error;
@@ -1729,12 +1739,12 @@ async function handleDodoPaymentsTarget(
         kind: triggerResponse.kind,
         eventName: triggerResponse.eventName,
         description: triggerResponse.description,
-        metadata: {
+        metadata: buildPaymentsTriggerEventMetadata('dodopayments', source, {
           ...triggerResponse.metadata,
           operation,
           status: response.status,
           body: responseBody,
-        },
+        }),
       });
       event.save().then(event => emitPlatformEvent(event)).catch(() => {});
     }
@@ -1747,6 +1757,7 @@ async function handleDodoPaymentsTarget(
         status: (error as any)?.status,
         providerResponse: (error as any)?.responseBody,
         error,
+        providerContext: resolvePaymentProviderPublicContext('dodopayments', source.metadata, source._id?.toString()),
       });
     }
     throw error;

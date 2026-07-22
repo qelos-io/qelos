@@ -1,4 +1,12 @@
 import { emitPlatformEvent, type PlatformEvent } from '@qelos/api-kit';
+import {
+  appendPaymentProviderContext,
+  buildPaymentAdminSuggestions,
+  buildPaymentEventDescription,
+  extractSumitProviderError,
+  type PaymentAdminSuggestion,
+  type PaymentProviderPublicContext,
+} from '@qelos/global-types';
 
 type BaseEventParams = {
   tenant?: string;
@@ -7,6 +15,9 @@ type BaseEventParams = {
 
 export type PaymentMetadata = {
   providerKind?: string;
+  providerSourceId?: string;
+  providerPublicAccountId?: string;
+  providerEnvironment?: string;
   operation?: string;
   code?: string;
   subscriptionId?: string;
@@ -17,6 +28,8 @@ export type PaymentMetadata = {
   externalEventId?: string;
   couponCode?: string;
   providerResponse?: unknown;
+  providerError?: Record<string, unknown> | null;
+  adminSuggestions?: PaymentAdminSuggestion[];
   error?: ReturnType<typeof serializeError> | null;
 };
 
@@ -73,22 +86,84 @@ export function serializeError(error: any) {
     return null;
   }
 
+  const responseData = error.response?.data ?? error.responseData;
+  const providerError = error.providerError
+    ?? (error.providerKind === 'sumit' ? extractSumitProviderError(responseData?.providerError ?? responseData) : responseData?.providerError);
+
   return {
     message: error.message,
     code: error.code,
     type: error.type,
     status: error.status ?? error.response?.status,
-    responseData: sanitizeValue(error.response?.data),
+    responseData: sanitizeValue(responseData),
+    providerError: sanitizeValue(providerError),
+    adminSuggestions: error.adminSuggestions,
     stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
   };
 }
 
-export function sanitizePaymentMetadata(metadata: Record<string, unknown>): PaymentMetadata {
-  return sanitizeValue(metadata) as PaymentMetadata;
+function resolveProviderError(params: {
+  providerKind?: string;
+  error: any;
+  providerResponse?: unknown;
+}) {
+  if (params.error?.providerError) {
+    return params.error.providerError as Record<string, unknown>;
+  }
+
+  const responseData = params.error?.response?.data ?? params.error?.responseData;
+  if (params.providerKind === 'sumit') {
+    return extractSumitProviderError(responseData?.providerError ?? responseData ?? params.providerResponse);
+  }
+
+  return responseData?.providerError ?? null;
+}
+
+function resolveAdminSuggestions(params: {
+  providerKind?: string;
+  operation?: string;
+  code?: string;
+  error: any;
+  providerError?: Record<string, unknown> | null;
+}) {
+  if (Array.isArray(params.error?.adminSuggestions) && params.error.adminSuggestions.length > 0) {
+    return params.error.adminSuggestions;
+  }
+
+  return buildPaymentAdminSuggestions({
+    providerKind: params.providerKind,
+    operation: params.operation,
+    code: params.code ?? params.error?.code,
+    status: params.error?.status ?? params.error?.response?.status,
+    message: params.error?.message,
+    providerError: params.providerError,
+  });
+}
+
+type PaymentEventParams = BaseEventParams & {
+  providerContext?: PaymentProviderPublicContext;
+};
+
+function withPaymentMetadata(
+  metadata: Record<string, unknown>,
+  providerContext?: PaymentProviderPublicContext,
+): PaymentMetadata {
+  return sanitizePaymentMetadata(appendPaymentProviderContext(metadata, providerContext)) as PaymentMetadata;
+}
+
+export function buildPaymentEventMetadata(
+  metadata: Record<string, unknown>,
+  providerContext?: PaymentProviderPublicContext,
+): PaymentMetadata {
+  return withPaymentMetadata(metadata, providerContext);
 }
 
 function resolveSource(providerKind?: string) {
   return providerKind ? `payments:${providerKind}` : 'payments';
+}
+
+export function sanitizePaymentMetadata(metadata: Record<string, unknown>): PaymentMetadata {
+  return sanitizeValue(metadata) as PaymentMetadata;
 }
 
 function emitSafePlatformEvent(event: PlatformEvent) {
@@ -99,7 +174,7 @@ function emitSafePlatformEvent(event: PlatformEvent) {
   }
 }
 
-export function emitCheckoutFailedEvent(params: BaseEventParams & {
+export function emitCheckoutFailedEvent(params: PaymentEventParams & {
   providerKind?: string;
   operation?: string;
   code?: string;
@@ -116,9 +191,20 @@ export function emitCheckoutFailedEvent(params: BaseEventParams & {
   }
 
   const operation = params.operation ?? 'initiateCheckout';
-  const description = operation === 'initiateCheckout'
-    ? 'Checkout initiation failed'
-    : `Checkout ${operation} failed`;
+  const providerError = resolveProviderError(params);
+  const adminSuggestions = resolveAdminSuggestions({
+    providerKind: params.providerKind,
+    operation,
+    code: params.code,
+    error: params.error,
+    providerError,
+  });
+  const description = buildPaymentEventDescription(
+    operation === 'initiateCheckout'
+      ? 'Checkout initiation failed'
+      : `Checkout ${operation} failed`,
+    providerError,
+  );
 
   emitSafePlatformEvent({
     tenant: params.tenant,
@@ -127,7 +213,7 @@ export function emitCheckoutFailedEvent(params: BaseEventParams & {
     kind: 'checkout',
     eventName: 'checkout-failed',
     description,
-    metadata: sanitizePaymentMetadata({
+    metadata: withPaymentMetadata({
       providerKind: params.providerKind,
       operation,
       code: params.code ?? params.error?.code,
@@ -137,12 +223,14 @@ export function emitCheckoutFailedEvent(params: BaseEventParams & {
       billableEntityId: params.billableEntityId,
       externalSubscriptionId: params.externalSubscriptionId,
       couponCode: params.couponCode,
+      providerError,
+      adminSuggestions,
       error: serializeError(params.error),
-    }),
+    }, params.providerContext),
   });
 }
 
-export function emitProviderCallFailedEvent(params: BaseEventParams & {
+export function emitProviderCallFailedEvent(params: PaymentEventParams & {
   providerKind: string;
   operation: string;
   code?: string;
@@ -163,11 +251,19 @@ export function emitProviderCallFailedEvent(params: BaseEventParams & {
     params.operation === 'setPaymentDetails' ? 'payment-method-save-failed' : 'provider-call-failed'
   );
 
-  const description = eventName === 'payment-method-save-failed'
+  const baseDescription = eventName === 'payment-method-save-failed'
     ? `Failed to save payment method via ${params.providerKind}`
     : eventName === 'payment-failed'
       ? `Payment failed via ${params.providerKind}`
       : `Provider call failed: ${params.operation}`;
+  const providerError = resolveProviderError(params);
+  const adminSuggestions = resolveAdminSuggestions({
+    providerKind: params.providerKind,
+    operation: params.operation,
+    code: params.code,
+    error: params.error,
+    providerError,
+  });
 
   emitSafePlatformEvent({
     tenant: params.tenant,
@@ -175,8 +271,8 @@ export function emitProviderCallFailedEvent(params: BaseEventParams & {
     source: resolveSource(params.providerKind),
     kind: 'provider',
     eventName,
-    description,
-    metadata: sanitizePaymentMetadata({
+    description: buildPaymentEventDescription(baseDescription, providerError),
+    metadata: withPaymentMetadata({
       providerKind: params.providerKind,
       operation: params.operation,
       code: params.code ?? params.error?.code,
@@ -186,12 +282,14 @@ export function emitProviderCallFailedEvent(params: BaseEventParams & {
       billableEntityId: params.billableEntityId,
       externalSubscriptionId: params.externalSubscriptionId,
       providerResponse: params.providerResponse,
+      providerError,
+      adminSuggestions,
       error: serializeError(params.error),
-    }),
+    }, params.providerContext),
   });
 }
 
-export function emitWebhookPaymentFailedEvent(params: BaseEventParams & {
+export function emitWebhookPaymentFailedEvent(params: PaymentEventParams & {
   providerKind: string;
   code?: string;
   subscriptionId?: string;
@@ -214,7 +312,7 @@ export function emitWebhookPaymentFailedEvent(params: BaseEventParams & {
     kind: 'webhook',
     eventName: 'payment-failed',
     description: `Webhook reported payment failure via ${params.providerKind}`,
-    metadata: sanitizePaymentMetadata({
+    metadata: withPaymentMetadata({
       providerKind: params.providerKind,
       operation: 'payment-failed',
       code: params.code ?? params.error?.code,
@@ -226,11 +324,11 @@ export function emitWebhookPaymentFailedEvent(params: BaseEventParams & {
       externalEventId: params.externalEventId,
       providerResponse: params.providerResponse,
       error: serializeError(params.error),
-    }),
+    }, params.providerContext),
   });
 }
 
-export function emitWebhookProcessingFailedEvent(params: BaseEventParams & {
+export function emitWebhookProcessingFailedEvent(params: PaymentEventParams & {
   providerKind?: string;
   operation?: string;
   code?: string;
@@ -251,13 +349,13 @@ export function emitWebhookProcessingFailedEvent(params: BaseEventParams & {
     description: params.providerKind
       ? `Webhook processing failed for ${params.providerKind}`
       : 'Webhook processing failed',
-    metadata: sanitizePaymentMetadata({
+    metadata: withPaymentMetadata({
       providerKind: params.providerKind,
       operation: params.operation,
       code: params.code ?? params.error?.code,
       externalEventId: params.externalEventId,
       providerResponse: params.providerResponse,
       error: serializeError(params.error),
-    }),
+    }, params.providerContext),
   });
 }

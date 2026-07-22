@@ -1,4 +1,4 @@
-import { BillableEntityType, BillingCycle } from '@qelos/global-types';
+import { BillableEntityType, BillingCycle, PaymentProviderPublicContext } from '@qelos/global-types';
 import * as PlansService from './plans-service';
 import * as SubscriptionsService from './subscriptions-service';
 import * as InvoicesService from './invoices-service';
@@ -32,12 +32,14 @@ function emitInitiateCheckoutFailed(
     billableEntityType?: BillableEntityType;
     billableEntityId?: string;
     providerKind?: string;
+    providerContext?: PaymentProviderPublicContext;
   },
 ) {
   emitCheckoutFailedEvent({
     tenant,
     userId: context.userId,
     providerKind: state.providerKind,
+    providerContext: state.providerContext,
     operation: 'initiateCheckout',
     code: error?.code,
     planId: state.plan?._id?.toString() ?? params.planId ?? state.existingSubscription?.planId?.toString(),
@@ -73,6 +75,7 @@ export async function initiateCheckout(
   let billableEntityType: BillableEntityType;
   let billableEntityId: string;
   let providerKind: string | undefined;
+  let providerContext: PaymentProviderPublicContext | undefined;
 
   try {
     if (params.subscriptionId) {
@@ -127,6 +130,7 @@ export async function initiateCheckout(
 
     const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
     providerKind = config.providerKind;
+    providerContext = config.providerContext;
 
     if (plan.dynamic && config.providerKind !== 'sumit') {
       throw {
@@ -137,6 +141,20 @@ export async function initiateCheckout(
 
     const successUrl = params.successUrl || config.successUrl;
     const cancelUrl = params.cancelUrl || config.cancelUrl;
+
+    if (config.providerKind === 'sumit' && (!successUrl || !cancelUrl)) {
+      throw {
+        code: 'MISSING_REDIRECT_URLS',
+        message: 'Sumit checkout requires successUrl and cancelUrl. Configure them in Admin → Pricing Plans → Configuration or pass them in the checkout request.',
+      };
+    }
+
+    if (finalPrice <= 0) {
+      throw {
+        code: 'INVALID_CHECKOUT_AMOUNT',
+        message: 'Checkout amount must be greater than zero',
+      };
+    }
 
     const providerResult = await ProviderAdapter.createCheckout(
       tenant,
@@ -199,6 +217,7 @@ export async function initiateCheckout(
       billableEntityType,
       billableEntityId,
       providerKind,
+      providerContext,
     });
     throw error;
   }
@@ -276,6 +295,12 @@ export async function cancelCheckoutSubscription(
     subscription = await SubscriptionsService.getSubscriptionById(tenant, subscriptionId);
 
     if (subscription.externalSubscriptionId && subscription.providerKind && subscription.providerId) {
+      const providerContext = await ProviderAdapter.resolveProviderPublicContext(
+        tenant,
+        subscription.providerId,
+        subscription.providerKind,
+      );
+
       await ProviderAdapter.cancelProviderSubscription(
         tenant,
         subscription.providerId,
@@ -286,6 +311,7 @@ export async function cancelCheckoutSubscription(
           tenant,
           userId: context.userId,
           providerKind: subscription.providerKind,
+          providerContext,
           operation: 'cancelCheckoutSubscription',
           subscriptionId,
           planId: subscription.planId?.toString(),

@@ -28,3 +28,4 @@ apps/admin/components.d.ts
 *.aidev.task.json
 aidev.tasks.json
 *.egg-info/
+.pnpm-store

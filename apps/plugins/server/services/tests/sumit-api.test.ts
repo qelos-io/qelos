@@ -6,6 +6,7 @@ import {
   buildSumitRecurringChargeBody,
   buildSumitSetPaymentDetailsBody,
   currencyToSumitCode,
+  parseSumitCompanyId,
   parseSumitResponse,
 } from '../sumit-api.js';
 
@@ -16,6 +17,30 @@ describe('sumit-api', () => {
     assert.strictEqual(currencyToSumitCode('ILS'), 0);
     assert.strictEqual(currencyToSumitCode('USD'), 1);
     assert.strictEqual(currencyToSumitCode('EUR'), 2);
+  });
+
+  it('parseSumitCompanyId coerces numeric strings to integers', () => {
+    assert.strictEqual(parseSumitCompanyId('476778618'), 476778618);
+  });
+
+  it('parseSumitCompanyId rejects invalid values', () => {
+    assert.throws(
+      () => parseSumitCompanyId('not-a-number'),
+      (err: any) => {
+        assert.strictEqual(err.code, 'INVALID_SUMIT_COMPANY_ID');
+        return true;
+      },
+    );
+  });
+
+  it('currencyToSumitCode throws coded error for unsupported currencies', () => {
+    assert.throws(
+      () => currencyToSumitCode('GBP'),
+      (err: any) => {
+        assert.strictEqual(err.code, 'UNSUPPORTED_SUMIT_CURRENCY');
+        return true;
+      },
+    );
   });
 
   it('parseSumitResponse unwraps Data on success', () => {
@@ -78,8 +103,10 @@ describe('sumit-api', () => {
       RedirectURL: 'https://example.com/success',
       CancelRedirectURL: 'https://example.com/cancel',
       ExternalIdentifier: '{"tenant":"tenant-1"}',
-    }, credentials);
+    }, { CompanyID: parseSumitCompanyId('476778618'), APIKey: 'test-key' });
 
+    assert.strictEqual(body.Credentials.CompanyID, 476778618);
+    assert.strictEqual(typeof body.Credentials.CompanyID, 'number');
     assert.strictEqual(body.Items[0].Currency, 1);
     assert.strictEqual(body.RedirectURL, 'https://example.com/success');
   });
