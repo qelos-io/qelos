@@ -450,6 +450,37 @@ describe('webhook-service', async () => {
       );
     });
 
+    it('should resolve tenant from ExternalIdentifier when CustomData is absent', async () => {
+      const externalIdentifier = JSON.stringify({
+        tenant: 'tenant-1',
+        billableEntityType: 'user',
+        billableEntityId: 'user-1',
+        planId: 'plan-1',
+      });
+      const mockSub = {
+        _id: 'sub-1',
+        tenant: 'tenant-1',
+        providerKind: 'sumit',
+        status: 'pending',
+        externalSubscriptionId: externalIdentifier,
+      };
+      mockSubscriptionFound(mockSub);
+      activateSubscriptionMock.mock.mockImplementation(async () => ({ _id: 'sub-1', status: 'active' }));
+      createInvoiceForPaymentMock.mock.mockImplementation(async () => ({ _id: 'inv-1' }));
+
+      await WebhookService.processWebhook('sumit', { 'x-webhook-secret': 'test-secret' }, {
+        EventId: 'evt-sumit-ext-1',
+        EventType: 'payment_success',
+        ExternalIdentifier: externalIdentifier,
+        Amount: 49,
+        Currency: 'ILS',
+        PaymentID: 'pay-1',
+      });
+
+      assert.strictEqual(activateSubscriptionMock.mock.calls.length, 1);
+      assert.strictEqual(createInvoiceForPaymentMock.mock.calls.length, 1);
+    });
+
     it('should handle payment_success event', async () => {
       const mockSub = { _id: 'sub-1', tenant: 'tenant-1', providerKind: 'sumit', status: 'pending' };
       mockSubscriptionFound(mockSub);

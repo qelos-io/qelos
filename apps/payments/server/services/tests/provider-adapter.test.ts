@@ -261,35 +261,34 @@ describe('provider-adapter', async () => {
     });
 
     describe('sumit', () => {
-      it('should call plugins service with correct sumit params', async () => {
+      it('should call plugins service with beginCheckoutRedirect params', async () => {
         mockCallPluginsService.mock.mockImplementation(async () => ({
           data: {
-            PaymentUrl: 'https://sumit.co.il/pay/xxx',
-            RecurringPaymentId: 123,
+            RedirectURL: 'https://sumit.co.il/pay/xxx',
           },
         }));
 
         const result = await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'sumit', baseCheckoutParams);
 
         assert.strictEqual(result.checkoutUrl, 'https://sumit.co.il/pay/xxx');
-        assert.strictEqual(result.externalSubscriptionId, '123');
+        assert.ok(result.externalSubscriptionId);
 
         const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
-        assert.strictEqual(callArgs.data.operation, 'createRecurringPayment');
-        assert.strictEqual(callArgs.data.payload.Amount, 29);
-        assert.strictEqual(callArgs.data.payload.RecurringInterval, 1);
+        assert.strictEqual(callArgs.data.operation, 'beginCheckoutRedirect');
+        assert.strictEqual(callArgs.data.payload.Items[0].UnitPrice, 29);
+        assert.strictEqual(callArgs.data.payload.Items[0].Currency, 'USD');
+        assert.strictEqual(callArgs.data.payload.RedirectURL, 'https://example.com/success');
       });
 
-      it('should use 12 month interval for yearly billing', async () => {
-        mockCallPluginsService.mock.mockImplementation(async () => ({ data: { RecurringPaymentId: 456 } }));
+      it('should include tenant in ExternalIdentifier payload', async () => {
+        mockCallPluginsService.mock.mockImplementation(async () => ({ data: { RedirectURL: 'https://sumit.co.il/pay/yyy' } }));
 
-        await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'sumit', {
-          ...baseCheckoutParams,
-          billingCycle: 'yearly',
-        });
+        await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'sumit', baseCheckoutParams);
 
         const callArgs = mockCallPluginsService.mock.calls[0].arguments[0];
-        assert.strictEqual(callArgs.data.payload.RecurringInterval, 12);
+        const externalIdentifier = JSON.parse(callArgs.data.payload.ExternalIdentifier);
+        assert.strictEqual(externalIdentifier.tenant, 'tenant-1');
+        assert.strictEqual(externalIdentifier.planId, 'plan-1');
       });
     });
 

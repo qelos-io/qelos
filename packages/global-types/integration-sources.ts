@@ -88,6 +88,7 @@ export const SumitTargetOperation = {
   updatePayment: 'updatePayment',
   // Placeholder for recurring payments
   listRecurringPayments: 'listRecurringPayments',
+  beginCheckoutRedirect: 'beginCheckoutRedirect',
   createRecurringPayment: 'createRecurringPayment',
   getRecurringPayment: 'getRecurringPayment',
   updateRecurringPayment: 'updateRecurringPayment',

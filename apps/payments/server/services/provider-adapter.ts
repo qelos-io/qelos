@@ -345,22 +345,41 @@ async function createDodoPaymentsCheckout(tenant: string, sourceId: string, para
 }
 
 async function createSumitCheckout(tenant: string, sourceId: string, params: CheckoutParams): Promise<CheckoutResult> {
-  const result = await callIntegrationSource(tenant, sourceId, 'sumit', 'createRecurringPayment', {}, {
-    Amount: params.amount,
-    Currency: params.currency,
-    Description: params.plan.name,
-    RecurringInterval: params.billingCycle === 'monthly' ? 1 : 12,
-    RecurringIntervalType: 'month',
-    CustomData: JSON.stringify({
-      billableEntityType: params.billableEntityType,
-      billableEntityId: params.billableEntityId,
-      planId: params.plan._id.toString(),
-    }),
+  const externalIdentifier = JSON.stringify({
+    tenant,
+    billableEntityType: params.billableEntityType,
+    billableEntityId: params.billableEntityId,
+    planId: params.plan._id.toString(),
   });
 
+  const result = await callIntegrationSource(tenant, sourceId, 'sumit', 'beginCheckoutRedirect', {}, {
+    Customer: {
+      ExternalIdentifier: `${params.billableEntityType}:${params.billableEntityId}`,
+      SearchMode: 2,
+      Name: params.customerName || params.customerEmail || params.billableEntityId,
+      EmailAddress: params.customerEmail,
+    },
+    Items: [{
+      Item: {
+        Name: params.plan.name,
+        Description: params.plan.name,
+      },
+      Quantity: 1,
+      UnitPrice: params.amount,
+      Currency: params.currency,
+    }],
+    RedirectURL: params.successUrl,
+    CancelRedirectURL: params.cancelUrl,
+    ExternalIdentifier: externalIdentifier,
+    VATIncluded: true,
+  });
+
+  const recurringItemId = result?.RecurringCustomerItemIDs?.[0]?.toString()
+    || result?.RecurringPaymentId?.toString();
+
   return {
-    checkoutUrl: result?.PaymentUrl,
-    externalSubscriptionId: result?.RecurringPaymentId?.toString(),
+    checkoutUrl: result?.RedirectURL,
+    externalSubscriptionId: recurringItemId || externalIdentifier,
     providerData: result,
   };
 }

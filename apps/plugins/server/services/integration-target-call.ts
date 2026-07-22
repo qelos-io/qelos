@@ -8,6 +8,12 @@ import httpAgent from './http-agent';
 import { emitPlatformEvent } from './hook-events';
 import PlatformEvent from '../models/event';
 import { emitPaymentsProviderFailureEvent } from './payments-platform-events.js';
+import {
+  SUMIT_API_BASE,
+  SUMIT_OPERATION_ENDPOINTS,
+  buildSumitRequestBody,
+  parseSumitResponse,
+} from './sumit-api.js';
 import { createUser, updateUser } from './users';
 import logger from '../services/logger';
 import { createBlueprintEntity, updateBlueprintEntity } from './no-code-service';
@@ -426,6 +432,7 @@ async function handleEmailTarget(
 const SUMIT_PAYMENTS_FAILURE_OPERATIONS = new Set<string>([
   SumitTargetOperation.setPaymentDetails,
   SumitTargetOperation.createRecurringPayment,
+  SumitTargetOperation.beginCheckoutRedirect,
 ]);
 
 const PAYPAL_PAYMENTS_FAILURE_OPERATIONS = new Set<string>([
@@ -444,7 +451,6 @@ async function handleSumitTarget(
 
   const { apiKey } = authentication;
   const { companyId } = source.metadata;
-  const baseUrl = 'https://app.sumit.co.il/api/';
 
   if (!apiKey || !companyId) {
     throw new Error('Missing API key or Company ID for Sumit integration');
@@ -455,28 +461,13 @@ async function handleSumitTarget(
     APIKey: apiKey,
   };
 
-  let endpoint = '';
-  const method = 'POST';
-  const body: any = { ...payload, Credentials: credentials };
-
-  switch (operation) {
-    case SumitTargetOperation.createCustomer:
-      endpoint = '/v1/customers/add';
-      break;
-    case SumitTargetOperation.setPaymentDetails:
-      endpoint = '/v1/customers/update-payment-method';
-      break;
-    case SumitTargetOperation.createRecurringPayment:
-      endpoint = '/v1/recurring-payments/add';
-      break;
-    case SumitTargetOperation.deleteRecurringPayment:
-      endpoint = '/v1/recurring-payments/delete';
-      break;
-    default:
-      throw new Error(`Unsupported Sumit operation: ${operation}`);
+  const endpoint = SUMIT_OPERATION_ENDPOINTS[operation];
+  if (!endpoint) {
+    throw new Error(`Unsupported Sumit operation: ${operation}`);
   }
 
-  const url = new URL(endpoint, baseUrl).toString();
+  const url = new URL(endpoint, SUMIT_API_BASE).toString();
+  const body = buildSumitRequestBody(operation, payload, credentials);
 
   const headers = {
     'Content-Type': 'application/json',
@@ -484,7 +475,7 @@ async function handleSumitTarget(
 
   try {
     const response = await fetch(url, {
-      method,
+      method: 'POST',
       headers,
       body: JSON.stringify(body),
       agent: httpAgent,
@@ -504,7 +495,7 @@ async function handleSumitTarget(
       throw error;
     }
 
-    return responseBody;
+    return parseSumitResponse(responseBody);
   } catch (error) {
     logger.error('Error calling Sumit API', error);
     if (SUMIT_PAYMENTS_FAILURE_OPERATIONS.has(operation)) {
