@@ -11,6 +11,11 @@ export interface CheckoutRequest {
   successUrl?: string;
   cancelUrl?: string;
   /**
+   * When true, cancels any existing active or trialing subscription for the
+   * authenticated billable entity before starting checkout (e.g. plan change).
+   */
+  reset?: boolean;
+  /**
    * Pre-created subscription ID. Required for dynamic plans — the admin must set
    * `dynamicAmount` on the subscription before this checkout call will succeed.
    * When provided, `planId` and `billingCycle` are ignored.

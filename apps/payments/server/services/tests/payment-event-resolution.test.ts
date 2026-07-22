@@ -48,6 +48,16 @@ describe('payment-event-resolution', () => {
     assert.match(suggestions[0].action, /dynamicAmount/);
   });
 
+  it('buildPaymentAdminSuggestions maps active subscription conflicts', () => {
+    const suggestions = buildPaymentAdminSuggestions({
+      code: 'ACTIVE_SUBSCRIPTION_EXISTS',
+    });
+
+    assert.strictEqual(suggestions.length, 1);
+    assert.match(suggestions[0].action, /reset: true/);
+    assert.match(suggestions[0].action, /cancelSubscription/);
+  });
+
   it('buildPaymentEventDescription appends Sumit user message', () => {
     const description = buildPaymentEventDescription(
       'Provider call failed: beginCheckoutRedirect',

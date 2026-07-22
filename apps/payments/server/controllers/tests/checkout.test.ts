@@ -258,6 +258,30 @@ describe('checkout controller', async () => {
       assert.strictEqual(res.status.mock.calls[0].arguments[0], 404);
     });
 
+    it('should pass reset flag to service', async () => {
+      initiateCheckoutMock.mock.mockImplementation(async () => ({ subscriptionId: 'sub-1', checkoutUrl: 'url' }));
+
+      const req = mockReq({ body: { planId: 'plan-1', billingCycle: 'monthly', reset: true } });
+      const res = mockRes();
+      await CheckoutController.initiateCheckout(req, res);
+
+      const params = initiateCheckoutMock.mock.calls[0].arguments[1];
+      assert.strictEqual(params.reset, true);
+    });
+
+    it('should return 409 with existingSubscriptionId for ACTIVE_SUBSCRIPTION_EXISTS', async () => {
+      initiateCheckoutMock.mock.mockImplementation(async () => {
+        throw { code: 'ACTIVE_SUBSCRIPTION_EXISTS', existingSubscriptionId: 'sub-existing' };
+      });
+      const req = mockReq({ body: { planId: 'plan-1', billingCycle: 'monthly' } });
+      const res = mockRes();
+      await CheckoutController.initiateCheckout(req, res);
+      assert.strictEqual(res.status.mock.calls[0].arguments[0], 409);
+      const body = res.json.mock.calls[0].arguments[0];
+      assert.strictEqual(body.code, 'ACTIVE_SUBSCRIPTION_EXISTS');
+      assert.strictEqual(body.existingSubscriptionId, 'sub-existing');
+    });
+
     it('should return 409 for ACTIVE_SUBSCRIPTION_EXISTS', async () => {
       initiateCheckoutMock.mock.mockImplementation(async () => { throw { code: 'ACTIVE_SUBSCRIPTION_EXISTS' }; });
       const req = mockReq({ body: { planId: 'plan-1', billingCycle: 'monthly' } });
