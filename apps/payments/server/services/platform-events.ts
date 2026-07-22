@@ -21,6 +21,7 @@ export type PaymentMetadata = {
   operation?: string;
   code?: string;
   subscriptionId?: string;
+  existingSubscriptionId?: string;
   planId?: string;
   billableEntityType?: string;
   billableEntityId?: string;
@@ -180,6 +181,7 @@ export function emitCheckoutFailedEvent(params: PaymentEventParams & {
   code?: string;
   planId?: string;
   subscriptionId?: string;
+  existingSubscriptionId?: string;
   billableEntityType?: string;
   billableEntityId?: string;
   externalSubscriptionId?: string;
@@ -219,6 +221,7 @@ export function emitCheckoutFailedEvent(params: PaymentEventParams & {
       code: params.code ?? params.error?.code,
       planId: params.planId,
       subscriptionId: params.subscriptionId,
+      existingSubscriptionId: params.existingSubscriptionId,
       billableEntityType: params.billableEntityType,
       billableEntityId: params.billableEntityId,
       externalSubscriptionId: params.externalSubscriptionId,

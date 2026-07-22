@@ -182,6 +182,13 @@ export function buildPaymentAdminSuggestions(context: PaymentResolutionContext):
     });
   }
 
+  if (code === 'ACTIVE_SUBSCRIPTION_EXISTS') {
+    pushUnique(suggestions, {
+      summary: 'Cancel the existing subscription before checkout',
+      action: 'The billable entity already has an active or trialing subscription. Cancel it with sdk.payments.cancelSubscription(existingSubscriptionId), or pass reset: true on checkout to cancel automatically and start a new subscription.',
+    });
+  }
+
   if (code === 'DYNAMIC_AMOUNT_NOT_SET') {
     pushUnique(suggestions, {
       summary: 'Set the subscription amount before checkout',

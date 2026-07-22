@@ -20,6 +20,8 @@ export interface AdminCheckoutRequest {
   couponCode?: string;
   successUrl?: string;
   cancelUrl?: string;
+  /** When true, cancels any existing active/trialing subscription before checkout. */
+  reset?: boolean;
   /**
    * Admin-only. For plans with `dynamic: true`, sets the `dynamicAmount` on the
    * pending subscription before initiating checkout. Regular users cannot set this;

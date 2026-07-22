@@ -138,6 +138,7 @@ describe('platform-events', async () => {
           code: 'PLAN_NOT_ACTIVE',
           planId: 'plan-1',
           subscriptionId: undefined,
+          existingSubscriptionId: undefined,
           billableEntityType: 'user',
           billableEntityId: 'user-1',
           externalSubscriptionId: undefined,

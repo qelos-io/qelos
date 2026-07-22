@@ -11,6 +11,7 @@ const redeemCouponMock = mock.fn();
 const getPaymentsConfigurationMock = mock.fn();
 const createCheckoutMock = mock.fn();
 const cancelProviderSubscriptionMock = mock.fn();
+const cancelSubscriptionMock = mock.fn();
 const resolveProviderPublicContextMock = mock.fn();
 const getSubscriptionByIdMock = mock.fn();
 const emitCheckoutFailedEventMock = mock.fn();
@@ -33,7 +34,7 @@ mock.module('../subscriptions-service', {
     updateSubscriptionStatus: updateSubscriptionStatusMock,
     getSubscriptionById: getSubscriptionByIdMock,
     listSubscriptions: mock.fn(),
-    cancelSubscription: mock.fn(),
+    cancelSubscription: cancelSubscriptionMock,
     setDynamicAmount: mock.fn(),
   },
 });
@@ -138,6 +139,7 @@ describe('checkout-service', async () => {
     getPaymentsConfigurationMock.mock.resetCalls();
     createCheckoutMock.mock.resetCalls();
     cancelProviderSubscriptionMock.mock.resetCalls();
+    cancelSubscriptionMock.mock.resetCalls();
     resolveProviderPublicContextMock.mock.resetCalls();
     getSubscriptionByIdMock.mock.resetCalls();
     emitCheckoutFailedEventMock.mock.resetCalls();
@@ -156,6 +158,7 @@ describe('checkout-service', async () => {
       status: 'pending',
     }));
     resolveProviderPublicContextMock.mock.mockImplementation(async () => mockConfig.providerContext);
+    cancelSubscriptionMock.mock.mockImplementation(async () => ({ _id: 'existing-sub', status: 'canceled' }));
     updateSubscriptionStatusMock.mock.mockImplementation(async () => ({
       _id: 'sub-pending-1',
       planId: 'plan-1',
@@ -244,6 +247,7 @@ describe('checkout-service', async () => {
           code: 'PLAN_NOT_ACTIVE',
           planId: 'plan-1',
           subscriptionId: undefined,
+          existingSubscriptionId: undefined,
           billableEntityType: 'user',
           billableEntityId: 'user-1',
           couponCode: undefined,
@@ -252,20 +256,60 @@ describe('checkout-service', async () => {
       });
 
       it('should throw ACTIVE_SUBSCRIPTION_EXISTS when there is an active subscription', async () => {
-        getActiveSubscriptionMock.mock.mockImplementation(async () => ({ _id: 'existing-sub' }));
+        getActiveSubscriptionMock.mock.mockImplementation(async () => ({
+          _id: 'existing-sub',
+          planId: 'plan-old',
+          billableEntityType: 'user',
+          billableEntityId: 'user-1',
+        }));
 
         await assert.rejects(
           () => CheckoutService.initiateCheckout('tenant-1', defaultParams, { userId: 'user-1' }),
           (e: any) => {
             assert.strictEqual(e.code, 'ACTIVE_SUBSCRIPTION_EXISTS');
+            assert.strictEqual(e.existingSubscriptionId, 'existing-sub');
             return true;
           },
         );
 
         assert.strictEqual(emitCheckoutFailedEventMock.mock.calls.length, 1);
-        assert.strictEqual(emitCheckoutFailedEventMock.mock.calls[0].arguments[0].code, 'ACTIVE_SUBSCRIPTION_EXISTS');
-        assert.strictEqual(emitCheckoutFailedEventMock.mock.calls[0].arguments[0].planId, 'plan-1');
-        assert.strictEqual(emitCheckoutFailedEventMock.mock.calls[0].arguments[0].billableEntityId, 'user-1');
+        const emitArgs = emitCheckoutFailedEventMock.mock.calls[0].arguments[0];
+        assert.strictEqual(emitArgs.code, 'ACTIVE_SUBSCRIPTION_EXISTS');
+        assert.strictEqual(emitArgs.planId, 'plan-1');
+        assert.strictEqual(emitArgs.billableEntityId, 'user-1');
+        assert.strictEqual(emitArgs.existingSubscriptionId, 'existing-sub');
+      });
+
+      it('should cancel active subscription and proceed when reset is true', async () => {
+        getActiveSubscriptionMock.mock.mockImplementation(async () => ({
+          _id: 'existing-sub',
+          planId: 'plan-old',
+          billableEntityType: 'user',
+          billableEntityId: 'user-1',
+          externalSubscriptionId: 'ext-sub-1',
+          providerKind: 'sumit',
+          providerId: 'source-1',
+        }));
+        getPaymentsConfigurationMock.mock.mockImplementation(async () => ({
+          ...mockConfig,
+          providerKind: 'sumit',
+        }));
+        cancelProviderSubscriptionMock.mock.mockImplementation(async () => ({ success: true, providerData: {} }));
+
+        const result = await CheckoutService.initiateCheckout(
+          'tenant-1',
+          { ...defaultParams, reset: true },
+          { userId: 'user-1' },
+        );
+
+        assert.strictEqual(cancelProviderSubscriptionMock.mock.calls.length, 1);
+        assert.deepStrictEqual(cancelProviderSubscriptionMock.mock.calls[0].arguments, [
+          'tenant-1', 'source-1', 'sumit', 'ext-sub-1',
+        ]);
+        assert.strictEqual(cancelSubscriptionMock.mock.calls.length, 1);
+        assert.strictEqual(cancelSubscriptionMock.mock.calls[0].arguments[1], 'existing-sub');
+        assert.strictEqual(createCheckoutMock.mock.calls.length, 1);
+        assert.strictEqual(result.checkoutUrl, 'https://checkout.paddle.com/xxx');
       });
 
       it('should emit checkout-failed when provider checkout fails', async () => {

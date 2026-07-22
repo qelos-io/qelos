@@ -15,6 +15,8 @@ export interface InitiateCheckoutParams {
   couponCode?: string;
   successUrl?: string;
   cancelUrl?: string;
+  /** When true, cancels any active/trialing subscription for the billable entity before checkout. */
+  reset?: boolean;
 }
 
 export interface CheckoutContext {
@@ -29,6 +31,7 @@ function emitInitiateCheckoutFailed(
   state: {
     plan?: any;
     existingSubscription?: any;
+    activeSubscription?: any;
     billableEntityType?: BillableEntityType;
     billableEntityId?: string;
     providerKind?: string;
@@ -44,11 +47,49 @@ function emitInitiateCheckoutFailed(
     code: error?.code,
     planId: state.plan?._id?.toString() ?? params.planId ?? state.existingSubscription?.planId?.toString(),
     subscriptionId: params.subscriptionId ?? state.existingSubscription?._id?.toString(),
+    existingSubscriptionId: state.activeSubscription?._id?.toString(),
     billableEntityType: state.billableEntityType,
     billableEntityId: state.billableEntityId,
     couponCode: params.couponCode,
     error,
   });
+}
+
+async function cancelActiveSubscriptionForReset(
+  tenant: string,
+  subscription: any,
+  context: CheckoutContext,
+) {
+  if (subscription.externalSubscriptionId && subscription.providerKind && subscription.providerId) {
+    const providerContext = await ProviderAdapter.resolveProviderPublicContext(
+      tenant,
+      subscription.providerId,
+      subscription.providerKind,
+    );
+
+    await ProviderAdapter.cancelProviderSubscription(
+      tenant,
+      subscription.providerId,
+      subscription.providerKind,
+      subscription.externalSubscriptionId,
+    ).catch((error) => {
+      emitCheckoutFailedEvent({
+        tenant,
+        userId: context.userId,
+        providerKind: subscription.providerKind,
+        providerContext,
+        operation: 'resetActiveSubscription',
+        subscriptionId: subscription._id?.toString(),
+        planId: subscription.planId?.toString(),
+        billableEntityType: subscription.billableEntityType,
+        billableEntityId: subscription.billableEntityId,
+        externalSubscriptionId: subscription.externalSubscriptionId,
+        error,
+      });
+    });
+  }
+
+  await SubscriptionsService.cancelSubscription(tenant, subscription._id.toString());
 }
 
 export function calculateDiscountedPrice(
@@ -70,6 +111,7 @@ export async function initiateCheckout(
   context: CheckoutContext = {},
 ) {
   let existingSubscription: any = null;
+  let activeSubscription: any = null;
   let plan: any;
   let billingCycle: BillingCycle;
   let billableEntityType: BillableEntityType;
@@ -123,9 +165,18 @@ export async function initiateCheckout(
       finalPrice = calculateDiscountedPrice(basePrice, coupon);
     }
 
-    const existing = await SubscriptionsService.getActiveSubscription(tenant, billableEntityType, billableEntityId);
-    if (existing) {
-      throw { code: 'ACTIVE_SUBSCRIPTION_EXISTS', message: 'An active subscription already exists' };
+    activeSubscription = await SubscriptionsService.getActiveSubscription(tenant, billableEntityType, billableEntityId);
+    if (activeSubscription) {
+      if (params.reset) {
+        await cancelActiveSubscriptionForReset(tenant, activeSubscription, context);
+        activeSubscription = null;
+      } else {
+        throw {
+          code: 'ACTIVE_SUBSCRIPTION_EXISTS',
+          message: 'An active subscription already exists',
+          existingSubscriptionId: activeSubscription._id.toString(),
+        };
+      }
     }
 
     const config = await ProviderAdapter.getPaymentsConfiguration(tenant);
@@ -214,6 +265,7 @@ export async function initiateCheckout(
     emitInitiateCheckoutFailed(tenant, context, params, error, {
       plan,
       existingSubscription,
+      activeSubscription,
       billableEntityType,
       billableEntityId,
       providerKind,

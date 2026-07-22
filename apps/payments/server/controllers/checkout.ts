@@ -40,6 +40,7 @@ export async function initiateCheckout(req, res: Response) {
       couponCode,
       successUrl,
       cancelUrl,
+      reset,
     } = req.body;
 
     const isPrivileged = req.user?.isPrivileged;
@@ -90,6 +91,7 @@ export async function initiateCheckout(req, res: Response) {
         couponCode,
         successUrl,
         cancelUrl,
+        reset: reset === true,
       }, checkoutContext(req));
       res.status(200).json(result).end();
       return;
@@ -118,6 +120,7 @@ export async function initiateCheckout(req, res: Response) {
       couponCode,
       successUrl,
       cancelUrl,
+      reset: reset === true,
     }, checkoutContext(req));
 
     res.status(200).json(result).end();
@@ -150,7 +153,11 @@ export async function initiateCheckout(req, res: Response) {
       COUPON_NOT_APPLICABLE: 400,
     };
     const status = statusMap[e?.code] || 500;
-    res.status(status).json({ code: e?.code, message: e?.message || 'checkout failed' }).end();
+    const body: Record<string, unknown> = { code: e?.code, message: e?.message || 'checkout failed' };
+    if (e?.existingSubscriptionId) {
+      body.existingSubscriptionId = e.existingSubscriptionId;
+    }
+    res.status(status).json(body).end();
   }
 }
 
