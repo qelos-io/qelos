@@ -276,6 +276,26 @@ Either `subscriptionId` **or** `planId` is required.
 
 ---
 
+## Payments configuration
+
+### `GET /api/payments/configuration`
+
+Returns tenant payments settings. **Auth**: privileged.
+
+### `PUT /api/payments/configuration`
+
+Creates or updates tenant payments settings. Accepts `{ metadata: { ... } }` with fields such as `isEnabled`, `paymentSourceId`, `defaultCurrency`, `gracePeriodDays`, `successUrl`, and `cancelUrl`.
+
+**Errors**
+
+| Code | HTTP | Description |
+|---|---|---|
+| `INVALID_PAYMENTS_CONFIGURATION` | 400 | Invalid redirect URL |
+
+> **SDK:** `adminSdk.payments.getPaymentsConfiguration()` · `adminSdk.payments.updatePaymentsConfiguration(metadata)`
+
+---
+
 ### `PUT /api/checkout/:subscriptionId/cancel`
 
 Cancel a subscription initiated through checkout. Attempts provider-side cancellation before marking it locally. **Auth**: authenticated (non-admins can only cancel their own entity's subscriptions).

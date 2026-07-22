@@ -1,5 +1,18 @@
 import { api, getCallData } from './api'
-import { IPlan, ISubscription, IInvoice, ICoupon, BillableEntityType, BillingCycle } from '@qelos/global-types'
+import {
+  IPlan,
+  ISubscription,
+  IInvoice,
+  ICoupon,
+  BillableEntityType,
+  BillingCycle,
+  IPaymentsConfigurationMetadata,
+} from '@qelos/global-types'
+
+export interface PaymentsConfigurationRecord {
+  key: string
+  metadata: IPaymentsConfigurationMetadata
+}
 
 export interface CheckoutRequest {
   planId: string
@@ -47,6 +60,14 @@ const billingService = {
 
   validateCoupon(code: string, planId?: string): Promise<ICoupon> {
     return api.post('/api/coupons/validate', { code, planId }).then(getCallData)
+  },
+
+  getPaymentsConfiguration(): Promise<PaymentsConfigurationRecord> {
+    return api.get('/api/payments/configuration').then(getCallData)
+  },
+
+  updatePaymentsConfiguration(metadata: Partial<IPaymentsConfigurationMetadata>): Promise<PaymentsConfigurationRecord> {
+    return api.put('/api/payments/configuration', { metadata }).then(getCallData)
   },
 }
 

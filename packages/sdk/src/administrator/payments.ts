@@ -3,7 +3,13 @@ import BaseSDK from '../base-sdk';
 import {
   IPlan, ISubscription, IInvoice, ICoupon,
   BillableEntityType, SubscriptionStatus, InvoiceStatus, BillingCycle,
+  IPaymentsConfigurationMetadata,
 } from '@qelos/global-types';
+
+export interface PaymentsConfigurationRecord {
+  key: string;
+  metadata: IPaymentsConfigurationMetadata;
+}
 
 export interface AdminCheckoutRequest {
   planId: string;
@@ -180,5 +186,19 @@ export default class QlPaymentsAdmin extends BaseSDK {
 
   deleteCoupon(couponId: string) {
     return this.callJsonApi<ICoupon>(`/api/coupons/${couponId}`, { method: 'delete' });
+  }
+
+  /** Load tenant payments settings (`payments-configuration`). */
+  getPaymentsConfiguration() {
+    return this.callJsonApi<PaymentsConfigurationRecord>('/api/payments/configuration');
+  }
+
+  /** Update tenant payments settings. Partial metadata is merged with the existing record. */
+  updatePaymentsConfiguration(metadata: Partial<IPaymentsConfigurationMetadata>) {
+    return this.callJsonApi<PaymentsConfigurationRecord>('/api/payments/configuration', {
+      method: 'put',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ metadata }),
+    });
   }
 }

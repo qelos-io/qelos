@@ -38,15 +38,20 @@ Create or update the `payments-configuration` configuration key with the provide
 | `successUrl` | Default redirect URL after successful payment |
 | `cancelUrl` | Default redirect URL when user cancels checkout |
 
-This can be set through the Admin UI or via the SDK:
+This can be set in **Admin → Pricing Plans → Configuration** (Success URL / Cancel URL fields), via the payments API, or via the SDK:
 
 ```typescript
-await adminSdk.manageConfigurations.update('payments-configuration', {
-  providerSourceId: 'source-id',
-  providerKind: 'paddle',
+await adminSdk.payments.updatePaymentsConfiguration({
+  paymentSourceId: 'source-id',
+  isEnabled: true,
   successUrl: 'https://your-app.com/success',
   cancelUrl: 'https://your-app.com/cancel',
 });
+```
+
+```
+GET /api/payments/configuration
+PUT /api/payments/configuration
 ```
 
 ### 3. Create Plans

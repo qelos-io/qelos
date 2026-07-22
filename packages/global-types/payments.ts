@@ -13,6 +13,23 @@ export type InvoiceStatus = 'paid' | 'pending' | 'failed' | 'refunded';
 /** Type of discount a coupon provides. */
 export type CouponDiscountType = 'percentage' | 'fixed';
 
+/** Tenant payments settings stored in the `payments-configuration` configuration key. */
+export interface IPaymentsConfigurationMetadata {
+  isEnabled?: boolean;
+  /** Integration source `_id` (admin UI field name). */
+  paymentSourceId?: string;
+  /** Same as `paymentSourceId`; normalized by the payments service when loading config. */
+  providerSourceId?: string;
+  providerKind?: 'paddle' | 'paypal' | 'sumit' | 'dodopayments' | string;
+  defaultCurrency?: string;
+  gracePeriodDays?: number;
+  /** Default redirect URL after successful checkout (required for Sumit unless overridden per checkout). */
+  successUrl?: string;
+  /** Default redirect URL when the user cancels checkout (required for Sumit unless overridden per checkout). */
+  cancelUrl?: string;
+  webhookSecret?: string;
+}
+
 /**
  * Arbitrary limits associated with a plan (e.g. max users, storage quota).
  * Keys are limit names; values can be numbers, booleans, or strings.

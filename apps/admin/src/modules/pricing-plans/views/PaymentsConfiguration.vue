@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
-import configurationsService from '@/services/apis/configurations-service';
+import billingService from '@/services/apis/billing-service';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { storeToRefs } from 'pinia';
 import { IntegrationSourceKind } from '@qelos/global-types';
 
 const { t } = useI18n();
-const router = useRouter();
 const sourcesStore = useIntegrationSourcesStore();
 const { result: sources } = storeToRefs(sourcesStore);
 
@@ -23,6 +21,8 @@ const form = reactive({
   paymentSourceId: '' as string,
   defaultCurrency: 'USD',
   gracePeriodDays: 3,
+  successUrl: '',
+  cancelUrl: '',
 });
 
 const paymentSources = computed(() =>
@@ -33,17 +33,21 @@ const selectedSource = computed(() =>
   paymentSources.value.find(s => s._id === form.paymentSourceId)
 );
 
+const requiresRedirectUrls = computed(() => selectedSource.value?.kind === IntegrationSourceKind.Sumit);
+
 const currencies = ['USD', 'EUR', 'GBP', 'ILS', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL'];
 
 onMounted(async () => {
   try {
     await sourcesStore.promise;
-    const config = await configurationsService.getOne('payments-configuration').catch(() => null);
+    const config = await billingService.getPaymentsConfiguration().catch(() => null);
     if (config?.metadata) {
       form.isEnabled = config.metadata.isEnabled ?? false;
-      form.paymentSourceId = config.metadata.paymentSourceId ?? '';
+      form.paymentSourceId = config.metadata.paymentSourceId ?? config.metadata.providerSourceId ?? '';
       form.defaultCurrency = config.metadata.defaultCurrency ?? 'USD';
       form.gracePeriodDays = config.metadata.gracePeriodDays ?? 3;
+      form.successUrl = config.metadata.successUrl ?? '';
+      form.cancelUrl = config.metadata.cancelUrl ?? '';
     }
   } finally {
     loading.value = false;
@@ -53,23 +57,13 @@ onMounted(async () => {
 async function save() {
   saving.value = true;
   try {
-    await configurationsService.update('payments-configuration', {
-      metadata: {
-        isEnabled: form.isEnabled,
-        paymentSourceId: form.paymentSourceId,
-        defaultCurrency: form.defaultCurrency,
-        gracePeriodDays: form.gracePeriodDays,
-      },
-    }).catch(async () => {
-      await configurationsService.create({
-        key: 'payments-configuration',
-        metadata: {
-          isEnabled: form.isEnabled,
-          paymentSourceId: form.paymentSourceId,
-          defaultCurrency: form.defaultCurrency,
-          gracePeriodDays: form.gracePeriodDays,
-        },
-      } as any);
+    await billingService.updatePaymentsConfiguration({
+      isEnabled: form.isEnabled,
+      paymentSourceId: form.paymentSourceId,
+      defaultCurrency: form.defaultCurrency,
+      gracePeriodDays: form.gracePeriodDays,
+      successUrl: form.successUrl.trim() || undefined,
+      cancelUrl: form.cancelUrl.trim() || undefined,
     });
     ElMessage.success(t('Payments configuration saved'));
   } catch {
@@ -174,6 +168,41 @@ async function save() {
         </div>
       </el-card>
 
+      <el-card shadow="never" class="form-section">
+        <template #header>
+          <span>{{ t('Checkout Redirect URLs') }}</span>
+        </template>
+
+        <p class="section-hint">
+          {{ t('Default URLs used when checkout requests do not pass successUrl or cancelUrl. Required for Sumit checkout.') }}
+        </p>
+
+        <el-alert
+          v-if="requiresRedirectUrls && (!form.successUrl || !form.cancelUrl)"
+          :title="t('Sumit requires both redirect URLs')"
+          type="warning"
+          :closable="false"
+          show-icon
+          class="redirect-alert"
+        />
+
+        <el-form-item :label="t('Success URL')">
+          <el-input
+            v-model="form.successUrl"
+            dir="ltr"
+            :placeholder="t('https://your-app.com/billing/return?status=success')"
+          />
+        </el-form-item>
+
+        <el-form-item :label="t('Cancel URL')">
+          <el-input
+            v-model="form.cancelUrl"
+            dir="ltr"
+            :placeholder="t('https://your-app.com/billing/return?status=cancel')"
+          />
+        </el-form-item>
+      </el-card>
+
       <div class="form-actions">
         <el-button type="primary" @click="save" :loading="saving">
           {{ t('Save Configuration') }}
@@ -227,6 +256,13 @@ async function save() {
   margin: 0 0 20px;
 }
 
+.section-hint {
+  margin: 0 0 16px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .config-form {
   display: flex;
   flex-direction: column;
@@ -234,6 +270,10 @@ async function save() {
 
 .form-section {
   margin-top: 16px;
+}
+
+.redirect-alert {
+  margin-bottom: 16px;
 }
 
 .form-actions {

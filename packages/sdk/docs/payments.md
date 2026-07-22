@@ -104,6 +104,60 @@ const result = await adminSdk.payments.checkout({
 
 ---
 
+## Payments configuration
+
+Admin-only tenant settings stored in `payments-configuration`.
+
+### `GET /api/payments/configuration`
+
+Returns the current payments configuration metadata. **Auth**: privileged.
+
+**Response `200`**
+
+```json
+{
+  "key": "payments-configuration",
+  "metadata": {
+    "isEnabled": true,
+    "paymentSourceId": "integration-source-id",
+    "defaultCurrency": "ILS",
+    "gracePeriodDays": 3,
+    "successUrl": "https://your-app.com/billing/return?status=success",
+    "cancelUrl": "https://your-app.com/billing/return?status=cancel"
+  }
+}
+```
+
+### `PUT /api/payments/configuration`
+
+Creates or updates payments configuration. Partial `metadata` is merged with the existing record. **Auth**: privileged.
+
+**Body**
+
+```json
+{
+  "metadata": {
+    "isEnabled": true,
+    "paymentSourceId": "integration-source-id",
+    "successUrl": "https://your-app.com/billing/return?status=success",
+    "cancelUrl": "https://your-app.com/billing/return?status=cancel"
+  }
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `isEnabled` | boolean | Enable payments for the tenant |
+| `paymentSourceId` | string | Integration source `_id` for the payment provider |
+| `defaultCurrency` | string | Default ISO 4217 currency code |
+| `gracePeriodDays` | number | Grace period after failed payment |
+| `successUrl` | string | Default redirect URL after successful checkout |
+| `cancelUrl` | string | Default redirect URL when checkout is canceled |
+
+> **SDK:** `adminSdk.payments.getPaymentsConfiguration()` · `adminSdk.payments.updatePaymentsConfiguration(metadata)`
+
+---
+
 ## Listing Plans and Subscriptions
 
 ### User SDK

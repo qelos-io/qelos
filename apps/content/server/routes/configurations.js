@@ -24,4 +24,6 @@ module.exports = function (app) {
 
   app.get('/internal-api/host-tenant', getTenantByHost)
   app.get('/internal-api/configurations/:configKey', verifyInternalCall, getConfigurationByKey, getConfiguration)
+  app.put('/internal-api/configurations/:configKey', verifyInternalCall, getConfigurationByKey, updateConfiguration)
+  app.post('/internal-api/configurations', verifyInternalCall, createConfiguration)
 }
