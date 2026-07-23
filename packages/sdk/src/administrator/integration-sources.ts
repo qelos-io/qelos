@@ -1,6 +1,10 @@
 import { QelosSDKOptions, RequestExtra } from '../types';
 import BaseSDK from '../base-sdk';
-import { IIntegrationSource } from '@qelos/global-types';
+import {
+  IIntegrationSource,
+  IIntegrationSourceStatusRequest,
+  IIntegrationSourceStatusResult,
+} from '@qelos/global-types';
 
 export default class QlIntegrationSources extends BaseSDK {
   private relativePath = '/api/integration-sources';
@@ -38,6 +42,31 @@ export default class QlIntegrationSources extends BaseSDK {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(source)
     })
+  }
+
+  checkStatus(
+    sourceId: string,
+    overrides?: Partial<Pick<IIntegrationSource, 'metadata' | 'authentication'>>,
+  ): Promise<IIntegrationSourceStatusResult> {
+    return this.callJsonApi<IIntegrationSourceStatusResult>(
+      `${this.relativePath}/${sourceId}/status`,
+      {
+        method: 'post',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(overrides ?? {}),
+      },
+    );
+  }
+
+  checkDraftStatus(source: IIntegrationSourceStatusRequest): Promise<IIntegrationSourceStatusResult> {
+    return this.callJsonApi<IIntegrationSourceStatusResult>(
+      `${this.relativePath}/status`,
+      {
+        method: 'post',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(source),
+      },
+    );
   }
 
 }
