@@ -68,6 +68,35 @@ describe('sumit-api', () => {
     );
   });
 
+  it('parseSumitResponse throws on Sumit\'s real BusinessError/TechnicalError status (HTTP 200 body-level failure)', () => {
+    assert.throws(
+      () => parseSumitResponse({
+        Status: 'BusinessError',
+        UserErrorMessage: 'Card declined',
+      }),
+      (err: any) => {
+        assert.match(err.message, /Card declined/);
+        return true;
+      },
+    );
+
+    assert.throws(
+      () => parseSumitResponse({
+        Status: 'TechnicalError',
+        TechnicalErrorDetails: 'Gateway timeout',
+      }),
+      (err: any) => {
+        assert.match(err.message, /Gateway timeout/);
+        return true;
+      },
+    );
+  });
+
+  it('parseSumitResponse does not throw on Success status', () => {
+    const result = parseSumitResponse({ Status: 'Success', Data: { ID: 1 } });
+    assert.strictEqual(result.ID, 1);
+  });
+
   it('buildSumitRecurringChargeBody maps legacy payload with SingleUseToken', () => {
     const body = buildSumitRecurringChargeBody({
       Amount: 29,

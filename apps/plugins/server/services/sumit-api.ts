@@ -37,7 +37,7 @@ export function currencyToSumitCode(currency: string | number): 0 | 1 | 2 {
 }
 
 function isFailedSumitStatus(status: unknown) {
-  if (status === 'Error' || status === 'Failed') return true;
+  if (status === 'BusinessError' || status === 'TechnicalError' || status === 'Error' || status === 'Failed') return true;
   if (typeof status === 'number') return status !== 0;
   if (typeof status === 'string' && /^\d+$/.test(status)) return Number(status) !== 0;
   return false;
@@ -256,6 +256,10 @@ export async function checkSumitStatus(params: {
     APIKey: params.apiKey,
   };
 
+  const dateTo = new Date();
+  const dateFrom = new Date(dateTo);
+  dateFrom.setDate(dateFrom.getDate() - 1);
+
   const url = new URL(SUMIT_STATUS_CHECK_ENDPOINT, SUMIT_API_BASE).toString();
   const response = await fetch(url, {
     method: 'POST',
@@ -264,6 +268,8 @@ export async function checkSumitStatus(params: {
     },
     body: JSON.stringify({
       Credentials: credentials,
+      Date_From: dateFrom.toISOString(),
+      Date_To: dateTo.toISOString(),
       PageSize: 1,
       PageNumber: 1,
     }),
