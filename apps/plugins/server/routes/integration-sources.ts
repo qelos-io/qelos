@@ -1,9 +1,14 @@
 import { getRouter, verifyUser, populateUser, getBodyParser, verifyInternalCall } from '@qelos/api-kit';
 import { onlyEditPrivilegedOrPlugin } from '../middlewares/privileged-check';
 import {
+  checkIntegrationSourceStatusHandler,
   createIntegrationSource,
   getAllIntegrationSources,
-  getIntegrationSource, getInternalIntegrationSource, removeIntegrationSource, triggerIntegrationSource, updateIntegrationSource
+  getIntegrationSource,
+  getInternalIntegrationSource,
+  removeIntegrationSource,
+  triggerIntegrationSource,
+  updateIntegrationSource,
 } from '../controllers/integration-sources';
 
 export function integrationSourcesRouter() {
@@ -14,11 +19,13 @@ export function integrationSourcesRouter() {
   router
     .get('/api/integration-sources', AUTHENTICATION_MIDDLEWARES.concat(getAllIntegrationSources))
     .post('/api/integration-sources', AUTHENTICATION_MIDDLEWARES.concat(createIntegrationSource))
+    .post('/api/integration-sources/status', AUTHENTICATION_MIDDLEWARES.concat(checkIntegrationSourceStatusHandler))
 
   router
     .get('/api/integration-sources/:sourceId', AUTHENTICATION_MIDDLEWARES.concat(getIntegrationSource))
     .put('/api/integration-sources/:sourceId', AUTHENTICATION_MIDDLEWARES.concat(updateIntegrationSource))
     .delete('/api/integration-sources/:sourceId', AUTHENTICATION_MIDDLEWARES.concat(removeIntegrationSource))
+    .post('/api/integration-sources/:sourceId/status', AUTHENTICATION_MIDDLEWARES.concat(checkIntegrationSourceStatusHandler))
 
 
   router
