@@ -12,7 +12,7 @@
 //   node scripts/publish-packages.mjs --skip-login    skip `pnpm whoami` / `pnpm login`
 //
 // Notes:
-// - Does not publish apps/, tools/, or Python packages.
+// - Does not publish apps/, tools/ (except tools/cli), or Python packages.
 // - pnpm rewrites workspace:* / workspace:^ deps to the published version.
 // - Run build/test first, or use `node scripts/publish.mjs` for the full release flow.
 
@@ -38,6 +38,7 @@ const PACKAGES = [
   { key: 'integrator-nest',    dir: 'integrators/nest' },
   { key: 'integrator-next',    dir: 'integrators/next' },
   { key: 'integrator-nuxt',    dir: 'integrators/nuxt' },
+  { key: 'cli',                dir: 'tools/cli' },
 ];
 
 const args = process.argv.slice(2);
