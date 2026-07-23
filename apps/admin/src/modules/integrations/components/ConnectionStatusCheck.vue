@@ -53,6 +53,7 @@ const props = defineProps<{
   kind: IntegrationSourceKind | string;
   sourceId?: string;
   formModel: { metadata?: Record<string, unknown> };
+  getFormModel?: () => { metadata?: Record<string, unknown> };
   getAuthenticationOverride: () => Record<string, unknown> | undefined;
 }>();
 
@@ -63,7 +64,7 @@ const isPaymentKind = computed(() =>
 const { statusResult, checking, checkConnection, canCheck } = useIntegrationSourceStatus({
   kind: () => props.kind,
   sourceId: () => props.sourceId,
-  formModel: () => props.formModel,
+  formModel: props.getFormModel ?? (() => props.formModel),
   getAuthenticationOverride: props.getAuthenticationOverride,
 });
 

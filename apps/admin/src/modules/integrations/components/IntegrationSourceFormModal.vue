@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import FooterActions from '@/modules/core/components/common/FooterActions.vue';
 import IntegrationSourceForm from '@/modules/integrations/IntegrationSourceForm.vue';
+import ConnectionStatusCheck from '@/modules/integrations/components/ConnectionStatusCheck.vue';
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import { useIntegrationKinds } from '../compositions/integration-kinds';
 
@@ -19,7 +20,11 @@ const props = withDefaults(
 const emit = defineEmits(['close', 'save']);
 
 const model = ref<any>();
-const formShellRef = ref<{ submitFromModal?: () => void } | null>(null);
+const formShellRef = ref<{
+  submitFromModal?: () => void;
+  getAuthenticationOverride?: () => Record<string, unknown> | undefined;
+  getStatusFormModel?: () => { metadata?: Record<string, unknown> };
+} | null>(null);
 const bodyRef = ref<HTMLElement | null>(null);
 
 function onGlobalModEnter(e: KeyboardEvent) {
@@ -72,6 +77,14 @@ function focusFirstField() {
   });
 }
 
+function getStatusFormModel() {
+  return formShellRef.value?.getStatusFormModel?.() ?? { metadata: model.value?.metadata ?? {} };
+}
+
+function getAuthenticationOverride() {
+  return formShellRef.value?.getAuthenticationOverride?.();
+}
+
 </script>
 
 <template>
@@ -118,6 +131,14 @@ function focusFirstField() {
         class="integration-source-form-inner"
         @submit="$emit('save', $event)"
         @close="$emit('close', $event)"
+      />
+      <ConnectionStatusCheck
+        v-if="visible && model"
+        :kind="kind"
+        :source-id="editingIntegration?._id"
+        :form-model="model"
+        :get-form-model="getStatusFormModel"
+        :get-authentication-override="getAuthenticationOverride"
       />
     </div>
 
