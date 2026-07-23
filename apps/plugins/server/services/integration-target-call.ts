@@ -15,6 +15,7 @@ import {
   parseSumitCompanyId,
   parseSumitResponse,
 } from './sumit-api.js';
+import { exchangePayPalAccessToken, getPayPalApiBaseUrl } from './paypal-api.js';
 import { resolvePaymentProviderPublicContext } from '@qelos/global-types';
 import { createUser, updateUser } from './users';
 import logger from '../services/logger';
@@ -517,45 +518,21 @@ async function handleSumitTarget(
 }
 
 async function getPayPalAccessToken(source: IPayPalSource, clientSecret: string, tenant?: string): Promise<string> {
-  const baseUrl = source.metadata.environment === 'live'
-    ? 'https://api-m.paypal.com'
-    : 'https://api-m.sandbox.paypal.com';
-
   const cacheKey = `paypal-token-${source._id}`;
   const cached = await cacheManager.getItem<string>(cacheKey);
   if (cached) {
     return cached;
   }
 
-  const credentials = Buffer.from(`${source.metadata.clientId}:${clientSecret}`).toString('base64');
-
   try {
-    const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: 'grant_type=client_credentials',
-      agent: httpAgent,
+    const { accessToken } = await exchangePayPalAccessToken({
+      clientId: source.metadata.clientId,
+      clientSecret,
+      environment: source.metadata.environment,
     });
 
-    let body: any = null;
-    try {
-      body = await response.json();
-    } catch {
-      body = null;
-    }
-
-    if (!response.ok || !body?.access_token) {
-      const error: any = new Error(`PayPal OAuth token exchange failed: ${JSON.stringify(body)}`);
-      error.status = response.status;
-      error.responseBody = body;
-      throw error;
-    }
-
-    await cacheManager.setItem(cacheKey, body.access_token, { ttl: 1800 });
-    return body.access_token;
+    await cacheManager.setItem(cacheKey, accessToken, { ttl: 1800 });
+    return accessToken;
   } catch (error) {
     logger.error('PayPal OAuth token exchange failed', error);
     emitPaymentsProviderFailureEvent(tenant ?? source.tenant, 'paypal', 'getAccessToken', {
@@ -581,9 +558,7 @@ async function handlePayPalTarget(
     throw new Error('Missing client secret for PayPal integration');
   }
 
-  const baseUrl = source.metadata.environment === 'live'
-    ? 'https://api-m.paypal.com'
-    : 'https://api-m.sandbox.paypal.com';
+  const baseUrl = getPayPalApiBaseUrl(source.metadata.environment);
 
   const accessToken = await getPayPalAccessToken(source, clientSecret, source.tenant);
   const details = integrationTarget.details || {};

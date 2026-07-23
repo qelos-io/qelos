@@ -46,13 +46,25 @@ const formComponentMap = {
 
 const SelectedFormComponent = computed(() => formComponentMap[props.kind] || null);
 
-const innerFormRef = ref<{ submitForm?: () => void | Promise<void> } | null>(null);
+const innerFormRef = ref<{
+  submitForm?: () => void | Promise<void>;
+  getAuthenticationOverride?: () => Record<string, unknown> | undefined;
+  getStatusFormModel?: () => { metadata?: Record<string, unknown> };
+} | null>(null);
 
 function submitFromModal() {
   innerFormRef.value?.submitForm?.();
 }
 
-defineExpose({ submitFromModal });
+function getAuthenticationOverride() {
+  return innerFormRef.value?.getAuthenticationOverride?.();
+}
+
+function getStatusFormModel() {
+  return innerFormRef.value?.getStatusFormModel?.() ?? { metadata: props.modelValue?.metadata ?? {} };
+}
+
+defineExpose({ submitFromModal, getAuthenticationOverride, getStatusFormModel });
 </script>
 
 <template>

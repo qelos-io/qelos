@@ -1,4 +1,9 @@
+import fetch from 'node-fetch';
+import httpAgent from './http-agent.js';
+
 export const SUMIT_API_BASE = 'https://api.sumit.co.il';
+
+export const SUMIT_STATUS_CHECK_ENDPOINT = '/billing/payments/list/';
 
 export type SumitCredentials = {
   CompanyID: number;
@@ -240,4 +245,56 @@ export function buildSumitRequestBody(
     default:
       return withCredentials(payload, credentials);
   }
+}
+
+export async function checkSumitStatus(params: {
+  companyId: string | number;
+  apiKey: string;
+}): Promise<{ companyId: number; paymentCount?: number }> {
+  const credentials: SumitCredentials = {
+    CompanyID: parseSumitCompanyId(params.companyId),
+    APIKey: params.apiKey,
+  };
+
+  const url = new URL(SUMIT_STATUS_CHECK_ENDPOINT, SUMIT_API_BASE).toString();
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      Credentials: credentials,
+      PageSize: 1,
+      PageNumber: 1,
+    }),
+    agent: httpAgent,
+  });
+
+  let responseBody: any = null;
+  try {
+    responseBody = await response.json();
+  } catch {
+    responseBody = null;
+  }
+
+  if (!response.ok) {
+    const error: any = new Error(
+      `Sumit API request failed with status ${response.status}: ${JSON.stringify(responseBody)}`,
+    );
+    error.status = response.status;
+    error.responseBody = responseBody;
+    throw error;
+  }
+
+  const parsed = parseSumitResponse(responseBody);
+  const payments = Array.isArray(parsed.Payments)
+    ? parsed.Payments
+    : Array.isArray(parsed.Data?.Payments)
+      ? parsed.Data.Payments
+      : undefined;
+
+  return {
+    companyId: credentials.CompanyID,
+    ...(payments ? { paymentCount: payments.length } : {}),
+  };
 }

@@ -345,5 +345,10 @@
   "Connection API reference hint": "Ejemplos de rutas tras guardar (sustituye sourceId por el id real).",
   "Connection section modelGemini hint": "Modelo predeterminado y URL base opcional de Gemini o proxy.",
   "Connection modal keyboard hint": "⌘ Intro o Ctrl+Intro guarda. Escape cierra.",
-  "No connection form for type": "No hay formulario para este tipo de conexión."
+  "No connection form for type": "No hay formulario para este tipo de conexión.",
+  "Test connection": "Probar conexión",
+  "Testing connection…": "Probando conexión…",
+  "Connection verified": "Conexión verificada",
+  "Connection check failed": "Error al comprobar la conexión",
+  "Fill required fields to test connection": "Completa todos los campos obligatorios antes de probar la conexión."
 }

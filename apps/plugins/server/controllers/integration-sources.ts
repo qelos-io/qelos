@@ -10,11 +10,16 @@ import {
 } from '../services/source-authentication-service';
 import { validateSourceMetadata } from '../services/source-metadata-service';
 import { callIntegrationTarget } from '../services/integration-target-call';
+import {
+  checkIntegrationSourceStatus,
+  resolveStatusAuthentication,
+} from '../services/integration-source-status';
 import { isValidObjectId, Types } from 'mongoose';
 import {
   buildPaymentAdminSuggestions,
   buildPaymentEventDescription,
   extractSumitProviderError,
+  IntegrationSourceKind,
   sanitizeProviderErrorBody,
 } from '@qelos/global-types';
 
@@ -215,6 +220,97 @@ export async function removeIntegrationSource(req, res) {
   } catch  {
 
     res.status(500).json({ message: 'could not delete integration source' }).end();
+  }
+}
+
+export async function checkIntegrationSourceStatusHandler(req, res) {
+  const tenant = req.headers.tenant as string;
+  const sourceId = req.params.sourceId as string | undefined;
+  const { kind: bodyKind, metadata: bodyMetadata, authentication: bodyAuthentication } = req.body || {};
+  let resolvedKind: IntegrationSourceKind | undefined;
+
+  try {
+    let kind: IntegrationSourceKind;
+    let metadata: Record<string, unknown>;
+    let authentication: Record<string, unknown> | undefined;
+
+    if (sourceId) {
+      if (!isValidObjectId(sourceId)) {
+        res.status(400).json({ message: 'invalid source id', code: 'INVALID_SOURCE_ID' }).end();
+        return;
+      }
+
+      const source = await IntegrationSource
+        .findOne({ _id: sourceId, tenant })
+        .lean()
+        .exec();
+
+      if (!source) {
+        res.status(404).json({ message: 'integration source not found', code: 'INTEGRATION_SOURCE_NOT_FOUND' }).end();
+        return;
+      }
+
+      kind = source.kind;
+      resolvedKind = kind;
+      metadata = bodyMetadata && typeof bodyMetadata === 'object' && !Array.isArray(bodyMetadata)
+        ? { ...source.metadata, ...bodyMetadata }
+        : source.metadata;
+
+      const storedAuth = source.authentication
+        ? await getEncryptedSourceAuthentication(tenant, source.kind, source.authentication)
+        : null;
+
+      authentication = resolveStatusAuthentication(
+        storedAuth,
+        bodyAuthentication && typeof bodyAuthentication === 'object' && !Array.isArray(bodyAuthentication)
+          ? bodyAuthentication
+          : undefined,
+        source.kind,
+      );
+    } else {
+      if (!bodyKind || typeof bodyKind !== 'string' || !Object.values(IntegrationSourceKind).includes(bodyKind as IntegrationSourceKind)) {
+        res.status(400).json({ message: 'kind is required', code: 'MISSING_KIND' }).end();
+        return;
+      }
+
+      if (!bodyMetadata || typeof bodyMetadata !== 'object' || Array.isArray(bodyMetadata)) {
+        res.status(400).json({ message: 'metadata is required', code: 'MISSING_METADATA' }).end();
+        return;
+      }
+
+      kind = bodyKind as IntegrationSourceKind;
+      resolvedKind = kind;
+      metadata = bodyMetadata;
+      authentication = bodyAuthentication && typeof bodyAuthentication === 'object' && !Array.isArray(bodyAuthentication)
+        ? bodyAuthentication
+        : undefined;
+    }
+
+    const result = await checkIntegrationSourceStatus({
+      tenant,
+      kind,
+      metadata,
+      authentication,
+    });
+
+    res.status(200).json(result).end();
+  } catch (error: any) {
+    if (error?.status === 400) {
+      const code = error.code || 'STATUS_CHECK_VALIDATION_FAILED';
+      res.status(400).json({
+        message: error.message,
+        code,
+        adminSuggestions: buildPaymentAdminSuggestions({
+          code,
+          message: error.message,
+          providerKind: resolvedKind ?? bodyKind,
+        }),
+      }).end();
+      return;
+    }
+
+    logger.error('Error checking integration source status', error);
+    res.status(500).json({ message: 'could not check integration source status' }).end();
   }
 }
 

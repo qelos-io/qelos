@@ -11,6 +11,7 @@ export * from './workspace-configuration-metadata'
 export * from './auth-configuration-metadata'
 export * from './app-configuration-metadata'
 export * from './integration-sources'
+export * from './integration-source-status'
 export * from './integration'
 export * from './integration-targets'
 export * from './no-code-components';
