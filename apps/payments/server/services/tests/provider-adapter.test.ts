@@ -345,6 +345,39 @@ describe('provider-adapter', async () => {
         assert.strictEqual(externalIdentifier.tenant, 'tenant-1');
         assert.strictEqual(externalIdentifier.planId, 'plan-1');
       });
+
+      it('should send the real customer name/contact details instead of the raw billable entity ID', async () => {
+        mockPluginsWithIntegrationSource('sumit', { RedirectURL: 'https://sumit.co.il/pay/zzz' });
+
+        await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'sumit', {
+          ...baseCheckoutParams,
+          customer: {
+            name: 'Jane Doe',
+            nameForInvoice: 'Acme Inc.',
+            email: 'jane@acme.example',
+            phone: '+1-555-0100',
+            address: '1 Main St',
+            city: 'Springfield',
+          },
+        });
+
+        const callArgs = getTriggerCallArgs();
+        assert.strictEqual(callArgs.data.payload.Customer.Name, 'Jane Doe');
+        assert.strictEqual(callArgs.data.payload.Customer.NameForInvoice, 'Acme Inc.');
+        assert.strictEqual(callArgs.data.payload.Customer.EmailAddress, 'jane@acme.example');
+        assert.strictEqual(callArgs.data.payload.Customer.Phone, '+1-555-0100');
+        assert.strictEqual(callArgs.data.payload.Customer.Address, '1 Main St');
+        assert.strictEqual(callArgs.data.payload.Customer.City, 'Springfield');
+      });
+
+      it('should fall back to the raw billable entity ID only when no customer data is provided', async () => {
+        mockPluginsWithIntegrationSource('sumit', { RedirectURL: 'https://sumit.co.il/pay/www' });
+
+        await ProviderAdapter.createCheckout('tenant-1', 'src-1', 'sumit', baseCheckoutParams);
+
+        const callArgs = getTriggerCallArgs();
+        assert.strictEqual(callArgs.data.payload.Customer.Name, 'user-1');
+      });
     });
 
     describe('dodopayments', () => {

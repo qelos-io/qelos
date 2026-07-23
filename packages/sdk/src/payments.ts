@@ -1,6 +1,6 @@
 import { QelosSDKOptions } from './types';
 import BaseSDK from './base-sdk';
-import { IPlan, ISubscription, IInvoice, ICoupon, BillingCycle } from '@qelos/global-types';
+import { IPlan, ISubscription, IInvoice, ICoupon, BillingCycle, CheckoutCustomer } from '@qelos/global-types';
 
 export interface CheckoutRequest {
   /** Required when not providing `subscriptionId`. Must be a non-dynamic plan. */
@@ -10,6 +10,12 @@ export interface CheckoutRequest {
   couponCode?: string;
   successUrl?: string;
   cancelUrl?: string;
+  /**
+   * Real-world identity of the billable entity. Passed through to the payment
+   * provider (e.g. Sumit) so it can create a properly-named customer record
+   * instead of falling back to the raw billable entity ID.
+   */
+  customer?: CheckoutCustomer;
   /**
    * When true, cancels any existing active or trialing subscription for the
    * authenticated billable entity before starting checkout (e.g. plan change).

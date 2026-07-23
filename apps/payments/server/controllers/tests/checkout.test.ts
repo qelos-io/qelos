@@ -258,6 +258,51 @@ describe('checkout controller', async () => {
       assert.strictEqual(res.status.mock.calls[0].arguments[0], 404);
     });
 
+    it('should pass explicit customer details to service', async () => {
+      initiateCheckoutMock.mock.mockImplementation(async () => ({ subscriptionId: 'sub-1', checkoutUrl: 'url' }));
+
+      const req = mockReq({
+        body: {
+          planId: 'plan-1',
+          billingCycle: 'monthly',
+          customer: { name: 'Jane Doe', email: 'jane@acme.example', phone: '+1-555-0100' },
+        },
+      });
+      const res = mockRes();
+      await CheckoutController.initiateCheckout(req, res);
+
+      const params = initiateCheckoutMock.mock.calls[0].arguments[1];
+      assert.strictEqual(params.customer.name, 'Jane Doe');
+      assert.strictEqual(params.customer.email, 'jane@acme.example');
+      assert.strictEqual(params.customer.phone, '+1-555-0100');
+    });
+
+    it('should fall back to the authenticated user name/email when no explicit customer is sent', async () => {
+      initiateCheckoutMock.mock.mockImplementation(async () => ({ subscriptionId: 'sub-1', checkoutUrl: 'url' }));
+
+      const req = mockReq({
+        body: { planId: 'plan-1', billingCycle: 'monthly' },
+        user: { _id: 'user-1', workspace: 'ws-1', billableEntityType: 'user', fullName: 'John Smith', email: 'john@example.com' },
+      });
+      const res = mockRes();
+      await CheckoutController.initiateCheckout(req, res);
+
+      const params = initiateCheckoutMock.mock.calls[0].arguments[1];
+      assert.strictEqual(params.customer.name, 'John Smith');
+      assert.strictEqual(params.customer.email, 'john@example.com');
+    });
+
+    it('should leave customer undefined when neither explicit data nor user identity is available', async () => {
+      initiateCheckoutMock.mock.mockImplementation(async () => ({ subscriptionId: 'sub-1', checkoutUrl: 'url' }));
+
+      const req = mockReq({ body: { planId: 'plan-1', billingCycle: 'monthly' } });
+      const res = mockRes();
+      await CheckoutController.initiateCheckout(req, res);
+
+      const params = initiateCheckoutMock.mock.calls[0].arguments[1];
+      assert.strictEqual(params.customer, undefined);
+    });
+
     it('should pass reset flag to service', async () => {
       initiateCheckoutMock.mock.mockImplementation(async () => ({ subscriptionId: 'sub-1', checkoutUrl: 'url' }));
 

@@ -13,6 +13,23 @@ export type InvoiceStatus = 'paid' | 'pending' | 'failed' | 'refunded';
 /** Type of discount a coupon provides. */
 export type CouponDiscountType = 'percentage' | 'fixed';
 
+/**
+ * Real-world identity of the billable entity, passed through checkout so payment
+ * providers (e.g. Sumit) can create a properly-named customer record instead of
+ * falling back to the raw billable entity ID.
+ */
+export interface CheckoutCustomer {
+  name?: string;
+  /** Legal/invoice name, e.g. a company name distinct from the contact's personal name. */
+  nameForInvoice?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  /** Company tax/VAT identifier. */
+  taxId?: string;
+}
+
 /** Tenant payments settings stored in the `payments-configuration` configuration key. */
 export interface IPaymentsConfigurationMetadata {
   isEnabled?: boolean;

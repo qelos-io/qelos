@@ -3,7 +3,7 @@ import BaseSDK from '../base-sdk';
 import {
   IPlan, ISubscription, IInvoice, ICoupon,
   BillableEntityType, SubscriptionStatus, InvoiceStatus, BillingCycle,
-  IPaymentsConfigurationMetadata,
+  IPaymentsConfigurationMetadata, CheckoutCustomer,
 } from '@qelos/global-types';
 
 export interface PaymentsConfigurationRecord {
@@ -28,6 +28,12 @@ export interface AdminCheckoutRequest {
    * use `setSubscriptionDynamicAmount()` + a separate `checkout()` call instead.
    */
   amount?: number;
+  /**
+   * Real-world identity of the billable entity. Passed through to the payment
+   * provider (e.g. Sumit) so it can create a properly-named customer record
+   * instead of falling back to the raw billable entity ID.
+   */
+  customer?: CheckoutCustomer;
 }
 
 export interface CreateSubscriptionData {

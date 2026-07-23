@@ -1,8 +1,24 @@
 import { Response } from 'express';
 import * as CheckoutService from '../services/checkout-service';
 import * as SubscriptionsService from '../services/subscriptions-service';
-import { BillingCycle, BillableEntityType } from '@qelos/global-types';
+import { BillingCycle, BillableEntityType, CheckoutCustomer } from '@qelos/global-types';
 import { emitCheckoutFailedEvent } from '../services/platform-events.js';
+
+function resolveCheckoutCustomer(req): CheckoutCustomer | undefined {
+  const explicit: CheckoutCustomer | undefined = req.body?.customer;
+  const name = explicit?.name || req.user?.fullName || req.user?.name;
+  const email = explicit?.email || req.user?.email;
+
+  if (!name && !email && !explicit?.phone && !explicit?.address) {
+    return undefined;
+  }
+
+  return {
+    ...explicit,
+    name,
+    email,
+  };
+}
 
 function resolveUserEntityId(req): string | undefined {
   return req.user?.workspace || req.user?._id;
@@ -85,6 +101,8 @@ export async function initiateCheckout(req, res: Response) {
       resolvedSubscriptionId = pendingSub._id.toString();
     }
 
+    const customer = resolveCheckoutCustomer(req);
+
     if (resolvedSubscriptionId) {
       const result = await CheckoutService.initiateCheckout(tenant, {
         subscriptionId: resolvedSubscriptionId,
@@ -92,6 +110,7 @@ export async function initiateCheckout(req, res: Response) {
         successUrl,
         cancelUrl,
         reset: reset === true,
+        customer,
       }, checkoutContext(req));
       res.status(200).json(result).end();
       return;
@@ -121,6 +140,7 @@ export async function initiateCheckout(req, res: Response) {
       successUrl,
       cancelUrl,
       reset: reset === true,
+      customer,
     }, checkoutContext(req));
 
     res.status(200).json(result).end();

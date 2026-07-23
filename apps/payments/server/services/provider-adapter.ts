@@ -1,5 +1,5 @@
 import { service } from '@qelos/api-kit';
-import { resolvePaymentProviderPublicContext, type PaymentProviderPublicContext } from '@qelos/global-types';
+import { resolvePaymentProviderPublicContext, type PaymentProviderPublicContext, type CheckoutCustomer } from '@qelos/global-types';
 import { emitCheckoutFailedEvent, emitProviderCallFailedEvent } from './platform-events.js';
 
 const callPluginsService = service('PLUGINS', { port: process.env.PLUGINS_SERVICE_PORT || 9006 });
@@ -22,8 +22,12 @@ export interface CheckoutParams {
   billableEntityId: string;
   amount: number;
   currency: string;
-  customerEmail?: string;
-  customerName?: string;
+  /**
+   * Real-world identity of the billable entity, used to create a properly-named
+   * customer record with the payment provider (e.g. Sumit) instead of falling
+   * back to the raw billable entity ID.
+   */
+  customer?: CheckoutCustomer;
   successUrl?: string;
   cancelUrl?: string;
 }
@@ -408,7 +412,7 @@ async function createDodoPaymentsCheckout(
       billableEntityId: params.billableEntityId,
       planId: params.plan._id.toString(),
     },
-    customer: params.customerEmail ? { email: params.customerEmail, name: params.customerName } : undefined,
+    customer: params.customer?.email ? { email: params.customer.email, name: params.customer.name } : undefined,
     return_url: params.successUrl,
   }, providerContext);
 
@@ -472,8 +476,14 @@ async function createSumitCheckout(
     Customer: {
       ExternalIdentifier: `${params.billableEntityType}:${params.billableEntityId}`,
       SearchMode: 2,
-      Name: params.customerName || params.customerEmail || params.billableEntityId,
-      EmailAddress: params.customerEmail,
+      // Falling back to the raw billable entity ID is a last resort — it should
+      // rarely trigger once callers populate `customer`.
+      Name: params.customer?.name || params.customer?.email || params.billableEntityId,
+      NameForInvoice: params.customer?.nameForInvoice,
+      EmailAddress: params.customer?.email,
+      Phone: params.customer?.phone,
+      Address: params.customer?.address,
+      City: params.customer?.city,
     },
     Items: [{
       Item: {

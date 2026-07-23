@@ -1,4 +1,4 @@
-import { BillableEntityType, BillingCycle, PaymentProviderPublicContext } from '@qelos/global-types';
+import { BillableEntityType, BillingCycle, CheckoutCustomer, PaymentProviderPublicContext } from '@qelos/global-types';
 import * as PlansService from './plans-service';
 import * as SubscriptionsService from './subscriptions-service';
 import * as InvoicesService from './invoices-service';
@@ -17,6 +17,11 @@ export interface InitiateCheckoutParams {
   cancelUrl?: string;
   /** When true, cancels any active/trialing subscription for the billable entity before checkout. */
   reset?: boolean;
+  /**
+   * Real-world identity of the billable entity. Forwarded to the payment provider
+   * (e.g. Sumit) so it can create a properly-named customer record.
+   */
+  customer?: CheckoutCustomer;
 }
 
 export interface CheckoutContext {
@@ -220,6 +225,7 @@ export async function initiateCheckout(
         currency: plan.currency,
         successUrl,
         cancelUrl,
+        customer: params.customer,
       },
     );
 
