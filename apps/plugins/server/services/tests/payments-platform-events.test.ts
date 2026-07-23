@@ -84,8 +84,6 @@ describe('payments-platform-events', async () => {
         code: 'ERR_1',
         type: 'api_error',
         status: 502,
-        responseData: { Status: 'Error' },
-        stack: 'Error stack trace',
       });
     });
 
@@ -125,7 +123,11 @@ describe('payments-platform-events', async () => {
       assert.strictEqual(savedEvents[0].kind, 'provider');
       assert.strictEqual(savedEvents[0].eventName, 'provider-call-failed');
       assert.strictEqual(savedEvents[0].description, 'Provider call failed: createRecurringPayment: Invalid amount');
-      assert.ok(Array.isArray(savedEvents[0].metadata.adminSuggestions));
+      assert.strictEqual(
+        savedEvents[0].metadata.docsUrl,
+        'https://docs.qelos.io/payments/events#checkout-initiation-failure-checkout-failed-or-provider-call-failed',
+      );
+      assert.strictEqual(savedEvents[0].metadata.adminSuggestions, undefined);
       assert.strictEqual(savedEvents[0].metadata.providerKind, 'sumit');
       assert.strictEqual(savedEvents[0].metadata.operation, 'createRecurringPayment');
       assert.strictEqual(savedEvents[0].metadata.status, 400);

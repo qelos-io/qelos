@@ -47,7 +47,8 @@ Every payment event includes a sanitized `metadata` object:
 | `externalEventId` | `string` | Provider webhook event ID (webhook events only) |
 | `couponCode` | `string` | Coupon applied during checkout (checkout events only) |
 | `providerResponse` | `object` | Sanitized provider response body or summary |
-| `error` | `object` | Serialized error — see [Error object](#error-object) |
+| `docsUrl` | `string` | Link to [Payments Troubleshooting](/payments/troubleshooting) or a provider playbook in this guide |
+| `error` | `object` | Compact serialized error — see [Error object](#error-object) |
 
 Sensitive keys (`Credentials`, card fields, API keys, secrets) are never stored.
 
@@ -61,8 +62,8 @@ The `metadata.error` field contains:
 | `code` | Error code when available |
 | `type` | Error type when available |
 | `status` | HTTP status from provider responses |
-| `responseData` | Sanitized provider error payload |
-| `stack` | Stack trace (non-production environments only) |
+
+Use `metadata.docsUrl` for remediation steps. Full provider payloads and admin suggestions are intentionally **not** stored in the Events log.
 
 ## Operations
 
@@ -168,8 +169,10 @@ await sdkAdmin.events.getList({
 **What to inspect:**
 
 - `metadata.operation` — always `setPaymentDetails`
-- `metadata.error.status` / `metadata.error.responseData` — Sumit HTTP status and error body (credentials stripped)
+- `metadata.error.status` — HTTP status when available
+- `metadata.providerResponse` — sanitized Sumit error body (credentials stripped)
 - `metadata.code` — Sumit `Status` field when present
+- `metadata.docsUrl` — link to remediation steps
 
 **Common causes:** Invalid or expired card, Sumit API key / Company ID misconfiguration, customer record missing in Sumit.
 
@@ -198,7 +201,7 @@ await sdkAdmin.events.getList({
 **What to inspect:**
 
 - `checkout-failed` — check `metadata.code` (`DYNAMIC_AMOUNT_NOT_SET`, `PLAN_NOT_ACTIVE`, etc.)
-- `provider-call-failed` with `metadata.operation` = `createRecurringPayment` — Sumit rejected the recurring payment setup; inspect `metadata.providerResponse` and `metadata.error.responseData`
+- `provider-call-failed` with `metadata.operation` = `createRecurringPayment` — Sumit rejected the recurring payment setup; inspect `metadata.providerResponse` and follow `metadata.docsUrl`
 
 ### Webhook-reported payment failure (`payment-failed`)
 
@@ -280,8 +283,9 @@ await sdkAdmin.events.getList({
 **What to inspect:**
 
 - `metadata.operation` — `createSubscription` (checkout) or `cancelSubscription` (checkout cancellation)
-- `metadata.error.status` / `metadata.error.responseData` — Paddle API error body (credentials stripped)
-- `metadata.providerResponse` — sanitized summary of the integration trigger payload
+- `metadata.error.status` — HTTP status when available
+- `metadata.providerResponse` — sanitized Paddle API error body (credentials stripped)
+- `metadata.docsUrl` — link to remediation steps
 
 **Common causes:** Invalid Paddle price ID, sandbox/live environment mismatch, or Paddle API outage.
 
@@ -353,7 +357,7 @@ await sdkAdmin.events.getList({
 **What to inspect:**
 
 - `checkout-failed` — check `metadata.code` (`MISSING_EXTERNAL_PRICE_ID` when `externalIds.paypal.productId` is missing, `PLAN_NOT_ACTIVE`, etc.)
-- `provider-call-failed` with `metadata.operation` = `createSubscription` — PayPal rejected subscription creation; inspect `metadata.error.responseData` for PayPal error details (e.g. invalid `plan_id`)
+- `provider-call-failed` with `metadata.operation` = `createSubscription` — PayPal rejected subscription creation; inspect `metadata.providerResponse` and follow `metadata.docsUrl`
 - `provider-call-failed` with `metadata.operation` = `cancelSubscription` — provider-side cancellation failed during checkout cancel
 
 **Common causes:** PayPal product/plan ID not linked on the Qelos plan, misconfigured return/cancel URLs, or PayPal REST API errors.
@@ -428,7 +432,7 @@ await sdkAdmin.events.getList({
 **What to inspect:**
 
 - `checkout-failed` — check `metadata.code` (`MISSING_EXTERNAL_PRICE_ID` when `externalIds.dodopayments.monthlyPriceId` / `yearlyPriceId` is missing, `PLAN_NOT_ACTIVE`, etc.)
-- `provider-call-failed` with `metadata.operation` = `createSubscription` — DodoPayments rejected payment-link creation; inspect `metadata.error.responseData`
+- `provider-call-failed` with `metadata.operation` = `createSubscription` — DodoPayments rejected payment-link creation; inspect `metadata.providerResponse` and follow `metadata.docsUrl`
 - `provider-call-failed` with `metadata.operation` = `cancelSubscription` — provider-side cancellation failed
 
 **Common causes:** DodoPayments product/price ID not configured on the plan, invalid API credentials, or DodoPayments API errors.

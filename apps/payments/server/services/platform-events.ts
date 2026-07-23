@@ -1,10 +1,9 @@
 import { emitPlatformEvent, type PlatformEvent } from '@qelos/api-kit';
 import {
   appendPaymentProviderContext,
-  buildPaymentAdminSuggestions,
   buildPaymentEventDescription,
   extractSumitProviderError,
-  type PaymentAdminSuggestion,
+  resolvePaymentEventDocsUrl,
   type PaymentProviderPublicContext,
 } from '@qelos/global-types';
 
@@ -29,8 +28,7 @@ export type PaymentMetadata = {
   externalEventId?: string;
   couponCode?: string;
   providerResponse?: unknown;
-  providerError?: Record<string, unknown> | null;
-  adminSuggestions?: PaymentAdminSuggestion[];
+  docsUrl?: string;
   error?: ReturnType<typeof serializeError> | null;
 };
 
@@ -87,19 +85,11 @@ export function serializeError(error: any) {
     return null;
   }
 
-  const responseData = error.response?.data ?? error.responseData;
-  const providerError = error.providerError
-    ?? (error.providerKind === 'sumit' ? extractSumitProviderError(responseData?.providerError ?? responseData) : responseData?.providerError);
-
   return {
     message: error.message,
     code: error.code,
     type: error.type,
     status: error.status ?? error.response?.status,
-    responseData: sanitizeValue(responseData),
-    providerError: sanitizeValue(providerError),
-    adminSuggestions: error.adminSuggestions,
-    stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
   };
 }
 
@@ -118,27 +108,6 @@ function resolveProviderError(params: {
   }
 
   return responseData?.providerError ?? null;
-}
-
-function resolveAdminSuggestions(params: {
-  providerKind?: string;
-  operation?: string;
-  code?: string;
-  error: any;
-  providerError?: Record<string, unknown> | null;
-}) {
-  if (Array.isArray(params.error?.adminSuggestions) && params.error.adminSuggestions.length > 0) {
-    return params.error.adminSuggestions;
-  }
-
-  return buildPaymentAdminSuggestions({
-    providerKind: params.providerKind,
-    operation: params.operation,
-    code: params.code ?? params.error?.code,
-    status: params.error?.status ?? params.error?.response?.status,
-    message: params.error?.message,
-    providerError: params.providerError,
-  });
 }
 
 type PaymentEventParams = BaseEventParams & {
@@ -193,14 +162,8 @@ export function emitCheckoutFailedEvent(params: PaymentEventParams & {
   }
 
   const operation = params.operation ?? 'initiateCheckout';
+  const code = params.code ?? params.error?.code;
   const providerError = resolveProviderError(params);
-  const adminSuggestions = resolveAdminSuggestions({
-    providerKind: params.providerKind,
-    operation,
-    code: params.code,
-    error: params.error,
-    providerError,
-  });
   const description = buildPaymentEventDescription(
     operation === 'initiateCheckout'
       ? 'Checkout initiation failed'
@@ -218,7 +181,7 @@ export function emitCheckoutFailedEvent(params: PaymentEventParams & {
     metadata: withPaymentMetadata({
       providerKind: params.providerKind,
       operation,
-      code: params.code ?? params.error?.code,
+      code,
       planId: params.planId,
       subscriptionId: params.subscriptionId,
       existingSubscriptionId: params.existingSubscriptionId,
@@ -226,8 +189,12 @@ export function emitCheckoutFailedEvent(params: PaymentEventParams & {
       billableEntityId: params.billableEntityId,
       externalSubscriptionId: params.externalSubscriptionId,
       couponCode: params.couponCode,
-      providerError,
-      adminSuggestions,
+      docsUrl: resolvePaymentEventDocsUrl({
+        providerKind: params.providerKind,
+        eventName: 'checkout-failed',
+        operation,
+        code,
+      }),
       error: serializeError(params.error),
     }, params.providerContext),
   });
@@ -259,14 +226,8 @@ export function emitProviderCallFailedEvent(params: PaymentEventParams & {
     : eventName === 'payment-failed'
       ? `Payment failed via ${params.providerKind}`
       : `Provider call failed: ${params.operation}`;
+  const code = params.code ?? params.error?.code;
   const providerError = resolveProviderError(params);
-  const adminSuggestions = resolveAdminSuggestions({
-    providerKind: params.providerKind,
-    operation: params.operation,
-    code: params.code,
-    error: params.error,
-    providerError,
-  });
 
   emitSafePlatformEvent({
     tenant: params.tenant,
@@ -278,15 +239,19 @@ export function emitProviderCallFailedEvent(params: PaymentEventParams & {
     metadata: withPaymentMetadata({
       providerKind: params.providerKind,
       operation: params.operation,
-      code: params.code ?? params.error?.code,
+      code,
       subscriptionId: params.subscriptionId,
       planId: params.planId,
       billableEntityType: params.billableEntityType,
       billableEntityId: params.billableEntityId,
       externalSubscriptionId: params.externalSubscriptionId,
       providerResponse: params.providerResponse,
-      providerError,
-      adminSuggestions,
+      docsUrl: resolvePaymentEventDocsUrl({
+        providerKind: params.providerKind,
+        eventName,
+        operation: params.operation,
+        code,
+      }),
       error: serializeError(params.error),
     }, params.providerContext),
   });
@@ -308,6 +273,8 @@ export function emitWebhookPaymentFailedEvent(params: PaymentEventParams & {
     return;
   }
 
+  const code = params.code ?? params.error?.code;
+
   emitSafePlatformEvent({
     tenant: params.tenant,
     user: params.userId,
@@ -318,7 +285,7 @@ export function emitWebhookPaymentFailedEvent(params: PaymentEventParams & {
     metadata: withPaymentMetadata({
       providerKind: params.providerKind,
       operation: 'payment-failed',
-      code: params.code ?? params.error?.code,
+      code,
       subscriptionId: params.subscriptionId,
       planId: params.planId,
       billableEntityType: params.billableEntityType,
@@ -326,6 +293,12 @@ export function emitWebhookPaymentFailedEvent(params: PaymentEventParams & {
       externalSubscriptionId: params.externalSubscriptionId,
       externalEventId: params.externalEventId,
       providerResponse: params.providerResponse,
+      docsUrl: resolvePaymentEventDocsUrl({
+        providerKind: params.providerKind,
+        eventName: 'payment-failed',
+        operation: 'payment-failed',
+        code,
+      }),
       error: serializeError(params.error),
     }, params.providerContext),
   });
@@ -343,6 +316,8 @@ export function emitWebhookProcessingFailedEvent(params: PaymentEventParams & {
     return;
   }
 
+  const code = params.code ?? params.error?.code;
+
   emitSafePlatformEvent({
     tenant: params.tenant,
     user: params.userId,
@@ -355,9 +330,15 @@ export function emitWebhookProcessingFailedEvent(params: PaymentEventParams & {
     metadata: withPaymentMetadata({
       providerKind: params.providerKind,
       operation: params.operation,
-      code: params.code ?? params.error?.code,
+      code,
       externalEventId: params.externalEventId,
       providerResponse: params.providerResponse,
+      docsUrl: resolvePaymentEventDocsUrl({
+        providerKind: params.providerKind,
+        eventName: 'webhook-processing-failed',
+        operation: params.operation,
+        code,
+      }),
       error: serializeError(params.error),
     }, params.providerContext),
   });

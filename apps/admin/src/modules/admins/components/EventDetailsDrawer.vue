@@ -85,6 +85,19 @@
                 {{ paymentsMetadata.code }}
               </el-descriptions-item>
               <el-descriptions-item
+                v-if="paymentsDocsUrl"
+                :label="$t('Documentation')"
+              >
+                <a
+                  :href="paymentsDocsUrl"
+                  target="_blank"
+                  rel="noopener"
+                  class="docs-link"
+                >
+                  {{ $t("View troubleshooting guide") }}
+                </a>
+              </el-descriptions-item>
+              <el-descriptions-item
                 v-if="paymentsErrorMessage"
                 :label="$t('Error')"
               >
@@ -310,6 +323,11 @@ const paymentsErrorMessage = computed(() => {
   return typeof message === "string" ? message : "";
 });
 
+const paymentsDocsUrl = computed(() => {
+  const docsUrl = paymentsMetadata.value?.docsUrl;
+  return typeof docsUrl === "string" && docsUrl ? docsUrl : "";
+});
+
 watch(
   () => eventUserId.value,
   async (userId) => {
@@ -457,6 +475,16 @@ const userDisplayName = computed(() => {
 }
 
 .user-link {
+  color: var(--el-color-primary);
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.docs-link {
   color: var(--el-color-primary);
   text-decoration: none;
   font-weight: 500;
