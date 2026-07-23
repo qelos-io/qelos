@@ -5,7 +5,7 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { BlueprintPropertyType } from '@qelos/global-types';
-import { validateValue, getValidBlueprintMetadata } from '../entities.service';
+import { validateValue, getValidBlueprintMetadata, extractFlatMetadata, buildEntityMetadataInput } from '../entities.service';
 
 describe('validateValue', () => {
 
@@ -447,5 +447,89 @@ describe('getValidBlueprintMetadata', () => {
 
     const result = getValidBlueprintMetadata(null, blueprint as any);
     assert.deepStrictEqual(result, {});
+  });
+});
+
+describe('extractFlatMetadata', () => {
+  const blueprint = {
+    properties: {
+      content: { title: 'Content', type: BlueprintPropertyType.STRING, description: '', required: false },
+      post: { title: 'Post', type: BlueprintPropertyType.STRING, description: '', required: true },
+    },
+  };
+
+  it('should pick up blueprint properties sent flat at the top level', () => {
+    const body = { post: '6a3fce7a86fbf00fe3b15d3c', content: 'nice' };
+    const result = extractFlatMetadata(body, blueprint as any);
+    assert.deepStrictEqual(result, { post: '6a3fce7a86fbf00fe3b15d3c', content: 'nice' });
+  });
+
+  it('should ignore top-level fields that are not blueprint properties', () => {
+    const body = { post: '6a3fce7a86fbf00fe3b15d3c', user: 'someUserId', workspace: 'someWorkspaceId' };
+    const result = extractFlatMetadata(body, blueprint as any);
+    assert.deepStrictEqual(result, { post: '6a3fce7a86fbf00fe3b15d3c' });
+  });
+
+  it('should return an empty object when body is missing', () => {
+    assert.deepStrictEqual(extractFlatMetadata(undefined, blueprint as any), {});
+    assert.deepStrictEqual(extractFlatMetadata(null, blueprint as any), {});
+  });
+
+  it('should return an empty object when blueprint has no properties', () => {
+    const result = extractFlatMetadata({ post: 'id' }, {} as any);
+    assert.deepStrictEqual(result, {});
+  });
+});
+
+describe('buildEntityMetadataInput', () => {
+  const blueprint = {
+    properties: {
+      content: { title: 'Content', type: BlueprintPropertyType.STRING, description: '', required: false },
+      post: { title: 'Post', type: BlueprintPropertyType.STRING, description: '', required: true },
+    },
+    relations: [{ key: 'post', target: 'posts' }],
+  };
+
+  it('should support the old usage: properties nested under a `metadata` object', () => {
+    const body = { metadata: { post: '6a3fce7a86fbf00fe3b15d3c', content: 'nice' } };
+    const result = buildEntityMetadataInput({}, body, blueprint as any);
+    assert.deepStrictEqual(result, { post: '6a3fce7a86fbf00fe3b15d3c', content: 'nice' });
+
+    const validated = getValidBlueprintMetadata(result, blueprint as any);
+    assert.deepStrictEqual(validated, { post: '6a3fce7a86fbf00fe3b15d3c', content: 'nice' });
+  });
+
+  it('should support flat properties sent at the top level of the body (including relation keys)', () => {
+    const body = { post: '6a3fce7a86fbf00fe3b15d3c', content: 'nice' };
+    const result = buildEntityMetadataInput({}, body, blueprint as any);
+    assert.deepStrictEqual(result, { post: '6a3fce7a86fbf00fe3b15d3c', content: 'nice' });
+
+    const validated = getValidBlueprintMetadata(result, blueprint as any);
+    assert.deepStrictEqual(validated, { post: '6a3fce7a86fbf00fe3b15d3c', content: 'nice' });
+  });
+
+  it('should not throw the old "Property post must be a string" bug when the relation is sent flat', () => {
+    const body = { post: '6a3fce7a86fbf00fe3b15d3c', content: 'nice' };
+    const result = buildEntityMetadataInput({}, body, blueprint as any);
+    assert.doesNotThrow(() => getValidBlueprintMetadata(result, blueprint as any));
+  });
+
+  it('should preserve pre-existing entity metadata not present in the body', () => {
+    const existingMetadata = { post: 'oldPostId', content: 'old content' };
+    const body = { content: 'updated content' };
+    const result = buildEntityMetadataInput(existingMetadata, body, blueprint as any);
+    assert.deepStrictEqual(result, { post: 'oldPostId', content: 'updated content' });
+  });
+
+  it('should let an explicit `metadata` object win over flat top-level fields when both are present', () => {
+    const body = { post: 'flatPostId', content: 'flat content', metadata: { post: 'nestedPostId' } };
+    const result = buildEntityMetadataInput({}, body, blueprint as any);
+    assert.deepStrictEqual(result, { post: 'nestedPostId', content: 'flat content' });
+  });
+
+  it('should ignore `_id` from the body', () => {
+    const body = { _id: 'someMongoId', post: '6a3fce7a86fbf00fe3b15d3c' };
+    const result = buildEntityMetadataInput({}, body, blueprint as any);
+    assert.strictEqual('_id' in result, false);
   });
 });

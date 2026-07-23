@@ -6,6 +6,7 @@ import { CRUDOperation, PermissionScope } from '@qelos/global-types';
 import mongoose from 'mongoose';
 import logger from '../services/logger';
 import {
+  buildEntityMetadataInput,
   convertQueryToIndexes,
   Full,
   getEntityIndexes,
@@ -39,10 +40,8 @@ function getAuditItem(req: Request): IAuditItem {
 }
 
 async function updateAllEntityMetadata(req: Full<RequestWithUser>, blueprint: IBlueprint, entity: IBlueprintEntity) {
-  const { _id, ...body } = req.body || {}
-
   // validate the metadata
-  entity.metadata = getValidBlueprintMetadata({...entity.metadata, ...body.metadata}, blueprint);
+  entity.metadata = getValidBlueprintMetadata(buildEntityMetadataInput(entity.metadata, req.body, blueprint), blueprint);
 
   // run the update mapping pre-save
   await updateEntityMapping(blueprint, entity);

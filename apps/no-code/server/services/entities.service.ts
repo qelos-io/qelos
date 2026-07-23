@@ -85,6 +85,36 @@ export function validateValue(key: string, value: any, property: IBlueprintPrope
   return value;
 }
 
+// Requests may send blueprint properties (including relation keys, which are
+// plain string properties under the hood) flat at the top level of the body
+// instead of nested under `metadata` - mirroring the flat response shape
+// entities are returned in by default. Only keys declared on the blueprint
+// are picked up, so unrelated top-level fields (user, workspace, etc.) are
+// left untouched.
+export function extractFlatMetadata(body: any, blueprint: IBlueprint): Record<string, any> {
+  const flat: Record<string, any> = {};
+  if (!body || !blueprint.properties) {
+    return flat;
+  }
+  for (const key of Object.keys(blueprint.properties)) {
+    if (key in body) {
+      flat[key] = body[key];
+    }
+  }
+  return flat;
+}
+
+// Merges a request body into the metadata that should be validated: existing
+// entity metadata, overlaid by any blueprint properties sent flat at the
+// top level, overlaid by an explicit `metadata` object - so requests that
+// still send the old nested `{ metadata: {...} }` shape keep taking
+// precedence over flat top-level fields when both are present.
+export function buildEntityMetadataInput(existingMetadata: any, body: any, blueprint: IBlueprint): Record<string, any> {
+  const { _id, metadata, ...rest } = body || {};
+  const flatMetadata = extractFlatMetadata(rest, blueprint);
+  return { ...existingMetadata, ...flatMetadata, ...metadata };
+}
+
 export function getValidBlueprintMetadata(metadata: any, blueprint: IBlueprint) {
   const validData = {};
   if (metadata && blueprint.properties) {
