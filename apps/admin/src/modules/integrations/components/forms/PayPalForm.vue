@@ -181,7 +181,16 @@ const submitForm = async () => {
   }
 };
 
-defineExpose({ submitForm });
+function getAuthenticationOverride() {
+  const clientSecret = tokenInput.value.trim();
+  return clientSecret ? { clientSecret } : undefined;
+}
+
+function getStatusFormModel() {
+  return { metadata: { ...formModel.value.metadata } };
+}
+
+defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
 </script>
 
 <style scoped>

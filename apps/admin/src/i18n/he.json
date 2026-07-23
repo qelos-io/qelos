@@ -345,5 +345,10 @@
   "Connection API reference hint": "דוגמאות אחרי השמירה (החלף sourceId במזהה האמיתי).",
   "Connection section modelGemini hint": "מודל ברירת מחדל וכתובת בסיס אופציונלית ל‑Gemini או פרוקסי.",
   "Connection modal keyboard hint": "⌘ Enter או Ctrl+Enter שומרים. Escape סוגר.",
-  "No connection form for type": "אין טופס זמין לסוג חיבור זה."
+  "No connection form for type": "אין טופס זמין לסוג חיבור זה.",
+  "Test connection": "בדיקת חיבור",
+  "Testing connection…": "בודק חיבור…",
+  "Connection verified": "החיבור אומת",
+  "Connection check failed": "בדיקת החיבור נכשלה",
+  "Fill required fields to test connection": "מלא את כל השדות הנדרשים לפני בדיקת החיבור."
 }
