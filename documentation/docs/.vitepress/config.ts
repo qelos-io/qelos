@@ -140,6 +140,7 @@ export default defineConfig({
           { text: 'Coupons', link: '/payments/coupons' },
           { text: 'Checkout', link: '/payments/checkout' },
           { text: 'Platform Events', link: '/payments/events' },
+          { text: 'Troubleshooting', link: '/payments/troubleshooting' },
           { text: 'Configuration', link: '/payments/configuration' },
           { text: 'Sumit', link: '/payments/sumit' },
           { text: 'Paddle', link: '/payments/paddle' },

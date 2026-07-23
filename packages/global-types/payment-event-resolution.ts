@@ -18,6 +18,93 @@ export type PaymentResolutionContext = {
   providerError?: Record<string, unknown> | null;
 };
 
+export type PaymentEventDocsContext = {
+  providerKind?: string;
+  eventName?: string;
+  operation?: string;
+  code?: string;
+};
+
+export const PAYMENTS_DOCS_BASE_URL = 'https://docs.qelos.io/payments';
+
+const TROUBLESHOOTING_ERROR_CODES = new Set([
+  'PAYMENTS_NOT_CONFIGURED',
+  'ACTIVE_SUBSCRIPTION_EXISTS',
+  'DYNAMIC_AMOUNT_NOT_SET',
+  'DYNAMIC_PLAN_REQUIRES_SUBSCRIPTION',
+  'DYNAMIC_PLAN_UNSUPPORTED_PROVIDER',
+  'MISSING_REDIRECT_URLS',
+  'INVALID_CHECKOUT_AMOUNT',
+  'INVALID_SUMIT_COMPANY_ID',
+  'MISSING_SUMIT_CREDENTIALS',
+  'UNSUPPORTED_SUMIT_CURRENCY',
+  'INTEGRATION_SOURCE_NOT_FOUND',
+  'MISSING_EXTERNAL_PRICE_ID',
+  'PLAN_NOT_ACTIVE',
+  'SUBSCRIPTION_NOT_PENDING',
+  'INVALID_SIGNATURE',
+  'WEBHOOK_SECRET_NOT_CONFIGURED',
+  'TENANT_NOT_FOUND',
+]);
+
+function troubleshootingCodeAnchor(code: string) {
+  return code.toLowerCase().replace(/_/g, '-');
+}
+
+function resolveProviderEventDocsUrl(providerKind: string, eventName?: string) {
+  const provider = providerKind.toLowerCase();
+
+  if (eventName === 'payment-method-save-failed') {
+    return `${PAYMENTS_DOCS_BASE_URL}/events#failed-credit-card-capture-payment-method-save-failed`;
+  }
+
+  if (eventName === 'payment-failed' || eventName === 'webhook-processing-failed') {
+    return `${PAYMENTS_DOCS_BASE_URL}/events#${provider}-troubleshooting`;
+  }
+
+  if (eventName === 'checkout-failed' || eventName === 'provider-call-failed') {
+    switch (provider) {
+      case 'sumit':
+        return `${PAYMENTS_DOCS_BASE_URL}/events#checkout-initiation-failure-checkout-failed-or-provider-call-failed`;
+      case 'paddle':
+        return `${PAYMENTS_DOCS_BASE_URL}/events#checkout-validation-failure-checkout-failed`;
+      case 'paypal':
+        return `${PAYMENTS_DOCS_BASE_URL}/events#checkout-and-subscription-setup-failure-checkout-failed-or-provider-call-failed`;
+      case 'dodopayments':
+        return `${PAYMENTS_DOCS_BASE_URL}/events#checkout-failure-checkout-failed-or-provider-call-failed`;
+      default:
+        break;
+    }
+  }
+
+  switch (provider) {
+    case 'sumit':
+      return `${PAYMENTS_DOCS_BASE_URL}/events#sumit-troubleshooting`;
+    case 'paddle':
+      return `${PAYMENTS_DOCS_BASE_URL}/events#paddle-troubleshooting`;
+    case 'paypal':
+      return `${PAYMENTS_DOCS_BASE_URL}/events#paypal-troubleshooting`;
+    case 'dodopayments':
+      return `${PAYMENTS_DOCS_BASE_URL}/events#dodopayments-troubleshooting`;
+    default:
+      return `${PAYMENTS_DOCS_BASE_URL}/troubleshooting`;
+  }
+}
+
+export function resolvePaymentEventDocsUrl(context: PaymentEventDocsContext): string {
+  const code = context.code?.toUpperCase();
+
+  if (code && TROUBLESHOOTING_ERROR_CODES.has(code)) {
+    return `${PAYMENTS_DOCS_BASE_URL}/troubleshooting#${troubleshootingCodeAnchor(code)}`;
+  }
+
+  if (context.providerKind) {
+    return resolveProviderEventDocsUrl(context.providerKind, context.eventName);
+  }
+
+  return `${PAYMENTS_DOCS_BASE_URL}/troubleshooting`;
+}
+
 function pushUnique(suggestions: PaymentAdminSuggestion[], suggestion: PaymentAdminSuggestion) {
   if (suggestions.some((s) => s.summary === suggestion.summary)) {
     return;

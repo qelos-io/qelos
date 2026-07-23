@@ -29,7 +29,7 @@ describe('platform-events', async () => {
       assert.strictEqual(PlatformEvents.serializeError(undefined), null);
     });
 
-    it('serializes error fields and sanitizes responseData', () => {
+    it('serializes error fields without nested provider payloads', () => {
       const error = {
         message: 'Provider failed',
         code: 'PROVIDER_ERROR',
@@ -42,6 +42,7 @@ describe('platform-events', async () => {
             ErrorCode: 'CARD_DECLINED',
             Message: 'Card was declined',
             Credentials: { APIKey: 'secret-key' },
+            adminSuggestions: [{ summary: 'Fix credentials', action: 'Open admin' }],
           },
         },
       };
@@ -52,13 +53,6 @@ describe('platform-events', async () => {
         code: 'PROVIDER_ERROR',
         type: 'provider_error',
         status: 400,
-        responseData: {
-          ErrorCode: 'CARD_DECLINED',
-          Message: 'Card was declined',
-        },
-        providerError: undefined,
-        adminSuggestions: undefined,
-        stack: error.stack,
       });
     });
 
@@ -66,6 +60,12 @@ describe('platform-events', async () => {
       process.env.NODE_ENV = 'production';
       const serialized = PlatformEvents.serializeError(new Error('boom'));
       assert.strictEqual(serialized?.stack, undefined);
+      assert.deepStrictEqual(serialized, {
+        message: 'boom',
+        code: undefined,
+        type: undefined,
+        status: undefined,
+      });
     });
   });
 
@@ -143,20 +143,41 @@ describe('platform-events', async () => {
           billableEntityId: 'user-1',
           externalSubscriptionId: undefined,
           couponCode: undefined,
-          providerError: null,
-          adminSuggestions: [],
+          docsUrl: 'https://docs.qelos.io/payments/troubleshooting#plan-not-active',
           error: {
             message: 'Plan inactive',
             code: 'PLAN_NOT_ACTIVE',
             type: undefined,
             status: undefined,
-            responseData: undefined,
-            providerError: undefined,
-            adminSuggestions: undefined,
-            stack: undefined,
           },
         },
       });
+    });
+
+    it('emits checkout-failed with docs link for Sumit credential errors', () => {
+      PlatformEvents.emitCheckoutFailedEvent({
+        tenant: 'tenant-1',
+        userId: 'user-1',
+        providerKind: 'sumit',
+        code: 'MISSING_SUMIT_CREDENTIALS',
+        planId: 'plan-1',
+        subscriptionId: 'sub-1',
+        billableEntityType: 'user',
+        billableEntityId: 'user-1',
+        error: {
+          message: 'Provider call failed: beginCheckoutRedirect',
+          code: 'MISSING_SUMIT_CREDENTIALS',
+          status: 400,
+        },
+      });
+
+      const event = emitPlatformEventMock.mock.calls[0].arguments[0];
+      assert.strictEqual(
+        event.metadata.docsUrl,
+        'https://docs.qelos.io/payments/troubleshooting#missing-sumit-credentials',
+      );
+      assert.strictEqual(event.metadata.adminSuggestions, undefined);
+      assert.strictEqual(event.metadata.providerError, undefined);
     });
   });
 

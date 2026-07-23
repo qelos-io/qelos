@@ -4,6 +4,7 @@ import {
   buildPaymentAdminSuggestions,
   buildPaymentEventDescription,
   extractSumitProviderError,
+  resolvePaymentEventDocsUrl,
   resolvePaymentProviderPublicContext,
 } from '@qelos/global-types';
 
@@ -58,15 +59,6 @@ describe('payment-event-resolution', () => {
     assert.match(suggestions[0].action, /cancelSubscription/);
   });
 
-  it('buildPaymentEventDescription appends Sumit user message', () => {
-    const description = buildPaymentEventDescription(
-      'Provider call failed: beginCheckoutRedirect',
-      { UserErrorMessage: 'Invalid API key' },
-    );
-
-    assert.strictEqual(description, 'Provider call failed: beginCheckoutRedirect: Invalid API key');
-  });
-
   it('resolvePaymentProviderPublicContext maps provider public account identifiers', () => {
     assert.deepStrictEqual(
       resolvePaymentProviderPublicContext('sumit', { companyId: '476778618' }, 'source-1'),
@@ -91,6 +83,44 @@ describe('payment-event-resolution', () => {
         providerSourceId: 'source-3',
         providerEnvironment: 'live',
       },
+    );
+  });
+
+  it('buildPaymentEventDescription appends Sumit user message', () => {
+    const description = buildPaymentEventDescription(
+      'Provider call failed: beginCheckoutRedirect',
+      { UserErrorMessage: 'Invalid API key' },
+    );
+
+    assert.strictEqual(description, 'Provider call failed: beginCheckoutRedirect: Invalid API key');
+  });
+
+  it('resolvePaymentEventDocsUrl maps error codes to troubleshooting anchors', () => {
+    assert.strictEqual(
+      resolvePaymentEventDocsUrl({ code: 'MISSING_SUMIT_CREDENTIALS' }),
+      'https://docs.qelos.io/payments/troubleshooting#missing-sumit-credentials',
+    );
+    assert.strictEqual(
+      resolvePaymentEventDocsUrl({ code: 'PLAN_NOT_ACTIVE' }),
+      'https://docs.qelos.io/payments/troubleshooting#plan-not-active',
+    );
+  });
+
+  it('resolvePaymentEventDocsUrl falls back to provider event playbooks', () => {
+    assert.strictEqual(
+      resolvePaymentEventDocsUrl({
+        providerKind: 'sumit',
+        eventName: 'payment-method-save-failed',
+      }),
+      'https://docs.qelos.io/payments/events#failed-credit-card-capture-payment-method-save-failed',
+    );
+    assert.strictEqual(
+      resolvePaymentEventDocsUrl({
+        providerKind: 'paddle',
+        eventName: 'checkout-failed',
+        code: 'INTEGRATION_TARGET_FAILED',
+      }),
+      'https://docs.qelos.io/payments/events#checkout-validation-failure-checkout-failed',
     );
   });
 });

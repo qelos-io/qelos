@@ -2,9 +2,9 @@ import PlatformEvent from '../models/event.js';
 import { emitPlatformEvent } from './hook-events.js';
 import {
   appendPaymentProviderContext,
-  buildPaymentAdminSuggestions,
   buildPaymentEventDescription,
   extractSumitProviderError,
+  resolvePaymentEventDocsUrl,
   resolvePaymentProviderPublicContext,
   type PaymentProviderPublicContext,
 } from '@qelos/global-types';
@@ -68,8 +68,6 @@ export function serializePaymentsError(error: any) {
     code: error.code,
     type: error.type,
     status: error.status ?? error.response?.status,
-    responseData: sanitizePaymentsMetadata(error.responseBody ?? error.response?.data),
-    stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
   };
 }
 
@@ -115,14 +113,7 @@ export function emitPaymentsProviderFailureEvent(
       : (providerResponse && typeof providerResponse === 'object'
         ? providerResponse as Record<string, unknown>
         : null);
-    const adminSuggestions = buildPaymentAdminSuggestions({
-      providerKind,
-      operation,
-      code: params.error?.code ?? (providerResponse as any)?.Status,
-      status: params.status ?? params.error?.status,
-      message: params.error?.message,
-      providerError,
-    });
+    const code = params.error?.code ?? (providerResponse as any)?.Status;
 
     const providerContext = params.providerContext
       ?? resolvePaymentProviderPublicContext(providerKind);
@@ -136,11 +127,15 @@ export function emitPaymentsProviderFailureEvent(
       metadata: sanitizePaymentsMetadata(appendPaymentProviderContext({
         providerKind,
         operation,
-        code: params.error?.code ?? (providerResponse as any)?.Status,
+        code,
         status: params.status ?? params.error?.status,
         providerResponse,
-        providerError,
-        adminSuggestions,
+        docsUrl: resolvePaymentEventDocsUrl({
+          providerKind,
+          eventName,
+          operation,
+          code,
+        }),
         error: serializePaymentsError(params.error),
       }, providerContext)),
     });
