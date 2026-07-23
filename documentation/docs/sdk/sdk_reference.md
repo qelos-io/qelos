@@ -21,13 +21,13 @@ const sdk = new QelosSDK({
 | Module | Public surface | What it does |
 |---|---|---|
 | Entities (Blueprints) | `sdk.blueprints`, `sdk.blueprints.entitiesOf(key)` | CRUD + query builder for blueprint-backed data |
-| AI | `sdk.ai.threads`, `sdk.ai.chat`, `sdk.ai.rag` | Threads, chat completions, streaming, RAG |
+| AI | `sdk.ai.agents`, `sdk.ai.threads`, `sdk.ai.chat`, `sdk.ai.rag` | Agent CRUD + agent-centric chat, threads, chat completions, streaming, RAG, client-side tool calls |
 | Authentication | `sdk.authentication` | Sign in / up, social, cookie + token refresh, API tokens |
 | Workspaces | `sdk.workspaces` | Multi-tenant workspace CRUD, members, activation |
 | Permissions | *Admin SDK + role-aware endpoints* | See [Permissions](#permissions) — there is no `sdk.permissions` namespace yet |
 | Events | `sdkAdmin.events` (administrator SDK) | List and dispatch tenant events |
 
-> **AI agents:** "Agents" in Qelos are surfaced as **integrations**. Use `sdk.ai.chat.chat(integrationId, ...)` against the agent's integration ID; there is no `sdk.ai.agents` sub-SDK.
+> **AI agents:** an agent is surfaced as an **integration**. You can talk to it either through `sdk.ai.agents.chat(agentId, message, options)` (agent-centric, recommended) or `sdk.ai.chat.chat(integrationId, options)` (integration-centric, same integration ID either way).
 
 ---
 
@@ -177,7 +177,7 @@ wrapped[0].metadata.price;   // ✅
 
 > **See also:** [AI Operations](./ai_operations.md) and [AI SDK Structure](./ai_sdk_structure.md).
 
-The AI SDK is split into three sub-SDKs: `sdk.ai.threads`, `sdk.ai.chat`, and `sdk.ai.rag`. Every chat call is scoped to an **integration ID** — that integration represents the configured AI agent (provider, model, system prompt, tools).
+The AI SDK is split into four sub-SDKs: `sdk.ai.agents`, `sdk.ai.threads`, `sdk.ai.chat`, and `sdk.ai.rag`. Every chat call is scoped to an **integration ID** — that integration represents the configured AI agent (provider, model, system prompt, tools).
 
 ### `sdk.ai.threads.create(data)`
 
@@ -249,18 +249,68 @@ const response = await sdk.ai.chat.chat('support-bot', {
 console.log(response.choices[0].message.content);
 ```
 
-### Talking to a Specific Agent
+### Client tools (`clientTools`) — client-side function calls
 
-There is no `sdk.ai.agents.chat()` method today — agents are exposed as integrations:
+`clientTools` is a per-request array of tool definitions that only exist in the **calling app**, not on the agent/integration. The model is offered these tools alongside any server-side ones; if it calls one, the AI service does **not** execute it — it hands the call back to you so it can run in the user's browser (geolocation, clipboard, opening a modal, rendering an inline form, etc.), then you feed the result back as a `tool`-role message.
 
 ```typescript
-// Equivalent to "chat with agent X"
-const response = await sdk.ai.chat.chat('agent-integration-id', {
-  messages: [{ role: 'user', content: 'Hi' }],
+const response = await sdk.ai.chat.chat('support-bot', {
+  messages: [{ role: 'user', content: 'Copy my last order number to the clipboard' }],
+  clientTools: [
+    {
+      name: 'copy_to_clipboard',
+      description: "Copy text to the user's clipboard.",
+      schema: {
+        type: 'object',
+        properties: { text: { type: 'string' } },
+        required: ['text'],
+      },
+    },
+  ],
+});
+
+const assistantMessage = response.choices[0].message;
+const call = assistantMessage.tool_calls?.[0];
+
+if (call?.function.name === 'copy_to_clipboard') {
+  const { text } = JSON.parse(call.function.arguments);
+  await navigator.clipboard.writeText(text);
+
+  // Re-call with the assistant's tool call + your tool result appended, so the model can continue
+  await sdk.ai.chat.chat('support-bot', {
+    messages: [
+      assistantMessage,
+      { role: 'tool', tool_call_id: call.id, content: 'Copied.' },
+    ],
+  });
+}
+```
+
+With the streaming path, the same call arrives as a `client_tool_calls` SSE event instead of a field on the final message — see [AI Chat API](../api/ai-chat.md#client-tool-calls-sse-event). The `<AiChat>` Vue component runs this whole call/resolve/re-call loop for you, including 8 built-in interactive widgets (`confirm`, `select`, `form`, `date`, …) — see the [AI Agents guide, §7](../ai/agents.md#7-client-tools-local-function-execution) and the [AiChat component reference](../pre-designed-frontends/components/ai-chat.md#predefined-interactive-tools).
+
+### `sdk.ai.agents` — agent CRUD and agent-centric chat
+
+`sdk.ai.agents` manages agents directly (as opposed to `sdk.ai.chat`, which just talks to an integration ID without agent-specific metadata):
+
+| Method | Signature | Notes |
+|---|---|---|
+| `list(query?)` | `Promise<IAgent[]>` | Filter by `active`, `kind`, paginate with `limit`/`page`/`sort` |
+| `get(agentId)` | `Promise<IAgent>` | Full agent config: model, tools, system prompt |
+| `create(data)` | `Promise<IAgent>` | `ICreateAgentRequest`: `name`, `model`, `triggerSource`, `targetSource`, `systemPrompt?`, `tools?`, … |
+| `update(agentId, data)` | `Promise<IAgent>` | `IUpdateAgentRequest`, all fields optional |
+| `remove(agentId)` | `Promise<{ success: boolean }>` | |
+| `chat(agentId, message, options?)` | `Promise<IChatCompletionResponse>` | Non-streaming; forwards `clientTools` via `IAgentChatOptions` |
+| `chatInThread(agentId, threadId, message, options?)` | `Promise<IChatCompletionResponse>` | Same as `chat`, pinned to an existing thread |
+| `streamChat(agentId, message, options?)` | `Promise<ISSEStreamProcessor>` | GET + SSE transport |
+| `streamChatInThread(agentId, threadId, message, options?)` | `Promise<ISSEStreamProcessor>` | Same, within a thread |
+
+```typescript
+const response = await sdk.ai.agents.chat('agent-id', 'Hi, what can you help with?', {
+  clientTools: [{ name: 'confirm', description: 'Ask the user to confirm.' }],
 });
 ```
 
-A dedicated `sdk.ai.agents` namespace is on the [roadmap](https://github.com/qelos/qelos/blob/main/ROADMAP.md); until it lands, treat the integration ID as the agent identifier.
+> **Known limitation:** `streamChat`/`streamChatInThread` use a GET request with the payload serialized into the query string, and only forward `messages`/`threadId`/`queryParams` — **`clientTools` is silently dropped on the streaming agent path**. If you need `clientTools` together with streaming today, call `sdk.ai.chat.stream(agentId, { messages, clientTools, ... })` directly (POST + SSE) instead of `sdk.ai.agents.streamChat`; that's the path `<AiChat>` itself uses.
 
 ---
 

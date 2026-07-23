@@ -10,8 +10,9 @@ The AI module provides comprehensive functionality for managing AI-powered conve
 
 ## SDK Structure
 
-The AI SDK is organized into three sub-SDKs for better organization:
+The AI SDK is organized into four sub-SDKs for better organization:
 
+- **`sdk.ai.agents`** - Agent CRUD and agent-centric chat (`chat`, `streamChat`, `chatInThread`, `streamChatInThread`)
 - **`sdk.ai.threads`** - Thread CRUD operations
 - **`sdk.ai.chat`** - Chat completion operations (streaming and non-streaming)
 - **`sdk.ai.rag`** - Vector storage management for RAG
@@ -147,6 +148,43 @@ const response = await sdk.ai.chat.chat('integration-id', {
 });
 ```
 
+### Client-Side Tool Calls (`clientTools`)
+
+`clientTools` lets the calling app advertise tools that run **in the client**, not on the AI service. This is how apps like the admin's `<AiChat>` component render interactive widgets (confirmations, forms, date pickers) or run browser-only code (clipboard, geolocation) mid-conversation.
+
+```typescript
+const response = await sdk.ai.chat.chat('integration-id', {
+  messages: [{ role: 'user', content: "What's my current location?" }],
+  clientTools: [
+    {
+      name: 'get_current_location',
+      description: "Get the user's current geographic coordinates.",
+      schema: {
+        type: 'object',
+        properties: {
+          accuracy: { type: 'string', enum: ['high', 'low'] }
+        }
+      }
+    }
+  ]
+});
+
+const call = response.choices[0].message.tool_calls?.[0];
+if (call?.function.name === 'get_current_location') {
+  // Execute the tool yourself, then re-call chat() with a `tool`-role
+  // message (tool_call_id: call.id) appended so the model can continue.
+}
+```
+
+The model never distinguishes `clientTools` from server-side tools — it just sees a normal `tools[]` list. The difference is entirely in how the *result* comes back to you:
+
+- **Non-streaming** (`chat`/`chatInThread`): the tool call shows up as `response.choices[0].message.tool_calls`, same as any function call.
+- **Streaming** (`stream`/`streamInThread`): the stream emits a `client_tool_calls` event and then ends — see [AI Chat API: Client Tool Calls](/api/ai-chat#client-tool-calls-sse-event) for the exact event shape and the follow-up request format.
+
+In both cases, resolving the call is on you: run the tool (or show a UI and wait for the user), then send a new request with an `assistant` message carrying the original `tool_calls` plus one `tool`-role message per call result.
+
+> The `<AiChat>` Vue component implements this whole loop already, plus 8 built-in interactive tools (`confirm`, `select`, `multi_select`, `form`, `date`, `time`, `datetime`, `number`) enabled via its `allowTools` prop. See the [AiChat component reference](../pre-designed-frontends/components/ai-chat.md#predefined-interactive-tools) and the [AI Agents guide](../ai/agents.md#7-client-tools-local-function-execution).
+
 ## Streaming Chat Completions
 
 ### Basic Streaming
@@ -280,6 +318,15 @@ interface IChatCompletionOptions {
   response_format?: any;
   context?: Record<string, any>;
   stream?: boolean;
+  queryParams?: Record<string, any>;
+  clientTools?: IClientTool[]; // see "Client-Side Tool Calls" above
+  rules?: string[];
+}
+
+interface IClientTool {
+  name: string;
+  description: string;
+  schema?: any; // JSON schema for the tool's arguments
 }
 ```
 
@@ -709,9 +756,33 @@ stores.forEach(store => {
 });
 ```
 
+## Agent Operations
+
+`sdk.ai.agents` manages agents directly and layers agent-centric chat helpers on top of `sdk.ai.chat`:
+
+```typescript
+const agent = await sdk.ai.agents.create({
+  name: 'Support Bot',
+  model: 'gpt-4.1-mini',
+  triggerSource: 'source-id',
+  targetSource: 'source-id',
+  systemPrompt: 'You are a concise support assistant.'
+});
+
+const response = await sdk.ai.agents.chat(agent._id, 'What are your business hours?', {
+  clientTools: [{ name: 'confirm', description: 'Ask the user to confirm.' }]
+});
+```
+
+> **Streaming caveat:** `sdk.ai.agents.streamChat`/`streamChatInThread` use a GET + query-string transport and do **not** forward `clientTools`. For streaming with `clientTools`, call `sdk.ai.chat.stream(agentId, { messages, clientTools, ... })` directly instead.
+
+See the full method table in [SDK Reference: `sdk.ai.agents`](./sdk_reference.md#sdkaiagents--agent-crud-and-agent-centric-chat) and the end-to-end [AI Agents guide](../ai/agents.md) for creating, testing, and embedding an agent.
+
 ## Related Documentation
 
 - [AI SDK Structure](./ai_sdk_structure.md) - Detailed SDK organization and sub-SDKs
+- [SDK Reference](./sdk_reference.md) - Full method reference including `sdk.ai.agents` and client tools
+- [AI Agents Guide](../ai/agents.md) - Creating, testing, and embedding an agent, including client tools
 - [Authentication](./authentication.md) - User authentication setup
 - [Error Handling](./error_handling.md) - Error handling patterns
 - [TypeScript Types](./typescript_types.md) - Complete type definitions

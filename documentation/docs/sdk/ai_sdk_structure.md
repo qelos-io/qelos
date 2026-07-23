@@ -1,6 +1,6 @@
 # Qelos AI SDK Structure
 
-The Qelos AI SDK is organized into three sub-SDKs, each responsible for a specific domain of AI functionality. This modular structure provides better organization, improved maintainability, and clearer separation of concerns.
+The Qelos AI SDK is organized into four sub-SDKs, each responsible for a specific domain of AI functionality. This modular structure provides better organization, improved maintainability, and clearer separation of concerns.
 
 ## Overview
 
@@ -14,6 +14,7 @@ const sdk = new QelosSDK({
 });
 
 // Access AI functionality through sub-SDKs
+await sdk.ai.agents.chat('agent-id', 'Hello!');
 await sdk.ai.threads.create({ integration: 'id' });
 await sdk.ai.chat.stream('id', options);
 await sdk.ai.rag.uploadContent('sourceId', data);
@@ -21,7 +22,38 @@ await sdk.ai.rag.uploadContent('sourceId', data);
 
 ## Sub-SDKs
 
-### 1. Threads Sub-SDK (`sdk.ai.threads`)
+### 1. Agents Sub-SDK (`sdk.ai.agents`)
+
+Manages agents (CRUD) and provides agent-centric chat helpers on top of the chat sub-SDK.
+
+#### Methods
+
+| Method | Description | Return Type |
+|--------|-------------|-------------|
+| `list(query?)` | List agents, filterable by `active`/`kind`, paginated | `Promise<IAgent[]>` |
+| `get(agentId)` | Get an agent's full config | `Promise<IAgent>` |
+| `create(data)` | Create a new agent (`ICreateAgentRequest`) | `Promise<IAgent>` |
+| `update(agentId, data)` | Update an agent (`IUpdateAgentRequest`) | `Promise<IAgent>` |
+| `remove(agentId)` | Delete an agent | `Promise<{ success: boolean }>` |
+| `chat(agentId, message, options?)` | Non-streaming chat, forwards `clientTools` | `Promise<IChatCompletionResponse>` |
+| `chatInThread(agentId, threadId, message, options?)` | Non-streaming chat within a thread | `Promise<IChatCompletionResponse>` |
+| `streamChat(agentId, message, options?)` | Streaming chat via GET+SSE | `Promise<ISSEStreamProcessor>` |
+| `streamChatInThread(agentId, threadId, message, options?)` | Streaming chat within a thread | `Promise<ISSEStreamProcessor>` |
+
+`options` is `IAgentChatOptions` — everything `IChatCompletionOptions` has (minus `messages`), plus `history` (messages prepended before the user message) and `threadId`.
+
+#### Example
+
+```typescript
+// Non-streaming, with a client-side tool the caller will resolve itself
+const response = await sdk.ai.agents.chat('agent-id', 'Can you confirm my order?', {
+  clientTools: [{ name: 'confirm', description: 'Ask the user to confirm.' }]
+});
+```
+
+> **Streaming limitation:** `streamChat`/`streamChatInThread` serialize the request into a GET query string and currently only forward `messages`, `threadId`, and `queryParams` — **`clientTools` is not sent** on this path. Use `sdk.ai.chat.stream(agentId, { messages, clientTools, ... })` (POST + SSE) if you need streaming together with `clientTools`.
+
+### 2. Threads Sub-SDK (`sdk.ai.threads`)
 
 Manages conversation threads for AI chat interactions.
 
@@ -51,7 +83,7 @@ const threads = await sdk.ai.threads.list({
 });
 ```
 
-### 2. Chat Sub-SDK (`sdk.ai.chat`)
+### 3. Chat Sub-SDK (`sdk.ai.chat`)
 
 Handles chat completion operations, both streaming and non-streaming.
 
@@ -79,11 +111,17 @@ const stream = await sdk.ai.chat.stream('integration-id', {
 for await (const chunk of sdk.ai.chat.parseSSEStream(stream)) {
   if (chunk.choices?.[0]?.delta?.content) {
     console.log(chunk.choices[0].delta.content);
+  } else if (chunk.type === 'client_tool_calls') {
+    // Model called a client-side tool — resolve it and re-call chat/stream
+    // with the result appended as a `tool`-role message.
+    console.log('Client tool calls:', chunk.functionCalls);
   }
 }
 ```
 
-### 3. RAG Sub-SDK (`sdk.ai.rag`)
+`chat`/`stream` (and their `*InThread` variants) accept `clientTools: IClientTool[]` in `options` — see [Client-Side Tool Calls](./ai_operations.md#client-side-tool-calls-clienttools) for the full request/response contract.
+
+### 4. RAG Sub-SDK (`sdk.ai.rag`)
 
 Manages vector storage for Retrieval-Augmented Generation (RAG) operations.
 
@@ -159,8 +197,65 @@ interface IChatCompletionOptions {
   context?: Record<string, any>;
   stream?: boolean;
   queryParams?: Record<string, any>; // Additional query parameters
+  clientTools?: IClientTool[]; // Client-side tool definitions (see below)
+  rules?: string[]; // Additional rules appended to the system prompt
+}
+
+interface IClientTool {
+  name: string;
+  description: string;
+  schema?: any; // JSON schema for the tool's arguments
 }
 ```
+
+### Agent Interfaces
+
+```typescript
+interface IAgentTool {
+  name: string;
+  description: string;
+  schema?: object;
+}
+
+interface IAgent {
+  _id: string;
+  name: string;
+  description?: string;
+  model?: string;
+  kind?: string[];
+  active?: boolean;
+  systemPrompt?: string;
+  tools?: IAgentTool[];
+  temperature?: number;
+  maxTokens?: number;
+  triggerSource?: string;
+  targetSource?: string;
+  created?: Date;
+  updated?: Date;
+}
+
+interface ICreateAgentRequest {
+  name: string;
+  model: string;
+  triggerSource: string;
+  targetSource: string;
+  systemPrompt?: string;
+  tools?: IAgentTool[];
+  temperature?: number;
+  maxTokens?: number;
+  workspace?: string;
+  active?: boolean;
+}
+
+// IUpdateAgentRequest is the same shape, all fields optional
+
+interface IAgentChatOptions extends Partial<Omit<IChatCompletionOptions, 'messages'>> {
+  history?: IMessage[]; // Prepended before the user message
+  threadId?: string;    // Reuse an existing thread
+}
+```
+
+> **Note:** `IAgentTool[]` set via `ICreateAgentRequest.tools`/`IUpdateAgentRequest.tools` is persisted metadata on the agent, but is **not currently wired into the chat-completion tool list at runtime** — it doesn't give the agent any capability by itself. Use server-side integration tools (configured on the integration and picked up automatically) for backend capabilities, and per-request `clientTools` (above) for anything the client should resolve.
 
 ### RAG Interfaces
 

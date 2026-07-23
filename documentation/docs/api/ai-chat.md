@@ -211,3 +211,52 @@ Same as [Streaming Chat Completion](#streaming-chat-completion).
 Returns a `text/event-stream` response (same format as streaming without thread).
 
 > **SDK:** [`sdk.ai.chat.streamInThread(integrationId, threadId, options)`](/sdk/ai_operations#streaming-with-thread-context)
+
+---
+
+## Client Tool Calls (SSE event)
+
+When a request includes `clientTools` (see [Chat Completion](#chat-completion) request body), the model may decide to call one of them instead of (or alongside) any server-side tools. Client tools are never executed by Qelos — execution is the caller's responsibility, since these tools only make sense in the context of the calling app (rendering a UI widget, reading `navigator.geolocation`, etc.).
+
+In the **streaming** response, this is signaled by a dedicated SSE event instead of a normal content `delta`:
+
+```
+data: {"type":"client_tool_calls","functionCalls":[{"id":"call_abc123","type":"function","function":{"name":"confirm","arguments":"{\"message\":\"Proceed with the refund?\"}"}}],"backendResults":[],"assistantToolCalls":[{"id":"call_abc123","type":"function","function":{"name":"confirm","arguments":"{\"message\":\"Proceed with the refund?\"}"}}]}
+
+data: [DONE]
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `type` | `"client_tool_calls"` | Discriminator for this event |
+| `functionCalls` | `Array<{ id, type: 'function', function: { name, arguments } }>` | The client tool call(s) the model made this turn. `arguments` is a JSON-encoded string |
+| `backendResults` | `Array<{ functionCall, result }>` | Any **server-side** tool calls the model made in the *same* turn — already executed, included here so the client doesn't have to re-derive them |
+| `assistantToolCalls` | `Array<{ id, type, function }>` | The full, unsplit list of tool calls the model made this turn (client + backend combined), for reconstructing the assistant message |
+
+The stream ends immediately after this event — the AI service pauses the conversation until the client resolves the call. To continue:
+
+1. Execute the tool locally (or render a UI widget and wait for the user's input).
+2. Send a new request with the original messages plus:
+   - An `assistant` message carrying `tool_calls: assistantToolCalls`.
+   - One `tool`-role message per entry in `functionCalls`, with `tool_call_id` set to the call's `id` and `content` set to the (string) result.
+
+```json
+{
+  "messages": [
+    { "role": "user", "content": "Can you refund my last order?" },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        { "id": "call_abc123", "type": "function", "function": { "name": "confirm", "arguments": "{\"message\":\"Proceed with the refund?\"}" } }
+      ]
+    },
+    { "role": "tool", "tool_call_id": "call_abc123", "content": "yes" }
+  ],
+  "stream": true
+}
+```
+
+Object results should be JSON-stringified before being placed in `content` — `content` is always a string.
+
+> **SDK / component:** [`sdk.ai.chat`](/sdk/sdk_reference#client-tools-clienttools--client-side-function-calls) documents the raw request/response shapes; the [`<AiChat>` component](/pre-designed-frontends/components/ai-chat#predefined-interactive-tools) and the [AI Agents guide](/ai/agents#7-client-tools-local-function-execution) handle this whole call/resolve/re-call loop for you, including 8 built-in interactive UI widgets.
