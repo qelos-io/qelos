@@ -1,21 +1,39 @@
 <template>
   <div v-if="isPaymentKind" class="connection-status-check">
     <div class="connection-status-check-actions">
-      <el-button
-        type="primary"
-        plain
-        :loading="checking"
-        :disabled="!canCheck || checking"
-        :aria-label="$t('Test connection')"
-        @click="checkConnection"
-      >
-        <el-icon v-if="!checking" aria-hidden="true">
-          <font-awesome-icon :icon="['fas', 'vial']" />
-        </el-icon>
-        {{ checking ? $t('Testing connection…') : $t('Test connection') }}
-      </el-button>
+      <div class="connection-status-check-buttons">
+        <el-button
+          type="primary"
+          plain
+          :loading="checking"
+          :disabled="!canCheck || checking || checkingStored"
+          :aria-label="$t('Test connection')"
+          @click="checkConnection"
+        >
+          <el-icon v-if="!checking" aria-hidden="true">
+            <font-awesome-icon :icon="['fas', 'vial']" />
+          </el-icon>
+          {{ checking ? $t('Testing connection…') : $t('Test connection') }}
+        </el-button>
+        <el-button
+          v-if="sourceId"
+          plain
+          :loading="checkingStored"
+          :disabled="!canCheckStored || checking || checkingStored"
+          :aria-label="$t('Check connection')"
+          @click="checkStoredConnection"
+        >
+          <el-icon v-if="!checkingStored" aria-hidden="true">
+            <font-awesome-icon :icon="['fas', 'plug']" />
+          </el-icon>
+          {{ checkingStored ? $t('Checking connection…') : $t('Check connection') }}
+        </el-button>
+      </div>
       <p v-if="!canCheck && !checking" class="connection-status-hint">
         {{ $t('Fill required fields to test connection') }}
+      </p>
+      <p v-if="sourceId" class="connection-status-hint">
+        {{ $t('Test connection checks the values in this form. Check connection checks the saved credentials.') }}
       </p>
     </div>
 
@@ -61,7 +79,15 @@ const isPaymentKind = computed(() =>
   PAYMENT_INTEGRATION_SOURCE_KINDS.includes(props.kind as IntegrationSourceKind),
 );
 
-const { statusResult, checking, checkConnection, canCheck } = useIntegrationSourceStatus({
+const {
+  statusResult,
+  checking,
+  checkingStored,
+  checkConnection,
+  checkStoredConnection,
+  canCheck,
+  canCheckStored,
+} = useIntegrationSourceStatus({
   kind: () => props.kind,
   sourceId: () => props.sourceId,
   formModel: props.getFormModel ?? (() => props.formModel),
@@ -100,6 +126,12 @@ const statusBanner = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.connection-status-check-buttons {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 

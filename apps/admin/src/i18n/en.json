@@ -350,5 +350,8 @@
   "Testing connection…": "Testing connection…",
   "Connection verified": "Connection verified",
   "Connection check failed": "Connection check failed",
-  "Fill required fields to test connection": "Fill in all required fields before testing the connection."
+  "Fill required fields to test connection": "Fill in all required fields before testing the connection.",
+  "Check connection": "Check connection",
+  "Checking connection…": "Checking connection…",
+  "Test connection checks the values in this form. Check connection checks the saved credentials.": "Test connection checks the values in this form. Check connection checks the saved credentials."
 }

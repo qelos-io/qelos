@@ -350,5 +350,8 @@
   "Testing connection…": "בודק חיבור…",
   "Connection verified": "החיבור אומת",
   "Connection check failed": "בדיקת החיבור נכשלה",
-  "Fill required fields to test connection": "מלא את כל השדות הנדרשים לפני בדיקת החיבור."
+  "Fill required fields to test connection": "מלא את כל השדות הנדרשים לפני בדיקת החיבור.",
+  "Check connection": "בדוק חיבור קיים",
+  "Checking connection…": "בודק חיבור קיים…",
+  "Test connection checks the values in this form. Check connection checks the saved credentials.": "בדיקת חיבור בודקת את הערכים שבטופס זה. בדוק חיבור קיים בודק את הפרטים השמורים במערכת."
 }

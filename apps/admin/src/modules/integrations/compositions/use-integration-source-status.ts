@@ -88,6 +88,7 @@ function hasRequiredAuthentication(
 export function useIntegrationSourceStatus(options: UseIntegrationSourceStatusOptions) {
   const statusResult = ref<IIntegrationSourceStatusResult | null>(null);
   const checking = ref(false);
+  const checkingStored = ref(false);
 
   const resolvedKind = computed(() => toValue(options.kind) as IntegrationSourceKind);
   const resolvedSourceId = computed(() => toValue(options.sourceId));
@@ -147,10 +148,41 @@ export function useIntegrationSourceStatus(options: UseIntegrationSourceStatusOp
     }
   }
 
+  const canCheckStored = computed(() => isPaymentKind(resolvedKind.value) && isEdit.value);
+
+  async function checkStoredConnection() {
+    if (!canCheckStored.value || checking.value || checkingStored.value) {
+      return;
+    }
+
+    checkingStored.value = true;
+    statusResult.value = null;
+
+    try {
+      statusResult.value = await integrationSourcesService.checkStatus(resolvedSourceId.value!);
+    } catch (error: any) {
+      const responseData = error?.response?.data;
+      statusResult.value = {
+        status: 'failed',
+        message: responseData?.message || error?.message || 'Connection check failed',
+        kind: resolvedKind.value,
+        checkedAt: new Date().toISOString(),
+        ...(responseData?.adminSuggestions
+          ? { details: { adminSuggestions: responseData.adminSuggestions } }
+          : {}),
+      };
+    } finally {
+      checkingStored.value = false;
+    }
+  }
+
   return {
     statusResult,
     checking,
+    checkingStored,
     checkConnection,
+    checkStoredConnection,
     canCheck,
+    canCheckStored,
   };
 }
