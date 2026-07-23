@@ -373,7 +373,7 @@ describe('handlePaddleTarget', async () => {
     assert.strictEqual(savedEvents[0].metadata.status, 422);
     assert.strictEqual(savedEvents[0].metadata.providerResponse.error.detail, 'Invalid price');
     assert.strictEqual(savedEvents[0].metadata.providerResponse.error.api_key, undefined);
-    assert.strictEqual(savedEvents[0].metadata.error.responseData.error.api_key, undefined);
+    assert.strictEqual(savedEvents[0].metadata.error.responseData, undefined);
     assert.ok(emitPlatformEventMock.mock.calls.length >= 1);
   });
 
@@ -435,6 +435,6 @@ describe('handlePaddleTarget', async () => {
     assert.strictEqual(savedEvents[0].metadata.operation, 'cancelSubscription');
     assert.strictEqual(savedEvents[0].metadata.providerResponse.error.detail, 'Subscription not found');
     assert.strictEqual(savedEvents[0].metadata.providerResponse.error.authorization, undefined);
-    assert.strictEqual(savedEvents[0].metadata.error.responseData.error.authorization, undefined);
+    assert.strictEqual(savedEvents[0].metadata.error.responseData, undefined);
   });
 });
