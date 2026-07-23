@@ -345,5 +345,10 @@
   "Connection API reference hint": "Example routes once this source is saved (replace sourceId with the real id).",
   "Connection section modelGemini hint": "Default model and optional proxy or custom Gemini base URL.",
   "Connection modal keyboard hint": "⌘ Enter or Ctrl+Enter saves. Escape closes.",
-  "No connection form for type": "No form is available for this connection type."
+  "No connection form for type": "No form is available for this connection type.",
+  "Test connection": "Test connection",
+  "Testing connection…": "Testing connection…",
+  "Connection verified": "Connection verified",
+  "Connection check failed": "Connection check failed",
+  "Fill required fields to test connection": "Fill in all required fields before testing the connection."
 }
