@@ -345,5 +345,10 @@
   "Connection API reference hint": "Exemples d’URL après enregistrement (remplacez sourceId par l’id réel).",
   "Connection section modelGemini hint": "Modèle par défaut et URL de base Gemini ou proxy optionnelle.",
   "Connection modal keyboard hint": "⌘ Entrée ou Ctrl+Entrée enregistre. Échap ferme.",
-  "No connection form for type": "Aucun formulaire pour ce type de connexion."
+  "No connection form for type": "Aucun formulaire pour ce type de connexion.",
+  "Test connection": "Tester la connexion",
+  "Testing connection…": "Test de la connexion…",
+  "Connection verified": "Connexion vérifiée",
+  "Connection check failed": "Échec de la vérification de la connexion",
+  "Fill required fields to test connection": "Remplissez tous les champs obligatoires avant de tester la connexion."
 }
