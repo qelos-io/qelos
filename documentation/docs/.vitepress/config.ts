@@ -147,6 +147,13 @@ export default defineConfig({
         ]
       },
       {
+        text: 'INTEGRATIONS',
+        collapsed: true,
+        items: [
+          { text: 'Connection Status Checks', link: '/integrations/status-check' },
+        ]
+      },
+      {
         text: 'SDK',
         collapsed: true,
         items: [
@@ -222,7 +229,8 @@ export default defineConfig({
           { text: 'SDK Command', link: '/cli/sdk' },
           { text: 'Agent Command', link: '/cli/agent' },
           { text: 'Agent Tools (clientTools)', link: '/cli/agent-tools' },
-          { text: 'Global Environments', link: '/cli/global' }
+          { text: 'Global Environments', link: '/cli/global' },
+          { text: 'Connections Command', link: '/cli/connections' }
         ]
       },
       {

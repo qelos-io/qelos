@@ -39,8 +39,8 @@ export async function storeEncryptedSourceAuthentication(tenant: string, kind: I
   }
 
   if (kind === IntegrationSourceKind.N8n || kind === IntegrationSourceKind.Sumit || kind === IntegrationSourceKind.Paddle) {
-    const { apikey } = authentication;
-    await setSecret(tenant, `integration-source-${kind}-${authId}`, { apikey });
+    const { apiKey } = authentication;
+    await setSecret(tenant, `integration-source-${kind}-${authId}`, { apiKey });
     return authId;
   }
 

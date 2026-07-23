@@ -89,4 +89,33 @@ test('QlIntegrationSources status methods', async (t) => {
     assert.deepEqual(JSON.parse(init?.body as string), draft);
     assert.deepEqual(result, connectedResult);
   });
+
+  await t.test('checkDraftStatus is kind-agnostic and works for non-payment sources too', async () => {
+    let init: RequestInit | undefined;
+    const emailConnectedResult = {
+      status: 'connected' as const,
+      message: 'SMTP connection verified',
+      kind: IntegrationSourceKind.Email,
+      checkedAt: '2026-07-23T05:00:00.000Z',
+    };
+    const options: QelosSDKOptions = {
+      appUrl: 'http://localhost:3000',
+      fetch: async (_url, requestInit) => {
+        init = requestInit;
+        return jsonResponse(emailConnectedResult);
+      },
+    };
+
+    const draft = {
+      kind: IntegrationSourceKind.Email,
+      metadata: { smtp: 'smtp.example.com', username: 'bot@example.com', email: 'bot@example.com', pop3: 'pop3.example.com', senderName: 'Bot' },
+      authentication: { password: 'secret' },
+    };
+
+    const sdk = new QlIntegrationSources(options);
+    const result = await sdk.checkDraftStatus(draft);
+
+    assert.deepEqual(JSON.parse(init?.body as string), draft);
+    assert.deepEqual(result, emailConnectedResult);
+  });
 });

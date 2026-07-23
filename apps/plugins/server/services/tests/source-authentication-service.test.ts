@@ -62,3 +62,28 @@ describe('storeEncryptedSourceAuthentication - PayPal', async () => {
     assert.strictEqual(setSecretMock.mock.calls.length, 0);
   });
 });
+
+describe('storeEncryptedSourceAuthentication - Sumit', async () => {
+  const { storeEncryptedSourceAuthentication } = await import('../source-authentication-service');
+
+  afterEach(() => {
+    setSecretMock.mock.resetCalls();
+  });
+
+  it('should store apiKey via setSecret and return authId', async () => {
+    const result = await storeEncryptedSourceAuthentication(
+      'tenant-1',
+      'sumit' as any,
+      { apiKey: 'sumit_test_key_123' },
+      'auth-123'
+    );
+
+    assert.strictEqual(result, 'auth-123');
+    assert.strictEqual(setSecretMock.mock.calls.length, 1);
+
+    const call = setSecretMock.mock.calls[0];
+    assert.strictEqual(call.arguments[0], 'tenant-1');
+    assert.strictEqual(call.arguments[1], 'integration-source-sumit-auth-123');
+    assert.deepStrictEqual(call.arguments[2], { apiKey: 'sumit_test_key_123' });
+  });
+});

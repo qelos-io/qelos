@@ -74,9 +74,11 @@ mock.module('../../models/integration', {
   namedExports: { IIntegrationEntity: {} },
 });
 
+const getEncryptedSourceAuthenticationMock = mock.fn(async () => ({ clientSecret: 'test-secret' }));
+
 mock.module('../source-authentication-service', {
   namedExports: {
-    getEncryptedSourceAuthentication: mock.fn(async () => ({ clientSecret: 'test-secret' })),
+    getEncryptedSourceAuthentication: getEncryptedSourceAuthenticationMock,
   },
 });
 
@@ -464,5 +466,24 @@ describe('handlePayPalTarget', async () => {
     assert.ok(cacheCall.arguments[0].includes('paypal-token-'));
     assert.strictEqual(cacheCall.arguments[1], 'test-token-abc');
     assert.deepStrictEqual(cacheCall.arguments[2], { ttl: 1800 });
+  });
+
+  it('should throw when the persisted secret has no clientSecret', async () => {
+    getEncryptedSourceAuthenticationMock.mock.mockImplementationOnce(async () => ({}));
+    setupFetch();
+
+    await assert.rejects(
+      () => callIntegrationTarget(
+        'tenant-1',
+        { intent: 'CAPTURE', purchase_units: [{ amount: { currency_code: 'USD', value: '10.00' } }] },
+        createMockTarget('createOrder') as any,
+      ),
+      (err: any) => {
+        assert.match(err.message, /Missing client secret for PayPal integration/);
+        return true;
+      },
+    );
+
+    assert.strictEqual(fetchCalls.length, 0, 'must not call the PayPal API when credentials are missing');
   });
 });

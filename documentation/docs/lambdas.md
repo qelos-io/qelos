@@ -2,6 +2,8 @@
 
 This document describes how to manage and execute Lambda/Serverless functions using the Qelos platform.
 
+Before creating functions, you can verify that the underlying AWS or Cloudflare integration source's credentials actually work with [`checkStatus`](./integrations/status-check.md).
+
 ## Listing Functions
 
 You can list all the functions for a given integration source.

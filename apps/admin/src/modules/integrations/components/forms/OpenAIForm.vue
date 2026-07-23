@@ -185,7 +185,19 @@ watch(() => props.modelValue, (newValue) => {
   }
 }, { immediate: true });
 
-defineExpose({ submitForm });
+function getAuthenticationOverride() {
+  const rawToken = tokenInput.value.trim();
+  if (!rawToken || rawToken === TOKEN_UNCHANGED_MASK) {
+    return undefined;
+  }
+  return { token: rawToken };
+}
+
+function getStatusFormModel() {
+  return { metadata: { ...formModel.value.metadata } };
+}
+
+defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
 </script>
 
 <template>

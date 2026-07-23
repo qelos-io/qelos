@@ -68,9 +68,11 @@ mock.module('../../models/integration', {
   namedExports: { IIntegrationEntity: {} },
 });
 
+const getEncryptedSourceAuthenticationMock = mock.fn(async () => ({ apiKey: 'test-paddle-key' }));
+
 mock.module('../source-authentication-service', {
   namedExports: {
-    getEncryptedSourceAuthentication: mock.fn(async () => ({ apiKey: 'test-paddle-key' })),
+    getEncryptedSourceAuthentication: getEncryptedSourceAuthenticationMock,
   },
 });
 
@@ -436,5 +438,24 @@ describe('handlePaddleTarget', async () => {
     assert.strictEqual(savedEvents[0].metadata.providerResponse.error.detail, 'Subscription not found');
     assert.strictEqual(savedEvents[0].metadata.providerResponse.error.authorization, undefined);
     assert.strictEqual(savedEvents[0].metadata.error.responseData, undefined);
+  });
+
+  it('should throw when the persisted secret has no apiKey', async () => {
+    getEncryptedSourceAuthenticationMock.mock.mockImplementationOnce(async () => ({}));
+    setupFetch();
+
+    await assert.rejects(
+      () => callIntegrationTarget(
+        'tenant-1',
+        { name: 'Test Product', tax_category: 'standard' },
+        createMockTarget('createProduct') as any,
+      ),
+      (err: any) => {
+        assert.match(err.message, /Missing API key for Paddle integration/);
+        return true;
+      },
+    );
+
+    assert.strictEqual(fetchCalls.length, 0, 'must not call the Paddle API when credentials are missing');
   });
 });

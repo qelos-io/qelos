@@ -6,7 +6,7 @@ title: Troubleshooting
 
 Payment platform events store a compact `metadata` payload with a `docsUrl` link to this page. Use the error **code** from **Admin → Events** to jump to the matching section below.
 
-For event taxonomy, filtering, and provider-specific playbooks, see [Platform Events](./events.md).
+For event taxonomy, filtering, and provider-specific playbooks, see [Platform Events](./events.md). To verify a connection's credentials directly (without going through checkout), see [Connection Status Checks](../integrations/status-check.md).
 
 ## Error codes
 

@@ -2,7 +2,7 @@ import { computed, ref, toValue, type MaybeRefOrGetter } from 'vue';
 import {
   IntegrationSourceKind,
   IIntegrationSourceStatusResult,
-  PAYMENT_INTEGRATION_SOURCE_KINDS,
+  STATUS_CHECK_SUPPORTED_INTEGRATION_SOURCE_KINDS,
 } from '@qelos/global-types';
 import integrationSourcesService from '@/services/apis/integration-sources-service';
 
@@ -38,8 +38,8 @@ function buildAuthenticationPayload(
   return Object.keys(payload).length ? payload : undefined;
 }
 
-function isPaymentKind(kind: IntegrationSourceKind | string): kind is IntegrationSourceKind {
-  return PAYMENT_INTEGRATION_SOURCE_KINDS.includes(kind as IntegrationSourceKind);
+function isStatusCheckSupportedKind(kind: IntegrationSourceKind | string): kind is IntegrationSourceKind {
+  return STATUS_CHECK_SUPPORTED_INTEGRATION_SOURCE_KINDS.includes(kind as IntegrationSourceKind);
 }
 
 function hasRequiredMetadata(
@@ -54,6 +54,18 @@ function hasRequiredMetadata(
     case IntegrationSourceKind.Paddle:
     case IntegrationSourceKind.DodoPayments:
       return true;
+    case IntegrationSourceKind.Http:
+      return hasNonEmptyString(metadata.baseUrl);
+    case IntegrationSourceKind.OpenAI:
+      return true;
+    case IntegrationSourceKind.Qelos:
+      return metadata.external !== true || (hasNonEmptyString(metadata.url) && hasNonEmptyString(metadata.username));
+    case IntegrationSourceKind.Email:
+      return hasNonEmptyString(metadata.smtp);
+    case IntegrationSourceKind.AWS:
+      return hasNonEmptyString(metadata.region) && hasNonEmptyString(metadata.accessKeyId);
+    case IntegrationSourceKind.Cloudflare:
+      return hasNonEmptyString(metadata.accountId);
     default:
       return false;
   }
@@ -63,8 +75,17 @@ function hasRequiredAuthentication(
   kind: IntegrationSourceKind,
   authentication: Record<string, unknown> | undefined,
   isEdit: boolean,
+  metadata: Record<string, unknown> = {},
 ): boolean {
   if (isEdit) {
+    return true;
+  }
+
+  if (kind === IntegrationSourceKind.Qelos) {
+    return metadata.external !== true || hasNonEmptyString(authentication?.password);
+  }
+
+  if (kind === IntegrationSourceKind.Http) {
     return true;
   }
 
@@ -80,6 +101,14 @@ function hasRequiredAuthentication(
     case IntegrationSourceKind.Paddle:
     case IntegrationSourceKind.DodoPayments:
       return hasNonEmptyString(authentication.apiKey);
+    case IntegrationSourceKind.OpenAI:
+      return hasNonEmptyString(authentication.token);
+    case IntegrationSourceKind.Email:
+      return hasNonEmptyString(authentication.password);
+    case IntegrationSourceKind.AWS:
+      return hasNonEmptyString(authentication.secretAccessKey);
+    case IntegrationSourceKind.Cloudflare:
+      return hasNonEmptyString(authentication.apiToken);
     default:
       return false;
   }
@@ -96,7 +125,7 @@ export function useIntegrationSourceStatus(options: UseIntegrationSourceStatusOp
 
   const canCheck = computed(() => {
     const kind = resolvedKind.value;
-    if (!isPaymentKind(kind)) {
+    if (!isStatusCheckSupportedKind(kind)) {
       return false;
     }
 
@@ -104,7 +133,7 @@ export function useIntegrationSourceStatus(options: UseIntegrationSourceStatusOp
     const authentication = buildAuthenticationPayload(options.getAuthenticationOverride());
 
     return hasRequiredMetadata(kind, metadata)
-      && hasRequiredAuthentication(kind, authentication, isEdit.value);
+      && hasRequiredAuthentication(kind, authentication, isEdit.value, metadata);
   });
 
   async function checkConnection() {
@@ -148,7 +177,7 @@ export function useIntegrationSourceStatus(options: UseIntegrationSourceStatusOp
     }
   }
 
-  const canCheckStored = computed(() => isPaymentKind(resolvedKind.value) && isEdit.value);
+  const canCheckStored = computed(() => isStatusCheckSupportedKind(resolvedKind.value) && isEdit.value);
 
   async function checkStoredConnection() {
     if (!canCheckStored.value || checking.value || checkingStored.value) {

@@ -1,14 +1,16 @@
 import fetch from 'node-fetch';
+import { LambdaClient, ListFunctionsCommand } from '@aws-sdk/client-lambda';
 import {
   extractSumitProviderError,
   IntegrationSourceKind,
   IIntegrationSourceStatusResult,
-  PAYMENT_INTEGRATION_SOURCE_KINDS,
+  STATUS_CHECK_SUPPORTED_INTEGRATION_SOURCE_KINDS,
   sanitizeProviderErrorBody,
 } from '@qelos/global-types';
 import httpAgent from './http-agent.js';
 import { checkPayPalStatus } from './paypal-api.js';
 import { checkSumitStatus } from './sumit-api.js';
+import { verifyEmailConnection } from './email-service.js';
 
 type StatusCheckParams = {
   tenant: string;
@@ -86,6 +88,11 @@ function sanitizeStatusDetails(value: unknown): Record<string, unknown> | undefi
       || normalized === 'accesstoken'
       || normalized === 'password'
       || normalized === 'secret'
+      || normalized === 'secretaccesskey'
+      || normalized === 'accesskeyid'
+      || normalized === 'apitoken'
+      || normalized === 'token'
+      || normalized === 'securedheaders'
     ) {
       continue;
     }
@@ -358,12 +365,271 @@ async function checkDodoPaymentsIntegrationStatus(
   }
 }
 
+async function checkHttpIntegrationStatus(
+  kind: IntegrationSourceKind,
+  metadata: Record<string, unknown>,
+  authentication: Record<string, unknown>,
+): Promise<IIntegrationSourceStatusResult> {
+  const baseUrl = metadata.baseUrl as string | undefined;
+
+  if (!baseUrl) {
+    throw missingCredentialsError('Missing base URL for HTTP integration', 'MISSING_HTTP_BASE_URL');
+  }
+
+  const method = (metadata.method as string) || 'GET';
+  const headers = (metadata.headers as Record<string, string>) || {};
+  const securedHeaders = (authentication.securedHeaders as Record<string, string>) || {};
+
+  try {
+    const response = await fetch(baseUrl, {
+      method,
+      headers: { ...headers, ...securedHeaders },
+      agent: httpAgent,
+    });
+
+    if (response.status >= 500) {
+      return buildStatusResult(
+        kind,
+        'failed',
+        `HTTP endpoint responded with a server error (status ${response.status})`,
+        { statusCode: response.status },
+      );
+    }
+
+    return buildStatusResult(
+      kind,
+      'connected',
+      `HTTP endpoint reachable (status ${response.status})`,
+      { statusCode: response.status },
+    );
+  } catch (error: any) {
+    return buildStatusResult(kind, 'failed', providerFailureMessage(error, 'HTTP connection check failed'));
+  }
+}
+
+const OPENAI_DEFAULT_API_BASE = 'https://api.openai.com/v1';
+
+async function checkOpenAIIntegrationStatus(
+  kind: IntegrationSourceKind,
+  metadata: Record<string, unknown>,
+  authentication: Record<string, unknown>,
+): Promise<IIntegrationSourceStatusResult> {
+  const token = authentication.token as string | undefined;
+
+  if (!token) {
+    throw missingCredentialsError('Missing API token for OpenAI integration', 'MISSING_OPENAI_CREDENTIALS');
+  }
+
+  const organizationId = metadata.organizationId as string | undefined;
+  const rawApiUrl = (metadata.apiUrl as string | undefined) || OPENAI_DEFAULT_API_BASE;
+  const apiBase = rawApiUrl.endsWith('/') ? rawApiUrl : `${rawApiUrl}/`;
+
+  try {
+    const url = new URL('models', apiBase).toString();
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(organizationId ? { 'OpenAI-Organization': organizationId } : {}),
+      },
+      agent: httpAgent,
+    });
+
+    let responseBody: any = null;
+    try {
+      responseBody = await response.json();
+    } catch {
+      responseBody = null;
+    }
+
+    if (!response.ok) {
+      const error: any = new Error(
+        responseBody?.error?.message || `OpenAI API request failed with status ${response.status}`,
+      );
+      error.status = response.status;
+      error.responseBody = responseBody;
+      throw error;
+    }
+
+    const models = Array.isArray(responseBody?.data) ? responseBody.data : undefined;
+
+    return buildStatusResult(kind, 'connected', 'OpenAI connection verified', {
+      ...(models ? { modelCount: models.length } : {}),
+    });
+  } catch (error: any) {
+    const sanitized = sanitizeStatusDetails(error?.responseBody);
+    return buildStatusResult(kind, 'failed', providerFailureMessage(error, 'OpenAI connection check failed'), sanitized);
+  }
+}
+
+async function checkQelosIntegrationStatus(
+  kind: IntegrationSourceKind,
+  metadata: Record<string, unknown>,
+  authentication: Record<string, unknown>,
+): Promise<IIntegrationSourceStatusResult> {
+  if (metadata.external !== true) {
+    return buildStatusResult(kind, 'connected', 'Internal Qelos connection is always available');
+  }
+
+  const url = metadata.url as string | undefined;
+  const username = metadata.username as string | undefined;
+  const password = authentication.password as string | undefined;
+
+  if (!url || !username || !password) {
+    throw missingCredentialsError(
+      'Missing URL, username or password for external Qelos integration',
+      'MISSING_QELOS_CREDENTIALS',
+    );
+  }
+
+  try {
+    const signInUrl = new URL('/api/signin', url).toString();
+    const response = await fetch(signInUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+      agent: httpAgent,
+    });
+
+    let responseBody: any = null;
+    try {
+      responseBody = await response.json();
+    } catch {
+      responseBody = null;
+    }
+
+    if (!response.ok) {
+      const error: any = new Error(
+        responseBody?.errors?.general?.message
+        || responseBody?.errors?.password
+        || `Qelos sign-in failed with status ${response.status}`,
+      );
+      error.status = response.status;
+      error.responseBody = responseBody;
+      throw error;
+    }
+
+    return buildStatusResult(kind, 'connected', 'External Qelos connection verified');
+  } catch (error: any) {
+    const sanitized = sanitizeStatusDetails(error?.responseBody);
+    return buildStatusResult(kind, 'failed', providerFailureMessage(error, 'Qelos connection check failed'), sanitized);
+  }
+}
+
+async function checkEmailIntegrationStatus(
+  kind: IntegrationSourceKind,
+  metadata: Record<string, unknown>,
+  authentication: Record<string, unknown>,
+): Promise<IIntegrationSourceStatusResult> {
+  const smtp = metadata.smtp as string | undefined;
+  const password = authentication.password as string | undefined;
+
+  if (!smtp || !password) {
+    throw missingCredentialsError('Missing SMTP host or password for Email integration', 'MISSING_EMAIL_CREDENTIALS');
+  }
+
+  const result = await verifyEmailConnection(
+    {
+      smtp,
+      username: metadata.username as string | undefined,
+      email: metadata.email as string | undefined,
+    },
+    { password },
+  );
+
+  if (!result.success) {
+    return buildStatusResult(kind, 'failed', result.error || 'Email connection check failed');
+  }
+
+  return buildStatusResult(kind, 'connected', 'SMTP connection verified');
+}
+
+async function checkAwsIntegrationStatus(
+  kind: IntegrationSourceKind,
+  metadata: Record<string, unknown>,
+  authentication: Record<string, unknown>,
+): Promise<IIntegrationSourceStatusResult> {
+  const region = metadata.region as string | undefined;
+  const accessKeyId = metadata.accessKeyId as string | undefined;
+  const secretAccessKey = authentication.secretAccessKey as string | undefined;
+
+  if (!region || !accessKeyId || !secretAccessKey) {
+    throw missingCredentialsError(
+      'Missing region, access key ID or secret access key for AWS integration',
+      'MISSING_AWS_CREDENTIALS',
+    );
+  }
+
+  try {
+    const lambda = new LambdaClient({ region, credentials: { accessKeyId, secretAccessKey } });
+    const result = await lambda.send(new ListFunctionsCommand({ MaxItems: 1 }));
+
+    return buildStatusResult(kind, 'connected', 'AWS Lambda connection verified', {
+      region,
+      functionCount: result.Functions?.length ?? 0,
+    });
+  } catch (error: any) {
+    return buildStatusResult(kind, 'failed', providerFailureMessage(error, 'AWS connection check failed'));
+  }
+}
+
+async function checkCloudflareIntegrationStatus(
+  kind: IntegrationSourceKind,
+  metadata: Record<string, unknown>,
+  authentication: Record<string, unknown>,
+): Promise<IIntegrationSourceStatusResult> {
+  const accountId = metadata.accountId as string | undefined;
+  const apiToken = authentication.apiToken as string | undefined;
+
+  if (!accountId || !apiToken) {
+    throw missingCredentialsError(
+      'Missing account ID or API token for Cloudflare integration',
+      'MISSING_CLOUDFLARE_CREDENTIALS',
+    );
+  }
+
+  try {
+    const url = new URL(`/client/v4/accounts/${accountId}/workers/scripts`, 'https://api.cloudflare.com').toString();
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${apiToken}` },
+      agent: httpAgent,
+    });
+
+    let responseBody: any = null;
+    try {
+      responseBody = await response.json();
+    } catch {
+      responseBody = null;
+    }
+
+    if (!response.ok || responseBody?.success === false) {
+      const error: any = new Error(
+        responseBody?.errors?.[0]?.message || `Cloudflare API request failed with status ${response.status}`,
+      );
+      error.status = response.status;
+      error.responseBody = responseBody;
+      throw error;
+    }
+
+    const scripts = Array.isArray(responseBody?.result) ? responseBody.result : undefined;
+
+    return buildStatusResult(kind, 'connected', 'Cloudflare connection verified', {
+      accountId,
+      ...(scripts ? { scriptCount: scripts.length } : {}),
+    });
+  } catch (error: any) {
+    const sanitized = sanitizeStatusDetails(error?.responseBody);
+    return buildStatusResult(kind, 'failed', providerFailureMessage(error, 'Cloudflare connection check failed'), sanitized);
+  }
+}
+
 export async function checkIntegrationSourceStatus(
   params: StatusCheckParams,
 ): Promise<IIntegrationSourceStatusResult> {
   const { kind, metadata, authentication = {} } = params;
 
-  if (!PAYMENT_INTEGRATION_SOURCE_KINDS.includes(kind)) {
+  if (!STATUS_CHECK_SUPPORTED_INTEGRATION_SOURCE_KINDS.includes(kind)) {
     return buildStatusResult(
       kind,
       'unsupported',
@@ -380,6 +646,18 @@ export async function checkIntegrationSourceStatus(
       return checkPaddleIntegrationStatus(kind, metadata, authentication);
     case IntegrationSourceKind.DodoPayments:
       return checkDodoPaymentsIntegrationStatus(kind, metadata, authentication);
+    case IntegrationSourceKind.Http:
+      return checkHttpIntegrationStatus(kind, metadata, authentication);
+    case IntegrationSourceKind.OpenAI:
+      return checkOpenAIIntegrationStatus(kind, metadata, authentication);
+    case IntegrationSourceKind.Qelos:
+      return checkQelosIntegrationStatus(kind, metadata, authentication);
+    case IntegrationSourceKind.Email:
+      return checkEmailIntegrationStatus(kind, metadata, authentication);
+    case IntegrationSourceKind.AWS:
+      return checkAwsIntegrationStatus(kind, metadata, authentication);
+    case IntegrationSourceKind.Cloudflare:
+      return checkCloudflareIntegrationStatus(kind, metadata, authentication);
     default:
       return buildStatusResult(
         kind,

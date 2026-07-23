@@ -68,9 +68,11 @@ mock.module('../../models/integration', {
   namedExports: { IIntegrationEntity: {} },
 });
 
+const getEncryptedSourceAuthenticationMock = mock.fn(async () => ({ apiKey: 'test-dodo-key' }));
+
 mock.module('../source-authentication-service', {
   namedExports: {
-    getEncryptedSourceAuthentication: mock.fn(async () => ({ apiKey: 'test-dodo-key' })),
+    getEncryptedSourceAuthentication: getEncryptedSourceAuthenticationMock,
   },
 });
 
@@ -556,5 +558,24 @@ describe('handleDodoPaymentsTarget', async () => {
         return true;
       }
     );
+  });
+
+  it('should throw when the persisted secret has no apiKey', async () => {
+    getEncryptedSourceAuthenticationMock.mock.mockImplementationOnce(async () => ({}));
+    setupFetch();
+
+    await assert.rejects(
+      () => callIntegrationTarget(
+        'tenant-1',
+        { product_cart: [{ product_id: 'prod_1', quantity: 1 }], payment_link: true },
+        createMockTarget('createPayment') as any,
+      ),
+      (err: any) => {
+        assert.match(err.message, /Missing API key for DodoPayments integration/);
+        return true;
+      },
+    );
+
+    assert.strictEqual(fetchCalls.length, 0, 'must not call the DodoPayments API when credentials are missing');
   });
 });

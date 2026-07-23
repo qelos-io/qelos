@@ -348,6 +348,10 @@ qelos agent code-wizard -m "Hello"  # uses saved defaults
     <h3><a href="/cli/global">Global Environments</a></h3>
     <p>Register a project directory as a named global environment and run agent or data commands from anywhere on your machine using <code>--global</code>.</p>
   </div>
+  <div class="vp-feature">
+    <h3><a href="/cli/connections">Connections</a></h3>
+    <p>Print a table of every integration source connection (ID, name, kind, status) with a live, side-effect-free check against each provider.</p>
+  </div>
 </div>
 
 <style>

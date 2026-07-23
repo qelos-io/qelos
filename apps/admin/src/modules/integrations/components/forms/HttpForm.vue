@@ -99,7 +99,15 @@ const submitForm = () => {
 
 };
 
-defineExpose({ submitForm });
+function getAuthenticationOverride() {
+  return securedHeadersEdited.value ? { securedHeaders: { ...securedHeadersMasked.value } } : undefined;
+}
+
+function getStatusFormModel() {
+  return { metadata: { ...formModel.value.metadata } };
+}
+
+defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
 </script>
 
 <template>

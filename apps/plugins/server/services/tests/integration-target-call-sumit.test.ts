@@ -68,9 +68,11 @@ mock.module('../../models/integration', {
   namedExports: { IIntegrationEntity: {} },
 });
 
+const getEncryptedSourceAuthenticationMock = mock.fn(async () => ({ apiKey: 'test-sumit-key' }));
+
 mock.module('../source-authentication-service', {
   namedExports: {
-    getEncryptedSourceAuthentication: mock.fn(async () => ({ apiKey: 'test-sumit-key' })),
+    getEncryptedSourceAuthentication: getEncryptedSourceAuthenticationMock,
   },
 });
 
@@ -317,5 +319,31 @@ describe('handleSumitTarget', async () => {
         return true;
       },
     );
+  });
+
+  it('should throw MISSING_SUMIT_CREDENTIALS when the persisted secret has no apiKey', async () => {
+    getEncryptedSourceAuthenticationMock.mock.mockImplementationOnce(async () => ({}));
+    setupFetch();
+
+    await assert.rejects(
+      () => callIntegrationTarget(
+        'tenant-1',
+        {
+          Customer: { ExternalIdentifier: 'user:1', SearchMode: 2, Name: 'User One' },
+          Items: [{ Item: { Name: 'Pro Plan', Description: 'Pro Plan' }, Quantity: 1, UnitPrice: 29, Currency: 'ILS' }],
+          RedirectURL: 'https://example.com/success',
+          CancelRedirectURL: 'https://example.com/cancel',
+          ExternalIdentifier: '{"tenant":"tenant-1"}',
+        },
+        createMockTarget('beginCheckoutRedirect') as any,
+      ),
+      (err: any) => {
+        assert.strictEqual(err.code, 'MISSING_SUMIT_CREDENTIALS');
+        assert.strictEqual(err.status, 400);
+        return true;
+      },
+    );
+
+    assert.strictEqual(fetchCalls.length, 0, 'must not call the Sumit API when credentials are missing');
   });
 });

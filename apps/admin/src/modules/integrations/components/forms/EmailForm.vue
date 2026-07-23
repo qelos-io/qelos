@@ -28,7 +28,16 @@ const submitForm = () => {
   emit('submit', formModel.value);
 };
 
-defineExpose({ submitForm });
+function getAuthenticationOverride() {
+  const password = formModel.value.authentication?.password;
+  return password ? { password } : undefined;
+}
+
+function getStatusFormModel() {
+  return { metadata: { ...formModel.value.metadata } };
+}
+
+defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
 </script>
 
 <template>

@@ -25,3 +25,14 @@ export const PAYMENT_INTEGRATION_SOURCE_KINDS: IntegrationSourceKind[] = [
   IntegrationSourceKind.Paddle,
   IntegrationSourceKind.DodoPayments,
 ];
+
+/** Integration source kinds with a real, implemented connection status check. */
+export const STATUS_CHECK_SUPPORTED_INTEGRATION_SOURCE_KINDS: IntegrationSourceKind[] = [
+  ...PAYMENT_INTEGRATION_SOURCE_KINDS,
+  IntegrationSourceKind.Http,
+  IntegrationSourceKind.OpenAI,
+  IntegrationSourceKind.Qelos,
+  IntegrationSourceKind.Email,
+  IntegrationSourceKind.AWS,
+  IntegrationSourceKind.Cloudflare,
+];

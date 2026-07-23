@@ -67,3 +67,34 @@ export async function sendEmail(
     };
   }
 }
+
+/**
+ * Verify SMTP credentials via a handshake/auth check, without sending an email.
+ */
+export async function verifyEmailConnection(
+  metadata: { smtp: string; username?: string; email?: string },
+  authentication: { password: string }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: metadata.smtp,
+      port: 587,
+      secure: false,
+      auth: {
+        user: metadata.username || metadata.email,
+        pass: authentication.password
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+
+    await transporter.verify();
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}

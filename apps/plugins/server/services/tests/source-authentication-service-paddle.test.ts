@@ -21,11 +21,11 @@ describe('storeEncryptedSourceAuthentication - Paddle', async () => {
     setSecretMock.mock.resetCalls();
   });
 
-  it('should store apikey via setSecret and return authId', async () => {
+  it('should store apiKey via setSecret and return authId', async () => {
     const result = await storeEncryptedSourceAuthentication(
       'tenant-1',
       'paddle' as any,
-      { apikey: 'pdl_test_key_123' },
+      { apiKey: 'pdl_test_key_123' },
       'auth-123'
     );
 
@@ -35,14 +35,14 @@ describe('storeEncryptedSourceAuthentication - Paddle', async () => {
     const call = setSecretMock.mock.calls[0];
     assert.strictEqual(call.arguments[0], 'tenant-1');
     assert.strictEqual(call.arguments[1], 'integration-source-paddle-auth-123');
-    assert.deepStrictEqual(call.arguments[2], { apikey: 'pdl_test_key_123' });
+    assert.deepStrictEqual(call.arguments[2], { apiKey: 'pdl_test_key_123' });
   });
 
   it('should generate authId when not provided', async () => {
     const result = await storeEncryptedSourceAuthentication(
       'tenant-1',
       'paddle' as any,
-      { apikey: 'pdl_test_key_456' },
+      { apiKey: 'pdl_test_key_456' },
     );
 
     assert.strictEqual(result, 'test-auth-id');

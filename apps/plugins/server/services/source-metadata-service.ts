@@ -246,5 +246,24 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     return { environment: environment || 'test' };
   }
 
+  if (kind === IntegrationSourceKind.AWS) {
+    const { region, accessKeyId } = metadata;
+    if (!region || typeof region !== 'string' || !accessKeyId || typeof accessKeyId !== 'string') {
+      throw new ResponseError('Invalid AWS metadata: region and accessKeyId are required.', 400);
+    }
+    return { region, accessKeyId };
+  }
+
+  if (kind === IntegrationSourceKind.Cloudflare) {
+    const { accountId, workersDevSubdomain } = metadata;
+    if (!accountId || typeof accountId !== 'string') {
+      throw new ResponseError('Invalid Cloudflare metadata: accountId is required.', 400);
+    }
+    if (workersDevSubdomain != null && typeof workersDevSubdomain !== 'string') {
+      throw new ResponseError('Invalid Cloudflare metadata: workersDevSubdomain must be a string.', 400);
+    }
+    return { accountId, workersDevSubdomain: workersDevSubdomain || '' };
+  }
+
   return {};
 }

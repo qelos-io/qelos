@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isPaymentKind" class="connection-status-check">
+  <div v-if="isCheckSupportedKind" class="connection-status-check">
     <div class="connection-status-check-actions">
       <div class="connection-status-check-buttons">
         <el-button
@@ -61,7 +61,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   IntegrationSourceKind,
-  PAYMENT_INTEGRATION_SOURCE_KINDS,
+  STATUS_CHECK_SUPPORTED_INTEGRATION_SOURCE_KINDS,
 } from '@qelos/global-types';
 import { useIntegrationSourceStatus } from '../compositions/use-integration-source-status';
 
@@ -75,8 +75,8 @@ const props = defineProps<{
   getAuthenticationOverride: () => Record<string, unknown> | undefined;
 }>();
 
-const isPaymentKind = computed(() =>
-  PAYMENT_INTEGRATION_SOURCE_KINDS.includes(props.kind as IntegrationSourceKind),
+const isCheckSupportedKind = computed(() =>
+  STATUS_CHECK_SUPPORTED_INTEGRATION_SOURCE_KINDS.includes(props.kind as IntegrationSourceKind),
 );
 
 const {

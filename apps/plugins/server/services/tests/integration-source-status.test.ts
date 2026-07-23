@@ -28,6 +28,50 @@ function setupFetch(...responses: Array<{ ok: boolean; status: number; body: any
   fetchCalls = [];
 }
 
+let lambdaSendImpl: (cmd: any) => Promise<any> = async () => ({ Functions: [] });
+const lambdaSendMock = mock.fn((cmd: any) => lambdaSendImpl(cmd));
+const lambdaClientConstructorMock = mock.fn();
+
+class MockLambdaClient {
+  constructor(config: any) {
+    lambdaClientConstructorMock(config);
+  }
+  send(cmd: any) {
+    return lambdaSendMock(cmd);
+  }
+}
+
+class MockListFunctionsCommand {
+  input: any;
+  constructor(input: any) {
+    this.input = input;
+  }
+}
+
+mock.module('@aws-sdk/client-lambda', {
+  namedExports: {
+    LambdaClient: MockLambdaClient,
+    ListFunctionsCommand: MockListFunctionsCommand,
+  },
+});
+
+let nodemailerVerifyImpl: () => Promise<any> = async () => true;
+const nodemailerVerifyMock = mock.fn(() => nodemailerVerifyImpl());
+const nodemailerCreateTransportMock = mock.fn((config: any) => ({ verify: nodemailerVerifyMock, transportConfig: config }));
+
+mock.module('nodemailer', {
+  defaultExport: { createTransport: nodemailerCreateTransportMock },
+});
+
+function resetProviderMocks() {
+  lambdaSendImpl = async () => ({ Functions: [] });
+  nodemailerVerifyImpl = async () => true;
+  lambdaSendMock.mock.resetCalls();
+  lambdaClientConstructorMock.mock.resetCalls();
+  nodemailerVerifyMock.mock.resetCalls();
+  nodemailerCreateTransportMock.mock.resetCalls();
+}
+
 describe('resolveStatusAuthentication', async () => {
   const { resolveStatusAuthentication } = await import('../integration-source-status.js');
 
@@ -68,19 +112,20 @@ describe('checkIntegrationSourceStatus', async () => {
 
   beforeEach(() => {
     setupFetch();
+    resetProviderMocks();
   });
 
-  it('returns unsupported for non-payment integration kinds', async () => {
+  it('returns unsupported for kinds without an implemented status check', async () => {
     const result = await checkIntegrationSourceStatus({
       tenant: 'tenant-1',
-      kind: IntegrationSourceKind.OpenAI,
+      kind: IntegrationSourceKind.ClaudeAi,
       metadata: {},
       authentication: { token: 'sk-test' },
     });
 
     assert.strictEqual(result.status, 'unsupported');
     assert.match(result.message, /not supported/i);
-    assert.strictEqual(result.kind, IntegrationSourceKind.OpenAI);
+    assert.strictEqual(result.kind, IntegrationSourceKind.ClaudeAi);
     assert.ok(result.checkedAt);
     assert.strictEqual(fetchCalls.length, 0);
   });
@@ -345,5 +390,303 @@ describe('checkIntegrationSourceStatus', async () => {
         return true;
       },
     );
+  });
+
+  it('throws when HTTP base URL is missing', async () => {
+    await assert.rejects(
+      () => checkIntegrationSourceStatus({
+        tenant: 'tenant-1',
+        kind: IntegrationSourceKind.Http,
+        metadata: {},
+        authentication: {},
+      }),
+      (err: any) => {
+        assert.strictEqual(err.status, 400);
+        assert.strictEqual(err.code, 'MISSING_HTTP_BASE_URL');
+        return true;
+      },
+    );
+  });
+
+  it('returns connected when HTTP endpoint responds successfully', async () => {
+    setupFetch({ ok: true, status: 204, body: null });
+
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.Http,
+      metadata: { baseUrl: 'https://example.com/health', method: 'GET', headers: {} },
+      authentication: { securedHeaders: { 'X-Api-Key': 'secret' } },
+    });
+
+    assert.strictEqual(result.status, 'connected');
+    assert.strictEqual(result.details?.statusCode, 204);
+    assert.strictEqual(fetchCalls[0].url, 'https://example.com/health');
+    assert.strictEqual(fetchCalls[0].options.headers['X-Api-Key'], 'secret');
+  });
+
+  it('returns failed when HTTP endpoint responds with a server error', async () => {
+    setupFetch({ ok: false, status: 502, body: null });
+
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.Http,
+      metadata: { baseUrl: 'https://example.com/health' },
+      authentication: {},
+    });
+
+    assert.strictEqual(result.status, 'failed');
+    assert.match(result.message, /server error/i);
+  });
+
+  it('throws when OpenAI token is missing', async () => {
+    await assert.rejects(
+      () => checkIntegrationSourceStatus({
+        tenant: 'tenant-1',
+        kind: IntegrationSourceKind.OpenAI,
+        metadata: {},
+        authentication: {},
+      }),
+      (err: any) => {
+        assert.strictEqual(err.status, 400);
+        assert.strictEqual(err.code, 'MISSING_OPENAI_CREDENTIALS');
+        return true;
+      },
+    );
+  });
+
+  it('returns connected when OpenAI models list succeeds', async () => {
+    setupFetch({ ok: true, status: 200, body: { data: [{ id: 'gpt-5.2' }, { id: 'gpt-5.2-mini' }] } });
+
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.OpenAI,
+      metadata: {},
+      authentication: { token: 'sk-test' },
+    });
+
+    assert.strictEqual(result.status, 'connected');
+    assert.strictEqual(result.message, 'OpenAI connection verified');
+    assert.strictEqual(result.details?.modelCount, 2);
+    assert.ok(fetchCalls[0].url.includes('api.openai.com/v1/models'));
+    assert.strictEqual(fetchCalls[0].options.headers.Authorization, 'Bearer sk-test');
+  });
+
+  it('returns failed when OpenAI rejects the token', async () => {
+    setupFetch({ ok: false, status: 401, body: { error: { message: 'Incorrect API key provided' } } });
+
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.OpenAI,
+      metadata: {},
+      authentication: { token: 'bad-token' },
+    });
+
+    assert.strictEqual(result.status, 'failed');
+    assert.strictEqual(result.message, 'Incorrect API key provided');
+  });
+
+  it('returns connected for internal Qelos sources without calling out', async () => {
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.Qelos,
+      metadata: { external: false },
+      authentication: {},
+    });
+
+    assert.strictEqual(result.status, 'connected');
+    assert.strictEqual(fetchCalls.length, 0);
+  });
+
+  it('throws when external Qelos credentials are missing', async () => {
+    await assert.rejects(
+      () => checkIntegrationSourceStatus({
+        tenant: 'tenant-1',
+        kind: IntegrationSourceKind.Qelos,
+        metadata: { external: true, url: 'https://remote.qelos.example' },
+        authentication: {},
+      }),
+      (err: any) => {
+        assert.strictEqual(err.status, 400);
+        assert.strictEqual(err.code, 'MISSING_QELOS_CREDENTIALS');
+        return true;
+      },
+    );
+  });
+
+  it('returns connected when external Qelos sign-in succeeds', async () => {
+    setupFetch({ ok: true, status: 200, body: { token: 'jwt-token' } });
+
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.Qelos,
+      metadata: { external: true, url: 'https://remote.qelos.example', username: 'bot' },
+      authentication: { password: 'secret' },
+    });
+
+    assert.strictEqual(result.status, 'connected');
+    assert.ok(fetchCalls[0].url.includes('/api/signin'));
+    assert.deepStrictEqual(JSON.parse(fetchCalls[0].options.body), { username: 'bot', password: 'secret' });
+  });
+
+  it('returns failed when external Qelos sign-in is rejected', async () => {
+    setupFetch({ ok: false, status: 401, body: { errors: { password: 'password is incorrect' } } });
+
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.Qelos,
+      metadata: { external: true, url: 'https://remote.qelos.example', username: 'bot' },
+      authentication: { password: 'wrong' },
+    });
+
+    assert.strictEqual(result.status, 'failed');
+    assert.strictEqual(result.message, 'password is incorrect');
+  });
+
+  it('throws when Email SMTP host or password is missing', async () => {
+    await assert.rejects(
+      () => checkIntegrationSourceStatus({
+        tenant: 'tenant-1',
+        kind: IntegrationSourceKind.Email,
+        metadata: { username: 'bot@example.com' },
+        authentication: {},
+      }),
+      (err: any) => {
+        assert.strictEqual(err.status, 400);
+        assert.strictEqual(err.code, 'MISSING_EMAIL_CREDENTIALS');
+        return true;
+      },
+    );
+  });
+
+  it('returns connected when the SMTP handshake succeeds', async () => {
+    nodemailerVerifyImpl = async () => true;
+
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.Email,
+      metadata: { smtp: 'smtp.example.com', username: 'bot@example.com' },
+      authentication: { password: 'secret' },
+    });
+
+    assert.strictEqual(result.status, 'connected');
+    assert.strictEqual(result.message, 'SMTP connection verified');
+    assert.strictEqual(nodemailerCreateTransportMock.mock.calls[0].arguments[0].host, 'smtp.example.com');
+  });
+
+  it('returns failed when the SMTP handshake is rejected', async () => {
+    nodemailerVerifyImpl = async () => {
+      throw new Error('Invalid login');
+    };
+
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.Email,
+      metadata: { smtp: 'smtp.example.com', username: 'bot@example.com' },
+      authentication: { password: 'bad-password' },
+    });
+
+    assert.strictEqual(result.status, 'failed');
+    assert.strictEqual(result.message, 'Invalid login');
+  });
+
+  it('throws when AWS credentials are missing', async () => {
+    await assert.rejects(
+      () => checkIntegrationSourceStatus({
+        tenant: 'tenant-1',
+        kind: IntegrationSourceKind.AWS,
+        metadata: { region: 'us-east-1' },
+        authentication: {},
+      }),
+      (err: any) => {
+        assert.strictEqual(err.status, 400);
+        assert.strictEqual(err.code, 'MISSING_AWS_CREDENTIALS');
+        return true;
+      },
+    );
+  });
+
+  it('returns connected when AWS Lambda list functions succeeds', async () => {
+    lambdaSendImpl = async () => ({ Functions: [{ FunctionName: 'fn-1' }] });
+
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.AWS,
+      metadata: { region: 'us-east-1', accessKeyId: 'AKIAEXAMPLE' },
+      authentication: { secretAccessKey: 'secret' },
+    });
+
+    assert.strictEqual(result.status, 'connected');
+    assert.strictEqual(result.details?.functionCount, 1);
+    assert.deepStrictEqual(lambdaClientConstructorMock.mock.calls[0].arguments[0], {
+      region: 'us-east-1',
+      credentials: { accessKeyId: 'AKIAEXAMPLE', secretAccessKey: 'secret' },
+    });
+  });
+
+  it('returns failed when AWS rejects the credentials', async () => {
+    lambdaSendImpl = async () => {
+      const error: any = new Error('UnrecognizedClientException: The security token included in the request is invalid');
+      throw error;
+    };
+
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.AWS,
+      metadata: { region: 'us-east-1', accessKeyId: 'AKIAEXAMPLE' },
+      authentication: { secretAccessKey: 'bad-secret' },
+    });
+
+    assert.strictEqual(result.status, 'failed');
+    assert.match(result.message, /security token/i);
+  });
+
+  it('throws when Cloudflare credentials are missing', async () => {
+    await assert.rejects(
+      () => checkIntegrationSourceStatus({
+        tenant: 'tenant-1',
+        kind: IntegrationSourceKind.Cloudflare,
+        metadata: {},
+        authentication: {},
+      }),
+      (err: any) => {
+        assert.strictEqual(err.status, 400);
+        assert.strictEqual(err.code, 'MISSING_CLOUDFLARE_CREDENTIALS');
+        return true;
+      },
+    );
+  });
+
+  it('returns connected when Cloudflare Workers list succeeds', async () => {
+    setupFetch({ ok: true, status: 200, body: { success: true, result: [{ id: 'script-1' }] } });
+
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.Cloudflare,
+      metadata: { accountId: 'acc-123' },
+      authentication: { apiToken: 'cf-token' },
+    });
+
+    assert.strictEqual(result.status, 'connected');
+    assert.strictEqual(result.details?.scriptCount, 1);
+    assert.ok(fetchCalls[0].url.includes('/accounts/acc-123/workers/scripts'));
+    assert.strictEqual(fetchCalls[0].options.headers.Authorization, 'Bearer cf-token');
+  });
+
+  it('returns failed when Cloudflare rejects the API token', async () => {
+    setupFetch({
+      ok: false,
+      status: 403,
+      body: { success: false, errors: [{ code: 10000, message: 'Authentication error' }] },
+    });
+
+    const result = await checkIntegrationSourceStatus({
+      tenant: 'tenant-1',
+      kind: IntegrationSourceKind.Cloudflare,
+      metadata: { accountId: 'acc-123' },
+      authentication: { apiToken: 'bad-token' },
+    });
+
+    assert.strictEqual(result.status, 'failed');
+    assert.match(result.message, /Authentication error/i);
   });
 });

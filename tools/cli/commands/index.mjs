@@ -14,6 +14,7 @@ import testCommand from './test.mjs';
 import devCommand from './dev.mjs';
 import interfacesCommand from './interfaces.mjs';
 import sdkCommand from './sdk.mjs';
+import connectionsCommand from './connections.mjs';
 
 /**
  * Ordered list of all CLI commands.
@@ -37,6 +38,7 @@ export const commands = [
   devCommand,
   interfacesCommand,
   sdkCommand,
+  connectionsCommand,
 ];
 
 /**
