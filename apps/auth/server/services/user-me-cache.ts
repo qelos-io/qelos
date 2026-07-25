@@ -97,6 +97,41 @@ export function buildMeResponse(
   };
 }
 
+export function profileFromUser(user: {
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  profileImage?: string | null;
+  birthDate?: string | Date;
+  metadata?: Record<string, unknown>;
+}): IUserMeProfile {
+  const firstName = user.firstName;
+  const lastName = user.lastName;
+  const fullName =
+    user.fullName || [firstName, lastName].filter(Boolean).join(' ').trim();
+  const name = fullName;
+
+  return {
+    firstName,
+    lastName,
+    fullName,
+    name,
+    profileImage: user.profileImage,
+    birthDate: user.birthDate,
+    metadata: user.metadata ?? {},
+  };
+}
+
+export function resolveMeMetadata(
+  cached: IUserMeProfile | null,
+  dbMetadata: Record<string, unknown>
+): Record<string, unknown> {
+  if (cached?.metadata !== undefined) {
+    return cached.metadata;
+  }
+  return dbMetadata;
+}
+
 export function buildProfileUpdate(
   cached: IUserMeProfile | null,
   payload: IUserMePayload,

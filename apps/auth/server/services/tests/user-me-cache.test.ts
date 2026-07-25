@@ -4,6 +4,8 @@ import {
   buildMeResponse,
   buildProfileUpdate,
   decodeIfNeeded,
+  profileFromUser,
+  resolveMeMetadata,
   userMeCacheKey,
 } from '../user-me-cache';
 
@@ -93,5 +95,65 @@ describe('buildProfileUpdate', () => {
     const profile = buildProfileUpdate(null, payload, { profileImage: '' });
 
     assert.equal(profile.profileImage, null);
+  });
+});
+
+describe('profileFromUser', () => {
+  it('builds a cache profile from persisted user fields', () => {
+    const profile = profileFromUser({
+      firstName: 'David',
+      lastName: 'Levy',
+      fullName: 'David Levy',
+      profileImage: 'https://example.com/avatar.png',
+      birthDate: '1990-01-01',
+      metadata: { department: 'Engineering' },
+    });
+
+    assert.equal(profile.firstName, 'David');
+    assert.equal(profile.lastName, 'Levy');
+    assert.equal(profile.fullName, 'David Levy');
+    assert.equal(profile.name, 'David Levy');
+    assert.equal(profile.profileImage, 'https://example.com/avatar.png');
+    assert.equal(profile.birthDate, '1990-01-01');
+    assert.deepEqual(profile.metadata, { department: 'Engineering' });
+  });
+
+  it('derives fullName from first and last name when missing', () => {
+    const profile = profileFromUser({
+      firstName: 'David',
+      lastName: 'Levy',
+    });
+
+    assert.equal(profile.fullName, 'David Levy');
+    assert.equal(profile.name, 'David Levy');
+  });
+
+  it('always includes metadata so cache entries do not force db fallback', () => {
+    const profile = profileFromUser({
+      firstName: 'David',
+      lastName: 'Levy',
+    });
+
+    assert.deepEqual(profile.metadata, {});
+  });
+});
+
+describe('resolveMeMetadata', () => {
+  it('prefers cached metadata when present', () => {
+    assert.deepEqual(
+      resolveMeMetadata({ metadata: { department: 'Sales' } }, { department: 'Legacy' }),
+      { department: 'Sales' }
+    );
+  });
+
+  it('falls back to db metadata when cache has no metadata field', () => {
+    assert.deepEqual(
+      resolveMeMetadata({ firstName: 'Cached' }, { department: 'Legacy' }),
+      { department: 'Legacy' }
+    );
+  });
+
+  it('returns cached empty metadata without falling back to db', () => {
+    assert.deepEqual(resolveMeMetadata({ metadata: {} }, { department: 'Legacy' }), {});
   });
 });

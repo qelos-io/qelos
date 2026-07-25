@@ -4,8 +4,9 @@ import { AuthRequest } from '../../types'
 import { getWorkspaceForUser } from '../services/workspaces';
 import {
   buildMeResponse,
-  buildProfileUpdate,
   getCachedUserMe,
+  profileFromUser,
+  resolveMeMetadata,
   setCachedUserMe,
 } from '../services/user-me-cache';
 
@@ -59,17 +60,22 @@ export async function getMe(req: AuthRequest, res: Response) {
   const userId = req.userPayload.sub;
   const cached = await getCachedUserMe(tenant, userId);
 
-  let metadata = cached?.metadata || {};
+  let dbMetadata: Record<string, unknown> = {};
   if (cached?.metadata === undefined) {
     try {
-      metadata = await getUserMetadata(userId, tenant);
+      dbMetadata = await getUserMetadata(userId, tenant);
     } catch {
       //
     }
   }
 
   res.status(200).json(
-    buildMeResponse(req.userPayload, cached, metadata, req.activeWorkspace)
+    buildMeResponse(
+      req.userPayload,
+      cached,
+      resolveMeMetadata(cached, dbMetadata),
+      req.activeWorkspace
+    )
   ).end();
 }
 
@@ -85,22 +91,22 @@ export async function setMe(req: AuthRequest, res: Response) {
       req.authConfig
     )
 
-    const cached = await getCachedUserMe(tenant, userId);
-    const profileUpdate = buildProfileUpdate(cached, req.userPayload, {
-      name,
-      fullName,
-      firstName,
-      lastName,
-      birthDate,
-      profileImage,
-      metadata,
+    const user = await getUser({ _id: userId, tenant });
+    const userObj = user as any;
+    const profile = profileFromUser({
+      firstName: userObj.firstName,
+      lastName: userObj.lastName,
+      fullName: userObj.fullName,
+      profileImage: userObj.profileImage,
+      birthDate: userObj.birthDate,
+      metadata: userObj.metadata,
     });
-    await setCachedUserMe(tenant, userId, profileUpdate);
+    await setCachedUserMe(tenant, userId, profile);
 
     const response = buildMeResponse(
       req.userPayload,
-      profileUpdate,
-      profileUpdate.metadata || {},
+      profile,
+      profile.metadata!,
       req.activeWorkspace
     );
     res.status(200).json({
