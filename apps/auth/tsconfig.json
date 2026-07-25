@@ -14,5 +14,6 @@
     /* Module Resolution Options */
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
-  }
+  },
+  "exclude": ["**/*.test.ts", "**/*.spec.ts"]
 }
