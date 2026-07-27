@@ -1,29 +1,51 @@
-# Qelos plugins system service
+# Qelos gateway
 
-An HTTP server to manage 3rd-party plugins for any system, combining frontend and backend plugins.
+API gateway and tenant-aware reverse proxy for Qelos microservices.
 
 ## Dependencies
+
 - Node.js
 - pnpm
-- MongoDB
-- [Authentication-service](https://github.com/qelos-io/qelos)
-- [Secrets-service](https://github.com/qelos-io/qelos)
+- Redis
+- Downstream Qelos services (auth, content, admin panel, etc.)
+
+## Proxy routes
+
+Service upstreams are configured in `server/services/proxy-middleware/config.ts`. Each service uses `{NAME}_SERVICE_URL`, `{NAME}_SERVICE_PORT`, and optional `{NAME}_SERVICE_PROXIES` env vars.
+
+| Service | Default port | Gateway prefix |
+|---------|--------------|----------------|
+| Auth | 9000 | `/api/auth`, `/api/signin`, `/api/me`, … |
+| Content | 9001 | `/api/blocks`, `/api/configurations`, … |
+| AI | 9007 | `/api/ai` |
+| MCP | 9010 | `/api/mcp` |
+| Payments | 9008 | `/api/plans`, `/api/subscriptions`, … |
+| Plugins | 9006 | `/api/plugins`, `/api/events`, `/api`, … |
+
+MCP clients connect at `{tenantHost}/api/mcp/admin` (proxied to `@qelos/mcp`).
+
+OAuth discovery metadata (e.g. `/.well-known/oauth-authorization-server`) is **not** under `/api/mcp`; when implemented it belongs on the auth service and must be listed in `authService.proxies`, not `mcpService.proxies`.
+
+## Environment variables (local dev)
+
+```sh
+MCP_SERVICE_PORT=9010
+AI_SERVICE_PORT=9007
+AUTH_SERVICE_PORT=9000
+CONTENT_SERVICE_PORT=9001
+```
 
 ## Usage
+
 ### As a Docker container
+
 ```sh
-$ docker run -p 3001:3001 qelos/gateway
+docker run -p 3000:3000 qelos/gateway
 ```
 
-## Development and Independent Usage
-In case you would like to run this project manually, for any reason, there are several commands you need to acknowledge:
+## Development
 
-### Install
 ```sh
-$ pnpm install
-```
-
-### Launch
-```sh
-$ pnpm start
+pnpm install
+pnpm -F @qelos/gateway dev
 ```
