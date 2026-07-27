@@ -74,13 +74,39 @@
       </header>
 
       <div class="callback-hints">
-        <p class="hints-title">{{ $t('Known MCP client patterns') }}</p>
-        <ul class="hints-list">
-          <li v-for="hint in callbackHints" :key="hint.id">
-            <strong>{{ $t(hint.labelKey) }}</strong>
-            <code dir="ltr">{{ hint.example }}</code>
-          </li>
-        </ul>
+        <div class="hints-header">
+          <p class="hints-title">{{ $t('Known MCP client patterns') }}</p>
+          <p class="hints-subtitle">{{ $t('MCP callback suggestions hint') }}</p>
+        </div>
+        <div class="hint-chips" role="list">
+          <button
+            v-for="hint in clickableCallbackHints"
+            :key="hint.id"
+            type="button"
+            class="hint-chip"
+            :class="{ 'hint-chip-added': isSuggestedCallbackAdded(hint.example) }"
+            :disabled="!edited.enabled || isSuggestedCallbackAdded(hint.example)"
+            :title="hint.example"
+            role="listitem"
+            @click="addSuggestedCallbackUrl(hint.example)"
+          >
+            <span class="hint-chip-label">{{ $t(hint.labelKey) }}</span>
+            <code class="hint-chip-url" dir="ltr">{{ hint.example }}</code>
+            <span v-if="isSuggestedCallbackAdded(hint.example)" class="hint-chip-badge">
+              {{ $t('MCP callback suggestion added') }}
+            </span>
+            <span v-else class="hint-chip-action">{{ $t('MCP callback suggestion add') }}</span>
+          </button>
+        </div>
+        <details class="hint-patterns">
+          <summary>{{ $t('MCP callback generic patterns') }}</summary>
+          <ul class="hints-list">
+            <li v-for="hint in genericCallbackHints" :key="hint.id">
+              <strong>{{ $t(hint.labelKey) }}</strong>
+              <code dir="ltr">{{ hint.example }}</code>
+            </li>
+          </ul>
+        </details>
       </div>
 
       <div v-if="!edited.permittedCallbackUrls.length" class="empty-state">
@@ -217,7 +243,9 @@ import { MCP_FORBIDDEN_TOOL_IDS } from '@qelos/global-types';
 import { KNOWN_MCP_TOOLS } from '@/modules/configurations/constants/mcp-known-tools';
 import {
   CALLBACK_URL_CLIENT_HINTS,
+  CLICKABLE_CALLBACK_CLIENT_HINTS,
   detectCallbackUrlClient,
+  isCallbackUrlInList,
   isValidCallbackUrl,
 } from '@/modules/configurations/services/mcp-callback-url-validation';
 
@@ -233,7 +261,8 @@ const { t: $t } = useI18n();
 const notifications = useNotifications();
 const wsConfig = useWsConfiguration();
 
-const callbackHints = CALLBACK_URL_CLIENT_HINTS;
+const clickableCallbackHints = CLICKABLE_CALLBACK_CLIENT_HINTS;
+const genericCallbackHints = CALLBACK_URL_CLIENT_HINTS.filter((hint) => hint.clickable === false);
 const roleOptions = ['user', 'admin', 'editor', 'plugin'];
 const workspaceRoleOptions = ['admin', 'member', 'user'];
 
@@ -316,6 +345,23 @@ function getToolLabelKey(toolId: string): string {
 
 function addCallbackUrl() {
   edited.value.permittedCallbackUrls = [...edited.value.permittedCallbackUrls, ''];
+}
+
+function isSuggestedCallbackAdded(url: string): boolean {
+  return isCallbackUrlInList(url, edited.value.permittedCallbackUrls);
+}
+
+function addSuggestedCallbackUrl(url: string) {
+  if (!edited.value.enabled || isSuggestedCallbackAdded(url)) {
+    return;
+  }
+
+  if (!isValidCallbackUrl(url)) {
+    notifications.error($t('Invalid callback URL format'));
+    return;
+  }
+
+  edited.value.permittedCallbackUrls = [...edited.value.permittedCallbackUrls, url];
 }
 
 function removeCallbackUrl(index: number) {
@@ -433,13 +479,96 @@ function save() {
   background: var(--el-fill-color-lighter);
 }
 
+.hints-header {
+  margin-block-end: 12px;
+}
+
 .hints-title {
-  margin: 0 0 8px;
+  margin: 0;
   font-weight: 600;
 }
 
+.hints-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+.hint-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.hint-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--background-color, #fff);
+  text-align: start;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.hint-chip:not(:disabled):hover {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.hint-chip:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.hint-chip-added {
+  border-color: var(--el-color-success-light-5);
+  background: var(--el-color-success-light-9);
+}
+
+.hint-chip-label {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.hint-chip-url {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  word-break: break-all;
+}
+
+.hint-chip-action,
+.hint-chip-badge {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hint-chip-action {
+  color: var(--el-color-primary);
+}
+
+.hint-chip-badge {
+  color: var(--el-color-success);
+}
+
+.hint-patterns {
+  margin-block-start: 14px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+.hint-patterns summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--el-text-color-regular);
+}
+
 .hints-list {
-  margin: 0;
+  margin: 10px 0 0;
   padding-inline-start: 18px;
   display: grid;
   gap: 8px;

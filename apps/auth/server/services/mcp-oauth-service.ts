@@ -8,10 +8,15 @@ const AUTH_CODE_TTL_SECONDS = 600;
 
 const KNOWN_CLIENT_PATTERNS: { id: string; pattern: RegExp }[] = [
   { id: 'cursor', pattern: /^cursor:\/\//i },
-  { id: 'claude', pattern: /^https:\/\/(claude\.ai|.*\.anthropic\.com)/i },
+  { id: 'claude', pattern: /^https:\/\/(claude\.ai|claude\.com|.*\.anthropic\.com)/i },
   { id: 'codex', pattern: /^https:\/\/(chatgpt\.com|.*\.openai\.com)/i },
   { id: 'devin', pattern: /^https:\/\/(.*\.)?devin\.ai/i },
+  { id: 'mintmcp', pattern: /^https:\/\/(.*\.)?mintmcp\.com/i },
+  { id: 'opencode', pattern: /^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\/mcp\/oauth\/callback/i },
+  { id: 'claude-code', pattern: /^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\/callback(?:[/?#]|$)/i },
+  { id: 'gemini-cli', pattern: /^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\/oauth\/callback/i },
   { id: 'https', pattern: /^https:\/\//i },
+  { id: 'http-loopback', pattern: /^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\//i },
   { id: 'custom-scheme', pattern: /^[a-z][a-z0-9+.-]*:\/\//i },
 ];
 

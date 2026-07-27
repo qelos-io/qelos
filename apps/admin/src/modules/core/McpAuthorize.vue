@@ -262,6 +262,18 @@ function formatRedirectTarget(uri: string): string {
   if (/^https:\/\/(.*\.)?devin\.ai/i.test(uri)) {
     return 'Devin';
   }
+  if (/^https:\/\/(.*\.)?mintmcp\.com/i.test(uri)) {
+    return 'mintMCP';
+  }
+  if (/^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\/mcp\/oauth\/callback/i.test(uri)) {
+    return 'OpenCode';
+  }
+  if (/^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\/callback(?:[/?#]|$)/i.test(uri)) {
+    return 'Claude Code';
+  }
+  if (/^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\/oauth\/callback/i.test(uri)) {
+    return 'Gemini CLI';
+  }
 
   try {
     const url = new URL(uri);
