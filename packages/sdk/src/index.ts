@@ -16,6 +16,7 @@ const noExtraHeadersUrls = new Set([
   '/api/signin',
   '/api/signup',
   '/api/auth/callback',
+  '/api/auth/mcp/token',
 ])
 
 export type {
@@ -23,6 +24,11 @@ export type {
   SocialAuthCallbackPayload,
   SocialProvider,
   SocialLoginOptions,
+  McpAuthorizeOptions,
+  McpCallbackInput,
+  McpCallbackParams,
+  McpTokenExchangeOptions,
+  McpTokenExchangeResult,
 } from './authentication';
 
 export type { BlueprintEntitiesRegistry } from './blueprints';
@@ -31,7 +37,10 @@ export {
   parseSocialCallbackRefreshToken,
   getSocialAuthSetCookieParts,
   applySocialAuthCookiesToServerResponse,
+  parseMcpCallbackParams,
 } from './authentication';
+
+export { buildMcpAuthorizePath } from './mcp-auth';
 
 export default class QelosSDK extends BaseSDK {
   #customHeaders = {}

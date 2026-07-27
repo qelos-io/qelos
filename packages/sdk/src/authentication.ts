@@ -1,6 +1,24 @@
 import { QelosSDKOptions } from './types';
 import BaseSDK from './base-sdk';
 import { decodeMeUser } from './services/decode-uri-fields';
+import {
+  buildMcpAuthorizePath,
+  buildMcpTokenExchangeBody,
+  type McpAuthorizeOptions,
+  type McpOAuthTokenResponse,
+  type McpTokenExchangeOptions,
+  type McpTokenExchangeResult,
+} from './mcp-auth';
+
+export type {
+  McpAuthorizeOptions,
+  McpCallbackInput,
+  McpCallbackParams,
+  McpTokenExchangeOptions,
+  McpTokenExchangeResult,
+} from './mcp-auth';
+
+export { parseMcpCallbackParams } from './mcp-auth';
 
 export interface IUser {
   _id: string;
@@ -374,6 +392,50 @@ export default class QlAuthentication extends BaseSDK {
       throw new Error('missing rt query parameter');
     }
     return this.exchangeAuthCallback(refreshToken);
+  }
+
+  getMcpAuthorizeUrl(options: McpAuthorizeOptions): string {
+    if (!options.redirectUri) {
+      throw new Error('redirectUri is required');
+    }
+    return this.buildUrl(buildMcpAuthorizePath(options));
+  }
+
+  async exchangeMcpAuthorizationCode(options: McpTokenExchangeOptions): Promise<McpTokenExchangeResult> {
+    const { code, redirectUri, codeVerifier } = options;
+    if (!code || !redirectUri || !codeVerifier) {
+      throw new Error('code, redirectUri, and codeVerifier are required');
+    }
+
+    const res = await this.callApi('/api/auth/mcp/token', {
+      method: 'post',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: buildMcpTokenExchangeBody(options).toString(),
+    });
+
+    if (!res.ok) {
+      let detail = '';
+      try {
+        detail = (await res.text()).slice(0, 512);
+      } catch {
+        /* ignore */
+      }
+      throw new Error(
+        `failed to exchange MCP authorization code: HTTP ${res.status}${detail ? ` — ${detail}` : ''}`,
+      );
+    }
+
+    const body = (await res.json()) as McpOAuthTokenResponse;
+    this.#accessToken = body.access_token;
+    this.#refreshToken = body.refresh_token;
+
+    const user = await this.getLoggedInUser();
+    return {
+      accessToken: body.access_token,
+      refreshToken: body.refresh_token,
+      expiresIn: body.expires_in,
+      user,
+    };
   }
 
   getLoggedInUser() {

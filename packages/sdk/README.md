@@ -117,4 +117,66 @@ expired cookie-only sessions and the rotated cookie is written back to the
 outbound response. Call it directly only when you need to refresh
 proactively — e.g. before handing the session off to another service.
 
+#### MCP client OAuth (Cursor, Claude, remote MCP)
+
+External MCP clients use Qelos as an OAuth authorization server. The SDK
+helpers build authorize URLs, parse callback query parameters, and exchange
+PKCE authorization codes — without reimplementing URL construction or token
+requests.
+
+Tenant admins must enable MCP OAuth and list client callback URLs in
+`mcp-configuration.metadata.permittedCallbackUrls`.
+
+```typescript
+import QelosSDK, {
+  buildMcpAuthorizePath,
+  parseMcpCallbackParams,
+} from '@qelos/sdk';
+import { createHash, randomBytes } from 'node:crypto';
+
+const sdk = new QelosSDK({ appUrl: 'https://your-tenant.qelos.app' });
+
+// PKCE (required for authorization-code delivery to MCP clients)
+const codeVerifier = randomBytes(32).toString('base64url');
+const codeChallenge = createHash('sha256')
+  .update(codeVerifier)
+  .digest('base64url');
+
+const redirectUri = 'cursor://anysphere.cursor-mcp/oauth/callback';
+
+// 1) Send the user to Qelos authorize (browser or MCP client opens this URL)
+const authorizeUrl = sdk.authentication.getMcpAuthorizeUrl({
+  redirectUri,
+  state: 'optional-csrf-state',
+  codeChallenge,
+  codeChallengeMethod: 'S256',
+});
+
+// Relative path only (e.g. for login redirect resume):
+const authorizePath = buildMcpAuthorizePath({
+  redirectUri,
+  codeChallenge,
+  codeChallengeMethod: 'S256',
+});
+
+// 2) On your callback route, parse ?code=…&state=… (or ?error=…)
+const params = parseMcpCallbackParams(req.url); // Express: req.url; Next.js: req.url
+
+if (params.error) {
+  throw new Error(params.error);
+}
+
+// 3) Exchange the authorization code for OAuth tokens + user profile
+const { accessToken, refreshToken, user } =
+  await sdk.authentication.exchangeMcpAuthorizationCode({
+    code: params.code!,
+    redirectUri,
+    codeVerifier,
+  });
+```
+
+Claude remote MCP uses `https://claude.ai/api/mcp/auth_callback` as
+`redirectUri`; Cursor uses `cursor://anysphere.cursor-mcp/oauth/callback`.
+Both must appear in the tenant permitted callback list.
+
 Enjoy!
