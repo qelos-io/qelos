@@ -1,3 +1,5 @@
+/** Tool categories that must never be exposed via MCP (e.g. secrets vault). */
+export const MCP_FORBIDDEN_TOOL_IDS = ['secrets'] as const;
 
 export interface IMcpExposedTool {
   toolId: string;
@@ -14,4 +16,17 @@ export interface IMcpConfigurationMetadata {
   adminOnly: boolean;
   serverName?: string;
   serverVersion?: string;
+}
+
+export function sanitizeMcpConfigurationMetadata(
+  configuration: IMcpConfigurationMetadata,
+): IMcpConfigurationMetadata {
+  const forbidden = new Set<string>(MCP_FORBIDDEN_TOOL_IDS);
+
+  return {
+    ...configuration,
+    exposedTools: (configuration.exposedTools || []).filter(
+      (tool) => !forbidden.has(tool.toolId),
+    ),
+  };
 }

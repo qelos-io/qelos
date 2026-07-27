@@ -44,7 +44,7 @@ Through permitted tool categories, connected clients can interact with tenant re
 - **Users, workspaces, permissions** — membership and access context
 - **Configurations, content, storage** — tenant settings and assets
 - **Events** — audit log and platform activity
-- **Agents, plugins, integrations, secrets** — AI and third-party connectivity
+- **Agents, plugins, integrations** — AI and third-party connectivity
 
 Available actions depend on your admin configuration and the connecting user's role. See [Permissions & Roles](/auth/permissions-roles) for how Qelos roles map to access.
 

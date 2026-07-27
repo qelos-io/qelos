@@ -46,11 +46,6 @@ export const KNOWN_MCP_TOOLS: KnownMcpToolDefinition[] = [
     descriptionKey: 'MCP tool integrations description',
   },
   {
-    toolId: 'secrets',
-    labelKey: 'MCP tool secrets',
-    descriptionKey: 'MCP tool secrets description',
-  },
-  {
     toolId: 'permissions',
     labelKey: 'MCP tool permissions',
     descriptionKey: 'MCP tool permissions description',

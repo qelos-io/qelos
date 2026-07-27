@@ -415,8 +415,6 @@
   "MCP tool agents description": "Chatear y configurar agentes IA",
   "MCP tool integrations": "Integraciones",
   "MCP tool integrations description": "Gestionar fuentes de integración y workflows",
-  "MCP tool secrets": "Secretos",
-  "MCP tool secrets description": "Acceder a la bóveda de secretos",
   "MCP tool permissions": "Permisos",
   "MCP tool permissions description": "Comprobar y gestionar permisos de usuario",
   "MCP tool content": "Contenido",

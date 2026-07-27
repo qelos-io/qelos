@@ -1,5 +1,8 @@
 import { service } from '@qelos/api-kit';
-import type { IMcpConfigurationMetadata } from '@qelos/global-types';
+import {
+  type IMcpConfigurationMetadata,
+  sanitizeMcpConfigurationMetadata,
+} from '@qelos/global-types';
 import { cacheManager } from './cache-manager';
 import { isMcpConfigurationEnabled } from './mcp-configuration-guards';
 import { contentServicePort, internalServicesSecret } from '../../config';
@@ -52,7 +55,9 @@ export async function getMcpConfiguration(tenant: string): Promise<IMcpConfigura
       }
 
       const metadata = extractConfigurationMetadata(response.data);
-      return JSON.stringify(metadata || defaultMcpConfiguration);
+      return JSON.stringify(
+        sanitizeMcpConfigurationMetadata(metadata || defaultMcpConfiguration),
+      );
     } catch {
       return JSON.stringify(defaultMcpConfiguration);
     }
