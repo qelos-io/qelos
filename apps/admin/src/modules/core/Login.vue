@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
 import { computed, toRefs, watch, ref, onMounted, onUnmounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import LoginForm from './components/LoginForm.vue'
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import { useAuthConfiguration } from '@/modules/configurations/store/auth-configuration';
@@ -54,6 +54,70 @@ const authStore = useAuthConfiguration();
 const { metadata, loaded } = toRefs(authStore);
 
 const route = useRoute();
+const router = useRouter();
+
+function readQueryValue(value: unknown): string | null {
+  if (typeof value === 'string' && value.length > 0) {
+    return value;
+  }
+  if (Array.isArray(value) && typeof value[0] === 'string' && value[0].length > 0) {
+    return value[0];
+  }
+  return null;
+}
+
+function buildMcpAuthorizeApiPath(query: Record<string, unknown>): string | null {
+  const redirectUri = readQueryValue(query.redirect_uri);
+  if (!redirectUri) {
+    return null;
+  }
+
+  const params = new URLSearchParams({ redirect_uri: redirectUri });
+  const state = readQueryValue(query.state);
+  const codeChallenge = readQueryValue(query.code_challenge);
+  const codeChallengeMethod = readQueryValue(query.code_challenge_method);
+  const clientId = readQueryValue(query.client_id);
+  const scope = readQueryValue(query.scope);
+
+  if (state) params.set('state', state);
+  if (codeChallenge) params.set('code_challenge', codeChallenge);
+  if (codeChallengeMethod) params.set('code_challenge_method', codeChallengeMethod);
+  if (clientId) params.set('client_id', clientId);
+  if (scope) params.set('scope', scope);
+
+  return `/api/auth/mcp/authorize?${params.toString()}`;
+}
+
+function resolveMcpLoginRedirect(): string | null {
+  const redirect = readQueryValue(route.query.redirect);
+  if (redirect) {
+    return redirect;
+  }
+
+  const mcpState = readQueryValue(route.query.mcp_state);
+  if (mcpState) {
+    return `/mcp/authorize?mcp_state=${encodeURIComponent(mcpState)}`;
+  }
+
+  return buildMcpAuthorizeApiPath(route.query);
+}
+
+onMounted(() => {
+  if (readQueryValue(route.query.redirect)) {
+    return;
+  }
+
+  const mcpRedirect = resolveMcpLoginRedirect();
+  if (mcpRedirect) {
+    router.replace({
+      path: route.path,
+      query: {
+        ...route.query,
+        redirect: mcpRedirect,
+      },
+    });
+  }
+});
 
 // Monitor the change of the 't' parameter in the URL and notify the store
 watch(

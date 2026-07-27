@@ -422,5 +422,20 @@
   "MCP tool content": "תוכן",
   "MCP tool content description": "ניהול טיוטות ותוכן שפורסם",
   "MCP tool storage": "אחסון",
-  "MCP tool storage description": "ניהול buckets ונכסים שהועלו"
+  "MCP tool storage description": "ניהול buckets ונכסים שהועלו",
+  "MCP authorize title": "אשר גישת MCP",
+  "MCP authorize description": "לקוח MCP מבקש גישה לדייר Qelos זה בשמך.",
+  "MCP authorize loading": "טוען בקשת הרשאה…",
+  "MCP authorize error title": "ההרשאה אינה זמינה",
+  "MCP authorize invalid state": "בקשת ההרשאה אינה תקפה או שפג תוקפה. התחל מחדש מלקוח ה-MCP.",
+  "MCP authorize missing state": "חסר מצב הרשאה. התחל מחדש מלקוח ה-MCP.",
+  "MCP authorize consent failed": "לא ניתן להשלים את ההרשאה. נסה שוב או דחה את הבקשה.",
+  "MCP authorize admin required title": "נדרשת גישת מנהל",
+  "MCP authorize admin required description": "דייר זה מגביל OAuth של MCP למנהלים. התחבר עם חשבון מנהל או בקש ממנהל לעדכן את הגדרות MCP.",
+  "MCP authorize client label": "לקוח",
+  "MCP authorize redirect label": "כתובת callback",
+  "MCP authorize client id label": "מזהה לקוח",
+  "MCP authorize scopes label": "היקפים מבוקשים",
+  "MCP authorize accept": "אשר",
+  "MCP authorize deny": "דחה"
 }

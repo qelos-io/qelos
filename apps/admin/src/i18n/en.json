@@ -422,5 +422,20 @@
   "MCP tool content": "Content",
   "MCP tool content description": "Manage drafts and published content",
   "MCP tool storage": "Storage",
-  "MCP tool storage description": "Manage storage buckets and uploaded assets"
+  "MCP tool storage description": "Manage storage buckets and uploaded assets",
+  "MCP authorize title": "Authorize MCP access",
+  "MCP authorize description": "An MCP client is requesting access to this Qelos tenant on your behalf.",
+  "MCP authorize loading": "Loading authorization request…",
+  "MCP authorize error title": "Authorization unavailable",
+  "MCP authorize invalid state": "This authorization request is invalid or has expired. Start again from your MCP client.",
+  "MCP authorize missing state": "Missing authorization state. Start again from your MCP client.",
+  "MCP authorize consent failed": "Could not complete authorization. Try again or deny the request.",
+  "MCP authorize admin required title": "Administrator access required",
+  "MCP authorize admin required description": "This tenant restricts MCP OAuth to administrators. Sign in with an admin account or ask an administrator to update MCP configuration.",
+  "MCP authorize client label": "Client",
+  "MCP authorize redirect label": "Callback URL",
+  "MCP authorize client id label": "Client ID",
+  "MCP authorize scopes label": "Requested scopes",
+  "MCP authorize accept": "Accept",
+  "MCP authorize deny": "Deny"
 }
