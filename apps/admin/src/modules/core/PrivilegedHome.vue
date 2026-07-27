@@ -128,6 +128,29 @@
               </router-link>
             </div>
 
+            <!-- MCP Configuration Card -->
+            <div class="unified-card">
+              <router-link :to="{name: 'editConfiguration', params: {key: 'mcp-configuration'}}" class="config-card-link">
+                <div class="config-card-icon" :class="mcpConfig.isEnabled ? 'success' : 'info'">
+                  <font-awesome-icon :icon="['fas', 'plug']" size="lg"/>
+                </div>
+                <div class="config-card-content">
+                  <div class="title-with-status">
+                    <h3>{{ $t('MCP Configuration') }}</h3>
+                    <el-tag size="small" :type="mcpConfig.isEnabled ? 'success' : 'info'" effect="light" class="status-tag">
+                      {{ mcpConfig.isEnabled ? $t('Enabled') : $t('Disabled') }}
+                    </el-tag>
+                  </div>
+                  <p class="config-card-description">{{ $t('Configure remote MCP tool exposure and OAuth callback URLs') }}</p>
+                </div>
+                <div class="config-card-action">
+                  <el-button :type="mcpConfig.isEnabled ? 'success' : 'info'" text>
+                    <font-awesome-icon :icon="['fas', 'edit']"/> {{ $t('Edit') }}
+                  </el-button>
+                </div>
+              </router-link>
+            </div>
+
             <!-- Authentication Settings Card -->
             <div class="unified-card">
               <router-link :to="{name: 'editConfiguration', params: {key: 'auth-configuration'}}" class="config-card-link">
@@ -161,6 +184,7 @@ import QuickStartWizard from '@/modules/admins/components/QuickStartWizard.vue';
 import DashboardOverview from '@/modules/core/components/DashboardOverview.vue';
 import IntegratorsSuggestions from '@/modules/core/components/IntegratorsSuggestions.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import { useMcpConfiguration } from '@/modules/configurations/store/mcp-configuration';
 import WorkflowsView from '../integrations/components/WorkflowsView.vue';
 import IntegrationFormModal from '../integrations/components/IntegrationFormModal.vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -168,6 +192,7 @@ import { useIntegrationsStore } from '../integrations/store/integrations';
 import { computed } from 'vue';
 
 const wsConfig = useWsConfiguration();
+const mcpConfig = useMcpConfiguration();
 
 const route = useRoute();
 const integrationsStore = useIntegrationsStore();
