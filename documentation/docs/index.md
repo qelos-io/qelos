@@ -103,6 +103,12 @@ Qelos is the **AI-first application layer gateway**. It plays three roles for yo
   <a href="/integrators/">See available integrators →</a>
 </div>
 
+<div class="custom-card">
+  <h3>🔗 Connect AI clients via MCP</h3>
+  <p>Expose tenant tools to Cursor, Claude, ChatGPT, and other MCP clients — configure access from the admin panel.</p>
+  <a href="/mcp/">MCP setup guide →</a>
+</div>
+
 </div>
 
 ## Quick start
