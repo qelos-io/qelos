@@ -1,94 +1,71 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import * as z from 'zod/v4';
-import type { IMcpConfigurationMetadata, IMcpExposedTool } from '@qelos/global-types';
+import type { IMcpConfigurationMetadata } from '@qelos/global-types';
+import { createSdkContext, type McpSdkCredentials } from '../services/sdk-context';
+import { getAuthorizedTools } from '../tools/authorize-tool';
 import type { McpUserContext } from '../types';
 
-function matchesRoleRequirement(requiredRoles: string[] | undefined, actualRoles: string[]): boolean {
-  if (!requiredRoles?.length) {
-    return true;
-  }
-
-  if (requiredRoles.includes('*')) {
-    return true;
-  }
-
-  return requiredRoles.some((role) => actualRoles.includes(role));
+function formatToolResult(result: unknown) {
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: JSON.stringify(result, null, 2),
+      },
+    ],
+  };
 }
 
-export function isToolAllowedForUser(tool: IMcpExposedTool, user: McpUserContext): boolean {
-  if (!tool.enabled) {
-    return false;
-  }
-
-  const userRoles = user.roles || [];
-  const workspaceRoles = user.workspace?.roles || [];
-  const workspaceLabels = user.workspace?.labels || [];
-
-  if (!matchesRoleRequirement(tool.roles, userRoles)) {
-    return false;
-  }
-
-  if (!matchesRoleRequirement(tool.wsRoles, workspaceRoles)) {
-    return false;
-  }
-
-  if (tool.wsLabels?.length) {
-    const hasLabel = tool.wsLabels.some((label) => workspaceLabels.includes(label));
-    if (!hasLabel) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-export function isUserAllowedForMcp(
-  configuration: IMcpConfigurationMetadata,
-  user: McpUserContext,
-): boolean {
-  if (!configuration.adminOnly) {
-    return true;
-  }
-
-  return user.roles.includes('admin') || user.isPrivileged === true;
+function formatToolError(error: unknown) {
+  const message = error instanceof Error ? error.message : 'Tool execution failed';
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: message,
+      },
+    ],
+    isError: true as const,
+  };
 }
 
 export function createMcpServer(
   configuration: IMcpConfigurationMetadata,
   user: McpUserContext,
+  credentials: McpSdkCredentials,
 ): McpServer {
   const server = new McpServer({
     name: configuration.serverName || 'qelos-mcp',
     version: configuration.serverVersion || '1.0.0',
   });
 
-  if (!isUserAllowedForMcp(configuration, user)) {
-    return server;
-  }
+  const authorizedTools = getAuthorizedTools(configuration, user);
+  const sdkContext = createSdkContext({
+    tenant: user.tenant,
+    user,
+    credentials,
+  });
 
-  for (const tool of configuration.exposedTools || []) {
-    if (!isToolAllowedForUser(tool, user)) {
-      continue;
-    }
-
+  for (const tool of authorizedTools) {
     server.registerTool(
-      tool.toolId,
+      tool.id,
       {
-        description: `Qelos MCP tool: ${tool.toolId}`,
-        inputSchema: {
-          input: z.string().optional().describe('Optional tool input payload'),
-        },
+        title: tool.title,
+        description: tool.description,
+        inputSchema: tool.inputSchema,
       },
-      async ({ input }) => ({
-        content: [
-          {
-            type: 'text',
-            text: input
-              ? `Tool "${tool.toolId}" executed for tenant ${user.tenant}.`
-              : `Tool "${tool.toolId}" executed successfully.`,
-          },
-        ],
-      }),
+      async (input) => {
+        try {
+          const result = await tool.handler({
+            sdk: sdkContext.sdk,
+            adminSdk: sdkContext.adminSdk,
+            user,
+            input: input as Record<string, unknown>,
+          });
+          return formatToolResult(result);
+        } catch (error) {
+          return formatToolError(error);
+        }
+      },
     );
   }
 

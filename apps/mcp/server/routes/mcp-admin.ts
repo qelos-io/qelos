@@ -4,7 +4,11 @@ import { getRouter } from '@qelos/api-kit';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import type { IMcpConfigurationMetadata } from '@qelos/global-types';
-import authenticateMcpRequest from '../middleware/authenticate-mcp-request';
+import authenticateMcpRequest, {
+  extractApiKey,
+  extractBearerAuthorization,
+} from '../middleware/authenticate-mcp-request';
+import type { McpSdkCredentials } from '../services/sdk-context';
 import requireMcpEnabled from '../middleware/require-mcp-enabled';
 import { createMcpServer } from '../mcp/create-mcp-server';
 import type { McpRequest, McpUserContext } from '../types';
@@ -13,6 +17,7 @@ interface McpSessionEntry {
   transport: StreamableHTTPServerTransport;
   user: McpUserContext;
   mcpConfiguration: IMcpConfigurationMetadata;
+  credentials: McpSdkCredentials;
 }
 
 const sessions = new Map<string, McpSessionEntry>();
@@ -47,11 +52,17 @@ async function handleMcpRequest(req: McpRequest, res: Response): Promise<void> {
         }
       };
 
-      const server = createMcpServer(req.mcpConfiguration!, req.user!);
+      const credentials: McpSdkCredentials = {
+        authorization: extractBearerAuthorization(req),
+        apiKey: extractApiKey(req),
+      };
+
+      const server = createMcpServer(req.mcpConfiguration!, req.user!, credentials);
       sessionEntry = {
         transport,
         user: req.user!,
         mcpConfiguration: req.mcpConfiguration!,
+        credentials,
       };
 
       await server.connect(transport);
