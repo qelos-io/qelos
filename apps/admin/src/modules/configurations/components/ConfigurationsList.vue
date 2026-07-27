@@ -178,6 +178,18 @@ const requiredConfigurations: Record<string, RequiredConfigurationDefinition> = 
       disableUsernamePassword: false
     }
   },
+  'mcp-configuration': {
+    title: 'MCP Server',
+    description: 'Control remote MCP tool exposure, OAuth callback URLs, and admin-only SDK access.',
+    kind: 'mcp',
+    public: false,
+    metadata: {
+      enabled: false,
+      permittedCallbackUrls: [],
+      exposedTools: [],
+      adminOnly: true
+    }
+  },
   'ssr-scripts': {
     title: 'SSR Scripts',
     description: 'SSR scripts configuration.',

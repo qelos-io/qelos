@@ -40,6 +40,7 @@
   "Edit Configuration": "Modifier la configuration",
   "Edit website configuration": "Modifier la configuration du site web",
   "app-configuration": "configuration-app",
+  "mcp-configuration": "configuration-mcp",
   "migration": "migration",
   "versions": "versions",
   "name": "nom",
