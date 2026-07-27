@@ -254,6 +254,7 @@ export default defineConfig({
         items: [
           { text: 'Overview', link: '/mcp/' },
           { text: 'Configuration', link: '/mcp/configuration' },
+          { text: 'Permitted tools', link: '/mcp/tools' },
         ]
       },
       {
