@@ -48,6 +48,16 @@ Through permitted tool categories, connected clients can interact with tenant re
 
 Available actions depend on your admin configuration and the connecting user's role. See [Permissions & Roles](/auth/permissions-roles) for how Qelos roles map to access.
 
+## Quick start
+
+Follow these pages in order:
+
+1. **[Configuration](./configuration.md)** — enable the MCP server, set admin-only mode, and add permitted OAuth callback URLs.
+2. **[Client setup](./clients.md)** — connect Cursor, Claude, ChatGPT, or Devin to `https://<your-tenant-domain>/api/mcp/admin`.
+3. **[Examples & ideas](./examples.md)** — try prompts once connected; outcomes depend on [permitted tools](./tools.md) and your role.
+
+Configure [permitted tools](./tools.md) at any point before or after connecting — start with admin-only access and a minimal category set, then expand.
+
 ## Documentation
 
 | Topic | Description |
