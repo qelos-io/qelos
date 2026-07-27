@@ -41,6 +41,7 @@ export default defineConfig({
       { text: 'CLI', link: '/cli/' },
       { text: 'Plugins', link: '/plugins/create' },
       { text: 'Integrators', link: '/integrators/' },
+      { text: 'MCP', link: '/mcp/' },
       { text: 'Deployment', link: '/deployment/' },
     ],
     socialLinks: [
@@ -245,6 +246,17 @@ export default defineConfig({
           { text: 'Fastify', link: '/integrators/fastify' },
           { text: 'NestJS', link: '/integrators/nest' },
           { text: 'FastAPI', link: '/integrators/fastapi' },
+        ]
+      },
+      {
+        text: 'MCP',
+        collapsed: true,
+        items: [
+          { text: 'Overview', link: '/mcp/' },
+          { text: 'Configuration', link: '/mcp/configuration' },
+          { text: 'Permitted tools', link: '/mcp/tools' },
+          { text: 'Client setup', link: '/mcp/clients' },
+          { text: 'Examples & ideas', link: '/mcp/examples' },
         ]
       },
       {
