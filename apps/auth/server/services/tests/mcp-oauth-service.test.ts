@@ -57,6 +57,22 @@ describe('isRedirectUriPermitted', () => {
     );
   });
 
+  it('accepts mintMCP and local MCP client family matches', () => {
+    const urls = ['https://app.mintmcp.com/oauth/callback', 'http://127.0.0.1:19876/mcp/oauth/callback'];
+    assert.equal(
+      isRedirectUriPermitted('https://app.mintmcp.com/oauth/callback', urls),
+      true,
+    );
+    assert.equal(
+      isRedirectUriPermitted('http://127.0.0.1:19876/mcp/oauth/callback', urls),
+      true,
+    );
+    assert.equal(
+      isRedirectUriPermitted('http://127.0.0.1:19876/mcp/oauth/callback?state=abc', urls),
+      true,
+    );
+  });
+
   it('rejects unauthorized redirect URIs with 400 semantics', () => {
     assert.equal(isRedirectUriPermitted('https://evil.example.com/callback', permittedCallbackUrls), false);
     assert.equal(isRedirectUriPermitted('', permittedCallbackUrls), false);
