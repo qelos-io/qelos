@@ -1,4 +1,4 @@
-import { IAuthConfigurationMetadata, IAppConfigurationMetadata } from '@qelos/global-types';
+import { IAuthConfigurationMetadata, IAppConfigurationMetadata, IMcpConfigurationMetadata } from '@qelos/global-types';
 import { Request } from 'express'
 import mongoose from 'mongoose';
 import { IWorkspace } from '../server/models/workspace';
@@ -64,4 +64,5 @@ export interface AuthRequest extends Request {
   isWorkspacePrivileged?: boolean;
   authConfig: IAuthConfigurationMetadata;
   appConfig: IAppConfigurationMetadata;
+  mcpConfig?: IMcpConfigurationMetadata;
 }

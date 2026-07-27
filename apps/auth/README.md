@@ -95,6 +95,102 @@ the cookie token via `POST /api/cookie/refresh`.
 4. App reads `rt` and calls `sdk.authentication.exchangeAuthCallback(rt)` to
    obtain the session cookie.
 
+## MCP client OAuth
+
+These endpoints export OAuth bearer + refresh tokens to external MCP clients
+(Cursor, Claude, Codex, Devin, mintMCP, Composio, etc.). This is **not** social
+login — it starts from an authenticated Qelos user (cookie session) and requires
+explicit consent before tokens are handed to the client's callback URL.
+
+Callback URLs must be listed in tenant `mcp-configuration.metadata.permittedCallbackUrls`.
+When `mcp-configuration.enabled` is `false`, MCP OAuth endpoints return `503`.
+
+### `GET /.well-known/oauth-authorization-server`
+
+OAuth discovery document for MCP clients. Advertises:
+
+- `authorization_endpoint`: `/api/auth/mcp/authorize`
+- `token_endpoint`: `/api/auth/mcp/token`
+- PKCE methods: `S256`, `plain`
+
+Requires the gateway/auth request to include `tenanthost` (or `host`) so issuer
+URLs can be built for the tenant.
+
+### `GET /api/auth/mcp/authorize`
+
+Starts the MCP OAuth flow.
+
+| Query param | Required | Purpose |
+|---|---|---|
+| `redirect_uri` | yes | Client callback URL; must match `permittedCallbackUrls` (exact, wildcard prefix, or known-client pattern). |
+| `state` | optional | Opaque value echoed back to the client callback. |
+| `code_challenge` | optional | PKCE challenge; when present, consent issues an authorization `code` instead of tokens. |
+| `code_challenge_method` | optional | `S256` or `plain`; required when `code_challenge` is set. |
+| `client_id` | optional | Client identifier stored in signed state. |
+
+Behavior:
+
+- Invalid or non-permitted `redirect_uri` → `400`.
+- MCP disabled → `503`.
+- **Authenticated** (valid cookie/API token via `verifyUser`) → redirect to
+  `/mcp/authorize?mcp_state=<signed-jwt>` (admin consent page).
+- **Unauthenticated** → redirect to `/login?redirect=<encoded authorize URL>`
+  so the user can sign in and resume the flow.
+
+Signed `mcp_state` / OAuth state JWT expires in ~10 minutes and includes
+`redirect_uri`, client `state`, PKCE params, and tenant.
+
+### `POST /api/auth/mcp/consent`
+
+Requires an authenticated user (`verifyUser`, `onlyAuthenticated`).
+
+| Body field | Required | Purpose |
+|---|---|---|
+| `mcp_state` | yes | Signed state from `/mcp/authorize`. |
+| `action` | yes | `accept` or `deny`. |
+| `token_delivery` | optional | `query` (default) or `fragment` for direct token delivery when PKCE is not used. |
+
+On **deny**: redirects to `redirect_uri?error=access_denied[&state=...]`.
+
+On **accept**:
+
+- **PKCE** (`code_challenge` was supplied): stores a single-use authorization
+  code (10 min TTL) and redirects to
+  `redirect_uri?code=<code>[&state=...]`.
+- **Direct delivery** (no PKCE): issues OAuth access + refresh tokens and
+  redirects to `redirect_uri` with tokens in the query string or URL fragment.
+
+Tokens are exported via the existing OAuth token path (`authType: 'oauth'`); they
+are **not** converted into cookie sessions.
+
+### `POST /api/auth/mcp/token`
+
+PKCE authorization-code exchange. Accepts JSON or form body:
+
+| Field | Required | Purpose |
+|---|---|---|
+| `grant_type` | yes | Must be `authorization_code`. |
+| `code` | yes | Authorization code from the consent redirect. |
+| `redirect_uri` | yes | Must match the original authorize request. |
+| `code_verifier` | yes | PKCE verifier matching the stored `code_challenge`. |
+
+Returns:
+
+```json
+{
+  "access_token": "...",
+  "refresh_token": "...",
+  "token_type": "Bearer",
+  "expires_in": 18000
+}
+```
+
+Invalid or expired codes, tenant mismatch, or PKCE failure → `400` with
+`error: "invalid_grant"`.
+
+Refresh tokens can be rotated via the existing `POST /api/token/refresh`
+endpoint using the `Authorization: Bearer <refresh_token>` header.
+
 ## Dependencies
 - Node.js
 - pnpm

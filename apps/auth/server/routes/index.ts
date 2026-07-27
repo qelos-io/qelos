@@ -2,6 +2,7 @@ import invitesRouter from './invites';
 import userProfileRouter from './user-profile';
 import usersRouter from './users';
 import authRouter from './auth';
+import mcpOAuthRouter from './mcp-oauth';
 import workspaceRouter from './workspace';
 import apiTokensRouter from './api-tokens';
 
@@ -13,4 +14,5 @@ app.use(userProfileRouter)
 app.use(invitesRouter)
 app.use(usersRouter);
 app.use(authRouter);
+app.use(mcpOAuthRouter);
 app.use(workspaceRouter);
