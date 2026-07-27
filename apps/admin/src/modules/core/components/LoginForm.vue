@@ -82,7 +82,13 @@ const onFocus = () => {
 }
 
 const loginWith = (provider: 'linkedin' | 'facebook' | 'google' | 'github') => {
-  window.location.href = `/api/auth/${provider}`;
+  const redirect = router.currentRoute.value.query.redirect as string
+  let url = `/api/auth/${provider}`
+  if (redirect) {
+    const returnUrl = `/auth/callback?returnUrl=${encodeURIComponent(redirect)}`
+    url += `?returnUrl=${encodeURIComponent(returnUrl)}`
+  }
+  window.location.href = url
 }
 </script>
 

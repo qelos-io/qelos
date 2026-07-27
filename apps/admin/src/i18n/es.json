@@ -422,5 +422,20 @@
   "MCP tool content": "Contenido",
   "MCP tool content description": "Gestionar borradores y contenido publicado",
   "MCP tool storage": "Almacenamiento",
-  "MCP tool storage description": "Gestionar buckets y activos subidos"
+  "MCP tool storage description": "Gestionar buckets y activos subidos",
+  "MCP authorize title": "Autorizar acceso MCP",
+  "MCP authorize description": "Un cliente MCP solicita acceso a este inquilino Qelos en tu nombre.",
+  "MCP authorize loading": "Cargando solicitud de autorización…",
+  "MCP authorize error title": "Autorización no disponible",
+  "MCP authorize invalid state": "Esta solicitud de autorización no es válida o ha caducado. Vuelve a iniciarla desde tu cliente MCP.",
+  "MCP authorize missing state": "Falta el estado de autorización. Vuelve a iniciarla desde tu cliente MCP.",
+  "MCP authorize consent failed": "No se pudo completar la autorización. Inténtalo de nuevo o deniega la solicitud.",
+  "MCP authorize admin required title": "Se requiere acceso de administrador",
+  "MCP authorize admin required description": "Este inquilino restringe OAuth MCP a administradores. Inicia sesión con una cuenta de administrador o pide a un administrador que actualice la configuración MCP.",
+  "MCP authorize client label": "Cliente",
+  "MCP authorize redirect label": "URL de callback",
+  "MCP authorize client id label": "ID de cliente",
+  "MCP authorize scopes label": "Ámbitos solicitados",
+  "MCP authorize accept": "Aceptar",
+  "MCP authorize deny": "Denegar"
 }

@@ -89,6 +89,13 @@ const router = createRouter({
         guest: true
       }
     },
+    {
+      path: '/mcp/authorize',
+      component: async () => (await import('./modules/core/McpAuthorize.vue')).default,
+      meta: {
+        guest: true
+      }
+    },
   ]
 })
 
