@@ -18,7 +18,7 @@ Every category ships **disabled** with empty role filters. Enable categories del
 3. For each category row, set **Enabled**, **Roles**, **Workspace roles**, and **Workspace labels** as needed.
 4. Click **Save**.
 
-The table lists twelve categories. The **Tool** column shows the admin label and the category ID (for example `blueprints`).
+The table lists eleven categories. The **Tool** column shows the admin label and the category ID (for example `blueprints`).
 
 ## Per-category controls
 
@@ -90,7 +90,7 @@ Tools marked **Admin only** in the table below always require a privileged user,
 
 ## Tool categories
 
-The admin table defines twelve categories. The **Registered tools** column lists MCP tools currently in the server registry for that category.
+The admin table defines eleven categories. The **Registered tools** column lists MCP tools currently in the server registry for that category.
 
 | Category ID | Admin label | Description | Registered tools |
 |-------------|-------------|-------------|------------------|
@@ -102,7 +102,6 @@ The admin table defines twelve categories. The **Registered tools** column lists
 | `plugins` | Plugins | Manage installed plugins and micro-frontends | — |
 | `agents` | AI agents | Chat with and configure AI agents | — |
 | `integrations` | Integrations | Manage integration sources and workflows | `list-integration-sources` (**Admin only**) |
-| `secrets` | Secrets | Access the secrets vault | — |
 | `permissions` | Permissions | Check and manage user permissions | — |
 | `content` | Content | Manage drafts and published content | — |
 | `storage` | Storage | Manage storage buckets and uploaded assets | — |
@@ -148,7 +147,7 @@ These categories expose admin-only registry tools:
 
 Privileged users still need the category **Enabled** and must pass role/workspace filters.
 
-### Agents, plugins, content, storage, secrets, permissions
+### Agents, plugins, content, storage, permissions
 
 These categories are defined in the admin UI for future and extended tooling. No MCP tools are registered for them yet. Leave them disabled unless you are testing upcoming capabilities.
 

@@ -213,6 +213,7 @@ import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import { useNotifications } from '@/modules/core/compositions/notifications';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import type { IMcpConfigurationMetadata, IMcpExposedTool } from '@qelos/global-types';
+import { MCP_FORBIDDEN_TOOL_IDS } from '@qelos/global-types';
 import { KNOWN_MCP_TOOLS } from '@/modules/configurations/constants/mcp-known-tools';
 import {
   CALLBACK_URL_CLIENT_HINTS,
@@ -275,8 +276,12 @@ function defaultExposedTool(toolId: string): IMcpExposedTool {
   };
 }
 
+const forbiddenToolIds = new Set<string>(MCP_FORBIDDEN_TOOL_IDS);
+
 function mergeExposedTools(saved: IMcpExposedTool[] = []): IMcpExposedTool[] {
-  const savedById = new Map(saved.map((tool) => [tool.toolId, tool]));
+  const savedById = new Map(
+    saved.filter((tool) => !forbiddenToolIds.has(tool.toolId)).map((tool) => [tool.toolId, tool]),
+  );
   const knownIds = new Set(KNOWN_MCP_TOOLS.map((tool) => tool.toolId));
 
   const merged = KNOWN_MCP_TOOLS.map(({ toolId }) => {
@@ -285,7 +290,7 @@ function mergeExposedTools(saved: IMcpExposedTool[] = []): IMcpExposedTool[] {
   });
 
   for (const tool of saved) {
-    if (!knownIds.has(tool.toolId)) {
+    if (!knownIds.has(tool.toolId) && !forbiddenToolIds.has(tool.toolId)) {
       merged.push({ ...defaultExposedTool(tool.toolId), ...tool, toolId: tool.toolId });
     }
   }
@@ -347,7 +352,9 @@ function save() {
   const payload: IMcpConfigurationMetadata = {
     ...edited.value,
     permittedCallbackUrls: edited.value.permittedCallbackUrls.map((url) => url.trim()).filter(Boolean),
-    exposedTools: edited.value.exposedTools.map((tool) => ({
+    exposedTools: edited.value.exposedTools
+      .filter((tool) => !forbiddenToolIds.has(tool.toolId))
+      .map((tool) => ({
       toolId: tool.toolId,
       enabled: !!tool.enabled,
       roles: [...(tool.roles || [])],

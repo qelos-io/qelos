@@ -1,6 +1,9 @@
 import { callContentService } from './content-service-api';
 import { cacheManager } from './cache-manager';
-import type { IMcpConfigurationMetadata } from '@qelos/global-types';
+import {
+  type IMcpConfigurationMetadata,
+  sanitizeMcpConfigurationMetadata,
+} from '@qelos/global-types';
 
 const MCP_CONFIGURATION_KEY = 'mcp-configuration';
 
@@ -36,7 +39,9 @@ export async function getMcpConfiguration(tenant: string): Promise<IMcpConfigura
         tenant,
       );
       const metadata = extractConfigurationMetadata(config);
-      return JSON.stringify(metadata || defaultMcpConfiguration);
+      return JSON.stringify(
+        sanitizeMcpConfigurationMetadata(metadata || defaultMcpConfiguration),
+      );
     } catch {
       return JSON.stringify(defaultMcpConfiguration);
     }
