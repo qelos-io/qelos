@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, writeFileSync, existsSync, rmSync, mkdirSync
 import { execSync } from "node:child_process";
 import { join } from "node:path";
 
-const ignoredApps = ['db', 'redis', 'local-mcp'];
+const ignoredApps = ['db', 'redis'];
 
 // Replace "workspace:^" references with "*" in a package.json file
 function replaceWorkspaceRefs(pkgPath) {
