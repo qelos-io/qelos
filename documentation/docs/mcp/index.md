@@ -52,7 +52,7 @@ Available actions depend on your admin configuration and the connecting user's r
 
 | Topic | Description |
 |-------|-------------|
-| [Configuration](./configuration.md) | Enable the MCP server, admin-only mode, callback URLs, and server metadata |
+| [Configuration](./configuration.md) | Admin-panel setup: enable the server, admin-only mode, OAuth callback URLs, validation rules, and the browser consent flow |
 | [Tools](./tools.md) | Tool categories, role and workspace restrictions, and recommended starting configs |
 | [Clients](./clients.md) | Connect from Cursor, Claude, ChatGPT, Devin, and other MCP clients |
 | [Examples & Ideas](./examples.md) | Prompts, expected outcomes, and workflow ideas once connected |

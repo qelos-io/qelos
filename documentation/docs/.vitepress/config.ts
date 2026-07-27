@@ -253,6 +253,7 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Overview', link: '/mcp/' },
+          { text: 'Configuration', link: '/mcp/configuration' },
         ]
       },
       {
