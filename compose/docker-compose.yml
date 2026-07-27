@@ -64,6 +64,8 @@ services:
       ADMIN_PANEL_URL: admin
       NO_CODE_SERVICE_URL: no-code
       AI_SERVICE_URL: ai
+      MCP_SERVICE_URL: mcp
+      MCP_SERVICE_PORT: 9010
       SHOW_LOGS: ${SHOW_LOGS}
   content:
     image: registry.github.com/qelos-io/qelos/content:${CONTENT_SERVICE_VERSION}

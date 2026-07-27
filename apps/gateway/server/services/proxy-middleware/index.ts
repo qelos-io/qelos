@@ -37,6 +37,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
     draftsService,
     pluginsService,
     aiService,
+    mcpService,
     paymentsService,
     tenant: defaultTenant,
     applicationUrl,
@@ -199,7 +200,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
     next();
   });
 
-  const allServicesPrefixesExceptAuth = [...contentService.proxies, ...assetsService.proxies, ...draftsService.proxies, ...pluginsService.proxies, ...noCodeService.proxies, ...aiService.proxies, ...paymentsService.proxies];
+  const allServicesPrefixesExceptAuth = [...contentService.proxies, ...assetsService.proxies, ...draftsService.proxies, ...pluginsService.proxies, ...noCodeService.proxies, ...aiService.proxies, ...mcpService.proxies, ...paymentsService.proxies];
 
   app.use(
     [...authService.proxies, ...allServicesPrefixesExceptAuth],
@@ -278,6 +279,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
   useProxy(app, assetsService);
   useProxy(app, noCodeService);
   useProxy(app, aiService);
+  useProxy(app, mcpService);
   useProxy(app, paymentsService);
   useProxy(app, pluginsService);
 

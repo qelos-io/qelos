@@ -74,6 +74,10 @@ export function getApiProxyConfig(): IApiProxyConfig {
       port: 9007,
       proxies: ['/api/ai'],
     }),
+    mcpService: getServiceFromEnvVars('mcp', 'MCP_SERVICE', {
+      port: 9010,
+      proxies: ['/api/mcp'],
+    }),
     paymentsService: getServiceFromEnvVars('payments', 'PAYMENTS_SERVICE', {
       port: 9008,
       proxies: ['/api/plans', '/api/subscriptions', '/api/invoices', '/api/coupons', '/api/checkout', '/api/payments'],
