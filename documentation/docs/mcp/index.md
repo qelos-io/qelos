@@ -54,5 +54,5 @@ Available actions depend on your admin configuration and the connecting user's r
 |-------|-------------|
 | [Configuration](./configuration.md) | Admin-panel setup: enable the server, admin-only mode, OAuth callback URLs, validation rules, and the browser consent flow |
 | [Permitted tools](./tools.md) | Tool categories, role and workspace restrictions, authorization rules, and recommended starting configs |
-| [Clients](./clients.md) | Connect from Cursor, Claude, ChatGPT, Devin, and other MCP clients |
+| [Client setup](./clients.md) | Connect Cursor, Claude, ChatGPT, and Devin — callback URLs, server URL, OAuth consent, and troubleshooting |
 | [Examples & Ideas](./examples.md) | Prompts, expected outcomes, and workflow ideas once connected |

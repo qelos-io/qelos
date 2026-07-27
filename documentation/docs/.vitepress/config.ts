@@ -255,6 +255,7 @@ export default defineConfig({
           { text: 'Overview', link: '/mcp/' },
           { text: 'Configuration', link: '/mcp/configuration' },
           { text: 'Permitted tools', link: '/mcp/tools' },
+          { text: 'Client setup', link: '/mcp/clients' },
         ]
       },
       {
