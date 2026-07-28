@@ -34,7 +34,7 @@ function extractConfigurationMetadata(responseData: unknown): IMcpConfigurationM
   }
 
   if (!record.key) {
-    return record as IMcpConfigurationMetadata;
+    return record as unknown as IMcpConfigurationMetadata;
   }
 
   return null;

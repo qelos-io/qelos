@@ -1,8 +1,8 @@
 import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
 
-const authenticateWithAuthServiceMock = mock.fn();
-const getAuthConfigurationMock = mock.fn();
+const authenticateWithAuthServiceMock = mock.fn<(...args: any[]) => any>();
+const getAuthConfigurationMock = mock.fn<(...args: any[]) => any>();
 
 mock.module('../services/auth-service-api.js', {
   namedExports: {

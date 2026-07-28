@@ -2,7 +2,7 @@ import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { isMcpConfigurationEnabled } from '../services/mcp-configuration-guards.js';
 
-const getMcpConfigurationMock = mock.fn();
+const getMcpConfigurationMock = mock.fn<(...args: any[]) => any>();
 
 mock.module('../services/mcp-configuration-service.js', {
   namedExports: {
