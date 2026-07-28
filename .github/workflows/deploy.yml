@@ -217,6 +217,9 @@ jobs:
           # Write directly to file to avoid heredoc issues
           HELM_VALUES="${{ secrets.HELM_VALUES_YAML }}"
           echo "$HELM_VALUES" > ./helm/values.yaml
+          # Neutralize un-rendered Go template placeholders (e.g. tag: {{ .Values.global.imageTag }})
+          # so the values file is valid YAML. Empty tags fall back to global.imageTag in the chart.
+          sed -i 's/{{[^}]*\.Values\.global\.imageTag[^}]*}}/""/g' ./helm/values.yaml
           chmod 600 ./helm/values.yaml
           # Verify file was created successfully
           if [ ! -s "./helm/values.yaml" ]; then

@@ -54,7 +54,8 @@ redis:
 gateway:
   image:
     repository: registry.github.com/qelos-io/qelos/gateway
-    tag: {{ .Values.global.imageTag }}
+    # Leave empty to inherit global.imageTag (set via --set global.imageTag during deploy)
+    tag: ""
     pullPolicy: Always
   replicas: 2
   resources:
@@ -72,7 +73,8 @@ gateway:
 auth:
   image:
     repository: registry.github.com/qelos-io/qelos/auth
-    tag: {{ .Values.global.imageTag }}
+    # Leave empty to inherit global.imageTag (set via --set global.imageTag during deploy)
+    tag: ""
     pullPolicy: Always
   host: auth-service
   port: 9000
@@ -94,7 +96,8 @@ auth:
 content:
   image:
     repository: registry.github.com/qelos-io/qelos/content
-    tag: {{ .Values.global.imageTag }}
+    # Leave empty to inherit global.imageTag (set via --set global.imageTag during deploy)
+    tag: ""
     pullPolicy: Always
   host: content-service
   port: 9001
@@ -108,7 +111,8 @@ content:
 secrets:
   image:
     repository: registry.github.com/qelos-io/qelos/secrets
-    tag: {{ .Values.global.imageTag }}
+    # Leave empty to inherit global.imageTag (set via --set global.imageTag during deploy)
+    tag: ""
     pullPolicy: Always
   host: secrets-service
   port: 9002
@@ -120,7 +124,8 @@ secrets:
 nocode:
   image:
     repository: registry.github.com/qelos-io/qelos/no-code
-    tag: {{ .Values.global.imageTag }}
+    # Leave empty to inherit global.imageTag (set via --set global.imageTag during deploy)
+    tag: ""
     pullPolicy: Always
   replicas: 2
   host: nocode-service
@@ -137,7 +142,8 @@ nocode:
 admin:
   image:
     repository: registry.github.com/qelos-io/qelos/admin
-    tag: {{ .Values.global.imageTag }}
+    # Leave empty to inherit global.imageTag (set via --set global.imageTag during deploy)
+    tag: ""
     pullPolicy: Always
   replicas: 2
   host: admin-service
@@ -153,7 +159,8 @@ admin:
 plugins:
   image:
     repository: registry.github.com/qelos-io/qelos/plugins
-    tag: {{ .Values.global.imageTag }}
+    # Leave empty to inherit global.imageTag (set via --set global.imageTag during deploy)
+    tag: ""
     pullPolicy: Always
   replicas: 2
   host: plugins-service
@@ -172,7 +179,8 @@ plugins:
 assets:
   image:
     repository: registry.github.com/qelos-io/qelos/assets
-    tag: {{ .Values.global.imageTag }}
+    # Leave empty to inherit global.imageTag (set via --set global.imageTag during deploy)
+    tag: ""
     pullPolicy: Always
   replicas: 2
   host: assets-service
@@ -196,7 +204,8 @@ assets:
 drafts:
   image:
     repository: registry.github.com/qelos-io/qelos/drafts
-    tag: {{ .Values.global.imageTag }}
+    # Leave empty to inherit global.imageTag (set via --set global.imageTag during deploy)
+    tag: ""
     pullPolicy: Always
   replicas: 1
   host: drafts-service
@@ -211,7 +220,8 @@ drafts:
 ai:
   image:
     repository: registry.github.com/qelos-io/qelos/ai
-    tag: {{ .Values.global.imageTag }}
+    # Leave empty to inherit global.imageTag (set via --set global.imageTag during deploy)
+    tag: ""
     pullPolicy: Always
   replicas: 2
   host: ai-service
@@ -230,7 +240,8 @@ ai:
 mcp:
   image:
     repository: registry.github.com/qelos-io/qelos/mcp
-    tag: {{ .Values.global.imageTag }}
+    # Leave empty to inherit global.imageTag (set via --set global.imageTag during deploy)
+    tag: ""
     pullPolicy: Always
   replicas: 2
   host: mcp-service
@@ -246,7 +257,8 @@ mcp:
 payments:
   image:
     repository: registry.github.com/qelos-io/qelos/payments
-    tag: {{ .Values.global.imageTag }}
+    # Leave empty to inherit global.imageTag (set via --set global.imageTag during deploy)
+    tag: ""
     pullPolicy: Always
   replicas: 2
   host: payments-service
