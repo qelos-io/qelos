@@ -27,6 +27,8 @@
         </div>
       </header>
 
+      <McpEndpointPanel variant="full" :muted="!edited.enabled" class="connection-details" />
+
       <div class="summary-stats">
         <div class="stat-card" :class="{ 'stat-card-attention': !edited.permittedCallbackUrls.length && edited.enabled }">
           <span class="stat-value">{{ edited.permittedCallbackUrls.length }}</span>
@@ -302,6 +304,7 @@ import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+import McpEndpointPanel from '@/modules/configurations/components/McpEndpointPanel.vue';
 import { useNotifications } from '@/modules/core/compositions/notifications';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import type { IMcpConfigurationMetadata, IMcpExposedTool } from '@qelos/global-types';
@@ -568,6 +571,10 @@ function save() {
   display: flex;
   gap: 8px;
   align-items: flex-start;
+}
+
+.connection-details {
+  margin-block-end: 20px;
 }
 
 .summary-stats {

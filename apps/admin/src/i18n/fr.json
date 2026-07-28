@@ -458,5 +458,13 @@
   "Search tools": "Rechercher des outils",
   "No tools match your search": "Aucun outil ne correspond à votre recherche",
   "Copy to clipboard": "Copier dans le presse-papiers",
-  "Copied to clipboard": "Copié dans le presse-papiers"
+  "Copied to clipboard": "Copié dans le presse-papiers",
+  "Copy": "Copier",
+  "Connection": "Connexion",
+  "MCP connection details": "Détails de connexion",
+  "MCP endpoint": "Point de terminaison MCP",
+  "MCP endpoint helper": "Cette URL est propre à votre locataire. Les clients MCP l'utilisent après l'activation du serveur et la configuration des URL de callback OAuth.",
+  "MCP overview": "Vue d'ensemble MCP",
+  "MCP configuration guide": "Guide de configuration",
+  "MCP client setup": "Configuration du client"
 }

@@ -458,5 +458,13 @@
   "Search tools": "חיפוש כלים",
   "No tools match your search": "לא נמצאו כלים התואמים לחיפוש",
   "Copy to clipboard": "העתק ללוח",
-  "Copied to clipboard": "הועתק ללוח"
+  "Copied to clipboard": "הועתק ללוח",
+  "Copy": "העתק",
+  "Connection": "חיבור",
+  "MCP connection details": "פרטי חיבור",
+  "MCP endpoint": "נקודת קצה MCP",
+  "MCP endpoint helper": "כתובת URL זו ייחודית לדייר שלך. לקוחות MCP משתמשים בה לאחר הפעלת השרת והגדרת כתובות callback של OAuth.",
+  "MCP overview": "סקירת MCP",
+  "MCP configuration guide": "מדריך הגדרה",
+  "MCP client setup": "הגדרת לקוח"
 }
