@@ -466,5 +466,8 @@
   "MCP endpoint helper": "Cette URL est propre à votre locataire. Les clients MCP l'utilisent après l'activation du serveur et la configuration des URL de callback OAuth.",
   "MCP overview": "Vue d'ensemble MCP",
   "MCP configuration guide": "Guide de configuration",
-  "MCP client setup": "Configuration du client"
+  "MCP client setup": "Configuration du client",
+  "MCP connection": "Connexion MCP",
+  "MCP dashboard description": "Connectez des clients MCP distants à ce locataire via votre point de terminaison Streamable HTTP.",
+  "Configure MCP": "Configurer MCP"
 }

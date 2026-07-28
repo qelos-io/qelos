@@ -466,5 +466,8 @@
   "MCP endpoint helper": "This URL is specific to your tenant. MCP clients use it after you enable the server and configure OAuth callback URLs.",
   "MCP overview": "MCP overview",
   "MCP configuration guide": "Configuration guide",
-  "MCP client setup": "Client setup"
+  "MCP client setup": "Client setup",
+  "MCP connection": "MCP connection",
+  "MCP dashboard description": "Connect remote MCP clients to this tenant using your Streamable HTTP endpoint.",
+  "Configure MCP": "Configure MCP"
 }
