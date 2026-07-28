@@ -23,6 +23,15 @@ on:
         required: false
         default: 'default'
         type: string
+      force:
+        description: 'Cancel in-progress Helm operations on qelos-release before deploying'
+        required: false
+        default: true
+        type: boolean
+      image_tag:
+        description: 'Image tag (short SHA or sha- prefix). Defaults to latest main commit.'
+        required: false
+        type: string
 
 # Add permissions for GITHUB_TOKEN
 permissions:
@@ -66,6 +75,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
         
       - name: Set up Helm
         uses: azure/setup-helm@v3
@@ -228,6 +239,33 @@ jobs:
           fi
         shell: bash
           
+      - name: Resolve image tag
+        id: image-tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +x
+          INPUT_TAG="${{ github.event.inputs.image_tag }}"
+          INPUT_TAG="${INPUT_TAG#sha-}"
+
+          if [ -n "$INPUT_TAG" ]; then
+            IMAGE_TAG="${INPUT_TAG:0:7}"
+            echo "Using provided image tag: sha-$IMAGE_TAG"
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            WORKFLOW_RUN_ID="${{ github.event.workflow_run.id }}"
+            GIT_SHA=$(gh api repos/${{ github.repository }}/actions/runs/$WORKFLOW_RUN_ID --jq '.head_sha')
+            IMAGE_TAG="${GIT_SHA:0:7}"
+            echo "Using Docker Release workflow SHA: sha-$IMAGE_TAG"
+          else
+            git fetch origin main --depth=1
+            GIT_SHA=$(git rev-parse origin/main)
+            IMAGE_TAG="${GIT_SHA:0:7}"
+            echo "Using latest main commit SHA: sha-$IMAGE_TAG"
+          fi
+
+          echo "tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+        shell: bash
+
       - name: Deploy with Helm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -242,36 +280,49 @@ jobs:
           # Sanitize namespace input
           NAMESPACE="${{ github.event.inputs.namespace || 'default' }}"
           NAMESPACE="${NAMESPACE//[^a-zA-Z0-9-]/-}"
-          
-          # Get the Git SHA from the triggering workflow
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            # Get the SHA from the Docker Release workflow
-            WORKFLOW_RUN_ID="${{ github.event.workflow_run.id }}"
-            GIT_SHA=$(gh api repos/${{ github.repository }}/actions/runs/$WORKFLOW_RUN_ID --jq '.head_sha')
-            IMAGE_TAG="${GIT_SHA:0:7}"
-          else
-            # For manual triggers, use the latest commit SHA
-            GIT_SHA=$(git rev-parse HEAD)
-            IMAGE_TAG="${GIT_SHA:0:7}"
+          IMAGE_TAG="${{ steps.image-tag.outputs.tag }}"
+          FORCE_DEPLOY="false"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force }}" = "true" ]; then
+            FORCE_DEPLOY="true"
           fi
-          
-          echo "Using IMAGE_TAG: $IMAGE_TAG"
-          
+
+          echo "Deploying qelos-release to namespace $NAMESPACE with image tag sha-$IMAGE_TAG (force=$FORCE_DEPLOY)"
+
+          if [ "$FORCE_DEPLOY" = "true" ]; then
+            bash ./.github/scripts/helm-force-unlock.sh qelos-release "$NAMESPACE"
+          fi
+
           cd helm
-          
-          helm upgrade --install qelos-release qelos \
-            -f values.yaml \
-            --set global.imageTag=sha-$IMAGE_TAG \
-            --namespace "$NAMESPACE" \
-            --create-namespace \
-            --rollback-on-failure \
-            --timeout 10m \
-            --debug=false \
-            --history-max 10
-          
-          # Don't show detailed error output that might contain secrets
-          if [ $? -ne 0 ]; then
+
+          deploy_release() {
+            helm upgrade --install qelos-release qelos \
+              -f values.yaml \
+              --set global.imageTag=sha-"$IMAGE_TAG" \
+              --namespace "$NAMESPACE" \
+              --create-namespace \
+              --rollback-on-failure \
+              --timeout 10m \
+              --debug=false \
+              --history-max 10
+          }
+
+          if deploy_release; then
+            exit 0
+          fi
+
+          if [ "$FORCE_DEPLOY" != "true" ]; then
             echo "::error::Helm deployment failed"
             exit 1
           fi
+
+          echo "Helm deployment failed; retrying after force unlock..."
+          bash ../.github/scripts/helm-force-unlock.sh qelos-release "$NAMESPACE"
+          sleep 5
+
+          if deploy_release; then
+            exit 0
+          fi
+
+          echo "::error::Helm deployment failed after force unlock retry"
+          exit 1
         shell: bash
