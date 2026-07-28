@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # Cancel in-progress Helm operations for a single release so upgrade --install can proceed.
 set -euo pipefail
 
@@ -44,6 +44,14 @@ rollback_to_last_deployed() {
   echo "Rolling back $RELEASE to revision $last_deployed to cancel in-progress operation..."
   helm rollback "$RELEASE" "$last_deployed" -n "$NAMESPACE" --wait=false --timeout 2m || true
 }
+
+if [ "$status" = "failed" ]; then
+  echo "Release $RELEASE is in failed state; clearing failed revision..."
+  delete_pending_release_secrets
+  rollback_to_last_deployed
+  status=$(helm status "$RELEASE" -n "$NAMESPACE" -o json 2>/dev/null | jq -r '.info.status // "missing"' || echo "missing")
+  echo "Release $RELEASE status after failed revision cleanup: $status"
+fi
 
 if is_pending "$status"; then
   last_deployed=$(helm history "$RELEASE" -n "$NAMESPACE" -o json 2>/dev/null | \

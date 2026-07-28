@@ -24,7 +24,7 @@ on:
         default: 'default'
         type: string
       force:
-        description: 'Cancel in-progress Helm operations on qelos-release before deploying'
+        description: 'Force deploy: unlock Helm, reset stuck workloads, apply image tag without waiting for pod readiness'
         required: false
         default: true
         type: boolean
@@ -286,43 +286,60 @@ jobs:
             FORCE_DEPLOY="true"
           fi
 
-          echo "Deploying qelos-release to namespace $NAMESPACE with image tag sha-$IMAGE_TAG (force=$FORCE_DEPLOY)"
+          EXPECTED_IMAGE_TAG="sha-$IMAGE_TAG"
+          echo "Deploying qelos-release to namespace $NAMESPACE with image tag $EXPECTED_IMAGE_TAG (force=$FORCE_DEPLOY)"
 
           if [ "$FORCE_DEPLOY" = "true" ]; then
-            bash ./.github/scripts/helm-force-unlock.sh qelos-release "$NAMESPACE"
+            bash ./.github/scripts/helm-force-prepare.sh qelos-release "$NAMESPACE"
           fi
 
           cd helm
 
           deploy_release() {
-            helm upgrade --install qelos-release qelos \
-              -f values.yaml \
-              --set global.imageTag=sha-"$IMAGE_TAG" \
-              --namespace "$NAMESPACE" \
-              --create-namespace \
-              --rollback-on-failure \
-              --timeout 10m \
-              --debug=false \
+            local helm_args=(
+              upgrade --install qelos-release qelos
+              -f values.yaml
+              --set "global.imageTag=${EXPECTED_IMAGE_TAG}"
+              --namespace "$NAMESPACE"
+              --create-namespace
+              --debug=false
               --history-max 10
+            )
+            if [ "$FORCE_DEPLOY" = "true" ]; then
+              helm_args+=(--wait=false)
+            else
+              helm_args+=(--rollback-on-failure --timeout 10m)
+            fi
+            helm "${helm_args[@]}"
           }
 
-          if deploy_release; then
-            exit 0
-          fi
+          verify_image_tags() {
+            bash ../.github/scripts/helm-verify-image-tag.sh "$NAMESPACE" "$EXPECTED_IMAGE_TAG"
+          }
 
-          if [ "$FORCE_DEPLOY" != "true" ]; then
-            echo "::error::Helm deployment failed"
+          if [ "$FORCE_DEPLOY" = "true" ]; then
+            if deploy_release && verify_image_tags; then
+              echo "Force deploy succeeded: image tag $EXPECTED_IMAGE_TAG applied"
+              exit 0
+            fi
+
+            echo "Force deploy failed; retrying after prepare..."
+            bash ../.github/scripts/helm-force-prepare.sh qelos-release "$NAMESPACE"
+            sleep 5
+
+            if deploy_release && verify_image_tags; then
+              echo "Force deploy succeeded on retry: image tag $EXPECTED_IMAGE_TAG applied"
+              exit 0
+            fi
+
+            echo "::error::Force deploy failed: could not apply image tag $EXPECTED_IMAGE_TAG"
             exit 1
           fi
 
-          echo "Helm deployment failed; retrying after force unlock..."
-          bash ../.github/scripts/helm-force-unlock.sh qelos-release "$NAMESPACE"
-          sleep 5
-
           if deploy_release; then
             exit 0
           fi
 
-          echo "::error::Helm deployment failed after force unlock retry"
+          echo "::error::Helm deployment failed"
           exit 1
         shell: bash
