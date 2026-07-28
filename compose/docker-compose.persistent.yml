@@ -64,6 +64,12 @@ services:
     depends_on:
       - mongo
       - redis
+  mcp:
+    extends:
+      file: docker-compose.yml
+      service: mcp
+    depends_on:
+      - redis
 
 networks:
   common_network:

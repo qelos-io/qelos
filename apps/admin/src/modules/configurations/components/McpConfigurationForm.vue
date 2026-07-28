@@ -27,6 +27,21 @@
         </div>
       </header>
 
+      <div class="summary-stats">
+        <div class="stat-card" :class="{ 'stat-card-attention': !edited.permittedCallbackUrls.length && edited.enabled }">
+          <span class="stat-value">{{ edited.permittedCallbackUrls.length }}</span>
+          <span class="stat-label">{{ $t('Callback URLs') }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ enabledToolsCount }} / {{ edited.exposedTools.length }}</span>
+          <span class="stat-label">{{ $t('Tools enabled') }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ edited.adminOnly ? $t('Admins') : $t('All users') }}</span>
+          <span class="stat-label">{{ $t('Who can connect') }}</span>
+        </div>
+      </div>
+
       <FormRowGroup>
         <FormInput
           v-model="edited.enabled"
@@ -42,22 +57,37 @@
         />
       </FormRowGroup>
 
-      <FormRowGroup>
-        <FormInput
-          v-model="edited.serverName"
-          title="Server name"
-          type="text"
-          placeholder="qelos-mcp"
-          label="Optional"
-        />
-        <FormInput
-          v-model="edited.serverVersion"
-          title="Server version"
-          type="text"
-          placeholder="1.0.0"
-          label="Optional"
-        />
-      </FormRowGroup>
+      <el-collapse class="advanced-collapse">
+        <el-collapse-item :title="$t('Advanced server settings')" name="advanced">
+          <FormRowGroup>
+            <FormInput
+              v-model="edited.serverName"
+              title="Server name"
+              type="text"
+              placeholder="qelos-mcp"
+              label="Optional"
+            />
+            <FormInput
+              v-model="edited.serverVersion"
+              title="Server version"
+              type="text"
+              placeholder="1.0.0"
+              label="Optional"
+            />
+          </FormRowGroup>
+
+          <FormRowGroup>
+            <FormInput
+              v-model="edited.loginUrl"
+              title="Login URL"
+              type="text"
+              placeholder="https://admin.example.com/login"
+              label="Optional"
+              description="URL shown to MCP clients when authentication is required. Defaults to the admin panel login page."
+            />
+          </FormRowGroup>
+        </el-collapse-item>
+      </el-collapse>
     </section>
 
     <section class="panel" :class="{ 'panel-muted': !edited.enabled }">
@@ -111,6 +141,9 @@
 
       <div v-if="!edited.permittedCallbackUrls.length" class="empty-state">
         <p>{{ $t('No callback URLs configured') }}</p>
+        <el-button type="primary" plain native-type="button" @click="addCallbackUrl">
+          {{ $t('Add callback URL') }}
+        </el-button>
       </div>
 
       <div
@@ -123,12 +156,19 @@
           :error="callbackErrors[index]"
           :label="`${$t('Callback URL')} ${index + 1}`"
         >
-          <el-input
-            v-model="edited.permittedCallbackUrls[index]"
-            dir="ltr"
-            :placeholder="$t('MCP callback URL placeholder')"
-          />
+          <el-input v-model="edited.permittedCallbackUrls[index]" dir="ltr" :placeholder="$t('MCP callback URL placeholder')">
+            <template #suffix>
+              <el-tooltip v-if="url" :content="$t('Copy to clipboard')" placement="top">
+                <font-awesome-icon
+                  :icon="['fas', 'copy']"
+                  class="copy-icon"
+                  @click.stop="copyCallbackUrl(url)"
+                />
+              </el-tooltip>
+            </template>
+          </el-input>
           <p v-if="detectCallbackUrlClient(url)" class="field-hint success-hint">
+            <font-awesome-icon :icon="['fas', 'check-circle']" />
             {{ $t('Matches') }}: {{ $t(detectCallbackUrlClient(url)!.labelKey) }}
           </p>
         </el-form-item>
@@ -143,84 +183,109 @@
           <h3>{{ $t('Exposed MCP tools') }}</h3>
           <p class="panel-description">{{ $t('MCP exposed tools description') }}</p>
         </div>
+        <div class="tools-actions">
+          <span class="tools-count-badge">{{ $t('MCP tools enabled count', { enabled: enabledToolsCount, total: edited.exposedTools.length }) }}</span>
+          <el-button size="small" native-type="button" @click="setAllToolsEnabled(true)">
+            {{ $t('Enable all') }}
+          </el-button>
+          <el-button size="small" native-type="button" @click="setAllToolsEnabled(false)">
+            {{ $t('Disable all') }}
+          </el-button>
+        </div>
       </header>
 
-      <el-table :data="edited.exposedTools" stripe class="tools-table">
-        <el-table-column :label="$t('Tool')" min-width="180">
-          <template #default="{ row }">
+      <el-input
+        v-model="toolsSearch"
+        class="tools-search"
+        clearable
+        :prefix-icon="Search"
+        :placeholder="$t('Search tools')"
+      />
+
+      <div v-if="!filteredExposedTools.length" class="empty-state">
+        <p>{{ $t('No tools match your search') }}</p>
+      </div>
+
+      <div class="tool-cards">
+        <div
+          v-for="row in filteredExposedTools"
+          :key="row.toolId"
+          class="tool-card"
+          :class="{ 'tool-card-enabled': row.enabled }"
+        >
+          <div class="tool-card-header">
             <div class="tool-name-cell">
-              <strong>{{ $t(getToolLabelKey(row.toolId)) }}</strong>
+              <div class="tool-name-line">
+                <strong>{{ $t(getToolLabelKey(row.toolId)) }}</strong>
+                <el-tooltip :content="$t(getToolDescriptionKey(row.toolId))" placement="top">
+                  <el-icon class="tool-info-icon"><QuestionFilled /></el-icon>
+                </el-tooltip>
+              </div>
               <span class="tool-id" dir="ltr">{{ row.toolId }}</span>
             </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column :label="$t('Enabled')" width="100" align="center">
-          <template #default="{ row }">
             <el-switch v-model="row.enabled" />
-          </template>
-        </el-table-column>
+          </div>
 
-        <el-table-column :label="$t('Roles')" min-width="180">
-          <template #default="{ row }">
-            <el-select
-              v-model="row.roles"
-              multiple
-              filterable
-              allow-create
-              default-first-option
-              :reserve-keyword="false"
-              :placeholder="$t('Select or type roles')"
-              style="width: 100%"
-            >
-              <el-option :label="$t('All roles')" value="*" />
-              <el-option v-for="role in roleOptions" :key="role" :label="role" :value="role" />
-            </el-select>
-          </template>
-        </el-table-column>
+          <div class="tool-card-body" :class="{ 'tool-card-body-disabled': !row.enabled }">
+            <div class="tool-field">
+              <label>{{ $t('Roles') }}</label>
+              <el-select
+                v-model="row.roles"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                :reserve-keyword="false"
+                :placeholder="$t('Select or type roles')"
+                style="width: 100%"
+              >
+                <el-option :label="$t('All roles')" value="*" />
+                <el-option v-for="role in roleOptions" :key="role" :label="role" :value="role" />
+              </el-select>
+            </div>
 
-        <el-table-column :label="$t('Workspace roles')" min-width="180">
-          <template #default="{ row }">
-            <el-select
-              v-model="row.wsRoles"
-              multiple
-              filterable
-              allow-create
-              default-first-option
-              :reserve-keyword="false"
-              :placeholder="$t('Select or type workspace roles')"
-              style="width: 100%"
-              :disabled="!wsConfigActive"
-            >
-              <el-option :label="$t('All workspace roles')" value="*" />
-              <el-option v-for="role in workspaceRoleOptions" :key="role" :label="role" :value="role" />
-            </el-select>
-          </template>
-        </el-table-column>
+            <div class="tool-field">
+              <label>{{ $t('Workspace roles') }}</label>
+              <el-select
+                v-model="row.wsRoles"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                :reserve-keyword="false"
+                :placeholder="$t('Select or type workspace roles')"
+                style="width: 100%"
+                :disabled="!wsConfigActive"
+              >
+                <el-option :label="$t('All workspace roles')" value="*" />
+                <el-option v-for="role in workspaceRoleOptions" :key="role" :label="role" :value="role" />
+              </el-select>
+            </div>
 
-        <el-table-column :label="$t('Workspace labels')" min-width="180">
-          <template #default="{ row }">
-            <el-select
-              v-model="row.wsLabels"
-              multiple
-              filterable
-              allow-create
-              default-first-option
-              :reserve-keyword="false"
-              :placeholder="$t('Select or type workspace labels')"
-              style="width: 100%"
-              :disabled="!wsConfigActive"
-            >
-              <el-option
-                v-for="label in workspaceLabelOptions"
-                :key="label"
-                :label="label"
-                :value="label"
-              />
-            </el-select>
-          </template>
-        </el-table-column>
-      </el-table>
+            <div class="tool-field">
+              <label>{{ $t('Workspace labels') }}</label>
+              <el-select
+                v-model="row.wsLabels"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                :reserve-keyword="false"
+                :placeholder="$t('Select or type workspace labels')"
+                style="width: 100%"
+                :disabled="!wsConfigActive"
+              >
+                <el-option
+                  v-for="label in workspaceLabelOptions"
+                  :key="label"
+                  :label="label"
+                  :value="label"
+                />
+              </el-select>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <div class="form-footer">
@@ -232,6 +297,7 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { Search, QuestionFilled } from '@element-plus/icons-vue';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
@@ -266,16 +332,35 @@ const genericCallbackHints = CALLBACK_URL_CLIENT_HINTS.filter((hint) => hint.cli
 const roleOptions = ['user', 'admin', 'editor', 'plugin'];
 const workspaceRoleOptions = ['admin', 'member', 'user'];
 
+const forbiddenToolIds = new Set<string>(MCP_FORBIDDEN_TOOL_IDS);
+
 const defaultMetadata: IMcpConfigurationMetadata = {
   enabled: false,
   permittedCallbackUrls: [],
   exposedTools: [],
   adminOnly: true,
+  loginUrl: '',
 };
 
 const edited = ref<IMcpConfigurationMetadata>(normalizeMetadata(props.metadata));
+const toolsSearch = ref('');
 
 const wsConfigActive = computed(() => wsConfig.isActive);
+
+const enabledToolsCount = computed(
+  () => edited.value.exposedTools.filter((tool) => tool.enabled).length,
+);
+
+const filteredExposedTools = computed(() => {
+  const query = toolsSearch.value.trim().toLowerCase();
+  if (!query) {
+    return edited.value.exposedTools;
+  }
+  return edited.value.exposedTools.filter((tool) => {
+    const label = $t(getToolLabelKey(tool.toolId)).toLowerCase();
+    return tool.toolId.toLowerCase().includes(query) || label.includes(query);
+  });
+});
 
 const workspaceLabelOptions = computed(() => {
   const labels = wsConfig.metadata.labels || [];
@@ -304,8 +389,6 @@ function defaultExposedTool(toolId: string): IMcpExposedTool {
     wsLabels: [],
   };
 }
-
-const forbiddenToolIds = new Set<string>(MCP_FORBIDDEN_TOOL_IDS);
 
 function mergeExposedTools(saved: IMcpExposedTool[] = []): IMcpExposedTool[] {
   const savedById = new Map(
@@ -336,11 +419,25 @@ function normalizeMetadata(metadata?: Partial<IMcpConfigurationMetadata>): IMcpC
     exposedTools: mergeExposedTools(source.exposedTools),
     serverName: source.serverName || '',
     serverVersion: source.serverVersion || '',
+    loginUrl: source.loginUrl || '',
   };
 }
 
 function getToolLabelKey(toolId: string): string {
   return KNOWN_MCP_TOOLS.find((tool) => tool.toolId === toolId)?.labelKey || toolId;
+}
+
+function getToolDescriptionKey(toolId: string): string {
+  return KNOWN_MCP_TOOLS.find((tool) => tool.toolId === toolId)?.descriptionKey || toolId;
+}
+
+function setAllToolsEnabled(enabled: boolean) {
+  edited.value.exposedTools = edited.value.exposedTools.map((tool) => ({ ...tool, enabled }));
+}
+
+function copyCallbackUrl(url: string) {
+  navigator.clipboard.writeText(url);
+  notifications.success($t('Copied to clipboard'));
 }
 
 function addCallbackUrl() {
@@ -409,6 +506,7 @@ function save() {
     })),
     serverName: edited.value.serverName?.trim() || undefined,
     serverVersion: edited.value.serverVersion?.trim() || undefined,
+    loginUrl: edited.value.loginUrl?.trim() || undefined,
   };
 
   emit('save', payload);
@@ -470,6 +568,54 @@ function save() {
   display: flex;
   gap: 8px;
   align-items: flex-start;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-block-end: 20px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--el-fill-color-lighter);
+  border: 1px solid transparent;
+}
+
+.stat-card-attention {
+  border-color: var(--el-color-danger-light-5);
+  background: var(--el-color-danger-light-9);
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.advanced-collapse {
+  margin-block-start: 4px;
+  border: none;
+}
+
+.advanced-collapse :deep(.el-collapse-item__header) {
+  border-block-end: none;
+  font-weight: 600;
+  color: var(--el-text-color-regular);
+}
+
+.advanced-collapse :deep(.el-collapse-item__wrap) {
+  border-block-end: none;
 }
 
 .callback-hints {
@@ -600,20 +746,81 @@ function save() {
   text-align: center;
   color: var(--el-text-color-secondary);
   margin-block-end: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .field-hint {
   margin: 6px 0 0;
   font-size: 13px;
   color: var(--el-text-color-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .success-hint {
   color: var(--el-color-success);
 }
 
-.tools-table {
-  width: 100%;
+.copy-icon {
+  cursor: pointer;
+  color: var(--el-text-color-secondary);
+  transition: color 0.15s ease;
+}
+
+.copy-icon:hover {
+  color: var(--el-color-primary);
+}
+
+.tools-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tools-count-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-regular);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--el-fill-color-lighter);
+}
+
+.tools-search {
+  margin-block-end: 16px;
+  max-width: 320px;
+}
+
+.tool-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.tool-card {
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--background-color, #fff);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tool-card-enabled {
+  border-color: var(--el-color-success-light-5);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+}
+
+.tool-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-block-end: 12px;
 }
 
 .tool-name-cell {
@@ -622,8 +829,43 @@ function save() {
   gap: 4px;
 }
 
+.tool-name-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tool-info-icon {
+  color: var(--el-text-color-secondary);
+  cursor: help;
+  font-size: 14px;
+}
+
 .tool-id {
   font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.tool-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: opacity 0.15s ease;
+}
+
+.tool-card-body-disabled {
+  opacity: 0.55;
+}
+
+.tool-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tool-field label {
+  font-size: 12px;
+  font-weight: 600;
   color: var(--el-text-color-secondary);
 }
 
@@ -646,6 +888,14 @@ function save() {
 
   .panel {
     padding: 18px;
+  }
+
+  .tool-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .tools-search {
+    max-width: none;
   }
 }
 </style>

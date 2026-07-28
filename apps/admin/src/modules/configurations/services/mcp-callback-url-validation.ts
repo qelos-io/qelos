@@ -57,6 +57,18 @@ export const CALLBACK_URL_CLIENT_HINTS: CallbackUrlClientHint[] = [
     pattern: /^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\/oauth\/callback/i,
   },
   {
+    id: 'windsurf',
+    labelKey: 'MCP callback client Windsurf',
+    example: 'http://localhost:6274/oauth/callback',
+    pattern: /^http:\/\/(127\.0\.0\.1|localhost|\[::1\]):6274\/oauth\/callback/i,
+  },
+  {
+    id: 'windsurf-mcp-remote',
+    labelKey: 'MCP callback client Windsurf mcp-remote',
+    example: 'http://localhost:3334/mcp/oauth/callback',
+    pattern: /^http:\/\/(127\.0\.0\.1|localhost|\[::1\]):3334\/mcp\/oauth\/callback/i,
+  },
+  {
     id: 'https',
     labelKey: 'MCP callback client HTTPS',
     example: 'https://localhost:6274/oauth/callback',
@@ -80,6 +92,7 @@ const CUSTOM_SCHEME_PATTERN = /^(?!https?:)[a-z][a-z0-9+.-]*:\/\/.+/i;
 const HTTPS_PATTERN = /^https:\/\/.+/i;
 const HTTP_PATTERN = /^http:\/\/.+/i;
 const HTTP_LOOPBACK_PATTERN = /^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?\/.+/i;
+const HTTP_LOOPBACK_WILDCARD_PATTERN = /^http:\/\/(localhost|127\.0\.0\.1|\[::1\]):\*\/.+/i;
 
 export function isValidCallbackUrl(url: string): boolean {
   const trimmed = url.trim();
@@ -94,6 +107,11 @@ export function isValidCallbackUrl(url: string): boolean {
     } catch {
       return false;
     }
+  }
+
+  // Allow wildcard patterns for loopback URLs (e.g., http://127.0.0.1:*/auth/callback)
+  if (HTTP_LOOPBACK_WILDCARD_PATTERN.test(trimmed)) {
+    return true;
   }
 
   if (HTTP_PATTERN.test(trimmed)) {

@@ -31,10 +31,13 @@ DELETE /api/mcp/admin
 
 Every request requires a tenant header and one of:
 
-- `Authorization: Bearer <oauth_access_token>`
+- `Authorization: Bearer <oauth_access_token>` (obtained through the MCP OAuth flow)
 - `x-api-key: <tenant api token>` when tenant `auth-configuration.allowUserTokenAuthentication` is `true`
 
-Unauthenticated requests receive `401` with an MCP JSON-RPC error body.
+Unauthenticated requests receive `401` with an MCP JSON-RPC error body. The response includes:
+
+- A `WWW-Authenticate: Bearer authorization_server="..."` header pointing to `/.well-known/oauth-authorization-server`.
+- `error.data.loginUrl` — a browser login URL. Defaults to the admin panel login page (`/login`) and can be overridden per tenant via `mcp-configuration.loginUrl`.
 
 When tenant `mcp-configuration.enabled` is `false`, the service responds with `503`.
 

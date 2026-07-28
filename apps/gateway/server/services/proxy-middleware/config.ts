@@ -45,6 +45,7 @@ export function getApiProxyConfig(): IApiProxyConfig {
         '/api/workspaces',
         '/api/auth',
         '/api/roles',
+        '/.well-known/oauth-authorization-server',
       ],
     }),
     assetsService: getServiceFromEnvVars('assets', 'ASSETS_SERVICE', {

@@ -105,8 +105,10 @@ const clientLabel = computed(() => formatRedirectTarget(redirectUri.value));
 const adminOnlyBlocked = computed(() => mcpConfig.metadata.adminOnly && !isAdmin.value);
 
 onMounted(async () => {
+  console.log('[MCP Authorize] Route query:', route.query);
   const user = await fetchAuthUser(false, true);
   if (!user) {
+    console.log('[MCP Authorize] No user, redirecting to login');
     router.replace({
       name: 'login',
       query: { redirect: route.fullPath },
@@ -115,12 +117,16 @@ onMounted(async () => {
   }
 
   await mcpConfig.promise;
+  console.log('[MCP Authorize] MCP config loaded:', mcpConfig.metadata);
 
   const packedState = typeof route.query.mcp_state === 'string' ? route.query.mcp_state : '';
   if (packedState) {
+    console.log('[MCP Authorize] Packed state found:', packedState);
     mcpState.value = packedState;
     const payload = decodeJwtPayload(packedState) as McpOAuthStatePayload | null;
+    console.log('[MCP Authorize] Decoded payload:', payload);
     if (!payload?.ru) {
+      console.error('[MCP Authorize] Invalid state: missing redirect URI');
       error.value = t('MCP authorize invalid state');
       loading.value = false;
       return;
@@ -128,63 +134,59 @@ onMounted(async () => {
     redirectUri.value = payload.ru;
     clientId.value = payload.cid || '';
     oauthState.value = payload.s ?? null;
+    console.log('[MCP Authorize] State parsed successfully:', { redirectUri: redirectUri.value, clientId: clientId.value, oauthState: oauthState.value });
     loading.value = false;
     return;
   }
 
   const authorizePath = buildAuthorizeApiPath(route.query);
   if (authorizePath) {
+    console.log('[MCP Authorize] Redirecting to authorize path:', authorizePath);
     window.location.href = authorizePath;
     return;
   }
 
+  console.error('[MCP Authorize] Missing state parameter');
   error.value = t('MCP authorize missing state');
   loading.value = false;
 });
 
 async function submitConsent(action: 'accept' | 'deny') {
   if (!mcpState.value || submitting.value) {
+    console.log('[MCP Consent] Submit blocked:', { hasState: !!mcpState.value, submitting: submitting.value });
     return;
   }
 
   submitting.value = true;
   error.value = '';
 
+  console.log('[MCP Consent] Submitting consent via form:', { action, mcpState: mcpState.value });
+
   try {
-    const response = await fetch('/api/auth/mcp/consent', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mcp_state: mcpState.value, action }),
-      redirect: 'manual',
-    });
+    // Create a hidden form to submit the consent
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/auth/mcp/consent';
+    form.style.display = 'none';
 
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get('Location');
-      if (location) {
-        window.location.href = location;
-        return;
-      }
-    }
+    const mcpStateInput = document.createElement('input');
+    mcpStateInput.type = 'hidden';
+    mcpStateInput.name = 'mcp_state';
+    mcpStateInput.value = mcpState.value;
+    form.appendChild(mcpStateInput);
 
-    if (!response.ok) {
-      let message = t('MCP authorize consent failed');
-      try {
-        const body = await response.json();
-        if (body?.message) {
-          message = body.message;
-        }
-      } catch {
-        // ignore parse errors
-      }
-      error.value = message;
-      return;
-    }
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = action;
+    form.appendChild(actionInput);
 
+    document.body.appendChild(form);
+    form.submit();
+    // The browser will handle the redirect automatically
+  } catch (e) {
+    console.error('[MCP Consent] Form submission failed:', e);
     error.value = t('MCP authorize consent failed');
-  } catch {
-    error.value = t('MCP authorize consent failed');
-  } finally {
     submitting.value = false;
   }
 }

@@ -18,6 +18,7 @@ import {
   type StoredMcpAuthCode,
 } from '../../services/mcp-oauth-service';
 import logger from '../../services/logger';
+import { getRegisteredClient } from './register';
 
 type ConsentBody = {
   mcp_state?: string;
@@ -31,25 +32,63 @@ export async function mcpConsent(req: AuthRequest, res: Response) {
   const action = body?.action;
   const tokenDelivery = body?.token_delivery === 'fragment' ? 'fragment' : 'query';
 
+  logger.log('[MCP Consent] Request received:', { action, hasState: !!rawState });
+
   if (!rawState || (action !== 'accept' && action !== 'deny')) {
+    logger.error('[MCP Consent] Invalid request: missing mcp_state or invalid action');
     return res.status(400).json({ message: 'mcp_state and action are required' }).end();
   }
 
   const state = unpackMcpOAuthState(rawState);
   if (!state) {
+    logger.error('[MCP Consent] Invalid or expired mcp_state');
     return res.status(400).json({ message: 'mcp_state is invalid or expired' }).end();
   }
 
+  logger.log('[MCP Consent] State decoded:', { redirectUri: state.ru, clientId: state.cid, tenant: state.t });
+
   const tenant = req.headers.tenant || '0';
   if (state.t !== tenant) {
+    logger.error('[MCP Consent] Tenant mismatch:', { stateTenant: state.t, requestTenant: tenant });
     return res.status(400).json({ message: 'tenant mismatch' }).end();
   }
 
   if (!req.mcpConfig?.enabled) {
+    logger.error('[MCP Consent] MCP OAuth not enabled for tenant');
     return res.status(503).json({ message: 'MCP OAuth is not enabled for this tenant' }).end();
   }
 
-  if (!isRedirectUriPermitted(state.ru, req.mcpConfig.permittedCallbackUrls)) {
+  logger.log('[MCP Consent] MCP config permittedCallbackUrls:', req.mcpConfig.permittedCallbackUrls);
+
+  // If client_id is in state, validate against registered clients
+  let redirectUriPermitted = false;
+  if (state.cid) {
+    logger.log('[MCP Consent] Validating registered client:', state.cid);
+    const registeredClient = await getRegisteredClient(state.cid);
+    if (!registeredClient || registeredClient.tenant !== tenant) {
+      logger.error('[MCP Consent] Invalid client_id or tenant mismatch:', { clientId: state.cid, registeredClient: !!registeredClient, clientTenant: registeredClient?.tenant, requestTenant: tenant });
+      return res.status(400).json({ message: 'Invalid client_id' }).end();
+    }
+    logger.log('[MCP Consent] Registered client redirect_uris:', registeredClient.redirect_uris);
+    // Check if redirect_uri matches any of the client's registered redirect_uris (with wildcard support)
+    redirectUriPermitted = registeredClient.redirect_uris.some((permitted) =>
+      isRedirectUriPermitted(state.ru, [permitted])
+    );
+    logger.log('[MCP Consent] Registered client redirect URI check:', { redirectUri: state.ru, permitted: redirectUriPermitted });
+    // Also check tenant's permittedCallbackUrls as fallback (for wildcard patterns)
+    if (!redirectUriPermitted) {
+      redirectUriPermitted = isRedirectUriPermitted(state.ru, req.mcpConfig.permittedCallbackUrls);
+      logger.log('[MCP Consent] Fallback to permittedCallbackUrls:', { redirectUri: state.ru, permitted: redirectUriPermitted });
+    }
+  } else {
+    // Fall back to permittedCallbackUrls for pre-configured clients
+    logger.log('[MCP Consent] No client_id, using permittedCallbackUrls');
+    redirectUriPermitted = isRedirectUriPermitted(state.ru, req.mcpConfig.permittedCallbackUrls);
+    logger.log('[MCP Consent] PermittedCallbackUrls check:', { redirectUri: state.ru, permitted: redirectUriPermitted });
+  }
+
+  if (!redirectUriPermitted) {
+    logger.error('[MCP Consent] Redirect URI not permitted:', { redirectUri: state.ru, permittedCallbackUrls: req.mcpConfig.permittedCallbackUrls });
     return res.status(400).json({ message: 'redirect_uri is not permitted' }).end();
   }
 

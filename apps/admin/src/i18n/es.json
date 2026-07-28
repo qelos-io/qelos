@@ -385,6 +385,8 @@
   "MCP callback client OpenCode": "OpenCode",
   "MCP callback client Claude Code": "Claude Code",
   "MCP callback client Gemini CLI": "Gemini CLI",
+  "MCP callback client Windsurf": "Windsurf",
+  "MCP callback client Windsurf mcp-remote": "Windsurf (mcp-remote)",
   "MCP callback client HTTPS": "HTTPS genérico",
   "MCP callback client custom scheme": "Esquema URI personalizado",
   "No callback URLs configured": "No hay URLs de callback configuradas.",
@@ -443,5 +445,18 @@
   "MCP authorize client id label": "ID de cliente",
   "MCP authorize scopes label": "Ámbitos solicitados",
   "MCP authorize accept": "Aceptar",
-  "MCP authorize deny": "Denegar"
+  "MCP authorize deny": "Denegar",
+  "Callback URLs": "URLs de retorno",
+  "Tools enabled": "Herramientas habilitadas",
+  "Who can connect": "Quién puede conectarse",
+  "Admins": "Administradores",
+  "All users": "Todos los usuarios",
+  "Advanced server settings": "Configuración avanzada del servidor",
+  "MCP tools enabled count": "{enabled} de {total} herramientas habilitadas",
+  "Enable all": "Habilitar todo",
+  "Disable all": "Deshabilitar todo",
+  "Search tools": "Buscar herramientas",
+  "No tools match your search": "Ninguna herramienta coincide con tu búsqueda",
+  "Copy to clipboard": "Copiar al portapapeles",
+  "Copied to clipboard": "Copiado al portapapeles"
 }

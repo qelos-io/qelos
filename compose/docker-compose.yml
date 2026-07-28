@@ -145,6 +145,23 @@ services:
     depends_on:
       - redis
       - plugins
-  
+  mcp:
+    image: registry.github.com/qelos-io/qelos/mcp:${MCP_SERVICE_VERSION}
+    restart: always
+    environment:
+      IP: 0.0.0.0
+      PORT: 9010
+      REDIS_URL: redis://redis
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      AUTH_SERVICE_PORT: 9000
+      CONTENT_SERVICE_PORT: 9001
+      GATEWAY_SERVICE_URL: gateway
+      GATEWAY_SERVICE_PORT: 3000
+      SHOW_LOGS: ${SHOW_LOGS}
+    depends_on:
+      - redis
+      - auth
+      - content
+
 networks:
   common_network:

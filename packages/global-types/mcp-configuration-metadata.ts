@@ -16,6 +16,7 @@ export interface IMcpConfigurationMetadata {
   adminOnly: boolean;
   serverName?: string;
   serverVersion?: string;
+  loginUrl?: string;
 }
 
 export function sanitizeMcpConfigurationMetadata(

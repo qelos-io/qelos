@@ -160,7 +160,11 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
       req.disableCors = true;
     }
 
-    if (host === defaultApplicationHost || host === internalUrl) {
+    const hostHostname = getHostHostname(host || '');
+    const defaultHostHostname = getHostHostname(defaultApplicationHost);
+    const internalHostHostname = getHostHostname(internalUrl);
+
+    if (hostHostname === defaultHostHostname || hostHostname === internalHostHostname) {
       req.headers.tenant = req.headers.tenant || defaultTenant;
     } else {
       try {
@@ -310,6 +314,14 @@ function normalizeHostHeader(value: string | string[] | undefined): string | nul
   return trimmed || null;
 }
 
+function getHostHostname(value: string): string {
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return value.split(':')[0];
+  }
+}
+
 async function isHostForTenant(
   hostValue: string,
   tenant: string,
@@ -318,9 +330,15 @@ async function isHostForTenant(
   internalUrl: string,
   getTenantByHost: (hostUrl: string) => Promise<string>,
 ): Promise<boolean> {
-  const hostname = hostValue.split(':')[0];
-  if (hostname === defaultApplicationHost || hostValue === internalUrl) {
+  const hostname = getHostHostname(hostValue);
+  const defaultHostname = getHostHostname(defaultApplicationHost);
+  const internalHostname = getHostHostname(internalUrl);
+
+  if (hostname === defaultHostname) {
     return tenant === defaultTenant;
+  }
+  if (hostname === internalHostname) {
+    return true;
   }
   try {
     const resolvedTenant = await getTenantByHost(hostValue);

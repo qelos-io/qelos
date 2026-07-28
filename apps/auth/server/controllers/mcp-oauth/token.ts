@@ -12,6 +12,7 @@ import {
   type StoredMcpAuthCode,
 } from '../../services/mcp-oauth-service';
 import logger from '../../services/logger';
+import { getRegisteredClient } from './register';
 
 function readTokenRequestBody(body: Record<string, unknown>) {
   const read = (key: string): string | null => {
@@ -24,12 +25,13 @@ function readTokenRequestBody(body: Record<string, unknown>) {
     code: read('code'),
     redirectUri: read('redirect_uri'),
     codeVerifier: read('code_verifier'),
+    clientId: read('client_id'),
   };
 }
 
 export async function mcpToken(req: AuthRequest, res: Response) {
   const tenant = req.headers.tenant || '0';
-  const { grantType, code, redirectUri, codeVerifier } = readTokenRequestBody(req.body || {});
+  const { grantType, code, redirectUri, codeVerifier, clientId } = readTokenRequestBody(req.body || {});
 
   if (grantType !== 'authorization_code') {
     return res.status(400).json({ error: 'unsupported_grant_type' }).end();
@@ -43,7 +45,23 @@ export async function mcpToken(req: AuthRequest, res: Response) {
     return res.status(503).json({ error: 'temporarily_unavailable' }).end();
   }
 
-  if (!isRedirectUriPermitted(redirectUri, req.mcpConfig.permittedCallbackUrls)) {
+  // If client_id is provided, validate against registered clients
+  let redirectUriPermitted = false;
+  if (clientId) {
+    const registeredClient = await getRegisteredClient(clientId);
+    if (!registeredClient || registeredClient.tenant !== tenant) {
+      return res.status(400).json({ error: 'invalid_client' }).end();
+    }
+    // Check if redirect_uri matches any of the client's registered redirect_uris (with wildcard support)
+    redirectUriPermitted = registeredClient.redirect_uris.some((permitted) =>
+      isRedirectUriPermitted(redirectUri, [permitted])
+    );
+  } else {
+    // Fall back to permittedCallbackUrls for pre-configured clients
+    redirectUriPermitted = isRedirectUriPermitted(redirectUri, req.mcpConfig.permittedCallbackUrls);
+  }
+
+  if (!redirectUriPermitted) {
     return res.status(400).json({ error: 'invalid_request', error_description: 'redirect_uri is not permitted' }).end();
   }
 

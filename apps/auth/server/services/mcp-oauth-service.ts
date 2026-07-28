@@ -105,6 +105,13 @@ function matchesPermittedEntry(redirectUri: string, permitted: string): boolean 
     return false;
   }
 
+  // Support wildcard patterns for loopback URLs (e.g., http://127.0.0.1:*/auth/callback)
+  if (normalizedPermitted.includes(':*')) {
+    const wildcardPattern = normalizedPermitted.replace(':*', ':\\d+');
+    const regex = new RegExp(`^${wildcardPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
+    return regex.test(normalizedRedirect);
+  }
+
   if (normalizedPermitted.endsWith('*')) {
     return normalizedRedirect.startsWith(normalizedPermitted.slice(0, -1));
   }
@@ -196,6 +203,7 @@ export function buildOAuthDiscoveryDocument(baseUrl: string) {
     issuer,
     authorization_endpoint: `${issuer}/api/auth/mcp/authorize`,
     token_endpoint: `${issuer}/api/auth/mcp/token`,
+    registration_endpoint: `${issuer}/.well-known/oauth-authorization-server/register`,
     response_types_supported: ['code'],
     grant_types_supported: ['authorization_code', 'refresh_token'],
     code_challenge_methods_supported: ['S256', 'plain'],
@@ -207,7 +215,8 @@ export function buildTenantBaseUrl(tenantHost: string, useHttps = true): string 
   if (tenantHost.startsWith('http://') || tenantHost.startsWith('https://')) {
     return tenantHost.replace(/\/$/, '');
   }
-  const protocol = useHttps ? 'https' : 'http';
+  const isLoopback = /^localhost|127\.0\.0\.1|\[::1\]/i.test(tenantHost.split(':')[0]);
+  const protocol = useHttps && !isLoopback ? 'https' : 'http';
   return `${protocol}://${tenantHost}`.replace(/\/$/, '');
 }
 

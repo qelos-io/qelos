@@ -7,6 +7,23 @@ import {
 import { mcpUnauthorized } from '../services/mcp-json-rpc';
 import type { McpRequest } from '../types';
 
+function getRequestBaseUrl(req: McpRequest): string {
+  const host = String(req.headers.tenanthost || req.headers.host || 'localhost').replace(/\/$/, '');
+  const protocol = String(req.headers['x-forwarded-proto'] || 'http');
+  return `${protocol}://${host}`;
+}
+
+function buildAuthRequiredData(req: McpRequest) {
+  const baseUrl = getRequestBaseUrl(req);
+  const discoveryUrl = `${baseUrl}/.well-known/oauth-authorization-server`;
+  const configuredLoginUrl = req.mcpConfiguration?.loginUrl?.trim();
+  const defaultLoginUrl = `${baseUrl}/login`;
+  return {
+    loginUrl: configuredLoginUrl || defaultLoginUrl,
+    authorizationServer: discoveryUrl,
+  };
+}
+
 export function extractTenantHeader(req: McpRequest): string | null {
   const tenant = req.headers.tenant;
   if (tenant === undefined || tenant === null) {
@@ -54,21 +71,22 @@ export async function authenticateMcpRequest(
   const apiKey = extractApiKey(req);
 
   if (!authorization && !apiKey) {
-    mcpUnauthorized(res);
+    const authData = buildAuthRequiredData(req);
+    mcpUnauthorized(res, 'Authentication required', authData);
     return;
   }
 
   if (apiKey) {
     const authConfiguration = await getAuthConfiguration(tenant);
     if (!isApiKeyAuthenticationAllowed(authConfiguration)) {
-      mcpUnauthorized(res, 'API key authentication is not enabled for this tenant');
+      mcpUnauthorized(res, 'API key authentication is not enabled for this tenant', buildAuthRequiredData(req));
       return;
     }
   }
 
   const user = await authenticateWithAuthService(tenant, { authorization, apiKey });
   if (!user) {
-    mcpUnauthorized(res, 'Invalid or expired credentials');
+    mcpUnauthorized(res, 'Invalid or expired credentials', buildAuthRequiredData(req));
     return;
   }
 

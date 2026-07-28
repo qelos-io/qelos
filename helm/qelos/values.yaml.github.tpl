@@ -62,7 +62,7 @@ gateway:
       memory: "256Mi"
       cpu: "200m"
   environment:
-    INTERNAL_URL: localhost
+    INTERNAL_URL: gateway-service
     BASIC_TENANT: 0
     APPLICATION_URL: localhost:3000
 
@@ -214,6 +214,22 @@ ai:
     PLUGINS_SERVICE_PORT: 9006
     NO_CODE_SERVICE_URL: nocode-service
     NO_CODE_SERVICE_PORT: 9004
+
+mcp:
+  image:
+    repository: ghcr.io/{{ .Values.GITHUB_USERNAME }}/qelos/mcp
+    tag: latest
+    pullPolicy: Always
+  replicas: 2
+  host: mcp-service
+  port: 9010
+  environment:
+    AUTH_SERVICE_URL: auth-service
+    AUTH_SERVICE_PORT: 9000
+    CONTENT_SERVICE_URL: content-service
+    CONTENT_SERVICE_PORT: 9001
+    GATEWAY_SERVICE_URL: gateway-service
+    GATEWAY_SERVICE_PORT: 80
 
 payments:
   image:

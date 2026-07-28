@@ -90,14 +90,14 @@ const activityTimeframe = ref('week');
     kind: 'workspaces',
     eventName: 'workspace-created',
     source: 'auth'
-  }), { immediate: false })
+  }), null, true)
 
   const { result: createdWorkspacesLastMonth, retry: loadCreatedWorkspacesLastMonth } = useDispatcher(() => eventsService.getAll({
     period: 'last-month',
     kind: 'workspaces',
     eventName: 'workspace-created',
     source: 'auth'
-  }), { immediate: false })
+  }), null, true)
 
   const wsConfig = useWsConfiguration();
   if (wsConfig.isActive) {
@@ -111,12 +111,12 @@ const activityTimeframe = ref('week');
     return [
       { 
         name: 'Authentication', 
-        status: authEvents.value?.length > 0 ? 'degraded' : 'operational', 
+        status: (authEvents.value?.events?.length || 0) > 0 ? 'degraded' : 'operational', 
         icon: ['fas', 'shield-alt']
       },
       { 
         name: 'Storage',
-        status: storageEvents.value?.length > 0 ? 'degraded' : 'operational', 
+        status: (storageEvents.value?.events?.length || 0) > 0 ? 'degraded' : 'operational', 
         icon: ['fas', 'hdd']
       }
     ]
@@ -221,24 +221,24 @@ const activityTimeframe = ref('week');
     const getEventsForTimeframe = () => {
       if (activityTimeframe.value === 'day') {
         return {
-          registered: registeredUsersLastDay.value,
-          created: createdUsersLastDay.value,
-          workspaces: createdWorkspacesLastDay.value
+          registered: registeredUsersLastDay.value?.events || [],
+          created: createdUsersLastDay.value?.events || [],
+          workspaces: createdWorkspacesLastDay.value?.events || []
         };
       }
 
       if (activityTimeframe.value === 'week') {
         return {
-          registered: registeredUsersLastWeek.value,
-          created: createdUsersLastWeek.value,
-          workspaces: createdWorkspacesLastWeek.value
+          registered: registeredUsersLastWeek.value?.events || [],
+          created: createdUsersLastWeek.value?.events || [],
+          workspaces: createdWorkspacesLastWeek.value?.events || []
         };
       }
 
       return {
-        registered: registeredUsersLastMonth.value,
-        created: createdUsersLastMonth.value,
-        workspaces: createdWorkspacesLastMonth.value
+        registered: registeredUsersLastMonth.value?.events || [],
+        created: createdUsersLastMonth.value?.events || [],
+        workspaces: createdWorkspacesLastMonth.value?.events || []
       };
     };
     

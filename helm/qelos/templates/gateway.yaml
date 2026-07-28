@@ -88,6 +88,10 @@ spec:
               value: {{ .Values.payments.host }}
             - name: PAYMENTS_SERVICE_PORT
               value: "{{ .Values.payments.port }}"
+            - name: MCP_SERVICE_URL
+              value: {{ .Values.mcp.host }}
+            - name: MCP_SERVICE_PORT
+              value: "{{ .Values.mcp.port }}"
             - name: SHOW_LOGS
               value: "true"
             - name: BASIC_TENANT

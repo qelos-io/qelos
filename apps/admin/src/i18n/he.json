@@ -385,6 +385,8 @@
   "MCP callback client OpenCode": "OpenCode",
   "MCP callback client Claude Code": "Claude Code",
   "MCP callback client Gemini CLI": "Gemini CLI",
+  "MCP callback client Windsurf": "Windsurf",
+  "MCP callback client Windsurf mcp-remote": "Windsurf (mcp-remote)",
   "MCP callback client HTTPS": "HTTPS כללי",
   "MCP callback client custom scheme": "סכמת URI מותאמת",
   "No callback URLs configured": "לא הוגדרו כתובות callback.",
@@ -443,5 +445,18 @@
   "MCP authorize client id label": "מזהה לקוח",
   "MCP authorize scopes label": "היקפים מבוקשים",
   "MCP authorize accept": "אשר",
-  "MCP authorize deny": "דחה"
+  "MCP authorize deny": "דחה",
+  "Callback URLs": "כתובות חזרה",
+  "Tools enabled": "כלים מופעלים",
+  "Who can connect": "מי יכול להתחבר",
+  "Admins": "מנהלים",
+  "All users": "כל המשתמשים",
+  "Advanced server settings": "הגדרות שרת מתקדמות",
+  "MCP tools enabled count": "{enabled} מתוך {total} כלים מופעלים",
+  "Enable all": "הפעל הכול",
+  "Disable all": "בטל הכול",
+  "Search tools": "חיפוש כלים",
+  "No tools match your search": "לא נמצאו כלים התואמים לחיפוש",
+  "Copy to clipboard": "העתק ללוח",
+  "Copied to clipboard": "הועתק ללוח"
 }
