@@ -31,7 +31,7 @@ function getStorageAssets(req, res) {
 }
 
 function uploadStorageAssets(req, res) {
-  const fileData = req.files[0];
+  const fileData = req.file;
   const type = fileData.mimetype;
   const { identifier, extension, prefix } = req.query || {};
   const tenant = req.headers.tenant;
