@@ -29,6 +29,8 @@ export type {
   McpCallbackParams,
   McpTokenExchangeOptions,
   McpTokenExchangeResult,
+  DecodedMcpOAuthStatePayload,
+  McpPagePathOptions,
 } from './authentication';
 
 export type { BlueprintEntitiesRegistry } from './blueprints';
@@ -40,7 +42,16 @@ export {
   parseMcpCallbackParams,
 } from './authentication';
 
-export { buildMcpAuthorizePath } from './mcp-auth';
+export {
+  buildMcpAuthorizePath,
+  buildMcpAuthorizePathFromQuery,
+  buildMcpLoginRedirectUrl,
+  buildMcpConsentPageUrl,
+  resolveMcpLoginRedirect,
+  appendMcpAccessDeniedRedirect,
+  decodeMcpOAuthStatePayload,
+  buildMcpTokenExchangeBody,
+} from './mcp-auth';
 
 export default class QelosSDK extends BaseSDK {
   #customHeaders = {}

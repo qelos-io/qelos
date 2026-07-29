@@ -199,3 +199,11 @@ export const getServerSideProps = withQelosSSR(
 `completeSocialAuthCallback` and the re-exported SDK helpers forward Qelos
 session cookies from `socialCallback` onto your Node response — use them from
 a route handler that owns the response object.
+
+## MCP OAuth
+
+When your app is the MCP OAuth issuer on a custom domain, host `/login` and
+`/mcp/authorize` and use the re-exported MCP helpers (`resolveMcpLoginRedirect`,
+`decodeMcpOAuthStatePayload`, `completeMcpAuthorizationCallback`, …). See
+[MCP OAuth for integrator apps](https://docs.qelos.io/auth/mcp-oauth-integrators)
+in the Qelos docs.
