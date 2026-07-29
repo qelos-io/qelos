@@ -235,7 +235,47 @@
       </div>
     </section>
 
-    <!-- 5. API & platform health (from platform event throughput — gateway traffic is reflected in the events stream) -->
+    <!-- 5. MCP connection -->
+    <section class="dash-section mcp-connection-section">
+      <div class="section-head">
+        <h2 class="section-title section-title-left">{{ $t('MCP connection') }}</h2>
+        <p class="section-sub">{{ $t('MCP dashboard description') }}</p>
+      </div>
+      <div
+        class="unified-card mcp-connection-card"
+        :class="{ 'mcp-connection-card--muted': !mcpConfig.isEnabled }"
+        v-loading="mcpConfig.loading"
+      >
+        <div class="mcp-connection-header">
+          <el-tag :type="mcpConfig.isEnabled ? 'success' : 'info'" effect="dark">
+            {{ mcpConfig.isEnabled ? $t('Enabled') : $t('Disabled') }}
+          </el-tag>
+        </div>
+
+        <McpEndpointPanel variant="compact" :muted="!mcpConfig.isEnabled" />
+
+        <div class="mcp-connection-actions">
+          <router-link
+            :to="{ name: 'editConfiguration', params: { key: 'mcp-configuration' } }"
+            class="mcp-configure-cta"
+          >
+            {{ $t('Configure MCP') }}
+            <font-awesome-icon :icon="['fas', 'arrow-right']" />
+          </router-link>
+          <a
+            :href="MCP_DOCS_BASE_URL"
+            target="_blank"
+            rel="noopener"
+            class="mcp-docs-link"
+          >
+            {{ $t('MCP overview') }}
+            <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" />
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. API & platform health (from platform event throughput — gateway traffic is reflected in the events stream) -->
     <section class="dash-section">
       <div class="section-head">
         <h2 class="section-title section-title-left">{{ $t('API & platform health') }}</h2>
@@ -309,6 +349,9 @@ import { useIntegrationSourcesStore } from '@/modules/integrations/store/integra
 import sdk from '@/services/sdk';
 import eventsService, { type IEvent } from '@/services/apis/events-service';
 import type { IThread } from '@qelos/sdk/ai';
+import McpEndpointPanel from '@/modules/configurations/components/McpEndpointPanel.vue';
+import { useMcpConfiguration } from '@/modules/configurations/store/mcp-configuration';
+import { MCP_DOCS_BASE_URL } from '@qelos/global-types';
 
 const { loading: loadingBlocks, blocks } = toRefs(useBlocksList());
 const { loading: loadingStats, stats } = useUsersStats();
@@ -316,6 +359,7 @@ const { activityChartOption, activityTimeframe } = toRefs(useAdminEvents());
 const { t } = useI18n();
 
 const wsConfig = useWsConfiguration();
+const mcpConfig = useMcpConfiguration();
 const { groupedSources } = toRefs(useIntegrationSourcesStore());
 
 const pluginsStore = usePluginsList();
@@ -1157,5 +1201,91 @@ async function removeBlueprintFromDashboard(identifier: string) {
 .el-popover .el-select .el-input__wrapper .el-input__inner:focus {
   background-color: #f9f9f9;
   box-shadow: 0 0 0 2px rgba(var(--main-color-rgb), 0.2);
+}
+
+.mcp-connection-section {
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+.mcp-connection-card {
+  padding: 20px;
+  max-width: 900px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mcp-connection-card--muted {
+  opacity: 0.9;
+}
+
+.mcp-connection-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.mcp-connection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-block-start: 4px;
+}
+
+.mcp-configure-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--main-color), #667eea);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+  }
+}
+
+.mcp-docs-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--main-color);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+@media (max-width: 768px) {
+  .mcp-connection-card {
+    padding: 16px;
+  }
+
+  .mcp-connection-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .mcp-configure-cta {
+    justify-content: center;
+  }
+
+  .mcp-docs-link {
+    justify-content: center;
+  }
 }
 </style>

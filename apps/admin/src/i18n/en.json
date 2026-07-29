@@ -458,5 +458,16 @@
   "Search tools": "Search tools",
   "No tools match your search": "No tools match your search",
   "Copy to clipboard": "Copy to clipboard",
-  "Copied to clipboard": "Copied to clipboard"
+  "Copied to clipboard": "Copied to clipboard",
+  "Copy": "Copy",
+  "Connection": "Connection",
+  "MCP connection details": "Connection details",
+  "MCP endpoint": "MCP endpoint",
+  "MCP endpoint helper": "This URL is specific to your tenant. MCP clients use it after you enable the server and configure OAuth callback URLs.",
+  "MCP overview": "MCP overview",
+  "MCP configuration guide": "Configuration guide",
+  "MCP client setup": "Client setup",
+  "MCP connection": "MCP connection",
+  "MCP dashboard description": "Connect remote MCP clients to this tenant using your Streamable HTTP endpoint.",
+  "Configure MCP": "Configure MCP"
 }
