@@ -2,9 +2,15 @@ import * as assert from 'node:assert/strict';
 import { createHash, randomBytes } from 'node:crypto';
 import { test } from 'node:test';
 import {
+  appendMcpAccessDeniedRedirect,
   buildMcpAuthorizePath,
+  buildMcpAuthorizePathFromQuery,
+  buildMcpConsentPageUrl,
+  buildMcpLoginRedirectUrl,
   buildMcpTokenExchangeBody,
+  decodeMcpOAuthStatePayload,
   parseMcpCallbackParams,
+  resolveMcpLoginRedirect,
 } from '../src/mcp-auth';
 
 function pkceChallenge(verifier: string): string {
@@ -174,5 +180,76 @@ test('exchangeMcpAuthorizationCode', async (t) => {
       codeVerifier: verifier,
     });
     assert.equal(body.get('code_verifier'), verifier);
+  });
+});
+
+test('mcp authorize page helpers', async (t) => {
+  await t.test('buildMcpLoginRedirectUrl encodes authorize path', () => {
+    const authorizePath = '/api/auth/mcp/authorize?redirect_uri=https%3A%2F%2Fclaude.ai';
+    assert.equal(
+      buildMcpLoginRedirectUrl(authorizePath),
+      `/login?redirect=${encodeURIComponent(authorizePath)}`,
+    );
+  });
+
+  await t.test('buildMcpConsentPageUrl encodes mcp_state', () => {
+    assert.equal(
+      buildMcpConsentPageUrl('signed.jwt.state'),
+      `/mcp/authorize?mcp_state=${encodeURIComponent('signed.jwt.state')}`,
+    );
+  });
+
+  await t.test('buildMcpAuthorizePathFromQuery mirrors authorize params', () => {
+    const path = buildMcpAuthorizePathFromQuery({
+      redirect_uri: 'cursor://anysphere.cursor-mcp/oauth/callback',
+      state: 's1',
+      code_challenge: 'cc',
+      code_challenge_method: 'S256',
+      client_id: 'cursor',
+    });
+    assert.ok(path);
+    const parsed = new URL(`https://gateway.example.com${path}`);
+    assert.equal(parsed.searchParams.get('redirect_uri'), 'cursor://anysphere.cursor-mcp/oauth/callback');
+    assert.equal(parsed.searchParams.get('state'), 's1');
+    assert.equal(parsed.searchParams.get('code_challenge'), 'cc');
+    assert.equal(parsed.searchParams.get('code_challenge_method'), 'S256');
+    assert.equal(parsed.searchParams.get('client_id'), 'cursor');
+  });
+
+  await t.test('resolveMcpLoginRedirect prefers redirect, then mcp_state, then authorize query', () => {
+    assert.equal(
+      resolveMcpLoginRedirect({ redirect: '/api/auth/mcp/authorize?redirect_uri=x' }),
+      '/api/auth/mcp/authorize?redirect_uri=x',
+    );
+    assert.equal(
+      resolveMcpLoginRedirect({ mcp_state: 'jwt' }),
+      `/mcp/authorize?mcp_state=${encodeURIComponent('jwt')}`,
+    );
+    assert.equal(
+      resolveMcpLoginRedirect({ redirect_uri: 'https://claude.ai/cb' }),
+      '/api/auth/mcp/authorize?redirect_uri=https%3A%2F%2Fclaude.ai%2Fcb',
+    );
+    assert.equal(resolveMcpLoginRedirect({}), null);
+  });
+
+  await t.test('appendMcpAccessDeniedRedirect adds error and state', () => {
+    assert.equal(
+      appendMcpAccessDeniedRedirect('cursor://cb?foo=1', 'oauth-state'),
+      'cursor://cb?foo=1&error=access_denied&state=oauth-state',
+    );
+  });
+
+  await t.test('decodeMcpOAuthStatePayload decodes JWT payload without verification', () => {
+    const payload = { ru: 'cursor://cb', s: 'oauth-state', t: 'tenant-1', cid: 'cursor' };
+    const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
+    const token = `header.${encoded}.signature`;
+
+    assert.deepEqual(decodeMcpOAuthStatePayload(token), {
+      redirectUri: 'cursor://cb',
+      state: 'oauth-state',
+      tenant: 'tenant-1',
+      clientId: 'cursor',
+    });
+    assert.equal(decodeMcpOAuthStatePayload('not-a-jwt'), null);
   });
 });

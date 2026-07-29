@@ -123,6 +123,7 @@ export default defineConfig({
           { text: 'Overview', link: '/auth/' },
           { text: 'Email & Password', link: '/auth/email-password' },
           { text: 'Social Authentication', link: '/auth/social-auth' },
+          { text: 'MCP OAuth (Integrator Apps)', link: '/auth/mcp-oauth-integrators' },
           { text: 'Cookie Token Lifecycle', link: '/auth/cookie-tokens' },
           { text: 'API Token Management', link: '/auth/api-tokens' },
           { text: 'Permissions & Roles', link: '/auth/permissions-roles' },

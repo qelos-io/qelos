@@ -65,4 +65,5 @@ Configure [permitted tools](./tools.md) at any point before or after connecting 
 | [Configuration](./configuration.md) | Admin-panel setup: enable the server, admin-only mode, OAuth callback URLs, validation rules, and the browser consent flow |
 | [Permitted tools](./tools.md) | Tool categories, role and workspace restrictions, authorization rules, and recommended starting configs |
 | [Client setup](./clients.md) | Connect Cursor, Claude, ChatGPT, and Devin — callback URLs, server URL, OAuth consent, and troubleshooting |
+| [Custom frontend (integrator apps)](/auth/mcp-oauth-integrators) | Host your own `/login` and `/mcp/authorize` when the tenant runs behind `@qelos/integrator-*` |
 | [Examples & Ideas](./examples.md) | Prompts, expected outcomes, and workflow ideas once connected |

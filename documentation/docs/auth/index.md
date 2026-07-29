@@ -19,6 +19,7 @@ workspaces and roles.
 - [Auth modes overview](#auth-modes) — cookie vs OAuth vs API token
 - [Email & password signup / signin](./email-password)
 - [Social authentication (OAuth providers)](./social-auth) — includes [Nuxt + Netlify reference](./social-auth.md#nuxt-netlify-reference-implementation)
+- [MCP OAuth for integrator apps](./mcp-oauth-integrators) — custom `/login` and `/mcp/authorize` with the SDK
 - [Cookie token lifecycle and refresh](./cookie-tokens)
 - [API token management](./api-tokens)
 - [Permissions and roles](./permissions-roles)

@@ -160,6 +160,14 @@ import { requireUser } from '@qelos/integrator-express';
 app.get('/private', requireUser((req, res) => res.json(req.qelos.user)));
 ```
 
+## MCP OAuth
+
+When your custom domain serves MCP clients as an OAuth issuer, add `/login` and
+`/mcp/authorize` routes and use the re-exported MCP helpers
+(`resolveMcpLoginRedirect`, `decodeMcpOAuthStatePayload`,
+`completeMcpAuthorizationCallback`, …). See the Qelos docs:
+[MCP OAuth for integrator apps](https://docs.qelos.io/auth/mcp-oauth-integrators).
+
 ## Workspace resolution
 
 `req.qelos.workspace` defaults to whatever the managed Qelos app reports on

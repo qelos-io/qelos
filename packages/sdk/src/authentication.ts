@@ -16,6 +16,8 @@ export type {
   McpCallbackParams,
   McpTokenExchangeOptions,
   McpTokenExchangeResult,
+  DecodedMcpOAuthStatePayload,
+  McpPagePathOptions,
 } from './mcp-auth';
 
 export { parseMcpCallbackParams } from './mcp-auth';

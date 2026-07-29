@@ -32,7 +32,7 @@ Every guide covers the same six steps:
 1. **Install** the integrator and the SDK.
 2. **Configure** the middleware / module.
 3. **Access** the user and workspace from your routes.
-4. **Handle** authentication — login, social auth, token refresh.
+4. **Handle** authentication — login, social auth, [MCP OAuth consent pages](../auth/mcp-oauth-integrators), token refresh.
 5. **Query** entities through the request-scoped SDK.
 6. **Common patterns and gotchas.**
 
@@ -82,6 +82,20 @@ the gateway directly.
 
 The Python integrator uses snake_case for the same fields (`app_url`,
 `api_token`, `require_auth`, `skip_paths`, `disable_proxy`, `sdk_options`).
+
+## MCP OAuth with a custom frontend
+
+When your custom domain is the MCP OAuth issuer (Cursor / Claude connect to
+your tenant), Qelos redirects users to `/login` and `/mcp/authorize` on that
+domain during authorization. Implement those routes in your app and use SDK
+helpers for URL construction, login resume, and consent display.
+
+`@qelos/integrator-express` and `@qelos/integrator-next` re-export
+`completeMcpAuthorizationCallback`, `resolveMcpLoginRedirect`,
+`decodeMcpOAuthStatePayload`, and related helpers from `@qelos/sdk`.
+
+See **[MCP OAuth for integrator apps](../auth/mcp-oauth-integrators)** for the
+full flow, checklist, and code samples.
 
 ## Picking the right one
 

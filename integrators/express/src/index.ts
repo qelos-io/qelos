@@ -34,6 +34,27 @@ export {
   type SocialCallbackInput,
 } from './social-auth';
 
+export {
+  completeMcpAuthorizationCallback,
+  appendMcpAccessDeniedRedirect,
+  buildMcpAuthorizePath,
+  buildMcpAuthorizePathFromQuery,
+  buildMcpConsentPageUrl,
+  buildMcpLoginRedirectUrl,
+  buildMcpTokenExchangeBody,
+  decodeMcpOAuthStatePayload,
+  parseMcpCallbackParams,
+  resolveMcpLoginRedirect,
+  type CompleteMcpAuthorizationCallbackOptions,
+  type DecodedMcpOAuthStatePayload,
+  type McpAuthorizeOptions,
+  type McpCallbackInput,
+  type McpCallbackParams,
+  type McpPagePathOptions,
+  type McpTokenExchangeOptions,
+  type McpTokenExchangeResult,
+} from './mcp-auth';
+
 export interface QelosIntegrator {
   /**
    * User-resolution middleware. Forwards inbound cookies to `/api/me` and

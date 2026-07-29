@@ -35,6 +35,21 @@ export interface McpCallbackParams {
   errorDescription?: string;
 }
 
+/** Decoded MCP OAuth state JWT payload (display only — not verified). */
+export interface DecodedMcpOAuthStatePayload {
+  redirectUri?: string;
+  state?: string;
+  codeChallenge?: string;
+  codeChallengeMethod?: string;
+  tenant?: string;
+  clientId?: string;
+}
+
+export interface McpPagePathOptions {
+  loginPath?: string;
+  consentPath?: string;
+}
+
 function readQueryValue(
   input: Record<string, string | string[] | undefined>,
   key: string,
@@ -132,6 +147,133 @@ export function buildMcpAuthorizePath(options: McpAuthorizeOptions): string {
   if (options.codeChallengeMethod) search.set('code_challenge_method', options.codeChallengeMethod);
   if (options.clientId) search.set('client_id', options.clientId);
   return `/api/auth/mcp/authorize?${search.toString()}`;
+}
+
+/**
+ * Build `/api/auth/mcp/authorize?…` from OAuth authorize query params
+ * (e.g. when `/mcp/authorize` receives a direct client redirect).
+ */
+export function buildMcpAuthorizePathFromQuery(
+  query: Record<string, string | string[] | undefined>,
+): string | null {
+  const redirectUri = readQueryValue(query, 'redirect_uri');
+  if (!redirectUri) {
+    return null;
+  }
+
+  const options: McpAuthorizeOptions = { redirectUri };
+  const state = readQueryValue(query, 'state');
+  const codeChallenge = readQueryValue(query, 'code_challenge');
+  const codeChallengeMethod = readQueryValue(query, 'code_challenge_method');
+  const clientId = readQueryValue(query, 'client_id');
+  if (state) options.state = state;
+  if (codeChallenge) options.codeChallenge = codeChallenge;
+  if (codeChallengeMethod) options.codeChallengeMethod = codeChallengeMethod;
+  if (clientId) options.clientId = clientId;
+  return buildMcpAuthorizePath(options);
+}
+
+/** Login redirect used by Qelos after an unauthenticated MCP authorize request. */
+export function buildMcpLoginRedirectUrl(
+  authorizePath: string,
+  options?: Pick<McpPagePathOptions, 'loginPath'>,
+): string {
+  const loginPath = options?.loginPath ?? '/login';
+  return `${loginPath}?redirect=${encodeURIComponent(authorizePath)}`;
+}
+
+/** Consent page URL issued after the user signs in during MCP OAuth. */
+export function buildMcpConsentPageUrl(
+  mcpState: string,
+  options?: Pick<McpPagePathOptions, 'consentPath'>,
+): string {
+  const consentPath = options?.consentPath ?? '/mcp/authorize';
+  return `${consentPath}?mcp_state=${encodeURIComponent(mcpState)}`;
+}
+
+/**
+ * Resolve the post-login redirect target from login-page query params.
+ * Matches the resume logic used by the Qelos admin login flow.
+ */
+export function resolveMcpLoginRedirect(
+  query: Record<string, string | string[] | undefined>,
+  options?: McpPagePathOptions,
+): string | null {
+  const redirect = readQueryValue(query, 'redirect');
+  if (redirect) {
+    return redirect;
+  }
+
+  const mcpState = readQueryValue(query, 'mcp_state');
+  if (mcpState) {
+    return buildMcpConsentPageUrl(mcpState, options);
+  }
+
+  return buildMcpAuthorizePathFromQuery(query);
+}
+
+/** Redirect URI with `error=access_denied` for MCP consent denial. */
+export function appendMcpAccessDeniedRedirect(
+  redirectUri: string,
+  oauthState?: string | null,
+): string {
+  try {
+    const url = new URL(redirectUri);
+    url.searchParams.set('error', 'access_denied');
+    if (oauthState) {
+      url.searchParams.set('state', oauthState);
+    }
+    return url.toString();
+  } catch {
+    const separator = redirectUri.includes('?') ? '&' : '?';
+    let result = `${redirectUri}${separator}error=access_denied`;
+    if (oauthState) {
+      result += `&state=${encodeURIComponent(oauthState)}`;
+    }
+    return result;
+  }
+}
+
+/**
+ * Decode the signed `mcp_state` JWT payload for display on a consent page.
+ * Does not verify the signature — use only for UI labels, not authorization.
+ */
+export function decodeMcpOAuthStatePayload(mcpState: string): DecodedMcpOAuthStatePayload | null {
+  if (!mcpState) {
+    return null;
+  }
+
+  try {
+    const parts = mcpState.split('.');
+    if (parts.length !== 3 || !parts[1]) {
+      return null;
+    }
+
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const json =
+      typeof globalThis.atob === 'function'
+        ? globalThis.atob(base64)
+        : Buffer.from(base64, 'base64').toString('utf8');
+    const decoded = JSON.parse(json) as {
+      ru?: string;
+      s?: string;
+      cc?: string;
+      ccm?: string;
+      t?: string;
+      cid?: string;
+    };
+
+    const payload: DecodedMcpOAuthStatePayload = {};
+    if (decoded.ru) payload.redirectUri = decoded.ru;
+    if (decoded.s) payload.state = decoded.s;
+    if (decoded.cc) payload.codeChallenge = decoded.cc;
+    if (decoded.ccm) payload.codeChallengeMethod = decoded.ccm;
+    if (decoded.t) payload.tenant = decoded.t;
+    if (decoded.cid) payload.clientId = decoded.cid;
+    return payload.redirectUri ? payload : null;
+  } catch {
+    return null;
+  }
 }
 
 export interface McpOAuthTokenResponse {
