@@ -57,7 +57,7 @@ async function handleMcpRequest(req: McpRequest, res: Response): Promise<void> {
         apiKey: extractApiKey(req),
       };
 
-      const server = createMcpServer(req.mcpConfiguration!, req.user!, credentials);
+      const server = await createMcpServer(req.mcpConfiguration!, req.user!, credentials);
       sessionEntry = {
         transport,
         user: req.user!,

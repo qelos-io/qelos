@@ -48,6 +48,7 @@
       <div class="nav-group" v-if="isEditingEnabled || (isAdmin && !hasPages)">
         <el-menu-item
           id="menu-item-create-new-page"
+          index="create-new-page"
           @click="openDrawer"
           :data-title="$t('Create New Page')"
         >

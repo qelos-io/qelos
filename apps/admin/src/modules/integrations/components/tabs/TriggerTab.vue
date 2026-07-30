@@ -53,6 +53,10 @@ const selectedTriggerSource = computed(() => store.result?.find(s => s._id === p
 
 const isQelosWebhook = computed(() => selectedTriggerSource.value?.kind === IntegrationSourceKind.Qelos && props.modelValue.operation === QelosTriggerOperation.webhook);
 
+const isOpenAIFunctionCalling = computed(() => selectedTriggerSource.value?.kind === IntegrationSourceKind.OpenAI && props.modelValue.operation === OpenAITriggerOperation.functionCalling);
+const isMcpTool = computed(() => selectedTriggerSource.value?.kind === IntegrationSourceKind.Qelos && props.modelValue.operation === QelosTriggerOperation.mcpTool);
+const isToolCalling = computed(() => isOpenAIFunctionCalling.value || isMcpTool.value);
+
 const chosenFromSample = ref(false);
 const canLoadWebhookSamples = computed(() => {
   if (!isQelosWebhook.value) return false;
@@ -262,33 +266,29 @@ const formatEventTimestamp = (value?: string | Date) => {
   }
 };
 
-// Update function calling details
+// Update function calling / MCP tool details (both share the name/description/parameters JSON-schema shape)
 const updateFunctionCallingDetails = () => {
+  let parameters: any = {};
   try {
-    const parameters = JSON.parse(functionParameters.value);
-    const newModelValue = { ...props.modelValue };
-    newModelValue.details = {
-      ...newModelValue.details,
-      name: functionName.value,
-      description: functionDescription.value,
-      parameters: parameters,
-      allowedIntegrationIds: allowedIntegrationIds.value,
-      blockedIntegrationIds: blockedIntegrationIds.value
-    };
-    emit('update:modelValue', newModelValue);
+    parameters = JSON.parse(functionParameters.value);
   } catch (e) {
-    // Still update name and description even if parameters are invalid
-    const newModelValue = { ...props.modelValue };
-    newModelValue.details = {
-      ...newModelValue.details,
-      name: functionName.value,
-      description: functionDescription.value,
-      parameters: {}, // Default to empty object if JSON is invalid
+    // Default to empty object if JSON is invalid, but still update name/description
+  }
+
+  const newModelValue = { ...props.modelValue };
+  newModelValue.details = {
+    ...newModelValue.details,
+    name: functionName.value,
+    description: functionDescription.value,
+    parameters,
+    // allow/block lists only apply to OpenAI function-calling consumers; MCP tool
+    // exposure is controlled via the MCP configuration's exposedTools instead.
+    ...(isMcpTool.value ? {} : {
       allowedIntegrationIds: allowedIntegrationIds.value,
       blockedIntegrationIds: blockedIntegrationIds.value
-    };
-    emit('update:modelValue', newModelValue);
-  }
+    })
+  };
+  emit('update:modelValue', newModelValue);
 };
 
 // Handle source change
@@ -308,10 +308,9 @@ const handleOperationChange = () => {
   selectedTriggerOperation.value = operation;
   
   const newModelValue = { ...props.modelValue };
-  
-  // Special handling for OpenAI function calling
-  if (selectedTriggerSource.value?.kind === IntegrationSourceKind.OpenAI && 
-      props.modelValue.operation === OpenAITriggerOperation.functionCalling) {
+
+  // Special handling for OpenAI function calling / Qelos MCP tool (share the same tool-calling shape)
+  if (isToolCalling.value) {
     newModelValue.details = {
       name: '',
       description: '',
@@ -348,9 +347,8 @@ onMounted(() => {
     const operation = triggerOperations[selectedTriggerSource.value?.kind]?.find(o => o.name === props.modelValue.operation);
     selectedTriggerOperation.value = operation;
     
-    // Initialize function calling form fields if we're in functionCalling mode
-    if (selectedTriggerSource.value?.kind === IntegrationSourceKind.OpenAI && 
-        props.modelValue.operation === OpenAITriggerOperation.functionCalling) {
+    // Initialize function calling / MCP tool form fields
+    if (isToolCalling.value) {
       const details = props.modelValue.details || {};
       functionName.value = details.name || '';
       functionDescription.value = details.description || '';
@@ -641,10 +639,11 @@ watch(
         </div>
       </div>
       
-      <!-- OpenAI Function Calling Form -->
-      <div v-else-if="selectedTriggerSource?.kind === IntegrationSourceKind.OpenAI && modelValue.operation === OpenAITriggerOperation.functionCalling" class="function-calling-form">
+      <!-- OpenAI Function Calling / Qelos MCP Tool Form (share the same tool-calling shape) -->
+      <div v-else-if="isToolCalling" class="function-calling-form">
         <div class="function-calling-info">
-          <p class="help-text">Configure the function that OpenAI can call. The parameters should be a valid JSON schema.</p>
+          <p v-if="isMcpTool" class="help-text">Configure the tool that will be exposed on the MCP server. The parameters should be a valid JSON schema.</p>
+          <p v-else class="help-text">Configure the function that OpenAI can call. The parameters should be a valid JSON schema.</p>
         </div>
         <el-form label-position="top">
           <el-form-item label="Function Name" required>
@@ -670,7 +669,7 @@ watch(
             @update:modelValue="updateFunctionCallingDetails"
           />
 
-          <div class="integration-access">
+          <div v-if="!isMcpTool" class="integration-access">
             <button class="collapse-header" type="button" @click="integrationAccessCollapsed = !integrationAccessCollapsed">
               <div class="header-content">
                 <strong>Integration Access Control</strong>

@@ -14,6 +14,11 @@ export interface McpToolHandlerContext {
 
 export interface McpToolDefinition {
   id: string;
+  /**
+   * Name registered with the MCP client (what the LLM invokes). Falls back to `id` when unset.
+   * Kept distinct from `id` so dynamic, admin-renameable tools keep a stable authorization key.
+   */
+  name?: string;
   category: string;
   title: string;
   description: string;

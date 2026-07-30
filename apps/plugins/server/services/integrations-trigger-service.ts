@@ -16,6 +16,10 @@ const supportedSources: Record<IntegrationSourceKind, Record<string, { required:
     apiWebhook: {
       required: [],
       optional: ['name']
+    },
+    mcpTool: {
+      required: ['name', 'description'],
+      optional: ['parameters']
     }
   },
   [IntegrationSourceKind.ClaudeAi]: null,

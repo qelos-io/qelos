@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { IMcpConfigurationMetadata } from '@qelos/global-types';
 import { createSdkContext, type McpSdkCredentials } from '../services/sdk-context';
 import { getAuthorizedTools } from '../tools/authorize-tool';
+import { getDynamicToolDefinitions } from '../tools/dynamic-tools';
 import type { McpUserContext } from '../types';
 
 function formatToolResult(result: unknown) {
@@ -28,17 +29,18 @@ function formatToolError(error: unknown) {
   };
 }
 
-export function createMcpServer(
+export async function createMcpServer(
   configuration: IMcpConfigurationMetadata,
   user: McpUserContext,
   credentials: McpSdkCredentials,
-): McpServer {
+): Promise<McpServer> {
   const server = new McpServer({
     name: configuration.serverName || 'qelos-mcp',
     version: configuration.serverVersion || '1.0.0',
   });
 
-  const authorizedTools = getAuthorizedTools(configuration, user);
+  const dynamicTools = await getDynamicToolDefinitions(user.tenant).catch(() => []);
+  const authorizedTools = getAuthorizedTools(configuration, user, dynamicTools);
   const sdkContext = createSdkContext({
     tenant: user.tenant,
     user,
@@ -47,7 +49,7 @@ export function createMcpServer(
 
   for (const tool of authorizedTools) {
     server.registerTool(
-      tool.id,
+      tool.name || tool.id,
       {
         title: tool.title,
         description: tool.description,

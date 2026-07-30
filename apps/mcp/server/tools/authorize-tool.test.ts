@@ -198,5 +198,52 @@ describe('authorize-tool', () => {
 
       assert.deepEqual(getAuthorizedTools(configuration, user()), []);
     });
+
+    it('merges dynamic extraTools with the static registry and applies the same rules', () => {
+      const dynamicTool = {
+        id: 'integration:1',
+        name: 'my_tool',
+        category: 'integrations',
+        title: 'My tool',
+        description: 'A dynamic tool',
+        inputSchema: {},
+        requiredPrivilege: 'user' as const,
+        handler: async () => ({}),
+      };
+
+      const configuration = {
+        ...baseConfiguration,
+        exposedTools: [
+          exposedTool({ toolId: 'workspaces' }),
+          exposedTool({ toolId: 'integration:1' }),
+        ],
+      };
+
+      const authorized = getAuthorizedTools(configuration, user(), [dynamicTool]);
+      const ids = authorized.map((tool) => tool.id);
+
+      assert.deepEqual(ids, ['list-workspaces', 'integration:1']);
+    });
+
+    it('excludes dynamic tools that are not enabled in exposedTools', () => {
+      const dynamicTool = {
+        id: 'integration:1',
+        name: 'my_tool',
+        category: 'integrations',
+        title: 'My tool',
+        description: 'A dynamic tool',
+        inputSchema: {},
+        requiredPrivilege: 'user' as const,
+        handler: async () => ({}),
+      };
+
+      const configuration = {
+        ...baseConfiguration,
+        exposedTools: [exposedTool({ toolId: 'workspaces' })],
+      };
+
+      const authorized = getAuthorizedTools(configuration, user(), [dynamicTool]);
+      assert.deepEqual(authorized.map((tool) => tool.id), ['list-workspaces']);
+    });
   });
 });

@@ -218,8 +218,8 @@
           <div class="tool-card-header">
             <div class="tool-name-cell">
               <div class="tool-name-line">
-                <strong>{{ $t(getToolLabelKey(row.toolId)) }}</strong>
-                <el-tooltip :content="$t(getToolDescriptionKey(row.toolId))" placement="top">
+                <strong>{{ getToolLabel(row.toolId) }}</strong>
+                <el-tooltip :content="getToolDescription(row.toolId)" placement="top">
                   <el-icon class="tool-info-icon"><QuestionFilled /></el-icon>
                 </el-tooltip>
               </div>
@@ -297,7 +297,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Search, QuestionFilled } from '@element-plus/icons-vue';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
@@ -307,8 +307,9 @@ import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import McpEndpointPanel from '@/modules/configurations/components/McpEndpointPanel.vue';
 import { useNotifications } from '@/modules/core/compositions/notifications';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 import type { IMcpConfigurationMetadata, IMcpExposedTool } from '@qelos/global-types';
-import { MCP_FORBIDDEN_TOOL_IDS } from '@qelos/global-types';
+import { MCP_FORBIDDEN_TOOL_IDS, IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
 import { KNOWN_MCP_TOOLS } from '@/modules/configurations/constants/mcp-known-tools';
 import {
   CALLBACK_URL_CLIENT_HINTS,
@@ -329,6 +330,7 @@ const emit = defineEmits(['save']);
 const { t: $t } = useI18n();
 const notifications = useNotifications();
 const wsConfig = useWsConfiguration();
+const integrationsStore = useIntegrationsStore();
 
 const clickableCallbackHints = CLICKABLE_CALLBACK_CLIENT_HINTS;
 const genericCallbackHints = CALLBACK_URL_CLIENT_HINTS.filter((hint) => hint.clickable === false);
@@ -345,10 +347,32 @@ const defaultMetadata: IMcpConfigurationMetadata = {
   loginUrl: '',
 };
 
+// Must be declared before `edited` — normalizeMetadata() (called synchronously below)
+// reads mcpToolIntegrations.value via mergeExposedTools() to seed dynamic tool rows.
+const mcpToolIntegrations = computed(() =>
+  (integrationsStore.integrations || []).filter(
+    (integration) =>
+      integration.active &&
+      integration.kind?.[0] === IntegrationSourceKind.Qelos &&
+      integration.trigger?.operation === QelosTriggerOperation.mcpTool,
+  ),
+);
+
 const edited = ref<IMcpConfigurationMetadata>(normalizeMetadata(props.metadata));
 const toolsSearch = ref('');
 
 const wsConfigActive = computed(() => wsConfig.isActive);
+
+const integrationToolMeta = computed(() => {
+  const map = new Map<string, { label: string; description: string }>();
+  mcpToolIntegrations.value.forEach((integration) => {
+    map.set(`integration:${integration._id}`, {
+      label: integration.trigger.details?.name || integration._id,
+      description: integration.trigger.details?.description || '',
+    });
+  });
+  return map;
+});
 
 const enabledToolsCount = computed(
   () => edited.value.exposedTools.filter((tool) => tool.enabled).length,
@@ -360,7 +384,7 @@ const filteredExposedTools = computed(() => {
     return edited.value.exposedTools;
   }
   return edited.value.exposedTools.filter((tool) => {
-    const label = $t(getToolLabelKey(tool.toolId)).toLowerCase();
+    const label = getToolLabel(tool.toolId).toLowerCase();
     return tool.toolId.toLowerCase().includes(query) || label.includes(query);
   });
 });
@@ -397,9 +421,10 @@ function mergeExposedTools(saved: IMcpExposedTool[] = []): IMcpExposedTool[] {
   const savedById = new Map(
     saved.filter((tool) => !forbiddenToolIds.has(tool.toolId)).map((tool) => [tool.toolId, tool]),
   );
-  const knownIds = new Set(KNOWN_MCP_TOOLS.map((tool) => tool.toolId));
+  const dynamicToolIds = mcpToolIntegrations.value.map((integration) => `integration:${integration._id}`);
+  const knownIds = new Set([...KNOWN_MCP_TOOLS.map((tool) => tool.toolId), ...dynamicToolIds]);
 
-  const merged = KNOWN_MCP_TOOLS.map(({ toolId }) => {
+  const merged = [...KNOWN_MCP_TOOLS.map((tool) => tool.toolId), ...dynamicToolIds].map((toolId) => {
     const existing = savedById.get(toolId);
     return existing ? { ...defaultExposedTool(toolId), ...existing, toolId } : defaultExposedTool(toolId);
   });
@@ -433,6 +458,22 @@ function getToolLabelKey(toolId: string): string {
 function getToolDescriptionKey(toolId: string): string {
   return KNOWN_MCP_TOOLS.find((tool) => tool.toolId === toolId)?.descriptionKey || toolId;
 }
+
+// Dynamic (integration-backed) tool labels/descriptions are admin-provided free text,
+// not i18n keys, so they're resolved directly instead of passing through $t(...).
+function getToolLabel(toolId: string): string {
+  const dynamic = integrationToolMeta.value.get(toolId);
+  return dynamic ? dynamic.label : $t(getToolLabelKey(toolId));
+}
+
+function getToolDescription(toolId: string): string {
+  const dynamic = integrationToolMeta.value.get(toolId);
+  return dynamic ? dynamic.description : $t(getToolDescriptionKey(toolId));
+}
+
+watch(mcpToolIntegrations, () => {
+  edited.value.exposedTools = mergeExposedTools(edited.value.exposedTools);
+});
 
 function setAllToolsEnabled(enabled: boolean) {
   edited.value.exposedTools = edited.value.exposedTools.map((tool) => ({ ...tool, enabled }));

@@ -34,3 +34,24 @@ export async function getIntegrationTools(req, res) {
     res.status(500).json({ message: 'Error fetching tools integrations' });
   }
 }
+
+export async function getMcpToolIntegrations(req, res) {
+  try {
+    const tenant = req.headers.tenant as string;
+
+    const tools = await cacheManager.wrap(`mcp-tool-integrations:${tenant}`, async () => {
+      const toolsIntegrations = await Integration.find({
+        active: true,
+        tenant,
+        'kind.0': 'qelos',
+        'trigger.operation': 'mcpTool',
+      }).lean().exec();
+      return toolsIntegrations ? JSON.stringify(toolsIntegrations) : '';
+    }, { ttl: 60 * 5 });
+
+    res.status(200).set('Content-Type', 'application/json').end(tools || '[]');
+  } catch (error) {
+    logger.error('Error fetching MCP tool integrations', error);
+    res.status(500).json({ message: 'Error fetching MCP tool integrations' });
+  }
+}

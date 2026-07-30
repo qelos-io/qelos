@@ -139,6 +139,15 @@ export function useIntegrationKindsTriggerOperations() {
         name: QelosTriggerOperation.apiWebhook,
         label: 'API Webhook',
         details: {}
+      },
+      {
+        name: QelosTriggerOperation.mcpTool,
+        label: 'MCP Tool',
+        details: {
+          name: '',
+          description: '',
+          parameters: { type: 'object', properties: {}, required: [] }
+        }
       }
     ],
     [IntegrationSourceKind.N8n]: [],

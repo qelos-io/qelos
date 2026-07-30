@@ -92,12 +92,13 @@ export function isToolAuthorized(
 export function getAuthorizedTools(
   configuration: IMcpConfigurationMetadata,
   user: McpUserContext,
+  extraTools: McpToolDefinition[] = [],
 ): McpToolDefinition[] {
   if (!isUserAllowedForMcp(configuration, user)) {
     return [];
   }
 
-  return MCP_TOOL_REGISTRY.filter((tool) => isToolAuthorized(tool, configuration, user));
+  return [...MCP_TOOL_REGISTRY, ...extraTools].filter((tool) => isToolAuthorized(tool, configuration, user));
 }
 
 export function getRegistryTool(toolId: string): McpToolDefinition | undefined {

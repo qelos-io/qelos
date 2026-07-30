@@ -40,6 +40,7 @@ export enum QelosTriggerOperation {
   webhook = 'webhook',
   apiWebhook = 'apiWebhook',
   chatCompletion = 'chatCompletion',
+  mcpTool = 'mcpTool',
 }
 
 export enum QelosTargetOperation {
