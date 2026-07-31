@@ -69,6 +69,7 @@ watch(visible, (value) => {
             form.trigger = { ...parsed.trigger };
             form.target = { ...parsed.target };
             form.dataManipulation = parsed.dataManipulation || [];
+            form.targetManipulation = parsed.targetManipulation || [];
             form.active = parsed.active || false;
             
             // After applying cloned data, we need to update the view mode
@@ -137,6 +138,16 @@ const applyPastedIntegration = () => {
       form.dataManipulation = [];
     }
 
+    if (parsedContent.targetManipulation && Array.isArray(parsedContent.targetManipulation)) {
+      form.targetManipulation = parsedContent.targetManipulation.map((row: any) => {
+        const newRow = { ...row };
+        delete newRow._id;
+        return newRow;
+      });
+    } else {
+      form.targetManipulation = [];
+    }
+
     pasteDialogVisible.value = false;
     ElMessage.success('Integration object applied successfully');
   } catch (error) {
@@ -198,6 +209,7 @@ const applyPastedIntegration = () => {
             v-model:trigger="form.trigger"
             v-model:target="form.target"
             v-model:data-manipulation="form.dataManipulation"
+            v-model:target-manipulation="form.targetManipulation"
             :integration-id="props.editingIntegration?._id"
           />
         </div>

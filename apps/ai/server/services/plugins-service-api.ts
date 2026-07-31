@@ -100,11 +100,12 @@ export function getSourceAuthentication(tenant: string, sourceId: string): Promi
   return callPluginsService(`/internal-api/integration-sources/${sourceId}`, tenant);
 }
 
-export function triggerIntegrationSource(tenant: string, sourceId: string, { payload, operation, details }: { payload: any, operation: string, details: any }) {
+export function triggerIntegrationSource(tenant: string, sourceId: string, { payload, operation, details, targetManipulation }: { payload: any, operation: string, details: any, targetManipulation?: IDataManipulationStep[] }) {
   return callPluginsService(`/internal-api/integration-sources/${sourceId}/trigger`, tenant, {
     payload,
     operation,
-    details
+    details,
+    targetManipulation
   }, 'POST');
 }
 

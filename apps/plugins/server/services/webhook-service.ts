@@ -34,7 +34,7 @@ export async function triggerWebhookService(
     
     const integration = await Integration
       .findOne(query)
-      .select('target trigger kind dataManipulation')
+      .select('target trigger kind dataManipulation targetManipulation')
       .lean()
       .exec();
 
@@ -122,7 +122,7 @@ export async function triggerWebhookService(
     }
 
     // Call the integration target
-    const result = await callIntegrationTarget(tenant, finalPayload, integration.target as IIntegrationEntity);
+    const result = await callIntegrationTarget(tenant, finalPayload, integration.target as IIntegrationEntity, integration.targetManipulation);
     return result;
   } catch (error) {
     logger.error('Error triggering webhook from service', error);

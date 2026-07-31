@@ -491,6 +491,31 @@ export const createIntegrationCalling = {
           },
           description: 'Steps to manipulate data between trigger and target'
         },
+        targetManipulation: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              map: {
+                type: 'object',
+                description: 'JQ expressions to map the target result'
+              },
+              populate: {
+                type: 'object',
+                description: 'Data to populate from Qelos sources'
+              },
+              clean: {
+                type: 'boolean',
+                description: 'Whether to clean the data'
+              },
+              abort: {
+                type: ['boolean', 'string'],
+                description: 'Condition to abort the integration'
+              }
+            }
+          },
+          description: 'Optional steps to manipulate the target\'s result before it is returned or passed onward'
+        },
         active: {
           type: 'boolean',
           description: 'Whether the integration should be active immediately',
@@ -500,7 +525,7 @@ export const createIntegrationCalling = {
       required: ['trigger', 'target']
     },
   },
-  handler: async (req, payload: any = { trigger: {}, target: {}, dataManipulation: [], active: true }) => {
+  handler: async (req, payload: any = { trigger: {}, target: {}, dataManipulation: [], targetManipulation: [], active: true }) => {
     const tenant = req.headers.tenant;
     const user = req.headers.user;
 
@@ -518,6 +543,7 @@ export const createIntegrationCalling = {
         trigger: payload.trigger as IIntegrationEntity,
         target: payload.target as IIntegrationEntity,
         dataManipulation: payload.dataManipulation as IDataManipulationStep[] || [],
+        targetManipulation: payload.targetManipulation as IDataManipulationStep[] || [],
         active: payload.active !== false, // Default to true if not specified
         kind: ['integration'] // Default kind
       };
@@ -604,6 +630,31 @@ export const updateIntegrationCalling = {
           },
           description: 'Steps to manipulate data between trigger and target'
         },
+        targetManipulation: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              map: {
+                type: 'object',
+                description: 'JQ expressions to map the target result'
+              },
+              populate: {
+                type: 'object',
+                description: 'Data to populate from Qelos sources'
+              },
+              clean: {
+                type: 'boolean',
+                description: 'Whether to clean the data'
+              },
+              abort: {
+                type: ['boolean', 'string'],
+                description: 'Condition to abort the integration'
+              }
+            }
+          },
+          description: 'Optional steps to manipulate the target\'s result before it is returned or passed onward'
+        },
         active: {
           type: 'boolean',
           description: 'Whether the integration should be active'
@@ -627,6 +678,7 @@ export const updateIntegrationCalling = {
       if (payload.trigger !== undefined) updates.trigger = payload.trigger;
       if (payload.target !== undefined) updates.target = payload.target;
       if (payload.dataManipulation !== undefined) updates.dataManipulation = payload.dataManipulation;
+      if (payload.targetManipulation !== undefined) updates.targetManipulation = payload.targetManipulation;
       if (payload.active !== undefined) updates.active = payload.active;
 
       const result = await updateIntegration(tenant, user, payload.integrationId, updates);

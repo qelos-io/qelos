@@ -4,11 +4,13 @@ import type { IIntegration } from '@qelos/global-types';
 
 const getMcpToolIntegrationsMock = mock.fn<(...args: any[]) => any>();
 const triggerIntegrationSourceMock = mock.fn<(...args: any[]) => any>();
+const executeDataManipulationMock = mock.fn<(...args: any[]) => any>(async (_tenant: string, payload: any) => payload);
 
 mock.module('../services/plugins-service-api.js', {
   namedExports: {
     getMcpToolIntegrations: getMcpToolIntegrationsMock,
     triggerIntegrationSource: triggerIntegrationSourceMock,
+    executeDataManipulation: executeDataManipulationMock,
   },
 });
 
@@ -30,6 +32,7 @@ function integration(overrides: Partial<IIntegration> = {}): IIntegration {
       details: { url: '/weather' },
     },
     dataManipulation: [],
+    targetManipulation: [],
     created: new Date(),
     ...overrides,
   };
@@ -104,7 +107,48 @@ describe('mapIntegrationToToolDefinition', () => {
       payload: { city: 'Tel Aviv' },
       operation: 'makeRequest',
       details: { url: '/weather' },
+      targetManipulation: [],
     });
+  });
+
+  it('applies dataManipulation to the input before calling the target', async () => {
+    triggerIntegrationSourceMock.mock.resetCalls();
+    triggerIntegrationSourceMock.mock.mockImplementation(async () => ({ ok: true }));
+    executeDataManipulationMock.mock.resetCalls();
+    executeDataManipulationMock.mock.mockImplementation(async () => ({ arguments: { city: 'transformed' } }));
+
+    const tool = mapIntegrationToToolDefinition(
+      integration({ dataManipulation: [{ map: { city: '.city | ascii_upcase' }, populate: {} }] }),
+      new Set(),
+    )!;
+    const user = { sub: 'u1', tenant: 'tenant-1', roles: [], workspace: null };
+    await tool.handler({ sdk: {} as any, adminSdk: null, user, input: { city: 'Tel Aviv' } });
+
+    assert.equal(executeDataManipulationMock.mock.calls.length, 1);
+    const [tenant, payload, workflow] = executeDataManipulationMock.mock.calls[0].arguments;
+    assert.equal(tenant, 'tenant-1');
+    assert.deepEqual(payload, { arguments: { city: 'Tel Aviv' }, user, workspace: user.workspace });
+    assert.deepEqual(workflow, [{ map: { city: '.city | ascii_upcase' }, populate: {} }]);
+
+    const [, , options] = triggerIntegrationSourceMock.mock.calls[0].arguments;
+    assert.deepEqual(options.payload, { city: 'transformed' });
+  });
+
+  it('forwards targetManipulation steps to triggerIntegrationSource', async () => {
+    triggerIntegrationSourceMock.mock.resetCalls();
+    triggerIntegrationSourceMock.mock.mockImplementation(async () => ({ ok: true }));
+
+    const steps = [{ map: { count: '.items | length' }, populate: {} }];
+    const tool = mapIntegrationToToolDefinition(integration({ targetManipulation: steps }), new Set())!;
+    await tool.handler({
+      sdk: {} as any,
+      adminSdk: null,
+      user: { sub: 'u1', tenant: 'tenant-1', roles: [], workspace: null },
+      input: {},
+    });
+
+    const [, , options] = triggerIntegrationSourceMock.mock.calls[0].arguments;
+    assert.deepEqual(options.targetManipulation, steps);
   });
 });
 

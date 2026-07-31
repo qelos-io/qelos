@@ -320,7 +320,7 @@ export async function triggerIntegrationSource(req, res) {
   let sourceKind: string | undefined;
 
   try {
-    const { payload, operation, details } = req.body as { payload: any, operation: string, details: any };
+    const { payload, operation, details, targetManipulation } = req.body as { payload: any, operation: string, details: any, targetManipulation?: any[] };
 
     if (!isValidObjectId(sourceId)) {
       res.status(400).json({ message: 'invalid source id', code: 'INVALID_SOURCE_ID' }).end();
@@ -364,7 +364,7 @@ export async function triggerIntegrationSource(req, res) {
       details,
     };
 
-    const result = await callIntegrationTarget(tenant, payload, target as any);
+    const result = await callIntegrationTarget(tenant, payload, target as any, Array.isArray(targetManipulation) ? targetManipulation : undefined);
     if (result === undefined) {
       res.status(404).json({
         message: 'Integration source not found',

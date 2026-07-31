@@ -56,6 +56,31 @@ const IntegrationSchema = new Schema<IIntegration>({
         type: Schema.Types.Mixed,
         default: {},
       },
+      clean: {
+        type: Boolean,
+      },
+      abort: {
+        type: Schema.Types.Mixed,
+      },
+    }],
+    default: [],
+  },
+  targetManipulation: {
+    type: [{
+      map: {
+        type: Schema.Types.Mixed,
+        default: {},
+      },
+      populate: {
+        type: Schema.Types.Mixed,
+        default: {},
+      },
+      clean: {
+        type: Boolean,
+      },
+      abort: {
+        type: Schema.Types.Mixed,
+      },
     }],
     default: [],
   },

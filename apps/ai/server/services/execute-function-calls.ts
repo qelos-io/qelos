@@ -439,7 +439,8 @@ export async function executeFunctionCalls(
                   : triggerIntegrationSource(tenant, targetIntegration.target.source, {
                       payload: args,
                       operation: targetIntegration.target.operation,
-                      details: targetIntegration.target.details
+                      details: targetIntegration.target.details,
+                      targetManipulation: targetIntegration.targetManipulation
                     });
               
               // Use longer timeout for nested agent calls (functions that call other agents)

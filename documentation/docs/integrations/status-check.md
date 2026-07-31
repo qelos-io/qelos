@@ -79,4 +79,4 @@ await qelos.administrator.integrationSources.checkDraftStatus({
 - **External Qelos connections**: the sign-in check has no way to target a specific tenant on the remote instance (the `IQelosSource` type has no tenant field), so it authenticates against whichever tenant the remote host resolves by default. Internal (self) Qelos connections skip this entirely — they're always reported as connected.
 - Details are sanitized before being returned: credentials, tokens, and secrets are stripped from the `details` object regardless of provider.
 
-See also: [Payments Troubleshooting](../payments/troubleshooting.md), [Sumit Integration](../payments/sumit.md), [Lambda/Serverless Functions](../lambdas.md).
+See also: [Trigger, Data Manipulation & Target Pipeline](./pipeline.md), [Payments Troubleshooting](../payments/troubleshooting.md), [Sumit Integration](../payments/sumit.md), [Lambda/Serverless Functions](../lambdas.md).

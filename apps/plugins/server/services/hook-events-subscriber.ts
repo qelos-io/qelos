@@ -94,7 +94,7 @@ function executeIntegrationsOperations(platformEvent: IEvent, awaitedIntegration
     }
 
     // trigger integration target using calculated data:
-    await callIntegrationTarget(platformEvent.tenant, calculatedData, integration.target);
+    await callIntegrationTarget(platformEvent.tenant, calculatedData, integration.target, integration.targetManipulation);
   })).catch((err) => logger.error('failed to execute integration', err));
 }
 

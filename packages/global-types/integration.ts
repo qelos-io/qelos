@@ -33,6 +33,7 @@ export interface IIntegration {
   trigger: IIntegrationEntity;
   target: IIntegrationEntity;
   dataManipulation: IDataManipulationStep[]
+  targetManipulation: IDataManipulationStep[]
   created: Date;
 }
 

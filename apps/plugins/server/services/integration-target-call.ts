@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fetch from 'node-fetch';
-import { CloudflareTargetOperation, EmailTargetOperation, HttpTargetOperation, ICloudflareSource, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, IPayPalSource, IPaddleSource, IDodoPaymentsSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation, PayPalTargetOperation, PaddleTargetOperation, DodoPaymentsTargetOperation, AWSTargetOperation, IAWSSource, OpenAIChatCompletionPayload, OpenAIClearStoragePayload, OpenAIUploadStoragePayload } from '@qelos/global-types';
+import { CloudflareTargetOperation, EmailTargetOperation, HttpTargetOperation, ICloudflareSource, IEmailSource, IHttpSource, IntegrationSourceKind, IOpenAISource, IQelosSource, ISumitSource, IPayPalSource, IPaddleSource, IDodoPaymentsSource, OpenAITargetOperation, OpenAITargetPayload, QelosTargetOperation, SumitTargetOperation, PayPalTargetOperation, PaddleTargetOperation, DodoPaymentsTargetOperation, AWSTargetOperation, IAWSSource, OpenAIChatCompletionPayload, OpenAIClearStoragePayload, OpenAIUploadStoragePayload, IDataManipulationStep } from '@qelos/global-types';
+import { executeDataManipulation } from './data-manipulation-service';
 import { IIntegrationEntity } from '../models/integration';
 import IntegrationSource from '../models/integration-source';
 import { getEncryptedSourceAuthentication } from './source-authentication-service';
@@ -1739,7 +1740,12 @@ async function handleDodoPaymentsTarget(
   }
 }
 
-export async function callIntegrationTarget(tenant: string, payload: any, integrationTarget: IIntegrationEntity) {
+export async function callIntegrationTarget(
+  tenant: string,
+  payload: any,
+  integrationTarget: IIntegrationEntity,
+  targetManipulation?: IDataManipulationStep[],
+) {
   // load integration source data
   const source = await IntegrationSource.findOne({ tenant, _id: integrationTarget.source }).lean().exec();
   if (!source) {
@@ -1747,25 +1753,34 @@ export async function callIntegrationTarget(tenant: string, payload: any, integr
   }
   const authentication = await getEncryptedSourceAuthentication(tenant, source.kind, source.authentication);
 
+  let result;
   if (source.kind === IntegrationSourceKind.Http) {
-    return handleHttpTarget(integrationTarget, source as IHttpSource, authentication || {}, payload)
+    result = await handleHttpTarget(integrationTarget, source as IHttpSource, authentication || {}, payload)
   } else if (source.kind === IntegrationSourceKind.OpenAI) {
-    return handleOpenAiTarget(integrationTarget, source as IOpenAISource, authentication || {}, payload);
+    result = await handleOpenAiTarget(integrationTarget, source as IOpenAISource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Qelos) {
-    return handleQelosTarget(integrationTarget, source as IQelosSource, authentication || {}, payload);
+    result = await handleQelosTarget(integrationTarget, source as IQelosSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Email) {
-    return handleEmailTarget(integrationTarget, source as IEmailSource, authentication || {}, payload);
+    result = await handleEmailTarget(integrationTarget, source as IEmailSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Sumit) {
-    return handleSumitTarget(integrationTarget, source as ISumitSource, authentication || {}, payload);
+    result = await handleSumitTarget(integrationTarget, source as ISumitSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.PayPal) {
-    return handlePayPalTarget(integrationTarget, source as IPayPalSource, authentication || {}, payload);
+    result = await handlePayPalTarget(integrationTarget, source as IPayPalSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Paddle) {
-    return handlePaddleTarget(integrationTarget, source as IPaddleSource, authentication || {}, payload);
+    result = await handlePaddleTarget(integrationTarget, source as IPaddleSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.AWS) {
-    return handleAwsTarget(integrationTarget, source as IAWSSource, authentication || {}, payload);
+    result = await handleAwsTarget(integrationTarget, source as IAWSSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.Cloudflare) {
-    return handleCloudflareTarget(integrationTarget, source as ICloudflareSource, authentication || {}, payload);
+    result = await handleCloudflareTarget(integrationTarget, source as ICloudflareSource, authentication || {}, payload);
   } else if (source.kind === IntegrationSourceKind.DodoPayments) {
-    return handleDodoPaymentsTarget(integrationTarget, source as IDodoPaymentsSource, authentication || {}, payload);
+    result = await handleDodoPaymentsTarget(integrationTarget, source as IDodoPaymentsSource, authentication || {}, payload);
+  } else {
+    return;
   }
+
+  if (targetManipulation?.length) {
+    result = await executeDataManipulation(tenant, result, targetManipulation);
+  }
+
+  return result;
 }

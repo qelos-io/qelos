@@ -22,6 +22,7 @@ import {
 const trigger = defineModel<any>('trigger', { required: true });
 const target = defineModel<any>('target', { required: true });
 const dataManipulation = defineModel<any>('dataManipulation', { required: true });
+const targetManipulation = defineModel<any>('targetManipulation', { required: true });
 
 const props = defineProps<{ integrationId?: string }>();
 
@@ -155,13 +156,14 @@ const workflowSteps = computed(() => [
     required: true 
   },
   { id: 'data-manipulation', title: 'Data Manipulation', icon: 'DataAnalysis', optional: true },
-  { 
-    id: 'target', 
-    title: 'Target', 
+  {
+    id: 'target',
+    title: 'Target',
     subtitle: target.value?.operation || '',
-    icon: 'Position', 
-    required: true 
+    icon: 'Position',
+    required: true
   },
+  { id: 'target-manipulation', title: 'Target Manipulation', icon: 'DataAnalysis', optional: true },
   { id: 'trigger-response', title: 'Trigger Response', icon: 'ArrowRight', optional: true },
   { id: 'downstream', title: 'Downstream Automations', icon: 'Connection', optional: true }
 ]);
@@ -211,6 +213,8 @@ const getStepStatus = (stepId: string) => {
       return dataManipulation.value?.length > 0 ? 'success' : 'inactive';
     case 'target':
       return target.value?.source && target.value?.details ? 'success' : 'error';
+    case 'target-manipulation':
+      return targetManipulation.value?.length > 0 ? 'success' : 'inactive';
     case 'trigger-response':
       return hasTriggerResponseSignature.value ? 'success' : 'inactive';
     case 'downstream':
@@ -707,6 +711,44 @@ onUnmounted(() => {
         <div class="connector-arrow"><el-icon><ArrowDown /></el-icon></div>
       </div>
 
+      <!-- Target Manipulation Step -->
+      <div class="workflow-step" :class="`status-${getStepStatus('target-manipulation')}`" data-step-id="target-manipulation">
+        <div class="step-header" @click="toggleStep('target-manipulation')">
+          <div class="step-indicator">
+            <el-icon class="step-status-icon" :class="`status-${getStepStatus('target-manipulation')}`">
+              <component :is="getStepIcon('target-manipulation', getStepStatus('target-manipulation'))" />
+            </el-icon>
+            <div class="step-number">5</div>
+          </div>
+          <div class="step-info">
+            <h3>{{ $t('Target Manipulation') }}</h3>
+            <p>{{ $t('Transform, filter or shape the target\'s result before it is returned or passed onward') }}</p>
+            <div class="step-badges">
+              <el-tag size="small" type="info">{{ $t('Optional') }}</el-tag>
+              <el-tag v-if="targetManipulation?.length > 0" size="small" type="success">
+                {{ targetManipulation.length }} {{ $t('operations') }}
+              </el-tag>
+            </div>
+          </div>
+          <div class="step-actions">
+            <el-icon class="expand-icon" :class="{ expanded: isStepExpanded('target-manipulation') }">
+              <ArrowDown />
+            </el-icon>
+          </div>
+        </div>
+        <el-collapse-transition>
+          <div v-show="isStepExpanded('target-manipulation')" class="step-content">
+            <DataManipulationTab v-model="targetManipulation" />
+          </div>
+        </el-collapse-transition>
+      </div>
+
+      <!-- Flow Connector -->
+      <div class="flow-connector" :class="{ active: getStepStatus('target') === 'success' }">
+        <div class="connector-line"></div>
+        <div class="connector-arrow"><el-icon><ArrowDown /></el-icon></div>
+      </div>
+
       <!-- Trigger Response Step -->
       <div class="workflow-step" :class="`status-${getStepStatus('trigger-response')}`" data-step-id="trigger-response">
         <div class="step-header" @click="toggleStep('trigger-response')">
@@ -714,7 +756,7 @@ onUnmounted(() => {
             <el-icon class="step-status-icon" :class="`status-${getStepStatus('trigger-response')}`">
               <component :is="getStepIcon('trigger-response', getStepStatus('trigger-response'))" />
             </el-icon>
-            <div class="step-number">5</div>
+            <div class="step-number">6</div>
           </div>
           <div class="step-info">
             <h3>{{ $t('Trigger Response') }}</h3>
@@ -752,7 +794,7 @@ onUnmounted(() => {
             <el-icon class="step-status-icon" :class="`status-${getStepStatus('downstream')}`">
               <component :is="getStepIcon('downstream', getStepStatus('downstream'))" />
             </el-icon>
-            <div class="step-number">6</div>
+            <div class="step-number">7</div>
           </div>
           <div class="step-info">
             <h3>{{ $t('Downstream Automations') }}</h3>

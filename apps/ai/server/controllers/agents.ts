@@ -90,6 +90,7 @@ export const createAgent = async (req: RequestWithUser, res: Response) => {
       trigger: agentPayloadToTrigger(payload),
       target: agentPayloadToTarget(payload),
       dataManipulation: [],
+      targetManipulation: [],
     };
 
     const created: IIntegration = await calPublicPluginsService(

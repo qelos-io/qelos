@@ -1,7 +1,7 @@
 import type { IIntegration } from '@qelos/global-types';
 import type { McpToolDefinition } from './types';
 import { jsonSchemaToZodShape } from './json-schema-to-zod';
-import { getMcpToolIntegrations, triggerIntegrationSource } from '../services/plugins-service-api';
+import { executeDataManipulation, getMcpToolIntegrations, triggerIntegrationSource } from '../services/plugins-service-api';
 
 function sanitizeToolName(raw: string): string {
   const sanitized = raw.trim().replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 128);
@@ -35,10 +35,21 @@ export function mapIntegrationToToolDefinition(
     inputSchema: jsonSchemaToZodShape(details.parameters),
     requiredPrivilege: 'user',
     handler: async ({ user, input }) => {
+      let payload: unknown = input;
+      if (integration.dataManipulation?.length) {
+        const manipulated = await executeDataManipulation(
+          user.tenant,
+          { arguments: input, user, workspace: user.workspace },
+          integration.dataManipulation,
+        );
+        payload = manipulated?.arguments;
+      }
+
       return triggerIntegrationSource(user.tenant, String(integration.target.source), {
-        payload: input,
+        payload,
         operation: integration.target.operation,
         details: integration.target.details,
+        targetManipulation: integration.targetManipulation,
       });
     },
   };

@@ -152,6 +152,7 @@ export default defineConfig({
         text: 'INTEGRATIONS',
         collapsed: true,
         items: [
+          { text: 'Trigger, Data Manipulation & Target Pipeline', link: '/integrations/pipeline' },
           { text: 'Connection Status Checks', link: '/integrations/status-check' },
         ]
       },

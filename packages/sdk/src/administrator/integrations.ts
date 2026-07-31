@@ -38,6 +38,7 @@ export default class QlIntegrations extends BaseSDK {
     trigger?: any;
     target?: any;
     dataManipulation?: any;
+    targetManipulation?: any;
   }): Promise<IIntegration> {
     return this.callJsonApi<IIntegration>(
       `${this.relativePath}/${integrationId}`,
@@ -53,6 +54,7 @@ export default class QlIntegrations extends BaseSDK {
     trigger: any;
     target: any;
     dataManipulation?: any;
+    targetManipulation?: any;
     active?: boolean;
   }): Promise<IIntegration> {
     return this.callJsonApi<IIntegration>(this.relativePath, {

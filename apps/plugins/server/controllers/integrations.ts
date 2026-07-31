@@ -81,7 +81,7 @@ export async function getIntegration(req, res) {
 }
 
 export async function createIntegration(req, res) {
-  const { trigger, target, dataManipulation, active } = req.body || {}
+  const { trigger, target, dataManipulation, targetManipulation, active } = req.body || {}
 
   if (!trigger || !target) {
     res.status(400).json({ message: 'trigger and target are required' }).end();
@@ -96,6 +96,7 @@ export async function createIntegration(req, res) {
     user: userId,
     plugin: plugin?._id,
     dataManipulation,
+    targetManipulation,
     trigger,
     target,
     active
@@ -146,6 +147,9 @@ export async function updateIntegration(req, res) {
     }
     if (req.body?.dataManipulation) {
       integration.dataManipulation = req.body.dataManipulation;
+    }
+    if (req.body?.targetManipulation) {
+      integration.targetManipulation = req.body.targetManipulation;
     }
     if (integration.isModified()) {
       await integration.save();

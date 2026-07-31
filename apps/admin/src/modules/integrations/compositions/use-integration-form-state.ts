@@ -47,7 +47,7 @@ export function useIntegrationFormState({
   isAIAgentMode,
   preSelectedSourceId 
 }: UseIntegrationFormStateOptions) {
-  const form = reactive<Pick<IIntegration, 'trigger' | 'target' | 'dataManipulation' | 'active'>>({
+  const form = reactive<Pick<IIntegration, 'trigger' | 'target' | 'dataManipulation' | 'targetManipulation' | 'active'>>({
     trigger: {
       source: '',
       operation: '',
@@ -59,6 +59,7 @@ export function useIntegrationFormState({
       details: {}
     },
     dataManipulation: [...DEFAULT_DATA_MANIPULATION],
+    targetManipulation: [],
     active: false
   });
 
@@ -80,6 +81,11 @@ export function useIntegrationFormState({
 
   const sanitizeDataManipulation = () => {
     form.dataManipulation = (form.dataManipulation || []).map((row: any) => {
+      const clone = { ...row };
+      delete clone._id;
+      return clone;
+    });
+    form.targetManipulation = (form.targetManipulation || []).map((row: any) => {
       const clone = { ...row };
       delete clone._id;
       return clone;
@@ -113,6 +119,7 @@ export function useIntegrationFormState({
       dataManipulation: (editingIntegration._id || editingIntegration.dataManipulation?.length)
         ? (editingIntegration.dataManipulation || [])
         : [...DEFAULT_DATA_MANIPULATION],
+      targetManipulation: editingIntegration.targetManipulation || [],
       active: editingIntegration.active || false
     });
 
