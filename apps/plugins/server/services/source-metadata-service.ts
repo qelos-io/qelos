@@ -39,6 +39,17 @@ function normalizeOptionalOrganizationId(raw: unknown): string | null {
   return trimmed || null;
 }
 
+function normalizeModelName(raw: unknown): string | null {
+  if (raw == null || raw === '') {
+    return null;
+  }
+  if (typeof raw !== 'string') {
+    return null;
+  }
+  const trimmed = raw.trim();
+  return trimmed || null;
+}
+
 export async function validateSourceMetadata(kind: IntegrationSourceKind, metadata: any = {}) {
   if (kind === IntegrationSourceKind.Qelos) {
     const { external = false, url, username } = metadata;
@@ -82,7 +93,7 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
     );
 
     const base = {
-      defaultModel: typeof defaultModel === 'string' ? defaultModel : null,
+      defaultModel: normalizeModelName(defaultModel),
       initialMessages: initialMessages instanceof Array ? initialMessages.map(msg => {
         return {
           role: typeof msg.role === 'string' ? msg.role : 'system',
@@ -111,7 +122,7 @@ export async function validateSourceMetadata(kind: IntegrationSourceKind, metada
   if (kind === IntegrationSourceKind.ClaudeAi) {
     const { defaultModel, initialMessages } = metadata;
     return {
-      defaultModel: typeof defaultModel === 'string' ? defaultModel : null,
+      defaultModel: normalizeModelName(defaultModel),
       initialMessages: initialMessages instanceof Array ? initialMessages.map(msg => {
         return {
           role: typeof msg.role === 'string' ? msg.role : 'system',
