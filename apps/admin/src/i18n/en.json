@@ -469,5 +469,6 @@
   "MCP client setup": "Client setup",
   "MCP connection": "MCP connection",
   "MCP dashboard description": "Connect remote MCP clients to this tenant using your Streamable HTTP endpoint.",
-  "Configure MCP": "Configure MCP"
+  "Configure MCP": "Configure MCP",
+  "Show all {count} integrators": "Show all {count} integrators"
 }

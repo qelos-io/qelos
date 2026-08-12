@@ -469,5 +469,6 @@
   "MCP client setup": "Configuración del cliente",
   "MCP connection": "Conexión MCP",
   "MCP dashboard description": "Conecta clientes MCP remotos a este inquilino usando tu endpoint Streamable HTTP.",
-  "Configure MCP": "Configurar MCP"
+  "Configure MCP": "Configurar MCP",
+  "Show all {count} integrators": "Mostrar los {count} integradores"
 }

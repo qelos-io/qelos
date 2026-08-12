@@ -469,5 +469,6 @@
   "MCP client setup": "הגדרת לקוח",
   "MCP connection": "חיבור MCP",
   "MCP dashboard description": "חבר לקוחות MCP מרוחקים לדייר זה באמצעות נקודת הקצה Streamable HTTP שלך.",
-  "Configure MCP": "הגדר MCP"
+  "Configure MCP": "הגדר MCP",
+  "Show all {count} integrators": "הצג את כל {count} האינטגרטורים"
 }
