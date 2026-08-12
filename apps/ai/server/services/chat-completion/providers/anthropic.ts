@@ -25,7 +25,8 @@ export function createAnthropicService(source: AIServiceSource, authentication: 
         const originalMessages = options.unsafeUserContext
           ? getMessagesWithUserContext(options.messages, options.unsafeUserContext)
           : options.messages;
-        const { system, messages } = transformMessagesToAnthropicSDK(originalMessages);
+        const { system: baseSystem, messages } = transformMessagesToAnthropicSDK(originalMessages);
+        const system = applyResponseFormatToSystem(baseSystem, options.response_format);
         const tools = transformToolsToAnthropic(options.tools);
 
         const response = await anthropic.messages.create({
@@ -77,7 +78,8 @@ export function createAnthropicService(source: AIServiceSource, authentication: 
         const originalMessages = options.unsafeUserContext
           ? getMessagesWithUserContext(options.messages, options.unsafeUserContext)
           : options.messages;
-        const { system, messages } = transformMessagesToAnthropicSDK(originalMessages);
+        const { system: baseSystem, messages } = transformMessagesToAnthropicSDK(originalMessages);
+        const system = applyResponseFormatToSystem(baseSystem, options.response_format);
         const tools = transformToolsToAnthropic(options.tools);
 
         const stream = await anthropic.messages.create({
@@ -103,6 +105,25 @@ export function createAnthropicService(source: AIServiceSource, authentication: 
       }
     },
   };
+}
+
+export function applyResponseFormatToSystem(system: string | undefined, responseFormat?: any) {
+  if (!responseFormat) {
+    return system;
+  }
+
+  let instruction: string | undefined;
+  if (responseFormat.type === 'json_schema' && responseFormat.json_schema?.schema) {
+    instruction = `You must respond with valid JSON only, without any markdown formatting or extra text. The response must conform to this JSON schema:\n${JSON.stringify(responseFormat.json_schema.schema)}`;
+  } else if (responseFormat.type === 'json_object' || responseFormat.type === 'json_schema') {
+    instruction = 'You must respond with valid JSON only, without any markdown formatting or extra text.';
+  }
+
+  if (!instruction) {
+    return system;
+  }
+
+  return system ? `${system}\n\n${instruction}` : instruction;
 }
 
 function transformMessagesToAnthropicSDK(messages: any[]) {

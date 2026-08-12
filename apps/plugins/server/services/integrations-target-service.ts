@@ -103,6 +103,17 @@ const supportedSources = {
         'temperature',
         'top_p',
         'stop_sequences',
+        'pre_messages',
+        'model',
+        'max_tokens',
+        'frequency_penalty',
+        'presence_penalty',
+        'stop',
+        'response_format',
+        'embeddingType',
+        'maxTools',
+        'ingestedBlueprints',
+        'ingestedAgents'
       ],
     }
   },

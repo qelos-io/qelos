@@ -287,6 +287,7 @@ export async function chatCompletion(req: any, res: any | null) {
   }] : [];
 
   const initialMessages = [
+    ...(integration.target.details.system ? [{ role: 'system', content: integration.target.details.system }] : []),
     ...(integration.target.details.pre_messages || []),
     ...rulesMessages,
     ...options.messages,
@@ -382,7 +383,8 @@ export async function chatCompletion(req: any, res: any | null) {
     top_p: options.top_p || integration.target.details.top_p,
     frequency_penalty: options.frequency_penalty || integration.target.details.frequency_penalty,
     presence_penalty: options.presence_penalty || integration.target.details.presence_penalty,
-    stop: options.stop || integration.target.details.stop,
+    stop: options.stop || integration.target.details.stop || integration.target.details.stop_sequences,
+    max_tokens: options.max_tokens || integration.target.details.max_tokens,
     messages: initialMessages.map(msg => typeof msg === 'string' ? { role: 'user', content: msg } : msg),
     unsafeUserContext: Object.keys(options?.context || {}).length > 0 ? options.context : undefined,
     response_format: options.response_format || integration.target.details.response_format,
