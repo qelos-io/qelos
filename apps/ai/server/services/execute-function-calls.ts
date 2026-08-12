@@ -99,7 +99,17 @@ async function executeBlueprintOperation(
     
     case 'list':
       // Use query if provided, otherwise empty object
-      const {createdFrom, createdTo, updatedFrom, updatedTo, $fields, ...query} = args || {};
+      const {createdFrom, createdTo, updatedFrom, updatedTo, ...query} = args || {};
+      // Tool schemas expose control params with "_" prefix (Anthropic disallows "$" in
+      // property keys); map them back to the "$"-prefixed query params, accepting both forms.
+      for (const param of ['sort', 'page', 'limit', 'populate', 'fields']) {
+        if (query[`_${param}`] !== undefined) {
+          query[`$${param}`] ??= query[`_${param}`];
+          delete query[`_${param}`];
+        }
+      }
+      const $fields = query.$fields;
+      delete query.$fields;
       if (createdFrom) {
         query[`metadata.created[$gte]`] = new Date(createdFrom).toJSON();
       }

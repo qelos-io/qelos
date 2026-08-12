@@ -185,24 +185,26 @@ export function generateBlueprintTools(blueprint: IBlueprint): BlueprintTool[] {
         parameters: {
           type: 'object',
           properties: {
-            $sort: {
+            // Note: these control params use "_" prefix (not "$") because some providers
+            // (e.g. Anthropic) only allow property keys matching ^[a-zA-Z0-9_.-]{1,64}$
+            _sort: {
               type: 'string',
               description: 'Sort the results by this field. add "minus" to sort in descending order (e.g. "-rank"). default: "-created"',
-              enum: ['created', 'updated', ...Object.keys(blueprint.properties).map(prop => ['metadata' + prop, '-metadata.' + prop]).flat()]
+              enum: ['created', 'updated', ...Object.keys(blueprint.properties).map(prop => ['metadata.' + prop, '-metadata.' + prop]).flat()]
             },
-            $page: {
+            _page: {
               type: 'number',
               description: 'the page number to return. default: 1'
             },
-            $limit: {
+            _limit: {
               type: 'number',
               description: 'Limit the number of results. default: 100'
             },
-            $populate: {
+            _populate: {
               type: 'boolean',
               description: 'Populate the results. default: false. if true, the results will be populated with the blueprint relations.'
             },
-            $fields: {
+            _fields: {
               description: 'selected fields to get from each entity. when given - only those filters will return.',
             },
             createdFrom: {
