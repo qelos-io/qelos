@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { DEFAULT_AI_MODEL_BY_PROVIDER } from '@qelos/global-types';
 import logger from '../../logger';
 import { emitAIProviderErrorEvent, emitTokenUsageEvent } from '../../platform-events';
 import { compactObject, extractTextContent, getMessagesWithUserContext, safeJsonParse } from './shared';
@@ -27,7 +28,7 @@ export function createAnthropicService(source: AIServiceSource, authentication: 
         const tools = transformToolsToAnthropic(options.tools);
 
         const response = await anthropic.messages.create({
-          model: options.model || source.metadata.defaultModel || 'claude-3-opus-20240229',
+          model: options.model || source.metadata.defaultModel || DEFAULT_AI_MODEL_BY_PROVIDER.claude,
           system,
           messages,
           temperature: options.temperature,
@@ -66,7 +67,7 @@ export function createAnthropicService(source: AIServiceSource, authentication: 
           provider: source.kind,
           sourceId: source._id,
           stream: false,
-          model: options.model || source.metadata.defaultModel || 'claude-3-opus-20240229',
+          model: options.model || source.metadata.defaultModel || DEFAULT_AI_MODEL_BY_PROVIDER.claude,
           context: options.unsafeUserContext,
           error,
         });
@@ -83,7 +84,7 @@ export function createAnthropicService(source: AIServiceSource, authentication: 
         const tools = transformToolsToAnthropic(options.tools);
 
         const stream = await anthropic.messages.create({
-          model: options.model || source.metadata.defaultModel || 'claude-3-opus-20240229',
+          model: options.model || source.metadata.defaultModel || DEFAULT_AI_MODEL_BY_PROVIDER.claude,
           system,
           messages,
           temperature: options.temperature,
@@ -101,7 +102,7 @@ export function createAnthropicService(source: AIServiceSource, authentication: 
           provider: source.kind,
           sourceId: source._id,
           stream: true,
-          model: options.model || source.metadata.defaultModel || 'claude-3-opus-20240229',
+          model: options.model || source.metadata.defaultModel || DEFAULT_AI_MODEL_BY_PROVIDER.claude,
           context: options.unsafeUserContext,
           error,
         });

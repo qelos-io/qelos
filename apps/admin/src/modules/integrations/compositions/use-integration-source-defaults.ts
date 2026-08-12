@@ -1,4 +1,4 @@
-import { IntegrationSourceKind } from '@qelos/global-types';
+import { DEFAULT_AI_MODEL_BY_PROVIDER, IntegrationSourceKind } from '@qelos/global-types';
 
 export function useIntegrationSourceDefaults() {
   const getDefaultMetadata = (kind: IntegrationSourceKind) => {
@@ -11,8 +11,14 @@ export function useIntegrationSourceDefaults() {
     if (kind === IntegrationSourceKind.Google || kind === IntegrationSourceKind.GitHub) {
       return { scope: 'openid email profile' };
     }
+    if (kind === IntegrationSourceKind.OpenAI) {
+      return { defaultModel: DEFAULT_AI_MODEL_BY_PROVIDER.openai };
+    }
+    if (kind === IntegrationSourceKind.ClaudeAi) {
+      return { defaultModel: DEFAULT_AI_MODEL_BY_PROVIDER.claude };
+    }
     if (kind === IntegrationSourceKind.Gemini) {
-      return { defaultModel: 'gemini-1.5-pro-latest' };
+      return { defaultModel: DEFAULT_AI_MODEL_BY_PROVIDER.gemini };
     }
 
     return {};

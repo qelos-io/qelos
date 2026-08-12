@@ -1,6 +1,13 @@
 import { nextTick, reactive, ref, toValue, watch } from 'vue';
 import type { Ref } from 'vue';
-import { IIntegration, IDataManipulationStep, IntegrationSourceKind, QelosTriggerOperation } from '@qelos/global-types';
+import {
+  DEFAULT_AI_MODEL_BY_PROVIDER,
+  getProviderFromSourceKind,
+  IIntegration,
+  IDataManipulationStep,
+  IntegrationSourceKind,
+  QelosTriggerOperation,
+} from '@qelos/global-types';
 import { detectIntegrationType, IntegrationType } from '@/modules/integrations/utils/integration-type-detector';
 
 interface UseIntegrationFormStateOptions {
@@ -149,12 +156,17 @@ export function useIntegrationFormState({
             if (preSelectedSource) {
               // For AI agents, set the source as trigger
               if (aiAgentMode) {
+                const provider = getProviderFromSourceKind(preSelectedSource.kind);
+                const defaultModel = provider
+                  ? DEFAULT_AI_MODEL_BY_PROVIDER[provider]
+                  : DEFAULT_AI_MODEL_BY_PROVIDER.openai;
+
                 form.trigger.source = selectedSourceId;
                 form.trigger.operation = 'chat_completion';
                 form.trigger.details = {
                   name: `AI Agent - ${preSelectedSource.name}`,
                   instructions: '',
-                  model: preSelectedSource.metadata?.defaultModel || 'gpt-4'
+                  model: preSelectedSource.metadata?.defaultModel || defaultModel,
                 };
                 
                 // Set target to Qelos for webhook

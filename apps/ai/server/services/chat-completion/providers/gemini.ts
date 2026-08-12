@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { DEFAULT_AI_MODEL_BY_PROVIDER } from '@qelos/global-types';
 import logger from '../../logger';
 import { emitAIProviderErrorEvent, emitTokenUsageEvent } from '../../platform-events';
 import { compactObject, extractTextContent, getMessagesWithUserContext, safeJsonParse } from './shared';
@@ -14,7 +15,7 @@ export function createGeminiService(source: AIServiceSource, authentication: AIS
   const client = new GoogleGenerativeAI(apiKey);
 
   function buildGeminiPayload(options: AIServiceOptions) {
-    const modelName = options.model || source.metadata.defaultModel || 'gemini-1.5-pro-latest';
+    const modelName = options.model || source.metadata.defaultModel || DEFAULT_AI_MODEL_BY_PROVIDER.gemini;
     const messages = options.unsafeUserContext
       ? getMessagesWithUserContext(options.messages, options.unsafeUserContext)
       : options.messages;

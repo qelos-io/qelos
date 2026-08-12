@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { IOpenAISource } from '@qelos/global-types';
+import { DEFAULT_AI_MODEL_BY_PROVIDER, IOpenAISource } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import ConnectionFormSection from '@/modules/integrations/components/forms/ConnectionFormSection.vue';
@@ -17,7 +17,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'submit', 'close']);
 const formRef = ref();
 
-const DEFAULT_OPENAI_MODEL = 'gpt-5.2';
+const DEFAULT_OPENAI_MODEL = DEFAULT_AI_MODEL_BY_PROVIDER.openai;
 
 const TOKEN_UNCHANGED_MASK = '*****';
 
