@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { IClaudeAiSource } from '@qelos/global-types';
+import { DEFAULT_AI_MODEL_BY_PROVIDER, IClaudeAiSource } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import ConnectionFormSection from '@/modules/integrations/components/forms/ConnectionFormSection.vue';
 import { ElMessage } from 'element-plus';
 import { QuestionFilled, Warning } from '@element-plus/icons-vue';
+import { CLAUDE_MODELS } from '@/modules/integrations/constants/ai-models';
 
 const props = defineProps({
   modelValue: {
@@ -15,11 +16,33 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'submit', 'close']);
 const formRef = ref();
-const formModel = ref({ ...props.modelValue });
+
+const DEFAULT_CLAUDE_MODEL = DEFAULT_AI_MODEL_BY_PROVIDER.claude;
+
+const normalizeDefaultModel = (value: unknown): string => {
+  if (typeof value !== 'string' || value === '[object InputEvent]') {
+    return DEFAULT_CLAUDE_MODEL;
+  }
+  return value;
+};
+
+const formModel = ref({
+  ...props.modelValue,
+  metadata: {
+    ...props.modelValue?.metadata,
+    defaultModel: normalizeDefaultModel(props.modelValue?.metadata?.defaultModel) || DEFAULT_CLAUDE_MODEL,
+  },
+});
 const availableLabels = ['Chatbot', 'NLP', 'AI Assistant'];
 const tokenInput = ref('');
 const isSubmitting = ref(false);
 const showTokenHelp = ref(false);
+
+const claudeModelOptions = CLAUDE_MODELS.map((model) => ({
+  label: model.label,
+  value: model.value ?? model.identifier,
+  description: model.description ?? '',
+}));
 
 // Determine if this is a new integration or an edit
 const isNewIntegration = computed(() => !props.modelValue?.id);
@@ -120,6 +143,22 @@ defineExpose({ submitForm });
       >
         <el-option v-for="label in availableLabels" :key="label" :label="label" :value="label" />
       </LabelsInput>
+    </ConnectionFormSection>
+
+    <ConnectionFormSection
+      :title="$t('Connection section modelEndpoint')"
+      :description="$t('Connection section modelEndpoint hint')"
+    >
+      <FormInput
+        v-model="formModel.metadata.defaultModel"
+        title="Default Model"
+        type="select"
+        :options="claudeModelOptions"
+        required
+        placeholder="claude-sonnet-4-6"
+        description="Claude model to use when a specific model isn't provided by workflows."
+        :select-options="{ filterable: true, allowCreate: true }"
+      />
     </ConnectionFormSection>
 
     <ConnectionFormSection
