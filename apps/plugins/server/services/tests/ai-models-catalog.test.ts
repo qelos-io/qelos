@@ -42,6 +42,7 @@ describe('AI model catalog', () => {
   it('exports expected curated Claude identifiers', () => {
     const identifiers = CLAUDE_MODELS.map((m) => m.identifier);
     assert.ok(identifiers.includes('claude-sonnet-4-6'));
+    assert.ok(identifiers.includes('claude-opus-5'));
     assert.ok(identifiers.includes('claude-opus-4-8'));
     assert.ok(identifiers.includes('claude-3-7-sonnet-20250219'));
     assert.ok(identifiers.includes('claude-3-5-haiku-20241022'));
