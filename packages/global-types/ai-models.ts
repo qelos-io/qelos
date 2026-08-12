@@ -8,6 +8,8 @@ export interface AIModel {
   maxTokens: number;
   contextWindow: number;
   provider: AIModelProvider;
+  /** When false, temperature/top_p/top_k must not be sent to Anthropic. Defaults to true. */
+  supportsSamplingParams?: boolean;
 }
 
 const UNKNOWN_MODEL_MAX_TOKENS = 4096;
@@ -172,6 +174,7 @@ export const CLAUDE_MODELS: AIModel[] = [
     maxTokens: 128000,
     contextWindow: 1000000,
     provider: 'claude',
+    supportsSamplingParams: false,
   },
   {
     label: 'Claude Opus 4.6',
@@ -236,6 +239,24 @@ export const getMaxTokensForModel = (identifier: string): number => {
 
 export const getContextWindowForModel = (identifier: string): number => {
   return getModelByIdentifier(identifier)?.contextWindow ?? UNKNOWN_MODEL_CONTEXT_WINDOW;
+};
+
+const CLAUDE_MODELS_WITHOUT_SAMPLING_PARAMS: RegExp[] = [
+  /^claude-opus-4-(?:[7-9]|\d{2,})/,
+  /^claude-opus-5/,
+  /^claude-sonnet-5/,
+  /^claude-mythos/,
+];
+
+export const claudeModelSupportsSamplingParams = (modelId: string): boolean => {
+  const normalized = modelId.trim();
+  const catalogModel = getModelByIdentifier(normalized);
+
+  if (catalogModel?.provider === 'claude') {
+    return catalogModel.supportsSamplingParams !== false;
+  }
+
+  return !CLAUDE_MODELS_WITHOUT_SAMPLING_PARAMS.some((pattern) => pattern.test(normalized));
 };
 
 export const getModelsByProvider = (provider: AIModelProvider): AIModel[] => {

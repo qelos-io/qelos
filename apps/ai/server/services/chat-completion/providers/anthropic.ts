@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { DEFAULT_AI_MODEL_BY_PROVIDER } from '@qelos/global-types';
 import logger from '../../logger';
 import { emitAIProviderErrorEvent, emitTokenUsageEvent } from '../../platform-events';
+import { buildAnthropicMessagesCreateParams } from './anthropic-request-params';
 import { compactObject, extractTextContent, getMessagesWithUserContext, safeJsonParse } from './shared';
 import type { AIServiceAuthentication, AIServiceOptions, AIServiceSource } from './types';
 
@@ -28,13 +29,9 @@ export function createAnthropicService(source: AIServiceSource, authentication: 
         const tools = transformToolsToAnthropic(options.tools);
 
         const response = await anthropic.messages.create({
-          model: options.model || source.metadata.defaultModel || DEFAULT_AI_MODEL_BY_PROVIDER.claude,
+          ...buildAnthropicMessagesCreateParams(options, source, false),
           system,
           messages,
-          temperature: options.temperature,
-          top_p: options.top_p,
-          max_tokens: options.max_tokens || 4000,
-          stream: false,
           tools,
         });
 
@@ -84,13 +81,9 @@ export function createAnthropicService(source: AIServiceSource, authentication: 
         const tools = transformToolsToAnthropic(options.tools);
 
         const stream = await anthropic.messages.create({
-          model: options.model || source.metadata.defaultModel || DEFAULT_AI_MODEL_BY_PROVIDER.claude,
+          ...buildAnthropicMessagesCreateParams(options, source, true),
           system,
           messages,
-          temperature: options.temperature,
-          top_p: options.top_p,
-          max_tokens: options.max_tokens || 4000,
-          stream: true,
           tools,
         });
 
