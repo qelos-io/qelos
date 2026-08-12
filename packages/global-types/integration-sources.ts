@@ -284,6 +284,15 @@ export interface IOpenAISource extends IIntegrationSource {
 export interface IClaudeAiSource extends IIntegrationSource {
   _id?: string;
   kind: IntegrationSourceKind.ClaudeAi;
+  authentication: {
+    token: string;
+  };
+  metadata: {
+    /** Custom API base URL when using a proxy or compatible endpoint. */
+    apiUrl?: string;
+    defaultModel?: string | null;
+    initialMessages?: { role: string; content: string }[];
+  };
 }
 
 export interface IGeminiSource extends IIntegrationSource {
