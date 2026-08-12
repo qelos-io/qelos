@@ -149,6 +149,16 @@ export const GEMINI_MODELS: AIModel[] = [
 
 export const CLAUDE_MODELS: AIModel[] = [
   {
+    label: 'Claude Opus 5',
+    identifier: 'claude-opus-5',
+    value: 'claude-opus-5',
+    description: 'Latest Claude Opus frontier model',
+    maxTokens: 128000,
+    contextWindow: 1000000,
+    provider: 'claude',
+    supportsSamplingParams: false,
+  },
+  {
     label: 'Claude Sonnet 4.6',
     identifier: 'claude-sonnet-4-6',
     value: 'claude-sonnet-4-6',
@@ -245,6 +255,7 @@ const CLAUDE_MODELS_WITHOUT_SAMPLING_PARAMS: RegExp[] = [
   /^claude-opus-4-(?:[7-9]|\d{2,})/,
   /^claude-opus-5/,
   /^claude-sonnet-5/,
+  /^claude-fable-5/,
   /^claude-mythos/,
 ];
 

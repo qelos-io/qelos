@@ -35,17 +35,21 @@ describe('claudeModelSupportsSamplingParams', () => {
   it('returns false for custom dated Claude Opus 4.8 model id via heuristic', () => {
     assert.strictEqual(claudeModelSupportsSamplingParams('claude-opus-4-8-20260201'), false);
   });
+
+  it('returns false for catalog Claude Opus 5', () => {
+    assert.strictEqual(claudeModelSupportsSamplingParams('claude-opus-5'), false);
+  });
 });
 
 describe('buildAnthropicMessagesCreateParams', () => {
   it('omits temperature and top_p for unsupported model even when options include them', () => {
     const params = buildAnthropicMessagesCreateParams(
-      baseOptions({ model: 'claude-opus-4-8' }),
+      baseOptions({ model: 'claude-opus-5' }),
       claudeSource(),
       false,
     );
 
-    assert.strictEqual(params.model, 'claude-opus-4-8');
+    assert.strictEqual(params.model, 'claude-opus-5');
     assert.strictEqual(params.max_tokens, 1024);
     assert.strictEqual(params.stream, false);
     assert.ok(!('temperature' in params));
