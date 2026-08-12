@@ -1,4 +1,4 @@
-FROM node:22.14-slim AS builder
+FROM node:26.7-slim AS builder
 WORKDIR /app
 
 # Install build dependencies for native modules
@@ -16,7 +16,7 @@ RUN tar -xzf /tmp/app.tgz -C /app && rm /tmp/app.tgz
 RUN npm install -g prebuild-install && npm rebuild sharp
 
 # Production image
-FROM node:22.14-slim
+FROM node:26.7-slim
 ENV PORT=9007
 EXPOSE $PORT
 ENV NODE_ENV=production

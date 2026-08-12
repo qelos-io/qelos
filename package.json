@@ -23,7 +23,7 @@
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "engines": {
-    "node": ">=20.x"
+    "node": ">=24.x"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",

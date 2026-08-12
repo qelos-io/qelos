@@ -468,14 +468,14 @@ describe('patch tool – Dockerfile', () => {
   beforeEach(setup);
   afterEach(teardown);
 
-  const DOCKERFILE = `FROM node:18-alpine AS builder
+  const DOCKERFILE = `FROM node:26-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:18-alpine
+FROM node:26-alpine
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
@@ -485,7 +485,7 @@ CMD ["node", "dist/index.js"]
 
   it('replaces the base image', () => {
     const fp = writeFixture('Dockerfile', DOCKERFILE);
-    const res = applyPatch(fp, 'FROM node:18-alpine AS builder', 'FROM node:20-alpine AS builder');
+    const res = applyPatch(fp, 'FROM node:26-alpine AS builder', 'FROM node:26-alpine AS builder');
     assert.strictEqual(res.ok, true);
     assert.ok(readFixture(fp).includes('node:20-alpine AS builder'));
   });
