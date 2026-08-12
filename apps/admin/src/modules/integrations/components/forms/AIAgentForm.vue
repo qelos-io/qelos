@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watch, watchEffect, ref, onMounted } from 'vue';
-import { DEFAULT_AI_MODEL_BY_PROVIDER, IIntegration, IntegrationSourceKind, QelosTriggerOperation, OpenAITargetOperation } from '@qelos/global-types';
+import { claudeModelSupportsSamplingParams, DEFAULT_AI_MODEL_BY_PROVIDER, IIntegration, IntegrationSourceKind, QelosTriggerOperation, OpenAITargetOperation } from '@qelos/global-types';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
@@ -431,6 +431,11 @@ const temperature = computed({
   }
 });
 
+const supportsSamplingParams = computed(() => {
+  if (currentProvider.value !== 'claude') return true;
+  return claudeModelSupportsSamplingParams(model.value);
+});
+
 const maxTokens = computed({
   get: () => target.value?.details?.max_tokens || 10000,
   set: (value: number) => {
@@ -651,14 +656,12 @@ watch([contextBlueprints, includeUserContext, includeWorkspaceContext], (newValu
 }, { deep: true });
 
 // AI generation functions
-const agentSchema = {
-  type: "object",
-  properties: {
+const agentSchema = computed(() => {
+  const properties: Record<string, unknown> = {
     name: { type: "string", description: "A clear, concise name for the agent" },
     system_message: { type: "string", description: "The system prompt defining the agent's role, tone, and responsibilities" },
     model: { type: "string", description: "The AI model to use (e.g., gpt-5.4, claude-sonnet-4-6, gemini-2.5-pro)" },
     maxTokens: { type: "number", description: "Maximum tokens for the response (e.g., 4096, 8192, 16384)" },
-    temperature: { type: "number", description: "Controls randomness (0.0-2.0, lower = more focused)" },
     recordThread: { type: "boolean", description: "Whether to record conversation threads" },
     vectorStore: { type: "boolean", description: "Whether to create a vector store for the thread" },
     webSearch: { type: "boolean", description: "Whether to enable web search capability" },
@@ -669,7 +672,7 @@ const agentSchema = {
     vectorStoreHardcodedIds: { type: "array", items: { type: "string" }, description: "Additional OpenAI vector store IDs to include in file search" },
     includeUserContext: { type: "boolean", description: "Whether to include user information in context" },
     includeWorkspaceContext: { type: "boolean", description: "Whether to include workspace information in context" },
-    permissions: { 
+    permissions: {
       type: "object",
       properties: {
         canReadFiles: { type: "boolean", description: "Can read uploaded files" },
@@ -678,14 +681,23 @@ const agentSchema = {
         canAccessApis: { type: "boolean", description: "Can make API calls" }
       }
     }
-  },
-  required: ["name", "system_message"]
-};
+  };
+
+  if (supportsSamplingParams.value) {
+    properties.temperature = { type: "number", description: "Controls randomness (0.0-2.0, lower = more focused)" };
+  }
+
+  return {
+    type: "object",
+    properties,
+    required: ["name", "system_message"]
+  };
+});
 
 const getAgentPrompt = async () => {
   return {
     prompt: `Based on the following description, generate a complete AI agent configuration:\n\nDescription: ${agentDescription.value}\n\nGenerate appropriate values for the agent configuration. Consider:\n1. A suitable AI model (use gpt-5.4 for complex tasks, gpt-4o for general use, claude-sonnet-4-6 for nuanced reasoning, or gemini-2.5-pro for multimodal tasks)\n2. Appropriate max tokens (4096 for simple responses, 8192+ for detailed analysis)\n3. Temperature setting (0.7 for creative tasks, 0.3-0.5 for analytical tasks)\n4. Relevant permissions based on the agent's purpose\n\nThe system message should be detailed and professional, defining the agent's role, tone, and specific responsibilities.`,
-    schema: agentSchema
+    schema: agentSchema.value
   };
 };
 
@@ -1331,7 +1343,7 @@ const handleSystemPromptImproved = (result: any) => {
               </el-select>
             </el-form-item>
 
-            <el-form-item :label="`${$t('Temperature')}: ${temperature}`">
+            <el-form-item v-if="supportsSamplingParams" :label="`${$t('Temperature')}: ${temperature}`">
               <el-slider
                 v-model="temperature"
                 :min="0"
@@ -1346,6 +1358,15 @@ const handleSystemPromptImproved = (result: any) => {
                 </div>
               </template>
             </el-form-item>
+
+            <el-alert
+              v-if="currentProvider === 'claude' && !supportsSamplingParams"
+              type="info"
+              :closable="false"
+              show-icon
+            >
+              {{ $t('Temperature and top_p are not supported for this Claude model. Use prompting to control response style instead.') }}
+            </el-alert>
 
             <el-form-item :label="$t('Max Tokens')">
               <el-input-number
