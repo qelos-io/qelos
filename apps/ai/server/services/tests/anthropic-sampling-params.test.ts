@@ -1,0 +1,68 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
+import {
+  claudeModelSupportsSamplingParams,
+  IntegrationSourceKind,
+  type IClaudeAiSource,
+} from '@qelos/global-types';
+import { buildAnthropicMessagesCreateParams } from '../chat-completion/providers/anthropic-request-params';
+import type { AIServiceOptions } from '../chat-completion/providers/types';
+
+const claudeSource = (): IClaudeAiSource => ({
+  kind: IntegrationSourceKind.ClaudeAi,
+  authentication: { token: 'test-token' },
+  metadata: {},
+});
+
+const baseOptions = (overrides: Partial<AIServiceOptions> = {}): AIServiceOptions => ({
+  model: 'claude-sonnet-4-6',
+  messages: [{ role: 'user', content: 'Hello' }],
+  temperature: 0.7,
+  top_p: 0.9,
+  max_tokens: 1024,
+  ...overrides,
+});
+
+describe('claudeModelSupportsSamplingParams', () => {
+  it('returns false for catalog Claude Opus 4.8', () => {
+    assert.strictEqual(claudeModelSupportsSamplingParams('claude-opus-4-8'), false);
+  });
+
+  it('returns true for catalog Claude Sonnet 4.6', () => {
+    assert.strictEqual(claudeModelSupportsSamplingParams('claude-sonnet-4-6'), true);
+  });
+
+  it('returns false for custom dated Claude Opus 4.8 model id via heuristic', () => {
+    assert.strictEqual(claudeModelSupportsSamplingParams('claude-opus-4-8-20260201'), false);
+  });
+});
+
+describe('buildAnthropicMessagesCreateParams', () => {
+  it('omits temperature and top_p for unsupported model even when options include them', () => {
+    const params = buildAnthropicMessagesCreateParams(
+      baseOptions({ model: 'claude-opus-4-8' }),
+      claudeSource(),
+      false,
+    );
+
+    assert.strictEqual(params.model, 'claude-opus-4-8');
+    assert.strictEqual(params.max_tokens, 1024);
+    assert.strictEqual(params.stream, false);
+    assert.ok(!('temperature' in params));
+    assert.ok(!('top_p' in params));
+  });
+
+  it('includes temperature and top_p for supported model', () => {
+    const params = buildAnthropicMessagesCreateParams(
+      baseOptions({ model: 'claude-sonnet-4-6' }),
+      claudeSource(),
+      true,
+    );
+
+    assert.strictEqual(params.model, 'claude-sonnet-4-6');
+    assert.strictEqual(params.temperature, 0.7);
+    assert.strictEqual(params.top_p, 0.9);
+    assert.strictEqual(params.max_tokens, 1024);
+    assert.strictEqual(params.stream, true);
+  });
+});
