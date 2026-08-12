@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Setting } from '@element-plus/icons-vue';
+import { AVAILABLE_MODELS } from '@/modules/integrations/constants/ai-models';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { IntegrationSourceKind } from '@qelos/global-types';
 import { computed } from 'vue';
@@ -10,41 +11,7 @@ const openAISources = computed(() => {
   return store.result?.filter(s => s.kind === IntegrationSourceKind.OpenAI) || [];
 });
 
-const availableModels = [
-  // GPT-5 Series (Future)
-  { label: 'GPT-5', value: 'gpt-5', description: 'Next generation flagship model' },
-  { label: 'GPT-5 Turbo', value: 'gpt-5-turbo', description: 'GPT-5 optimized version' },
-  { label: 'GPT-5 Turbo Preview', value: 'gpt-5-turbo-preview', description: 'GPT-5 Turbo preview' },
-
-  // GPT-4o Series (Latest)
-  { label: 'GPT-4o', value: 'gpt-4o', description: 'Most capable, multimodal flagship model' },
-  { label: 'GPT-4o Mini', value: 'gpt-4o-mini', description: 'Affordable and intelligent small model' },
-  { label: 'GPT-4o Nano', value: 'gpt-4o-nano', description: 'Ultra-efficient, lightweight model' },
-
-  // GPT-4.1 Series
-  { label: 'GPT-4.1', value: 'gpt-4.1', description: 'Enhanced GPT-4 model' },
-  { label: 'GPT-4.1 Turbo', value: 'gpt-4.1-turbo', description: 'GPT-4.1 optimized version' },
-  { label: 'GPT-4.1 Preview', value: 'gpt-4.1-preview', description: 'GPT-4.1 preview version' },
-
-  // GPT-4 Turbo Series
-  { label: 'GPT-4 Turbo', value: 'gpt-4-turbo', description: 'Latest GPT-4 Turbo' },
-  { label: 'GPT-4 Turbo Preview', value: 'gpt-4-turbo-preview', description: 'GPT-4 Turbo preview' },
-
-  // GPT-4 Series
-  { label: 'GPT-4', value: 'gpt-4', description: 'Latest GPT-4 model' },
-  { label: 'GPT-4 32k', value: 'gpt-4-32k', description: '32k context window' },
-
-  // GPT-3.5 Turbo Series
-  { label: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo', description: 'Latest GPT-3.5 Turbo' },
-  
-  // GPT-3.5 Base
-  { label: 'GPT-3.5 Turbo Instruct', value: 'gpt-3.5-turbo-instruct', description: 'Instruction-following model' },
-  
-  // O1 Series (Reasoning models)
-  { label: 'O1', value: 'o1', description: 'Advanced reasoning model' },
-  { label: 'O1 Preview', value: 'o1-preview', description: 'O1 preview version' },
-  { label: 'O1 Mini', value: 'o1-mini', description: 'Faster, cheaper reasoning model' },
-];
+const availableModels = AVAILABLE_MODELS;
 
 const selectedOpenAISource = defineModel<string>('selectedOpenAISource', { required: true });
 const systemMessage = defineModel<string>('systemMessage', { required: true });
