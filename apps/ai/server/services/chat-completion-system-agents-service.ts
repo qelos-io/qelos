@@ -2,6 +2,7 @@ import * as ChatCompletionService from "./chat-completion-service";
 import { executeFunctionCalls } from "./execute-function-calls";
 import { createAIService } from "./ai-service";
 import { emitAIProviderErrorEvent } from "./platform-events";
+import { DEFAULT_AI_MODEL_BY_PROVIDER, getProviderFromSourceKind } from '@qelos/global-types';
 import logger from "./logger";
 
 const NESTED_AGENT_TIMEOUT_MS = 600000; // 10 minutes timeout for nested agent calls
@@ -31,9 +32,14 @@ function getSafeUserMessages(messages) {
 /**
  * Creates chat options from request options and source details
  */
+function getDefaultModelForSource(source) {
+  const provider = getProviderFromSourceKind(source.kind);
+  return provider ? DEFAULT_AI_MODEL_BY_PROVIDER[provider] : DEFAULT_AI_MODEL_BY_PROVIDER.openai;
+}
+
 function createChatOptions(options, sourceDetails, source, initialMessages, safeUserMessages, tools) {
   return {
-    model: options.model || sourceDetails.model || source.metadata.defaultModel || 'gpt-5.4',
+    model: options.model || sourceDetails.model || source.metadata.defaultModel || getDefaultModelForSource(source),
     temperature: options.temperature || sourceDetails.temperature,
     top_p: options.top_p || sourceDetails.top_p,
     frequency_penalty: options.frequency_penalty || sourceDetails.frequency_penalty,

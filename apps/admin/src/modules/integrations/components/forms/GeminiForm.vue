@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { IGeminiSource } from '@qelos/global-types';
+import { DEFAULT_AI_MODEL_BY_PROVIDER, IGeminiSource } from '@qelos/global-types';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import ConnectionFormSection from '@/modules/integrations/components/forms/ConnectionFormSection.vue';
 import { ElMessage } from 'element-plus';
 import { QuestionFilled, Warning } from '@element-plus/icons-vue';
+import { GEMINI_MODELS } from '@/modules/integrations/constants/ai-models';
 
 const props = defineProps({
   modelValue: {
@@ -15,22 +16,33 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'submit', 'close']);
 const formRef = ref();
-const formModel = ref({ ...props.modelValue });
+
+const DEFAULT_GEMINI_MODEL = DEFAULT_AI_MODEL_BY_PROVIDER.gemini;
+
+const normalizeDefaultModel = (value: unknown): string => {
+  if (typeof value !== 'string' || value === '[object InputEvent]') {
+    return DEFAULT_GEMINI_MODEL;
+  }
+  return value;
+};
+
+const formModel = ref({
+  ...props.modelValue,
+  metadata: {
+    ...props.modelValue?.metadata,
+    defaultModel: normalizeDefaultModel(props.modelValue?.metadata?.defaultModel) || DEFAULT_GEMINI_MODEL,
+  },
+});
 const availableLabels = ['AI Assistant', 'Multimodal', 'Gemini'];
 const tokenInput = ref('');
 const isSubmitting = ref(false);
 const showTokenHelp = ref(false);
 
-const ensureMetadata = () => {
-  if (!formModel.value.metadata) {
-    formModel.value.metadata = {};
-  }
-  if (typeof formModel.value.metadata.defaultModel !== 'string') {
-    formModel.value.metadata.defaultModel = 'gemini-1.5-pro-latest';
-  }
-};
-
-ensureMetadata();
+const geminiModelOptions = GEMINI_MODELS.map((model) => ({
+  label: model.label,
+  value: model.value ?? model.identifier,
+  description: model.description ?? '',
+}));
 
 const isNewIntegration = computed(() => !props.modelValue?._id);
 
@@ -138,9 +150,12 @@ defineExpose({ submitForm });
       <FormInput
         v-model="formModel.metadata.defaultModel"
         title="Default Model"
+        type="select"
+        :options="geminiModelOptions"
         required
-        placeholder="gemini-1.5-pro-latest"
+        placeholder="gemini-2.5-flash"
         description="Gemini model to use when a specific model isn't provided by workflows."
+        :select-options="{ filterable: true, allowCreate: true }"
       />
       <FormInput
         v-model="formModel.metadata.apiUrl"

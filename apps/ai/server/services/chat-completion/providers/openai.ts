@@ -1,5 +1,6 @@
 import { OpenAI } from 'openai';
 import { ResponseTextConfig } from 'openai/resources/responses/responses';
+import { DEFAULT_AI_MODEL_BY_PROVIDER } from '@qelos/global-types';
 import logger from '../../logger';
 import { emitAIProviderErrorEvent, emitTokenUsageEvent } from '../../platform-events';
 import { compactObject, getMessagesWithUserContext } from './shared';
@@ -105,7 +106,7 @@ export function createOpenAIService(source: AIServiceSource, authentication: AIS
 
   return {
     async createChatCompletion(options: AIServiceOptions) {
-      const model = options.model || source.metadata.defaultModel || 'gpt-5.4';
+      const model = options.model || source.metadata.defaultModel || DEFAULT_AI_MODEL_BY_PROVIDER.openai;
       try {
         const messages = options.unsafeUserContext
           ? getMessagesWithUserContext(options.messages, options.unsafeUserContext)
@@ -260,7 +261,7 @@ export function createOpenAIService(source: AIServiceSource, authentication: AIS
     },
 
     async createChatCompletionStream(options: AIServiceOptions) {
-      const model = options.model || source.metadata.defaultModel || 'gpt-5.4';
+      const model = options.model || source.metadata.defaultModel || DEFAULT_AI_MODEL_BY_PROVIDER.openai;
       try {
         const messages = options.unsafeUserContext
           ? getMessagesWithUserContext(options.messages, options.unsafeUserContext)

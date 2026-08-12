@@ -6,7 +6,7 @@ import Monaco from '@/modules/users/components/Monaco.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { storeToRefs } from 'pinia';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
-import { IntegrationSourceKind, OpenAITargetOperation, QelosTriggerOperation } from '@qelos/global-types';
+import { DEFAULT_AI_MODEL_BY_PROVIDER, IntegrationSourceKind, OpenAITargetOperation, QelosTriggerOperation } from '@qelos/global-types';
 import {
   Service as CustomerSupportIcon,
   Document as DocumentIcon,
@@ -25,8 +25,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:modelValue']);
 
-// OpenAI model options from shared constants
-const openAiModelOptions = OPENAI_MODEL_OPTIONS;
+const DEFAULT_OPENAI_MODEL = DEFAULT_AI_MODEL_BY_PROVIDER.openai;
 
 // Pre-defined chat personalities with complete configurations
 const chatPersonalities = [
@@ -89,7 +88,7 @@ const chatPersonalities = [
 
 // OpenAI target UI state
 const openAiDetails = ref({
-  model: 'gpt-4o',
+  model: DEFAULT_OPENAI_MODEL,
   temperature: 0.7,
   top_p: 1,
   frequency_penalty: 0,
@@ -102,6 +101,20 @@ const openAiDetails = ref({
   maxTools: 15,
   ingestedBlueprints: [],
   ingestedAgents: [],
+});
+
+const openAiModelOptions = computed(() => {
+  const curated = OPENAI_MODEL_OPTIONS.map(option => ({
+    label: option.label,
+    identifier: option.identifier,
+  }));
+
+  const savedModel = openAiDetails.value.model?.trim();
+  if (savedModel && !curated.some(option => option.identifier === savedModel)) {
+    return [...curated, { label: savedModel, identifier: savedModel }];
+  }
+
+  return curated;
 });
 
 // Get blueprints for selection
@@ -156,7 +169,7 @@ const maxTokensLimit = computed(() => {
 const initOpenAiDetails = () => {
   if (props.modelValue.details) {
     openAiDetails.value = {
-      model: props.modelValue.details.model || 'gpt-4o',
+      model: props.modelValue.details.model || DEFAULT_OPENAI_MODEL,
       temperature: props.modelValue.details.temperature ?? 0.7,
       top_p: props.modelValue.details.top_p ?? 1,
       frequency_penalty: props.modelValue.details.frequency_penalty ?? 0,

@@ -1,5 +1,11 @@
+import { DEFAULT_AI_MODEL_BY_PROVIDER, getProviderFromSourceKind } from '@qelos/global-types';
 import { AIMessageTemplates } from "../services/ai-message-templates";
 import { createAIService } from "../services/ai-service";
+
+function getDefaultModelForSource(source) {
+  const provider = getProviderFromSourceKind(source.kind);
+  return provider ? DEFAULT_AI_MODEL_BY_PROVIDER[provider] : DEFAULT_AI_MODEL_BY_PROVIDER.openai;
+}
 
 export async function createBlueprintUsingAI(req, res) {
   const tenant = req.headers.tenant;
@@ -12,7 +18,7 @@ export async function createBlueprintUsingAI(req, res) {
   const aiService = createAIService(req.source, req.sourceAuthentication);
 
   const response = await aiService.createChatCompletion({ 
-    model: req.source.metadata.defaultModel || 'gpt-4o',
+    model: req.source.metadata.defaultModel || getDefaultModelForSource(req.source),
     messages: [
       AIMessageTemplates.getNoCodeBlueprintsSystemMessage(),
       {
@@ -34,7 +40,7 @@ export async function createBlueprintUsingAI(req, res) {
 
   const suggestedBlueprints = await Promise.all(blueprintsDescriptions.map(async (blueprintDescription) => {
     const blueprintResponse = await aiService.createChatCompletion({
-      model: req.source.metadata.defaultModel || 'gpt-4o',
+      model: req.source.metadata.defaultModel || getDefaultModelForSource(req.source),
       messages: AIMessageTemplates.getBlueprintGenerationMessages(blueprintDescription, response.choices[0].message.content, req.body.prompt),
       stream: false,
       loggingContext: {
