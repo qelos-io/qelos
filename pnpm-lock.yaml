@@ -801,6 +801,9 @@ importers:
       h3:
         specifier: ^1.13.0
         version: 1.15.11
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
       typescript:
         specifier: ^5.4.5
         version: 5.6.3
@@ -14782,13 +14785,13 @@ snapshots:
   '@vue/language-core@3.0.6(typescript@5.6.3)':
     dependencies:
       '@volar/language-core': 2.4.23
-      '@vue/compiler-dom': 3.5.21
+      '@vue/compiler-dom': 3.5.34
       '@vue/compiler-vue2': 2.7.16
-      '@vue/shared': 3.5.30
+      '@vue/shared': 3.5.34
       alien-signals: 2.0.7
       muggle-string: 0.4.1
       path-browserify: 1.0.1
-      picomatch: 4.0.3
+      picomatch: 4.0.4
     optionalDependencies:
       typescript: 5.6.3
 

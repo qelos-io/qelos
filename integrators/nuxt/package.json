@@ -39,7 +39,8 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "build": "npm run type-check && tsc",
-    "pre-build": "pnpm run type-check && tsc"
+    "pre-build": "pnpm run type-check && tsc",
+    "test": "node --import tsx --test \"src/**/*.test.ts\""
   },
   "keywords": [
     "qelos",
@@ -73,6 +74,7 @@
     "@nuxt/kit": "^3.13.0",
     "@nuxt/schema": "^3.13.0",
     "h3": "^1.13.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.4.5"
   }
 }
