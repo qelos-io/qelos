@@ -27,10 +27,13 @@ npm install @qelos/integrator-nest @qelos/sdk
 npm install @nestjs/common @nestjs/core
 ```
 
-Requirements:
+## Version requirements
 
-- **Node.js ≥ 18** (the integrator uses the global `fetch`).
-- **NestJS 9, 10, or 11.**
+- **NestJS** `@nestjs/common` and `@nestjs/core` ^9.0.0, ^10.0.0, or ^11.0.0
+  (plus `reflect-metadata` and `rxjs` peer dependencies).
+- **Node.js** ≥18 (the integrator uses the global `fetch`).
+- **Forward compatibility:** the integrator accepts any NestJS release that
+  satisfies the peer dependency semver range.
 
 ## 2. Configure the module
 
