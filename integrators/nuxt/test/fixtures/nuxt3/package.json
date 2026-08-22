@@ -1,0 +1,12 @@
+{
+  "name": "@qelos/integrator-nuxt-fixture-nuxt3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:nuxt": "nuxt prepare"
+  },
+  "dependencies": {
+    "@qelos/integrator-nuxt": "workspace:*",
+    "nuxt": "^3.16.0"
+  }
+}
