@@ -10,16 +10,8 @@ const integratorRoot = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(integratorRoot, '../..');
 
 const fixtures = [
-  {
-    label: 'Nuxt 3',
-    dir: 'nuxt3',
-    filter: '@qelos/integrator-nuxt-fixture-nuxt3',
-  },
-  {
-    label: 'Nuxt 4',
-    dir: 'nuxt4',
-    filter: '@qelos/integrator-nuxt-fixture-nuxt4',
-  },
+  { label: 'Nuxt 3', dir: 'nuxt3' },
+  { label: 'Nuxt 4', dir: 'nuxt4' },
 ] as const;
 
 const pnpmCommand = 'pnpm';
