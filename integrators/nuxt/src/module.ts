@@ -5,6 +5,7 @@ import {
   createResolver,
   addTypeTemplate,
 } from '@nuxt/kit';
+import type { NuxtModule } from '@nuxt/schema';
 import type { QelosNuxtRuntimeConfig } from './types';
 
 export interface QelosNuxtModuleOptions extends QelosNuxtRuntimeConfig {
@@ -20,7 +21,7 @@ export interface QelosNuxtModuleOptions extends QelosNuxtRuntimeConfig {
   disableProxy?: boolean;
 }
 
-export default defineNuxtModule<QelosNuxtModuleOptions>({
+const qelosNuxtModule: NuxtModule<QelosNuxtModuleOptions> = defineNuxtModule<QelosNuxtModuleOptions>({
   meta: {
     name: '@qelos/integrator-nuxt',
     configKey: 'qelos',
@@ -92,6 +93,8 @@ export {};
     });
   },
 });
+
+export default qelosNuxtModule;
 
 export { createQelosMiddleware } from './middleware';
 export { createRequestSdk } from './sdk-factory';
