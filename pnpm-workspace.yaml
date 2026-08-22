@@ -2,6 +2,7 @@ packages:
   - apps/*
   - packages/*
   - integrators/*
+  - integrators/nuxt/test/fixtures/*
   - e2e
   - documentation
 
