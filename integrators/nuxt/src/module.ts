@@ -25,7 +25,7 @@ export default defineNuxtModule<QelosNuxtModuleOptions>({
     name: '@qelos/integrator-nuxt',
     configKey: 'qelos',
     compatibility: {
-      nuxt: '>=3.0.0',
+      nuxt: '^3.0.0 || ^4.0.0',
     },
   },
   defaults: {
