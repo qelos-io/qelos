@@ -70,9 +70,10 @@
     "@qelos/sdk": "workspace:*"
   },
   "devDependencies": {
-    "@nuxt/kit": "^3.13.0",
-    "@nuxt/schema": "^3.13.0",
+    "@nuxt/kit": "^3.13.0 || ^4.0.0",
+    "@nuxt/schema": "^3.13.0 || ^4.0.0",
     "h3": "^1.13.0",
+    "nuxt": "^4.0.0",
     "typescript": "^5.4.5"
   }
 }
