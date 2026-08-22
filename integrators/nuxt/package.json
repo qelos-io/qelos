@@ -54,13 +54,16 @@
   "publishConfig": {
     "access": "public"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "peerDependencies": {
     "h3": "^1.0.0",
-    "nuxt": "^3.0.0"
+    "nuxt": ">=3.0.0"
   },
   "peerDependenciesMeta": {
     "nuxt": {
-      "optional": true
+      "optional": false
     }
   },
   "dependencies": {
