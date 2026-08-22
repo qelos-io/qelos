@@ -27,7 +27,9 @@
     "type-check": "tsc --noEmit",
     "build": "tsc",
     "pre-build": "tsc",
-    "test": "node --import tsx --test src/**/*.test.ts test/**/*.test.ts"
+    "test": "pnpm run test:4 && pnpm run test:5",
+    "test:4": "node test/run-with-fastify-major.mjs 4",
+    "test:5": "node test/run-with-fastify-major.mjs 5"
   },
   "keywords": [
     "qelos",
@@ -60,6 +62,7 @@
   },
   "devDependencies": {
     "fastify": "~4.15.0",
+    "fastify-v5": "npm:fastify@^5.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.6.3"
   }
