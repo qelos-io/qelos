@@ -229,6 +229,15 @@ await app.register(qelosFastify, {
 });
 ```
 
+## Version support
+
+| Runtime | Supported versions |
+|---------|-------------------|
+| Node.js | >= 18 |
+| Fastify  | 4.x, 5.x (peer: `^4.0.0 || ^5.0.0`) |
+
+Unit tests run against both Fastify 4 and 5 (`pnpm run test:4` / `pnpm run test:5`).
+
 ## Requirements
 
 - Node.js >= 18 (uses global `fetch` and `Headers.getSetCookie`).

@@ -163,7 +163,13 @@ QelosModule.forRoot({
 });
 ```
 
-## Requirements
+## Version support
 
-- Node.js >= 18  
-- NestJS 9, 10, or 11  
+| Requirement | Supported range |
+|-------------|-----------------|
+| Node.js | >= 18 |
+| NestJS (`@nestjs/common`, `@nestjs/core`) | 9.x, 10.x, 11.x |
+
+Peer dependencies accept `^9.0.0 || ^10.0.0 || ^11.0.0`. Local development and CI target **Nest 11**; the integrator is verified against that major while remaining compatible with Nest 9 and 10 through the same public API.
+
+Nest 12 prereleases are not included in the peer range until a stable release — add an explicit union when upgrading support.

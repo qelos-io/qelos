@@ -22,10 +22,27 @@ the overall flow (CLI, blueprints, deployment). The pages below are the
 |---|---|---|
 | **Express** | `@qelos/integrator-express` | [Express setup](./express.md) |
 | **Next.js** (App + Pages Router) | `@qelos/integrator-next` | [Next.js setup](./next.md) |
-| **Nuxt 3** | `@qelos/integrator-nuxt` | [Nuxt setup](./nuxt.md) |
+| **Nuxt 3+** | `@qelos/integrator-nuxt` | [Nuxt setup](./nuxt.md) |
 | **Fastify** | `@qelos/integrator-fastify` | [Fastify setup](./fastify.md) |
 | **NestJS** | `@qelos/integrator-nest` | [NestJS setup](./nest.md) |
 | **FastAPI** (Python) | `qelos-integrator-fastapi` | [FastAPI setup](./fastapi.md) |
+
+## Version support
+
+All Node.js integrators require **Node.js ≥ 18**. Each package declares minimum
+framework versions in its `peerDependencies`; integrators accept **current and
+future releases within that semver range** (for example, Nuxt `>=3.0.0` covers
+Nuxt 4.x).
+
+| Integrator | Minimum framework version |
+|---|---|
+| Express | Express ^4.17.0 or ^5.0.0 |
+| Next.js | Next.js ≥13.4.0, React ≥18.2.0 |
+| Nuxt | Nuxt ≥3.0.0 (includes Nuxt 4.x; Nuxt 2 and below are **not** supported) |
+| Fastify | Fastify ^4.0.0 or ^5.0.0 |
+| NestJS | `@nestjs/common` and `@nestjs/core` ^9.0.0, ^10.0.0, or ^11.0.0 |
+
+See each integrator guide for full version requirements.
 
 Every guide covers the same six steps:
 

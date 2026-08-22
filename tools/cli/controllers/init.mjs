@@ -8,6 +8,8 @@ import {
   buildJsConfigContents,
   shouldUseTypeScript,
   shouldUseESModule,
+  validateFrameworkVersion,
+  getFrameworkPackageVersion,
 } from '../services/init/scaffold.mjs';
 
 function addIntegratorToPackageJson(cwd, framework) {
@@ -90,6 +92,14 @@ export default async function initController(argv) {
   }
 
   const framework = FRAMEWORKS[frameworkId];
+  const frameworkVersion = detection?.version ?? getFrameworkPackageVersion(cwd, frameworkId);
+  if (frameworkVersion) {
+    const validation = validateFrameworkVersion(frameworkId, frameworkVersion);
+    if (!validation.ok) {
+      logger.warning(validation.message);
+    }
+  }
+
   const useTypeScript = shouldUseTypeScript(cwd, frameworkId);
   const useESModule = shouldUseESModule(cwd);
   const configFilename = frameworkId === 'fastapi'

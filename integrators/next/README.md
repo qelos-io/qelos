@@ -7,9 +7,6 @@ route proxies `/api/**` to Qelos with `Set-Cookie` domain rewriting, and the
 SDK reads live `Cookie` / `Authorization` headers on every call — no
 integrator-managed access or refresh tokens.
 
-Supports the **App Router** and the **Pages Router** on Next.js **14** and
-**15**.
-
 > Requires **Node 18+** — the middleware and proxy use
 > [`Response.headers.getSetCookie()`](https://developer.mozilla.org/docs/Web/API/Headers/getSetCookie)
 > to forward individual upstream `Set-Cookie` headers.
@@ -21,6 +18,20 @@ pnpm add @qelos/integrator-next @qelos/sdk
 ```
 
 `next` (>=13.4) and `react` are peer dependencies.
+
+## Version support
+
+| | |
+|---|---|
+| **Minimum** | Next.js **13.4+** (App Router and Pages Router) |
+| **Tested through** | Next.js **15.x** (see `devDependencies.next` in this package) |
+| **Peer range** | `>=13.4.0` — forward-compatible; no upper bound so future Next majors remain supported until a breaking API change requires a new integrator release |
+| **React** | `>=18.2.0` (optional peer) |
+| **Node.js** | `>=18` |
+
+The integrator avoids APIs tied to a single Next major where possible (for
+example, `next/headers` is consumed in a way that accepts both sync and async
+return shapes). Report issues on newer Next releases if you hit a regression.
 
 ## Quick start
 
