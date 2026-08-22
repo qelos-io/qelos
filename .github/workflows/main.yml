@@ -32,6 +32,9 @@ jobs:
       - name: Build integrators
         run: pnpm --filter "./integrators/**" build
 
+      - name: Nuxt integrator compatibility smoke tests
+        run: pnpm --filter @qelos/integrator-nuxt test:smoke
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
