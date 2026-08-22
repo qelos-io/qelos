@@ -1,6 +1,6 @@
 import * as assert from 'node:assert/strict';
 import { test } from 'node:test';
-import Fastify from 'fastify';
+import Fastify from './fastify';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import qelosFastify, { qelosPlugin, requireUser } from '../src/plugin';

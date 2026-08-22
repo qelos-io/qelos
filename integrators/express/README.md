@@ -212,7 +212,18 @@ createQelosIntegrator({
 });
 ```
 
-## Requirements
+## Version support
 
-- Node.js >= 18 (uses global `fetch` and `Headers.getSetCookie`).
-- Express 4 or 5.
+| Runtime | Supported versions |
+|---------|-------------------|
+| Node.js | >= 18 (uses global `fetch` and `Headers.getSetCookie`) |
+| Express | 4.17+ and 5.x |
+
+The integrator is tested against Express 4 and Express 5 in CI (`pnpm --filter
+@qelos/integrator-express test`). Express is a peer dependency — install the
+major version your app already uses; no integrator-specific adapter is required.
+
+When upgrading from Express 4 to 5, see the [Express 5 migration
+guide](https://expressjs.com/en/guide/migrating-5.html). This package uses only
+APIs that are stable across both majors (middleware, `req.headers`, response
+headers, and request streaming for the proxy).

@@ -57,14 +57,12 @@ export interface QelosRequestContext {
   sdk: QelosSDK;
 }
 
-declare module 'express' {
-  interface Request {
-    qelos: QelosRequestContext;
+declare global {
+  namespace Express {
+    interface Request {
+      qelos: QelosRequestContext;
+    }
   }
 }
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    qelos: QelosRequestContext;
-  }
-}
+export {};

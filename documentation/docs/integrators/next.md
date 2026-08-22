@@ -21,8 +21,13 @@ for the overall flow (CLI, blueprints, deployment).
 npm install @qelos/integrator-next @qelos/sdk
 ```
 
-`next` (≥13.4) and `react` are peer dependencies. Tested with Next.js
-14.2 and 15.x, on both routers.
+## Version requirements
+
+- **Next.js** ≥13.4.0 (tested with 14.2 and 15.x, on both App and Pages Router).
+- **React** ≥18.2.0 (peer dependency).
+- **Node.js** ≥18.
+- **Forward compatibility:** the integrator accepts any Next.js release that
+  satisfies the `>=13.4.0` peer dependency range.
 
 ### Environment variables
 

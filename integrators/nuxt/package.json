@@ -40,7 +40,7 @@
     "type-check": "tsc --noEmit",
     "build": "npm run type-check && tsc",
     "pre-build": "pnpm run type-check && tsc",
-    "test": "node --import tsx --test src/**/*.test.ts",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "pretest:smoke": "pnpm run build",
     "test:smoke": "node --import tsx --test test/module-smoke.test.ts",
     "test:smoke:nuxt3": "node --import tsx --test test/module-smoke.test.ts --test-name-pattern \"Nuxt 3\"",
@@ -59,13 +59,16 @@
   "publishConfig": {
     "access": "public"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "peerDependencies": {
     "h3": "^1.0.0",
     "nuxt": "^3.0.0 || ^4.0.0"
   },
   "peerDependenciesMeta": {
     "nuxt": {
-      "optional": true
+      "optional": false
     }
   },
   "dependencies": {
