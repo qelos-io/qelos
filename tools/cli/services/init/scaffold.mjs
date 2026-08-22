@@ -73,6 +73,120 @@ export const FRAMEWORKS = {
   },
 };
 
+/** @type {Record<string, { min: string, packageKey: string, label: string }>} */
+export const FRAMEWORK_MIN_VERSIONS = {
+  nuxt: { min: '3.0.0', packageKey: 'nuxt', label: 'Nuxt' },
+  next: { min: '13.4.0', packageKey: 'next', label: 'Next.js' },
+  express: { min: '4.17.0', packageKey: 'express', label: 'Express' },
+  fastify: { min: '4.0.0', packageKey: 'fastify', label: 'Fastify' },
+  nest: { min: '9.0.0', packageKey: '@nestjs/core', label: 'NestJS' },
+};
+
+/**
+ * @param {string | undefined | null} versionRangeString
+ * @returns {{ major: number, minor: number, patch: number } | null}
+ */
+export function parsePackageVersion(versionRangeString) {
+  if (!versionRangeString || typeof versionRangeString !== 'string') return null;
+
+  let version = versionRangeString.trim();
+  const npmAliasMatch = version.match(/^npm:[^@]+@(.+)$/);
+  if (npmAliasMatch) {
+    version = npmAliasMatch[1];
+  } else if (/^(workspace:|link:|file:|git\+|github:|catalog:)/.test(version)) {
+    return null;
+  }
+
+  version = version.replace(/^v/i, '');
+  version = version.replace(/^[\^~>=<]+/, '');
+
+  const hyphenLower = version.match(/^(\d+(?:\.\d+){0,2})\s*-\s*/);
+  if (hyphenLower) {
+    version = hyphenLower[1];
+  }
+
+  const match = version.match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
+  if (!match) return null;
+
+  return {
+    major: Number.parseInt(match[1], 10),
+    minor: Number.parseInt(match[2] ?? '0', 10),
+    patch: Number.parseInt(match[3] ?? '0', 10),
+  };
+}
+
+/**
+ * @param {{ major: number, minor: number, patch: number }} a
+ * @param {{ major: number, minor: number, patch: number }} b
+ * @returns {number}
+ */
+function compareVersions(a, b) {
+  if (a.major !== b.major) return a.major - b.major;
+  if (a.minor !== b.minor) return a.minor - b.minor;
+  return a.patch - b.patch;
+}
+
+/**
+ * @param {string} frameworkId
+ * @param {string} versionRangeString
+ * @returns {{ ok: boolean, message: string }}
+ */
+export function validateFrameworkVersion(frameworkId, versionRangeString) {
+  const spec = FRAMEWORK_MIN_VERSIONS[frameworkId];
+  if (!spec) return { ok: true, message: '' };
+
+  const parsed = parsePackageVersion(versionRangeString);
+  const minParsed = parsePackageVersion(spec.min);
+  if (!parsed || !minParsed) return { ok: true, message: '' };
+
+  if (compareVersions(parsed, minParsed) >= 0) {
+    return { ok: true, message: '' };
+  }
+
+  const framework = FRAMEWORKS[frameworkId];
+  const integrator = framework?.integrator ?? `@qelos/integrator-${frameworkId}`;
+  const displayVersion = versionRangeString.trim();
+
+  return {
+    ok: false,
+    message:
+      `${integrator} requires ${spec.label} >=${spec.min}; found ${spec.packageKey}@${displayVersion}. ` +
+      `Upgrade ${spec.label} before installing the integrator.`,
+  };
+}
+
+/**
+ * @param {string} cwd
+ * @returns {Record<string, string>}
+ */
+function readPackageDependencies(cwd) {
+  const pkgPath = path.join(cwd, 'package.json');
+  if (!fs.existsSync(pkgPath)) return {};
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+    return {
+      ...(pkg.dependencies || {}),
+      ...(pkg.devDependencies || {}),
+      ...(pkg.peerDependencies || {}),
+    };
+  } catch (err) {
+    logger.debug(`Failed to parse package.json: ${err.message}`);
+    return {};
+  }
+}
+
+/**
+ * @param {string} cwd
+ * @param {string} frameworkId
+ * @returns {string | null}
+ */
+export function getFrameworkPackageVersion(cwd, frameworkId) {
+  const spec = FRAMEWORK_MIN_VERSIONS[frameworkId];
+  if (!spec) return null;
+  const allDeps = readPackageDependencies(cwd);
+  return allDeps[spec.packageKey] ?? null;
+}
+
 /**
  * Detect framework from package.json deps or Python project files.
  * Order favors meta-frameworks first; NestJS is checked before Express/Fastify so Nest apps
@@ -81,23 +195,15 @@ export const FRAMEWORKS = {
  * @returns {{ id: string, source: string } | null}
  */
 export function detectFramework(cwd) {
-  const pkgPath = path.join(cwd, 'package.json');
-  if (fs.existsSync(pkgPath)) {
-    try {
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-      const allDeps = {
-        ...(pkg.dependencies || {}),
-        ...(pkg.devDependencies || {}),
-        ...(pkg.peerDependencies || {}),
-      };
-      if (allDeps.next) return { id: 'next', source: 'package.json' };
-      if (allDeps.nuxt) return { id: 'nuxt', source: 'package.json' };
-      if (allDeps['@nestjs/core']) return { id: 'nest', source: 'package.json' };
-      if (allDeps.fastify) return { id: 'fastify', source: 'package.json' };
-      if (allDeps.express) return { id: 'express', source: 'package.json' };
-    } catch (err) {
-      logger.debug(`Failed to parse package.json: ${err.message}`);
+  const allDeps = readPackageDependencies(cwd);
+  if (Object.keys(allDeps).length > 0) {
+    if (allDeps.next) return { id: 'next', source: 'package.json', version: allDeps.next };
+    if (allDeps.nuxt) return { id: 'nuxt', source: 'package.json', version: allDeps.nuxt };
+    if (allDeps['@nestjs/core']) {
+      return { id: 'nest', source: 'package.json', version: allDeps['@nestjs/core'] };
     }
+    if (allDeps.fastify) return { id: 'fastify', source: 'package.json', version: allDeps.fastify };
+    if (allDeps.express) return { id: 'express', source: 'package.json', version: allDeps.express };
   }
 
   const reqPath = path.join(cwd, 'requirements.txt');
