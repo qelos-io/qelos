@@ -5,7 +5,7 @@ editLink: true
 
 # `@qelos/integrator-nuxt`
 
-Nuxt 3 module that registers a server middleware to identify the current
+Nuxt 3+ module that registers a server middleware to identify the current
 Qelos user and active workspace via the SDK *before* your Nitro/Nuxt
 handlers run, exposes the result on `event.context.qelos`, and adds a
 `useQelos()` composable so Vue components see the same identity that was
@@ -28,6 +28,13 @@ npm install @qelos/integrator-nuxt
 The integrator pulls `@qelos/sdk` in as a transitive dependency; you don't
 need to install it separately unless you also use the SDK from your own
 code.
+
+## Version requirements
+
+- **Nuxt** ≥3.0.0 (includes Nuxt 4.x). Nuxt 2 and below are **not** supported.
+- **Node.js** ≥18.
+- **Forward compatibility:** the integrator accepts any Nuxt release that
+  satisfies the `>=3.0.0` peer dependency range.
 
 ## 2. Configure the module
 

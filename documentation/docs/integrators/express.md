@@ -24,10 +24,12 @@ npm install @qelos/integrator-express @qelos/sdk
 npm install express
 ```
 
-Requirements:
+## Version requirements
 
-- **Node.js ≥ 18** (the integrator uses the global `fetch`).
-- **Express 4 or 5.**
+- **Express** ^4.17.0 or ^5.0.0.
+- **Node.js** ≥18 (the integrator uses the global `fetch`).
+- **Forward compatibility:** the integrator accepts any Express release that
+  satisfies the peer dependency semver range.
 
 ## 2. Configure the middleware
 

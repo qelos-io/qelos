@@ -1,6 +1,6 @@
 # @qelos/integrator-nuxt
 
-Nuxt 3 integrator for [Qelos](https://qelos.io). It plugs into a Nuxt app's
+Nuxt 3+ integrator for [Qelos](https://qelos.io). It plugs into a Nuxt app's
 Nitro server to make the Nuxt host act as a same-origin BFF for a managed
 Qelos app: requests under `/api/**` are proxied to Qelos, and every other
 request resolves the current user up front so your route handlers and Vue
@@ -12,9 +12,14 @@ components can use them directly.
 pnpm add @qelos/integrator-nuxt
 ```
 
-> Requires Node 18+ — the middleware uses
-> [`Response.headers.getSetCookie()`](https://developer.mozilla.org/docs/Web/API/Headers/getSetCookie)
-> to pipe individual upstream `Set-Cookie` headers back to the client.
+## Version requirements
+
+- **Nuxt** ≥3.0.0 (includes Nuxt 4.x). Nuxt 2 and below are **not** supported.
+- **Node.js** ≥18 — the middleware uses
+  [`Response.headers.getSetCookie()`](https://developer.mozilla.org/docs/Web/API/Headers/getSetCookie)
+  to pipe individual upstream `Set-Cookie` headers back to the client.
+- **Forward compatibility:** the integrator accepts any Nuxt release that
+  satisfies the `>=3.0.0` peer dependency range.
 
 ## Configure
 

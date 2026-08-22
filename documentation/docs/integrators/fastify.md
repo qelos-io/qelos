@@ -26,10 +26,12 @@ npm install @qelos/integrator-fastify @qelos/sdk
 npm install fastify
 ```
 
-Requirements:
+## Version requirements
 
-- **Node.js ≥ 18** (the integrator uses the global `fetch`).
-- **Fastify 4 or 5.**
+- **Fastify** ^4.0.0 or ^5.0.0.
+- **Node.js** ≥18 (the integrator uses the global `fetch`).
+- **Forward compatibility:** the integrator accepts any Fastify release that
+  satisfies the peer dependency semver range.
 
 ## 2. Configure the plugin
 
