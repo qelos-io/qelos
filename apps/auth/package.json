@@ -26,6 +26,7 @@
     "@qelos/global-types": "workspace:^",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.5",
+    "express": "^4.17.11",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^8.6.1",
     "passport": "^0.3.2",
