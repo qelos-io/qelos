@@ -57,7 +57,7 @@ export function getBodyParser(options = _config.bodyParserOptions || {}) {
 
 function startApp(serviceName = 'APP', port = _config.port, ip = _config.ip): Promise<void> {
   return new Promise((resolve) => {
-    _app.listen(parseInt(port as string), ip, () => {
+    _app.listen(parseInt(String(port), 10), ip, () => {
       console.log(`${serviceName} is running on port ${port}`);
       if (_config.showLogs) {
         console.log('logs are available');
