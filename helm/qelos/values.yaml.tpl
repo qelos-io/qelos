@@ -45,10 +45,10 @@ mongodb:
 redis:
   resources:
     requests:
-      cpu: 50m
-      memory: 128Mi
+      cpu: 20m
+      memory: 64Mi
     limits:
-      cpu: 150m
+      cpu: 200m
       memory: 256Mi
 
 gateway:
@@ -60,10 +60,10 @@ gateway:
   replicas: 2
   resources:
     requests:
-      memory: "128Mi"
-      cpu: "100m"
+      memory: "160Mi"
+      cpu: "30m"
     limits:
-      memory: "256Mi"
+      memory: "320Mi"
       cpu: "200m"
   environment:
     INTERNAL_URL: gateway-service
@@ -79,6 +79,13 @@ auth:
   host: auth-service
   port: 9000
   replicas: 2
+  resources:
+    requests:
+      memory: "96Mi"
+      cpu: "30m"
+    limits:
+      memory: "192Mi"
+      cpu: "150m"
   environment:
     JWT_SECRET: {{ .Values.JWT_SECRET }}
     REFRESH_TOKEN_SECRET: {{ .Values.REFRESH_TOKEN_SECRET }}
@@ -102,6 +109,13 @@ content:
   host: content-service
   port: 9001
   replicas: 2
+  resources:
+    requests:
+      memory: "96Mi"
+      cpu: "30m"
+    limits:
+      memory: "192Mi"
+      cpu: "150m"
   environment:
     IP: 0.0.0.0
     AUTH_SERVICE_URL: auth-service
@@ -117,6 +131,13 @@ secrets:
   host: secrets-service
   port: 9002
   replicas: 2
+  resources:
+    requests:
+      memory: "96Mi"
+      cpu: "30m"
+    limits:
+      memory: "192Mi"
+      cpu: "150m"
   environment:
     IP: 0.0.0.0
     SECRET: {{ .Values.SECRETS_SERVICE_SECRET }}
@@ -130,6 +151,13 @@ nocode:
   replicas: 2
   host: nocode-service
   port: 9004
+  resources:
+    requests:
+      memory: "160Mi"
+      cpu: "30m"
+    limits:
+      memory: "384Mi"
+      cpu: "200m"
   environment:
     SECRETS_TOKEN: {{ .Values.NO_CODE_SERVICE_SECRET }}
     AUTH_SERVICE_URL: auth-service
@@ -148,6 +176,13 @@ admin:
   replicas: 2
   host: admin-service
   port: 3001
+  resources:
+    requests:
+      memory: "96Mi"
+      cpu: "30m"
+    limits:
+      memory: "192Mi"
+      cpu: "150m"
   environment:
     AUTH_SERVICE_URL: auth-service
     AUTH_SERVICE_PORT: 9000
@@ -165,6 +200,13 @@ plugins:
   replicas: 2
   host: plugins-service
   port: 9006
+  resources:
+    requests:
+      memory: "192Mi"
+      cpu: "30m"
+    limits:
+      memory: "384Mi"
+      cpu: "200m"
   environment:
     AUTH_SERVICE_URL: auth-service
     AUTH_SERVICE_PORT: 9000
@@ -187,11 +229,11 @@ assets:
   port: 9005
   resources:
     requests:
-      cpu: 200m
-      memory: 1Gi
+      cpu: 30m
+      memory: 256Mi
     limits:
-      cpu: 500m
-      memory: 4Gi
+      cpu: 200m
+      memory: 512Mi
   environment:
     SECRETS_TOKEN: {{ .Values.ASSETS_SERVICE_SECRET }}
     AUTH_SERVICE_URL: auth-service
@@ -210,6 +252,13 @@ drafts:
   replicas: 1
   host: drafts-service
   port: 9006
+  resources:
+    requests:
+      memory: "160Mi"
+      cpu: "30m"
+    limits:
+      memory: "320Mi"
+      cpu: "200m"
   environment:
     SECRETS_TOKEN: {{ .Values.DRAFTS_SERVICE_SECRET }}
     AUTH_SERVICE_URL: auth-service
@@ -226,6 +275,13 @@ ai:
   replicas: 2
   host: ai-service
   port: 9007
+  resources:
+    requests:
+      cpu: 30m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi
   environment:
     SECRETS_TOKEN: {{ .Values.AI_SERVICE_SECRET }}
     AUTH_SERVICE_URL: auth-service
@@ -246,6 +302,13 @@ mcp:
   replicas: 2
   host: mcp-service
   port: 9010
+  resources:
+    requests:
+      memory: "192Mi"
+      cpu: "30m"
+    limits:
+      memory: "384Mi"
+      cpu: "200m"
   environment:
     AUTH_SERVICE_URL: auth-service
     AUTH_SERVICE_PORT: 9000
@@ -263,6 +326,13 @@ payments:
   replicas: 2
   host: payments-service
   port: 9008
+  resources:
+    requests:
+      memory: "160Mi"
+      cpu: "30m"
+    limits:
+      memory: "320Mi"
+      cpu: "200m"
   environment:
     PLUGINS_SERVICE_URL: plugins-service
     PLUGINS_SERVICE_PORT: 9006
