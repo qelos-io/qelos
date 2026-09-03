@@ -2,13 +2,19 @@
   "name": "@qelos/global-types",
   "version": "4.2.0",
   "description": "",
-  "main": "index.ts",
-  "types": "index.ts",
-  "scripts": {},
+  "main": "dist/index.js",
+  "module": "index.ts",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
   "author": "",
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
   }
 }
