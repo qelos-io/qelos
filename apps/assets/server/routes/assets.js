@@ -15,7 +15,7 @@ const AUTH_MIDDLEWARES = [populateUser, verifyUser, editorCheck]
 
 router
   .get('/api/assets/:storageId', [...AUTH_MIDDLEWARES, getStorageById, getStorageAssets])
-  .post('/api/assets/:storageId', [...AUTH_MIDDLEWARES, getStorageById, verifyIdentifier, upload.any(), uploadStorageAssets])
+  .post('/api/assets/:storageId', [...AUTH_MIDDLEWARES, getStorageById, verifyIdentifier, upload.single('file'), uploadStorageAssets])
   .put('/api/assets/:storageId', [...AUTH_MIDDLEWARES, getStorageById, verifyIdentifier, renameStorageAssets])
   .delete('/api/assets/:storageId', [...AUTH_MIDDLEWARES, getStorageById, verifyIdentifier, removeStorageAsset]);
 
