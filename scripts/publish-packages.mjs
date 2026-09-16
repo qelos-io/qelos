@@ -54,7 +54,14 @@ const SKIP_LOGIN = flag('--skip-login');
 const TAG = value('--tag');
 const OTP = value('--otp');
 const ONLY = value('--only')?.split(',').map((s) => s.trim()).filter(Boolean);
-const POSITIONAL = args.filter((a) => !a.startsWith('--'));
+
+// Positional package keys, excluding the value slot consumed by any --flag <value> above
+// (e.g. `--otp 123456` must not leak "123456" in as a positional package key).
+const VALUE_FLAGS = ['--tag', '--otp', '--only'];
+const consumedIndices = new Set(
+  VALUE_FLAGS.map((f) => args.indexOf(f)).filter((i) => i !== -1).map((i) => i + 1),
+);
+const POSITIONAL = args.filter((a, i) => !a.startsWith('--') && !consumedIndices.has(i));
 
 const C = {
   reset: '\x1b[0m', dim: '\x1b[2m', bold: '\x1b[1m',
