@@ -485,7 +485,7 @@ CMD ["node", "dist/index.js"]
 
   it('replaces the base image', () => {
     const fp = writeFixture('Dockerfile', DOCKERFILE);
-    const res = applyPatch(fp, 'FROM node:26-alpine AS builder', 'FROM node:26-alpine AS builder');
+    const res = applyPatch(fp, 'FROM node:26-alpine AS builder', 'FROM node:20-alpine AS builder');
     assert.strictEqual(res.ok, true);
     assert.ok(readFixture(fp).includes('node:20-alpine AS builder'));
   });
