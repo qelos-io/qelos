@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qelos-integrator-fastapi"
-version = "4.2.0"
+version = "4.2.1"
 description = "FastAPI integrator for Qelos: middleware that identifies the user and active workspace from the Qelos SDK before your handlers run"
 readme = "README.md"
 license = { text = "MIT" }
@@ -29,7 +29,7 @@ classifiers = [
 ]
 dependencies = [
     "httpx>=0.24.0",
-    "qelos-sdk>=4.0.0",
+    "qelos-sdk>=4.2.1",
     "fastapi>=0.95.0",
     "pydantic>=2.4.0",
     "starlette>=0.27.0",
