@@ -12,11 +12,24 @@ const CSP = {
   style: `'self' 'unsafe-inline' https: ${process.env.PRODUCTION ? '' : 'http:'}`,
 }
 
-function getProxy(target: string) {
+// Every proxied service response is a tenant's private, post-login data (unlike the admin
+// panel's static bundle, which is public and fine to cache). CDNs in front of custom tenant
+// domains (e.g. Cloudflare) must never cache these - a cached response ignores auth/query-string
+// changes entirely and can leak one user's/query's data to the next request on that path.
+function preventApiCaching(_proxyRes, _req, res) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+}
+
+function getProxy(target: string, { preventCaching = false }: { preventCaching?: boolean } = {}) {
   return proxy({
     target,
     changeOrigin: true,
-    onProxyRes: onProxyResSetApiVersion,
+    onProxyRes: (proxyRes, req, res) => {
+      onProxyResSetApiVersion(proxyRes, req, res);
+      if (preventCaching) {
+        preventApiCaching(proxyRes, req, res);
+      }
+    },
   });
 }
 
@@ -47,13 +60,13 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
 
   app.use(apiVersionMiddleware());
 
-  function useProxy(app, service: IServiceProxyConfig) {
+  function useProxy(app, service: IServiceProxyConfig, options?: { preventCaching?: boolean }) {
     if (excludedServices.includes(service.name)) {
       console.log('excluding proxy to ' + service.name);
       return;
     }
     console.log(`Proxy ${service.name} to: `, service.proxies);
-    app.use(service.proxies, getProxy(getProxyTarget(service)));
+    app.use(service.proxies, getProxy(getProxyTarget(service), options));
   }
 
   function loadIndexHtml(retry = 0) {
@@ -277,15 +290,16 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
       });
   });
 
-  useProxy(app, authService);
-  useProxy(app, contentService);
-  useProxy(app, draftsService);
-  useProxy(app, assetsService);
-  useProxy(app, noCodeService);
-  useProxy(app, aiService);
-  useProxy(app, mcpService);
-  useProxy(app, paymentsService);
-  useProxy(app, pluginsService);
+  const preventCaching = { preventCaching: true };
+  useProxy(app, authService, preventCaching);
+  useProxy(app, contentService, preventCaching);
+  useProxy(app, draftsService, preventCaching);
+  useProxy(app, assetsService, preventCaching);
+  useProxy(app, noCodeService, preventCaching);
+  useProxy(app, aiService, preventCaching);
+  useProxy(app, mcpService, preventCaching);
+  useProxy(app, paymentsService, preventCaching);
+  useProxy(app, pluginsService, preventCaching);
 
   const ignoreExtensions = ['js', 'json', 'jpg', 'svg', 'png', 'ico', 'ts', 'vue', 'css', 'map', 'scss', 'json', 'mjs']
 
