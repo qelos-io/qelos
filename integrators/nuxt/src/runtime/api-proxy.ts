@@ -26,8 +26,7 @@ export default defineEventHandler((event) => {
   }
 
   const originalHost = getRequestHeader(event, 'host');
-  const path = event.path.split('?')[0] ?? event.path;
-  const target = joinURL(base, path);
+  const target = joinURL(base, event.path);
 
   return proxyRequest(event, target, {
     fetch: globalThis.fetch,
