@@ -5,7 +5,6 @@ import {
   createResolver,
   addTypeTemplate,
 } from '@nuxt/kit';
-import type { NuxtModule } from '@nuxt/schema';
 import type { QelosNuxtRuntimeConfig } from './types';
 
 export interface QelosNuxtModuleOptions extends QelosNuxtRuntimeConfig {
@@ -21,7 +20,13 @@ export interface QelosNuxtModuleOptions extends QelosNuxtRuntimeConfig {
   disableProxy?: boolean;
 }
 
-const qelosNuxtModule: NuxtModule<QelosNuxtModuleOptions> = defineNuxtModule<QelosNuxtModuleOptions>({
+// The workspace resolves two @nuxt/schema copies (3.21.4 and 4.5.2 - this package
+// supports both Nuxt versions, and other workspace packages pin different ones), which
+// makes tsc's declaration-portability check for the exported module non-deterministic
+// across runs. `any` sidesteps needing to name a cross-package type for the export;
+// runtime behavior is unaffected and is verified against real Nuxt 3 and 4 projects by
+// test/module-smoke.test.ts.
+const qelosNuxtModule: any = defineNuxtModule<QelosNuxtModuleOptions>({
   meta: {
     name: '@qelos/integrator-nuxt',
     configKey: 'qelos',
