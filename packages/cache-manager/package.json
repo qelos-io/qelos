@@ -1,6 +1,6 @@
 {
   "name": "@qelos/cache-manager",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "",
   "main": "./dist/index.js",
   "private": false,
