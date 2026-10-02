@@ -1,6 +1,7 @@
 import * as assert from 'node:assert/strict';
 import { test } from 'node:test';
 import QlPayments from '../src/payments';
+import QlPaymentsAdmin from '../src/administrator/payments';
 import { QelosSDKOptions } from '../src/types';
 
 function jsonResponse(body: unknown) {
@@ -61,5 +62,89 @@ test('QlPayments', async (t) => {
 
     const body = JSON.parse(init?.body as string);
     assert.equal('customer' in body, false);
+  });
+});
+
+test('QlPaymentsAdmin', async (t) => {
+  await t.test('createCoupon passes benefitDurationUnit/benefitDurationValue through to the POST body', async () => {
+    let init: RequestInit | undefined;
+    const options: QelosSDKOptions = {
+      appUrl: 'http://localhost:3000',
+      fetch: async (_url, requestInit) => {
+        init = requestInit;
+        return jsonResponse({ _id: 'coupon-1', code: 'FREEMONTH' });
+      },
+    };
+    const paymentsAdmin = new QlPaymentsAdmin(options);
+    await paymentsAdmin.createCoupon({
+      code: 'FREEMONTH',
+      discountType: 'percentage',
+      discountValue: 100,
+      currentRedemptions: 0,
+      applicablePlanIds: [],
+      isActive: true,
+      benefitDurationUnit: 'months',
+      benefitDurationValue: 1,
+    });
+
+    assert.equal(init?.method, 'post');
+    const body = JSON.parse(init?.body as string);
+    assert.equal(body.benefitDurationUnit, 'months');
+    assert.equal(body.benefitDurationValue, 1);
+  });
+
+  await t.test('updateCoupon passes benefitDurationUnit/benefitDurationValue through to the PUT body', async () => {
+    let init: RequestInit | undefined;
+    const options: QelosSDKOptions = {
+      appUrl: 'http://localhost:3000',
+      fetch: async (_url, requestInit) => {
+        init = requestInit;
+        return jsonResponse({ _id: 'coupon-1', code: 'FREEMONTH' });
+      },
+    };
+    const paymentsAdmin = new QlPaymentsAdmin(options);
+    await paymentsAdmin.updateCoupon('coupon-1', {
+      benefitDurationUnit: 'days',
+      benefitDurationValue: 14,
+    });
+
+    assert.equal(init?.method, 'put');
+    const body = JSON.parse(init?.body as string);
+    assert.equal(body.benefitDurationUnit, 'days');
+    assert.equal(body.benefitDurationValue, 14);
+  });
+
+  await t.test('getWorkspaceSubscriptions calls the workspace-filtered endpoint with the query string', async () => {
+    let url: string | undefined;
+    const options: QelosSDKOptions = {
+      appUrl: 'http://localhost:3000',
+      fetch: async (requestUrl) => {
+        url = requestUrl.toString();
+        return jsonResponse([
+          { _id: 'sub-1', billableEntityType: 'workspace', billableEntityId: 'ws-1', planId: { _id: 'plan-1', name: 'Pro' } },
+        ]);
+      },
+    };
+    const paymentsAdmin = new QlPaymentsAdmin(options);
+    const subscriptions = await paymentsAdmin.getWorkspaceSubscriptions({ status: 'active' });
+
+    assert.equal(url, 'http://localhost:3000/api/subscriptions/workspaces?status=active');
+    assert.equal(subscriptions[0].billableEntityId, 'ws-1');
+    assert.equal((subscriptions[0].planId as any).name, 'Pro');
+  });
+
+  await t.test('getWorkspaceSubscriptions omits the query string when no query is provided', async () => {
+    let url: string | undefined;
+    const options: QelosSDKOptions = {
+      appUrl: 'http://localhost:3000',
+      fetch: async (requestUrl) => {
+        url = requestUrl.toString();
+        return jsonResponse([]);
+      },
+    };
+    const paymentsAdmin = new QlPaymentsAdmin(options);
+    await paymentsAdmin.getWorkspaceSubscriptions();
+
+    assert.equal(url, 'http://localhost:3000/api/subscriptions/workspaces');
   });
 });

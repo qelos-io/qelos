@@ -193,6 +193,24 @@ GET /api/subscriptions/workspaces
 
 Optionally filter by `billableEntityId` (a specific workspace) or `planId` (every workspace on a given plan) using query parameters. See the [Payments API reference](/api/payments#subscriptions) for details.
 
+### Admin SDK
+
+```typescript
+// Every workspace's active subscription, with its plan populated
+const workspaceSubs = await adminSdk.managePayments.getWorkspaceSubscriptions({
+  status: 'active',
+});
+
+for (const sub of workspaceSubs) {
+  console.log(sub.billableEntityId, '->', sub.planId.name);
+}
+
+// A single workspace's subscription
+const [sub] = await adminSdk.managePayments.getWorkspaceSubscriptions({
+  billableEntityId: 'workspace-1',
+});
+```
+
 ## External IDs
 
 To connect plans with payment providers, you must configure `externalIds` with the provider-specific product and price identifiers:
