@@ -28,6 +28,8 @@ const form = reactive({
   maxRedemptions: null as number | null,
   validFrom: null as string | null,
   validUntil: null as string | null,
+  benefitDurationUnit: 'months' as 'days' | 'months' | null,
+  benefitDurationValue: null as number | null,
   applicablePlanIds: [] as string[],
   isActive: true,
 });
@@ -53,6 +55,8 @@ onMounted(async () => {
       form.maxRedemptions = coupon.maxRedemptions ?? null;
       form.validFrom = coupon.validFrom ? new Date(coupon.validFrom).toISOString().slice(0, 10) : null;
       form.validUntil = coupon.validUntil ? new Date(coupon.validUntil).toISOString().slice(0, 10) : null;
+      form.benefitDurationUnit = coupon.benefitDurationUnit ?? 'months';
+      form.benefitDurationValue = coupon.benefitDurationValue ?? null;
       form.applicablePlanIds = [...(coupon.applicablePlanIds || [])];
       form.isActive = coupon.isActive;
     } catch {
@@ -85,6 +89,8 @@ async function submit() {
     maxRedemptions: form.maxRedemptions,
     validFrom: form.validFrom ? new Date(form.validFrom) : undefined,
     validUntil: form.validUntil ? new Date(form.validUntil) : undefined,
+    benefitDurationUnit: form.benefitDurationValue ? form.benefitDurationUnit : undefined,
+    benefitDurationValue: form.benefitDurationValue ?? undefined,
     applicablePlanIds: form.applicablePlanIds,
     isActive: form.isActive,
   };
@@ -209,6 +215,38 @@ async function submit() {
 
       <el-card shadow="never" class="form-section">
         <template #header>
+          <span>{{ t('Benefit Duration') }}</span>
+        </template>
+
+        <p class="section-hint">
+          {{ t('How long the discount lasts after a customer redeems this coupon (leave blank for the life of the subscription). This is separate from the Valid From/Until dates above, which only control when the coupon code itself can be redeemed.') }}
+        </p>
+
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item :label="t('Duration')">
+              <el-input-number
+                v-model="form.benefitDurationValue"
+                :min="1"
+                controls-position="right"
+                :placeholder="t('Unlimited')"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item :label="t('Duration Unit')">
+              <el-select v-model="form.benefitDurationUnit" :disabled="!form.benefitDurationValue" style="width: 100%">
+                <el-option :label="t('Days')" value="days" />
+                <el-option :label="t('Months')" value="months" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-card>
+
+      <el-card shadow="never" class="form-section">
+        <template #header>
           <span>{{ t('Applicable Plans') }}</span>
         </template>
 
@@ -282,5 +320,11 @@ async function submit() {
   margin-inline-start: 12px;
   color: var(--el-text-color-secondary);
   font-size: 12px;
+}
+
+.section-hint {
+  margin-block: 0 16px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 </style>
