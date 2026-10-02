@@ -8,6 +8,7 @@ const updateSubscriptionStatusMock = mock.fn();
 const createInvoiceMock = mock.fn();
 const validateCouponMock = mock.fn();
 const redeemCouponMock = mock.fn();
+const calculateCouponBenefitEndDateMock = mock.fn();
 const getPaymentsConfigurationMock = mock.fn();
 const createCheckoutMock = mock.fn();
 const cancelProviderSubscriptionMock = mock.fn();
@@ -53,6 +54,7 @@ mock.module('../coupons-service', {
   namedExports: {
     validateCoupon: validateCouponMock,
     redeemCoupon: redeemCouponMock,
+    calculateCouponBenefitEndDate: calculateCouponBenefitEndDateMock,
     createCoupon: mock.fn(),
     listCoupons: mock.fn(),
     getCouponById: mock.fn(),
@@ -136,6 +138,7 @@ describe('checkout-service', async () => {
     createInvoiceMock.mock.resetCalls();
     validateCouponMock.mock.resetCalls();
     redeemCouponMock.mock.resetCalls();
+    calculateCouponBenefitEndDateMock.mock.resetCalls();
     getPaymentsConfigurationMock.mock.resetCalls();
     createCheckoutMock.mock.resetCalls();
     cancelProviderSubscriptionMock.mock.resetCalls();
@@ -164,6 +167,7 @@ describe('checkout-service', async () => {
       planId: 'plan-1',
       status: 'pending',
     }));
+    calculateCouponBenefitEndDateMock.mock.mockImplementation(() => null);
   });
 
   describe('calculateDiscountedPrice', () => {
@@ -194,6 +198,22 @@ describe('checkout-service', async () => {
 
     it('should return base price for unknown discount type', () => {
       const result = CheckoutService.calculateDiscountedPrice(100, { discountType: 'unknown', discountValue: 10 });
+      assert.strictEqual(result, 100);
+    });
+
+    it('should apply discount when within the benefit window', () => {
+      const result = CheckoutService.calculateDiscountedPrice(100, { discountType: 'percentage', discountValue: 20 }, {
+        benefitEndsAt: new Date('2026-06-01'),
+        referenceDate: new Date('2026-05-01'),
+      });
+      assert.strictEqual(result, 80);
+    });
+
+    it('should revert to base price once the benefit window has elapsed', () => {
+      const result = CheckoutService.calculateDiscountedPrice(100, { discountType: 'percentage', discountValue: 20 }, {
+        benefitEndsAt: new Date('2026-06-01'),
+        referenceDate: new Date('2026-07-01'),
+      });
       assert.strictEqual(result, 100);
     });
   });
@@ -475,6 +495,30 @@ describe('checkout-service', async () => {
         );
       });
 
+      it('should re-apply the discount when re-checking out within the coupon benefit window', async () => {
+        const benefitEndsAt = new Date(Date.now() + 86400000);
+        getSubscriptionByIdMock.mock.mockImplementation(async () => ({
+          ...mockPendingSubscription, couponId: 'coupon-1', couponBenefitEndsAt: benefitEndsAt,
+        }));
+        validateCouponMock.mock.mockImplementation(async () => ({ _id: 'coupon-1', discountType: 'percentage', discountValue: 50 }));
+
+        await CheckoutService.initiateCheckout('tenant-1', { subscriptionId: 'sub-pending-1', couponCode: 'HALF_OFF' });
+
+        assert.strictEqual(createCheckoutMock.mock.calls[0].arguments[3].amount, 14.5);
+      });
+
+      it('should revert to standard price when re-checking out after the coupon benefit window has elapsed', async () => {
+        const benefitEndsAt = new Date(Date.now() - 86400000);
+        getSubscriptionByIdMock.mock.mockImplementation(async () => ({
+          ...mockPendingSubscription, couponId: 'coupon-1', couponBenefitEndsAt: benefitEndsAt,
+        }));
+        validateCouponMock.mock.mockImplementation(async () => ({ _id: 'coupon-1', discountType: 'percentage', discountValue: 50 }));
+
+        await CheckoutService.initiateCheckout('tenant-1', { subscriptionId: 'sub-pending-1', couponCode: 'HALF_OFF' });
+
+        assert.strictEqual(createCheckoutMock.mock.calls[0].arguments[3].amount, 29);
+      });
+
       it('should throw DYNAMIC_PLAN_UNSUPPORTED_PROVIDER for dynamic plan with non-sumit provider', async () => {
         getPlanByIdMock.mock.mockImplementation(async () => ({ ...mockPlan, dynamic: true }));
         getSubscriptionByIdMock.mock.mockImplementation(async () => ({
@@ -555,6 +599,39 @@ describe('checkout-service', async () => {
 
       await CheckoutService.activateSubscription('tenant-1', 'sub-1');
       assert.strictEqual(redeemCouponMock.mock.calls.length, 0);
+    });
+
+    it('should persist couponBenefitEndsAt when the redeemed coupon has a benefit duration', async () => {
+      const periodStart = new Date('2026-01-01');
+      updateSubscriptionStatusMock.mock.mockImplementation(async () => ({
+        _id: 'sub-1', status: 'active', couponId: 'coupon-1', currentPeriodStart: periodStart,
+      }));
+      const redeemedCoupon = { _id: 'coupon-1', benefitDurationUnit: 'months', benefitDurationValue: 3 };
+      redeemCouponMock.mock.mockImplementation(async () => redeemedCoupon);
+      const benefitEndsAt = new Date('2026-04-01');
+      calculateCouponBenefitEndDateMock.mock.mockImplementation(() => benefitEndsAt);
+
+      await CheckoutService.activateSubscription('tenant-1', 'sub-1', { currentPeriodStart: periodStart });
+
+      assert.strictEqual(calculateCouponBenefitEndDateMock.mock.calls.length, 1);
+      assert.deepStrictEqual(calculateCouponBenefitEndDateMock.mock.calls[0].arguments, [redeemedCoupon, periodStart]);
+      assert.strictEqual(updateSubscriptionStatusMock.mock.calls.length, 2);
+      const secondUpdateArgs = updateSubscriptionStatusMock.mock.calls[1].arguments;
+      assert.strictEqual(secondUpdateArgs[1], 'sub-1');
+      assert.strictEqual(secondUpdateArgs[2], 'active');
+      assert.strictEqual(secondUpdateArgs[3].couponBenefitEndsAt, benefitEndsAt);
+    });
+
+    it('should not persist couponBenefitEndsAt when the redeemed coupon has no benefit duration', async () => {
+      updateSubscriptionStatusMock.mock.mockImplementation(async () => ({
+        _id: 'sub-1', status: 'active', couponId: 'coupon-1',
+      }));
+      redeemCouponMock.mock.mockImplementation(async () => ({ _id: 'coupon-1' }));
+      calculateCouponBenefitEndDateMock.mock.mockImplementation(() => null);
+
+      await CheckoutService.activateSubscription('tenant-1', 'sub-1');
+
+      assert.strictEqual(updateSubscriptionStatusMock.mock.calls.length, 1);
     });
   });
 

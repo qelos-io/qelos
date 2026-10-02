@@ -409,13 +409,35 @@ List coupons. **Auth**: admin.
 
 Create a coupon. **Auth**: admin.
 
+**Request body**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `code` | string | yes | Unique coupon code |
+| `discountType` | `percentage` \| `fixed` | yes | |
+| `discountValue` | number | yes | 0–100 for percentage, absolute amount for fixed |
+| `currency` | string | no | Relevant for fixed-amount discounts |
+| `maxRedemptions` | number | no | `null` = unlimited |
+| `validFrom` / `validUntil` | Date | no | Redemption window — whether the coupon can currently be applied |
+| `benefitDurationUnit` | `days` \| `months` | no | Unit for the post-redemption benefit duration. Must be set together with `benefitDurationValue` |
+| `benefitDurationValue` | number | no | Length of the post-redemption discount/free period. Unset = discount applies for the life of the subscription |
+| `applicablePlanIds` | string[] | no | Empty = all plans |
+| `isActive` | boolean | no | |
+
+**Errors**
+
+| Code | HTTP | Description |
+|---|---|---|
+| `INVALID_COUPON_DATA` | 400 | Missing required fields, invalid discount value, or invalid `benefitDurationUnit`/`benefitDurationValue` |
+| `COUPON_CODE_EXISTS` | 400 | A coupon with this code already exists for the tenant |
+
 > **SDK:** `adminSdk.managePayments.createCoupon(data)`
 
 ---
 
 ### `PUT /api/coupons/:couponId` <Badge type="warning" text="admin" />
 
-Update a coupon. **Auth**: admin.
+Update a coupon. **Auth**: admin. Accepts the same fields as `POST /api/coupons`.
 
 > **SDK:** `adminSdk.managePayments.updateCoupon(couponId, data)`
 

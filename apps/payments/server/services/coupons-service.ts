@@ -1,5 +1,5 @@
 import Coupon from '../models/coupon';
-import { CouponDiscountType } from '@qelos/global-types';
+import { CouponBenefitDurationUnit, CouponDiscountType } from '@qelos/global-types';
 
 export async function listCoupons(tenant: string, filters: { isActive?: boolean } = {}) {
   const query: any = { tenant };
@@ -25,6 +25,8 @@ export async function createCoupon(tenant: string, data: {
   maxRedemptions?: number;
   validFrom?: Date;
   validUntil?: Date;
+  benefitDurationUnit?: CouponBenefitDurationUnit;
+  benefitDurationValue?: number;
   applicablePlanIds?: string[];
   isActive?: boolean;
 }) {
@@ -34,6 +36,15 @@ export async function createCoupon(tenant: string, data: {
 
   if (data.discountType === 'percentage' && (data.discountValue < 0 || data.discountValue > 100)) {
     throw { code: 'INVALID_COUPON_DATA', message: 'percentage discount must be between 0 and 100' };
+  }
+
+  if (data.benefitDurationUnit != null || data.benefitDurationValue != null) {
+    if (!['days', 'months'].includes(data.benefitDurationUnit as string)) {
+      throw { code: 'INVALID_COUPON_DATA', message: 'benefitDurationUnit must be "days" or "months"' };
+    }
+    if (data.benefitDurationValue == null || data.benefitDurationValue <= 0) {
+      throw { code: 'INVALID_COUPON_DATA', message: 'benefitDurationValue must be a positive number' };
+    }
   }
 
   const existing = await (Coupon as any).findOne({ tenant, code: data.code }).lean().exec();
@@ -50,6 +61,8 @@ export async function createCoupon(tenant: string, data: {
     maxRedemptions: data.maxRedemptions || null,
     validFrom: data.validFrom,
     validUntil: data.validUntil,
+    benefitDurationUnit: data.benefitDurationUnit,
+    benefitDurationValue: data.benefitDurationValue,
     applicablePlanIds: data.applicablePlanIds || [],
     isActive: data.isActive !== false,
   });
@@ -61,7 +74,9 @@ export async function updateCoupon(tenant: string, couponId: string, data: Recor
   const updates: Record<string, any> = {};
   const allowedFields = [
     'code', 'discountType', 'discountValue', 'currency',
-    'maxRedemptions', 'validFrom', 'validUntil', 'applicablePlanIds', 'isActive'
+    'maxRedemptions', 'validFrom', 'validUntil',
+    'benefitDurationUnit', 'benefitDurationValue',
+    'applicablePlanIds', 'isActive'
   ];
 
   for (const field of allowedFields) {
@@ -126,6 +141,28 @@ export async function validateCoupon(tenant: string, code: string, planId?: stri
   }
 
   return coupon;
+}
+
+/**
+ * Computes when a coupon's post-redemption benefit (discount/free period) ends, counting
+ * from `fromDate`. Returns `null` when the coupon has no benefit duration, meaning the
+ * discount applies for the life of the subscription.
+ */
+export function calculateCouponBenefitEndDate(
+  coupon: { benefitDurationUnit?: CouponBenefitDurationUnit; benefitDurationValue?: number },
+  fromDate: Date = new Date(),
+): Date | null {
+  if (!coupon.benefitDurationUnit || !coupon.benefitDurationValue) {
+    return null;
+  }
+
+  const endDate = new Date(fromDate);
+  if (coupon.benefitDurationUnit === 'days') {
+    endDate.setUTCDate(endDate.getUTCDate() + coupon.benefitDurationValue);
+  } else {
+    endDate.setUTCMonth(endDate.getUTCMonth() + coupon.benefitDurationValue);
+  }
+  return endDate;
 }
 
 export async function redeemCoupon(tenant: string, couponId: string) {
