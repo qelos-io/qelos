@@ -29,9 +29,12 @@ apps/admin/components.d.ts
 aidev.tasks.json
 *.egg-info/
 .pnpm-store
+.aidev.active
+.aidev.lock
 .aidev/assets/
 .aidev/mcp/
 .aidev/better-mcp.json
+.aidev/last-cleanup.json
 .cursor/mcp.json
 .agents/mcp_config.json
 .devin/config.json
