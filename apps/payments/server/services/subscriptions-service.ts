@@ -12,6 +12,22 @@ export async function listSubscriptions(
   return (Subscription as any).find(query).sort({ created: -1 }).lean().exec();
 }
 
+export async function listWorkspaceSubscriptions(
+  tenant: string,
+  filters: { billableEntityId?: string; planId?: string; status?: SubscriptionStatus } = {}
+) {
+  const query: any = { tenant, billableEntityType: 'workspace' };
+  if (filters.billableEntityId) query.billableEntityId = filters.billableEntityId;
+  if (filters.planId) query.planId = filters.planId;
+  if (filters.status) query.status = filters.status;
+  return (Subscription as any)
+    .find(query)
+    .sort({ created: -1 })
+    .populate('planId')
+    .lean()
+    .exec();
+}
+
 export async function getSubscriptionById(tenant: string, subscriptionId: string) {
   const subscription = await (Subscription as any).findOne({ _id: subscriptionId, tenant }).lean().exec();
   if (!subscription) {

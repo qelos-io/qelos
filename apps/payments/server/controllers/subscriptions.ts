@@ -23,6 +23,20 @@ export async function getSubscriptions(req, res: Response) {
   }
 }
 
+export async function getWorkspaceSubscriptions(req, res: Response) {
+  try {
+    const filters: any = {};
+    if (req.query.billableEntityId) filters.billableEntityId = req.query.billableEntityId;
+    if (req.query.planId) filters.planId = req.query.planId;
+    if (req.query.status) filters.status = req.query.status;
+
+    const subscriptions = await SubscriptionsService.listWorkspaceSubscriptions(req.headers.tenant, filters);
+    res.status(200).json(subscriptions).end();
+  } catch (e) {
+    res.status(500).json({ message: 'failed to load workspace subscriptions' }).end();
+  }
+}
+
 export async function getSubscription(req, res: Response) {
   try {
     const subscription = await SubscriptionsService.getSubscriptionById(req.headers.tenant, req.params.id);

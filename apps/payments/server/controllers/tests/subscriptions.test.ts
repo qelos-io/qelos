@@ -2,6 +2,7 @@ import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert';
 
 const listSubscriptionsMock = mock.fn();
+const listWorkspaceSubscriptionsMock = mock.fn();
 const getSubscriptionByIdMock = mock.fn();
 const getActiveSubscriptionMock = mock.fn();
 const createSubscriptionMock = mock.fn();
@@ -12,6 +13,7 @@ const updateSubscriptionStatusMock = mock.fn();
 mock.module('../../services/subscriptions-service', {
   namedExports: {
     listSubscriptions: listSubscriptionsMock,
+    listWorkspaceSubscriptions: listWorkspaceSubscriptionsMock,
     getSubscriptionById: getSubscriptionByIdMock,
     getActiveSubscription: getActiveSubscriptionMock,
     createSubscription: createSubscriptionMock,
@@ -45,6 +47,7 @@ describe('subscriptions controller', async () => {
 
   beforeEach(() => {
     listSubscriptionsMock.mock.resetCalls();
+    listWorkspaceSubscriptionsMock.mock.resetCalls();
     getSubscriptionByIdMock.mock.resetCalls();
     getActiveSubscriptionMock.mock.resetCalls();
     createSubscriptionMock.mock.resetCalls();
@@ -91,6 +94,37 @@ describe('subscriptions controller', async () => {
       const req = mockReq();
       const res = mockRes();
       await SubscriptionsController.getSubscriptions(req, res);
+
+      assert.strictEqual(res.status.mock.calls[0].arguments[0], 500);
+    });
+  });
+
+  describe('getWorkspaceSubscriptions', () => {
+    it('should return 200 with workspace subscriptions', async () => {
+      const subscriptions = [{ _id: 'sub-1', billableEntityType: 'workspace', planId: { _id: 'plan-1', name: 'Pro' } }];
+      listWorkspaceSubscriptionsMock.mock.mockImplementation(async () => subscriptions);
+
+      const req = mockReq({
+        user: { _id: 'admin-1', isPrivileged: true },
+        query: { billableEntityId: 'ws-1', planId: 'plan-1', status: 'active' },
+      });
+      const res = mockRes();
+      await SubscriptionsController.getWorkspaceSubscriptions(req, res);
+
+      assert.strictEqual(res.status.mock.calls[0].arguments[0], 200);
+      assert.deepStrictEqual(res.json.mock.calls[0].arguments[0], subscriptions);
+      const filterArg = listWorkspaceSubscriptionsMock.mock.calls[0].arguments[1];
+      assert.strictEqual(filterArg.billableEntityId, 'ws-1');
+      assert.strictEqual(filterArg.planId, 'plan-1');
+      assert.strictEqual(filterArg.status, 'active');
+    });
+
+    it('should return 500 on unexpected error', async () => {
+      listWorkspaceSubscriptionsMock.mock.mockImplementation(async () => { throw new Error('db error'); });
+
+      const req = mockReq({ user: { _id: 'admin-1', isPrivileged: true } });
+      const res = mockRes();
+      await SubscriptionsController.getWorkspaceSubscriptions(req, res);
 
       assert.strictEqual(res.status.mock.calls[0].arguments[0], 500);
     });

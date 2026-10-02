@@ -152,6 +152,47 @@ To create a dynamic plan, set `dynamic: true`. When `dynamic` is enabled, `month
 
 When checking out a dynamic plan, the `amount` field becomes **required** in the checkout request — see the [Checkout](./checkout.md) docs.
 
+## Finding Which Plan a Workspace Is On
+
+A workspace's current plan isn't stored on the `Workspace` record itself — it's derived from its active `Subscription`, which links to a `Plan` via `planId`.
+
+### Admin Panel
+
+Open **Pricing Plans → Workspaces** (`/admin/pricing-plans/workspaces`) to see every workspace alongside its currently attached plan name, subscription status, and billing cycle in one table. This page joins workspace data (from the auth service) with subscription/plan data (from the payments service) client-side, since the two live in separate services.
+
+### API
+
+Admins can fetch the same data directly via the workspace-subscriptions endpoint, which returns subscriptions with the related `Plan` populated in place of `planId`:
+
+```
+GET /api/subscriptions/workspaces
+```
+
+**Response:**
+
+```json
+[
+  {
+    "_id": "sub-1",
+    "billableEntityType": "workspace",
+    "billableEntityId": "workspace-1",
+    "status": "active",
+    "billingCycle": "monthly",
+    "currentPeriodStart": "2026-09-01T00:00:00.000Z",
+    "currentPeriodEnd": "2026-10-01T00:00:00.000Z",
+    "planId": {
+      "_id": "plan-1",
+      "name": "Pro",
+      "monthlyPrice": 29,
+      "yearlyPrice": 290,
+      "currency": "USD"
+    }
+  }
+]
+```
+
+Optionally filter by `billableEntityId` (a specific workspace) or `planId` (every workspace on a given plan) using query parameters. See the [Payments API reference](/api/payments#subscriptions) for details.
+
 ## External IDs
 
 To connect plans with payment providers, you must configure `externalIds` with the provider-specific product and price identifiers:

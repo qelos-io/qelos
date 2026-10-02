@@ -49,6 +49,15 @@ export const pricingPlansRoutes: RouteRecordRaw = {
       meta: { roles: ['admin'] },
     },
     {
+      path: 'workspaces',
+      name: 'workspace-subscriptions',
+      component: async () => (await import('./views/WorkspaceSubscriptions.vue')).default,
+      meta: {
+        roles: ['admin'],
+        name: 'Workspace Subscriptions',
+      },
+    },
+    {
       path: 'configuration',
       name: 'paymentsConfiguration',
       component: async () => (await import('./views/PaymentsConfiguration.vue')).default,
