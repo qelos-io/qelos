@@ -100,7 +100,11 @@ async function cancelActiveSubscriptionForReset(
 export function calculateDiscountedPrice(
   basePrice: number,
   coupon: { discountType: string; discountValue: number },
+  options: { benefitEndsAt?: Date | null; referenceDate?: Date } = {},
 ): number {
+  if (options.benefitEndsAt && (options.referenceDate || new Date()) > new Date(options.benefitEndsAt)) {
+    return basePrice;
+  }
   if (coupon.discountType === 'percentage') {
     return Math.round(basePrice * (1 - coupon.discountValue / 100) * 100) / 100;
   }
@@ -167,7 +171,10 @@ export async function initiateCheckout(
     let finalPrice = basePrice;
     if (params.couponCode) {
       coupon = await CouponsService.validateCoupon(tenant, params.couponCode, plan._id.toString());
-      finalPrice = calculateDiscountedPrice(basePrice, coupon);
+      const benefitEndsAt = existingSubscription?.couponId?.toString() === coupon._id.toString()
+        ? existingSubscription.couponBenefitEndsAt
+        : undefined;
+      finalPrice = calculateDiscountedPrice(basePrice, coupon, { benefitEndsAt });
     }
 
     activeSubscription = await SubscriptionsService.getActiveSubscription(tenant, billableEntityType, billableEntityId);
@@ -303,7 +310,12 @@ export async function activateSubscription(
   );
 
   if (subscription.couponId) {
-    await CouponsService.redeemCoupon(tenant, subscription.couponId.toString()).catch(() => {});
+    const redeemedCoupon = await CouponsService.redeemCoupon(tenant, subscription.couponId.toString()).catch(() => null);
+    const benefitEndsAt = redeemedCoupon
+      && CouponsService.calculateCouponBenefitEndDate(redeemedCoupon, subscription.currentPeriodStart || new Date());
+    if (benefitEndsAt) {
+      return SubscriptionsService.updateSubscriptionStatus(tenant, subscriptionId, 'active', { couponBenefitEndsAt: benefitEndsAt });
+    }
   }
 
   return subscription;

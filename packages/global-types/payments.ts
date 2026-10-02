@@ -13,6 +13,9 @@ export type InvoiceStatus = 'paid' | 'pending' | 'failed' | 'refunded';
 /** Type of discount a coupon provides. */
 export type CouponDiscountType = 'percentage' | 'fixed';
 
+/** Unit used to express a coupon's post-redemption benefit duration. */
+export type CouponBenefitDurationUnit = 'days' | 'months';
+
 /**
  * Real-world identity of the billable entity, passed through checkout so payment
  * providers (e.g. Sumit) can create a properly-named customer record instead of
@@ -116,6 +119,12 @@ export interface ISubscription {
   providerKind?: string;
   couponId?: string;
   /**
+   * When the applied coupon's discounted/free benefit period ends (set when a coupon with
+   * `benefitDurationUnit`/`benefitDurationValue` is redeemed). After this date, billing
+   * reverts to the plan's standard price. Unset if no time-limited coupon benefit applies.
+   */
+  couponBenefitEndsAt?: Date;
+  /**
    * Admin-configured charge amount for dynamic-priced plans. Only admins may
    * set this field; it is read by the checkout service when `IPlan.dynamic` is
    * `true`. Must be set before checkout can proceed on a dynamic plan.
@@ -171,6 +180,15 @@ export interface ICoupon {
   currentRedemptions: number;
   validFrom?: Date;
   validUntil?: Date;
+  /**
+   * Unit for the post-redemption benefit duration (how long the discount/free period lasts
+   * for the redeeming subscriber once applied). Distinct from `validFrom`/`validUntil`, which
+   * only gate whether the coupon can currently be redeemed. Unset means the discount applies
+   * for the life of the subscription.
+   */
+  benefitDurationUnit?: CouponBenefitDurationUnit;
+  /** Length of the post-redemption benefit, in `benefitDurationUnit` units. */
+  benefitDurationValue?: number;
   /** Empty array means the coupon applies to all plans. */
   applicablePlanIds: string[];
   isActive: boolean;

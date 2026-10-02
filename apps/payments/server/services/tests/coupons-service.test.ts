@@ -121,6 +121,76 @@ describe('coupons-service', async () => {
       assert.ok(result);
       assert.strictEqual(result._id, 'coupon-1');
     });
+
+    it('should throw INVALID_COUPON_DATA when benefitDurationUnit is invalid', async () => {
+      await assert.rejects(() => CouponsService.createCoupon('tenant-1', {
+        code: 'FREE3M', discountType: 'percentage', discountValue: 100, benefitDurationUnit: 'weeks' as any, benefitDurationValue: 3,
+      }), (e: any) => {
+        assert.strictEqual(e.code, 'INVALID_COUPON_DATA');
+        return true;
+      });
+    });
+
+    it('should throw INVALID_COUPON_DATA when benefitDurationValue is zero', async () => {
+      await assert.rejects(() => CouponsService.createCoupon('tenant-1', {
+        code: 'FREE3M', discountType: 'percentage', discountValue: 100, benefitDurationUnit: 'months', benefitDurationValue: 0,
+      }), (e: any) => {
+        assert.strictEqual(e.code, 'INVALID_COUPON_DATA');
+        return true;
+      });
+    });
+
+    it('should throw INVALID_COUPON_DATA when benefitDurationValue is negative', async () => {
+      await assert.rejects(() => CouponsService.createCoupon('tenant-1', {
+        code: 'FREE3M', discountType: 'percentage', discountValue: 100, benefitDurationUnit: 'days', benefitDurationValue: -5,
+      }), (e: any) => {
+        assert.strictEqual(e.code, 'INVALID_COUPON_DATA');
+        return true;
+      });
+    });
+
+    it('should throw INVALID_COUPON_DATA when only benefitDurationUnit is set', async () => {
+      await assert.rejects(() => CouponsService.createCoupon('tenant-1', {
+        code: 'FREE3M', discountType: 'percentage', discountValue: 100, benefitDurationUnit: 'months',
+      } as any), (e: any) => {
+        assert.strictEqual(e.code, 'INVALID_COUPON_DATA');
+        return true;
+      });
+    });
+
+    it('should create coupon with a valid benefit duration', async () => {
+      const result = await CouponsService.createCoupon('tenant-1', {
+        code: 'FREE3M', discountType: 'percentage', discountValue: 100, benefitDurationUnit: 'months', benefitDurationValue: 3,
+      });
+      assert.ok(result);
+      assert.strictEqual(result.benefitDurationUnit, 'months');
+      assert.strictEqual(result.benefitDurationValue, 3);
+    });
+  });
+
+  describe('calculateCouponBenefitEndDate', () => {
+    it('should return null when no benefit duration is set', () => {
+      const result = CouponsService.calculateCouponBenefitEndDate({});
+      assert.strictEqual(result, null);
+    });
+
+    it('should add days to the from-date', () => {
+      const from = new Date('2026-01-01T00:00:00.000Z');
+      const result = CouponsService.calculateCouponBenefitEndDate(
+        { benefitDurationUnit: 'days', benefitDurationValue: 10 },
+        from,
+      );
+      assert.strictEqual(result?.toISOString(), new Date('2026-01-11T00:00:00.000Z').toISOString());
+    });
+
+    it('should add months to the from-date', () => {
+      const from = new Date('2026-01-15T00:00:00.000Z');
+      const result = CouponsService.calculateCouponBenefitEndDate(
+        { benefitDurationUnit: 'months', benefitDurationValue: 3 },
+        from,
+      );
+      assert.strictEqual(result?.toISOString(), new Date('2026-04-15T00:00:00.000Z').toISOString());
+    });
   });
 
   describe('validateCoupon', () => {

@@ -14,6 +14,8 @@ export interface SubscriptionDocument extends Document {
   providerId: string;
   providerKind: string;
   couponId: mongoose.Types.ObjectId;
+  /** When the active coupon's discounted/free benefit period ends; after this date, billing reverts to standard pricing. */
+  couponBenefitEndsAt: Date;
   dynamicAmount: number;
   metadata: Record<string, any>;
   created: Date;
@@ -57,6 +59,7 @@ const SubscriptionSchema = new mongoose.Schema<any, any>({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Coupon',
   },
+  couponBenefitEndsAt: Date,
   dynamicAmount: {
     type: Number,
   },

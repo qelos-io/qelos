@@ -18,8 +18,21 @@ Coupons allow you to offer discounts during checkout. They support both percenta
 | `currentRedemptions` | `number` | Number of times redeemed so far |
 | `validFrom` | `Date` | Coupon becomes valid at this date |
 | `validUntil` | `Date` | Coupon expires at this date |
+| `benefitDurationUnit` | `"days"` \| `"months"` | Unit for the post-redemption benefit duration (unset = benefit lasts for the life of the subscription) |
+| `benefitDurationValue` | `number` | Length of the post-redemption benefit, in `benefitDurationUnit` units |
 | `applicablePlanIds` | `string[]` | Plans this coupon works with (empty = all plans) |
 | `isActive` | `boolean` | Whether the coupon is currently active |
+
+### Redemption window vs. benefit duration
+
+These two concepts are easy to confuse, but they govern different things:
+
+- **Redemption window** (`validFrom` / `validUntil`) — gates *whether the coupon can currently be redeemed at all*. A coupon with `validUntil` in the past can no longer be applied at checkout, regardless of its discount.
+- **Benefit duration** (`benefitDurationUnit` / `benefitDurationValue`) — once a coupon *has been redeemed*, this controls *how long the discount/free period lasts for that subscriber*. For example, a coupon with `benefitDurationUnit: 'months'` and `benefitDurationValue: 3` gives the redeeming subscriber 3 months at the discounted price; after that, billing automatically reverts to the plan's standard price — the subscription itself is not canceled.
+
+If `benefitDurationUnit`/`benefitDurationValue` are left unset, the discount applies for the life of the subscription, matching the pre-existing behavior.
+
+When a coupon with a benefit duration is redeemed (subscription activation), the end date of the benefit is computed from the subscription's `currentPeriodStart` (falling back to the redemption time) and stored on the subscription as `couponBenefitEndsAt`. Pricing logic checks this field — if the current date is past `couponBenefitEndsAt`, the standard plan price is used instead of the discounted one.
 
 ## Validation Rules
 
@@ -115,6 +128,17 @@ await adminSdk.managePayments.createCoupon({
   validUntil: new Date('2026-12-31'),
   isActive: true,
   applicablePlanIds: ['plan-pro'],
+});
+
+// First 3 months free, then standard pricing
+await adminSdk.managePayments.createCoupon({
+  code: 'FIRST3FREE',
+  discountType: 'percentage',
+  discountValue: 100,
+  benefitDurationUnit: 'months',
+  benefitDurationValue: 3,
+  isActive: true,
+  applicablePlanIds: [],
 });
 
 // Deactivate a coupon

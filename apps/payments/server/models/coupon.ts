@@ -1,5 +1,5 @@
 import mongoose, { Document } from 'mongoose';
-import { CouponDiscountType } from '@qelos/global-types';
+import { CouponBenefitDurationUnit, CouponDiscountType } from '@qelos/global-types';
 
 export interface CouponDocument extends Document {
   tenant: string;
@@ -11,6 +11,10 @@ export interface CouponDocument extends Document {
   currentRedemptions: number;
   validFrom: Date;
   validUntil: Date;
+  /** Unit for the post-redemption benefit duration. Unset = discount applies for the life of the subscription. */
+  benefitDurationUnit: CouponBenefitDurationUnit;
+  /** Length of the post-redemption benefit, in `benefitDurationUnit` units. */
+  benefitDurationValue: number;
   applicablePlanIds: mongoose.Types.ObjectId[];
   isActive: boolean;
   created: Date;
@@ -49,6 +53,14 @@ const CouponSchema = new mongoose.Schema<any, any>({
   },
   validFrom: Date,
   validUntil: Date,
+  benefitDurationUnit: {
+    type: String,
+    enum: ['days', 'months'],
+  },
+  benefitDurationValue: {
+    type: Number,
+    min: 1,
+  },
   applicablePlanIds: {
     type: [mongoose.Schema.Types.ObjectId],
     default: () => [],
