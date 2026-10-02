@@ -139,6 +139,43 @@ List subscriptions. **Auth**: authenticated. Regular users see only their own en
 
 ---
 
+### `GET /api/subscriptions/workspaces` <Badge type="warning" text="admin" />
+
+List subscriptions for workspaces (`billableEntityType` is always `workspace`), with the related `Plan` populated in place of `planId`. Used by the admin panel's **Pricing Plans → Workspaces** page to show which plan each workspace is attached to. **Auth**: admin.
+
+**Query parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `billableEntityId` | string | Filter to a single workspace |
+| `planId` | string | Filter to every workspace subscribed to a given plan |
+| `status` | `pending` \| `active` \| `trialing` \| `canceled` \| `past_due` \| `expired` | Filter by status |
+
+**Response `200`**
+
+```json
+[
+  {
+    "_id": "sub-1",
+    "billableEntityType": "workspace",
+    "billableEntityId": "workspace-1",
+    "status": "active",
+    "billingCycle": "monthly",
+    "currentPeriodStart": "2026-09-01T00:00:00.000Z",
+    "currentPeriodEnd": "2026-10-01T00:00:00.000Z",
+    "planId": {
+      "_id": "plan-1",
+      "name": "Pro",
+      "monthlyPrice": 29,
+      "yearlyPrice": 290,
+      "currency": "USD"
+    }
+  }
+]
+```
+
+---
+
 ### `GET /api/subscriptions/:id`
 
 Returns a single subscription. **Auth**: authenticated (non-admins can only access their own entity's subscriptions).

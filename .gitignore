@@ -29,3 +29,12 @@ apps/admin/components.d.ts
 aidev.tasks.json
 *.egg-info/
 .pnpm-store
+.aidev/assets/
+.aidev/mcp/
+.aidev/better-mcp.json
+.cursor/mcp.json
+.agents/mcp_config.json
+.devin/config.json
+.codex/config.toml
+opencode.json
+*.aidev-backup

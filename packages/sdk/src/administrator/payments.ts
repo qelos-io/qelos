@@ -116,6 +116,22 @@ export default class QlPaymentsAdmin extends BaseSDK {
   }
 
   /**
+   * Lists subscriptions for workspaces, with the related `Plan` populated in
+   * place of `planId`. Useful for an admin panel showing which plan each
+   * workspace is attached to.
+   */
+  getWorkspaceSubscriptions(query?: {
+    billableEntityId?: string;
+    planId?: string;
+    status?: SubscriptionStatus;
+  }) {
+    const qs = query ? `?${new URLSearchParams(query as any)}` : '';
+    return this.callJsonApi<(Omit<ISubscription, 'planId'> & { planId: IPlan })[]>(
+      `/api/subscriptions/workspaces${qs}`,
+    );
+  }
+
+  /**
    * Creates a pending subscription on behalf of any billable entity. Admins can
    * also set `dynamicAmount` here for dynamic plans, making the subscription
    * immediately ready for checkout.

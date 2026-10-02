@@ -67,6 +67,10 @@ function formatPrice(amount: number, currency: string) {
             <font-awesome-icon :icon="['fas', 'ticket']" />
             {{ t('Coupons') }}
           </router-link>
+          <router-link :to="{ name: 'workspace-subscriptions' }" class="tab-link">
+            <font-awesome-icon :icon="['fas', 'building']" />
+            {{ t('Workspaces') }}
+          </router-link>
           <router-link :to="{ name: 'paymentsConfiguration' }" class="tab-link">
             <font-awesome-icon :icon="['fas', 'gear']" />
             {{ t('Configuration') }}

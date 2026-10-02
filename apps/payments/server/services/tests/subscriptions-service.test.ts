@@ -8,6 +8,11 @@ const findMock = mock.fn(() => ({
     lean: mock.fn(() => ({
       exec: mock.fn(async () => []),
     })),
+    populate: mock.fn(() => ({
+      lean: mock.fn(() => ({
+        exec: mock.fn(async () => []),
+      })),
+    })),
   })),
 }));
 
@@ -92,6 +97,43 @@ describe('subscriptions-service', async () => {
         tenant: 'tenant-1',
         billableEntityType: 'workspace',
         billableEntityId: 'ws-1',
+        status: 'active',
+      });
+    });
+  });
+
+  describe('listWorkspaceSubscriptions', () => {
+    it('should always filter by billableEntityType workspace', async () => {
+      await SubscriptionsService.listWorkspaceSubscriptions('tenant-1');
+      assert.deepStrictEqual(findMock.mock.calls[0].arguments[0], {
+        tenant: 'tenant-1',
+        billableEntityType: 'workspace',
+      });
+    });
+
+    it('should pass billableEntityId filter', async () => {
+      await SubscriptionsService.listWorkspaceSubscriptions('tenant-1', { billableEntityId: 'ws-1' });
+      assert.deepStrictEqual(findMock.mock.calls[0].arguments[0], {
+        tenant: 'tenant-1',
+        billableEntityType: 'workspace',
+        billableEntityId: 'ws-1',
+      });
+    });
+
+    it('should pass planId filter', async () => {
+      await SubscriptionsService.listWorkspaceSubscriptions('tenant-1', { planId: 'plan-1' });
+      assert.deepStrictEqual(findMock.mock.calls[0].arguments[0], {
+        tenant: 'tenant-1',
+        billableEntityType: 'workspace',
+        planId: 'plan-1',
+      });
+    });
+
+    it('should pass status filter', async () => {
+      await SubscriptionsService.listWorkspaceSubscriptions('tenant-1', { status: 'active' });
+      assert.deepStrictEqual(findMock.mock.calls[0].arguments[0], {
+        tenant: 'tenant-1',
+        billableEntityType: 'workspace',
         status: 'active',
       });
     });
