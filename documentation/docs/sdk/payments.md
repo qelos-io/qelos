@@ -231,6 +231,45 @@ await adminSdk.managePayments.updateCoupon(coupon._id, { isActive: false });
 await adminSdk.managePayments.deleteCoupon(coupon._id);
 ```
 
+### Duration-based coupons (free/discount period)
+
+A coupon's `benefitDurationUnit`/`benefitDurationValue` limit the discount to a fixed period after redemption (e.g. "free for 1 month", then full price). Omit them for a discount that lasts the life of the subscription.
+
+```typescript
+// 100% off for the first month, then full price
+const trialCoupon = await adminSdk.managePayments.createCoupon({
+  code: 'FIRSTMONTHFREE',
+  discountType: 'percentage',
+  discountValue: 100,
+  isActive: true,
+  applicablePlanIds: ['plan-id'],
+  benefitDurationUnit: 'months',
+  benefitDurationValue: 1,
+});
+
+// 14 days of 20% off
+await adminSdk.managePayments.updateCoupon(coupon._id, {
+  benefitDurationUnit: 'days',
+  benefitDurationValue: 14,
+});
+```
+
+---
+
+## Workspace-to-Plan Assignments
+
+Admins can list subscriptions for workspaces with the related plan populated — useful for an admin panel showing which pricing plan each workspace is on:
+
+```typescript
+const workspaceSubs = await adminSdk.managePayments.getWorkspaceSubscriptions({
+  status: 'active',
+});
+
+for (const sub of workspaceSubs) {
+  console.log(sub.billableEntityId, '->', sub.planId.name);
+}
+```
+
 ---
 
 ## `QlPayments` Reference (User SDK)
@@ -261,6 +300,7 @@ await adminSdk.managePayments.deleteCoupon(coupon._id);
 | `checkout(params)` | Initiate checkout with entity overrides and optional `amount` |
 | `getSubscriptions(query?)` | List subscriptions across all entities |
 | `getSubscription(subscriptionId)` | Get a single subscription |
+| `getWorkspaceSubscriptions(query?)` | List workspace subscriptions with the related plan populated |
 | `createSubscription(data)` | Create a pending subscription on behalf of any entity |
 | `cancelSubscription(subscriptionId)` | Cancel any subscription |
 | `setSubscriptionDynamicAmount(subscriptionId, amount)` | Set or update the dynamic amount on a subscription |
