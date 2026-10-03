@@ -7,6 +7,7 @@ import type { FormRules } from 'element-plus';
 import couponsService from '@/services/apis/coupons-service';
 import { useCouponsStore } from '../store/coupons';
 import { usePlansStore } from '../store/plans';
+import { useWorkspaceSubscriptionsStore } from '../store/workspace-subscriptions';
 import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();
@@ -15,6 +16,13 @@ const router = useRouter();
 const couponsStore = useCouponsStore();
 const plansStore = usePlansStore();
 const { plans } = storeToRefs(plansStore);
+const workspaceSubscriptionsStore = useWorkspaceSubscriptionsStore();
+const { rows: workspaceRows, loading: workspaceRowsLoading } = storeToRefs(workspaceSubscriptionsStore);
+
+const couponId = computed(() => route.params.couponId as string);
+const workspacesUsingCoupon = computed(() =>
+  workspaceRows.value.filter((row) => row.subscription?.couponId === couponId.value)
+);
 
 const isEdit = computed(() => !!route.params.couponId);
 const loading = ref(false);
@@ -265,6 +273,25 @@ async function submit() {
             />
           </el-select>
         </el-form-item>
+      </el-card>
+
+      <el-card v-if="isEdit" shadow="never" class="form-section" v-loading="workspaceRowsLoading">
+        <template #header>
+          <span>{{ t('Workspaces Using This Coupon') }}</span>
+        </template>
+
+        <el-table v-if="workspacesUsingCoupon.length" :data="workspacesUsingCoupon" row-key="workspace._id" size="small">
+          <el-table-column :label="t('Workspace')" min-width="160">
+            <template #default="{ row }">{{ row.workspace.name }}</template>
+          </el-table-column>
+          <el-table-column :label="t('Plan')" min-width="140">
+            <template #default="{ row }">{{ row.subscription.planId?.name || '—' }}</template>
+          </el-table-column>
+          <el-table-column :label="t('Status')" width="120">
+            <template #default="{ row }">{{ t(row.subscription.status) }}</template>
+          </el-table-column>
+        </el-table>
+        <el-empty v-else :description="t('No workspaces are currently using this coupon')" :image-size="60" />
       </el-card>
 
       <div class="form-actions">
