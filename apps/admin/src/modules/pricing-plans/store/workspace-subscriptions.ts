@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import subscriptionsService from '@/services/apis/subscriptions-service';
 import workspacesService from '@/services/apis/workspaces-service';
-import { IPlan, ISubscription } from '@qelos/global-types';
+import { BillingCycle, IPlan, ISubscription } from '@qelos/global-types';
 import { IWorkspace } from '@qelos/sdk/dist/workspaces';
 
 export type SubscriptionWithPlan = Omit<ISubscription, 'planId'> & { planId: IPlan };
@@ -35,5 +36,54 @@ export const useWorkspaceSubscriptionsStore = defineStore('workspace-subscriptio
     []
   );
 
-  return { rows: result, loading, loaded, promise, error, retry };
+  const saving = ref(false);
+
+  async function attachToPlan(workspaceId: string, planId: string, billingCycle: BillingCycle) {
+    saving.value = true;
+    try {
+      const created = await subscriptionsService.create({
+        planId,
+        billingCycle,
+        billableEntityType: 'workspace',
+        billableEntityId: workspaceId,
+        status: 'active',
+      });
+      await retry();
+      return created;
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  async function changePlan(workspaceId: string, currentSubscriptionId: string | undefined, planId: string, billingCycle: BillingCycle) {
+    saving.value = true;
+    try {
+      if (currentSubscriptionId) {
+        await subscriptionsService.cancel(currentSubscriptionId);
+      }
+      const created = await subscriptionsService.create({
+        planId,
+        billingCycle,
+        billableEntityType: 'workspace',
+        billableEntityId: workspaceId,
+        status: 'active',
+      });
+      await retry();
+      return created;
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  async function detach(subscriptionId: string) {
+    saving.value = true;
+    try {
+      await subscriptionsService.cancel(subscriptionId);
+      await retry();
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  return { rows: result, loading, loaded, promise, error, retry, saving, attachToPlan, changePlan, detach };
 });

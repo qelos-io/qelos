@@ -2,16 +2,21 @@
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { storeToRefs } from 'pinia';
 import type { FormInstance, FormRules } from 'element-plus';
 import plansService from '@/services/apis/plans-service';
 import { usePlansStore } from '../store/plans';
+import { useWorkspaceSubscriptionsStore, WorkspaceSubscriptionRow } from '../store/workspace-subscriptions';
 import PlanCard from '../components/PlanCard.vue';
+import { BillingCycle } from '@qelos/global-types';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const plansStore = usePlansStore();
+const workspaceSubscriptionsStore = useWorkspaceSubscriptionsStore();
+const { rows: workspaceRows, loading: workspaceRowsLoading, saving: attachingWorkspace } = storeToRefs(workspaceSubscriptionsStore);
 
 const isEdit = computed(() => !!route.params.planId);
 const loading = ref(false);
@@ -133,6 +138,66 @@ async function submit() {
     router.push({ name: 'pricing-plans' });
   } catch {
     ElMessage.error(t('Failed to save plan'));
+  }
+}
+
+const planId = computed(() => route.params.planId as string);
+
+const attachedWorkspaces = computed(() =>
+  workspaceRows.value.filter((row) => row.subscription?.planId?._id === planId.value)
+);
+
+const availableWorkspaces = computed(() =>
+  workspaceRows.value.filter((row) => row.subscription?.planId?._id !== planId.value)
+);
+
+const selectedWorkspaceId = ref('');
+const selectedBillingCycle = ref<BillingCycle>('monthly');
+
+async function attachWorkspace() {
+  if (!selectedWorkspaceId.value) {
+    ElMessage.warning(t('Please select a workspace'));
+    return;
+  }
+
+  const row = availableWorkspaces.value.find((r) => r.workspace._id === selectedWorkspaceId.value);
+
+  try {
+    if (row?.subscription) {
+      await workspaceSubscriptionsStore.changePlan(
+        selectedWorkspaceId.value,
+        row.subscription._id,
+        planId.value,
+        selectedBillingCycle.value
+      );
+    } else {
+      await workspaceSubscriptionsStore.attachToPlan(selectedWorkspaceId.value, planId.value, selectedBillingCycle.value);
+    }
+    ElMessage.success(t('Workspace attached to plan'));
+    selectedWorkspaceId.value = '';
+  } catch {
+    ElMessage.error(t('Failed to attach workspace'));
+  }
+}
+
+async function detachWorkspace(row: WorkspaceSubscriptionRow) {
+  if (!row.subscription) return;
+
+  try {
+    await ElMessageBox.confirm(
+      t('This will cancel the subscription and detach the workspace from this plan.'),
+      t('Detach workspace from plan'),
+      { type: 'warning', confirmButtonText: t('Detach'), cancelButtonText: t('Cancel') }
+    );
+  } catch {
+    return;
+  }
+
+  try {
+    await workspaceSubscriptionsStore.detach(row.subscription._id);
+    ElMessage.success(t('Workspace detached from plan'));
+  } catch {
+    ElMessage.error(t('Failed to detach workspace'));
   }
 }
 
@@ -291,6 +356,55 @@ const planPreview = computed(() => ({
             </div>
           </el-card>
 
+          <el-card v-if="isEdit" shadow="never" class="form-section" v-loading="workspaceRowsLoading">
+            <template #header>
+              <span>{{ t('Workspaces on this Plan') }}</span>
+            </template>
+
+            <el-table v-if="attachedWorkspaces.length" :data="attachedWorkspaces" row-key="workspace._id" size="small">
+              <el-table-column :label="t('Workspace')" min-width="160">
+                <template #default="{ row }">{{ row.workspace.name }}</template>
+              </el-table-column>
+              <el-table-column :label="t('Status')" width="120">
+                <template #default="{ row }">{{ t(row.subscription.status) }}</template>
+              </el-table-column>
+              <el-table-column :label="t('Billing Cycle')" width="140">
+                <template #default="{ row }">{{ t(row.subscription.billingCycle) }}</template>
+              </el-table-column>
+              <el-table-column :label="t('Actions')" width="100">
+                <template #default="{ row }">
+                  <el-button size="small" type="danger" plain @click="detachWorkspace(row)">
+                    {{ t('Detach') }}
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <el-empty v-else :description="t('No workspaces attached yet')" :image-size="60" />
+
+            <div class="add-row attach-workspace-row">
+              <el-select
+                v-model="selectedWorkspaceId"
+                filterable
+                :placeholder="t('Select a workspace to attach')"
+                style="flex: 1"
+              >
+                <el-option
+                  v-for="row in availableWorkspaces"
+                  :key="row.workspace._id"
+                  :label="row.workspace.name"
+                  :value="row.workspace._id"
+                />
+              </el-select>
+              <el-select v-model="selectedBillingCycle" style="width: 140px">
+                <el-option :label="t('Monthly')" value="monthly" />
+                <el-option :label="t('Yearly')" value="yearly" />
+              </el-select>
+              <el-button type="primary" plain :loading="attachingWorkspace" @click="attachWorkspace">
+                {{ t('Attach') }}
+              </el-button>
+            </div>
+          </el-card>
+
           <div class="form-actions">
             <el-button @click="router.push({ name: 'pricing-plans' })">{{ t('Cancel') }}</el-button>
             <el-button type="primary" @click="submit" :loading="plansStore.saving">
@@ -366,6 +480,10 @@ const planPreview = computed(() => ({
 .add-row {
   display: flex;
   gap: 8px;
+}
+
+.attach-workspace-row {
+  margin-top: 16px;
 }
 
 .limits-list {

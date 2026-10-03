@@ -14,6 +14,41 @@
 		<SaveButton class="save-btn" :submitting="submitting">{{ $t('Save') }}</SaveButton>
 	</el-form>
 
+	<div v-if="workspace._id" class="container plan-section">
+		<div class="member-header">
+			<h3>{{ $t('Pricing Plan') }}</h3>
+		</div>
+
+		<div v-loading="loadingSubscription" class="plan-content">
+			<div class="current-plan-row">
+				<span v-if="currentSubscription?.planId?.name" class="current-plan-info">
+					<strong>{{ currentSubscription.planId.name }}</strong>
+					<el-tag size="small" effect="light" :type="currentSubscription.status === 'active' ? 'success' : 'info'">
+						{{ $t(currentSubscription.status) }}
+					</el-tag>
+					<span class="billing-cycle-label">{{ $t(currentSubscription.billingCycle) }}</span>
+				</span>
+				<el-tag v-else type="info" size="small" effect="light">{{ $t('No plan attached') }}</el-tag>
+			</div>
+
+			<div class="flex-row plan-picker-row">
+				<el-select v-model="selectedPlanId" filterable :placeholder="$t('Select a plan')" style="width: 100%;">
+					<el-option v-for="plan in plans" :key="plan._id" :label="plan.name" :value="plan._id" />
+				</el-select>
+				<el-select v-model="selectedBillingCycle" style="width: 100%;">
+					<el-option :label="$t('Monthly')" value="monthly" />
+					<el-option :label="$t('Yearly')" value="yearly" />
+				</el-select>
+				<el-button type="primary" plain :loading="savingSubscription" @click="saveSubscription">
+					{{ currentSubscription ? $t('Change Plan') : $t('Attach to Plan') }}
+				</el-button>
+				<el-button v-if="currentSubscription" type="danger" plain :loading="savingSubscription" @click="detachSubscription">
+					{{ $t('Detach') }}
+				</el-button>
+			</div>
+		</div>
+	</div>
+
 	<div class="container">
 		<div class="member-header">
 			<h3>{{ $t('Members') }}</h3>
@@ -87,10 +122,12 @@ import {
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 
 import { ElMessage } from 'element-plus';
-import { WorkspaceLabelDefinition } from '@qelos/global-types'
+import { BillingCycle, IPlan, WorkspaceLabelDefinition } from '@qelos/global-types'
 import { useUsersList } from '@/modules/users/compositions/users';
 import { IUser } from '@/modules/core/store/types/user';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
+import plansService from '@/services/apis/plans-service';
+import subscriptionsService from '@/services/apis/subscriptions-service';
 const { users, loading } = useUsersList();
 
 const searchQueryForMembers = ref('');
@@ -193,7 +230,76 @@ const data = reactive<Partial<IWorkspace>>({
 });
 onMounted(() => {
 	loadLabelsFromWorkspace();
+	if (workspace._id) {
+		loadPlans();
+		loadSubscription();
+	}
 })
+
+const plans = ref<IPlan[]>([]);
+const currentSubscription = ref<any>(null);
+const loadingSubscription = ref(false);
+const savingSubscription = ref(false);
+const selectedPlanId = ref('');
+const selectedBillingCycle = ref<BillingCycle>('monthly');
+
+async function loadPlans() {
+	plans.value = await plansService.getAll();
+}
+
+async function loadSubscription() {
+	loadingSubscription.value = true;
+	try {
+		const [subscription] = await subscriptionsService.getWorkspaceSubscriptions({ billableEntityId: workspace._id });
+		currentSubscription.value = subscription || null;
+		selectedPlanId.value = subscription?.planId?._id || '';
+		selectedBillingCycle.value = subscription?.billingCycle || 'monthly';
+	} finally {
+		loadingSubscription.value = false;
+	}
+}
+
+async function saveSubscription() {
+	if (!selectedPlanId.value) {
+		ElMessage.warning('Please select a plan');
+		return;
+	}
+
+	savingSubscription.value = true;
+	try {
+		if (currentSubscription.value) {
+			await subscriptionsService.cancel(currentSubscription.value._id);
+		}
+		await subscriptionsService.create({
+			planId: selectedPlanId.value,
+			billingCycle: selectedBillingCycle.value,
+			billableEntityType: 'workspace',
+			billableEntityId: workspace._id,
+			status: 'active',
+		});
+		ElMessage.success('Workspace attached to plan');
+		await loadSubscription();
+	} catch {
+		ElMessage.error('Failed to update the workspace plan');
+	} finally {
+		savingSubscription.value = false;
+	}
+}
+
+async function detachSubscription() {
+	if (!currentSubscription.value) return;
+
+	savingSubscription.value = true;
+	try {
+		await subscriptionsService.cancel(currentSubscription.value._id);
+		ElMessage.success('Workspace detached from plan');
+		await loadSubscription();
+	} catch {
+		ElMessage.error('Failed to detach the workspace from its plan');
+	} finally {
+		savingSubscription.value = false;
+	}
+}
 watch(
 	() => workspace.labels,
 	(newLabels) => {
@@ -336,5 +442,35 @@ function updateMemberRoles(index: number) {
 .search-input {
 	width: 100%;
 	margin-bottom: 10px;
+}
+
+.plan-section {
+	margin-bottom: 20px;
+}
+
+.plan-content {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.current-plan-row {
+	display: flex;
+	align-items: center;
+}
+
+.current-plan-info {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.billing-cycle-label {
+	color: var(--el-text-color-secondary);
+	font-size: 13px;
+}
+
+.plan-picker-row {
+	align-items: center;
 }
 </style>
