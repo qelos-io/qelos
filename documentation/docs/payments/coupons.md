@@ -34,6 +34,19 @@ If `benefitDurationUnit`/`benefitDurationValue` are left unset, the discount app
 
 When a coupon with a benefit duration is redeemed (subscription activation), the end date of the benefit is computed from the subscription's `currentPeriodStart` (falling back to the redemption time) and stored on the subscription as `couponBenefitEndsAt`. Pricing logic checks this field — if the current date is past `couponBenefitEndsAt`, the standard plan price is used instead of the discounted one.
 
+## Admin Panel
+
+The coupon create/edit form (Pricing Plans → Coupons in the admin panel) has a **Benefit Duration** section, separate from the **Redemption Limits** section's `Valid From`/`Valid Until` date pickers:
+
+- **Duration** — a numeric field for `benefitDurationValue`. Leave empty for the discount to apply for the life of the subscription.
+- **Duration Unit** — a `Days`/`Months` dropdown for `benefitDurationUnit`, enabled once a duration value is entered.
+
+A helper note in the form clarifies the distinction: *"How long the discount lasts after a customer redeems this coupon (leave blank for the life of the subscription)"* — as opposed to `Valid From`/`Valid Until`, which only gate whether the coupon code itself can currently be redeemed.
+
+Examples:
+- **3 months free**: `discountType: 'percentage'`, `discountValue: 100`, `benefitDurationUnit: 'months'`, `benefitDurationValue: 3`.
+- **20% off for 6 months**: `discountType: 'percentage'`, `discountValue: 20`, `benefitDurationUnit: 'months'`, `benefitDurationValue: 6`.
+
 ## Validation Rules
 
 When a coupon is validated, the following checks are performed in order:
