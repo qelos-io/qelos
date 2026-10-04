@@ -1,6 +1,6 @@
 {
   "name": "@qelos/global-types",
-  "version": "4.2.2",
+  "version": "4.3.0",
   "description": "",
   "main": "dist/index.js",
   "module": "index.ts",
