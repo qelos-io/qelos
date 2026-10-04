@@ -9,8 +9,10 @@ const findMock = mock.fn(() => ({
       exec: mock.fn(async () => []),
     })),
     populate: mock.fn(() => ({
-      lean: mock.fn(() => ({
-        exec: mock.fn(async () => []),
+      populate: mock.fn(() => ({
+        lean: mock.fn(() => ({
+          exec: mock.fn(async () => []),
+        })),
       })),
     })),
   })),

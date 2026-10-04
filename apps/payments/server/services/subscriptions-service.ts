@@ -1,4 +1,5 @@
 import Subscription from '../models/subscription';
+import * as CouponsService from './coupons-service';
 import { BillableEntityType, SubscriptionStatus, BillingCycle } from '@qelos/global-types';
 
 export async function listSubscriptions(
@@ -24,6 +25,7 @@ export async function listWorkspaceSubscriptions(
     .find(query)
     .sort({ created: -1 })
     .populate('planId')
+    .populate('couponId', 'code discountType discountValue currency')
     .lean()
     .exec();
 }
@@ -61,22 +63,40 @@ export async function createSubscription(tenant: string, data: {
   providerId?: string;
   providerKind?: string;
   couponId?: string;
+  /** Resolved to `couponId`; validated against the plan and redeemed immediately when the subscription is active. */
+  couponCode?: string;
   dynamicAmount?: number;
   metadata?: Record<string, any>;
 }) {
+  const status = data.status || 'active';
+  let couponId = data.couponId;
+  let couponBenefitEndsAt: Date | undefined;
+
+  if (data.couponCode) {
+    const coupon = await CouponsService.validateCoupon(tenant, data.couponCode, data.planId.toString());
+    couponId = coupon._id.toString();
+    if (status === 'active') {
+      const redeemed = await CouponsService.redeemCoupon(tenant, couponId);
+      couponBenefitEndsAt = CouponsService.calculateCouponBenefitEndDate(
+        redeemed, data.currentPeriodStart || new Date(),
+      ) || undefined;
+    }
+  }
+
   const subscription = new Subscription({
     tenant,
     planId: data.planId,
     billableEntityType: data.billableEntityType,
     billableEntityId: data.billableEntityId,
     billingCycle: data.billingCycle,
-    status: data.status || 'active',
+    status,
     currentPeriodStart: data.currentPeriodStart,
     currentPeriodEnd: data.currentPeriodEnd,
     externalSubscriptionId: data.externalSubscriptionId,
     providerId: data.providerId,
     providerKind: data.providerKind,
-    couponId: data.couponId,
+    couponId,
+    couponBenefitEndsAt,
     dynamicAmount: data.dynamicAmount,
     metadata: data.metadata || {},
   });

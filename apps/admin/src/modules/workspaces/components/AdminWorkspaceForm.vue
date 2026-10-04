@@ -122,11 +122,12 @@ import {
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 
 import { ElMessage } from 'element-plus';
-import { BillingCycle, IPlan, WorkspaceLabelDefinition } from '@qelos/global-types'
+import { BillingCycle, ICoupon, IPlan, WorkspaceLabelDefinition } from '@qelos/global-types'
 import { useUsersList } from '@/modules/users/compositions/users';
 import { IUser } from '@/modules/core/store/types/user';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
 import plansService from '@/services/apis/plans-service';
+import couponsService from '@/services/apis/coupons-service';
 import subscriptionsService from '@/services/apis/subscriptions-service';
 const { users, loading } = useUsersList();
 
@@ -242,9 +243,26 @@ const loadingSubscription = ref(false);
 const savingSubscription = ref(false);
 const selectedPlanId = ref('');
 const selectedBillingCycle = ref<BillingCycle>('monthly');
+const coupons = ref<ICoupon[]>([]);
+const selectedCouponCode = ref('');
+
+const availableCoupons = computed(() => coupons.value.filter((coupon) =>
+	coupon.isActive && (!coupon.applicablePlanIds?.length || coupon.applicablePlanIds.includes(selectedPlanId.value))
+));
+
+function couponLabel(coupon: ICoupon) {
+	const discount = coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `${coupon.discountValue} ${coupon.currency || ''}`.trim();
+	return `${coupon.code} (-${discount})`;
+}
+
+watch(selectedPlanId, () => {
+	if (selectedCouponCode.value && !availableCoupons.value.some((coupon) => coupon.code === selectedCouponCode.value)) {
+		selectedCouponCode.value = '';
+	}
+});
 
 async function loadPlans() {
-	plans.value = await plansService.getAll();
+	[plans.value, coupons.value] = await Promise.all([plansService.getAll(), couponsService.getAll()]);
 }
 
 async function loadSubscription() {
@@ -267,20 +285,24 @@ async function saveSubscription() {
 
 	savingSubscription.value = true;
 	try {
-		if (currentSubscription.value) {
-			await subscriptionsService.cancel(currentSubscription.value._id);
-		}
+		const previousSubscriptionId = currentSubscription.value?._id;
 		await subscriptionsService.create({
 			planId: selectedPlanId.value,
 			billingCycle: selectedBillingCycle.value,
 			billableEntityType: 'workspace',
 			billableEntityId: workspace._id,
 			status: 'active',
+			couponCode: selectedCouponCode.value || undefined,
 		});
+		// cancel the old subscription only after the new one (and its coupon) was accepted
+		if (previousSubscriptionId) {
+			await subscriptionsService.cancel(previousSubscriptionId);
+		}
+		selectedCouponCode.value = '';
 		ElMessage.success('Workspace attached to plan');
 		await loadSubscription();
-	} catch {
-		ElMessage.error('Failed to update the workspace plan');
+	} catch (e: any) {
+		ElMessage.error(e?.response?.data?.message || 'Failed to update the workspace plan');
 	} finally {
 		savingSubscription.value = false;
 	}

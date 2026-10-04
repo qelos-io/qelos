@@ -11,6 +11,7 @@ const subscriptionsService = {
     billableEntityType: BillableEntityType;
     billableEntityId: string;
     status?: SubscriptionStatus;
+    couponCode?: string;
   }): Promise<ISubscription> {
     return api.post('/api/subscriptions', data).then(getCallData)
   },
