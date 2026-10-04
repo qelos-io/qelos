@@ -22,11 +22,21 @@
       <UserForm :user="user" @submitted="handleUserUpdate" :submitting="submitting" :as-admin="true">
       </UserForm>
     </div>
+
+    <!-- without workspaces, the user is the billable account -->
+    <EntityPlanSection
+      v-if="user && wsConfig.loaded && !wsConfig.isActive"
+      class="user-plan-section"
+      billable-entity-type="user"
+      :billable-entity-id="user._id"
+    />
   </div>
 </template>
 <script lang="ts" setup>
 import { useEditUsers } from './compositions/users'
 import UserForm from './components/UserForm.vue'
+import EntityPlanSection from '@/modules/pricing-plans/components/EntityPlanSection.vue'
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration'
 import { useRoute } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import Breadcrumb from '@/modules/core/components/Breadcrumb.vue'
@@ -43,6 +53,7 @@ const route = useRoute()
 const userId = route.params.userId
 const { user, updateUser, submitting, refreshUser } = useEditUsers(userId)
 const { t } = useI18n()
+const wsConfig = useWsConfiguration()
 
 const breadcrumbItems = computed((): BreadcrumbItem[] => {
   const items: BreadcrumbItem[] = [
@@ -74,6 +85,10 @@ const handleUserUpdate = async (userData: any) => {
 .edit-user {
   padding: 20px;
   margin: 0 auto;
+}
+
+.user-plan-section {
+  margin-block-start: 20px;
 }
 
 .user-breadcrumb {

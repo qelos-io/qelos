@@ -58,6 +58,15 @@ export const pricingPlansRoutes: RouteRecordRaw = {
       },
     },
     {
+      path: 'users',
+      name: 'user-subscriptions',
+      component: async () => (await import('./views/UserSubscriptions.vue')).default,
+      meta: {
+        roles: ['admin'],
+        name: 'User Subscriptions',
+      },
+    },
+    {
       path: 'configuration',
       name: 'paymentsConfiguration',
       component: async () => (await import('./views/PaymentsConfiguration.vue')).default,

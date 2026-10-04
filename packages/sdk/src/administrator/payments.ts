@@ -166,6 +166,21 @@ export default class QlPaymentsAdmin extends BaseSDK {
     );
   }
 
+  /**
+   * Attaches a coupon (by code) to an existing subscription of any billable entity
+   * (workspace or user), or removes it when `couponCode` is `null`. Admin only.
+   */
+  setSubscriptionCoupon(subscriptionId: string, couponCode: string | null) {
+    return this.callJsonApi<ISubscription>(
+      `/api/subscriptions/${subscriptionId}/coupon`,
+      {
+        method: 'put',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ couponCode }),
+      },
+    );
+  }
+
   // --- Invoices ---
 
   getInvoices(query?: {

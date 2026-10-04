@@ -109,6 +109,24 @@ export async function setDynamicAmount(req, res: Response) {
   }
 }
 
+export async function setSubscriptionCoupon(req, res: Response) {
+  try {
+    const { couponCode } = req.body;
+    if (couponCode != null && typeof couponCode !== 'string') {
+      res.status(400).json({ message: 'couponCode must be a string or null' }).end();
+      return;
+    }
+    const subscription = await SubscriptionsService.setSubscriptionCoupon(
+      req.headers.tenant, req.params.id, couponCode || null,
+    );
+    res.status(200).json(subscription).end();
+  } catch (e: any) {
+    const status = e?.code === 'SUBSCRIPTION_NOT_FOUND' || e?.code === 'COUPON_NOT_FOUND' ? 404
+      : e?.code?.startsWith('COUPON_') ? 400 : 500;
+    res.status(status).json({ code: e?.code, message: e?.message || 'failed to set subscription coupon' }).end();
+  }
+}
+
 export async function cancelSubscription(req, res: Response) {
   try {
     const subscription = await SubscriptionsService.getSubscriptionById(req.headers.tenant, req.params.id);

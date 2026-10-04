@@ -64,6 +64,17 @@ class QlPaymentsAdmin(BaseSDK):
             f"/api/subscriptions/{subscription_id}/cancel", method="PUT"
         )
 
+    async def set_subscription_coupon(
+        self, subscription_id: str, coupon_code: Optional[str]
+    ) -> Dict[str, Any]:
+        """Attach a coupon (by code) to a subscription, or remove it when ``coupon_code`` is None."""
+        return await self.call_json_api(
+            f"/api/subscriptions/{subscription_id}/coupon",
+            method="PUT",
+            headers={"content-type": "application/json"},
+            body=json.dumps({"couponCode": coupon_code}),
+        )
+
     # --- Invoices ---
 
     async def get_invoices(self, query: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:

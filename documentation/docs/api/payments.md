@@ -246,6 +246,30 @@ Set or update the dynamic amount on a pending subscription. Must be called befor
 
 ---
 
+### `PUT /api/subscriptions/:id/coupon` <Badge type="warning" text="admin" />
+
+Attach a coupon to an existing subscription of a workspace or user, or remove it. The coupon is validated against the subscription's plan. Active subscriptions redeem it immediately (counting toward `maxRedemptions`); other subscriptions redeem it when activated. Re-sending the coupon already attached is a no-op.
+
+**Auth**: admin.
+
+**Request body**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `couponCode` | string \| null | yes | Coupon code to attach, or `null` to remove the current coupon |
+
+**Errors**
+
+| Code | HTTP | Description |
+|---|---|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | No subscription with the given ID |
+| `COUPON_NOT_FOUND` | 404 | Unknown or inactive coupon code |
+| `COUPON_EXPIRED`, `COUPON_NOT_YET_VALID`, `COUPON_MAX_REDEMPTIONS`, `COUPON_NOT_APPLICABLE` | 400 | Coupon cannot be used for this subscription |
+
+> **SDK:** `adminSdk.managePayments.setSubscriptionCoupon(subscriptionId, couponCode)`
+
+---
+
 ### `PUT /api/subscriptions/:id/cancel`
 
 Cancel a subscription. **Auth**: authenticated (non-admins can only cancel their own entity's subscriptions).

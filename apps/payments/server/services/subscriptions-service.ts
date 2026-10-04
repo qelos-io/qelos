@@ -144,3 +144,37 @@ export async function updateSubscriptionStatus(
 export async function cancelSubscription(tenant: string, subscriptionId: string) {
   return updateSubscriptionStatus(tenant, subscriptionId, 'canceled');
 }
+
+/**
+ * Attaches a coupon to an existing subscription (or removes it when `couponCode` is null).
+ * Active subscriptions redeem the coupon immediately; others redeem on activation.
+ */
+export async function setSubscriptionCoupon(tenant: string, subscriptionId: string, couponCode: string | null) {
+  const subscription = await getSubscriptionById(tenant, subscriptionId);
+  const update: Record<string, any> = {};
+
+  if (!couponCode) {
+    update.$unset = { couponId: '', couponBenefitEndsAt: '' };
+  } else {
+    const coupon = await CouponsService.validateCoupon(tenant, couponCode, subscription.planId.toString());
+    if (subscription.couponId?.toString() === coupon._id.toString()) {
+      return subscription;
+    }
+
+    update.$set = { couponId: coupon._id };
+    update.$unset = { couponBenefitEndsAt: '' };
+    if (['active', 'trialing'].includes(subscription.status)) {
+      const redeemed = await CouponsService.redeemCoupon(tenant, coupon._id.toString());
+      const benefitEndsAt = CouponsService.calculateCouponBenefitEndDate(redeemed, new Date());
+      if (benefitEndsAt) {
+        update.$set.couponBenefitEndsAt = benefitEndsAt;
+        delete update.$unset;
+      }
+    }
+  }
+
+  return (Subscription as any)
+    .findOneAndUpdate({ _id: subscriptionId, tenant }, update, { new: true })
+    .lean()
+    .exec();
+}

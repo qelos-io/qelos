@@ -35,7 +35,14 @@ function PlanConstructor(data: any) {
 }
 Object.assign(PlanConstructor, { find: findMock, findOne: findOneMock, findOneAndUpdate: findOneAndUpdateMock });
 
+const subscriptionExistsMock = mock.fn(async () => null);
+const findOneAndDeleteMock = mock.fn(() => ({ lean: () => ({ exec: async () => null }) }));
+const updateManyMock = mock.fn(() => ({ exec: async () => ({}) }));
+Object.assign(PlanConstructor, { findOneAndDelete: findOneAndDeleteMock });
+
 mock.module('../../models/plan', { defaultExport: PlanConstructor });
+mock.module('../../models/subscription', { defaultExport: { exists: subscriptionExistsMock } });
+mock.module('../../models/coupon', { defaultExport: { updateMany: updateManyMock } });
 
 describe('plans-service', async () => {
   const PlansService = await import('../plans-service');
@@ -237,6 +244,36 @@ describe('plans-service', async () => {
       const result = await PlansService.deactivatePlan('tenant-1', 'plan-1');
       assert.strictEqual(result.isActive, false);
       assert.deepStrictEqual(findOneAndUpdateMock.mock.calls[0].arguments[1], { $set: { isActive: false } });
+    });
+  });
+
+  describe('deletePlan', () => {
+    it('should throw PLAN_IN_USE and keep the plan when subscriptions reference it', async () => {
+      subscriptionExistsMock.mock.mockImplementationOnce(async () => ({ _id: 'sub-1' }) as any);
+      findOneAndDeleteMock.mock.resetCalls();
+
+      await assert.rejects(() => PlansService.deletePlan('tenant-1', 'plan-1'), (e: any) => {
+        assert.strictEqual(e.code, 'PLAN_IN_USE');
+        return true;
+      });
+      assert.strictEqual(findOneAndDeleteMock.mock.calls.length, 0);
+    });
+
+    it('should throw PLAN_NOT_FOUND when plan does not exist', async () => {
+      await assert.rejects(() => PlansService.deletePlan('tenant-1', 'nonexistent'), (e: any) => {
+        assert.strictEqual(e.code, 'PLAN_NOT_FOUND');
+        return true;
+      });
+    });
+
+    it('should delete the plan and detach it from coupons', async () => {
+      findOneAndDeleteMock.mock.mockImplementationOnce(() => ({
+        lean: () => ({ exec: async () => ({ _id: 'plan-1', tenant: 'tenant-1' }) }),
+      }));
+      updateManyMock.mock.resetCalls();
+
+      await PlansService.deletePlan('tenant-1', 'plan-1');
+      assert.deepStrictEqual(updateManyMock.mock.calls[0].arguments[1], { $pull: { applicablePlanIds: 'plan-1' } });
     });
   });
 });

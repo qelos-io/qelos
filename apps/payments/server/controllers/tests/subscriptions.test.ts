@@ -8,6 +8,7 @@ const getActiveSubscriptionMock = mock.fn();
 const createSubscriptionMock = mock.fn();
 const setDynamicAmountMock = mock.fn();
 const cancelSubscriptionMock = mock.fn();
+const setSubscriptionCouponMock = mock.fn();
 const updateSubscriptionStatusMock = mock.fn();
 
 mock.module('../../services/subscriptions-service', {
@@ -19,6 +20,7 @@ mock.module('../../services/subscriptions-service', {
     createSubscription: createSubscriptionMock,
     setDynamicAmount: setDynamicAmountMock,
     cancelSubscription: cancelSubscriptionMock,
+    setSubscriptionCoupon: setSubscriptionCouponMock,
     updateSubscriptionStatus: updateSubscriptionStatusMock,
   },
 });
@@ -450,6 +452,47 @@ describe('subscriptions controller', async () => {
       await SubscriptionsController.cancelSubscription(req, res);
 
       assert.strictEqual(res.status.mock.calls[0].arguments[0], 500);
+    });
+  });
+
+  describe('setSubscriptionCoupon', () => {
+    beforeEach(() => setSubscriptionCouponMock.mock.resetCalls());
+
+    it('should pass the coupon code and return the subscription', async () => {
+      const sub = { _id: 'sub-1', couponId: 'c1' };
+      setSubscriptionCouponMock.mock.mockImplementation(async () => sub);
+      const res = mockRes();
+      await SubscriptionsController.setSubscriptionCoupon(
+        mockReq({ params: { id: 'sub-1' }, body: { couponCode: 'SAVE10' } }), res);
+
+      assert.deepStrictEqual(setSubscriptionCouponMock.mock.calls[0].arguments, ['tenant-1', 'sub-1', 'SAVE10']);
+      assert.strictEqual(res.status.mock.calls[0].arguments[0], 200);
+      assert.deepStrictEqual(res.json.mock.calls[0].arguments[0], sub);
+    });
+
+    it('should treat a null couponCode as removal', async () => {
+      setSubscriptionCouponMock.mock.mockImplementation(async () => ({}));
+      await SubscriptionsController.setSubscriptionCoupon(
+        mockReq({ params: { id: 'sub-1' }, body: { couponCode: null } }), mockRes());
+      assert.strictEqual(setSubscriptionCouponMock.mock.calls[0].arguments[2], null);
+    });
+
+    it('should return 400 for a non-string couponCode', async () => {
+      const res = mockRes();
+      await SubscriptionsController.setSubscriptionCoupon(mockReq({ body: { couponCode: 5 } }), res);
+      assert.strictEqual(res.status.mock.calls[0].arguments[0], 400);
+    });
+
+    it('should map coupon validation errors to 400 and missing subscription to 404', async () => {
+      setSubscriptionCouponMock.mock.mockImplementation(async () => { throw { code: 'COUPON_EXPIRED' }; });
+      let res = mockRes();
+      await SubscriptionsController.setSubscriptionCoupon(mockReq({ body: { couponCode: 'X' } }), res);
+      assert.strictEqual(res.status.mock.calls[0].arguments[0], 400);
+
+      setSubscriptionCouponMock.mock.mockImplementation(async () => { throw { code: 'SUBSCRIPTION_NOT_FOUND' }; });
+      res = mockRes();
+      await SubscriptionsController.setSubscriptionCoupon(mockReq({ body: { couponCode: 'X' } }), res);
+      assert.strictEqual(res.status.mock.calls[0].arguments[0], 404);
     });
   });
 });

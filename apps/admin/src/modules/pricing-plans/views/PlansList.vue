@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
+import PricingTabs from '../components/PricingTabs.vue';
 import PlanCard from '../components/PlanCard.vue';
 import { usePlansStore } from '../store/plans';
 import { storeToRefs } from 'pinia';
@@ -37,10 +38,19 @@ async function removePlan(plan) {
       t('Delete Plan'),
       { confirmButtonText: t('Delete'), cancelButtonText: t('Cancel'), type: 'warning' }
     );
+  } catch {
+    return; // cancelled
+  }
+
+  try {
     await plansStore.remove(plan._id);
     ElMessage.success(t('Plan deleted'));
-  } catch {
-    // cancelled
+  } catch (e: any) {
+    ElMessage.error(
+      e?.response?.status === 409
+        ? t('This plan has subscriptions and cannot be deleted. Deactivate it instead.')
+        : t('Failed to delete plan')
+    );
   }
 }
 
@@ -58,24 +68,7 @@ function formatPrice(amount: number, currency: string) {
       create-text="Create Plan"
     >
       <template #content>
-        <div class="tab-links">
-          <router-link :to="{ name: 'pricing-plans' }" class="tab-link active">
-            <font-awesome-icon :icon="['fas', 'tags']" />
-            {{ t('Plans') }}
-          </router-link>
-          <router-link :to="{ name: 'coupons' }" class="tab-link">
-            <font-awesome-icon :icon="['fas', 'ticket']" />
-            {{ t('Coupons') }}
-          </router-link>
-          <router-link :to="{ name: 'workspace-subscriptions' }" class="tab-link">
-            <font-awesome-icon :icon="['fas', 'building']" />
-            {{ t('Workspaces') }}
-          </router-link>
-          <router-link :to="{ name: 'paymentsConfiguration' }" class="tab-link">
-            <font-awesome-icon :icon="['fas', 'gear']" />
-            {{ t('Configuration') }}
-          </router-link>
-        </div>
+        <PricingTabs active="plans" />
       </template>
     </ListPageTitle>
 
@@ -160,34 +153,6 @@ function formatPrice(amount: number, currency: string) {
   display: flex;
   flex-direction: column;
   height: 100%;
-}
-
-.tab-links {
-  display: flex;
-  gap: 8px;
-}
-
-.tab-link {
-  padding: 6px 14px;
-  border-radius: 6px;
-  text-decoration: none;
-  color: var(--el-text-color-regular);
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s;
-}
-
-.tab-link:hover {
-  background: var(--el-fill-color-light);
-  color: var(--el-color-primary);
-}
-
-.tab-link.active {
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-  font-weight: 500;
 }
 
 .plans-content {

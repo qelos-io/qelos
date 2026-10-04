@@ -35,7 +35,18 @@ function SubscriptionConstructor(data: any) {
 }
 Object.assign(SubscriptionConstructor, { find: findMock, findOne: findOneMock, findOneAndUpdate: findOneAndUpdateMock });
 
+const validateCouponMock = mock.fn(async (..._args: any[]): Promise<any> => ({ _id: 'coupon-1' }));
+const redeemCouponMock = mock.fn(async (..._args: any[]): Promise<any> => ({ _id: 'coupon-1' }));
+const calculateCouponBenefitEndDateMock = mock.fn((..._args: any[]): Date | null => null);
+
 mock.module('../../models/subscription', { defaultExport: SubscriptionConstructor });
+mock.module('../coupons-service', {
+  namedExports: {
+    validateCoupon: validateCouponMock,
+    redeemCoupon: redeemCouponMock,
+    calculateCouponBenefitEndDate: calculateCouponBenefitEndDateMock,
+  },
+});
 
 describe('subscriptions-service', async () => {
   const SubscriptionsService = await import('../subscriptions-service');
@@ -329,6 +340,72 @@ describe('subscriptions-service', async () => {
         assert.strictEqual(e.code, 'SUBSCRIPTION_NOT_FOUND');
         return true;
       });
+    });
+  });
+
+  describe('setSubscriptionCoupon', () => {
+    const existing = (overrides: any = {}) => {
+      findOneMock.mock.mockImplementationOnce(() => ({
+        lean: mock.fn(() => ({
+          exec: mock.fn(async () => ({ _id: 'sub-1', planId: 'plan-1', status: 'active', ...overrides })),
+        })),
+      }));
+    };
+
+    beforeEach(() => {
+      validateCouponMock.mock.resetCalls();
+      redeemCouponMock.mock.resetCalls();
+    });
+
+    it('should throw SUBSCRIPTION_NOT_FOUND when subscription does not exist', async () => {
+      await assert.rejects(() => SubscriptionsService.setSubscriptionCoupon('tenant-1', 'nope', 'SAVE10'), (e: any) => {
+        assert.strictEqual(e.code, 'SUBSCRIPTION_NOT_FOUND');
+        return true;
+      });
+    });
+
+    it('should validate against the subscription plan, redeem and store the coupon', async () => {
+      existing();
+      await SubscriptionsService.setSubscriptionCoupon('tenant-1', 'sub-1', 'SAVE10');
+
+      assert.deepStrictEqual(validateCouponMock.mock.calls[0].arguments, ['tenant-1', 'SAVE10', 'plan-1']);
+      assert.strictEqual(redeemCouponMock.mock.calls.length, 1);
+      const update = findOneAndUpdateMock.mock.calls[0].arguments[1];
+      assert.deepStrictEqual(update.$set, { couponId: 'coupon-1' });
+      assert.deepStrictEqual(update.$unset, { couponBenefitEndsAt: '' });
+    });
+
+    it('should set couponBenefitEndsAt when the coupon has a benefit duration', async () => {
+      const endsAt = new Date('2030-01-01');
+      calculateCouponBenefitEndDateMock.mock.mockImplementationOnce(() => endsAt);
+      existing();
+      await SubscriptionsService.setSubscriptionCoupon('tenant-1', 'sub-1', 'SAVE10');
+
+      const update = findOneAndUpdateMock.mock.calls[0].arguments[1];
+      assert.deepStrictEqual(update.$set, { couponId: 'coupon-1', couponBenefitEndsAt: endsAt });
+      assert.strictEqual(update.$unset, undefined);
+    });
+
+    it('should not redeem for a subscription that is not active yet', async () => {
+      existing({ status: 'pending' });
+      await SubscriptionsService.setSubscriptionCoupon('tenant-1', 'sub-1', 'SAVE10');
+      assert.strictEqual(redeemCouponMock.mock.calls.length, 0);
+    });
+
+    it('should not redeem again when the coupon is already attached', async () => {
+      existing({ couponId: 'coupon-1' });
+      await SubscriptionsService.setSubscriptionCoupon('tenant-1', 'sub-1', 'SAVE10');
+      assert.strictEqual(redeemCouponMock.mock.calls.length, 0);
+      assert.strictEqual(findOneAndUpdateMock.mock.calls.length, 0);
+    });
+
+    it('should remove the coupon when couponCode is null', async () => {
+      existing({ couponId: 'coupon-1' });
+      await SubscriptionsService.setSubscriptionCoupon('tenant-1', 'sub-1', null);
+      assert.deepStrictEqual(findOneAndUpdateMock.mock.calls[0].arguments[1], {
+        $unset: { couponId: '', couponBenefitEndsAt: '' },
+      });
+      assert.strictEqual(validateCouponMock.mock.calls.length, 0);
     });
   });
 });

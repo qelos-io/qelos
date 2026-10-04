@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive } from 'vue';
+import { ref, computed, onMounted, reactive, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
+import CouponAccountsCard, { CouponAccountRow } from '../components/CouponAccountsCard.vue';
+import { getUserDisplayName, useUserSubscriptionsStore } from '../store/user-subscriptions';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import type { FormRules } from 'element-plus';
 import couponsService from '@/services/apis/coupons-service';
 import { useCouponsStore } from '../store/coupons';
@@ -20,9 +23,53 @@ const workspaceSubscriptionsStore = useWorkspaceSubscriptionsStore();
 const { rows: workspaceRows, loading: workspaceRowsLoading } = storeToRefs(workspaceSubscriptionsStore);
 
 const couponId = computed(() => route.params.couponId as string);
-const workspacesUsingCoupon = computed(() =>
-  workspaceRows.value.filter((row) => row.subscription?.couponId === couponId.value)
+const userSubscriptionsStore = useUserSubscriptionsStore();
+const { rows: userRows, loading: userRowsLoading, saving: userRowsSaving } = storeToRefs(userSubscriptionsStore);
+const { saving: workspaceRowsSaving } = storeToRefs(workspaceSubscriptionsStore);
+
+// without workspaces, accounts are billed per user
+const wsConfig = useWsConfiguration();
+const showUsers = computed(() => wsConfig.loaded && !wsConfig.isActive);
+watch(showUsers, (show) => show && userSubscriptionsStore.load(), { immediate: true });
+
+const savedCode = ref('');
+
+const workspaceAccounts = computed<CouponAccountRow[]>(() =>
+  (workspaceRows.value || []).map(({ workspace, subscription }) => ({
+    id: workspace._id,
+    label: workspace.name,
+    subscriptionId: subscription?._id,
+    planId: subscription?.planId?._id,
+    planName: subscription?.planId?.name,
+    status: subscription?.status,
+    usesCoupon: !!subscription && subscription.couponId?._id === couponId.value,
+  }))
 );
+
+const userAccounts = computed<CouponAccountRow[]>(() =>
+  (userRows.value || []).map(({ user, subscription }) => ({
+    id: user._id,
+    label: getUserDisplayName(user),
+    subscriptionId: subscription._id,
+    planId: subscription.planId,
+    planName: plans.value?.find((plan) => plan._id === subscription.planId)?.name,
+    status: subscription.status,
+    usesCoupon: subscription.couponId === couponId.value,
+  }))
+);
+
+async function setAccountCoupon(
+  store: { setCoupon: (subscriptionId: string, code: string | null) => Promise<unknown> },
+  subscriptionId: string,
+  code: string | null,
+) {
+  try {
+    await store.setCoupon(subscriptionId, code);
+    ElMessage.success(t(code ? 'Coupon applied' : 'Coupon removed'));
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || t('Failed to update the coupon'));
+  }
+}
 
 const isEdit = computed(() => !!route.params.couponId);
 const loading = ref(false);
@@ -57,6 +104,7 @@ onMounted(async () => {
     try {
       const coupon = await couponsService.getOne(route.params.couponId as string);
       form.code = coupon.code;
+      savedCode.value = coupon.code;
       form.discountType = coupon.discountType;
       form.discountValue = coupon.discountValue;
       form.currency = coupon.currency || 'USD';
@@ -275,24 +323,35 @@ async function submit() {
         </el-form-item>
       </el-card>
 
-      <el-card v-if="isEdit" shadow="never" class="form-section" v-loading="workspaceRowsLoading">
-        <template #header>
-          <span>{{ t('Workspaces Using This Coupon') }}</span>
-        </template>
+      <CouponAccountsCard
+        v-if="isEdit"
+        :title="t('Workspaces Using This Coupon')"
+        :account-label="t('Workspace')"
+        :select-placeholder="t('Select a workspace')"
+        :add-label="t('Add Workspace')"
+        :empty-text="t('No workspaces are currently using this coupon')"
+        :rows="workspaceAccounts"
+        :applicable-plan-ids="form.applicablePlanIds"
+        :loading="workspaceRowsLoading"
+        :saving="workspaceRowsSaving"
+        @add="setAccountCoupon(workspaceSubscriptionsStore, $event, savedCode)"
+        @remove="setAccountCoupon(workspaceSubscriptionsStore, $event, null)"
+      />
 
-        <el-table v-if="workspacesUsingCoupon.length" :data="workspacesUsingCoupon" row-key="workspace._id" size="small">
-          <el-table-column :label="t('Workspace')" min-width="160">
-            <template #default="{ row }">{{ row.workspace.name }}</template>
-          </el-table-column>
-          <el-table-column :label="t('Plan')" min-width="140">
-            <template #default="{ row }">{{ row.subscription.planId?.name || '—' }}</template>
-          </el-table-column>
-          <el-table-column :label="t('Status')" width="120">
-            <template #default="{ row }">{{ t(row.subscription.status) }}</template>
-          </el-table-column>
-        </el-table>
-        <el-empty v-else :description="t('No workspaces are currently using this coupon')" :image-size="60" />
-      </el-card>
+      <CouponAccountsCard
+        v-if="isEdit && showUsers"
+        :title="t('Users Using This Coupon')"
+        :account-label="t('User')"
+        :select-placeholder="t('Select a user')"
+        :add-label="t('Add User')"
+        :empty-text="t('No users are currently using this coupon')"
+        :rows="userAccounts"
+        :applicable-plan-ids="form.applicablePlanIds"
+        :loading="userRowsLoading"
+        :saving="userRowsSaving"
+        @add="setAccountCoupon(userSubscriptionsStore, $event, savedCode)"
+        @remove="setAccountCoupon(userSubscriptionsStore, $event, null)"
+      />
 
       <div class="form-actions">
         <el-button @click="router.push({ name: 'coupons' })">{{ t('Cancel') }}</el-button>

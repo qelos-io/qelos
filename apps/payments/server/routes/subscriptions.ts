@@ -8,6 +8,7 @@ import {
   getWorkspaceSubscriptions,
   createSubscription,
   setDynamicAmount,
+  setSubscriptionCoupon,
   cancelSubscription,
 } from '../controllers/subscriptions';
 
@@ -20,6 +21,7 @@ router
   .get('/api/subscriptions/:id', populateUser, onlyAuthenticated, getSubscription)
   .post('/api/subscriptions', populateUser, onlyAuthenticated, createSubscription)
   .put('/api/subscriptions/:id/dynamic-amount', populateUser, onlyPrivileged, setDynamicAmount)
+  .put('/api/subscriptions/:id/coupon', populateUser, onlyPrivileged, setSubscriptionCoupon)
   .put('/api/subscriptions/:id/cancel', populateUser, onlyAuthenticated, cancelSubscription);
 
 export default router;

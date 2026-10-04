@@ -1,4 +1,6 @@
 import Plan from '../models/plan';
+import Subscription from '../models/subscription';
+import Coupon from '../models/coupon';
 import { IPlan } from '@qelos/global-types';
 import { sanitizePlan, sanitizePlans } from './plan-serializer';
 
@@ -96,6 +98,26 @@ export async function deactivatePlan(tenant: string, planId: string) {
   if (!plan) {
     throw { code: 'PLAN_NOT_FOUND' };
   }
+
+  return sanitizePlan(plan);
+}
+
+/**
+ * Permanently removes a plan. Plans that any subscription still references must be
+ * deactivated instead, so billing history keeps resolving its plan.
+ */
+export async function deletePlan(tenant: string, planId: string) {
+  const inUse = await (Subscription as any).exists({ tenant, planId });
+  if (inUse) {
+    throw { code: 'PLAN_IN_USE', message: 'plan has subscriptions; deactivate it instead' };
+  }
+
+  const plan = await (Plan as any).findOneAndDelete({ _id: planId, tenant }).lean().exec();
+  if (!plan) {
+    throw { code: 'PLAN_NOT_FOUND' };
+  }
+
+  await (Coupon as any).updateMany({ tenant, applicablePlanIds: planId }, { $pull: { applicablePlanIds: planId } }).exec();
 
   return sanitizePlan(plan);
 }

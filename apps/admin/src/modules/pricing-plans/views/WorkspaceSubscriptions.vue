@@ -7,6 +7,7 @@ import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue
 import { useWorkspaceSubscriptionsStore, WorkspaceSubscriptionRow } from '../store/workspace-subscriptions';
 import { usePlansStore } from '../store/plans';
 import { BillingCycle } from '@qelos/global-types';
+import PricingTabs from '../components/PricingTabs.vue';
 
 const { t } = useI18n();
 const workspaceSubscriptionsStore = useWorkspaceSubscriptionsStore();
@@ -101,24 +102,7 @@ async function detachWorkspace(row: WorkspaceSubscriptionRow) {
       description="See which pricing plan and subscription each workspace is currently attached to."
     >
       <template #content>
-        <div class="tab-links">
-          <router-link :to="{ name: 'pricing-plans' }" class="tab-link">
-            <font-awesome-icon :icon="['fas', 'tags']" />
-            {{ t('Plans') }}
-          </router-link>
-          <router-link :to="{ name: 'coupons' }" class="tab-link">
-            <font-awesome-icon :icon="['fas', 'ticket']" />
-            {{ t('Coupons') }}
-          </router-link>
-          <router-link :to="{ name: 'workspace-subscriptions' }" class="tab-link active">
-            <font-awesome-icon :icon="['fas', 'building']" />
-            {{ t('Workspaces') }}
-          </router-link>
-          <router-link :to="{ name: 'paymentsConfiguration' }" class="tab-link">
-            <font-awesome-icon :icon="['fas', 'gear']" />
-            {{ t('Configuration') }}
-          </router-link>
-        </div>
+        <PricingTabs active="workspaces" />
       </template>
     </ListPageTitle>
 
@@ -203,34 +187,6 @@ async function detachWorkspace(row: WorkspaceSubscriptionRow) {
   display: flex;
   flex-direction: column;
   height: 100%;
-}
-
-.tab-links {
-  display: flex;
-  gap: 8px;
-}
-
-.tab-link {
-  padding: 6px 14px;
-  border-radius: 6px;
-  text-decoration: none;
-  color: var(--el-text-color-regular);
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s;
-}
-
-.tab-link:hover {
-  background: var(--el-fill-color-light);
-  color: var(--el-color-primary);
-}
-
-.tab-link.active {
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-  font-weight: 500;
 }
 
 .workspace-subscriptions-content {

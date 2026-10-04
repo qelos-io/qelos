@@ -59,10 +59,10 @@ export async function updatePlan(req, res: Response) {
 
 export async function deletePlan(req, res: Response) {
   try {
-    const plan = await PlansService.deactivatePlan(req.headers.tenant, req.params.planId);
+    const plan = await PlansService.deletePlan(req.headers.tenant, req.params.planId);
     res.status(200).json(plan).end();
   } catch (e: any) {
-    const status = e?.code === 'PLAN_NOT_FOUND' ? 404 : 500;
-    res.status(status).json({ message: e?.message || 'failed to deactivate plan' }).end();
+    const status = e?.code === 'PLAN_NOT_FOUND' ? 404 : e?.code === 'PLAN_IN_USE' ? 409 : 500;
+    res.status(status).json({ code: e?.code, message: e?.message || 'failed to delete plan' }).end();
   }
 }

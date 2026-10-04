@@ -3,10 +3,14 @@ import { ref } from 'vue';
 import { useDispatcher } from '@/modules/core/compositions/dispatcher';
 import subscriptionsService from '@/services/apis/subscriptions-service';
 import workspacesService from '@/services/apis/workspaces-service';
-import { BillingCycle, IPlan, ISubscription } from '@qelos/global-types';
+import { BillingCycle, ICoupon, IPlan, ISubscription } from '@qelos/global-types';
 import { IWorkspace } from '@qelos/sdk/dist/workspaces';
 
-export type SubscriptionWithPlan = Omit<ISubscription, 'planId'> & { planId: IPlan };
+export type SubscriptionWithPlan = Omit<ISubscription, 'planId' | 'couponId'> & {
+  planId: IPlan;
+  /** Populated by the workspace subscriptions endpoint. */
+  couponId?: Pick<ICoupon, '_id' | 'code' | 'discountType' | 'discountValue' | 'currency'>;
+};
 
 export interface WorkspaceSubscriptionRow {
   workspace: IWorkspace;
@@ -85,5 +89,16 @@ export const useWorkspaceSubscriptionsStore = defineStore('workspace-subscriptio
     }
   }
 
-  return { rows: result, loading, loaded, promise, error, retry, saving, attachToPlan, changePlan, detach };
+  async function setCoupon(subscriptionId: string, couponCode: string | null) {
+    saving.value = true;
+    try {
+      const updated = await subscriptionsService.setCoupon(subscriptionId, couponCode);
+      await retry();
+      return updated;
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  return { rows: result, loading, loaded, promise, error, retry, saving, attachToPlan, changePlan, detach, setCoupon };
 });

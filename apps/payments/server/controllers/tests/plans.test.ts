@@ -6,7 +6,7 @@ const getPublicPlansMock = mock.fn();
 const getPlanByIdMock = mock.fn();
 const createPlanMock = mock.fn();
 const updatePlanMock = mock.fn();
-const deactivatePlanMock = mock.fn();
+const deletePlanMock = mock.fn();
 
 mock.module('../../services/plans-service', {
   namedExports: {
@@ -15,7 +15,7 @@ mock.module('../../services/plans-service', {
     getPlanById: getPlanByIdMock,
     createPlan: createPlanMock,
     updatePlan: updatePlanMock,
-    deactivatePlan: deactivatePlanMock,
+    deletePlan: deletePlanMock,
   },
 });
 
@@ -47,7 +47,7 @@ describe('plans controller', async () => {
     getPlanByIdMock.mock.resetCalls();
     createPlanMock.mock.resetCalls();
     updatePlanMock.mock.resetCalls();
-    deactivatePlanMock.mock.resetCalls();
+    deletePlanMock.mock.resetCalls();
   });
 
   describe('getPlans', () => {
@@ -213,9 +213,9 @@ describe('plans controller', async () => {
   });
 
   describe('deletePlan', () => {
-    it('should deactivate plan and return 200', async () => {
+    it('should delete plan and return 200', async () => {
       const plan = { _id: 'p1', isActive: false };
-      deactivatePlanMock.mock.mockImplementation(async () => plan);
+      deletePlanMock.mock.mockImplementation(async () => plan);
 
       const req = mockReq({ params: { planId: 'p1' } });
       const res = mockRes();
@@ -225,8 +225,18 @@ describe('plans controller', async () => {
       assert.deepStrictEqual(res.json.mock.calls[0].arguments[0], plan);
     });
 
+    it('should return 409 when plan is still used by subscriptions', async () => {
+      deletePlanMock.mock.mockImplementation(async () => { throw { code: 'PLAN_IN_USE', message: 'in use' }; });
+
+      const req = mockReq({ params: { planId: 'p1' } });
+      const res = mockRes();
+      await PlansController.deletePlan(req, res);
+
+      assert.strictEqual(res.status.mock.calls[0].arguments[0], 409);
+    });
+
     it('should return 404 when plan not found', async () => {
-      deactivatePlanMock.mock.mockImplementation(async () => { throw { code: 'PLAN_NOT_FOUND' }; });
+      deletePlanMock.mock.mockImplementation(async () => { throw { code: 'PLAN_NOT_FOUND' }; });
 
       const req = mockReq({ params: { planId: 'nonexistent' } });
       const res = mockRes();
