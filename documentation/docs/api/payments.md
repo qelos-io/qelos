@@ -353,7 +353,7 @@ Creates or updates tenant payments settings. Accepts `{ metadata: { ... } }` wit
 |---|---|---|
 | `INVALID_PAYMENTS_CONFIGURATION` | 400 | Invalid redirect URL |
 
-> **SDK:** `adminSdk.payments.getPaymentsConfiguration()` · `adminSdk.payments.updatePaymentsConfiguration(metadata)`
+> **SDK:** `adminSdk.managePayments.getPaymentsConfiguration()` · `adminSdk.managePayments.updatePaymentsConfiguration(metadata)`
 
 ---
 

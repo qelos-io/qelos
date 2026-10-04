@@ -41,7 +41,7 @@ Create or update the `payments-configuration` configuration key with the provide
 This can be set in **Admin → Pricing Plans → Configuration** (Success URL / Cancel URL fields), via the payments API, or via the SDK:
 
 ```typescript
-await adminSdk.payments.updatePaymentsConfiguration({
+await adminSdk.managePayments.updatePaymentsConfiguration({
   paymentSourceId: 'source-id',
   isEnabled: true,
   successUrl: 'https://your-app.com/success',

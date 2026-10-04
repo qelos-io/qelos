@@ -24,18 +24,16 @@
     </div>
 
     <!-- without workspaces, the user is the billable account -->
-    <EntityPlanSection
-      v-if="user && wsConfig.loaded && !wsConfig.isActive"
-      class="user-plan-section"
-      billable-entity-type="user"
-      :billable-entity-id="user._id"
-    />
+    <section v-if="user && wsConfig.loaded && !wsConfig.isActive" class="user-billing">
+      <h2>{{ t('Billing') }}</h2>
+      <EntityBillingPanel billable-entity-type="user" :billable-entity-id="user._id" />
+    </section>
   </div>
 </template>
 <script lang="ts" setup>
 import { useEditUsers } from './compositions/users'
 import UserForm from './components/UserForm.vue'
-import EntityPlanSection from '@/modules/pricing-plans/components/EntityPlanSection.vue'
+import EntityBillingPanel from '@/modules/pricing-plans/components/EntityBillingPanel.vue'
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration'
 import { useRoute } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -87,8 +85,13 @@ const handleUserUpdate = async (userData: any) => {
   margin: 0 auto;
 }
 
-.user-plan-section {
-  margin-block-start: 20px;
+.user-billing {
+  margin-block-start: 24px;
+}
+
+.user-billing h2 {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
 }
 
 .user-breadcrumb {

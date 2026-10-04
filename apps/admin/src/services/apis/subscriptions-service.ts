@@ -15,8 +15,12 @@ const subscriptionsService = {
     billableEntityId: string;
     status?: SubscriptionStatus;
     couponCode?: string;
+    dynamicAmount?: number;
   }): Promise<ISubscription> {
     return api.post('/api/subscriptions', data).then(getCallData)
+  },
+  setDynamicAmount(id: string, amount: number): Promise<ISubscription> {
+    return api.put(`/api/subscriptions/${id}/dynamic-amount`, { amount }).then(getCallData)
   },
   setCoupon(id: string, couponCode: string | null): Promise<ISubscription> {
     return api.put(`/api/subscriptions/${id}/coupon`, { couponCode }).then(getCallData)

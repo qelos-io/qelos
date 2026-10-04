@@ -83,8 +83,31 @@ export const adminWorkspacesRoutes: RouteRecordRaw = {
     {
       path: ':id',
       name: 'adminEditWorkspace',
+      redirect: { name: 'adminEditWorkspaceOverview' },
       component: async () => (await import('./AdminEditWorkspace.vue')).default,
       meta: { roles: ['admin'] },
+      children: [
+        {
+          path: 'overview',
+          name: 'adminEditWorkspaceOverview',
+          component: async () => (await import('./admin/OverviewTab.vue')).default,
+        },
+        {
+          path: 'members',
+          name: 'adminEditWorkspaceMembers',
+          component: async () => (await import('./admin/MembersTab.vue')).default,
+        },
+        {
+          path: 'billing',
+          name: 'adminEditWorkspaceBilling',
+          component: async () => (await import('./admin/BillingTab.vue')).default,
+        },
+        {
+          path: 'settings',
+          name: 'adminEditWorkspaceSettings',
+          component: async () => (await import('./admin/SettingsTab.vue')).default,
+        },
+      ],
     }
   ],
 };

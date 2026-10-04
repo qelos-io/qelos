@@ -239,7 +239,8 @@ export async function updateWorkspace(req: AuthRequest, res: Response) {
       workspace.name = name;
     }
 
-    if (logo) {
+    // an empty string removes the logo
+    if (typeof logo === 'string') {
       workspace.logo = logo;
     }
 
@@ -435,10 +436,10 @@ export async function addWorkspaceMember(req: AuthRequest, res: Response) {
 
 export async function deleteWorkspaceMember(req: AuthRequest, res: Response) {
   const { tenant } = req.headers || {};
-  const { userId } = req.params;
+  const { workspaceId, userId } = req.params;
 
   try {
-    const workspace = await Workspace.findOne({ tenant, 'members.user': userId }).exec();
+    const workspace = await Workspace.findOne({ tenant, _id: workspaceId, 'members.user': userId }).exec();
 
     if (!workspace) {
       return res.status(404).json({ message: 'Workspace not found.' });

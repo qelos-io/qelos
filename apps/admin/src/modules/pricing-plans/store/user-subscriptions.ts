@@ -13,12 +13,6 @@ export interface UserSubscriptionRow {
 
 const USERS_CHUNK_SIZE = 100;
 
-export function getUserDisplayName(user: IUser): string {
-  if (user.fullName) return user.fullName;
-  const name = `${decodeURIComponent(user.firstName ?? '')} ${decodeURIComponent(user.lastName ?? '')}`.trim();
-  return name || user.username || user.email || '';
-}
-
 /** Users that currently have a subscription (canceled and expired ones no longer attach a user to a plan). */
 export const useUserSubscriptionsStore = defineStore('user-subscriptions', () => {
   const { result, loading, loaded, promise, error, retry } = useDispatcher<UserSubscriptionRow[]>(

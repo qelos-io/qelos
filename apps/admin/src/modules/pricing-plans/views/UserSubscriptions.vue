@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
 import PricingTabs from '../components/PricingTabs.vue';
-import { getUserDisplayName, useUserSubscriptionsStore } from '../store/user-subscriptions';
+import { useUserSubscriptionsStore } from '../store/user-subscriptions';
+import { getUserDisplayName } from '@/modules/users/services/display-name';
 import { usePlansStore } from '../store/plans';
 import { useCouponsStore } from '../store/coupons';
 
