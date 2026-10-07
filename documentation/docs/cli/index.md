@@ -352,6 +352,10 @@ qelos agent code-wizard -m "Hello"  # uses saved defaults
     <h3><a href="/cli/connections">Connections</a></h3>
     <p>Print a table of every integration source connection (ID, name, kind, status) with a live, side-effect-free check against each provider.</p>
   </div>
+  <div class="vp-feature">
+    <h3><a href="/cli/log">Log</a></h3>
+    <p>Filter and tail platform event logs from the terminal with <code>--follow</code>, or fetch a single log with its full metadata by ID.</p>
+  </div>
 </div>
 
 <style>

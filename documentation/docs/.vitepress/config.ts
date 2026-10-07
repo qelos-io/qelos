@@ -233,7 +233,8 @@ export default defineConfig({
           { text: 'Agent Command', link: '/cli/agent' },
           { text: 'Agent Tools (clientTools)', link: '/cli/agent-tools' },
           { text: 'Global Environments', link: '/cli/global' },
-          { text: 'Connections Command', link: '/cli/connections' }
+          { text: 'Connections Command', link: '/cli/connections' },
+          { text: 'Log Command', link: '/cli/log' }
         ]
       },
       {

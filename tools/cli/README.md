@@ -287,3 +287,15 @@ Conversation logs are stored as JSON arrays:
   }
 ]
 ```
+
+### Log
+
+Print platform event logs, optionally following new ones, or fetch one log by id.
+
+```bash
+qelos log --kind ai --source openai --event-name completion --time 2h
+qelos log -f                    # follow: poll every 5s, print only new logs
+qelos log <id>                  # one log with its full metadata
+```
+
+`--time` defaults to `30m` (bare numbers are minutes; units `s`, `m`, `h`, `d`). Use `--json` for one JSON object per line.
