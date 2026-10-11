@@ -10,6 +10,7 @@ export interface IWorkspace extends Document {
   labels: string[];
   invites: Invite[];
   created?: Date;
+  updated?: Date;
 }
 
 // Use a type assertion to avoid complex union type error
@@ -40,8 +41,7 @@ export const WorkspaceSchema = new mongoose.Schema<any, any>({
     roles: [{ type: String, required: true }],
     created: { type: Date, default: Date.now }
   }],
-  created: { type: Date, default: Date.now }
-});
+}, { timestamps: { createdAt: 'created', updatedAt: 'updated' } });
 
 // Use a more robust type assertion to avoid complex union type error
 const Workspace = mongoose.model('Workspace', WorkspaceSchema) as unknown as mongoose.Model<IWorkspace>;

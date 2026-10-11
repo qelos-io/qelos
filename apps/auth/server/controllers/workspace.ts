@@ -516,7 +516,7 @@ export async function getWorkspaceByParams(req, res, next) {
     if (!isPrivilegedUser) {
       query['members.user'] = userId;
     }
-    const select = isPrivilegedUser ? 'name logo labels' : 'name logo labels members.$';
+    const select = isPrivilegedUser ? 'name logo labels created updated' : 'name logo labels created updated members.$';
     const workspace = await Workspace.findOne(query).select(select).exec();
     if (!workspace) {
       res.status(404).json({ message: 'workspace not found', from: 'get-workspace' }).end();

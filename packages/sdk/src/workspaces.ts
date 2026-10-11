@@ -24,6 +24,8 @@ export interface IWorkspace {
   members?: IWorkspaceMember[];
   invites?: IInvite[];
   labels: string[]
+  created?: string | Date;
+  updated?: string | Date;
 
   [key: string]: any;
 }
