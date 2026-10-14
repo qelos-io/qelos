@@ -12,6 +12,7 @@ import EntityBillingPanel from '../components/EntityBillingPanel.vue';
 import AddSubscriberDialog from '../components/AddSubscriberDialog.vue';
 import { usePlansStore } from '../store/plans';
 import { useCouponsStore } from '../store/coupons';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import { useSubscriptionsSummaryStore } from '../store/summary';
 import { useEntityNames } from '../compositions/entity-names';
 import { formatMoney, planPrice } from '../services/pricing';
@@ -25,6 +26,7 @@ useCouponsStore();
 const summaryStore = useSubscriptionsSummaryStore();
 const { resolve, nameOf } = useEntityNames();
 
+const wsConfig = useWsConfiguration();
 const rows = ref<ISubscription[]>([]);
 const loading = ref(true);
 const failed = ref(false);
@@ -79,6 +81,10 @@ const filtered = computed(() => {
     return true;
   });
 });
+
+// B2C tenants bill users and B2B tenants bill workspaces: only offer the account-type filter
+// when the data really contains both (e.g. after switching modes)
+const hasBothTypes = computed(() => new Set(rows.value.map((row) => row.billableEntityType)).size > 1);
 
 const paged = computed(() => filtered.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE));
 watch([status, type, planId, search], () => (page.value = 1));
@@ -171,7 +177,7 @@ const addOpen = ref(false);
 
     <div class="filters">
       <el-input v-model="search" class="search" clearable :prefix-icon="Search" :placeholder="$t('Search accounts')" :aria-label="$t('Search accounts')" />
-      <el-select v-model="type" class="select" :aria-label="$t('Account type')">
+      <el-select v-if="hasBothTypes" v-model="type" class="select" :aria-label="$t('Account type')">
         <el-option :label="$t('All accounts')" value="all" />
         <el-option :label="$t('Workspaces')" value="workspace" />
         <el-option :label="$t('Users')" value="user" />
@@ -289,7 +295,7 @@ const addOpen = ref(false);
       <EntityBillingPanel v-if="drawer" :billable-entity-type="drawer.type" :billable-entity-id="drawer.id" @changed="onChanged" />
     </el-drawer>
 
-    <AddSubscriberDialog v-model="addOpen" @pick="(entity) => openEntity(entity.type, entity.id)" />
+    <AddSubscriberDialog v-model="addOpen" :entity-type="wsConfig.isActive ? 'workspace' : 'user'" @pick="(entity) => openEntity(entity.type, entity.id)" />
   </div>
 </template>
 

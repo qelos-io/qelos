@@ -988,5 +988,15 @@
   "Manage subscription": "Gérer l'abonnement",
   "View in Subscribers": "Voir dans Abonnés",
   "Subscription settings": "Paramètres de l'abonnement",
-  "Previous subscriptions": "Abonnements précédents"
+  "Previous subscriptions": "Abonnements précédents",
+  "Users on this Plan": "Utilisateurs sur ce forfait",
+  "No users attached yet": "Aucun utilisateur associé pour l'instant",
+  "Select a user to attach": "Sélectionnez un utilisateur à associer",
+  "Please select a user": "Veuillez sélectionner un utilisateur",
+  "User attached to plan": "Utilisateur associé au forfait",
+  "User detached from plan": "Utilisateur dissocié du forfait",
+  "Failed to attach user": "Échec de l'association de l'utilisateur",
+  "Failed to detach user": "Échec de la dissociation de l'utilisateur",
+  "This will cancel the subscription and detach the user from this plan.": "Cela annulera l'abonnement et dissociera l'utilisateur de ce forfait.",
+  "Detach user from plan": "Dissocier l'utilisateur du forfait"
 }

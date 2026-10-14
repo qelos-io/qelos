@@ -988,5 +988,15 @@
   "Manage subscription": "ניהול מנוי",
   "View in Subscribers": "הצג במנויים",
   "Subscription settings": "הגדרות מנוי",
-  "Previous subscriptions": "מנויים קודמים"
+  "Previous subscriptions": "מנויים קודמים",
+  "Users on this Plan": "משתמשים בתוכנית זו",
+  "No users attached yet": "עדיין לא שויכו משתמשים",
+  "Select a user to attach": "בחר משתמש לשיוך",
+  "Please select a user": "נא לבחור משתמש",
+  "User attached to plan": "המשתמש שויך לתוכנית",
+  "User detached from plan": "המשתמש נותק מהתוכנית",
+  "Failed to attach user": "שיוך המשתמש נכשל",
+  "Failed to detach user": "ניתוק המשתמש נכשל",
+  "This will cancel the subscription and detach the user from this plan.": "פעולה זו תבטל את המנוי ותנתק את המשתמש מהתוכנית.",
+  "Detach user from plan": "נתק משתמש מהתוכנית"
 }

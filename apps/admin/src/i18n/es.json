@@ -988,5 +988,15 @@
   "Manage subscription": "Gestionar suscripción",
   "View in Subscribers": "Ver en Suscriptores",
   "Subscription settings": "Ajustes de la suscripción",
-  "Previous subscriptions": "Suscripciones anteriores"
+  "Previous subscriptions": "Suscripciones anteriores",
+  "Users on this Plan": "Usuarios en este plan",
+  "No users attached yet": "Aún no hay usuarios asociados",
+  "Select a user to attach": "Selecciona un usuario para asociar",
+  "Please select a user": "Selecciona un usuario",
+  "User attached to plan": "Usuario asociado al plan",
+  "User detached from plan": "Usuario desasociado del plan",
+  "Failed to attach user": "No se pudo asociar el usuario",
+  "Failed to detach user": "No se pudo desasociar el usuario",
+  "This will cancel the subscription and detach the user from this plan.": "Esto cancelará la suscripción y desasociará al usuario de este plan.",
+  "Detach user from plan": "Desasociar usuario del plan"
 }

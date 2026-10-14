@@ -31,7 +31,9 @@ const { saving: workspaceRowsSaving } = storeToRefs(workspaceSubscriptionsStore)
 
 // without workspaces, accounts are billed per user
 const wsConfig = useWsConfiguration();
+// B2C tenants attach coupons to users, B2B tenants to workspaces
 const showUsers = computed(() => wsConfig.loaded && !wsConfig.isActive);
+const showWorkspaces = computed(() => wsConfig.loaded && wsConfig.isActive);
 watch(showUsers, (show) => show && userSubscriptionsStore.load(), { immediate: true });
 
 const savedCode = ref('');
@@ -326,7 +328,7 @@ async function submit() {
       </el-card>
 
       <CouponAccountsCard
-        v-if="isEdit"
+        v-if="isEdit && showWorkspaces"
         :title="t('Workspaces Using This Coupon')"
         :account-label="t('Workspace')"
         :select-placeholder="t('Select a workspace')"

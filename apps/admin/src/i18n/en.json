@@ -988,5 +988,15 @@
   "Manage subscription": "Manage subscription",
   "View in Subscribers": "View in Subscribers",
   "Subscription settings": "Subscription settings",
-  "Previous subscriptions": "Previous subscriptions"
+  "Previous subscriptions": "Previous subscriptions",
+  "Users on this Plan": "Users on this Plan",
+  "No users attached yet": "No users attached yet",
+  "Select a user to attach": "Select a user to attach",
+  "Please select a user": "Please select a user",
+  "User attached to plan": "User attached to plan",
+  "User detached from plan": "User detached from plan",
+  "Failed to attach user": "Failed to attach user",
+  "Failed to detach user": "Failed to detach user",
+  "This will cancel the subscription and detach the user from this plan.": "This will cancel the subscription and detach the user from this plan.",
+  "Detach user from plan": "Detach user from plan"
 }

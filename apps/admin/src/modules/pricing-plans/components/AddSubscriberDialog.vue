@@ -6,10 +6,12 @@ import workspacesService from '@/services/apis/workspaces-service';
 import usersService from '@/services/apis/users-service';
 
 const open = defineModel<boolean>({ default: false });
+/** B2C tenants bill users, B2B tenants bill workspaces */
+const props = withDefaults(defineProps<{ entityType?: BillableEntityType }>(), { entityType: 'workspace' });
 const emit = defineEmits<{ pick: [entity: { type: BillableEntityType; id: string }] }>();
 
 const { t } = useI18n();
-const type = ref<BillableEntityType>('workspace');
+const type = ref<BillableEntityType>(props.entityType);
 const selected = ref('');
 const loading = ref(false);
 const options = ref<{ id: string; label: string; hint?: string }[]>([]);
@@ -36,6 +38,7 @@ async function load() {
   }
 }
 
+watch(() => props.entityType, (value) => (type.value = value));
 watch([open, type], ([isOpen]) => isOpen && load(), { immediate: true });
 
 const canContinue = computed(() => !!selected.value);
@@ -49,15 +52,6 @@ function confirm() {
 <template>
   <el-dialog v-model="open" :title="$t('Add subscriber')" width="440px" append-to-body>
     <p class="intro">{{ $t('Pick an account, then choose its plan. The plan can be attached without going through checkout.') }}</p>
-
-    <el-segmented
-      v-model="type"
-      class="type-toggle"
-      :options="[
-        { label: t('Workspace'), value: 'workspace' },
-        { label: t('User'), value: 'user' },
-      ]"
-    />
 
     <el-select
       v-model="selected"
@@ -85,10 +79,6 @@ function confirm() {
   margin: 0 0 16px;
   color: var(--el-text-color-regular);
   font-size: 14px;
-}
-
-.type-toggle {
-  margin-block-end: 14px;
 }
 
 .picker {
