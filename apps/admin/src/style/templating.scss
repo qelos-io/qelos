@@ -89,8 +89,19 @@ body:has(nav.collapsed) {
   --layout-header-max-width: calc(100vw - var(--nav-width))
 }
 
-html.mobile body {
-  --nav-width: 0;
+// the shell's breakpoints: phones have no sidebar (tab bar + sheet), tablets get the icon rail
+@media (min-width: 640px) and (max-width: 1023px) {
+  :root:root body {
+    --nav-width: var(--collapsed-nav-width);
+    --layout-header-max-width: none;
+  }
+}
+
+@media (max-width: 639px) {
+  :root:root body {
+    --nav-width: 0px;
+    --layout-header-max-width: none;
+  }
 }
 
 .el-input__wrapper, .el-textarea {

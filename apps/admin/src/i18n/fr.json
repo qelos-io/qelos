@@ -1062,5 +1062,20 @@
   "identifier": "identifiant",
   "loaded": "chargé",
   "none": "aucun",
-  "The component did not compile. See the output panel.": "Le composant n'a pas compilé. Consultez le panneau de sortie."
+  "The component did not compile. See the output panel.": "Le composant n'a pas compilé. Consultez le panneau de sortie.",
+  "Appearance": "Apparence",
+  "Close menu": "Fermer le menu",
+  "Content & Structure": "Contenu et structure",
+  "Events Log": "Journal des événements",
+  "Go to…": "Aller à…",
+  "Main navigation": "Navigation principale",
+  "Menu": "Menu",
+  "More": "Plus",
+  "Nothing matches": "Aucun résultat pour",
+  "Open menu": "Ouvrir le menu",
+  "Plugins": "Plugins",
+  "Quick navigation": "Navigation rapide",
+  "Results": "Résultats",
+  "Search pages and actions…": "Rechercher des pages et des actions…",
+  "System & Config": "Système et configuration"
 }

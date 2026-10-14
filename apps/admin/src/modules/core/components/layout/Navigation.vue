@@ -1,970 +1,692 @@
-<template>
-  <nav
-    :class="{
-      show: opened,
-      collapsed: isCollapsed && !opened,
-      'nav-layout-icons-only': appConfig.navigationLayout === 'icons-only',
-      'mobile': $isMobile
-    }"
-  >
-    <div class="mobile-mask" @click="close" />
-    <div class="nav-header" v-if="!isStackedHeader || $isMobile">
-      <router-link to="/" class="home-logo">
-        <img
-          :alt="appConfig.name"
-          :src="appConfig.logoUrl"
-          class="logo-image"
-        />
-        <img
-          v-if="appConfig.smallLogoUrl"
-          :src="appConfig.smallLogoUrl"
-          class="small-logo-image"
-          :alt="appConfig.name"
-        />
-      </router-link>
-      <button
-        class="collapse-toggle"
-        @click="toggleCollapse"
-        v-if="!$isMobile"
-        :title="isCollapsed ? $t('Expand menu') : $t('Collapse menu')"
-      >
-        <el-icon>
-          <font-awesome-icon
-            :icon="['fas', isCollapsed ? 'angle-right' : 'angle-left']"
-          />
-        </el-icon>
-      </button>
-    </div>
-
-    <el-menu
-      router
-      :default-active="$route.path"
-      :collapse="isCollapsed && !opened"
-      :collapse-transition="false"
-      class="el-menu-vertical"
-      :class="`nav-layout-${appConfig.navigationLayout || 'icon-text'}`"
-      :ellipsis="false"
-    >
-      <div class="nav-group" v-if="isEditingEnabled || (isAdmin && !hasPages)">
-        <el-menu-item
-          id="menu-item-create-new-page"
-          index="create-new-page"
-          @click="openDrawer"
-          :data-title="$t('Create New Page')"
-        >
-          <el-icon>
-            <font-awesome-icon :icon="['fas', 'plus-circle']" />
-          </el-icon>
-          <span>{{ $t("Create New Page") }}</span>
-        </el-menu-item>
-
-        <QuicklyCreateMicrofrontends v-model="dialogVisible" />
-      </div>
-      <template v-for="group in navBar.top">
-        <div :key="group.key" class="nav-group" v-if="group.items.length">
-          <h4 v-if="group.key && group.key !== ''">{{ group.key }}</h4>
-          <el-menu-item
-            v-for="mfe in group.items"
-            :key="mfe.route.path"
-            :index="'/' + mfe.route.path"
-          >
-            <router-link :to="'/' + mfe.route.path">
-              <el-icon>
-              <component
-                v-if="mfe.route.iconName"
-                :is="'icon-' + mfe.route.iconName"
-              />
-              <font-awesome-icon v-else :icon="['fas', 'circle-dot']" />
-            </el-icon>
-            <span>{{ mfe.name }}</span>
-            </router-link>
-          </el-menu-item>
-        </div>
-      </template>
-
-      <div class="nav-group" v-if="isPrivilegedUser">
-        <h4>{{ $t('Overview') }}</h4>
-        <el-menu-item
-          index="/admin-dashboard"
-          :data-title="$t('Admin Dashboard')"
-        >
-          <router-link to="/admin-dashboard">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'chart-column']" />
-            </el-icon>
-            <span>{{ $t("Admin Dashboard") }}</span>
-          </router-link>
-        </el-menu-item>
-
-        <el-menu-item
-          v-if="isAdmin"
-          index="/users"
-          :data-title="$t('Users')"
-        >
-          <router-link to="/users">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'user']" />
-            </el-icon>
-            <span>{{ $t("Users") }}</span>
-          </router-link>
-        </el-menu-item>
-
-        <el-menu-item
-          v-if="isAdmin && isWorkspacesActive"
-          index="/admin/workspaces"
-          :data-title="$t('Workspaces')"
-        >
-          <router-link to="/admin/workspaces">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'briefcase']" />
-            </el-icon>
-            <span>{{ $t("Workspaces") }}</span>
-          </router-link>
-        </el-menu-item>
-
-        <el-menu-item
-          v-if="isAdmin"
-          index="/admin/log"
-          :data-title="$t('Events Log')"
-        >
-          <router-link to="/admin/log">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'clipboard-list']" />
-            </el-icon>
-            <span>{{ $t("Events Log") }}</span>
-          </router-link>
-        </el-menu-item>
-      </div>
-
-      <div class="nav-group" v-if="isAdmin">
-        <h4>{{ $t('Content & Structure') }}</h4>
-        <el-menu-item
-          index="/admin/components"
-          :data-title="$t('Components')"
-        >
-          <router-link to="/admin/components">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'th']" />
-            </el-icon>
-            <span>{{ $t("Components") }}</span>
-          </router-link>
-        </el-menu-item>
-
-        <el-menu-item
-          index="/admin/blocks"
-          :data-title="$t('Content Boxes')"
-        >
-          <router-link to="/admin/blocks">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'box']" />
-            </el-icon>
-            <span>{{ $t("Content Boxes") }}</span>
-          </router-link>
-        </el-menu-item>
-
-        <el-menu-item
-          index="/no-code/blueprints"
-          :data-title="$t('Blueprints')"
-        >
-          <router-link to="/no-code/blueprints">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'database']" />
-            </el-icon>
-            <span>{{ $t("Blueprints") }}</span>
-          </router-link>
-        </el-menu-item>
-
-        <el-menu-item
-          index="/assets"
-          :data-title="$t('Storage & Assets')"
-        >
-          <router-link to="/assets">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'folder-tree']" />
-            </el-icon>
-            <span>{{ $t("Storage & Assets") }}</span>
-          </router-link>
-        </el-menu-item>
-      </div>
-
-      <div class="nav-group" v-if="isAdmin">
-        <h4>{{ $t('System & Config') }}</h4>
-        <el-menu-item
-          index="/configurations"
-          :data-title="$t('Configurations')"
-        >
-          <router-link to="/configurations">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'gear']" />
-            </el-icon>
-            <span>{{ $t("Configurations") }}</span>
-          </router-link>
-        </el-menu-item>
-
-        <el-menu-item
-          index="/admin/appearance"
-          :data-title="$t('Appearance')"
-        >
-          <router-link to="/admin/appearance">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'palette']" />
-            </el-icon>
-            <span>{{ $t("Appearance") }}</span>
-          </router-link>
-        </el-menu-item>
-
-        <el-menu-item
-          index="/plugins"
-          :data-title="$t('Plugins')"
-        >
-          <router-link to="/plugins">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'plug']" />
-            </el-icon>
-            <span>{{ $t("Plugins") }}</span>
-          </router-link>
-        </el-menu-item>
-
-        <el-menu-item
-          index="/integrations"
-          :data-title="$t('Integrations')"
-        >
-          <router-link to="/integrations">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'link']" />
-            </el-icon>
-            <span>{{ $t("Integrations") }}</span>
-          </router-link>
-        </el-menu-item>
-
-        <el-menu-item
-          index="/admin/pricing-plans"
-          :data-title="$t('Pricing Plans')"
-        >
-          <router-link to="/admin/pricing-plans">
-            <el-icon>
-              <font-awesome-icon :icon="['fas', 'tags']" />
-            </el-icon>
-            <span>{{ $t("Pricing Plans") }}</span>
-          </router-link>
-        </el-menu-item>
-      </div>
-
-      <template v-for="group in navBar.bottom">
-        <div :key="group.key" class="nav-group" v-if="group.items.length">
-          <h4 v-if="group.key && group.key !== ''">{{ group.key }}</h4>
-          <el-menu-item
-            v-for="mfe in group.items"
-            :key="mfe.route.path"
-            :index="'/' + mfe.route.path"
-          >
-            <router-link :to="'/' + mfe.route.path">
-              <el-icon>
-              <component
-                v-if="mfe.route.iconName"
-                :is="'icon-' + mfe.route.iconName"
-              />
-              <font-awesome-icon v-else :icon="['fas', 'circle-dot']" />
-            </el-icon>
-            <span>{{ mfe.name }}</span>
-            </router-link>
-          </el-menu-item>
-        </div>
-      </template>
-    </el-menu>
-  </nav>
-</template>
-
 <script lang="ts" setup>
-import { storeToRefs } from "pinia";
-import { usePluginsMicroFrontends } from "@/modules/plugins/store/plugins-microfrontends";
-import {
-  isAdmin,
-  isEditingEnabled,
-  isPrivilegedUser,
-} from "@/modules/core/store/auth";
-import { useAppConfiguration } from "@/modules/configurations/store/app-configuration";
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
+import { isActivePath, pickTabs, type NavItem } from '../../services/navigation-model';
+import { useNavSections } from '../../compositions/navigation';
+import { useViewport } from '../../compositions/viewport';
+import { openCreatePage, openPalette } from '../../store/shell';
+import NavIcon from './NavIcon.vue';
 
-import { ref, onMounted, toRef, computed } from "vue";
+defineOptions({ inheritAttrs: false });
+const props = defineProps({ opened: Boolean });
+const emit = defineEmits(['close', 'open']);
 
-const { navBar, hasPages } = storeToRefs(usePluginsMicroFrontends());
+const route = useRoute();
 const { appConfig } = useAppConfiguration();
-import QuicklyCreateMicrofrontends from "./navigation/QuicklyCreateMicrofrontends.vue";
-import { useWsConfiguration } from "@/modules/configurations/store/ws-configuration";
+const { isCompact, isTablet } = useViewport();
 
-const isStackedHeader = computed(() => appConfig.value.layoutStyle === "stacked-header");
+const isStackedHeader = computed(() => appConfig.value.layoutStyle === 'stacked-header');
+const layout = computed(() => appConfig.value.navigationLayout || 'icon-text');
 
-// Visibility state of the modal window
-const dialogVisible = ref(false);
-const isCollapsed = ref(false);
-const isWorkspacesActive = toRef(useWsConfiguration(), "isActive");
+const sections = useNavSections();
 
-// Check if the user has a preference for collapsed state in localStorage
+const TAB_COUNT = 4;
+const tabs = computed(() => pickTabs(sections.value, TAB_COUNT, route.path));
+const moreIsActive = computed(() => !tabs.value.some((item) => isActivePath(item.to, route.path)));
+
+// ---- collapse (desktop) ----
+const COLLAPSE_KEY = 'qelos-nav-collapsed';
+const isCollapsedPref = ref(false);
 onMounted(() => {
-  const savedState = localStorage.getItem("qelos-nav-collapsed");
-  if (savedState) {
-    isCollapsed.value = savedState === "true";
+  try {
+    isCollapsedPref.value = localStorage.getItem(COLLAPSE_KEY) === 'true';
+  } catch {
+    // the preference is a convenience only
   }
 });
+function toggleCollapse() {
+  isCollapsedPref.value = !isCollapsedPref.value;
+  try {
+    localStorage.setItem(COLLAPSE_KEY, String(isCollapsedPref.value));
+  } catch {
+    // ignore
+  }
+  setTimeout(() => window.dispatchEvent(new Event('resize')), 250);
+}
 
-const toggleCollapse = () => {
-  isCollapsed.value = !isCollapsed.value;
-  localStorage.setItem("qelos-nav-collapsed", isCollapsed.value.toString());
+// the tablet rail is always collapsed; the drawer (opened) shows the full menu
+const collapsed = computed(() => !isCompact.value && (isTablet.value || isCollapsedPref.value));
+const drawer = computed(() => isTablet.value && props.opened);
+// labels are hidden only while the rail is showing, not while its drawer is open
+const rail = computed(() => collapsed.value && !drawer.value);
+const sheet = computed(() => isCompact.value);
 
-  // Force a small delay to ensure the DOM updates properly
-  setTimeout(() => {
-    window.dispatchEvent(new Event("resize"));
-  }, 300);
-};
+function activate(item: NavItem) {
+  if (item.action === 'create-page') openCreatePage();
+  emit('close');
+}
 
-const openDrawer = () => {
-  dialogVisible.value = true;
-};
-
-defineProps({ opened: Boolean });
-const emit = defineEmits(["close"]);
-
-const close = () => emit("close");
+// keep keyboard focus inside the sheet / drawer while it is open, and let Escape close it
+const panel = ref<HTMLElement>();
+watch(
+  () => props.opened,
+  (open) => {
+    if (open) setTimeout(() => panel.value?.querySelector<HTMLElement>('[data-autofocus]')?.focus(), 50);
+  },
+);
+function onKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && props.opened) emit('close');
+}
 </script>
+
+<template>
+  <nav
+    v-bind="$attrs"
+    class="sidebar"
+    :class="[
+      `nav-layout-${layout}`,
+      { show: opened, collapsed, drawer, sheet, 'stacked-header': isStackedHeader },
+    ]"
+    :aria-label="$t('Main navigation')"
+    @keydown="onKeydown"
+  >
+    <div v-if="drawer || sheet" class="mask" @click="emit('close')" />
+
+    <div ref="panel" class="panel" :role="sheet || drawer ? 'dialog' : undefined" :aria-modal="sheet || drawer ? 'true' : undefined" :aria-label="sheet || drawer ? $t('Menu') : undefined">
+      <div v-if="sheet" class="sheet-head">
+        <span class="grabber" aria-hidden="true" />
+        <p class="sheet-title">{{ $t('Menu') }}</p>
+        <el-button class="sheet-close" circle text size="large" data-autofocus :aria-label="$t('Close menu')" @click="emit('close')">
+          <el-icon><font-awesome-icon :icon="['fas', 'xmark']" /></el-icon>
+        </el-button>
+      </div>
+
+      <div v-else-if="!isStackedHeader || drawer" class="brand">
+        <router-link to="/" class="home-logo" :class="{ 'has-small': !!appConfig.smallLogoUrl }" :aria-label="appConfig.name">
+          <img v-if="appConfig.logoUrl" :alt="appConfig.name" :src="appConfig.logoUrl" class="logo-image" />
+          <img v-if="appConfig.smallLogoUrl" :alt="appConfig.name" :src="appConfig.smallLogoUrl" class="small-logo-image" />
+          <span v-if="!appConfig.logoUrl && !appConfig.smallLogoUrl" class="logo-text">{{ appConfig.name }}</span>
+        </router-link>
+        <button v-if="!isTablet" type="button" class="collapse-toggle" :aria-label="collapsed ? $t('Expand menu') : $t('Collapse menu')" :title="collapsed ? $t('Expand menu') : $t('Collapse menu')" @click="toggleCollapse">
+          <el-icon><font-awesome-icon :icon="['fas', collapsed ? 'angle-right' : 'angle-left']" /></el-icon>
+        </button>
+        <button v-else-if="drawer" type="button" class="collapse-toggle" data-autofocus :aria-label="$t('Close menu')" @click="emit('close')">
+          <el-icon><font-awesome-icon :icon="['fas', 'xmark']" /></el-icon>
+        </button>
+      </div>
+
+      <button v-if="!sheet" type="button" class="jump" :title="rail ? $t('Go to…') : undefined" @click="openPalette(), emit('close')">
+        <el-icon><font-awesome-icon :icon="['fas', 'magnifying-glass']" /></el-icon>
+        <span class="jump-label">{{ $t('Go to…') }}</span>
+        <kbd class="jump-key">⌘K</kbd>
+      </button>
+
+      <div class="scroll">
+        <section v-for="section in sections" :key="section.key" class="group">
+          <h2 v-if="section.label" class="group-label">{{ section.label }}</h2>
+          <ul>
+            <li v-for="item in section.items" :key="item.key">
+              <component
+                :is="item.to ? 'router-link' : 'button'"
+                v-bind="item.to ? { to: item.to } : { type: 'button' }"
+                class="item"
+                :class="{ active: isActivePath(item.to, route.path) }"
+                :aria-current="isActivePath(item.to, route.path) ? 'page' : undefined"
+                :title="rail || layout === 'icons-only' ? item.label : undefined"
+                @click="activate(item)"
+              >
+                <NavIcon :icon="item.icon" class="item-icon" />
+                <span class="item-label">{{ item.label }}</span>
+              </component>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </nav>
+
+  <Teleport to="body">
+    <nav v-if="isCompact" class="tabbar" :aria-label="$t('Quick navigation')">
+      <router-link
+        v-for="item in tabs"
+        :key="item.key"
+        :to="item.to!"
+        class="tab"
+        :class="{ active: isActivePath(item.to, route.path) }"
+        :aria-current="isActivePath(item.to, route.path) ? 'page' : undefined"
+      >
+        <NavIcon :icon="item.icon" class="tab-icon" />
+        <span class="tab-label">{{ item.label }}</span>
+      </router-link>
+      <button type="button" class="tab" :class="{ active: opened || moreIsActive }" :aria-expanded="opened" aria-haspopup="dialog" @click="emit('open')">
+        <el-icon class="tab-icon"><font-awesome-icon :icon="['fas', 'bars']" /></el-icon>
+        <span class="tab-label">{{ $t('More') }}</span>
+      </button>
+    </nav>
+  </Teleport>
+</template>
+
 <style scoped lang="scss">
-nav {
+// Navigation tokens derive from the theme (Appearance), so custom and dark palettes stay consistent.
+.sidebar,
+.tabbar {
+  --nav-text: var(--secondary-color);
+  --nav-muted: var(--nav-muted-color, color-mix(in srgb, var(--secondary-color) 62%, var(--nav-bg-color)));
+  --nav-hover: color-mix(in srgb, var(--secondary-color) 9%, var(--nav-bg-color));
+  --nav-active-bg: color-mix(in srgb, var(--secondary-color) 18%, var(--nav-bg-color));
+  --nav-active-text: var(--secondary-color);
+  --nav-focus: var(--third-color, var(--secondary-color));
+}
+
+.sidebar {
+  flex: none;
+  inline-size: var(--nav-width);
+  min-inline-size: var(--nav-width);
+  transition: inline-size 0.2s ease, min-inline-size 0.2s ease;
+  z-index: 100;
+}
+
+.panel {
   display: flex;
   flex-direction: column;
-  background-color: var(--nav-bg-color);
-  transition: width 0.3s ease, min-width 0.3s ease;
-  min-width: var(--nav-width);
-  overflow-y: auto;
-  position: relative;
-  box-shadow: var(--layout-nav-shadow, 0 0 10px rgba(0, 0, 0, 0.1));
+  block-size: 100%;
+  min-block-size: 0;
+  overflow: hidden;
+  background: var(--nav-bg-color);
+  color: var(--nav-text);
+  box-shadow: var(--layout-nav-shadow, none);
   border-inline-end: var(--layout-nav-border, 0);
-
-  &.collapsed {
-    width: var(--nav-width);
-
-    .home-logo {
-      .logo-image {
-        display: none;
-      }
-      .small-logo-image {
-        display: block;
-      }
-    }
-
-    .nav-group h4 {
-      opacity: 0;
-      height: 0;
-      margin: 0;
-      overflow: hidden;
-    }
-
-    // Add tooltip for menu items in collapsed mode (but not for icons-only layout)
-    &:not(.nav-layout-icons-only) {
-      .el-menu-item,
-      .el-sub-menu__title {
-        &:hover {
-          &::after {
-            content: attr(data-title);
-            position: absolute;
-            inset-inline-start: 64px;
-            inset-block-start: 50%;
-            transform: translateY(-50%);
-            padding: 8px 12px;
-            background: var(--nav-bg-color);
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-            border-radius: 4px;
-            white-space: nowrap;
-            color: var(--nav-muted-color, var(--negative-color));
-            font-size: 14px;
-            z-index: 10;
-            animation: fadeIn 0.2s ease-in-out;
-          }
-        }
-      }
-
-      .el-menu-item {
-        &.is-active {
-          position: relative;
-
-          &::before {
-            content: "";
-            position: absolute;
-            inset-inline-start: 0;
-            top: 0;
-            height: 100%;
-            width: 3px;
-            background-color: var(--el-menu-active-color);
-            border-radius: 0 2px 2px 0;
-          }
-        }
-      }
-
-      &.is-active {
-        ::v-deep(.el-sub-menu__title) {
-          &::before {
-            content: "";
-            position: absolute;
-            inset-inline-start: 0;
-            inset-block-start: 0;
-            height: 100%;
-            width: 3px;
-            background-color: var(--el-menu-active-color);
-            border-radius: 0 2px 2px 0;
-          }
-        }
-      }
-
-      .el-sub-menu {
-        ::v-deep(.el-menu) {
-          padding-inline-start: 5px;
-          border-inline-start: 1px dashed rgba(255, 255, 255, 0.1);
-          margin-inline-start: 10px;
-        }
-      }
-    }
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-50%) translateX(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(-50%) translateX(0);
-    }
-  }
 }
 
-nav:not(.mobile) .el-menu {
-  overflow: hidden;
+.mask {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgb(0 0 0 / 0.45);
+  animation: fade 0.2s ease;
 }
 
-nav .el-menu,
-nav {
-  --el-menu-text-color: var(--secondary-color);
-  --el-menu-hover-bg-color: var(--main-color);
-  --el-menu-bg-color: var(--nav-bg-color);
-  --el-menu-active-color: var(--third-color);
-  border: 0;
-  scrollbar-color: var(--el-menu-hover-bg-color) var(--nav-bg-color);
-  scrollbar-width: thin;
-
-  &:hover {
-    overflow: auto;
-  }
-
-  &::-webkit-scrollbar {
-    width: 5px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: var(--nav-bg-color);
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background-color: var(--el-menu-hover-bg-color);
-    border-radius: 20px;
-  }
-}
-
-// Properly handle Element Plus menu collapse
-.el-menu-vertical:not(.el-menu--collapse) {
-  width: 100%;
-  min-width: var(--nav-width);
-}
-
-.el-menu--collapse {
-  width: 64px !important;
-
-  .el-sub-menu__title span {
-    display: none;
-  }
-
-  .el-sub-menu__title .el-sub-menu__icon-arrow {
-    display: none;
-  }
-
-  .el-menu-item a span {
-    display: none;
-  }
-
-  .el-menu-item,
-  .el-sub-menu__title {
-    padding: 0 !important;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-
-    .el-icon {
-      margin: 0 auto !important;
-    }
-  }
-}
-
-// Fix for submenu popup positioning in collapsed mode
-.el-popper {
-  &.is-pure {
-    .el-popper__arrow {
-      inset-inline-start: -6px !important;
-    }
-  }
-
-  .el-menu--popup {
-    padding: 5px;
-    min-width: 180px;
-    background-color: var(--nav-bg-color);
-    border-radius: 4px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-
-    .el-menu-item a{
-      border-radius: 4px;
-      margin: 2px;
-      height: 40px;
-      line-height: 40px;
-      display: flex;
-      align-items: center;
-
-      .el-icon {
-        margin-right: 8px;
-      }
-    }
-  }
-}
-
-.el-menu-item:hover {
-  --el-menu-text-color: var(--nav-muted-color, var(--negative-color));
-  --el-menu-hover-bg-color: var(--main-color);
-  --el-menu-bg-color: var(--nav-bg-color);
-  border: 0;
-}
-
-.el-menu-item a {
-  color: var(--el-menu-text-color);
-  text-decoration: none;
-  display: block;
-  width: 100%;
-}
-
-.el-menu-item.is-active:hover, .el-menu-item.is-active a:hover {
-  color: var(--nav-muted-color, var(--negative-color));
-}
-
-.el-menu-item a {
-  padding: 0;
-  margin: 5px;
-  border-radius: 5px;
-  line-height: 50px;
-  height: 50px;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
+.brand {
   display: flex;
-  align-items: center;
-
-  &:hover {
-    transform: translateX(3px);
-  }
-
-  .el-icon {
-    margin-right: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-  }
-
-  span {
-    flex: 1;
-  }
-}
-
-.el-sub-menu {
-  margin: 5px;
-  transition: all 0.3s ease;
-
-  ::v-deep(.el-sub-menu__title) {
-    padding: 0 20px;
-    border-radius: 5px;
-    line-height: 50px;
-    height: 50px;
-    --el-menu-text-color: var(--secondary-color);
-    transition: all 0.3s ease;
-    position: relative;
-    display: flex;
-    align-items: center;
-
-    &:hover {
-      color: var(--nav-muted-color, var(--negative-color));
-      transform: translateX(3px);
-    }
-
-    .el-icon {
-      margin-right: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      height: 24px;
-    }
-
-    span {
-      flex: 1;
-    }
-
-    .el-sub-menu__icon-arrow {
-      position: absolute;
-      inset-inline-end: 20px;
-      inset-block-start: 25%;
-      transform: translateY(-50%);
-      font-size: 12px;
-      margin-block-start: 0;
-    }
-  }
-
-  ::v-deep(.el-menu) {
-    background-color: var(--nav-bg-color);
-    --el-menu-text-color: var(--secondary-color);
-  }
-}
-
-a:hover {
-  border: none;
-}
-
-.mobile-mask {
-  display: none;
-}
-
-.nav-header {
-  display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
-  padding: 5px;
-  background-color: var(--nav-bg-color);
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 2;
-  transition: all 0.3s ease;
-  width: 100%;
-  height: 70px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 8px;
+  block-size: var(--header-height, 60px);
+  padding-inline: 12px;
 }
 
 .home-logo {
   display: flex;
+  flex: 1;
   align-items: center;
   justify-content: center;
-  height: 60px;
-  flex: 1;
-  transition: all 0.3s ease;
+  min-inline-size: 0;
+  block-size: 100%;
   overflow: hidden;
+  color: var(--nav-text);
+  text-decoration: none;
 
   .logo-image {
-    max-width: 80%;
-    max-height: 100%;
-    transition: opacity 0.3s ease;
-    margin-bottom: 0;
+    max-inline-size: 80%;
+    max-block-size: 70%;
   }
 
   .small-logo-image {
-    max-width: 40px;
-    max-height: 40px;
     display: none;
+    max-inline-size: 36px;
+    max-block-size: 36px;
+  }
+
+  .logo-text {
+    overflow: hidden;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
 .collapse-toggle {
-  background: transparent;
-  border: none;
-  color: var(--secondary-color);
-  cursor: pointer;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border: 0;
   border-radius: 50%;
-  transition: all 0.2s ease;
+  background: transparent;
+  color: var(--nav-muted);
+  cursor: pointer;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--nav-muted-color, var(--negative-color));
+    background: var(--nav-hover);
+    color: var(--nav-text);
   }
 }
 
-@media (max-width: 600px) {
-  nav {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    min-width: 100%;
-    height: 0; /* Start with 0 height when closed */
-    opacity: 0; /* Start with 0 opacity when closed */
-    overflow: hidden;
-    transition: all 0.3s ease-in-out;
-    z-index: 100;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-    border-top-left-radius: var(--border-radius);
-    border-top-right-radius: var(--border-radius);
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    margin: 0;
-    transform: translateY(100%); /* Start off-screen */
-    pointer-events: none; /* Prevent interaction when hidden */
+.jump {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 12px 8px;
+  padding: 0 10px;
+  block-size: 38px;
+  border: 1px solid color-mix(in srgb, var(--nav-text) 16%, transparent);
+  border-radius: calc(var(--border-radius, 6px) + 2px);
+  background: transparent;
+  color: var(--nav-muted);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
 
-    .el-menu {
-      display: none;
-    }
+  &:hover {
+    background: var(--nav-hover);
+    color: var(--nav-text);
+  }
 
-    &.show {
-      position: fixed;
-      inset-block-start: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 100vh;
-      opacity: 1;
-      margin: 0;
-      border-radius: 0;
-      overflow: auto;
-      transform: translateY(0); /* Slide in from bottom */
-      pointer-events: auto; /* Re-enable interactions */
-      display: flex;
-      flex-direction: column;
-      padding-bottom: env(
-        safe-area-inset-bottom,
-        80px
-      ); /* Add safe area padding for iPhone */
+  .jump-label {
+    flex: 1;
+    text-align: start;
+  }
 
-      .el-menu {
-        display: block;
-        padding-bottom: 100px;
-        margin-top: 10px; /* Add some space at the top */
-        animation: fadeIn 0.3s ease-in-out; /* Animate menu items */
-      }
+  .jump-key {
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--nav-text) 12%, transparent);
+    font: inherit;
+    font-size: 0.72rem;
+  }
+}
 
-      .mobile-mask {
-        display: block;
-        position: fixed;
-        inset-block-start: 0;
-        inset-inline-start: 0;
-        inset-inline-end: 0;
-        inset-block-end: 0;
-        background-color: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(2px);
-        z-index: -1;
-      }
-    }
+.scroll {
+  flex: 1;
+  min-block-size: 0;
+  padding: 4px 8px 16px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--nav-text) 25%, transparent) transparent;
+}
+
+.group + .group {
+  margin-block-start: 14px;
+}
+
+.group ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.group-label {
+  margin: 0 0 4px;
+  padding-inline: 12px;
+  color: var(--nav-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  min-block-size: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: calc(var(--border-radius, 6px) + 1px);
+  background: transparent;
+  color: var(--nav-text);
+  font: inherit;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--nav-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--nav-focus);
+    outline-offset: -2px;
+  }
+
+  &.active {
+    background: var(--nav-active-bg);
+    color: var(--nav-active-text);
+    font-weight: 600;
+  }
+}
+
+.item-icon {
+  flex: none;
+  inline-size: 22px;
+  font-size: 18px;
+}
+
+.item-label {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ---- user-chosen navigation layouts (Appearance) ----
+.nav-layout-text-only:not(.collapsed):not(.sheet):not(.drawer) .item-icon {
+  display: none;
+}
+
+.nav-layout-compact:not(.sheet):not(.drawer) {
+  .item {
+    min-block-size: 32px;
+    font-size: 0.88rem;
+  }
+
+  .item-icon {
+    inline-size: 18px;
+    font-size: 15px;
+  }
+
+  .group-label {
+    font-size: 0.7rem;
+  }
+}
+
+.nav-layout-icon-above:not(.collapsed):not(.sheet):not(.drawer) {
+  .item {
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-block-size: 64px;
+    padding-block: 8px;
+    text-align: center;
+  }
+
+  .item-label {
+    flex: none;
+    font-size: 0.75rem;
+  }
+
+  .item-icon {
+    font-size: 22px;
+  }
+}
+
+.nav-layout-icons-only:not(.sheet):not(.drawer),
+.collapsed:not(.sheet):not(.drawer) {
+  .item {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .item-label,
+  .group-label,
+  .jump-label,
+  .jump-key {
+    display: none;
+  }
+
+  .jump {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .group + .group {
+    margin-block-start: 8px;
+    padding-block-start: 8px;
+    border-block-start: 1px solid color-mix(in srgb, var(--nav-text) 12%, transparent);
+  }
+
+  .has-small .logo-image {
+    display: none;
+  }
+
+  .has-small .small-logo-image {
+    display: block;
+  }
+
+  .logo-image {
+    max-inline-size: 40px;
+  }
+
+  .logo-text {
+    display: none;
+  }
+
+  // the rail keeps a visible expand button under the logo
+  .brand {
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    block-size: auto;
+    padding: 12px 4px 6px;
   }
 
   .home-logo {
-    background: transparent;
-
-    img {
-      display: inline;
-    }
+    flex: none;
+    inline-size: 40px;
+    block-size: 36px;
   }
 
   .collapse-toggle {
-    display: none;
+    inline-size: 36px;
+    block-size: 28px;
+    border-radius: calc(var(--border-radius, 6px) + 1px);
+    background: var(--nav-hover);
+    color: var(--nav-text);
   }
 }
 
-@media (min-width: 1200px) {
-  nav {
-    margin: var(--spacing);
+// ---- desktop: the sidebar floats as a card, like the header ----
+@media (min-width: 1024px) {
+  .sidebar {
+    box-sizing: border-box;
+    padding: var(--spacing);
+    padding-inline-end: 0;
+  }
+
+  .panel {
     border-radius: var(--border-radius);
   }
+}
 
-  nav .home-logo {
-    margin: 0 auto;
-    width: var(--nav-width);
-  }
-
-  nav .home-logo img {
-    display: inline-block;
+// ---- tablet drawer: the rail keeps its width, the panel floats over the content ----
+.drawer {
+  .panel {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: min(300px, 86vw);
+    z-index: 1;
+    animation: slide-in 0.22s ease;
   }
 }
 
-.nav-group {
-  position: relative;
-  padding: 5px 0;
-  transition: all 0.3s ease;
+// ---- phone: the menu is a bottom sheet, opened from the tab bar ----
+.sidebar.sheet {
+  position: fixed;
+  inset: 0;
+  inline-size: auto;
+  min-inline-size: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 1100;
 
-  &:not(:last-child)::after {
-    content: "";
-    display: block;
-    height: 1px;
-    background: linear-gradient(
-      to right,
-      transparent,
-      rgba(255, 255, 255, 0.1),
-      transparent
-    );
-    margin: 8px 15px;
+  &.show {
+    visibility: visible;
+    pointer-events: auto;
   }
 
-  h4 {
-    color: var(--nav-muted-color, var(--negative-color));
-    font-size: var(--base-font-size, 16px);
-    font-weight: 500;
-    margin: 15px 10px 10px;
-    transition: all 0.3s ease;
-    opacity: 0.8;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-
-    &:before {
-      content: "";
-      display: inline-block;
-      vertical-align: middle;
-      width: 15px;
-      height: 1px;
-      background-color: var(--negative-color);
-      margin-inline-end: 5px;
-      opacity: 0.6;
-    }
-  }
-}
-
-.bottom {
-  margin-top: auto;
-}
-
-// Navigation Layout Styles
-.nav-layout-icon-above {
-  .el-menu-item,
-  .el-sub-menu__title {
-    flex-direction: column !important;
-    height: 70px;
-    line-height: 1.2;
-    text-align: center;
-    padding: 8px 20px;
-
-    .el-icon:not(.el-sub-menu__icon-arrow) {
-      margin-right: 0 !important;
-      margin-bottom: 4px;
-      width: 36px;
-      height: 36px;
-      font-size: 28px;
-    }
-
-    span {
-      font-size: 12px;
-      line-height: 1.2;
-    }
+  .panel {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    block-size: auto;
+    max-block-size: 88dvh;
+    border-radius: 20px 20px 0 0;
+    border-inline-end: 0;
+    padding-block-end: env(safe-area-inset-bottom, 0);
+    transform: translateY(100%);
+    transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .el-sub-menu {
-    ::v-deep(.el-sub-menu__title) {
-      flex-direction: column !important;
-      height: 70px;
-      
-      .el-icon:not(.el-sub-menu__icon-arrow) {
-        margin-right: 0 !important;
-        margin-bottom: 4px;
-        width: 36px;
-        height: 36px;
-        font-size: 28px;
-      }
-    }
+  &.show .panel {
+    transform: translateY(0);
   }
 
-  &.el-menu--collapse {
-    .el-menu-item,
-    .el-sub-menu__title {
-      height: 50px;
-
-      a {
-        padding-inline-start: 22%;
-      }
-
-      .el-icon {
-        margin-bottom: 0;
-      }
-
-      span {
-        display: none;
-      }
-    }
-  }
-}
-
-.nav-layout-icons-only {
-  .logo-image {
-    max-width: 40px;
-  }
-  .collapse-toggle,
-  .nav-group h4 {
-    display: none;
-  }
-  .el-menu-item,
-  .el-sub-menu__title {
-    justify-content: center;
+  .sheet-head {
     position: relative;
-
-    .el-icon {
-      margin-right: 0;
-      width: 36px;
-      height: 36px;
-      font-size: 28px;
-    }
-
-    span {
-      display: none !important;
-    }
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 8px 4px 20px;
   }
 
-  .el-sub-menu {
-    .el-menu {
-      .el-menu-item a{
-        padding: 0;
-        padding-inline-start: 10px;
-      }
+  .grabber {
+    position: absolute;
+    inset-block-start: 8px;
+    inset-inline: 0;
+    margin-inline: auto;
+    inline-size: 36px;
+    block-size: 4px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--nav-text) 28%, transparent);
+  }
+
+  .sheet-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .sheet-close {
+    --el-button-text-color: var(--nav-text);
+    --el-button-hover-bg-color: var(--nav-hover);
+    inline-size: 44px;
+    block-size: 44px;
+  }
+
+  .item {
+    min-block-size: 48px;
+    font-size: 1rem;
+  }
+
+  .item-icon {
+    font-size: 20px;
+  }
+
+  .group-label {
+    margin-block-start: 6px;
+    font-size: 0.8rem;
+  }
+}
+
+.sidebar.sheet {
+  .scroll {
+    padding-block-end: 12px;
+  }
+}
+
+// ---- bottom tab bar (phones) ----
+.tabbar {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 1000;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0));
+  background: var(--nav-bg-color);
+  box-shadow: 0 -1px 0 color-mix(in srgb, var(--nav-text) 14%, transparent), 0 -6px 18px rgb(0 0 0 / 0.08);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-inline-size: 0;
+  min-block-size: 52px;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--nav-muted);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:focus-visible {
+    outline: 2px solid var(--nav-focus);
+    outline-offset: -2px;
+  }
+
+  &.active {
+    color: var(--nav-active-text);
+
+    .tab-icon {
+      background: var(--nav-active-bg);
+    }
+
+    .tab-label {
+      font-weight: 700;
     }
   }
 }
 
-.nav-layout-text-only {
-  .el-menu-item,
-  .el-sub-menu__title {
-    .el-icon {
-      display: none;
-    }
+.tab-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 52px;
+  block-size: 28px;
+  border-radius: 14px;
+  font-size: 18px;
+  transition: background 0.15s ease;
+}
 
-    span {
-      margin-left: 0;
-    }
+.tab-label {
+  max-inline-size: 100%;
+  overflow: hidden;
+  font-size: 0.7rem;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
   }
 }
 
-.nav-layout-compact {
-  .el-menu-item,
-  .el-sub-menu__title {
-    height: 40px;
-    line-height: 40px;
-    padding: 0 16px;
-    margin: 2px;
-
-    .el-icon {
-      width: 20px;
-      height: 20px;
-      margin-right: 6px;
-    }
-
-    span {
-      font-size: 13px;
-    }
+@keyframes slide-in {
+  from {
+    transform: translateX(-24px);
+    opacity: 0;
   }
+}
 
-  .nav-group h4 {
-    font-size: 0.7rem;
-    margin: 10px 8px 6px;
+[dir='rtl'] .drawer .panel,
+:root[dir='rtl'] .drawer .panel {
+  animation-name: slide-in-rtl;
+}
+
+@keyframes slide-in-rtl {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .panel,
+  .item,
+  .tab-icon,
+  .mask {
+    animation: none !important;
+    transition: none !important;
   }
 }
 </style>

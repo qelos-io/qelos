@@ -1062,5 +1062,20 @@
   "identifier": "identifier",
   "loaded": "loaded",
   "none": "none",
-  "The component did not compile. See the output panel.": "The component did not compile. See the output panel."
+  "The component did not compile. See the output panel.": "The component did not compile. See the output panel.",
+  "Appearance": "Appearance",
+  "Close menu": "Close menu",
+  "Content & Structure": "Content & Structure",
+  "Events Log": "Events Log",
+  "Go to…": "Go to…",
+  "Main navigation": "Main navigation",
+  "Menu": "Menu",
+  "More": "More",
+  "Nothing matches": "Nothing matches",
+  "Open menu": "Open menu",
+  "Plugins": "Plugins",
+  "Quick navigation": "Quick navigation",
+  "Results": "Results",
+  "Search pages and actions…": "Search pages and actions…",
+  "System & Config": "System & Config"
 }

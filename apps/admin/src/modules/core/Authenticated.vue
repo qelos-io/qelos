@@ -20,18 +20,19 @@
     />
 
     <!-- Fixed impersonation exit button -->
-    <div v-if="isImpersonating" class="impersonation-exit-btn" @click="handleExitImpersonation">
+    <button v-if="isImpersonating" type="button" class="impersonation-exit-btn" @click="handleExitImpersonation">
       <font-awesome-icon icon="fas fa-user-secret" />
       <span>Exit Impersonation</span>
-    </div>
+    </button>
 
-    <component v-if="customComponents.loaded" :is="customComponents.NavigationComponent || Navigation" class="navigation" :opened="navigationOpened" @close="navigationOpened = false"/>
+    <component v-if="customComponents.loaded" :is="customComponents.NavigationComponent || Navigation" class="navigation" :opened="navigationOpened" @close="navigationOpened = false" @open="navigationOpened = true"/>
     <div class="admin-content">
       <component
         v-if="customComponents.loaded"
         :is="customComponents.headerComponent || Header"
         @toggle="navigationOpened = !navigationOpened"
         :is-navigation-opened="navigationOpened"
+        :show-menu-button="isTablet || (isCompact && !!customComponents.NavigationComponent)"
       />
       <div class="main-wrapper">
         <div class="main">
@@ -41,6 +42,8 @@
       </div>
     </div>
   </div>
+  <CommandPalette v-if="isLoaded" />
+  <QuicklyCreateMicrofrontends v-if="isLoaded && isAdmin" v-model="isCreatePageOpen" />
   <template v-if="openModals?.length">
     <MicroFrontendModal v-for="{mfe, props} in openModals" :key="mfe.name" :mfe="mfe" :props="props"/>
   </template>
@@ -52,6 +55,10 @@ import { onBeforeRouteUpdate, useRouter } from 'vue-router'
 import { useAuth, useAuthenticatedIntercept } from './compositions/authentication'
 import Header from './components/layout/Header.vue'
 import Navigation from './components/layout/Navigation.vue'
+import CommandPalette from './components/layout/CommandPalette.vue'
+import QuicklyCreateMicrofrontends from './components/layout/navigation/QuicklyCreateMicrofrontends.vue'
+import { isCreatePageOpen } from './store/shell'
+import { useViewport } from './compositions/viewport'
 import { authStore, isPrivilegedUser, isEditingEnabled, isAdmin } from '@/modules/core/store/auth';
 import { isImpersonating, clearImpersonation } from '@/modules/core/store/impersonation';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
@@ -80,6 +87,7 @@ provide('user', user);
 provide('wsConfig', toRef(wsConfig, 'metadata'));
 
 const navigationOpened = ref(false)
+const { isCompact, isTablet } = useViewport()
 const { isLoaded } = useAuthenticatedIntercept();
 const openModals = toRef(usePluginsMicroFrontends(), 'openModals');
 const layoutStyle = computed(() => appConfig.value.layoutStyle || 'classic');
@@ -102,6 +110,7 @@ const shouldShowBuilderComponents = computed(() => {
 });
 
 router.afterEach(() => navigationOpened.value = false);
+watch([isCompact, isTablet], () => navigationOpened.value = false);
 
 onBeforeRouteUpdate(async (to, from) => {
   await authStore.userPromise;
@@ -179,36 +188,30 @@ function handleExitImpersonation() {
 <style scoped lang="scss">
 .admin-panel {
   display: flex;
-
-  width: 100%;
-  height: 100%;
   flex-direction: row;
+  inline-size: 100%;
+  block-size: 100%;
   background: linear-gradient(to right bottom, var(--border-color) 20%, var(--body-bg) 80%);
 }
 
-.main-wrapper {
-  max-width: calc(100vw - var(--nav-width));
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  height: calc(100% - 60px);
-  overflow: auto;
-  order: 2;
+.navigation {
+  align-self: stretch;
 }
 
 .admin-content {
   display: flex;
-  flex-direction: column;
   flex: 1;
-  height: 100%;
+  flex-direction: column;
+  min-inline-size: 0;
+  block-size: 100%;
 
   .main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: auto;
-    padding-bottom: 0;
     position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-block-size: 0;
+    overflow: auto;
     border: var(--layout-main-border, 0);
     background: var(--layout-main-bg, transparent);
     border-radius: var(--layout-main-radius, var(--border-radius));
@@ -219,43 +222,47 @@ function handleExitImpersonation() {
   }
 
   .main-content {
-    width: 100%;
-    height: 100%;
+    inline-size: 100%;
+    block-size: 100%;
   }
 }
 
-@media (max-width: 600px) {
+.main-wrapper {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  min-block-size: 0;
+  max-inline-size: calc(100vw - var(--nav-width));
+  overflow: auto;
+}
+
+// phones: the navigation is a bottom tab bar + sheet, so the content gets the whole width
+@media (max-width: 639px) {
   .admin-panel {
     flex-direction: column;
   }
-  
-  .admin-content {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .navigation {
-    order: 1;
-    width: 100%;
-    position: relative;
-    left: 0;
-  }
-  
-  .header {
-    order: 2;
-    z-index: 80;
-  }
-  
-  .main {
-    order: 3;
+
+  .main-wrapper {
+    max-inline-size: 100vw;
+    // keep the end of every page clear of the fixed tab bar
+    padding-block-end: calc(64px + env(safe-area-inset-bottom, 0px));
   }
 }
 
 // Impersonation exit button
+@media (max-width: 639px) {
+  .impersonation-exit-btn {
+    inset-block-start: auto !important;
+    inset-block-end: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .impersonation-exit-btn {
   position: fixed;
-  top: 80px;
+  inset-block-start: 80px;
   inset-inline-end: 20px;
+  border: 0;
+  font-family: inherit;
   background: var(--el-color-warning);
   color: white;
   padding: 10px 16px;

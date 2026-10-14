@@ -1062,5 +1062,20 @@
   "identifier": "מזהה",
   "loaded": "נטען",
   "none": "ללא",
-  "The component did not compile. See the output panel.": "הרכיב לא עבר קומפילציה. ראו את לוח הפלט."
+  "The component did not compile. See the output panel.": "הרכיב לא עבר קומפילציה. ראו את לוח הפלט.",
+  "Appearance": "מראה",
+  "Close menu": "סגירת תפריט",
+  "Content & Structure": "תוכן ומבנה",
+  "Events Log": "יומן אירועים",
+  "Go to…": "מעבר אל…",
+  "Main navigation": "ניווט ראשי",
+  "Menu": "תפריט",
+  "More": "עוד",
+  "Nothing matches": "אין תוצאות עבור",
+  "Open menu": "פתיחת תפריט",
+  "Plugins": "תוספים",
+  "Quick navigation": "ניווט מהיר",
+  "Results": "תוצאות",
+  "Search pages and actions…": "חיפוש עמודים ופעולות…",
+  "System & Config": "מערכת והגדרות"
 }

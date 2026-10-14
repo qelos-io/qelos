@@ -1,54 +1,54 @@
 <template>
-  <header v-if="loaded && showStandardHeader" :dir="$t('appDirection')" :class="{ 'searching': isSearching, header: true, mobile: $isMobile, 'stacked-header': isStackedHeader }">
+  <header v-if="loaded && showStandardHeader" :dir="$t('appDirection')" :class="{ searching: isSearching, header: true, compact: isCompact, 'stacked-header': isStackedHeader }">
     <div class="header-left">
-      <el-button class="mobile-menu-opener" v-if="$isMobile" text circle size="large" @click="toggle">
-        <el-icon>
-          <font-awesome-icon :icon="['fas', isNavigationOpened ? 'times' : 'bars']"/>
-        </el-icon>
+      <el-button v-if="showMenuButton" class="menu-opener" text circle size="large" :aria-label="isNavigationOpened ? $t('Close menu') : $t('Open menu')" :aria-expanded="isNavigationOpened" @click="toggle">
+        <el-icon><font-awesome-icon :icon="['fas', isNavigationOpened ? 'xmark' : 'bars']" /></el-icon>
       </el-button>
-      
-      <div class="logo-container" v-if="$isMobile || isStackedHeader">
+
+      <router-link v-if="(isStackedHeader && !(isCompact && current)) || (isCompact && !showPageSearch && !current)" to="/" class="logo-container" :aria-label="appConfig.name">
         <img v-if="appConfig.logoUrl" :src="appConfig.logoUrl" :alt="appConfig.name" class="logo" />
-        <h2 v-else class="app-title">{{ appConfig.name }}</h2>
+        <span v-else class="app-title">{{ appConfig.name }}</span>
+      </router-link>
+
+      <div v-if="current && !showPageSearch" class="where" :class="{ 'with-logo': isStackedHeader }">
+        <template v-if="!isCompact && current.section">
+          <span class="where-section">{{ current.section }}</span>
+          <font-awesome-icon :icon="['fas', 'chevron-right']" class="where-sep" aria-hidden="true" />
+        </template>
+        <span class="where-page">{{ current.label }}</span>
       </div>
     </div>
-    
-    <div class="header-center" v-if="route.meta?.searchQuery">
-      <div class="search-container" :class="{ 'active': isSearching }">
+
+    <div v-if="showPageSearch" class="header-center">
+      <div class="search-container" :class="{ active: isSearching }">
         <el-input
           class="query-input"
           size="large"
           v-model="query"
+          clearable
+          :aria-label="$t(route?.meta?.searchPlaceholder as string || 'Search...')"
           :placeholder="$t(route?.meta?.searchPlaceholder as string || 'Search...')"
           @focus="isSearching = true"
           @blur="isSearching = false"
         >
           <template #prefix>
-            <el-icon class="search-icon">
-              <font-awesome-icon :icon="['fas', 'search']"/>
-            </el-icon>
-          </template>
-          <template #suffix v-if="query">
-            <el-icon class="clear-icon" @click="query = ''">
-              <font-awesome-icon :icon="['fas', 'times']"/>
-            </el-icon>
+            <el-icon class="search-icon"><font-awesome-icon :icon="['fas', 'search']" /></el-icon>
           </template>
         </el-input>
-        <div class="search-shortcuts" v-if="isSearching">
-          <span class="shortcut-hint">Press <kbd>/</kbd> to focus</span>
-          <span class="shortcut-hint">Press <kbd>Esc</kbd> to cancel</span>
-        </div>
       </div>
     </div>
-    
+
     <div class="header-right">
-      <AssistantOpener v-if="isPrivilegedUser"/>
-      <HeaderUserDropdown/>
+      <button type="button" class="palette-trigger" :aria-label="$t('Go to…')" :title="$t('Go to…')" @click="openPalette">
+        <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
+        <span class="palette-label">{{ $t('Go to…') }}</span>
+        <kbd class="palette-key">⌘K</kbd>
+      </button>
+      <AssistantOpener v-if="isPrivilegedUser" />
+      <HeaderUserDropdown />
     </div>
   </header>
-  <RuntimeTemplate v-if="loaded && usersHeader?.active" class="header"
-                    :template="usersHeader.html"
-                    :template-props="templateProps" :components="{HeaderUserDropdown}"/>
+  <RuntimeTemplate v-if="loaded && usersHeader?.active" class="header" :template="usersHeader.html" :template-props="templateProps" :components="{ HeaderUserDropdown }" />
 </template>
 <script lang="ts" setup>
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
@@ -60,6 +60,9 @@ import { useUsersHeader } from '@/modules/configurations/store/users-header';
 import { isPrivilegedUser } from '@/modules/core/store/auth';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import AssistantOpener from '@/modules/admins/components/AssistantOpener.vue';
+import { useNavSections, findCurrent } from '../../compositions/navigation';
+import { useViewport } from '../../compositions/viewport';
+import { openPalette } from '../../store/shell';
 
 const { appConfig } = useAppConfiguration()
 
@@ -72,12 +75,22 @@ const props = defineProps({
   isNavigationOpened: {
     type: Boolean,
     default: false
+  },
+  // the shell tells the header whether the navigation component offers its own way to open the menu
+  showMenuButton: {
+    type: Boolean,
+    default: false
   }
 });
 
 const emit = defineEmits(['toggle']);
 const router = useRouter()
 const route = useRoute()
+
+const { isCompact } = useViewport()
+const sections = useNavSections()
+const current = computed(() => findCurrent(sections.value, route.path))
+const showPageSearch = computed(() => !!route.meta?.searchQuery)
 
 const tempQuery = ref(null)
 const isSearching = ref(false)
@@ -128,238 +141,201 @@ watch(tempQuery, debounce((value: string) => {
 const toggle = () => emit('toggle');
 </script>
 <style scoped lang="scss">
-
 header {
-  margin: var(--spacing);
-  border-radius: var(--border-radius);
   position: sticky;
   inset-block-start: 0;
-  z-index: 100;
+  z-index: 90;
   display: flex;
-  justify-content: space-between;
-  height: var(--header-height, 60px);
+  flex: none;
   align-items: center;
-  background: var(--layout-header-bg, #fff);
-  border: var(--layout-header-border, 1px solid var(--border-color));
-  box-shadow: var(--layout-header-shadow, 0 2px 8px rgba(0, 0, 0, 0.05));
-  padding-inline: 16px;
-  transition: all 0.3s ease;
-  
-  &.searching {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  }
+  justify-content: space-between;
+  gap: 12px;
+  block-size: var(--header-height, 60px);
+  margin: var(--spacing) var(--spacing) 0;
+  padding-inline: 16px 12px;
+  border: var(--layout-header-border, 0);
+  border-radius: var(--border-radius);
+  background: var(--layout-header-bg, var(--surface, #fff));
+  box-shadow: var(--layout-header-shadow, none);
 
-  &:not(.mobile):not(.stacked-header) {
-    max-width: var(--layout-header-max-width, calc(100vw - var(--nav-width)));
+  &:not(.compact):not(.stacked-header) {
+    max-inline-size: var(--layout-header-max-width, none);
   }
 }
 
-.header-left, .header-right, .header-center {
+.header-left,
+.header-right {
   display: flex;
   align-items: center;
+  gap: 8px;
+  min-inline-size: 0;
 }
 
 .header-left {
-  min-width: 200px;
-}
-
-.header-center {
-  flex: 1;
-  justify-content: center;
+  flex: 1 1 0;
 }
 
 .header-right {
-  min-width: 200px;
+  flex: none;
   justify-content: flex-end;
+}
+
+.header-center {
+  display: flex;
+  flex: 2 1 0;
+  justify-content: center;
+  min-inline-size: 0;
+}
+
+.menu-opener {
+  flex: none;
+  inline-size: 44px;
+  block-size: 44px;
+  margin-inline-start: -8px;
 }
 
 .logo-container {
   display: flex;
+  flex: none;
   align-items: center;
-  margin-inline-start: 10px;
+  color: var(--el-text-color-primary);
+  text-decoration: none;
 }
 
 .logo {
-  height: 32px;
-  width: auto;
+  block-size: 30px;
+  inline-size: auto;
 }
 
 .app-title {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--primary-color);
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 
-.search-container {
-  width: 100%;
-  max-width: 500px;
-  position: relative;
-  transition: all 0.3s ease;
-  
-  &.active {
-    max-width: 600px;
-  }
-}
-
-.query-input {
-  width: 100%;
-  transition: all 0.3s ease;
-  
-  :deep(.el-input__wrapper) {
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    padding-inline-start: 12px;
-    transition: all 0.3s ease;
-    
-    &.is-focus {
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--primary-color);
-    }
-  }
-  
-  :deep(.el-input__inner) {
-    font-size: 14px;
-  }
-}
-
-.search-icon, .clear-icon {
-  color: var(--text-color-light);
-  font-size: 14px;
-}
-
-.clear-icon {
-  cursor: pointer;
-  
-  &:hover {
-    color: var(--text-color);
-  }
-}
-
-.search-shortcuts {
-  position: absolute;
-  bottom: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 4px;
-  padding: 4px 8px;
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-  color: var(--text-color-light);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-}
-
-.shortcut-hint {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-kbd {
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
-  color: #333;
-  display: inline-block;
-  font-size: 11px;
-  line-height: 1;
-  padding: 2px 4px;
-  white-space: nowrap;
-}
-
-.header-actions {
+.where {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-inline-end: 16px;
+  min-inline-size: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 0.95rem;
+
+  &.with-logo {
+    margin-inline-start: 12px;
+    padding-inline-start: 16px;
+    border-inline-start: 1px solid var(--border-color);
+  }
 }
 
-.action-button {
-  font-size: 18px;
-  color: var(--text-color-light);
-  transition: color 0.2s ease;
-  
+.where-section,
+.where-page {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.where-page {
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+}
+
+.where-sep {
+  flex: none;
+  font-size: 0.65rem;
+  opacity: 0.6;
+}
+
+[dir='rtl'] .where-sep {
+  transform: scaleX(-1);
+}
+
+.search-container {
+  inline-size: 100%;
+  max-inline-size: 520px;
+}
+
+.query-input :deep(.el-input__wrapper) {
+  border-radius: calc(var(--border-radius, 6px) + 2px);
+}
+
+.search-icon {
+  color: var(--el-text-color-secondary);
+}
+
+.palette-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  block-size: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--el-border-color);
+  border-radius: calc(var(--border-radius, 6px) + 2px);
+  background: var(--el-fill-color-blank);
+  color: var(--el-text-color-secondary);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+
   &:hover {
-    color: var(--primary-color);
+    border-color: var(--el-color-primary);
+    color: var(--el-text-color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+
+  .palette-label {
+    min-inline-size: 90px;
+    text-align: start;
+  }
+
+  .palette-key {
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--el-fill-color);
+    font: inherit;
+    font-size: 0.72rem;
   }
 }
 
-.mobile-menu-opener {
-  display: none;
-  margin-inline-end: 10px;
-}
-
-/* Notifications styles will be added when the feature is implemented */
-
-@media (max-width: 900px) {
-  .header-center {
-    max-width: 300px;
-  }
-}
-
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   header {
-    padding: 0 12px;
+    margin-inline: 0;
+    margin-block-start: 0;
+    border-radius: 0;
+    border-inline: 0;
+    border-block-start: 0;
   }
-  
-  .header-left {
-    min-width: auto;
+
+  .palette-trigger {
+    inline-size: 40px;
+    block-size: 40px;
+    justify-content: center;
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
+
+    .palette-label,
+    .palette-key {
+      display: none;
+    }
   }
-  
+}
+
+@media (max-width: 639px) {
+  header {
+    padding-inline: 12px 8px;
+    gap: 6px;
+  }
+
+  .header-center {
+    flex: 1 1 auto;
+  }
+
   .header-right {
-    min-width: auto;
-  }
-  
-  .logo-container {
-    display: none;
-  }
-}
-
-@media (max-width: 600px) {
-  header {
-    margin-top: 0;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    height: 55px;
-    order: 2;
-    z-index: 80;
-  }
-  
-  .mobile-menu-opener {
-    display: block;
-  }
-  
-  .header-center {
-    max-width: 200px;
-  }
-  
-  .search-shortcuts {
-    display: none;
-  }
-  
-  .logo-container {
-    margin-inline-start: 5px;
-  }
-  
-  .app-title {
-    font-size: 1rem;
-  }
-
-  .logo {
-    height: 28px;
-  }
-}
-
-@media (max-width: 480px) {
-  .header-actions {
-    margin-inline-end: 8px;
-  }
-  
-  .action-button {
-    font-size: 16px;
+    gap: 2px;
   }
 }
 </style>
