@@ -4,8 +4,7 @@
       <section class="panel workspace-mode-panel">
         <header class="panel-header">
           <div>
-            <p class="panel-eyebrow">{{ $t('Workspace Mode') }}</p>
-            <h2>{{ $t('Design how accounts collaborate across workspaces') }}</h2>
+            <h2>{{ $t('Workspace mode') }}</h2>
             <p class="panel-description">{{ workspaceModeCopy.description }}</p>
           </div>
           <FormInput
@@ -29,8 +28,7 @@
       <section class="panel">
         <header class="panel-header compact">
           <div>
-            <p class="panel-eyebrow">{{ $t('Access & Governance') }}</p>
-            <h3>{{ $t('Decide who can create workspaces and see members') }}</h3>
+            <h3>{{ $t('Access and governance') }}</h3>
             <p class="panel-description">{{ $t('Use granular role gates to keep workspace management safe while empowering admins.') }}</p>
           </div>
         </header>
@@ -101,8 +99,7 @@
       <section class="panel labels-panel">
         <header class="panel-header">
           <div>
-            <p class="panel-eyebrow">{{ $t('Labels & Plans') }}</p>
-            <h3>{{ $t('Describe the workspace flavors you support') }}</h3>
+            <h3>{{ $t('Labels and plans') }}</h3>
             <p class="panel-description">{{ $t('Labels can behave like pricing plans or marketplace roles. Combine multiple labels to mix both concepts for the same account.') }}</p>
           </div>
           <el-button type="primary" plain class="add-label-btn" native-type="button" @click="addLabel">
@@ -164,19 +161,15 @@
           </article>
         </TransitionGroup>
       </section>
-
-      <div class="form-footer">
-        <SaveButton :submitting="submitting"/>
-      </div>
     </el-form>
     <CreateMyWorkspace v-if="!$isMobile" class="create-ws-demo flex-2" :ws-config="edited"/>
   </div>
 </template>
 
 <script lang="ts" setup>
+import { useConfigDraft } from '../compositions/config-shell';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import { WorkspaceConfigurationMetadata } from '@qelos/global-types';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
@@ -221,6 +214,7 @@ const edited = ref<WorkspaceConfigurationMetadata>({
 })
 
 const emit = defineEmits(['save']);
+useConfigDraft(edited);
 
 const notifications = useNotifications();
 const { t: $t } = useI18n();
@@ -265,6 +259,12 @@ function save() {
 }
 </script>
 <style scoped>
+.panel :is(h2, h3) {
+  margin: 0;
+  padding: 0;
+  font-size: 1.15rem;
+}
+
 .workspace-config-page {
   align-items: flex-start;
   gap: 30px;
@@ -295,15 +295,6 @@ function save() {
 
 .panel-header.compact {
   margin-block-end: 8px;
-}
-
-.panel-eyebrow {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--el-color-primary);
-  margin: 0;
-  font-weight: 600;
 }
 
 .panel-description {

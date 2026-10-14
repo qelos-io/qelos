@@ -39,9 +39,6 @@
           />
         </div>
 
-        <div class="form-actions">
-          <SaveButton :submitting="submitting" />
-        </div>
       </el-form>
     </div>
     
@@ -69,7 +66,7 @@
 
 <script lang="ts" setup>
 import { computed, ref, toRefs, watch } from 'vue';
-import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
+import { useConfigDraft } from '../compositions/config-shell';
 import { IAuthConfigurationMetadata, IntegrationSourceKind } from '@qelos/global-types';
 import LoginPreviewFrame from './auth-config-form/LoginPreviewFrame.vue';
 import { useViewport } from '@/modules/core/compositions/viewport';
@@ -110,6 +107,7 @@ const edited = ref<IAuthConfigurationMetadata>({
 })
 
 const emit = defineEmits(['save']);
+useConfigDraft(edited);
 
 const { t } = useI18n();
 const { width } = useViewport();
@@ -212,55 +210,16 @@ function ensureSocialLoginsSources(metadata: Partial<IAuthConfigurationMetadata>
 .form-wrapper {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 120px); /* Adjust based on your header/nav height */
-  min-height: 600px;
 }
 
 .auth-configuration-form {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow: hidden;
 }
 
 .form-content {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 0.5rem;
   margin-bottom: 1rem;
-}
-
-/* Custom scrollbar styling */
-.form-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.form-content::-webkit-scrollbar-track {
-  background: var(--el-fill-color-lighter, #f5f7fa);
-  border-radius: 4px;
-}
-
-.form-content::-webkit-scrollbar-thumb {
-  background: var(--el-border-color, #dcdfe6);
-  border-radius: 4px;
-}
-
-.form-content::-webkit-scrollbar-thumb:hover {
-  background: var(--el-border-color-dark, #c0c4cc);
-}
-
-.form-actions {
-  position: sticky;
-  bottom: 0;
-  padding: 1rem 0;
-  background: linear-gradient(to top, var(--el-bg-color, #ffffff) 80%, transparent);
-  border-block-start: 1px solid var(--el-border-color-light, #e4e7ed);
-  display: flex;
-  justify-content: flex-end;
-  z-index: 10;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .preview-container {

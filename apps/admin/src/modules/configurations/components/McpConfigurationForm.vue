@@ -13,7 +13,6 @@
     <section class="panel">
       <header class="panel-header">
         <div>
-          <p class="panel-eyebrow">{{ $t('General') }}</p>
           <h2>{{ $t('MCP server settings') }}</h2>
           <p class="panel-description">{{ $t('MCP general description') }}</p>
         </div>
@@ -95,7 +94,6 @@
     <section class="panel" :class="{ 'panel-muted': !edited.enabled }">
       <header class="panel-header compact">
         <div>
-          <p class="panel-eyebrow">{{ $t('OAuth') }}</p>
           <h3>{{ $t('Permitted callback URLs') }}</h3>
           <p class="panel-description">{{ $t('MCP callback URLs description') }}</p>
         </div>
@@ -181,7 +179,6 @@
     <section class="panel" :class="{ 'panel-muted': !edited.enabled }">
       <header class="panel-header compact">
         <div>
-          <p class="panel-eyebrow">{{ $t('Tools') }}</p>
           <h3>{{ $t('Exposed MCP tools') }}</h3>
           <p class="panel-description">{{ $t('MCP exposed tools description') }}</p>
         </div>
@@ -289,18 +286,14 @@
         </div>
       </div>
     </section>
-
-    <div class="form-footer">
-      <SaveButton :submitting="submitting" />
-    </div>
   </el-form>
 </template>
 
 <script lang="ts" setup>
+import { useConfigDraft } from '../compositions/config-shell';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Search, QuestionFilled } from '@element-plus/icons-vue';
-import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
@@ -359,6 +352,7 @@ const mcpToolIntegrations = computed(() =>
 );
 
 const edited = ref<IMcpConfigurationMetadata>(normalizeMetadata(props.metadata));
+useConfigDraft(edited);
 const toolsSearch = ref('');
 
 const wsConfigActive = computed(() => wsConfig.isActive);
@@ -558,6 +552,12 @@ function save() {
 </script>
 
 <style scoped>
+.panel :is(h2, h3) {
+  margin: 0;
+  padding: 0;
+  font-size: 1.15rem;
+}
+
 .mcp-configuration-form {
   display: flex;
   flex-direction: column;
@@ -591,15 +591,6 @@ function save() {
 
 .panel-header.compact {
   margin-block-end: 12px;
-}
-
-.panel-eyebrow {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--el-color-primary);
-  margin: 0;
-  font-weight: 600;
 }
 
 .panel-description {

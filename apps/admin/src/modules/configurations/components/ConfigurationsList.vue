@@ -1,487 +1,265 @@
-<template>
-  <div class="configurations-list">    
-
-    <!-- Loading state -->
-    <div v-if="!list" class="loading-state">
-      <el-skeleton :rows="3" animated />
-      <el-skeleton :rows="3" animated />
-    </div>
-    
-    <!-- Empty state -->
-    <el-empty v-else-if="list && filteredList.length === 0" description="No configurations found">
-      <template #image>
-        <el-icon><DocumentRemove style="font-size: 48px" /></el-icon>
-      </template>
-      <el-button type="primary" @click="clearFilters">Clear filters</el-button>
-    </el-empty>
-    
-    <!-- Configurations list -->
-    <div v-else class="configurations-grid">
-      <div
-        v-for="config in filteredList" 
-        :key="config.key"
-        class="config-card"
-        :class="{'system-config': config.key === 'app-configuration'}"
-        @click="navigateToEdit(config, $event)"
-      >
-        <div class="config-header">
-          <div class="config-title">
-            <h3>
-              <router-link :to="{name: 'editConfiguration', params: {key: config.key}}" @click.stop>
-                {{ getConfigTitle(config) }}
-              </router-link>
-            </h3>
-            <el-tag 
-              size="small" 
-              :type="config.key === 'app-configuration' ? 'danger' : (config.public ? 'success' : 'info')"
-              class="config-tag"
-            >
-              {{ config.key === 'app-configuration' ? 'System' : (config.public ? 'Public' : 'Private') }}
-            </el-tag>
-          </div>
-          <div class="config-description" v-if="getConfigDescription(config)">
-            {{ getConfigDescription(config) }}
-          </div>
-        </div>
-        
-        <div class="config-details">
-          <h4>{{ $t('Details') }}</h4>
-          <div class="config-meta">
-            <div v-if="config.updatedAt" class="update-time">
-              <el-icon><Calendar /></el-icon>
-              <span>{{ $t('Updated') }}: {{ formatDate(config.updatedAt) }}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="config-actions">
-          <el-tooltip content="Edit configuration" placement="top">
-            <el-button 
-              type="primary" 
-              circle 
-              @click.stop="navigateToEdit(config)"
-            >
-              <el-icon><Edit /></el-icon>
-            </el-button>
-          </el-tooltip>
-          
-          <el-tooltip 
-            v-if="config.key !== 'app-configuration'" 
-            content="Delete configuration" 
-            placement="top"
-          >
-            <el-button 
-              type="danger" 
-              circle 
-              @click.stop="remove(config)"
-            >
-              <el-icon><Delete /></el-icon>
-            </el-button>
-          </el-tooltip>
-        </div>
-      </div>
-      
-      <AddNewCard 
-        :title="$t('Create new Configuration')"
-        :description="$t('Add a new configuration to your collection')"
-        :to="{ name: 'createConfiguration' }"
-      />
-    </div>
-  </div>
-</template>
-
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { Delete } from '@element-plus/icons-vue';
 import { useConfigurationsList } from '../compositions/configurations';
-import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
 import configurationsService from '@/services/apis/configurations-service';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
-import { Calendar, Edit, Delete, DocumentRemove } from '@element-plus/icons-vue';
+import { formatRelative } from '@/modules/admins/services/event-presentation';
+import { useWsConfiguration } from '../store/ws-configuration';
+import { useMcpConfiguration } from '../store/mcp-configuration';
+import { useUsersHeader } from '../store/users-header';
+import {
+  REQUIRED_CONFIGURATIONS,
+  buildConfigurationsView,
+  type ConfigurationInfo,
+  type ListedConfiguration,
+} from '../services/configuration-registry';
 
-import { useI18n } from 'vue-i18n';
+const props = defineProps<{ visibility: '' | 'public' | 'private'; searchQuery: string }>();
 
 const router = useRouter();
-const { t } = useI18n();  
-
-type RequiredConfigurationDefinition = {
-  title: string;
-  description: string;
-  kind?: string;
-  public: boolean;
-  metadata: Record<string, any>;
-};
-
-const requiredConfigurations: Record<string, RequiredConfigurationDefinition> = {
-  'app-configuration': {
-    title: 'Application Branding & Theme',
-    description: 'Control your app name, app URL, logo, direction, language, and theme.',
-    kind: 'app',
-    public: true,
-    metadata: {
-      colorsPalette: {
-        mainColor: '#264653',
-        mainColorLight: '#1c4252',
-        textColor: '#1c4252',
-        secondaryColor: '#2a9d8f',
-        thirdColor: '#e9c46a',
-        bgColor: '#ffffff',
-        bordersColor: '#e2e8f0',
-        inputsTextColor: '#1c4252',
-        inputsBgColor: '#f8fafc',
-        linksColor: '#2a9d8f',
-        navigationBgColor: '#1c4252',
-        negativeColor: '#9b7a3a',
-        buttonTextColor: '#ffffff',
-        buttonBgColor: '#264653',
-        focusColor: '#2a9d8f',
-        fontFamily: 'Helvetica, Arial, sans-serif',
-        headingsFontFamily: 'Helvetica, Arial, sans-serif',
-        baseFontSize: 16,
-        borderRadius: 4,
-        buttonRadius: 4,
-        spacing: 'normal',
-        shadowStyle: 'light',
-        animationSpeed: 250
-      },
-      description: '',
-      direction: 'ltr',
-      homeScreen: '',
-      keywords: '',
-      language: 'en',
-      logoUrl: '',
-      name: '',
-      scriptUrl: '',
-      slogan: '',
-      themeStylesUrl: '',
-      borderRadius: 5,
-      baseFontSize: 16,
-      websiteUrls: []
-    }
-  },
-  'auth-configuration': {
-    title: 'Authentication Experience',
-    description: 'Customize login flows, user fields, and available social providers.',
-    kind: 'auth',
-    public: true,
-    metadata: {
-      treatUsernameAs: 'email',
-      formPosition: 'right',
-      loginTitle: '',
-      showLoginPage: true,
-      showRegisterPage: false,
-      allowSocialAutoRegistration: true,
-      additionalUserFields: [],
-      socialLoginsSources: {},
-      slots: {},
-      disableUsernamePassword: false
-    }
-  },
-  'mcp-configuration': {
-    title: 'MCP Server',
-    description: 'Control remote MCP tool exposure, OAuth callback URLs, and admin-only SDK access.',
-    kind: 'mcp',
-    public: false,
-    metadata: {
-      enabled: false,
-      permittedCallbackUrls: [],
-      exposedTools: [],
-      adminOnly: true
-    }
-  },
-  'ssr-scripts': {
-    title: 'SSR Scripts',
-    description: 'SSR scripts configuration.',
-    kind: 'ssr',
-    public: true,
-    metadata: {
-      head: '',
-      body: ''
-    }
-  },
-  'workspace-configuration': {
-    title: 'Workspace Mode & Labels',
-    description: 'Enable multi-workspace mode, labels, and creation permissions.',
-    kind: 'workspace',
-    public: true,
-    metadata: {
-      isActive: false,
-      creationPrivilegedRoles: [],
-      viewMembersPrivilegedWsRoles: [],
-      labels: [],
-      allowNonLabeledWorkspaces: true,
-      allowNonWorkspaceUsers: true
-    }
-  },
-  'users-header': {
-    title: 'Users Header Template',
-    description: 'Design a custom HTML header for the users list view.',
-    kind: 'users-header',
-    public: true,
-    metadata: {
-      html: '',
-      active: false
-    }
-  }
-};
-
-const requiredConfigKeys = Object.keys(requiredConfigurations);
-
-const ensuringDefaults = ref(false);
-const ensuredKeys = new Set<string>();
-
-const cloneMetadata = (metadata: Record<string, any>) => JSON.parse(JSON.stringify(metadata));
-
-// Accept filter type and search query from parent component
-const props = defineProps({
-  filterType: {
-    type: String,
-    default: ''
-  },
-  searchQuery: {
-    type: String,
-    default: ''
-  }
-});
-
+const { t, locale } = useI18n();
 const { list, retry } = useConfigurationsList();
 
-async function createRequiredConfiguration(key: string) {
-  const definition = requiredConfigurations[key];
-  if (!definition) return;
+// ---- every tenant gets the standard configurations on first visit ----
+const ensuring = ref(false);
+const ensured = new Set<string>();
 
-  await configurationsService.create({
-    key,
-    public: definition.public,
-    kind: definition.kind,
-    description: definition.description,
-    metadata: cloneMetadata(definition.metadata)
-  });
-  ensuredKeys.add(key);
+watch(
+  list,
+  async (configs) => {
+    if (!Array.isArray(configs) || ensuring.value) return;
+    const missing = Object.keys(REQUIRED_CONFIGURATIONS).filter((key) => !ensured.has(key) && !configs.some((config) => config.key === key));
+    if (!missing.length) return;
+    ensuring.value = true;
+    try {
+      for (const key of missing) {
+        const definition = REQUIRED_CONFIGURATIONS[key];
+        await configurationsService.create({
+          key,
+          public: definition.public,
+          kind: definition.kind,
+          description: definition.description,
+          metadata: JSON.parse(JSON.stringify(definition.metadata)),
+        });
+        ensured.add(key);
+      }
+      await retry();
+    } catch (error) {
+      console.error('[settings] could not create the standard configurations', error);
+    } finally {
+      ensuring.value = false;
+    }
+  },
+  { immediate: true },
+);
+
+const view = computed(() =>
+  buildConfigurationsView((list.value as ListedConfiguration[]) || [], { query: props.searchQuery, visibility: props.visibility, translate: t }),
+);
+const isEmpty = computed(() => !!list.value && !view.value.groups.length && !view.value.custom.length);
+
+// a small status chip for the configurations where "is it on?" is the first question.
+// The list endpoint does not return the values, so the status comes from the stores that already load them.
+const wsConfig = useWsConfiguration();
+const mcpConfig = useMcpConfiguration();
+const { usersHeader } = useUsersHeader();
+
+function statusOf(info: ConfigurationInfo) {
+  if (info.key === 'workspace-configuration') return { on: !!wsConfig.isActive, label: wsConfig.isActive ? t('Active') : t('Inactive') };
+  if (info.key === 'mcp-configuration') return { on: !!mcpConfig.isEnabled, label: mcpConfig.isEnabled ? t('Enabled') : t('Disabled') };
+  if (info.key === 'users-header') return { on: !!usersHeader.value?.active, label: usersHeader.value?.active ? t('Active') : t('Inactive') };
+  return null;
 }
 
-watch(list, async (configs) => {
-  if (!Array.isArray(configs) || ensuringDefaults.value) {
-    return;
-  }
-
-  const missingKeys = requiredConfigKeys.filter((key) => {
-    if (ensuredKeys.has(key)) {
-      return false;
-    }
-    return !configs.some((config) => config.key === key);
-  });
-
-  if (!missingKeys.length) {
-    return;
-  }
-
-  ensuringDefaults.value = true;
-  try {
-    for (const key of missingKeys) {
-      await createRequiredConfiguration(key);
-    }
-    await retry();
-  } catch (error) {
-    console.error('[ConfigurationsList] Failed to auto-create required configurations', error);
-  } finally {
-    ensuringDefaults.value = false;
-  }
-}, { immediate: true });
-
-const getConfigTitle = (config: { key: string }) => {
-  return requiredConfigurations[config.key]?.title || t(config.key);
+const now = new Date();
+const updated = (config?: ListedConfiguration) => {
+  const value = (config?.updated || (config as any)?.updatedAt) as string | undefined;
+  return value ? formatRelative(value, now, locale.value || undefined) : '';
 };
 
-const getConfigDescription = (config: { key: string; description?: string }) => {
-  return config.description || requiredConfigurations[config.key]?.description || '';
-};
+const open = (info: ConfigurationInfo) => router.push(info.route || { name: 'editConfiguration', params: { key: info.key } });
 
-// Format date helper
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(date);
-};
-
-// Filter and search logic
-const filteredList = computed(() => {
-  if (!list.value) return [];
-  
-  return list.value.filter(config => {
-    const matchesSearch = props.searchQuery === '' || 
-      t(config.key).toLowerCase().includes(props.searchQuery.toLowerCase()) ||
-      (config.description && config.description.toLowerCase().includes(props.searchQuery.toLowerCase()));
-      
-    const matchesFilter = props.filterType === '' ||
-      (props.filterType === 'public' && config.public) ||
-      (props.filterType === 'private' && !config.public);
-      
-    return matchesSearch && matchesFilter;
-  });
-});
-
-const emit = defineEmits(['update:filterType', 'update:searchQuery']);
-
-const clearFilters = () => {
-  // Emit events to update parent's filterType and searchQuery
-  emit('update:filterType', '');
-  emit('update:searchQuery', '');
-};
-
-const navigateToEdit = (config, event?: MouseEvent) => {
-  if (!event || event.target === event.currentTarget || (event.target as HTMLElement).closest('.config-card') === event.currentTarget) {
-    router.push({ name: 'editConfiguration', params: { key: config.key } });
-  }
-};
-
-const { submit: removeFn } = useSubmitting((config) => configurationsService.remove(config.key), {
+const { submit: removeFn } = useSubmitting((config: ListedConfiguration) => configurationsService.remove(config.key), {
   success: 'Configuration removed successfully',
-  error: 'Failed to remove configuration'
+  error: 'Failed to remove configuration',
 }, retry);
-
 const remove = useConfirmAction(removeFn);
-
-// No artificial loading delay - we want maximum performance
 </script>
 
-<style scoped>
-.configurations-list {
+<template>
+  <div class="list">
+    <el-skeleton v-if="!list" :rows="6" animated />
+
+    <el-empty v-else-if="isEmpty" :image-size="90" :description="$t('No settings match your search.')" />
+
+    <template v-else>
+      <section v-for="group in view.groups" :key="group.key" class="group" :aria-label="$t(group.label)">
+        <h2 class="group-label">{{ $t(group.label) }}</h2>
+        <ul class="rows">
+          <li v-for="{ info, config } in group.rows" :key="info.key">
+            <a href="#" class="row" @click.prevent="open(info)">
+              <span class="icon" aria-hidden="true"><font-awesome-icon :icon="info.icon" /></span>
+              <span class="text">
+                <span class="title">{{ $t(info.title) }}</span>
+                <span class="description">{{ $t(info.description) }}</span>
+              </span>
+              <el-tag v-if="statusOf(info)" :type="statusOf(info)!.on ? 'success' : 'info'" effect="light" size="small">{{ statusOf(info)!.label }}</el-tag>
+              <span v-if="updated(config)" class="when">{{ updated(config) }}</span>
+              <font-awesome-icon :icon="['fas', 'chevron-right']" class="go" aria-hidden="true" />
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      <section v-if="view.custom.length" class="group" :aria-label="$t('Custom & system')">
+        <h2 class="group-label">{{ $t('Custom & system') }}</h2>
+        <ul class="rows">
+          <li v-for="config in view.custom" :key="config.key" class="custom-row">
+            <router-link class="row" :to="{ name: 'editConfiguration', params: { key: config.key } }">
+              <span class="text">
+                <code class="key" dir="ltr">{{ config.key }}</code>
+                <span v-if="config.description" class="description">{{ config.description }}</span>
+              </span>
+              <span v-if="config.kind" class="kind" dir="ltr">{{ config.kind }}</span>
+              <el-tag :type="config.public ? 'success' : 'info'" effect="light" size="small">{{ config.public ? $t('Public') : $t('Private') }}</el-tag>
+              <span v-if="updated(config)" class="when">{{ updated(config) }}</span>
+            </router-link>
+            <el-button class="remove" text circle type="danger" :aria-label="`${$t('Remove')}: ${config.key}`" @click="remove(config)">
+              <el-icon><Delete /></el-icon>
+            </el-button>
+          </li>
+        </ul>
+      </section>
+    </template>
+  </div>
+</template>
+
+<style scoped lang="scss">
+.list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  margin: 0 1rem;
+  gap: 22px;
 }
 
-.configurations-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 20px;
-  width: 100%;
-}
-
-.config-card {
-  display: flex;
-  flex-direction: column;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  padding: 20px;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px solid #ebeef5;
-}
-
-.config-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  border-color: var(--el-color-primary-light-5);
-}
-
-.system-config {
-  border-left: 3px solid var(--el-color-danger);
-}
-
-.config-header {
-  margin-bottom: 16px;
-}
-
-.config-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.config-title h3 {
-  margin: 0;
-  font-size: 18px;
+.group-label {
+  margin: 0 0 8px;
+  padding-inline: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 0.85rem;
   font-weight: 600;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: calc(var(--border-radius, 6px) + 4px);
+  background: var(--surface);
+
+  li + li {
+    border-block-start: 1px solid var(--el-border-color-extra-light);
+  }
+}
+
+.row {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 14px;
+  min-inline-size: 0;
+  min-block-size: 64px;
+  padding: 10px 16px;
+  color: var(--el-text-color-primary);
+  text-decoration: none;
+
+  &:hover {
+    background: var(--el-fill-color-lighter);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: -2px;
+  }
+}
+
+.icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 38px;
+  block-size: 38px;
+  border-radius: calc(var(--border-radius, 6px) + 2px);
+  background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
 }
 
-.config-title a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.config-title a:hover {
-  text-decoration: underline;
-}
-
-.config-tag {
-  flex-shrink: 0;
-}
-
-.config-description {
-  color: #606266;
-  font-size: 14px;
-  line-height: 1.5;
-  margin-bottom: 12px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.config-details {
-  flex: 1;
-  margin-bottom: 16px;
-}
-
-.config-details h4 {
-  margin: 0 0 12px 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-  border-block-end: 1px solid #ebeef5;
-  padding-block-end: 8px;
-}
-
-.config-meta {
+.text {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 8px;
+  min-inline-size: 0;
 }
 
-.update-time {
+.title {
+  font-weight: 600;
+}
+
+.description {
+  color: var(--el-text-color-secondary);
+  font-size: 0.86rem;
+  text-align: start;
+}
+
+.key {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92rem;
+}
+
+.kind {
+  flex: none;
+  color: var(--el-text-color-secondary);
+  font-size: 0.82rem;
+}
+
+.when {
+  flex: none;
+  color: var(--el-text-color-secondary);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.go {
+  flex: none;
+  color: var(--el-text-color-placeholder);
+  font-size: 0.75rem;
+}
+
+[dir='rtl'] .go {
+  transform: scaleX(-1);
+}
+
+.custom-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #606266;
-  font-size: 14px;
+  padding-inline-end: 8px;
 }
 
-.config-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  padding-block-start: 12px;
-  border-block-start: 1px solid #ebeef5;
-}
-
-.loading-state {
-  padding: 20px;
-}
-
-@media (max-width: 768px) {
-  .configurations-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 639px) {
+  .row {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding-inline: 12px;
   }
-}
 
-@media (min-width: 769px) and (max-width: 1200px) {
-  .configurations-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .when,
+  .kind {
+    display: none;
   }
 }
 </style>

@@ -50,9 +50,9 @@ h3 {
   color: var(--text-color);
 }
 
-/* Paragraphs */
+/* Paragraphs: left-aligned (justified text makes uneven word gaps and is harder to read) */
 p {
-  text-align: justify;
+  text-align: start;
 }
 
 /* Links */

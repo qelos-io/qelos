@@ -3,61 +3,32 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import { useMcpConfiguration } from '@/modules/configurations/store/mcp-configuration';
+import { CONFIGURATION_GROUPS, CONFIGURATION_INFO } from '@/modules/configurations/services/configuration-registry';
 
 const { t } = useI18n();
 const wsConfig = useWsConfiguration();
 const mcpConfig = useMcpConfiguration();
 
-interface Row {
-  key: string;
-  title: string;
-  description: string;
-  icon: string[];
-  to: any;
-  status?: { label: string; on: boolean };
-}
-
-const groups = computed<{ key: string; label: string; rows: Row[] }[]>(() => [
-  {
-    key: 'app',
-    label: t('Your application'),
-    rows: [
-      { key: 'appearance', title: t('Appearance'), description: t('Themes, colors, typography, and design tokens'), icon: ['fas', 'palette'], to: { name: 'appearance' } },
-      { key: 'app', title: t('App Settings'), description: t('Configure application name, logo, and general settings'), icon: ['fas', 'gear'], to: { name: 'editConfiguration', params: { key: 'app-configuration' } } },
-      { key: 'auth', title: t('Authentication Settings'), description: t('Configure authentication methods, providers, and security settings'), icon: ['fas', 'key'], to: { name: 'editConfiguration', params: { key: 'auth-configuration' } } },
-      { key: 'ssr', title: t('SSR Scripts'), description: t('Manage server-side rendering scripts and HTML templates'), icon: ['fab', 'html5'], to: { name: 'editConfiguration', params: { key: 'ssr-scripts' } } },
-    ],
-  },
-  {
-    key: 'business',
-    label: t('People & money'),
-    rows: [
-      {
-        key: 'workspaces',
-        title: t('Workspace Settings'),
-        description: t('Configure workspace defaults, permissions and structure'),
-        icon: ['far', 'building'],
-        to: { name: 'editConfiguration', params: { key: 'workspace-configuration' } },
-        status: { label: wsConfig.isActive ? t('Active') : t('Inactive'), on: !!wsConfig.isActive },
-      },
-      { key: 'payments', title: t('Payments & Plans'), description: t('Configure pricing plans, coupons, and payment providers'), icon: ['fas', 'tags'], to: { name: 'paymentsConfiguration' } },
-    ],
-  },
-  {
-    key: 'platform',
-    label: t('Connections'),
-    rows: [
-      {
-        key: 'mcp',
-        title: t('MCP Configuration'),
-        description: t('Configure remote MCP tool exposure and OAuth callback URLs'),
-        icon: ['fas', 'plug'],
-        to: { name: 'editConfiguration', params: { key: 'mcp-configuration' } },
-        status: { label: mcpConfig.isEnabled ? t('Enabled') : t('Disabled'), on: !!mcpConfig.isEnabled },
-      },
-    ],
-  },
-]);
+// the same registry as the Settings page, so the two never drift apart
+const groups = computed(() =>
+  CONFIGURATION_GROUPS.map((group) => ({
+    key: group.key,
+    label: t(group.label),
+    rows: CONFIGURATION_INFO.filter((info) => info.group === group.key).map((info) => ({
+      key: info.key,
+      title: t(info.title),
+      description: t(info.description),
+      icon: info.icon,
+      to: info.route || { name: 'editConfiguration', params: { key: info.key } },
+      status:
+        info.key === 'workspace-configuration'
+          ? { label: wsConfig.isActive ? t('Active') : t('Inactive'), on: !!wsConfig.isActive }
+          : info.key === 'mcp-configuration'
+            ? { label: mcpConfig.isEnabled ? t('Enabled') : t('Disabled'), on: !!mcpConfig.isEnabled }
+            : undefined,
+    })),
+  })).filter((group) => group.rows.length),
+);
 </script>
 
 <template>
@@ -78,6 +49,7 @@ const groups = computed<{ key: string; label: string; rows: Row[] }[]>(() => [
         </li>
       </ul>
     </section>
+    <router-link :to="{ name: 'configurations' }" class="all">{{ $t('See all settings') }}</router-link>
   </div>
 </template>
 
@@ -166,6 +138,17 @@ const groups = computed<{ key: string; label: string; rows: Row[] }[]>(() => [
 
 [dir='rtl'] .go {
   transform: scaleX(-1);
+}
+
+.all {
+  align-self: flex-start;
+  color: var(--el-color-primary);
+  font-size: 0.9rem;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 @media (max-width: 639px) {

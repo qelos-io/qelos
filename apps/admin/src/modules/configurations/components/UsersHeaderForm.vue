@@ -2,20 +2,16 @@
   <el-form @submit.native.prevent="save" class="ssr-scripts-form">
     <form-input type="switch" v-model="edited.active" title="Active"/>
 
-    <el-form-item label="Enter Custom Template">
+    <el-form-item :label="$t('Custom template')">
       <Monaco v-model="edited.html" language="html"/>
     </el-form-item>
-
-    <div class="submit-wrapper">
-      <SaveButton :submitting="submitting"/>
-    </div>
   </el-form>
 </template>
 
 <script lang="ts" setup>
 import { ref } from 'vue';
 import Monaco from '../../users/components/Monaco.vue'
-import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
+import { useConfigDraft } from '../compositions/config-shell';
 import { clearNulls } from '../../core/utils/clear-nulls';
 
 const props = defineProps({
@@ -33,19 +29,10 @@ const edited = ref({
   active: props.metadata?.active || defaultMetadata.active
 })
 const emit = defineEmits(['save']);
+useConfigDraft(edited);
 
 function save() {
   emit('save', clearNulls(edited.value))
 }
 </script>
-<style scoped>
-.submit-wrapper {
-  z-index: 5;
-  background-color: var(--body-bg);
-  margin: 0;
-  padding: 20px;
-  position: sticky;
-  bottom: 0;
-}
-</style>
 

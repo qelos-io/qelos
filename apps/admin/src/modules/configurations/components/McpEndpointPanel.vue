@@ -7,7 +7,6 @@
     }"
   >
     <header v-if="variant === 'full'" class="endpoint-header">
-      <p class="panel-eyebrow">{{ $t('Connection') }}</p>
       <h3 class="endpoint-heading">{{ $t('MCP connection details') }}</h3>
     </header>
 
@@ -119,15 +118,6 @@ async function copyEndpointUrl() {
 
 .endpoint-header {
   margin-block-end: 4px;
-}
-
-.panel-eyebrow {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--el-color-primary);
-  margin: 0;
-  font-weight: 600;
 }
 
 .endpoint-heading {

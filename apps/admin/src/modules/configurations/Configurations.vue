@@ -1,106 +1,86 @@
-<template>
-  <div class="categories-page">
-    <ListPageTitle 
-      title="Configurations" 
-      description="Configurations store key-value pairs and settings for your application. Manage environment variables, API keys, and other configuration data here."
-      create-route="createConfiguration"
-    >
-      <template #content>
-        <div class="search-bar">
-          <el-select 
-            v-model="filterType" 
-            placeholder="Filter by type" 
-            clearable
-            class="filter-select"
-            popper-class="filter-select-dropdown"
-          >
-            <template #prefix>
-              <el-icon><Filter /></el-icon>
-            </template>
-            <el-option label="All configurations" value=""></el-option>
-            <el-option label="Public configurations" value="public">
-              <div class="option-with-icon">
-                <el-icon><Lock /></el-icon>
-                <span>{{ $t('Public') }}</span>
-              </div>
-            </el-option>
-            <el-option label="Private configurations" value="private">
-              <div class="option-with-icon">
-                <el-icon><Lock /></el-icon>
-                <span>{{ $t('Private') }}</span>
-              </div>
-            </el-option>
-          </el-select>
-        </div>
-      </template>
-    </ListPageTitle>
-    <ConfigurationsList   
-      :filter-type="filterType"
-      :search-query="$route.query.q?.toString()"
-    />
-  </div>
-</template>
 <script lang="ts" setup>
-import ConfigurationsList from './components/ConfigurationsList.vue'
-import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
-import { ref, watch, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { Filter, Lock } from '@element-plus/icons-vue';
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { Plus } from '@element-plus/icons-vue';
+import ConfigurationsList from './components/ConfigurationsList.vue';
 
-const router = useRouter();
 const route = useRoute();
+const router = useRouter();
 
-// Initialize with values from URL query parameters if available
-const filterType = ref('');
-
-// Sync with URL query parameters
-onMounted(() => {
-  // Get initial values from URL if available
-  if (route.query.filter) {
-    filterType.value = route.query.filter as string;
-  }
-});
-
-// Update URL when filter or search changes
-watch([filterType], ([newFilterType]) => {
-  const query = { ...route.query };
-  
-  // Update filter in query
-  if (newFilterType) {
-    query.filter = newFilterType;
-  } else {
-    delete query.filter;
-  }
-
-  // Update URL without reloading the page
-  router.replace({ query });
+// the visibility filter lives in the URL so a filtered view can be shared
+const visibility = computed({
+  get: () => ((route.query.filter as string) || '') as '' | 'public' | 'private',
+  set: (value) => {
+    const query = { ...route.query };
+    if (value) query.filter = value;
+    else delete query.filter;
+    router.replace({ query });
+  },
 });
 </script>
-<style scoped>
-.search-bar {
+
+<template>
+  <div class="settings-page">
+    <header class="page-head">
+      <div>
+        <h1>{{ $t('Settings') }}</h1>
+        <p>{{ $t('Everything that shapes your application: how it looks, who can sign in, and what it connects to.') }}</p>
+      </div>
+      <el-button type="primary" @click="router.push({ name: 'createConfiguration' })">
+        <el-icon><Plus /></el-icon>
+        <span class="action-label">{{ $t('Custom configuration') }}</span>
+      </el-button>
+    </header>
+
+    <div class="toolbar">
+      <el-segmented
+        v-model="visibility"
+        :options="[
+          { label: $t('All'), value: '' },
+          { label: $t('Public'), value: 'public' },
+          { label: $t('Private'), value: 'private' },
+        ]"
+        :aria-label="$t('Filter by type')"
+      />
+    </div>
+
+    <ConfigurationsList :visibility="visibility" :search-query="($route.query.q as string) || ''" />
+  </div>
+</template>
+
+<style scoped lang="scss">
+.settings-page {
   display: flex;
-  gap: var(--spacing);
-  margin-bottom: var(--spacing);
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
 }
 
-.search-input {
-  width: 100%;
-}
-
-.filter-select {
-  margin-right: var(--spacing);
-}
-
-.option-with-icon {
+.page-head {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 24px;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--el-text-color-secondary);
+    text-align: start;
+  }
 }
 
-.option-with-icon .el-icon {
-  font-size: 16px;
-  color: var(--el-color-primary);
+@media (max-width: 639px) {
+  .settings-page {
+    padding: 12px;
+  }
+
+  .action-label {
+    display: none;
+  }
 }
 </style>
