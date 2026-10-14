@@ -42,6 +42,29 @@ export const useLiveEditStore = defineStore('live-edit', () => {
     await softResetConfiguration();
   }
 
+  /**
+   * Applies a whole theme. App.vue lets top-level settings (fonts, radius, spacing...) override
+   * the palette's own, so they must be written together or the previous theme leaks through.
+   */
+  async function applyTheme(palette) {
+    const current = appConfig.value
+    await configurationsService.update('app-configuration', {
+      metadata: {
+        ...current,
+        colorsPalette: palette,
+        borderRadius: palette.borderRadius ?? current.borderRadius ?? 0,
+        buttonRadius: palette.buttonRadius ?? palette.borderRadius ?? current.borderRadius ?? 4,
+        baseFontSize: palette.baseFontSize ?? current.baseFontSize ?? 16,
+        fontFamily: palette.fontFamily ?? current.fontFamily,
+        headingsFontFamily: palette.headingsFontFamily ?? palette.fontFamily ?? current.fontFamily,
+        spacing: palette.spacing ?? current.spacing ?? 'normal',
+        shadowStyle: palette.shadowStyle ?? current.shadowStyle ?? 'light',
+        animationSpeed: palette.animationSpeed ?? current.animationSpeed ?? 300,
+      }
+    })
+    await softResetConfiguration();
+  }
+
   function cancelEdit() {
     isOpen.value = false;
   }
@@ -52,6 +75,7 @@ export const useLiveEditStore = defineStore('live-edit', () => {
     openPaletteColorLiveEdit,
     submitEdit,
     changePalette,
+    applyTheme,
     cancelEdit
   }
 })

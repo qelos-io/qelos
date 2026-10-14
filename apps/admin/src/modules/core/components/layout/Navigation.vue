@@ -373,7 +373,7 @@ nav {
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
             border-radius: 4px;
             white-space: nowrap;
-            color: var(--negative-color);
+            color: var(--nav-muted-color, var(--negative-color));
             font-size: 14px;
             z-index: 10;
             animation: fadeIn 0.2s ease-in-out;
@@ -532,7 +532,7 @@ nav {
 }
 
 .el-menu-item:hover {
-  --el-menu-text-color: var(--negative-color);
+  --el-menu-text-color: var(--nav-muted-color, var(--negative-color));
   --el-menu-hover-bg-color: var(--main-color);
   --el-menu-bg-color: var(--nav-bg-color);
   border: 0;
@@ -546,7 +546,7 @@ nav {
 }
 
 .el-menu-item.is-active:hover, .el-menu-item.is-active a:hover {
-  color: var(--negative-color);
+  color: var(--nav-muted-color, var(--negative-color));
 }
 
 .el-menu-item a {
@@ -595,7 +595,7 @@ nav {
     align-items: center;
 
     &:hover {
-      color: var(--negative-color);
+      color: var(--nav-muted-color, var(--negative-color));
       transform: translateX(3px);
     }
 
@@ -689,7 +689,7 @@ a:hover {
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
-    color: var(--negative-color);
+    color: var(--nav-muted-color, var(--negative-color));
   }
 }
 
@@ -809,7 +809,7 @@ a:hover {
   }
 
   h4 {
-    color: var(--negative-color);
+    color: var(--nav-muted-color, var(--negative-color));
     font-size: var(--base-font-size, 16px);
     font-weight: 500;
     margin: 15px 10px 10px;

@@ -1,1209 +1,870 @@
 <script setup lang="ts">
-import { onBeforeMount, ref, toRefs, computed } from 'vue';
+import { computed, onBeforeMount, reactive, ref, toRefs } from 'vue';
+import { ElMessage } from 'element-plus';
+import { ArrowDown, ArrowRight, Check, OfficeBuilding, User } from '@element-plus/icons-vue';
+import { useI18n } from 'vue-i18n';
 import { useToursStore } from '@/modules/core/store/tours';
 import { useAppConfiguration, softResetConfiguration } from '@/modules/configurations/store/app-configuration';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
-import blueprintsService from '@/services/apis/blueprints-service';
 import { useLiveEditStore } from '@/modules/layouts/store/live-edit';
-import FormInput from '@/modules/core/components/forms/FormInput.vue';
+import blueprintsService from '@/services/apis/blueprints-service';
 import configurationsService from '@/services/apis/configurations-service';
 import integrationSourcesService from '@/services/apis/integration-sources-service';
-import { ElMessage, ElLoading } from 'element-plus';
-import { useI18n } from 'vue-i18n';
+import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { PALETTES } from '@/modules/core/utils/colors-palettes';
 import { IntegrationSourceKind } from '@qelos/global-types';
-import { ArrowLeft, ArrowRight, Check, OfficeBuilding, User, SuccessFilled, InfoFilled, House, DocumentAdd } from '@element-plus/icons-vue';
+
+type TaskId = 'name' | 'logo' | 'theme' | 'audience' | 'ai';
+type TaskState = 'todo' | 'done' | 'skipped';
 
 const { t } = useI18n();
-const formVisible = ref(false);
-const currentStep = ref(1);
-const loading = ref(false);
+const open = ref(false);
+const saving = ref<TaskId | ''>('');
+const current = ref<TaskId | ''>('name');
 
-// Form data
 const appName = ref('');
 const appLogo = ref('');
 const selectedTheme = ref('');
-const appType = ref('b2c'); 
+const appType = ref<'b2b' | 'b2c'>('b2c');
 const openAiToken = ref('');
 const aiPurpose = ref('');
-const generatedBlueprints = ref([]);
-const successfullyCreated = ref([]);
+const createdBlueprints = ref<any[]>([]);
 
-const liveEdit = useLiveEditStore();
-
-// Use color palettes for themes
-const themes = PALETTES.map(palette => ({
-  value: palette.name.toLowerCase().replace(/\s+/g, '-'),
-  label: palette.name,
-  color: palette.palette.mainColor,
-  description: palette.description,
-  palette: palette.palette
-}));
-
-const toursStore = useToursStore();
-onBeforeMount(async () => {
-  await toursStore.setCurrentTour('quick-start', 1);
-  formVisible.value = toursStore.tourOpen;
+const state = reactive<Record<TaskId, TaskState>>({
+  name: 'todo',
+  logo: 'todo',
+  theme: 'todo',
+  audience: 'todo',
+  ai: 'todo',
 });
 
+const themes = PALETTES.map((palette) => ({
+  value: palette.name.toLowerCase().replace(/\s+/g, '-'),
+  label: palette.name,
+  description: palette.description,
+  palette: palette.palette,
+}));
+
+const SHADOWS: Record<string, string> = {
+  none: 'none',
+  light: '0 2px 4px rgba(0,0,0,.12)',
+  medium: '0 4px 8px rgba(0,0,0,.18)',
+  heavy: '0 8px 16px rgba(0,0,0,.28)',
+};
+
+function isColorDark(hex: string) {
+  const value = String(hex || '').replace('#', '');
+  if (value.length !== 6) return false;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16));
+  return (r * 299 + g * 587 + b * 114) / 1000 < 128;
+}
+
+// a miniature of the real UI, drawn with the palette's own values
+function previewVars(palette: Record<string, any>) {
+  const dark = isColorDark(palette.bgColor);
+  return {
+    '--pv-bg': palette.bgColor,
+    '--pv-nav': palette.navigationBgColor,
+    '--pv-nav-text': palette.secondaryColor,
+    '--pv-nav-active': palette.thirdColor,
+    '--pv-surface': palette.surfaceColor || (dark ? palette.negativeColor : '#ffffff'),
+    '--pv-main': palette.mainColor,
+    '--pv-text': palette.textColor,
+    '--pv-border': palette.bordersColor,
+    '--pv-btn': palette.mainColor,
+    '--pv-btn-text': palette.buttonTextColor || '#ffffff',
+    '--pv-radius': `${Math.min(palette.borderRadius ?? 6, 14)}px`,
+    '--pv-btn-radius': `${Math.min(palette.buttonRadius ?? 6, 12)}px`,
+    '--pv-shadow': SHADOWS[palette.shadowStyle] || 'none',
+  };
+}
+
+function headingFont(palette: Record<string, any>) {
+  return String(palette.headingsFontFamily || palette.fontFamily || '').split(',')[0].replace(/['"]/g, '').trim();
+}
+
+const liveEdit = useLiveEditStore();
+const toursStore = useToursStore();
 const { appConfig, promise: appConfigPromise } = useAppConfiguration();
 const wsConfig = useWsConfiguration();
 const integrationSourcesStore = useIntegrationSourcesStore();
-
 const { promise: integrationPromise, groupedSources } = toRefs(integrationSourcesStore);
 
+const hasQelosIntegration = computed(() => groupedSources.value?.['qelos']?.length > 0);
+const hasOpenAIIntegration = computed(() => groupedSources.value?.['openai']?.length > 0);
+
+const tasks = computed(() => [
+  { id: 'name' as TaskId, title: t('App name'), summary: appName.value, optional: false },
+  { id: 'logo' as TaskId, title: t('Logo'), summary: appLogo.value ? t('Added') : '', optional: true },
+  {
+    id: 'theme' as TaskId,
+    title: t('Theme'),
+    summary: themes.find((theme) => theme.value === selectedTheme.value)?.label || '',
+    optional: true,
+  },
+  { id: 'audience' as TaskId, title: t('Audience'), summary: appType.value.toUpperCase(), optional: false },
+  {
+    id: 'ai' as TaskId,
+    title: t('AI & data model'),
+    summary: createdBlueprints.value.length ? `${createdBlueprints.value.length} ${t('blueprints')}` : '',
+    optional: true,
+  },
+]);
+
+const doneCount = computed(() => Object.values(state).filter((value) => value !== 'todo').length);
+const allSettled = computed(() => doneCount.value === tasks.value.length);
+const progress = computed(() => Math.round((doneCount.value / tasks.value.length) * 100));
+
+function nextTodo(after?: TaskId): TaskId | '' {
+  const ids = tasks.value.map((task) => task.id);
+  const start = after ? ids.indexOf(after) + 1 : 0;
+  return [...ids.slice(start), ...ids.slice(0, start)].find((id) => state[id] === 'todo') ?? '';
+}
+
+function settle(id: TaskId, status: TaskState = 'done') {
+  state[id] = status;
+  current.value = nextTodo(id);
+}
+
+function toggle(id: TaskId) {
+  current.value = current.value === id ? '' : id;
+}
+
 onBeforeMount(async () => {
+  await toursStore.setCurrentTour('quick-start', 1);
+  open.value = toursStore.tourOpen;
   await Promise.all([appConfigPromise, wsConfig.promise, integrationPromise.value]);
   if (appConfig.value.name) {
     appName.value = appConfig.value.name;
+    state.name = 'done';
   }
   if (appConfig.value.logoUrl) {
     appLogo.value = appConfig.value.logoUrl;
+    state.logo = 'done';
   }
-});
-
-const hasQelosIntegration = computed(() => {
-  return groupedSources.value?.['qelos']?.length > 0;
-});
-
-const hasOpenAIIntegration = computed(() => {
-  return groupedSources.value?.['openai']?.length > 0;
-});
-
-// Total steps calculation based on existing integrations
-const totalSteps = computed(() => {
-  // name, logo, theme, app type, AI purpose, blueprints confirmation, done (+ OpenAI token when missing)
-  return hasOpenAIIntegration.value ? 7 : 8;
-});
-
-// the position shown in the progress bar (screens are numbered 1-8 internally)
-const displayStep = computed(() => {
-  const step = getStepForCurrent(currentStep.value);
-  return hasOpenAIIntegration.value && step >= 6 ? step - 1 : step;
-});
-
-function goBack() {
-  // when an OpenAI integration exists the token screen (5) is skipped
-  if (currentStep.value === 6 && hasOpenAIIntegration.value) {
-    currentStep.value = 4;
-    return;
+  if (wsConfig.isActive) {
+    appType.value = 'b2b';
+    state.audience = 'done';
   }
-  currentStep.value--;
+  current.value = nextTodo();
+});
+
+async function run(id: TaskId, failure: string, work: () => Promise<void>) {
+  saving.value = id;
+  try {
+    await work();
+  } catch (error) {
+    console.error(error);
+    ElMessage.error(t(failure));
+  } finally {
+    saving.value = '';
+  }
 }
 
-// Step mapping based on existing integrations
-const getStepForCurrent = (step: number) => {
-  if (step <= 3) return step; // Steps 1-3 are always the same (name, logo, theme)
-  if (step === 4) return 4; // App type step
-  if (step === 5 && !hasOpenAIIntegration.value) return 5; // OpenAI token step (only if no integration)
-  if (step === 5 && hasOpenAIIntegration.value) return 6; // Skip to AI purpose if OpenAI exists
-  if (step === 6 && !hasOpenAIIntegration.value) return 6; // AI purpose step (after OpenAI token)
-  if (step === 6 && hasOpenAIIntegration.value) return 6; // AI purpose step (direct from app type)
-  if (step === 7) return 7; // Blueprints confirmation step
-  if (step === 8) return 8; // Final done screen
-  return step;
-};
-
-async function saveAppName() {
-  if (!appName.value) {
+function saveName() {
+  if (!appName.value.trim()) {
     ElMessage.error(t('App name is required'));
     return;
   }
-  
-  loading.value = true;
-  try {
+  return run('name', 'Failed to save app name', async () => {
     await configurationsService.update('app-configuration', {
-      metadata: {
-        ...appConfig.value,
-        name: appName.value
-      }
+      metadata: { ...appConfig.value, name: appName.value.trim() },
     });
     softResetConfiguration();
-    currentStep.value++;
-  } catch (error) {
-    ElMessage.error(t('Failed to save app name'));
-    console.error(error);
-  } finally {
-    loading.value = false;
-  }
+    settle('name');
+  });
 }
 
-async function saveAppLogo() {
-  loading.value = true;
-  try {
-    await configurationsService.update('app-configuration', {
-      metadata: {
-        ...appConfig.value,
-        logoUrl: appLogo.value
-      }
-    });
-    softResetConfiguration();
-    currentStep.value++;
-  } catch (error) {
-    ElMessage.error(t('Failed to save app logo'));
-    console.error(error);
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function saveAppTheme() {
-  if (!selectedTheme.value) {
-    currentStep.value++;
+function saveLogo() {
+  if (!appLogo.value.trim()) {
+    settle('logo', 'skipped');
     return;
   }
-  loading.value = true;
-  try {
-    const selectedThemeObj = themes.find(theme => theme.value === selectedTheme.value);
-    if (!selectedThemeObj) {
-      throw new Error('Selected theme not found');
-    }
-    
-    await liveEdit.changePalette(selectedThemeObj.palette);
-    currentStep.value++;
-  } catch (error) {
-    ElMessage.error(t('Failed to save theme'));
-    console.error(error);
-  } finally {
-    loading.value = false;
-  }
+  return run('logo', 'Failed to save app logo', async () => {
+    await configurationsService.update('app-configuration', {
+      metadata: { ...appConfig.value, logoUrl: appLogo.value.trim() },
+    });
+    softResetConfiguration();
+    settle('logo');
+  });
 }
 
-async function saveAppType() {
-  loading.value = true;
-  try {
-    // For B2B, set workspace config active to true and ensure there's at least one label
+function saveTheme() {
+  const theme = themes.find((item) => item.value === selectedTheme.value);
+  if (!theme) {
+    ElMessage.info(t('Choose a theme or skip this step'));
+    return;
+  }
+  return run('theme', 'Failed to save theme', async () => {
+    await liveEdit.applyTheme(theme.palette);
+    settle('theme');
+  });
+}
+
+function saveAudience() {
+  return run('audience', 'Failed to save app type', async () => {
+    // B2B turns workspaces on and makes sure at least one label exists
     if (appType.value === 'b2b') {
       const labels = wsConfig.metadata.labels || [];
       if (labels.length === 0) {
-        // Add a default label if none exists
-        const newLabel: WorkspaceLabelDefinition = {
-          title: 'Basic',
-          description: '',
-          value: ['basic']
-        };
-        labels.push(newLabel);
+        labels.push({ title: 'Basic', description: '', value: ['basic'] });
       }
-      
       await configurationsService.update('workspace-configuration', {
-        metadata: {
-          ...wsConfig.metadata,
-          isActive: true,
-          labels
-        }
+        metadata: { ...wsConfig.metadata, isActive: true, labels },
       });
+      wsConfig.reload();
     }
-    
-    // Skip OpenAI step if integration already exists
-    if (hasOpenAIIntegration.value) {
-      currentStep.value = 6; // Jump to AI purpose step
-    } else {
-      currentStep.value++; // Go to OpenAI token step
-    }
-    
-    wsConfig.reload();
-  } catch (error) {
-    ElMessage.error(t('Failed to save app type'));
-    console.error(error);
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function saveOpenAiToken() {
-  if (!openAiToken.value) {
-    ElMessage.error(t('OpenAI token is required'));
-    return;
-  }
-  
-  loading.value = true;
-  try {
-    // Check if OpenAI integration exists
-    if (!hasOpenAIIntegration.value) {
-      // Create OpenAI integration source
-      const openAiSource: Partial<IOpenAISource> = {
-        name: 'OpenAI',
-        kind: IntegrationSourceKind.OpenAI,
-        labels: [],
-        authentication: {
-          token: openAiToken.value
-        }
-      };
-      await integrationSourcesService.create(openAiSource);
-    }
-    
-    // Check if Qelos integration exists
-    if (!hasQelosIntegration.value) {
-      // Create Qelos integration source
-      const qelosSource: Partial<IQelosSource> = {
-        name: 'Qelos',
-        kind: IntegrationSourceKind.Qelos,
-        labels: [],
-        authentication: {
-          password: 'qelos'
-        },
-        metadata: {
-          url: 'http://localhost:3000',
-          username: 'qelos'
-        }
-      };
-      await integrationSourcesService.create(qelosSource);
-    }
-
-    integrationSourcesStore.retry();
-    
-    currentStep.value++;
-  } catch (error) {
-    ElMessage.error(t('Failed to save OpenAI token'));
-    console.error(error);
-  } finally {
-    loading.value = false;
-  }
+    settle('audience');
+  });
 }
 
 async function generateBlueprintsFromAI(sourceId: string): Promise<any[]> {
   const response = await fetch(`/api/ai/sources/${sourceId}/blueprints`, {
     method: 'post',
-    headers: {'content-type': 'application/json'},
-    body: JSON.stringify({ prompt: aiPurpose.value })
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ prompt: aiPurpose.value }),
   });
-  
   if (!response.ok) {
     throw new Error(`Error: ${response.status}`);
   }
-  
   return await response.json();
 }
 
-async function createBlueprints(blueprintsData: any[]): Promise<any[]> {
-  const successfullyCreatedList = [];
-  
-  for (const blueprint of blueprintsData) {
+async function createBlueprints(blueprints: any[]) {
+  const created: any[] = [];
+  for (const blueprint of blueprints) {
     try {
-      const createdBlueprint = await blueprintsService.create(blueprint);
-      successfullyCreatedList.push(createdBlueprint);
+      created.push(await blueprintsService.create(blueprint));
     } catch (error) {
       console.error(`Failed to create blueprint ${blueprint.name}:`, error);
     }
   }
-  
-  return successfullyCreatedList;
+  return created;
 }
 
-function showBlueprintCreationResults(successCount: number, totalCount: number) {
-  if (successCount > 0) {
-    ElMessage.success(t(`${successCount} blueprints created successfully based on your AI purpose!`));
-  } else if (totalCount > 0) {
-    ElMessage.warning(t('Failed to create blueprints. You can create them manually later.'));
-  } else {
-    ElMessage.info(t('No blueprints were generated. You can create them manually later.'));
-  }
-}
-
-async function saveAiPurpose() {
-  if (!aiPurpose.value.trim()) {
-    currentStep.value += 2;
+function saveAi() {
+  const needsToken = !hasOpenAIIntegration.value;
+  if (needsToken && !openAiToken.value.trim()) {
+    ElMessage.error(t('OpenAI token is required'));
     return;
   }
+  return run('ai', 'Failed to process AI purpose', async () => {
+    let sourceId: string | undefined = groupedSources.value?.[IntegrationSourceKind.OpenAI]?.[0]?._id;
 
-  loading.value = true;
-  
-  try {
-    const openAISources = groupedSources.value?.[IntegrationSourceKind.OpenAI] || [];
-    
-    if (openAISources.length === 0) {
-      ElMessage.error(t('No OpenAI integration found for blueprint generation'));
-      currentStep.value++;
-      finishSetup();
-      return;
-    }
-
-    const selectedSourceId = openAISources[0]._id;
-    const loadingInstance = ElLoading.service({
-      lock: true,
-      text: t('Generating blueprints based on your AI purpose...'),
-      background: 'rgba(0, 0, 0, 0.7)',
-    });
-
-    try {
-      const generatedBlueprintsData = await generateBlueprintsFromAI(selectedSourceId);
-      
-      if (generatedBlueprintsData && generatedBlueprintsData.length > 0) {
-        const successfullyCreatedList = await createBlueprints(generatedBlueprintsData);
-        
-        generatedBlueprints.value = generatedBlueprintsData;
-        successfullyCreated.value = successfullyCreatedList;
-        
-        showBlueprintCreationResults(successfullyCreatedList.length, generatedBlueprintsData.length);
-      } else {
-        ElMessage.info(t('No blueprints were generated. You can create them manually later.'));
+    if (needsToken) {
+      const source: any = await integrationSourcesService.create({
+        name: 'OpenAI',
+        kind: IntegrationSourceKind.OpenAI,
+        labels: [],
+        authentication: { token: openAiToken.value.trim() },
+      } as any);
+      sourceId = source?._id;
+      if (!hasQelosIntegration.value) {
+        await integrationSourcesService.create({
+          name: 'Qelos',
+          kind: IntegrationSourceKind.Qelos,
+          labels: [],
+          authentication: { password: 'qelos' },
+          metadata: { url: 'http://localhost:3000', username: 'qelos' },
+        } as any);
       }
-    } catch (error) {
-      console.error('Error generating blueprints:', error);
-      ElMessage.warning(t('Failed to generate blueprints automatically. You can create them manually later.'));
-    } finally {
-      loadingInstance.close();
+      integrationSourcesStore.retry();
     }
-    
-    currentStep.value++;
-  } catch (error) {
-    ElMessage.error(t('Failed to process AI purpose'));
-    console.error(error);
-  } finally {
-    loading.value = false;
-  }
+
+    if (aiPurpose.value.trim() && sourceId) {
+      try {
+        const generated = await generateBlueprintsFromAI(sourceId);
+        createdBlueprints.value = await createBlueprints(generated || []);
+        if (createdBlueprints.value.length) {
+          ElMessage.success(`${createdBlueprints.value.length} ${t('blueprints')}`);
+        } else {
+          ElMessage.info(t('No blueprints were generated. You can create them manually later.'));
+        }
+      } catch (error) {
+        console.error('Error generating blueprints:', error);
+        ElMessage.warning(t('Failed to generate blueprints automatically. You can create them manually later.'));
+      }
+    }
+    settle('ai');
+  });
 }
 
-function finishSetup() {
-  closeForm();
-}
-
-function closeForm() {
+function onClose() {
   if (toursStore.tourOpen) {
     toursStore.tourFinished();
   }
-  formVisible.value = false;
-  // clear all form data to default values
-  generatedBlueprints.value = [];
-  successfullyCreated.value = [];
-  currentStep.value = 1;
 }
-
 </script>
 
 <template>
-  <div><el-button text @click="formVisible = true">{{ $t('Quick Start') }}</el-button></div>
-  <el-dialog append-to-body v-model="formVisible" :title="$t('Quick Start')"
-             :width="$isMobile ? '100%' : '60%'"
-             :close-on-click-modal="false"
-             :close-on-press-escape="false"
-             @close="closeForm">
-    
-    <!-- Progress Steps -->
-    <div
-      class="wizard-progress"
-      role="progressbar"
-      :aria-label="$t('Quick Start')"
-      aria-valuemin="1"
-      :aria-valuemax="totalSteps"
-      :aria-valuenow="displayStep"
-      :aria-valuetext="`${displayStep} / ${totalSteps}`"
-    >
-      <div class="progress-bar">
-        <div class="progress-indicator" :style="{ width: `${(displayStep - 1) / (totalSteps - 1) * 100}%` }"></div>
+  <div><el-button text @click="open = true">{{ $t('Quick Start') }}</el-button></div>
+  <el-drawer
+    v-model="open"
+    :size="$isMobile ? '100%' : '560px'"
+    append-to-body
+    class="quick-start-drawer"
+    @close="onClose"
+  >
+    <template #header>
+      <div class="qs-head">
+        <h2>{{ $t('Set up your app') }}</h2>
+        <p class="qs-count" aria-live="polite">{{ doneCount }} / {{ tasks.length }} {{ $t('steps done') }}</p>
+        <el-progress :percentage="progress" :show-text="false" :stroke-width="6" :aria-label="$t('Quick Start')" />
       </div>
-      <div class="steps-container">
-        <div 
-          v-for="step in totalSteps" 
-          :key="step"
-          class="step-circle"
-          :class="{ 
-            'active': displayStep === step, 
-            'completed': displayStep > step,
-            'pending': displayStep < step 
-          }"
-          :aria-current="displayStep === step ? 'step' : undefined"
-        >
-          <span v-if="displayStep <= step">{{ step }}</span>
-          <el-icon v-else><Check /></el-icon>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Step 1: App Name -->
-    <div v-if="getStepForCurrent(currentStep) === 1" class="step-container">
-      <div class="step-header">
-        <h2>{{ $t('What is your app name?') }}</h2>
-        <p class="step-description">{{ $t('This will be displayed as the title of your application.') }}</p>
-      </div>
-      <el-form @submit.prevent="saveAppName">
-        <FormInput v-model="appName" type="text" :placeholder="$t('Enter your app name')" autofocus />
-        <div class="form-actions">
-          <el-button type="primary" native-type="submit" :loading="loading" size="large">
-            {{ $t('Next') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
-          </el-button>
-        </div>
-      </el-form>
-    </div>
-    
-    <!-- Step 2: App Logo -->
-    <div v-if="getStepForCurrent(currentStep) === 2" class="step-container">
-      <div class="step-header">
-        <h2>{{ $t('Enter your app logo') }}</h2>
-        <p class="step-description">{{ $t('This will be displayed as the logo of your application.') }}</p>
-      </div>
-      <el-form @submit.prevent="saveAppLogo">
-        <FormInput v-model="appLogo" type="url" :placeholder="$t('Enter logo URL')" />
-        <div v-if="appLogo" class="logo-preview">
-          <img :src="appLogo" :alt="appName" />
-        </div>
-        <div class="form-actions">
-          <el-button @click="goBack" size="large">
-            <el-icon class="dir-icon"><ArrowLeft /></el-icon> {{ $t('Back') }}
-          </el-button>
-          <el-button type="primary" native-type="submit" :loading="loading" size="large">
-            {{ $t('Next') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
-          </el-button>
-        </div>
-      </el-form>
-    </div>
-        <!-- Step 3: Theme Selection -->
-    <div v-if="getStepForCurrent(currentStep) === 3" class="step-container">
-      <div class="step-header">
-        <h2>{{ $t('Select an initial theme') }}</h2>
-        <p class="step-description">{{ $t('Choose a theme that matches your brand identity.') }}</p>
-      </div>
-      <el-form>
-        <div class="theme-options" role="radiogroup" :aria-label="$t('Select an initial theme')">
-          <div 
-            v-for="theme in themes" 
-            :key="theme.value" 
-            class="theme-option"
-            :class="{ 'selected': selectedTheme === theme.value }"
-            role="radio"
-            tabindex="0"
-            :aria-checked="selectedTheme === theme.value"
-            @click="selectedTheme = theme.value"
-            @keydown.enter.prevent="selectedTheme = theme.value"
-            @keydown.space.prevent="selectedTheme = theme.value"
-          >
-            <div class="theme-color-preview">
-              <div class="main-color" :style="{ backgroundColor: theme.color }"></div>
-              <div class="color-palette">
-                <div class="palette-color" :style="{ backgroundColor: theme.palette.secondaryColor }"></div>
-                <div class="palette-color" :style="{ backgroundColor: theme.palette.thirdColor }"></div>
-                <div class="palette-color" :style="{ backgroundColor: theme.palette.bgColor }"></div>
-              </div>
-            </div>
-            <div class="theme-label">{{ theme.label }}</div>
-            <div class="theme-description">{{ theme.description }}</div>
-          </div>
-        </div>
-        <div class="form-actions">
-          <el-button @click="goBack" size="large">
-            <el-icon class="dir-icon"><ArrowLeft /></el-icon> {{ $t('Back') }}
-          </el-button>
-          <el-button type="primary" @click="saveAppTheme" :loading="loading" size="large">
-            {{ $t('Next') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
-          </el-button>
-        </div>
-      </el-form>
-    </div>
-    
-    <!-- Step 4: App Type -->
-    <div v-if="getStepForCurrent(currentStep) === 4" class="step-container">
-      <div class="step-header">
-        <h2>{{ $t('Is your app made for B2B or B2C?') }}</h2>
-        <p class="step-description">{{ $t('This will configure your workspace settings appropriately.') }}</p>
-      </div>
-      <el-form @submit.prevent="saveAppType">
-        <div class="app-type-cards" role="radiogroup" :aria-label="$t('Is your app made for B2B or B2C?')">
-          <div 
-            class="app-type-card" 
-            :class="{ 'selected': appType === 'b2b' }" 
-            role="radio"
-            tabindex="0"
-            :aria-checked="appType === 'b2b'"
-            @click="appType = 'b2b'"
-            @keydown.enter.prevent="appType = 'b2b'"
-            @keydown.space.prevent="appType = 'b2b'"
-          >
-            <div class="app-type-icon">
-              <el-icon><OfficeBuilding /></el-icon>
-            </div>
-            <div class="app-type-title">{{ $t('B2B') }}</div>
-            <div class="app-type-subtitle">{{ $t('Business to Business') }}</div>
-          </div>
-          <div 
-            class="app-type-card" 
-            :class="{ 'selected': appType === 'b2c' }" 
-            role="radio"
-            tabindex="0"
-            :aria-checked="appType === 'b2c'"
-            @click="appType = 'b2c'"
-            @keydown.enter.prevent="appType = 'b2c'"
-            @keydown.space.prevent="appType = 'b2c'"
-          >
-            <div class="app-type-icon">
-              <el-icon><User /></el-icon>
-            </div>
-            <div class="app-type-title">{{ $t('B2C') }}</div>
-            <div class="app-type-subtitle">{{ $t('Business to Consumer') }}</div>
-          </div>
-        </div>
-        
-        <div class="app-type-description">
-          <div v-if="appType === 'b2b'" class="help-text">
-            {{ $t('B2B will enable workspace management and ensure at least one workspace label exists.') }}
-          </div>
-          <div v-else class="help-text">
-            {{ $t('B2C will keep workspace management disabled.') }}
-          </div>
-        </div>
-        
-        <div class="form-actions">
-          <el-button @click="goBack" size="large">
-            <el-icon class="dir-icon"><ArrowLeft /></el-icon> {{ $t('Back') }}
-          </el-button>
-          <el-button type="primary" native-type="submit" :loading="loading" size="large">
-            {{ $t('Next') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
-          </el-button>
-        </div>
-      </el-form>
-    </div>
-    
-    <!-- Step 5: OpenAI Token -->
-    <div v-if="getStepForCurrent(currentStep) === 5 && !hasOpenAIIntegration" class="step-container">
-      <div class="step-header">
-        <h2>{{ $t('Add your OpenAI token') }}</h2>
-        <p class="step-description">{{ $t('Connect your app to OpenAI for AI capabilities.') }}</p>
-      </div>
-      <el-form @submit.prevent="saveOpenAiToken">
-        <el-input 
-          v-model="openAiToken" 
-          type="password" 
-          show-password 
-          :placeholder="$t('Enter your OpenAI API key')" 
-          :aria-label="$t('Enter your OpenAI API key')"
-          autocomplete="off"
-          size="large"
-        />
-        <div class="help-text step-help">
-          {{ $t('Your API key will be stored securely and used for AI integrations.') }}
-        </div>
-        <div class="form-actions">
-          <el-button @click="goBack" size="large">
-            <el-icon class="dir-icon"><ArrowLeft /></el-icon> {{ $t('Back') }}
-          </el-button>
-          <el-button type="primary" native-type="submit" :loading="loading" size="large">
-            {{ $t('Next') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
-          </el-button>
-        </div>
-      </el-form>
-    </div>
-    
-    <!-- Step 6: AI Purpose -->
-    <div v-if="getStepForCurrent(currentStep) === 6" class="step-container">
-      <div class="step-header">
-        <h2>{{ $t('What should your app do with AI?') }}</h2>
-        <p class="step-description">{{ $t('Describe how you want to use AI in your application.') }}</p>
-      </div>
-      <el-form @submit.prevent="saveAiPurpose"  >
-        <el-input 
-          v-model="aiPurpose" 
-          type="textarea" 
-          :rows="4"
-          :placeholder="$t('Describe what you want to achieve with AI in your app...')" 
-          :aria-label="$t('What should your app do with AI?')"
-          size="large"
-        />
-        <div class="help-text step-help">
-          {{ $t('This will help set up blueprints using the chat completion API.') }}
-        </div>
-        <div class="form-actions">
-          <el-button @click="goBack" size="large">
-            <el-icon class="dir-icon"><ArrowLeft /></el-icon> {{ $t('Back') }}
-          </el-button>
-          <el-button type="primary" native-type="submit" :loading="loading" size="large">
-            {{ $t('Next') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
-          </el-button>
-        </div>
-      </el-form>
-    </div>
-    <!-- Step 7: Generated Blueprints -->
-    <div v-if="getStepForCurrent(currentStep) === 7" class="step-container">
-      <div class="step-header">
-        <h2>{{ $t('Generated Blueprints') }}</h2>
-        <p class="step-description">{{ $t('Here are the blueprints generated based on your AI purpose. They have been automatically created in your workspace.') }}</p>
-      </div>
-      <el-form>
-        <div v-if="generatedBlueprints.length > 0" class="blueprints-list">
-          <div class="blueprints-summary">
-            <el-icon><SuccessFilled /></el-icon>
-            <span>{{ $t('Successfully created') }} <strong>{{ successfullyCreated.length }}</strong> {{ $t('blueprints') }}</span>
-          </div>
-          <div class="blueprints-compact">
-            <div v-for="(blueprint, index) in successfullyCreated" :key="blueprint.id || blueprint._id || index" class="blueprint-item">
-              <span class="blueprint-number">{{ index + 1 }}.</span>
-              <span class="blueprint-name">{{ blueprint.name }}</span>
-              <span class="blueprint-properties">({{ Object.keys(blueprint.properties || {}).length }} {{ $t('props') }})</span>
-            </div>
-          </div>
-        </div>
-        <div v-else class="no-blueprints">
-          <el-icon><InfoFilled /></el-icon>
-          <p>{{ $t('No blueprints were generated. You can create them manually later from the No-Code section.') }}</p>
-        </div>
-        <div class="form-actions">
-          <el-button @click="goBack" size="large">
-            <el-icon class="dir-icon"><ArrowLeft /></el-icon> {{ $t('Back') }}
-          </el-button>
-          <el-button type="primary" @click="currentStep++" size="large">
-            {{ $t('Continue') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
-          </el-button>
-        </div>
-      </el-form>
-    </div>
+    </template>
 
-    <!-- Step 8: Final Done Screen -->
-    <div v-if="getStepForCurrent(currentStep) === 8" class="step-container final-step">
-      <div class="completion-content">
-        <div class="success-icon">
-          <el-icon><SuccessFilled /></el-icon>
-        </div>
-        <h2>{{ $t('Setup Complete!') }}</h2>
-        <p class="completion-message">{{ $t('Your Qelos application has been successfully configured. You can now start building your no-code solutions.') }}</p>
-        <div class="completion-stats">
-          <div class="stat-card">
-            <div class="stat-icon app-icon">
-              <el-icon><House /></el-icon>
+    <ol class="qs-tasks">
+      <li v-for="(task, index) in tasks" :key="task.id" class="qs-task" :class="[state[task.id], { open: current === task.id }]">
+        <button
+          type="button"
+          class="task-head"
+          :aria-expanded="current === task.id"
+          :aria-controls="`qs-${task.id}`"
+          @click="toggle(task.id)"
+        >
+          <span class="task-mark" aria-hidden="true">
+            <el-icon v-if="state[task.id] === 'done'"><Check /></el-icon>
+            <template v-else>{{ index + 1 }}</template>
+          </span>
+          <span class="task-title">
+            {{ task.title }}
+            <small v-if="task.optional" class="task-optional">{{ $t('Optional') }}</small>
+          </span>
+          <span v-if="current !== task.id && state[task.id] !== 'todo'" class="task-summary" dir="auto">
+            {{ state[task.id] === 'skipped' ? $t('Skipped') : task.summary }}
+          </span>
+          <el-icon class="task-chevron" :class="{ turned: current === task.id }"><ArrowDown /></el-icon>
+        </button>
+
+        <div v-if="current === task.id" :id="`qs-${task.id}`" class="task-body" role="region" :aria-label="task.title">
+          <!-- name -->
+          <form v-if="task.id === 'name'" @submit.prevent="saveName">
+            <p class="task-help">{{ $t('This will be displayed as the title of your application.') }}</p>
+            <FormInput v-model="appName" type="text" :placeholder="$t('Enter your app name')" autofocus />
+            <div class="task-actions">
+              <el-button type="primary" native-type="submit" :loading="saving === 'name'">{{ $t('Save and continue') }}</el-button>
             </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ appName || $t('Your App') }}</div>
-              <div class="stat-label">{{ $t('Application Name') }}</div>
+          </form>
+
+          <!-- logo -->
+          <form v-else-if="task.id === 'logo'" @submit.prevent="saveLogo">
+            <p class="task-help">{{ $t('This will be displayed as the logo of your application.') }}</p>
+            <FormInput v-model="appLogo" type="url" :placeholder="$t('Enter logo URL')" />
+            <img v-if="appLogo" :src="appLogo" :alt="appName" class="logo-preview" />
+            <div class="task-actions">
+              <el-button native-type="button" @click="settle('logo', 'skipped')">{{ $t('Skip for now') }}</el-button>
+              <el-button type="primary" native-type="submit" :loading="saving === 'logo'">{{ $t('Save and continue') }}</el-button>
+            </div>
+          </form>
+
+          <!-- theme -->
+          <div v-else-if="task.id === 'theme'">
+            <p class="task-help">{{ $t('Choose a theme that matches your brand identity.') }}</p>
+            <div class="theme-grid" role="radiogroup" :aria-label="$t('Theme')">
+              <button
+                v-for="theme in themes"
+                :key="theme.value"
+                type="button"
+                role="radio"
+                class="theme-card"
+                :class="{ selected: selectedTheme === theme.value }"
+                :aria-checked="selectedTheme === theme.value"
+                @click="selectedTheme = theme.value"
+              >
+                <span class="theme-preview" :style="previewVars(theme.palette)" aria-hidden="true">
+                  <span class="pv-nav"><i /><i class="active" /><i /></span>
+                  <span class="pv-main">
+                    <span class="pv-card">
+                      <b class="pv-title" />
+                      <i class="pv-line" />
+                      <i class="pv-line short" />
+                      <span class="pv-btn" />
+                    </span>
+                  </span>
+                </span>
+                <span class="theme-name">{{ theme.label }}</span>
+                <span class="theme-font">{{ headingFont(theme.palette) }}</span>
+              </button>
+            </div>
+            <p v-if="selectedTheme" class="theme-description">
+              {{ themes.find((theme) => theme.value === selectedTheme)?.description }}
+            </p>
+            <div class="task-actions">
+              <el-button @click="settle('theme', 'skipped')">{{ $t('Skip for now') }}</el-button>
+              <el-button type="primary" :loading="saving === 'theme'" @click="saveTheme">{{ $t('Save and continue') }}</el-button>
             </div>
           </div>
-          <div class="stat-card" v-if="successfullyCreated.length > 0">
-            <div class="stat-icon blueprints-icon">
-              <el-icon><DocumentAdd /></el-icon>
+
+          <!-- audience -->
+          <div v-else-if="task.id === 'audience'">
+            <p class="task-help">{{ $t('This will configure your workspace settings appropriately.') }}</p>
+            <div class="audience-grid" role="radiogroup" :aria-label="$t('Is your app made for B2B or B2C?')">
+              <button
+                type="button"
+                role="radio"
+                class="audience-card"
+                :class="{ selected: appType === 'b2b' }"
+                :aria-checked="appType === 'b2b'"
+                @click="appType = 'b2b'"
+              >
+                <el-icon><OfficeBuilding /></el-icon>
+                <strong>{{ $t('B2B') }}</strong>
+                <span>{{ $t('Business to Business') }}</span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                class="audience-card"
+                :class="{ selected: appType === 'b2c' }"
+                :aria-checked="appType === 'b2c'"
+                @click="appType = 'b2c'"
+              >
+                <el-icon><User /></el-icon>
+                <strong>{{ $t('B2C') }}</strong>
+                <span>{{ $t('Business to Consumer') }}</span>
+              </button>
             </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ successfullyCreated.length }}</div>
-              <div class="stat-label">{{ $t('Blueprints Created') }}</div>
+            <p class="task-help">
+              {{
+                appType === 'b2b'
+                  ? $t('B2B will enable workspace management and ensure at least one workspace label exists.')
+                  : $t('B2C will keep workspace management disabled.')
+              }}
+            </p>
+            <div class="task-actions">
+              <el-button type="primary" :loading="saving === 'audience'" @click="saveAudience">{{ $t('Save and continue') }}</el-button>
             </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon type-icon">
-              <el-icon v-if="appType === 'b2b'"><OfficeBuilding /></el-icon>
-              <el-icon v-else><User /></el-icon>
+
+          <!-- ai -->
+          <form v-else-if="task.id === 'ai'" @submit.prevent="saveAi">
+            <template v-if="!hasOpenAIIntegration">
+              <p class="task-help">{{ $t('Connect your app to OpenAI for AI capabilities.') }}</p>
+              <el-input
+                v-model="openAiToken"
+                type="password"
+                show-password
+                autocomplete="off"
+                :placeholder="$t('Enter your OpenAI API key')"
+                :aria-label="$t('Enter your OpenAI API key')"
+              />
+              <p class="task-hint">{{ $t('Your API key will be stored securely and used for AI integrations.') }}</p>
+            </template>
+            <p class="task-help">{{ $t('Describe how you want to use AI in your application.') }}</p>
+            <el-input
+              v-model="aiPurpose"
+              type="textarea"
+              :rows="4"
+              :placeholder="$t('Describe what you want to achieve with AI in your app...')"
+              :aria-label="$t('What should your app do with AI?')"
+            />
+            <p class="task-hint">{{ $t('This will help set up blueprints using the chat completion API.') }}</p>
+            <ul v-if="createdBlueprints.length" class="blueprint-list">
+              <li v-for="(blueprint, i) in createdBlueprints" :key="blueprint.id || blueprint._id || i">
+                <el-icon><Check /></el-icon>
+                <span dir="auto">{{ blueprint.name }}</span>
+                <small>{{ Object.keys(blueprint.properties || {}).length }} {{ $t('props') }}</small>
+              </li>
+            </ul>
+            <div class="task-actions">
+              <el-button native-type="button" @click="settle('ai', 'skipped')">{{ $t('Skip for now') }}</el-button>
+              <el-button type="primary" native-type="submit" :loading="saving === 'ai'">
+                {{ aiPurpose.trim() ? $t('Generate blueprints') : $t('Save and continue') }}
+              </el-button>
             </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ appType.toUpperCase() }}</div>
-              <div class="stat-label">{{ $t('App Type') }}</div>
-            </div>
-          </div>
+          </form>
         </div>
-        <div class="final-actions">
-          <el-button type="primary" @click="finishSetup" size="large" class="done-button">
-            {{ $t('DONE') }}
-          </el-button>
-        </div>
-      </div>
-    </div>
-    
-  </el-dialog>
+      </li>
+    </ol>
+
+    <section v-if="allSettled" class="qs-complete" aria-live="polite">
+      <h3>{{ $t('Setup Complete!') }}</h3>
+      <p>{{ $t('Your Qelos application has been successfully configured. You can now start building your no-code solutions.') }}</p>
+      <el-button type="primary" @click="open = false">
+        {{ $t('DONE') }}
+        <el-icon class="dir-icon"><ArrowRight /></el-icon>
+      </el-button>
+    </section>
+  </el-drawer>
 </template>
 
-<style scoped>
-img {
-  max-height: 50px;
-  max-width: 100px;
+<style scoped lang="scss">
+.qs-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  inline-size: 100%;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+  }
 }
 
-.step-container {
-  padding: 20px 0;
-  max-width: 600px;
-  margin: 0 auto;
+.qs-count {
+  margin: 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
-.step-header {
-  margin-block-end: 24px;
-  text-align: center;
+.qs-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.step-header h2 {
-  margin-block-end: 8px;
+.qs-task {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--el-bg-color);
+
+  &.open {
+    border-color: var(--el-color-primary-light-5);
+  }
+}
+
+.task-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  min-block-size: 56px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--el-text-color-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: -2px;
+  }
+}
+
+.task-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 50%;
+  font-size: 13px;
   font-weight: 600;
+  color: var(--el-text-color-secondary);
+}
+
+.done .task-mark {
+  border-color: transparent;
+  background: var(--el-color-primary);
+  color: var(--el-color-white, #fff);
+  box-shadow: 0 0 0 4px var(--el-color-primary-light-9);
+}
+
+.done .task-title {
+  color: var(--el-text-color-secondary);
+}
+
+.skipped .task-mark {
+  border-style: dashed;
+}
+
+.open .task-mark {
+  border-color: var(--el-color-primary);
   color: var(--el-color-primary);
 }
 
-.step-description {
-  color: var(--el-text-color-regular);
-  font-size: 16px;
+.task-title {
+  flex: 1;
+  min-inline-size: 0;
+  font-weight: 600;
 }
 
-.form-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-block-start: 32px;
-}
-
-.wizard-progress {
-  margin-block-end: 30px;
-  padding: 0 20px;
-}
-
-.progress-bar {
-  height: 4px;
-  background-color: var(--el-border-color-lighter);
-  border-radius: 4px;
-  margin-block-end: 15px;
-  position: relative;
-  overflow: hidden;
-}
-
-.progress-indicator {
-  position: absolute;
-  height: 100%;
-  background-color: var(--el-color-primary);
-  transition: width 0.3s ease;
-}
-
-.steps-container {
-  display: flex;
-  justify-content: space-between;
-  position: relative;
-}
-
-.step-circle {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-}
-
-.step-circle.active {
-  background-color: var(--el-color-primary);
-  color: white;
-  transform: scale(1.1);
-  box-shadow: 0 0 0 4px var(--el-color-primary-light-8);
-}
-
-.step-circle.completed {
-  background-color: var(--el-color-success);
-  color: white;
-}
-
-.step-circle.pending {
-  background-color: var(--el-fill-color-light);
-  border: 1px solid var(--el-border-color);
+.task-optional {
+  margin-inline-start: 8px;
+  font-weight: 400;
   color: var(--el-text-color-secondary);
+}
+
+.task-summary {
+  max-inline-size: 160px;
+  overflow: hidden;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-chevron {
+  flex: none;
+  color: var(--el-text-color-secondary);
+  transition: transform 0.15s ease;
+
+  &.turned {
+    transform: rotate(180deg);
+  }
+}
+
+.task-body {
+  padding: 4px 16px 16px;
+}
+
+.task-help {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--el-text-color-regular);
+}
+
+.task-hint {
+  margin: 8px 0 14px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.task-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-block-start: 16px;
 }
 
 .logo-preview {
+  display: block;
+  max-block-size: 56px;
+  max-inline-size: 160px;
   margin-block-start: 10px;
-  padding: 10px;
+  padding: 8px;
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 4px;
-  display: inline-block;
-}
-
-.theme-options {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 15px;
-  margin-block-start: 15px;
-}
-
-.theme-option {
-  width: 130px;
-  cursor: pointer;
-  padding: 12px;
   border-radius: 8px;
-  border: 2px solid var(--el-border-color-lighter);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  text-align: center;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  object-fit: contain;
 }
 
-.theme-option:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
 }
 
-.theme-option.selected {
-  border-color: var(--el-color-primary);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  background-color: var(--el-color-primary-light-9);
-}
-
-.theme-color-preview {
-  margin-block-end: 8px;
-}
-
-.main-color {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  margin: 0 auto 6px;
-  border: 1px solid #ddd;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.color-palette {
+.theme-card {
   display: flex;
-  justify-content: center;
-  gap: 4px;
-  margin-block-start: 6px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 2px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--el-bg-color);
+  color: var(--el-text-color-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--el-color-primary-light-5);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+
+  &.selected {
+    border-color: var(--el-color-primary);
+  }
 }
 
-.palette-color {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 1px solid #eee;
+.theme-preview {
+  display: flex;
+  block-size: 84px;
+  overflow: hidden;
+  border: 1px solid var(--pv-border);
+  border-radius: var(--pv-radius);
+  background: var(--pv-bg);
 }
 
-.theme-label {
+.pv-nav {
+  display: flex;
+  flex: 0 0 20%;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 6px;
+  background: var(--pv-nav);
+
+  i {
+    display: block;
+    block-size: 3px;
+    border-radius: 2px;
+    background: var(--pv-nav-text);
+    opacity: 0.7;
+
+    &.active {
+      background: var(--pv-nav-active);
+      opacity: 1;
+    }
+  }
+}
+
+.pv-main {
+  display: flex;
+  flex: 1;
+  padding: 8px;
+}
+
+.pv-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid var(--pv-border);
+  border-radius: var(--pv-radius);
+  background: var(--pv-surface);
+  box-shadow: var(--pv-shadow);
+}
+
+.pv-title {
+  inline-size: 55%;
+  block-size: 5px;
+  border-radius: 2px;
+  background: var(--pv-main);
+}
+
+.pv-line {
+  display: block;
+  block-size: 3px;
+  border-radius: 2px;
+  background: var(--pv-text);
+  opacity: 0.35;
+
+  &.short {
+    inline-size: 65%;
+  }
+}
+
+.pv-btn {
+  inline-size: 36%;
+  block-size: 10px;
+  margin-block-start: auto;
+  border-radius: var(--pv-btn-radius);
+  background: var(--pv-btn);
+}
+
+.theme-font {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+}
+
+.theme-name {
   font-size: 13px;
   font-weight: 600;
-  margin-block-end: 3px;
 }
 
 .theme-description {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.3;
-}
-
-.help-text {
-  color: var(--el-text-color-regular);
-  font-size: 14px;
-  margin-block-start: 5px;
-  line-height: 1.5;
-  text-align: center;
-}
-
-.app-type-cards {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-block: 20px 0;
-}
-
-.app-type-card {
-  width: 180px;
-  height: 180px;
-  border-radius: 8px;
-  border: 2px solid var(--el-border-color-lighter);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  padding: 20px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-}
-
-.app-type-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.1);
-}
-
-.app-type-card.selected {
-  border-color: var(--el-color-primary);
-  background-color: var(--el-color-primary-light-9);
-  box-shadow: 0 6px 16px 0 rgba(64, 158, 255, 0.2);
-}
-
-.app-type-icon {
-  font-size: 40px;
-  margin-block-end: 15px;
-  color: var(--el-color-primary);
-}
-
-.app-type-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin-block-end: 5px;
-}
-
-.app-type-subtitle {
-  font-size: 14px;
-  color: var(--el-text-color-secondary);
-}
-
-.app-type-description {
-  margin: 20px 0;
-}
-
-.blueprints-summary {
-  text-align: center;
-  margin-block-end: 10px;
-}
-
-.blueprints-compact {
-  padding: 10px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-}
-
-.blueprint-item {
-  padding: 8px;
-  border-block-end: 1px solid var(--el-border-color-lighter);
-}
-
-.blueprint-item:last-child {
-  border-block-end: none;
-}
-
-.blueprint-number {
-  font-size: 14px;
-  font-weight: 600;
-  margin-inline-end: 8px;
-}
-
-.blueprint-name {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.blueprint-properties {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin-inline-start: 8px;
-}
-
-.no-blueprints {
-  text-align: center;
-  margin-block-start: 20px;
-}
-
-.no-blueprints i {
-  font-size: 24px;
-  margin-block-end: 10px;
-}
-
-.final-step {
-  padding: 30px 0;
-  text-align: center;
-}
-
-.completion-content {
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.success-icon {
-  font-size: 48px;
-  margin-block-end: 20px;
-  color: var(--el-color-success);
-}
-
-.completion-message {
-  font-size: 16px;
-  margin-block-end: 20px;
-}
-
-.completion-stats {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
-  margin-block-end: 30px;
-}
-
-.stat-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 20px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 12px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-  background: var(--el-bg-color);
-  min-width: 160px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  inset-inline-start: 0;
-  inset-inline-end: 0;
-  inset-block-start: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--el-color-primary), var(--el-color-primary-light-3));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px 0 rgba(0, 0, 0, 0.1);
-  border-color: var(--el-color-primary-light-5);
-}
-
-.stat-card:hover::before {
-  opacity: 1;
-}
-
-.stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  margin-block-end: 15px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.app-icon {
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-}
-
-.blueprints-icon {
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-}
-
-.type-icon {
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-}
-
-.stat-card:hover .stat-icon {
-  transform: scale(1.1);
-}
-
-.stat-content {
-  text-align: center;
-}
-
-.stat-value {
-  font-size: 20px;
-  font-weight: 700;
-  margin-block-end: 8px;
-  color: var(--el-text-color-primary);
-  line-height: 1.2;
-}
-
-.stat-label {
+  margin: 10px 0 0;
   font-size: 13px;
   color: var(--el-text-color-secondary);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-/* Responsive design for mobile */
-@media (max-width: 768px) {
-  .completion-stats {
-    flex-direction: column;
+.audience-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-block-end: 12px;
+}
+
+.audience-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 10px;
+  border: 2px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--el-bg-color);
+  color: var(--el-text-color-primary);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+
+  .el-icon {
+    font-size: 26px;
+    color: var(--el-color-primary);
+  }
+
+  span {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+
+  &.selected {
+    border-color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+  }
+}
+
+.blueprint-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 8px;
+    font-size: 14px;
   }
-  
-  .stat-card {
-    min-width: 200px;
-    max-width: 250px;
-    width: 100%;
+
+  .el-icon {
+    color: var(--el-color-primary);
+  }
+
+  small {
+    margin-inline-start: auto;
+    color: var(--el-text-color-secondary);
   }
 }
 
-@media (max-width: 480px) {
-  .stat-card {
-    min-width: unset;
-    width: 100%;
-    max-width: 300px;
-    padding: 20px 16px;
-  }
-  
-  .stat-icon {
-    width: 45px;
-    height: 45px;
-    font-size: 22px;
-    margin-block-end: 12px;
-  }
-  
-  .stat-value {
+.qs-complete {
+  margin-block-start: 20px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--el-color-primary-light-9);
+
+  h3 {
+    margin: 0 0 6px;
     font-size: 18px;
   }
-}
 
-/* Animations for step transitions */
-.step-container {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.done-button {
-  width: 100%;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.theme-option:focus-visible,
-.app-type-card:focus-visible {
-  outline: 2px solid var(--el-color-primary);
-  outline-offset: 2px;
-}
-
-.form-actions .el-button--primary {
-  margin-inline-start: auto;
-}
-
-.app-type-card {
-  justify-content: flex-start;
-  padding-block-start: 28px;
-}
-
-.app-type-subtitle {
-  text-align: center;
-}
-
-.step-help {
-  margin-block: 16px;
+  p {
+    margin: 0 0 14px;
+    color: var(--el-text-color-regular);
+  }
 }
 
 [dir='rtl'] .dir-icon {
   transform: scaleX(-1);
 }
 
-@media (max-width: 480px) {
-  .app-type-cards {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .app-type-card {
-    width: 100%;
-    max-width: 280px;
-    height: auto;
-    min-height: 140px;
-  }
-
-  .theme-option {
-    width: calc(50% - 8px);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .step-container {
-    animation: none;
-  }
-
-  .progress-indicator,
-  .step-circle,
-  .theme-option,
-  .app-type-card,
-  .stat-card {
+  .task-chevron {
     transition: none;
-  }
-
-  .theme-option:hover,
-  .app-type-card:hover,
-  .stat-card:hover {
-    transform: none;
   }
 }
 </style>

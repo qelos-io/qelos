@@ -609,7 +609,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
 .section-title {
   font-size: 24px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-color);
   margin: 0;
 }
 
@@ -622,7 +622,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
   margin: 4px 0 0;
   width: 100%;
   font-size: 14px;
-  color: #64748b;
+  color: var(--el-text-color-secondary);
 }
 
 .section-link {
@@ -644,7 +644,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
   margin: 0 0 12px;
   font-size: 16px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-color);
 }
 
 .compact-table {
@@ -661,7 +661,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
 
 .token-label {
   font-size: 13px;
-  color: #64748b;
+  color: var(--el-text-color-secondary);
   margin-bottom: 8px;
 }
 
@@ -678,20 +678,20 @@ async function removeBlueprintFromDashboard(identifier: string) {
 
 .health-label {
   font-size: 13px;
-  color: #64748b;
+  color: var(--el-text-color-secondary);
   margin-bottom: 8px;
 }
 
 .health-value {
   font-size: 26px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--text-color);
 }
 
 .health-hint {
   margin: 12px 0 0;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--el-text-color-secondary);
   line-height: 1.4;
 }
 
@@ -749,20 +749,20 @@ async function removeBlueprintFromDashboard(identifier: string) {
 
 .popover-header {
   padding: 20px 20px 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .popover-header h4 {
   margin: 0 0 8px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-color);
 }
 
 .popover-header p {
   margin: 0;
   font-size: 13px;
-  color: #666;
+  color: var(--el-text-color-secondary);
 }
 
 .blueprint-select-popover {
@@ -771,9 +771,9 @@ async function removeBlueprintFromDashboard(identifier: string) {
 }
 
 .blueprint-select-popover .el-input__wrapper {
-  border: 1px solid #ddd;
+  border: 1px solid var(--el-border-color);
   border-radius: 8px;
-  background-color: white;
+  background-color: var(--surface);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
 }
@@ -790,7 +790,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
 
 .select-prefix-icon {
   font-size: 14px;
-  color: #999;
+  color: var(--el-text-color-placeholder);
   margin-right: 4px;
 }
 
@@ -800,7 +800,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
 
 .blueprint-option .el-select-dropdown__item {
   padding: 0 !important;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
   height: auto !important;
   line-height: normal !important;
 }
@@ -829,7 +829,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
 .option-name {
   font-size: 14px;
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--text-color);
   line-height: 1.3;
   margin: 0;
   padding: 0;
@@ -841,7 +841,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
   justify-content: center;
   gap: 8px;
   padding: 20px;
-  color: #666;
+  color: var(--el-text-color-secondary);
   font-size: 14px;
   font-style: italic;
 }
@@ -903,13 +903,13 @@ async function removeBlueprintFromDashboard(identifier: string) {
   margin: 0 0 8px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-color);
 }
 
 .blueprint-description {
   margin: 0 0 16px 0;
   font-size: 14px;
-  color: #666;
+  color: var(--el-text-color-secondary);
 }
 
 .blueprint-count {
@@ -960,7 +960,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
 }
 
 .quick-action-card {
-  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  background: var(--surface);
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -1031,7 +1031,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
 .action-title {
   font-size: 16px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-color);
   margin: 0 0 16px 0;
   line-height: 1.4;
 }
@@ -1050,7 +1050,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
 }
 
 .unified-card {
-  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  background: var(--surface);
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -1166,7 +1166,7 @@ async function removeBlueprintFromDashboard(identifier: string) {
 .el-popover .el-popover__title {
   font-size: 18px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-color);
   margin-bottom: 16px;
 }
 
@@ -1195,11 +1195,11 @@ async function removeBlueprintFromDashboard(identifier: string) {
 }
 
 .el-popover .el-select .el-input__wrapper .el-input__inner:hover {
-  background-color: #f0f0f0;
+  background-color: var(--el-fill-color-light);
 }
 
 .el-popover .el-select .el-input__wrapper .el-input__inner:focus {
-  background-color: #f9f9f9;
+  background-color: var(--el-fill-color-lighter);
   box-shadow: 0 0 0 2px rgba(var(--main-color-rgb), 0.2);
 }
 

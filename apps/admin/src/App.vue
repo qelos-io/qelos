@@ -119,6 +119,23 @@ watch(() => {
   palette = palette || {};
 
   // Determine if this is a dark theme based on background color brightness
+  // themes may ask for web fonts; only Google Fonts stylesheets are accepted
+  const fontsUrl: string | undefined = palette.fontsUrl;
+  let fontsLink = document.querySelector<HTMLLinkElement>('#app-fonts');
+  if (typeof fontsUrl === 'string' && fontsUrl.startsWith('https://fonts.googleapis.com/')) {
+    if (!fontsLink) {
+      fontsLink = document.createElement('link');
+      fontsLink.id = 'app-fonts';
+      fontsLink.rel = 'stylesheet';
+      document.head.appendChild(fontsLink);
+    }
+    if (fontsLink.href !== fontsUrl) {
+      fontsLink.href = fontsUrl;
+    }
+  } else {
+    fontsLink?.remove();
+  }
+
   const isDarkTheme = palette?.bgColor ? isColorDark(palette.bgColor) : false;
 
   vm.appContext.config.globalProperties.$isDarkTheme = isDarkTheme;
@@ -170,6 +187,33 @@ watch(() => {
       ${palette.navigationBgColor ? `--nav-bg-color: ${palette.navigationBgColor};` : ''}
       ${palette.negativeColor ? `--negative-color: ${palette.negativeColor};` : '--negative-color: #254044;'}
       
+      /* Surfaces and Element Plus tokens derived from the palette, so every component follows the theme */
+      --surface: ${palette.surfaceColor || (isDarkTheme && palette.negativeColor ? palette.negativeColor : '#ffffff')};
+      --el-bg-color: var(--surface);
+      --el-bg-color-overlay: var(--surface);
+      --el-bg-color-page: var(--body-bg, #f5f5f9);
+      --el-fill-color-blank: var(--surface);
+      --el-fill-color-lighter: color-mix(in srgb, var(--text-color, #000) 3%, var(--surface));
+      --el-fill-color-light: color-mix(in srgb, var(--text-color, #000) 5%, var(--surface));
+      --el-fill-color: color-mix(in srgb, var(--text-color, #000) 8%, var(--surface));
+      --el-fill-color-dark: color-mix(in srgb, var(--text-color, #000) 12%, var(--surface));
+      --el-border-color-extra-light: color-mix(in srgb, var(--border-color, #eee) 45%, var(--surface));
+      --el-border-color-lighter: color-mix(in srgb, var(--border-color, #eee) 70%, var(--surface));
+      --el-border-color-light: var(--border-color, #eee);
+      --el-border-color: color-mix(in srgb, var(--border-color, #eee) 85%, var(--text-color, #000));
+      --el-border-color-dark: color-mix(in srgb, var(--border-color, #eee) 65%, var(--text-color, #000));
+      --el-text-color-secondary: color-mix(in srgb, var(--text-color, #000) 62%, var(--surface));
+      --el-text-color-placeholder: color-mix(in srgb, var(--text-color, #000) 42%, var(--surface));
+      --el-color-primary-light-3: color-mix(in srgb, var(--el-color-primary) 70%, var(--surface));
+      --el-color-primary-light-5: color-mix(in srgb, var(--el-color-primary) 50%, var(--surface));
+      --el-color-primary-light-7: color-mix(in srgb, var(--el-color-primary) 30%, var(--surface));
+      --el-color-primary-light-8: color-mix(in srgb, var(--el-color-primary) 20%, var(--surface));
+      --el-color-primary-light-9: color-mix(in srgb, var(--el-color-primary) 10%, var(--surface));
+      --el-color-primary-dark-2: color-mix(in srgb, var(--el-color-primary) 80%, #000);
+      --layout-header-bg: var(--surface);
+      --nav-muted-color: ${isDarkTheme ? 'color-mix(in srgb, var(--secondary-color) 58%, var(--nav-bg-color))' : 'var(--negative-color)'};
+      ${isDarkTheme ? '--el-color-white: var(--body-bg);' : ''}
+
       /* New color variables */
       ${palette.buttonTextColor ? `--button-text-color: ${palette.buttonTextColor};` : '--button-text-color: #ffffff;'}
       ${palette.buttonBgColor ? `--button-bg-color: ${palette.buttonBgColor};` : palette.mainColor ? `--button-bg-color: ${palette.mainColor};` : '--button-bg-color: #409eff;'}
@@ -180,11 +224,14 @@ watch(() => {
     ${isDarkTheme ? `
       /* Tab styles for dark themes */
       .el-tabs__nav-scroll {
-        background-color: var(--secondary-color);
+        background-color: var(--surface);
       }
       .el-tabs .el-tabs__header .el-tabs__item {
-        background-color: var(--secondary-color);
-        color: rgba(255, 255, 255, 0.8);
+        background-color: var(--surface);
+        color: var(--el-text-color-secondary);
+      }
+      .el-tabs .el-tabs__header .el-tabs__item.is-active {
+        color: var(--text-color);
       }
       .el-tabs__active-bar {
         background-color: ${palette.mainColor || '#8b5cf6'} !important;
@@ -260,10 +307,10 @@ watch(() => {
         border-color: rgba(255, 255, 255, 0.1) !important;
       }
       .el-dropdown-menu__item {
-        color: var(--negative-color);
+        color: var(--text-color);
       }
       .el-dropdown-menu__item:hover {
-        background-color: var(--secondary-color);
+        background-color: var(--el-fill-color-light);
       }
     ` : ''}
   `;

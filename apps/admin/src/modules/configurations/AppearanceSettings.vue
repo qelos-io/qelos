@@ -45,30 +45,16 @@
 import { resetConfiguration, useAppConfiguration } from '@/modules/configurations/store/app-configuration';
 import configurationsService from '@/services/apis/configurations-service';
 import { DesignPalette, PALETTES } from '@/modules/core/utils/colors-palettes';
+import { useLiveEditStore } from '@/modules/layouts/store/live-edit';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import DesignConfiguration from '@/modules/configurations/components/DesignConfiguration.vue';
 
 const { appConfig, loaded: configLoaded } = useAppConfiguration();
 
+const { applyTheme } = useLiveEditStore();
+
 const applyDesignPalette = useConfirmAction(async function applyDesignPalette(designPalette: DesignPalette) {
-  const { palette } = designPalette;
-  const updatedConfig = {
-    ...appConfig.value,
-    colorsPalette: palette,
-    borderRadius: palette.borderRadius || appConfig.value.borderRadius || 0,
-    buttonRadius: palette.buttonRadius || palette.borderRadius || appConfig.value.borderRadius || 4,
-    baseFontSize: palette.baseFontSize || appConfig.value.baseFontSize || 16,
-    fontFamily: palette.fontFamily || appConfig.value.fontFamily,
-    headingsFontFamily: palette.headingsFontFamily || palette.fontFamily || appConfig.value.fontFamily,
-    spacing: palette.spacing || appConfig.value.spacing || 'normal',
-    shadowStyle: palette.shadowStyle || appConfig.value.shadowStyle || 'light',
-    animationSpeed: palette.animationSpeed || appConfig.value.animationSpeed || 300,
-  };
-
-  await configurationsService.update('app-configuration', {
-    metadata: updatedConfig,
-  });
-
+  await applyTheme(designPalette.palette);
   await resetConfiguration();
 });
 
