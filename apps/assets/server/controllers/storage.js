@@ -51,7 +51,7 @@ async function createStorage(req, res) {
 function getStorageList(req, res) {
 
   return Storage.find({ tenant: req.headers.tenant })
-    .select('kind name metadata')
+    .select('kind name metadata isDefault')
     .lean()
     .then(list => {
       if (!list) {

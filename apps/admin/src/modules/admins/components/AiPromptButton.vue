@@ -11,11 +11,12 @@
       :loading="loading"
       :disabled="disabled"
       class="ai-generate-button"
+      :aria-label="$t('Generate with AI')"
     >
-      <el-icon class="mr-1">
+      <el-icon>
         <font-awesome-icon :icon="['fas', 'wand-magic-sparkles']" />
       </el-icon>
-      <el-icon class="ml-1 el-icon--right">
+      <el-icon class="el-icon--right">
         <ArrowDown />
       </el-icon>
     </el-button>
@@ -23,7 +24,7 @@
     <template #dropdown>
       <el-dropdown-menu class="ai-source-menu">
         <div class="menu-header">
-          <span>Generate with AI</span>
+          <span>{{ $t('Generate with AI') }}</span>
         </div>
         <el-dropdown-item
           v-for="source in aiSources"
@@ -51,7 +52,7 @@
         >
           <div class="no-sources-content">
             <el-icon><Warning /></el-icon>
-            <span>No AI sources configured</span>
+            <span>{{ $t('No AI sources configured') }}</span>
           </div>
         </el-dropdown-item>
       </el-dropdown-menu>
@@ -61,6 +62,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { ArrowDown, Warning } from '@element-plus/icons-vue'
 import { useAskAdminAi } from '../store/ask-admin-ai'
@@ -85,6 +87,7 @@ const emit = defineEmits<{
 }>()
 
 const loading = ref(false)
+const { t } = useI18n()
 
 const askAdminAiStore = useAskAdminAi()
 const aiSources = computed(() => askAdminAiStore.aiSources)
@@ -96,7 +99,7 @@ function getKindLogo(kind: IntegrationSourceKind) {
 
 async function handleSourceSelect(sourceId: string) {
   if (!sourceId) {
-    ElMessage.warning('Please select an AI source')
+    ElMessage.warning(t('Please select an AI source'))
     return
   }
 
@@ -123,17 +126,17 @@ async function handleSourceSelect(sourceId: string) {
     }
 
     if (!finalPrompt) {
-      ElMessage.warning('No prompt provided')
+      ElMessage.warning(t('No prompt provided'))
       return
     }
 
     const response = await askAdminAiStore.askAiJson(sourceId, finalPrompt, finalSchema)
     emit('result', response)
-    ElMessage.success('AI generation completed')
+    ElMessage.success(t('AI generation completed'))
     
   } catch (error) {
     console.error('AI prompt error:', error)
-    ElMessage.error('Failed to get AI response')
+    ElMessage.error(t('Failed to get AI response'))
     emit('error', error)
   } finally {
     loading.value = false
@@ -142,10 +145,6 @@ async function handleSourceSelect(sourceId: string) {
 </script>
 
 <style scoped>
-.ai-generate-button {
-  transition: all 0.3s ease;
-}
-
 .ai-source-menu {
   min-width: 280px;
   padding: 8px 0;
@@ -156,8 +155,7 @@ async function handleSourceSelect(sourceId: string) {
   font-size: 12px;
   font-weight: 600;
   color: var(--el-text-color-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.2px;
   border-bottom: 1px solid var(--el-border-color-lighter);
   margin-bottom: 4px;
 }
@@ -216,13 +214,5 @@ async function handleSourceSelect(sourceId: string) {
   gap: 8px;
   color: var(--el-text-color-secondary);
   font-size: 14px;
-}
-
-.mr-1 {
-  margin-right: 0.25rem;
-}
-
-.ml-1 {
-  margin-left: 0.25rem;
 }
 </style>

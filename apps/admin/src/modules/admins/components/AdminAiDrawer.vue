@@ -12,7 +12,7 @@
         key="chat"
         :suggestions="suggestions" />
         <div v-else class="no-source-container" key="empty">
-          <el-empty description="No OpenAI integration source found">
+          <el-empty :description="$t('No OpenAI integration source found')">
             <template #default>
               <el-button type="primary" @click="navigateToOpenAIIntegration">{{ $t("Add OpenAI Integration") }}</el-button>
             </template>
@@ -139,7 +139,7 @@ async function handleFunctionExecuted(func: {name: string, arguments: any}) {
 /* Slide fade transition for the panel */
 .slide-fade-enter-active,
 .slide-fade-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide-fade-enter-from {
@@ -150,6 +150,20 @@ async function handleFunctionExecuted(func: {name: string, arguments: any}) {
 .slide-fade-leave-to {
   transform: translateX(30px);
   opacity: 0;
+}
+
+[dir='rtl'] .slide-fade-enter-from,
+[dir='rtl'] .slide-fade-leave-to {
+  transform: translateX(-30px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-fade-enter-active,
+  .slide-fade-leave-active,
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: none;
+  }
 }
 
 /* Fade transition for content switching */

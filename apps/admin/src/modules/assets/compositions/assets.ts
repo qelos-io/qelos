@@ -1,9 +1,10 @@
 import { api, getCallData } from '@/services/apis/api'
 import { computed, Ref, ref } from 'vue'
 
-export function getAssetInStorage(storageId: string, identifier?: string) {
+export function getAssetInStorage(storageId: string, identifier?: string, config: { timeout?: number } = {}) {
   return api.get('/api/assets/' + storageId, {
-    params: { identifier }
+    params: { identifier },
+    ...config
   }).then(getCallData)
 }
 

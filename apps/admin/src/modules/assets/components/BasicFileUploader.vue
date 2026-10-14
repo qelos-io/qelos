@@ -1,28 +1,30 @@
 <template>
   <div class="basic-file-uploader">
     <el-upload class="uploader" drag :headers="headers" :action="uploadUrl" :with-credentials="withCredentials"
-      :on-success="onSuccess" :before-upload="beforeUpload">
+      :on-success="onSuccess" :on-error="onError" :before-upload="beforeUpload">
       <div v-if="header" class="uploader-header-container">
         <h4>{{ header }}</h4>
         <p v-if="subheader">{{ subheader }}</p>
       </div>
 
       <div class="uploader-icon-container">
-        <img v-if="iconUrl" :src="iconUrl" class="custom-icon" alt="Upload icon" />
+        <img v-if="iconUrl" :src="iconUrl" class="custom-icon" alt="" />
         <el-icon v-else class="default-icon">
           <font-awesome-icon :icon="['fas', 'cloud-arrow-up']" />
         </el-icon>
       </div>
 
       <div class="el-upload__text">
-        <p>{{ mainText }}</p>
-        <em>{{ secondaryText }}</em>
+        <p>{{ mainText ?? $t('Drop file here or ') }}</p>
+        <em>{{ secondaryText ?? $t('click to upload') }}</em>
       </div>
     </el-upload>
   </div>
 </template>
 <script lang="ts">
 import { ref, nextTick } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { useAssetsUpload } from '../compositions/assets'
 
 export default {
@@ -34,17 +36,12 @@ export default {
     header: String,
     subheader: String,
     iconUrl: String,
-    mainText: {
-      type: String,
-      default: 'Drop file here or '
-    },
-    secondaryText: {
-      type: String,
-      default: 'click to upload'
-    }
+    mainText: String,
+    secondaryText: String
   },
   emits: ['upload'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const location = ref('')
     const { headers, uploadUrl, setUploadUrl, withCredentials } = useAssetsUpload(
       props.storage,
@@ -61,7 +58,11 @@ export default {
       },
       location,
       onSuccess(res) {
+        ElMessage.success(t('File uploaded'))
         emit('upload', res);
+      },
+      onError() {
+        ElMessage.error(t('Upload failed'))
       }
     }
   }
@@ -78,7 +79,7 @@ export default {
 }
 
 .uploader-header-container {
-  text-align: left;
+  text-align: start;
 }
 
 .uploader-icon-container {

@@ -1,10 +1,12 @@
 <template>
   <div v-if="loaded" class="assets-list">
-    <div v-for="asset in assets" :key="asset.identifier" class="asset-box">
-      <img v-if="asset.type === 'image'" :src="asset.publicUrl" loading="lazy" />
-      <font-awesome-icon v-else icon="fa-solid fa-file"/>
+    <div v-for="asset in assets" :key="asset.identifier" class="asset-box" :title="asset.identifier">
+      <img v-if="asset.type === 'image'" :src="asset.publicUrl" :alt="asset.identifier" loading="lazy" />
+      <font-awesome-icon v-else icon="fa-solid fa-file" :aria-label="asset.identifier"/>
     </div>
+    <p v-if="!assets.length" class="empty-assets">{{ $t('No files in this storage yet') }}</p>
   </div>
+  <el-skeleton v-else :rows="2" animated />
 </template>
 <script lang="ts" setup>
 import { ref, watch } from 'vue'
@@ -50,15 +52,22 @@ watch(() => props.storage + props.identifier, async () => {
   justify-content: center;
   align-items: center;
   transition: background-color 0.1s ease-in-out;
-  cursor: move;
 }
 
 .asset-box:hover {
-  background-color: var(--negative-color);
+  background-color: var(--el-fill-color-light);
+}
+
+.empty-assets {
+  width: 100%;
+  text-align: center;
+  color: var(--el-text-color-secondary);
 }
 
 img {
   max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 i {

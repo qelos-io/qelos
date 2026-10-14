@@ -131,9 +131,9 @@ router.beforeEach(async (to, from, next) => {
 router.afterEach((to) => {
   const { appConfig } = useAppConfiguration()
   if (to.meta?.name) {
-    document.querySelector('title').innerHTML = `${to.meta.name} | ${appConfig.value.name}`;
+    document.title = `${to.meta.name} | ${appConfig.value.name}`;
   } else {
-    document.querySelector('title').innerHTML = appConfig.value.name;
+    document.title = appConfig.value.name;
   }
 })
 

@@ -2,6 +2,7 @@ import PlatformEvent from '../models/event';
 import {emitPlatformEvent} from '../services/hook-events';
 import logger from '../services/logger';
 import { cacheManager } from '../services/cache-manager';
+import { buildBucketBoundaries, clampBuckets, mapBuckets, ERROR_EVENT_PATTERN } from '../services/events-overview';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
@@ -270,4 +271,81 @@ export async function getEventsSum(req, res) {
   }
   
   res.json(response).end();
+}
+
+export async function getEventsOverview(req, res) {
+  try {
+    await respondWithEventsOverview(req, res);
+  } catch (error) {
+    logger.error('failed to build events overview', error);
+    res.status(500).json({ message: 'failed to build events overview' }).end();
+  }
+}
+
+async function respondWithEventsOverview(req, res) {
+  const { kind = '*', eventName = '*', source = '*', user, workspace, search, period = 'last-week', from, to, buckets } = req.query;
+  const tenant = req.headers.tenant;
+  const bucketCount = clampBuckets(buckets);
+
+  // kind is applied only to the buckets/totals so the per-kind counts always cover every kind
+  const base = buildEventsQuery(tenant, { kind: '*', eventName, source, user, workspace, search, period, from, to });
+  const scope = kind !== '*' ? { kind } : {};
+
+  const end = to ? new Date(to) : new Date();
+  let start: Date | undefined = base.created?.$gte;
+  if (!start) {
+    const oldest = await PlatformEvent.findOne(base).sort({ created: 1 }).select('created').lean();
+    start = (oldest as any)?.created;
+  }
+
+  if (!start) {
+    return res.json({ buckets: [], kinds: [], total: 0, errors: 0 }).end();
+  }
+
+  const boundaries = buildBucketBoundaries(new Date(start), end, bucketCount);
+  const isError = {
+    $regexMatch: {
+      input: { $concat: [{ $ifNull: ['$kind', ''] }, ' ', { $ifNull: ['$eventName', ''] }] },
+      regex: ERROR_EVENT_PATTERN,
+      options: 'i',
+    },
+  };
+
+  const [result] = await PlatformEvent.aggregate([
+    { $match: base },
+    {
+      $facet: {
+        kinds: [
+          { $group: { _id: '$kind', count: { $sum: 1 }, errors: { $sum: { $cond: [isError, 1, 0] } } } },
+          { $sort: { count: -1 } },
+          { $limit: 20 },
+        ],
+        buckets: [
+          { $match: scope },
+          {
+            $bucket: {
+              groupBy: '$created',
+              boundaries,
+              default: 'other',
+              output: { count: { $sum: 1 }, errors: { $sum: { $cond: [isError, 1, 0] } } },
+            },
+          },
+        ],
+        totals: [
+          { $match: scope },
+          { $group: { _id: null, total: { $sum: 1 }, errors: { $sum: { $cond: [isError, 1, 0] } } } },
+        ],
+      },
+    },
+  ]);
+
+  const totals = result?.totals?.[0] || { total: 0, errors: 0 };
+  res
+    .json({
+      buckets: mapBuckets(boundaries, (result?.buckets || []).filter((b) => b._id !== 'other')),
+      kinds: (result?.kinds || []).filter((k) => k._id).map((k) => ({ kind: k._id, count: k.count, errors: k.errors })),
+      total: totals.total,
+      errors: totals.errors,
+    })
+    .end();
 }

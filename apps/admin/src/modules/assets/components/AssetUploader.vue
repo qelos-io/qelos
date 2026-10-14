@@ -2,9 +2,21 @@
   <div>
     <AssetsStorageSelector v-if="isPrivilegedUser" v-model="selectedStorage"/>
     <div v-if="value && !showUploader" class="assets-view flex-row">
-      <el-card class="asset-view" shadow="hover" @click="showUploader = true">
+      <el-card
+        class="asset-view"
+        shadow="hover"
+        role="button"
+        tabindex="0"
+        :aria-label="$t('Replace file')"
+        @click="showUploader = true"
+        @keydown.enter.self="showUploader = true"
+        @keydown.space.self.prevent="showUploader = true"
+      >
         <img :src="value" v-if="isImage" alt=""/>
-        <h3 v-else><font-awesome-icon :icon="['far', 'file-lines']" /></h3>
+        <template v-else>
+          <h3><font-awesome-icon :icon="['far', 'file-lines']" /></h3>
+          <p class="file-name" dir="ltr">{{ fileName }}</p>
+        </template>
         <template #footer>
           <RemoveButton @click.stop="$emit('change', null)" />
         </template>
@@ -49,12 +61,14 @@ export default {
 
     const isImage = computed(() => props.uploadConfig?.isImage || ['jpg', 'jpeg', 'png', 'gif'].includes(props.value?.split?.('.').pop().toLowerCase()))
     const showUploader = ref(!props.value);
+    const fileName = computed(() => decodeURIComponent(String(props.value || '').split('?')[0].split('/').pop() || ''))
 
     return {
       selectedStorage,
       isPrivilegedUser,
       showUploader,
       isImage,
+      fileName,
       uploadComplete({ publicUrl }) {
         emit('change', publicUrl)
       }
@@ -65,6 +79,23 @@ export default {
 <style scoped>
 .assets-view {
   padding-block: 10px;
+}
+
+.asset-view {
+  cursor: pointer;
+}
+
+.asset-view:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+}
+
+.file-name {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--el-text-color-secondary);
 }
 
 .asset-view img {

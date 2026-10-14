@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive } from 'vue'
 import storagesService from '../../../services/apis/storages-service'
 import { fetchStorages, removeStorage, storagesStore } from '../store/storages'
 import { useSubmitting } from '../../core/compositions/submitting'
@@ -20,29 +20,6 @@ export function useStorageList() {
     loaded: computed(() => storagesStore.loaded),
     remove,
     promise
-  }
-}
-
-export function useStorageForm(props) {
-  const editedStorage = reactive({
-    ...(props.value || {
-      name: 'New Storage',
-      kind: 'ftp',
-      isDefault: false
-    }),
-    authentication: null,
-    metadata: {
-      publicUrl: '',
-      basePath: '/',
-      bucketName: '',
-      ...(props.value ? props.value.metadata : {})
-    }
-  })
-  const showAuth = ref(!props.value)
-
-  return {
-    editedStorage,
-    showAuth
   }
 }
 

@@ -1,165 +1,215 @@
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useDispatcher } from '../../core/compositions/dispatcher'
-import eventsService, { IEvent, IEventsListResponse, IEventsFilterOptions } from '@/services/apis/events-service'
+import eventsService, {
+  IEvent,
+  IEventsFilterOptions,
+  IEventsOverview,
+  IEventsQueryParams,
+} from '@/services/apis/events-service'
 
-interface Filters {
-  kind?: string
-  eventName?: string
-  source?: string
-  user?: string
-  workspace?: string
-  search?: string
-  period?: string
-  from?: string
-  to?: string
-  page?: number
-  limit?: number
-}
+const PAGE_SIZE = 50
+const TIMELINE_BUCKETS = 24
+const FILTER_KEYS = ['kind', 'eventName', 'source', 'user', 'workspace', 'search', 'period', 'from', 'to'] as const
 
-const DEFAULT_PAGE_SIZE = 50
+export type EventsFilterKey = (typeof FILTER_KEYS)[number]
+export type EventsFilters = Partial<Record<EventsFilterKey, string>>
 
-function queryParams(route: ReturnType<typeof useRoute>) {
-  return {
-    kind: (route.query.kind as string) || undefined,
-    eventName: (route.query.eventName as string) || undefined,
-    source: (route.query.source as string) || undefined,
-    user: (route.query.user as string) || undefined,
-    workspace: (route.query.workspace as string) || undefined,
-    search: (route.query.search as string) || undefined,
-    period: (route.query.period as string) || 'last-week',
-    from: (route.query.from as string) || undefined,
-    to: (route.query.to as string) || undefined,
-    page: route.query.page ? Number(route.query.page) : 0,
-    limit: route.query.limit ? Number(route.query.limit) : DEFAULT_PAGE_SIZE,
-  }
-}
+const EMPTY_OVERVIEW: IEventsOverview = { buckets: [], kinds: [], total: 0, errors: 0 }
 
-export function useEventsList() {
+export function useEventsFeed() {
   const route = useRoute()
   const router = useRouter()
 
-  const kind = computed(() => (route.query.kind as string) || undefined)
-  const eventName = computed(() => (route.query.eventName as string) || undefined)
-  const source = computed(() => (route.query.source as string) || undefined)
-  const user = computed(() => (route.query.user as string) || undefined)
-  const workspace = computed(() => (route.query.workspace as string) || undefined)
-  const search = computed(() => (route.query.search as string) || undefined)
-  const period = computed(() => (route.query.period as string) || 'last-week')
-  const from = computed(() => (route.query.from as string) || undefined)
-  const to = computed(() => (route.query.to as string) || undefined)
-  const page = computed(() => (route.query.page ? Number(route.query.page) : 0))
-  const limitParam = computed(() =>
-    route.query.limit ? Number(route.query.limit) : DEFAULT_PAGE_SIZE
+  const filters = computed(() => {
+    const result: EventsFilters = {}
+    for (const key of FILTER_KEYS) {
+      const value = route.query[key]
+      if (typeof value === 'string' && value) {
+        result[key] = value
+      }
+    }
+    if (result.from || result.to) {
+      delete result.period
+    } else {
+      result.period = result.period || 'last-week'
+    }
+    return result
+  })
+
+  // filters that narrow the feed (everything except the time range)
+  const activeFilterKeys = computed(() =>
+    (['kind', 'eventName', 'source', 'user', 'workspace', 'search'] as const).filter((key) => filters.value[key]),
   )
 
-  function updateFilters(filters: Filters) {
-    router.push({
-      query: {
-        ...route.query,
-        kind: filters.kind || undefined,
-        eventName: filters.eventName || undefined,
-        source: filters.source || undefined,
-        user: filters.user || undefined,
-        workspace: filters.workspace || undefined,
-        search: filters.search || undefined,
-        period: filters.period || undefined,
-        from: filters.from || undefined,
-        to: filters.to || undefined,
-        page:
-          filters.page !== undefined && !Number.isNaN(filters.page)
-            ? filters.page.toString()
-            : undefined,
-        limit:
-          filters.limit !== undefined && !Number.isNaN(filters.limit)
-            ? filters.limit.toString()
-            : undefined,
-      },
-    })
-  }
-
+  const events = ref<IEvent[]>([])
+  const total = ref(0)
+  const totalCapped = ref(false)
+  const page = ref(0)
+  const totalPages = ref(0)
+  const loading = ref(false)
+  const loadingMore = ref(false)
+  const error = ref(false)
+  const overview = ref<IEventsOverview>(EMPTY_OVERVIEW)
+  const overviewLoading = ref(false)
   const filterOptions = ref<IEventsFilterOptions>({ kinds: [], eventNames: [], sources: [] })
-  const filterOptionsLoading = ref(false)
 
-  const { result: listResult, retry, loading } = useDispatcher<IEventsListResponse>(
-    () => {
-      const params = queryParams(route)
-      return eventsService.getAll({
-        kind: kind.value || '*',
-        eventName: eventName.value || '*',
-        source: source.value || '*',
-        user: user.value,
-        workspace: workspace.value,
-        search: search.value,
-        period: period.value,
-        from: from.value,
-        to: to.value,
-        page: page.value,
-        limit: limitParam.value,
-      })
-    },
-    [],
-  )
+  const hasMore = computed(() => page.value + 1 < totalPages.value)
 
-  const events = computed(() => listResult.value?.events ?? [])
-  const total = computed(() => listResult.value?.total ?? 0)
-  const totalCapped = computed(() => listResult.value?.totalCapped ?? false)
-  const totalPages = computed(() => listResult.value?.totalPages ?? 0)
-  const limit = computed(() => listResult.value?.limit ?? DEFAULT_PAGE_SIZE)
-
-  async function loadFilterOptions() {
-    filterOptionsLoading.value = true
-    try {
-      const params = queryParams(route)
-      const opts = await eventsService.getFilterOptions({
-        kind: params.kind || '*',
-        eventName: params.eventName || '*',
-        source: params.source || '*',
-        user: params.user,
-        workspace: params.workspace,
-        search: params.search,
-        period: params.period,
-        from: params.from,
-        to: params.to,
-      })
-      filterOptions.value = opts
-    } finally {
-      filterOptionsLoading.value = false
+  function queryFor(extra: Partial<IEventsQueryParams> = {}): IEventsQueryParams {
+    const f = filters.value
+    return {
+      kind: f.kind || '*',
+      eventName: f.eventName || '*',
+      source: f.source || '*',
+      user: f.user,
+      workspace: f.workspace,
+      search: f.search,
+      period: f.period,
+      from: f.from,
+      to: f.to,
+      ...extra,
     }
   }
 
-  const uniqueKinds = computed(() => filterOptions.value.kinds)
-  const uniqueEventNames = computed(() => filterOptions.value.eventNames)
-  const uniqueSources = computed(() => filterOptions.value.sources)
+  let requestId = 0
 
-  watch([kind, eventName, source, user, workspace, search, period, from, to, page, limitParam], retry)
-  watch([period, from, to], () => loadFilterOptions(), { immediate: true })
+  async function reload() {
+    const current = ++requestId
+    loading.value = true
+    error.value = false
+    overviewLoading.value = true
+
+    const listPromise = eventsService.getAll({ ...queryFor(), page: 0, limit: PAGE_SIZE })
+    const overviewPromise = eventsService
+      .getOverview({ ...queryFor(), buckets: TIMELINE_BUCKETS })
+      .catch(() => EMPTY_OVERVIEW)
+
+    try {
+      const list = await listPromise
+      if (current !== requestId) return
+      events.value = list.events
+      total.value = list.total
+      totalCapped.value = !!list.totalCapped
+      totalPages.value = list.totalPages
+      page.value = 0
+    } catch (e) {
+      if (current !== requestId) return
+      events.value = []
+      total.value = 0
+      error.value = true
+    } finally {
+      if (current === requestId) loading.value = false
+    }
+
+    const overviewResult = await overviewPromise
+    if (current === requestId) {
+      overview.value = overviewResult
+      overviewLoading.value = false
+    }
+  }
+
+  async function loadMore() {
+    if (loadingMore.value || loading.value || !hasMore.value) return
+    const current = requestId
+    loadingMore.value = true
+    try {
+      const next = await eventsService.getAll({ ...queryFor(), page: page.value + 1, limit: PAGE_SIZE })
+      if (current !== requestId) return
+      const known = new Set(events.value.map((event) => event._id))
+      events.value = events.value.concat(next.events.filter((event) => !known.has(event._id)))
+      page.value = next.page
+      totalPages.value = next.totalPages
+    } finally {
+      loadingMore.value = false
+    }
+  }
+
+  async function loadFilterOptions() {
+    try {
+      filterOptions.value = await eventsService.getFilterOptions(queryFor())
+    } catch {
+      // options are a convenience; the feed still works without them
+    }
+  }
+
+  function setFilters(patch: Record<string, string | undefined>) {
+    const query = { ...route.query }
+    for (const [key, value] of Object.entries(patch)) {
+      if (value) {
+        query[key] = value
+      } else {
+        delete query[key]
+      }
+    }
+    router.push({ query })
+  }
+
+  function clearFilters() {
+    const query = { ...route.query }
+    for (const key of FILTER_KEYS) {
+      delete query[key]
+    }
+    router.push({ query })
+  }
+
+  const selectedId = computed(() => (route.query.eventId as string) || '')
+  const fetchedEvent = ref<IEvent | null>(null)
+  const selectedEvent = computed(
+    () => events.value.find((event) => event._id === selectedId.value) ?? (fetchedEvent.value?._id === selectedId.value ? fetchedEvent.value : null),
+  )
+
+  function selectEvent(id?: string) {
+    const query = { ...route.query }
+    if (id) {
+      query.eventId = id
+    } else {
+      delete query.eventId
+    }
+    // keep the history clean while browsing the feed
+    router.replace({ query })
+  }
+
+  watch(
+    [selectedId, events],
+    async ([id]) => {
+      if (!id || events.value.some((event) => event._id === id) || fetchedEvent.value?._id === id) return
+      try {
+        fetchedEvent.value = await eventsService.getOne(id)
+      } catch {
+        fetchedEvent.value = null
+      }
+    },
+    { immediate: true },
+  )
+
+  watch(
+    () => FILTER_KEYS.map((key) => route.query[key]).join('|'),
+    () => {
+      reload()
+      loadFilterOptions()
+    },
+    { immediate: true },
+  )
 
   return {
+    filters,
+    activeFilterKeys,
     events,
-    loading,
     total,
     totalCapped,
-    totalPages,
-    limit,
-    updateFilters,
-    uniqueKinds,
-    uniqueEventNames,
-    uniqueSources,
-    filterOptionsLoading,
-    loadFilterOptions,
-    filters: reactive({
-      kind,
-      eventName,
-      source,
-      user,
-      workspace,
-      search,
-      period,
-      from,
-      to,
-      page,
-      limit,
-    }),
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    overview,
+    overviewLoading,
+    filterOptions,
+    selectedId,
+    selectedEvent,
+    selectEvent,
+    setFilters,
+    clearFilters,
+    loadMore,
+    reload,
   }
 }

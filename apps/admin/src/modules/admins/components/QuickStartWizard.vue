@@ -13,6 +13,7 @@ import { ElMessage, ElLoading } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import { PALETTES } from '@/modules/core/utils/colors-palettes';
 import { IntegrationSourceKind } from '@qelos/global-types';
+import { ArrowLeft, ArrowRight, Check, OfficeBuilding, User, SuccessFilled, InfoFilled, House, DocumentAdd } from '@element-plus/icons-vue';
 
 const { t } = useI18n();
 const formVisible = ref(false);
@@ -72,12 +73,24 @@ const hasOpenAIIntegration = computed(() => {
 
 // Total steps calculation based on existing integrations
 const totalSteps = computed(() => {
-  let steps = 7; // Base steps: name, logo, theme, app type, AI purpose, blueprints confirmation, final done screen
-  if (!hasOpenAIIntegration.value) {
-    steps++; // Add OpenAI token step if no OpenAI integration exists
-  }
-  return steps;
+  // name, logo, theme, app type, AI purpose, blueprints confirmation, done (+ OpenAI token when missing)
+  return hasOpenAIIntegration.value ? 7 : 8;
 });
+
+// the position shown in the progress bar (screens are numbered 1-8 internally)
+const displayStep = computed(() => {
+  const step = getStepForCurrent(currentStep.value);
+  return hasOpenAIIntegration.value && step >= 6 ? step - 1 : step;
+});
+
+function goBack() {
+  // when an OpenAI integration exists the token screen (5) is skipped
+  if (currentStep.value === 6 && hasOpenAIIntegration.value) {
+    currentStep.value = 4;
+    return;
+  }
+  currentStep.value--;
+}
 
 // Step mapping based on existing integrations
 const getStepForCurrent = (step: number) => {
@@ -175,7 +188,7 @@ async function saveAppType() {
       
       await configurationsService.update('workspace-configuration', {
         metadata: {
-          ...wsConfig.metadata.value,
+          ...wsConfig.metadata,
           isActive: true,
           labels
         }
@@ -368,9 +381,17 @@ function closeForm() {
              @close="closeForm">
     
     <!-- Progress Steps -->
-    <div class="wizard-progress">
+    <div
+      class="wizard-progress"
+      role="progressbar"
+      :aria-label="$t('Quick Start')"
+      aria-valuemin="1"
+      :aria-valuemax="totalSteps"
+      :aria-valuenow="displayStep"
+      :aria-valuetext="`${displayStep} / ${totalSteps}`"
+    >
       <div class="progress-bar">
-        <div class="progress-indicator" :style="{ width: `${(getStepForCurrent(currentStep) - 1) / (totalSteps - 1) * 100}%` }"></div>
+        <div class="progress-indicator" :style="{ width: `${(displayStep - 1) / (totalSteps - 1) * 100}%` }"></div>
       </div>
       <div class="steps-container">
         <div 
@@ -378,13 +399,14 @@ function closeForm() {
           :key="step"
           class="step-circle"
           :class="{ 
-            'active': getStepForCurrent(currentStep) === step, 
-            'completed': getStepForCurrent(currentStep) > step,
-            'pending': getStepForCurrent(currentStep) < step 
+            'active': displayStep === step, 
+            'completed': displayStep > step,
+            'pending': displayStep < step 
           }"
+          :aria-current="displayStep === step ? 'step' : undefined"
         >
-          <span v-if="getStepForCurrent(currentStep) <= step">{{ step }}</span>
-          <i v-else class="el-icon-check"></i>
+          <span v-if="displayStep <= step">{{ step }}</span>
+          <el-icon v-else><Check /></el-icon>
         </div>
       </div>
     </div>
@@ -396,10 +418,10 @@ function closeForm() {
         <p class="step-description">{{ $t('This will be displayed as the title of your application.') }}</p>
       </div>
       <el-form @submit.prevent="saveAppName">
-        <FormInput v-model="appName" type="text" :placeholder="$t('Enter your app name')" />
+        <FormInput v-model="appName" type="text" :placeholder="$t('Enter your app name')" autofocus />
         <div class="form-actions">
           <el-button type="primary" native-type="submit" :loading="loading" size="large">
-            {{ $t('Next') }} <i class="el-icon-arrow-right"></i>
+            {{ $t('Next') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
           </el-button>
         </div>
       </el-form>
@@ -417,11 +439,11 @@ function closeForm() {
           <img :src="appLogo" :alt="appName" />
         </div>
         <div class="form-actions">
-          <el-button @click="currentStep--" size="large">
-            <i class="el-icon-arrow-left"></i> {{ $t('Back') }}
+          <el-button @click="goBack" size="large">
+            <el-icon class="dir-icon"><ArrowLeft /></el-icon> {{ $t('Back') }}
           </el-button>
           <el-button type="primary" native-type="submit" :loading="loading" size="large">
-            {{ $t('Next') }} <i class="el-icon-arrow-right"></i>
+            {{ $t('Next') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
           </el-button>
         </div>
       </el-form>
@@ -433,13 +455,18 @@ function closeForm() {
         <p class="step-description">{{ $t('Choose a theme that matches your brand identity.') }}</p>
       </div>
       <el-form>
-        <div class="theme-options">
+        <div class="theme-options" role="radiogroup" :aria-label="$t('Select an initial theme')">
           <div 
             v-for="theme in themes" 
             :key="theme.value" 
             class="theme-option"
             :class="{ 'selected': selectedTheme === theme.value }"
+            role="radio"
+            tabindex="0"
+            :aria-checked="selectedTheme === theme.value"
             @click="selectedTheme = theme.value"
+            @keydown.enter.prevent="selectedTheme = theme.value"
+            @keydown.space.prevent="selectedTheme = theme.value"
           >
             <div class="theme-color-preview">
               <div class="main-color" :style="{ backgroundColor: theme.color }"></div>
@@ -454,11 +481,11 @@ function closeForm() {
           </div>
         </div>
         <div class="form-actions">
-          <el-button @click="currentStep--" size="large">
-            <i class="el-icon-arrow-left"></i> {{ $t('Back') }}
+          <el-button @click="goBack" size="large">
+            <el-icon class="dir-icon"><ArrowLeft /></el-icon> {{ $t('Back') }}
           </el-button>
           <el-button type="primary" @click="saveAppTheme" :loading="loading" size="large">
-            {{ $t('Next') }} <i class="el-icon-arrow-right"></i>
+            {{ $t('Next') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
           </el-button>
         </div>
       </el-form>
@@ -471,14 +498,19 @@ function closeForm() {
         <p class="step-description">{{ $t('This will configure your workspace settings appropriately.') }}</p>
       </div>
       <el-form @submit.prevent="saveAppType">
-        <div class="app-type-cards">
+        <div class="app-type-cards" role="radiogroup" :aria-label="$t('Is your app made for B2B or B2C?')">
           <div 
             class="app-type-card" 
             :class="{ 'selected': appType === 'b2b' }" 
+            role="radio"
+            tabindex="0"
+            :aria-checked="appType === 'b2b'"
             @click="appType = 'b2b'"
+            @keydown.enter.prevent="appType = 'b2b'"
+            @keydown.space.prevent="appType = 'b2b'"
           >
             <div class="app-type-icon">
-              <i class="el-icon-office-building"></i>
+              <el-icon><OfficeBuilding /></el-icon>
             </div>
             <div class="app-type-title">{{ $t('B2B') }}</div>
             <div class="app-type-subtitle">{{ $t('Business to Business') }}</div>
@@ -486,10 +518,15 @@ function closeForm() {
           <div 
             class="app-type-card" 
             :class="{ 'selected': appType === 'b2c' }" 
+            role="radio"
+            tabindex="0"
+            :aria-checked="appType === 'b2c'"
             @click="appType = 'b2c'"
+            @keydown.enter.prevent="appType = 'b2c'"
+            @keydown.space.prevent="appType = 'b2c'"
           >
             <div class="app-type-icon">
-              <i class="el-icon-user"></i>
+              <el-icon><User /></el-icon>
             </div>
             <div class="app-type-title">{{ $t('B2C') }}</div>
             <div class="app-type-subtitle">{{ $t('Business to Consumer') }}</div>
@@ -506,11 +543,11 @@ function closeForm() {
         </div>
         
         <div class="form-actions">
-          <el-button @click="currentStep--" size="large">
-            <i class="el-icon-arrow-left"></i> {{ $t('Back') }}
+          <el-button @click="goBack" size="large">
+            <el-icon class="dir-icon"><ArrowLeft /></el-icon> {{ $t('Back') }}
           </el-button>
           <el-button type="primary" native-type="submit" :loading="loading" size="large">
-            {{ $t('Next') }} <i class="el-icon-arrow-right"></i>
+            {{ $t('Next') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
           </el-button>
         </div>
       </el-form>
@@ -528,17 +565,19 @@ function closeForm() {
           type="password" 
           show-password 
           :placeholder="$t('Enter your OpenAI API key')" 
+          :aria-label="$t('Enter your OpenAI API key')"
+          autocomplete="off"
           size="large"
         />
-        <div class="help-text" style="margin: 16px 0">
+        <div class="help-text step-help">
           {{ $t('Your API key will be stored securely and used for AI integrations.') }}
         </div>
         <div class="form-actions">
-          <el-button @click="currentStep--" size="large">
-            <i class="el-icon-arrow-left"></i> {{ $t('Back') }}
+          <el-button @click="goBack" size="large">
+            <el-icon class="dir-icon"><ArrowLeft /></el-icon> {{ $t('Back') }}
           </el-button>
           <el-button type="primary" native-type="submit" :loading="loading" size="large">
-            {{ $t('Next') }} <i class="el-icon-arrow-right"></i>
+            {{ $t('Next') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
           </el-button>
         </div>
       </el-form>
@@ -556,17 +595,18 @@ function closeForm() {
           type="textarea" 
           :rows="4"
           :placeholder="$t('Describe what you want to achieve with AI in your app...')" 
+          :aria-label="$t('What should your app do with AI?')"
           size="large"
         />
-        <div class="help-text" style="margin: 16px 0">
+        <div class="help-text step-help">
           {{ $t('This will help set up blueprints using the chat completion API.') }}
         </div>
         <div class="form-actions">
-          <el-button @click="currentStep--" size="large">
-            <i class="el-icon-arrow-left"></i> {{ $t('Back') }}
+          <el-button @click="goBack" size="large">
+            <el-icon class="dir-icon"><ArrowLeft /></el-icon> {{ $t('Back') }}
           </el-button>
           <el-button type="primary" native-type="submit" :loading="loading" size="large">
-            {{ $t('Next') }} <i class="el-icon-arrow-right"></i>
+            {{ $t('Next') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
           </el-button>
         </div>
       </el-form>
@@ -580,11 +620,11 @@ function closeForm() {
       <el-form>
         <div v-if="generatedBlueprints.length > 0" class="blueprints-list">
           <div class="blueprints-summary">
-            <i class="el-icon-success"></i>
+            <el-icon><SuccessFilled /></el-icon>
             <span>{{ $t('Successfully created') }} <strong>{{ successfullyCreated.length }}</strong> {{ $t('blueprints') }}</span>
           </div>
           <div class="blueprints-compact">
-            <div v-for="(blueprint, index) in successfullyCreated" :key="blueprint.id" class="blueprint-item">
+            <div v-for="(blueprint, index) in successfullyCreated" :key="blueprint.id || blueprint._id || index" class="blueprint-item">
               <span class="blueprint-number">{{ index + 1 }}.</span>
               <span class="blueprint-name">{{ blueprint.name }}</span>
               <span class="blueprint-properties">({{ Object.keys(blueprint.properties || {}).length }} {{ $t('props') }})</span>
@@ -592,15 +632,15 @@ function closeForm() {
           </div>
         </div>
         <div v-else class="no-blueprints">
-          <i class="el-icon-info"></i>
+          <el-icon><InfoFilled /></el-icon>
           <p>{{ $t('No blueprints were generated. You can create them manually later from the No-Code section.') }}</p>
         </div>
         <div class="form-actions">
-          <el-button @click="currentStep--" size="large">
-            <i class="el-icon-arrow-left"></i> {{ $t('Back') }}
+          <el-button @click="goBack" size="large">
+            <el-icon class="dir-icon"><ArrowLeft /></el-icon> {{ $t('Back') }}
           </el-button>
           <el-button type="primary" @click="currentStep++" size="large">
-            {{ $t('Continue') }} <i class="el-icon-arrow-right"></i>
+            {{ $t('Continue') }} <el-icon class="dir-icon"><ArrowRight /></el-icon>
           </el-button>
         </div>
       </el-form>
@@ -610,14 +650,14 @@ function closeForm() {
     <div v-if="getStepForCurrent(currentStep) === 8" class="step-container final-step">
       <div class="completion-content">
         <div class="success-icon">
-          <i class="el-icon-success"></i>
+          <el-icon><SuccessFilled /></el-icon>
         </div>
         <h2>{{ $t('Setup Complete!') }}</h2>
         <p class="completion-message">{{ $t('Your Qelos application has been successfully configured. You can now start building your no-code solutions.') }}</p>
         <div class="completion-stats">
           <div class="stat-card">
             <div class="stat-icon app-icon">
-              <i class="el-icon-s-home"></i>
+              <el-icon><House /></el-icon>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ appName || $t('Your App') }}</div>
@@ -626,7 +666,7 @@ function closeForm() {
           </div>
           <div class="stat-card" v-if="successfullyCreated.length > 0">
             <div class="stat-icon blueprints-icon">
-              <i class="el-icon-document-add"></i>
+              <el-icon><DocumentAdd /></el-icon>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ successfullyCreated.length }}</div>
@@ -635,8 +675,8 @@ function closeForm() {
           </div>
           <div class="stat-card">
             <div class="stat-icon type-icon">
-              <i class="el-icon-office-building" v-if="appType === 'b2b'"></i>
-              <i class="el-icon-user" v-else></i>
+              <el-icon v-if="appType === 'b2b'"><OfficeBuilding /></el-icon>
+              <el-icon v-else><User /></el-icon>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ appType.toUpperCase() }}</div>
@@ -679,7 +719,7 @@ img {
 }
 
 .step-description {
-  color: #606266;
+  color: var(--el-text-color-regular);
   font-size: 16px;
 }
 
@@ -696,7 +736,7 @@ img {
 
 .progress-bar {
   height: 4px;
-  background-color: #e4e7ed;
+  background-color: var(--el-border-color-lighter);
   border-radius: 4px;
   margin-block-end: 15px;
   position: relative;
@@ -725,14 +765,14 @@ img {
   justify-content: center;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .step-circle.active {
   background-color: var(--el-color-primary);
   color: white;
   transform: scale(1.1);
-  box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.2);
+  box-shadow: 0 0 0 4px var(--el-color-primary-light-8);
 }
 
 .step-circle.completed {
@@ -741,15 +781,15 @@ img {
 }
 
 .step-circle.pending {
-  background-color: #f5f7fa;
-  border: 1px solid #dcdfe6;
-  color: #909399;
+  background-color: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color);
+  color: var(--el-text-color-secondary);
 }
 
 .logo-preview {
   margin-block-start: 10px;
   padding: 10px;
-  border: 1px solid #eee;
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 4px;
   display: inline-block;
 }
@@ -763,12 +803,12 @@ img {
 }
 
 .theme-option {
-  width: 120px;
+  width: 130px;
   cursor: pointer;
   padding: 12px;
   border-radius: 8px;
-  border: 2px solid #e4e7ed;
-  transition: all 0.3s;
+  border: 2px solid var(--el-border-color-lighter);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   text-align: center;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
 }
@@ -781,7 +821,7 @@ img {
 .theme-option.selected {
   border-color: var(--el-color-primary);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  background-color: rgba(64, 158, 255, 0.05);
+  background-color: var(--el-color-primary-light-9);
 }
 
 .theme-color-preview {
@@ -818,13 +858,13 @@ img {
 }
 
 .theme-description {
-  font-size: 10px;
-  color: #909399;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
   line-height: 1.3;
 }
 
 .help-text {
-  color: #606266;
+  color: var(--el-text-color-regular);
   font-size: 14px;
   margin-block-start: 5px;
   line-height: 1.5;
@@ -842,13 +882,13 @@ img {
   width: 180px;
   height: 180px;
   border-radius: 8px;
-  border: 2px solid #e4e7ed;
+  border: 2px solid var(--el-border-color-lighter);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   padding: 20px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
 }
@@ -860,13 +900,13 @@ img {
 
 .app-type-card.selected {
   border-color: var(--el-color-primary);
-  background-color: rgba(64, 158, 255, 0.1);
+  background-color: var(--el-color-primary-light-9);
   box-shadow: 0 6px 16px 0 rgba(64, 158, 255, 0.2);
 }
 
 .app-type-icon {
   font-size: 40px;
-  margin-bottom: 15px;
+  margin-block-end: 15px;
   color: var(--el-color-primary);
 }
 
@@ -878,7 +918,7 @@ img {
 
 .app-type-subtitle {
   font-size: 14px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
 }
 
 .app-type-description {
@@ -892,14 +932,14 @@ img {
 
 .blueprints-compact {
   padding: 10px;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
 }
 
 .blueprint-item {
   padding: 8px;
-  border-block-end: 1px solid #e4e7ed;
+  border-block-end: 1px solid var(--el-border-color-lighter);
 }
 
 .blueprint-item:last-child {
@@ -909,7 +949,7 @@ img {
 .blueprint-number {
   font-size: 14px;
   font-weight: 600;
-  margin-right: 8px;
+  margin-inline-end: 8px;
 }
 
 .blueprint-name {
@@ -919,7 +959,7 @@ img {
 
 .blueprint-properties {
   font-size: 12px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
   margin-inline-start: 8px;
 }
 
@@ -968,12 +1008,12 @@ img {
   align-items: center;
   justify-content: center;
   padding: 24px 20px;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  background: var(--el-bg-color);
   min-width: 160px;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   position: relative;
   overflow: hidden;
 }
@@ -1009,22 +1049,22 @@ img {
   justify-content: center;
   font-size: 24px;
   margin-block-end: 15px;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .app-icon {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
 }
 
 .blueprints-icon {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
 }
 
 .type-icon {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
 }
 
 .stat-card:hover .stat-icon {
@@ -1039,13 +1079,13 @@ img {
   font-size: 20px;
   font-weight: 700;
   margin-block-end: 8px;
-  color: #2c3e50;
+  color: var(--el-text-color-primary);
   line-height: 1.2;
 }
 
 .stat-label {
   font-size: 13px;
-  color: #6c757d;
+  color: var(--el-text-color-secondary);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1100,5 +1140,70 @@ img {
   width: 100%;
   font-size: 18px;
   font-weight: 600;
+}
+
+.theme-option:focus-visible,
+.app-type-card:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+}
+
+.form-actions .el-button--primary {
+  margin-inline-start: auto;
+}
+
+.app-type-card {
+  justify-content: flex-start;
+  padding-block-start: 28px;
+}
+
+.app-type-subtitle {
+  text-align: center;
+}
+
+.step-help {
+  margin-block: 16px;
+}
+
+[dir='rtl'] .dir-icon {
+  transform: scaleX(-1);
+}
+
+@media (max-width: 480px) {
+  .app-type-cards {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .app-type-card {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    min-height: 140px;
+  }
+
+  .theme-option {
+    width: calc(50% - 8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-container {
+    animation: none;
+  }
+
+  .progress-indicator,
+  .step-circle,
+  .theme-option,
+  .app-type-card,
+  .stat-card {
+    transition: none;
+  }
+
+  .theme-option:hover,
+  .app-type-card:hover,
+  .stat-card:hover {
+    transform: none;
+  }
 }
 </style>

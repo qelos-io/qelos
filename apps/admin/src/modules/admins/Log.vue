@@ -1,82 +1,289 @@
 <template>
-  <div class="events-log-page">
-    <div class="header-container">
-      <ListPageTitle title="Events Log">
-        <template v-slot:content>
-          <EventsFilter
-            :unique-kinds="uniqueKinds"
-            :unique-event-names="uniqueEventNames"
-            :unique-sources="uniqueSources"
-            :filter-options-loading="filterOptionsLoading"
-            :period="filters.period"
-            :from="filters.from"
-            :to="filters.to"
-            :user="filters.user"
-            :workspace="filters.workspace"
-            :search="filters.search"
-            :current-page="filters.page"
-            :total="total"
-            :total-pages="totalPages"
-            :total-capped="totalCapped"
-            :loading="loading"
-          />
+  <div class="events-page">
+    <header class="page-head">
+      <div class="page-title">
+        <h1>{{ $t('Events') }}</h1>
+        <p class="page-summary" aria-live="polite">
+          <template v-if="loading && !events.length">{{ $t('Loading') }}…</template>
+          <template v-else>
+            <span class="summary-total">{{ totalLabel }} {{ $t('events') }}</span>
+            <span v-if="overview.errors" class="summary-errors">
+              <button type="button" class="errors-link" @click="focusErrors">
+                {{ overview.errors.toLocaleString() }} {{ $t('Errors') }}
+              </button>
+            </span>
+          </template>
+        </p>
+      </div>
+      <el-dropdown trigger="click" :disabled="!events.length" @command="downloadExport">
+        <el-button :disabled="!events.length">
+          <el-icon><Download /></el-icon>
+          <span class="export-label">{{ $t('Export') }}</span>
+        </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="csv">{{ $t('Export CSV') }}</el-dropdown-item>
+            <el-dropdown-item command="json">{{ $t('Export JSON') }}</el-dropdown-item>
+          </el-dropdown-menu>
         </template>
-      </ListPageTitle>
+      </el-dropdown>
+    </header>
+
+    <EventsToolbar
+      :filters="filters"
+      :kinds="kinds"
+      :all-count="allCount"
+      :options="filterOptions"
+      @change="setFilters"
+      @clear="clearFilters"
+    />
+
+    <EventsTimeline
+      :buckets="overview.buckets"
+      :loading="overviewLoading"
+      @select-range="(range) => setFilters({ ...range, period: undefined })"
+    />
+
+    <div class="workspace">
+      <EventsFeed
+        :events="events"
+        :selected-id="selectedId"
+        :loading="loading"
+        :loading-more="loadingMore"
+        :has-more="hasMore"
+        :error="error"
+        :has-filters="activeFilterKeys.length > 0 || !!filters.from"
+        :can-widen="filters.period !== 'all-time' && !filters.from"
+        @select="selectEvent"
+        @load-more="loadMore"
+        @clear="clearFilters"
+        @widen="setFilters({ period: 'all-time' })"
+        @retry="reload"
+      />
+
+      <aside v-if="!isCompact" class="detail-pane" :aria-label="$t('Event Details')">
+        <EventDetailPanel
+          :event="selectedEvent"
+          :related="related"
+          @select="selectEvent"
+          @filter="setFilters"
+        />
+      </aside>
     </div>
 
-    <EventsList
-      :events="events"
-      :loading="loading"
-      :total="total"
-      :total-capped="totalCapped"
-      :total-pages="totalPages"
-      :limit="limit"
-      :current-page="filters.page"
-    />
+    <el-drawer
+      v-if="isCompact"
+      :model-value="!!selectedId"
+      :direction="isPhone ? 'btt' : 'rtl'"
+      :size="isPhone ? '88%' : '480px'"
+      :title="$t('Event Details')"
+      append-to-body
+      @close="selectEvent()"
+    >
+      <EventDetailPanel
+        :event="selectedEvent"
+        :loading="!selectedEvent"
+        :related="related"
+        @select="selectEvent"
+        @filter="onCompactFilter"
+      />
+    </el-drawer>
   </div>
 </template>
 
 <script lang="ts" setup>
-import EventsList from './components/EventsList.vue';
-import EventsFilter from './components/EventsFilter.vue';
-import ListPageTitle from '../core/components/semantics/ListPageTitle.vue';
-import { useEventsList } from './compositions/events';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { Download } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import { useI18n } from 'vue-i18n';
+import EventsToolbar from './components/EventsToolbar.vue';
+import EventsTimeline from './components/EventsTimeline.vue';
+import EventsFeed from './components/EventsFeed.vue';
+import EventDetailPanel from './components/EventDetailPanel.vue';
+import { useEventsFeed } from './compositions/events';
+import { createEventsExport, EventsExportFormat, getEventUserId } from './services/event-export';
+import { getRelatedEvents } from './services/event-presentation';
+
+const { t } = useI18n();
 
 const {
+  filters,
+  activeFilterKeys,
   events,
-  loading,
   total,
   totalCapped,
-  totalPages,
-  limit,
-  uniqueKinds,
-  uniqueEventNames,
-  uniqueSources,
-  filterOptionsLoading,
-  filters,
-} = useEventsList();
+  loading,
+  loadingMore,
+  hasMore,
+  error,
+  overview,
+  overviewLoading,
+  filterOptions,
+  selectedId,
+  selectedEvent,
+  selectEvent,
+  setFilters,
+  clearFilters,
+  loadMore,
+  reload,
+} = useEventsFeed();
+
+const totalLabel = computed(() => `${total.value.toLocaleString()}${totalCapped.value ? '+' : ''}`);
+// per-kind counts come from the overview; fall back to plain kind chips when it is unavailable
+const kinds = computed(() =>
+  overview.value.kinds.length
+    ? overview.value.kinds
+    : filterOptions.value.kinds.map((kind) => ({ kind, count: undefined, errors: 0 })),
+);
+const allCount = computed(() =>
+  overview.value.kinds.length ? overview.value.kinds.reduce((sum, item) => sum + item.count, 0).toLocaleString() : '',
+);
+const related = computed(() =>
+  selectedEvent.value ? getRelatedEvents(selectedEvent.value, events.value, getEventUserId) : [],
+);
+
+// the detail pane lives beside the feed on wide screens and in a drawer / bottom sheet otherwise
+const COMPACT_QUERY = '(max-width: 1180px)';
+const PHONE_QUERY = '(max-width: 768px)';
+const isCompact = ref(false);
+const isPhone = ref(false);
+let compactMedia: MediaQueryList | undefined;
+let phoneMedia: MediaQueryList | undefined;
+
+function syncMedia() {
+  isCompact.value = !!compactMedia?.matches;
+  isPhone.value = !!phoneMedia?.matches;
+}
+
+onMounted(() => {
+  compactMedia = window.matchMedia(COMPACT_QUERY);
+  phoneMedia = window.matchMedia(PHONE_QUERY);
+  syncMedia();
+  compactMedia.addEventListener('change', syncMedia);
+  phoneMedia.addEventListener('change', syncMedia);
+});
+
+onBeforeUnmount(() => {
+  compactMedia?.removeEventListener('change', syncMedia);
+  phoneMedia?.removeEventListener('change', syncMedia);
+});
+
+function onCompactFilter(patch: Record<string, string>) {
+  selectEvent();
+  setFilters(patch);
+}
+
+function focusErrors() {
+  const first = events.value.find((event) => /error|fail|exception|denied|timeout|invalid/i.test(`${event.kind} ${event.eventName}`));
+  if (first) {
+    selectEvent(first._id);
+    document.getElementById(`event-${first._id}`)?.scrollIntoView({ block: 'center' });
+  } else {
+    // errors exist in the period but are not in the loaded page yet
+    ElMessage.info(t('Load more events to reach the errors'));
+  }
+}
+
+function downloadExport(format: EventsExportFormat) {
+  const file = createEventsExport(events.value, format);
+  const url = URL.createObjectURL(new Blob([file.content], { type: file.mimeType }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `events-${new Date().toISOString().replace(/[:.]/g, '-')}.${file.extension}`;
+  link.click();
+  URL.revokeObjectURL(url);
+  ElMessage.success(`${t('Exported')} ${events.value.length} ${t('events')} (${format.toUpperCase()})`);
+}
 </script>
 
 <style scoped lang="scss">
-.events-log-page {
+.events-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   padding: 20px;
+  min-inline-size: 0;
 }
 
-.header-container {
+.page-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.page-title h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.page-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--el-text-color-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.errors-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--el-color-danger);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-danger);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+.export-label {
+  margin-inline-start: 6px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
+  align-items: start;
+  gap: 20px;
+}
+
+.detail-pane {
+  position: sticky;
+  inset-block-start: 16px;
+  max-block-size: calc(100vh - 32px);
+  padding: 20px;
+  overflow: auto;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--el-bg-color);
+}
+
+@media (max-width: 1180px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
-  .events-log-page {
-    padding: 10px;
+  .events-page {
+    padding: 12px;
+    gap: 16px;
   }
 
-  .header-container {
-    flex-direction: column;
-    align-items: flex-start;
+  .export-label {
+    display: none;
   }
 }
 </style>

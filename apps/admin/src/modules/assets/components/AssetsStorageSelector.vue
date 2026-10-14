@@ -1,7 +1,7 @@
 <template>
   <div class="select-storage">
-    <label>{{ t('Storage') }}:</label>
-    <el-select v-model="model" class="storage-selection">
+    <label id="storage-select-label">{{ t('Storage') }}:</label>
+    <el-select v-model="model" class="storage-selection" aria-labelledby="storage-select-label" :placeholder="t('Select storage')">
       <el-option
           v-for="item in items"
           :key="item._id"

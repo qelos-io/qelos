@@ -1,11 +1,18 @@
 <template>
   <div :class="isOpen ? 'panel open' : 'panel'" :dir="t('appDirection')">
-    <a @click="togglePanel" class="toggle">
+    <button
+      type="button"
+      class="toggle"
+      :aria-expanded="isOpen"
+      :aria-label="t('Assets')"
+      :title="t('Assets')"
+      @click="togglePanel"
+    >
       <el-icon>
         <icon-arrow-right v-if="isOpen"/>
         <icon-arrow-left v-else/>
       </el-icon>
-    </a>
+    </button>
     <div class="content">
       <AssetsStorageSelector v-model="selectedStorage"/>
       <template v-if="selectedStorage">
@@ -41,7 +48,7 @@ const togglePanel = () => isOpen.value = !isOpen.value
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
-  transition: inset-inline-end 0.3s ease-in-out;
+  transition: inset-inline-end 0.25s ease-out;
 
   &[dir="rtl"] {
     inset-inline-start: -400px;
@@ -73,22 +80,30 @@ const togglePanel = () => isOpen.value = !isOpen.value
     justify-content: center;
     border-radius: 8px 0 0 8px;
     text-decoration: none;
-    background-color: #ddd;
+    border: 0;
+    padding: 0;
+    color: var(--el-text-color-primary);
+    background-color: var(--el-fill-color);
     transition: background-color 0.2s ease-in-out;
   }
 }
 
 .toggle:hover {
-  background-color: #ccc;
+  background-color: var(--el-fill-color-dark);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
 }
 
 .content {
-  background-color: #eee;
+  background-color: var(--el-bg-color);
   align-self: stretch;
   flex: 1;
   display: flex;
   flex-direction: column;
-  border: 1px solid #ddd;
+  border: 1px solid var(--el-border-color);
   width: 100%;
 }
 

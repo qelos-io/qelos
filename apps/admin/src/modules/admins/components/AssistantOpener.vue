@@ -1,6 +1,6 @@
 <template>
-    <el-button class="assistant-button" size="large" circle @click="toggle">
-      <img src="/logos/ai-chat-icon.svg" alt="AI Chat" />
+    <el-button class="assistant-button" size="large" circle :aria-label="$t('AI Chat')" :title="$t('AI Chat')" @click="toggle">
+      <img src="/logos/ai-chat-icon.svg" alt="" aria-hidden="true" />
     </el-button>
 </template>
 <script lang="ts" setup>
@@ -15,12 +15,23 @@ const { toggle } = useAdminAssistantStore();
   padding: 0;
   border: 0;
   overflow: hidden;
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow 0.2s ease;
 }
 
 .assistant-button:hover {
   box-shadow: 0 2px 8px rgba(10, 10, 10, 0.2);
   cursor: pointer;
+}
+
+.assistant-button:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-button.is-circle {
+    transition: none;
+  }
 }
 
 img {

@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<FormInput title="Access Key" v-model="form.accessKey"/>
-		<FormInput title="Secret Key" v-model="form.secretKey"/>
+		<FormInput title="Secret Key" type="password" v-model="form.secretKey"/>
 	</div>
 </template>
 <script lang="ts" setup>
