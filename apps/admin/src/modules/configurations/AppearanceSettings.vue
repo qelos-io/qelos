@@ -1,218 +1,312 @@
-<template>
-  <div class="appearance-settings">
-    <header class="appearance-header">
-      <h1>{{ $t('Appearance') }}</h1>
-      <p class="appearance-lead">
-        {{ $t('Themes, colors, and typography for your application UI.') }}
-        <router-link :to="{ name: 'editConfiguration', params: { key: 'app-configuration' } }" class="inline-link">
-          {{ $t('Application name, logos, and branding') }}
-        </router-link>
-      </p>
-    </header>
+<script lang="ts" setup>
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
+import { useViewport } from '@/modules/core/compositions/viewport';
+import { useThemeDraft } from './compositions/theme-draft';
+import { isHttpUrl, themeChecks, type AppearanceArea } from './services/appearance';
+import ThemePresets from './components/appearance/ThemePresets.vue';
+import ThemePreview from './components/appearance/ThemePreview.vue';
+import BrandPanel from './components/appearance/BrandPanel.vue';
+import ColorsPanel from './components/appearance/ColorsPanel.vue';
+import TypePanel from './components/appearance/TypePanel.vue';
+import ShapePanel from './components/appearance/ShapePanel.vue';
+import LayoutPanel from './components/appearance/LayoutPanel.vue';
+import AdvancedPanel from './components/appearance/AdvancedPanel.vue';
 
-    <div class="design-palettes">
-      <div
-        v-for="(p, index) in PALETTES"
-        :key="index"
-        class="design-palette-card"
-        :class="{ active: isActivePalette(p) }"
-        @click="applyDesignPalette(p)"
-      >
-        <div class="palette-header">
-          <h3>{{ p.name }}</h3>
-          <p class="palette-description">{{ p.description }}</p>
-        </div>
-        <div class="palette-preview">
-          <div class="color-swatches">
-            <div v-for="color in p.colors" :key="color" class="color-swatch" :style="{ backgroundColor: color }" />
-          </div>
-          <div class="design-preview" :style="getPreviewStyles(p.palette)">
-            <div class="preview-header">Header</div>
-            <div class="preview-content">
-              <div class="preview-text">Text Sample</div>
-              <div class="preview-button">Button</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+const { t } = useI18n();
+const { loaded } = useAppConfiguration();
+const { width } = useViewport();
+const { draft, areas, dirty, previewVariables, publishing, discard, applyPreset, setFont, publish } = useThemeDraft();
 
-    <DesignConfiguration v-if="configLoaded" />
-  </div>
-</template>
+const TABS: { key: AppearanceArea; label: string }[] = [
+  { key: 'colors', label: 'Colors' },
+  { key: 'type', label: 'Typography' },
+  { key: 'shape', label: 'Shape' },
+  { key: 'layout', label: 'Layout' },
+  { key: 'brand', label: 'Brand' },
+  { key: 'advanced', label: 'Advanced' },
+];
+const tab = ref<AppearanceArea>('colors');
 
-<script setup lang="ts">
-import { resetConfiguration, useAppConfiguration } from '@/modules/configurations/store/app-configuration';
-import configurationsService from '@/services/apis/configurations-service';
-import { DesignPalette, PALETTES } from '@/modules/core/utils/colors-palettes';
-import { useLiveEditStore } from '@/modules/layouts/store/live-edit';
-import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
-import DesignConfiguration from '@/modules/configurations/components/DesignConfiguration.vue';
+const device = ref<'desktop' | 'phone'>('desktop');
+const isWide = computed(() => width.value >= 1100);
+const previewOpen = ref(false);
 
-const { appConfig, loaded: configLoaded } = useAppConfiguration();
+const invalidUrls = computed(() => [draft.value.logoUrl, draft.value.smallLogoUrl, draft.value.themeStylesUrl, draft.value.scriptUrl].some((url) => !isHttpUrl(url)));
+const unreadable = computed(() => themeChecks(draft.value.colorsPalette).filter((check) => !check.pass).length);
 
-const { applyTheme } = useLiveEditStore();
+const AREA_LABELS: Record<AppearanceArea, string> = {
+  brand: 'Brand',
+  colors: 'Colors',
+  type: 'Typography',
+  shape: 'Shape',
+  layout: 'Layout',
+  advanced: 'Advanced',
+};
 
-const applyDesignPalette = useConfirmAction(async function applyDesignPalette(designPalette: DesignPalette) {
-  await applyTheme(designPalette.palette);
-  await resetConfiguration();
+async function confirmPublish() {
+  if (invalidUrls.value) {
+    ElMessage.error(t('Fix the invalid addresses before publishing'));
+    tab.value = isHttpUrl(draft.value.logoUrl) && isHttpUrl(draft.value.smallLogoUrl) ? 'advanced' : 'brand';
+    return;
+  }
+  const changed = areas.value.map((area) => t(AREA_LABELS[area])).join(', ');
+  const warning = unreadable.value ? ` ${t('Hard-to-read color pairs: {count}.', { count: unreadable.value })}` : '';
+  try {
+    await ElMessageBox.confirm(
+      `${t('Publishing changes how the application looks for everyone who uses it.')} ${t('Changed: {areas}.', { areas: changed })}${warning}`,
+      t('Publish this theme?'),
+      { type: unreadable.value ? 'warning' : 'info', confirmButtonText: t('Publish theme'), cancelButtonText: t('Keep editing') },
+    );
+  } catch {
+    return;
+  }
+  try {
+    await publish();
+    ElMessage.success(t('Theme published'));
+  } catch {
+    ElMessage.error(t('Could not publish the theme'));
+  }
+}
+
+onBeforeRouteLeave(async () => {
+  if (!dirty.value || publishing.value) return true;
+  try {
+    await ElMessageBox.confirm(t('You have unsaved changes. Leave without saving?'), t('Unsaved changes'), {
+      type: 'warning',
+      confirmButtonText: t('Leave'),
+      cancelButtonText: t('Stay'),
+    });
+    return true;
+  } catch {
+    return false;
+  }
 });
 
-function isActivePalette(designPalette: DesignPalette): boolean {
-  if (!appConfig.value.colorsPalette) return false;
-  return (
-    appConfig.value.colorsPalette.mainColor === designPalette.palette.mainColor &&
-    appConfig.value.colorsPalette.bgColor === designPalette.palette.bgColor
-  );
-}
-
-function getPreviewStyles(palette: DesignPalette['palette']) {
-  return {
-    fontFamily: palette.fontFamily || 'inherit',
-    '--preview-main-color': palette.mainColor,
-    '--preview-bg-color': palette.bgColor,
-    '--preview-text-color': palette.textColor,
-    '--preview-border-radius': `${palette.borderRadius || 0}px`,
-    '--preview-button-radius': `${palette.buttonRadius || palette.borderRadius || 4}px`,
-    '--preview-border-color': palette.bordersColor,
-  };
-}
+const warnUnload = (event: BeforeUnloadEvent) => {
+  if (dirty.value) event.preventDefault();
+};
+onMounted(() => window.addEventListener('beforeunload', warnUnload));
+onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnload));
 </script>
 
+<template>
+  <div v-if="loaded" class="appearance">
+    <header class="head">
+      <h1>{{ $t('Appearance') }}</h1>
+      <p>{{ $t('Colors, type, shape and layout for your whole application. Edit freely: nothing changes for your users until you publish.') }}</p>
+    </header>
+
+    <ThemePresets :current-main="draft.colorsPalette.mainColor" :current-bg="draft.colorsPalette.bgColor" @pick="applyPreset" />
+
+    <div class="editor">
+      <section class="controls" :aria-label="$t('Theme settings')">
+        <el-tabs v-model="tab" class="tabs">
+          <el-tab-pane v-for="item in TABS" :key="item.key" :name="item.key">
+            <template #label>
+              <span class="tab-label">{{ $t(item.label) }}<i v-if="areas.includes(item.key)" class="changed" :title="$t('Changed')" /></span>
+            </template>
+          </el-tab-pane>
+        </el-tabs>
+
+        <div class="panel">
+          <ColorsPanel v-if="tab === 'colors'" v-model="draft.colorsPalette" />
+          <TypePanel v-else-if="tab === 'type'" v-model="draft" @font="setFont" />
+          <ShapePanel v-else-if="tab === 'shape'" v-model="draft" />
+          <LayoutPanel v-else-if="tab === 'layout'" v-model="draft" />
+          <BrandPanel v-else-if="tab === 'brand'" v-model="draft" />
+          <AdvancedPanel v-else v-model="draft" />
+        </div>
+      </section>
+
+      <aside v-if="isWide" class="preview" :aria-label="$t('Live preview')">
+        <div class="preview-head">
+          <strong>{{ $t('Live preview') }}</strong>
+          <el-segmented v-model="device" size="small" :options="[{ label: $t('Desktop'), value: 'desktop' }, { label: $t('Phone'), value: 'phone' }]" :aria-label="$t('Preview device')" />
+        </div>
+        <ThemePreview :variables="previewVariables" :draft="draft" :device="device" />
+      </aside>
+    </div>
+
+    <el-button v-if="!isWide" class="preview-fab" type="primary" round size="large" @click="previewOpen = true">
+      <font-awesome-icon :icon="['fas', 'eye']" /> {{ $t('Preview') }}
+    </el-button>
+    <el-drawer v-if="!isWide" v-model="previewOpen" direction="btt" size="88%" :title="$t('Live preview')">
+      <el-segmented v-model="device" size="small" :options="[{ label: $t('Desktop'), value: 'desktop' }, { label: $t('Phone'), value: 'phone' }]" :aria-label="$t('Preview device')" class="drawer-device" />
+      <ThemePreview :variables="previewVariables" :draft="draft" :device="device" />
+    </el-drawer>
+
+    <div class="savebar" :class="{ dirty }" role="region" :aria-label="$t('Publish theme')">
+      <p class="state" role="status">
+        <template v-if="dirty"><span class="dot" aria-hidden="true" />{{ $t('Unpublished changes') }}</template>
+        <template v-else>{{ $t('Matches what your users see') }}</template>
+      </p>
+      <el-button :disabled="!dirty || publishing" @click="discard">{{ $t('Discard') }}</el-button>
+      <el-button type="primary" :loading="publishing" :disabled="!dirty" @click="confirmPublish">{{ $t('Publish theme') }}</el-button>
+    </div>
+  </div>
+  <el-skeleton v-else :rows="8" animated class="loading" />
+</template>
+
 <style scoped lang="scss">
-.appearance-settings {
-  padding: 20px 24px 40px;
-  max-width: 1200px;
-  margin-inline: auto;
-}
-
-.appearance-header {
-  margin-bottom: 28px;
-
-  h1 {
-    margin: 0 0 8px;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #2c3e50;
-  }
-}
-
-.appearance-lead {
-  margin: 0;
-  font-size: 14px;
-  color: #64748b;
-  line-height: 1.5;
-}
-
-.inline-link {
-  color: var(--main-color);
-  font-weight: 500;
-  margin-inline-start: 4px;
-}
-
-.design-palettes {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-.design-palette-card {
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  overflow: hidden;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.design-palette-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.design-palette-card.active {
-  border: 2px solid var(--main-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.palette-header {
-  padding: 15px;
-  border-bottom: 1px solid var(--border-color);
-
-  h3 {
-    margin: 0 0 5px;
-    font-size: 16px;
-    color: black;
-  }
-}
-
-.palette-description {
-  margin: 0;
-  font-size: 12px;
-  color: #666;
-}
-
-.palette-preview {
-  padding: 15px;
-}
-
-.color-swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 15px;
-}
-
-.color-swatch {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.design-preview {
-  border: 1px solid var(--preview-border-color, #ddd);
-  border-radius: var(--preview-border-radius, 4px);
-  overflow: hidden;
-  height: 120px;
-  background-color: var(--preview-bg-color, #fff);
-  color: var(--preview-text-color, #333);
-}
-
-.preview-header {
-  background-color: var(--preview-main-color, #409eff);
-  color: #fff;
-  padding: 8px 12px;
-  font-size: 14px;
-}
-
-.preview-content {
-  padding: 12px;
+.appearance {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  min-block-size: 100%;
+  padding: 16px 20px 0;
+}
+
+.head {
+  h1 {
+    margin: 0;
+    padding: 0;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--el-text-color-secondary);
+    text-align: start;
+  }
+}
+
+.editor {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+@media (min-width: 1100px) {
+  .editor {
+    grid-template-columns: minmax(380px, 460px) minmax(0, 1fr);
+  }
+}
+
+.controls,
+.preview {
+  min-inline-size: 0;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: calc(var(--border-radius, 6px) + 4px);
+  background: var(--surface);
+}
+
+.tabs {
+  padding-inline: 12px;
+
+  :deep(.el-tabs__item) {
+    padding-inline: 11px;
+  }
+}
+
+.tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.changed {
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 50%;
+  background: var(--el-color-warning);
+}
+
+.panel {
+  padding: 4px 18px 20px;
+}
+
+.preview {
+  position: sticky;
+  inset-block-start: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: var(--el-fill-color-light);
+}
+
+.preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preview-fab {
+  position: fixed;
+  inset-block-end: calc(150px + env(safe-area-inset-bottom, 0px));
+  inset-inline-end: 16px;
+  z-index: 900;
+  gap: 8px;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+}
+
+.drawer-device {
+  margin-block-end: 12px;
+}
+
+.savebar {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 10px;
+  margin-inline: -20px;
+  padding: 12px 20px;
+  border-block-start: 1px solid var(--el-border-color-lighter);
+  background: var(--surface);
+  box-shadow: 0 -6px 16px rgb(0 0 0 / 0.06);
+
+  :deep(.el-button.is-disabled) {
+    opacity: 0.45;
+  }
 }
 
-.preview-text {
-  font-size: 13px;
+.state {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 0.9rem;
 }
 
-.preview-button {
-  background-color: var(--preview-main-color, #409eff);
-  color: #fff;
-  border-radius: var(--preview-button-radius, 4px);
-  padding: 6px 12px;
-  font-size: 13px;
-  display: inline-block;
-  text-align: center;
-  width: fit-content;
+.dirty .state {
+  color: var(--el-text-color-primary);
 }
 
-@media (max-width: 768px) {
-  .design-palettes {
-    grid-template-columns: 1fr;
+.dot {
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--el-color-warning);
+}
+
+.loading {
+  padding: 24px;
+}
+
+@media (max-width: 639px) {
+  .appearance {
+    padding: 12px 12px 0;
+  }
+
+  .savebar {
+    margin-inline: -12px;
+    padding: 10px 12px;
+  }
+
+  .state {
+    font-size: 0.82rem;
   }
 }
 </style>
