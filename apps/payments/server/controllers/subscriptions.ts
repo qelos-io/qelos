@@ -53,6 +53,22 @@ export async function getSubscription(req, res: Response) {
   }
 }
 
+export async function getSubscriptionActivity(req, res: Response) {
+  try {
+    const { subscription, activity } = await SubscriptionsService.getSubscriptionActivity(req.headers.tenant, req.params.id);
+
+    if (!req.user?.isPrivileged && subscription.billableEntityId !== resolveUserEntityId(req)) {
+      res.status(403).json({ message: 'access denied' }).end();
+      return;
+    }
+
+    res.status(200).json(activity).end();
+  } catch (e: any) {
+    const status = e?.code === 'SUBSCRIPTION_NOT_FOUND' ? 404 : 500;
+    res.status(status).json({ message: e?.message || 'failed to load subscription activity' }).end();
+  }
+}
+
 export async function getMySubscription(req, res: Response) {
   try {
     const entityId = resolveUserEntityId(req);

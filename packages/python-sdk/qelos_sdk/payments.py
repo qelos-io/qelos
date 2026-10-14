@@ -50,6 +50,12 @@ class QlPayments(BaseSDK):
         """Get the current user's subscription."""
         return await self.call_json_api(f"{self._relative_path}/subscriptions/me")
 
+    async def get_subscription_activity(self, subscription_id: str) -> List[Dict[str, Any]]:
+        """Timeline of a subscription (status changes, coupons and invoices), newest first."""
+        return await self.call_json_api(
+            f"{self._relative_path}/subscriptions/{subscription_id}/activity"
+        )
+
     async def cancel_subscription(self, subscription_id: str) -> Dict[str, Any]:
         """Cancel a subscription."""
         return await self.call_json_api(

@@ -20,6 +20,13 @@ export async function getInvoiceById(tenant: string, invoiceId: string) {
   return invoice;
 }
 
+export async function listBySubscription(tenant: string, subscriptionId: string) {
+  return (Invoice as any).find({ tenant, subscriptionId })
+    .sort({ created: -1 })
+    .lean()
+    .exec();
+}
+
 export async function listByEntity(
   tenant: string,
   billableEntityType: BillableEntityType,

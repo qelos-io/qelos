@@ -58,6 +58,11 @@ describe('subscriptions-service', async () => {
     saveMock.mock.resetCalls();
 
     findOneMock.mock.mockImplementation(() => ({
+      select: mock.fn(() => ({
+        lean: mock.fn(() => ({
+          exec: mock.fn(async () => null),
+        })),
+      })),
       lean: mock.fn(() => ({
         exec: mock.fn(async () => null),
       })),
@@ -214,6 +219,33 @@ describe('subscriptions-service', async () => {
       assert.strictEqual(result.status, 'active');
     });
 
+    it('should record the creation in history', async () => {
+      const result = await SubscriptionsService.createSubscription('tenant-1', {
+        planId: 'plan-1',
+        billableEntityType: 'user',
+        billableEntityId: 'user-1',
+        billingCycle: 'monthly',
+        status: 'pending',
+      });
+
+      assert.strictEqual(result.history.length, 1);
+      assert.strictEqual(result.history[0].type, 'created');
+      assert.strictEqual(result.history[0].to, 'pending');
+    });
+
+    it('should also record the coupon when created with a coupon code', async () => {
+      const result = await SubscriptionsService.createSubscription('tenant-1', {
+        planId: 'plan-1',
+        billableEntityType: 'user',
+        billableEntityId: 'user-1',
+        billingCycle: 'monthly',
+        couponCode: 'SPRING20',
+      });
+
+      assert.deepStrictEqual(result.history.map((entry: any) => entry.type), ['created', 'coupon_applied']);
+      assert.strictEqual(result.history[1].couponCode, 'SPRING20');
+    });
+
     it('should accept custom status', async () => {
       const result = await SubscriptionsService.createSubscription('tenant-1', {
         planId: 'plan-1',
@@ -245,6 +277,17 @@ describe('subscriptions-service', async () => {
     });
   });
 
+  // the service reads the previous status (select) to decide whether to record a history entry
+  const previousStatus = (status: string) => {
+    findOneMock.mock.mockImplementationOnce(() => ({
+      select: mock.fn(() => ({
+        lean: mock.fn(() => ({
+          exec: mock.fn(async () => ({ _id: 'sub-1', status })),
+        })),
+      })),
+    }));
+  };
+
   describe('updateSubscriptionStatus', () => {
     it('should throw SUBSCRIPTION_NOT_FOUND when subscription does not exist', async () => {
       await assert.rejects(() => SubscriptionsService.updateSubscriptionStatus('tenant-1', 'nonexistent', 'active'), (e: any) => {
@@ -253,7 +296,8 @@ describe('subscriptions-service', async () => {
       });
     });
 
-    it('should update status', async () => {
+    it('should update status and record the transition in history', async () => {
+      previousStatus('pending');
       const mockSub = { _id: 'sub-1', status: 'active' };
       findOneAndUpdateMock.mock.mockImplementationOnce(() => ({
         lean: mock.fn(() => ({
@@ -264,10 +308,29 @@ describe('subscriptions-service', async () => {
       const result = await SubscriptionsService.updateSubscriptionStatus('tenant-1', 'sub-1', 'active');
       assert.strictEqual(result.status, 'active');
       assert.deepStrictEqual(findOneAndUpdateMock.mock.calls[0].arguments[0], { _id: 'sub-1', tenant: 'tenant-1' });
+      const update = findOneAndUpdateMock.mock.calls[0].arguments[1] as any;
+      assert.deepStrictEqual(update.$set, { status: 'active' });
+      assert.strictEqual(update.$push.history.$slice, -100);
+      assert.strictEqual(update.$push.history.$each.length, 1);
+      assert.strictEqual(update.$push.history.$each[0].type, 'status_changed');
+      assert.strictEqual(update.$push.history.$each[0].from, 'pending');
+      assert.strictEqual(update.$push.history.$each[0].to, 'active');
+    });
+
+    it('should not add a history entry when the status did not change', async () => {
+      previousStatus('active');
+      findOneAndUpdateMock.mock.mockImplementationOnce(() => ({
+        lean: mock.fn(() => ({
+          exec: mock.fn(async () => ({ _id: 'sub-1', status: 'active' })),
+        })),
+      }));
+
+      await SubscriptionsService.updateSubscriptionStatus('tenant-1', 'sub-1', 'active');
       assert.deepStrictEqual(findOneAndUpdateMock.mock.calls[0].arguments[1], { $set: { status: 'active' } });
     });
 
     it('should merge additional updates', async () => {
+      previousStatus('active');
       const now = new Date();
       const mockSub = { _id: 'sub-1', status: 'active', currentPeriodEnd: now };
       findOneAndUpdateMock.mock.mockImplementationOnce(() => ({
@@ -323,7 +386,8 @@ describe('subscriptions-service', async () => {
   });
 
   describe('cancelSubscription', () => {
-    it('should set status to canceled', async () => {
+    it('should set status to canceled and record a canceled history entry', async () => {
+      previousStatus('active');
       const mockSub = { _id: 'sub-1', status: 'canceled' };
       findOneAndUpdateMock.mock.mockImplementationOnce(() => ({
         lean: mock.fn(() => ({
@@ -333,6 +397,8 @@ describe('subscriptions-service', async () => {
 
       const result = await SubscriptionsService.cancelSubscription('tenant-1', 'sub-1');
       assert.strictEqual(result.status, 'canceled');
+      const update = findOneAndUpdateMock.mock.calls[0].arguments[1] as any;
+      assert.strictEqual(update.$push.history.$each[0].type, 'canceled');
     });
 
     it('should throw SUBSCRIPTION_NOT_FOUND when subscription does not exist', async () => {
@@ -402,9 +468,9 @@ describe('subscriptions-service', async () => {
     it('should remove the coupon when couponCode is null', async () => {
       existing({ couponId: 'coupon-1' });
       await SubscriptionsService.setSubscriptionCoupon('tenant-1', 'sub-1', null);
-      assert.deepStrictEqual(findOneAndUpdateMock.mock.calls[0].arguments[1], {
-        $unset: { couponId: '', couponBenefitEndsAt: '' },
-      });
+      const update = findOneAndUpdateMock.mock.calls[0].arguments[1] as any;
+      assert.deepStrictEqual(update.$unset, { couponId: '', couponBenefitEndsAt: '' });
+      assert.strictEqual(update.$push.history.$each[0].type, 'coupon_removed');
       assert.strictEqual(validateCouponMock.mock.calls.length, 0);
     });
   });

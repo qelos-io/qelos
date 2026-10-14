@@ -177,6 +177,23 @@ await sdk.payments.cancelSubscription('subscription-id');
 await adminSdk.managePayments.cancelSubscription('subscription-id');
 ```
 
+## Subscription Activity
+
+```typescript
+// Timeline of a subscription: status changes, coupons and invoices, newest first
+const activity = await sdk.payments.getSubscriptionActivity('subscription-id');
+
+// Admins can read the timeline of any subscription
+const adminActivity = await adminSdk.managePayments.getSubscriptionActivity('subscription-id');
+
+for (const item of activity) {
+  // item.kind: 'subscription.created' | 'subscription.status_changed' | 'subscription.canceled'
+  //          | 'coupon.applied' | 'coupon.removed'
+  //          | 'invoice.paid' | 'invoice.pending' | 'invoice.failed' | 'invoice.refunded'
+  console.log(item.at, item.kind);
+}
+```
+
 ---
 
 ## Admin Plan Management
@@ -281,6 +298,7 @@ for (const sub of workspaceSubs) {
 | `subscribeToPlan(planId, billingCycle, couponCode?)` | Create a pending subscription (required first step for dynamic plans) |
 | `checkout(params)` | Initiate a checkout session |
 | `getMySubscription()` | Get the current user's active subscription |
+| `getSubscriptionActivity(subscriptionId)` | Timeline of a subscription: status changes, coupons and invoices, newest first |
 | `cancelSubscription(subscriptionId)` | Cancel a subscription |
 | `getInvoices(query?)` | List the current user's invoices |
 | `getInvoice(invoiceId)` | Get a single invoice |
@@ -300,6 +318,7 @@ for (const sub of workspaceSubs) {
 | `checkout(params)` | Initiate checkout with entity overrides and optional `amount` |
 | `getSubscriptions(query?)` | List subscriptions across all entities |
 | `getSubscription(subscriptionId)` | Get a single subscription |
+| `getSubscriptionActivity(subscriptionId)` | Timeline of any subscription: status changes, coupons and invoices, newest first |
 | `getWorkspaceSubscriptions(query?)` | List workspace subscriptions with the related plan populated |
 | `createSubscription(data)` | Create a pending subscription on behalf of any entity |
 | `cancelSubscription(subscriptionId)` | Cancel any subscription |

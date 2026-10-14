@@ -1,7 +1,7 @@
 import { QelosSDKOptions } from '../types';
 import BaseSDK from '../base-sdk';
 import {
-  IPlan, ISubscription, IInvoice, ICoupon,
+  IPlan, ISubscription, ISubscriptionActivityItem, IInvoice, ICoupon,
   BillableEntityType, SubscriptionStatus, InvoiceStatus, BillingCycle,
   IPaymentsConfigurationMetadata, CheckoutCustomer,
 } from '@qelos/global-types';
@@ -113,6 +113,14 @@ export default class QlPaymentsAdmin extends BaseSDK {
 
   getSubscription(subscriptionId: string) {
     return this.callJsonApi<ISubscription>(`/api/subscriptions/${subscriptionId}`);
+  }
+
+  /**
+   * The activity timeline of any subscription (recorded status changes and coupons merged
+   * with its invoices), newest first.
+   */
+  getSubscriptionActivity(subscriptionId: string) {
+    return this.callJsonApi<ISubscriptionActivityItem[]>(`/api/subscriptions/${subscriptionId}/activity`);
   }
 
   /**

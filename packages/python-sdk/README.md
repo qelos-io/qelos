@@ -236,6 +236,7 @@ checkout = await sdk.payments.checkout({
     "billingCycle": "monthly",
 })
 subscription = await sdk.payments.get_my_subscription()
+activity = await sdk.payments.get_subscription_activity("subscription-id")
 await sdk.payments.cancel_subscription("subscription-id")
 invoices = await sdk.payments.get_invoices()
 await sdk.payments.validate_coupon("DISCOUNT20")
@@ -335,6 +336,7 @@ all_workspaces = await admin_sdk.admin_workspaces.get_list()
 plans = await admin_sdk.manage_payments.get_plans()
 await admin_sdk.manage_payments.create_plan({...})
 subscriptions = await admin_sdk.manage_payments.get_subscriptions()
+activity = await admin_sdk.manage_payments.get_subscription_activity("subscription-id")
 coupons = await admin_sdk.manage_payments.get_coupons()
 ```
 

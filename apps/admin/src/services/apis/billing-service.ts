@@ -3,6 +3,7 @@ import {
   IPlan,
   ISubscription,
   IInvoice,
+  ISubscriptionActivityItem,
   ICoupon,
   BillableEntityType,
   BillingCycle,
@@ -20,6 +21,8 @@ export interface CheckoutRequest {
   billableEntityType: BillableEntityType
   billableEntityId: string
   couponCode?: string
+  /** cancels the entity's active subscription first (plan change) */
+  reset?: boolean
   successUrl?: string
   cancelUrl?: string
 }
@@ -32,6 +35,10 @@ export interface CheckoutResponse {
 }
 
 const billingService = {
+  getPlan(planId: string): Promise<IPlan> {
+    return api.get(`/api/plans/${planId}`).then(getCallData)
+  },
+
   getPublicPlans(): Promise<IPlan[]> {
     return api.get('/api/plans/public').then(getCallData)
   },
@@ -44,6 +51,10 @@ const billingService = {
     return api.get('/api/subscriptions', {
       params: { billableEntityType, billableEntityId, status: 'active' }
     }).then(getCallData).then((subs: ISubscription[]) => subs?.[0] || null)
+  },
+
+  getSubscriptionActivity(subscriptionId: string): Promise<ISubscriptionActivityItem[]> {
+    return api.get(`/api/subscriptions/${subscriptionId}/activity`).then(getCallData)
   },
 
   getInvoices(params: { billableEntityType: BillableEntityType; billableEntityId: string }): Promise<IInvoice[]> {

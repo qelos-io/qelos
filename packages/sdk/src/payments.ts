@@ -1,6 +1,6 @@
 import { QelosSDKOptions } from './types';
 import BaseSDK from './base-sdk';
-import { IPlan, ISubscription, IInvoice, ICoupon, BillingCycle, CheckoutCustomer } from '@qelos/global-types';
+import { IPlan, ISubscription, ISubscriptionActivityItem, IInvoice, ICoupon, BillingCycle, CheckoutCustomer } from '@qelos/global-types';
 
 export interface CheckoutRequest {
   /** Required when not providing `subscriptionId`. Must be a non-dynamic plan. */
@@ -94,6 +94,16 @@ export default class QlPayments extends BaseSDK {
 
   getMySubscription() {
     return this.callJsonApi<ISubscription>(`${this.relativePath}/subscriptions/me`);
+  }
+
+  /**
+   * The activity timeline of a subscription (status changes, coupons and invoices),
+   * newest first. Users can read their own subscription's activity; admins any.
+   */
+  getSubscriptionActivity(subscriptionId: string) {
+    return this.callJsonApi<ISubscriptionActivityItem[]>(
+      `${this.relativePath}/subscriptions/${subscriptionId}/activity`,
+    );
   }
 
   cancelSubscription(subscriptionId: string) {

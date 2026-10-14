@@ -1,5 +1,13 @@
 import Subscription from '../models/subscription';
 import * as CouponsService from './coupons-service';
+import * as InvoicesService from './invoices-service';
+import {
+  HISTORY_LIMIT,
+  buildActivityTimeline,
+  buildCouponHistoryEntry,
+  buildCreatedHistoryEntry,
+  buildStatusHistoryEntry,
+} from './subscription-activity';
 import { BillableEntityType, SubscriptionStatus, BillingCycle } from '@qelos/global-types';
 
 export async function listSubscriptions(
@@ -71,10 +79,12 @@ export async function createSubscription(tenant: string, data: {
   const status = data.status || 'active';
   let couponId = data.couponId;
   let couponBenefitEndsAt: Date | undefined;
+  let appliedCouponCode: string | undefined;
 
   if (data.couponCode) {
     const coupon = await CouponsService.validateCoupon(tenant, data.couponCode, data.planId.toString());
     couponId = coupon._id.toString();
+    appliedCouponCode = data.couponCode;
     if (status === 'active') {
       const redeemed = await CouponsService.redeemCoupon(tenant, couponId);
       couponBenefitEndsAt = CouponsService.calculateCouponBenefitEndDate(
@@ -98,6 +108,10 @@ export async function createSubscription(tenant: string, data: {
     couponId,
     couponBenefitEndsAt,
     dynamicAmount: data.dynamicAmount,
+    history: [
+      buildCreatedHistoryEntry(status),
+      ...(appliedCouponCode ? [buildCouponHistoryEntry(appliedCouponCode)] : []),
+    ],
     metadata: data.metadata || {},
   });
 
@@ -128,9 +142,16 @@ export async function updateSubscriptionStatus(
   status: SubscriptionStatus,
   updates: Record<string, any> = {}
 ) {
+  const previous = await (Subscription as any).findOne({ _id: subscriptionId, tenant }).select('status').lean().exec();
+
+  const update: Record<string, any> = { $set: { status, ...updates } };
+  if (previous && previous.status !== status) {
+    update.$push = { history: { $each: [buildStatusHistoryEntry(previous.status, status)], $slice: -HISTORY_LIMIT } };
+  }
+
   const subscription = await (Subscription as any).findOneAndUpdate(
     { _id: subscriptionId, tenant },
-    { $set: { status, ...updates } },
+    update,
     { new: true }
   ).lean().exec();
 
@@ -155,6 +176,9 @@ export async function setSubscriptionCoupon(tenant: string, subscriptionId: stri
 
   if (!couponCode) {
     update.$unset = { couponId: '', couponBenefitEndsAt: '' };
+    if (subscription.couponId) {
+      update.$push = { history: { $each: [buildCouponHistoryEntry(null)], $slice: -HISTORY_LIMIT } };
+    }
   } else {
     const coupon = await CouponsService.validateCoupon(tenant, couponCode, subscription.planId.toString());
     if (subscription.couponId?.toString() === coupon._id.toString()) {
@@ -163,6 +187,7 @@ export async function setSubscriptionCoupon(tenant: string, subscriptionId: stri
 
     update.$set = { couponId: coupon._id };
     update.$unset = { couponBenefitEndsAt: '' };
+    update.$push = { history: { $each: [buildCouponHistoryEntry(couponCode)], $slice: -HISTORY_LIMIT } };
     if (['active', 'trialing'].includes(subscription.status)) {
       const redeemed = await CouponsService.redeemCoupon(tenant, coupon._id.toString());
       const benefitEndsAt = CouponsService.calculateCouponBenefitEndDate(redeemed, new Date());
@@ -177,4 +202,11 @@ export async function setSubscriptionCoupon(tenant: string, subscriptionId: stri
     .findOneAndUpdate({ _id: subscriptionId, tenant }, update, { new: true })
     .lean()
     .exec();
+}
+
+/** The merged timeline (recorded history + invoices) of one subscription, newest first. */
+export async function getSubscriptionActivity(tenant: string, subscriptionId: string) {
+  const subscription = await getSubscriptionById(tenant, subscriptionId);
+  const invoices = await InvoicesService.listBySubscription(tenant, subscriptionId);
+  return { subscription, activity: buildActivityTimeline(subscription, invoices) };
 }

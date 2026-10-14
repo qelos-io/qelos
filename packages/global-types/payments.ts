@@ -99,6 +99,46 @@ export interface IPlan {
   created?: Date;
 }
 
+/** What changed on a subscription; recorded in `ISubscription.history`. */
+export type SubscriptionHistoryType = 'created' | 'status_changed' | 'canceled' | 'coupon_applied' | 'coupon_removed';
+
+/** A recorded change to a subscription (kept to the most recent 100 entries). */
+export interface ISubscriptionHistoryEntry {
+  type: SubscriptionHistoryType;
+  at: Date | string;
+  /** Previous status, for `status_changed` and `canceled`. */
+  from?: SubscriptionStatus;
+  /** New status, for `created`, `status_changed` and `canceled`. */
+  to?: SubscriptionStatus;
+  /** Coupon code, for `coupon_applied`. */
+  couponCode?: string;
+}
+
+/** One line of a subscription's activity timeline (history entries merged with its invoices). */
+export type SubscriptionActivityKind =
+  | 'subscription.created'
+  | 'subscription.status_changed'
+  | 'subscription.canceled'
+  | 'coupon.applied'
+  | 'coupon.removed'
+  | 'invoice.paid'
+  | 'invoice.pending'
+  | 'invoice.failed'
+  | 'invoice.refunded';
+
+export interface ISubscriptionActivityItem {
+  kind: SubscriptionActivityKind;
+  at: Date | string;
+  from?: SubscriptionStatus;
+  to?: SubscriptionStatus;
+  couponCode?: string;
+  /** Invoice fields, for `invoice.*` items. */
+  invoiceId?: string;
+  amount?: number;
+  currency?: string;
+  invoiceUrl?: string;
+}
+
 /** A subscription linking a billable entity to a plan. */
 export interface ISubscription {
   _id?: string;
@@ -130,6 +170,8 @@ export interface ISubscription {
    * `true`. Must be set before checkout can proceed on a dynamic plan.
    */
   dynamicAmount?: number;
+  /** Most recent changes (status transitions, coupons). Use the activity endpoint for a merged timeline. */
+  history?: ISubscriptionHistoryEntry[];
   metadata?: Record<string, any>;
   created?: Date;
 }

@@ -191,6 +191,33 @@ Returns a single subscription. **Auth**: authenticated (non-admins can only acce
 
 ---
 
+### `GET /api/subscriptions/:id/activity`
+
+Returns the activity timeline of a subscription, **newest first** (up to 100 items): the subscription's recorded history (creation, status changes, cancellation, coupons) merged with its invoices. **Auth**: authenticated (non-admins can only read the activity of their own entity's subscriptions).
+
+Subscriptions created before history was recorded get a synthesized `subscription.created` item; their earlier status changes are not available.
+
+**Response** — an array of items:
+
+| Field | Type | Description |
+|---|---|---|
+| `kind` | `string` | `subscription.created`, `subscription.status_changed`, `subscription.canceled`, `coupon.applied`, `coupon.removed`, `invoice.paid`, `invoice.pending`, `invoice.failed` or `invoice.refunded` |
+| `at` | `string` (ISO date) | When it happened (`paidAt` for paid invoices) |
+| `from` / `to` | `string` | Previous / new status, on `subscription.*` items |
+| `couponCode` | `string` | On `coupon.applied` |
+| `invoiceId`, `amount`, `currency`, `invoiceUrl` | — | On `invoice.*` items |
+
+**Errors**
+
+| Code | HTTP | Description |
+|---|---|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | No subscription with the given ID |
+| — | 403 | Access denied |
+
+> **SDK:** `sdk.payments.getSubscriptionActivity(subscriptionId)` · `adminSdk.managePayments.getSubscriptionActivity(subscriptionId)`
+
+---
+
 ### `POST /api/subscriptions`
 
 Create a pending subscription. **Auth**: authenticated.

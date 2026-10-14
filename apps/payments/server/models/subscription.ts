@@ -1,5 +1,5 @@
 import mongoose, { Document } from 'mongoose';
-import { BillableEntityType, SubscriptionStatus, BillingCycle } from '@qelos/global-types';
+import { BillableEntityType, SubscriptionStatus, BillingCycle, ISubscriptionHistoryEntry } from '@qelos/global-types';
 
 export interface SubscriptionDocument extends Document {
   tenant: string;
@@ -17,6 +17,8 @@ export interface SubscriptionDocument extends Document {
   /** When the active coupon's discounted/free benefit period ends; after this date, billing reverts to standard pricing. */
   couponBenefitEndsAt: Date;
   dynamicAmount: number;
+  /** Most recent subscription changes, newest last (see services/subscription-activity.ts). */
+  history: ISubscriptionHistoryEntry[];
   metadata: Record<string, any>;
   created: Date;
 }
@@ -62,6 +64,21 @@ const SubscriptionSchema = new mongoose.Schema<any, any>({
   couponBenefitEndsAt: Date,
   dynamicAmount: {
     type: Number,
+  },
+  history: {
+    type: [
+      new mongoose.Schema(
+        {
+          type: { type: String, required: true },
+          at: { type: Date, default: Date.now },
+          from: String,
+          to: String,
+          couponCode: String,
+        },
+        { _id: false },
+      ),
+    ],
+    default: () => [],
   },
   metadata: {
     type: mongoose.Schema.Types.Mixed,

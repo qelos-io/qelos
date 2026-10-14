@@ -21,6 +21,7 @@ Subscriptions track which user or workspace is subscribed to a plan, including b
 | `externalSubscriptionId` | `string` | Provider-side subscription ID |
 | `providerKind` | `string` | Payment provider (e.g. `"paddle"`) |
 | `couponId` | `string` | Applied coupon, if any |
+| `history` | `array` | The most recent changes (status transitions, coupons), up to 100 entries. Use the [activity endpoint](#get-subscription-activity) for a merged timeline |
 
 ## Status Lifecycle
 
@@ -116,6 +117,14 @@ GET /api/subscriptions/:id
 
 Non-admins can only access their own entity's subscriptions.
 
+### Get Subscription Activity
+
+```
+GET /api/subscriptions/:id/activity
+```
+
+Returns the subscription's timeline, newest first: its recorded history (creation, status changes, cancellation, coupons) merged with its invoices. Non-admins can only read the activity of their own entity's subscriptions. See the [API reference](/api/payments#get-api-subscriptions-id-activity) for the item shape.
+
 ### Set Dynamic Amount (admin only)
 
 Sets or updates the charge amount on a pending subscription before checkout. Can also be called during an active subscription period to reprice the next billing cycle.
@@ -155,6 +164,9 @@ const subscription = await sdk.payments.getMySubscription();
 
 // Cancel subscription
 await sdk.payments.cancelSubscription('subscription-id');
+
+// Timeline of a subscription: status changes, coupons and invoices, newest first
+const activity = await sdk.payments.getSubscriptionActivity('subscription-id');
 ```
 
 ### Admin SDK
@@ -181,6 +193,9 @@ const sub = await adminSdk.managePayments.getSubscription('sub-id');
 
 // Cancel any subscription
 await adminSdk.managePayments.cancelSubscription('sub-id');
+
+// Timeline of any subscription (status changes, coupons, invoices)
+const activity = await adminSdk.managePayments.getSubscriptionActivity('sub-id');
 ```
 
 ## Webhook-Driven Updates

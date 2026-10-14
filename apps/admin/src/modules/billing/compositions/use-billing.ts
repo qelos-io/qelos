@@ -1,7 +1,8 @@
-import { ref, computed, Ref } from 'vue'
+import { ref, computed, watch, Ref } from 'vue'
 import billingService, { CheckoutRequest, CheckoutResponse } from '@/services/apis/billing-service'
 import { useDispatcher } from '@/modules/core/compositions/dispatcher'
-import { IPlan, ISubscription, IInvoice, ICoupon, BillableEntityType, BillingCycle } from '@qelos/global-types'
+import { IPlan, ISubscription, ISubscriptionActivityItem, ICoupon, BillableEntityType, BillingCycle } from '@qelos/global-types'
+import { pickCurrentSubscription } from '../services/billing-presentation'
 
 export function useBillingPlans() {
   const {
@@ -19,21 +20,26 @@ export function useBillingPlans() {
   return { plans, activePlans, loading, loaded, error, retry }
 }
 
-export function useSubscription(billableEntityType: Ref<BillableEntityType>, billableEntityId: Ref<string>) {
+/**
+ * The subscription that best describes the entity (live first, then the latest ended one),
+ * whatever its status; a past-due or pending subscription is still "the" subscription.
+ */
+export function useCurrentSubscription(billableEntityType: Ref<BillableEntityType>, billableEntityId: Ref<string>) {
   const subscription = ref<ISubscription | null>(null)
   const loading = ref(false)
   const loaded = ref(false)
   const error = ref<any>(null)
 
-  async function fetch() {
+  async function refresh() {
     if (!billableEntityId.value) return
     loading.value = true
     error.value = null
     try {
-      subscription.value = await billingService.getActiveSubscription(
-        billableEntityType.value,
-        billableEntityId.value
-      )
+      const subscriptions = await billingService.getSubscriptions({
+        billableEntityType: billableEntityType.value,
+        billableEntityId: billableEntityId.value,
+      })
+      subscription.value = pickCurrentSubscription(subscriptions || [])
     } catch (e) {
       error.value = e
     } finally {
@@ -42,26 +48,28 @@ export function useSubscription(billableEntityType: Ref<BillableEntityType>, bil
     }
   }
 
-  fetch()
+  refresh()
 
-  return { subscription, loading, loaded, error, refresh: fetch }
+  return { subscription, loading, loaded, error, refresh }
 }
 
-export function useInvoices(billableEntityType: Ref<BillableEntityType>, billableEntityId: Ref<string>) {
-  const invoices = ref<IInvoice[]>([])
+/** The merged timeline (history + invoices) of a subscription, newest first. */
+export function useSubscriptionActivity(subscriptionId: Ref<string | undefined>) {
+  const activity = ref<ISubscriptionActivityItem[]>([])
   const loading = ref(false)
   const loaded = ref(false)
   const error = ref<any>(null)
 
-  async function fetch() {
-    if (!billableEntityId.value) return
+  async function refresh() {
+    if (!subscriptionId.value) {
+      activity.value = []
+      loaded.value = true
+      return
+    }
     loading.value = true
     error.value = null
     try {
-      invoices.value = await billingService.getInvoices({
-        billableEntityType: billableEntityType.value,
-        billableEntityId: billableEntityId.value,
-      })
+      activity.value = await billingService.getSubscriptionActivity(subscriptionId.value)
     } catch (e) {
       error.value = e
     } finally {
@@ -70,9 +78,34 @@ export function useInvoices(billableEntityType: Ref<BillableEntityType>, billabl
     }
   }
 
-  fetch()
+  watch(subscriptionId, refresh, { immediate: true })
 
-  return { invoices, loading, loaded, error, refresh: fetch }
+  return { activity, loading, loaded, error, refresh }
+}
+
+/** The plan of a subscription, even when it is no longer public or active. */
+export function useSubscriptionPlan(planId: Ref<string | undefined>) {
+  const plan = ref<IPlan | null>(null)
+  const loading = ref(false)
+
+  watch(
+    planId,
+    async (id) => {
+      plan.value = null
+      if (!id) return
+      loading.value = true
+      try {
+        plan.value = await billingService.getPlan(id)
+      } catch {
+        plan.value = null
+      } finally {
+        loading.value = false
+      }
+    },
+    { immediate: true },
+  )
+
+  return { plan, loading }
 }
 
 export function useCheckout() {
