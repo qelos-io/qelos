@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, toRef } from 'vue';
+import { computed, ref, toRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { BillableEntityType, BillingCycle, ICoupon, IPlan, ISubscription } from '@qelos/global-types';
 import subscriptionsService from '@/services/apis/subscriptions-service';
-import InvoiceHistory from '@/modules/billing/components/InvoiceHistory.vue';
+import ActivityTimeline from '@/modules/billing/components/ActivityTimeline.vue';
+import { useSubscriptionActivity } from '@/modules/billing/compositions/use-billing';
 import { usePlansStore } from '../store/plans';
 import { useCouponsStore } from '../store/coupons';
 import { useEntitySubscriptions } from '../compositions/entity-subscriptions';
@@ -32,6 +33,12 @@ const { subscriptions, current, loading, error, reload } = useEntitySubscription
 );
 
 const saving = ref(false);
+
+// the timeline follows the live subscription, or the latest ended one
+const { activity, loading: activityLoading, refresh: refreshActivity } = useSubscriptionActivity(
+  computed(() => (current.value || subscriptions.value[0])?._id),
+);
+watch(subscriptions, () => refreshActivity());
 
 const currentPlan = computed(() => plans.value?.find((plan) => plan._id === current.value?.planId));
 const currentCoupon = computed(() => coupons.value?.find((coupon) => coupon._id === current.value?.couponId));
@@ -306,7 +313,7 @@ defineExpose({ reload });
       </el-table>
     </el-card>
 
-    <InvoiceHistory :billable-entity-type="billableEntityType" :billable-entity-id="billableEntityId" />
+    <ActivityTimeline :activity="activity" :loading="activityLoading" />
 
     <!-- attach / change plan -->
     <el-drawer v-model="drawerOpen" :title="current ? t('Change Plan') : t('Attach to Plan')" size="min(520px, 100vw)">
