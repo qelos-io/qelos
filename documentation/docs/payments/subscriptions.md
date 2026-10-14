@@ -117,6 +117,14 @@ GET /api/subscriptions/:id
 
 Non-admins can only access their own entity's subscriptions.
 
+### Subscriptions Summary (admin only)
+
+```
+GET /api/subscriptions/summary
+```
+
+Counts per status and plan, estimated MRR and the subscriptions that need attention (past due, or pending for over a day). Optional `billableEntityType` filter. See the [API reference](/api/payments#get-api-subscriptions-summary) for the response shape.
+
 ### Get Subscription Activity
 
 ```
@@ -196,6 +204,9 @@ await adminSdk.managePayments.cancelSubscription('sub-id');
 
 // Timeline of any subscription (status changes, coupons, invoices)
 const activity = await adminSdk.managePayments.getSubscriptionActivity('sub-id');
+
+// Overview: counts per status/plan, estimated MRR, subscriptions needing attention
+const summary = await adminSdk.managePayments.getSubscriptionsSummary();
 ```
 
 ## Webhook-Driven Updates

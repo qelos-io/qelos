@@ -319,6 +319,7 @@ for (const sub of workspaceSubs) {
 | `getSubscriptions(query?)` | List subscriptions across all entities |
 | `getSubscription(subscriptionId)` | Get a single subscription |
 | `getSubscriptionActivity(subscriptionId)` | Timeline of any subscription: status changes, coupons and invoices, newest first |
+| `getSubscriptionsSummary(query?)` | Overview: counts per status and plan, estimated MRR and subscriptions needing attention |
 | `getWorkspaceSubscriptions(query?)` | List workspace subscriptions with the related plan populated |
 | `createSubscription(data)` | Create a pending subscription on behalf of any entity |
 | `cancelSubscription(subscriptionId)` | Cancel any subscription |

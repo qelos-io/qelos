@@ -9,6 +9,15 @@ export const pricingPlansRoutes: RouteRecordRaw = {
     {
       path: '',
       name: 'pricing-plans',
+      component: async () => (await import('./views/PricingOverview.vue')).default,
+      meta: {
+        roles: ['admin'],
+        name: 'Pricing & Billing',
+      },
+    },
+    {
+      path: 'plans',
+      name: 'plans-list',
       component: async () => (await import('./views/PlansList.vue')).default,
       meta: {
         roles: ['admin'],
@@ -49,23 +58,17 @@ export const pricingPlansRoutes: RouteRecordRaw = {
       meta: { roles: ['admin'] },
     },
     {
-      path: 'workspaces',
-      name: 'workspace-subscriptions',
-      component: async () => (await import('./views/WorkspaceSubscriptions.vue')).default,
+      path: 'subscribers',
+      name: 'subscribers',
+      component: async () => (await import('./views/Subscribers.vue')).default,
       meta: {
         roles: ['admin'],
-        name: 'Workspace Subscriptions',
+        name: 'Subscribers',
       },
     },
-    {
-      path: 'users',
-      name: 'user-subscriptions',
-      component: async () => (await import('./views/UserSubscriptions.vue')).default,
-      meta: {
-        roles: ['admin'],
-        name: 'User Subscriptions',
-      },
-    },
+    // the former Workspaces / Users tabs live in the unified Subscribers view
+    { path: 'workspaces', name: 'workspace-subscriptions', redirect: { name: 'subscribers', query: { type: 'workspace' } } },
+    { path: 'users', name: 'user-subscriptions', redirect: { name: 'subscribers', query: { type: 'user' } } },
     {
       path: 'configuration',
       name: 'paymentsConfiguration',

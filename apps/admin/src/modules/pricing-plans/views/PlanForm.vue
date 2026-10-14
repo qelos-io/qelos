@@ -35,6 +35,16 @@ const form = reactive({
   dynamic: false,
 });
 
+const previewCycle = ref<'monthly' | 'yearly'>('monthly');
+const yearlySaving = computed(() =>
+  form.monthlyPrice > 0 ? Math.round((1 - form.yearlyPrice / (form.monthlyPrice * 12)) * 100) : 0,
+);
+
+function applyYearlyDiscount(percent: number) {
+  form.yearlyPrice = Math.round(form.monthlyPrice * 12 * (1 - percent / 100) * 100) / 100;
+  previewCycle.value = 'yearly';
+}
+
 const newFeature = ref('');
 const newLimitKey = ref('');
 const newLimitValue = ref('');
@@ -71,7 +81,7 @@ onMounted(async () => {
       }));
     } catch {
       ElMessage.error(t('Failed to load plan'));
-      router.push({ name: 'pricing-plans' });
+      router.push({ name: 'plans-list' });
     } finally {
       loading.value = false;
     }
@@ -135,7 +145,7 @@ async function submit() {
       await plansStore.create(payload as any);
       ElMessage.success(t('Plan created'));
     }
-    router.push({ name: 'pricing-plans' });
+    router.push({ name: 'plans-list' });
   } catch {
     ElMessage.error(t('Failed to save plan'));
   }
@@ -216,7 +226,7 @@ const planPreview = computed(() => ({
 <template>
   <div class="plan-form-page" v-loading="loading">
     <div class="form-header">
-      <el-page-header @back="router.push({ name: 'pricing-plans' })">
+      <el-page-header @back="router.push({ name: 'plans-list' })">
         <template #content>
           <span class="page-title">{{ isEdit ? t('Edit Plan') : t('Create Plan') }}</span>
         </template>
@@ -245,11 +255,6 @@ const planPreview = computed(() => ({
             </el-form-item>
 
             <el-row :gutter="16">
-              <el-col :span="8">
-                <el-form-item :label="t('Sort Order')">
-                  <el-input-number v-model="form.sortOrder" :min="0" controls-position="right" style="width: 100%" />
-                </el-form-item>
-              </el-col>
               <el-col :span="8">
                 <el-form-item :label="t('Status')">
                   <el-switch v-model="form.isActive" :active-text="t('Active')" :inactive-text="t('Inactive')" />
@@ -302,6 +307,15 @@ const planPreview = computed(() => ({
                 </el-form-item>
               </el-col>
             </el-row>
+
+            <div v-if="!form.dynamic && form.monthlyPrice > 0" class="yearly-helper">
+              <span class="saving" :class="{ none: yearlySaving <= 0 }">
+                {{ yearlySaving > 0 ? `${t('Yearly billing saves')} ${yearlySaving}% ${t('compared with monthly')}` : t('Yearly billing costs the same as twelve months or more') }}
+              </span>
+              <span class="presets" role="group" :aria-label="t('Yearly discount')">
+                <el-button v-for="d in [10, 15, 20, 25]" :key="d" size="small" @click="applyYearlyDiscount(d)">−{{ d }}%</el-button>
+              </span>
+            </div>
           </el-card>
 
           <el-card shadow="never" class="form-section">
@@ -406,7 +420,7 @@ const planPreview = computed(() => ({
           </el-card>
 
           <div class="form-actions">
-            <el-button @click="router.push({ name: 'pricing-plans' })">{{ t('Cancel') }}</el-button>
+            <el-button @click="router.push({ name: 'plans-list' })">{{ t('Cancel') }}</el-button>
             <el-button type="primary" @click="submit" :loading="plansStore.saving">
               {{ isEdit ? t('Update Plan') : t('Create Plan') }}
             </el-button>
@@ -416,13 +430,44 @@ const planPreview = computed(() => ({
 
       <div class="form-preview">
         <h3>{{ t('Preview') }}</h3>
-        <PlanCard :plan="planPreview" />
+        <el-segmented v-model="previewCycle" class="preview-cycle" :options="[{ label: t('Monthly'), value: 'monthly' }, { label: t('Yearly'), value: 'yearly' }]" :aria-label="t('Billing')" />
+        <PlanCard :plan="planPreview" :billing-cycle="previewCycle" />
+        <p class="preview-note">{{ t('This is how the plan looks to customers.') }}</p>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.yearly-helper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.yearly-helper .saving {
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
+
+.yearly-helper .saving.none {
+  color: var(--el-text-color-secondary);
+  font-weight: 400;
+}
+
+.preview-cycle {
+  margin-bottom: 12px;
+}
+
+.preview-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
 .plan-form-page {
   padding: 20px;
   max-width: 1200px;

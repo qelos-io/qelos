@@ -1,7 +1,7 @@
 import { QelosSDKOptions } from '../types';
 import BaseSDK from '../base-sdk';
 import {
-  IPlan, ISubscription, ISubscriptionActivityItem, IInvoice, ICoupon,
+  IPlan, ISubscription, ISubscriptionActivityItem, ISubscriptionsSummary, IInvoice, ICoupon,
   BillableEntityType, SubscriptionStatus, InvoiceStatus, BillingCycle,
   IPaymentsConfigurationMetadata, CheckoutCustomer,
 } from '@qelos/global-types';
@@ -113,6 +113,16 @@ export default class QlPaymentsAdmin extends BaseSDK {
 
   getSubscription(subscriptionId: string) {
     return this.callJsonApi<ISubscription>(`/api/subscriptions/${subscriptionId}`);
+  }
+
+  /**
+   * Overview of the tenant's subscriptions: counts per status and plan, estimated MRR
+   * (before coupons, fixed-price plans only) and the subscriptions that need attention
+   * (past due, or pending for over a day). Aggregated server-side.
+   */
+  getSubscriptionsSummary(query?: { billableEntityType?: BillableEntityType }) {
+    const qs = query ? `?${new URLSearchParams(query as any)}` : '';
+    return this.callJsonApi<ISubscriptionsSummary>(`/api/subscriptions/summary${qs}`);
   }
 
   /**

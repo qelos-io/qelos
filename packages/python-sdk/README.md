@@ -337,6 +337,7 @@ plans = await admin_sdk.manage_payments.get_plans()
 await admin_sdk.manage_payments.create_plan({...})
 subscriptions = await admin_sdk.manage_payments.get_subscriptions()
 activity = await admin_sdk.manage_payments.get_subscription_activity("subscription-id")
+summary = await admin_sdk.manage_payments.get_subscriptions_summary()
 coupons = await admin_sdk.manage_payments.get_coupons()
 ```
 

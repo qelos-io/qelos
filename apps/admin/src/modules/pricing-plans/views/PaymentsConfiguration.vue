@@ -6,13 +6,33 @@ import billingService from '@/services/apis/billing-service';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { storeToRefs } from 'pinia';
 import { IntegrationSourceKind } from '@qelos/global-types';
-import PricingTabs from '../components/PricingTabs.vue';
+import PricingHeader from '../components/PricingHeader.vue';
+import integrationSourcesService from '@/services/apis/integration-sources-service';
+import { getSetupSteps, isSetupComplete } from '../services/pricing-overview';
+import { usePlansStore } from '../store/plans';
 
 const { t } = useI18n();
 const sourcesStore = useIntegrationSourcesStore();
 const { result: sources } = storeToRefs(sourcesStore);
 
 const loading = ref(true);
+const { plans } = storeToRefs(usePlansStore());
+const checking = ref(false);
+const connection = ref<{ ok: boolean; message: string } | null>(null);
+
+async function checkConnection() {
+  if (!form.paymentSourceId) return;
+  checking.value = true;
+  connection.value = null;
+  try {
+    const result = await integrationSourcesService.checkStatus(form.paymentSourceId);
+    connection.value = { ok: result.status === 'connected', message: result.message || '' };
+  } catch (e: any) {
+    connection.value = { ok: false, message: e?.response?.data?.message || t('Could not reach the provider') };
+  } finally {
+    checking.value = false;
+  }
+}
 const saving = ref(false);
 
 const PAYMENT_KINDS = [IntegrationSourceKind.Paddle, IntegrationSourceKind.PayPal, IntegrationSourceKind.Sumit];
@@ -34,6 +54,15 @@ const selectedSource = computed(() =>
   paymentSources.value.find(s => s._id === form.paymentSourceId)
 );
 
+const steps = computed(() =>
+  getSetupSteps({ isEnabled: form.isEnabled, paymentSourceId: form.paymentSourceId } as any, plans.value || []),
+);
+const complete = computed(() => isSetupComplete(steps.value));
+const remaining = computed(() =>
+  steps.value
+    .filter((step) => !step.done)
+    .map((step) => (step.id === 'provider' ? t('choose a provider') : step.id === 'enabled' ? t('turn payments on') : t('publish a plan'))),
+);
 const requiresRedirectUrls = computed(() => selectedSource.value?.kind === IntegrationSourceKind.Sumit);
 
 const currencies = ['USD', 'EUR', 'GBP', 'ILS', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL'];
@@ -77,11 +106,17 @@ async function save() {
 
 <template>
   <div class="payments-config-page" v-loading="loading">
-    <div class="config-header">
-      <PricingTabs active="configuration" />
-    </div>
+    <PricingHeader active="setup" :subtitle="$t('Connect your payment provider and decide how checkout behaves.')" />
 
-    <h2 class="section-title">{{ t('Payments Configuration') }}</h2>
+    <div class="readiness" :class="{ ready: complete }" role="status">
+      <strong>{{ complete ? $t('Ready to take payments') : $t('Not ready yet') }}</strong>
+      <span>
+        <template v-if="complete">{{ $t('Provider connected, payments on and at least one active plan.') }}</template>
+        <template v-else>
+          {{ remaining.length }} {{ $t('steps left') }}: {{ remaining.join(', ') }}
+        </template>
+      </span>
+    </div>
 
     <el-form label-position="top" size="default" class="config-form">
       <el-card shadow="never">
@@ -138,6 +173,13 @@ async function save() {
             <router-link to="/integrations">{{ t('Go to Integrations') }}</router-link>
           </template>
         </el-alert>
+
+        <div v-if="selectedSource" class="check-row">
+          <el-button :loading="checking" @click="checkConnection">{{ t('Check connection') }}</el-button>
+          <span v-if="connection" class="check-result" :class="{ ok: connection.ok }" role="status">
+            {{ connection.ok ? t('Connected') : t('Connection failed') }}<template v-if="connection.message"> · {{ connection.message }}</template>
+          </span>
+        </div>
 
         <div v-if="selectedSource" class="source-info">
           <el-descriptions :column="2" border size="small">
@@ -201,6 +243,47 @@ async function save() {
 </template>
 
 <style scoped>
+.payments-config-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  max-inline-size: 820px;
+}
+
+.readiness {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 18px;
+  border: 1px solid var(--el-color-warning-light-5);
+  border-radius: 12px;
+  background: var(--el-color-warning-light-9);
+  font-size: 14px;
+}
+
+.readiness.ready {
+  border-color: var(--el-color-primary-light-5);
+  background: var(--el-color-primary-light-9);
+}
+
+.check-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-block-start: 14px;
+}
+
+.check-result {
+  font-size: 13px;
+  color: var(--el-color-danger);
+}
+
+.check-result.ok {
+  color: var(--el-color-primary);
+}
+
 .payments-config-page {
   padding: 20px;
   max-width: 800px;

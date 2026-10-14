@@ -39,3 +39,10 @@ export const subscriptionStatusTagType: Record<string, string> = {
 export function isLiveSubscription(subscription: { status: string }) {
   return !['canceled', 'expired'].includes(subscription.status);
 }
+
+/** What yearly billing saves versus twelve monthly payments, in percent (0 when it saves nothing). */
+export function getYearlySavingPercent(plan: Pick<IPlan, 'monthlyPrice' | 'yearlyPrice'>) {
+  if (!plan.monthlyPrice || !plan.yearlyPrice) return 0;
+  const saving = 1 - plan.yearlyPrice / (plan.monthlyPrice * 12);
+  return saving > 0 ? Math.round(saving * 100) : 0;
+}

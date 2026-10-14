@@ -1,6 +1,8 @@
 import Subscription from '../models/subscription';
+import Plan from '../models/plan';
 import * as CouponsService from './coupons-service';
 import * as InvoicesService from './invoices-service';
+import { buildSubscriptionsSummary, pickAttentionItems } from './subscriptions-summary';
 import {
   HISTORY_LIMIT,
   buildActivityTimeline,
@@ -209,4 +211,30 @@ export async function getSubscriptionActivity(tenant: string, subscriptionId: st
   const subscription = await getSubscriptionById(tenant, subscriptionId);
   const invoices = await InvoicesService.listBySubscription(tenant, subscriptionId);
   return { subscription, activity: buildActivityTimeline(subscription, invoices) };
+}
+
+/**
+ * Admin overview: subscriber counts per status and plan, estimated MRR and the subscriptions
+ * that need attention. Aggregated in the database so it stays cheap for large tenants.
+ */
+export async function getSubscriptionsSummary(tenant: string, filters: { billableEntityType?: BillableEntityType } = {}) {
+  const match: Record<string, any> = { tenant };
+  if (filters.billableEntityType) match.billableEntityType = filters.billableEntityType;
+
+  const [groups, plans, candidates] = await Promise.all([
+    (Subscription as any).aggregate([
+      { $match: match },
+      { $group: { _id: { status: '$status', planId: '$planId', billingCycle: '$billingCycle' }, count: { $sum: 1 } } },
+    ]),
+    (Plan as any).find({ tenant }).select('name monthlyPrice yearlyPrice currency dynamic').lean().exec(),
+    (Subscription as any)
+      .find({ ...match, status: { $in: ['past_due', 'pending'] } })
+      .select('status planId billableEntityType billableEntityId created history')
+      .sort({ created: 1 })
+      .limit(200)
+      .lean()
+      .exec(),
+  ]);
+
+  return { ...buildSubscriptionsSummary(groups, plans), attention: pickAttentionItems(candidates) };
 }

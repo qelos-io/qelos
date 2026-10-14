@@ -1,9 +1,12 @@
 import { api, getCallData } from './api'
-import { BillableEntityType, BillingCycle, ISubscription, SubscriptionStatus } from '@qelos/global-types'
+import { BillableEntityType, BillingCycle, ISubscription, ISubscriptionsSummary, SubscriptionStatus } from '@qelos/global-types'
 
 const subscriptionsService = {
   list(params?: { billableEntityType?: BillableEntityType; billableEntityId?: string; status?: string }): Promise<ISubscription[]> {
     return api.get('/api/subscriptions', { params }).then(getCallData)
+  },
+  getSummary(params?: { billableEntityType?: BillableEntityType }): Promise<ISubscriptionsSummary> {
+    return api.get('/api/subscriptions/summary', { params }).then(getCallData)
   },
   getWorkspaceSubscriptions(params?: { billableEntityId?: string; planId?: string; status?: string }): Promise<any[]> {
     return api.get('/api/subscriptions/workspaces', { params }).then(getCallData)

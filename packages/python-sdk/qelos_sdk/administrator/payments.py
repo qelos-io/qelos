@@ -58,6 +58,13 @@ class QlPaymentsAdmin(BaseSDK):
         """Get a subscription by ID."""
         return await self.call_json_api(f"/api/subscriptions/{subscription_id}")
 
+    async def get_subscriptions_summary(
+        self, query: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Overview of subscriptions: counts per status/plan, estimated MRR and attention items."""
+        qs = "?" + urlencode(query) if query else ""
+        return await self.call_json_api(f"/api/subscriptions/summary{qs}")
+
     async def get_subscription_activity(self, subscription_id: str) -> List[Dict[str, Any]]:
         """Timeline of any subscription (status changes, coupons and invoices), newest first."""
         return await self.call_json_api(f"/api/subscriptions/{subscription_id}/activity")

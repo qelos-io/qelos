@@ -139,6 +139,31 @@ List subscriptions. **Auth**: authenticated. Regular users see only their own en
 
 ---
 
+### `GET /api/subscriptions/summary` <Badge type="warning" text="admin" />
+
+An overview of the tenant's subscriptions, aggregated in the database. **Auth**: admin only.
+
+| Query parameter | Description |
+|---|---|
+| `billableEntityType` | Optional: `user` or `workspace` |
+
+**Response**
+
+| Field | Type | Description |
+|---|---|---|
+| `byStatus` | `object` | Count per status (`pending`, `active`, `trialing`, `past_due`, `canceled`, `expired`); every status is present |
+| `live` | `number` | Subscriptions counted as customers: `active` + `trialing` + `past_due` |
+| `byPlan` | `array` | `{ planId, name, count }` per plan, live subscriptions only, largest first |
+| `mrr` | `array` | `{ currency, amount }` — **estimated** monthly recurring revenue per currency; yearly plans count as 1/12. Before coupons, fixed-price plans only |
+| `dynamicCount` | `number` | Live subscriptions on dynamic-price plans (not included in `mrr`) |
+| `attention` | `array` | Up to 10 `past_due` subscriptions and `pending` ones older than a day, longest waiting first: `{ subscriptionId, billableEntityType, billableEntityId, planId, status, since }` |
+
+> The MRR figure is an estimate from plan prices; it does not include what the payment provider actually charged.
+
+> **SDK:** `adminSdk.managePayments.getSubscriptionsSummary(query?)`
+
+---
+
 ### `GET /api/subscriptions/workspaces` <Badge type="warning" text="admin" />
 
 List subscriptions for workspaces (`billableEntityType` is always `workspace`), with the related `Plan` populated in place of `planId`. Used by the admin panel's **Pricing Plans → Workspaces** page to show which plan each workspace is attached to. **Auth**: admin.

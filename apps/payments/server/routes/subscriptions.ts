@@ -5,6 +5,7 @@ import {
   getSubscriptions,
   getSubscription,
   getSubscriptionActivity,
+  getSubscriptionsSummary,
   getMySubscription,
   getWorkspaceSubscriptions,
   createSubscription,
@@ -18,6 +19,7 @@ const router = getRouter();
 router
   .get('/api/subscriptions', populateUser, onlyAuthenticated, getSubscriptions)
   .get('/api/subscriptions/me', populateUser, onlyAuthenticated, getMySubscription)
+  .get('/api/subscriptions/summary', populateUser, onlyPrivileged, getSubscriptionsSummary)
   .get('/api/subscriptions/workspaces', populateUser, onlyPrivileged, getWorkspaceSubscriptions)
   .get('/api/subscriptions/:id', populateUser, onlyAuthenticated, getSubscription)
   .get('/api/subscriptions/:id/activity', populateUser, onlyAuthenticated, getSubscriptionActivity)

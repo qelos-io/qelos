@@ -42,3 +42,31 @@ test('getSubscriptionActivity', async (t) => {
     assert.deepEqual(result, activity);
   });
 });
+
+test('getSubscriptionsSummary', async (t) => {
+  const summary = { byStatus: { active: 2 }, live: 2, byPlan: [], mrr: [{ currency: 'USD', amount: 98 }], dynamicCount: 0, attention: [] };
+  const make = () => {
+    const calls: string[] = [];
+    const options: QelosSDKOptions = {
+      appUrl: 'http://localhost:3000',
+      fetch: async (url) => {
+        calls.push(url.toString());
+        return jsonResponse(summary);
+      },
+    };
+    return { calls, options };
+  };
+
+  await t.test('reads the overview', async () => {
+    const { calls, options } = make();
+    const result = await new QlManagePayments(options).getSubscriptionsSummary();
+    assert.equal(calls[0], 'http://localhost:3000/api/subscriptions/summary');
+    assert.deepEqual(result, summary);
+  });
+
+  await t.test('can be scoped to one entity type', async () => {
+    const { calls, options } = make();
+    await new QlManagePayments(options).getSubscriptionsSummary({ billableEntityType: 'workspace' });
+    assert.equal(calls[0], 'http://localhost:3000/api/subscriptions/summary?billableEntityType=workspace');
+  });
+});

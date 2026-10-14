@@ -176,6 +176,46 @@ export interface ISubscription {
   created?: Date;
 }
 
+/** Counts of subscriptions per status (every status is present, possibly 0). */
+export type SubscriptionStatusCounts = Record<SubscriptionStatus, number>;
+
+/** Estimated recurring revenue in one currency. */
+export interface ISubscriptionsMrr {
+  /** ISO 4217 currency code. */
+  currency: string;
+  /** Estimated monthly recurring revenue (yearly plans count as 1/12). */
+  amount: number;
+}
+
+/** A subscription that needs an admin's attention. */
+export interface ISubscriptionAttentionItem {
+  subscriptionId: string;
+  billableEntityType: BillableEntityType;
+  billableEntityId: string;
+  planId: string;
+  status: 'past_due' | 'pending';
+  /** When the subscription entered this status (falls back to its creation date). */
+  since: Date | string;
+}
+
+/** Admin overview of a tenant's subscriptions. */
+export interface ISubscriptionsSummary {
+  byStatus: SubscriptionStatusCounts;
+  /** Subscriptions that currently count as customers: active, trialing and past due. */
+  live: number;
+  /** Subscribers per plan, live subscriptions only, largest first. */
+  byPlan: { planId: string; name: string; count: number }[];
+  /**
+   * Estimated MRR from live subscriptions on fixed-price plans, before coupons and
+   * excluding anything the payment provider actually charged. Dynamic plans are not included.
+   */
+  mrr: ISubscriptionsMrr[];
+  /** Live subscriptions on dynamic-price plans (not included in `mrr`). */
+  dynamicCount: number;
+  /** Past-due and long-pending subscriptions, oldest first (up to 10). */
+  attention: ISubscriptionAttentionItem[];
+}
+
 /** A single line item within an invoice. */
 export interface IInvoiceItem {
   description: string;

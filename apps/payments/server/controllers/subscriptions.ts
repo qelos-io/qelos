@@ -53,6 +53,18 @@ export async function getSubscription(req, res: Response) {
   }
 }
 
+export async function getSubscriptionsSummary(req, res: Response) {
+  try {
+    const filters: any = {};
+    if (req.query.billableEntityType) filters.billableEntityType = req.query.billableEntityType;
+
+    const summary = await SubscriptionsService.getSubscriptionsSummary(req.headers.tenant, filters);
+    res.status(200).json(summary).end();
+  } catch (e) {
+    res.status(500).json({ message: 'failed to load subscriptions summary' }).end();
+  }
+}
+
 export async function getSubscriptionActivity(req, res: Response) {
   try {
     const { subscription, activity } = await SubscriptionsService.getSubscriptionActivity(req.headers.tenant, req.params.id);
