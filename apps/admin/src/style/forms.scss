@@ -50,7 +50,7 @@ textarea {
 
   &.el-button--primary {
     background-color: var(--main-color);
-    color: white;
+    color: var(--button-text-color, white);
     border: 1px solid var(--border-color);
 
     &:hover {

@@ -215,11 +215,18 @@ watch(() => {
       ${isDarkTheme ? '--el-color-white: var(--body-bg);' : ''}
 
       /* New color variables */
-      ${palette.buttonTextColor ? `--button-text-color: ${palette.buttonTextColor};` : '--button-text-color: #ffffff;'}
+      --button-text-color: ${palette.buttonTextColor || '#ffffff'};
       ${palette.buttonBgColor ? `--button-bg-color: ${palette.buttonBgColor};` : palette.mainColor ? `--button-bg-color: ${palette.mainColor};` : '--button-bg-color: #409eff;'}
       ${palette.focusColor ? `--focus-color: ${palette.focusColor};` : palette.mainColor ? `--focus-color: ${palette.mainColor};` : '--focus-color: #409eff;'}
     }
     
+    /* without an explicit button text colour, pick black or white from the button colour's lightness so light brand colours stay readable */
+    ${palette.buttonTextColor ? '' : `@supports (color: oklch(from red l c h)) {
+      :root {
+        --button-text-color: oklch(from var(--button-bg-color) clamp(0, calc((0.66 - l) * 1000), 1) 0 0);
+      }
+    }`}
+
     /* Element Plus component overrides for dark themes */
     ${isDarkTheme ? `
       /* Tab styles for dark themes */

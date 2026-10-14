@@ -45,11 +45,25 @@
       </el-form>
     </div>
     
-    <!-- Live Preview -->
-    <div class="preview-container flex-1" v-if="!$isMobile">
-      <div class="preview-header">{{ $t('Live Preview') }}</div>
-      <Login class="login-demo" :auth-config="edited"/>
-    </div>
+    <!-- Live preview: the real login page, at a real device width -->
+    <aside v-if="isWide" class="preview-container flex-1" :aria-label="$t('Live Preview')">
+      <div class="preview-header">
+        <span>{{ $t('Live Preview') }}</span>
+        <el-segmented v-model="device" size="small" :options="deviceOptions" :aria-label="$t('Preview device')" />
+      </div>
+      <div class="preview-body"><LoginPreviewFrame :config="edited" :device="device" /></div>
+      <a class="preview-open" href="/login" target="_blank" rel="noopener">{{ $t('Open the saved login page') }}</a>
+    </aside>
+
+    <template v-else>
+      <el-button class="preview-fab" type="primary" round size="large" @click="previewOpen = true">
+        <font-awesome-icon :icon="['fas', 'eye']" /> {{ $t('Preview') }}
+      </el-button>
+      <el-drawer v-model="previewOpen" direction="btt" size="88%" :title="$t('Live Preview')">
+        <el-segmented v-model="device" size="small" :options="deviceOptions" :aria-label="$t('Preview device')" class="drawer-device" />
+        <LoginPreviewFrame :config="edited" :device="device" />
+      </el-drawer>
+    </template>
   </div>
 </template>
 
@@ -57,7 +71,9 @@
 import { computed, ref, toRefs, watch } from 'vue';
 import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
 import { IAuthConfigurationMetadata, IntegrationSourceKind } from '@qelos/global-types';
-import Login from '@/modules/core/Login.vue';
+import LoginPreviewFrame from './auth-config-form/LoginPreviewFrame.vue';
+import { useViewport } from '@/modules/core/compositions/viewport';
+import { useI18n } from 'vue-i18n';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { ElMessage } from 'element-plus';
 import GeneralSettingsSection from './auth-config-form/GeneralSettingsSection.vue';
@@ -94,6 +110,16 @@ const edited = ref<IAuthConfigurationMetadata>({
 })
 
 const emit = defineEmits(['save']);
+
+const { t } = useI18n();
+const { width } = useViewport();
+const isWide = computed(() => width.value >= 1100);
+const previewOpen = ref(false);
+const device = ref<'desktop' | 'phone'>('desktop');
+const deviceOptions = [
+  { label: t('Desktop'), value: 'desktop' },
+  { label: t('Phone'), value: 'phone' },
+];
 
 const { groupedSources, loaded: sourcedLoaded } = toRefs(useIntegrationSourcesStore())
 
@@ -238,34 +264,57 @@ function ensureSocialLoginsSources(metadata: Partial<IAuthConfigurationMetadata>
 }
 
 .preview-container {
-  margin-inline-start: 2rem;
-  display: flex;
-  flex-direction: column;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background-color: var(--el-bg-color, #ffffff);
-  height: calc(100vh - 120px);
   position: sticky;
   inset-block-start: 20px;
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  gap: 12px;
+  min-inline-size: 0;
+  margin-inline-start: 2rem;
+  padding: 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--surface);
 }
 
 .preview-header {
-  padding: 1rem;
-  background-color: var(--el-color-primary-light-9, #ecf5ff);
-  color: var(--el-color-primary, #409eff);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   font-weight: 600;
-  text-align: center;
-  border-block-end: 1px solid var(--el-border-color-light, #e4e7ed);
 }
 
-.login-demo {
-  border: none;
-  margin: 0;
-  transform: scale(0.9);
-  transform-origin: top center;
-  height: 100%;
-  overflow: auto;
+.preview-body {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--el-fill-color-light);
+}
+
+.preview-open {
+  color: var(--el-color-primary);
+  font-size: 0.88rem;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.preview-fab {
+  position: fixed;
+  inset-block-end: calc(76px + env(safe-area-inset-bottom, 0px));
+  inset-inline-end: 16px;
+  z-index: 900;
+  gap: 8px;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+}
+
+.drawer-device {
+  margin-block-end: 12px;
 }
 
 @media (max-width: 768px) {

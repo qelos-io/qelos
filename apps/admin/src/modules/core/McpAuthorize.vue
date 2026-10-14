@@ -322,9 +322,11 @@ function appendAccessDeniedRedirect(uri: string, state?: string | null): string 
   width: 100%;
   max-width: 520px;
   padding: 32px;
-  background: #fff;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
+  background: var(--surface);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: calc(var(--border-radius, 6px) + 6px);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.08);
+  color: var(--el-text-color-primary);
   text-align: center;
 }
 
@@ -341,13 +343,13 @@ function appendAccessDeniedRedirect(uri: string, state?: string | null): string 
   height: 56px;
   margin-block-end: 16px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--primary-color, #4f46e5) 12%, transparent);
-  color: var(--primary-color, #4f46e5);
+  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+  color: var(--el-color-primary);
   font-size: 24px;
 }
 
 .mcp-authorize-lead {
-  color: var(--text-muted, #666);
+  color: var(--el-text-color-secondary);
   margin-block: 0 24px;
 }
 
@@ -355,7 +357,7 @@ function appendAccessDeniedRedirect(uri: string, state?: string | null): string 
   margin: 0 0 24px;
   padding: 16px;
   border-radius: calc(var(--border-radius) * 0.8);
-  background: var(--body-bg);
+  background: var(--el-fill-color-light);
   text-align: start;
 }
 
@@ -365,7 +367,7 @@ function appendAccessDeniedRedirect(uri: string, state?: string | null): string 
 
 .mcp-authorize-details dt {
   font-size: 0.85rem;
-  color: var(--text-muted, #666);
+  color: var(--el-text-color-secondary);
   margin-block-end: 4px;
 }
 
@@ -386,7 +388,20 @@ function appendAccessDeniedRedirect(uri: string, state?: string | null): string 
   justify-content: center;
 }
 
-html[data-dark-mode="true"] .mcp-authorize-card {
-  background: var(--body-bg);
+@media (max-width: 639px) {
+  .mcp-authorize-page {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .mcp-authorize-card {
+    padding: 20px;
+    box-shadow: none;
+  }
+
+  .mcp-authorize-actions .el-button {
+    inline-size: 100%;
+    margin-inline: 0;
+  }
 }
 </style>

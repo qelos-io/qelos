@@ -61,9 +61,9 @@ body[data-layout-style='stacked-header'] {
 
 // Navigation Layout Width Overrides
 body[data-navigation-layout='icon-above'] {
-  --nav-width: 180px;
+  --nav-width: 200px;
   --collapsed-nav-width: 64px;
-  --layout-header-max-width: calc(100vw - 180px);
+  --layout-header-max-width: calc(100vw - 200px);
 }
 
 body[data-navigation-layout='icons-only'] {
@@ -73,15 +73,15 @@ body[data-navigation-layout='icons-only'] {
 }
 
 body[data-navigation-layout='text-only'] {
-  --nav-width: 180px;
+  --nav-width: 232px;
   --collapsed-nav-width: 64px;
-  --layout-header-max-width: calc(100vw - 180px);
+  --layout-header-max-width: calc(100vw - 232px);
 }
 
 body[data-navigation-layout='compact'] {
-  --nav-width: 200px;
+  --nav-width: 216px;
   --collapsed-nav-width: 64px;
-  --layout-header-max-width: calc(100vw - 200px);
+  --layout-header-max-width: calc(100vw - 216px);
 }
 
 body:has(nav.collapsed) {

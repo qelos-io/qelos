@@ -1,227 +1,237 @@
+<script lang="ts" setup>
+import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { useLogin } from '../compositions/authentication';
+import type { IAuthConfigurationMetadata } from '@qelos/global-types';
+
+const props = defineProps<{
+  authConfig: IAuthConfigurationMetadata;
+  /** inside the auth configuration editor: looks real, does nothing */
+  preview?: boolean;
+}>();
+
+const { t } = useI18n();
+const { login, form, isLoggedIn } = useLogin();
+const router = useRouter();
+
+const submitting = ref(false);
+const error = ref('');
+
+const usernameLabel = computed(() => {
+  switch (props.authConfig.treatUsernameAs) {
+    case 'email':
+      return t('Email');
+    case 'phone':
+      return t('Phone number');
+    case 'username':
+      return t('Username');
+    default:
+      return t('Username / Email');
+  }
+});
+const usernameType = computed(() => (props.authConfig.treatUsernameAs === 'email' ? 'email' : props.authConfig.treatUsernameAs === 'phone' ? 'tel' : 'text'));
+const usernameAutocomplete = computed(() => (props.authConfig.treatUsernameAs === 'email' ? 'email' : props.authConfig.treatUsernameAs === 'phone' ? 'tel' : 'username'));
+
+const providers = computed(() => {
+  const sources = props.authConfig.socialLoginsSources || {};
+  return [
+    { key: 'google', label: t('Login with Google'), icon: ['fab', 'google'] },
+    { key: 'github', label: t('Login with GitHub'), icon: ['fab', 'github'] },
+    { key: 'linkedin', label: t('Login with LinkedIn'), icon: ['fab', 'linkedin'] },
+    { key: 'facebook', label: t('Login with Facebook'), icon: ['fab', 'facebook'] },
+  ].filter((provider) => (sources as Record<string, unknown>)[provider.key]);
+});
+const hasPassword = computed(() => !props.authConfig.disableUsernamePassword);
+
+watch(isLoggedIn, (is) => {
+  if (is && !props.preview) {
+    const redirect = router.currentRoute.value.query.redirect as string;
+    if (redirect) {
+      router.push(redirect);
+    } else {
+      router.push({ name: 'qelos-home' });
+    }
+  }
+});
+
+async function submit() {
+  if (props.preview || submitting.value) return;
+  error.value = '';
+  submitting.value = true;
+  try {
+    await login();
+  } catch (err: any) {
+    error.value = err?.response?.data?.message || t('We could not sign you in. Check your details and try again.');
+  } finally {
+    submitting.value = false;
+  }
+}
+
+const loginWith = (provider: string) => {
+  if (props.preview) return;
+  const redirect = router.currentRoute.value.query.redirect as string;
+  let url = `/api/auth/${provider}`;
+  if (redirect) {
+    const returnUrl = `/auth/callback?returnUrl=${encodeURIComponent(redirect)}`;
+    url += `?returnUrl=${encodeURIComponent(returnUrl)}`;
+  }
+  window.location.href = url;
+};
+</script>
+
 <template>
-  <div class="login-container">
+  <div class="card" :inert="preview || undefined">
     <slot name="header" />
-    <el-form v-if="!props.authConfig?.disableUsernamePassword" class="login-form" @submit.native.prevent="submit">
-      <el-form-item :label="$t('Username / Email')" class="form-item-flex">
-        <el-input size="large" name="username" v-model="form.username" :type="authConfig.treatUsernameAs" required
-          @focus="onFocus" dir="ltr" />
-      </el-form-item>
-      <el-form-item :label="$t('Password')" class="form-item-flex">
-        <el-input size="large" name="password" v-model="form.password" type="password" required @focus="onFocus"
-          dir='ltr' />
-      </el-form-item>
-      <div class="form-buttons">
-        <el-button native-type="submit" :loading="submitting">
-          <span>{{ $t('Login') }}</span>
-          <template #icon>
-            <font-awesome-icon :icon="['fas', $t('appDirection') === 'rtl' ? 'arrow-left-long' : 'arrow-right-long']" />
-          </template>
-        </el-button>
-      </div>
-    </el-form>
 
-    <template v-if="hasSocialLogins">
-      <div v-if="!props.authConfig?.disableUsernamePassword" class="separator">
-        <span>{{ $t('OR') }}</span>
+    <form v-if="hasPassword" class="form" novalidate @submit.prevent="submit">
+      <el-alert v-if="error" class="error" type="error" show-icon :closable="false" :title="error" role="alert" />
+
+      <div class="field">
+        <label for="login-username">{{ usernameLabel }}</label>
+        <el-input id="login-username" v-model="form.username" size="large" name="username" :type="usernameType" :autocomplete="usernameAutocomplete" dir="ltr" required />
+      </div>
+      <div class="field">
+        <label for="login-password">{{ $t('Password') }}</label>
+        <el-input id="login-password" v-model="form.password" size="large" name="password" type="password" show-password autocomplete="current-password" dir="ltr" required />
       </div>
 
-      <el-button v-if="authConfig.socialLoginsSources?.linkedin" type="primary" class="social-btn linkedin-button" @click="loginWith('linkedin')">
-        <font-awesome-icon :icon="['fab', 'linkedin']" class="social-icon" />
-        <span>{{ $t('Login with LinkedIn') }}</span>
+      <el-button type="primary" size="large" native-type="submit" class="submit" :loading="submitting">
+        {{ $t('Login') }}
+        <font-awesome-icon :icon="['fas', $t('appDirection') === 'rtl' ? 'arrow-left-long' : 'arrow-right-long']" class="arrow" aria-hidden="true" />
       </el-button>
-      <el-button v-if="authConfig.socialLoginsSources?.facebook" type="primary" class="social-btn facebook-button" @click="loginWith('facebook')">
-        <font-awesome-icon :icon="['fab', 'facebook']" class="social-icon" />
-        <span>{{ $t('Login with Facebook') }}</span>
-      </el-button>
-      <el-button v-if="authConfig.socialLoginsSources?.google" type="primary" class="social-btn google-button" @click="loginWith('google')">
-        <font-awesome-icon :icon="['fab', 'google']" class="social-icon" />
-        <span>{{ $t('Login with Google') }}</span>
-      </el-button>
-      <el-button v-if="authConfig.socialLoginsSources?.github" type="primary" class="social-btn github-button" @click="loginWith('github')">
-        <font-awesome-icon :icon="['fab', 'github']" class="social-icon" />
-        <span>{{ $t('Login with GitHub') }}</span>
-      </el-button>
+    </form>
+
+    <template v-if="providers.length">
+      <div v-if="hasPassword" class="separator" role="separator"><span>{{ $t('OR') }}</span></div>
+      <div class="providers">
+        <button v-for="provider in providers" :key="provider.key" type="button" class="social" :class="provider.key" @click="loginWith(provider.key)">
+          <font-awesome-icon :icon="provider.icon" class="social-icon" aria-hidden="true" />
+          <span>{{ provider.label }}</span>
+        </button>
+      </div>
     </template>
 
-    <slot name="footer"/>
+    <slot name="footer" />
   </div>
 </template>
 
-<script lang="ts" setup>
-import { watch, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useLogin } from '../compositions/authentication'
-import { useSubmitting } from '../compositions/submitting'
-import { IAuthConfigurationMetadata } from '@qelos/global-types';
-
-const props = defineProps<{ authConfig: IAuthConfigurationMetadata }>()
-
-const { login, form, isLoggedIn } = useLogin()
-const router = useRouter()
-
-const { submit, submitting } = useSubmitting(login, { error: 'Login failed' })
-
-const hasSocialLogins = computed(() => {
-  return props.authConfig.socialLoginsSources?.linkedin || props.authConfig.socialLoginsSources?.facebook || props.authConfig.socialLoginsSources?.google || props.authConfig.socialLoginsSources?.github
-})
-watch(isLoggedIn, (is) => {
-  if (is) {
-    const redirect = router.currentRoute.value.query.redirect as string
-    if (redirect) {
-      router.push(redirect);
-      return
-    } else {
-      router.push({ name: 'qelos-home' })
-    }
-  }
-})
-
-const onFocus = () => {
-  window.scrollTo(0, 0)
-  document.body.scrollTop = 0
-}
-
-const loginWith = (provider: 'linkedin' | 'facebook' | 'google' | 'github') => {
-  const redirect = router.currentRoute.value.query.redirect as string
-  let url = `/api/auth/${provider}`
-  if (redirect) {
-    const returnUrl = `/auth/callback?returnUrl=${encodeURIComponent(redirect)}`
-    url += `?returnUrl=${encodeURIComponent(returnUrl)}`
-  }
-  window.location.href = url
-}
-</script>
-
-<style scoped>
-.login-container {
+<style scoped lang="scss">
+.card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 20px;
-  background: #fff;
-  border-radius: var(--border-radius);
+  gap: 20px;
+  inline-size: 100%;
+  max-inline-size: 440px;
+  margin-inline: auto;
+  padding: 28px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: calc(var(--border-radius, 6px) + 6px);
+  background: var(--surface);
+  color: var(--el-text-color-primary);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.08);
 }
 
-form {
+.form {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  width: 90%;
-  max-width: 500px;
-  margin: 0 auto;
+  gap: 16px;
 }
 
-.form-buttons {
-  text-align: end;
-
-  .el-button.el-button {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-  }
-}
-
-html[data-dark-mode="true"] {
-  .form-buttons {
-    .el-button {
-      color: var(--main-color);
-    }
-  }
-}
-
-.form-buttons :deep(.el-icon) {
-  margin-inline-start: auto;
-  position: absolute;
-  inset-inline-end: 10px;
-}
-
-.linkedin-button {
-  width: 100%;
-  background-color: #0077b5;
-  color: white;
+.field {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    color: var(--el-text-color-regular);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+}
+
+.submit {
+  inline-size: 100%;
+  margin-block-start: 4px;
+  gap: 10px;
+}
+
+.arrow {
+  margin-inline-start: 8px;
 }
 
 .separator {
   display: flex;
   align-items: center;
-  width: 90%;
-  text-align: center;
-  margin: 20px 0;
-}
+  gap: 12px;
+  color: var(--el-text-color-secondary);
+  font-size: 0.8rem;
 
-.separator::before,
-.separator::after {
-  content: "";
-  flex: 1;
-  border-bottom: 1px solid #ccc;
-}
-
-.separator span {
-  padding: 0 12px;
-  color: #666;
-  white-space: nowrap;
-}
-
-.social-btn {
-  width: 90%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-inline: 0;
-  margin-block: 5px;
-  gap: 8px;
-  padding: 20px;
-  font-size: var(--base-font-size);
-  border-radius: calc(var(--border-radius) * 1.2);
-  border: none;
-  transition: background-color 0.3s;
-  color: white;
-
-  &:hover {
-    border: none;
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-block-start: 1px solid var(--el-border-color-lighter);
   }
 }
 
-.linkedin-button {
-  background-color: #0077b5;
+.providers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.facebook-button {
-  background-color: #1877f2;
-}
+// brand colours stay (they identify the provider); everything else follows the theme
+.social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-block-size: 46px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: calc(var(--border-radius, 6px) * 1.2);
+  color: #fff;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.15s ease;
 
-.google-button {
-  background-color: #db4437;
-}
+  &:hover {
+    filter: brightness(0.92);
+  }
 
-.github-button {
-  background-color: #24292e;
-}
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
 
-.linkedin-button:hover {
-  background-color: #005f91;
-}
-.facebook-button:hover {
-  background-color: #1565c0;
-}
-.google-button:hover {
-  background-color: #db4437;
-}
-.github-button:hover {
-  background-color: #24292e;
+  &.google {
+    background: #db4437;
+  }
+
+  &.github {
+    background: #24292e;
+  }
+
+  &.linkedin {
+    background: #0077b5;
+  }
+
+  &.facebook {
+    background: #1877f2;
+  }
 }
 
 .social-icon {
-  font-size: var(--large-font-size);
-  margin-inline-end: 18px;
+  font-size: 1.15rem;
+}
+
+@media (max-width: 639px) {
+  .card {
+    padding: 20px;
+    box-shadow: none;
+  }
 }
 </style>
+

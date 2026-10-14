@@ -1,11 +1,13 @@
 <template>
-<el-alert type="warning" show-icon class="alert" :show-close="false">
-  <div class="flex-row">
-    <div class="flex-2">{{ $t('OpenAI connection is required for AI features') }}</div>
-    <el-input class="flex-1" v-model="token" type="password" v-if="showInput" placeholder="Enter to save" @keyup.enter="addToken" />
-    <el-button v-else @click="showInput = true">{{ $t('Add OpenAI Key') }}</el-button>
+  <div class="attention-row" role="status">
+    <font-awesome-icon :icon="['fas', 'wand-magic-sparkles']" class="icon" aria-hidden="true" />
+    <p class="text">
+      <strong>{{ $t('Connect an AI provider') }}</strong>
+      <span>{{ $t('OpenAI connection is required for AI features') }}</span>
+    </p>
+    <el-input v-if="showInput" v-model="token" class="key" type="password" show-password :placeholder="$t('Paste your OpenAI key and press Enter')" :aria-label="$t('OpenAI key')" @keyup.enter="addToken" @keyup.esc="showInput = false" />
+    <el-button v-else type="primary" plain @click="showInput = true">{{ $t('Add OpenAI Key') }}</el-button>
   </div>
-</el-alert>
 </template>
 <script lang="ts" setup>
 import { ref } from 'vue';
@@ -44,14 +46,50 @@ const addToken = () => {
 }
 
 </script>
-<style scoped>
-.alert :deep(:is(.el-alert__description, .el-alert__content)) {
-  width: 100%;
-  padding-inline: 8px;
-}
-.flex-row {
-  width: 100%;
+<style scoped lang="scss">
+.attention-row {
+  display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--el-color-warning) 45%, var(--surface));
+  border-radius: calc(var(--border-radius, 6px) + 4px);
+  background: color-mix(in srgb, var(--el-color-warning) 10%, var(--surface));
+}
+
+.icon {
+  flex: none;
+  color: var(--el-color-warning);
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0 10px;
+  min-inline-size: 0;
+  margin: 0;
+  text-align: start;
+
+  span {
+    color: var(--el-text-color-secondary);
+    font-size: 0.9rem;
+  }
+}
+
+.key {
+  flex: 1;
+  max-inline-size: 360px;
+}
+
+@media (max-width: 639px) {
+  .attention-row {
+    flex-wrap: wrap;
+  }
+
+  .key {
+    flex-basis: 100%;
+    max-inline-size: none;
+  }
 }
 </style>
