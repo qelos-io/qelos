@@ -6,6 +6,9 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import type { BillableEntityType, BillingCycle, ICoupon, IPlan, ISubscription } from '@qelos/global-types';
 import subscriptionsService from '@/services/apis/subscriptions-service';
 import ActivityTimeline from '@/modules/billing/components/ActivityTimeline.vue';
+import SubscriptionHero from '@/modules/billing/components/SubscriptionHero.vue';
+import PlanDetailsCard from '@/modules/billing/components/PlanDetailsCard.vue';
+import { getActiveCouponCode, getSubscriptionState, pickCurrentSubscription } from '@/modules/billing/services/billing-presentation';
 import { useSubscriptionActivity } from '@/modules/billing/compositions/use-billing';
 import { usePlansStore } from '../store/plans';
 import { useCouponsStore } from '../store/coupons';
@@ -39,6 +42,14 @@ const { activity, loading: activityLoading, refresh: refreshActivity } = useSubs
   computed(() => (current.value || subscriptions.value[0])?._id),
 );
 watch(subscriptions, () => refreshActivity());
+
+// what the hero shows: the live subscription, else the most recent ended one
+const shown = computed(() => current.value || pickCurrentSubscription(subscriptions.value));
+const shownPlan = computed(() => (plans.value || []).find((plan) => plan._id === String(shown.value?.planId)) || null);
+const state = computed(() => getSubscriptionState(shown.value));
+const heroCouponCode = computed(() => currentCoupon.value?.code || getActiveCouponCode(activity.value));
+const failedInvoice = computed(() => activity.value.find((item) => item.kind === 'invoice.failed' && item.invoiceUrl) || null);
+const previous = computed(() => subscriptions.value.filter((subscription) => subscription._id !== shown.value?._id));
 
 const currentPlan = computed(() => plans.value?.find((plan) => plan._id === current.value?.planId));
 const currentCoupon = computed(() => coupons.value?.find((coupon) => coupon._id === current.value?.couponId));
@@ -211,109 +222,71 @@ defineExpose({ reload });
       <el-button size="small" @click="reload">{{ t('Retry') }}</el-button>
     </el-alert>
 
-    <!-- current plan -->
-    <el-card shadow="never" class="panel-card">
-      <template #header>
-        <div class="card-title">
-          <span>{{ t('Current Plan') }}</span>
-          <el-button type="primary" plain size="small" @click="openDrawer">
-            {{ current ? t('Change Plan') : t('Attach to Plan') }}
-          </el-button>
+    <SubscriptionHero
+      :subscription="shown"
+      :plan="shownPlan"
+      :state="state"
+      :coupon-code="heroCouponCode"
+      :failed-invoice="failedInvoice"
+      :canceling="saving"
+      @change-plan="openDrawer"
+      @cancel="detach"
+    />
+
+    <!-- admin tools for the live subscription -->
+    <section v-if="current" class="tools" :aria-label="t('Subscription settings')">
+      <h3>{{ t('Subscription settings') }}</h3>
+
+      <div v-if="currentPlan?.dynamic" class="tool">
+        <div class="tool-label">{{ t('Amount') }}</div>
+        <div v-if="amountEditing" class="tool-row">
+          <el-input-number v-model="amountDraft" :min="0" :precision="2" size="small" controls-position="right" />
+          <el-button size="small" type="primary" :loading="saving" @click="saveAmount">{{ t('Save') }}</el-button>
+          <el-button size="small" @click="amountEditing = false">{{ t('Cancel') }}</el-button>
         </div>
-      </template>
-
-      <el-empty v-if="!current" :image-size="70" :description="t('No plan attached')">
-        <el-button type="primary" @click="openDrawer">{{ t('Attach to Plan') }}</el-button>
-      </el-empty>
-
-      <template v-else>
-        <div class="plan-headline">
-          <strong class="plan-name">{{ currentPlan?.name || '—' }}</strong>
-          <el-tag :type="subscriptionStatusTagType[current.status] || 'info'" effect="light" size="small">
-            {{ t(current.status) }}
-          </el-tag>
-          <el-tag v-if="currentPlan && !currentPlan.isActive" type="info" effect="plain" size="small">
-            {{ t('Inactive plan') }}
-          </el-tag>
+        <div v-else class="tool-row">
+          <strong>{{ current.dynamicAmount != null ? formatMoney(current.dynamicAmount, currentPlan.currency) : t('Not set') }}</strong>
+          <el-button link type="primary" size="small" @click="startAmountEdit">{{ t('Edit') }}</el-button>
         </div>
+      </div>
 
-        <el-descriptions :column="2" size="small" class="plan-details">
-          <el-descriptions-item :label="t('Price')">
-            {{ currentPrice || '—' }}
-            <span v-if="currentPrice && !currentPlan?.dynamic" class="muted">/ {{ t(current.billingCycle) }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('Billing Cycle')">{{ t(current.billingCycle) }}</el-descriptions-item>
-          <el-descriptions-item :label="t('Current Period')">
-            {{ formatDate(current.currentPeriodStart) }} – {{ formatDate(current.currentPeriodEnd) }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('Payment provider')">{{ current.providerKind || t('Manual') }}</el-descriptions-item>
-          <el-descriptions-item v-if="currentPlan?.dynamic" :label="t('Amount')">
-            <template v-if="amountEditing">
-              <el-input-number v-model="amountDraft" :min="0" :precision="2" size="small" controls-position="right" />
-              <el-button size="small" type="primary" :loading="saving" @click="saveAmount">{{ t('Save') }}</el-button>
-              <el-button size="small" @click="amountEditing = false">{{ t('Cancel') }}</el-button>
-            </template>
-            <template v-else>
-              {{ current.dynamicAmount != null ? formatMoney(current.dynamicAmount, currentPlan.currency) : t('Not set') }}
-              <el-button link type="primary" size="small" @click="startAmountEdit">{{ t('Edit') }}</el-button>
-            </template>
-          </el-descriptions-item>
-        </el-descriptions>
-
-        <!-- coupon -->
-        <div class="coupon-block">
-          <div class="block-label">{{ t('Coupon') }}</div>
-          <div v-if="currentCoupon" class="coupon-current">
-            <el-tag type="warning" effect="plain">{{ currentCoupon.code }}</el-tag>
-            <span class="muted">
-              -{{ couponDiscountLabel(currentCoupon) }}
-              <template v-if="current.couponBenefitEndsAt">
-                · {{ t('benefit ends {date}', { date: formatDate(current.couponBenefitEndsAt) }) }}
-              </template>
-              <template v-else>· {{ t('for the life of the subscription') }}</template>
-            </span>
-            <el-button size="small" plain :loading="saving" @click="removeCoupon">{{ t('Remove Coupon') }}</el-button>
-          </div>
-          <div class="coupon-apply">
-            <el-select v-model="inlineCouponCode" filterable clearable :placeholder="currentCoupon ? t('Replace with another coupon') : t('Select a coupon')">
-              <el-option v-for="coupon in inlineCoupons" :key="coupon._id" :label="couponLabel(coupon)" :value="coupon.code" />
-              <template #empty>{{ t('No applicable coupons') }}</template>
-            </el-select>
-            <el-button :disabled="!inlineCouponCode" :loading="saving" @click="applyCoupon">{{ t('Apply Coupon') }}</el-button>
-          </div>
+      <div class="tool">
+        <div class="tool-label">{{ t('Coupon') }}</div>
+        <div v-if="currentCoupon" class="tool-row">
+          <el-tag type="warning" effect="plain">{{ currentCoupon.code }}</el-tag>
+          <span class="muted">
+            −{{ couponDiscountLabel(currentCoupon) }}
+            <template v-if="current.couponBenefitEndsAt">· {{ t('benefit ends {date}', { date: formatDate(current.couponBenefitEndsAt) }) }}</template>
+            <template v-else>· {{ t('for the life of the subscription') }}</template>
+          </span>
+          <el-button size="small" plain :loading="saving" @click="removeCoupon">{{ t('Remove Coupon') }}</el-button>
         </div>
-
-        <div class="danger-row">
-          <el-button type="danger" plain size="small" :loading="saving" @click="detach">{{ t('Detach') }}</el-button>
+        <div class="tool-row apply">
+          <el-select v-model="inlineCouponCode" filterable clearable :placeholder="currentCoupon ? t('Replace with another coupon') : t('Select a coupon')" :aria-label="t('Coupon')">
+            <el-option v-for="coupon in inlineCoupons" :key="coupon._id" :label="couponLabel(coupon)" :value="coupon.code" />
+            <template #empty>{{ t('No applicable coupons') }}</template>
+          </el-select>
+          <el-button :disabled="!inlineCouponCode" :loading="saving" @click="applyCoupon">{{ t('Apply Coupon') }}</el-button>
         </div>
-      </template>
-    </el-card>
+      </div>
+    </section>
 
-    <!-- history -->
-    <el-card v-if="subscriptions.length" shadow="never" class="panel-card">
-      <template #header><span>{{ t('Subscription history') }}</span></template>
-      <el-table :data="subscriptions" size="small" row-key="_id">
-        <el-table-column :label="t('Plan')" min-width="140">
-          <template #default="{ row }">{{ planName(row.planId) }}</template>
-        </el-table-column>
-        <el-table-column :label="t('Status')" width="120">
-          <template #default="{ row }">
+    <div v-if="shown" class="panel-grid">
+      <PlanDetailsCard :plan="shownPlan" />
+      <ActivityTimeline :activity="activity" :loading="activityLoading" />
+    </div>
+
+    <el-collapse v-if="previous.length" class="previous">
+      <el-collapse-item :title="`${t('Previous subscriptions')} (${previous.length})`" name="previous">
+        <ul class="previous-list">
+          <li v-for="row in previous" :key="row._id">
+            <strong>{{ planName(row.planId) }}</strong>
             <el-tag :type="subscriptionStatusTagType[row.status] || 'info'" size="small" effect="light">{{ t(row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('Billing Cycle')" width="120">
-          <template #default="{ row }">{{ t(row.billingCycle) }}</template>
-        </el-table-column>
-        <el-table-column :label="t('Coupon')" width="120">
-          <template #default="{ row }">{{ couponCode(row.couponId) || '—' }}</template>
-        </el-table-column>
-        <el-table-column :label="t('Started')" width="120">
-          <template #default="{ row }">{{ formatDate(row.created) }}</template>
-        </el-table-column>
-      </el-table>
-    </el-card>
-
-    <ActivityTimeline :activity="activity" :loading="activityLoading" />
+            <span class="muted">{{ t(row.billingCycle) }} · {{ formatDate(row.created) }}<template v-if="couponCode(row.couponId)"> · {{ couponCode(row.couponId) }}</template></span>
+          </li>
+        </ul>
+      </el-collapse-item>
+    </el-collapse>
 
     <!-- attach / change plan -->
     <el-drawer v-model="drawerOpen" :title="current ? t('Change Plan') : t('Attach to Plan')" size="min(520px, 100vw)">
@@ -385,30 +358,11 @@ defineExpose({ reload });
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .billing-panel {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.card-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.plan-headline {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-block-end: 12px;
-}
-
-.plan-name {
-  font-size: 1.25rem;
 }
 
 .muted {
@@ -416,37 +370,69 @@ defineExpose({ reload });
   font-size: 13px;
 }
 
-.coupon-block {
-  margin-block-start: 16px;
-  padding-block-start: 16px;
-  border-block-start: 1px solid var(--el-border-color-lighter);
+.tools {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 14px;
+  background: var(--el-bg-color);
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+  }
 }
 
-.block-label {
-  font-weight: 600;
+.tool {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-label {
   font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-secondary);
 }
 
-.coupon-current,
-.coupon-apply {
+.tool-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+
+  &.apply .el-select {
+    flex: 1 1 220px;
+    max-inline-size: 360px;
+  }
 }
 
-.coupon-apply .el-select {
-  flex: 1 1 220px;
-  max-inline-size: 360px;
+.panel-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
 }
 
-.danger-row {
-  margin-block-start: 16px;
+.previous {
+  border-radius: 12px;
+}
+
+.previous-list {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+  }
 }
 
 .drawer-body {

@@ -15,6 +15,7 @@ import { useCouponsStore } from '../store/coupons';
 import { useSubscriptionsSummaryStore } from '../store/summary';
 import { useEntityNames } from '../compositions/entity-names';
 import { formatMoney, planPrice } from '../services/pricing';
+import { entityPageRoute } from '../services/entity-links';
 
 const { t, locale } = useI18n();
 const route = useRoute();
@@ -209,19 +210,20 @@ const addOpen = ref(false);
 
     <template v-else>
       <ul v-if="isMobile" class="cards">
-        <li v-for="row in paged" :key="row._id">
-          <button type="button" class="card" @click="openEntity(row.billableEntityType, row.billableEntityId)">
-            <span class="card-top">
-              <strong dir="auto">{{ nameOf(row.billableEntityType, row.billableEntityId) }}</strong>
-              <el-tag :type="TONE[row.status]" size="small" effect="light">{{ STATUS_LABEL[row.status] }}</el-tag>
-            </span>
-            <span class="card-meta">
-              {{ planOf(row)?.name || '—' }} · {{ priceOf(row) }}
-            </span>
-            <span class="card-meta">
-              {{ row.billableEntityType === 'workspace' ? $t('Workspace') : $t('User') }} · {{ $t('Period ends') }} {{ ended(row) }}
-            </span>
-          </button>
+        <li v-for="row in paged" :key="row._id" class="card">
+          <div class="card-top">
+            <router-link class="account-link" dir="auto" :to="entityPageRoute(row.billableEntityType, row.billableEntityId)">
+              {{ nameOf(row.billableEntityType, row.billableEntityId) }}
+            </router-link>
+            <el-tag :type="TONE[row.status]" size="small" effect="light">{{ STATUS_LABEL[row.status] }}</el-tag>
+          </div>
+          <span class="card-meta">{{ planOf(row)?.name || '—' }} · {{ priceOf(row) }}</span>
+          <span class="card-meta">
+            {{ row.billableEntityType === 'workspace' ? $t('Workspace') : $t('User') }} · {{ $t('Period ends') }} {{ ended(row) }}
+          </span>
+          <el-button size="small" class="card-manage" @click="openEntity(row.billableEntityType, row.billableEntityId)">
+            {{ $t('Manage subscription') }}
+          </el-button>
         </li>
       </ul>
 
@@ -229,7 +231,15 @@ const addOpen = ref(false);
         <el-table-column :label="$t('Account')" min-width="200">
           <template #default="{ row }">
             <div class="account">
-              <strong dir="auto">{{ nameOf(row.billableEntityType, row.billableEntityId) }}</strong>
+              <router-link
+                class="account-link"
+                dir="auto"
+                :to="entityPageRoute(row.billableEntityType, row.billableEntityId)"
+                :title="row.billableEntityType === 'workspace' ? $t('Open workspace') : $t('Open user')"
+                @click.stop
+              >
+                {{ nameOf(row.billableEntityType, row.billableEntityId) }}
+              </router-link>
               <small>{{ row.billableEntityType === 'workspace' ? $t('Workspace') : $t('User') }}</small>
             </div>
           </template>
@@ -267,7 +277,15 @@ const addOpen = ref(false);
       />
     </template>
 
-    <el-drawer v-model="drawerOpen" :title="drawer ? nameOf(drawer.type, drawer.id) : ''" size="min(640px, 100vw)" append-to-body destroy-on-close>
+    <el-drawer v-model="drawerOpen" size="min(640px, 100vw)" append-to-body destroy-on-close>
+      <template #header>
+        <div v-if="drawer" class="drawer-title">
+          <span class="drawer-name" dir="auto">{{ nameOf(drawer.type, drawer.id) }}</span>
+          <router-link class="drawer-open" :to="entityPageRoute(drawer.type, drawer.id)">
+            {{ drawer.type === 'workspace' ? $t('Open workspace') : $t('Open user') }} →
+          </router-link>
+        </div>
+      </template>
       <EntityBillingPanel v-if="drawer" :billable-entity-type="drawer.type" :billable-entity-id="drawer.id" @changed="onChanged" />
     </el-drawer>
 
@@ -390,19 +408,57 @@ const addOpen = ref(false);
   display: flex;
   flex-direction: column;
   gap: 4px;
-  inline-size: 100%;
   padding: 14px 16px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
   background: var(--el-bg-color);
-  color: var(--el-text-color-primary);
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
+}
+
+.card-manage {
+  align-self: flex-start;
+  margin-block-start: 8px;
+}
+
+.account-link {
+  min-inline-size: 0;
+  overflow: hidden;
+  color: var(--el-color-primary);
+  font-weight: 600;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
 
   &:focus-visible {
     outline: 2px solid var(--el-color-primary);
     outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+.drawer-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.drawer-name {
+  font-size: 18px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.drawer-open {
+  font-size: 13px;
+  color: var(--el-color-primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
   }
 }
 

@@ -982,5 +982,11 @@
   "turn payments on": "turn payments on",
   "unlimited": "unlimited",
   "Until": "Until",
-  "Always": "Always"
+  "Always": "Always",
+  "Open workspace": "Open workspace",
+  "Open user": "Open user",
+  "Manage subscription": "Manage subscription",
+  "View in Subscribers": "View in Subscribers",
+  "Subscription settings": "Subscription settings",
+  "Previous subscriptions": "Previous subscriptions"
 }

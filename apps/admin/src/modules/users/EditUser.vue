@@ -25,7 +25,10 @@
 
     <!-- without workspaces, the user is the billable account -->
     <section v-if="user && wsConfig.loaded && !wsConfig.isActive" class="user-billing">
-      <h2>{{ t('Billing') }}</h2>
+      <div class="billing-head">
+        <h2>{{ t('Billing') }}</h2>
+        <router-link class="subscribers-link" :to="subscriptionRoute('user', user._id)">{{ t('View in Subscribers') }} →</router-link>
+      </div>
       <EntityBillingPanel billable-entity-type="user" :billable-entity-id="user._id" />
     </section>
   </div>
@@ -34,6 +37,7 @@
 import { useEditUsers } from './compositions/users'
 import UserForm from './components/UserForm.vue'
 import EntityBillingPanel from '@/modules/pricing-plans/components/EntityBillingPanel.vue'
+import { subscriptionRoute } from '@/modules/pricing-plans/services/entity-links'
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration'
 import { useRoute } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -89,9 +93,27 @@ const handleUserUpdate = async (userData: any) => {
   margin-block-start: 24px;
 }
 
-.user-billing h2 {
+.billing-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
   margin: 0 0 12px;
+}
+
+.user-billing h2 {
+  margin: 0;
   font-size: 1.25rem;
+}
+
+.subscribers-link {
+  font-size: 0.875rem;
+  color: var(--el-color-primary);
+  text-decoration: none;
+}
+
+.subscribers-link:hover {
+  text-decoration: underline;
 }
 
 .user-breadcrumb {
