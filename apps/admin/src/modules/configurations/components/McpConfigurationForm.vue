@@ -225,7 +225,13 @@
             <el-switch v-model="row.enabled" />
           </div>
 
-          <div class="tool-card-body" :class="{ 'tool-card-body-disabled': !row.enabled }">
+          <button type="button" class="access-toggle" :aria-expanded="isOpen(row.toolId)" :disabled="!row.enabled" @click="toggleTool(row.toolId)">
+            <span class="access-label">{{ $t('Access') }}</span>
+            <span class="access-summary" dir="auto">{{ accessSummary(row) }}</span>
+            <font-awesome-icon :icon="['fas', isOpen(row.toolId) ? 'chevron-up' : 'chevron-down']" aria-hidden="true" />
+          </button>
+
+          <div v-show="isOpen(row.toolId)" class="tool-card-body" :class="{ 'tool-card-body-disabled': !row.enabled }">
             <div class="tool-field">
               <label>{{ $t('Roles') }}</label>
               <el-select
@@ -353,6 +359,23 @@ const mcpToolIntegrations = computed(() =>
 
 const edited = ref<IMcpConfigurationMetadata>(normalizeMetadata(props.metadata));
 useConfigDraft(edited);
+// each tool's role restrictions are tucked behind a one-line summary so the grid stays scannable
+const openTools = ref<Set<string>>(new Set());
+const isOpen = (toolId: string) => openTools.value.has(toolId);
+function toggleTool(toolId: string) {
+  const next = new Set(openTools.value);
+  if (next.has(toolId)) next.delete(toolId);
+  else next.add(toolId);
+  openTools.value = next;
+}
+function accessSummary(row: { roles?: string[]; wsRoles?: string[]; wsLabels?: string[] }) {
+  const parts: string[] = [];
+  if (row.roles?.length) parts.push(`${$t('Roles')}: ${row.roles.map((role) => (role === '*' ? $t('All roles') : role)).join(', ')}`);
+  if (row.wsRoles?.length) parts.push(`${$t('Workspace roles')}: ${row.wsRoles.map((role) => (role === '*' ? $t('All workspace roles') : role)).join(', ')}`);
+  if (row.wsLabels?.length) parts.push(`${$t('Workspace labels')}: ${row.wsLabels.join(', ')}`);
+  return parts.length ? parts.join(' · ') : $t('No restrictions');
+}
+
 const toolsSearch = ref('');
 
 const wsConfigActive = computed(() => wsConfig.isActive);
@@ -936,5 +959,49 @@ function save() {
   .tools-search {
     max-width: none;
   }
+}
+
+.access-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  inline-size: 100%;
+  margin-block-start: 8px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--el-fill-color-lighter);
+  color: var(--el-text-color-regular);
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: start;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--el-fill-color);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.access-label {
+  font-weight: 600;
+}
+
+.access-summary {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

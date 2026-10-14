@@ -1,461 +1,234 @@
-<template>
-  <div class="section-container">
-    <h2 class="section-title">{{ $t('General Settings') }}</h2>
-    <div class="flex-row-column">
-      <BlockItem>
-        <FormInput v-model="showLoginPage" title="Show Login Page?" type="switch">
-          <template #help>
-            <span class="help-text">{{ $t('Enable or disable the login page for your application') }}</span>
-          </template>
-        </FormInput>
-
-        <div v-if="showLoginPage" class="form-subsection">
-          <div class="subsection-label">Form Position</div>
-          <div class="flex-row positions-list">
-            <div class="position-option left" @click="formPosition = 'left'"
-                :class="{selected: formPosition === 'left'}">
-              <div class="position-tooltip">{{ $t('Left') }}</div>
-            </div>
-            <div class="position-option right" @click="formPosition = 'right'"
-                :class="{selected: formPosition === 'right'}">
-              <div class="position-tooltip">{{ $t('Right') }}</div>
-            </div>
-            <div class="position-option center" @click="formPosition = 'center'"
-                :class="{selected: formPosition === 'center'}">
-              <div class="inner"/>
-              <div class="position-tooltip">{{ $t('Center') }}</div>
-            </div>
-            <div class="position-option top" @click="formPosition = 'top'"
-                :class="{selected: formPosition === 'top'}">
-              <div class="position-tooltip">{{ $t('Top') }}</div>
-            </div>
-            <div class="position-option bottom" @click="formPosition = 'bottom'"
-                :class="{selected: formPosition === 'bottom'}">
-              <div class="position-tooltip">{{ $t('Bottom') }}</div>
-            </div>
-          </div>
-        </div>
-      </BlockItem>
-      <BlockItem>
-        <div class="enhanced-toggle-container">
-          <FormInput v-model="showRegisterPage" type="switch">
-            <template #pre>
-              <div>{{$t('Show Registration Page?')}}</div>
-              <div class="toggle-icon">
-                <font-awesome-icon :icon="['fas', 'user-plus']" :class="{'active': showRegisterPage}" />
-              </div>
-            </template>
-            <template #help>
-              <div class="toggle-help">
-                <span class="help-text">{{ $t('Enable or disable the registration page for new users') }}</span>
-                <div v-if="showRegisterPage" class="toggle-status enabled">
-                  <font-awesome-icon :icon="['fas', 'check-circle']" /> 
-                  {{ $t('Registration is enabled - New users can create accounts') }}
-                </div>
-                <div v-else class="toggle-status disabled">
-                  <font-awesome-icon :icon="['fas', 'info-circle']" /> 
-                  {{ $t('Registration is disabled - Only existing users can log in') }}
-                </div>
-              </div>
-            </template>
-          </FormInput>
-        </div>
-      </BlockItem>
-      <BlockItem>
-        <div class="username-type-selector">
-          <div class="selector-header">
-            <h4>{{ $t('Treat Username As') }}</h4>
-            <span class="selector-description">{{ $t('Determines how username fields will be validated') }}</span>
-          </div>
-          
-          <div class="username-options">
-            <div 
-              class="username-option" 
-              :class="{ selected: treatUsernameAs === 'email' }"
-              @click="treatUsernameAs = 'email'"
-            >
-              <div class="option-icon">
-                <font-awesome-icon :icon="['fas', 'envelope']" />
-              </div>
-              <div class="option-content">
-                <div class="option-title">{{ $t('Email') }}</div>
-                <div class="option-description">{{ $t('Users log in with email addresses') }}</div>
-              </div>
-              <div class="option-check">
-                <font-awesome-icon :icon="['fas', 'check-circle']" />
-              </div>
-            </div>
-            
-            <div 
-              class="username-option" 
-              :class="{ selected: treatUsernameAs === 'username' }"
-              @click="treatUsernameAs = 'username'"
-            >
-              <div class="option-icon">
-                <font-awesome-icon :icon="['fas', 'user']" />
-              </div>
-              <div class="option-content">
-                <div class="option-title">{{ $t('Username') }}</div>
-                <div class="option-description">{{ $t('Users log in with custom usernames') }}</div>
-              </div>
-              <div class="option-check">
-                <font-awesome-icon :icon="['fas', 'check-circle']" />
-              </div>
-            </div>
-            
-            <div 
-              class="username-option" 
-              :class="{ selected: treatUsernameAs === 'phone' }"
-              @click="treatUsernameAs = 'phone'"
-            >
-              <div class="option-icon">
-                <font-awesome-icon :icon="['fas', 'phone']" />
-              </div>
-              <div class="option-content">
-                <div class="option-title">{{ $t('Phone') }}</div>
-                <div class="option-description">{{ $t('Users log in with phone numbers') }}</div>
-              </div>
-              <div class="option-check">
-                <font-awesome-icon :icon="['fas', 'check-circle']" />
-              </div>
-            </div>
-          </div>
-          
-          <div class="selector-help">
-            <font-awesome-icon :icon="['fas', 'info-circle']" />
-            <span>{{ $t('This affects validation rules and keyboard types on mobile devices') }}</span>
-          </div>
-        </div>
-      </BlockItem>
-    </div>
-  </div>
-</template>
-
 <script lang="ts" setup>
-import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
+import ConfigCard from '../ConfigCard.vue';
+import SettingRow from '../SettingRow.vue';
 
 const showLoginPage = defineModel<boolean>('showLoginPage', { required: true });
 const showRegisterPage = defineModel<boolean>('showRegisterPage', { required: true });
 const treatUsernameAs = defineModel<string>('treatUsernameAs', { required: true });
 const formPosition = defineModel<string>('formPosition', { required: true });
+
+const usernameOptions = [
+  { value: 'email', label: 'Email', description: 'Users log in with email addresses', icon: ['fas', 'envelope'] },
+  { value: 'username', label: 'Username', description: 'Users log in with custom usernames', icon: ['fas', 'user'] },
+  { value: 'phone', label: 'Phone', description: 'Users log in with phone numbers', icon: ['fas', 'phone'] },
+] as const;
+
+const positions = [
+  { value: 'left', label: 'Left' },
+  { value: 'right', label: 'Right' },
+  { value: 'center', label: 'Center' },
+  { value: 'top', label: 'Top' },
+  { value: 'bottom', label: 'Bottom' },
+] as const;
 </script>
 
-<style scoped>
-.section-container {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  border-radius: 8px;
-  background-color: var(--el-bg-color-page, #f5f7fa);
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+<template>
+  <ConfigCard id="auth-general" :title="$t('Sign-in and registration')" :description="$t('Which pages exist and how people identify themselves.')">
+    <SettingRow :title="$t('Show Login Page?')" :description="$t('Enable or disable the login page for your application')">
+      <template #default="{ labelledBy }"><el-switch v-model="showLoginPage" :aria-labelledby="labelledBy" /></template>
+    </SettingRow>
+
+    <SettingRow :title="$t('Show Registration Page?')" :description="showRegisterPage ? $t('Registration is enabled - New users can create accounts') : $t('Registration is disabled - Only existing users can log in')">
+      <template #default="{ labelledBy }"><el-switch v-model="showRegisterPage" :aria-labelledby="labelledBy" /></template>
+    </SettingRow>
+
+    <fieldset class="choice">
+      <legend>{{ $t('Treat Username As') }}</legend>
+      <p class="hint">{{ $t('Determines how username fields will be validated') }}</p>
+      <div class="options">
+        <label v-for="option in usernameOptions" :key="option.value" class="option" :class="{ active: treatUsernameAs === option.value }">
+          <input v-model="treatUsernameAs" type="radio" name="username-type" :value="option.value" class="sr-only" />
+          <font-awesome-icon :icon="option.icon as any" class="option-icon" aria-hidden="true" />
+          <span class="option-text">
+            <span class="option-title">{{ $t(option.label) }}</span>
+            <span class="option-desc">{{ $t(option.description) }}</span>
+          </span>
+        </label>
+      </div>
+      <p class="hint">{{ $t('This affects validation rules and keyboard types on mobile devices') }}</p>
+    </fieldset>
+
+    <fieldset v-if="showLoginPage" class="choice">
+      <legend>{{ $t('Form Position') }}</legend>
+      <p class="hint">{{ $t('Where the login form sits next to the brand panel. The preview shows the result.') }}</p>
+      <div class="positions">
+        <label v-for="option in positions" :key="option.value" class="position" :class="{ active: formPosition === option.value }">
+          <input v-model="formPosition" type="radio" name="form-position" :value="option.value" class="sr-only" />
+          <span class="drawing" :class="`p-${option.value}`" aria-hidden="true"><i class="panel" /><i class="form" /></span>
+          <span class="position-label">{{ $t(option.label) }}</span>
+        </label>
+      </div>
+    </fieldset>
+  </ConfigCard>
+</template>
+
+<style scoped lang="scss">
+.choice {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+
+  legend {
+    padding: 0;
+    font-weight: 600;
+  }
 }
 
-.section-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: var(--el-text-color-primary, #303133);
-  border-bottom: 1px solid var(--el-border-color-light, #e4e7ed);
-  padding-bottom: 0.75rem;
+.hint {
+  margin: 2px 0 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 0.84rem;
+  text-align: start;
 }
 
-.form-subsection {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px dashed var(--el-border-color-lighter, #ebeef5);
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
 }
 
-.subsection-label {
-  font-size: 0.9rem;
-  font-weight: 500;
-  margin-bottom: 0.75rem;
-  color: var(--el-text-color-secondary, #909399);
-}
-
-.positions-list {
-  flex-wrap: wrap;
+.option {
   display: flex;
-  justify-content: center;
-  margin-top: 0.5rem;
-}
-
-.position-option {
-  display: block;
-  width: 40px;
-  height: 40px;
-  border: 1px solid #ddd;
-  margin: 8px;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  position: relative;
-  z-index: 0;
-  
+
   &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    z-index: 1;
-    
-    .position-tooltip {
-      opacity: 1;
-      transform: translateY(0);
-      z-index: 99999;
-    }
+    border-color: var(--el-color-primary-light-5);
   }
 
-  &.left {
-    border-left: 4px solid #759b7d;
+  &:has(:focus-visible) {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
   }
 
-  &.right {
-    border-right: 4px solid #759b7d;
-  }
-
-  &.top {
-    border-top: 4px solid #759b7d;
-  }
-
-  &.bottom {
-    border-bottom: 4px solid #759b7d;
-  }
-
-  &.center {
-    position: relative;
-
-    .inner {
-      position: absolute;
-      top: 15%;
-      bottom: 15%;
-      left: 15%;
-      right: 15%;
-      border: 4px solid #759b7d;
-      border-radius: 2px;
-    }
-  }
-
-  &.selected {
-    background-color: rgba(117, 155, 125, 0.15);
-    transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .position-tooltip {
-    position: absolute;
-    bottom: -25px;
-    left: 50%;
-    transform: translateX(-50%) translateY(5px);
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    white-space: nowrap;
-    opacity: 0;
-    transition: all 0.2s ease;
-    pointer-events: none;
-    z-index: 1;
-  }
-}
-
-.enhanced-toggle-container {
-  margin-bottom: 0.5rem;
-}
-
-.toggle-icon {
-  margin-right: 0.75rem;
-  font-size: 1.1rem;
-  color: var(--el-text-color-secondary, #909399);
-  transition: color 0.3s ease;
-}
-
-.toggle-icon .active {
-  color: var(--el-color-primary, #409eff);
-}
-
-.toggle-help {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.toggle-status {
-  font-size: 0.85rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
-}
-
-.toggle-status.enabled {
-  background-color: var(--el-color-success-light-9, #f0f9eb);
-  color: var(--el-color-success, #67c23a);
-  border-left: 3px solid var(--el-color-success, #67c23a);
-}
-
-.toggle-status.disabled {
-  background-color: var(--el-color-info-light-9, #f4f4f5);
-  color: var(--el-color-info, #909399);
-  border-left: 3px solid var(--el-color-info, #909399);
-}
-
-.help-text {
-  font-size: 0.8rem;
-  color: var(--el-text-color-secondary, #909399);
-  display: block;
-  margin-top: 0.25rem;
-}
-
-/* Username type selector */
-.username-type-selector {
-  margin-top: 0.5rem;
-}
-
-.selector-header {
-  margin-bottom: 1rem;
-}
-
-.selector-header h4 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--el-text-color-primary, #303133);
-}
-
-.selector-description {
-  font-size: 0.85rem;
-  color: var(--el-text-color-secondary, #909399);
-}
-
-.username-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.username-option {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border: 2px solid var(--el-border-color-light, #e4e7ed);
-  border-radius: 8px;
-  background-color: var(--el-bg-color, #ffffff);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    border-color: var(--el-color-primary-light-5, #a0cfff);
-    background-color: var(--el-color-primary-light-9, #ecf5ff);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  }
-  
-  &.selected {
-    border-color: var(--el-color-primary, #409eff);
-    background-color: var(--el-color-primary-light-9, #ecf5ff);
-    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
-    
-    .option-icon {
-      background-color: var(--el-color-primary, #409eff);
-      color: white;
-    }
-    
-    .option-check {
-      opacity: 1;
-      color: var(--el-color-primary, #409eff);
-    }
-    
-    .option-title {
-      color: var(--el-color-primary, #409eff);
-      font-weight: 600;
-    }
+  &.active {
+    border-color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
   }
 }
 
 .option-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  background-color: var(--el-fill-color-light, #f5f7fa);
-  color: var(--el-text-color-regular, #606266);
-  font-size: 1.25rem;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
+  margin-block-start: 3px;
+  color: var(--el-color-primary);
 }
 
-.option-content {
-  flex: 1;
+.option-text {
+  display: flex;
+  flex-direction: column;
 }
 
 .option-title {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--el-text-color-primary, #303133);
-  margin-bottom: 0.25rem;
-  transition: all 0.2s ease;
+  font-weight: 600;
 }
 
-.option-description {
-  font-size: 0.8rem;
-  color: var(--el-text-color-secondary, #909399);
-  line-height: 1.4;
+.option-desc {
+  color: var(--el-text-color-secondary);
+  font-size: 0.82rem;
+  text-align: start;
 }
 
-.option-check {
-  font-size: 1.25rem;
-  opacity: 0;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
+.positions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 10px;
 }
 
-.selector-help {
+.position {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background-color: var(--el-fill-color-lighter, #f5f7fa);
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--el-color-primary-light-5);
+  }
+
+  &:has(:focus-visible) {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+
+  &.active {
+    border-color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+  }
+}
+
+.position-label {
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+// wireframes: the grey block is the brand panel, the outlined one is the form
+.drawing {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  block-size: 46px;
   border-radius: 6px;
-  font-size: 0.8rem;
-  color: var(--el-text-color-secondary, #909399);
+  background: var(--el-fill-color-light);
+  overflow: hidden;
+
+  i {
+    position: absolute;
+    display: block;
+    border-radius: 3px;
+  }
+
+  .panel {
+    background: var(--el-text-color-placeholder);
+  }
+
+  .form {
+    border: 2px solid var(--el-color-primary);
+    background: var(--el-bg-color);
+  }
+
+  &.p-left {
+    .panel { inset: 4px 4px 4px 52%; }
+    .form { inset: 4px 52% 4px 4px; }
+  }
+
+  &.p-right {
+    .panel { inset: 4px 52% 4px 4px; }
+    .form { inset: 4px 4px 4px 52%; }
+  }
+
+  &.p-center {
+    .panel { inset: 0; border-radius: 0; opacity: 0.45; }
+    .form { inset: 8px 28%; }
+  }
+
+  &.p-top {
+    .panel { inset: 52% 4px 4px; }
+    .form { inset: 4px 4px 52%; }
+  }
+
+  &.p-bottom {
+    .panel { inset: 4px 4px 52%; }
+    .form { inset: 52% 4px 4px; }
+  }
 }
 
-.selector-help svg {
-  flex-shrink: 0;
+[dir='rtl'] .drawing.p-left,
+[dir='rtl'] .drawing.p-right {
+  transform: scaleX(-1);
 }
 
-@media (max-width: 768px) {
-  .section-container {
-    padding: 1rem;
-    margin-bottom: 1rem;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-  
-  .positions-list {
-    gap: 0.5rem;
-  }
-  
-  .position-option {
-    width: 36px;
-    height: 36px;
-    margin: 4px;
-  }
-  
-  .username-option {
-    padding: 0.75rem;
-  }
-  
-  .option-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.1rem;
-  }
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 </style>

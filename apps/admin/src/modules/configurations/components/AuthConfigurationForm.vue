@@ -218,7 +218,10 @@ function ensureSocialLoginsSources(metadata: Partial<IAuthConfigurationMetadata>
 }
 
 .form-content {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  gap: 16px;
   margin-bottom: 1rem;
 }
 

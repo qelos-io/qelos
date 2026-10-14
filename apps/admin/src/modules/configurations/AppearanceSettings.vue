@@ -31,7 +31,8 @@ const TABS: { key: AppearanceArea; label: string }[] = [
 ];
 const tab = ref<AppearanceArea>('colors');
 
-const device = ref<'desktop' | 'phone'>('desktop');
+// on a phone the preview opens in a drawer, where a phone-sized preview is the one that fits
+const device = ref<'desktop' | 'phone'>(width.value < 640 ? 'phone' : 'desktop');
 const isWide = computed(() => width.value >= 1100);
 const previewOpen = ref(false);
 

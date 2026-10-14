@@ -1,50 +1,6 @@
-<template>
-  <div class="section-container">
-    <h2 class="section-title">{{ $t('Additional User Fields') }}</h2>
-    <p class="section-description">{{ $t('Define custom fields to collect from users during registration') }}</p>
-    
-    <div class="user-fields-container">
-      <div v-if="additionalUserFields.length === 0" class="empty-state">
-        <p>{{ $t('No additional fields defined yet. Add fields to collect more information from users.') }}</p>
-      </div>
-      
-      <FormRowGroup v-for="(row, index) in additionalUserFields" :key="index" class="user-field-row">
-        <FormInput v-model="row.key" title="Key" type="text" required/>
-        <FormInput v-model="row.name" title="Name" type="text" required/>
-        <FormInput v-model="row.label" title="Label" type="text" required/>
-        <FormInput v-model="row.inputType" title="Input Type" type="select" required>
-          <template #options>
-            <el-option label="Text" value="text"/>
-            <el-option label="Select" value="select"/>
-            <el-option label="Radio" value="radio"/>
-            <el-option label="Checkbox" value="checkbox"/>
-          </template>
-        </FormInput>
-        <FormInput v-model="row.valueType" title="Value Type" type="select" required>
-          <template #options>
-            <el-option label="String" value="string"/>
-            <el-option label="Number" value="number"/>
-            <el-option label="Boolean" value="boolean"/>
-          </template>
-        </FormInput>
-        <FormInput class="flex-0" v-model="row.required" title="Required" type="switch"/>
-        <div class="flex-0 remove-row">
-          <RemoveButton @click="additionalUserFields.splice(index, 1)" />
-        </div>
-      </FormRowGroup>
-    </div>
-    
-    <AddMore
-        class="add-field-button"
-        @click="additionalUserFields.push({inputType: 'text',key: undefined ,label: undefined ,name: undefined ,required: false ,valueType: 'string'})"/>
-  </div>
-</template>
-
 <script lang="ts" setup>
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
-import FormInput from '@/modules/core/components/forms/FormInput.vue';
-import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
-import AddMore from '@/modules/core/components/forms/AddMore.vue';
+import { Delete, Plus } from '@element-plus/icons-vue';
+import ConfigCard from '../ConfigCard.vue';
 
 interface UserField {
   key?: string;
@@ -56,55 +12,115 @@ interface UserField {
 }
 
 const additionalUserFields = defineModel<UserField[]>('additionalUserFields', { required: true });
+
+const inputTypes = [
+  { label: 'Text', value: 'text' },
+  { label: 'Select', value: 'select' },
+  { label: 'Radio', value: 'radio' },
+  { label: 'Checkbox', value: 'checkbox' },
+];
+const valueTypes = [
+  { label: 'String', value: 'string' },
+  { label: 'Number', value: 'number' },
+  { label: 'Boolean', value: 'boolean' },
+];
+
+const add = () => additionalUserFields.value.push({ inputType: 'text', key: undefined, label: undefined, name: undefined, required: false, valueType: 'string' });
+const remove = (index: number) => additionalUserFields.value.splice(index, 1);
+const incomplete = (field: UserField) => !field.key || !field.name || !field.label;
 </script>
 
-<style scoped>
-.section-container {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  border-radius: 8px;
-  background-color: var(--el-bg-color-page, #f5f7fa);
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+<template>
+  <ConfigCard id="auth-fields" :title="$t('Additional User Fields')" :description="$t('Define custom fields to collect from users during registration')">
+    <template #actions>
+      <el-button type="primary" plain native-type="button" @click="add"><el-icon><Plus /></el-icon>{{ $t('Add field') }}</el-button>
+    </template>
+
+    <p v-if="!additionalUserFields.length" class="empty">{{ $t('No additional fields defined yet. Add fields to collect more information from users.') }}</p>
+
+    <ul v-else class="fields">
+      <li v-for="(field, index) in additionalUserFields" :key="index" class="field" :class="{ incomplete: incomplete(field) }">
+        <div class="grid">
+          <label>
+            <span>{{ $t('Key') }} *</span>
+            <el-input v-model="field.key" dir="ltr" :aria-invalid="!field.key" />
+          </label>
+          <label>
+            <span>{{ $t('Name') }} *</span>
+            <el-input v-model="field.name" :aria-invalid="!field.name" />
+          </label>
+          <label>
+            <span>{{ $t('Label') }} *</span>
+            <el-input v-model="field.label" :aria-invalid="!field.label" />
+          </label>
+          <label>
+            <span>{{ $t('Input Type') }}</span>
+            <el-select v-model="field.inputType"><el-option v-for="type in inputTypes" :key="type.value" :label="$t(type.label)" :value="type.value" /></el-select>
+          </label>
+          <label>
+            <span>{{ $t('Value Type') }}</span>
+            <el-select v-model="field.valueType"><el-option v-for="type in valueTypes" :key="type.value" :label="$t(type.label)" :value="type.value" /></el-select>
+          </label>
+          <label class="required">
+            <span>{{ $t('Required') }}</span>
+            <el-switch v-model="field.required" />
+          </label>
+        </div>
+        <el-button class="remove" text circle type="danger" native-type="button" :aria-label="`${$t('Remove')}: ${field.label || field.key || index + 1}`" @click="remove(index)"><el-icon><Delete /></el-icon></el-button>
+      </li>
+    </ul>
+  </ConfigCard>
+</template>
+
+<style scoped lang="scss">
+.empty {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 10px;
+  color: var(--el-text-color-secondary);
+  text-align: start;
 }
 
-.section-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: var(--el-text-color-primary, #303133);
-  border-bottom: 1px solid var(--el-border-color-light, #e4e7ed);
-  padding-bottom: 0.75rem;
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.section-description {
-  color: var(--el-text-color-secondary, #909399);
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
+.field {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--el-fill-color-lighter);
+
+  &.incomplete {
+    border-color: var(--el-color-warning-light-5);
+  }
 }
 
-.user-fields-container {
-  margin-bottom: 1rem;
-}
+.grid {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 12px;
 
-.user-field-row {
-  margin-bottom: 1rem;
-  padding: 1rem;
-  border-radius: 4px;
-  background-color: var(--el-bg-color, #ffffff);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-}
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.84rem;
+    font-weight: 600;
+  }
 
-.add-field-button {
-  margin-top: 1rem;
-}
-
-.empty-state {
-  padding: 2rem;
-  text-align: center;
-  background-color: var(--el-bg-color, #ffffff);
-  border-radius: 4px;
-  border: 1px dashed var(--el-border-color, #dcdfe6);
-  color: var(--el-text-color-secondary, #909399);
+  .required {
+    justify-content: flex-end;
+  }
 }
 </style>
