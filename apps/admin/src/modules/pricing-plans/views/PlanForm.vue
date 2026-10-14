@@ -367,7 +367,6 @@ const planPreview = computed(() => ({
 
 .plan-form-page {
   padding: 20px;
-  max-width: 1200px;
 }
 
 .form-header {

@@ -328,6 +328,7 @@ async function submit() {
       </el-card>
 
       <CouponAccountsCard
+        class="span-all"
         v-if="isEdit && showWorkspaces"
         :title="t('Workspaces Using This Coupon')"
         :account-label="t('Workspace')"
@@ -343,6 +344,7 @@ async function submit() {
       />
 
       <CouponAccountsCard
+        class="span-all"
         v-if="isEdit && showUsers"
         :title="t('Users Using This Coupon')"
         :account-label="t('User')"
@@ -370,7 +372,6 @@ async function submit() {
 <style scoped>
 .coupon-form-page {
   padding: 20px;
-  max-width: 800px;
 }
 
 .form-header {
@@ -383,9 +384,21 @@ async function submit() {
 }
 
 .coupon-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+}
+
+.coupon-form > .span-all,
+.coupon-form > .form-actions {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1000px) {
+  .coupon-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .code-input-row {
@@ -395,7 +408,7 @@ async function submit() {
 }
 
 .form-section {
-  margin-top: 16px;
+  margin-top: 0;
 }
 
 .form-actions {

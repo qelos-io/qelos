@@ -198,7 +198,7 @@ async function save() {
         </div>
       </el-card>
 
-      <el-card shadow="never" class="form-section">
+      <el-card shadow="never" class="form-section span-all">
         <template #header>
           <span>{{ t('Checkout Redirect URLs') }}</span>
         </template>
@@ -248,7 +248,6 @@ async function save() {
   flex-direction: column;
   gap: 16px;
   padding: 20px;
-  max-inline-size: 820px;
 }
 
 .readiness {
@@ -284,11 +283,6 @@ async function save() {
   color: var(--el-color-primary);
 }
 
-.payments-config-page {
-  padding: 20px;
-  max-width: 800px;
-}
-
 .config-header {
   margin-bottom: 20px;
 }
@@ -307,12 +301,25 @@ async function save() {
 }
 
 .config-form {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+}
+
+.config-form > .span-all,
+.config-form > .form-actions {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1000px) {
+  .config-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .form-section {
-  margin-top: 16px;
+  margin-top: 0;
 }
 
 .redirect-alert {
