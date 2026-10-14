@@ -1,88 +1,55 @@
 <template>
-  <div class="edit-component-page">
-    <PageTitle :title="'Edit Component'" :back-route="{ name: 'components' }" />
+  <div v-if="loading" class="loading"><el-skeleton animated :rows="6" /></div>
 
-    <el-card v-loading="submitting" class="component-form-card">
-      <ComponentForm
-        v-if="component"
-        :initial-data="component"
-        @submitted="submit"
-      />
-    </el-card>
-  </div>
+  <ComponentWorkspace v-else-if="component" ref="workspace" :key="component._id" :component="component" :saving="saving" :compile-error="compileError" @submitted="submit" />
+
+  <el-empty v-else :description="$t('Component not found')" :image-size="160">
+    <el-button type="primary" @click="router.push({ name: 'components' })">{{ $t('Back to components') }}</el-button>
+  </el-empty>
 </template>
 
 <script setup lang="ts">
-import { useRoute } from "vue-router";
-import componentsService from "@/services/apis/components-service";
-import PageTitle from "../core/components/semantics/PageTitle.vue";
-import ComponentForm from "./components/ComponentForm.vue";
-import { useSubmitting } from "@/modules/core/compositions/submitting";
-import { ref, watch, h } from "vue";
-import { useComponentsList } from "@/modules/blocks/store/components-list";
-
-const componentsStore = useComponentsList();
+import { ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import type { INoCodeComponent } from '@qelos/global-types';
+import componentsService from '@/services/apis/components-service';
+import ComponentWorkspace from './components/ComponentWorkspace.vue';
+import { useComponentSave } from './compositions/component-save';
+import { useComponentsList } from './store/components-list';
+import { useStaticComponentsStore } from '@/modules/no-code/store/static-components';
 
 const route = useRoute();
-const { submit, submitting } = useSubmitting(
-  ({ componentName, identifier, description, content }) => {
-    return componentsService.update(route.params.componentId as string, {
-      componentName,
-      identifier,
-      description,
-      content,
-    });
-  },
-  {
-    success: "Component updated successfully",
-    error: (error: any) => {
-      if (error?.response?.data?.reason) {
-        // Split into error message and code snippet
-        const parts = error?.response?.data?.reason.split("\n\n");
-        const errorMsg = parts[0];
-        const codeSnippet = parts.slice(1).join("\n\n");
+const router = useRouter();
+const componentId = route.params.componentId as string;
+const componentsStore = useComponentsList();
+const staticComponents = useStaticComponentsStore();
+const { saving, compileError, run } = useComponentSave();
 
-        return {
-          title: "Compilation Error",
-          message: h("div", { class: "compilation-error" }, [
-            h("div", { class: "error-message" }, errorMsg),
-            codeSnippet
-              ? h("pre", { class: "code-snippet" }, codeSnippet)
-              : null,
-          ]),
-          dangerouslyUseHTMLString: false,
-          duration: 10000, // 10 seconds for compilation errors
-          customClass: "compilation-error-notification",
-        };
-      }
+const component = ref<INoCodeComponent | null>(null);
+const loading = ref(true);
+const workspace = ref<InstanceType<typeof ComponentWorkspace>>();
 
-      return `Failed to update component`;
-    },
-  },
-  () => {
-    componentsStore.retry();
-  }
-);
+componentsService
+  .getOne(componentId)
+  .then((data) => (component.value = data))
+  .catch(() => (component.value = null))
+  .finally(() => (loading.value = false));
 
-const component = ref<any>(null);
-
-function loadComponent() {
-  componentsService.getOne(route.params.componentId as string).then((data) => {
-    component.value = data;
-  });
+async function submit(payload: { componentName: string; identifier: string; description: string; content: string }) {
+  const updated = await run(() => componentsService.update(componentId, payload), 'Failed to update component');
+  if (!updated) return;
+  ElMessage.success('Component updated successfully');
+  component.value = { ...component.value, ...payload, ...(updated as object) } as INoCodeComponent;
+  workspace.value?.markSaved();
+  componentsStore.retry();
+  // refresh the compiled list so the preview shows the new bundle
+  await staticComponents.retry();
 }
-
-watch(() => componentsStore.components, loadComponent);
-
-loadComponent();
 </script>
 
 <style scoped>
-.edit-component-page {
-  padding: 20px;
-}
-
-.component-form-card {
-  margin-block-start: 20px;
+.loading {
+  padding: 24px;
 }
 </style>

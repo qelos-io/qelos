@@ -23,6 +23,10 @@ onMounted(() => {
     language: props.language || 'json',
     value: typeof props.modelValue === 'string' ? props.modelValue : JSON.stringify(props.modelValue, null, 2),
   })
+  // edits made with the mouse (paste, drag, undo) do not fire keyup
+  monacoInstance.onDidChangeModelContent(() => {
+    if (monacoInstance.getValue() !== props.modelValue) emitUpdate()
+  })
 })
 
 defineExpose({

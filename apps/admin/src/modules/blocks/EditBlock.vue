@@ -1,98 +1,36 @@
 <template>
-  <div class="block-page">
-    <div v-if="loading" class="loading-container">
-      <el-skeleton style="width: 100%" animated>
-        <template #template>
-          <div style="padding: 16px;">
-            <el-skeleton-item variant="p" style="width: 50%" />
-            <el-skeleton-item variant="text" style="margin-block-start: 16px; width: 80%" />
-            <el-skeleton-item variant="text" style="margin-block-start: 16px; width: 80%" />
-            <el-skeleton-item variant="text" style="margin-block-start: 16px; width: 60%" />
-          </div>
-        </template>
-      </el-skeleton>
-    </div>
-
-    <template v-else-if="block">
-      <div class="page-header">
-        <div class="page-title">
-          <h1>Edit Block: {{ block.name }}</h1>
-          <p class="page-description">Modify the HTML content block</p>
-        </div>
-        <div class="page-actions">
-          <el-button @click="router.push({ name: 'blocks' })" icon="icon-arrow-left">Back to Blocks</el-button>
-        </div>
-      </div>
-      
-      <el-card class="block-card" shadow="hover">
-        <BlockForm :block="block" :submitting="submitting" @submitted="handleUpdate" />
-      </el-card>
-    </template>
-
-    <el-empty v-else description="Block not found" :image-size="200">
-      <el-button type="primary" @click="router.push({ name: 'blocks' })">Back to Blocks List</el-button>
-    </el-empty>
+  <div v-if="loading" class="loading">
+    <el-skeleton animated :rows="6" />
   </div>
+
+  <BlockWorkspace v-else-if="block" :key="block._id" :block="block" :submitting="submitting" @submitted="handleUpdate" />
+
+  <el-empty v-else :description="$t('Content box not found')" :image-size="160">
+    <el-button type="primary" @click="router.push({ name: 'blocks' })">{{ $t('Back to content boxes') }}</el-button>
+  </el-empty>
 </template>
 <script lang="ts" setup>
 import { useRoute, useRouter } from 'vue-router'
-import { computed } from 'vue'
 import { useEditBlock } from './compositions/blocks'
-import BlockForm from './components/BlockForm.vue'
+import { useBlocksList } from './store/blocks-list'
+import BlockWorkspace from './components/BlockWorkspace.vue'
 
 const router = useRouter()
 const blockId = useRoute().params.blockId as string
 const { block, submitting, updateBlock, loading } = useEditBlock(blockId)
-
-// Check if block exists after it's loaded
-const blockExists = computed(() => !!block.value)
+const { retry } = useBlocksList()
 
 async function handleUpdate(data) {
   try {
     await updateBlock(data)
+    retry()
   } catch (error) {
     console.error('Failed to update block:', error)
   }
 }
 </script>
-
 <style scoped>
-.block-page {
-  padding: 0 16px 32px;
-}
-
-.loading-container {
+.loading {
   padding: 24px;
-  background-color: var(--el-fill-color-blank);
-  border-radius: 4px;
-  margin-block-start: 24px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-block-end: 24px;
-}
-
-.page-title h1 {
-  margin: 0 0 8px;
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.page-description {
-  margin: 0;
-  color: var(--el-text-color-secondary);
-  font-size: 0.95rem;
-}
-
-.block-card {
-  margin-block-end: 24px;
-}
-
-.block-card :deep(.el-card__body) {
-  padding: 0;
 }
 </style>
