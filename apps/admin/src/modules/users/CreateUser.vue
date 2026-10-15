@@ -1,21 +1,19 @@
 <template>
-  <div>
-    <UserForm v-if="!submitting" :user="{}" @submitted="save" :as-admin="true">
-      {{ $t('Create User') }}
-    </UserForm>
-  </div>
+  <UserEditor mode="create" :submitting="submitting" :save="save" />
 </template>
+
 <script lang="ts" setup>
 import { useRouter } from 'vue-router';
-import { useCreateUser } from './compositions/users'
-import UserForm from './components/UserForm.vue'
+import { useCreateUser } from './compositions/users';
+import UserEditor from './components/UserEditor.vue';
 
-const router = useRouter()
+const router = useRouter();
+const { createUser, submitting } = useCreateUser();
 
-const { createUser, submitting } = useCreateUser()
-
-const save = async user => {
-  const { _id } = await createUser(user)
-  await router.push({ name: 'editUser', params: { userId: _id } })
-};
+async function save(payload: Record<string, unknown>) {
+  const created = await createUser(payload);
+  if (!created?._id) return undefined;
+  router.push({ name: 'editUser', params: { userId: created._id } });
+  return created;
+}
 </script>

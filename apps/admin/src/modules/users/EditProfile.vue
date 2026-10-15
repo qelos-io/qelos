@@ -1,87 +1,26 @@
 <template>
-  <div class="edit-user-profile">    
-    <div class="user-header" v-if="isLoaded && user">
-      <div class="user-info">
-        <div class="user-avatar" v-if="user.profileImage">
-          <img :src="user.profileImage" :alt="`${decodeURIComponent(user.firstName || '')} ${decodeURIComponent(user.lastName || '')}`" />
-        </div>
-        <div class="user-avatar-placeholder" v-else>
-          <font-awesome-icon :icon="['fas', 'user-circle']" />
-        </div>
-        <div class="user-details">
-          <h1>{{ decodeURIComponent(user.firstName || '') }} {{ decodeURIComponent(user.lastName || '') }}</h1>
-          <p>{{ user.username }}</p>
-        </div>
-        <el-button 
-          type="danger" 
-          size="small" 
-          plain
-          class="logout-btn"
-          @click="handleLogout"
-          :loading="isLoggingOut"
-        >
-          <font-awesome-icon :icon="['fas', 'sign-out-alt']" />
-          <span>{{ $t('Logout') }}</span>
-        </el-button>
+  <div class="profile">
+    <header v-if="isLoaded && user" class="head">
+      <UserAvatar :name="displayName" :src="user.profileImage" :size="64" />
+      <div class="who">
+        <h1 dir="auto">{{ displayName }}</h1>
+        <p dir="ltr">{{ user.username }}</p>
       </div>
-    </div>
-    <el-skeleton v-else-if="!isLoaded" :rows="3" animated />
+      <el-button class="logout" plain type="danger" :icon="SwitchButton" :loading="isLoggingOut" @click="handleLogout">{{ $t('Logout') }}</el-button>
+    </header>
+    <el-skeleton v-else-if="!isLoaded" :rows="2" animated class="head" />
 
-    <el-tabs 
-      v-model="activeTab" 
-      type="card" 
-      class="user-tabs"
-      @tab-change="handleTabChange"
-    > 
-      <el-tab-pane 
-        :label="$t('General')" 
-        name="general"
-        :lazy="true"
-      >
-        <template #label>
-          <font-awesome-icon :icon="['fas', 'user']" class="tab-icon" />
-          {{ $t('General') }}
-        </template>
-      </el-tab-pane>
-      
-      <el-tab-pane
-        v-if="showPaymentsTab"
-        :label="$t('Payments')"
-        name="payments"
-        :lazy="true"
-      >
-        <template #label>
-          <font-awesome-icon :icon="['fas', 'credit-card']" class="tab-icon" />
-          {{ $t('Payments') }}
-        </template>
-      </el-tab-pane>
+    <div class="layout">
+      <nav v-if="tabs.length > 1" class="rail" :aria-label="$t('Profile sections')">
+        <button v-for="tab in tabs" :key="tab.name" type="button" class="rail-item" :class="{ on: activeTab === tab.name }" :aria-current="activeTab === tab.name ? 'page' : undefined" @click="handleTabChange(tab.name)">{{ tab.label }}</button>
+      </nav>
 
-      <el-tab-pane
-        v-if="showApiTokensTab"
-        :label="$t('API Tokens')"
-        name="apiTokens"
-        :lazy="true"
-      >
-        <template #label>
-          <font-awesome-icon :icon="['fas', 'key']" class="tab-icon" />
-          {{ $t('API Tokens') }}
-        </template>
-      </el-tab-pane>
-    </el-tabs>
-
-    <div class="tab-content">
-      <router-view v-slot="{ Component }">
-        <component 
-          v-if="user && user._id"
-          :is="Component" 
-          :user="user"
-          :user-id="user._id"
-          :submitting="submitting"
-          @submitted="handleTabSubmit"
-          @refresh-user="handleRefreshUser"
-        />
-        <el-skeleton v-else :rows="5" animated />
-      </router-view>
+      <main class="panel">
+        <router-view v-slot="{ Component }">
+          <component v-if="user && user._id" :is="Component" :user="user" :user-id="user._id" />
+          <el-skeleton v-else :rows="5" animated />
+        </router-view>
+      </main>
     </div>
   </div>
 </template>
@@ -92,9 +31,11 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '@/modules/core/compositions/authentication';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import { useAuthConfiguration } from '@/modules/configurations/store/auth-configuration';
-import { updateProfile } from '@/modules/core/store/auth';
-import { useSubmitting } from '@/modules/core/compositions/submitting';
 import { ElMessageBox, ElMessage } from 'element-plus';
+import { SwitchButton } from '@element-plus/icons-vue';
+import { useI18n } from 'vue-i18n';
+import UserAvatar from './components/UserAvatar.vue';
+import { getUserDisplayName } from './services/display-name';
 
 const route = useRoute();
 const router = useRouter();
@@ -102,12 +43,7 @@ const { user, isLoaded, logout } = useAuth();
 const wsConfig = useWsConfiguration();
 const authConfig = useAuthConfiguration();
 
-// For profile editing, we use the authenticated user directly
-// No need for useUpdateUser since we're editing the current user
-const { submit, submitting } = useSubmitting((payload) => updateProfile(payload), {
-  success: 'Your profile has been updated.',
-  error: 'Failed to update your profile'
-});
+const { t } = useI18n();
 
 const activeTab = ref('general');
 const isLoggingOut = ref(false);
@@ -149,23 +85,13 @@ function handleTabChange(tabName: string) {
   }
 }
 
-async function handleTabSubmit(data: any) {
-  try {
-    await submit(data);
-  } catch (error) {
-    console.error('Update error:', error);
-  }
-}
+const displayName = computed(() => (user.value ? getUserDisplayName(user.value) : ''));
 
-async function handleRefreshUser() {
-  try {
-    // The useAuth hook automatically handles user data refresh
-    // We can trigger a re-fetch if needed by calling the auth store's refresh method
-    // For now, the user data is kept in sync with the auth store
-  } catch (error) {
-    console.error('Refresh error:', error);
-  }
-}
+const tabs = computed(() => [
+  { name: 'general', label: t('Profile') },
+  ...(showPaymentsTab.value ? [{ name: 'payments', label: t('Payments') }] : []),
+  ...(showApiTokensTab.value ? [{ name: 'apiTokens', label: t('API Tokens') }] : []),
+]);
 
 async function handleLogout() {
   try {
@@ -334,6 +260,112 @@ async function handleLogout() {
   :deep(.el-tabs__nav) {
     display: inline-flex;
     float: none;
+  }
+}
+</style>
+
+<style scoped lang="scss">
+.head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px 8px;
+
+  h1 {
+    margin: 0;
+    padding: 0;
+    font-size: 1.5rem;
+    line-height: 1.25;
+  }
+
+  p {
+    margin: 2px 0 0;
+    padding: 0;
+    color: var(--el-text-color-secondary);
+    text-align: start;
+  }
+}
+
+.who {
+  min-inline-size: 0;
+}
+
+.logout {
+  margin-inline-start: auto;
+}
+
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 8px 20px 24px;
+}
+
+.rail {
+  position: sticky;
+  inset-block-start: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 0 0 200px;
+}
+
+.rail-item {
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--el-text-color-regular);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--el-fill-color-light);
+  }
+
+  &.on {
+    background: var(--el-color-primary-light-9);
+    color: var(--el-color-primary);
+    font-weight: 600;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.panel {
+  flex: 1;
+  min-inline-size: 0;
+  max-inline-size: 760px;
+}
+
+@media (max-width: 800px) {
+  .head {
+    flex-wrap: wrap;
+    padding-inline: 14px;
+  }
+
+  .layout {
+    flex-direction: column;
+    gap: 12px;
+    padding-inline: 14px;
+  }
+
+  .rail {
+    position: static;
+    flex-direction: row;
+    flex-basis: auto;
+    inline-size: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .rail-item {
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 }
 </style>

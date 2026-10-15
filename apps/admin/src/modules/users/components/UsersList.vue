@@ -1,452 +1,258 @@
+<script lang="ts" setup>
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { ArrowDown, ArrowRight, Check, Delete, Edit, MoreFilled, User } from '@element-plus/icons-vue';
+import type { IUser } from '@/modules/core/store/types/user';
+import { authStore, isAdmin } from '@/modules/core/store/auth';
+import { useImpersonation, useRemoveUser } from '../compositions/users';
+import { getUserDisplayName } from '../services/display-name';
+import { lastSeen, relativeTime, roleTagType } from '../services/user-presentation';
+import UserAvatar from './UserAvatar.vue';
+
+const props = defineProps<{ people: IUser[]; services: IUser[]; loading?: boolean; filtered?: boolean }>();
+const emit = defineEmits<{ (e: 'removed', id: string): void; (e: 'create'): void }>();
+
+const { locale } = useI18n();
+const { remove } = useRemoveUser((id) => emit('removed', id));
+const impersonate = useImpersonation();
+
+const PAGE_SIZE = 25;
+const page = ref(1);
+const servicesOpen = ref(false);
+const pageOfPeople = computed(() => props.people.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE));
+watch(() => props.people, () => (page.value = 1));
+
+const seen = (user: IUser) => {
+  const date = lastSeen(user as any);
+  return date ? relativeTime(date, new Date(), locale.value) : '';
+};
+const canImpersonate = (user: IUser) => isAdmin.value && authStore.user?._id !== user._id;
+const command = (user: IUser, name: string) => (name === 'impersonate' ? impersonate(user) : remove(user));
+</script>
+
 <template>
-  <div class="users-list-container">
-    <el-skeleton :loading="loading" :count="3" animated>
-      <template #template>
-        <div class="users-grid">
-          <div class="user-skeleton" v-for="i in 3" :key="i">
-            <el-skeleton-item variant="circle" style="width: 50px; height: 50px" />
-            <el-skeleton-item variant="h3" style="width: 40%" />
-            <el-skeleton-item variant="text" style="width: 60%" />
-            <el-skeleton-item variant="text" style="width: 50%" />
-          </div>
-        </div>
-      </template>
-      
-      <template #default>
-        <!-- Empty state -->
-        <div v-if="filteredUsers.length === 0" class="empty-state">
-          <el-empty :description="$t('No users found')">
-            <el-button type="primary" @click="$router.push({ name: 'createUser' })">
-              <el-icon><icon-plus /></el-icon>
-              {{ $t('Add User') }}
-            </el-button>
-          </el-empty>
-        </div>
+  <div class="list">
+    <ul v-if="loading" class="rows" aria-hidden="true">
+      <li v-for="i in 5" :key="i" class="row skeleton"><el-skeleton animated><template #template><el-skeleton-item variant="text" style="inline-size: 40%" /></template></el-skeleton></li>
+    </ul>
 
-        <!-- Users list with cards -->
-        <div v-else class="users-grid">
-          <div 
-            v-for="user in paginatedUsers" 
-            :key="user._id"
-            class="user-card"
-            @click="$router.push({name: 'editUser', params: {userId: user._id}})"
-          >
-        <div class="user-card-header">
-          <div class="user-avatar">
-            <el-avatar 
-              :size="50" 
-              :src="user.profileImage || getUserInitialsAvatar(user)" 
-              :alt="getUserFullName(user)"
-            />
-          </div>
-          <div class="user-info">
-            <h3 class="user-name">
-              {{ getUserFullName(user) }}
-            </h3>
-            <p v-if="user.username" class="user-username">@{{ user.username }}</p>
-          </div>
-          <div class="verification-badges">
-            <el-tooltip v-if="user.emailVerified" :content="$t('Email Verified')" placement="top">
-              <el-icon class="verified-icon"><Check /></el-icon>
-            </el-tooltip>
-          </div>
-        </div>
+    <div v-else-if="!people.length && !services.length" class="empty">
+      <el-empty :description="filtered ? $t('No user matches your search') : $t('No users yet')">
+        <el-button v-if="!filtered" type="primary" @click="$emit('create')">{{ $t('Create user') }}</el-button>
+      </el-empty>
+    </div>
 
-        <div class="user-card-body">
-          <div v-if="user.socialLogins?.length" class="social-logins">
-            <font-awesome-icon 
-              v-for="icon in user.socialLogins" 
-              :key="icon" 
-              :icon="['fab', icon]"
-              class="social-icon"
-            />
+    <template v-else>
+      <ul class="rows">
+        <li v-for="user in pageOfPeople" :key="user._id" class="row" @click="$router.push({ name: 'editUser', params: { userId: user._id } })">
+          <UserAvatar :name="getUserDisplayName(user)" :src="user.profileImage" :size="40" />
+          <div class="who">
+            <router-link class="name" dir="auto" :to="{ name: 'editUser', params: { userId: user._id } }" @click.stop>{{ getUserDisplayName(user) }}</router-link>
+            <span class="email" dir="ltr">{{ user.username }}</span>
           </div>
-          
-          <div class="user-roles">
-            <el-tag 
-              v-for="tag in user.roles" 
-              :key="tag" 
-              class="role-tag"
-              :type="getRoleTagType(tag)"
-              size="small"
-              effect="light"
-            >
-              {{ tag }}
-            </el-tag>
+          <div class="roles">
+            <el-tag v-for="role in user.roles" :key="role" size="small" :type="roleTagType(role)" effect="light">{{ role }}</el-tag>
           </div>
-        </div>
+          <div class="signin">
+            <el-tooltip v-if="user.emailVerified" :content="$t('Email verified')" placement="top"><el-icon class="ok"><Check /></el-icon></el-tooltip>
+            <font-awesome-icon v-for="icon in user.socialLogins || []" :key="icon" :icon="['fab', icon]" class="social" :title="icon" />
+          </div>
+          <span class="seen" :class="{ never: !seen(user) }">{{ seen(user) ? $t('Signed in {time}', { time: seen(user) }) : $t('Never signed in') }}</span>
+          <el-dropdown trigger="click" @command="(name: string) => command(user, name)" @click.stop>
+            <el-button text circle :aria-label="`${$t('Actions')}: ${getUserDisplayName(user)}`" @click.stop><el-icon><MoreFilled /></el-icon></el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item :icon="Edit" @click="$router.push({ name: 'editUser', params: { userId: user._id } })">{{ $t('Edit') }}</el-dropdown-item>
+                <el-dropdown-item v-if="canImpersonate(user)" command="impersonate" :icon="User">{{ $t('Sign in as this user') }}</el-dropdown-item>
+                <el-dropdown-item command="remove" :icon="Delete" divided>{{ $t('Remove user') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </li>
+      </ul>
 
-          <div class="user-card-actions">
-            <el-tooltip :content="$t('Edit User')" placement="top">
-              <el-button 
-                type="primary" 
-                circle 
-                @click.stop="$router.push({name: 'editUser', params: {userId: user._id}})"
-              >
-                <el-icon><Edit /></el-icon>
-              </el-button>
-            </el-tooltip>
-            <el-tooltip 
-              v-if="isAdmin && authStore.user?._id !== user._id" 
-              :content="$t('Impersonate User')" 
-              placement="top"
-            >
-              <el-button 
-                type="warning" 
-                circle 
-                @click.stop="impersonate(user)"
-              >
-                <el-icon><User /></el-icon>
-              </el-button>
-            </el-tooltip>
-            <el-tooltip :content="$t('Remove User')" placement="top">
-              <el-button 
-                type="danger" 
-                circle 
-                @click.stop="remove(user)"
-              >
-                <el-icon><Delete /></el-icon>
-              </el-button>
-              
-            </el-tooltip>
-          </div>
-          </div>
-          
-          <AddNewCard 
-            :title="$t('Create new User')"
-            :description="$t('Add a new user to your workspace')"
-            :to="{ name: 'createUser' }"
-          />
-        </div>
+      <el-pagination v-if="people.length > PAGE_SIZE" v-model:current-page="page" class="pager" :page-size="PAGE_SIZE" :total="people.length" layout="prev, pager, next" />
 
-        <!-- Pagination -->
-        <div class="pagination-container" v-if="filteredUsers.length > pageSize">
-          <el-pagination
-            v-model:current-page="currentPage"
-            :page-size="pageSize"
-            :total="filteredUsers.length"
-            layout="prev, pager, next"
-            @current-change="handlePageChange"
-          />
-        </div>
-      </template>
-    </el-skeleton>
+      <section v-if="services.length" class="services">
+        <button type="button" class="services-toggle" :aria-expanded="servicesOpen" @click="servicesOpen = !servicesOpen">
+          <el-icon class="chev"><component :is="servicesOpen ? ArrowDown : ArrowRight" /></el-icon>
+          {{ $t('Service accounts') }} <span class="count">{{ services.length }}</span>
+          <span class="hint">{{ $t('Used by plugins to sign in') }}</span>
+        </button>
+        <ul v-if="servicesOpen" class="rows">
+          <li v-for="user in services" :key="user._id" class="row service" @click="$router.push({ name: 'editUser', params: { userId: user._id } })">
+            <UserAvatar :name="getUserDisplayName(user)" :src="user.profileImage" :size="32" />
+            <div class="who">
+              <router-link class="name" dir="auto" :to="{ name: 'editUser', params: { userId: user._id } }" @click.stop>{{ getUserDisplayName(user) }}</router-link>
+            </div>
+            <div class="roles"><el-tag v-for="role in user.roles" :key="role" size="small" :type="roleTagType(role)" effect="light">{{ role }}</el-tag></div>
+            <el-button text circle :icon="Delete" :aria-label="`${$t('Remove user')}: ${getUserDisplayName(user)}`" @click.stop="remove(user)" />
+          </li>
+        </ul>
+      </section>
+    </template>
   </div>
 </template>
 
-<script lang="ts" setup>
-import { ref, computed, watch } from 'vue';
-import { useRemoveUser } from '../compositions/users';
-import { IUser } from '@/modules/core/store/types/user';
-import { Edit, Delete, Check, User } from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
-import { isAdmin, authStore } from '@/modules/core/store/auth';
-import { impersonateUser } from '@/services/sdk';
-import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
-
-import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
-
-const props = defineProps<{ users: IUser[], loading?: boolean }>();
-const emit = defineEmits(['removed']);
-
-// Initialize workspace configuration
-const wsConfig = useWsConfiguration();
-
-// Search and filter state
-const searchQuery = ref('');
-const roleFilter = ref('');
-const currentPage = ref(1);
-const pageSize = ref(32); // Number of users per page
-
-// Remove user functionality
-const { remove } = useRemoveUser((id) => {
-  emit('removed', id);
-});
-
-// Impersonate user functionality
-function impersonate(user: IUser) {
-  const userToImpersonate = {
-    _id: user._id,
-    name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || user.email,
-    email: user.email,
-  };
-
-  // Don't impersonate if trying to impersonate yourself
-  if (userToImpersonate._id === authStore.user?._id) {
-    ElMessage.warning('Cannot impersonate yourself');
-    return;
-  }
-
-  // Use the SDK wrapper which updates the store
-  impersonateUser(userToImpersonate);
-  ElMessage.success(`Now impersonating ${userToImpersonate.name || userToImpersonate.email}`);
-  
-  // Reload the page to apply impersonation
-  setTimeout(() => {
-    window.location.reload();
-  }, 500);
-}
-
-// Extract all unique roles from users for the filter dropdown
-const availableRoles = computed(() => {
-  const roles = new Set();
-  props.users.forEach(user => {
-    if (user.roles && user.roles.length) {
-      user.roles.forEach(role => roles.add(role));
-    }
-  });
-  return Array.from(roles);
-});
-
-// Filter users based on search query and role filter
-const filteredUsers = computed(() => {
-  let result = [...props.users];
-  
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(user => {
-      const fullName = getUserFullName(user).toLowerCase();
-      const username = (user.username || '').toLowerCase();
-      return fullName.includes(query) || username.includes(query);
-    });
-  }
-  
-  if (roleFilter.value) {
-    result = result.filter(user => 
-      user.roles && user.roles.includes(roleFilter.value)
-    );
-  }
-  
-  return result;
-});
-
-// Get paginated users based on current page
-const paginatedUsers = computed(() => {
-  const startIndex = (currentPage.value - 1) * pageSize.value;
-  return filteredUsers.value.slice(startIndex, startIndex + pageSize.value);
-});
-
-// Reset to first page when filters change
-watch([searchQuery, roleFilter], () => {
-  currentPage.value = 1;
-});
-
-// Reset to first page when users prop changes
-watch(() => props.users, () => {
-  currentPage.value = 1;
-}, { deep: true });
-
-// Handle search and filter changes
-function handleSearch() {
-  currentPage.value = 1; // Reset to first page on search
-}
-
-// Handle page change
-function handlePageChange(page) {
-  currentPage.value = page;
-}
-
-// Get user's full name
-function getUserFullName(user) {
-  let fullName = user.name || user.fullName;
-  if (fullName) {
-    return decodeURIComponent(fullName);
-  }
-  if (user.firstName) {
-    return decodeURIComponent(user.firstName) + (user.lastName ? ' ' + decodeURIComponent(user.lastName) : '');
-  }
-  return 'Unknown';
-}
-
-// Generate avatar with initials when no profile image exists
-function getUserInitialsAvatar(user) {
-  const name = getUserFullName(user);
-  if (name === 'Unknown') {
-    return null; // Default avatar will be used
-  }
-  
-  const initials = name
-    .split(' ')
-    .map(part => part.charAt(0))
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-    
-  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23${getRandomColor(name)}"/><text x="50" y="50" font-size="40" text-anchor="middle" dominant-baseline="central" fill="white">${initials}</text></svg>`;
-}
-
-// Generate consistent color based on user name
-function getRandomColor(name) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  
-  const colors = [
-    '3498db', '2ecc71', '9b59b6', 'e74c3c', 'f39c12', 
-    '1abc9c', 'd35400', '34495e', '16a085', '27ae60'
-  ];
-  
-  const index = Math.abs(hash) % colors.length;
-  return colors[index];
-}
-
-// Get appropriate tag type based on role name
-function getRoleTagType(role) {
-  const roleMap = {
-    'admin': 'danger',
-    'owner': 'danger',
-    'editor': 'warning',
-    'user': 'info',
-    'viewer': 'success'
-  };
-  
-  return roleMap[role.toLowerCase()] || 'info';
-}
-</script>
-
-<style scoped>
-.users-list-container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 16px;
-}
-
-.search-filters {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.users-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-  width: 100%;
-}
-
-@media (max-width: 768px) {
-  .users-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .search-filters {
-    flex-direction: column;
-  }
-}
-
-.user-card {
+<style scoped lang="scss">
+.rows {
   display: flex;
   flex-direction: column;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  padding: 20px;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px solid #ebeef5;
-}
-
-.user-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  border-color: var(--el-color-primary-light-5);
-}
-
-.user-skeleton {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  padding: 20px;
-  height: 200px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
-  justify-content: center;
-}
-
-.empty-state {
-  margin: 40px 0;
-}
-
-.user-card-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.user-avatar {
-  margin-right: 12px;
-}
-
-.user-info {
-  flex: 1;
-}
-
-.user-name {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.user-username {
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: #666;
-}
-
-.verification-badges {
-  display: flex;
   gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.verified-icon {
-  color: #2ecc71;
-  font-size: 18px;
+.row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 1.2fr) auto minmax(110px, auto) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--surface, var(--el-bg-color));
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--el-border-color);
+  }
+
+  &.skeleton {
+    min-block-size: 62px;
+    cursor: default;
+  }
+
+  &.service {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    padding-block: 6px;
+  }
 }
 
-.user-card-body {
-  flex: 1;
-  margin-bottom: 16px;
-}
-
-.social-logins {
+.who {
   display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  min-inline-size: 0;
 }
 
-.social-icon {
-  font-size: 18px;
-  color: #666;
+.name {
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--el-color-primary);
+  }
 }
 
-.user-roles {
+.email {
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 0.85rem;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roles {
   display: flex;
   flex-wrap: wrap;
+  gap: 4px;
+}
+
+.signin {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  color: var(--el-text-color-secondary);
 }
 
-.role-tag {
-  font-size: 12px;
+.ok {
+  color: var(--el-color-success);
 }
 
-.user-card-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  padding-top: 12px;
-  border-top: 1px solid #ebeef5;
+.seen {
+  color: var(--el-text-color-secondary);
+  font-size: 0.85rem;
+
+  &.never {
+    color: var(--el-text-color-placeholder);
+  }
 }
 
-.pagination-container {
-  display: flex;
+.pager {
   justify-content: center;
-  margin-top: 24px;
+  margin-block-start: 16px;
+}
+
+.services {
+  margin-block-start: 20px;
+}
+
+.services-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-block-end: 8px;
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--el-text-color-regular);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  .count {
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--el-fill-color);
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+
+  .hint {
+    color: var(--el-text-color-placeholder);
+    font-size: 0.82rem;
+    font-weight: 400;
+  }
+}
+
+@media (max-width: 900px) {
+  .row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'avatar who menu' '. roles roles' '. seen seen';
+    row-gap: 6px;
+
+    > :nth-child(1) { grid-area: avatar; }
+    > .who { grid-area: who; }
+    > .roles { grid-area: roles; }
+    > .signin { display: none; }
+    > .seen { grid-area: seen; }
+    > :last-child { grid-area: menu; }
+
+    &.service {
+      grid-template-areas: none;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+
+      > .roles { display: none; }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    transition: none;
+  }
 }
 </style>
