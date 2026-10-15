@@ -104,7 +104,25 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
     }, data)
   });
 
+  // routes that stand in for plugin pages until the real ones are registered; they match almost any address
+  const PLACEHOLDER_ROUTES = [
+    'playPlugin',
+    'playGuestPlugin',
+    'defaultPluginPlaceholder',
+    'defaultGuestPluginPlaceholder',
+    'defaultPluginPlaceholderSecond',
+    'defaultGuestPluginPlaceholderSecond',
+    'defaultAdminPluginPlaceholder',
+    'defaultAdminPluginPlaceholderSecond',
+  ];
+
   const initiateRoutes = ({ navBar, onlyRoutes }) => {
+    // Does the address in the browser already lead to an app screen (including ones with an id, like /users/:id),
+    // or only to a placeholder? Only a placeholder means the page has to be navigated to again once its route exists.
+    const addressMatches = router.resolve(location.pathname + location.search).matched;
+    const leaf = addressMatches[addressMatches.length - 1];
+    const addressWasPlaceholder = !leaf || PLACEHOLDER_ROUTES.includes(leaf.name as string);
+
     const allRoutes = router.getRoutes().reduce((map, route) => {
       map[route.path] = route;
       return map;
@@ -183,19 +201,12 @@ export const usePluginsMicroFrontends = defineStore('plugins-micro-frontends', f
       })
 
     if (plugins.value) {
-      ['playGuestPlugin',
-        'defaultPluginPlaceholder',
-        'defaultGuestPluginPlaceholder',
-        'defaultPluginPlaceholderSecond',
-        'defaultGuestPluginPlaceholderSecond',
-        'defaultAdminPluginPlaceholder',
-        'defaultAdminPluginPlaceholderSecond'
-      ].forEach(routeName => {
+      PLACEHOLDER_ROUTES.filter((routeName) => routeName !== 'playPlugin').forEach(routeName => {
         if (router.hasRoute(routeName)) {
           router.removeRoute(routeName);
         }
       })
-      if (location.pathname === '/' || !allRoutes[location.pathname]) {
+      if (location.pathname === '/' || addressWasPlaceholder) {
         router.push(location.pathname + location.search).then(() => {
           if (router.currentRoute.value.matched.length === 0) {
             if (addedRoutes['404']) {
