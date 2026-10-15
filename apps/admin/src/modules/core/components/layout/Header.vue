@@ -39,7 +39,7 @@
     </div>
 
     <div class="header-right">
-      <button type="button" class="palette-trigger" :aria-label="$t('Go to…')" :title="$t('Go to…')" @click="openPalette">
+      <button type="button" class="palette-trigger" :class="{ 'icon-only': showPageSearch }" :aria-label="$t('Go to…')" :title="$t('Go to…')" @click="openPalette">
         <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
         <span class="palette-label">{{ $t('Go to…') }}</span>
         <kbd class="palette-key">⌘K</kbd>
@@ -289,6 +289,19 @@ header {
   .palette-label {
     min-inline-size: 90px;
     text-align: start;
+  }
+
+  /* the page has its own search box: the jump-to button steps back to an icon so the two do not compete */
+  &.icon-only {
+    padding: 0 8px;
+    border-color: transparent;
+    background: transparent;
+
+    /* a second magnifier would look like a second search: keep only the shortcut hint */
+    svg,
+    .palette-label {
+      display: none;
+    }
   }
 
   .palette-key {
