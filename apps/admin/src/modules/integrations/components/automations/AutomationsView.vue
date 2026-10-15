@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
@@ -23,7 +23,8 @@ import {
   type AutomationType,
   type StateFilter,
 } from '../../services/integration-presentation';
-import WorkflowsView from '../WorkflowsView.vue';
+import FlowCanvas from '../flow/FlowCanvas.vue';
+import { useFlowCanvasStore } from '../../store/flow-canvas';
 
 const route = useRoute();
 const router = useRouter();
@@ -49,6 +50,10 @@ const rows = computed(() =>
   ),
 );
 const hasFilters = computed(() => type.value !== 'all' || state.value !== 'all' || !!query.value);
+// the canvas shows the same automations as the list, so it follows the same filters
+const canvasStore = useFlowCanvasStore();
+watch(rows, (list) => (canvasStore.allowedIds = hasFilters.value ? new Set(list.map((entry) => entry._id)) : null), { immediate: true });
+
 function clearFilters() {
   type.value = 'all';
   state.value = 'all';
@@ -133,11 +138,11 @@ const create = (kind: 'agent' | 'workflow') => router.push({ name: 'integration-
         </ul>
         <div class="toolbar-right">
           <el-segmented v-model="state" size="small" :options="[{ label: $t('All'), value: 'all' }, { label: $t('Active'), value: 'active' }, { label: $t('Inactive'), value: 'inactive' }]" :aria-label="$t('State')" />
-          <el-segmented v-if="width >= 1100" v-model="display" size="small" :options="[{ label: $t('List'), value: 'list' }, { label: $t('Map'), value: 'map' }]" :aria-label="$t('Display')" />
+          <el-segmented v-if="width >= 1100" v-model="display" size="small" :options="[{ label: $t('List'), value: 'list' }, { label: $t('Canvas'), value: 'map' }]" :aria-label="$t('Display')" />
         </div>
       </div>
 
-      <WorkflowsView v-if="display === 'map'" />
+      <FlowCanvas v-if="display === 'map'" />
 
       <template v-else>
         <div v-if="!rows.length" class="no-match">
