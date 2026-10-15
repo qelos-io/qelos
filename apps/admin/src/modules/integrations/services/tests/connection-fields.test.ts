@@ -149,3 +149,44 @@ describe('payment providers', () => {
     expect(validateConnection(sumit, model, { 'authentication.apiKey': 'k'.repeat(20) }, false)).toEqual({});
   });
 });
+
+describe('AI providers', () => {
+  const official = 'sk-' + 'x'.repeat(30);
+
+  it('sends the token only when typed and never an empty one', () => {
+    for (const kind of [IntegrationSourceKind.OpenAI, IntegrationSourceKind.ClaudeAi, IntegrationSourceKind.Gemini]) {
+      const schema = getConnectionSchema(kind)!;
+      const model = { _id: '1', name: 'ai', metadata: { defaultModel: 'm' } };
+      expect(buildConnectionPayload(schema, kind, model, { 'authentication.token': official }).authentication).toEqual({ token: official });
+      expect(buildConnectionPayload(schema, kind, model, {}).authentication).toEqual({});
+    }
+  });
+
+  it('edits no longer ask for the token again (Claude used to read `id` instead of `_id`)', () => {
+    const schema = getConnectionSchema(IntegrationSourceKind.ClaudeAi)!;
+    expect(validateConnection(schema, { name: 'c', metadata: { defaultModel: 'm' } }, {}, true)).toEqual({});
+  });
+
+  it('openai: a compatible gateway makes the token optional and stores the placeholder', () => {
+    const schema = getConnectionSchema(IntegrationSourceKind.OpenAI)!;
+    const model = { name: 'gw', metadata: { defaultModel: 'm', apiUrl: 'https://llm.example.com/v1' } };
+    expect(validateConnection(schema, model, {}, false)).toEqual({});
+    expect(buildConnectionPayload(schema, 'openai', model, {}).authentication).toEqual({ token: 'none' });
+    expect(buildConnectionPayload(schema, 'openai', model, { 'authentication.token': 'abc' }).authentication).toEqual({ token: 'abc' });
+  });
+
+  it('openai: the official endpoint still requires a long enough token on a new connection', () => {
+    const schema = getConnectionSchema(IntegrationSourceKind.OpenAI)!;
+    const model = { name: 'o', metadata: { defaultModel: 'm', apiUrl: '' } };
+    expect(validateConnection(schema, model, {}, false)['authentication.token']).toBeTruthy();
+    expect(validateConnection(schema, model, { 'authentication.token': 'short' }, false)['authentication.token']).toBeTruthy();
+    expect(validateConnection(schema, model, { 'authentication.token': official }, false)).toEqual({});
+    expect(buildConnectionPayload(schema, 'openai', model, {}).authentication).toEqual({});
+  });
+
+  it('starts on each provider default model', () => {
+    for (const kind of [IntegrationSourceKind.OpenAI, IntegrationSourceKind.ClaudeAi, IntegrationSourceKind.Gemini]) {
+      expect(getSchemaDefaults(getConnectionSchema(kind)!)['metadata.defaultModel']).toBeTruthy();
+    }
+  });
+});

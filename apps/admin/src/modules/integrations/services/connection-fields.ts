@@ -1,6 +1,7 @@
-import { IntegrationSourceKind } from '@qelos/global-types';
+import { DEFAULT_AI_MODEL_BY_PROVIDER, IntegrationSourceKind } from '@qelos/global-types';
+import { CLAUDE_MODELS, GEMINI_MODELS, OPENAI_MODELS } from '../constants/ai-models';
 
-export type ConnectionFieldType = 'text' | 'url' | 'email' | 'secret' | 'choice';
+export type ConnectionFieldType = 'text' | 'url' | 'email' | 'secret' | 'choice' | 'model';
 
 export interface ConnectionField {
   /** Dotted path inside the connection, e.g. `metadata.clientId` or `authentication.clientSecret`. */
@@ -12,7 +13,9 @@ export interface ConnectionField {
   placeholder?: string;
   ltr?: boolean;
   /** Choice fields: the allowed values, the first being the default. */
-  options?: Array<{ value: string; label: string }>;
+  options?: Array<{ value: string; label: string; description?: string }>;
+  /** Value a new connection starts with when the field is not a choice. */
+  default?: string;
   /** Shown while this value is selected, e.g. a warning for live payments. */
   warnOn?: { value: string; text: string };
   /** Shortest value accepted once something is typed. */
@@ -26,7 +29,68 @@ export interface ConnectionSchema {
   credentials: ConnectionField[];
   /** Where the provider hands out credentials (only links already used by the previous forms). */
   help?: { url: string; label: string };
+  /**
+   * Providers that also speak to compatible gateways: with a non-official address the
+   * token becomes optional and an empty one is stored as the placeholder `none`.
+   */
+  customEndpoint?: { urlPath: string; isOfficial: (url: unknown) => boolean };
+  /** Routes the saved source serves, shown as a reference (relative to /api/ai/sources/:id). */
+  apiPaths?: string[];
 }
+
+function hostnameOf(url: unknown): string | null {
+  const raw = url == null ? '' : String(url).trim();
+  if (!raw) return null;
+  try {
+    return new URL(raw).hostname.toLowerCase();
+  } catch {
+    try {
+      return new URL(`https://${raw}`).hostname.toLowerCase();
+    } catch {
+      return null;
+    }
+  }
+}
+
+/** An empty address means the provider's own API. */
+export function isOfficialOpenAiApiUrl(url: unknown): boolean {
+  const host = hostnameOf(url);
+  return host == null || host === 'openai.com' || host.endsWith('.openai.com');
+}
+
+const toOptions = (models: Array<{ label: string; value?: string; identifier?: string; description?: string }>) =>
+  models.map((m) => ({ value: (m.value ?? m.identifier)!, label: m.label, description: m.description }));
+
+const ai = (
+  description: string,
+  provider: 'openai' | 'claude' | 'gemini',
+  models: ReturnType<typeof toOptions>,
+  extra: Partial<ConnectionSchema> & { apiUrl?: { placeholder: string; hint: string } },
+  help: { url: string; label: string },
+): ConnectionSchema => {
+  const { apiUrl, ...rest } = extra;
+  return {
+    description,
+    basics: [
+      {
+        path: 'metadata.defaultModel',
+        label: 'Default Model',
+        type: 'model',
+        required: true,
+        options: models,
+        default: DEFAULT_AI_MODEL_BY_PROVIDER[provider],
+        hint: `Used when a workflow doesn't pick a model`,
+        ltr: true,
+      },
+      ...(apiUrl
+        ? [{ path: 'metadata.apiUrl', label: 'API base URL', type: 'url' as const, placeholder: apiUrl.placeholder, hint: apiUrl.hint, ltr: true }]
+        : []),
+    ],
+    credentials: [{ path: 'authentication.token', label: 'API Token', type: 'secret', required: true, minLength: 20 }],
+    help,
+    ...rest,
+  };
+};
 
 const payments = (
   description: string,
@@ -104,6 +168,40 @@ export const SIMPLE_CONNECTION_SCHEMAS: Partial<Record<IntegrationSourceKind, Co
   },
 };
 
+SIMPLE_CONNECTION_SCHEMAS[IntegrationSourceKind.OpenAI] = ai(
+  'Chat completion and agents through OpenAI or a compatible gateway',
+  'openai',
+  toOptions(OPENAI_MODELS),
+  {
+    apiUrl: {
+      placeholder: 'https://api.openai.com/v1',
+      hint: 'Leave empty for OpenAI. Set an http(s) address for an OpenAI-compatible gateway; its token is then optional.',
+    },
+    customEndpoint: { urlPath: 'metadata.apiUrl', isOfficial: isOfficialOpenAiApiUrl },
+    apiPaths: ['chat-completion', 'chat-completion/pages', 'blueprints'],
+  },
+  { url: 'https://platform.openai.com/settings/organization/api-keys', label: 'Get an OpenAI API key' },
+);
+SIMPLE_CONNECTION_SCHEMAS[IntegrationSourceKind.ClaudeAi] = ai(
+  'Chat completion and agents through Anthropic Claude',
+  'claude',
+  toOptions(CLAUDE_MODELS),
+  {},
+  { url: 'https://console.anthropic.com/settings/keys', label: 'Get a Claude API key' },
+);
+SIMPLE_CONNECTION_SCHEMAS[IntegrationSourceKind.Gemini] = ai(
+  'Chat completion and agents through Google Gemini',
+  'gemini',
+  toOptions(GEMINI_MODELS),
+  {
+    apiUrl: {
+      placeholder: 'https://generativelanguage.googleapis.com',
+      hint: 'Leave empty for Google. Set this only for a compatible proxy or custom endpoint.',
+    },
+  },
+  { url: 'https://aistudio.google.com/app/apikey', label: 'Get a Gemini API key' },
+);
+
 SIMPLE_CONNECTION_SCHEMAS[IntegrationSourceKind.Sumit] = {
   description: 'Takes payments through Sumit',
   basics: [{ path: 'metadata.companyId', label: 'Company ID', type: 'text', required: true, ltr: true }],
@@ -138,7 +236,10 @@ SIMPLE_CONNECTION_SCHEMAS[IntegrationSourceKind.DodoPayments] = payments(
 /** Values a new connection starts with, taken from each choice field's first option. */
 export function getSchemaDefaults(schema: ConnectionSchema): Record<string, string> {
   const defaults: Record<string, string> = {};
-  for (const field of schema.basics) if (field.options?.length) defaults[field.path] = field.options[0].value;
+  for (const field of schema.basics) {
+    if (field.type === 'choice' && field.options?.length) defaults[field.path] = field.options[0].value;
+    else if (field.default) defaults[field.path] = field.default;
+  }
   return defaults;
 }
 
@@ -184,8 +285,9 @@ export function validateConnection(
   for (const field of [...schema.basics, ...schema.credentials]) {
     if (isSecret(field)) {
       const typed = String(typedSecrets[field.path] ?? '').trim();
-      if (field.required && !isEdit && !typed) errors[field.path] = 'This field is required';
-      else if (typed && field.minLength && typed.length < field.minLength) errors[field.path] = 'This value looks too short';
+      const official = !schema.customEndpoint || schema.customEndpoint.isOfficial(getPath(model, schema.customEndpoint.urlPath));
+      if (field.required && !isEdit && official && !typed) errors[field.path] = 'This field is required';
+      else if (typed && official && field.minLength && typed.length < field.minLength) errors[field.path] = 'This value looks too short';
       continue;
     }
     const value = String(getPath(model, field.path) ?? '').trim();
@@ -216,6 +318,13 @@ export function buildConnectionPayload(
     const typed = typedSecrets[field.path];
     if (typed) payload.authentication[key] = typed;
     else delete payload.authentication[key];
+  }
+  const custom = schema.customEndpoint;
+  if (custom && !custom.isOfficial(getPath(model, custom.urlPath))) {
+    for (const field of schema.credentials) {
+      const key = field.path.replace(/^authentication\./, '');
+      if (!typedSecrets[field.path]) payload.authentication[key] = 'none';
+    }
   }
   return payload;
 }

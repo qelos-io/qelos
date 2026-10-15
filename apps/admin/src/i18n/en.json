@@ -2090,5 +2090,22 @@
   "Takes payments through DodoPayments": "Takes payments through DodoPayments",
   "Get your Company ID and API Key": "Get your Company ID and API Key",
   "Get your Client ID and Secret": "Get your Client ID and Secret",
-  "Get your API Key": "Get your API Key"
+  "Get your API Key": "Get your API Key",
+  "Request defaults": "Request defaults",
+  "Sent with every request made through this connection.": "Sent with every request made through this connection.",
+  "Stored encrypted. Values show as ***** after saving; leave them to keep the saved ones.": "Stored encrypted. Values show as ***** after saving; leave them to keep the saved ones.",
+  "Optional for this endpoint": "Optional for this endpoint",
+  "Default Model": "Default Model",
+  "API base URL": "API base URL",
+  "API Token": "API Token",
+  "Base URL": "Base URL",
+  "Used when a workflow doesn't pick a model": "Used when a workflow doesn't pick a model",
+  "Chat completion and agents through OpenAI or a compatible gateway": "Chat completion and agents through OpenAI or a compatible gateway",
+  "Chat completion and agents through Anthropic Claude": "Chat completion and agents through Anthropic Claude",
+  "Chat completion and agents through Google Gemini": "Chat completion and agents through Google Gemini",
+  "Leave empty for OpenAI. Set an http(s) address for an OpenAI-compatible gateway; its token is then optional.": "Leave empty for OpenAI. Set an http(s) address for an OpenAI-compatible gateway; its token is then optional.",
+  "Leave empty for Google. Set this only for a compatible proxy or custom endpoint.": "Leave empty for Google. Set this only for a compatible proxy or custom endpoint.",
+  "Get an OpenAI API key": "Get an OpenAI API key",
+  "Get a Claude API key": "Get a Claude API key",
+  "Get a Gemini API key": "Get a Gemini API key"
 }

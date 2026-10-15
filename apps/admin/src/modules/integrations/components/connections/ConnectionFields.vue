@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useIntegrationSourcesStore } from '../../store/integration-sources';
+import ConnectionIdentity from './ConnectionIdentity.vue';
 import {
   buildAuthenticationOverride,
   buildConnectionPayload,
-  collectLabelSuggestions,
   getConnectionSchema,
   getSchemaDefaults,
   getPath,
@@ -18,7 +17,6 @@ const props = defineProps<{ modelValue: any; kind: string }>();
 const emit = defineEmits<{ submit: [payload: any] }>();
 
 const { t } = useI18n();
-const store = useIntegrationSourcesStore();
 
 const schema = computed(() => getConnectionSchema(props.kind)!);
 const isEdit = computed(() => !!props.modelValue?._id);
@@ -27,14 +25,13 @@ const model = reactive<any>({
   labels: [...(props.modelValue?.labels || [])],
   metadata: { ...(props.modelValue?.metadata || {}) },
 });
+if (typeof model.metadata.defaultModel !== 'string') delete model.metadata.defaultModel;
 for (const [path, value] of Object.entries(getSchemaDefaults(schema.value))) {
   if (!getPath(model, path)) setPath(model, path, value);
 }
 const typedSecrets = reactive<Record<string, string>>({});
 const errors = ref<Record<string, string>>({});
 const rootRef = ref<{ $el: HTMLElement } | null>(null);
-
-const labelSuggestions = computed(() => collectLabelSuggestions(store.result));
 
 const fieldValue = (field: ConnectionField) => getPath(model, field.path) ?? '';
 const clearError = (path: string) => {
@@ -51,8 +48,15 @@ const setSecret = (field: ConnectionField, value: string) => {
   typedSecrets[field.path] = value;
   clearError(field.path);
 };
-const placeholderFor = (field: ConnectionField) =>
-  field.type === 'secret' && isEdit.value ? t('Saved - leave empty to keep') : field.placeholder;
+const officialEndpoint = computed(() => {
+  const custom = schema.value.customEndpoint;
+  return !custom || custom.isOfficial(getPath(model, custom.urlPath));
+});
+const placeholderFor = (field: ConnectionField) => {
+  if (field.type !== 'secret') return field.placeholder;
+  if (!officialEndpoint.value) return t('Optional for this endpoint');
+  return isEdit.value ? t('Saved - leave empty to keep') : field.placeholder;
+};
 const inputType = (field: ConnectionField) => (field.type === 'email' ? 'email' : 'text');
 
 function submitForm() {
@@ -78,28 +82,12 @@ defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
 <template>
   <el-form ref="rootRef" class="connection-fields" label-position="top" novalidate @submit.prevent="submitForm">
     <section class="group" :aria-label="$t('Connection section basics')">
-      <el-form-item :label="$t('Name')" required :error="errors.name ? $t(errors.name) : ''" data-field="name">
-        <el-input
-          v-model="model.name"
-          dir="auto"
-          size="large"
-          @input="clearError('name')"
-        />
-      </el-form-item>
-      <el-form-item :label="$t('Labels')">
-        <el-select
-          v-model="model.labels"
-          multiple
-          filterable
-          allow-create
-          default-first-option
-          size="large"
-          :placeholder="$t('Add a label')"
-          :reserve-keyword="false"
-        >
-          <el-option v-for="label in labelSuggestions" :key="label" :label="label" :value="label" />
-        </el-select>
-      </el-form-item>
+      <ConnectionIdentity
+        v-model:name="model.name"
+        v-model:labels="model.labels"
+        :error="errors.name"
+        @edited="clearError('name')"
+      />
       <el-form-item
         v-for="field in schema.basics"
         :key="field.path"
@@ -117,6 +105,22 @@ defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
             {{ $t(option.label) }}
           </el-radio>
         </el-radio-group>
+        <el-select
+          v-else-if="field.type === 'model'"
+          :model-value="fieldValue(field)"
+          filterable
+          allow-create
+          default-first-option
+          size="large"
+          @update:model-value="setField(field, $event as string)"
+        >
+          <el-option v-for="option in field.options" :key="option.value" :label="option.label" :value="option.value">
+            <span class="model-option">
+              <span>{{ option.label }}</span>
+              <small v-if="option.description">{{ option.description }}</small>
+            </span>
+          </el-option>
+        </el-select>
         <el-input
           v-else
           :model-value="fieldValue(field)"
@@ -139,7 +143,7 @@ defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
         v-for="field in schema.credentials"
         :key="field.path"
         :label="$t(field.label)"
-        :required="field.required && !isEdit"
+        :required="field.required && !isEdit && officialEndpoint"
         :error="errors[field.path] ? $t(errors[field.path]) : ''"
         :data-field="field.path"
       >
@@ -167,6 +171,16 @@ defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
         <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" aria-hidden="true" />
       </el-link>
     </section>
+    <el-collapse v-if="schema.apiPaths" class="reference">
+      <el-collapse-item name="ref" :title="$t('Connection API reference')">
+        <p class="hint">{{ $t('Connection API reference hint') }}</p>
+        <ul class="paths">
+          <li v-for="path in schema.apiPaths" :key="path">
+            <code dir="ltr">/api/ai/sources/{{ modelValue?._id || 'sourceId' }}/{{ path }}</code>
+          </li>
+        </ul>
+      </el-collapse-item>
+    </el-collapse>
   </el-form>
 </template>
 
@@ -182,6 +196,31 @@ defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
   font-size: 12px;
   line-height: 1.4;
   color: var(--el-text-color-secondary);
+}
+
+.model-option {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.model-option small {
+  color: var(--el-text-color-secondary);
+}
+
+.reference {
+  margin-block-start: 12px;
+  border: none;
+}
+
+.paths {
+  margin: 0;
+  padding-inline-start: 18px;
+}
+
+.paths code {
+  font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
 .warn {

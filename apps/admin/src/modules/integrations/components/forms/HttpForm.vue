@@ -2,7 +2,8 @@
 import { ref, computed, defineProps, defineEmits, toRaw } from 'vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import KeyValueInput from '@/modules/core/components/forms/KeyValueInput.vue';
-import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
+import ConnectionIdentity from '../connections/ConnectionIdentity.vue';
+import ConnectionFormSection from './ConnectionFormSection.vue';
 import { IntegrationSourceKind, IHttpSource } from '@qelos/global-types';
 import { useSecuredHeadersMasked } from '../../compositions/use-secured-headers-masked';
 
@@ -81,7 +82,13 @@ const onSecuredHeadersChange = (newArray: { key: string; value: string }[]) => {
 
 };
 
+const nameError = ref('');
+
 const submitForm = () => {
+  if (!String(formModel.value.name ?? '').trim()) {
+    nameError.value = 'Name is required';
+    return;
+  }
   Object.keys(securedHeadersMasked.value).forEach((key) => {
     formModel.value.metadata.headers[key] = '*****';
   });
@@ -112,16 +119,32 @@ defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
 
 <template>
   <el-form :model="formModel" ref="formRef" label-position="top" @submit.prevent="submitForm">
-    <FormInput v-model="formModel.name" title="Name" />
-
-    <LabelsInput v-model="formModel.labels" :availableLabels="['supplier', 'store', 'consumer']" title="Labels">
-      <el-option v-for="label in ['supplier', 'store', 'consumer']" :key="label" :label="label" :value="label" />
-    </LabelsInput>
-
-    <KeyValueInput v-model="securedHeadersMasked" :initialValue="securedHeadersArray" @change="onSecuredHeadersChange"
-      title="Secured Headers" />
-    <KeyValueInput v-model="formModel.metadata.headers" title="Headers" />
-    <KeyValueInput v-model="formModel.metadata.query" title="Query Params" />
-    <FormInput v-model="formModel.metadata.baseUrl" title="Base URL" />
+    <ConnectionFormSection :title="$t('Connection section basics')">
+      <ConnectionIdentity
+        v-model:name="formModel.name"
+        v-model:labels="formModel.labels"
+        :error="nameError"
+        @edited="nameError = ''"
+      />
+      <FormInput v-model="formModel.metadata.baseUrl" title="Base URL" dir="ltr" />
+    </ConnectionFormSection>
+    <ConnectionFormSection
+      :title="$t('Request defaults')"
+      :description="$t('Sent with every request made through this connection.')"
+    >
+      <KeyValueInput v-model="formModel.metadata.headers" title="Headers" />
+      <KeyValueInput v-model="formModel.metadata.query" title="Query Params" />
+    </ConnectionFormSection>
+    <ConnectionFormSection
+      :title="$t('Connection section authentication')"
+      :description="$t('Stored encrypted. Values show as ***** after saving; leave them to keep the saved ones.')"
+    >
+      <KeyValueInput
+        v-model="securedHeadersMasked"
+        :initialValue="securedHeadersArray"
+        title="Secured Headers"
+        @change="onSecuredHeadersChange"
+      />
+    </ConnectionFormSection>
   </el-form>
 </template>

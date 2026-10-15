@@ -2090,5 +2090,22 @@
   "Takes payments through DodoPayments": "גובה תשלומים דרך DodoPayments",
   "Get your Company ID and API Key": "קבלו את מזהה החברה ומפתח ה-API",
   "Get your Client ID and Secret": "קבלו את מזהה הלקוח והסוד",
-  "Get your API Key": "קבלו את מפתח ה-API"
+  "Get your API Key": "קבלו את מפתח ה-API",
+  "Request defaults": "ברירות מחדל לבקשות",
+  "Sent with every request made through this connection.": "נשלח עם כל בקשה שעוברת בחיבור הזה.",
+  "Stored encrypted. Values show as ***** after saving; leave them to keep the saved ones.": "נשמר מוצפן. אחרי השמירה הערכים מוצגים כ-*****; השאירו אותם כדי לשמור את הערכים השמורים.",
+  "Optional for this endpoint": "אופציונלי עבור כתובת זו",
+  "Default Model": "מודל ברירת מחדל",
+  "API base URL": "כתובת בסיס ל-API",
+  "API Token": "טוקן API",
+  "Base URL": "כתובת בסיס",
+  "Used when a workflow doesn't pick a model": "בשימוש כשתהליך לא בוחר מודל",
+  "Chat completion and agents through OpenAI or a compatible gateway": "צ׳אט וסוכנים דרך OpenAI או שער תואם",
+  "Chat completion and agents through Anthropic Claude": "צ׳אט וסוכנים דרך Anthropic Claude",
+  "Chat completion and agents through Google Gemini": "צ׳אט וסוכנים דרך Google Gemini",
+  "Leave empty for OpenAI. Set an http(s) address for an OpenAI-compatible gateway; its token is then optional.": "השאירו ריק עבור OpenAI. הזינו כתובת http(s) לשער תואם OpenAI; אז הטוקן אופציונלי.",
+  "Leave empty for Google. Set this only for a compatible proxy or custom endpoint.": "השאירו ריק עבור Google. הזינו רק עבור פרוקסי תואם או כתובת מותאמת.",
+  "Get an OpenAI API key": "קבלו מפתח API של OpenAI",
+  "Get a Claude API key": "קבלו מפתח API של Claude",
+  "Get a Gemini API key": "קבלו מפתח API של Gemini"
 }

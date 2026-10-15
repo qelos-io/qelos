@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import OpenAIForm from './components/forms/OpenAIForm.vue';
 import ConnectionFields from './components/connections/ConnectionFields.vue';
 import { getConnectionSchema } from './services/connection-fields';
 import HttpForm from './components/forms/HttpForm.vue';
-import ClaudeAiForm from './components/forms/ClaudeAIForm.vue';
-import GeminiForm from './components/forms/GeminiForm.vue';
 
 const props = defineProps<{
   modelValue: any;
@@ -16,9 +13,6 @@ const emit = defineEmits(['update:modelValue', 'submit', 'close']);
 
 // Map of integration types and components
 const formComponentMap = {
-  openai: OpenAIForm,
-  gemini: GeminiForm,
-  claudeai: ClaudeAiForm,
   http: HttpForm,
 };
 
