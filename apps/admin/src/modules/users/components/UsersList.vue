@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { ArrowDown, ArrowRight, Check, Delete, Edit, MoreFilled, User } from '@element-plus/icons-vue';
 import type { IUser } from '@/modules/core/store/types/user';
 import { authStore, isAdmin } from '@/modules/core/store/auth';
@@ -13,6 +14,7 @@ const props = defineProps<{ people: IUser[]; services: IUser[]; loading?: boolea
 const emit = defineEmits<{ (e: 'removed', id: string): void; (e: 'create'): void }>();
 
 const { locale, t } = useI18n();
+const router = useRouter();
 const { remove } = useRemoveUser((id) => emit('removed', id));
 const impersonate = useImpersonation();
 
@@ -28,7 +30,12 @@ const seen = (user: IUser) => {
   return isJustNow(date) ? t('Signed in just now') : t('Signed in {time}', { time: relativeTime(date, new Date(), locale.value) });
 };
 const canImpersonate = (user: IUser) => isAdmin.value && authStore.user?._id !== user._id;
-const command = (user: IUser, name: string) => (name === 'impersonate' ? impersonate(user) : remove(user));
+function command(user: IUser, name: string) {
+  if (name === 'edit') edit(user);
+  else if (name === 'impersonate') impersonate(user);
+  else if (name === 'remove') remove(user);
+}
+const edit = (user: IUser) => router.push({ name: 'editUser', params: { userId: user._id } });
 </script>
 
 <template>
@@ -63,7 +70,7 @@ const command = (user: IUser, name: string) => (name === 'impersonate' ? imperso
             <el-button text circle :aria-label="`${$t('Actions')}: ${getUserDisplayName(user)}`" @click.stop><el-icon><MoreFilled /></el-icon></el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item :icon="Edit" @click="$router.push({ name: 'editUser', params: { userId: user._id } })">{{ $t('Edit') }}</el-dropdown-item>
+                <el-dropdown-item command="edit" :icon="Edit">{{ $t('Edit') }}</el-dropdown-item>
                 <el-dropdown-item v-if="canImpersonate(user)" command="impersonate" :icon="User">{{ $t('Sign in as this user') }}</el-dropdown-item>
                 <el-dropdown-item command="remove" :icon="Delete" divided>{{ $t('Remove user') }}</el-dropdown-item>
               </el-dropdown-menu>
