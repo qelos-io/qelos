@@ -18,7 +18,7 @@ const targetText = computed(() => [props.data.target.source, props.data.target.o
 
 <template>
   <article class="node" :class="{ off: !data.active, selected }" :aria-label="data.name">
-    <Handle type="target" :position="Position.Left" class="handle" />
+    <Handle v-if="data.canListen" type="target" :position="Position.Left" class="handle" />
 
     <header class="head">
       <strong class="name" dir="auto">{{ data.name }}</strong>

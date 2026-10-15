@@ -26,6 +26,8 @@ export interface IntegrationNodeData {
   emits?: EventSignature;
   /** how many integrations listen to what it emits */
   listeners: number;
+  /** only integrations with a webhook trigger can be started by an event */
+  canListen: boolean;
   /** the first logo kind of each end, for the card icons */
   kinds: [string, string];
 }
@@ -106,6 +108,7 @@ export function buildFlowGraph(integrations: FlowIntegration[], sources: Record<
       target: { source: sources[integration.target?.source || '']?.name || '', operation: integration.target?.operation || '' },
       steps: (integration.dataManipulation?.length || 0) + (integration.targetManipulation?.length || 0),
       emits: emitted,
+      canListen: integration.trigger?.operation === 'webhook',
       listeners: emitted ? (listenersOf.get(signatureKey(emitted)) || []).filter((listener) => listener._id !== integration._id).length : 0,
       kinds: [integration.kind?.[0] || '', integration.kind?.[1] || ''],
     };

@@ -14,6 +14,7 @@ import WorkflowIntegrationView from '@/modules/integrations/components/WorkflowI
 import PasteIntegrationDialog from '@/modules/integrations/components/PasteIntegrationDialog.vue';
 import { useIntegrationFormState } from '@/modules/integrations/compositions/use-integration-form-state';
 import { automationName, cloneForCreate } from '../services/integration-presentation';
+import { announceUpdate, triggerFor, type FullIntegration } from '../services/flow-links';
 import { WORKFLOW_STEPS, stepsNeedingAttention } from '../services/workflow-steps';
 
 const props = defineProps<{
@@ -22,6 +23,8 @@ const props = defineProps<{
   agent?: boolean;
   preSelectedSourceId?: string;
   clone?: boolean;
+  /** start right after this event; the integration before it announces it first when it does not yet */
+  startFrom?: { signature: { source: string; kind: string; eventName: string }; needsAnnounce: boolean; afterId?: string };
 }>();
 
 const { t } = useI18n();
@@ -51,6 +54,14 @@ const ready = ref(false);
 const dirty = computed(() => ready.value && snapshot() !== baseline.value);
 const skipGuard = ref(false);
 
+function applyStartFrom() {
+  if (!props.startFrom || !isNew.value) return;
+  const qelos = (store.result || []).find((source: any) => source.kind === 'qelos');
+  if (!qelos) return;
+  setSelectedViewMode(IntegrationType.Workflow, { manual: true });
+  form.trigger = triggerFor(qelos._id, props.startFrom.signature) as any;
+}
+
 function applyClone() {
   if (!props.clone) return;
   const stored = sessionStorage.getItem('clonedIntegration');
@@ -72,7 +83,11 @@ function applyClone() {
 // the forms normalise some values right after they mount; those are not the user's edits
 let settle: ReturnType<typeof setTimeout>;
 onMounted(() => {
-  nextTick(applyClone);
+  nextTick(() => {
+    applyClone();
+    // after the form's own defaults have been applied
+    setTimeout(applyStartFrom, 250);
+  });
   settle = setTimeout(() => {
     baseline.value = snapshot();
     ready.value = true;
@@ -104,6 +119,14 @@ async function save() {
   try {
     if (isNew.value) {
       const created = await integrationsService.create(form as any);
+      // the integration before this one has to announce the event this one waits for
+      if (props.startFrom?.needsAnnounce && props.startFrom.afterId) {
+        const previous = ((integrationsStore.integrations || []) as FullIntegration[]).find((entry) => entry._id === props.startFrom!.afterId);
+        if (previous) {
+          const update = announceUpdate(previous, props.startFrom.signature);
+          await integrationsService.update(update.id, update.body as any);
+        }
+      }
       await integrationsStore.retry();
       ElMessage.success(t('Integration created'));
       skipGuard.value = true;

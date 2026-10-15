@@ -5,13 +5,13 @@ import { useRouter } from 'vue-router';
 import { Close } from '@element-plus/icons-vue';
 import { useFlowCanvasStore } from '../../store/flow-canvas';
 import { AUTOMATION_TYPES } from '../../services/integration-presentation';
-import { signatureLabel } from '../../services/flow-graph';
+import { signatureKey, signatureLabel } from '../../services/flow-graph';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 const router = useRouter();
 const store = useFlowCanvasStore();
-const { selected, relations } = storeToRefs(store);
+const { selected, relations, selectedEdge, busy } = storeToRefs(store);
 
 const integration = computed(() => (selected.value?.type === 'integration' ? selected.value : null));
 const typeLabel = computed(() => (integration.value ? t(AUTOMATION_TYPES.find((entry) => entry.key === integration.value!.automationType)!.label.replace(/s$/, '')) : ''));
@@ -20,12 +20,35 @@ const nameOf = (id: string) => {
   return node?.type === 'integration' ? node.name : node?.type === 'event' ? node.signature.eventName : id;
 };
 
+const addNext = () => {
+  const node = selected.value!;
+  router.push({ name: 'integration-new', query: { type: 'workflow', after: node.type === 'event' ? `event:${signatureKey(node.signature)}` : node.id } });
+};
+
 const open = () => router.push({ name: 'integration-edit', params: { integrationId: selected.value!.id } });
 
 </script>
 
 <template>
-  <aside v-if="selected" class="inspector" :aria-label="$t('Details')">
+  <aside v-if="selectedEdge" class="inspector" :aria-label="$t('Link')">
+    <header class="head">
+      <div class="titles">
+        <h2 dir="auto">{{ selectedEdge.signature.eventName }}</h2>
+        <span class="sub">{{ $t('Link') }}</span>
+      </div>
+      <el-button text circle :aria-label="$t('Close')" @click="store.selectEdge(null)"><el-icon><Close /></el-icon></el-button>
+    </header>
+    <dl class="facts">
+      <div><dt>{{ $t('From') }}</dt><dd dir="auto"><button type="button" class="link" @click="store.select(selectedEdge.from)">{{ nameOf(selectedEdge.from) }}</button></dd></div>
+      <div><dt>{{ $t('To') }}</dt><dd dir="auto"><button type="button" class="link" @click="store.select(selectedEdge.to)">{{ nameOf(selectedEdge.to) }}</button></dd></div>
+      <div><dt>{{ $t('Event') }}</dt><dd dir="ltr">{{ signatureLabel(selectedEdge.signature) }}</dd></div>
+    </dl>
+    <footer class="actions">
+      <el-button type="danger" plain :loading="busy" @click="store.disconnect(selectedEdge.id)">{{ $t('Disconnect') }}</el-button>
+    </footer>
+  </aside>
+
+  <aside v-else-if="selected" class="inspector" :aria-label="$t('Details')">
     <header class="head">
       <div class="titles">
         <h2 dir="auto">{{ integration ? integration.name : (selected as any).signature.eventName }}</h2>
@@ -60,8 +83,9 @@ const open = () => router.push({ name: 'integration-edit', params: { integration
       </ul>
     </section>
 
-    <footer v-if="integration" class="actions">
-      <el-button type="primary" @click="open">{{ $t('Open') }}</el-button>
+    <footer class="actions">
+      <el-button v-if="integration" type="primary" @click="open">{{ $t('Open') }}</el-button>
+      <el-button @click="addNext"><font-awesome-icon :icon="['fas', 'plus']" aria-hidden="true" />&nbsp;{{ $t('Add next step') }}</el-button>
     </footer>
   </aside>
 </template>
@@ -167,6 +191,7 @@ const open = () => router.push({ name: 'integration-edit', params: { integration
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 </style>

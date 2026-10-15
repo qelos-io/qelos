@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { nextTick, watch } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { VueFlow, useVueFlow } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
@@ -16,11 +16,34 @@ import '@vue-flow/controls/dist/style.css';
 import '@vue-flow/minimap/dist/style.css';
 
 const store = useFlowCanvasStore();
-const { nodes, edges, showMinimap, selected } = storeToRefs(store);
-const { fitView, onNodeClick, onPaneClick } = useVueFlow();
+const { nodes, edges, showMinimap, selected, selectedEdge } = storeToRefs(store);
+const { fitView, onNodeClick, onPaneClick, onEdgeClick, onConnect } = useVueFlow();
 
 onNodeClick(({ node }) => store.select(node.id));
-onPaneClick(() => store.select(null));
+onEdgeClick(({ edge }) => store.selectEdge(edge.id));
+onPaneClick(() => {
+  store.select(null);
+  store.selectEdge(null);
+});
+
+// drag from a node's right handle to the left handle of an integration that can be started by an event
+onConnect(({ source, target }) => store.connect(source, target));
+
+const canLink = ({ source, target }: { source: string; target: string }) => {
+  const to = store.graph.nodes.find((node) => node.id === target);
+  return source !== target && to?.type === 'integration' && to.canListen;
+};
+
+// Delete / Backspace unlinks the selected edge (after a confirmation), unless the user is typing
+function onKeydown(event: KeyboardEvent) {
+  if (!['Delete', 'Backspace'].includes(event.key) || !store.selectedEdgeId) return;
+  const tag = (event.target as HTMLElement | null)?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || (event.target as HTMLElement | null)?.isContentEditable) return;
+  event.preventDefault();
+  store.disconnect(store.selectedEdgeId);
+}
+onMounted(() => window.addEventListener('keydown', onKeydown));
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
 
 const fit = () => fitView({ padding: 0.15, maxZoom: 1 });
 
@@ -34,12 +57,14 @@ watch(
 <template>
   <section class="canvas" :aria-label="$t('Flow canvas')">
     <FlowToolbar @fit="fit" />
-    <div class="stage" :class="{ 'with-inspector': !!selected }">
+    <div class="stage" :class="{ 'with-inspector': !!selected || !!selectedEdge }">
       <div class="graph">
         <VueFlow
           :nodes="nodes"
           :edges="edges"
-          :nodes-connectable="false"
+          :nodes-connectable="true"
+          :is-valid-connection="canLink"
+          :connection-radius="28"
           :min-zoom="0.2"
           :max-zoom="1.6"
           :default-edge-options="{ type: 'smoothstep', animated: false }"
@@ -122,6 +147,25 @@ watch(
   border: 0;
   background: transparent;
   box-shadow: none;
+}
+
+:deep(.vue-flow__connection-path) {
+  stroke: var(--el-color-primary);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+:deep(.vue-flow__handle.connectable) {
+  cursor: crosshair;
+}
+
+:deep(.vue-flow__handle.connectingto.valid) {
+  background: var(--el-color-success);
+  transform: scale(1.5);
+}
+
+:deep(.vue-flow__edge.selected .vue-flow__edge-path) {
+  stroke-width: 3;
 }
 
 :deep(.vue-flow__controls) {

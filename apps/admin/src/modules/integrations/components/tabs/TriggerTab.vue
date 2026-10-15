@@ -213,14 +213,15 @@ const loadWebhookSamples = async () => {
 
   try {
     const details = props.modelValue.details || {};
-    const events = await eventsService.getAll({
+    const response = await eventsService.getAll({
       source: details.source,
       kind: details.kind,
       eventName: details.eventName,
       period: 'last-month',
       page: 0,
     });
-    webhookSamples.value = events;
+    // the endpoint answers with { events, … }, not a bare list
+    webhookSamples.value = response?.events || [];
   } catch (error: any) {
     webhookSamplesError.value = error?.message || 'Failed to load webhook events.';
     webhookSamples.value = [];

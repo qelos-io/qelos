@@ -350,14 +350,15 @@ const loadWebhookSamples = async (silent = false) => {
   webhookSamplesError.value = null;
 
   try {
-    const events = await eventsService.getAll({
+    const response = await eventsService.getAll({
       source: triggerDetails.value.source,
       kind: triggerDetails.value.kind,
       eventName: triggerDetails.value.eventName,
       period: 'last-month',
       page: 0
     });
-    webhookSamples.value = events;
+    // the endpoint answers with { events, … }, not a bare list
+    webhookSamples.value = response?.events || [];
   } catch (error: any) {
     webhookSamplesError.value = error?.message || 'Failed to load webhook events.';
     webhookSamples.value = [];

@@ -5,7 +5,7 @@ import { useFlowCanvasStore } from '../../store/flow-canvas';
 defineEmits<{ fit: [] }>();
 
 const store = useFlowCanvasStore();
-const { showStandalone, showMinimap, standalone, problems } = storeToRefs(store);
+const { showStandalone, showMinimap, standalone, problems, lastChange, busy } = storeToRefs(store);
 </script>
 
 <template>
@@ -18,10 +18,13 @@ const { showStandalone, showMinimap, standalone, problems } = storeToRefs(store)
       <el-switch v-model="showMinimap" size="small" />
       <span>{{ $t('Minimap') }}</span>
     </label>
+    <span class="hint">{{ $t('Drag from one integration to another to link them.') }}</span>
     <span v-if="problems.length" class="problems" role="status">
       <font-awesome-icon :icon="['fas', 'triangle-exclamation']" aria-hidden="true" />
       {{ $t('{count} events nobody listens to', { count: problems.length }) }}
     </span>
+    <span v-if="busy" class="saving" role="status">{{ $t('Saving…') }}</span>
+    <el-button v-else-if="lastChange" size="small" text type="primary" @click="store.undo()"><font-awesome-icon :icon="['fas', 'rotate-left']" aria-hidden="true" />&nbsp;{{ $t('Undo') }}: {{ lastChange.label }}</el-button>
     <div class="grow" />
     <el-button size="small" @click="$emit('fit')"><font-awesome-icon :icon="['fas', 'expand']" aria-hidden="true" />&nbsp;{{ $t('Fit to screen') }}</el-button>
   </div>
@@ -49,6 +52,16 @@ const { showStandalone, showMinimap, standalone, problems } = storeToRefs(store)
   align-items: center;
   gap: 6px;
   color: var(--el-color-warning);
+  font-size: 0.86rem;
+}
+
+.hint {
+  color: var(--el-text-color-secondary);
+  font-size: 0.82rem;
+}
+
+.saving {
+  color: var(--el-text-color-secondary);
   font-size: 0.86rem;
 }
 
