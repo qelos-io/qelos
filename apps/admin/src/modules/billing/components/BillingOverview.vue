@@ -10,7 +10,7 @@ import {
   useSubscriptionActivity,
   useSubscriptionPlan,
 } from '../compositions/use-billing'
-import { getActiveCouponCode, getSubscriptionState, isLiveSubscription } from '../services/billing-presentation'
+import { getActiveCouponCode, getSubscriptionState, isLiveSubscription, planHasDetails } from '../services/billing-presentation'
 import SubscriptionHero from './SubscriptionHero.vue'
 import PlanDetailsCard from './PlanDetailsCard.vue'
 import ActivityTimeline from './ActivityTimeline.vue'
@@ -35,6 +35,7 @@ const { initiateCheckout, cancelSubscription, loading: busy } = useCheckout()
 const state = computed(() => getSubscriptionState(subscription.value))
 const couponCode = computed(() => getActiveCouponCode(activity.value))
 const failedInvoice = computed(() => activity.value.find((item) => item.kind === 'invoice.failed' && item.invoiceUrl) || null)
+const showPlanDetails = computed(() => planLoading.value || planHasDetails(plan.value))
 const hasLive = computed(() => isLiveSubscription(subscription.value))
 
 const drawerOpen = ref(false)
@@ -104,8 +105,8 @@ async function onCancel() {
         @cancel="cancelOpen = true"
       />
 
-      <div v-if="subscription" class="billing-grid">
-        <PlanDetailsCard :plan="plan" :loading="planLoading" />
+      <div v-if="subscription" class="billing-grid" :class="{ single: !showPlanDetails }">
+        <PlanDetailsCard v-if="showPlanDetails" :plan="plan" :loading="planLoading" />
         <ActivityTimeline :activity="activity" :loading="activityLoading" />
       </div>
     </template>
@@ -134,6 +135,7 @@ async function onCancel() {
 
 <style scoped lang="scss">
 .billing {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -151,9 +153,14 @@ async function onCancel() {
   font-size: 13px;
 }
 
-@media (max-width: 1000px) {
+/* side by side only when the panel itself is wide enough, wherever it is placed */
+@container (max-width: 760px) {
   .billing-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+.billing-grid.single {
+  grid-template-columns: minmax(0, 1fr);
 }
 </style>

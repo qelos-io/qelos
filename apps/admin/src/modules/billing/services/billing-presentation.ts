@@ -102,3 +102,8 @@ export function daysUntil(date: Date | string | undefined, now = new Date()) {
   if (!date) return null;
   return Math.ceil((new Date(date).getTime() - now.getTime()) / 86_400_000);
 }
+
+/** Whether a plan has anything to list under "What is included". */
+export function planHasDetails(plan: Pick<IPlan, 'description' | 'features' | 'limits'> | null | undefined) {
+  return !!plan && (!!plan.description?.trim() || !!plan.features?.length || describePlanLimits(plan.limits).length > 0);
+}

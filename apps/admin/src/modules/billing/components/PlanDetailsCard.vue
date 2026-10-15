@@ -10,7 +10,7 @@ const limits = computed(() => describePlanLimits(props.plan?.limits))
 </script>
 
 <template>
-  <section class="plan-card" :aria-label="$t('Plan details')" :aria-busy="loading">
+  <section class="plan-details" :aria-label="$t('Plan details')" :aria-busy="loading">
     <h3>{{ $t('What is included') }}</h3>
 
     <el-skeleton v-if="loading" :rows="4" animated />
@@ -35,9 +35,6 @@ const limits = computed(() => describePlanLimits(props.plan?.limits))
         </dl>
       </div>
 
-      <p v-if="!plan.description && !plan.features?.length && !limits.length" class="plan-empty">
-        {{ $t('This plan has no description.') }}
-      </p>
     </template>
 
     <p v-else class="plan-empty">{{ $t('Pick a plan to see what it includes.') }}</p>
@@ -45,7 +42,7 @@ const limits = computed(() => describePlanLimits(props.plan?.limits))
 </template>
 
 <style scoped lang="scss">
-.plan-card {
+.plan-details {
   display: flex;
   flex-direction: column;
   gap: 14px;

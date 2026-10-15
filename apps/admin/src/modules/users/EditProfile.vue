@@ -350,8 +350,13 @@ async function handleLogout() {
 
   .layout {
     flex-direction: column;
+    align-items: stretch;
     gap: 12px;
     padding-inline: 14px;
+  }
+
+  .panel {
+    inline-size: 100%;
   }
 
   .rail {

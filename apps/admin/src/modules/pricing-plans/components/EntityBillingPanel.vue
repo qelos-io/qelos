@@ -8,7 +8,7 @@ import subscriptionsService from '@/services/apis/subscriptions-service';
 import ActivityTimeline from '@/modules/billing/components/ActivityTimeline.vue';
 import SubscriptionHero from '@/modules/billing/components/SubscriptionHero.vue';
 import PlanDetailsCard from '@/modules/billing/components/PlanDetailsCard.vue';
-import { getActiveCouponCode, getSubscriptionState, pickCurrentSubscription } from '@/modules/billing/services/billing-presentation';
+import { getActiveCouponCode, getSubscriptionState, pickCurrentSubscription, planHasDetails } from '@/modules/billing/services/billing-presentation';
 import { useSubscriptionActivity } from '@/modules/billing/compositions/use-billing';
 import { usePlansStore } from '../store/plans';
 import { useCouponsStore } from '../store/coupons';
@@ -49,6 +49,7 @@ const shownPlan = computed(() => (plans.value || []).find((plan) => plan._id ===
 const state = computed(() => getSubscriptionState(shown.value));
 const heroCouponCode = computed(() => currentCoupon.value?.code || getActiveCouponCode(activity.value));
 const failedInvoice = computed(() => activity.value.find((item) => item.kind === 'invoice.failed' && item.invoiceUrl) || null);
+const showPlanDetails = computed(() => planHasDetails(shownPlan.value));
 const previous = computed(() => subscriptions.value.filter((subscription) => subscription._id !== shown.value?._id));
 
 const currentPlan = computed(() => plans.value?.find((plan) => plan._id === current.value?.planId));
@@ -271,8 +272,8 @@ defineExpose({ reload });
       </div>
     </section>
 
-    <div v-if="shown" class="panel-grid">
-      <PlanDetailsCard :plan="shownPlan" />
+    <div v-if="shown" class="panel-grid" :class="{ single: !showPlanDetails }">
+      <PlanDetailsCard v-if="showPlanDetails" :plan="shownPlan" />
       <ActivityTimeline :activity="activity" :loading="activityLoading" />
     </div>
 
@@ -360,6 +361,7 @@ defineExpose({ reload });
 
 <style scoped lang="scss">
 .billing-panel {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -411,8 +413,19 @@ defineExpose({ reload });
 
 .panel-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  align-items: start;
   gap: 16px;
+
+  &.single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (max-width: 760px) {
+  .panel-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .previous {

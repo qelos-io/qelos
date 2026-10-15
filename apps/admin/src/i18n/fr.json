@@ -1866,5 +1866,6 @@
   "{n} people": "{n} personnes",
   "Signed in just now": "Connecté à l'instant",
   "Could not load the users": "Impossible de charger les utilisateurs",
-  "Choose where to store the file first. No storage? Paste an address below.": "Choisissez d'abord où stocker le fichier. Pas de stockage ? Collez une adresse ci-dessous."
+  "Choose where to store the file first. No storage? Paste an address below.": "Choisissez d'abord où stocker le fichier. Pas de stockage ? Collez une adresse ci-dessous.",
+  "Free": "Gratuit"
 }

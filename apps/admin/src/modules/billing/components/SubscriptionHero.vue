@@ -55,13 +55,15 @@ const price = computed(() => {
   if (props.plan.dynamic) {
     return props.subscription?.dynamicAmount ? formatMoney(props.subscription.dynamicAmount, props.plan.currency, locale.value) : t('Custom')
   }
-  return formatMoney(getPlanPrice(props.plan, cycle.value), props.plan.currency, locale.value)
+  const amount = getPlanPrice(props.plan, cycle.value)
+  return amount ? formatMoney(amount, props.plan.currency, locale.value) : t('Free')
 })
+const isFree = computed(() => !!props.plan && !props.plan.dynamic && !getPlanPrice(props.plan, cycle.value))
 
 const meta = computed(() => {
   const items: { label: string; value: string; hint?: string }[] = []
   if (!props.subscription) return items
-  items.push({ label: t('Billing'), value: cycle.value === 'yearly' ? t('Yearly') : t('Monthly') })
+  if (!isFree.value) items.push({ label: t('Billing'), value: cycle.value === 'yearly' ? t('Yearly') : t('Monthly') })
   if (props.state === 'active' || props.state === 'past_due') {
     items.push({
       label: props.state === 'past_due' ? t('Period ended') : t('Renews on'),
@@ -79,7 +81,8 @@ const meta = computed(() => {
       hint: props.subscription.couponBenefitEndsAt ? `${t('until')} ${date(props.subscription.couponBenefitEndsAt)}` : undefined,
     })
   }
-  return items
+  // a label with nothing to say next to it is noise
+  return items.filter((item) => item.value)
 })
 
 const banner = computed(() => {
@@ -144,7 +147,7 @@ const cancelable = computed(() => ['active', 'trialing', 'past_due'].includes(pr
         <h2 class="hero-plan">{{ plan?.name || (subscription ? '…' : $t('No plan yet')) }}</h2>
         <p v-if="plan" class="hero-price">
           <span class="price-amount">{{ price }}</span>
-          <span v-if="!plan.dynamic" class="price-period">/ {{ cycle === 'yearly' ? $t('year') : $t('month') }}</span>
+          <span v-if="!plan.dynamic && !isFree" class="price-period">/ {{ cycle === 'yearly' ? $t('year') : $t('month') }}</span>
         </p>
         <p v-else-if="!subscription" class="hero-empty">{{ $t('Choose a plan to start billing this account.') }}</p>
       </div>
@@ -160,7 +163,7 @@ const cancelable = computed(() => ['active', 'trialing', 'past_due'].includes(pr
       </dl>
 
       <div class="hero-actions">
-        <el-button type="primary" size="large" @click="emit('changePlan')">{{ primaryLabel }}</el-button>
+        <el-button type="primary" @click="emit('changePlan')">{{ primaryLabel }}</el-button>
         <el-button v-if="cancelable" text type="danger" :loading="canceling" @click="emit('cancel')">{{ $t('Cancel subscription') }}</el-button>
       </div>
     </div>
@@ -169,6 +172,7 @@ const cancelable = computed(() => ['active', 'trialing', 'past_due'].includes(pr
 
 <style scoped lang="scss">
 .hero {
+  container-type: inline-size;
   overflow: hidden;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 14px;
@@ -277,7 +281,8 @@ const cancelable = computed(() => ['active', 'trialing', 'past_due'].includes(pr
 
 .hero-plan {
   margin: 0;
-  font-size: 26px;
+  padding: 0;
+  font-size: 24px;
   font-weight: 700;
   line-height: 1.15;
   overflow-wrap: anywhere;
@@ -343,18 +348,22 @@ const cancelable = computed(() => ['active', 'trialing', 'past_due'].includes(pr
   justify-self: end;
 }
 
-@media (max-width: 1100px) {
+/* the hero sits in panels of different widths, so it adapts to its own width, not the screen's */
+@container (max-width: 700px) {
   .hero-main {
     grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
   }
 
   .hero-actions {
     flex-direction: row;
     flex-wrap: wrap;
+    align-items: center;
+    justify-self: start;
   }
 }
 
-@media (max-width: 768px) {
+@container (max-width: 520px) {
   .hero-banner {
     flex-wrap: wrap;
   }

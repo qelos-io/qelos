@@ -8,8 +8,7 @@ import {
   getSubscriptionState,
   getYearlySaving,
   isLiveSubscription,
-  pickCurrentSubscription,
-} from '../billing-presentation';
+  pickCurrentSubscription, planHasDetails } from '../billing-presentation';
 
 const sub = (overrides: Record<string, any> = {}) =>
   ({ _id: 's', status: 'active', created: '2026-01-01T00:00:00Z', ...overrides }) as any;
@@ -96,5 +95,19 @@ describe('billing presentation', () => {
   it('counts days until a date', () => {
     expect(daysUntil('2026-06-11T00:00:00Z', new Date('2026-06-01T00:00:00Z'))).toBe(10);
     expect(daysUntil(undefined)).toBeNull();
+  });
+});
+
+describe('planHasDetails', () => {
+  it('is true when there is a description, a feature or a limit', () => {
+    expect(planHasDetails({ description: 'x' } as any)).toBe(true);
+    expect(planHasDetails({ features: ['a'] } as any)).toBe(true);
+    expect(planHasDetails({ limits: { seats: 3 } } as any)).toBe(true);
+  });
+
+  it('is false for an empty plan, blank text, false limits and no plan', () => {
+    expect(planHasDetails({ description: '  ', features: [], limits: { sso: false } } as any)).toBe(false);
+    expect(planHasDetails({} as any)).toBe(false);
+    expect(planHasDetails(null)).toBe(false);
   });
 });

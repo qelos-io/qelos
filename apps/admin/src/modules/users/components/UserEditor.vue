@@ -537,8 +537,13 @@ const isMe = computed(() => !!props.user && authStore.user?._id === props.user._
 @media (max-width: 800px) {
   .layout {
     flex-direction: column;
+    align-items: stretch;
     gap: 12px;
     padding-inline: 14px;
+  }
+
+  .panel {
+    inline-size: 100%;
   }
 
   .head {
