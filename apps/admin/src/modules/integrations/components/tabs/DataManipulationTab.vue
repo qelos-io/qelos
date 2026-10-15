@@ -10,12 +10,13 @@ import { capitalize } from 'vue';
 import { getPlural } from '@/modules/core/utils/texts';
 import { QelosTriggerOperation, PopulateSource, IntegrationSourceKind } from '@qelos/global-types';
 import { ElMessage } from 'element-plus';
+import { useI18n } from 'vue-i18n';
 import { executeDataManipulationTest } from '@/services/apis/data-manipulation-service';
 import eventsService, { IEvent } from '@/services/apis/events-service';
-import Accordion from 'primevue/accordion';
-import AccordionTab from 'primevue/accordiontab';
 import { authStore } from '@/modules/core/store/auth';
 
+
+const { t } = useI18n();
 
 // Define props and emits
 const props = defineProps<{
@@ -184,6 +185,9 @@ const templates = ref([
 
 // Store steps as arrays of entries for stable references
 const steps = ref<any[]>([]);
+// one step is open at a time; the whole manipulation can also be edited as JSON
+const openStep = ref<number | null>(0);
+const viewMode = ref<'steps' | 'json'>('steps');
 const mapEntries = ref<Record<number, Array<{key: string, value: unknown}>>>({});
 const populateEntries = ref<Record<number, Array<{key: string, source: string, blueprint?: string, scope?: string, subjectId?: string, integration?: string}>>>({});
 const clearFlags = ref<Record<number, boolean>>({});
@@ -989,327 +993,227 @@ onMounted(() => {
   }
 });
 
+
+const summaryOf = (stepIndex: number) => {
+  const parts: string[] = [];
+  const fields = getMapEntries(stepIndex).filter((entry) => entry.key).length;
+  const populates = (populateEntries.value[stepIndex] || []).filter((entry) => entry.key).length;
+  if (fields) parts.push(`${fields} ${fields === 1 ? t('field') : t('fields')}`);
+  if (populates) parts.push(`${populates} ${t('populate')}`);
+  if (clearFlags.value[stepIndex]) parts.push(t('clears previous data'));
+  if (abortTypes.value[stepIndex] && abortTypes.value[stepIndex] !== 'none') parts.push(t('can abort'));
+  return parts.join(' · ') || t('Empty step');
+};
+
+// the open step follows its content when steps are reordered or removed
+const moveAndFollow = (from: number, to: number) => {
+  const wasOpen = openStep.value === from;
+  moveStep(from, to);
+  if (wasOpen) openStep.value = to;
+  else if (openStep.value === to) openStep.value = from;
+};
+
+const removeAndAdjust = (index: number) => {
+  removeStep(index);
+  if (openStep.value === null) return;
+  if (openStep.value === index) openStep.value = null;
+  else if (openStep.value > index) openStep.value -= 1;
+};
+
+const addStepAndOpen = () => {
+  addStep();
+  openStep.value = steps.value.length - 1;
+};
+
+// jump to the step that failed the last test
+watch(stepErrors, (errors) => {
+  const failed = Object.keys(errors)[0];
+  if (failed !== undefined) openStep.value = Number(failed);
+});
 </script>
 
 <template>
-  <div class="data-manipulation-container">
-    <el-alert type="info" :closable="false" class="mb-3">
-      {{ $t('Each step processes data from the previous step. Use map to transform data and populate to fetch related data.') }}
-    </el-alert>
-    
-    <!-- Steps List -->
-    <div v-for="(step, i) in steps" :key="i" class="data-step">
-      <div class="step-header">
-        <h4>{{ $t('Step') }} {{ i + 1 }}</h4>
-        <el-tag v-if="getStepError(i)" type="danger" size="small">
-          {{ $t('Needs attention') }}
-        </el-tag>
-        <div class="step-actions">
-          <el-button size="small" type="danger" @click="removeStep(i)" :icon="Delete" circle />
-          <el-button size="small" @click="moveStep(i, i - 1)" :disabled="i === 0" :icon="ArrowUp" circle />
-          <el-button size="small" @click="moveStep(i, i + 1)" :disabled="i === steps.length - 1" :icon="ArrowDown" circle />
-        </div>
+  <div class="mapping">
+    <p class="intro">{{ $t('Each step processes data from the previous step. Use map to transform data and populate to fetch related data.') }}</p>
+
+    <div class="mode-bar">
+      <el-segmented v-model="viewMode" size="small" :options="[{ label: $t('Steps'), value: 'steps' }, { label: $t('JSON'), value: 'json' }]" :aria-label="$t('View')" />
+      <div class="grow" />
+      <el-button v-if="viewMode === 'steps'" @click="openTemplateDialog"><el-icon><MagicStick /></el-icon>{{ $t('Apply Template') }}</el-button>
+      <el-button v-if="viewMode === 'steps'" type="primary" @click="addStepAndOpen"><el-icon><Plus /></el-icon>{{ $t('Add Step') }}</el-button>
+    </div>
+
+    <!-- the whole manipulation as JSON -->
+    <div v-if="viewMode === 'json'" class="json-editor">
+      <Monaco :modelValue="completeJsonText" height="320px" language="json" @update:modelValue="updateCompleteJson" />
+    </div>
+
+    <template v-else>
+      <div v-if="!steps.length" class="empty">
+        <strong>{{ $t('No steps yet') }}</strong>
+        <span>{{ $t('Without steps the payload goes to the next stage unchanged. Add a step to reshape it, or start from a template.') }}</span>
       </div>
-      <el-alert
-        v-if="getStepError(i)"
-        type="error"
-        show-icon
-        :closable="false"
-        class="step-error-alert"
-        :title="$t('This step failed during the last test.')"
-        :description="getStepError(i)?.message"
-      />
-      
-      <el-tabs class="step-tabs">
-        <!-- Map Tab -->
-        <el-tab-pane :label="$t('Map')">
-          <p class="step-description">{{ $t('Map transforms data using JQ-like expressions') }}</p>
-          <div class="map-entries">
-            <div v-for="(entry, index) in getMapEntries(i)" :key="index" class="map-entry" :class="{ 'has-error': isMapFieldError(i, entry.key) }">
-              <el-input 
-                dir="ltr"
-                v-model="entry.key" 
-                placeholder="Key (Field Name)" 
-                @update:model-value="syncToModel" 
-                :class="{ 'input-error': isMapFieldError(i, entry.key) }"
-              />
-              <el-input 
-                dir="ltr"
-                :model-value="typeof entry.value === 'string' ? entry.value : JSON.stringify(entry.value ?? '')"
-                @input="(val) => { entry.value = val; syncToModel(); }"
-                placeholder="JQ Expression or Value" 
-                :class="{ 'input-error': isMapFieldError(i, entry.key) }"
-              />  
-              <el-button type="danger" :icon="Delete" @click="removeMapEntry(i, index)" circle />
+
+      <ol v-else class="steps">
+        <li v-for="(step, i) in steps" :key="i" class="step" :class="{ open: openStep === i, failed: !!getStepError(i) }">
+          <div class="step-bar">
+            <button type="button" class="step-toggle" :aria-expanded="openStep === i" @click="openStep = openStep === i ? null : i">
+              <font-awesome-icon :icon="['fas', openStep === i ? 'chevron-down' : 'chevron-right']" class="chev" aria-hidden="true" />
+              <span class="num" aria-hidden="true">{{ i + 1 }}</span>
+              <span class="step-text">
+                <strong>{{ $t('Step') }} {{ i + 1 }}</strong>
+                <span class="step-sum" dir="auto">{{ summaryOf(i) }}</span>
+              </span>
+              <el-tag v-if="getStepError(i)" type="danger" size="small" effect="light">{{ $t('Needs attention') }}</el-tag>
+            </button>
+            <div class="step-tools">
+              <el-button text circle size="small" :disabled="i === 0" :aria-label="`${$t('Move up')}: ${$t('Step')} ${i + 1}`" @click="moveAndFollow(i, i - 1)"><el-icon><ArrowUp /></el-icon></el-button>
+              <el-button text circle size="small" :disabled="i === steps.length - 1" :aria-label="`${$t('Move down')}: ${$t('Step')} ${i + 1}`" @click="moveAndFollow(i, i + 1)"><el-icon><ArrowDown /></el-icon></el-button>
+              <el-button text circle size="small" type="danger" :aria-label="`${$t('Remove')}: ${$t('Step')} ${i + 1}`" @click="removeAndAdjust(i)"><el-icon><Delete /></el-icon></el-button>
             </div>
-            <el-button type="primary" @click="addMapEntry(i)" :icon="Plus">{{ $t('Add Field') }}</el-button>
           </div>
-        </el-tab-pane>
-        
-        <!-- Populate Tab -->
-        <el-tab-pane :label="$t('Populate')">
-          <p class="step-description">{{ $t('Populate fetches related data from databases') }}</p>
-          <div class="populate-entries">
-            <div v-for="(entry, index) in populateEntries[i]" :key="index" class="populate-entry" :class="{ 'has-error': isPopulateFieldError(i, entry.key) }">
-              <el-input 
-                dir="ltr"
-                v-model="entry.key" 
-                placeholder="Key" 
-                @update:model-value="syncToModel" 
-                :class="{ 'input-error': isPopulateFieldError(i, entry.key), 'flex-1': entry.source === PopulateSource.vectorStores }"
-              />
-              <el-select 
-                v-model="entry.source" 
-                placeholder="Source"
-                @update:model-value="syncToModel" 
-                :class="{ 'input-error': isPopulateFieldError(i, entry.key), 'flex-1': entry.source === PopulateSource.vectorStores }"
-              >
-                <el-option :value="PopulateSource.user" label="User" />
-                <el-option :value="PopulateSource.workspace" label="Workspace" />
-                <el-option :value="PopulateSource.blueprintEntities" label="Blueprint Entities" />
-                <el-option :value="PopulateSource.blueprintEntity" label="Blueprint Entity" />
-                <el-option :value="PopulateSource.vectorStores" label="Vector Stores" />
-                <el-option :value="PopulateSource.apiWebhook" label="API Webhook" />
-              </el-select>
-              <BlueprintDropdown 
-                v-if="entry.source === PopulateSource.blueprintEntities || entry.source === PopulateSource.blueprintEntity" 
-                v-model="entry.blueprint" 
-                @update:model-value="syncToModel" 
-              />
-              <template v-if="entry.source === PopulateSource.vectorStores">
-                <el-select 
-                  v-model="entry.scope" 
-                  placeholder="Scope"
-                  @update:model-value="syncToModel"
-                  class="flex-1"
-                >
-                  <el-option value="tenant" label="Tenant" />
-                  <el-option value="user" label="User" />
-                  <el-option value="workspace" label="Workspace" />
-                  <el-option value="thread" label="Thread" />
-                </el-select>
-                <el-input 
-                  v-model="entry.subjectId" 
-                  placeholder="Subject ID (optional)"
-                  @update:model-value="syncToModel"
-                  class="flex-1"
-                />
-              </template>
-              <template v-if="entry.source === PopulateSource.apiWebhook">
-                <el-select 
-                  v-model="entry.integration" 
-                  placeholder="Select Integration"
-                  @update:model-value="syncToModel"
-                  filterable
-                >
-                  <el-option 
-                    v-for="integration in apiWebhookIntegrations" 
-                    :key="integration._id"
-                    :value="integration._id"
-                    :label="integration.trigger.details?.name || integration._id"
-                  />
-                </el-select>
-              </template>
-              <el-button type="danger" :icon="Delete" @click="removePopulateEntry(i, index)" circle />
-            </div>
-            <el-button type="primary" @click="addPopulateEntry(i)" :icon="Plus">{{ $t('Add Field') }}</el-button>
-          </div>
-        </el-tab-pane>
-        
-        <!-- JSON View Tab -->
-        <el-tab-pane :label="$t('JSON View')">
-          <Monaco 
-            :modelValue="stepJsons[i]" 
-            height="200px" 
-            language="json"
-            @update:modelValue="(value) => updateStepJson(i, value)" 
-          />
-        </el-tab-pane>
-        <!-- Options Tab -->
-        <el-tab-pane :label="$t('Options')">
-          <p class="step-description">{{ $t('Configure additional options for this step') }}</p>
-          <div class="step-options">
-            <div class="option-item">
-              <el-switch
-                v-model="clearFlags[i]"
-                :active-text="$t('Clear previous data')"
-                @update:model-value="syncToModel"
-              />
-              <div class="option-description">
-                {{ $t('When enabled, only data from this step will pass to the next step') }}
-              </div>
-            </div>
-            
-            <div class="option-item">
-              <div class="abort-option">
-                <el-select
-                  v-model="abortTypes[i]"
-                  @update:model-value="handleAbortTypeChange(i)"
-                  :class="{ 'input-error': isAbortError(i) }"
-                >
-                  <el-option value="none" :label="$t('No abort')" />
-                  <el-option value="boolean" :label="$t('Abort operation')" />
-                  <el-option value="expression" :label="$t('Abort with condition')" />
-                </el-select>
-                
+
+          <div v-show="openStep === i" class="step-body">
+            <el-alert v-if="getStepError(i)" type="error" show-icon :closable="false" :title="$t('This step failed during the last test.')" :description="getStepError(i)?.message" />
+
+            <section class="block" :aria-label="$t('Map')">
+              <header>
+                <h4>{{ $t('Map') }}</h4>
+                <p>{{ $t('Map transforms data using JQ-like expressions') }}</p>
+              </header>
+              <div v-for="(entry, index) in getMapEntries(i)" :key="index" class="entry" :class="{ 'has-error': isMapFieldError(i, entry.key) }">
+                <el-input dir="ltr" v-model="entry.key" :placeholder="$t('Field name')" :aria-label="$t('Field name')" :class="{ 'input-error': isMapFieldError(i, entry.key) }" @update:model-value="syncToModel" />
+                <span class="equals" aria-hidden="true">=</span>
                 <el-input
-                  v-if="abortTypes[i] === 'expression'"
                   dir="ltr"
-                  v-model="abortValues[i]"
-                  placeholder="JQ Expression"
-                  @update:model-value="syncToModel"
-                  :class="{ 'input-error': isAbortError(i) }"
+                  :model-value="typeof entry.value === 'string' ? entry.value : JSON.stringify(entry.value ?? '')"
+                  :placeholder="$t('JQ Expression or Value')"
+                  :aria-label="$t('JQ Expression or Value')"
+                  :class="{ 'input-error': isMapFieldError(i, entry.key) }"
+                  @input="(val) => { entry.value = val; syncToModel(); }"
                 />
+                <el-button text circle type="danger" :aria-label="`${$t('Remove')}: ${entry.key || $t('Field name')}`" @click="removeMapEntry(i, index)"><el-icon><Delete /></el-icon></el-button>
               </div>
-              <div class="option-description">
-                {{ $t('Abort will prevent the target from being called') }}
+              <el-button class="add" text @click="addMapEntry(i)"><el-icon><Plus /></el-icon>{{ $t('Add Field') }}</el-button>
+            </section>
+
+            <section class="block" :aria-label="$t('Populate')">
+              <header>
+                <h4>{{ $t('Populate') }}</h4>
+                <p>{{ $t('Populate fetches related data from databases') }}</p>
+              </header>
+              <div v-for="(entry, index) in populateEntries[i]" :key="index" class="entry populate" :class="{ 'has-error': isPopulateFieldError(i, entry.key) }">
+                <el-input dir="ltr" v-model="entry.key" :placeholder="$t('Key')" :aria-label="$t('Key')" :class="{ 'input-error': isPopulateFieldError(i, entry.key) }" @update:model-value="syncToModel" />
+                <el-select v-model="entry.source" :placeholder="$t('Source')" :aria-label="$t('Source')" :class="{ 'input-error': isPopulateFieldError(i, entry.key) }" @update:model-value="syncToModel">
+                  <el-option :value="PopulateSource.user" :label="$t('User')" />
+                  <el-option :value="PopulateSource.workspace" :label="$t('Workspace')" />
+                  <el-option :value="PopulateSource.blueprintEntities" :label="$t('Blueprint Entities')" />
+                  <el-option :value="PopulateSource.blueprintEntity" :label="$t('Blueprint Entity')" />
+                  <el-option :value="PopulateSource.vectorStores" :label="$t('Vector Stores')" />
+                  <el-option :value="PopulateSource.apiWebhook" :label="$t('API Webhook')" />
+                </el-select>
+                <BlueprintDropdown v-if="entry.source === PopulateSource.blueprintEntities || entry.source === PopulateSource.blueprintEntity" v-model="entry.blueprint" @update:model-value="syncToModel" />
+                <template v-if="entry.source === PopulateSource.vectorStores">
+                  <el-select v-model="entry.scope" :placeholder="$t('Scope')" :aria-label="$t('Scope')" @update:model-value="syncToModel">
+                    <el-option value="tenant" :label="$t('Tenant')" />
+                    <el-option value="user" :label="$t('User')" />
+                    <el-option value="workspace" :label="$t('Workspace')" />
+                    <el-option value="thread" :label="$t('Thread')" />
+                  </el-select>
+                  <el-input v-model="entry.subjectId" :placeholder="$t('Subject ID (optional)')" :aria-label="$t('Subject ID (optional)')" @update:model-value="syncToModel" />
+                </template>
+                <el-select v-if="entry.source === PopulateSource.apiWebhook" v-model="entry.integration" :placeholder="$t('Select Integration')" :aria-label="$t('Select Integration')" filterable @update:model-value="syncToModel">
+                  <el-option v-for="integration in apiWebhookIntegrations" :key="integration._id" :value="integration._id" :label="integration.trigger.details?.name || integration._id" />
+                </el-select>
+                <el-button text circle type="danger" :aria-label="`${$t('Remove')}: ${entry.key || $t('Key')}`" @click="removePopulateEntry(i, index)"><el-icon><Delete /></el-icon></el-button>
               </div>
-            </div>
+              <el-button class="add" text @click="addPopulateEntry(i)"><el-icon><Plus /></el-icon>{{ $t('Add Field') }}</el-button>
+            </section>
+
+            <section class="block" :aria-label="$t('Options')">
+              <header>
+                <h4>{{ $t('Options') }}</h4>
+                <p>{{ $t('Configure additional options for this step') }}</p>
+              </header>
+              <div class="option">
+                <div>
+                  <strong>{{ $t('Clear previous data') }}</strong>
+                  <span>{{ $t('When enabled, only data from this step will pass to the next step') }}</span>
+                </div>
+                <el-switch v-model="clearFlags[i]" :aria-label="$t('Clear previous data')" @update:model-value="syncToModel" />
+              </div>
+              <div class="option">
+                <div>
+                  <strong>{{ $t('Abort') }}</strong>
+                  <span>{{ $t('Abort will prevent the target from being called') }}</span>
+                </div>
+                <div class="abort">
+                  <el-select v-model="abortTypes[i]" :aria-label="$t('Abort')" :class="{ 'input-error': isAbortError(i) }" @update:model-value="handleAbortTypeChange(i)">
+                    <el-option value="none" :label="$t('No abort')" />
+                    <el-option value="boolean" :label="$t('Abort operation')" />
+                    <el-option value="expression" :label="$t('Abort with condition')" />
+                  </el-select>
+                  <el-input v-if="abortTypes[i] === 'expression'" dir="ltr" v-model="abortValues[i]" placeholder="JQ Expression" aria-label="JQ Expression" :class="{ 'input-error': isAbortError(i) }" @update:model-value="syncToModel" />
+                </div>
+              </div>
+            </section>
+
+            <details class="raw">
+              <summary>{{ $t('Edit this step as JSON') }}</summary>
+              <Monaco :modelValue="stepJsons[i]" height="200px" language="json" @update:modelValue="(value) => updateStepJson(i, value)" />
+            </details>
           </div>
-        </el-tab-pane>
-      </el-tabs>
-    </div>
-    
-    <!-- Add Step Button -->
-    <div class="add-step-container">
-      <el-button type="primary" @click="addStep" :icon="Plus">{{ $t('Add Step') }}</el-button>
-      <el-button type="primary" @click="openTemplateDialog" :icon="MagicStick">{{ $t('Apply Template') }}</el-button>
-    </div>
-    
-    <el-divider />
-    
-    <!-- Complete JSON Preview -->
-    <div class="json-preview">
-      <Accordion>
-        <AccordionTab :header="$t('Complete Data Manipulation JSON')">
-          <Monaco 
-            :modelValue="completeJsonText" 
-            height="200px" 
-            language="json"
-            @update:modelValue="updateCompleteJson" 
-          />
-        </AccordionTab>
-      </Accordion>
-    </div>
+        </li>
+      </ol>
+    </template>
 
-    <el-divider />
-
-    <div class="data-manipulation-test">
-      <div class="test-header">
+    <!-- try it with a sample -->
+    <section class="tester" :aria-label="$t('Test Data Manipulation')">
+      <header class="tester-head">
         <div>
-          <h4>{{ $t('Test Data Manipulation') }}</h4>
+          <h3>{{ $t('Test Data Manipulation') }}</h3>
           <p>{{ $t('Send a sample payload to preview the transformed result without leaving this form.') }}</p>
         </div>
-        <div class="test-actions">
+        <div class="tester-actions">
           <el-button @click="resetTestPayload">{{ $t('Reset Sample Payload') }}</el-button>
-          <el-button type="primary" :loading="isTestingDataManipulation" @click="runDataManipulationTest">
-            {{ $t('Run Test') }}
-          </el-button>
+          <el-button type="primary" :loading="isTestingDataManipulation" @click="runDataManipulationTest">{{ $t('Run Test') }}</el-button>
         </div>
-      </div>
+      </header>
 
-      <div class="test-editor">
-        <Accordion>
-          <AccordionTab :header="$t('Sample Payload (JSON)')">
-            <Monaco 
-              :modelValue="testPayloadText" 
-              height="200px" 
-              language="json"
-              @update:modelValue="updateTestPayload" 
-            />
-          </AccordionTab>
-        </Accordion>
-      </div>
-
-      <div v-if="isWebhookTrigger" class="webhook-samples">
-        <div class="webhook-samples-header">
+      <div v-if="isWebhookTrigger" class="samples">
+        <div class="samples-head">
           <div>
-            <label class="section-label">{{ $t('Recent Webhook Events') }}</label>
-            <p>{{ $t('Load real events captured in the last month to test your workflow.') }}</p>
+            <strong>{{ $t('Recent Webhook Events') }}</strong>
+            <span>{{ $t('Load real events captured in the last month to test your workflow.') }}</span>
           </div>
-          <el-button
-            size="small"
-            :loading="webhookSamplesLoading"
-            type="primary"
-            plain
-            @click="loadWebhookSamples()"
-          >
-            {{ webhookSamplesLoaded ? $t('Refresh Events') : $t('Load Events') }}
-          </el-button>
+          <el-button size="small" :loading="webhookSamplesLoading" type="primary" plain @click="loadWebhookSamples()">{{ webhookSamplesLoaded ? $t('Refresh Events') : $t('Load Events') }}</el-button>
         </div>
-
-        <el-alert
-          v-if="!canLoadWebhookSamples"
-          :title="$t('Fill Source, Kind, and Event Name to fetch events.')"
-          type="info"
-          show-icon
-          class="mb-2"
-        />
-        <el-alert
-          v-else-if="webhookSamplesError"
-          :title="webhookSamplesError"
-          type="error"
-          show-icon
-          class="mb-2"
-        />
+        <el-alert v-if="!canLoadWebhookSamples" :title="$t('Fill Source, Kind, and Event Name to fetch events.')" type="info" show-icon :closable="false" />
+        <el-alert v-else-if="webhookSamplesError" :title="webhookSamplesError" type="error" show-icon :closable="false" />
         <el-skeleton v-else-if="webhookSamplesLoading" :rows="3" animated />
-        <el-empty
-          v-else-if="webhookSamplesLoaded && !webhookSamples.length"
-          :description="$t('No events found for the selected filters.')"
-        />
-        <el-table
-          v-else
-          :data="webhookSamples"
-          size="small"
-          border
-          class="webhook-samples-table"
-        >
-          <el-table-column :label="$t('Event')">
-            <template #default="{ row }">
-              <div class="event-name">{{ row.eventName }}</div>
-              <small class="event-source">{{ row.source }} · {{ row.kind }}</small>
-            </template>
-          </el-table-column>
-          <el-table-column :label="$t('Captured')" width="160">
-            <template #default="{ row }">
-              {{ formatEventTimestamp(row.created) }}
-            </template>
-          </el-table-column>
-          <el-table-column width="140">
-            <template #default="{ row }">
-              <el-button
-                size="small"
-                type="primary"
-                plain
-                :loading="webhookSampleLoading && webhookSampleSelectedId === row._id"
-                @click="applyWebhookSample(row)"
-              >
-                {{ $t('Use Sample') }}
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <p v-else-if="webhookSamplesLoaded && !webhookSamples.length" class="muted">{{ $t('No events found for the selected filters.') }}</p>
+        <ul v-else-if="webhookSamples.length" class="sample-list">
+          <li v-for="row in webhookSamples" :key="row._id">
+            <span class="sample-text"><strong>{{ row.eventName }}</strong><small>{{ row.source }} · {{ row.kind }} · {{ formatEventTimestamp(row.created) }}</small></span>
+            <el-button size="small" type="primary" plain :loading="webhookSampleLoading && webhookSampleSelectedId === row._id" @click="applyWebhookSample(row)">{{ $t('Use Sample') }}</el-button>
+          </li>
+        </ul>
       </div>
 
-      <el-alert
-        v-if="testError"
-        :title="testError"
-        type="error"
-        show-icon
-        class="mb-3"
-      />
-
-      <div v-if="testResultText" class="test-result">
-        <label class="section-label">{{ $t('Result') }}</label>
-        <Monaco 
-          :modelValue="testResultText" 
-          height="200px" 
-          language="json"
-          @update:modelValue="(value) => testResultText = value"
-        />
+      <div class="panes">
+        <div class="pane">
+          <label class="pane-label">{{ $t('Sample Payload (JSON)') }}</label>
+          <Monaco :modelValue="testPayloadText" height="260px" language="json" @update:modelValue="updateTestPayload" />
+        </div>
+        <div class="pane">
+          <label class="pane-label">{{ $t('Result') }}</label>
+          <el-alert v-if="testError" :title="testError" type="error" show-icon :closable="false" role="alert" />
+          <Monaco v-else-if="testResultText" :modelValue="testResultText" height="260px" language="json" @update:modelValue="(value) => (testResultText = value)" />
+          <p v-else class="muted result-empty">{{ $t('Run the test to see the transformed payload here.') }}</p>
+        </div>
       </div>
-    </div>
-    
+    </section>
+
     <!-- Template Dialog -->
     <el-dialog 
       v-model="showTemplateDialog" 
@@ -1397,119 +1301,407 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
-.data-manipulation-container {
-  padding: 10px 0;
-}
-
-.data-step {
-  border: 1px solid var(--el-border-color);
-  border-radius: 4px;
-  padding: 15px;
-  margin-bottom: 20px;
-}
-
-.step-header {
+<style scoped lang="scss">
+.mapping {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
+  flex-direction: column;
+  gap: 14px;
+  min-inline-size: 0;
 }
 
-.step-header h4 {
+.intro {
   margin: 0;
-}
-
-.step-actions {
-  display: flex;
-  gap: 5px;
-}
-
-.step-tabs {
-  margin-top: 10px;
-}
-
-.step-description {
   color: var(--el-text-color-secondary);
-  font-size: 0.9em;
-  margin-bottom: 15px;
+  font-size: 0.9rem;
+  text-align: start;
 }
 
-.map-entries, .populate-entries {
+.mode-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+
+  .grow {
+    flex: 1;
+  }
+}
+
+.empty {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
+  padding: 18px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 10px;
+  color: var(--el-text-color-secondary);
+  text-align: start;
+
+  strong {
+    color: var(--el-text-color-primary);
+  }
 }
 
-.map-entry, .populate-entry {
+.steps {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--surface);
+
+  &.open {
+    border-color: var(--el-color-primary-light-5);
+  }
+
+  &.failed {
+    border-color: var(--el-color-danger-light-5);
+  }
+}
+
+.step-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline-end: 6px;
+}
+
+.step-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-inline-size: 0;
+  padding: 10px 10px 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--el-text-color-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--el-fill-color-lighter);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: -2px;
+  }
+}
+
+.num {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 50%;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.step-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.step-sum {
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 0.84rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chev {
+  flex: none;
+  color: var(--el-text-color-placeholder);
+  font-size: 0.75rem;
+}
+
+.step-tools {
+  display: flex;
+  flex: none;
+}
+
+.step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 14px 14px;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
   align-items: flex-start;
+  gap: 8px;
+
+  header {
+    h4 {
+      margin: 0;
+      padding: 0;
+      font-size: 0.95rem;
+    }
+
+    p {
+      margin: 2px 0 0;
+      color: var(--el-text-color-secondary);
+      font-size: 0.84rem;
+      text-align: start;
+    }
+  }
 }
 
-.add-step-container {
-  margin: 20px 0;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
-
-.json-preview {
-  margin-top: 20px;
-}
-
-.mb-3 {
-  margin-bottom: 15px;
-}
-
-/* Connection selector icon styling */
-:deep(.flex-row) {
+.entry {
   display: flex;
   align-items: center;
+  gap: 8px;
+  inline-size: 100%;
+
+  > :deep(.el-input),
+  > :deep(.el-select) {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  &.populate > :deep(.el-select) {
+    flex: 0 1 190px;
+  }
 }
 
-:deep(.flex-middle) {
-  align-items: center;
+.equals {
+  flex: none;
+  color: var(--el-text-color-placeholder);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-:deep(.flex-row img) {
-  width: 20px;
-  height: 20px;
-  margin-inline-end: 8px;
-  object-fit: contain;
+.option {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  inline-size: 100%;
+  padding-block: 4px;
+
+  > div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-inline-size: 0;
+
+    span {
+      color: var(--el-text-color-secondary);
+      font-size: 0.84rem;
+      text-align: start;
+    }
+  }
 }
 
-:deep(.flex-row small) {
-  font-size: 0.8em;
-  margin-inline-end: 8px;
-  color: var(--el-text-color-secondary);
+.abort {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-inline-size: 420px;
+
+  :deep(.el-select),
+  :deep(.el-input) {
+    min-inline-size: 190px;
+  }
 }
 
-/* Options tab styling */
-.step-options {
+// quiet "add" links: the theme gives every primary button a solid fill
+.add {
+  padding-inline: 6px;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--el-color-primary) !important;
+}
+
+[dir='rtl'] .chev {
+  transform: scaleX(-1);
+}
+
+.raw {
+  summary {
+    color: var(--el-color-primary);
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+
+  :deep(.monaco) {
+    margin-block-start: 8px;
+  }
+}
+
+.input-error :deep(.el-input__wrapper),
+.input-error :deep(.el-select__wrapper) {
+  box-shadow: 0 0 0 1px var(--el-color-danger) inset;
+}
+
+// ---- tester ----
+.tester {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
+  padding-block-start: 14px;
+  border-block-start: 1px solid var(--el-border-color-lighter);
 }
 
-.option-item {
+.tester-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+
+  h3 {
+    margin: 0;
+    padding: 0;
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: var(--el-text-color-secondary);
+    font-size: 0.86rem;
+    text-align: start;
+  }
+}
+
+.tester-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.samples {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--el-fill-color-lighter);
 }
 
-.option-description {
-  font-size: 0.8em;
-  color: var(--el-text-color-secondary);
-  margin-top: 4px;
-}
-
-.abort-option {
+.samples-head {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 10px;
-  align-items: center;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    span {
+      color: var(--el-text-color-secondary);
+      font-size: 0.84rem;
+    }
+  }
 }
 
+.sample-list {
+  display: flex;
+  flex-direction: column;
+  max-block-size: 220px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 0;
+  }
+
+  li + li {
+    border-block-start: 1px solid var(--el-border-color-extra-light);
+  }
+}
+
+.sample-text {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+
+  small {
+    color: var(--el-text-color-secondary);
+  }
+}
+
+.panes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.pane-label {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.muted {
+  margin: 0;
+  color: var(--el-text-color-secondary);
+  text-align: start;
+}
+
+.result-empty {
+  padding: 18px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 10px;
+}
+
+@media (max-width: 1023px) {
+  .panes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .entry {
+    flex-wrap: wrap;
+
+    > :deep(.el-input),
+    > :deep(.el-select) {
+      flex-basis: 100%;
+    }
+
+    .equals {
+      display: none;
+    }
+  }
+
+  .option {
+    flex-direction: column;
+  }
+}
+
+// ---- template dialog (unchanged) ----
 .template-selector {
   display: flex;
   flex-direction: column;
@@ -1536,10 +1728,6 @@ onMounted(() => {
 .template-actions {
   display: flex;
   gap: 10px;
-}
-
-.blueprint-selector {
-  margin-top: 20px;
 }
 
 .template-dialog-content {
@@ -1599,12 +1787,6 @@ onMounted(() => {
   color: var(--el-text-color-primary);
 }
 
-.blueprint-required {
-  font-size: 11px;
-  color: var(--el-color-warning);
-  font-weight: 500;
-}
-
 .template-description {
   margin-bottom: 12px;
 }
@@ -1620,6 +1802,25 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.template-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--el-border-color);
+  background: var(--el-bg-color-page);
+}
+
+.blueprint-selector {
+  margin-top: 20px;
+}
+
+.blueprint-required {
+  font-size: 11px;
+  color: var(--el-color-warning);
+  font-weight: 500;
 }
 
 .blueprint-selection-section {
@@ -1652,101 +1853,5 @@ onMounted(() => {
 
 .blueprint-dropdown-container {
   margin-bottom: 12px;
-}
-
-.template-dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 20px;
-  border-top: 1px solid var(--el-border-color);
-  background: var(--el-bg-color-page);
-}
-
-.data-manipulation-test {
-  border: 1px solid var(--el-border-color);
-  border-radius: 8px;
-  padding: 16px;
-  margin-block: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.test-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.test-header h4 {
-  margin: 0;
-}
-
-.test-header p {
-  margin: 4px 0 0;
-  color: var(--el-text-color-secondary);
-}
-
-.test-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.test-editor,
-.test-result {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.section-label {
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.step-error-alert {
-  margin-bottom: 12px;
-}
-
-.map-entry.has-error,
-.populate-entry.has-error {
-  border-inline-start: 3px solid var(--el-color-danger);
-  padding-inline-start: 8px;
-  border-radius: 4px;
-}
-
-.webhook-samples {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.webhook-samples-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: flex-start;
-}
-
-.webhook-samples-header p {
-  margin: 4px 0 0;
-  color: var(--el-text-color-secondary);
-}
-
-.webhook-samples-table {
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.event-name {
-  font-weight: 600;
-}
-
-.event-source {
-  color: var(--el-text-color-secondary);
 }
 </style>
