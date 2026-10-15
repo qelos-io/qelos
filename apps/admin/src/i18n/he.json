@@ -1905,5 +1905,6 @@
   "You are not in any workspace yet": "עדיין אינכם בשום סביבת עבודה",
   "You have been invited": "הוזמנתם",
   "optional": "אופציונלי",
-  "{n} workspaces": "{n} סביבות עבודה"
+  "{n} workspaces": "{n} סביבות עבודה",
+  "Could not load the full event": "לא ניתן לטעון את האירוע המלא"
 }

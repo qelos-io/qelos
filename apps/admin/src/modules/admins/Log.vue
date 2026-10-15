@@ -1,5 +1,5 @@
 <template>
-  <div class="events-page">
+  <div ref="page" class="events-page">
     <header class="page-head">
       <div class="page-title">
         <h1>{{ $t('Events') }}</h1>
@@ -64,6 +64,8 @@
       <aside v-if="!isCompact" class="detail-pane" :aria-label="$t('Event Details')">
         <EventDetailPanel
           :event="selectedEvent"
+          :loading="detailLoading"
+          :failed="detailFailed"
           :related="related"
           @select="selectEvent"
           @filter="setFilters"
@@ -82,7 +84,8 @@
     >
       <EventDetailPanel
         :event="selectedEvent"
-        :loading="!selectedEvent"
+        :loading="detailLoading || !selectedEvent"
+        :failed="detailFailed"
         :related="related"
         @select="selectEvent"
         @filter="onCompactFilter"
@@ -121,6 +124,8 @@ const {
   filterOptions,
   selectedId,
   selectedEvent,
+  detailLoading,
+  detailFailed,
   selectEvent,
   setFilters,
   clearFilters,
@@ -142,31 +147,29 @@ const related = computed(() =>
   selectedEvent.value ? getRelatedEvents(selectedEvent.value, events.value, getEventUserId) : [],
 );
 
-// the detail pane lives beside the feed on wide screens and in a drawer / bottom sheet otherwise
-const COMPACT_QUERY = '(max-width: 1180px)';
-const PHONE_QUERY = '(max-width: 768px)';
+// The detail pane lives beside the feed when the page has room for both, and in a drawer / bottom sheet otherwise.
+// It follows the width of the page itself, not of the window, so a wide sidebar does not change the answer by surprise.
+const SPLIT_MIN_WIDTH = 860;
+const PHONE_MAX_WIDTH = 640;
+const page = ref<HTMLElement>();
 const isCompact = ref(false);
 const isPhone = ref(false);
-let compactMedia: MediaQueryList | undefined;
-let phoneMedia: MediaQueryList | undefined;
+let observer: ResizeObserver | undefined;
 
-function syncMedia() {
-  isCompact.value = !!compactMedia?.matches;
-  isPhone.value = !!phoneMedia?.matches;
+function syncWidth(width: number) {
+  isCompact.value = width < SPLIT_MIN_WIDTH;
+  isPhone.value = width < PHONE_MAX_WIDTH;
 }
 
 onMounted(() => {
-  compactMedia = window.matchMedia(COMPACT_QUERY);
-  phoneMedia = window.matchMedia(PHONE_QUERY);
-  syncMedia();
-  compactMedia.addEventListener('change', syncMedia);
-  phoneMedia.addEventListener('change', syncMedia);
+  if (!page.value) return;
+  const style = getComputedStyle(page.value);
+  syncWidth(page.value.clientWidth - parseFloat(style.paddingInlineStart) - parseFloat(style.paddingInlineEnd));
+  observer = new ResizeObserver(([entry]) => syncWidth(entry.contentRect.width));
+  observer.observe(page.value);
 });
 
-onBeforeUnmount(() => {
-  compactMedia?.removeEventListener('change', syncMedia);
-  phoneMedia?.removeEventListener('change', syncMedia);
-});
+onBeforeUnmount(() => observer?.disconnect());
 
 function onCompactFilter(patch: Record<string, string>) {
   selectEvent();
@@ -198,6 +201,7 @@ function downloadExport(format: EventsExportFormat) {
 
 <style scoped lang="scss">
 .events-page {
+  container: events / inline-size;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -270,7 +274,7 @@ function downloadExport(format: EventsExportFormat) {
   background: var(--el-bg-color);
 }
 
-@media (max-width: 1180px) {
+@container events (max-width: 859px) {
   .workspace {
     grid-template-columns: minmax(0, 1fr);
   }

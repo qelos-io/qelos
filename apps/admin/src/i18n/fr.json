@@ -1905,5 +1905,6 @@
   "You are not in any workspace yet": "Vous n'êtes dans aucun espace de travail pour l'instant",
   "You have been invited": "Vous avez été invité",
   "optional": "facultatif",
-  "{n} workspaces": "{n} espaces de travail"
+  "{n} workspaces": "{n} espaces de travail",
+  "Could not load the full event": "Impossible de charger l'événement complet"
 }

@@ -153,9 +153,13 @@ export function useEventsFeed() {
   }
 
   const selectedId = computed(() => (route.query.eventId as string) || '')
-  const fetchedEvent = ref<IEvent | null>(null)
+  // The detail always shows the complete event, loaded by its id: the feed only needs enough to list it.
+  // Until it arrives the row from the feed (if it is in the page) stands in, so opening one is instant.
+  const fullEvents = ref<Record<string, IEvent>>({})
+  const detailLoading = ref(false)
+  const detailFailed = ref(false)
   const selectedEvent = computed(
-    () => events.value.find((event) => event._id === selectedId.value) ?? (fetchedEvent.value?._id === selectedId.value ? fetchedEvent.value : null),
+    () => fullEvents.value[selectedId.value] ?? events.value.find((event) => event._id === selectedId.value) ?? null,
   )
 
   function selectEvent(id?: string) {
@@ -170,13 +174,23 @@ export function useEventsFeed() {
   }
 
   watch(
-    [selectedId, events],
-    async ([id]) => {
-      if (!id || events.value.some((event) => event._id === id) || fetchedEvent.value?._id === id) return
+    selectedId,
+    async (id) => {
+      detailFailed.value = false
+      if (!id || fullEvents.value[id]) {
+        detailLoading.value = false
+        return
+      }
+      detailLoading.value = true
       try {
-        fetchedEvent.value = await eventsService.getOne(id)
+        const event = await eventsService.getOne(id)
+        // the person may have moved on to another event while this one was loading
+        if (event) fullEvents.value = { ...fullEvents.value, [id]: event }
+        else detailFailed.value = selectedId.value === id
       } catch {
-        fetchedEvent.value = null
+        detailFailed.value = selectedId.value === id
+      } finally {
+        if (selectedId.value === id) detailLoading.value = false
       }
     },
     { immediate: true },
@@ -206,6 +220,8 @@ export function useEventsFeed() {
     filterOptions,
     selectedId,
     selectedEvent,
+    detailLoading,
+    detailFailed,
     selectEvent,
     setFilters,
     clearFilters,

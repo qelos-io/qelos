@@ -1,5 +1,6 @@
 <template>
   <article v-if="event" v-loading="loading" class="event-panel">
+    <el-alert v-if="failed" class="panel-alert" type="warning" show-icon :closable="false" :title="$t('Could not load the full event')" />
     <header class="panel-head">
       <span class="panel-dot" :class="severity" />
       <div class="panel-title">
@@ -254,6 +255,8 @@ import {
 const props = defineProps<{
   event: IEvent | null;
   loading?: boolean;
+  /** the complete event could not be loaded; what the feed had is shown */
+  failed?: boolean;
   related?: IEvent[];
 }>();
 
