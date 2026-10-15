@@ -117,53 +117,53 @@ const statusBanner = computed(() => {
 
 <style scoped>
 .connection-status-check {
-  margin-block-start: 1.5rem;
-  padding-block-start: 1.5rem;
-  border-block-start: 1px dashed var(--el-border-color-lighter);
+  margin-block-start: 20px;
+  padding-block-start: 20px;
+  border-block-start: 1px solid var(--el-border-color-lighter);
 }
 
 .connection-status-check-actions {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .connection-status-check-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .connection-status-hint {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--el-text-color-secondary);
 }
 
 .connection-status-container {
-  margin-block-start: 1rem;
+  margin-block-start: 12px;
 }
 
 .connection-status {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.8rem 1rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .connection-status.success {
   background-color: var(--el-color-success-light-9);
-  color: var(--el-color-success);
-  border-inline-start: 4px solid var(--el-color-success);
+  color: var(--el-color-success-dark-2);
 }
 
 .connection-status.error {
   background-color: var(--el-color-danger-light-9);
-  color: var(--el-color-danger);
-  border-inline-start: 4px solid var(--el-color-danger);
+  color: var(--el-color-danger-dark-2);
 }
 </style>

@@ -8,7 +8,7 @@ import { useIntegrationKinds } from '@/modules/integrations/compositions/integra
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 import integrationSourcesService from '@/services/apis/integration-sources-service';
 import { useConfirmAction } from '../core/compositions/confirm-action';
-import IntegrationSourceFormModal from '@/modules/integrations/components/IntegrationSourceFormModal.vue';
+import ConnectionDrawer from '@/modules/integrations/components/connections/ConnectionDrawer.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useSecuredHeadersMasked } from './compositions/use-secured-headers-masked';
 import { useConnectionOptions } from './compositions/connection-options';
@@ -159,7 +159,7 @@ const details = (connection: any) =>
       </li>
     </ul>
 
-    <IntegrationSourceFormModal
+    <ConnectionDrawer
       v-model:visible="formVisible"
       v-model:editing-integration="editing"
       :kind="kind"

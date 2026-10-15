@@ -5,7 +5,7 @@ import { ArrowDown, Plus } from '@element-plus/icons-vue';
 import { DEFAULT_AI_MODEL_BY_PROVIDER, IntegrationSourceKind } from '@qelos/global-types';
 import integrationSourcesService from '@/services/apis/integration-sources-service';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
-import IntegrationSourceFormModal from '../IntegrationSourceFormModal.vue';
+import ConnectionDrawer from './ConnectionDrawer.vue';
 import { useIntegrationKinds } from '../../compositions/integration-kinds';
 import { useIntegrationSourcesStore } from '../../store/integration-sources';
 
@@ -123,7 +123,7 @@ const manage = (kind: string) => router.push({ name: 'integrations-sources', par
       </template>
     </template>
 
-    <IntegrationSourceFormModal
+    <ConnectionDrawer
       v-model:visible="formVisible"
       v-model:editing-integration="editing"
       :kind="formKind"

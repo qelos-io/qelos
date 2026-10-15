@@ -6,7 +6,7 @@ import { IIntegrationSource, IntegrationSourceKind } from '@qelos/global-types';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { useIntegrationSourceDefaults } from '@/modules/integrations/compositions/use-integration-source-defaults';
-import IntegrationSourceFormModal from '@/modules/integrations/components/IntegrationSourceFormModal.vue';
+import ConnectionDrawer from '@/modules/integrations/components/connections/ConnectionDrawer.vue';
 import integrationSourcesService from '@/services/apis/integration-sources-service';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
 
@@ -355,7 +355,7 @@ function capitalize(value: string) {
 
   </div>
 
-  <IntegrationSourceFormModal
+  <ConnectionDrawer
     v-model:visible="createModalVisible"
     :editing-integration="modalDraft"
     :kind="selectedKind"
