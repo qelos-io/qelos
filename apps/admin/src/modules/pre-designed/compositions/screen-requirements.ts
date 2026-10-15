@@ -8,6 +8,7 @@ import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microf
 import Sdk from '@/services/sdk';
 import { useAuth } from '@/modules/core/compositions/authentication';
 import { isLoadingDataAsUser } from '@/modules/core/store/auth';
+import { previewState } from './page-editing';
 
 export const useScreenRequirementsStore = defineStore('screen-requirements', function useScreenRequirements() {
   const route = useRoute()
@@ -50,8 +51,11 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
     }, {})
   }
 
+  /** the draft's data while a page is being designed, otherwise the saved requirements */
+  const activeRequirements = () => (previewState.requirements ?? route.meta.screenRequirements) as IScreenRequirement[] | undefined;
+
   const reloadRequirements = () => {
-    const reqs = route.meta.screenRequirements;
+    const reqs = activeRequirements();
     const watchers = [];
     if (!(reqs instanceof Array && reqs.length)) {
       requirements.value = {}
@@ -163,10 +167,10 @@ export const useScreenRequirementsStore = defineStore('screen-requirements', fun
     });
   }
 
-  watch(() => [route.meta.screenRequirements, mfes.navBar, mfes.modals, mfes.cruds, isLoadingDataAsUser.value], reloadRequirements, { immediate: true })
+  watch(() => [route.meta.screenRequirements, previewState.requirements, mfes.navBar, mfes.modals, mfes.cruds, isLoadingDataAsUser.value], reloadRequirements, { immediate: true })
 
   const isRequirementsLoaded = computed(() => {
-    const hasEmptyRequirement = (route.meta.screenRequirements as IScreenRequirement[] || [])
+    const hasEmptyRequirement = (activeRequirements() || [])
       .map((item: IScreenRequirement) => item.key)
       .some(key => typeof requirements.value[key] === 'undefined')
     return !hasEmptyRequirement;

@@ -1,5 +1,6 @@
 <template>
-  <main v-if="!isEditingEnabled || !updateCode">
+  <main :style="{ '--ql-reserve': (isEditingEnabled ? editingState.reserve : 0) + 'px' }">
+    <PageEditingLayer v-if="isPrivilegedUser" v-model:code-open="codeOpen" :structure="givenStructure" :saved-structure="savedStructure" :extra-tags="extraEditableTags"/>
     <ErrorBoundary v-if="isRequirementsLoaded" @error="reRenderAfterError" :key="$route.fullPath + updates">
       <div class="template-content">
         <VRuntimeTemplate v-if="item"
@@ -7,26 +8,7 @@
                           :template-props="templateProps"/>
       </div>
     </ErrorBoundary>
-    <AddComponentModal v-if="addComponentOptions" @save="submitComponentToTemplate" @close="addComponentOptions = undefined"/>
-    <EditComponentModal v-if="editedComponentContext?.editChild" v-model="editedComponentContext.editChild"
-                        @save="finishEditComponent"/>
   </main>
-  <PlainEditingLayer
-    v-if="isPrivilegedUser"
-    :is-editing-enabled="isEditingEnabled"
-    :show-code-editor="isEditingEnabled && updateCode"
-    :page-name="pageName"
-    :edited-plugin-mfe="editedPluginMfe"
-    :submitting="submitting"
-    :toggle-edit="toggleEditing"
-    :open-add-component-modal="handleOpenAddComponent"
-    :open-code-editor="handleOpenCodeEditor"
-    :clone-page="handleClonePage"
-    :remove-page="handleRemovePage"
-    :save-code-editor="saveCodeEditor"
-    :close-code-editor="closeCodeEditor"
-  />
-  <EditorTour v-if="isPrivilegedUser"/>
 </template>
 
 <script lang="ts" setup>
@@ -38,22 +20,18 @@ import { useDynamicRouteItem } from '@/modules/pre-designed/compositions/dynamic
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
 import { useAuth } from '@/modules/core/compositions/authentication';
 import { fetchAuthUser, isEditingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
-import AddComponentModal from '@/pre-designed/editor/AddComponentModal.vue';
-import { useEditMfeStructure } from '@/modules/no-code/compositions/edit-mfe-structure';
-import { useSubmitting } from '@/modules/core/compositions/submitting';
 import sdk from '@/services/sdk';
 import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
-import { useRoute } from 'vue-router';
 import { useGlobalStyles } from '@/modules/pre-designed/compositions/global-styles';
-import EditComponentModal from '@/pre-designed/editor/EditComponentModal.vue';
-import EditorTour from '@/pre-designed/editor/EditorTour.vue';
-import PlainEditingLayer from '@/pre-designed/PlainEditingLayer.vue';
+import PageEditingLayer from '@/modules/pre-designed/components/editing/PageEditingLayer.vue';
+import { editingState } from '@/modules/pre-designed/compositions/page-editing';
 import { usePluginsStore } from '@/modules/plugins/store/pluginsStore';
-const pluginsStore = usePluginsStore(); 
-const route = useRoute();
+
+const pluginsStore = usePluginsStore();
 const mfes = usePluginsMicroFrontends();
 const item = ref();
 const cruds = toRef(mfes, 'cruds')
+const codeOpen = ref(false)
 
 const updates = ref(0)
 
@@ -65,10 +43,6 @@ async function reRenderAfterError() {
   updates.value++;
 }
 
-function toggleEditing() {
-  isEditingEnabled.value = !isEditingEnabled.value;
-}
-
 fetchAuthUser(false, true);
 const { user, isLoaded: userLoaded, userPromise } = useAuth()
 
@@ -76,57 +50,10 @@ watch(() => pluginsStore.componentUpdates, () => {
   updates.value++;
 });
 
-const { api, crud, relevantStructure, styles } = useSingleItemCrud()
+const { api, crud, relevantStructure, givenStructure, savedStructure, extraEditableTags, styles } = useSingleItemCrud()
 const { requirements, isRequirementsLoaded } = toRefs(useScreenRequirementsStore())
 useDynamicRouteItem(api, item);
 useGlobalStyles(styles);
-
-function openAddComponentModal(el?: HTMLElement) {
-  addComponentOptions.value = {
-    afterEl: el,
-  }
-}
-
-const {
-  addComponentOptions,
-  submitComponentToTemplate,
-  pageName,
-  fetchMfe,
-  editedPluginMfe,
-  submitCodeToTemplate,
-  clonePage,
-  removePage,
-  editedComponentContext,
-  finishEditComponent
-} = useEditMfeStructure()
-const updateCode = ref(false)
-
-const handleOpenAddComponent = () => openAddComponentModal()
-const handleOpenCodeEditor = () => openCodeEditor()
-const handleClonePage = () => (clonePage as (payload?: any) => Promise<void> | void)()
-const handleRemovePage = () => (removePage as (payload?: any) => Promise<void> | void)()
-
-async function openCodeEditor() {
-  await fetchMfe()
-  editedPluginMfe.value.structure ||= '';
-  editedPluginMfe.value.requirements ||= []
-  updateCode.value = true;
-}
-
-function closeCodeEditor() {
-  updateCode.value = false;
-}
-
-const { submit: saveCodeEditor, submitting } = useSubmitting(async ({ structure, requirements, settings }) => {
-  await submitCodeToTemplate(structure, requirements, settings)
-  updateCode.value = true;
-})
-
-watch(() => route.fullPath, () => {
-  if (updateCode.value) {
-    openCodeEditor();
-  }
-})
 
 watch(relevantStructure, () => {
   updates.value++;
@@ -154,5 +81,18 @@ if (isPrivilegedUser.value && !isEditingEnabled.value && relevantStructure.value
 <style scoped>
 main {
   position: relative;
+}
+
+@media (min-width: 721px) {
+  main {
+    padding-inline-end: var(--ql-reserve, 0px);
+    transition: padding-inline-end 0.2s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main {
+    transition: none;
+  }
 }
 </style>

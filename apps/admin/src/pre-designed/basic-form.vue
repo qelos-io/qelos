@@ -1,19 +1,11 @@
 <template>
-  <EditPageStructure v-if="isEditingEnabled && updateCode"
-                     :page-name="pageName"
-                     :mfe="editedPluginMfe"
-                     :submitting="submittingCode"
-                     @save="saveCodeEditor"
-                     @close="closeCodeEditor"/>
-  <main v-else>
+  <main>
+    <PageEditingLayer v-if="isPrivilegedUser" v-model:code-open="codeOpen" :structure="givenStructure" :saved-structure="savedStructure" :extra-tags="extraEditableTags"/>
     <el-form @submit.prevent="submit">
       <ErrorBoundary>
         <VRuntimeTemplate v-if="item" :template="relevantStructure" :template-props="templateProps"/>
       </ErrorBoundary>
-
     </el-form>
-    <EditButtons v-if="isEditingEnabled" @wizard="openAddComponentModal" @code="openCodeEditor"/>
-    <AddComponentModal v-if="addComponent" @save="submitComponentToTemplate" @close="addComponent = undefined"/>
   </main>
 </template>
 
@@ -27,11 +19,8 @@ import { useSingleItemCrud } from '@/modules/pre-designed/compositions/single-it
 import { useDynamicRouteItem } from '@/modules/pre-designed/compositions/dynamic-route-item';
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
 import { useAuth } from '@/modules/core/compositions/authentication';
-import { isEditingEnabled } from '@/modules/core/store/auth';
-import { useEditMfeStructure } from '@/modules/no-code/compositions/edit-mfe-structure';
-import AddComponentModal from '@/pre-designed/editor/AddComponentModal.vue';
-import EditButtons from '@/pre-designed/editor/EditButtons.vue';
-import EditPageStructure from '@/pre-designed/editor/EditPageStructure.vue';
+import { isEditingEnabled, isPrivilegedUser } from '@/modules/core/store/auth';
+import PageEditingLayer from '@/modules/pre-designed/components/editing/PageEditingLayer.vue';
 import sdk from '@/services/sdk';
 import ErrorBoundary from '@/modules/core/components/layout/ErrorBoundary.vue';
 
@@ -41,7 +30,7 @@ const { user } = useAuth()
 const mfes = usePluginsMicroFrontends();
 
 const cruds = toRef(mfes, 'cruds')
-const { api, crud, relevantStructure } = useSingleItemCrud()
+const { api, crud, relevantStructure, givenStructure, savedStructure, extraEditableTags } = useSingleItemCrud()
 
 const identifierKey = computed(() => mfes.cruds[crud.value.name].identifierKey || '_id');
 const isExistingItem = computed(() => !!route.params.id);
@@ -90,37 +79,7 @@ const { submit, submitting } = useSubmitting(async () => {
 })
 
 provide('submitting', submitting);
-const updateCode = ref(false)
-const {
-  addComponent,
-  submitComponentToTemplate,
-  submitCodeToTemplate,
-  fetchMfe,
-  editedPluginMfe,
-  pageName
-} = useEditMfeStructure();
-
-function openAddComponentModal(el?: HTMLElement) {
-  addComponent.value = {
-    afterEl: el,
-  }
-}
-
-async function openCodeEditor() {
-  await fetchMfe()
-  editedPluginMfe.value.structure ||= '';
-  editedPluginMfe.value.requirements ||= []
-  updateCode.value = true;
-}
-
-function closeCodeEditor() {
-  updateCode.value = false;
-}
-
-const { submit: saveCodeEditor, submitting: submittingCode } = useSubmitting(async ({ structure, requirements }) => {
-  await submitCodeToTemplate(structure, requirements)
-  updateCode.value = true;
-})
+const codeOpen = ref(false)
 
 const templateProps = computed(() => {
   return {

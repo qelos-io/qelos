@@ -4,9 +4,8 @@ import { useRoute } from 'vue-router';
 import { isEditingEnabled } from '@/modules/core/store/auth';
 import { usePluginsStore } from '@/modules/plugins/store/pluginsStore';
 import { useStaticComponentsStore } from '@/modules/no-code/store/static-components';
-
-const editableContent = document.createElement('editable-content');
-const selector = 'p, h1, h2, h3, h4, h5, h6, div, remove-confirmation, block-item, empty-state, ai-chat, el-button, el-select, el-input, el-form, form, life-cycle, list-page-title, quick-table, v-chart';
+import { annotateStructure } from '@/modules/pre-designed/services/structure-ops';
+import { previewState } from './page-editing';
 
 export function useSingleItemCrud() {
   const mfes = usePluginsMicroFrontends();
@@ -14,16 +13,11 @@ export function useSingleItemCrud() {
   const staticComponentsStore = useStaticComponentsStore();
   const route = useRoute()
 
-  const editableElementsSelector = computed(() => {
-    const customComponents = pluginsStore.loadedCustomComponents;
-    const staticComponents = staticComponentsStore.staticComponents.map(c => c.name);
-    const allComponents = [...customComponents, ...staticComponents];
-    
-    if (!allComponents.length) {
-      return selector;
-    }
-    return `${selector}, ${allComponents.join(', ')}`;
-  });
+  /** components added by the app (not part of the built-in set) are blocks too */
+  const extraEditableTags = computed(() => [
+    ...pluginsStore.loadedCustomComponents,
+    ...staticComponentsStore.staticComponents.map((c) => c.name),
+  ]);
 
   const crud = computed(() => {
     const crud = route.meta.crud as any || { display: {} };
@@ -40,9 +34,10 @@ export function useSingleItemCrud() {
     }
   });
   const api = computed(() => mfes.cruds[crud.value?.name]?.api);
-  const givenStructure = computed(() => {
-    return (route.meta.mfe as any)?.structure || '<div></div>';
-  });
+  /** what is saved */
+  const savedStructure = computed(() => (route.meta.mfe as any)?.structure || '<div></div>');
+  /** what the page shows: a draft while one is being designed */
+  const givenStructure = computed(() => previewState.structure ?? savedStructure.value);
 
   function getTemplate(html: string = givenStructure.value) {
     const template = document.createElement('template');
@@ -50,46 +45,10 @@ export function useSingleItemCrud() {
     return template;
   }
 
-  function convertToEditableContent(template: HTMLTemplateElement) {
-    Array.from(template.content.querySelectorAll(editableElementsSelector.value)).forEach((el) => {
-      const newEl = editableContent.cloneNode() as HTMLElement;
-      newEl.setAttribute('data-ql-component', el.tagName.toLowerCase());
-      el.replaceWith(newEl);
-      el.getAttributeNames().forEach((attr) => {
-        attr = attr.trim();
-        const firstChar = attr[0];
-        if (!attr || firstChar === '#') {
-          return;
-        }
-        try {
-          newEl.setAttribute(firstChar === '@' ? attr.replace('@', 'v-on:') : attr, el.getAttribute(attr));
-        } catch {
-          //
-        }
-        if (attr.startsWith('v-else') || attr === 'v-for') {
-          el.removeAttribute(attr);
-        }
-      })
-      newEl.appendChild(el);
-    })
-  }
-
   const relevantStructure = computed(() => {
     const template = getTemplate(givenStructure.value);
-
     if (isEditingEnabled.value) {
-      template.content.querySelectorAll('*').forEach((el, index) => {
-        el.setAttribute('data-ql-id', index.toString());
-
-        if (el.tagName.toLowerCase() === 'template') {
-          Array.from((el as HTMLTemplateElement).content.querySelectorAll('*')).forEach((innerEl, innerIndex) => {
-            innerEl.setAttribute('data-ql-id', index.toString() + '-inner-' + innerIndex.toString());
-          })
-          return;
-        }
-      });
-      convertToEditableContent(template);
-      template.content.querySelectorAll('template').forEach((el => convertToEditableContent(el)))
+      annotateStructure(template, extraEditableTags.value);
     }
     return template.innerHTML;
   });
@@ -106,6 +65,9 @@ export function useSingleItemCrud() {
     crud,
     api,
     relevantStructure,
+    givenStructure,
+    savedStructure,
+    extraEditableTags,
     styles
   }
 }

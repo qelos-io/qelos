@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { provide, ref, watch } from 'vue';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
-import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 
 const props = defineProps<{
   onSubmit?: (data: any) => Promise<unknown>;
@@ -38,7 +37,6 @@ watch(() => props.data, () => {
 
 <template>
   <el-form @submit.prevent="submit">
-    <EditComponentBar/>
     <slot v-bind="{submit, submitting, data, form}"/>
   </el-form>
 </template>

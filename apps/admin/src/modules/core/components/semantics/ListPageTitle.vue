@@ -2,7 +2,6 @@
   <div class="list-page-title">
     <div class="list-page-header">
       <h1 class="title-section">
-        <EditComponentBar v-if="$slots.editBar" />
         <slot v-if="$slots.default"/>
         <span v-else>{{ t(title) }}</span>
         <el-tooltip 
@@ -89,7 +88,6 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessageBox } from 'element-plus';
 import { Plus, QuestionFilled } from '@element-plus/icons-vue';
-import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 
 const router = useRouter();
 const { t } = useI18n();

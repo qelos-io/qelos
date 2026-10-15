@@ -38,7 +38,6 @@ export default function applyGlobalTemplatesComponents(app: App) {
   app.component('ConfirmMessage', defineAsyncComponent(async () => (await import('./components/ConfirmMessage.vue')).default))
   app.component('RemoveButton', RemoveButton)
   app.component('VChart', defineAsyncComponent(async () => (await import('./components/VChart.vue')).default))
-  app.component('EditableContent', defineAsyncComponent(async () => (await import('./components/EditableContent.vue')).default))
   app.component('RemoveConfirmation', defineAsyncComponent(async () => (await import('./components/RemoveConfirmation.vue')).default))
   app.component('StatsCard', StatsCard)
   app.component('QPre', defineAsyncComponent(async () => (await import('./components/Pre.vue')).default))

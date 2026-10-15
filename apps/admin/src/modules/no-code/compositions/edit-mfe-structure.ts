@@ -5,78 +5,51 @@ import { isEditingEnabled } from '@/modules/core/store/auth';
 import { useRoute, useRouter } from 'vue-router';
 import { useEditPlugin } from '@/modules/plugins/compositions/manage-plugin';
 import { useScreenRequirementsStore } from '@/modules/pre-designed/compositions/screen-requirements';
+import {
+  getElementByQlId,
+  moveElement,
+  moveStep,
+  parseStructure,
+  removeElement,
+  serializeStructure,
+  type DropPosition,
+} from '@/modules/pre-designed/services/structure-ops';
+import { insertBlock, mergeRequirements, type BuiltComponent } from '@/modules/pre-designed/services/build-component';
 
-export type DragPosition = 'before' | 'after';
+export type { DropPosition };
 
+/** what the page editing UI can do to the blocks of the page, by block id (`data-ql-id`) */
 export type EditableManager = {
-  removeComponent: (el: HTMLElement) => Promise<void>;
-  editComponent: (el: HTMLElement) => Promise<void>;
-  addComponentBefore: (el: HTMLElement) => void;
-  addComponentAfter: (el: HTMLElement) => void;
-  reorderComponents: (draggedQlId: string, targetQlId: string, position: DragPosition) => Promise<void>;
+  removeComponent: (qlId: string) => Promise<void>;
+  editComponent: (qlId: string) => Promise<void>;
+  addComponentBefore: (qlId: string) => void;
+  addComponentAfter: (qlId: string) => void;
+  reorderComponents: (draggedQlId: string, targetQlId: string, position: DropPosition) => Promise<void>;
+  moveComponent: (qlId: string, direction: 'up' | 'down') => Promise<void>;
   setDraggingQlId: (qlId: string | null) => void;
   draggingQlId: Ref<string | null>;
 };
 
-function createTemplateFromStructure(structure?: string) {
-  const template = document.createElement('template');
-  template.innerHTML = structure || '';
-  return template;
-}
-
-function getElementByQlId(template: HTMLTemplateElement, qlId?: string | null) {
-  if (!qlId) {
-    return null;
-  }
-  const [outerIndexRaw, innerIndexRaw] = qlId.split('-inner-');
-  const outerIndex = Number(outerIndexRaw);
-  if (Number.isNaN(outerIndex)) {
-    return null;
-  }
-  const elements = Array.from(template.content.querySelectorAll('*'));
-  const outerEl = elements[outerIndex];
-  if (!outerEl) {
-    return null;
-  }
-  if (innerIndexRaw === undefined) {
-    return outerEl;
-  }
-  if (outerEl.tagName.toLowerCase() !== 'template') {
-    return null;
-  }
-  const innerIndex = Number(innerIndexRaw);
-  if (Number.isNaN(innerIndex)) {
-    return null;
-  }
-  return Array.from((outerEl as HTMLTemplateElement).content.querySelectorAll('*'))[innerIndex] || null;
-}
-
 export function useEditMfeStructure() {
   const route = useRoute();
-  const router = useRouter()
-  const { load: loadPlugin, updatePlugin } = useEditPlugin()
-  const addComponentOptions = ref<{ beforeEl?: HTMLElement, afterEl?: HTMLElement }>()
-  const { reloadRequirements } = useScreenRequirementsStore()
-  const editedPluginMfe = ref<IMicroFrontend>()
+  const router = useRouter();
+  const { load: loadPlugin, updatePlugin } = useEditPlugin();
+  const addComponentOptions = ref<{ beforeQlId?: string; afterQlId?: string }>();
+  const { reloadRequirements } = useScreenRequirementsStore();
+  const editedPluginMfe = ref<IMicroFrontend>();
   const editedComponentContext = ref();
   const draggingQlId = ref<string | null>(null);
 
   async function getUpdatedPluginAndMfe() {
-    const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId)
+    const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId);
     const routeMfe = route.meta.mfe as IMicroFrontend;
-
-    const pluginMfe: IMicroFrontend = plugin.microFrontends.find(mfe => mfe._id === routeMfe._id);
-
-    return {
-      plugin,
-      pluginMfe,
-      routeMfe
-    }
+    const pluginMfe: IMicroFrontend = plugin.microFrontends.find((mfe) => mfe._id === routeMfe._id);
+    return { plugin, pluginMfe, routeMfe };
   }
 
   async function fetchMfe() {
     editedPluginMfe.value = null;
-    const { pluginMfe } = await getUpdatedPluginAndMfe()
+    const { pluginMfe } = await getUpdatedPluginAndMfe();
     editedPluginMfe.value = pluginMfe;
   }
 
@@ -93,8 +66,7 @@ export function useEditMfeStructure() {
   }
 
   async function submitCodeToTemplate(structure: string, requirements: any[], otherSettings: Partial<IMicroFrontend>) {
-    const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
-
+    const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe();
     pluginMfe.structure = structure;
     pluginMfe.requirements = requirements;
     Object.assign(pluginMfe, otherSettings);
@@ -102,56 +74,22 @@ export function useEditMfeStructure() {
     updateRouteFromPluginMfe(routeMfe, pluginMfe);
   }
 
-  async function submitComponentToTemplate(data) {
-    const el = document.createElement(data.component);
+  /** the freshest saved structure + a handle to save a changed one */
+  async function editStructure(change: (html: string) => string) {
+    const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe();
+    const next = change(pluginMfe.structure || '');
+    if (next === (pluginMfe.structure || '')) return;
+    pluginMfe.structure = next;
+    await updatePlugin(plugin);
+    updateRouteFromPluginMfe(routeMfe, pluginMfe);
+  }
+
+  /** saves a block built by the component panel into the page, at the anchor the panel was opened with */
+  async function submitComponentToTemplate(built: BuiltComponent) {
     const options = addComponentOptions.value;
-
-    Object.keys(data.props).forEach(propName => {
-      try {
-        el.setAttribute(propName, data.props[propName]);
-      } catch {
-        //
-      }
-    })
-
-    if (data.innerHTML) {
-      el.innerHTML = data.innerHTML;
-    }
-    if (data.classes) {
-      el.classList.add(data.classes)
-    }
-
-    const {
-      editChild,
-      pluginMfe,
-      template,
-      routeMfe,
-      plugin
-    } = await getEditedComponent(options.beforeEl || options.afterEl || null);
-
-    if (options.beforeEl) {
-      (editChild as HTMLElement).before(el);
-    } else if (options.afterEl) {
-      (editChild as HTMLElement).after(el);
-    } else {
-      template.content.appendChild(el);
-    }
-    pluginMfe.structure = template.innerHTML.trim();
-    pluginMfe.requirements ||= [];
-    pluginMfe.requirements.push(...Object.values(data.requirements) as any[])
-
-    const uniqueRequirements = {};
-    pluginMfe.requirements.forEach(req => {
-      if (!uniqueRequirements[req.key]) {
-        uniqueRequirements[req.key] = req;
-        return;
-      }
-      if (uniqueRequirements[req.key].fromData && req.fromData) {
-        Object.assign(uniqueRequirements[req.key].fromData, req.fromData);
-      }
-    })
-    pluginMfe.requirements = Object.values(uniqueRequirements);
-
+    const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe();
+    pluginMfe.structure = insertBlock(pluginMfe.structure || '', built, options).html;
+    pluginMfe.requirements = mergeRequirements(pluginMfe.requirements, Object.values(built.requirements));
     await updatePlugin(plugin);
     updateRouteFromPluginMfe(routeMfe, pluginMfe);
   }
@@ -159,7 +97,7 @@ export function useEditMfeStructure() {
   async function clonePage() {
     const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId);
     const routeMfe = route.meta.mfe as IMicroFrontend;
-    const pluginMfe: IMicroFrontend = plugin.microFrontends.find(mfe => mfe._id === routeMfe._id);
+    const pluginMfe: IMicroFrontend = plugin.microFrontends.find((mfe) => mfe._id === routeMfe._id);
 
     const clone: IMicroFrontend = JSON.parse(JSON.stringify(pluginMfe));
     clone.name = clone.name + ' (copy)';
@@ -174,113 +112,90 @@ export function useEditMfeStructure() {
     location.reload();
   }
 
-  async function getEditedComponent(el: Element | null) {
-    const qlId = el?.getAttribute('data-ql-id');
-
-    if (el !== null && !qlId) {
-      return {};
+  /** `qlId` null: the whole page (no block picked) */
+  async function getEditedComponent(qlId: string | null) {
+    const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe();
+    const template = parseStructure(pluginMfe.structure);
+    const child = qlId === null ? undefined : getElementByQlId(template, qlId);
+    if (qlId !== null && !child) {
+      return { template, pluginMfe, routeMfe, plugin } as any;
     }
-    const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe()
-    const template = createTemplateFromStructure(pluginMfe.structure);
-    let child;
-    if (el !== null) {
-      child = getElementByQlId(template, qlId);
-    }
-
-    return {
-      template,
-      editChild: child,
-      routeMfe,
-      pluginMfe,
-      plugin
-    };
+    return { template, editChild: child, routeMfe, pluginMfe, plugin };
   }
 
-  const removeComponent = useConfirmAction(async function removeComponent(el: HTMLElement) {
-    const { editChild, pluginMfe, template, routeMfe, plugin } = await getEditedComponent(el);
-    if (!editChild) {
-      return;
-    }
-    editChild.remove();
-    pluginMfe.structure = template.innerHTML.trim();
+  const removeComponent = useConfirmAction(
+    async function removeComponent(qlId: string) {
+      const { editChild, pluginMfe, template, routeMfe, plugin } = await getEditedComponent(qlId);
+      if (!editChild) {
+        return;
+      }
+      editChild.remove();
+      pluginMfe.structure = serializeStructure(template);
 
-    editChild.getAttributeNames()
-      .filter(attr => attr.startsWith('v-bind:'))
-      .map(attr => editChild.getAttribute(attr).split('.')[0].replace('?', ''))
-      .forEach(optionalKey => {
-        if (pluginMfe.requirements.find(req => req.key === optionalKey)) {
-          pluginMfe.requirements = pluginMfe.requirements.filter(req => req.key !== optionalKey)
-        }
-      })
+      editChild
+        .getAttributeNames()
+        .filter((attr) => attr.startsWith('v-bind:'))
+        .map((attr) => editChild.getAttribute(attr).split('.')[0].replace('?', ''))
+        .forEach((optionalKey) => {
+          if (pluginMfe.requirements.find((req) => req.key === optionalKey)) {
+            pluginMfe.requirements = pluginMfe.requirements.filter((req) => req.key !== optionalKey);
+          }
+        });
 
-    await updatePlugin(plugin)
-    updateRouteFromPluginMfe(routeMfe, pluginMfe);
-  })
+      await updatePlugin(plugin);
+      updateRouteFromPluginMfe(routeMfe, pluginMfe);
+    },
+    { text: 'Remove this block from the page?' },
+  );
 
-  const editComponent = async function (el: HTMLElement) {
-    editedComponentContext.value = await getEditedComponent(el);
-  }
+  const editComponent = async function (qlId: string) {
+    editedComponentContext.value = { ...(await getEditedComponent(qlId)), qlId };
+  };
   const finishEditComponent = async function (newElement: HTMLElement) {
     const { pluginMfe, template, routeMfe, plugin, editChild } = editedComponentContext.value;
-
     if (!editChild) {
       return;
     }
-
     editChild.replaceWith(newElement);
-    pluginMfe.structure = template.innerHTML.trim();
-
-    await updatePlugin(plugin)
+    pluginMfe.structure = serializeStructure(template);
+    await updatePlugin(plugin);
     updateRouteFromPluginMfe(routeMfe, pluginMfe);
-  }
+  };
 
   const removePage = useConfirmAction(async function removePage() {
     const plugin = await loadPlugin((route.meta.mfe as IMicroFrontend).pluginId);
     const routeMfe = route.meta.mfe as IMicroFrontend;
-    plugin.microFrontends = plugin.microFrontends.filter(mfe => mfe._id !== routeMfe._id);
-
-    await updatePlugin(plugin)
-    await router.push('/');
-  })
-
-  async function reorderComponents(draggedQlId: string, targetQlId: string, position: DragPosition) {
-    if (!draggedQlId || !targetQlId || draggedQlId === targetQlId) {
-      return;
-    }
-    const { pluginMfe, routeMfe, plugin } = await getUpdatedPluginAndMfe();
-    const template = createTemplateFromStructure(pluginMfe.structure);
-    const draggedNode = getElementByQlId(template, draggedQlId);
-    const targetNode = getElementByQlId(template, targetQlId);
-
-    if (!draggedNode || !targetNode || draggedNode === targetNode) {
-      return;
-    }
-
-    if (position === 'before') {
-      targetNode.before(draggedNode);
-    } else {
-      targetNode.after(draggedNode);
-    }
-
-    pluginMfe.structure = template.innerHTML.trim();
+    plugin.microFrontends = plugin.microFrontends.filter((mfe) => mfe._id !== routeMfe._id);
     await updatePlugin(plugin);
-    updateRouteFromPluginMfe(routeMfe, pluginMfe);
+    await router.push('/');
+  });
+
+  async function reorderComponents(draggedQlId: string, targetQlId: string, position: DropPosition) {
+    await editStructure((html) => moveElement(html, draggedQlId, targetQlId, position));
   }
 
-  provide('editableManager', computed<EditableManager | false>(() => {
-    if (!isEditingEnabled.value) {
-      return false;
-    }
-    return {
-      removeComponent,
-      editComponent,
-      addComponentBefore: (el: HTMLElement) => addComponentOptions.value = { beforeEl: el },
-      addComponentAfter: (el: HTMLElement) => addComponentOptions.value = { afterEl: el },
-      reorderComponents,
-      setDraggingQlId: (qlId: string | null) => draggingQlId.value = qlId,
-      draggingQlId,
-    };
-  }));
+  async function moveComponent(qlId: string, direction: 'up' | 'down') {
+    await editStructure((html) => moveStep(html, qlId, direction));
+  }
+
+  provide(
+    'editableManager',
+    computed<EditableManager | false>(() => {
+      if (!isEditingEnabled.value) {
+        return false;
+      }
+      return {
+        removeComponent,
+        editComponent,
+        addComponentBefore: (qlId: string) => (addComponentOptions.value = { beforeQlId: qlId }),
+        addComponentAfter: (qlId: string) => (addComponentOptions.value = { afterQlId: qlId }),
+        reorderComponents,
+        moveComponent,
+        setDraggingQlId: (qlId: string | null) => (draggingQlId.value = qlId),
+        draggingQlId,
+      };
+    }),
+  );
 
   return {
     pageName: computed(() => route.meta.name as string),
@@ -292,6 +207,10 @@ export function useEditMfeStructure() {
     clonePage,
     removePage,
     editedComponentContext,
-    finishEditComponent
-  }
+    finishEditComponent,
+    removeComponent,
+    editComponent,
+    reorderComponents,
+    moveComponent,
+  };
 }

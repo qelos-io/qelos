@@ -1,6 +1,5 @@
 <template>
   <div v-if="type !== 'hidden'" :class="{'form-input-container': true, 'is-disabled': disabled}">
-    <EditComponentBar v-if="isEditingEnabled"/>
     <el-form-item 
       :label="title ? $t(title) : null" 
       :required="required"
@@ -249,27 +248,17 @@
     </el-form-item>
     <slot/>
   </div>
-  <div v-else-if="isEditingEnabled">
-    <EditComponentBar/>
-  </div>
 </template>
 
 <script lang="ts">
 import { ref, watch, nextTick } from 'vue';
 import AssetUploader from '@/modules/assets/components/AssetUploader.vue'
-import EditComponentBar from '@/modules/no-code/components/EditComponentBar.vue';
 import IconSelector from '@/modules/core/components/forms/IconSelector.vue';
-import { isEditingEnabled } from '@/modules/core/store/auth';
 import { QuestionFilled, WarningFilled, CircleCheckFilled } from '@element-plus/icons-vue';
 
 export default {
   name: 'FormInput',
-  computed: {
-    isEditingEnabled() {
-      return isEditingEnabled
-    }
-  },
-  components: { EditComponentBar, AssetUploader, IconSelector, QuestionFilled, WarningFilled, CircleCheckFilled },
+  components: { AssetUploader, IconSelector, QuestionFilled, WarningFilled, CircleCheckFilled },
   props: {
     // Basic props
     title: String,

@@ -53,6 +53,7 @@
     "axios": "^1.12.2",
     "echarts": "^5.5.1",
     "element-plus": "~2.11.3",
+    "happy-dom": "^21.0.1",
     "lodash-es": "^4.17.21",
     "lodash.debounce": "^4.0.8",
     "lodash.kebabcase": "^4.1.1",

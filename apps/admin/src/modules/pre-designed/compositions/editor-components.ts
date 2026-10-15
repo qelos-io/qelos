@@ -28,7 +28,6 @@ import Monaco from '@/modules/users/components/Monaco.vue';
 import GeneralForm from '@/modules/pre-designed/components/GeneralForm.vue';
 import ConfirmMessage from '@/modules/pre-designed/components/ConfirmMessage.vue';
 import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
-import EditableContent from '@/modules/pre-designed/components/EditableContent.vue';
 import Pre from '@/modules/pre-designed/components/Pre.vue';
 import ContentBox from '@/modules/pre-designed/components/ContentBox.vue';
 import QRating from '@/modules/pre-designed/components/QRating.vue';
@@ -608,16 +607,6 @@ export function useEditorComponents() {
       tags: ['actions'],
       icon: 'delete',
       capabilities: ['actions'],
-      requiredProps: []
-    },
-    'editable-content': {
-      component: EditableContent,
-      title: 'Editable Content',
-      description: 'Inline rich-text area.',
-      category: 'layout',
-      tags: ['content'],
-      icon: 'document',
-      capabilities: ['presentation'],
       requiredProps: []
     },
     'q-pre': {
