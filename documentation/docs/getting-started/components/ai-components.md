@@ -389,13 +389,13 @@ export const aiConfig = {
   providers: {
     openai: {
       apiKey: process.env.OPENAI_API_KEY,
-      model: 'gpt-4',
+      model: 'gpt-6-luna',
       temperature: 0.7,
       maxTokens: 2000
     },
     anthropic: {
       apiKey: process.env.ANTHROPIC_API_KEY,
-      model: 'claude-3-sonnet',
+      model: 'claude-sonnet-5-5',
       temperature: 0.7,
       maxTokens: 2000
     }

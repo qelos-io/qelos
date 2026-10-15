@@ -52,7 +52,7 @@ All chat completion operations are now available under `sdk.ai.chat`:
 // Non-streaming chat
 const response = await sdk.ai.chat.chat('integration-id', {
   messages: [{ role: 'user', content: 'Hello!' }],
-  model: 'gpt-4',
+  model: 'gpt-6-luna',
   queryParams: { bypassAdmin: true } // Optional query parameters
 });
 

@@ -345,7 +345,7 @@ describe('Integration Connection Reference Mapping', () => {
           target: {
             source: 'conn-456',
             operation: 'chatCompletion',
-            details: { model: 'gpt-4' }
+            details: { model: 'gpt-6-luna' }
           },
           dataManipulation: []
         }
@@ -362,7 +362,7 @@ describe('Integration Connection Reference Mapping', () => {
         target: {
           source: 'conn-456',
           operation: 'chatCompletion',
-          details: { model: 'gpt-4' }
+          details: { model: 'gpt-6-luna' }
         },
         dataManipulation: []
       };

@@ -2028,7 +2028,6 @@
   "Short human readable summary": "סיכום קצר וקריא",
   "System Prompt": "פרומפט מערכת",
   "Temperature": "טמפרטורה",
-  "Temperature and top_p are not supported for this Claude model. Use prompting to control response style instead.": "טמפרטורה ו-top_p לא נתמכים במודל Claude הזה. השתמשו בפרומפט כדי לשלוט בסגנון.",
   "Test this trigger": "בדיקת הטריגר",
   "The chat completion URL will be available after saving the integration": "כתובת ה-chat completion תהיה זמינה אחרי שמירת האינטגרציה",
   "The event": "האירוע",
@@ -2107,5 +2106,6 @@
   "Leave empty for Google. Set this only for a compatible proxy or custom endpoint.": "השאירו ריק עבור Google. הזינו רק עבור פרוקסי תואם או כתובת מותאמת.",
   "Get an OpenAI API key": "קבלו מפתח API של OpenAI",
   "Get a Claude API key": "קבלו מפתח API של Claude",
-  "Get a Gemini API key": "קבלו מפתח API של Gemini"
+  "Get a Gemini API key": "קבלו מפתח API של Gemini",
+  "Temperature and top_p are not supported for this model. Use prompting to control response style instead.": "Temperature ו-top_p אינם נתמכים במודל הזה. השתמשו בפרומפט כדי לשלוט בסגנון התשובה."
 }

@@ -2028,7 +2028,6 @@
   "Short human readable summary": "Short human readable summary",
   "System Prompt": "System Prompt",
   "Temperature": "Temperature",
-  "Temperature and top_p are not supported for this Claude model. Use prompting to control response style instead.": "Temperature and top_p are not supported for this Claude model. Use prompting to control response style instead.",
   "Test this trigger": "Test this trigger",
   "The chat completion URL will be available after saving the integration": "The chat completion URL will be available after saving the integration",
   "The event": "The event",
@@ -2107,5 +2106,6 @@
   "Leave empty for Google. Set this only for a compatible proxy or custom endpoint.": "Leave empty for Google. Set this only for a compatible proxy or custom endpoint.",
   "Get an OpenAI API key": "Get an OpenAI API key",
   "Get a Claude API key": "Get a Claude API key",
-  "Get a Gemini API key": "Get a Gemini API key"
+  "Get a Gemini API key": "Get a Gemini API key",
+  "Temperature and top_p are not supported for this model. Use prompting to control response style instead.": "Temperature and top_p are not supported for this model. Use prompting to control response style instead."
 }

@@ -218,7 +218,7 @@ Connections are saved as `<name>.connection.json` files that include `name`, `ki
   "name": "OpenAI",
   "kind": "openai",
   "labels": ["ai", "default"],
-  "metadata": { "defaultModel": "gpt-4o" },
+  "metadata": { "defaultModel": "gpt-6-luna" },
   "authentication": {
     "$var": "INTEGRATION_AUTH_OPENAI"
   }

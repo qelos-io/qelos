@@ -107,7 +107,7 @@ In **Settings → AI Integrations → + New Integration**:
 |-------|-------|
 | Name | `todo-generator` |
 | Provider | OpenAI |
-| Model | `gpt-4o` |
+| Model | `gpt-6-luna` |
 | System Prompt | *(see below)* |
 
 **System Prompt:**

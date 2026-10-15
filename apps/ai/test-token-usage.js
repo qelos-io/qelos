@@ -7,7 +7,7 @@ const mockSource = {
   tenant: 'test-tenant',
   _id: 'test-source-id',
   metadata: {
-    defaultModel: 'gpt-4.1-mini'
+    defaultModel: 'gpt-6-luna'
   }
 };
 
@@ -32,7 +32,7 @@ async function testNonStreamingCompletion() {
   console.log('Testing non-streaming completion...');
   try {
     const response = await aiService.createChatCompletion({
-      model: 'gpt-4.1-mini',
+      model: 'gpt-6-luna',
       messages: [{ role: 'user', content: 'Say hello' }],
       context: testContext
     });
@@ -48,7 +48,7 @@ async function testStreamingCompletion() {
   console.log('Testing streaming completion...');
   try {
     const stream = await aiService.createChatCompletionStream({
-      model: 'gpt-4.1-mini',
+      model: 'gpt-6-luna',
       messages: [{ role: 'user', content: 'Say hello' }],
       context: testContext
     });

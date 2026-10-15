@@ -16,7 +16,7 @@ export const ERROR_CATEGORIES = {
       'Try again with a simpler request',
       'Reduce the number of messages in the conversation',
       'Disable function calls if not essential',
-      'Use a faster model (e.g., gpt-3.5-turbo instead of gpt-4)',
+      'Use a faster model (e.g., gpt-6-luna instead of gpt-6.1-sol)',
       'Check network connectivity',
       'Increase timeout settings if possible'
     ]

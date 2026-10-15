@@ -26,7 +26,7 @@ The token usage event is emitted after every successful AI chat completion, whet
     sourceId?: string,          // Source configuration ID
     integrationId?: string,     // Integration ID
     integrationName?: string,   // Integration name
-    model: string,              // Model used (e.g., 'gpt-4.1-mini', 'claude-3-opus-20240229')
+    model: string,              // Model used (e.g., 'gpt-6-luna', 'claude-sonnet-5-5')
     usage: {
       prompt_tokens: number,     // Number of tokens in the prompt
       completion_tokens: number, // Number of tokens in the completion
@@ -86,9 +86,9 @@ platformEventService.on('token_usage', (event) => {
 ```javascript
 // Calculate costs based on token usage
 const PRICING = {
-  'gpt-4.1-mini': { prompt: 0.00015, completion: 0.0006 },
-  'claude-3-opus-20240229': { prompt: 0.015, completion: 0.075 },
-  'gemini-1.5-pro': { prompt: 0.0025, completion: 0.0075 }
+  // Example rates per 1K tokens - check each provider's pricing page for current numbers
+  'claude-sonnet-5-5': { prompt: 0.002, completion: 0.01 },
+  'claude-haiku-5-5': { prompt: 0.0001, completion: 0.0005 }
 };
 
 platformEventService.on('token_usage', (event) => {

@@ -6,45 +6,31 @@ import { interactiveSelect } from '../utils/interactive-select.mjs';
 
 const AI_PROVIDER_KINDS = ['openai', 'claudeai', 'gemini'];
 
+// Keep in sync with packages/global-types/ai-models.ts (the CLI ships standalone, without that package).
 const MODELS_BY_PROVIDER = {
-  openai: [
-    'gpt-5.4',
-    'gpt-5.4-nano',
-    'gpt-5.2',
-    'gpt-5.2-codex',
-    'gpt-5.2-nano',
-    'gpt-5.2-16k',
-    'gpt-5.2-16k-nano',
-    'gpt-5.1',
-    'gpt-5.1-codex',
-    'gpt-5.1-nano',
-    'gpt-5',
-    'gpt-4o',
-    'gpt-4o-mini',
-    'gpt-4-turbo',
-    'gpt-4',
-    'gpt-3.5-turbo',
-    'gpt-4-turbo-preview',
-    'gpt-4-vision-preview',
-    'gpt-3.5-turbo-16k',
-    'gpt-4-32k',
-    'gpt-4-1106-preview',
-    'gpt-4-0125-preview'
-  ],
+  openai: ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna', 'gpt-5.4', 'gpt-5.2'],
   claudeai: [
-    'claude-3-5-sonnet-20241022',
-    'claude-3-5-haiku-20241022',
-    'claude-3-opus-20240229',
-    'claude-3-sonnet-20240229',
-    'claude-3-haiku-20240307'
+    'claude-fable-5-1',
+    'claude-opus-5-5',
+    'claude-sonnet-5-5',
+    'claude-haiku-5-5',
+    'claude-fable-5',
+    'claude-opus-5',
+    'claude-sonnet-5',
+    'claude-opus-4-8',
+    'claude-sonnet-4-6',
+    'claude-opus-4-6',
+    'claude-opus-4-5-20251101',
+    'claude-haiku-4-5-20251001'
   ],
   gemini: [
-    'gemini-2.0-flash-exp',
-    'gemini-1.5-pro',
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-8b',
-    'gemini-pro',
-    'gemini-pro-vision'
+    'gemini-4-argon',
+    'gemini-3.8-flash',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-2.5-pro',
+    'gemini-2.5-flash'
   ]
 };
 

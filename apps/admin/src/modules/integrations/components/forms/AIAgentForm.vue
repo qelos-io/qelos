@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watch, watchEffect, ref, onMounted } from 'vue';
-import { claudeModelSupportsSamplingParams, DEFAULT_AI_MODEL_BY_PROVIDER, IIntegration, IntegrationSourceKind, QelosTriggerOperation, OpenAITargetOperation } from '@qelos/global-types';
+import { claudeModelSupportsSamplingParams, DEFAULT_AI_MODEL_BY_PROVIDER, modelSupportsSamplingParams, IIntegration, IntegrationSourceKind, QelosTriggerOperation, OpenAITargetOperation } from '@qelos/global-types';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
@@ -427,8 +427,8 @@ const temperature = computed({
 });
 
 const supportsSamplingParams = computed(() => {
-  if (currentProvider.value !== 'claude') return true;
-  return claudeModelSupportsSamplingParams(model.value);
+  if (currentProvider.value === 'claude') return claudeModelSupportsSamplingParams(model.value);
+  return modelSupportsSamplingParams(model.value);
 });
 
 const maxTokens = computed({
@@ -655,7 +655,7 @@ const agentSchema = computed(() => {
   const properties: Record<string, unknown> = {
     name: { type: "string", description: "A clear, concise name for the agent" },
     system_message: { type: "string", description: "The system prompt defining the agent's role, tone, and responsibilities" },
-    model: { type: "string", description: "The AI model to use (e.g., gpt-5.4, claude-sonnet-4-6, gemini-2.5-pro)" },
+    model: { type: "string", description: "The AI model to use (e.g., gpt-6.1-sol, claude-sonnet-5-5, gemini-3.8-flash)" },
     maxTokens: { type: "number", description: "Maximum tokens for the response (e.g., 4096, 8192, 16384)" },
     recordThread: { type: "boolean", description: "Whether to record conversation threads" },
     vectorStore: { type: "boolean", description: "Whether to create a vector store for the thread" },
@@ -691,7 +691,7 @@ const agentSchema = computed(() => {
 
 const getAgentPrompt = async () => {
   return {
-    prompt: `Based on the following description, generate a complete AI agent configuration:\n\nDescription: ${agentDescription.value}\n\nGenerate appropriate values for the agent configuration. Consider:\n1. A suitable AI model (use gpt-5.4 for complex tasks, gpt-4o for general use, claude-sonnet-4-6 for nuanced reasoning, or gemini-2.5-pro for multimodal tasks)\n2. Appropriate max tokens (4096 for simple responses, 8192+ for detailed analysis)\n3. Temperature setting (0.7 for creative tasks, 0.3-0.5 for analytical tasks)\n4. Relevant permissions based on the agent's purpose\n\nThe system message should be detailed and professional, defining the agent's role, tone, and specific responsibilities.`,
+    prompt: `Based on the following description, generate a complete AI agent configuration:\n\nDescription: ${agentDescription.value}\n\nGenerate appropriate values for the agent configuration. Consider:\n1. A suitable AI model (use gpt-6.1-sol for complex tasks, gpt-6-luna for general use, claude-sonnet-5-5 for nuanced reasoning, or gemini-3.8-flash for multimodal tasks)\n2. Appropriate max tokens (4096 for simple responses, 8192+ for detailed analysis)\n3. Temperature setting (0.7 for creative tasks, 0.3-0.5 for analytical tasks)\n4. Relevant permissions based on the agent's purpose\n\nThe system message should be detailed and professional, defining the agent's role, tone, and specific responsibilities.`,
     schema: agentSchema.value
   };
 };
@@ -1253,12 +1253,12 @@ const railSteps = computed(() =>
             </el-form-item>
 
             <el-alert
-              v-if="currentProvider === 'claude' && !supportsSamplingParams"
+              v-if="!supportsSamplingParams"
               type="info"
               :closable="false"
               show-icon
             >
-              {{ $t('Temperature and top_p are not supported for this Claude model. Use prompting to control response style instead.') }}
+              {{ $t('Temperature and top_p are not supported for this model. Use prompting to control response style instead.') }}
             </el-alert>
 
             <el-form-item :label="$t('Max Tokens')">

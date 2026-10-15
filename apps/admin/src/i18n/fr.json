@@ -2028,7 +2028,6 @@
   "Short human readable summary": "Court résumé lisible",
   "System Prompt": "Prompt système",
   "Temperature": "Température",
-  "Temperature and top_p are not supported for this Claude model. Use prompting to control response style instead.": "La température et top_p ne sont pas pris en charge par ce modèle Claude. Utilisez le prompt pour contrôler le style.",
   "Test this trigger": "Tester ce déclencheur",
   "The chat completion URL will be available after saving the integration": "L'URL de chat completion sera disponible après l'enregistrement de l'intégration",
   "The event": "L'événement",
@@ -2107,5 +2106,6 @@
   "Leave empty for Google. Set this only for a compatible proxy or custom endpoint.": "Laissez vide pour Google. À renseigner uniquement pour un proxy compatible ou un point d'accès personnalisé.",
   "Get an OpenAI API key": "Obtenez une clé API OpenAI",
   "Get a Claude API key": "Obtenez une clé API Claude",
-  "Get a Gemini API key": "Obtenez une clé API Gemini"
+  "Get a Gemini API key": "Obtenez une clé API Gemini",
+  "Temperature and top_p are not supported for this model. Use prompting to control response style instead.": "Temperature et top_p ne sont pas pris en charge pour ce modèle. Utilisez le prompt pour contrôler le style des réponses."
 }

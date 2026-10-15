@@ -97,7 +97,7 @@ Configure connection-specific settings and options:
 
 ```
 Enter metadata - organizationId (current: ): org-your-org
-Enter metadata - defaultModel (current: null): gpt-4
+Enter metadata - defaultModel (current: null): gpt-6-luna
 Enter metadata - defaultTemperature (current: 0.7): 0.8
 ```
 
@@ -136,7 +136,7 @@ The generated connection file uses environment variable references instead of pl
   "kind": "openai",
   "metadata": {
     "organizationId": "org-123",
-    "defaultModel": "gpt-4",
+    "defaultModel": "gpt-6-luna",
     "defaultTemperature": 0.7
   },
   "authentication": {
@@ -158,7 +158,7 @@ qelos generate connection my-openai --kind openai
 **Prompts for:**
 - `authentication.token`: OpenAI API key
 - `metadata.organizationId`: OpenAI organization ID (optional)
-- `metadata.defaultModel`: Default model (gpt-3.5-turbo, gpt-4, etc.)
+- `metadata.defaultModel`: Default model (gpt-6-luna, gpt-6.1-sol, etc.)
 - `metadata.defaultTemperature`: Default temperature (0.0-2.0)
 - `metadata.defaultMaxTokens`: Default response token limit
 - Other OpenAI-specific settings

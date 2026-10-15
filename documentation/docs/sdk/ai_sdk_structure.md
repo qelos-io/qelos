@@ -103,7 +103,7 @@ Handles chat completion operations, both streaming and non-streaming.
 // Streaming chat
 const stream = await sdk.ai.chat.stream('integration-id', {
   messages: [{ role: 'user', content: 'Hello!' }],
-  model: 'gpt-4',
+  model: 'gpt-6-luna',
   queryParams: { bypassAdmin: true }
 });
 

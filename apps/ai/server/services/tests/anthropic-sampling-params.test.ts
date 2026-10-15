@@ -37,6 +37,11 @@ describe('claudeModelSupportsSamplingParams', () => {
     assert.strictEqual(claudeModelSupportsSamplingParams('claude-opus-4-8-20260201'), false);
   });
 
+  it('returns false for Claude Haiku 5.5 and Sonnet 5.5', () => {
+    assert.strictEqual(claudeModelSupportsSamplingParams('claude-haiku-5-5'), false);
+    assert.strictEqual(claudeModelSupportsSamplingParams('claude-sonnet-5-5'), false);
+  });
+
   it('returns false for catalog Claude Opus 5', () => {
     assert.strictEqual(claudeModelSupportsSamplingParams('claude-opus-5'), false);
   });

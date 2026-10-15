@@ -4,7 +4,7 @@ import Monaco from '@/modules/users/components/Monaco.vue';
 import FormInput from '@/modules/core/components/forms/FormInput.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useIntegrationKindsTargetOperations } from '@/modules/integrations/compositions/integration-kinds-operations';
-import { IntegrationSourceKind, OpenAITargetOperation, HttpTargetOperation, EmailTargetOperation, QelosTargetOperation } from '@qelos/global-types';
+import { DEFAULT_AI_MODEL_BY_PROVIDER, IntegrationSourceKind, OpenAITargetOperation, HttpTargetOperation, EmailTargetOperation, QelosTargetOperation } from '@qelos/global-types';
 import ConnectionSelector from '@/modules/integrations/components/ConnectionSelector.vue';
 import StepSection from '@/modules/integrations/components/steps/StepSection.vue';
 import JsonDetails from '@/modules/integrations/components/steps/JsonDetails.vue';
@@ -38,7 +38,7 @@ const httpDetails = ref({
 const httpBodyJson = ref('{}');
 
 const openAiDetails = ref({
-  model: 'gpt-5.2',
+  model: DEFAULT_AI_MODEL_BY_PROVIDER.openai,
   temperature: 0.7,
   top_p: 1,
   frequency_penalty: 0,
@@ -147,7 +147,7 @@ const initTargetDetails = () => {
   } else if (source.kind === IntegrationSourceKind.OpenAI && props.modelValue.operation === OpenAITargetOperation.chatCompletion) {
     // Initialize OpenAI details
     openAiDetails.value = {
-      model: props.modelValue.details?.model || 'gpt-4o',
+      model: props.modelValue.details?.model || DEFAULT_AI_MODEL_BY_PROVIDER.openai,
       temperature: props.modelValue.details?.temperature ?? 0.7,
       top_p: props.modelValue.details?.top_p ?? 1,
       frequency_penalty: props.modelValue.details?.frequency_penalty ?? 0,

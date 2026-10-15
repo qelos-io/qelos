@@ -361,7 +361,7 @@ Connections include an `authentication` placeholder that points to an environmen
   "name": "OpenAI",
   "kind": "openai",
   "labels": ["ai", "default"],
-  "metadata": { "defaultModel": "gpt-4o" },
+  "metadata": { "defaultModel": "gpt-6-luna" },
   "authentication": {
     "$var": "INTEGRATION_AUTH_OPENAI"
   }

@@ -1,10 +1,15 @@
 import { OpenAI } from 'openai';
 import { ResponseTextConfig } from 'openai/resources/responses/responses';
-import { DEFAULT_AI_MODEL_BY_PROVIDER } from '@qelos/global-types';
+import { DEFAULT_AI_MODEL_BY_PROVIDER, modelSupportsSamplingParams } from '@qelos/global-types';
 import logger from '../../logger';
 import { emitAIProviderErrorEvent, emitTokenUsageEvent } from '../../platform-events';
 import { compactObject, getMessagesWithUserContext } from './shared';
 import type { AIServiceAuthentication, AIServiceOptions, AIServiceSource } from './types';
+
+/** GPT-6 Astra / Sol take reasoning effort instead of temperature and top_p. */
+function samplingParams(model: string, options: AIServiceOptions) {
+  return modelSupportsSamplingParams(model) ? { temperature: options.temperature, top_p: options.top_p } : {};
+}
 
 function openAIApiUrlHostname(apiUrl: string | undefined | null): string | null {
   const raw = apiUrl == null ? '' : String(apiUrl).trim();
@@ -117,8 +122,7 @@ export function createOpenAIService(source: AIServiceSource, authentication: AIS
           const chatParams = compactObject({
             model,
             messages,
-            temperature: options.temperature,
-            top_p: options.top_p,
+            ...samplingParams(model, options),
             max_tokens: options.max_tokens,
             frequency_penalty: options.frequency_penalty,
             presence_penalty: options.presence_penalty,
@@ -178,8 +182,7 @@ export function createOpenAIService(source: AIServiceSource, authentication: AIS
           instructions: transformToInstructions(messages),
           input: finalInput,
           tools: allTools,
-          temperature: options.temperature,
-          top_p: options.top_p,
+          ...samplingParams(model, options),
           max_output_tokens: options.max_tokens,
           text: responseFormat,
           stream: false,
@@ -272,8 +275,7 @@ export function createOpenAIService(source: AIServiceSource, authentication: AIS
           const chatParams = compactObject({
             model,
             messages,
-            temperature: options.temperature,
-            top_p: options.top_p,
+            ...samplingParams(model, options),
             max_tokens: options.max_tokens,
             frequency_penalty: options.frequency_penalty,
             presence_penalty: options.presence_penalty,
@@ -335,8 +337,7 @@ export function createOpenAIService(source: AIServiceSource, authentication: AIS
           instructions: transformToInstructions(messages),
           input: finalInput,
           tools: allTools,
-          temperature: options.temperature,
-          top_p: options.top_p,
+          ...samplingParams(model, options),
           max_output_tokens: options.max_tokens,
           text: convertResponseFormatToOpenAIText(options.response_format),
           stream: true,

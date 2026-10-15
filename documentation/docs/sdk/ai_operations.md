@@ -98,7 +98,7 @@ const response = await sdk.ai.chat.chat('integration-id', {
     { role: 'user', content: 'Hello, how can you help me?' }
   ],
   temperature: 0.7,
-  model: 'gpt-4' // Optional, uses integration default if not specified
+  model: 'gpt-6-luna' // Optional, uses integration default if not specified
 });
 
 console.log('AI Response:', response.choices[0].message.content);
@@ -134,7 +134,7 @@ const response = await sdk.ai.chat.chat('integration-id', {
     { role: 'system', content: 'You are a helpful customer service agent.' },
     { role: 'user', content: 'I need help with my order' }
   ],
-  model: 'gpt-4',
+  model: 'gpt-6-luna',
   temperature: 0.3,
   top_p: 0.9,
   frequency_penalty: 0.1,
@@ -763,7 +763,7 @@ stores.forEach(store => {
 ```typescript
 const agent = await sdk.ai.agents.create({
   name: 'Support Bot',
-  model: 'gpt-4.1-mini',
+  model: 'gpt-6-luna',
   triggerSource: 'source-id',
   targetSource: 'source-id',
   systemPrompt: 'You are a concise support assistant.'

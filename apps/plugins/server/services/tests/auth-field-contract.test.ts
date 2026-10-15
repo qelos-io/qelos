@@ -3,6 +3,10 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { IntegrationSourceKind } from '@qelos/global-types';
+import {
+  buildConnectionPayload,
+  getConnectionSchema,
+} from '../../../../admin/src/modules/integrations/services/connection-fields';
 
 const setSecretMock = mock.fn(async () => {});
 
@@ -97,23 +101,25 @@ const CONTRACT: Array<{
   field: string;
   sampleValue: unknown;
   adminForm?: string;
+  /** The admin panel builds this kind's form from the connection field schema. */
+  adminSchema?: boolean;
   targetHandler?: string;
   statusHandler?: string;
 }> = [
-  { kind: IntegrationSourceKind.Qelos, field: 'password', sampleValue: 'contract-test-value', adminForm: 'QelosForm.vue', statusHandler: 'checkQelosIntegrationStatus' },
-  { kind: IntegrationSourceKind.OpenAI, field: 'token', sampleValue: 'contract-test-value', adminForm: 'OpenAIForm.vue', targetHandler: 'handleOpenAiTarget', statusHandler: 'checkOpenAIIntegrationStatus' },
-  { kind: IntegrationSourceKind.Sumit, field: 'apiKey', sampleValue: 'contract-test-value', adminForm: 'SumitForm.vue', targetHandler: 'handleSumitTarget', statusHandler: 'checkSumitIntegrationStatus' },
-  { kind: IntegrationSourceKind.Paddle, field: 'apiKey', sampleValue: 'contract-test-value', adminForm: 'PaddleForm.vue', targetHandler: 'handlePaddleTarget', statusHandler: 'checkPaddleStatus' },
-  { kind: IntegrationSourceKind.DodoPayments, field: 'apiKey', sampleValue: 'contract-test-value', adminForm: 'DodoPaymentsForm.vue', targetHandler: 'handleDodoPaymentsTarget', statusHandler: 'checkDodoPaymentsStatus' },
-  { kind: IntegrationSourceKind.PayPal, field: 'clientSecret', sampleValue: 'contract-test-value', adminForm: 'PayPalForm.vue', targetHandler: 'handlePayPalTarget', statusHandler: 'checkPayPalIntegrationStatus' },
+  { kind: IntegrationSourceKind.Qelos, field: 'password', sampleValue: 'contract-test-value', adminSchema: true, statusHandler: 'checkQelosIntegrationStatus' },
+  { kind: IntegrationSourceKind.OpenAI, field: 'token', sampleValue: 'contract-test-value', adminSchema: true, targetHandler: 'handleOpenAiTarget', statusHandler: 'checkOpenAIIntegrationStatus' },
+  { kind: IntegrationSourceKind.Sumit, field: 'apiKey', sampleValue: 'contract-test-value', adminSchema: true, targetHandler: 'handleSumitTarget', statusHandler: 'checkSumitIntegrationStatus' },
+  { kind: IntegrationSourceKind.Paddle, field: 'apiKey', sampleValue: 'contract-test-value', adminSchema: true, targetHandler: 'handlePaddleTarget', statusHandler: 'checkPaddleStatus' },
+  { kind: IntegrationSourceKind.DodoPayments, field: 'apiKey', sampleValue: 'contract-test-value', adminSchema: true, targetHandler: 'handleDodoPaymentsTarget', statusHandler: 'checkDodoPaymentsStatus' },
+  { kind: IntegrationSourceKind.PayPal, field: 'clientSecret', sampleValue: 'contract-test-value', adminSchema: true, targetHandler: 'handlePayPalTarget', statusHandler: 'checkPayPalIntegrationStatus' },
   { kind: IntegrationSourceKind.Http, field: 'securedHeaders', sampleValue: { 'x-api-key': 'contract-test-value' }, adminForm: 'HttpForm.vue', targetHandler: 'handleHttpTarget', statusHandler: 'checkHttpIntegrationStatus' },
-  { kind: IntegrationSourceKind.Email, field: 'password', sampleValue: 'contract-test-value', adminForm: 'EmailForm.vue', targetHandler: 'handleEmailTarget', statusHandler: 'checkEmailIntegrationStatus' },
+  { kind: IntegrationSourceKind.Email, field: 'password', sampleValue: 'contract-test-value', adminSchema: true, targetHandler: 'handleEmailTarget', statusHandler: 'checkEmailIntegrationStatus' },
   { kind: IntegrationSourceKind.AWS, field: 'secretAccessKey', sampleValue: 'contract-test-value', targetHandler: 'handleAwsTarget', statusHandler: 'checkAwsIntegrationStatus' },
   { kind: IntegrationSourceKind.Cloudflare, field: 'apiToken', sampleValue: 'contract-test-value', targetHandler: 'handleCloudflareTarget', statusHandler: 'checkCloudflareIntegrationStatus' },
-  { kind: IntegrationSourceKind.LinkedIn, field: 'clientSecret', sampleValue: 'contract-test-value', adminForm: 'LinkedInForm.vue' },
-  { kind: IntegrationSourceKind.Facebook, field: 'clientSecret', sampleValue: 'contract-test-value', adminForm: 'FacebookForm.vue' },
-  { kind: IntegrationSourceKind.Google, field: 'clientSecret', sampleValue: 'contract-test-value', adminForm: 'GoogleForm.vue' },
-  { kind: IntegrationSourceKind.GitHub, field: 'clientSecret', sampleValue: 'contract-test-value', adminForm: 'GitHubForm.vue' },
+  { kind: IntegrationSourceKind.LinkedIn, field: 'clientSecret', sampleValue: 'contract-test-value', adminSchema: true },
+  { kind: IntegrationSourceKind.Facebook, field: 'clientSecret', sampleValue: 'contract-test-value', adminSchema: true },
+  { kind: IntegrationSourceKind.Google, field: 'clientSecret', sampleValue: 'contract-test-value', adminSchema: true },
+  { kind: IntegrationSourceKind.GitHub, field: 'clientSecret', sampleValue: 'contract-test-value', adminSchema: true },
 ];
 
 describe('Auth field contract: storage vs admin UI vs consumers', async () => {
@@ -123,7 +129,7 @@ describe('Auth field contract: storage vs admin UI vs consumers', async () => {
     setSecretMock.mock.resetCalls();
   });
 
-  for (const { kind, field, sampleValue, adminForm, targetHandler, statusHandler } of CONTRACT) {
+  for (const { kind, field, sampleValue, adminForm, adminSchema, targetHandler, statusHandler } of CONTRACT) {
     describe(kind, () => {
       it(`storeEncryptedSourceAuthentication persists the exact "${field}" key`, async () => {
         await storeEncryptedSourceAuthentication('tenant-1', kind, { [field]: sampleValue }, 'contract-auth-id');
@@ -144,6 +150,20 @@ describe('Auth field contract: storage vs admin UI vs consumers', async () => {
             adminFormSendsField(adminForm, field),
             `${adminForm} no longer appears to submit its secret under "${field}". ` +
             `storeEncryptedSourceAuthentication expects this exact key — a mismatch here silently drops the credential on save.`
+          );
+        });
+      }
+
+      if (adminSchema) {
+        it(`admin connection schema submits its secret under "${field}"`, () => {
+          const schema = getConnectionSchema(kind);
+          assert.ok(schema, `no admin connection schema for ${kind}`);
+          const payload = buildConnectionPayload(schema, kind, { name: 'contract' }, { [`authentication.${field}`]: 'contract-test-value' });
+          assert.strictEqual(
+            payload.authentication?.[field],
+            'contract-test-value',
+            `the admin form for "${kind}" no longer submits its secret under "${field}". ` +
+            `storeEncryptedSourceAuthentication expects this exact key - a mismatch here silently drops the credential on save.`
           );
         });
       }

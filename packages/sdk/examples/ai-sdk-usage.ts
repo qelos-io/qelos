@@ -43,7 +43,7 @@ async function chatExamples() {
   // Non-streaming chat
   const response = await sdk.ai.chat.chat(integrationId, {
     messages,
-    model: 'gpt-4',
+    model: 'gpt-6-luna',
     temperature: 0.7,
     queryParams: { bypassAdmin: true } // Optional query params
   });

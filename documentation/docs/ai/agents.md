@@ -24,7 +24,7 @@ Before you can create an agent, you need an AI source — the credential record 
    | `name` | A label for this connection (e.g. `OpenAI — Production`). |
    | `labels` | Optional tags for filtering. |
    | `authentication.token` | Your provider API key. Stored encrypted. |
-   | `metadata.defaultModel` | The model used when an agent does not override it (e.g. `gpt-4.1-mini`, `claude-sonnet-4-5`, `gemini-1.5-pro`). |
+   | `metadata.defaultModel` | The model used when an agent does not override it (e.g. `gpt-6-luna`, `claude-sonnet-5-5`, `gemini-3.8-flash`). |
    | `metadata.apiUrl` | Optional custom base URL (proxies, Azure-style endpoints). |
    | `metadata.organizationId` | Optional — OpenAI-only. |
    | `metadata.defaultTemperature` / `defaultTopP` / `defaultMaxTokens` / `defaultFrequencyPenalty` / `defaultPresencePenalty` | Provider-level defaults. Per-agent and per-call overrides take precedence. |
@@ -41,7 +41,7 @@ const admin = new QelosAdministratorSDK({ appUrl, fetch });
 const source = await admin.integrationSources.create({
   name: 'OpenAI — Production',
   labels: ['ai', 'prod'],
-  metadata: { defaultModel: 'gpt-4.1-mini' },
+  metadata: { defaultModel: 'gpt-6-luna' },
   authentication: { token: process.env.OPENAI_API_KEY }
 });
 ```

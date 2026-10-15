@@ -224,7 +224,7 @@ const result = await sdk.lambdas.post('email-integration', {
 const result = await sdk.lambdas.post('ai-integration', {
   body: {
     prompt: 'Summarize this text',
-    model: 'gpt-4',
+    model: 'gpt-6-luna',
     max_tokens: 100
   }
 });

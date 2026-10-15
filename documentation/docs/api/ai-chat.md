@@ -30,7 +30,7 @@ POST /api/ai/{integrationId}/chat-completion
     { "role": "system", "content": "You are a helpful assistant." },
     { "role": "user", "content": "Hello, how can you help me?" }
   ],
-  "model": "gpt-4",
+  "model": "gpt-6-luna",
   "temperature": 0.7,
   "top_p": 0.9,
   "max_tokens": 500,
@@ -79,7 +79,7 @@ POST /api/ai/{integrationId}/chat-completion
   "id": "completion-id",
   "object": "chat.completion",
   "created": 1700000000,
-  "model": "gpt-4",
+  "model": "gpt-6-luna",
   "choices": [
     {
       "index": 0,
