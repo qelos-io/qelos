@@ -13,7 +13,7 @@ import type { IUser } from '@/modules/core/store/types/user';
 import { useImpersonation, useRemoveUser } from '../compositions/users';
 import { getUserDisplayName } from '../services/display-name';
 import { buildPayload, draftFromUser, firstErrorSection, generatePassword, validateUser, type UserErrors, type UserMode, type UserSection } from '../services/user-draft';
-import { lastSeen, relativeTime, roleTagType } from '../services/user-presentation';
+import { isJustNow, lastSeen, relativeTime, roleTagType } from '../services/user-presentation';
 import AvatarField from './AvatarField.vue';
 import UserAvatar from './UserAvatar.vue';
 
@@ -158,7 +158,8 @@ onBeforeRouteLeave(async () => {
 
 const seen = computed(() => {
   const date = props.user ? lastSeen(props.user as any) : null;
-  return date ? relativeTime(date, new Date(), locale.value) : '';
+  if (!date) return '';
+  return isJustNow(date) ? t('Signed in just now') : t('Signed in {time}', { time: relativeTime(date, new Date(), locale.value) });
 });
 const canImpersonate = computed(() => isAdmin.value && props.mode === 'edit' && !!props.user && authStore.user?._id !== props.user._id);
 const isMe = computed(() => !!props.user && authStore.user?._id === props.user._id);
@@ -175,8 +176,7 @@ const isMe = computed(() => !!props.user && authStore.user?._id === props.user._
           <p v-if="user" class="meta">
             <span dir="ltr">{{ user.username }}</span>
             <el-tag v-if="user.emailVerified" size="small" type="success" effect="plain">{{ $t('Email verified') }}</el-tag>
-            <span v-if="seen">{{ $t('Signed in {time}', { time: seen }) }}</span>
-            <span v-else>{{ $t('Never signed in') }}</span>
+            <span>{{ seen || $t('Never signed in') }}</span>
           </p>
           <p v-else class="meta">{{ $t('Create a person who can sign in to your app.') }}</p>
         </div>
@@ -409,6 +409,11 @@ const isMe = computed(() => !!props.user && authStore.user?._id === props.user._
 .form {
   display: flex;
   flex-direction: column;
+
+  /* room for the error line under a field before the next label */
+  :deep(.el-form-item) {
+    margin-block-end: 26px;
+  }
 }
 
 .two {
@@ -469,10 +474,21 @@ const isMe = computed(() => !!props.user && authStore.user?._id === props.user._
   }
 }
 
-.advanced h2 {
-  margin: 0;
-  padding: 0;
-  font-size: 1.15rem;
+.advanced {
+  h2 {
+    margin: 0;
+    padding: 0;
+    font-size: 1.15rem;
+  }
+
+  .hint {
+    margin: 4px 0 12px;
+  }
+
+  :deep(.monaco-editor),
+  :deep(.monaco-editor .overflow-guard) {
+    border-radius: 8px;
+  }
 }
 
 .savebar {

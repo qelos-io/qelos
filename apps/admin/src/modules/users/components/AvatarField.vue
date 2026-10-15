@@ -32,6 +32,7 @@ function uploaded(value: string | null) {
       <el-form label-position="top" @submit.prevent="useUrl">
         <el-form-item :label="$t('Upload an image')">
           <AssetUploader :value="null" :upload-config="{ isImage: true }" @change="uploaded" />
+          <p class="hint">{{ $t('Choose where to store the file first. No storage? Paste an address below.') }}</p>
         </el-form-item>
         <el-form-item :label="$t('Or paste an image address')">
           <el-input v-model="url" dir="ltr" type="url" placeholder="https://…" @keydown.enter.prevent="useUrl" />
@@ -51,6 +52,15 @@ function uploaded(value: string | null) {
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
+}
+
+.hint {
+  inline-size: 100%;
+  margin: 6px 0 0;
+  padding: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 0.85rem;
+  text-align: start;
 }
 
 .actions {

@@ -1863,5 +1863,8 @@
   "Used by plugins to sign in": "Used by plugins to sign in",
   "User sections": "User sections",
   "Your email is how you sign in. Ask an admin to change it.": "Your email is how you sign in. Ask an admin to change it.",
-  "{n} people": "{n} people"
+  "{n} people": "{n} people",
+  "Signed in just now": "Signed in just now",
+  "Could not load the users": "Could not load the users",
+  "Choose where to store the file first. No storage? Paste an address below.": "Choose where to store the file first. No storage? Paste an address below."
 }

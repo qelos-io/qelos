@@ -6,13 +6,13 @@ import type { IUser } from '@/modules/core/store/types/user';
 import { authStore, isAdmin } from '@/modules/core/store/auth';
 import { useImpersonation, useRemoveUser } from '../compositions/users';
 import { getUserDisplayName } from '../services/display-name';
-import { lastSeen, relativeTime, roleTagType } from '../services/user-presentation';
+import { isJustNow, lastSeen, relativeTime, roleTagType } from '../services/user-presentation';
 import UserAvatar from './UserAvatar.vue';
 
 const props = defineProps<{ people: IUser[]; services: IUser[]; loading?: boolean; filtered?: boolean }>();
 const emit = defineEmits<{ (e: 'removed', id: string): void; (e: 'create'): void }>();
 
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 const { remove } = useRemoveUser((id) => emit('removed', id));
 const impersonate = useImpersonation();
 
@@ -24,7 +24,8 @@ watch(() => props.people, () => (page.value = 1));
 
 const seen = (user: IUser) => {
   const date = lastSeen(user as any);
-  return date ? relativeTime(date, new Date(), locale.value) : '';
+  if (!date) return '';
+  return isJustNow(date) ? t('Signed in just now') : t('Signed in {time}', { time: relativeTime(date, new Date(), locale.value) });
 };
 const canImpersonate = (user: IUser) => isAdmin.value && authStore.user?._id !== user._id;
 const command = (user: IUser, name: string) => (name === 'impersonate' ? impersonate(user) : remove(user));
@@ -57,7 +58,7 @@ const command = (user: IUser, name: string) => (name === 'impersonate' ? imperso
             <el-tooltip v-if="user.emailVerified" :content="$t('Email verified')" placement="top"><el-icon class="ok"><Check /></el-icon></el-tooltip>
             <font-awesome-icon v-for="icon in user.socialLogins || []" :key="icon" :icon="['fab', icon]" class="social" :title="icon" />
           </div>
-          <span class="seen" :class="{ never: !seen(user) }">{{ seen(user) ? $t('Signed in {time}', { time: seen(user) }) : $t('Never signed in') }}</span>
+          <span class="seen" :class="{ never: !seen(user) }">{{ seen(user) || $t('Never signed in') }}</span>
           <el-dropdown trigger="click" @command="(name: string) => command(user, name)" @click.stop>
             <el-button text circle :aria-label="`${$t('Actions')}: ${getUserDisplayName(user)}`" @click.stop><el-icon><MoreFilled /></el-icon></el-button>
             <template #dropdown>
@@ -118,6 +119,10 @@ const command = (user: IUser, name: string) => (name === 'impersonate' ? imperso
 
   &:hover {
     border-color: var(--el-border-color);
+  }
+
+  &:focus-within {
+    border-color: var(--el-color-primary);
   }
 
   &.skeleton {
@@ -241,12 +246,21 @@ const command = (user: IUser, name: string) => (name === 'impersonate' ? imperso
     > .seen { grid-area: seen; }
     > :last-child { grid-area: menu; }
 
+    :deep(.el-button.is-circle) {
+      inline-size: 40px;
+      block-size: 40px;
+    }
+
     &.service {
-      grid-template-areas: none;
-      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: 'avatar who menu';
+      row-gap: 0;
 
       > .roles { display: none; }
     }
+  }
+
+  .services-toggle .hint {
+    display: none;
   }
 }
 

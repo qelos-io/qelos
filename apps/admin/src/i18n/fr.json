@@ -1863,5 +1863,8 @@
   "Used by plugins to sign in": "Utilisés par les plugins pour se connecter",
   "User sections": "Sections de l'utilisateur",
   "Your email is how you sign in. Ask an admin to change it.": "Votre e-mail sert à vous connecter. Demandez à un admin de le modifier.",
-  "{n} people": "{n} personnes"
+  "{n} people": "{n} personnes",
+  "Signed in just now": "Connecté à l'instant",
+  "Could not load the users": "Impossible de charger les utilisateurs",
+  "Choose where to store the file first. No storage? Paste an address below.": "Choisissez d'abord où stocker le fichier. Pas de stockage ? Collez une adresse ci-dessous."
 }

@@ -51,6 +51,9 @@ export function lastSeen(user: ListedUser): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+/** under a minute: "just now" reads better than the formatter's "now" in a sentence */
+export const isJustNow = (date: Date, now: Date = new Date()) => Math.abs(now.getTime() - date.getTime()) < 60_000;
+
 const UNITS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
   ['year', 365 * 24 * 3600],
   ['month', 30 * 24 * 3600],

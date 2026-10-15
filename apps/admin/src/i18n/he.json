@@ -1863,5 +1863,8 @@
   "Used by plugins to sign in": "משמשים תוספים להתחברות",
   "User sections": "אזורי המשתמש",
   "Your email is how you sign in. Ask an admin to change it.": "האימייל משמש להתחברות. בקשו ממנהל לשנות אותו.",
-  "{n} people": "{n} אנשים"
+  "{n} people": "{n} אנשים",
+  "Signed in just now": "התחבר ממש עכשיו",
+  "Could not load the users": "לא ניתן לטעון את המשתמשים",
+  "Choose where to store the file first. No storage? Paste an address below.": "בחרו קודם איפה לשמור את הקובץ. אין אחסון? הדביקו כתובת למטה."
 }

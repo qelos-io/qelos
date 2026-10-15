@@ -6,7 +6,7 @@ import { useUsersList } from './compositions/users';
 import UsersList from './components/UsersList.vue';
 
 const router = useRouter();
-const { view, roles, query, loading, setRoles, removeUser } = useUsersList();
+const { view, roles, query, loading, failed, setRoles, removeUser, reload } = useUsersList();
 
 const filtered = computed(() => !!query.value || roles.value.length > 0);
 const toggleRole = (role: string) => setRoles(roles.value.includes(role) ? roles.value.filter((r) => r !== role) : [...roles.value, role]);
@@ -30,7 +30,11 @@ const create = () => router.push({ name: 'createUser' });
       </button>
     </div>
 
-    <UsersList :people="view.people" :services="view.services" :loading="loading" :filtered="filtered" @removed="removeUser" @create="create" />
+    <el-alert v-if="failed && !loading" class="failed" type="error" show-icon :closable="false" :title="$t('Could not load the users')">
+      <el-button size="small" @click="reload">{{ $t('Try again') }}</el-button>
+    </el-alert>
+
+    <UsersList v-else :people="view.people" :services="view.services" :loading="loading" :filtered="filtered" @removed="removeUser" @create="create" />
   </div>
 </template>
 
@@ -58,6 +62,10 @@ const create = () => router.push({ name: 'createUser' });
     padding: 0;
     color: var(--el-text-color-secondary);
   }
+}
+
+.failed {
+  margin-block-end: 14px;
 }
 
 .chips {

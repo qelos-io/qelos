@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { avatarColor, buildUsersView, initials, isServiceAccount, lastSeen, matchesSearch, relativeTime, roleTagType } from '../user-presentation';
+import { avatarColor, isJustNow, buildUsersView, initials, isServiceAccount, lastSeen, matchesSearch, relativeTime, roleTagType } from '../user-presentation';
 
 const users: any[] = [
   { _id: '1', firstName: 'Dana', lastName: 'Levy', username: 'dana@x.com', roles: ['admin', 'user'], lastLogin: { created: '2026-01-02T00:00:00Z' } },
@@ -46,6 +46,12 @@ describe('time and avatars', () => {
     expect(relativeTime(new Date('2026-01-08T00:00:00Z'), now, 'en')).toBe('2 days ago');
     expect(relativeTime(new Date('2025-10-10T00:00:00Z'), now, 'en')).toBe('3 months ago');
     expect(relativeTime(new Date('2026-01-09T23:59:50Z'), now, 'en')).toBe('now');
+  });
+
+  it('knows when a sign-in was just now', () => {
+    const now = new Date('2026-01-10T00:00:00Z');
+    expect(isJustNow(new Date('2026-01-09T23:59:30Z'), now)).toBe(true);
+    expect(isJustNow(new Date('2026-01-09T23:58:00Z'), now)).toBe(false);
   });
 
   it('makes initials and a stable color', () => {

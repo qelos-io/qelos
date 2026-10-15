@@ -3,7 +3,7 @@ import usersService from '../../../services/apis/users-service';
 import { useDispatcher } from '../../core/compositions/dispatcher';
 import { useSubmitting } from '../../core/compositions/submitting';
 import { useRoute, useRouter } from 'vue-router';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { authStore } from '@/modules/core/store/auth';
@@ -68,7 +68,15 @@ export function useUsersList() {
   const query = computed(() => (route.query.q ? String(route.query.q) : ''));
 
   // the list is loaded once; searching and filtering by role happen on it, so typing is instant
-  const { result: users, retry, loading } = useDispatcher<IUser[]>(() => usersService.getAll().catch(() => []), []);
+  const failed = ref(false);
+  const { result: users, retry, loading } = useDispatcher<IUser[]>(
+    () =>
+      usersService.getAll().then(
+        (list) => ((failed.value = false), list),
+        () => ((failed.value = true), []),
+      ),
+    [],
+  );
 
   const view = computed(() => buildUsersView(users.value || [], { query: query.value, roles: roles.value }));
 
@@ -80,7 +88,7 @@ export function useUsersList() {
     users.value = users.value.filter((user) => user._id !== userId);
   }
 
-  return { users, view, roles, query, loading, setRoles, removeUser, reload: retry };
+  return { users, view, roles, query, loading, failed, setRoles, removeUser, reload: retry };
 }
 
 /** sign in as another user: the page reloads to apply it */
