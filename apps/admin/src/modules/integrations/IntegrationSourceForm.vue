@@ -6,10 +6,6 @@ import { getConnectionSchema } from './services/connection-fields';
 import HttpForm from './components/forms/HttpForm.vue';
 import ClaudeAiForm from './components/forms/ClaudeAIForm.vue';
 import GeminiForm from './components/forms/GeminiForm.vue';
-import SumitForm from './components/forms/SumitForm.vue';
-import PayPalForm from './components/forms/PayPalForm.vue';
-import PaddleForm from './components/forms/PaddleForm.vue';
-import DodoPaymentsForm from './components/forms/DodoPaymentsForm.vue';
 
 const props = defineProps<{
   modelValue: any;
@@ -24,10 +20,6 @@ const formComponentMap = {
   gemini: GeminiForm,
   claudeai: ClaudeAiForm,
   http: HttpForm,
-  sumit: SumitForm,
-  paypal: PayPalForm,
-  paddle: PaddleForm,
-  dodopayments: DodoPaymentsForm
 };
 
 const isDataDriven = computed(() => !!getConnectionSchema(props.kind));

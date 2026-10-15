@@ -1,6 +1,6 @@
 import { IntegrationSourceKind } from '@qelos/global-types';
 
-export type ConnectionFieldType = 'text' | 'url' | 'email' | 'secret';
+export type ConnectionFieldType = 'text' | 'url' | 'email' | 'secret' | 'choice';
 
 export interface ConnectionField {
   /** Dotted path inside the connection, e.g. `metadata.clientId` or `authentication.clientSecret`. */
@@ -11,6 +11,12 @@ export interface ConnectionField {
   hint?: string;
   placeholder?: string;
   ltr?: boolean;
+  /** Choice fields: the allowed values, the first being the default. */
+  options?: Array<{ value: string; label: string }>;
+  /** Shown while this value is selected, e.g. a warning for live payments. */
+  warnOn?: { value: string; text: string };
+  /** Shortest value accepted once something is typed. */
+  minLength?: number;
 }
 
 export interface ConnectionSchema {
@@ -18,7 +24,33 @@ export interface ConnectionSchema {
   description: string;
   basics: ConnectionField[];
   credentials: ConnectionField[];
+  /** Where the provider hands out credentials (only links already used by the previous forms). */
+  help?: { url: string; label: string };
 }
+
+const payments = (
+  description: string,
+  helpUrl: string,
+  helpLabel: string,
+  secret: ConnectionField,
+  before: ConnectionField[],
+  environments: string[],
+): ConnectionSchema => ({
+  description,
+  basics: [
+    ...before,
+    {
+      path: 'metadata.environment',
+      label: 'Environment',
+      type: 'choice',
+      required: true,
+      options: environments.map((value) => ({ value, label: value === 'live' ? 'Live' : value === 'test' ? 'Test' : 'Sandbox' })),
+      warnOn: { value: 'live', text: 'Live mode processes real payments. Use production credentials.' },
+    },
+  ],
+  credentials: [secret],
+  help: { url: helpUrl, label: helpLabel },
+});
 
 const oauth = (description: string): ConnectionSchema => ({
   description,
@@ -72,6 +104,44 @@ export const SIMPLE_CONNECTION_SCHEMAS: Partial<Record<IntegrationSourceKind, Co
   },
 };
 
+SIMPLE_CONNECTION_SCHEMAS[IntegrationSourceKind.Sumit] = {
+  description: 'Takes payments through Sumit',
+  basics: [{ path: 'metadata.companyId', label: 'Company ID', type: 'text', required: true, ltr: true }],
+  credentials: [{ path: 'authentication.apiKey', label: 'API Key', type: 'secret', required: true, minLength: 20 }],
+  help: { url: 'https://app.sumit.co.il/developers/keys/', label: 'Get your Company ID and API Key' },
+};
+SIMPLE_CONNECTION_SCHEMAS[IntegrationSourceKind.PayPal] = payments(
+  'Takes payments through PayPal',
+  'https://developer.paypal.com/dashboard/applications',
+  'Get your Client ID and Secret',
+  { path: 'authentication.clientSecret', label: 'Client Secret', type: 'secret', required: true, minLength: 10 },
+  [{ path: 'metadata.clientId', label: 'Client ID', type: 'text', required: true, ltr: true }],
+  ['sandbox', 'live'],
+);
+SIMPLE_CONNECTION_SCHEMAS[IntegrationSourceKind.Paddle] = payments(
+  'Takes payments through Paddle',
+  'https://vendors.paddle.com/authentication',
+  'Get your API Key',
+  { path: 'authentication.apiKey', label: 'API Key', type: 'secret', required: true, minLength: 10 },
+  [],
+  ['sandbox', 'live'],
+);
+SIMPLE_CONNECTION_SCHEMAS[IntegrationSourceKind.DodoPayments] = payments(
+  'Takes payments through DodoPayments',
+  'https://docs.dodopayments.com/',
+  'Get your API Key',
+  { path: 'authentication.apiKey', label: 'API Key', type: 'secret', required: true, minLength: 10 },
+  [],
+  ['test', 'live'],
+);
+
+/** Values a new connection starts with, taken from each choice field's first option. */
+export function getSchemaDefaults(schema: ConnectionSchema): Record<string, string> {
+  const defaults: Record<string, string> = {};
+  for (const field of schema.basics) if (field.options?.length) defaults[field.path] = field.options[0].value;
+  return defaults;
+}
+
 export function getConnectionSchema(kind: string): ConnectionSchema | undefined {
   return SIMPLE_CONNECTION_SCHEMAS[kind as IntegrationSourceKind];
 }
@@ -113,9 +183,9 @@ export function validateConnection(
 
   for (const field of [...schema.basics, ...schema.credentials]) {
     if (isSecret(field)) {
-      if (field.required && !isEdit && !String(typedSecrets[field.path] ?? '').trim()) {
-        errors[field.path] = 'This field is required';
-      }
+      const typed = String(typedSecrets[field.path] ?? '').trim();
+      if (field.required && !isEdit && !typed) errors[field.path] = 'This field is required';
+      else if (typed && field.minLength && typed.length < field.minLength) errors[field.path] = 'This value looks too short';
       continue;
     }
     const value = String(getPath(model, field.path) ?? '').trim();

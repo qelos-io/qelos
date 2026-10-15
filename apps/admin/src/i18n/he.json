@@ -2079,5 +2079,16 @@
   "Connects a Supabase project": "מתחבר לפרויקט Supabase",
   "Connects an n8n workflow instance": "מתחבר למופע של n8n",
   "Connects another Qelos application": "מתחבר ליישום Qelos אחר",
-  "Sends and receives email through your own mail server": "שולח ומקבל אימייל דרך שרת הדואר שלכם"
+  "Sends and receives email through your own mail server": "שולח ומקבל אימייל דרך שרת הדואר שלכם",
+  "Sandbox": "סביבת בדיקות",
+  "Test": "בדיקה",
+  "This value looks too short": "הערך נראה קצר מדי",
+  "Live mode processes real payments. Use production credentials.": "מצב חי מעבד תשלומים אמיתיים. השתמשו בפרטי גישה של סביבת ייצור.",
+  "Takes payments through Sumit": "גובה תשלומים דרך Sumit",
+  "Takes payments through PayPal": "גובה תשלומים דרך PayPal",
+  "Takes payments through Paddle": "גובה תשלומים דרך Paddle",
+  "Takes payments through DodoPayments": "גובה תשלומים דרך DodoPayments",
+  "Get your Company ID and API Key": "קבלו את מזהה החברה ומפתח ה-API",
+  "Get your Client ID and Secret": "קבלו את מזהה הלקוח והסוד",
+  "Get your API Key": "קבלו את מפתח ה-API"
 }

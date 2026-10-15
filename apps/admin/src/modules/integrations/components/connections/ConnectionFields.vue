@@ -7,6 +7,7 @@ import {
   buildConnectionPayload,
   collectLabelSuggestions,
   getConnectionSchema,
+  getSchemaDefaults,
   getPath,
   setPath,
   validateConnection,
@@ -26,6 +27,9 @@ const model = reactive<any>({
   labels: [...(props.modelValue?.labels || [])],
   metadata: { ...(props.modelValue?.metadata || {}) },
 });
+for (const [path, value] of Object.entries(getSchemaDefaults(schema.value))) {
+  if (!getPath(model, path)) setPath(model, path, value);
+}
 const typedSecrets = reactive<Record<string, string>>({});
 const errors = ref<Record<string, string>>({});
 const rootRef = ref<{ $el: HTMLElement } | null>(null);
@@ -104,7 +108,17 @@ defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
         :error="errors[field.path] ? $t(errors[field.path]) : ''"
         :data-field="field.path"
       >
+        <el-radio-group
+          v-if="field.type === 'choice'"
+          :model-value="fieldValue(field)"
+          @update:model-value="setField(field, $event as string)"
+        >
+          <el-radio v-for="option in field.options" :key="option.value" :value="option.value">
+            {{ $t(option.label) }}
+          </el-radio>
+        </el-radio-group>
         <el-input
+          v-else
           :model-value="fieldValue(field)"
           :type="inputType(field)"
           :dir="field.ltr ? 'ltr' : 'auto'"
@@ -113,6 +127,10 @@ defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
           @update:model-value="setField(field, $event)"
         />
         <p v-if="field.hint" class="hint">{{ $t(field.hint) }}</p>
+        <p v-if="field.warnOn && fieldValue(field) === field.warnOn.value" class="warn" role="status">
+          <font-awesome-icon :icon="['fas', 'triangle-exclamation']" aria-hidden="true" />
+          {{ $t(field.warnOn.text) }}
+        </p>
       </el-form-item>
     </section>
 
@@ -136,6 +154,18 @@ defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
           @update:model-value="setSecret(field, $event)"
         />
       </el-form-item>
+      <el-link
+        v-if="schema.help"
+        class="help"
+        type="primary"
+        :href="schema.help.url"
+        target="_blank"
+        rel="noopener"
+        :underline="false"
+      >
+        {{ $t(schema.help.label) }}
+        <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" aria-hidden="true" />
+      </el-link>
     </section>
   </el-form>
 </template>
@@ -152,5 +182,22 @@ defineExpose({ submitForm, getAuthenticationOverride, getStatusFormModel });
   font-size: 12px;
   line-height: 1.4;
   color: var(--el-text-color-secondary);
+}
+
+.warn {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--el-color-warning-dark-2);
+}
+
+.help {
+  font-size: 13px;
+}
+
+.help :deep(.el-link__inner) {
+  gap: 6px;
 }
 </style>

@@ -5,6 +5,7 @@ import {
   buildConnectionPayload,
   collectLabelSuggestions,
   getConnectionSchema,
+  getSchemaDefaults,
   validateConnection,
 } from '../connection-fields';
 
@@ -116,5 +117,35 @@ describe('status check and label suggestions', () => {
       collectLabelSuggestions([{ labels: ['Beta', 'alpha'] }, { labels: ['beta', ' gamma '] }, {}]),
     ).toEqual(['alpha', 'Beta', 'gamma']);
     expect(collectLabelSuggestions(undefined)).toEqual([]);
+  });
+});
+
+describe('payment providers', () => {
+  const cases: Array<[IntegrationSourceKind, string]> = [
+    [IntegrationSourceKind.Sumit, 'apiKey'],
+    [IntegrationSourceKind.Paddle, 'apiKey'],
+    [IntegrationSourceKind.DodoPayments, 'apiKey'],
+    [IntegrationSourceKind.PayPal, 'clientSecret'],
+  ];
+
+  for (const [kind, key] of cases) {
+    it(`${kind}: sends {${key}} when typed, nothing when editing untouched (as the retired form did)`, () => {
+      const schema = getConnectionSchema(kind)!;
+      const model = { _id: '1', name: 'p', metadata: { environment: 'live' } };
+      expect(buildConnectionPayload(schema, kind, model, { [`authentication.${key}`]: 'k'.repeat(24) }).authentication).toEqual({
+        [key]: 'k'.repeat(24),
+      });
+      expect(buildConnectionPayload(schema, kind, model, {}).authentication).toEqual({});
+      expect(buildAuthenticationOverride(schema, { [`authentication.${key}`]: 'abc' })).toEqual({ [key]: 'abc' });
+    });
+  }
+
+  it('starts on the first environment and rejects too-short keys', () => {
+    expect(getSchemaDefaults(getConnectionSchema(IntegrationSourceKind.PayPal)!)).toEqual({ 'metadata.environment': 'sandbox' });
+    expect(getSchemaDefaults(getConnectionSchema(IntegrationSourceKind.DodoPayments)!)).toEqual({ 'metadata.environment': 'test' });
+    const sumit = getConnectionSchema(IntegrationSourceKind.Sumit)!;
+    const model = { name: 's', metadata: { companyId: '1' } };
+    expect(validateConnection(sumit, model, { 'authentication.apiKey': 'short' }, false)['authentication.apiKey']).toBeTruthy();
+    expect(validateConnection(sumit, model, { 'authentication.apiKey': 'k'.repeat(20) }, false)).toEqual({});
   });
 });
