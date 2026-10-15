@@ -1434,5 +1434,7 @@
   "Webhook": "Webhook",
   "Webhooks": "Webhooks",
   "Workflow": "תהליך",
-  "Workflows": "תהליכים"
+  "Workflows": "תהליכים",
+  "Could not load integrations": "לא ניתן לטעון את האינטגרציות",
+  "Check your connection and try again.": "בדקו את החיבור ונסו שוב."
 }

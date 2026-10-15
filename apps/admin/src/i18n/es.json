@@ -1434,5 +1434,7 @@
   "Webhook": "Webhook",
   "Webhooks": "Webhooks",
   "Workflow": "Flujo",
-  "Workflows": "Flujos"
+  "Workflows": "Flujos",
+  "Could not load integrations": "No se pudieron cargar las integraciones",
+  "Check your connection and try again.": "Revisa tu conexión e inténtalo de nuevo."
 }

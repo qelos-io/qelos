@@ -1434,5 +1434,7 @@
   "Webhook": "Webhook",
   "Webhooks": "Webhooks",
   "Workflow": "Workflow",
-  "Workflows": "Workflows"
+  "Workflows": "Workflows",
+  "Could not load integrations": "Impossible de charger les intégrations",
+  "Check your connection and try again.": "Vérifiez votre connexion et réessayez."
 }

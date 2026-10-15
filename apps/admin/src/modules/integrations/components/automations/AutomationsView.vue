@@ -57,8 +57,9 @@ function clearFilters() {
 
 // ---- display: list, or the diagram on wide screens ----
 const display = computed({
-  get: () => (route.query.display === 'map' && width.value >= 1100 ? 'map' : 'list'),
-  set: (value) => router.replace({ query: { ...route.query, display: value === 'map' ? 'map' : undefined } }),
+  // the old ?view=workflows link meant the diagram
+  get: () => ((route.query.display === 'map' || route.query.view === 'workflows') && width.value >= 1100 ? 'map' : 'list'),
+  set: (value) => router.replace({ query: { ...route.query, view: route.query.view === 'workflows' ? undefined : route.query.view, display: value === 'map' ? 'map' : undefined } }),
 });
 
 // ---- row actions ----
@@ -106,6 +107,12 @@ const create = (kind: 'agent' | 'workflow') => router.push({ query: kind === 'ag
       <el-skeleton :rows="1" animated class="skeleton" />
       <el-skeleton v-for="n in 4" :key="n" :rows="1" animated class="skeleton" />
     </template>
+
+    <div v-else-if="store.error && !all.length" class="empty" role="alert">
+      <h2>{{ $t('Could not load integrations') }}</h2>
+      <p>{{ $t('Check your connection and try again.') }}</p>
+      <el-button type="primary" @click="store.retry()">{{ $t('Try again') }}</el-button>
+    </div>
 
     <div v-else-if="!all.length" class="empty">
       <h2>{{ $t('No integrations yet') }}</h2>
