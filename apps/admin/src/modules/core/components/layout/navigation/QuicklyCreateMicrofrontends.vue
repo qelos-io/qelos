@@ -1,244 +1,228 @@
-<template>
-  <el-form @submit.prevent="submit">
-    <el-drawer v-model="localDialogVisible" :title="$t('Create New Page')" size="40%" class="create-plugin-drawer"
-               direction="btt">
-      <FormRowGroup>
-        <el-form-item :label="$t('Select Plugin')">
-          <el-select v-model="pluginList" :placeholder="$t('Select Plugin')" clearable
-                     @change="handleMenuCommand" placement="top-start" teleported>
-            <el-option v-for="plugin in plugins" :key="plugin._id" :label="plugin.name" :value="plugin._id">
-              {{ plugin.name }}
-            </el-option>
-            <el-option label="Add New Page" value="addNewPage">-- {{ $t('Add New Plugin') }} --</el-option>
-          </el-select>
-        </el-form-item>
-        <NavigationPositionSelector v-model="position" :placeholder="$t('Select Position')" class="full-width-input"/>
-        <FormInput v-model="pageName" :placeholder="$t('Enter Page Name')" required size="large" class="full-width-input"
-                   title="Page Name"/>
-      </FormRowGroup>
-      <FormRowGroup>
-        <FormInput type="switch" v-model="showBoilerplating" :title="$t('Boilerplate ?')" class="flex-0"/>
-        <template v-if="showBoilerplating">
-          <BlueprintSelector v-model="boilerplateBlueprint"/>
-          <FormInput type="select" v-model="boilerplateType">
-            <template #options>
-              <el-option value="table" :label="$t('Table')"/>
-              <el-option value="grid" :label="$t('Grid')"/>
-              <el-option value="table-stats" :label="$t('Table + Stats')"/>
-              <el-option value="dashboard" :label="$t('Dashboard (Stats + Highlights)')"/>
-            </template>
-          </FormInput>
-        </template>
-      </FormRowGroup>
-
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="closeDialog" native-type="button">{{ $t('Cancel') }}</el-button>
-          <el-button type="primary" native-type="submit">
-            {{ $t('Confirm') }}
-          </el-button>
-        </div>
-      </template>
-    </el-drawer>
-  </el-form>
-</template>
-
 <script lang="ts" setup>
-import { ref, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { DataAnalysis, Document, Grid, List, Odometer } from '@element-plus/icons-vue';
 import { usePluginsList } from '@/modules/plugins/store/plugins-list';
 import { useCreatePlugin } from '@/modules/plugins/compositions/manage-plugin';
-import { useNotifications } from '@/modules/core/compositions/notifications';
-import NavigationPositionSelector from '@/modules/plugins/components/NavigationPositionSelector.vue';
-import FormInput from '../../forms/FormInput.vue';
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
-import BlueprintSelector from '@/modules/no-code/components/BlueprintSelector.vue';
-import { useQuickBoilerplate } from '@/modules/core/compositions/quick-boilerplate';
-import pluginsService from '@/services/apis/plugins-service';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
+import { useQuickBoilerplate } from '@/modules/core/compositions/quick-boilerplate';
+import { useNotifications } from '@/modules/core/compositions/notifications';
+import { useViewport } from '@/modules/core/compositions/viewport';
+import { isEditingEnabled } from '@/modules/core/store/auth';
+import pluginsService from '@/services/apis/plugins-service';
+import { PAGE_STARTS, buildNewPage, pageAddress, validateNewPage, type PageLink, type PageStart } from '@/modules/plugins/services/new-page';
 
-const { plugins } = usePluginsList();
+const open = defineModel<boolean>({ default: false });
+
+const { t } = useI18n();
+const router = useRouter();
+const store = usePluginsList();
+const blueprintsStore = useBlueprintsStore();
+const { blueprints } = storeToRefs(blueprintsStore);
 const { savePlugin } = useCreatePlugin();
-const { success, error } = useNotifications();
+const { error } = useNotifications();
+const { isCompact } = useViewport();
 
-const blueprintsStore = useBlueprintsStore()
+const form = reactive({ name: '', target: 'new', link: 'top' as PageLink, start: 'blank' as PageStart, blueprint: '' });
+const submitted = ref(false);
+const saving = ref(false);
 
-const pluginList = ref('addNewPage');
-const position = ref<string | boolean>('top');
-const pageName = ref('');
+const START_ICONS = { blank: Document, table: List, grid: Grid, 'table-stats': DataAnalysis, dashboard: Odometer } as const;
+const START_COPY: Record<PageStart, { title: string; text: string }> = {
+  blank: { title: 'Blank', text: 'Start empty and design it on the page' },
+  table: { title: 'Table', text: 'Rows of your data' },
+  grid: { title: 'Grid', text: 'Cards of your data' },
+  'table-stats': { title: 'Table + stats', text: 'Rows with totals on top' },
+  dashboard: { title: 'Dashboard', text: 'Stats and highlights' },
+};
 
-const props = defineProps({
-  modelValue: Boolean  // modelValue from Navigation
-});
-const emit = defineEmits(['update:modelValue']);
-
-const localDialogVisible = ref(props.modelValue);
-
-watch(() => props.modelValue, (newValue) => {
-  localDialogVisible.value = newValue;
-});
-
-// When local state changes, send it upstream via emit
-watch(localDialogVisible, (newValue) => {
-  emit('update:modelValue', newValue);
+watch(open, (isOpen) => {
+  if (!isOpen) return;
+  Object.assign(form, { name: '', target: 'new', link: 'top', start: 'blank', blueprint: '' });
+  submitted.value = false;
 });
 
+const reservedPaths = () => router.getRoutes().filter((r) => !r.meta?.mfe && !r.meta?.mfeUrl).map((r) => r.path).filter((p) => p.length > 1 && !p.startsWith('/:'));
+const errors = computed(() => validateNewPage(form, store.plugins || [], reservedPaths()));
+const shown = (field: 'name' | 'address' | 'blueprint') => (submitted.value && errors.value[field] ? t(errors.value[field]!) : undefined);
+const address = computed(() => pageAddress(form.name));
 
-const showBoilerplating = ref(false);
-const boilerplateBlueprint = ref('');
-const boilerplateType = ref('table');
-
+const blueprintId = computed(() => (form.start === 'blank' ? '' : form.blueprint));
 const { getBoilerPlate } = useQuickBoilerplate({
-  blueprintIdentifier: boilerplateBlueprint,
-  pageName,
-  boilerplateType,
+  blueprintIdentifier: blueprintId as any,
+  pageName: computed(() => form.name.trim()) as any,
+  boilerplateType: computed(() => form.start) as any,
 });
 
-const closeDialog = () => {
-  localDialogVisible.value = false;
-};
-
-const submit = async () => {
-  // Check if the necessary fields have values
-  if (!pluginList.value) {
-    error('No plugin selected.');
-    return;
-  }
-
-  if (position.value === '' || position.value === null || position.value === false) {
-    error('No position selected.');
-    return;
-  }
-
-  if (!pageName.value) {
-    error('No position selected.');
-    return;
-  }
-
+async function submit() {
+  submitted.value = true;
+  if (Object.keys(errors.value).length || saving.value) return;
+  saving.value = true;
   try {
-    if (pluginList.value === 'addNewPage') {
-      // Handle the "Add New Page" case by creating a new plugin
-      await createPlugin(position.value as string, pageName.value);
-
+    const boilerplate = await getBoilerPlate();
+    const page = buildNewPage({ name: form.name, link: form.link, structure: boilerplate.structure, requirements: boilerplate.requirements });
+    if (form.target === 'new') {
+      const created = await savePlugin({ name: form.name.trim(), microFrontends: [page] });
+      if (!created) return;
     } else {
-      // Handle adding MFE to existing plugin
-      await addMicroFrontendToPlugin(pluginList.value, position.value as string, pageName.value);
-      success('Micro-frontend added to plugin.');
+      // the list's plugins carry runtime fields added by the navigation, so start from a fresh copy
+      const plugin = await pluginsService.getOne(form.target);
+      await pluginsService.update(plugin._id, { ...plugin, microFrontends: [...(plugin.microFrontends || []), page] });
     }
-
-    // Reset form values after submission
-    pluginList.value = '';
-    position.value = '';
-    pageName.value = '';
-
-    // Close the form after successful submission
-    localDialogVisible.value = false;
-
-
-  } catch (error) {
-    console.error('Error during form submission:', error);
-  }
-};
-
-const handleMenuCommand = (pluginId: string) => {
-  const selectedPlugin = plugins.find(plugin => plugin._id === pluginId);
-  if (selectedPlugin) {
-    pluginList.value = selectedPlugin._id;
-  }
-};
-
-const addMicroFrontendToPlugin = async (pluginId: string, position: string, mfeName: string) => {
-  const selectedPlugin = plugins.find(plugin => plugin._id === pluginId);
-
-  if (selectedPlugin) {
-    const mfeTemplate = selectedPlugin.microFrontends[0] || {} as any; // Template for the new MFE
-    const boilerplate = await getBoilerPlate();
-
-    const newMFE = {
-      name: mfeName || 'New MFE', // Name from the form or default value
-      description: mfeTemplate.description || 'Description for the MFE',
-      manifestUrl: mfeTemplate.manifestUrl || '',
-      url: mfeTemplate.url || '',
-      active: true,
-      opened: true,
-      roles: mfeTemplate.roles || ['*'],
-      workspaceRoles: mfeTemplate.workspaceRoles || ['*'],
-      workspaceLabels: mfeTemplate.workspaceLabels || ['*'],
-      use: mfeTemplate.use || 'plain',
-      requirements: boilerplate.requirements || [],
-      route: {
-        name: mfeName.toLowerCase().replace(/\s+/g, '-'),
-        path: mfeName.toLowerCase().replace(/\s+/g, '-'),
-        roles: mfeTemplate.route?.roles || ['*'],
-        navBarPosition: position as 'top' | 'bottom' | 'user-dropdown' | false,
-      },
-      structure: boilerplate.structure
-    };
-
-    selectedPlugin.microFrontends.push(newMFE);
-
-    await pluginsService.update(selectedPlugin._id, selectedPlugin);
-
+    await store.retry();
     blueprintsStore.retry();
-
-  } else {
-    error('No plugin found with the given ID.');
+    open.value = false;
+    isEditingEnabled.value = true;
+    router.push('/' + page.route!.path);
+  } catch (e) {
+    console.error(e);
+    error(t('Could not create the page'));
+  } finally {
+    saving.value = false;
   }
-};
-
-const createPlugin = async (position: string, pluginName: string) => {
-  if (pluginName.trim()) {
-    const formattedPluginName = pluginName.toLowerCase().replace(/\s+/g, '-');
-    const boilerplate = await getBoilerPlate();
-
-    const newPlugin = {
-      name: pluginName,
-      microFrontends: [
-        {
-          name: pluginName,
-          description: '',
-          use: 'plain',
-          active: true,
-          opened: true,
-          url: '',
-          roles: ['*'],
-          workspaceRoles: ['*'],
-          workspaceLabels: ['*'],
-          route: {
-            name: formattedPluginName,
-            path: formattedPluginName,
-            navBarPosition: position,
-          },
-          structure: boilerplate.structure,
-          requirements: boilerplate.requirements,
-        },
-      ],
-    };
-
-    await savePlugin(newPlugin);
-    blueprintsStore.retry();
-  }
-};
+}
 </script>
 
+<template>
+  <el-dialog v-model="open" :title="$t('New page')" width="620px" :fullscreen="isCompact" class="new-page" append-to-body align-center>
+    <el-form label-position="top" class="form" @submit.prevent="submit">
+      <el-form-item :label="$t('Page name')" :error="shown('name') || shown('address')">
+        <el-input v-model="form.name" dir="auto" maxlength="80" autofocus :placeholder="$t('Sales report')" />
+        <p v-if="address" class="hint" dir="ltr">{{ $t('Address') }}: /{{ address }}</p>
+      </el-form-item>
+
+      <el-form-item :label="$t('Add to')">
+        <el-select v-model="form.target" class="target">
+          <el-option value="new" :label="$t('A new plugin')" />
+          <el-option v-for="plugin in store.plugins" :key="plugin._id" :value="plugin._id" :label="plugin.name" />
+        </el-select>
+      </el-form-item>
+
+      <el-form-item :label="$t('Link in the menu')">
+        <el-radio-group v-model="form.link">
+          <el-radio-button :value="false">{{ $t('No link') }}</el-radio-button>
+          <el-radio-button value="top">{{ $t('Top') }}</el-radio-button>
+          <el-radio-button value="bottom">{{ $t('Bottom') }}</el-radio-button>
+          <el-radio-button value="user-dropdown">{{ $t('User menu') }}</el-radio-button>
+        </el-radio-group>
+      </el-form-item>
+
+      <fieldset class="starts">
+        <legend>{{ $t('Start with') }}</legend>
+        <div class="start-grid" role="radiogroup">
+          <button v-for="start in PAGE_STARTS" :key="start" type="button" role="radio" :aria-checked="form.start === start" class="start" :class="{ on: form.start === start }" @click="form.start = start">
+            <el-icon aria-hidden="true"><component :is="START_ICONS[start]" /></el-icon>
+            <strong>{{ $t(START_COPY[start].title) }}</strong>
+            <span>{{ $t(START_COPY[start].text) }}</span>
+          </button>
+        </div>
+      </fieldset>
+
+      <el-form-item v-if="form.start !== 'blank'" :label="$t('Data to show')" :error="shown('blueprint')">
+        <el-select v-model="form.blueprint" filterable :placeholder="$t('Choose a blueprint')">
+          <el-option v-for="blueprint in blueprints" :key="blueprint.identifier" :value="blueprint.identifier" :label="blueprint.name" />
+        </el-select>
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <div class="footer">
+        <el-button :disabled="saving" @click="open = false">{{ $t('Cancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="submit">{{ $t('Create page') }}</el-button>
+      </div>
+    </template>
+  </el-dialog>
+</template>
+
 <style scoped lang="scss">
-.dialog-footer {
+.form :deep(.el-form-item) {
+  margin-block-end: 24px;
+}
+
+.target {
+  inline-size: 100%;
+}
+
+.hint {
+  inline-size: 100%;
+  margin: 4px 0 0;
+  padding: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 0.85rem;
+  text-align: start;
+}
+
+.starts {
+  min-inline-size: 0;
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+
+  legend {
+    padding: 0 0 8px;
+    color: var(--el-text-color-regular);
+    font-size: var(--el-form-label-font-size, 14px);
+  }
+}
+
+.start-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.start {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  .el-icon {
+    margin-block-end: 4px;
+    font-size: 18px;
+    color: var(--el-color-primary);
+  }
+
+  span {
+    color: var(--el-text-color-secondary);
+    font-size: 0.82rem;
+  }
+
+  &:hover {
+    border-color: var(--el-color-primary-light-5);
+  }
+
+  &.on {
+    border-color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
 }
 
-.create-plugin-drawer {
-  --el-drawer-padding-primary: 10px;
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
-:deep(.el-drawer__header) {
-  margin-bottom: 0;
-}
-
-.full-width-input {
-  width: 100%;
-}
-
-.el-input {
-  height: 38px; /* Set your desired height */
+@media (prefers-reduced-motion: reduce) {
+  .start {
+    transition: none;
+  }
 }
 </style>

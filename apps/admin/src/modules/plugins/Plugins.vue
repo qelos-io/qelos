@@ -6,18 +6,19 @@
       :create-route-query="{mode: 'quick-create'}" 
     />
     <YourPluginsList/>
-    <QuickPluginFormModal :visible="$route.query.mode === 'quick-create'" @close="$router.push({query: {mode: undefined}})" @saved="afterSave" />
+    <NewPluginDialog :visible="$route.query.mode === 'quick-create'" @close="closeDialog" />
   </div>
 </template>
 <script lang="ts" setup>
 import ListPageTitle from '../core/components/semantics/ListPageTitle.vue'
-import QuickPluginFormModal from './components/QuickPluginFormModal.vue';
+import NewPluginDialog from './components/new-plugin/NewPluginDialog.vue';
 import YourPluginsList from './components/YourPluginsList.vue';
-import { usePluginsList } from './store/plugins-list';
+import { useRoute, useRouter } from 'vue-router';
 
-const store = usePluginsList()
+const route = useRoute();
+const router = useRouter();
 
-function afterSave() {
-  store.retry();
+function closeDialog() {
+  if (route.query.mode === 'quick-create') router.push({ query: { ...route.query, mode: undefined, option: undefined } });
 }
 </script>

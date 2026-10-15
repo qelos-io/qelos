@@ -103,8 +103,17 @@ export function canEditLive(mfe: Partial<IMicroFrontend>): boolean {
   return mfeKind(mfe) === 'page' && mfeSource(mfe) !== 'url';
 }
 
+/** url-safe text that keeps letters of any language: "Sales Report!" → "sales-report" */
+export function slugify(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}_]+/gu, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export function newMicroFrontend(kind: Exclude<MfeKind, 'unplaced'>, name: string): IMicroFrontend {
-  const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'page';
+  const slug = slugify(name) || 'page';
   const base = {
     name,
     description: '',
