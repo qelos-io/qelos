@@ -1411,15 +1411,12 @@ const railSteps = computed(() =>
               </template>
               <el-select
                 v-model="responseFormat"
-                :placeholder="$t('Select response format')"
+                value-key="type"
+                :placeholder="$t('Default (no format constraint)')"
                 clearable
                 size="large"
                 class="w-full"
               >
-                <el-option
-                  :label="$t('Default (no format constraint)')"
-                  :value="undefined"
-                />
                 <el-option
                   :label="$t('JSON Object')"
                   :value="{ type: 'json_object' }"
