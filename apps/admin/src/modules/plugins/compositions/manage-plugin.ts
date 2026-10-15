@@ -15,7 +15,10 @@ export function useEditPlugin(pluginId?: string) {
 
   const { submit: updatePlugin, submitting } = useSubmitting(
     (changes: Partial<IPlugin>) =>
-      pluginsService.update(pluginId, changes).then(retry),
+      pluginsService.update(pluginId, changes).then(async (updated) => {
+        await retry();
+        return updated || changes;
+      }),
     {
       success: 'Plugin updated successfully',
       error: (err: Error & any) => {

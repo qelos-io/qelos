@@ -1,369 +1,252 @@
-<template>
-  <div class="plugins-container">
-    <el-skeleton :loading="store.loading" :count="3" animated>
-      <template #template>
-        <div class="plugins-grid">
-          <div class="plugin-skeleton" v-for="i in 3" :key="i">
-            <el-skeleton-item variant="h3" style="width: 40%" />
-            <el-skeleton-item variant="text" style="width: 60%" />
-            <el-skeleton-item variant="text" style="width: 50%" />
-          </div>
-        </div>
-      </template>
-      
-      <template #default>
-        <div v-if="plugins.length === 0" class="empty-state">
-          <el-empty :description="$t('No plugins found')">
-            <el-button type="primary" @click="$router.push({ name: 'createPlugin' })">
-              <el-icon><icon-plus /></el-icon>
-              {{ $t('Add Plugin') }}
-            </el-button>
-          </el-empty>
-        </div>
-        
-        <div v-else class="plugins-grid">
-          <div v-for="plugin in plugins" 
-               :key="plugin._id"
-               :id="'plugin-' + plugin._id"
-               class="plugin-card"
-               @click="$router.push({name: 'editPlugin', params: {pluginId: plugin._id}})">
-            
-            <div class="plugin-header">
-              <div class="plugin-title">
-                <h3>
-                  <router-link :to="{name: 'editPlugin', params: {pluginId: plugin._id}}" @click.stop>
-                    {{ plugin.name }}
-                  </router-link>
-                </h3>
-                <div class="plugin-badge" :class="getMicroFrontendsBadgeClass(plugin)">
-                  {{ plugin.microFrontends ? plugin.microFrontends.length : 0 }} {{ $t('Micro-Frontends') }}
-                </div>
-              </div>
-              <div class="plugin-description">
-                {{ plugin.description || $t('No description provided') }}
-              </div>
-            </div>
-            
-            <div class="plugin-details" v-if="plugin.microFrontends && plugin.microFrontends.length > 0">
-              <h4>{{ $t('Micro-Frontends') }}</h4>
-              <div class="details-list">
-                <div v-for="(mf, index) in plugin.microFrontends" :key="index" class="detail-item">
-                  <div class="detail-name">
-                    {{ mf.name }}
-                    <span v-if="mf.guest" class="guest-badge">{{ $t('Guest') }}</span>
-                  </div>
-                  <div class="detail-actions" v-if="mf.route">
-                    <el-button size="small" type="primary" @click.stop="$router.push('/' + mf.route.path)" circle>
-                      <el-icon><icon-view /></el-icon>
-                    </el-button>
-                    <el-button size="small" type="warning" v-if="mf.guest" @click.stop="$router.push('screen-editor/' + mf.route.path)" circle>
-                      <el-icon><icon-edit /></el-icon>
-                    </el-button>
-                  </div>
-                  <div class="detail-type" v-else>
-                    <el-tag size="small" type="info" effect="plain">
-                      {{ $t('No Route') }}
-                    </el-tag>
-                  </div>
-                </div>
-                
-                <div v-if="plugin.microFrontends.length === 0" class="no-details">
-                  {{ $t('No micro-frontends defined') }}
-                </div>
-              </div>
-            </div>
-            
-            <div class="plugin-details" v-if="plugin.subscribedEvents && plugin.subscribedEvents.length > 0">
-              <h4>{{ $t('Subscribed Events') }}</h4>
-              <div class="details-list">
-                <div v-for="(event, index) in plugin.subscribedEvents" :key="index" class="detail-item">
-                  <div class="detail-name">
-                    {{ event.eventName || '*' }}
-                  </div>
-                  <div class="detail-type">
-                    <el-tag size="small" type="info" effect="plain">
-                      {{ event.source || '*' }}
-                    </el-tag>
-                    <el-tag size="small" type="success" effect="plain" v-if="event.kind">
-                      {{ event.kind }}
-                    </el-tag>
-                  </div>
-                </div>
-                
-                <div v-if="plugin.subscribedEvents.length === 0" class="no-details">
-                  {{ $t('No events subscribed') }}
-                </div>
-              </div>
-            </div>
-            
-            <div class="plugin-actions">
-              <el-tooltip :content="$t('Edit Plugin')" placement="top">
-                <el-button 
-                  type="primary" 
-                  circle 
-                  @click.stop="$router.push({name: 'editPlugin', params: {pluginId: plugin._id}})"
-                >
-                  <el-icon><icon-edit /></el-icon>
-                </el-button>
-              </el-tooltip>
-              
-              <el-tooltip :content="$t('Remove Plugin')" placement="top">
-                <el-button 
-                  type="danger" 
-                  circle 
-                  @click.stop="remove(plugin)"
-                >
-                  <el-icon><icon-delete /></el-icon>
-                </el-button>
-              </el-tooltip>
-            </div>
-          </div>
-          
-          <AddNewCard 
-            :title="$t('Create new Plugin')"
-            :description="$t('Add a new plugin to your collection')"
-            :to="{ name: 'createPlugin' }"
-          />
-        </div>
-      </template>
-    </el-skeleton>
-  </div>
-</template>
-
 <script lang="ts" setup>
-import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { Delete, Edit, MoreFilled, Plus, View } from '@element-plus/icons-vue';
 import { usePluginsList } from '@/modules/plugins/store/plugins-list';
 import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
 import { IPlugin } from '@/services/types/plugin';
-import { useRoute } from 'vue-router';
-import { computed } from 'vue';
+import { mfeKind, mfePageHref, summarizePlugin, type PluginSection } from '../services/plugin-effects';
 
+const { t } = useI18n();
 const route = useRoute();
+const router = useRouter();
 const store = usePluginsList();
 
 const plugins = computed(() => {
-  if (!route.query.q) return store.plugins;
-  const query = String(route.query.q).toLowerCase();
-  return store.plugins.filter(plugin => 
-    plugin.name.toLowerCase().includes(query) ||
-    (plugin.description && plugin.description.toLowerCase().includes(query)) || 
-    (plugin.apiPath && plugin.apiPath.toLowerCase().includes(query))
+  const query = String(route.query.q || '').trim().toLowerCase();
+  if (!query) return store.plugins;
+  return store.plugins.filter(
+    (plugin) =>
+      plugin.name.toLowerCase().includes(query) ||
+      plugin.description?.toLowerCase().includes(query) ||
+      plugin.apiPath?.toLowerCase().includes(query),
   );
 });
 
 const remove = useConfirmAction(store.removePlugin);
 
-// Get badge class based on number of micro-frontends
-const getMicroFrontendsBadgeClass = (plugin: IPlugin) => {
-  const count = plugin.microFrontends?.length || 0;
-  if (count === 0) return 'empty';
-  if (count < 3) return 'small';
-  if (count < 6) return 'medium';
-  return 'large';
-};
+const MAX_PAGE_LINKS = 3;
+
+function effectChips(plugin: IPlugin) {
+  const s = summarizePlugin(plugin);
+  const chips: { key: string; label: string; section: PluginSection }[] = [];
+  const add = (key: string, section: PluginSection, count: number, one: string, many: string) =>
+    count && chips.push({ key, section, label: t(count === 1 ? one : many, { n: count }) });
+  add('pages', 'ui', s.pages, '{n} page', '{n} pages');
+  add('components', 'ui', s.components, '{n} component', '{n} components');
+  add('modals', 'ui', s.modals, '{n} modal', '{n} modals');
+  add('injectables', 'ui', s.injectables, '{n} HTML injection', '{n} HTML injections');
+  if (s.proxy) chips.push({ key: 'proxy', section: 'endpoints', label: t('API proxy') });
+  add('cruds', 'endpoints', s.cruds, '{n} data API', '{n} data APIs');
+  add('events', 'events', s.events, '{n} event', '{n} events');
+  return chips;
+}
+
+function pageLinks(plugin: IPlugin) {
+  return (plugin.microFrontends || [])
+    .filter((mfe) => mfeKind(mfe) === 'page' && mfe.active !== false)
+    .map((mfe) => ({ name: mfe.name, href: mfePageHref(mfe)! }));
+}
+
+const open = (plugin: IPlugin, section?: PluginSection) =>
+  router.push({ name: 'editPlugin', params: { pluginId: plugin._id }, query: section ? { section } : undefined });
 </script>
 
-<style scoped>
-.plugins-container {
+<template>
+  <div class="plugins">
+    <ul v-if="store.loading && !store.loaded" class="list" aria-hidden="true">
+      <li v-for="i in 4" :key="i" class="row skeleton">
+        <el-skeleton animated>
+          <template #template>
+            <el-skeleton-item variant="h3" style="inline-size: 30%" />
+            <el-skeleton-item variant="text" style="inline-size: 55%" />
+          </template>
+        </el-skeleton>
+      </li>
+    </ul>
+
+    <div v-else-if="!plugins.length" class="empty">
+      <el-empty :description="store.plugins.length ? $t('No plugin matches your search') : $t('No plugins yet')">
+        <p v-if="!store.plugins.length" class="empty-hint" dir="auto">
+          {{ $t('A plugin adds pages, endpoints, components or event listeners to your app, from your own code or an external service.') }}
+        </p>
+        <el-button v-if="!store.plugins.length" type="primary" :icon="Plus" @click="router.push({ query: { mode: 'quick-create' } })">{{ $t('Create plugin') }}</el-button>
+      </el-empty>
+    </div>
+
+    <ul v-else class="list">
+      <li v-for="plugin in plugins" :key="plugin._id" :id="'plugin-' + plugin._id" class="row">
+        <div class="main">
+          <router-link class="name" dir="auto" :to="{ name: 'editPlugin', params: { pluginId: plugin._id } }">{{ plugin.name }}</router-link>
+          <p v-if="plugin.description" class="description" dir="auto">{{ plugin.description }}</p>
+
+          <ul v-if="effectChips(plugin).length" class="chips" :aria-label="$t('What this plugin adds')">
+            <li v-for="chip in effectChips(plugin)" :key="chip.key">
+              <router-link class="chip" :class="chip.key" :to="{ name: 'editPlugin', params: { pluginId: plugin._id }, query: { section: chip.section } }">{{ chip.label }}</router-link>
+            </li>
+          </ul>
+          <p v-else class="idle">{{ $t('Does nothing yet') }} — <router-link :to="{ name: 'editPlugin', params: { pluginId: plugin._id } }">{{ $t('add a page, endpoint or event') }}</router-link></p>
+
+          <p v-if="pageLinks(plugin).length" class="pages">
+            <el-icon aria-hidden="true"><View /></el-icon>
+            <template v-for="(page, i) in pageLinks(plugin).slice(0, MAX_PAGE_LINKS)" :key="page.href">
+              <router-link :to="page.href" dir="auto">{{ page.name }}</router-link><span v-if="i < Math.min(pageLinks(plugin).length, MAX_PAGE_LINKS) - 1" aria-hidden="true">·</span>
+            </template>
+            <span v-if="pageLinks(plugin).length > MAX_PAGE_LINKS" class="more">+{{ pageLinks(plugin).length - MAX_PAGE_LINKS }}</span>
+          </p>
+        </div>
+
+        <div class="actions">
+          <el-button class="edit" :icon="Edit" @click="open(plugin)">{{ $t('Edit') }}</el-button>
+          <el-dropdown trigger="click" @command="(c: string) => c === 'remove' && remove(plugin)">
+            <el-button text circle :aria-label="`${$t('Actions')}: ${plugin.name}`"><el-icon><MoreFilled /></el-icon></el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="remove" :icon="Delete">{{ $t('Remove plugin') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </li>
+    </ul>
+  </div>
+</template>
+
+<style scoped lang="scss">
+.list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.plugins-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 20px;
-  width: 100%;
-}
-
-.plugin-skeleton {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  padding: 20px;
-  height: 300px;
-}
-
-.empty-state {
-  margin: 40px 0;
-}
-
-.plugin-card {
-  display: flex;
-  flex-direction: column;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  padding: 20px;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px solid #ebeef5;
-}
-
-.plugin-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  border-color: var(--el-color-primary-light-5);
-}
-
-.plugin-header {
-  margin-bottom: 16px;
-}
-
-.plugin-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.plugin-title h3 {
+  gap: 10px;
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--el-color-primary);
+  padding: 0;
+  list-style: none;
 }
 
-.plugin-title a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.plugin-title a:hover {
-  text-decoration: underline;
-}
-
-.plugin-badge {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 500;
-}
-
-.plugin-badge.empty {
-  background-color: #f5f7fa;
-  color: #909399;
-}
-
-.plugin-badge.small {
-  background-color: #ecf5ff;
-  color: #409eff;
-}
-
-.plugin-badge.medium {
-  background-color: #f0f9eb;
-  color: #67c23a;
-}
-
-.plugin-badge.large {
-  background-color: #fdf6ec;
-  color: #e6a23c;
-}
-
-.plugin-description {
-  color: #606266;
-  font-size: 14px;
-  line-height: 1.5;
-  margin-bottom: 12px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.plugin-details {
-  flex: 1;
-  margin-bottom: 16px;
-}
-
-.plugin-details h4 {
-  margin: 0 0 12px 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-  border-bottom: 1px solid #ebeef5;
-  padding-bottom: 8px;
-}
-
-.details-list {
+.row {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding-right: 8px;
-}
-
-.detail-item {
-  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
-  border-radius: 4px;
-  background-color: #f5f7fa;
-  transition: background-color 0.2s;
-}
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--surface, var(--el-bg-color));
+  transition: border-color 0.15s ease;
 
-.detail-item:hover {
-  background-color: #ecf5ff;
-}
-
-.detail-name {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 500;
-  color: #303133;
-}
-
-.guest-badge {
-  color: #e6a23c;
-  font-size: 12px;
-  background-color: #fdf6ec;
-  padding: 2px 6px;
-  border-radius: 10px;
-  margin-inline-start: 4px;
-}
-
-.detail-type, .detail-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.detail-actions .el-button {
-  padding: 4px;
-  font-size: 12px;
-}
-
-.no-details {
-  color: #909399;
-  font-style: italic;
-  text-align: center;
-  padding: 20px 0;
-}
-
-.plugin-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  padding-top: 12px;
-  border-top: 1px solid #ebeef5;
-}
-
-@media (max-width: 768px) {
-  .plugins-grid {
-    grid-template-columns: 1fr;
+  &:hover {
+    border-color: var(--el-border-color);
   }
 }
 
-@media (min-width: 769px) and (max-width: 1200px) {
-  .plugins-grid {
-    grid-template-columns: repeat(2, 1fr);
+.skeleton {
+  min-block-size: 76px;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.name {
+  align-self: flex-start;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--el-color-primary);
+  }
+}
+
+.description,
+.idle,
+.pages {
+  margin: 0;
+  padding: 0;
+  text-align: start;
+  font-size: 0.9rem;
+  color: var(--el-text-color-secondary);
+}
+
+.idle a {
+  color: var(--el-color-primary);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--el-fill-color);
+  color: var(--el-text-color-regular);
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--el-color-primary-light-9);
+    color: var(--el-color-primary);
+  }
+}
+
+.pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+
+  a {
+    color: var(--el-color-primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.empty-hint {
+  max-inline-size: 42ch;
+  margin: 0 0 12px;
+  padding: 0;
+  color: var(--el-text-color-secondary);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .row {
+    padding: 14px;
+  }
+
+  .edit {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .chip {
+    transition: none;
   }
 }
 </style>
