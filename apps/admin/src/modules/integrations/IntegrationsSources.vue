@@ -1,263 +1,355 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { IntegrationSourceKind } from '@qelos/global-types';
-import { useRoute } from 'vue-router';
+import { computed, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { ArrowDown, ArrowLeft, Delete, Plus } from '@element-plus/icons-vue';
+import { IntegrationSourceKind, STATUS_CHECK_SUPPORTED_INTEGRATION_SOURCE_KINDS, type IIntegrationSourceStatusResult } from '@qelos/global-types';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
-import BlockItem from '@/modules/core/components/layout/BlockItem.vue';
 import integrationSourcesService from '@/services/apis/integration-sources-service';
 import { useConfirmAction } from '../core/compositions/confirm-action';
-import RemoveButton from '@/modules/core/components/forms/RemoveButton.vue';
-import ListPageTitle from '@/modules/core/components/semantics/ListPageTitle.vue';
 import IntegrationSourceFormModal from '@/modules/integrations/components/IntegrationSourceFormModal.vue';
-import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
 import { useSecuredHeadersMasked } from './compositions/use-secured-headers-masked';
 import { useConnectionOptions } from './compositions/connection-options';
+import { formatRelative } from '@/modules/admins/services/event-presentation';
 
 const { securedHeadersMasked } = useSecuredHeadersMasked();
 const route = useRoute();
-const kind = route.params.kind.toString() as IntegrationSourceKind;
-const kindData = useIntegrationKinds()[kind];
+const router = useRouter();
+const { t, locale } = useI18n();
+
+const kind = computed(() => route.params.kind.toString() as IntegrationSourceKind);
+const kindData = computed(() => (useIntegrationKinds() as Record<string, { logo?: string; name: string }>)[kind.value]);
 const store = useIntegrationSourcesStore();
-const data = computed(() => store.groupedSources[kind]);
+const connections = computed(() => (store.groupedSources?.[kind.value] || []) as any[]);
+const templates = computed(() => useConnectionOptions(kind.value));
+const canTest = computed(() => STATUS_CHECK_SUPPORTED_INTEGRATION_SOURCE_KINDS.includes(kind.value));
 
-const suggestedOptions = useConnectionOptions(kind);
-
-const filteredConnections = computed(() => data.value || []);
 const formVisible = ref(false);
-const editingIntegration = ref<any>(null);
-const isEditing = ref(false);
+const editing = ref<any>(null);
 
-
-const { submit: saveConnection, submitting: saveConnectionSubmitting } = useSubmitting(
-  async (formData: any) => {
-    try {
-
-      let savedData;
-      if (editingIntegration.value?._id) {
-        isEditing.value = true;
-        // Update an existing connection
-        savedData = await integrationSourcesService.update(editingIntegration.value._id, formData);
-      } else {
-        isEditing.value = false;
-        // Create a new connection in the database
-        savedData = await integrationSourcesService.create(formData);
-      }
-      // Update the connection list after saving
-      await store.retry();
-
-      return savedData;
-    } catch (error) {
-      throw error;
-    }
-  },
-  {
-    success: () => (isEditing.value ? 'Connection updated successfully' : 'Connection created successfully'),
-    error: 'Failed to save connection',
-  },
-  () => (formVisible.value = false)
-);
-
-const { submit: deleteConnectionBase } = useSubmitting(
-  async (_id: string) => {
-    try {
-
-      await integrationSourcesService.remove(_id);
-      await store.retry();
-      // removing securitedHeader from HTTP form 
-      if (Object.keys(securedHeadersMasked.value).length > 0) {
-        securedHeadersMasked.value = {};
-      }
-
-      return _id;
-    } catch (error) {
-      throw error;
-    }
-  },
-  {
-    success: 'Connection deleted successfully',
-    error: 'Failed to delete connection',
-  }
-);
-
-const deleteConnection = useConfirmAction(deleteConnectionBase, {
-  text: 'Are you sure you want to delete this connection?',
-  title: 'Confirm Delete',
-  type: 'warning'
-});
-
-function getDefaultMetadata(kind: IntegrationSourceKind) {
-  if (kind === 'linkedin') {
-    return {
-      scope: 'openid email profile',
-    };
-  }
-  if (kind === 'facebook') {
-    return {
-      scope: 'openid email public_profile',
-    };
-  }
-  if (kind === 'google') {
-    return {
-      scope: 'openid email profile',
-    };
-  }
-  if (kind === 'github') {
-    return {
-      scope: 'openid email profile',
-    };
-  }
+function defaultMetadata(k: IntegrationSourceKind): Record<string, unknown> {
+  if (k === 'linkedin' || k === 'google' || k === 'github') return { scope: 'openid email profile' };
+  if (k === 'facebook') return { scope: 'openid email public_profile' };
   return {};
 }
 
-const openCreateForm = () => {
-  editingIntegration.value = {
-    kind,
-    name: '',
-    labels: [],
-    metadata: getDefaultMetadata(kind),
-    authentication: {},
-  };
+const create = () => {
+  editing.value = { kind: kind.value, name: '', labels: [], metadata: defaultMetadata(kind.value), authentication: {} };
   formVisible.value = true;
 };
 
-const openEditForm = (connection) => {
-  if (!connection) {
-    return;
-  }
-
-  editingIntegration.value = {
-    ...connection,
-    authentication: connection.authentication || {},
-  };
-
+const edit = (connection: any) => {
+  editing.value = { ...connection, authentication: connection.authentication || {} };
   formVisible.value = true;
 };
 
-const createOptionalConnection = (value: string) => {
-  const option = suggestedOptions.find((option) => option.value === value);
-  if (!option) {
-    return;
-  }
-  openEditForm({
+function fromTemplate(value: string) {
+  const option = templates.value.find((entry) => entry.value === value);
+  if (!option) return;
+  edit({
     ...option.data,
-    authentication: {
-      ...option.data.authentication,
-    },
+    authentication: { ...option.data?.authentication },
     name: option.label,
-    kind,
+    kind: kind.value,
     labels: [],
-    metadata: {
-      ...getDefaultMetadata(kind),
-      ...option.data.metadata,
-    },
+    metadata: { ...defaultMetadata(kind.value), ...option.data?.metadata },
   });
-};
+}
 
-const closeForm = () => {
-  formVisible.value = null;
-};
+const { submit: save, submitting } = useSubmitting(
+  async (data: any) => {
+    const saved = editing.value?._id ? await integrationSourcesService.update(editing.value._id, data) : await integrationSourcesService.create(data);
+    await store.retry();
+    return saved;
+  },
+  { success: () => (editing.value?._id ? 'Connection updated successfully' : 'Connection created successfully'), error: 'Failed to save connection' },
+  () => (formVisible.value = false),
+);
+
+const { submit: removeBase } = useSubmitting(
+  async (id: string) => {
+    await integrationSourcesService.remove(id);
+    await store.retry();
+    if (Object.keys(securedHeadersMasked.value).length > 0) securedHeadersMasked.value = {};
+    return id;
+  },
+  { success: 'Connection deleted successfully', error: 'Failed to delete connection' },
+);
+const remove = useConfirmAction(removeBase, { text: 'Are you sure you want to delete this connection?', title: 'Confirm Delete', type: 'warning' });
+
+// ---- test a saved connection ----
+const results = ref<Record<string, IIntegrationSourceStatusResult | { status: 'failed'; message: string; checkedAt: string }>>({});
+const testing = ref<Record<string, boolean>>({});
+async function test(connection: any) {
+  testing.value[connection._id] = true;
+  try {
+    results.value[connection._id] = await integrationSourcesService.checkStatus(connection._id);
+  } catch (error: any) {
+    results.value[connection._id] = { status: 'failed', message: error?.response?.data?.message || error?.message || t('Connection check failed'), checkedAt: new Date().toISOString() };
+  } finally {
+    testing.value[connection._id] = false;
+  }
+}
+const ok = (id: string) => results.value[id]?.status === 'connected';
+const when = (id: string) => (results.value[id]?.checkedAt ? formatRelative(results.value[id].checkedAt, new Date(), locale.value || undefined) : '');
+
+// the few fields worth showing under the name
+const details = (connection: any) =>
+  [
+    ['URL', connection.metadata?.url],
+    ['Base Url', connection.metadata?.baseUrl],
+    ['Client ID', connection.metadata?.clientId],
+    ['Scope', connection.metadata?.scope],
+    ['API Endpoint', connection.metadata?.apiEndpoint],
+  ].filter(([, value]) => !!value) as [string, string][];
 </script>
 
 <template>
-  <ListPageTitle @create="openCreateForm" :options="suggestedOptions" @selected="createOptionalConnection($event)">
-    <img v-if="kindData?.logo" class="head-logo" :alt="kindData?.name" :src="kindData?.logo" />
-    <span>{{ kindData?.name }} {{ $t('Connections') }}</span>
-  </ListPageTitle>
+  <div class="source-page">
+    <header class="head">
+      <el-button text class="back" :aria-label="$t('Back to connections')" @click="router.push({ name: 'integrations', query: { view: 'connections' } })">
+        <el-icon class="dir-icon"><ArrowLeft /></el-icon><span>{{ $t('Connections') }}</span>
+      </el-button>
+      <div class="title-row">
+        <img v-if="kindData?.logo" class="logo" :alt="kindData.name" :src="kindData.logo" />
+        <h1>{{ kindData?.name || kind }}</h1>
+        <span class="count">{{ $t('{count} connections', { count: connections.length }) }}</span>
+        <div class="grow" />
+        <el-dropdown v-if="templates.length" trigger="click" @command="fromTemplate">
+          <el-button>{{ $t('From a template') }}<el-icon class="caret"><ArrowDown /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item v-for="option in templates" :key="option.value" :command="option.value">{{ option.label }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-button type="primary" @click="create"><el-icon><Plus /></el-icon>{{ $t('Create Connection') }}</el-button>
+      </div>
+    </header>
 
-  <!-- Connections cards -->
-  <div class="blocks-list">
-    <BlockItem v-for="connection in filteredConnections" :key="connection._id" class="connection-card">
-      <template #header>
-        <h3>{{ connection.name }}</h3>
-      </template>
-      <p>
-        <strong>{{ $t('Labels') }}:</strong>
-        <el-tag v-for="label in connection.labels" :key="label" class="role">{{ label }}</el-tag>
-      </p>
-      <p v-if="connection.metadata?.url">
-        <strong>{{ $t('URL') }}:</strong> {{ connection.metadata.url }}
-      </p>
-      <p v-if="connection.metadata?.clientId">
-        <strong>{{ $t('Client ID') }}:</strong> {{ connection.metadata.clientId }}
-      </p>
-      <p v-if="connection.metadata?.baseUrl" class="base-url-container">
-        <strong class="base-url-text">{{ $t('Base Url') }}:</strong>
-        <span class="base-url">{{ connection.metadata.baseUrl }}</span>
-      </p>
-      <p v-if="connection.metadata?.scope">
-        <strong>{{ $t('Scope') }}:</strong> {{ connection.metadata.scope }}
-      </p>
-      <p v-if="connection.metadata?.apiEndpoint">
-        <strong>{{ $t('API Endpoint') }}:</strong> {{ connection.metadata.apiEndpoint }}
-      </p>
-      <template #actions>
-        <el-button size="small" type="primary" @click="openEditForm(connection)">{{ $t('Edit') }}</el-button>
-        <RemoveButton wide @click="deleteConnection(connection._id)" />
-      </template>
-    </BlockItem>
+    <el-skeleton v-if="!store.loaded" :rows="4" animated />
+
+    <div v-else-if="!connections.length" class="empty">
+      <h2>{{ $t('No connections yet') }}</h2>
+      <p>{{ $t('No connections found. Create one to get started.') }}</p>
+      <el-button type="primary" @click="create">{{ $t('Create Connection') }}</el-button>
+    </div>
+
+    <ul v-else class="rows">
+      <li v-for="connection in connections" :key="connection._id" class="row">
+        <div class="main">
+          <strong class="name" dir="auto">{{ connection.name }}</strong>
+          <p v-if="connection.labels?.length" class="labels"><el-tag v-for="label in connection.labels" :key="label" size="small" effect="plain">{{ label }}</el-tag></p>
+          <dl class="details">
+            <div v-for="[label, value] in details(connection)" :key="label"><dt>{{ $t(label) }}</dt><dd dir="ltr">{{ value }}</dd></div>
+          </dl>
+          <p v-if="results[connection._id]" class="result" :class="{ ok: ok(connection._id) }" role="status">
+            <font-awesome-icon :icon="['fas', ok(connection._id) ? 'circle-check' : 'circle-xmark']" aria-hidden="true" />
+            <span dir="auto">{{ results[connection._id].message || (ok(connection._id) ? $t('Connected') : $t('Connection failed')) }}</span>
+            <span class="when">{{ when(connection._id) }}</span>
+          </p>
+        </div>
+        <div class="actions">
+          <el-button v-if="canTest" size="small" :loading="testing[connection._id]" @click="test(connection)">{{ $t('Test connection') }}</el-button>
+          <el-button size="small" type="primary" plain @click="edit(connection)">{{ $t('Edit') }}</el-button>
+          <el-button size="small" text circle type="danger" :aria-label="`${$t('Remove')}: ${connection.name}`" @click="remove(connection._id)"><el-icon><Delete /></el-icon></el-button>
+        </div>
+      </li>
+    </ul>
+
+    <IntegrationSourceFormModal
+      v-model:visible="formVisible"
+      v-model:editing-integration="editing"
+      :kind="kind"
+      :save-loading="submitting"
+      @save="save"
+      @close="formVisible = false"
+    />
   </div>
-
-  <!-- If there are no connections -->
-  <EmptyState v-if="store.loaded && !filteredConnections.length"
-    description="No connections found. Create one to get started.">
-    <el-button type="primary" @click="openCreateForm">{{ $t('Create Connection') }}</el-button>
-  </EmptyState>
-
-  <IntegrationSourceFormModal
-    v-model:visible="formVisible"
-    v-model:editing-integration="editingIntegration"
-    :kind="kind"
-    :save-loading="saveConnectionSubmitting"
-    @save="saveConnection"
-    @close="closeForm"
-  />
 </template>
 
-<style scoped>
-.base-url-container {
+<style scoped lang="scss">
+.source-page {
   display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px 20px 32px;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.back {
+  margin-inline-start: -10px;
+  padding-inline: 10px;
+  gap: 4px;
+  color: var(--el-text-color-secondary);
+}
+
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 3px;
-  width: 100%;
+  gap: 8px 12px;
+  inline-size: 100%;
+
+  h1 {
+    margin: 0;
+    padding: 0;
+    font-size: 1.5rem;
+  }
 }
 
-.base-url-text {
-  flex-shrink: 0;
+.logo {
+  inline-size: 32px;
+  block-size: 32px;
+  object-fit: contain;
 }
 
-.base-url {
-  flex-grow: 1;
-  white-space: nowrap;
+.count {
+  color: var(--el-text-color-secondary);
+}
+
+.grow {
+  flex: 1;
+}
+
+.caret {
+  margin-inline-start: 6px;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+  list-style: none;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: calc(var(--border-radius, 6px) + 4px);
+  background: var(--surface);
+
+  .row + .row {
+    border-block-start: 1px solid var(--el-border-color-extra-light);
+  }
 }
 
-h1 {
-  align-items: center;
+.row {
   display: flex;
-  flex-direction: row;
-  gap: 10px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
 }
 
-.head-logo {
-  height: 30px;
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.name {
+  font-size: 1.02rem;
+}
+
+.labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   margin: 0;
 }
 
-.blocks-list {
+.details {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+
+  div {
+    display: flex;
+    gap: 8px;
+    min-inline-size: 0;
+  }
+
+  dt {
+    flex: none;
+    color: var(--el-text-color-secondary);
+    font-size: 0.84rem;
+  }
+
+  dd {
+    min-inline-size: 0;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.86rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.result {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--el-color-danger);
+  font-size: 0.86rem;
+
+  &.ok {
+    color: var(--el-color-success);
+  }
 }
 
-.connection-card {
-  width: 28%;
-  min-width: 250px;
+.when {
+  color: var(--el-text-color-secondary);
 }
 
-.role {
-  margin: 0 3px;
+.actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.empty {
+  padding: 40px 20px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: calc(var(--border-radius, 6px) + 4px);
+  text-align: center;
+
+  h2 {
+    margin: 0 0 6px;
+    padding: 0;
+    font-size: 1.2rem;
+  }
+
+  p {
+    margin: 0 0 14px;
+    color: var(--el-text-color-secondary);
+    text-align: center;
+  }
+}
+
+[dir='rtl'] .dir-icon {
+  transform: scaleX(-1);
+}
+
+@media (max-width: 639px) {
+  .source-page {
+    padding: 8px 12px 24px;
+  }
+
+  .row {
+    flex-direction: column;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+  }
 }
 </style>

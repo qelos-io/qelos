@@ -88,7 +88,9 @@ watch(visible, (value) => {
     }
     
     // Skip type selection if AI agent mode is explicitly set OR if we're cloning
-    showTypeSelection.value = isNewIntegration.value && !props.isAIAgentMode && route.query.clone !== 'true';
+    const workflowChosen = isNewIntegration.value && route.query.type === 'workflow';
+    if (workflowChosen) setSelectedViewMode(IntegrationType.Workflow, { manual: true });
+    showTypeSelection.value = isNewIntegration.value && !props.isAIAgentMode && route.query.clone !== 'true' && !workflowChosen;
   }
 });
 
@@ -225,7 +227,7 @@ const applyPastedIntegration = () => {
       </el-form>
     </template>
     
-    <template #footer>
+    <template #footer v-if="!showTypeSelection">
       <div class="dialog-footer">
         <!-- Mode Selection Footer -->
         <template v-if="isAIAgentView">
