@@ -9,11 +9,7 @@ const useAdminWorkspacesList = defineStore('admin-workspaces-list', function use
 
   const { result, retry, loading } = useDispatcher<IWorkspace[]>(async () => {
     const workspaces = await workspacesService.getOne('all');
-      return workspaces.map(workspace => ({
-      ...workspace,
-      labels: workspace.labels || ['store'] // added to check the filter works
-  
-    }));
+    return workspaces.map(workspace => ({ ...workspace, labels: workspace.labels || [] }));
   }, []);
 
   const { submit: remove } = useSubmitting(

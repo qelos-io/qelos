@@ -39,21 +39,10 @@ export const workspacesRoutes: RouteRecordRaw = {
           name: 'editMyWorkspacePayments',
           component: async () => (await import('./tabs/PaymentsTab.vue')).default,
         },
-        {
-          path: 'integrations',
-          name: 'editMyWorkspaceIntegrations',
-          component: async () => (await import('./tabs/IntegrationsTab.vue')).default,
-        },
-        {
-          path: 'security',
-          name: 'editMyWorkspaceSecurity',
-          component: async () => (await import('./tabs/SecurityTab.vue')).default,
-        },
-        {
-          path: 'advanced',
-          name: 'editMyWorkspaceAdvanced',
-          component: async () => (await import('./tabs/AdvancedTab.vue')).default,
-        }
+        // sections that were announced but never built now lead to the general settings
+        { path: 'integrations', redirect: { name: 'editMyWorkspaceGeneral' } },
+        { path: 'security', redirect: { name: 'editMyWorkspaceGeneral' } },
+        { path: 'advanced', redirect: { name: 'editMyWorkspaceGeneral' } },
       ]
     }
   ],

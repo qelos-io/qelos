@@ -7,6 +7,7 @@
 <script lang="ts" setup>
 import BillingOverview from '@/modules/billing/components/BillingOverview.vue'
 
+defineOptions({ inheritAttrs: false })
 defineProps<{
   workspaceId: string
   workspace?: Record<string, any>

@@ -1,448 +1,296 @@
-<template>
-  <div class="members-tab">
-
-    <!-- Members List -->
-    <el-card class="members-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <h2>{{ $t('Workspace Members') }}</h2>
-          <p class="subtitle">{{ $t('People with access to this workspace') }}</p>
-          <div class="header-actions">
-            <el-button v-if="isAdmin" @click="refreshMembers" :loading="!loaded">
-              <font-awesome-icon :icon="['fas', 'refresh']" class="icon-left" />
-              {{ $t('Refresh') }}
-            </el-button>
-          </div>
-        </div>
-      </template>
-      
-      <div class="members-list">
-        <el-empty v-if="!loaded && (!members || members.length === 0)" :description="$t('No members in this workspace yet')" />
-        <el-skeleton v-else-if="!loaded" :rows="5" animated />
-        <QuickTable v-else :data="members" :columns="membersColumns">
-          <template #lastName="{ row }">
-            {{ decodeURIComponent(row.lastName) }}
-          </template>
-          <template #firstName="{ row }">
-            {{ decodeURIComponent(row.firstName) }}
-          </template>
-          <template #roles="{ row }">
-            <el-tag v-for="role in row.roles" :key="role" size="small" class="role-tag">
-              {{ role }}
-            </el-tag>
-          </template>
-          <template #actions="{ row }" v-if="isAdmin">
-            <el-dropdown @command="(command) => handleMemberAction(command, row)">
-              <el-button type="primary" plain size="small">
-                {{ $t('Actions') }}
-                <font-awesome-icon :icon="['fas', 'chevron-down']" class="icon-left" />
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="edit-role">
-                    <font-awesome-icon :icon="['fas', 'user-edit']" class="icon-left" />
-                    {{ $t('Edit Role') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item command="remove" divided>
-                    <font-awesome-icon :icon="['fas', 'user-minus']" class="icon-left" />
-                    {{ $t('Remove Member') }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-        </QuickTable> 
-      </div>
-    </el-card>
-
-    <!-- Invite Section -->
-    <el-card class="invite-card" shadow="hover" v-if="canInviteMembers">
-      <template #header>
-        <div class="card-header">
-          <h2>{{ $t('Invite Members') }}</h2>
-          <p class="subtitle">{{ $t('Add people to your workspace by email') }}</p>
-        </div>
-      </template>
-      
-      <div class="invites-list">
-        <el-empty 
-          v-if="invites.length === 0" 
-          :description="$t('No invites added yet')"
-          :image-size="100"
-        >
-          <template #default>
-            <el-button type="primary" @click="addInvite">
-              <font-awesome-icon :icon="['fas', 'user-plus']" class="icon-left" />
-              {{ $t('Add First Member') }}
-            </el-button>
-          </template>
-        </el-empty>
-        
-        <div v-else>
-          <el-form :model="{ invites }" ref="invitesFormRef" @submit.prevent>
-            <el-table :data="invites" style="width: 100%" class="invites-table">
-              <el-table-column prop="name" :label="$t('Name')" min-width="180">
-                <template #default="{ row }">
-                  <el-input 
-                    v-model="row.name" 
-                    :placeholder="$t('Enter name')"
-                    size="default"
-                  />
-                </template>
-              </el-table-column>
-              
-              <el-table-column prop="email" :label="$t('Email')" min-width="220">
-                <template #default="{ row }">
-                  <el-input 
-                    v-model="row.email" 
-                    :placeholder="$t('Enter email address')"
-                    type="email"
-                    size="default"
-                  />
-                </template>
-              </el-table-column>
-              
-              <el-table-column prop="role" :label="$t('Role')" width="200" v-if="isAdmin">
-                <template #default="{ row }">
-                  <el-select v-model="row.roles" multiple :placeholder="$t('Select role')">
-                    <el-option
-                      v-for="role in availableRoles"
-                      :key="role.value"
-                      :label="role.label"
-                      :value="role.value"
-                    />
-                  </el-select>
-                </template>
-              </el-table-column>
-              
-              <el-table-column width="80">
-                <template #default="{ $index }">
-                  <el-button 
-                    type="danger" 
-                    circle 
-                    @click="removeInvite($index)"
-                    size="small"
-                  >
-                    <font-awesome-icon :icon="['fas', 'trash']" />
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-form>
-        </div>
-        
-        <!-- Always show actions if user can invite members -->
-        <div class="invites-actions" v-if="canInviteMembers">
-          <el-button @click="addInvite" type="success" plain size="default">
-            <font-awesome-icon :icon="['fas', 'user-plus']" class="icon-left" />
-            {{ invites.length === 0 ? $t('Add First Member') : $t('Add Another Member') }}
-          </el-button>
-          <el-button class="flex-end" @click="sendInvites" type="primary" :loading="sendingInvites">
-            <font-awesome-icon :icon="['fas', 'paper-plane']" class="icon-left" />
-            {{ $t('Update Invites List') }}
-          </el-button>
-        </div>
-      </div>
-    </el-card>
-
-    <!-- Edit Role Dialog -->
-    <el-dialog
-      v-model="showEditRoleDialog"
-      :title="$t('Edit Member Role')"
-      width="400px"
-    >
-      <el-form :model="editingMember" label-width="80px">
-        <el-form-item :label="$t('Roles')">
-          <el-select
-            v-model="editingMember.roles"
-            multiple
-            :placeholder="$t('Select roles')"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="role in availableRoles"
-              :key="role.value"
-              :label="role.label"
-              :value="role.value"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showEditRoleDialog = false">{{ $t('Cancel') }}</el-button>
-        <el-button type="primary" @click="saveMemberRole" :loading="savingRole">
-          {{ $t('Save') }}
-        </el-button>
-      </template>
-    </el-dialog>
-  </div>
-</template>
-
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { Delete, Edit, MoreFilled, Plus } from '@element-plus/icons-vue';
 import { useWorkspaceMembers } from '../compositions/workspaces';
-import QuickTable from '@/modules/pre-designed/components/QuickTable.vue';
-import { ElNotification, ElMessageBox } from 'element-plus';
 import { useAuth } from '@/modules/core/compositions/authentication';
 import workspacesMembersService from '@/services/apis/workspaces-members-service';
 import workspacesService from '@/services/apis/workspaces-service';
+import UserAvatar from '@/modules/users/components/UserAvatar.vue';
+import { getUserDisplayName } from '@/modules/users/services/display-name';
+import { roleTagType } from '@/modules/users/services/user-presentation';
+import { cleanInvites } from '../services/workspace-presentation';
 
-const props = defineProps({
-  workspaceId: {
-    type: String,
-    required: true
-  },
-  workspace: {
-    type: Object,
-    default: () => ({})
-  }
-});
+defineOptions({ inheritAttrs: false });
+const props = defineProps<{ workspaceId: string; workspace?: any }>();
+const emit = defineEmits<{ (e: 'refresh-workspace'): void }>();
 
-const emit = defineEmits(['refresh-workspace']);
-
+const { t } = useI18n();
 const { user } = useAuth();
-const { load: loadMembers, members, loaded } = useWorkspaceMembers(props.workspaceId);
+const { load, members, loaded } = useWorkspaceMembers(props.workspaceId);
 
-const invites = ref(props.workspace.invites || []);
-const sendingInvites = ref(false);
-const showEditRoleDialog = ref(false);
-const editingMember = ref<any>({ roles: [] });
-const savingRole = ref(false);
+// the same rule as before: managing people is for admins
+const canManage = computed(() => !!user.value?.roles?.includes('admin'));
+const ROLES = computed(() => [
+  { label: t('Member'), value: 'member' },
+  { label: t('Manager'), value: 'manager' },
+  { label: t('Admin'), value: 'admin' },
+]);
 
-const isAdmin = computed(() => {
-  return user.value?.roles?.includes('admin');
-});
+onMounted(load);
 
-const canInviteMembers = computed(() => {
-  return user.value?.roles?.includes('admin');
-});
+const name = (member: any) => getUserDisplayName(member) || member.email || '';
 
-const membersColumns = computed(() => {
-  const columns = [
-    { label: 'First Name', prop: 'firstName' },
-    { label: 'Last Name', prop: 'lastName' },
-    { label: 'Email', prop: 'email' },
-    { label: 'Roles', prop: 'roles' },
-  ];
-  
-  if (isAdmin.value) {
-    columns.push({ label: 'Actions', prop: 'actions' });
-  }
-  
-  return columns;
-});
+/* ---- people ---- */
+const editing = ref<any>(null);
+const editRoles = ref<string[]>([]);
+const saving = ref(false);
 
-const availableRoles = [
-  { label: 'Member', value: 'member' },
-  { label: 'Manager', value: 'manager' },
-  { label: 'Admin', value: 'admin' }
-];
-
-function addInvite() {
-  invites.value.push({
-    name: '',
-    email: '',
-    roles: ['member']
-  });
+function startEdit(member: any) {
+  editing.value = member;
+  editRoles.value = [...(member.roles || [])];
 }
 
-function removeInvite(index) {
-  invites.value.splice(index, 1);
-}
-
-async function sendInvites() {
-  // Filter out empty invites
-  const validInvites = invites.value.filter(invite => invite.email && invite.email.trim() !== '');
-  
-  if (validInvites.length === 0) {
-    ElNotification.warning('Please add at least one valid email address');
-    return;
-  }
-  
-  sendingInvites.value = true;
+async function saveRoles() {
+  if (!editing.value) return;
+  saving.value = true;
   try {
-    // Add invites to the workspace
-    await workspacesService.update(props.workspaceId, {
-      ...props.workspace,
-      invites: validInvites
-    });
-    ElNotification.success({
-      title: 'Success',
-      message: `${validInvites.length} invite${validInvites.length > 1 ? 's' : ''} sent successfully`,
-      duration: 3000
-    });
-    // Emit event to refresh workspace data in parent
-    emit('refresh-workspace');
-  } catch (error) {
-    console.error('Failed to send invites:', error);
-    ElNotification.error({
-      title: 'Error',
-      message: 'Failed to send invites. Please try again.',
-      duration: 5000
-    });
+    await workspacesMembersService.update(props.workspaceId, editing.value.user, { roles: editRoles.value });
+    ElMessage.success(t('Member updated successfully'));
+    editing.value = null;
+    load();
+  } catch {
+    ElMessage.error(t('Failed to update member'));
   } finally {
-    sendingInvites.value = false;
-  }
-}
-
-function refreshMembers() {
-  loadMembers();
-}
-
-function handleMemberAction(command: string, row: any) {
-  switch (command) {
-    case 'edit-role':
-      editingMember.value = { ...row, roles: row.roles || [] };
-      showEditRoleDialog.value = true;
-      break;
-    case 'remove':
-      removeMember(row);
-      break;
+    saving.value = false;
   }
 }
 
 async function removeMember(member: any) {
   try {
-    await ElMessageBox.confirm(
-      `Are you sure you want to remove ${member.firstName} ${member.lastName} from the workspace?`,
-      'Remove Member',
-      {
-        confirmButtonText: 'Remove',
-        cancelButtonText: 'Cancel',
-        type: 'warning',
-      }
-    );
-    
-    await workspacesMembersService.delete(props.workspaceId, member.user);
-    ElNotification.success({
-      title: 'Success',
-      message: `${member.firstName} ${member.lastName} removed from workspace`,
-      duration: 3000
-    });
-    refreshMembers();
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('Failed to remove member:', error);
-      ElNotification.error({
-        title: 'Error',
-        message: 'Failed to remove member. Please try again.',
-        duration: 5000
-      });
-    }
-  }
-}
-
-async function saveMemberRole() {
-  if (!editingMember.value.user) {
-    ElNotification.error({
-      title: 'Error',
-      message: 'No member selected',
-      duration: 3000
-    });
+    await ElMessageBox.confirm(t('Remove {name} from this workspace?', { name: name(member) }), t('Remove member'), { type: 'warning', confirmButtonText: t('Remove'), cancelButtonText: t('Cancel') });
+  } catch {
     return;
   }
-  
-  savingRole.value = true;
   try {
-    await workspacesMembersService.update(props.workspaceId, editingMember.value.user, {
-      roles: editingMember.value.roles
-    });
-    ElNotification.success({
-      title: 'Success',
-      message: `Member role updated to ${editingMember.value.roles.join(', ')}`,
-      duration: 3000
-    });
-    showEditRoleDialog.value = false;
-    refreshMembers();
-  } catch (error) {
-    console.error('Failed to update member role:', error);
-    ElNotification.error({
-      title: 'Error',
-      message: 'Failed to update member role. Please try again.',
-      duration: 5000
-    });
-  } finally {
-    savingRole.value = false;
+    await workspacesMembersService.delete(props.workspaceId, member.user);
+    ElMessage.success(t('Member deleted successfully'));
+    load();
+    emit('refresh-workspace');
+  } catch {
+    ElMessage.error(t('Failed to delete member'));
   }
 }
 
-onMounted(() => {
-  refreshMembers();
-});
+/* ---- invites ---- */
+type Invite = { name?: string; email: string; roles: string[] };
+const fromWorkspace = (): Invite[] => (props.workspace?.invites || []).map((invite: any) => ({ name: invite.name || '', email: invite.email || '', roles: invite.roles?.length ? [...invite.roles] : ['member'] }));
+const invites = ref<Invite[]>(fromWorkspace());
+const baseline = ref(JSON.stringify(invites.value));
+const invitesDirty = computed(() => JSON.stringify(invites.value) !== baseline.value);
+const sending = ref(false);
+
+const addInvite = () => invites.value.push({ name: '', email: '', roles: ['member'] });
+const removeInvite = (index: number) => invites.value.splice(index, 1);
+
+async function sendInvites() {
+  const valid = cleanInvites(invites.value);
+  if (!valid.length && invites.value.length) {
+    ElMessage.warning(t('Please add at least one valid email address'));
+    return;
+  }
+  sending.value = true;
+  try {
+    await workspacesService.update(props.workspaceId, { invites: valid } as any);
+    invites.value = valid.map((invite) => ({ ...invite, name: invite.name || '' }));
+    baseline.value = JSON.stringify(invites.value);
+    ElMessage.success(valid.length ? t('Invites saved') : t('Invites cleared'));
+    emit('refresh-workspace');
+  } catch {
+    ElMessage.error(t('Failed to send invites. Please try again.'));
+  } finally {
+    sending.value = false;
+  }
+}
 </script>
 
-<style scoped>
-.invite-card,
-.members-card {
-  margin-bottom: 30px;
-  border-radius: 8px;
-}
+<template>
+  <div class="members">
+    <section aria-labelledby="people-title">
+      <h2 id="people-title">{{ $t('People') }} <small>{{ members?.length || 0 }}</small></h2>
+      <el-skeleton v-if="!loaded" animated :rows="2" />
+      <p v-else-if="!members?.length" class="empty">{{ $t('No members in this workspace yet') }}</p>
+      <ul v-else class="rows">
+        <li v-for="member in members" :key="member.user" class="row">
+          <UserAvatar :name="name(member)" :size="36" />
+          <div class="who">
+            <span class="name" dir="auto">{{ name(member) }}</span>
+            <span class="email" dir="ltr">{{ member.email }}</span>
+          </div>
+          <div class="roles"><el-tag v-for="role in member.roles" :key="role" size="small" :type="roleTagType(role)" effect="light">{{ role }}</el-tag></div>
+          <el-dropdown v-if="canManage" trigger="click">
+            <el-button text circle :aria-label="`${$t('Actions')}: ${name(member)}`"><el-icon><MoreFilled /></el-icon></el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item :icon="Edit" @click="startEdit(member)">{{ $t('Edit roles') }}</el-dropdown-item>
+                <el-dropdown-item :icon="Delete" divided @click="removeMember(member)">{{ $t('Remove') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </li>
+      </ul>
+    </section>
 
-.card-header {
+    <section v-if="canManage" aria-labelledby="invites-title">
+      <h2 id="invites-title">{{ $t('Invite by email') }}</h2>
+      <p class="hint">{{ $t('People you list here can accept the invitation when they sign in.') }}</p>
+      <ul v-if="invites.length" class="invites">
+        <li v-for="(invite, index) in invites" :key="index">
+          <el-input v-model="invite.name" dir="auto" :placeholder="$t('Name')" :aria-label="$t('Name')" />
+          <el-input v-model="invite.email" dir="ltr" type="email" :placeholder="$t('Email')" :aria-label="$t('Email')" />
+          <el-select v-model="invite.roles" multiple :aria-label="$t('Roles')" class="roles-select">
+            <el-option v-for="role in ROLES" :key="role.value" :label="role.label" :value="role.value" />
+          </el-select>
+          <el-button text circle :icon="Delete" :aria-label="$t('Remove')" @click="removeInvite(index)" />
+        </li>
+      </ul>
+      <div class="invite-actions">
+        <el-button :icon="Plus" @click="addInvite">{{ invites.length ? $t('Add another') : $t('Add an invite') }}</el-button>
+        <el-button v-if="invitesDirty" type="primary" :loading="sending" @click="sendInvites">{{ $t('Save invites') }}</el-button>
+      </div>
+    </section>
+
+    <el-dialog :model-value="!!editing" :title="$t('Edit roles')" width="400px" append-to-body align-center @close="editing = null">
+      <p v-if="editing" class="dialog-name" dir="auto">{{ name(editing) }}</p>
+      <el-select v-model="editRoles" multiple :placeholder="$t('Select roles')" class="full">
+        <el-option v-for="role in ROLES" :key="role.value" :label="role.label" :value="role.value" />
+      </el-select>
+      <template #footer>
+        <el-button @click="editing = null">{{ $t('Cancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="saveRoles">{{ $t('Save') }}</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<style scoped lang="scss">
+.members {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 10px;
+  flex-direction: column;
+  gap: 32px;
 }
 
-.card-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
+h2 {
+  margin: 0 0 10px;
+  padding: 0;
+  font-size: 1.15rem;
+
+  small {
+    margin-inline-start: 6px;
+    color: var(--el-text-color-secondary);
+    font-weight: 400;
+  }
 }
 
-.subtitle {
-  margin: 5px 0 0;
+.hint,
+.empty {
+  margin: 0 0 12px;
+  padding: 0;
   color: var(--el-text-color-secondary);
   font-size: 0.9rem;
+  text-align: start;
 }
 
-.header-actions {
+.rows,
+.invites {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.invites-list {
-  margin-top: 15px;
+.row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--surface, var(--el-bg-color));
 }
 
-.invites-table {
-  margin-bottom: 15px;
-}
-
-.invites-actions {
+.who {
   display: flex;
-  justify-content: flex-start;
-  gap: 10px;
-  margin-top: 15px;
+  flex-direction: column;
+  min-inline-size: 0;
 }
 
-.members-list {
-  margin-top: 15px;
+.name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.role-tag {
-  margin-right: 5px;
+.email {
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 0.85rem;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.icon-left {
-  margin-right: 5px;
+.roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-.flex-end {
-  margin-inline-start: auto;
+.invites li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(130px, 0.9fr) auto;
+  align-items: center;
+  gap: 8px;
 }
 
-@media (max-width: 768px) {
-  .card-header {
-    flex-direction: column;
-    gap: 10px;
+.invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-start: 12px;
+}
+
+.dialog-name {
+  margin: 0 0 12px;
+  padding: 0;
+  font-weight: 600;
+  text-align: start;
+}
+
+.full {
+  inline-size: 100%;
+}
+
+@media (max-width: 720px) {
+  .row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'avatar who menu' '. roles roles';
+    row-gap: 6px;
+
+    > :nth-child(1) { grid-area: avatar; }
+    > .who { grid-area: who; }
+    > .roles { grid-area: roles; }
+    > :last-child { grid-area: menu; }
+
+    :deep(.el-button.is-circle) {
+      inline-size: 40px;
+      block-size: 40px;
+    }
   }
-  
-  .header-actions {
-    width: 100%;
-    justify-content: flex-end;
+
+  .invites li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'name remove' 'email email' 'roles roles';
+
+    > :nth-child(1) { grid-area: name; }
+    > :nth-child(2) { grid-area: email; }
+    > :nth-child(3) { grid-area: roles; }
+    > :nth-child(4) { grid-area: remove; }
   }
 }
 </style>

@@ -1,316 +1,155 @@
-<template>
-  <div class="general-tab">
-    <el-card class="workspace-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <h2>{{ $t('General Settings') }}</h2>
-          <p class="subtitle">{{ $t('Manage your workspace basics') }}</p>
-        </div>
-      </template>
-      
-      <el-form @submit.native.prevent="submit" class="workspace-form" :model="data" :rules="rules" ref="formRef">
-        <div class="section workspace-details">
-          <h3>{{ $t('Workspace Details') }}</h3>
-          <div class="workspace-info">
-            <div class="workspace-name-section">
-              <FormInput 
-                title="Workspace Name" 
-                v-model="data.name" 
-                required 
-                :placeholder="$t('Enter workspace name')"
-                class="workspace-name"
-              />
-            </div>
-            
-            <div v-if="wsConfig.allowLogo" class="workspace-logo-section">
-              <FormInput 
-                title="Workspace Logo" 
-                v-model="data.logo" 
-                type="upload" 
-                :placeholder="$t('Upload a logo')"
-              />
-              <div class="logo-preview" v-if="data.logo">
-                <img :src="data.logo" alt="Workspace Logo" />
-              </div>
-            </div>
-          </div>
-        </div>
+<script lang="ts" setup>
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { ElMessageBox } from 'element-plus';
+import FormInput from '@/modules/core/components/forms/FormInput.vue';
+import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
+import WorkspaceAvatar from '../components/WorkspaceAvatar.vue';
 
-        <div class="section workspace-type" v-if="!workspace._id && filteredLabels.length > 1">
-          <h3>{{ $t(wsConfig.labelsSelectorTitle || 'Select your workspace type') }}</h3>
-          <p class="description">{{ $t('Choose the type that best fits your needs') }}</p>
-          
-          <div class="workspace-types-grid">
-            <div 
-              v-for="option of filteredLabels" 
-              :key="option.title"
-              class="workspace-type-option"
-              :class="{ 'selected': selectedLabels?.value === option.value }"
-              @click="selectedLabels = option"
-            >
-              <div class="type-icon">
-                <font-awesome-icon :icon="['fas', 'building']" />
-              </div>
-              <div class="type-content">
-                <h4>{{ option.title }}</h4>
-                <p v-if="option.description">{{ option.description }}</p>
-              </div>
-            </div>
-          </div>
+defineOptions({ inheritAttrs: false });
+const props = defineProps<{ workspace: any; submitting?: boolean; workspaceId?: string; save: (data: Record<string, unknown>) => Promise<unknown> }>();
+
+const { t } = useI18n();
+const wsConfig = useWsConfiguration();
+
+const fromWorkspace = () => ({ name: props.workspace.name || '', logo: props.workspace.logo || '' });
+const draft = reactive(fromWorkspace());
+const baseline = ref(JSON.stringify(draft));
+const dirty = computed(() => JSON.stringify(draft) !== baseline.value);
+const error = ref('');
+const justSaved = ref(false);
+let savedTimer: ReturnType<typeof setTimeout> | undefined;
+
+async function submit() {
+  if (props.submitting) return;
+  if (!draft.name.trim()) {
+    error.value = t('Workspace name is required');
+    return;
+  }
+  error.value = '';
+  const patch: Record<string, unknown> = { name: draft.name.trim() };
+  if (wsConfig.metadata.allowLogo) patch.logo = draft.logo || '';
+  const result = await props.save(patch);
+  if (!result) return;
+  baseline.value = JSON.stringify(draft);
+  justSaved.value = true;
+  clearTimeout(savedTimer);
+  savedTimer = setTimeout(() => (justSaved.value = false), 2500);
+  return result;
+}
+
+function discard() {
+  Object.assign(draft, JSON.parse(baseline.value));
+  error.value = '';
+}
+
+function onKeydown(event: KeyboardEvent) {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+    event.preventDefault();
+    submit();
+  }
+}
+const warnUnload = (event: BeforeUnloadEvent) => {
+  if (dirty.value) event.preventDefault();
+};
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown);
+  window.addEventListener('beforeunload', warnUnload);
+});
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown);
+  window.removeEventListener('beforeunload', warnUnload);
+  clearTimeout(savedTimer);
+});
+onBeforeRouteLeave(async () => {
+  if (!dirty.value) return true;
+  try {
+    await ElMessageBox.confirm(t('You have unsaved changes. Leave without saving?'), t('Unsaved changes'), { type: 'warning', confirmButtonText: t('Leave'), cancelButtonText: t('Stay') });
+    return true;
+  } catch {
+    return false;
+  }
+});
+</script>
+
+<template>
+  <div class="general">
+    <el-form label-position="top" class="form" @submit.prevent="submit">
+      <el-form-item :label="$t('Workspace name')" :error="error || undefined">
+        <el-input v-model="draft.name" dir="auto" maxlength="120" :placeholder="$t('Enter workspace name')" />
+      </el-form-item>
+      <el-form-item v-if="wsConfig.metadata.allowLogo" :label="$t('Logo')">
+        <div class="logo-row">
+          <WorkspaceAvatar :name="draft.name" :logo="draft.logo" :size="64" />
+          <div class="logo-field"><FormInput v-model="draft.logo" type="upload" :upload-config="{ isImage: true }" /></div>
+          <el-button v-if="draft.logo" text type="danger" @click="draft.logo = ''">{{ $t('Remove logo') }}</el-button>
         </div>
-        
-        <div class="form-actions">
-          <el-button @click="cancel" plain>{{ $t('Cancel') }}</el-button>
-          <SaveButton :submitting="submitting" type="primary" class="submit-button">
-            {{ workspace._id ? $t('Update Workspace') : $t('Create Workspace') }}
-          </SaveButton>
-        </div>
-      </el-form>
-    </el-card>
+      </el-form-item>
+    </el-form>
+
+    <div class="savebar" :class="{ dirty }" role="region" :aria-label="$t('Save changes')">
+      <p class="state" role="status">
+        <template v-if="dirty"><span class="dot" aria-hidden="true" />{{ $t('Unsaved changes') }}</template>
+        <template v-else-if="justSaved"><font-awesome-icon :icon="['fas', 'check']" class="ok" aria-hidden="true" />{{ $t('All changes saved') }}</template>
+        <template v-else>{{ $t('No changes yet') }}</template>
+      </p>
+      <el-button :disabled="!dirty || submitting" @click="discard">{{ $t('Discard') }}</el-button>
+      <el-button type="primary" :loading="submitting" :disabled="!dirty" @click="submit">{{ $t('Save changes') }}</el-button>
+    </div>
   </div>
 </template>
 
-<script lang="ts" setup>
-import { computed, PropType, reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import SaveButton from '@/modules/core/components/forms/SaveButton.vue';
-import FormInput from '../../core/components/forms/FormInput.vue';
-import { clearNulls } from '../../core/utils/clear-nulls';
+<style scoped lang="scss">
+.form {
+  max-inline-size: 560px;
 
-import { IWorkspace } from '@qelos/sdk/workspaces';
-import { WorkspaceConfigurationMetadata, WorkspaceLabelDefinition } from '@qelos/global-types';
-import { ElNotification } from 'element-plus';
-import { useAuth } from '@/modules/core/compositions/authentication';
-
-const props = defineProps({
-  submitting: Boolean,
-  workspace: {
-    type: Object as PropType<any>,
-    default: () => ({})
-  },
-  wsConfig: Object as PropType<WorkspaceConfigurationMetadata>,
-});
-
-const emit = defineEmits(['submitted']);
-
-const router = useRouter();
-const formRef = ref(null);
-const { user } = useAuth();
-
-const filteredLabels = computed(() => props.wsConfig.labels?.filter(l => !l.allowedRolesForCreation ||
-    l.allowedRolesForCreation.includes('*') ||
-    l.allowedRolesForCreation.some(r => user.value.roles.includes(r))
-) || []);
-
-const selectedLabels = ref<WorkspaceLabelDefinition>();
-
-// Form validation rules
-const rules = {
-  name: [
-    { required: true, message: 'Please enter a workspace name', trigger: 'blur' }
-  ]
-};
-
-if (!props.workspace._id) {
-  selectedLabels.value = filteredLabels.value[0];
-}
-
-const data = reactive<Partial<IWorkspace>>({
-  name: props.workspace.name || null,
-  logo: props.workspace.logo || null,
-  labels: props.workspace.labels || [],
-});
-
-function submit() {
-  if (formRef.value) {
-    formRef.value.validate(async (valid) => {
-      if (!valid) {
-        ElNotification.warning({
-          title: 'Validation Error',
-          message: 'Please fill in all required fields',
-          duration: 3000
-        });
-        return;
-      }
-      
-      if (!props.workspace._id) {
-        let labels = selectedLabels.value?.value || [];
-        if (filteredLabels.value.length === 1) {
-          labels = filteredLabels.value[0].value;
-        }
-        if (labels.length) {
-          data.labels = labels;
-        }
-        if (data.labels.length === 0 && !props.wsConfig.allowNonLabeledWorkspaces) {
-          ElNotification.error({
-            title: 'Validation Error',
-            message: 'Please select a workspace type',
-            duration: 3000
-          });
-          return;
-        }
-      }
-      
-      emit('submitted', clearNulls(data));
-    });
-  } else {
-    // Fallback if form ref is not available
-    emit('submitted', clearNulls(data));
+  :deep(.el-form-item) {
+    margin-block-end: 26px;
   }
 }
 
-function cancel() {
-  router.back();
-}
-</script>
-
-<style scoped>
-.workspace-card {
-  margin-bottom: 30px;
-  border-radius: 8px;
+.logo-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
 }
 
-.card-header {
-  margin-bottom: 10px;
+.logo-field {
+  min-inline-size: 220px;
 }
 
-.card-header h2 {
+.savebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-inline-size: 560px;
+  padding-block: 8px;
+}
+
+.state {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
+  color: var(--el-text-color-secondary);
+  font-size: 0.9rem;
+}
+
+.dirty .state {
   color: var(--el-text-color-primary);
 }
 
-.subtitle {
-  margin: 5px 0 0;
-  color: var(--el-text-color-secondary);
-  font-size: 0.9rem;
-}
-
-.section {
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-.section:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.section h3 {
-  margin: 0 0 10px;
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
-.description {
-  margin: 0 0 20px;
-  color: var(--el-text-color-secondary);
-  font-size: 0.9rem;
-}
-
-.workspace-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-.workspace-name-section {
-  flex: 1;
-  min-width: 300px;
-}
-
-.workspace-logo-section {
-  flex: 1;
-  min-width: 300px;
-}
-
-.logo-preview {
-  margin-top: 10px;
-  width: 100px;
-  height: 100px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid var(--el-border-color);
-}
-
-.logo-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.workspace-types-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 15px;
-  margin-top: 15px;
-}
-
-.workspace-type-option {
-  display: flex;
-  align-items: center;
-  padding: 15px;
-  border: 1px solid var(--el-border-color);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.workspace-type-option:hover {
-  border-color: var(--el-color-primary);
-  background-color: var(--el-color-primary-light-9);
-}
-
-.workspace-type-option.selected {
-  border-color: var(--el-color-primary);
-  background-color: var(--el-color-primary-light-9);
-}
-
-.type-icon {
-  font-size: 1.5rem;
-  color: var(--el-color-primary);
-  margin-right: 15px;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--el-color-primary-light-8);
+.dot {
+  inline-size: 8px;
+  block-size: 8px;
   border-radius: 50%;
+  background: var(--el-color-warning);
 }
 
-.type-content {
-  flex: 1;
-}
-
-.type-content h4 {
-  margin: 0 0 5px;
-  font-size: 1rem;
-}
-
-.type-content p {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--el-text-color-secondary);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 30px;
-}
-
-.submit-button {
-  min-width: 150px;
-}
-
-@media (max-width: 768px) {
-  .workspace-types-grid {
-    grid-template-columns: 1fr;
-  }
+.ok {
+  color: var(--el-color-success);
 }
 </style>

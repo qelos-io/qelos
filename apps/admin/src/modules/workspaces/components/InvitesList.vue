@@ -1,182 +1,87 @@
-<template>
-  <div class="invites-container">
-    <div class="invites-header">
-      <h2>{{ $t('Invites to workspaces') }}</h2>
-      <el-button 
-        size="small" 
-        type="primary" 
-        :icon="RefreshRight" 
-        circle 
-        @click="refreshInvites" 
-        :loading="isLoading"
-      />
-    </div>
-
-    <el-skeleton :loading="isLoading && !store.invites.length" animated :count="2">
-      <template #template>
-        <div class="skeleton-item">
-          <el-skeleton-item variant="p" style="width: 60%" />
-          <div style="display: flex; justify-content: flex-end">
-            <el-skeleton-item variant="button" style="width: 60px; margin-right: 10px" />
-            <el-skeleton-item variant="button" style="width: 60px" />
-          </div>
-        </div>
-      </template>
-
-      <template #default>
-        <el-empty v-if="!store.invites.length" :description="$t('No pending invitations')" />
-
-        <el-card 
-          v-for="invite in store.invites" 
-          :key="invite._id" 
-          class="invite-card"
-          shadow="hover"
-        >
-          <div class="invite-content">
-            <div class="invite-info">
-              <h3>{{ invite.name }}</h3>
-              <p class="invite-description">{{ $t('You have been invited to join this workspace') }}</p>
-            </div>
-            <div class="invite-actions">
-              <el-button 
-                type="success" 
-                @click="handleAccept(invite)" 
-                :loading="actionInProgress === invite._id && currentAction === 'accept'"
-              >
-                {{ $t('Accept') }}
-              </el-button>
-              <el-button 
-                type="danger" 
-                @click="handleDecline(invite)" 
-                :loading="actionInProgress === invite._id && currentAction === 'decline'"
-              >
-                {{ $t('Decline') }}
-              </el-button>
-            </div>
-          </div>
-        </el-card>
-      </template>
-    </el-skeleton>
-  </div>
-</template>
-
 <script lang="ts" setup>
 import { ref } from 'vue';
-import { RefreshRight } from '@element-plus/icons-vue';
 import useInvitesList, { InviteKind } from '@/modules/workspaces/store/invites-list';
+import WorkspaceAvatar from './WorkspaceAvatar.vue';
 
 const store = useInvitesList();
-const isLoading = ref(false);
-const actionInProgress = ref('');
-const currentAction = ref('');
+const busy = ref<{ id: string; kind: InviteKind } | null>(null);
 
-const refreshInvites = async () => {
-  isLoading.value = true;
+async function respond(invite: any, kind: InviteKind) {
+  busy.value = { id: invite._id, kind };
   try {
-    await store.reload();
+    await store.respondToInvite({ workspace: invite._id, kind });
   } finally {
-    isLoading.value = false;
+    busy.value = null;
   }
-};
+}
 
-const handleAccept = async (invite: any) => {
-  actionInProgress.value = invite._id;
-  currentAction.value = 'accept';
-  try {
-    await store.respondToInvite({
-      workspace: invite._id,
-      kind: InviteKind.ACCEPT
-    });
-  } finally {
-    actionInProgress.value = '';
-    currentAction.value = '';
-  }
-};
-
-const handleDecline = async (invite: any) => {
-  actionInProgress.value = invite._id;
-  currentAction.value = 'decline';
-  try {
-    await store.respondToInvite({
-      workspace: invite._id,
-      kind: InviteKind.DECLINE
-    });
-  } finally {
-    actionInProgress.value = '';
-    currentAction.value = '';
-  }
-};
-
-// Load invites when component is mounted
-store.promise;
+const loading = (invite: any, kind: InviteKind) => busy.value?.id === invite._id && busy.value.kind === kind;
 </script>
 
-<style scoped>
-.invites-container {
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
+<template>
+  <section v-if="store.invites.length" class="invites" :aria-label="$t('Invitations')">
+    <h2>{{ $t('You have been invited') }}</h2>
+    <ul>
+      <li v-for="invite in store.invites" :key="invite._id">
+        <WorkspaceAvatar :name="invite.name" :logo="invite.logo" :size="36" />
+        <div class="text">
+          <strong dir="auto">{{ invite.name }}</strong>
+          <span>{{ $t('Join this workspace to work with its members.') }}</span>
+        </div>
+        <div class="actions">
+          <el-button type="primary" :loading="loading(invite, InviteKind.ACCEPT)" :disabled="!!busy" @click="respond(invite, InviteKind.ACCEPT)">{{ $t('Accept') }}</el-button>
+          <el-button :loading="loading(invite, InviteKind.DECLINE)" :disabled="!!busy" @click="respond(invite, InviteKind.DECLINE)">{{ $t('Decline') }}</el-button>
+        </div>
+      </li>
+    </ul>
+  </section>
+</template>
+
+<style scoped lang="scss">
+.invites {
+  margin-block-end: 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--el-color-primary-light-7);
+  border-radius: 12px;
+  background: var(--el-color-primary-light-9);
+
+  h2 {
+    margin: 0 0 10px;
+    padding: 0;
+    font-size: 1rem;
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+  }
 }
 
-.invites-header {
+.text {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.invite-card {
-  margin-bottom: 16px;
-}
-
-.invite-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.invite-info {
   flex: 1;
+  flex-direction: column;
+  min-inline-size: 180px;
+
+  span {
+    color: var(--el-text-color-secondary);
+    font-size: 0.88rem;
+  }
 }
 
-.invite-info h3 {
-  margin: 0 0 8px 0;
-}
-
-.invite-description {
-  margin: 0;
-  color: var(--el-text-color-secondary);
-  font-size: 14px;
-}
-
-.invite-actions {
+.actions {
   display: flex;
   gap: 8px;
-}
-
-.skeleton-item {
-  padding: 20px;
-  border-radius: 4px;
-  box-shadow: var(--el-box-shadow-light);
-  margin-bottom: 16px;
-}
-
-@media (max-width: 768px) {
-  .invites-container {
-    padding: 0 16px;
-  }
-  
-  .invite-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .invite-actions {
-    width: 100%;
-    justify-content: flex-end;
-    margin-top: 12px;
-  }
 }
 </style>

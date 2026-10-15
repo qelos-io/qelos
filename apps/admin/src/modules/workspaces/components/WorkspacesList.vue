@@ -1,332 +1,188 @@
+<script lang="ts" setup>
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Delete, Edit, MoreFilled } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import { useRouter } from 'vue-router';
+import useWorkspacesList from '../store/workspaces-list';
+import { authStore } from '@/modules/core/store/auth';
+import { lastSeen, relativeTime, isJustNow } from '@/modules/users/services/user-presentation';
+import { type MyRole } from '../services/workspace-presentation';
+import WorkspaceAvatar from './WorkspaceAvatar.vue';
+
+const props = defineProps<{ workspaces: any[]; roleOf: (workspace: any) => MyRole; loading?: boolean; filtered?: boolean; canCreate?: boolean }>();
+const emit = defineEmits<{ (e: 'create'): void }>();
+
+const { t, locale } = useI18n();
+const router = useRouter();
+const store = useWorkspacesList();
+const activating = ref('');
+
+const PAGE_SIZE = 25;
+const page = ref(1);
+const shown = computed(() => props.workspaces.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE));
+watch(() => props.workspaces, () => (page.value = 1));
+
+const isCurrent = (workspace: any) => authStore.user?.workspace?._id === workspace._id;
+const roleLabel = (role: MyRole) => ({ admin: t('Admin'), manager: t('Manager'), member: t('Member'), guest: t('Guest') })[role];
+const edit = (workspace: any) => router.push({ name: 'editMyWorkspace', params: { id: workspace._id } });
+
+function accessed(workspace: any) {
+  const date = lastSeen({ lastLogin: { created: workspace.lastAccessed } });
+  if (!date) return '';
+  return isJustNow(date) ? t('Opened just now') : t('Opened {time}', { time: relativeTime(date, new Date(), locale.value) });
+}
+
+async function switchTo(workspace: any) {
+  activating.value = workspace._id;
+  try {
+    await store.activate(workspace);
+  } catch {
+    ElMessage.error(t('Failed to switch workspace'));
+  } finally {
+    activating.value = '';
+  }
+}
+</script>
+
 <template>
-  <div class="workspaces-list">
-    <!-- Search and Filter Bar -->
-    <div class="workspaces-list__header">
-      <el-input
-        v-model="searchQuery"
-        :placeholder="$t('Search workspaces...')"
-        prefix-icon="Search"
-        clearable
-        class="workspaces-list__search"
-      />
-      <el-select
-        v-model="roleFilter"
-        :placeholder="$t('Filter by role')"
-        clearable
-        class="workspaces-list__filter"
-      >
-        <el-option :label="$t('All')" value="" />
-        <el-option :label="$t('Admin')" value="admin" />
-        <el-option :label="$t('Manager')" value="manager" />
-        <el-option :label="$t('Member')" value="member" />
-      </el-select>
-      <el-button 
-        v-if="canUserCreateWorkspace"
-        type="primary"
-        @click="$router.push({ name: 'createMyWorkspace' })"
-        class="workspaces-list__create-btn"
-      >
-        <el-icon><font-awesome-icon :icon="['fas', 'plus']" /></el-icon>
-        {{ $t('Create Workspace') }}
-      </el-button>
+  <div class="list">
+    <ul v-if="loading" class="rows" aria-hidden="true">
+      <li v-for="i in 3" :key="i" class="row skeleton"><el-skeleton animated><template #template><el-skeleton-item variant="text" style="inline-size: 35%" /></template></el-skeleton></li>
+    </ul>
+
+    <div v-else-if="!workspaces.length" class="empty">
+      <el-empty :description="filtered ? $t('No workspace matches your search') : $t('You are not in any workspace yet')">
+        <el-button v-if="!filtered && canCreate" type="primary" @click="$emit('create')">{{ $t('Create workspace') }}</el-button>
+      </el-empty>
     </div>
 
-    <el-empty v-if="filteredWorkspaces.length === 0 && !store.loading" :description="$t('No workspaces found')" />
-    
-    <el-skeleton :loading="store.loading" animated :count="3" v-if="store.loading">
-      <template #template>
-        <div style="padding: 14px">
-          <el-skeleton-item variant="p" style="width: 50%" />
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 16px">
-            <el-skeleton-item variant="text" style="margin-right: 16px" />
-            <el-skeleton-item variant="text" style="width: 30%" />
+    <template v-else>
+      <ul class="rows">
+        <li v-for="workspace in shown" :key="workspace._id" class="row" :class="{ current: isCurrent(workspace) }" @click="edit(workspace)">
+          <WorkspaceAvatar :name="workspace.name" :logo="workspace.logo" :size="40" />
+          <div class="who">
+            <router-link class="name" dir="auto" :to="{ name: 'editMyWorkspace', params: { id: workspace._id } }" @click.stop>{{ workspace.name }}</router-link>
+            <span class="sub">{{ roleLabel(roleOf(workspace)) }} · {{ $t('{count} members', { count: workspace.members?.length || 0 }) }}</span>
           </div>
-        </div>
-      </template>
-    </el-skeleton>
-
-    <div v-else class="workspaces-list__grid">
-      <el-card 
-        v-for="workspace in filteredWorkspaces" 
-        :key="workspace._id"
-        class="workspace-card"
-        :class="{ 'workspace-card--active': isActiveWorkspace(workspace) }"
-        shadow="hover"
-      >
-        <template #header>
-          <div class="workspace-card__header">
-            <h3 class="workspace-card__title">
-              <router-link :to="{name: 'editMyWorkspace', params: {id: workspace._id}}">
-                {{ workspace.name }}
-              </router-link>
-            </h3>
-            <el-tag v-if="isActiveWorkspace(workspace)" type="success" size="small">
-              {{ $t('Current') }}
-            </el-tag>
+          <span class="seen">{{ accessed(workspace) }}</span>
+          <div class="state" @click.stop>
+            <el-tag v-if="isCurrent(workspace)" type="success" effect="light" size="small">{{ $t('Current') }}</el-tag>
+            <el-button v-else :loading="activating === workspace._id" @click="switchTo(workspace)">{{ $t('Switch to workspace') }}</el-button>
           </div>
-        </template>
-        
-        <div class="workspace-card__content">
-          <div class="workspace-card__info">
-            <div class="workspace-card__info-item">
-              <el-icon><font-awesome-icon :icon="['fas', 'users']" /></el-icon>
-              <span>{{ workspace.members?.length || 0 }} {{ $t('Members') }}</span>
-            </div>
-            <div class="workspace-card__info-item">
-              <el-icon><font-awesome-icon :icon="['fas', 'user-tag']" /></el-icon>
-              <span>{{ getUserRole(workspace) }}</span>
-            </div>
-            <div class="workspace-card__info-item" v-if="workspace.lastAccessed">
-              <el-icon><font-awesome-icon :icon="['fas', 'clock']" /></el-icon>
-              <span>{{ formatLastAccessed(workspace.lastAccessed) }}</span>
-            </div>
-            <div class="workspace-card__info-item" v-if="workspace.description">
-              <el-icon><font-awesome-icon :icon="['fas', 'info-circle']" /></el-icon>
-              <span class="description">{{ workspace.description }}</span>
-            </div>
-          </div>
-        </div>
-        
-        <template #footer>
-          <div class="workspace-card__actions">
-            <el-button 
-              v-if="!isActiveWorkspace(workspace)" 
-              type="primary" 
-              @click="store.activate(workspace)"
-              :loading="activatingWorkspace === workspace._id"
-            >
-              {{ $t('Switch to workspace') }}
-            </el-button>
-            <el-dropdown trigger="click">
-              <el-button circle>
-                <el-icon><font-awesome-icon :icon="['fas', 'ellipsis-vertical']" /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="navigateToEdit(workspace)">
-                    <el-icon><font-awesome-icon :icon="['fas', 'edit']" /></el-icon>
-                    {{ $t('Edit') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item 
-                    v-if="workspace.isPrivilegedUser" 
-                    @click="store.remove(workspace._id)"
-                    divided
-                    type="danger"
-                  >
-                    <el-icon><font-awesome-icon :icon="['fas', 'trash']" /></el-icon>
-                    {{ $t('Remove') }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
-        </template>
-      </el-card>
-    </div>
-
-    <div class="workspaces-list__pagination" v-if="filteredWorkspaces.length > 0">
-      <el-button text @click="store.reload" :loading="store.loading">
-        <el-icon><font-awesome-icon :icon="['fas', 'sync']" /></el-icon>
-        {{ $t('Refresh') }}
-      </el-button>
-    </div>
+          <el-dropdown trigger="click" @click.stop>
+            <el-button text circle :aria-label="`${$t('Actions')}: ${workspace.name}`" @click.stop><el-icon><MoreFilled /></el-icon></el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item :icon="Edit" @click="edit(workspace)">{{ $t('Open') }}</el-dropdown-item>
+                <el-dropdown-item v-if="workspace.isPrivilegedUser" :icon="Delete" divided @click="store.remove(workspace._id)">{{ $t('Remove') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </li>
+      </ul>
+      <el-pagination v-if="workspaces.length > PAGE_SIZE" v-model:current-page="page" class="pager" :page-size="PAGE_SIZE" :total="workspaces.length" layout="prev, pager, next" />
+    </template>
   </div>
 </template>
 
-<script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
-import { useI18n } from 'vue-i18n';
-import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
-import { authStore } from '@/modules/core/store/auth';
-import { useAuth } from '@/modules/core/compositions/authentication';
-import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
-import { toRefs } from 'vue';
-const { user } = useAuth();
-const { t } = useI18n();
-const router = useRouter();
-const route = useRoute();
-const store = useWorkspacesList();
-const searchQuery = computed(() => route.query.q?.toString());
-const roleFilter = ref('');
-const activatingWorkspace = ref('');
-const { canUserCreateWorkspace } = toRefs(useWsConfiguration());
-
-// Helper functions
-function getUserRole(workspace) {
-  const member = workspace.members?.find(m => m.user === user.value?._id);
-  if (!member) return t('Guest');
-  if (member.roles?.includes('admin')) return t('Admin');
-  if (member.roles?.includes('manager')) return t('Manager');
-  return t('Member');
-}
-
-function formatLastAccessed(date) {
-  if (!date) return '';
-  const now = new Date();
-  const accessed = new Date(date);
-  const diffMs = now.getTime() - accessed.getTime();
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffHours / 24);
-  
-  if (diffHours < 1) return t('Just now');
-  if (diffHours < 24) return t('{hours}h ago', { hours: diffHours });
-  if (diffDays < 7) return t('{days}d ago', { days: diffDays });
-  return accessed.toLocaleDateString();
-}
-
-onMounted(() => {
-  if (!store.workspaces.length) {
-    store.reload();
-  }
-});
-
-const filteredWorkspaces = computed(() => {
-  let workspaces = store.workspaces;
-  
-  // Filter by search query
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    workspaces = workspaces.filter(workspace => 
-      workspace.name.toLowerCase().includes(query) ||
-      workspace.description?.toLowerCase().includes(query)
-    );
-  }
-  
-  // Filter by role
-  if (roleFilter.value) {
-    workspaces = workspaces.filter(workspace => {
-      const member = workspace.members?.find(m => m.user === user.value?._id);
-      return member?.roles?.includes(roleFilter.value);
-    });
-  }
-  
-  return workspaces;
-});
-
-const isActiveWorkspace = (workspace) => {
-  return authStore.user?.workspace?._id === workspace._id;
-};
-
-const navigateToEdit = (workspace) => {
-  router.push({ name: 'editMyWorkspace', params: { id: workspace._id } });
-};
-
-// Override the activate method to track which workspace is being activated
-const originalActivate = store.activate;
-store.activate = async (workspace) => {
-  try {
-    activatingWorkspace.value = workspace._id;
-    await originalActivate(workspace);
-  } catch (error) {
-    ElMessage.error(t('Failed to switch workspace'));
-  } finally {
-    activatingWorkspace.value = '';
-  }
-};
-</script>
-
-<style scoped>
-.workspaces-list {
+<style scoped lang="scss">
+.rows {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  margin: 0 1.5rem;
-}
-
-.workspaces-list__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.workspaces-list__search {
-  flex: 1;
-  max-width: 400px;
-}
-
-.workspaces-list__filter {
-  width: 150px;
-}
-
-.workspaces-list__create-btn {
-  margin-left: auto;
-}
-
-.workspaces-list__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.workspace-card {
-  transition: all 0.3s ease;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.workspace-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.workspace-card--active {
-  border: 1px solid var(--el-color-success);
-}
-
-.workspace-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.workspace-card__title {
+  gap: 8px;
   margin: 0;
-  font-size: 1.1rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  padding: 0;
+  list-style: none;
 }
 
-.workspace-card__content {
-  flex: 1;
+.row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1.4fr) minmax(110px, auto) minmax(120px, auto) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--surface, var(--el-bg-color));
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--el-border-color);
+  }
+
+  &:focus-within {
+    border-color: var(--el-color-primary);
+  }
+
+  &.current {
+    border-color: var(--el-color-success-light-5);
+  }
+
+  &.skeleton {
+    min-block-size: 62px;
+    cursor: default;
+  }
 }
 
-.workspace-card__info {
+.who {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  min-inline-size: 0;
 }
 
-.workspace-card__info-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--el-text-color-secondary);
-  font-size: 0.9rem;
-}
-
-.workspace-card__info-item .description {
+.name {
   overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 200px;
+
+  &:hover {
+    color: var(--el-color-primary);
+  }
 }
 
-.workspace-card__actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.sub,
+.seen {
+  color: var(--el-text-color-secondary);
+  font-size: 0.85rem;
 }
 
-.workspaces-list__pagination {
+.state {
   display: flex;
+  justify-content: flex-end;
+}
+
+.pager {
   justify-content: center;
-  margin-top: 1rem;
+  margin-block-start: 16px;
+}
+
+@media (max-width: 800px) {
+  .row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'avatar who menu' '. state state' '. seen seen';
+    row-gap: 8px;
+
+    > :nth-child(1) { grid-area: avatar; }
+    > .who { grid-area: who; }
+    > .seen { grid-area: seen; }
+    > .state { grid-area: state; justify-content: flex-start; }
+    > :last-child { grid-area: menu; }
+
+    :deep(.el-button.is-circle) {
+      inline-size: 40px;
+      block-size: 40px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    transition: none;
+  }
 }
 </style>
