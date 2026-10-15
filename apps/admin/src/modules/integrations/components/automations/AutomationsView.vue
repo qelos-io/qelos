@@ -64,7 +64,7 @@ const display = computed({
 
 // ---- row actions ----
 const typeLabel = (automation: IIntegration) => t(AUTOMATION_TYPES.find((entry) => entry.key === classifyAutomation(automation))!.label.replace(/s$/, ''));
-const edit = (automation: IIntegration) => router.push({ query: { ...route.query, mode: 'edit', id: automation._id } });
+const edit = (automation: IIntegration) => router.push({ name: 'integration-edit', params: { integrationId: automation._id } });
 
 const busy = ref<Record<string, boolean>>({});
 async function toggle(automation: IIntegration, value: boolean) {
@@ -82,9 +82,7 @@ async function toggle(automation: IIntegration, value: boolean) {
 
 function duplicate(automation: IIntegration) {
   sessionStorage.setItem('clonedIntegration', JSON.stringify(cloneForCreate(automation)));
-  const query: Record<string, string> = { mode: 'create', clone: 'true' };
-  if (classifyAutomation(automation) === 'ai-agent') query.agentMode = 'true';
-  router.push({ query });
+  router.push({ name: 'integration-new', query: { type: classifyAutomation(automation) === 'ai-agent' ? 'agent' : 'workflow', clone: 'true' } });
 }
 
 const remove = useConfirmAction(async (automation: IIntegration) => {
@@ -98,7 +96,7 @@ function onCommand(command: string, automation: IIntegration) {
   else if (command === 'remove') remove(automation);
 }
 
-const create = (kind: 'agent' | 'workflow') => router.push({ query: kind === 'agent' ? { mode: 'create', agentMode: 'true' } : { mode: 'create', type: 'workflow' } });
+const create = (kind: 'agent' | 'workflow') => router.push({ name: 'integration-new', query: { type: kind } });
 </script>
 
 <template>

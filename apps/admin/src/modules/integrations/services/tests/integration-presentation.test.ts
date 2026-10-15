@@ -7,6 +7,7 @@ import {
   cloneForCreate,
   countByType,
   filterAutomations,
+  legacyEditorLocation,
   matchesAutomation,
 } from '../integration-presentation';
 
@@ -88,5 +89,23 @@ describe('cloneForCreate', () => {
     expect(copy.trigger).not.toHaveProperty('_id');
     expect(copy.dataManipulation[0]).not.toHaveProperty('_id');
     expect(original.trigger.details.name).toBe('avi');
+  });
+});
+
+describe('legacyEditorLocation', () => {
+  it('maps the old edit link to the editor page', () => {
+    expect(legacyEditorLocation({ mode: 'edit', id: 'abc' })).toEqual({ name: 'integration-edit', params: { integrationId: 'abc' } });
+    expect(legacyEditorLocation({ mode: 'edit' })).toBeNull();
+  });
+
+  it('maps create links, keeping agent mode, clone and the chosen source', () => {
+    expect(legacyEditorLocation({ mode: 'create' })).toEqual({ name: 'integration-new', query: { type: 'workflow' } });
+    expect(legacyEditorLocation({ mode: 'create', agentMode: 'true', sourceId: 's1' })).toEqual({ name: 'integration-new', query: { type: 'agent', sourceId: 's1' } });
+    expect(legacyEditorLocation({ mode: 'create', clone: 'true', agentMode: 'true' })?.query).toMatchObject({ type: 'agent', clone: 'true' });
+  });
+
+  it('ignores queries that are not about the editor', () => {
+    expect(legacyEditorLocation({ q: 'x' })).toBeNull();
+    expect(legacyEditorLocation({ mode: 'something' })).toBeNull();
   });
 });

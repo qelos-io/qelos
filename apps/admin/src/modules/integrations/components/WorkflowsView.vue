@@ -189,13 +189,7 @@ const getSourceLogo = (sourceId?: string) => {
 };
 
 const goToIntegration = (integrationId: string) => {
-  router.push({ 
-    query: { 
-      ...route.query,
-      mode: 'edit', 
-      id: integrationId 
-    } 
-  });
+  router.push({ name: 'integration-edit', params: { integrationId } });
 };
 
 const trackHeight = 130;
@@ -472,7 +466,7 @@ const isArrowConnected = (arrow: IntegrationArrow, integrationId: string | null)
       <EmptyState
         v-if="filteredIntegrations.length === 0"
         type="workflows"
-        @action="router.push({ query: { mode: 'create' } })"
+        @action="router.push({ name: 'integration-new', query: { type: 'workflow' } })"
       />
 
       <div

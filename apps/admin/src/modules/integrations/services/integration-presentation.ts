@@ -124,3 +124,25 @@ export function cloneForCreate<T extends Record<string, any>>(automation: T): T 
   for (const row of [...(copy.dataManipulation || []), ...(copy.targetManipulation || [])]) delete row._id;
   return copy;
 }
+
+export type RouteQuery = Record<string, string | string[] | null | undefined>;
+
+const first = (value: RouteQuery[string]) => (Array.isArray(value) ? value[0] : value) ?? undefined;
+
+/**
+ * Old links opened the editor as a dialog through ?mode=edit&id=… or ?mode=create. The editor is a page now;
+ * this maps such a query to its location so those links keep working. Returns null for any other query.
+ */
+export function legacyEditorLocation(query: RouteQuery): { name: string; params?: Record<string, string>; query?: Record<string, string> } | null {
+  const mode = first(query.mode);
+  if (mode === 'edit') {
+    const id = first(query.id);
+    return id ? { name: 'integration-edit', params: { integrationId: id } } : null;
+  }
+  if (mode !== 'create') return null;
+  const next: Record<string, string> = { type: first(query.agentMode) === 'true' || first(query.type) === 'agent' ? 'agent' : 'workflow' };
+  if (first(query.clone) === 'true') next.clone = 'true';
+  const sourceId = first(query.sourceId);
+  if (sourceId) next.sourceId = sourceId;
+  return { name: 'integration-new', query: next };
+}

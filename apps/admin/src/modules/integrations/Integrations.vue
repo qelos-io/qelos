@@ -2,15 +2,12 @@
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ArrowDown, Plus } from '@element-plus/icons-vue';
-import { QelosTriggerOperation } from '@qelos/global-types';
-import IntegrationFormModal from '@/modules/integrations/components/IntegrationFormModal.vue';
+import { useLegacyEditorRedirect } from '@/modules/integrations/compositions/legacy-editor-redirect';
 import AutomationsView from '@/modules/integrations/components/automations/AutomationsView.vue';
 import ConnectionsPanel from '@/modules/integrations/components/connections/ConnectionsPanel.vue';
-import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 
 const route = useRoute();
 const router = useRouter();
-const integrationsStore = useIntegrationsStore();
 
 const query = (updates: Record<string, string | undefined>) => {
   const next = { ...route.query, ...updates } as Record<string, any>;
@@ -24,28 +21,9 @@ const tab = computed({
   set: (value) => router.replace({ query: query({ view: value === 'connections' ? 'connections' : undefined, display: undefined }) }),
 });
 
-const newAutomation = (kind: string) => router.push({ query: query(kind === 'agent' ? { mode: 'create', agentMode: 'true', type: undefined } : { mode: 'create', type: 'workflow', agentMode: undefined }) });
+useLegacyEditorRedirect();
 
-const editingIntegration = computed(() => {
-  if (route.query.mode === 'create') return undefined;
-  if (route.query.mode === 'edit' && route.query.id) {
-    return integrationsStore.integrations?.find((integration) => integration._id === route.query.id);
-  }
-  return undefined;
-});
-
-const isAIAgentMode = computed(() => {
-  if (route.query.agentMode === 'true') return true;
-  if (editingIntegration.value) return editingIntegration.value.trigger?.operation === QelosTriggerOperation.chatCompletion;
-  return false;
-});
-
-const preSelectedSourceId = computed(() => route.query.sourceId as string | undefined);
-
-const closeModal = () => {
-  integrationsStore.retry();
-  router.push({ query: query({ mode: undefined, id: undefined, agentMode: undefined, sourceId: undefined, clone: undefined, type: undefined }) });
-};
+const newAutomation = (kind: string) => router.push({ name: 'integration-new', query: { type: kind } });
 </script>
 
 <template>
@@ -78,13 +56,6 @@ const closeModal = () => {
     <AutomationsView v-if="tab === 'automations'" />
     <ConnectionsPanel v-else />
 
-    <IntegrationFormModal
-      :visible="$route.query.mode === 'create' || ($route.query.mode === 'edit' && !!editingIntegration)"
-      :editing-integration="editingIntegration"
-      :is-ai-agent-mode="isAIAgentMode"
-      :pre-selected-source-id="preSelectedSourceId"
-      @close="closeModal"
-    />
   </div>
 </template>
 

@@ -31,33 +31,26 @@ const store = useIntegrationSourcesStore();
 const { blueprints } = storeToRefs(useBlueprintsStore());
 const integrationsStore = useIntegrationsStore();
 
-const PANEL_IDS = ['rolesIdentity', 'capabilities', 'systemPrompt', 'connections'] as const;
+const PANEL_IDS = ['rolesIdentity', 'advanced', 'systemPrompt', 'connections', 'capabilities'] as const;
 type PanelId = typeof PANEL_IDS[number];
 
 const isEditMode = computed(() => Boolean(props.integrationId));
-const collapsedPanels = ref<PanelId[]>([]);
+// the agent is set up one section at a time; a section's state shows in the list on the left
+const activePanel = ref<PanelId>('rolesIdentity');
+watch(() => props.integrationId, () => (activePanel.value = 'rolesIdentity'), { immediate: true });
 
-const resetPanels = () => {
-  if (isEditMode.value) {
-    collapsedPanels.value = PANEL_IDS.filter(panel => panel !== 'systemPrompt');
-  } else {
-    collapsedPanels.value = [];
-  }
+const isPanelOpen = (panel: PanelId) => activePanel.value === panel;
+const togglePanel = (panel: PanelId) => (activePanel.value = panel);
+
+const PANEL_TITLES: Record<PanelId, string> = {
+  rolesIdentity: 'Roles & Identity',
+  advanced: 'Advanced AI Settings',
+  systemPrompt: 'System Prompt & Context',
+  connections: 'Connections & Tools',
+  capabilities: 'Agent Capabilities',
 };
-
-watch(() => props.integrationId, () => {
-  resetPanels();
-}, { immediate: true });
-
-const isPanelOpen = (panel: PanelId) => !collapsedPanels.value.includes(panel);
-
-const togglePanel = (panel: PanelId) => {
-  if (isPanelOpen(panel)) {
-    collapsedPanels.value = [...collapsedPanels.value, panel];
-  } else {
-    collapsedPanels.value = collapsedPanels.value.filter(item => item !== panel);
-  }
-};
+const railTitle = (panel: PanelId) => PANEL_TITLES[panel];
+const railNeighbor = (direction: 1 | -1): PanelId | null => PANEL_IDS[PANEL_IDS.indexOf(activePanel.value) + direction] ?? null;
 
 // Find Qelos and OpenAI sources
 const qelosSource = computed(() => {
@@ -830,19 +823,49 @@ const handleSystemPromptImproved = (result: any) => {
     ElMessage.success('System prompt improved successfully');
   }
 };
+
+const railSteps = computed(() =>
+  PANEL_IDS.map((id) => {
+    let state: 'done' | 'todo' | 'empty' = 'empty';
+    let summary = '';
+    let summaryIsKey = false;
+    if (id === 'rolesIdentity') {
+      state = agentName.value ? 'done' : 'todo';
+      summary = agentName.value || 'Name your agent';
+      summaryIsKey = !agentName.value;
+    } else if (id === 'advanced') {
+      const source = allAISources.value.find((entry) => entry._id === (target.value?.source || ''));
+      state = source ? 'done' : 'todo';
+      summary = source ? `${source.name}${(trigger.value?.details as any)?.model ? ' · ' + (trigger.value?.details as any).model : ''}` : 'Choose an AI connection';
+      summaryIsKey = !source;
+    }
+    return { id, title: PANEL_TITLES[id], state, summary, summaryIsKey };
+  }),
+);
 </script>
 
 <template>
   <div class="ai-agent-form">
-    <el-row :gutter="24" class="form-grid">
-      <el-col :xs="24" :lg="15" class="main-column">
+    <div class="agent-layout">
+      <nav class="agent-rail" :aria-label="$t('Agent setup')">
+        <ol>
+          <li v-for="(step, index) in railSteps" :key="step.id">
+            <button type="button" class="rail-step" :class="[`state-${step.state}`, { active: step.id === activePanel }]" :aria-current="step.id === activePanel ? 'step' : undefined" @click="activePanel = step.id">
+              <span class="rail-marker" aria-hidden="true"><font-awesome-icon v-if="step.state === 'done'" :icon="['fas', 'check']" /><font-awesome-icon v-else-if="step.state === 'todo'" :icon="['fas', 'exclamation']" /><template v-else>{{ index + 1 }}</template></span>
+              <span class="rail-label"><span class="rail-title">{{ $t(step.title) }}</span><span class="rail-sub" dir="auto">{{ step.summaryIsKey ? $t(step.summary) : step.summary }}</span></span>
+            </button>
+          </li>
+        </ol>
+      </nav>
+      <div class="agent-panels">
+      <div class="agent-main">
         <el-card
           shadow="never"
           class="panel-card"
-          :class="{ 'is-collapsed': !isPanelOpen('rolesIdentity') }"
+          v-show="isPanelOpen('rolesIdentity')"
         >
           <template #header>
-            <button class="panel-toggle" type="button" @click="togglePanel('rolesIdentity')">
+            <div class="panel-toggle">
               <div class="panel-header">
                 <el-icon class="panel-icon"><Lock /></el-icon>
                 <div>
@@ -850,8 +873,7 @@ const handleSystemPromptImproved = (result: any) => {
                   <p>{{ $t('Control who can talk to this agent and how it identifies itself.') }}</p>
                 </div>
               </div>
-              <el-icon class="collapse-icon" :class="{ 'is-open': isPanelOpen('rolesIdentity') }"><ArrowDown /></el-icon>
-            </button>
+            </div>
           </template>
 
           <section v-show="isPanelOpen('rolesIdentity')" class="section-block">
@@ -953,10 +975,10 @@ const handleSystemPromptImproved = (result: any) => {
         <el-card
           shadow="never"
           class="panel-card"
-          :class="{ 'is-collapsed': !isPanelOpen('capabilities') }"
+          v-show="isPanelOpen('capabilities')"
         >
           <template #header>
-            <button class="panel-toggle" type="button" @click="togglePanel('capabilities')">
+            <div class="panel-toggle">
               <div class="panel-header">
                 <el-icon class="panel-icon"><Setting /></el-icon>
                 <div>
@@ -964,8 +986,7 @@ const handleSystemPromptImproved = (result: any) => {
                   <p>{{ $t('Configure recording, vector store, and web search capabilities.') }}</p>
                 </div>
               </div>
-              <el-icon class="collapse-icon" :class="{ 'is-open': isPanelOpen('capabilities') }"><ArrowDown /></el-icon>
-            </button>
+            </div>
           </template>
 
           <section v-show="isPanelOpen('capabilities')" class="section-block">
@@ -1098,10 +1119,10 @@ const handleSystemPromptImproved = (result: any) => {
         <el-card
           shadow="never"
           class="panel-card"
-          :class="{ 'is-collapsed': !isPanelOpen('systemPrompt') }"
+          v-show="isPanelOpen('systemPrompt')"
         >
           <template #header>
-            <button class="panel-toggle" type="button" @click="togglePanel('systemPrompt')">
+            <div class="panel-toggle">
               <div class="panel-header">
                 <el-icon class="panel-icon"><Document /></el-icon>
                 <div>
@@ -1109,8 +1130,7 @@ const handleSystemPromptImproved = (result: any) => {
                   <p>{{ $t('Craft the system behavior and decide what context is injected.') }}</p>
                 </div>
               </div>
-              <el-icon class="collapse-icon" :class="{ 'is-open': isPanelOpen('systemPrompt') }"><ArrowDown /></el-icon>
-            </button>
+            </div>
           </template>
 
           <section v-show="isPanelOpen('systemPrompt')" class="section-block">
@@ -1197,10 +1217,10 @@ const handleSystemPromptImproved = (result: any) => {
         <el-card
           shadow="never"
           class="panel-card"
-          :class="{ 'is-collapsed': !isPanelOpen('connections') }"
+          v-show="isPanelOpen('connections')"
         >
           <template #header>
-            <button class="panel-toggle" type="button" @click="togglePanel('connections')">
+            <div class="panel-toggle">
               <div class="panel-header">
                 <el-icon class="panel-icon"><Tools /></el-icon>
                 <div>
@@ -1208,8 +1228,7 @@ const handleSystemPromptImproved = (result: any) => {
                   <p>{{ $t('Decide which blueprints, agents, and functions this agent can call.') }}</p>
                 </div>
               </div>
-              <el-icon class="collapse-icon" :class="{ 'is-open': isPanelOpen('connections') }"><ArrowDown /></el-icon>
-            </button>
+            </div>
           </template>
 
           <section v-show="isPanelOpen('connections')" class="section-block">
@@ -1261,10 +1280,10 @@ const handleSystemPromptImproved = (result: any) => {
             </el-alert>
           </section>
         </el-card>
-      </el-col>
+      </div>
 
-      <el-col :xs="24" :lg="9" class="sidebar-column">
-        <el-card shadow="never" class="panel-card sticky-panel">
+      <div class="agent-main">
+        <el-card v-show="isPanelOpen('advanced')" shadow="never" class="panel-card">
           <template #header>
             <div class="panel-header">
               <el-icon class="panel-icon"><Setting /></el-icon>
@@ -1415,12 +1434,160 @@ const handleSystemPromptImproved = (result: any) => {
             </el-form-item>
           </el-form>
         </el-card>
-      </el-col>
-    </el-row>
+      </div>
+        <footer class="agent-foot">
+          <el-button v-if="railNeighbor(-1)" text @click="activePanel = railNeighbor(-1)!">{{ $t(railTitle(railNeighbor(-1)!)) }}</el-button>
+          <span class="grow" />
+          <el-button v-if="railNeighbor(1)" type="primary" plain @click="activePanel = railNeighbor(1)!">{{ $t(railTitle(railNeighbor(1)!)) }}</el-button>
+        </footer>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.agent-layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.agent-rail {
+  position: sticky;
+  inset-block-start: 12px;
+  padding: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: calc(var(--border-radius, 6px) + 4px);
+  background: var(--surface);
+
+  ol {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+.rail-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  inline-size: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: calc(var(--border-radius, 6px) + 1px);
+  background: transparent;
+  color: var(--el-text-color-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--el-fill-color-lighter);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: -2px;
+  }
+
+  &.active {
+    background: var(--el-color-primary-light-9);
+  }
+}
+
+.rail-marker {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 26px;
+  block-size: 26px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 50%;
+  color: var(--el-text-color-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.state-done .rail-marker {
+  border-color: var(--el-color-success);
+  background: var(--el-color-success);
+  color: #fff;
+}
+
+.state-todo .rail-marker {
+  border-color: var(--el-color-danger);
+  background: var(--el-color-danger);
+  color: #fff;
+}
+
+.rail-label {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.rail-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.rail-sub {
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.state-todo .rail-sub {
+  color: var(--el-color-danger);
+}
+
+.agent-panels {
+  min-inline-size: 0;
+}
+
+.agent-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-block: 4px;
+
+  .grow {
+    flex: 1;
+  }
+}
+
+@media (max-width: 1023px) {
+  .agent-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .agent-rail {
+    position: static;
+    padding: 6px;
+    overflow-x: auto;
+
+    ol {
+      flex-direction: row;
+      gap: 4px;
+    }
+  }
+
+  .rail-step {
+    inline-size: auto;
+    white-space: nowrap;
+  }
+
+  .rail-sub {
+    display: none;
+  }
+}
+
 .ai-agent-form {
   padding-block: 16px;
 }
