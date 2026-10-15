@@ -139,6 +139,23 @@ watch(
   background: var(--surface);
 }
 
+// narrow screens: the inspector goes under the canvas instead of squeezing it
+@media (max-width: 1099px) {
+  .stage {
+    flex-direction: column;
+    block-size: auto;
+    min-block-size: 0;
+  }
+
+  .graph {
+    block-size: 420px;
+  }
+
+  .stage :deep(.inspector) {
+    inline-size: auto;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :deep(.vue-flow__node),
   :deep(.vue-flow__edge) {

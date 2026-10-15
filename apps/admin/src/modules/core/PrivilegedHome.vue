@@ -14,7 +14,7 @@
       </el-tab-pane>
 
       <el-tab-pane name="integrations" :label="$t('Integrations')">
-        <WorkflowsView />
+        <IntegrationsFlowTab />
 
       </el-tab-pane>
 
@@ -38,7 +38,7 @@ import QuickStartWizard from '@/modules/admins/components/QuickStartWizard.vue';
 import DashboardOverview from '@/modules/core/components/DashboardOverview.vue';
 import IntegratorsSuggestions from '@/modules/core/components/IntegratorsSuggestions.vue';
 import ConfigHub from '@/modules/core/components/home/ConfigHub.vue';
-import WorkflowsView from '../integrations/components/WorkflowsView.vue';
+import IntegrationsFlowTab from '../integrations/components/flow/IntegrationsFlowTab.vue';
 import { useLegacyEditorRedirect } from '../integrations/compositions/legacy-editor-redirect';
 import { useRoute, useRouter } from 'vue-router';
 import { computed } from 'vue';

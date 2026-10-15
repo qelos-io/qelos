@@ -1554,5 +1554,7 @@
   "Transform": "Transform",
   "When": "When",
   "{count} events nobody listens to": "{count} events nobody listens to",
-  "{count} steps": "{count} steps"
+  "{count} steps": "{count} steps",
+  "How your integrations start each other. Select one to follow its flow.": "How your integrations start each other. Select one to follow its flow.",
+  "Manage integrations": "Manage integrations"
 }

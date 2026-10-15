@@ -1554,5 +1554,7 @@
   "Transform": "Transformer",
   "When": "Quand",
   "{count} events nobody listens to": "{count} événements que personne n'écoute",
-  "{count} steps": "{count} étapes"
+  "{count} steps": "{count} étapes",
+  "How your integrations start each other. Select one to follow its flow.": "Comment vos intégrations se déclenchent entre elles. Sélectionnez-en une pour suivre son flux.",
+  "Manage integrations": "Gérer les intégrations"
 }

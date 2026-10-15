@@ -1554,5 +1554,7 @@
   "Transform": "עיבוד",
   "When": "כאשר",
   "{count} events nobody listens to": "{count} אירועים שאף אחד לא מאזין להם",
-  "{count} steps": "{count} שלבים"
+  "{count} steps": "{count} שלבים",
+  "How your integrations start each other. Select one to follow its flow.": "איך האינטגרציות שלכם מפעילות זו את זו. בחרו אחת כדי לעקוב אחרי התהליך שלה.",
+  "Manage integrations": "ניהול אינטגרציות"
 }
