@@ -26,8 +26,8 @@
         <ConfigHub />
       </el-tab-pane>
     </el-tabs>
+    <footer><QuickStartWizard/></footer>
   </div>
- <footer><QuickStartWizard/></footer>
 </template>
 
 <script setup lang="ts">

@@ -209,14 +209,15 @@ function getBadgeClass(blueprint: IBlueprint) {
   return 'large';
 }
 
-function getTypeTagType(type: string | undefined): '' | 'success' | 'warning' | 'info' | 'danger' {
+// '' is not a valid tag type in Element Plus; the default (primary) look is the undefined one
+function getTypeTagType(type: string | undefined): undefined | 'success' | 'warning' | 'info' | 'danger' {
   switch(type?.toString().toLowerCase()) {
-    case 'string': return '';
+    case 'string': return undefined;
     case 'number': return 'success';
     case 'boolean': return 'warning';
     case 'date': return 'danger';
     case 'object': return 'info';
-    default: return '';
+    default: return undefined;
   }
 }
 
