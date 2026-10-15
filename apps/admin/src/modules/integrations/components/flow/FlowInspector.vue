@@ -7,14 +7,40 @@ import { useFlowCanvasStore } from '../../store/flow-canvas';
 import { AUTOMATION_TYPES } from '../../services/integration-presentation';
 import { signatureKey, signatureLabel } from '../../services/flow-graph';
 import { useI18n } from 'vue-i18n';
+import { watch } from 'vue';
+import { useFlowActivityStore } from '../../store/flow-activity';
+import { nodeActivities, activityLevel } from '../../services/flow-activity';
+import { formatRelative } from '@/modules/admins/services/event-presentation';
+import type { EventSignature } from '../../services/flow-graph';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const activityStore = useFlowActivityStore();
 const router = useRouter();
 const store = useFlowCanvasStore();
 const { selected, relations, selectedEdge, busy } = storeToRefs(store);
 
 const integration = computed(() => (selected.value?.type === 'integration' ? selected.value : null));
 const typeLabel = computed(() => (integration.value ? t(AUTOMATION_TYPES.find((entry) => entry.key === integration.value!.automationType)!.label.replace(/s$/, '')) : ''));
+// the events behind the selection, each with its numbers and the latest occurrences
+const events = computed<{ role: string; signature: EventSignature; level: string; day: number; week: number; last?: string }[]>(() => {
+  if (selectedEdge.value) {
+    const activity = activityStore.of(selectedEdge.value.signature);
+    return [{ role: 'link', signature: selectedEdge.value.signature, level: activityLevel(activity), day: activity.day, week: activity.week, last: activity.last }];
+  }
+  if (!selected.value) return [];
+  return nodeActivities(selected.value, activityStore.activities).map((item) => {
+    const signature = item.role === 'announces' ? (selected.value as any).emits : selected.value!.type === 'event' ? (selected.value as any).signature : (selected.value as any).trigger.event;
+    return { role: item.role, signature, level: activityLevel(item.activity), day: item.activity.day, week: item.activity.week, last: item.activity.last };
+  });
+});
+
+watch(events, (list) => list.forEach((entry) => entry.signature && !activityStore.recent[signatureKey(entry.signature)] && activityStore.loadRecent(entry.signature)), { immediate: true });
+
+const recentOf = (signature: EventSignature) => activityStore.recent[signatureKey(signature)] || [];
+const ago = (value: string | Date) => formatRelative(value, new Date(), locale.value || undefined);
+const roleText = (role: string) => (role === 'announces' ? t('Announced') : role === 'receives' ? t('Received') : role === 'link' ? t('Sent') : t('Started by'));
+const logLink = (signature: EventSignature) => ({ name: 'log', query: { source: signature.source, kind: signature.kind, eventName: signature.eventName, period: 'last-month' } });
+
 const nameOf = (id: string) => {
   const node = store.nodeById(id);
   return node?.type === 'integration' ? node.name : node?.type === 'event' ? node.signature.eventName : id;
@@ -43,6 +69,15 @@ const open = () => router.push({ name: 'integration-edit', params: { integration
       <div><dt>{{ $t('To') }}</dt><dd dir="auto"><button type="button" class="link" @click="store.select(selectedEdge.to)">{{ nameOf(selectedEdge.to) }}</button></dd></div>
       <div><dt>{{ $t('Event') }}</dt><dd dir="ltr">{{ signatureLabel(selectedEdge.signature) }}</dd></div>
     </dl>
+
+    <section v-for="entry in events" :key="entry.role + entry.signature.eventName" class="activity" :class="`level-${entry.level}`">
+      <h3><span class="dot" aria-hidden="true" />{{ roleText(entry.role) }}: <code dir="ltr">{{ entry.signature.eventName }}</code></h3>
+      <p class="numbers">{{ $t('{day} in 24h · {week} in 7 days', { day: entry.day, week: entry.week }) }}<template v-if="entry.last"> · {{ $t('last') }} {{ ago(entry.last) }}</template><template v-else> · {{ $t('none in the last month') }}</template></p>
+      <ul v-if="recentOf(entry.signature).length" class="recent">
+        <li v-for="event in recentOf(entry.signature)" :key="event._id"><time>{{ ago(event.created) }}</time><span dir="auto">{{ event.description || event.eventName }}</span></li>
+      </ul>
+      <router-link class="link" :to="logLink(entry.signature)">{{ $t('Open in the events log') }}</router-link>
+    </section>
     <footer class="actions">
       <el-button type="danger" plain :loading="busy" @click="store.disconnect(selectedEdge.id)">{{ $t('Disconnect') }}</el-button>
     </footer>
@@ -69,6 +104,16 @@ const open = () => router.push({ name: 'integration-edit', params: { integration
     <dl v-else class="facts">
       <div><dt>{{ $t('Event') }}</dt><dd dir="ltr">{{ signatureLabel((selected as any).signature) }}</dd></div>
     </dl>
+
+
+    <section v-for="entry in events" :key="entry.role + entry.signature.eventName" class="activity" :class="`level-${entry.level}`">
+      <h3><span class="dot" aria-hidden="true" />{{ roleText(entry.role) }}: <code dir="ltr">{{ entry.signature.eventName }}</code></h3>
+      <p class="numbers">{{ $t('{day} in 24h · {week} in 7 days', { day: entry.day, week: entry.week }) }}<template v-if="entry.last"> · {{ $t('last') }} {{ ago(entry.last) }}</template><template v-else> · {{ $t('none in the last month') }}</template></p>
+      <ul v-if="recentOf(entry.signature).length" class="recent">
+        <li v-for="event in recentOf(entry.signature)" :key="event._id"><time>{{ ago(event.created) }}</time><span dir="auto">{{ event.description || event.eventName }}</span></li>
+      </ul>
+      <router-link class="link" :to="logLink(entry.signature)">{{ $t('Open in the events log') }}</router-link>
+    </section>
 
     <section v-if="relations.triggeredBy.length" class="rel">
       <h3>{{ $t('Started by') }}</h3>
@@ -193,5 +238,83 @@ const open = () => router.push({ name: 'integration-edit', params: { integration
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+.activity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-block-start: 10px;
+  border-block-start: 1px solid var(--el-border-color-extra-light);
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+
+    code {
+      overflow: hidden;
+      font-size: 0.8rem;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+.dot {
+  flex: none;
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--el-border-color-dark);
+}
+
+.level-active .dot {
+  background: var(--el-color-success);
+}
+
+.level-recent .dot {
+  background: var(--el-color-primary-light-5);
+}
+
+.numbers {
+  margin: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 0.82rem;
+  text-align: start;
+}
+
+.recent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    gap: 8px;
+    font-size: 0.8rem;
+  }
+
+  time {
+    flex: none;
+    color: var(--el-text-color-secondary);
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.activity .link {
+  align-self: flex-start;
+  font-size: 0.82rem;
+  text-decoration: none;
 }
 </style>

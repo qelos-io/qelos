@@ -1,8 +1,17 @@
 <script lang="ts" setup>
+import { computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import { Handle, Position, type NodeProps } from '@vue-flow/core';
+import { useFlowActivityStore } from '../../store/flow-activity';
+import { useFlowCanvasStore } from '../../store/flow-canvas';
+import { countFor } from '../../services/flow-activity';
 import type { EventNodeData } from '../../services/flow-graph';
 
-defineProps<NodeProps<EventNodeData>>();
+const props = defineProps<NodeProps<EventNodeData>>();
+const activityStore = useFlowActivityStore();
+const { activities } = storeToRefs(activityStore);
+const { showActivity, period } = storeToRefs(useFlowCanvasStore());
+const count = computed(() => (showActivity.value && activityStore.known ? countFor(activities.value[`${props.data.signature.source}|${props.data.signature.kind}|${props.data.signature.eventName}`], period.value) : null));
 </script>
 
 <template>
@@ -10,7 +19,7 @@ defineProps<NodeProps<EventNodeData>>();
     <font-awesome-icon :icon="['fas', 'bolt']" class="icon" aria-hidden="true" />
     <span class="text">
       <strong dir="auto">{{ data.signature.eventName }}</strong>
-      <small dir="auto">{{ data.signature.source }} · {{ data.signature.kind }}</small>
+      <small dir="auto">{{ data.signature.source }} · {{ data.signature.kind }}<template v-if="count !== null"> · {{ count }}×</template></small>
     </span>
     <Handle type="source" :position="Position.Right" class="handle" />
   </article>

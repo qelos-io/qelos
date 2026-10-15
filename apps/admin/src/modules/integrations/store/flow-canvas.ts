@@ -6,6 +6,8 @@ import { translate } from '@/plugins/i18n';
 import integrationsService from '@/services/apis/integrations-service';
 import { useIntegrationsStore } from './integrations';
 import { useIntegrationSourcesStore } from './integration-sources';
+import { useFlowActivityStore } from './flow-activity';
+import { countFor } from '../services/flow-activity';
 import { buildFlowGraph, diagnose, flowOf, relationsOf, standaloneIds, subgraph, type FlowGraph, type FlowIntegration, type FlowNodeData } from '../services/flow-graph';
 import { layoutFlow } from '../services/flow-layout';
 import { inverseUpdates, planConnect, planDisconnect, type FullIntegration, type IntegrationUpdate, type LinkRefusal } from '../services/flow-links';
@@ -29,6 +31,9 @@ export const useFlowCanvasStore = defineStore('flow-canvas', () => {
   const allowedIds = ref<Set<string> | null>(null);
   const showStandalone = ref(true);
   const showMinimap = ref(false);
+  const showActivity = ref(true);
+  const period = ref<'day' | 'week'>('week');
+  const activityStore = useFlowActivityStore();
 
   const sourcesById = computed(() => Object.fromEntries((sourcesStore.result || []).map((source: any) => [source._id, source])));
   const graph = computed<FlowGraph>(() => buildFlowGraph((integrationsStore.integrations || []) as FlowIntegration[], sourcesById.value));
@@ -62,12 +67,19 @@ export const useFlowCanvasStore = defineStore('flow-canvas', () => {
     })),
   );
 
+  // the event name, with how often it happened in the chosen period once the numbers are in
+  const edgeLabel = (signature: { source: string; kind: string; eventName: string }) => {
+    if (!showActivity.value || !activityStore.known) return signature.eventName;
+    const count = countFor(activityStore.of(signature), period.value);
+    return `${signature.eventName} · ${count}×`;
+  };
+
   const edges = computed<Edge[]>(() =>
     visible.value.edges.map((edge) => ({
       id: edge.id,
       source: edge.from,
       target: edge.to,
-      label: edge.signature.eventName,
+      label: edgeLabel(edge.signature),
       data: edge.signature,
       markerEnd: 'arrowclosed',
       selected: edge.id === selectedEdgeId.value,
@@ -194,5 +206,5 @@ export const useFlowCanvasStore = defineStore('flow-canvas', () => {
     }
   }
 
-  return { selectedId, selectedEdgeId, selectedEdge, lastChange, busy, planLink, connect, disconnect, undo, selectEdge, allowedIds, showStandalone, showMinimap, graph, visible, nodes, edges, selected, relations, problems, standalone, nodeById, select };
+  return { showActivity, period, selectedId, selectedEdgeId, selectedEdge, lastChange, busy, planLink, connect, disconnect, undo, selectEdge, allowedIds, showStandalone, showMinimap, graph, visible, nodes, edges, selected, relations, problems, standalone, nodeById, select };
 });

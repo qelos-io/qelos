@@ -1,11 +1,14 @@
 <script lang="ts" setup>
 import { storeToRefs } from 'pinia';
 import { useFlowCanvasStore } from '../../store/flow-canvas';
+import { useFlowActivityStore } from '../../store/flow-activity';
 
-defineEmits<{ fit: [] }>();
+defineEmits<{ fit: []; refresh: [] }>();
 
 const store = useFlowCanvasStore();
-const { showStandalone, showMinimap, standalone, problems, lastChange, busy } = storeToRefs(store);
+const { showStandalone, showMinimap, showActivity, period, standalone, problems, lastChange, busy } = storeToRefs(store);
+const activity = useFlowActivityStore();
+const { loading: loadingActivity } = storeToRefs(activity);
 </script>
 
 <template>
@@ -14,6 +17,14 @@ const { showStandalone, showMinimap, standalone, problems, lastChange, busy } = 
       <el-switch v-model="showStandalone" size="small" />
       <span>{{ $t('Show unlinked ({count})', { count: standalone.size }) }}</span>
     </label>
+    <label class="toggle">
+      <el-switch v-model="showActivity" size="small" />
+      <span>{{ $t('Activity') }}</span>
+    </label>
+    <template v-if="showActivity">
+      <el-segmented v-model="period" size="small" :options="[{ label: $t('24h'), value: 'day' }, { label: $t('7 days'), value: 'week' }]" :aria-label="$t('Period')" />
+      <el-button size="small" text :loading="loadingActivity" :aria-label="$t('Refresh activity')" @click="$emit('refresh')"><font-awesome-icon :icon="['fas', 'rotate']" aria-hidden="true" /></el-button>
+    </template>
     <label class="toggle">
       <el-switch v-model="showMinimap" size="small" />
       <span>{{ $t('Minimap') }}</span>

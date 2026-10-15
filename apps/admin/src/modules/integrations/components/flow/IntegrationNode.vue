@@ -2,16 +2,36 @@
 import { computed } from 'vue';
 import { Handle, Position, type NodeProps } from '@vue-flow/core';
 import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import { useFlowActivityStore } from '../../store/flow-activity';
+import { useFlowCanvasStore } from '../../store/flow-canvas';
+import { activityLevel, countFor, nodeActivities } from '../../services/flow-activity';
+import { formatRelative } from '@/modules/admins/services/event-presentation';
 import { useIntegrationKinds } from '../../compositions/integration-kinds';
 import { AUTOMATION_TYPES } from '../../services/integration-presentation';
 import type { IntegrationNodeData } from '../../services/flow-graph';
 
 const props = defineProps<NodeProps<IntegrationNodeData>>();
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const activityStore = useFlowActivityStore();
+const { activities } = storeToRefs(activityStore);
+const { showActivity, period } = storeToRefs(useFlowCanvasStore());
 const kinds = useIntegrationKinds() as Record<string, { logo?: string; name: string }>;
 
 const typeLabel = computed(() => t(AUTOMATION_TYPES.find((entry) => entry.key === props.data.automationType)!.label.replace(/s$/, '')));
 const logo = (kind: string) => kinds[kind]?.logo;
+// what the platform recorded for the events this integration waits for and announces
+const runs = computed(() => {
+  if (!showActivity.value) return [];
+  return nodeActivities(props.data, activities.value).map((item) => ({
+    role: item.role,
+    level: activityLevel(item.activity),
+    count: countFor(item.activity, period.value),
+    ago: item.activity.last ? formatRelative(item.activity.last, new Date(), locale.value || undefined) : '',
+  }));
+});
+const roleLabel = (role: string) => (role === 'announces' ? t('Announced') : t('Started'));
+
 const triggerText = computed(() => [props.data.trigger.source, props.data.trigger.event?.eventName || props.data.trigger.operation].filter(Boolean).join(' · '));
 const targetText = computed(() => [props.data.target.source, props.data.target.operation].filter(Boolean).join(' · '));
 </script>
@@ -39,6 +59,13 @@ const targetText = computed(() => [props.data.target.source, props.data.target.o
         <span class="line" dir="auto"><small>{{ $t('Then') }}</small>{{ targetText || '—' }}</span>
       </li>
     </ol>
+
+    <ul v-if="runs.length" class="runs" :aria-label="$t('Activity')">
+      <li v-for="run in runs" :key="run.role" :class="`level-${run.level}`">
+        <span class="dot" aria-hidden="true" />
+        <span class="run-text">{{ roleLabel(run.role) }} {{ run.count }}× <template v-if="run.ago">· {{ run.ago }}</template><template v-else>· {{ $t('never lately') }}</template></span>
+      </li>
+    </ul>
 
     <footer v-if="data.emits || !data.active" class="foot">
       <span v-if="!data.active" class="chip muted">{{ $t('Inactive') }}</span>
@@ -143,6 +170,46 @@ const targetText = computed(() => [props.data.target.source, props.data.target.o
     font-size: 0.68rem;
     text-transform: none;
   }
+}
+
+.runs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 8px 0 0;
+  padding: 6px 0 0;
+  border-block-start: 1px solid var(--el-border-color-extra-light);
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--el-text-color-secondary);
+    font-size: 0.72rem;
+  }
+}
+
+.dot {
+  flex: none;
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 50%;
+  background: var(--el-border-color-dark);
+}
+
+.level-active .dot {
+  background: var(--el-color-success);
+}
+
+.level-recent .dot {
+  background: var(--el-color-primary-light-5);
+}
+
+.run-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .foot {

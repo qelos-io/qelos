@@ -6,6 +6,8 @@ import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import { MiniMap } from '@vue-flow/minimap';
 import { useFlowCanvasStore } from '../../store/flow-canvas';
+import { useFlowActivityStore } from '../../store/flow-activity';
+import { signaturesToTrack } from '../../services/flow-activity';
 import IntegrationNode from './IntegrationNode.vue';
 import EventNode from './EventNode.vue';
 import FlowToolbar from './FlowToolbar.vue';
@@ -16,7 +18,13 @@ import '@vue-flow/controls/dist/style.css';
 import '@vue-flow/minimap/dist/style.css';
 
 const store = useFlowCanvasStore();
-const { nodes, edges, showMinimap, selected, selectedEdge } = storeToRefs(store);
+const { nodes, edges, showMinimap, showActivity, selected, selectedEdge } = storeToRefs(store);
+const activity = useFlowActivityStore();
+
+// numbers for the events on screen: loaded when they first show, kept for a couple of minutes, refreshable
+const trackedSignatures = () => signaturesToTrack(store.visible.nodes, store.visible.edges);
+watch([() => nodes.value.map((node) => node.id).join(','), showActivity], () => showActivity.value && activity.load(trackedSignatures()), { immediate: true });
+const refresh = () => activity.load(trackedSignatures(), true);
 const { fitView, onNodeClick, onPaneClick, onEdgeClick, onConnect } = useVueFlow();
 
 onNodeClick(({ node }) => store.select(node.id));
@@ -56,7 +64,7 @@ watch(
 
 <template>
   <section class="canvas" :aria-label="$t('Flow canvas')">
-    <FlowToolbar @fit="fit" />
+    <FlowToolbar @fit="fit" @refresh="refresh" />
     <div class="stage" :class="{ 'with-inspector': !!selected || !!selectedEdge }">
       <div class="graph">
         <VueFlow

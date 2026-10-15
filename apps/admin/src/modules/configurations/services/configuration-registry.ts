@@ -141,7 +141,8 @@ export const CONFIGURATION_GROUPS: { key: ConfigurationGroupKey; label: string }
   { key: 'money', label: 'People & money' },
 ];
 
-/** The configurations the admin knows how to present. Anything else is shown as a custom configuration. */
+/** The configurations that exist in the platform's code (migrations, services, global types). Only these are presented by name;
+ * anything else is shown as a custom configuration. */
 export const CONFIGURATION_INFO: ConfigurationInfo[] = [
   { key: 'appearance', title: 'Appearance', description: 'Themes, colors, typography, and design tokens', icon: ['fas', 'palette'], group: 'application', route: { name: 'appearance' } },
   { key: 'app-configuration', title: 'App Settings', description: 'Configure application name, logo, and general settings', icon: ['fas', 'gear'], group: 'application' },
@@ -150,8 +151,7 @@ export const CONFIGURATION_INFO: ConfigurationInfo[] = [
   { key: 'users-header', title: 'Users Header Template', description: 'Design a custom HTML header for the users list view.', icon: ['fas', 'table-columns'], group: 'application' },
   { key: 'ssr-scripts', title: 'SSR Scripts', description: 'Manage server-side rendering scripts and HTML templates', icon: ['fab', 'html5'], group: 'application' },
   { key: 'mcp-configuration', title: 'MCP Configuration', description: 'Configure remote MCP tool exposure and OAuth callback URLs', icon: ['fas', 'plug'], group: 'connections' },
-  { key: 'global-ai-configuration', title: 'Global AI', description: 'Default AI provider and model settings for the whole application', icon: ['fas', 'wand-magic-sparkles'], group: 'connections' },
-  { key: 'livekit-live-users', title: 'LiveKit live users', description: 'Real-time rooms and live user presence', icon: ['fas', 'video'], group: 'connections' },
+  { key: 'global-ai-configuration', title: 'Global AI', description: 'Monthly AI prompt allowance per tenant and the system prompts used to generate blueprints and screens', icon: ['fas', 'wand-magic-sparkles'], group: 'connections' },
   { key: 'payments-configuration', title: 'Payments & Plans', description: 'Configure pricing plans, coupons, and payment providers', icon: ['fas', 'tags'], group: 'money', route: { name: 'paymentsConfiguration' } },
 ];
 
