@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, nextTick } from 'vue';
+import { ref, watch, computed } from 'vue';
 import BlueprintDropdown from '@/modules/integrations/components/BlueprintDropdown.vue';
 import { QelosTargetOperation } from '@qelos/global-types';
 
@@ -23,19 +23,28 @@ const qelosDetails = ref({
   source: '',
 });
 
-// Roles input UI state
-const roleInputVisible = ref(false);
-const roleInputValue = ref('');
-const roleInputRef = ref<{ input: HTMLInputElement } | null>(null);
+// Roles are a mapping value: a JSON list typed by hand or picked below, or an expression such as .data.roles
+const KNOWN_ROLES = ['admin', 'editor', 'user'];
 
-// Computed property for roles array
-const rolesArray = computed(() => {
+const rolesArray = computed<string[]>(() => {
   try {
-    return qelosDetails.value.roles ? JSON.parse(qelosDetails.value.roles) : [];
+    const parsed = qelosDetails.value.roles ? JSON.parse(qelosDetails.value.roles) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
     return [];
   }
 });
+
+/** the picker only applies while the value is empty or a plain list, not an expression */
+const rolesPickable = computed(() => {
+  if (!qelosDetails.value.roles) return true;
+  try {
+    return Array.isArray(JSON.parse(qelosDetails.value.roles));
+  } catch (e) {
+    return false;
+  }
+});
+const roleChoices = computed(() => [...new Set([...KNOWN_ROLES, ...rolesArray.value])]);
 
 // Initialize component with existing data if available
 const initQelosDetails = () => {
@@ -54,27 +63,9 @@ const initQelosDetails = () => {
   }
 };
 
-// Roles input methods
-const showRoleInput = () => {
-  roleInputVisible.value = true;
-  nextTick(() => {
-    roleInputRef.value?.input?.focus();
-  });
-};
-
-const handleRoleRemove = (tag: string) => {
-  const roles = rolesArray.value.filter(role => role !== tag);
-  qelosDetails.value.roles = JSON.stringify(roles);
-  syncQelosDetailsToTargetDetails();
-};
-
-const handleRoleConfirm = () => {
-  if (roleInputValue.value) {
-    const roles = [...rolesArray.value, roleInputValue.value];
-    qelosDetails.value.roles = JSON.stringify(roles);
-  }
-  roleInputVisible.value = false;
-  roleInputValue.value = '';
+const toggleRole = (role: string) => {
+  const roles = rolesArray.value.includes(role) ? rolesArray.value.filter((item) => item !== role) : [...rolesArray.value, role];
+  qelosDetails.value.roles = roles.length ? JSON.stringify(roles) : '';
   syncQelosDetailsToTargetDetails();
 };
 
@@ -131,153 +122,94 @@ watch(() => props.modelValue, initQelosDetails, { immediate: true });
 </script>
 
 <template>
-  <div class="qelos-target-config">
+  <el-form label-position="top" class="qelos-target-config" @submit.prevent>
     <!-- Webhook -->
-    <div v-if="operation === QelosTargetOperation.webhook" class="webhook-config">
-      <el-form-item :label="$t('Event Kind')">
-        <el-input v-model="qelosDetails.kind" placeholder="e.g., users, orders" @input="syncQelosDetailsToTargetDetails" />
-      </el-form-item>
-      
-      <el-form-item :label="$t('Event Name')">
-        <el-input v-model="qelosDetails.eventName" placeholder="e.g., user.created" @input="syncQelosDetailsToTargetDetails" />
-      </el-form-item>
+    <template v-if="operation === QelosTargetOperation.webhook">
+      <div class="two">
+        <el-form-item :label="$t('Event kind')"><el-input v-model="qelosDetails.kind" dir="ltr" placeholder="users" @input="syncQelosDetailsToTargetDetails" /></el-form-item>
+        <el-form-item :label="$t('Event name')"><el-input v-model="qelosDetails.eventName" dir="ltr" placeholder="user-created" @input="syncQelosDetailsToTargetDetails" /></el-form-item>
+      </div>
+      <el-form-item :label="$t('Description')"><el-input v-model="qelosDetails.description" dir="auto" :placeholder="$t('Event description')" @input="syncQelosDetailsToTargetDetails" /></el-form-item>
+    </template>
 
-      <el-form-item :label="$t('Description')">
-        <el-input v-model="qelosDetails.description" placeholder="Event description" @input="syncQelosDetailsToTargetDetails" />
+    <!-- Create / update a user, set roles -->
+    <template v-else-if="operation === QelosTargetOperation.createUser || operation === QelosTargetOperation.updateUser || operation === QelosTargetOperation.setUserRoles">
+      <p class="hint">{{ $t('Each field takes a value from your data steps, written like .data.email, or a fixed value.') }}</p>
+      <el-form-item v-if="operation !== QelosTargetOperation.createUser" :label="$t('User ID')">
+        <el-input v-model="qelosDetails.userId" dir="ltr" placeholder=".data.userId" @input="syncQelosDetailsToTargetDetails" />
       </el-form-item>
-    </div>
-    
-    <!-- Create User -->
-    <div v-else-if="operation === QelosTargetOperation.createUser" class="user-config">
-      <p class="config-description">{{ $t('Map these fields from your data manipulation steps:') }}</p>
-      
-      <el-form-item :label="$t('Password')">
-        <el-input v-model="qelosDetails.password" placeholder="e.g., .data.password" @input="syncQelosDetailsToTargetDetails" />
+      <el-form-item v-if="operation !== QelosTargetOperation.setUserRoles" :label="operation === QelosTargetOperation.updateUser ? $t('Password (optional)') : $t('Password')">
+        <el-input v-model="qelosDetails.password" dir="ltr" placeholder=".data.password" @input="syncQelosDetailsToTargetDetails" />
       </el-form-item>
-      
-      <el-form-item :label="$t('Roles')">
-        <el-input v-model="qelosDetails.roles" placeholder="e.g., .data.roles or ['user']" @input="syncQelosDetailsToTargetDetails" />
+      <el-form-item :label="operation === QelosTargetOperation.updateUser ? $t('Roles (optional)') : $t('Roles')">
+        <el-input v-model="qelosDetails.roles" dir="ltr" placeholder='.data.roles  or  ["user"]' @input="syncQelosDetailsToTargetDetails" />
+        <div v-if="rolesPickable" class="role-picks" role="group" :aria-label="$t('Pick roles')">
+          <button v-for="role in roleChoices" :key="role" type="button" class="pick" :class="{ on: rolesArray.includes(role) }" :aria-pressed="rolesArray.includes(role)" @click="toggleRole(role)">{{ role }}</button>
+        </div>
+        <p v-else class="hint">{{ $t('This value is an expression, so it is used as written.') }}</p>
       </el-form-item>
-      
-      <el-form-item :label="$t('User ID')">
-        <el-input v-model="qelosDetails.userId" placeholder="e.g., .data.userId" @input="syncQelosDetailsToTargetDetails" />
-      </el-form-item>
-      
-      <el-form-item :label="$t('Roles')">
-        <el-tag
-          :key="tag"
-          v-for="tag in rolesArray"
-          closable
-          :disable-transitions="false"
-          @close="handleRoleRemove(tag)"
-          class="mr-1 mb-1"
-        >
-          {{ tag }}
-        </el-tag>
-        <el-input
-          v-if="roleInputVisible"
-          ref="roleInputRef"
-          v-model="roleInputValue"
-          class="ml-1 w-auto"
-          size="small"
-          @keyup.enter="handleRoleConfirm"
-          @blur="handleRoleConfirm"
-        />
-        <el-button v-else class="button-new-tag ml-1" size="small" @click="showRoleInput">
-          + {{ $t('Add role') }}
-        </el-button>
-      </el-form-item>
-    </div>
-    
-    <!-- Update User -->
-    <div v-else-if="operation === QelosTargetOperation.updateUser" class="user-config">
-      <p class="config-description">{{ $t('Map these fields from your data manipulation steps:') }}</p>
-      
-      <el-form-item :label="$t('User ID')">
-        <el-input v-model="qelosDetails.userId" placeholder="e.g., .data.userId" @input="syncQelosDetailsToTargetDetails" />
-      </el-form-item>
-      
-      <el-form-item :label="$t('Password (Optional)')">
-        <el-input v-model="qelosDetails.password" placeholder="e.g., .data.password" @input="syncQelosDetailsToTargetDetails" />
-      </el-form-item>
-      
-      <el-form-item :label="$t('Roles (Optional)')">
-        <el-input v-model="qelosDetails.roles" placeholder="e.g., .data.roles or ['user']" @input="syncQelosDetailsToTargetDetails" />
-      </el-form-item>
-    </div>
-    
-    <!-- Set User Roles -->
-    <div v-else-if="operation === QelosTargetOperation.setUserRoles" class="user-config">
-      <p class="config-description">{{ $t('Map these fields from your data manipulation steps:') }}</p>
-      
-      <el-form-item :label="$t('User ID')">
-        <el-input v-model="qelosDetails.userId" placeholder="e.g., .data.userId" @input="syncQelosDetailsToTargetDetails" />
-      </el-form-item>
-      
-      <el-form-item :label="$t('Roles')">
-        <el-tag
-          :key="tag"
-          v-for="tag in rolesArray"
-          closable
-          :disable-transitions="false"
-          @close="handleRoleRemove(tag)"
-          class="mr-1 mb-1"
-        >
-          {{ tag }}
-        </el-tag>
-        <el-input
-          v-if="roleInputVisible"
-          ref="roleInputRef"
-          v-model="roleInputValue"
-          class="ml-1 w-auto"
-          size="small"
-          @keyup.enter="handleRoleConfirm"
-          @blur="handleRoleConfirm"
-        />
-        <el-button v-else class="button-new-tag ml-1" size="small" @click="showRoleInput">
-          + {{ $t('Add role') }}
-        </el-button>
-      </el-form-item>
-    </div>
-    
-    <!-- Set Workspace Labels -->
-    <div v-else-if="operation === QelosTargetOperation.setWorkspaceLabels" class="workspace-config">
-      <p class="config-description">{{ $t('This operation is not fully supported yet.') }}</p>
-    </div>
-    
-    <!-- Create Blueprint Entity -->
-    <div v-else-if="operation === QelosTargetOperation.createBlueprintEntity || operation === QelosTargetOperation.updateBlueprintEntity" class="blueprint-config">
-      <el-form-item :label="$t('Blueprint')">
-        <BlueprintDropdown v-model="qelosDetails.blueprint" @change="syncQelosDetailsToTargetDetails" />
-      </el-form-item>
-    </div>
-  </div>
+    </template>
+
+    <p v-else-if="operation === QelosTargetOperation.setWorkspaceLabels" class="hint">{{ $t('This operation is not fully supported yet.') }}</p>
+
+    <!-- Blueprint entity -->
+    <el-form-item v-else-if="operation === QelosTargetOperation.createBlueprintEntity || operation === QelosTargetOperation.updateBlueprintEntity" :label="$t('Blueprint')">
+      <BlueprintDropdown v-model="qelosDetails.blueprint" @change="syncQelosDetailsToTargetDetails" />
+    </el-form-item>
+  </el-form>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .qelos-target-config {
-  width: 100%;
+  max-inline-size: 640px;
 }
 
-.config-description {
+.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 14px;
+}
+
+.hint {
+  margin: 0 0 12px;
+  padding: 0;
   color: var(--el-text-color-secondary);
-  font-size: 0.9em;
-  margin-block-end: 15px;
+  font-size: 0.85rem;
+  text-align: start;
 }
 
-.mr-1 {
-  margin-inline-end: 0.25rem;
+.role-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-block-start: 8px;
 }
 
-.mb-1 {
-  margin-block-end: 0.25rem;
+.pick {
+  padding: 2px 12px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--el-text-color-regular);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &.on {
+    border-color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+    color: var(--el-color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
 }
 
-.ml-1 {
-  margin-inline-start: 0.25rem;
-}
-
-.w-auto {
-  width: auto;
+@media (max-width: 640px) {
+  .two {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

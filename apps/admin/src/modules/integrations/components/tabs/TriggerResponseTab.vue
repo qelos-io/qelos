@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
-import Monaco from '@/modules/users/components/Monaco.vue';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 import { useIntegrationSourcesStore } from '@/modules/integrations/store/integration-sources';
+import StepSection from '@/modules/integrations/components/steps/StepSection.vue';
+import JsonDetails from '@/modules/integrations/components/steps/JsonDetails.vue';
 
 const props = defineProps<{
   modelValue: any;
@@ -173,327 +174,156 @@ const dependentIntegrations = computed(() => {
 </script>
 
 <template>
-  <div class="trigger-response-tab">
-    <el-alert
-      type="info"
-      :closable="false"
-      class="mb-3"
-    >
-      {{ $t('Use trigger responses to broadcast platform events once your target finishes its work.') }}
-    </el-alert>
+  <div class="trigger-response">
+    <StepSection :title="$t('Announce an event when this succeeds')" :hint="$t('Other integrations can listen for it and run next.')">
+      <template #aside>
+        <el-switch v-model="triggerResponseToggle" :disabled="!modelValue?.source" :aria-label="$t('Announce an event when this succeeds')" />
+      </template>
+      <p v-if="!modelValue?.source" class="hint">{{ $t('Select and configure a target connection first to unlock trigger responses.') }}</p>
+    </StepSection>
 
-    <div class="enable-card">
-      <div>
-        <h4>{{ $t('Trigger response automation') }}</h4>
-        <p class="help-text">{{ $t('Send a platform event whenever this target succeeds so other integrations can react immediately.') }}</p>
-      </div>
-      <div class="enable-switch">
-        <span class="status-text" :class="{ active: isTriggerResponseEnabled }">
-          {{ isTriggerResponseEnabled ? $t('Enabled') : $t('Disabled') }}
-        </span>
-        <el-switch v-model="triggerResponseToggle" :active-text="$t('On')" :inactive-text="$t('Off')" />
-      </div>
-    </div>
-
-    <div v-if="!modelValue?.source" class="empty-target-state">
-      <p>
-        {{ $t('Select and configure a target connection first to unlock trigger responses.') }}
-      </p>
-    </div>
-
-    <div v-else-if="!isTriggerResponseEnabled" class="empty-trigger-response-state">
-      <h4>{{ $t('Trigger response is disabled') }}</h4>
-      <p>{{ $t('Emit an event only when you need other integrations to react to this target output.') }}</p>
-      <el-button type="primary" @click="enableTriggerResponse">
-        {{ $t('Enable trigger response') }}
-      </el-button>
-    </div>
-
-    <div v-else class="config-sections">
-      <div class="section-card">
-        <div class="event-status">
-          <div class="status-left">
-            <el-tag :type="isEventReady ? 'success' : 'warning'">
-              {{ isEventReady ? $t('Ready to emit') : $t('Missing details') }}
-            </el-tag>
-            <span class="signature-text">{{ eventSignature }}</span>
-          </div>
-          <div class="status-actions">
-            <el-button text size="small" :disabled="!isEventReady" @click="copySignature">
-              {{ $t('Copy signature') }}
-            </el-button>
-            <el-button text type="danger" size="small" @click="clearTriggerResponse">
-              {{ $t('Disable trigger response') }}
-            </el-button>
-          </div>
-        </div>
-
-        <el-alert
-          v-if="missingFields.length"
-          type="warning"
-          :closable="false"
-          class="mb-3"
-        >
-          {{ $t('Please fill the following fields:') }} {{ missingFields.join(', ') }}
-        </el-alert>
-
-        <h4 class="section-title">{{ $t('Event definition') }}</h4>
-        <p class="help-text">{{ $t('Describe the platform event that will be emitted when the target succeeds.') }}</p>
-
-        <el-form label-position="top">
-          <el-row :gutter="16">
-            <el-col :md="12" :sm="24">
-              <el-form-item :label="$t('Source identifier')" :required="true">
-                <el-input v-model="triggerSource" placeholder="e.g., auth, ai, no-code" />
-                <small class="help-text">{{ $t('Matches the source configured on the listening trigger.') }}</small>
-              </el-form-item>
-            </el-col>
-            <el-col :md="12" :sm="24">
-              <el-form-item :label="$t('Kind / channel')" :required="true">
-                <el-input v-model="triggerKind" placeholder="e.g., workspace, quota, blueprints" />
-                <small class="help-text">{{ $t('Use a domain specific grouping so events stay organized.') }}</small>
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="16">
-            <el-col :md="12" :sm="24">
-              <el-form-item :label="$t('Event name')" :required="true">
-                <el-input v-model="triggerEventName" placeholder="e.g., webhook-called, quota-exceeded" />
-              </el-form-item>
-            </el-col>
-            <el-col :md="12" :sm="24">
-              <el-form-item :label="$t('Description')">
-                <el-input v-model="triggerDescription" placeholder="{{ $t('Short human readable summary') }}" />
-              </el-form-item>
-            </el-col>
-          </el-row>
+    <template v-if="modelValue?.source && isTriggerResponseEnabled">
+      <StepSection :title="$t('The event')">
+        <el-form label-position="top" class="grid" @submit.prevent>
+          <el-form-item :label="$t('Source')" required>
+            <el-input v-model="triggerSource" dir="ltr" placeholder="integrations" />
+          </el-form-item>
+          <el-form-item :label="$t('Kind')" required>
+            <el-input v-model="triggerKind" dir="ltr" placeholder="orders" />
+          </el-form-item>
+          <el-form-item :label="$t('Event name')" required>
+            <el-input v-model="triggerEventName" dir="ltr" placeholder="order-created" />
+          </el-form-item>
         </el-form>
-      </div>
-
-      <div class="dual-columns">
-        <div class="section-card">
-          <h4>{{ $t('Metadata') }}</h4>
-          <p class="help-text">{{ $t('Add any JSON payload you want to accompany the event.') }}</p>
-          <Monaco
-            :model-value="metadataText"
-            language="json"
-            height="220px"
-            @update:modelValue="updateMetadata"
-          />
+        <p class="hint">{{ $t('A trigger listens for this event by the same source, kind and event name.') }}</p>
+        <el-form label-position="top" class="wide" @submit.prevent>
+          <el-form-item :label="$t('Description')"><el-input v-model="triggerDescription" dir="auto" :placeholder="$t('Short human readable summary')" /></el-form-item>
+        </el-form>
+        <div class="status">
+          <el-tag :type="isEventReady ? 'success' : 'warning'" effect="light">{{ isEventReady ? $t('Ready to emit') : $t('Missing details') }}</el-tag>
+          <code dir="ltr">{{ eventSignature }}</code>
+          <el-button text size="small" :disabled="!isEventReady" @click="copySignature">{{ $t('Copy signature') }}</el-button>
         </div>
-        <div class="section-card preview-card">
-          <h4>{{ $t('Event preview') }}</h4>
-          <p class="help-text">{{ $t('This is what downstream triggers will receive.') }}</p>
-          <pre>{{ JSON.stringify(eventPreview, null, 2) }}</pre>
-        </div>
-      </div>
+        <p v-if="missingFields.length" class="warn" role="alert">{{ $t('Please fill the following fields:') }} {{ missingFields.join(', ') }}</p>
+      </StepSection>
 
-      <div class="section-card demo-card">
-        <div class="section-header">
-          <div>
-            <h4>{{ $t('Platform event sample') }}</h4>
-            <p class="help-text">{{ $t('Use this object as a reference when mapping trigger listeners or debugging.') }}</p>
-          </div>
-        </div>
-        <pre>{{ JSON.stringify(eventExample, null, 2) }}</pre>
-      </div>
+      <StepSection :title="$t('What listeners will receive')" :hint="$t('The event with the target response added to its metadata.')">
+        <pre class="payload" dir="ltr">{{ JSON.stringify(eventExample, null, 2) }}</pre>
+        <JsonDetails :label="$t('Add your own metadata')" height="160px" :model-value="metadataText" @update:model-value="updateMetadata" />
+      </StepSection>
 
-      <div class="section-card">
-        <div class="section-header">
-          <div>
-            <h4>{{ $t('Listening integrations') }}</h4>
-            <p>{{ $t('Every integration whose trigger matches this event will appear here.') }}</p>
-          </div>
-          <div class="listeners-pill" v-if="isEventReady">
-            <el-tag type="info">{{ dependentIntegrations.length }} {{ $t('listener(s)') }}</el-tag>
-          </div>
-        </div>
-
-        <el-empty
-          v-if="!triggerSource || !triggerKind || !triggerEventName"
-          :description="$t('Provide source, kind and event name to see listeners')"
-        />
-
-        <el-empty
-          v-else-if="!dependentIntegrations.length"
-          :description="$t('No integrations listen to this event yet')"
-        >
-          <span>
-            {{ $t('Use this section as a quick way to discover consumers once they exist.') }}
-          </span>
-        </el-empty>
-
-        <div v-else class="listeners-grid">
-          <div v-for="integration in dependentIntegrations" :key="integration._id" class="listener-card">
-            <div class="listener-header">
-              <strong>{{ integration.trigger.details?.name || sourcesById[integration.trigger.source]?.name || $t('Unnamed trigger') }}</strong>
-              <el-tag v-if="integration.active" type="success" size="small">{{ $t('Active') }}</el-tag>
-              <el-tag v-else type="info" size="small">{{ $t('Paused') }}</el-tag>
+      <StepSection :title="$t('Listeners')" :hint="$t('Every integration whose trigger matches this event.')">
+        <p v-if="!isEventReady" class="hint">{{ $t('Provide source, kind and event name to see listeners') }}</p>
+        <p v-else-if="!dependentIntegrations.length" class="hint">{{ $t('No integrations listen to this event yet') }}</p>
+        <ul v-else class="listeners">
+          <li v-for="integration in dependentIntegrations" :key="integration._id">
+            <div class="who">
+              <router-link :to="{ name: 'integration-edit', params: { integrationId: integration._id } }" dir="auto">{{ integration.trigger.details?.name || sourcesById[integration.trigger.source]?.name || $t('Unnamed trigger') }}</router-link>
+              <span class="sub">{{ $t('Target') }}: {{ sourcesById[integration.target.source]?.name || $t('Unknown') }}</span>
             </div>
-            <p class="listener-description">
-              {{ integration.trigger.details?.description || $t('No description provided') }}
-            </p>
-            <div class="listener-meta">
-              <span>{{ $t('Target') }}: {{ sourcesById[integration.target.source]?.name || $t('Unknown') }}</span>
-              <span>ID: {{ integration._id }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+            <el-tag :type="integration.active ? 'success' : 'info'" size="small" effect="light">{{ integration.active ? $t('Active') : $t('Paused') }}</el-tag>
+          </li>
+        </ul>
+      </StepSection>
+    </template>
   </div>
 </template>
 
-<style scoped>
-.trigger-response-tab {
-  padding: 10px 0;
+<style scoped lang="scss">
+.trigger-response {
+  padding-block: 4px;
 }
 
-.enable-card {
-  border: 1px solid var(--el-border-color);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-}
-
-.enable-switch {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.status-text {
-  font-weight: 600;
-  color: var(--el-text-color-secondary);
-}
-
-.status-text.active {
-  color: var(--el-color-success);
-}
-
-.section-card {
-  border: 1px solid var(--el-border-color);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
-  background: var(--el-bg-color);
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-}
-
-.section-header h4 {
+.hint {
   margin: 0;
-}
-
-.help-text {
+  padding: 0;
   color: var(--el-text-color-secondary);
-  font-size: 12px;
-  margin-top: 4px;
+  font-size: 0.85rem;
+  text-align: start;
 }
 
-.dual-columns {
+.warn {
+  margin: 0;
+  color: var(--el-color-warning-dark-2, var(--el-color-warning));
+  font-size: 0.85rem;
+}
+
+.grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 14px;
 }
 
-.preview-card pre {
-  background: var(--el-color-info-light-9);
-  border-radius: 6px;
-  padding: 12px;
+.wide {
+  max-inline-size: 640px;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+
+  code {
+    color: var(--el-text-color-secondary);
+    font-size: 0.85rem;
+  }
+}
+
+.payload {
+  max-block-size: 300px;
   margin: 0;
-  max-height: 240px;
+  padding: 14px;
   overflow: auto;
-  font-size: 12px;
+  border-radius: 10px;
+  background: var(--el-fill-color-light);
+  font-size: 0.82rem;
+  text-align: start;
 }
 
-.demo-card pre {
-  background: var(--el-color-info-light-9);
-  border-radius: 6px;
-  padding: 12px;
-  margin: 0;
-  font-size: 12px;
-  overflow-x: auto;
-}
-
-.event-status {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.status-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.signature-text {
-  font-family: 'SFMono-Regular', Consolas, monospace;
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-
-.status-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.listeners-pill {
-  align-self: center;
-}
-
-.listeners-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
-}
-
-.listener-card {
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 6px;
-  padding: 12px;
-  background: var(--el-bg-color-page);
-}
-
-.listener-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.listener-description {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-  margin: 0 0 8px 0;
-}
-
-.listener-meta {
+.listeners {
   display: flex;
   flex-direction: column;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  gap: 4px;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 10px;
+  }
+
+  a {
+    color: var(--el-text-color-primary);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      color: var(--el-color-primary);
+    }
+  }
 }
 
-.empty-target-state {
-  border: 1px dashed var(--el-border-color);
-  border-radius: 8px;
-  padding: 30px;
-  text-align: center;
+.who {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.sub {
   color: var(--el-text-color-secondary);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 820px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

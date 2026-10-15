@@ -12,6 +12,9 @@ import eventsService, { IEvent } from '@/services/apis/events-service';
 import { PLATFORM_EVENTS, PlatformEventDefinition } from '@/modules/integrations/constants/platform-events';
 import FunctionParametersSchemaEditor from '@/modules/integrations/components/forms/FunctionParametersSchemaEditor.vue';
 import ConnectionSelector from '@/modules/integrations/components/ConnectionSelector.vue';
+import StepSection from '@/modules/integrations/components/steps/StepSection.vue';
+import JsonDetails from '@/modules/integrations/components/steps/JsonDetails.vue';
+import ChipButtons from '@/modules/integrations/components/steps/ChipButtons.vue';
 
 const props = defineProps<{
   modelValue: any;
@@ -56,6 +59,13 @@ const isQelosWebhook = computed(() => selectedTriggerSource.value?.kind === Inte
 const isOpenAIFunctionCalling = computed(() => selectedTriggerSource.value?.kind === IntegrationSourceKind.OpenAI && props.modelValue.operation === OpenAITriggerOperation.functionCalling);
 const isMcpTool = computed(() => selectedTriggerSource.value?.kind === IntegrationSourceKind.Qelos && props.modelValue.operation === QelosTriggerOperation.mcpTool);
 const isToolCalling = computed(() => isOpenAIFunctionCalling.value || isMcpTool.value);
+
+const isChatCompletion = computed(() => selectedTriggerSource.value?.kind === IntegrationSourceKind.Qelos && props.modelValue.operation === QelosTriggerOperation.chatCompletion);
+const isApiWebhook = computed(() => props.modelValue.operation === QelosTriggerOperation.apiWebhook);
+/** operations with their own fields; the others are edited as JSON directly */
+const hasCustomForm = computed(() => isChatCompletion.value || isQelosWebhook.value || isToolCalling.value || isApiWebhook.value);
+const operationsOfKind = computed(() => (selectedTriggerSource.value ? triggerOperations[selectedTriggerSource.value.kind] || [] : []));
+const testOpen = ref(false);
 
 const chosenFromSample = ref(false);
 const canLoadWebhookSamples = computed(() => {
@@ -408,53 +418,8 @@ watch(
 );
 </script>
 
-<style>
-.webhook-config {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.webhook-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-block-start: 8px;
-}
-
-.webhook-alert {
-  margin-block-start: 12px;
-}
-
-.webhook-samples {
-  margin-block-start: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.webhook-samples-table {
-  width: 100%;
-}
-
-.webhook-sample-metadata {
-  margin-block-start: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.webhook-sample-textarea :deep(textarea) {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-}
-</style>
-
 <template>
-  <div class="trigger-container">
-    <el-alert type="info" :closable="false" class="mb-3">
-      {{ $t('Configure the trigger that will start this workflow.') }}
-    </el-alert>
-    
+  <div class="trigger-step">
     <ConnectionSelector
       v-model="modelValue.source"
       section-title="Connection"
@@ -462,517 +427,251 @@ watch(
       description="Choose which connection will start this workflow."
       @change="handleSourceChange"
     />
-    
-    <!-- Operation Selection -->
-    <div v-if="selectedTriggerSource" class="section-container">
-      <h4>{{ $t('Operation') }}</h4>
-      <FormInput v-model="modelValue.operation"
-               type="select"
-               :options="triggerOperations[selectedTriggerSource?.kind] || []"
-               option-value="name"
-               option-label="label"
-               @change="handleOperationChange"
-               label="Operation that will trigger this workflow"/>
-    </div>
-    
-    <!-- Operation Options -->
-    <div v-if="selectedTriggerOperation?.options" class="section-container">
-      <h4>{{ $t('Presets') }}</h4>
-      <div class="operation-options">
-        <el-tag v-for="option in selectedTriggerOperation?.options"
-         :key="option.value" class="tag"
-         @click="setTriggerDetails(option.value)">{{ option.label }}</el-tag>
-      </div>
-    </div>
-    
-    <!-- Trigger Details Configuration -->
-    <div v-if="modelValue.operation" class="section-container">
-      <h4>{{ $t('Configuration') }}</h4>
-      
-      <!-- Qelos Chat Completion Form -->
-      <div v-if="selectedTriggerSource?.kind === IntegrationSourceKind.Qelos && modelValue.operation === QelosTriggerOperation.chatCompletion" class="chat-completion-form">
-        <el-form label-position="top"> 
-          <el-form-item>
-            <h4>{{ $t('Agent Name') }}</h4>
-            <el-input v-model="modelValue.details.name" @input="updateTriggerDetails" />
-          </el-form-item>
-          <el-form-item>
-            <h4>{{ $t('Agent Description') }}</h4>
-            <el-input v-model="modelValue.details.description" @input="updateTriggerDetails" />
-          </el-form-item>
-        </el-form>
-        
 
-        <div v-if="props.integrationId" class="chat-completion-url">
-          <h4>{{ $t('Chat Completion URL') }}</h4>
-          <el-input
-            :value="getCompletionUrl"
-            readonly
-            class="url-display"
-          >
-            <template #append>
-              <el-button @click="copyToClipboard(getCompletionUrl)">
-                <i class="el-icon-copy-document"></i> Copy
-              </el-button>
-            </template>
+    <StepSection v-if="selectedTriggerSource" :title="$t('Operation')">
+      <el-select v-model="modelValue.operation" :placeholder="$t('Choose what starts the workflow')" class="full" :aria-label="$t('Operation')" @change="handleOperationChange">
+        <el-option v-for="operation in operationsOfKind" :key="operation.name" :value="operation.name" :label="operation.label" />
+      </el-select>
+      <ChipButtons v-if="selectedTriggerOperation?.options" :items="selectedTriggerOperation.options" :label="$t('Presets')" @pick="setTriggerDetails($event.value)" />
+    </StepSection>
+
+    <StepSection v-if="modelValue.operation" :title="$t('Configuration')">
+      <!-- Qelos chat completion -->
+      <template v-if="isChatCompletion">
+        <el-form label-position="top" class="form" @submit.prevent>
+          <el-form-item :label="$t('Agent name')"><el-input v-model="modelValue.details.name" dir="auto" @input="updateTriggerDetails" /></el-form-item>
+          <el-form-item :label="$t('Agent description')"><el-input v-model="modelValue.details.description" dir="auto" @input="updateTriggerDetails" /></el-form-item>
+        </el-form>
+
+        <div v-if="props.integrationId" class="url-block">
+          <span class="field-label">{{ $t('Chat completion URL') }}</span>
+          <el-input :model-value="getCompletionUrl" readonly dir="ltr" class="url">
+            <template #append><el-button @click="copyToClipboard(getCompletionUrl)">{{ $t('Copy') }}</el-button></template>
           </el-input>
-          <p class="help-text">{{ urlHelpText }}</p>
-          
-          <div class="thread-options mt-3">
-            <el-checkbox 
-              v-model="recordThread" 
-              @change="updateRecordThreadSetting"
-            >
-              Record conversation thread
-            </el-checkbox>
-            <p class="help-text">
-              When enabled, conversations will be stored as threads. 
-              <span v-if="recordThread">The URL includes a threadId path parameter which can be used to continue existing conversations.</span>
-            </p>
-          </div>
+          <p class="hint">{{ urlHelpText }}</p>
+          <el-switch v-model="recordThread" :active-text="$t('Record conversation threads')" @change="updateRecordThreadSetting" />
+          <p class="hint">{{ $t('Conversations are stored as threads, and the URL takes a threadId to continue an existing one.') }}</p>
         </div>
-        <div v-else class="chat-completion-info">
-          <p class="help-text">The chat completion URL will be available after saving the integration</p>
-        </div>
-      </div>
+        <p v-else class="hint">{{ $t('The chat completion URL will be available after saving the integration') }}</p>
+      </template>
 
-      <!-- Qelos Webhook Form -->
-      <div v-else-if="selectedTriggerSource?.kind === IntegrationSourceKind.Qelos && modelValue.operation === QelosTriggerOperation.webhook" class="webhook-config">
-        <el-form label-position="top" class="webhook-form">
-          <el-form-item label="Source" required>
-            <el-autocomplete
-              :model-value="modelValue.details?.source || ''"
-              :fetch-suggestions="fetchSourceSuggestions"
-              highlight-first-item
-              placeholder="e.g., auth"
-              dir="ltr"
-              @input="(val) => updateWebhookDetail('source', val as string)"
-              @select="(item) => updateWebhookDetail('source', item.value)"
-            />
-            <small class="help-text">Available sources are documented in the <a href="https://docs.qelos.io/plugin-play/events#complete-event-list" target="_blank" rel="noopener noreferrer">platform events catalog</a>.</small>
+      <!-- Qelos webhook -->
+      <template v-else-if="isQelosWebhook">
+        <el-form label-position="top" class="grid3" @submit.prevent>
+          <el-form-item :label="$t('Source')" required>
+            <el-autocomplete :model-value="modelValue.details?.source || ''" :fetch-suggestions="fetchSourceSuggestions" highlight-first-item placeholder="auth" dir="ltr" @input="(val) => updateWebhookDetail('source', val as string)" @select="(item) => updateWebhookDetail('source', item.value)" />
           </el-form-item>
-          <el-form-item label="Kind" required>
-            <el-autocomplete
-              :model-value="modelValue.details?.kind || ''"
-              :fetch-suggestions="fetchKindSuggestions"
-              highlight-first-item
-              placeholder="e.g., signup"
-              dir="ltr"
-              @input="(val) => updateWebhookDetail('kind', val as string)"
-              @select="(item) => updateWebhookDetail('kind', item.value)"
-            />
-            <small class="help-text">Usually matches the domain of the event, such as signup, workspaces, or blueprints.</small>
+          <el-form-item :label="$t('Kind')" required>
+            <el-autocomplete :model-value="modelValue.details?.kind || ''" :fetch-suggestions="fetchKindSuggestions" highlight-first-item placeholder="signup" dir="ltr" @input="(val) => updateWebhookDetail('kind', val as string)" @select="(item) => updateWebhookDetail('kind', item.value)" />
           </el-form-item>
-          <el-form-item label="Event name" required>
-            <el-autocomplete
-              :model-value="modelValue.details?.eventName || ''"
-              :fetch-suggestions="fetchEventNameSuggestions"
-              highlight-first-item
-              placeholder="e.g., user-registered"
-              dir="ltr"
-              @input="(val) => updateWebhookDetail('eventName', val as string)"
-              @select="(item) => updateWebhookDetail('eventName', item.value)"
-            />
-            <small class="help-text">Use the kebab-case event identifier.</small>
+          <el-form-item :label="$t('Event name')" required>
+            <el-autocomplete :model-value="modelValue.details?.eventName || ''" :fetch-suggestions="fetchEventNameSuggestions" highlight-first-item placeholder="user-registered" dir="ltr" @input="(val) => updateWebhookDetail('eventName', val as string)" @select="(item) => updateWebhookDetail('eventName', item.value)" />
           </el-form-item>
         </el-form>
+        <p class="hint">{{ $t('Pick from the platform events, or type your own.') }} <a href="https://docs.qelos.io/plugin-play/events#complete-event-list" target="_blank" rel="noopener noreferrer">{{ $t('See the full list') }}</a></p>
 
-        <div class="webhook-actions">
-          <el-button
-            type="primary"
-            :disabled="!canLoadWebhookSamples"
-            :loading="webhookSamplesLoading"
-            @click="loadWebhookSamples"
-          >
-            Check existing webhooks
-          </el-button>
-          <small class="help-text">We retrieve matching events from the last month.</small>
+        <div class="test">
+          <button type="button" class="test-toggle" :aria-expanded="testOpen" @click="testOpen = !testOpen; if (testOpen && canLoadWebhookSamples && !webhookSamples.length) loadWebhookSamples()">
+            <font-awesome-icon :icon="['fas', testOpen ? 'chevron-down' : 'chevron-right']" class="chev" aria-hidden="true" />
+            {{ $t('Test this trigger') }}
+            <span v-if="webhookSamples.length" class="count">{{ webhookSamples.length }}</span>
+          </button>
+          <div v-if="testOpen" class="test-body">
+            <p class="hint">{{ $t('Events with these identifiers from the last month. Use one to fill the fields, or look at its payload to plan the next steps.') }}</p>
+            <el-alert v-if="webhookSamplesError" type="error" show-icon :closable="false" :title="webhookSamplesError" />
+            <el-button v-if="!webhookSamplesLoading" :disabled="!canLoadWebhookSamples" @click="loadWebhookSamples">{{ $t('Check again') }}</el-button>
+            <el-table v-if="webhookSamples.length || webhookSamplesLoading" v-loading="webhookSamplesLoading" :data="webhookSamples" size="small" class="samples">
+              <el-table-column prop="eventName" :label="$t('Event')" min-width="140" />
+              <el-table-column :label="$t('Received')" min-width="150"><template #default="{ row }">{{ formatEventTimestamp(row.created) }}</template></el-table-column>
+              <el-table-column min-width="190" align="end">
+                <template #default="{ row }">
+                  <el-button link type="primary" :loading="webhookSampleLoading && webhookSampleSelectedId === row._id" @click="previewWebhookSample(row)">{{ $t('Preview payload') }}</el-button>
+                  <el-button link @click="applyWebhookSampleDetails(row)">{{ $t('Use event') }}</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <p v-else-if="!webhookSamplesLoading && canLoadWebhookSamples" class="hint">{{ $t('No matching events in the last month.') }}</p>
+            <pre v-if="webhookSampleMetadata" class="payload" dir="ltr">{{ webhookSampleMetadata }}</pre>
+          </div>
         </div>
+      </template>
 
-        <el-alert
-          v-if="webhookSamplesError"
-          type="error"
-          :closable="false"
-          class="webhook-alert"
-        >
-          {{ webhookSamplesError }}
-        </el-alert>
-
-        <div v-if="!chosenFromSample || webhookSamples.length" class="webhook-samples">
-          <h5>Recent matching events</h5>
-          <el-table :data="webhookSamples" size="small" border class="webhook-samples-table">
-            <el-table-column prop="source" label="Source" width="120" />
-            <el-table-column prop="kind" label="Kind" width="140" />
-            <el-table-column prop="eventName" label="Event" />
-            <el-table-column label="Received" width="200">
-              <template #default="{ row }">
-                {{ formatEventTimestamp(row.created) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="Actions" width="200">
-              <template #default="{ row }">
-                <el-button link type="primary" :loading="webhookSampleLoading && webhookSampleSelectedId === row._id" @click="previewWebhookSample(row)">
-                  Preview payload
-                </el-button>
-                <el-button link type="success" @click="applyWebhookSampleDetails(row)">
-                  Use event
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <p v-else-if="!webhookSamplesLoading" class="help-text">
-          No matching events were found for the selected identifiers in the last month.
-        </p>
-
-        <div v-if="webhookSampleMetadata" class="webhook-sample-metadata">
-          <h5>Sample payload</h5>
-          <el-input
-            type="textarea"
-            :model-value="webhookSampleMetadata"
-            readonly
-            dir="ltr"
-            :autosize="{ minRows: 8 }"
-            class="webhook-sample-textarea"
-          />
-          <small class="help-text">Review the payload shape before wiring downstream steps.</small>
-        </div>
-      </div>
-      
-      <!-- OpenAI Function Calling / Qelos MCP Tool Form (share the same tool-calling shape) -->
-      <div v-else-if="isToolCalling" class="function-calling-form">
-        <div class="function-calling-info">
-          <p v-if="isMcpTool" class="help-text">Configure the tool that will be exposed on the MCP server. The parameters should be a valid JSON schema.</p>
-          <p v-else class="help-text">Configure the function that OpenAI can call. The parameters should be a valid JSON schema.</p>
-        </div>
-        <el-form label-position="top">
-          <el-form-item label="Function Name" required>
-            <el-input 
-              v-model="functionName" 
-              @input="updateFunctionCallingDetails" 
-              placeholder="e.g., get_weather, send_email"
-            />
-            <small class="help-text">A unique name for the function that OpenAI will call</small>
+      <!-- OpenAI function calling / Qelos MCP tool -->
+      <template v-else-if="isToolCalling">
+        <p class="hint">{{ isMcpTool ? $t('The tool that will be exposed on the MCP server. Its parameters are a JSON schema.') : $t('The function OpenAI can call. Its parameters are a JSON schema.') }}</p>
+        <el-form label-position="top" class="form" @submit.prevent>
+          <el-form-item :label="$t('Function name')" required>
+            <el-input v-model="functionName" dir="ltr" placeholder="get_weather" @input="updateFunctionCallingDetails" />
+            <p class="hint">{{ $t('A unique name the model will call it by.') }}</p>
           </el-form-item>
-          <el-form-item label="Description" required>
-            <el-input 
-              v-model="functionDescription" 
-              @input="updateFunctionCallingDetails" 
-              type="textarea"
-              :rows="2"
-              placeholder="Describe what this function does..."
-            />
-            <small class="help-text">Clear description of what the function does and when to use it</small>
+          <el-form-item :label="$t('Description')" required>
+            <el-input v-model="functionDescription" type="textarea" :rows="2" dir="auto" :placeholder="$t('What it does and when to use it')" @input="updateFunctionCallingDetails" />
           </el-form-item>
-          <FunctionParametersSchemaEditor
-            v-model="functionParameters"
-            @update:modelValue="updateFunctionCallingDetails"
-          />
+          <FunctionParametersSchemaEditor v-model="functionParameters" @update:modelValue="updateFunctionCallingDetails" />
 
-          <div v-if="!isMcpTool" class="integration-access">
-            <button class="collapse-header" type="button" @click="integrationAccessCollapsed = !integrationAccessCollapsed">
-              <div class="header-content">
-                <strong>Integration Access Control</strong>
-                <span class="help-text">
-                  Define which Qelos chat agents may call this function.
-                </span>
-              </div>
-              <el-icon :class="['collapse-icon', { collapsed: integrationAccessCollapsed }]">
-                <ArrowDown />
-              </el-icon>
+          <div v-if="!isMcpTool" class="access">
+            <button type="button" class="test-toggle" :aria-expanded="!integrationAccessCollapsed" @click="integrationAccessCollapsed = !integrationAccessCollapsed">
+              <font-awesome-icon :icon="['fas', integrationAccessCollapsed ? 'chevron-right' : 'chevron-down']" class="chev" aria-hidden="true" />
+              {{ $t('Which agents may call it') }}
+              <span class="count">{{ allowedIntegrationsSummary }}</span>
             </button>
-            <el-collapse-transition>
-              <div v-show="!integrationAccessCollapsed" class="integration-access-body">
-                <div class="integration-summary-cards">
-                  <div class="summary-card">
-                    <span class="summary-label">Allowed</span>
-                    <strong>{{ allowedIntegrationsSummary }}</strong>
-                    <small class="help-text">Empty = all integrations allowed</small>
-                  </div>
-                  <div class="summary-card">
-                    <span class="summary-label">Blocked</span>
-                    <strong>{{ blockedIntegrationsSummary }}</strong>
-                    <small class="help-text">Empty = no restrictions</small>
-                  </div>
-                </div>
-                <el-form-item label="Allowed Integrations">
-                  <small class="help-text">Select integrations that are allowed to use this function</small>
-                  <el-select
-                    v-model="allowedIntegrationIds"
-                    multiple
-                    filterable
-                    collapse-tags-tooltip
-                    placeholder="Select allowed integrations"
-                    @change="updateFunctionCallingDetails"
-                    class="integration-select"
-                  >
-                    <el-option
-                      v-for="integration in qelosChatIntegrations"
-                      :key="integration._id"
-                      :label="integration.trigger.details?.name || 'No name'"
-                      :tooltip="integration.trigger.details?.description || 'No description'"
-                      :value="integration._id"
-                    />
-                  </el-select>
-                  <small class="help-text">If none selected, all integrations are allowed</small>
-                </el-form-item>
-
-                <el-form-item label="Blocked Integrations">
-                  <small class="help-text">Select integrations that are blocked from using this function</small>
-                  <el-select
-                    v-model="blockedIntegrationIds"
-                    multiple
-                    filterable
-                    collapse-tags-tooltip
-                    placeholder="Select blocked integrations"
-                    @change="updateFunctionCallingDetails"
-                    class="integration-select"
-                  >
-                    <el-option
-                      v-for="integration in qelosChatIntegrations"
-                      :key="integration._id"
-                      :label="integration.trigger.details?.name || 'No name'"
-                      :tooltip="integration.trigger.details?.description || 'No description'"
-                      :value="integration._id"
-                    />
-                  </el-select>
-                </el-form-item>
-              </div>
-            </el-collapse-transition>
+            <div v-if="!integrationAccessCollapsed" class="test-body">
+              <el-form-item :label="$t('Allowed agents')">
+                <el-select v-model="allowedIntegrationIds" multiple filterable collapse-tags-tooltip :placeholder="$t('All agents')" class="full" @change="updateFunctionCallingDetails">
+                  <el-option v-for="integration in qelosChatIntegrations" :key="integration._id" :label="integration.trigger.details?.name || $t('No name')" :value="integration._id" />
+                </el-select>
+                <p class="hint">{{ $t('Leave empty to allow every agent.') }}</p>
+              </el-form-item>
+              <el-form-item :label="$t('Blocked agents')">
+                <el-select v-model="blockedIntegrationIds" multiple filterable collapse-tags-tooltip :placeholder="$t('None')" class="full" @change="updateFunctionCallingDetails">
+                  <el-option v-for="integration in qelosChatIntegrations" :key="integration._id" :label="integration.trigger.details?.name || $t('No name')" :value="integration._id" />
+                </el-select>
+              </el-form-item>
+            </div>
           </div>
         </el-form>
-      </div>
+      </template>
 
-      <el-alert v-if="modelValue.operation === QelosTriggerOperation.apiWebhook" type="info" :closable="false" class="mb-3">
-        {{ $t('API Webhook triggers are configured in the Integrations tab.') }}
-      </el-alert>
-      
-      <!-- API Webhook Name Configuration -->
-      <div v-if="modelValue.operation === QelosTriggerOperation.apiWebhook" class="mb-4">
-        <el-form-item :label="$t('Webhook Name')" prop="details.name">
-          <el-input 
-            v-model="modelValue.details.name" 
-            :placeholder="$t('Enter a nickname for this webhook')"
-            @input="updateTriggerDetails"
-          />
+      <!-- API webhook -->
+      <el-form v-else-if="isApiWebhook" label-position="top" class="form" @submit.prevent>
+        <p class="hint">{{ $t('API Webhook triggers are configured in the Integrations tab.') }}</p>
+        <el-form-item :label="$t('Webhook name')">
+          <el-input v-model="modelValue.details.name" dir="auto" :placeholder="$t('Enter a nickname for this webhook')" @input="updateTriggerDetails" />
         </el-form-item>
-      </div>
-      
-      <!-- Default JSON Editor for other operations -->
-      <Monaco 
-        v-else
-        :modelValue="triggerDetailsText" 
-        @update:modelValue="updateTriggerDetails" 
-        height="300px" 
-        language="json" 
-      />
-    </div>
+      </el-form>
+
+      <!-- everything else is the JSON of the step -->
+      <Monaco v-else :modelValue="triggerDetailsText" @update:modelValue="updateTriggerDetails" height="300px" language="json" />
+
+      <JsonDetails v-if="hasCustomForm" :model-value="triggerDetailsText" @update:model-value="updateTriggerDetails" />
+    </StepSection>
   </div>
 </template>
 
-<style scoped>
-.trigger-container {
-  padding: 10px 0;
+<style scoped lang="scss">
+.trigger-step {
+  padding-block: 4px;
 }
 
-.section-container {
-  margin-bottom: 20px;
-  padding: 15px;
-  border: 1px solid var(--el-border-color);
-  border-radius: 4px;
-  background-color: var(--el-bg-color-page);
-}
-
-.section-container h4 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-weight: 600;
-}
-
-.operation-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.tag {
-  margin: 5px;
-  cursor: pointer;
-}
-
-.mb-3 {
-  margin-bottom: 15px;
-}
-
-.mt-3 {
-  margin-top: 15px;
-}
-
-/* Chat Completion Form Styles */
-.chat-completion-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.slider-container {
-  margin-bottom: 15px;
-}
-
-.slider-container label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-
-.slider-description {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 5px;
-  font-size: 0.8em;
-  color: var(--el-text-color-secondary);
-}
-
-.system-message-container {
-  margin-bottom: 15px;
-}
-
-.system-message-container label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-}
-
-.help-text {
-  margin: 0 0 8px 0;
-  font-size: 0.8em;
-  color: var(--el-text-color-secondary);
-}
-
-.advanced-options {
-  margin-top: 10px;
-}
-
-.advanced-options-content {
-  padding: 15px;
-  border: 1px dashed var(--el-border-color);
-  border-radius: 4px;
-  margin-top: 10px;
-}
-
-.chat-completion-url {
-  margin-bottom: 20px;
-}
-
-.chat-completion-url h4 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-.url-display {
-  font-family: monospace;
-  background-color: var(--el-bg-color-page);
-}
-
-.chat-completion-info {
-  padding: 15px;
-  background-color: var(--el-bg-color-page);
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-
-.function-calling-form {
-  padding: 15px;
-  background-color: var(--el-bg-color-page);
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-
-.function-calling-info {
-  padding: 15px;
-  background-color: var(--el-color-info-light-9);
-  border-left: 4px solid var(--el-color-info);
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-
-.function-calling-info .help-text {
-  margin: 0;
-  color: var(--el-color-info-dark-2);
-}
-
-.function-calling-form .el-form-item {
-  margin-bottom: 20px;
-}
-
-.function-calling-form .el-form-item__label {
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.function-calling-form .help-text {
-  display: block;
-  margin-top: 5px;
-  font-size: 0.8em;
-  color: var(--el-text-color-secondary);
-}
-
-.integration-select {
-  width: 100%;
-}
-
-.integration-access {
-  border: 1px solid var(--el-border-color);
-  border-radius: 8px;
-  background-color: var(--el-bg-color);
-  margin-block-end: 20px;
-}
-
-.integration-access .collapse-header {
+.full {
   inline-size: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
 }
 
-.integration-access .header-content {
+.form,
+.grid3 {
+  max-inline-size: 640px;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 14px;
+  max-inline-size: none;
+
+  :deep(.el-autocomplete) {
+    inline-size: 100%;
+  }
+}
+
+.hint {
+  margin: 4px 0 0;
+  padding: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  text-align: start;
+
+  a {
+    color: var(--el-color-primary);
+  }
+}
+
+.field-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.url-block {
   display: flex;
   flex-direction: column;
-  inline-size: calc(100% - 40px);
+  align-items: flex-start;
+  gap: 6px;
+  max-inline-size: 640px;
+
+  .url {
+    font-family: var(--el-font-family-mono, ui-monospace, monospace);
+  }
+}
+
+.test,
+.access {
+  max-inline-size: 760px;
+}
+
+.test-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--el-text-color-regular);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--el-color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .chev {
+    inline-size: 10px;
+  }
+
+  .count {
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--el-fill-color);
+    color: var(--el-text-color-secondary);
+    font-size: 0.78rem;
+    font-weight: 400;
+  }
+}
+
+.test-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding-block: 8px 4px;
+
+  .samples,
+  :deep(.el-alert) {
+    inline-size: 100%;
+  }
+}
+
+.payload {
+  inline-size: 100%;
+  max-block-size: 260px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+  font-size: 0.82rem;
   text-align: start;
 }
 
-.integration-access .integration-access-body {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.integration-summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-}
-
-.summary-card {
-  padding: 12px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 6px;
-  background-color: var(--el-bg-color-page);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.summary-label {
-  font-size: 0.8em;
-  color: var(--el-text-color-secondary);
+@media (max-width: 820px) {
+  .grid3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

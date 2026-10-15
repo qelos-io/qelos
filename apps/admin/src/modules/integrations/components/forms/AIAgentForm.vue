@@ -5,12 +5,11 @@ import { useIntegrationSourcesStore } from '@/modules/integrations/store/integra
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import { useIntegrationsStore } from '@/modules/integrations/store/integrations';
 import { storeToRefs } from 'pinia';
-import { ChatDotRound, Tools, Document, Setting, Lock, Link as LinkIcon, ArrowDown } from '@element-plus/icons-vue';
+import { ArrowDown } from '@element-plus/icons-vue';
 import FunctionToolsTab from '@/modules/integrations/components/tabs/FunctionToolsTab.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import WorkspaceLabelSelector from '@/modules/no-code/components/WorkspaceLabelSelector.vue';
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 import { ElMessage } from 'element-plus';
 import { getPlural } from '@/modules/core/utils/texts';
@@ -381,6 +380,9 @@ const currentProvider = computed(() => {
   if (!currentAISource.value) return null;
   return getProviderFromSourceKind(currentAISource.value.kind);
 });
+
+/** vector store, web search and the code interpreter are OpenAI features; with no provider chosen yet they stay available */
+const supportsOpenAITools = computed(() => !currentProvider.value || currentProvider.value === 'openai');
 
 const defaultModelForProvider = computed(() => {
   if (currentProvider.value) {
@@ -859,43 +861,20 @@ const railSteps = computed(() =>
       </nav>
       <div class="agent-panels">
       <div class="agent-main">
-        <el-card
-          shadow="never"
-          class="panel-card"
-          v-show="isPanelOpen('rolesIdentity')"
-        >
-          <template #header>
-            <div class="panel-toggle">
-              <div class="panel-header">
-                <el-icon class="panel-icon"><Lock /></el-icon>
-                <div>
-                  <h3>{{ $t('Roles & Identity') }}</h3>
-                  <p>{{ $t('Control who can talk to this agent and how it identifies itself.') }}</p>
-                </div>
-              </div>
-            </div>
-          </template>
+        <section class="panel" v-show="isPanelOpen('rolesIdentity')">
+          <header class="panel-head"><h2>{{ $t('Roles & Identity') }}</h2><p>{{ $t('Control who can talk to this agent and how it identifies itself.') }}</p></header>
 
           <section v-show="isPanelOpen('rolesIdentity')" class="section-block">
             <div class="section-title">{{ $t('Roles & Permissions') }}</div>
             <p class="section-description">
               {{ $t('Define user, workspace, or label-based rules to trigger the agent.') }}
             </p>
-            <el-alert
-              type="info"
-              :closable="false"
-              class="section-alert"
-            >
-              {{ $t('Guest access, platform roles, workspace roles, and labels can be combined.') }}
-            </el-alert>
 
-            <FormRowGroup wrap class="permissions-grid">
+            <div class="permissions-grid">
               <el-form-item class="flex-item">
-                <template #label>
-                  {{ $t('Guest Access') }}
-                  <InfoIcon :content="$t('Allow unauthenticated visitors to start conversations.')" />
-                </template>
+                <template #label>{{ $t('Guest Access') }}</template>
                 <el-switch v-model="guestAllowed" />
+                <p class="field-hint">{{ $t('Allow unauthenticated visitors to start conversations.') }}</p>
               </el-form-item>
 
               <LabelsInput
@@ -929,10 +908,8 @@ const railSteps = computed(() =>
                 :info="$t('Limit access to labeled workspaces.')"
                 v-model="workspaceLabelsModel"
               />
-            </FormRowGroup>
+            </div>
           </section>
-
-          <el-divider />
 
           <section v-show="isPanelOpen('rolesIdentity')" class="section-block">
             <div class="section-title">{{ $t('Agent Identity') }}</div>
@@ -970,31 +947,14 @@ const railSteps = computed(() =>
               />
             </el-form-item>
           </section>
-        </el-card>
+        </section>
 
-        <el-card
-          shadow="never"
-          class="panel-card"
-          v-show="isPanelOpen('capabilities')"
-        >
-          <template #header>
-            <div class="panel-toggle">
-              <div class="panel-header">
-                <el-icon class="panel-icon"><Setting /></el-icon>
-                <div>
-                  <h3>{{ $t('Agent Capabilities') }}</h3>
-                  <p>{{ $t('Configure recording, vector store, and web search capabilities.') }}</p>
-                </div>
-              </div>
-            </div>
-          </template>
+        <section class="panel" v-show="isPanelOpen('capabilities')">
+          <header class="panel-head"><h2>{{ $t('Agent Capabilities') }}</h2><p>{{ $t('Configure recording, vector store, and web search capabilities.') }}</p></header>
 
           <section v-show="isPanelOpen('capabilities')" class="section-block">
             <div v-if="props.integrationId" class="endpoint-box">
-              <div class="endpoint-title">
-                <el-icon><LinkIcon /></el-icon>
-                <span>{{ $t('Agent Endpoint') }}</span>
-              </div>
+              <div class="endpoint-title"><span>{{ $t('Agent Endpoint') }}</span></div>
               <el-input :value="completionUrl" readonly dir="ltr">
                 <template #append>
                   <el-button @click="copyCompletionUrl">
@@ -1004,70 +964,30 @@ const railSteps = computed(() =>
               </el-input>
             </div>
 
-            <div class="capabilities-grid">
-              <div class="capability-item">
-                <div class="capability-header">
-                  <el-checkbox v-model="recordThread" size="large">
-                    <span class="capability-title">{{ $t('Record conversation threads') }}</span>
-                  </el-checkbox>
-                  <el-tag v-if="recordThread" type="success" size="small">{{ $t('Enabled') }}</el-tag>
-                </div>
-                <div class="capability-description">
-                  {{ $t('Maintains conversation context across multiple messages. Requires thread identifier in API.') }}
-                </div>
-              </div>
-
-              <div class="capability-item">
-                <div class="capability-header">
-                  <el-checkbox v-model="vectorStore" size="large">
-                    <span class="capability-title">{{ $t('Enable vector store') }}</span>
-                  </el-checkbox>
-                  <el-tag v-if="vectorStore" type="success" size="small">{{ $t('Enabled') }}</el-tag>
-                </div>
-                <div class="capability-description">
-                  {{ $t('Creates a vector store for file search capabilities. Allows agent to search through uploaded documents. (OpenAI only)') }}
-                </div>
-              </div>
-
-              <div class="capability-item">
-                <div class="capability-header">
-                  <el-checkbox v-model="webSearch" size="large">
-                    <span class="capability-title">{{ $t('Enable web search') }}</span>
-                  </el-checkbox>
-                  <el-tag v-if="webSearch" type="success" size="small">{{ $t('Enabled') }}</el-tag>
-                </div>
-                <div class="capability-description">
-                  {{ $t('Agent can search the web for current information and real-time data. (OpenAI only)') }}
-                </div>
-              </div>
-
-              <div class="capability-item">
-                <div class="capability-header">
-                  <el-checkbox v-model="codeInterpreter" size="large">
-                    <span class="capability-title">{{ $t('Enable code interpreter') }}</span>
-                  </el-checkbox>
-                  <el-tag v-if="codeInterpreter" type="success" size="small">{{ $t('Enabled') }}</el-tag>
-                </div>
-                <div class="capability-description">
-                  {{ $t('Agent can execute code in a sandboxed environment for data analysis, computation, and file processing. (OpenAI only)') }}
-                </div>
-              </div>
-
-              <div class="capability-item">
-                <div class="capability-header">
-                  <el-checkbox v-model="allowRules" size="large">
-                    <span class="capability-title">{{ $t('Allow rules') }}</span>
-                  </el-checkbox>
-                  <el-tag v-if="allowRules" type="success" size="small">{{ $t('Enabled') }}</el-tag>
-                </div>
-                <div class="capability-description">
-                  {{ $t('Allows clients to pass custom rules that are injected as system messages. Rules guide the agent\'s behavior and enforce conventions.') }}
-                </div>
-              </div>
-            </div>
+            <ul class="caps">
+              <li>
+                <div class="cap-text"><strong>{{ $t('Record conversation threads') }}</strong><p>{{ $t('Maintains conversation context across multiple messages. Requires thread identifier in API.') }}</p></div>
+                <el-switch v-model="recordThread" :aria-label="$t('Record conversation threads')" />
+              </li>
+              <li :class="{ unavailable: !supportsOpenAITools }">
+                <div class="cap-text"><strong>{{ $t('Enable vector store') }}</strong><p>{{ $t('Creates a vector store for file search capabilities. Allows agent to search through uploaded documents.') }}</p><span v-if="!supportsOpenAITools" class="cap-note">{{ $t('Needs an OpenAI provider') }}</span></div>
+                <el-switch v-model="vectorStore" :disabled="!supportsOpenAITools" :aria-label="$t('Enable vector store')" />
+              </li>
+              <li :class="{ unavailable: !supportsOpenAITools }">
+                <div class="cap-text"><strong>{{ $t('Enable web search') }}</strong><p>{{ $t('Agent can search the web for current information and real-time data.') }}</p><span v-if="!supportsOpenAITools" class="cap-note">{{ $t('Needs an OpenAI provider') }}</span></div>
+                <el-switch v-model="webSearch" :disabled="!supportsOpenAITools" :aria-label="$t('Enable web search')" />
+              </li>
+              <li :class="{ unavailable: !supportsOpenAITools }">
+                <div class="cap-text"><strong>{{ $t('Enable code interpreter') }}</strong><p>{{ $t('Agent can execute code in a sandboxed environment for data analysis, computation, and file processing.') }}</p><span v-if="!supportsOpenAITools" class="cap-note">{{ $t('Needs an OpenAI provider') }}</span></div>
+                <el-switch v-model="codeInterpreter" :disabled="!supportsOpenAITools" :aria-label="$t('Enable code interpreter')" />
+              </li>
+              <li>
+                <div class="cap-text"><strong>{{ $t('Allow rules') }}</strong><p>{{ $t('Allows clients to pass custom rules that are injected as system messages. Rules guide the agent\'s behavior and enforce conventions.') }}</p></div>
+                <el-switch v-model="allowRules" :aria-label="$t('Allow rules')" />
+              </li>
+            </ul>
 
             <template v-if="vectorStore">
-              <el-divider />
               <div class="section-title">{{ $t('Vector Store Configuration') }}</div>
               <el-row :gutter="20">
                 <el-col :span="12">
@@ -1114,40 +1034,20 @@ const railSteps = computed(() =>
               </el-row>
             </template>
           </section>
-        </el-card>
+        </section>
 
-        <el-card
-          shadow="never"
-          class="panel-card"
-          v-show="isPanelOpen('systemPrompt')"
-        >
-          <template #header>
-            <div class="panel-toggle">
-              <div class="panel-header">
-                <el-icon class="panel-icon"><Document /></el-icon>
-                <div>
-                  <h3>{{ $t('System Prompt & Context') }}</h3>
-                  <p>{{ $t('Craft the system behavior and decide what context is injected.') }}</p>
-                </div>
-              </div>
-            </div>
-          </template>
+        <section class="panel" v-show="isPanelOpen('systemPrompt')">
+          <header class="panel-head"><h2>{{ $t('System Prompt & Context') }}</h2><p>{{ $t('Craft the system behavior and decide what context is injected.') }}</p></header>
 
           <section v-show="isPanelOpen('systemPrompt')" class="section-block">
             <div class="section-title">{{ $t('System Prompt') }}</div>
             <p class="section-description">
               {{ $t('Define the role, tone, and responsibilities of the agent.') }}
             </p>
-            <p class="variables-hint">
+            <div class="variables-hint">
               {{ $t('Available variables') }}:
-              <el-tag
-                v-for="key in systemMessageVariables"
-                :key="key"
-                class="variable-tag"
-                size="small"
-                @click="copyVariableToClipboard(key)"
-              >{{ getVariableTemplate(key) }}</el-tag>
-            </p>
+              <button v-for="key in systemMessageVariables" :key="key" type="button" class="variable-chip" :title="$t('Copy')" @click="copyVariableToClipboard(key)">{{ getVariableTemplate(key) }}</button>
+            </div>
             <div class="form-item-with-button">
               <span>{{ $t('System Prompt') }}</span>
               <AiPromptButton
@@ -1167,8 +1067,6 @@ const railSteps = computed(() =>
             />
           </section>
 
-          <el-divider />
-
           <section v-show="isPanelOpen('systemPrompt')" class="section-block">
             <div class="section-title">{{ $t('Context Sources') }}</div>
             <p class="section-description">
@@ -1178,7 +1076,6 @@ const railSteps = computed(() =>
             <div class="context-grid">
               <div class="context-card">
                 <div class="card-heading">
-                  <el-icon><ChatDotRound /></el-icon>
                   <span>{{ $t('User & Workspace Context') }}</span>
                 </div>
                 <el-checkbox v-model="includeUserContext" class="context-checkbox">
@@ -1191,7 +1088,6 @@ const railSteps = computed(() =>
 
               <div class="context-card">
                 <div class="card-heading">
-                  <el-icon><Document /></el-icon>
                   <span>{{ $t('Blueprint Context') }}</span>
                 </div>
                 <el-select
@@ -1212,24 +1108,10 @@ const railSteps = computed(() =>
               </div>
             </div>
           </section>
-        </el-card>
+        </section>
 
-        <el-card
-          shadow="never"
-          class="panel-card"
-          v-show="isPanelOpen('connections')"
-        >
-          <template #header>
-            <div class="panel-toggle">
-              <div class="panel-header">
-                <el-icon class="panel-icon"><Tools /></el-icon>
-                <div>
-                  <h3>{{ $t('Connections & Tools') }}</h3>
-                  <p>{{ $t('Decide which blueprints, agents, and functions this agent can call.') }}</p>
-                </div>
-              </div>
-            </div>
-          </template>
+        <section class="panel" v-show="isPanelOpen('connections')">
+          <header class="panel-head"><h2>{{ $t('Connections & Tools') }}</h2><p>{{ $t('Decide which blueprints, agents, and functions this agent can call.') }}</p></header>
 
           <section v-show="isPanelOpen('connections')" class="section-block">
             <div class="section-title">{{ $t('Connect to other blueprints') }}</div>
@@ -1279,22 +1161,14 @@ const railSteps = computed(() =>
               {{ $t('Save the integration first to configure custom function tools.') }}
             </el-alert>
           </section>
-        </el-card>
+        </section>
       </div>
 
       <div class="agent-main">
-        <el-card v-show="isPanelOpen('advanced')" shadow="never" class="panel-card">
-          <template #header>
-            <div class="panel-header">
-              <el-icon class="panel-icon"><Setting /></el-icon>
-              <div>
-                <h3>{{ $t('Advanced AI Settings') }}</h3>
-                <p>{{ $t('Model, provider, and response controls.') }}</p>
-              </div>
-            </div>
-          </template>
+        <section class="panel" v-show="isPanelOpen('advanced')">
+          <header class="panel-head"><h2>{{ $t('Advanced AI Settings') }}</h2><p>{{ $t('Model, provider, and response controls.') }}</p></header>
 
-          <el-form label-position="top">
+          <el-form label-position="top" class="advanced-form" @submit.prevent>
             <el-form-item :label="$t('AI Provider Source')" required>
               <el-select
                 v-model="selectedAISource"
@@ -1403,12 +1277,7 @@ const railSteps = computed(() =>
 
             <!-- Response Format -->
             <el-form-item>
-              <template #label>
-                <span>{{ $t('Response Format') }}</span>
-                <el-tooltip :content="$t('Constrains the model output to a specific format. JSON mode ensures valid JSON output.')" placement="top">
-                  <i class="el-icon-question" style="margin-left: 4px;"></i>
-                </el-tooltip>
-              </template>
+              <template #label>{{ $t('Response Format') }}</template>
               <el-select
                 v-model="responseFormat"
                 value-key="type"
@@ -1423,14 +1292,11 @@ const railSteps = computed(() =>
                 />
               </el-select>
               <template #extra>
-                <div class="info-box" v-if="responseFormat?.type === 'json_object'" style="margin-top: 8px;">
-                  <i class="el-icon-warning" style="color: #e6a23c; margin-right: 4px;"></i>
-                  <small style="color: #e6a23c;">{{ $t('When using JSON mode, you must instruct the model to produce JSON in your system message or user prompt.') }}</small>
-                </div>
+                <p class="field-hint">{{ responseFormat?.type === 'json_object' ? $t('When using JSON mode, you must instruct the model to produce JSON in your system message or user prompt.') : $t('Constrains the model output to a specific format. JSON mode ensures valid JSON output.') }}</p>
               </template>
             </el-form-item>
           </el-form>
-        </el-card>
+        </section>
       </div>
         <footer class="agent-foot">
           <el-button v-if="railNeighbor(-1)" text @click="activePanel = railNeighbor(-1)!">{{ $t(railTitle(railNeighbor(-1)!)) }}</el-button>
@@ -1593,63 +1459,15 @@ const railSteps = computed(() =>
   margin-inline: auto;
 }
 
-.panel-card {
-  margin-block-end: 24px;
-  border-radius: 16px;
-  border: 1px solid var(--el-border-color-lighter);
-}
 
-.panel-card.is-collapsed {
-  border-color: var(--el-border-color-lighter);
-}
 
-.panel-toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
 
-.panel-toggle:focus-visible {
-  outline: 2px solid var(--el-color-primary);
-  border-radius: 8px;
-}
 
-.panel-header {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
 
-.collapse-icon {
-  transition: transform 0.2s ease;
-  color: var(--el-text-color-secondary);
-}
 
-.collapse-icon.is-open {
-  transform: rotate(180deg);
-}
 
-.panel-icon {
-  font-size: 24px;
-  color: var(--el-color-primary);
-}
 
-.panel-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
 
-.panel-header p {
-  margin: 4px 0 0;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-}
 
 .section-block {
   display: flex;
@@ -1658,6 +1476,7 @@ const railSteps = computed(() =>
 }
 
 .section-title {
+  font-size: 1rem;
   font-weight: 600;
   color: var(--el-text-color-primary);
 }
@@ -1678,14 +1497,7 @@ const railSteps = computed(() =>
   align-items: center;
 }
 
-.variable-tag {
-  cursor: pointer;
-  user-select: none;
-}
 
-.section-alert {
-  margin-block-end: 12px;
-}
 
 .permissions-grid {
   gap: 16px;
@@ -1697,57 +1509,13 @@ const railSteps = computed(() =>
 }
 
 /* Agent Capabilities Card Styles */
-.capabilities-card {
-  margin: 16px 0;
-  border: 1px solid var(--el-border-color-light);
-}
 
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
 
-.capabilities-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
 
-.capability-item {
-  padding: 16px;
-  background-color: var(--el-fill-color-extra-light);
-  border-radius: 8px;
-  border: 1px solid var(--el-border-color-lighter);
-  transition: all 0.2s ease;
-}
 
-.capability-item:hover {
-  background-color: var(--el-fill-color-light);
-  border-color: var(--el-border-color-light);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
 
-.capability-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
 
-.capability-title {
-  font-weight: 500;
-  color: var(--el-text-color-primary);
-}
 
-.capability-description {
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 1.5;
-}
 
 .recording-row {
   display: flex;
@@ -1758,22 +1526,7 @@ const railSteps = computed(() =>
   font-size: 13px;
 }
 
-.endpoint-box {
-  background-color: var(--el-fill-color-light);
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px dashed var(--el-border-color-light);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 
-.endpoint-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-}
 
 .context-grid {
   display: grid;
@@ -1781,22 +1534,7 @@ const railSteps = computed(() =>
   gap: 16px;
 }
 
-.context-card {
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-light);
-  background-color: var(--el-fill-color-blank);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
 
-.card-heading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-}
 
 .context-checkbox {
   margin: 0;
@@ -1884,6 +1622,177 @@ const railSteps = computed(() =>
 @media (max-width: 768px) {
   .ai-agent-form {
     padding-inline: 8px;
+  }
+}
+
+.panel {
+  margin-block-end: 28px;
+}
+
+.panel-head {
+  margin-block-end: 20px;
+  padding-block-end: 14px;
+  border-block-end: 1px solid var(--el-border-color-lighter);
+
+  h2 {
+    margin: 0;
+    padding: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  p {
+    margin: 2px 0 0;
+    padding: 0;
+    color: var(--el-text-color-secondary);
+    font-size: 0.88rem;
+    text-align: start;
+  }
+}
+
+.section-block {
+  margin-block-end: 32px;
+
+  &:last-child {
+    margin-block-end: 0;
+  }
+}
+
+.permissions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 16px;
+}
+
+.field-hint {
+  margin: 4px 0 0;
+  padding: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  text-align: start;
+}
+
+.caps {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 14px;
+    border-block-end: 1px solid var(--el-border-color-extra-light);
+
+    &:first-child {
+      padding-block-start: 0;
+    }
+
+    &:last-child {
+      border-block-end: 0;
+    }
+
+    &.unavailable .cap-text {
+      opacity: 0.6;
+    }
+  }
+}
+
+.cap-text {
+  min-inline-size: 0;
+
+  strong {
+    font-weight: 600;
+  }
+
+  p {
+    margin: 2px 0 0;
+    padding: 0;
+    max-inline-size: 62ch;
+    color: var(--el-text-color-secondary);
+    font-size: 0.86rem;
+    line-height: 1.45;
+    text-align: start;
+  }
+}
+
+.cap-note {
+  display: inline-block;
+  margin-block-start: 4px;
+  color: var(--el-color-warning-dark-2, var(--el-color-warning));
+  font-size: 0.8rem;
+}
+
+.endpoint-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-block-end: 28px;
+}
+
+.endpoint-title {
+  font-weight: 600;
+}
+
+.variables-hint {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 0.85rem;
+}
+
+.variable-chip {
+  padding: 2px 10px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--el-text-color-regular);
+  font-family: var(--el-font-family-mono, ui-monospace, monospace);
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--el-color-primary);
+    color: var(--el-color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.context-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.context-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-heading {
+  font-weight: 600;
+}
+
+.advanced-form {
+  max-inline-size: 640px;
+}
+
+@media (max-width: 820px) {
+  .permissions-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

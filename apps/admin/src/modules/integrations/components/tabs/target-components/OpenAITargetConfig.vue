@@ -767,23 +767,27 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
   flex: 1;
   min-width: 200px;
   max-width: 250px;
-  padding: 15px;
+  padding: 14px;
   border: 1px solid var(--el-border-color);
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: var(--el-bg-color);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  background-color: transparent;
 }
 
 .personality-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-color: var(--el-color-primary-light-5);
 }
 
 .personality-card.selected {
-  border: 2px solid var(--el-color-primary);
+  border-color: var(--el-color-primary);
   background-color: var(--el-color-primary-light-9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .personality-card {
+    transition: none;
+  }
 }
 
 .personality-icon {
@@ -855,15 +859,12 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
 .advanced-options-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+  gap: 28px 24px;
   margin-bottom: 20px;
 }
 
 .advanced-options-card {
-  padding: 15px;
-  border: 1px solid var(--el-border-color);
-  border-radius: 8px;
-  background-color: var(--el-bg-color);
+  padding: 0;
 }
 
 .advanced-options-card h5 {
@@ -917,10 +918,9 @@ watch(() => props.modelValue, initOpenAiDetails, { immediate: true });
   display: flex;
   align-items: flex-start;
   background-color: var(--el-color-warning-light-9);
-  border-left: 4px solid var(--el-color-warning);
-  padding: 10px;
+  padding: 10px 12px;
   margin-top: 10px;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .info-box i {

@@ -367,14 +367,10 @@ function capitalize(value: string) {
 
 <style scoped>
 .connection-selector {
-  margin-block-end: 20px;
-  padding: 16px;
-  border: 1px solid var(--el-border-color);
-  border-radius: 8px;
-  background-color: var(--el-bg-color-page);
+  margin-block-end: 32px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   position: relative;
 }
 
@@ -386,14 +382,19 @@ function capitalize(value: string) {
 }
 
 .connection-selector__head h4 {
-  margin: 0 0 4px 0;
+  margin: 0;
+  padding: 0;
+  font-size: 1rem;
   font-weight: 600;
+  line-height: 1.3;
 }
 
 .connection-selector__head .help-text {
-  margin: 0;
+  margin: 2px 0 0;
+  padding: 0;
   color: var(--el-text-color-secondary);
   font-size: 0.85rem;
+  text-align: start;
 }
 
 .connection-selector__create-item {
@@ -551,17 +552,30 @@ function capitalize(value: string) {
 }
 
 .connection-selector__summary {
-  border: 1px dashed var(--el-border-color);
-  border-radius: 6px;
-  padding: 12px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 10px;
+  padding: 10px 14px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background-color: var(--el-color-info-light-9);
+  background-color: var(--surface, var(--el-bg-color));
+  color: inherit;
+  font: inherit;
   width: 100%;
   cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.connection-selector__summary:hover,
+.connection-selector__summary.is-open {
+  border-color: var(--el-color-primary);
+}
+
+.connection-selector__summary:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
 }
 
 .connection-selector__summary-main {
@@ -572,8 +586,8 @@ function capitalize(value: string) {
 }
 
 .connection-selector__summary-logo {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   margin: 0;
 }

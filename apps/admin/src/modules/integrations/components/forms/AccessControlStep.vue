@@ -2,10 +2,7 @@
 import { computed } from 'vue';
 import LabelsInput from '@/modules/core/components/forms/LabelsInput.vue';
 import WorkspaceLabelSelector from '@/modules/no-code/components/WorkspaceLabelSelector.vue';
-import FormRowGroup from '@/modules/core/components/forms/FormRowGroup.vue';
 import { useWsConfiguration } from '@/modules/configurations/store/ws-configuration';
-import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
-import { Lock } from '@element-plus/icons-vue';
 
 interface PermissionsConfig {
   roles?: string[];
@@ -66,29 +63,13 @@ const guestAllowed = computed({
 
 <template>
   <div class="access-control-step">
-    <el-alert
-      type="info"
-      :closable="false"
-      class="mb-4"
-    >
-      {{ $t('Control who can trigger this integration by defining user, workspace, or label-based permissions.') }}
-    </el-alert>
+    <p class="lead">{{ $t('Control who can trigger this integration by defining user, workspace, or label-based permissions.') }}</p>
 
-    <el-card class="permissions-card">
-      <template #header>
-        <div class="card-header">
-          <el-icon><Lock /></el-icon>
-          <span>{{ $t('Access Rules') }}</span>
-        </div>
-      </template>
-
-      <FormRowGroup wrap class="permissions-grid">
+    <div class="permissions-grid">
         <el-form-item class="flex-1">
-          <template #label>
-            {{ $t('Guest Access') }}
-            <InfoIcon :content="$t('Allow unauthenticated users to start conversations with this integration.')" />
-          </template>
+          <template #label>{{ $t('Guest Access') }}</template>
           <el-switch v-model="guestAllowed" />
+          <p class="field-hint">{{ $t('Allow unauthenticated users to start conversations with this integration.') }}</p>
         </el-form-item>
 
         <LabelsInput
@@ -122,40 +103,46 @@ const guestAllowed = computed({
           :info="$t('Limit access to workspaces tagged with these labels.')"
           v-model="workspaceLabelsModel"
         />
-      </FormRowGroup>
-    </el-card>
+      </div>
+    
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .access-control-step {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding-block: 4px;
 }
 
-.mb-4 {
-  margin-block-end: 16px;
-}
-
-.permissions-card {
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-light);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
+.lead {
+  margin: 0;
+  padding: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 0.88rem;
+  text-align: start;
 }
 
 .permissions-grid {
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 20px;
 }
 
-.flex-1 {
-  flex: 1;
-  min-inline-size: 240px;
+.field-hint {
+  inline-size: 100%;
+  margin: 4px 0 0;
+  padding: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  text-align: start;
+}
+
+@media (max-width: 720px) {
+  .permissions-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

@@ -355,9 +355,15 @@ const summaryOf = (integration: any) => integration.trigger?.details?.descriptio
 .panel-foot {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 10px 14px;
   border-block-start: 1px solid var(--el-border-color-extra-light);
+
+  .el-button {
+    margin: 0;
+    max-inline-size: 100%;
+  }
 }
 
 .grow {

@@ -121,218 +121,110 @@ const blockAllFunctions = async () => {
 </script>
 
 <template>
-  <div class="function-tools-container">
-    <el-alert type="info" :closable="false" class="mb-3">
-      {{ $t('Manage function tools that can be used by this chat completion integration.') }}
-    </el-alert>
-    
-    <div class="function-tools-header">
-      <div class="function-tools-title">
-        <h3>{{ $t('Function Tools') }}</h3>
-        <span class="function-count">{{ functionCallingIntegrations.length }} {{ $t('available') }}</span>
-      </div>
-      
-      <div class="function-tools-actions">
-        <el-dropdown trigger="click" @command="handleBulkAction">
-          <el-button type="primary" plain size="small">
-            {{ $t('Bulk Actions') }}
-            <el-icon class="el-icon--right"><icon-arrow-down /></el-icon>
-          </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="allowAll" :disabled="areAllFunctionsEnabled">
-                <el-icon><icon-check /></el-icon>
-                {{ $t('Enable All') }}
-              </el-dropdown-item>
-              <el-dropdown-item command="blockAll" :disabled="areAllFunctionsDisabled">
-                <el-icon><icon-close /></el-icon>
-                {{ $t('Disable All') }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
-    </div>
-    
-    <div v-if="functionCallingIntegrations.length === 0" class="no-functions-message">
-      <el-empty :description="$t('No function calling integrations found')" />
-    </div>
-    
-    <div v-else class="function-rows-container">
-      <div 
-        v-for="func in functionCallingIntegrations" 
-        :key="func._id"
-        class="function-row"
-        :class="{ 'disabled': !isFunctionApplied(func) }"
-      >
-        <div class="function-row-content">
-          <div class="function-info">
-            <h3 class="function-name">{{ func.trigger.details?.name || 'Unnamed Function' }}</h3>
-            <p class="function-description">{{ func.trigger.details?.description || 'No description' }}</p>
-          </div>
-          
-          <div class="function-controls">
-            <el-popover
-              placement="left"
-              trigger="hover"
-              :width="400"
-            >
-              <template #reference>
-                <el-button size="small" type="info" plain>
-                  {{ $t('View Parameters') }}
-                </el-button>
-              </template>
-              <pre class="parameters-preview">{{ JSON.stringify(func.trigger.details?.parameters || {}, null, 2) }}</pre>
-            </el-popover>
-            
-            <el-tooltip :content="$t(isFunctionApplied(func) ? 'Disable Function' : 'Enable Function')" placement="top">
-              <el-button 
-                :type="isFunctionApplied(func) ? 'success' : 'info'" 
-                circle 
-                @click="toggleFunctionStatus(func, !isFunctionApplied(func))"
-              >
-                <el-icon><icon-check v-if="isFunctionApplied(func)" /><icon-close v-else /></el-icon>
-              </el-button>
-            </el-tooltip>
-          </div>
+  <div class="function-tools">
+    <header v-if="functionCallingIntegrations.length" class="bar">
+      <span class="count">{{ functionCallingIntegrations.length }} {{ $t('available') }}</span>
+      <el-dropdown trigger="click" @command="handleBulkAction">
+        <el-button text size="small">{{ $t('Bulk Actions') }}<el-icon class="el-icon--right"><icon-arrow-down /></el-icon></el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="allowAll" :disabled="areAllFunctionsEnabled">{{ $t('Enable All') }}</el-dropdown-item>
+            <el-dropdown-item command="blockAll" :disabled="areAllFunctionsDisabled">{{ $t('Disable All') }}</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </header>
+
+    <p v-if="functionCallingIntegrations.length === 0" class="empty">{{ $t('No function calling integrations found') }}. {{ $t('Create a workflow that starts from a function call, and it shows up here.') }}</p>
+
+    <ul v-else class="rows">
+      <li v-for="func in functionCallingIntegrations" :key="func._id" class="row" :class="{ off: !isFunctionApplied(func) }">
+        <div class="info">
+          <strong dir="auto">{{ func.trigger.details?.name || $t('Unnamed function') }}</strong>
+          <span dir="auto">{{ func.trigger.details?.description || $t('No description') }}</span>
         </div>
-      </div>
-    </div>
+        <el-popover placement="left" trigger="click" :width="400">
+          <template #reference><el-button text size="small">{{ $t('Parameters') }}</el-button></template>
+          <pre class="params" dir="ltr">{{ JSON.stringify(func.trigger.details?.parameters || {}, null, 2) }}</pre>
+        </el-popover>
+        <el-switch :model-value="isFunctionApplied(func)" :aria-label="`${$t('Enable Function')}: ${func.trigger.details?.name || ''}`" @change="(value: boolean) => toggleFunctionStatus(func, value)" />
+      </li>
+    </ul>
   </div>
 </template>
 
-<style scoped>
-.function-tools-container {
-  padding: 10px 0;
-}
-
-.mb-3 {
-  margin-bottom: 15px;
-}
-
-.function-tools-header {
+<style scoped lang="scss">
+.bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--el-border-color-light);
+  justify-content: space-between;
+  margin-block-end: 8px;
 }
 
-.function-tools-title {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-}
-
-.function-tools-title h3 {
+.count,
+.empty {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.function-count {
-  font-size: 13px;
   color: var(--el-text-color-secondary);
+  font-size: 0.88rem;
+  text-align: start;
 }
 
-.function-tools-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.function-rows-container {
+.rows {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.function-row {
-  width: 100%;
-  border: 1px solid var(--el-border-color);
-  border-radius: 8px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-}
-
-.function-row:hover {
-  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
-}
-
-.function-row.disabled {
-  opacity: 0.4;
-  background-color: var(--el-fill-color-light);
-}
-
-.function-row-content {
-  padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.function-info {
-  flex: 1;
-  min-width: 0; /* Needed for text truncation to work */
-}
-
-.function-name {
-  font-weight: 600;
-  margin: 0 0 4px 0;
-  font-size: 16px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.function-description {
-  font-size: 0.85em;
-  color: var(--el-text-color-secondary);
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.function-controls {
-  display: flex;
   gap: 8px;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.parameters-preview {
-  max-height: 300px;
-  overflow: auto;
-  font-family: monospace;
-  font-size: 12px;
-  background-color: var(--el-bg-color-page);
-  padding: 10px;
-  border-radius: 4px;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.no-functions-message {
-  margin-top: 40px;
-  text-align: center;
-}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  transition: opacity 0.15s ease;
 
-@media (max-width: 768px) {
-  .function-row-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+  &.off {
+    opacity: 0.6;
   }
-  
-  .function-controls {
-    width: 100%;
-    justify-content: flex-end;
+}
+
+.info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-inline-size: 0;
+
+  strong,
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  span {
+    color: var(--el-text-color-secondary);
+    font-size: 0.85rem;
+  }
+}
+
+.params {
+  max-block-size: 300px;
+  margin: 0;
+  padding: 10px;
+  overflow: auto;
+  border-radius: 6px;
+  background: var(--el-fill-color-light);
+  font-size: 0.8rem;
+  text-align: start;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    transition: none;
   }
 }
 </style>
