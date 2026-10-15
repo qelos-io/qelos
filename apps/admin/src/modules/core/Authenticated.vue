@@ -1,24 +1,5 @@
 <template>
   <div v-if="isLoaded" :class="['admin-panel', layoutClass]">
-    <BuilderEditingLayer
-      v-if="shouldShowBuilderComponents"
-      :page-name="currentPageName"
-      :is-editing-enabled="isEditingEnabled"
-      :toggle-edit="() => isEditingEnabled = !isEditingEnabled"
-      :submitting="false"
-      :show-code-editor="false"
-      :open-add-component-modal="() => {}"
-      :open-code-editor="() => {}"
-      :clone-page="() => {}"
-      :remove-page="() => {}"
-      :save-code-editor="() => {}"
-      :close-code-editor="() => {}"
-      @preview-mode="handlePreviewMode"
-      @toggle-guides="handleToggleGuides"
-      @inspect-mode="handleInspectMode"
-      @page-settings="handlePageSettings"
-    />
-
     <!-- Fixed impersonation exit button -->
     <button v-if="isImpersonating" type="button" class="impersonation-exit-btn" @click="handleExitImpersonation">
       <font-awesome-icon icon="fas fa-user-secret" />
@@ -59,7 +40,7 @@ import CommandPalette from './components/layout/CommandPalette.vue'
 import QuicklyCreateMicrofrontends from './components/layout/navigation/QuicklyCreateMicrofrontends.vue'
 import { isCreatePageOpen } from './store/shell'
 import { useViewport } from './compositions/viewport'
-import { authStore, isPrivilegedUser, isEditingEnabled, isAdmin } from '@/modules/core/store/auth';
+import { authStore, isPrivilegedUser, isAdmin } from '@/modules/core/store/auth';
 import { isImpersonating, clearImpersonation } from '@/modules/core/store/impersonation';
 import { usePluginsMicroFrontends } from '@/modules/plugins/store/plugins-microfrontends';
 import MicroFrontendModal from '@/modules/plugins/components/MicroFrontendModal.vue';
@@ -68,13 +49,9 @@ import useWorkspacesList from '@/modules/workspaces/store/workspaces-list';
 import useInvitesList from '@/modules/workspaces/store/invites-list';
 import PrivilegedAddons from '@/modules/admins/components/PrivilegedAddons.vue';
 import { useAppConfiguration } from '@/modules/configurations/store/app-configuration';
-import { shouldShowBuilderTheme } from '@/modules/builder/store/builderTheme';
-import BuilderEditingLayer from '@/modules/builder/components/BuilderEditingLayer.vue';
-import { useRoute } from 'vue-router';
 import { useStaticComponentsStore } from '../no-code/store/static-components'
 
 const router = useRouter()
-const route = useRoute();
 const { appConfig } = useAppConfiguration();
 const wsConfig = useWsConfiguration()
 const workspacesStore = useWorkspacesList()
@@ -93,21 +70,6 @@ const openModals = toRef(usePluginsMicroFrontends(), 'openModals');
 const layoutStyle = computed(() => appConfig.value.layoutStyle || 'classic');
 const navigationLayout = computed(() => appConfig.value.navigationLayout || 'icon-text');
 const layoutClass = computed(() => `layout-${layoutStyle.value}`);
-
-// Builder theme computed properties
-const currentPageName = computed(() => {
-  return (route.meta?.title as string) || (route.name as string) || 'Unknown Page';
-});
-
-const shouldShowBuilderComponents = computed(() => {
-  if (!isAdmin.value) return false;
-  // Show builder components on all pages for admin users on desktop
-  // except for specific pages where it shouldn't appear (like login, etc.)
-  const excludedRoutes = ['/login', '/register', '/forgot-password'];
-  const isExcludedRoute = excludedRoutes.some(excludedRoute => route.path.startsWith(excludedRoute));
-  
-  return shouldShowBuilderTheme.value && !isExcludedRoute;
-});
 
 router.afterEach(() => navigationOpened.value = false);
 watch([isCompact, isTablet], () => navigationOpened.value = false);
@@ -157,27 +119,6 @@ watch(navigationLayout, (layout) => {
   document.body.setAttribute('data-navigation-layout', layout);
 }, { immediate: true });
 
-
-// Builder theme event handlers
-function handlePreviewMode() {
-  // Implement preview mode logic
-  console.log('Preview mode activated');
-}
-
-function handleToggleGuides() {
-  // Implement guides toggle logic
-  console.log('Guides toggled');
-}
-
-function handleInspectMode() {
-  // Implement inspect mode logic
-  console.log('Inspect mode activated');
-}
-
-function handlePageSettings() {
-  // Implement page settings logic
-  console.log('Page settings opened');
-}
 
 function handleExitImpersonation() {
   clearImpersonation();

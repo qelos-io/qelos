@@ -49,12 +49,9 @@ app.config.globalProperties.$isMobile = isMobile;
 app.config.globalProperties.$pubsub = pubsub;
 app.config.globalProperties.$analytics = analyticsService;
 
-// Initialize builder theme after auth is loaded
+// Start loading the signed-in user right away
 import { fetchAuthUser } from './modules/core/store/auth';
-import { initializeBuilderTheme } from './modules/builder/store/builderTheme';
 
 fetchAuthUser(false, true).catch(() => {
   // Ignore errors during initial auth fetch - user might not be logged in
-}).then(() => {
-  initializeBuilderTheme(false);
 });
