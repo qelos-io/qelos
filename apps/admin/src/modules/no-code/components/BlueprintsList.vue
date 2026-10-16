@@ -42,10 +42,6 @@ function command(blueprint: IBlueprint, name: string) {
   if (name === 'remove') removeWithConfirm(blueprint.identifier);
   if (name === 'clear') removeAllEntities(blueprint.identifier);
 }
-
-function handleBlueprintSelect(blueprint: IBlueprint | null) {
-  if (blueprint) store.selectItem(blueprint.identifier);
-}
 </script>
 
 <template>
@@ -114,10 +110,7 @@ function handleBlueprintSelect(blueprint: IBlueprint | null) {
 
     <!-- Graph View -->
     <div v-else class="graph-view">
-      <BlueprintsRelationGraph 
-        :blueprints="filteredBlueprints" 
-        @select="handleBlueprintSelect"
-      />
+      <BlueprintsRelationGraph :blueprints="filteredBlueprints" />
     </div>
     
   </div>

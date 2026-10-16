@@ -2250,5 +2250,16 @@
   "{count} properties": "{count} propriétés",
   "{scope}: at most {count} entities": "{scope} : au maximum {count} entités",
   "1 property": "1 propriété",
-  "1 link": "1 lien"
+  "1 link": "1 lien",
+  "Blueprint relations graph": "Graphe des relations des blueprints",
+  "Edit blueprint": "Modifier le blueprint",
+  "Fit": "Ajuster",
+  "Linked from": "Lié depuis",
+  "Not linked to anything": "Sans aucun lien",
+  "Nothing links to anything yet": "Rien n'est encore lié",
+  "Open a blueprint, pick a text property and set \"Links to\": an arrow appears here.": "Ouvrez un blueprint, choisissez une propriété texte et définissez « Lié à » : une flèche apparaît ici.",
+  "Points to the blueprint a property links to; the label is that property.": "Pointe vers le blueprint auquel une propriété est liée ; l'étiquette est cette propriété.",
+  "Zoom": "Zoom",
+  "Zoom in": "Zoom avant",
+  "Zoom out": "Zoom arrière"
 }
