@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import BlueprintEntity from '../../models/blueprint-entity';
 import {
   ENTITY_BUCKETS,
+  ENTITY_LOG_COLLECTIONS,
   getAllEntityModels,
   getBucketCollectionName,
+  getLogCollectionName,
   getEntityModel,
   pickEntityCollection,
 } from '../entity-storage.service';
@@ -24,8 +26,12 @@ describe('entity-storage.service', () => {
     assert.throws(() => getEntityModel({ storage: { collection: 'tenant_acme_orders' } } as any), /unknown entities collection/);
   });
 
-  it('registers the legacy collection plus every bucket', () => {
-    assert.equal(getAllEntityModels().length, ENTITY_BUCKETS + 1);
+  it('registers the legacy collection, every bucket and every log collection', () => {
+    assert.equal(getAllEntityModels().length, 1 + ENTITY_BUCKETS + ENTITY_LOG_COLLECTIONS);
+    for (let index = 0; index < ENTITY_LOG_COLLECTIONS; index++) {
+      const name = getLogCollectionName(index);
+      assert.equal(getEntityModel({ storage: { collection: name } } as any).collection.name, name);
+    }
     for (let bucket = 0; bucket < ENTITY_BUCKETS; bucket++) {
       const name = getBucketCollectionName(bucket);
       const model = getEntityModel({ storage: { collection: name } } as any);
@@ -59,5 +65,27 @@ describe('entity-storage.service', () => {
       used.add(pickEntityCollection(`tenant-${i}`, 'orders'));
     }
     assert.ok(used.size > ENTITY_BUCKETS / 2);
+  });
+
+  it('assigns log-like blueprints to a log collection, others to a bucket', () => {
+    const logs = new Set<string>();
+    for (const [identifier, name] of [['activity_log'], ['usage-daily'], ['video-editing-state'], ['system_event'], ['x', 'Audit']] as const) {
+      const collection = pickEntityCollection('tenant-1', identifier, name);
+      assert.match(collection, /^blueprintentities_log_\d$/, identifier);
+      logs.add(collection);
+    }
+    for (const identifier of ['orders', 'event', 'catalog', 'state']) {
+      assert.match(pickEntityCollection('tenant-1', identifier), /^blueprintentities_\d\d$/, identifier);
+    }
+    assert.ok(getEntityModel({ storage: { collection: [...logs][0] } } as any));
+  });
+
+  it('spreads log blueprints across the log collections, deterministically', () => {
+    const used = new Set<string>();
+    for (let i = 0; i < 100; i++) {
+      used.add(pickEntityCollection(`tenant-${i}`, 'activity_log'));
+    }
+    assert.equal(used.size, ENTITY_LOG_COLLECTIONS);
+    assert.equal(pickEntityCollection('t', 'activity_log'), pickEntityCollection('t', 'activity_log'));
   });
 });
