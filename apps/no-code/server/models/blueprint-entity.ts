@@ -91,7 +91,10 @@ export const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
 
 BlueprintEntitySchema.index({ tenant: 1, blueprint: 1, created: 1 });
 BlueprintEntitySchema.index({ tenant: 1, blueprint: 1, identifier: 1 }, { unique: true });
-BlueprintEntitySchema.index({ tenant: 1, indexes: 1 });
+// relation lookups always filter by blueprint too; without it the scan walks every blueprint's entries of the tenant.
+// NOTE: collections created before this change still have the old { tenant, indexes } index. Mongoose does not drop it
+// automatically; drop `tenant_1_indexes_1` manually once this has been deployed.
+BlueprintEntitySchema.index({ tenant: 1, blueprint: 1, indexes: 1 });
 
 const BlueprintEntity = mongoose.model<IBlueprintEntity>('BlueprintEntity', BlueprintEntitySchema);
 
