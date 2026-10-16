@@ -1,5 +1,5 @@
 import Blueprint, { IBlueprint } from '../models/blueprint';
-import { getEntityModel } from '../services/entity-storage.service';
+import { getEntityModel, pickEntityCollection } from '../services/entity-storage.service';
 import { evictBlueprintCache, getBlueprintCacheKey } from '../services/blueprints.service';
 import { cacheManager } from '../services/cache-manager';
 import logger from '../services/logger';
@@ -84,9 +84,12 @@ export async function getSingleBlueprint(req, res) {
 }
 
 export async function createBlueprint(req, res) {
+  // storage is assigned by the system only, never from the request
+  const { storage, ...body } = req.body;
   const blueprint = new Blueprint({
-    ...req.body,
+    ...body,
     tenant: req.headers.tenant,
+    storage: { collection: pickEntityCollection(req.headers.tenant, body.identifier) },
   });
 
   try {
@@ -120,7 +123,7 @@ export async function updateBlueprint(req, res) {
     return;
   }
 
-  const { tenant, identifier, created, ...permittedData } = req.body;
+  const { tenant, identifier, created, storage, ...permittedData } = req.body;
 
   // Apply validated properties if they exist in the request
   if (req.body.properties) {
@@ -159,7 +162,7 @@ export async function patchBlueprint(req, res) {
     return;
   }
 
-  const { tenant, identifier, created, permissions, ...permittedData } = req.body as Partial<IBlueprint>;
+  const { tenant, identifier, created, permissions, storage, ...permittedData } = req.body as Partial<IBlueprint>;
 
   const relations = [
     ...blueprint.relations,
