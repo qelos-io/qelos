@@ -70,5 +70,7 @@ jobs:
           push: ${{ github.event.workflow_run.head_branch == 'main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # one cache scope per service: the 12 matrix jobs (and concurrent runs for the same commit) otherwise
+          # share the default scope and can collide reserving the same cache key ("failed to reserve cache")
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
