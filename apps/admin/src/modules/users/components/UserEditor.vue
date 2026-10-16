@@ -320,9 +320,11 @@ const isMe = computed(() => !!props.user && authStore.user?._id === props.user._
   h1 {
     margin: 0;
     padding: 0;
-    overflow: hidden;
     font-size: 1.5rem;
+    font-weight: 600;
     line-height: 1.25;
+    text-align: start;
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }

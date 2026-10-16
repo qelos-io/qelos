@@ -1,9 +1,8 @@
 <template>
   <div ref="page" class="events-page">
-    <header class="page-head">
-      <div class="page-title">
-        <h1>{{ $t('Events') }}</h1>
-        <p class="page-summary" aria-live="polite">
+    <AppPageHead :title="$t('Events')">
+      <template #subtitle>
+        <span class="page-summary" aria-live="polite">
           <template v-if="loading && !events.length">{{ $t('Loading') }}…</template>
           <template v-else>
             <span class="summary-total">{{ totalLabel }} {{ $t('events') }}</span>
@@ -13,21 +12,23 @@
               </button>
             </span>
           </template>
-        </p>
-      </div>
-      <el-dropdown trigger="click" :disabled="!events.length" @command="downloadExport">
-        <el-button :disabled="!events.length">
-          <el-icon><Download /></el-icon>
-          <span class="export-label">{{ $t('Export') }}</span>
-        </el-button>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="csv">{{ $t('Export CSV') }}</el-dropdown-item>
-            <el-dropdown-item command="json">{{ $t('Export JSON') }}</el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
-    </header>
+        </span>
+      </template>
+      <template #actions>
+        <el-dropdown trigger="click" :disabled="!events.length" @command="downloadExport">
+          <el-button :disabled="!events.length">
+            <el-icon><Download /></el-icon>
+            <span class="export-label action-label">{{ $t('Export') }}</span>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="csv">{{ $t('Export CSV') }}</el-dropdown-item>
+              <el-dropdown-item command="json">{{ $t('Export JSON') }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </template>
+    </AppPageHead>
 
     <EventsToolbar
       :filters="filters"
@@ -95,6 +96,7 @@
 </template>
 
 <script lang="ts" setup>
+import AppPageHead from '@/modules/core/components/layout/AppPageHead.vue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Download } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
@@ -204,32 +206,16 @@ function downloadExport(format: EventsExportFormat) {
   container: events / inline-size;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 20px;
+  gap: 16px;
+  padding: 20px 20px 28px;
   min-inline-size: 0;
 }
 
-.page-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.page-title h1 {
-  margin: 0;
-  font-size: 24px;
-  line-height: 1.2;
-}
-
+/* the count line */
 .page-summary {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 8px 16px;
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: var(--el-text-color-secondary);
-  font-variant-numeric: tabular-nums;
+  gap: 4px 16px;
 }
 
 .errors-link {

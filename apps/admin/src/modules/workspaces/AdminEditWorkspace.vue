@@ -250,8 +250,11 @@ function onMenuCommand(command: string) {
 
 .header-info h1 {
   margin: 0;
-  font-size: 1.6rem;
+  padding: 0;
+  font-size: 1.5rem;
   font-weight: 600;
+  line-height: 1.25;
+  text-align: start;
   overflow-wrap: anywhere;
 }
 

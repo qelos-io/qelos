@@ -2264,5 +2264,7 @@
   "Zoom out": "Zoom arrière",
   "Relations": "Relations",
   "{count} blueprints": "{count} blueprints",
-  "1 blueprint": "1 blueprint"
+  "1 blueprint": "1 blueprint",
+  "1 plugin": "1 plugin",
+  "{count} plugins": "{count} plugins"
 }

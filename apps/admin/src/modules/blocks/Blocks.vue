@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import AppPage from '@/modules/core/components/layout/AppPage.vue';
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -49,17 +50,13 @@ async function copyEmbed(block: any) {
 </script>
 
 <template>
-  <div class="blocks-page">
-    <header class="page-head">
-      <div>
-        <h1>{{ $t('Content Boxes') }}</h1>
-        <p>{{ $t('Reusable pieces of content you can drop into any page.') }}</p>
-      </div>
+  <AppPage :title="$t('Content Boxes')" :subtitle="$t('Reusable pieces of content you can drop into any page.')">
+    <template #actions>
       <el-button type="primary" @click="router.push({ name: 'createBlock' })">
         <el-icon><Plus /></el-icon>
         <span class="action-label">{{ $t('New box') }}</span>
       </el-button>
-    </header>
+    </template>
 
     <div v-if="blocks.length" class="toolbar">
       <el-input v-model="query" class="search" clearable :prefix-icon="Search" :placeholder="$t('Search content boxes')" :aria-label="$t('Search content boxes')" />
@@ -104,40 +101,10 @@ async function copyEmbed(block: any) {
         </div>
       </li>
     </ul>
-  </div>
+  </AppPage>
 </template>
 
 <style scoped lang="scss">
-.blocks-page {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-}
-
-.page-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-
-  h1 {
-    margin: 0;
-    font-size: 24px;
-    line-height: 1.2;
-  }
-
-  p {
-    margin: 4px 0 0;
-    font-size: 14px;
-    color: var(--el-text-color-secondary);
-  }
-}
-
-.action-label {
-  margin-inline-start: 6px;
-}
-
 .toolbar {
   display: flex;
   flex-wrap: wrap;

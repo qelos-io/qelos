@@ -1,24 +1,21 @@
 <template>
-  <div class="storage-page">
-    <header class="page-head">
-      <div>
-        <h1>{{ $t('Storage') }}</h1>
-        <p v-if="items.length" class="page-summary" aria-live="polite">
-          {{ items.length }} {{ items.length === 1 ? $t('storage') : $t('storages') }}
-          <template v-if="counts.ok"> · <span class="ok">{{ counts.ok }} {{ $t('connected') }}</span></template>
-          <template v-if="counts.error"> · <span class="bad">{{ counts.error }} {{ $t('failing') }}</span></template>
-          <template v-if="counts.idle"> · {{ counts.idle }} {{ $t('not tested') }}</template>
-        </p>
-        <p v-else class="page-summary">{{ $t('Where your app keeps uploaded files') }}</p>
-      </div>
-      <div v-if="items.length" class="page-actions">
-        <el-button :loading="testingAll" @click="testAll">{{ $t('Test all') }}</el-button>
-        <el-button type="primary" @click="router.push({ name: 'addStorage' })">
-          <el-icon><Plus /></el-icon>
-          <span class="action-label">{{ $t('Add storage') }}</span>
-        </el-button>
-      </div>
-    </header>
+  <AppPage :title="$t('Storage')">
+    <template #subtitle>
+      <span v-if="items.length" class="page-summary" aria-live="polite">
+        {{ items.length }} {{ items.length === 1 ? $t('storage') : $t('storages') }}
+        <template v-if="counts.ok"> · <span class="ok">{{ counts.ok }} {{ $t('connected') }}</span></template>
+        <template v-if="counts.error"> · <span class="bad">{{ counts.error }} {{ $t('failing') }}</span></template>
+        <template v-if="counts.idle"> · {{ counts.idle }} {{ $t('not tested') }}</template>
+      </span>
+      <template v-else>{{ $t('Where your app keeps uploaded files') }}</template>
+    </template>
+    <template v-if="items.length" #actions>
+      <el-button :loading="testingAll" @click="testAll">{{ $t('Test all') }}</el-button>
+      <el-button type="primary" @click="router.push({ name: 'addStorage' })">
+        <el-icon><Plus /></el-icon>
+        <span class="action-label">{{ $t('Add storage') }}</span>
+      </el-button>
+    </template>
 
     <div v-if="items.length" class="storage-grid">
       <StorageCard
@@ -46,10 +43,11 @@
     </section>
 
     <el-skeleton v-else :rows="4" animated />
-  </div>
+  </AppPage>
 </template>
 
 <script lang="ts" setup>
+import AppPage from '@/modules/core/components/layout/AppPage.vue';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Plus } from '@element-plus/icons-vue';
@@ -95,32 +93,8 @@ async function testAll() {
 </script>
 
 <style scoped lang="scss">
-.storage-page {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 20px;
-}
-
-.page-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-
-  h1 {
-    margin: 0;
-    font-size: 24px;
-    line-height: 1.2;
-  }
-}
 
 .page-summary {
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: var(--el-text-color-secondary);
-  font-variant-numeric: tabular-nums;
-
   .ok {
     color: var(--el-color-success);
     font-weight: 600;
@@ -130,15 +104,6 @@ async function testAll() {
     color: var(--el-color-danger);
     font-weight: 600;
   }
-}
-
-.page-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-label {
-  margin-inline-start: 6px;
 }
 
 .storage-grid {

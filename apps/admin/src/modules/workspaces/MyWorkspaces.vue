@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import AppPage from '@/modules/core/components/layout/AppPage.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Plus } from '@element-plus/icons-vue';
@@ -35,14 +36,10 @@ const create = () => router.push({ name: 'createMyWorkspace' });
 </script>
 
 <template>
-  <div class="page">
-    <header class="head">
-      <div>
-        <h1>{{ $t('Workspaces') }}</h1>
-        <p v-if="!store.loading" class="count">{{ $t('{n} workspaces', { n: (store.workspaces || []).length }) }}</p>
-      </div>
-      <el-button v-if="wsConfig.canUserCreateWorkspace" type="primary" :icon="Plus" @click="create">{{ $t('Create workspace') }}</el-button>
-    </header>
+  <AppPage :title="$t('Workspaces')" :subtitle="store.loading ? undefined : $t('{n} workspaces', { n: (store.workspaces || []).length })">
+    <template v-if="wsConfig.canUserCreateWorkspace" #actions>
+      <el-button type="primary" :icon="Plus" @click="create">{{ $t('Create workspace') }}</el-button>
+    </template>
 
     <InvitesList />
 
@@ -52,40 +49,14 @@ const create = () => router.push({ name: 'createMyWorkspace' });
     </div>
 
     <WorkspacesList :workspaces="visible" :role-of="roleOf" :loading="store.loading && !(store.workspaces || []).length" :filtered="filtered" :can-create="wsConfig.canUserCreateWorkspace" @create="create" />
-  </div>
+  </AppPage>
 </template>
 
 <style scoped lang="scss">
-.page {
-  padding: 8px 20px 24px;
-}
-
-.head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  margin-block-end: 14px;
-
-  h1 {
-    margin: 0;
-    padding: 0;
-    font-size: 1.5rem;
-    line-height: 1.25;
-  }
-
-  .count {
-    margin: 2px 0 0;
-    padding: 0;
-    color: var(--el-text-color-secondary);
-  }
-}
-
 .chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-block-end: 14px;
 }
 
 .chip {
@@ -122,9 +93,4 @@ const create = () => router.push({ name: 'createMyWorkspace' });
   }
 }
 
-@media (max-width: 640px) {
-  .page {
-    padding-inline: 12px;
-  }
-}
 </style>

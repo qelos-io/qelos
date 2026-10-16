@@ -138,7 +138,9 @@ async function submit() {
     margin: 0;
     padding: 0;
     font-size: 1.5rem;
+    font-weight: 600;
     line-height: 1.25;
+    text-align: start;
   }
 
   p {

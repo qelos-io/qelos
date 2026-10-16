@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppPageHead from '@/modules/core/components/layout/AppPageHead.vue';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -24,13 +25,9 @@ const tabs = computed(() => [
 
 <template>
   <header class="pricing-head">
-    <div class="head-row">
-      <div class="head-title">
-        <h1>{{ title || $t('Pricing & Billing') }}</h1>
-        <p v-if="subtitle">{{ subtitle }}</p>
-      </div>
-      <div v-if="$slots.actions" class="head-actions"><slot name="actions" /></div>
-    </div>
+    <AppPageHead :title="title || $t('Pricing & Billing')" :subtitle="subtitle">
+      <template v-if="$slots.actions" #actions><slot name="actions" /></template>
+    </AppPageHead>
 
     <nav class="pricing-tabs" :aria-label="$t('Pricing & Billing')">
       <router-link
@@ -53,32 +50,6 @@ const tabs = computed(() => [
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.head-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.head-title {
-  h1 {
-    margin: 0;
-    font-size: 24px;
-    line-height: 1.2;
-  }
-
-  p {
-    margin: 4px 0 0;
-    font-size: 14px;
-    color: var(--el-text-color-secondary);
-  }
-}
-
-.head-actions {
-  display: flex;
-  gap: 8px;
 }
 
 .pricing-tabs {

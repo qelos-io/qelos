@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import AppPage from '@/modules/core/components/layout/AppPage.vue';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -32,17 +33,13 @@ async function copy(text: string, message: string) {
 </script>
 
 <template>
-  <div class="components-page">
-    <header class="page-head">
-      <div>
-        <h1>{{ $t('Components') }}</h1>
-        <p>{{ $t('Reusable Vue components you can use across your pages and templates.') }}</p>
-      </div>
+  <AppPage :title="$t('Components')" :subtitle="$t('Reusable Vue components you can use across your pages and templates.')">
+    <template #actions>
       <el-button type="primary" @click="router.push({ name: 'createComponent' })">
         <el-icon><Plus /></el-icon>
         <span class="action-label">{{ $t('New component') }}</span>
       </el-button>
-    </header>
+    </template>
 
     <div v-if="components.length" class="toolbar">
       <el-input v-model="query" class="search" clearable :prefix-icon="Search" :placeholder="$t('Search components')" :aria-label="$t('Search components')" />
@@ -76,34 +73,10 @@ async function copy(text: string, message: string) {
         </div>
       </li>
     </ul>
-  </div>
+  </AppPage>
 </template>
 
 <style scoped lang="scss">
-.components-page {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-}
-
-.page-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-
-  h1 {
-    margin: 0;
-    font-size: 24px;
-  }
-
-  p {
-    margin: 4px 0 0;
-    color: var(--el-text-color-secondary);
-  }
-}
-
 .search {
   max-inline-size: 360px;
 }

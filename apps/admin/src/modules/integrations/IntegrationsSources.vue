@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import AppPage from '@/modules/core/components/layout/AppPage.vue';
 import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ArrowDown, ArrowLeft, Delete, Plus } from '@element-plus/icons-vue';
+import { ArrowDown, Delete, Plus } from '@element-plus/icons-vue';
 import { IntegrationSourceKind, STATUS_CHECK_SUPPORTED_INTEGRATION_SOURCE_KINDS, type IIntegrationSourceStatusResult } from '@qelos/global-types';
 import { useIntegrationKinds } from '@/modules/integrations/compositions/integration-kinds';
 import { useSubmitting } from '@/modules/core/compositions/submitting';
@@ -107,27 +108,23 @@ const details = (connection: any) =>
 </script>
 
 <template>
-  <div class="source-page">
-    <header class="head">
-      <el-button text class="back" :aria-label="$t('Back to connections')" @click="router.push({ name: 'integrations', query: { view: 'connections' } })">
-        <el-icon class="dir-icon"><ArrowLeft /></el-icon><span>{{ $t('Connections') }}</span>
-      </el-button>
-      <div class="title-row">
-        <img v-if="kindData?.logo" class="logo" :alt="kindData.name" :src="kindData.logo" />
-        <h1>{{ kindData?.name || kind }}</h1>
-        <span class="count">{{ $t('{count} connections', { count: connections.length }) }}</span>
-        <div class="grow" />
-        <el-dropdown v-if="templates.length" trigger="click" @command="fromTemplate">
-          <el-button>{{ $t('From a template') }}<el-icon class="caret"><ArrowDown /></el-icon></el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item v-for="option in templates" :key="option.value" :command="option.value">{{ option.label }}</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-        <el-button type="primary" @click="create"><el-icon><Plus /></el-icon>{{ $t('Create Connection') }}</el-button>
-      </div>
-    </header>
+  <AppPage
+    :title="kindData?.name || kind"
+    :subtitle="$t('{count} connections', { count: connections.length })"
+    :back="{ label: $t('Connections'), to: { name: 'integrations', query: { view: 'connections' } } }"
+  >
+    <template v-if="kindData?.logo" #lead><img class="logo" :alt="kindData.name" :src="kindData.logo" /></template>
+    <template #actions>
+      <el-dropdown v-if="templates.length" trigger="click" @command="fromTemplate">
+        <el-button>{{ $t('From a template') }}<el-icon class="caret"><ArrowDown /></el-icon></el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item v-for="option in templates" :key="option.value" :command="option.value">{{ option.label }}</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+      <el-button type="primary" @click="create"><el-icon><Plus /></el-icon>{{ $t('Create Connection') }}</el-button>
+    </template>
 
     <el-skeleton v-if="!store.loaded" :rows="4" animated />
 
@@ -167,57 +164,14 @@ const details = (connection: any) =>
       @save="save"
       @close="formVisible = false"
     />
-  </div>
+  </AppPage>
 </template>
 
 <style scoped lang="scss">
-.source-page {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 12px 20px 32px;
-}
-
-.head {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
-
-.back {
-  margin-inline-start: -10px;
-  padding-inline: 10px;
-  gap: 4px;
-  color: var(--el-text-color-secondary);
-}
-
-.title-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-  inline-size: 100%;
-
-  h1 {
-    margin: 0;
-    padding: 0;
-    font-size: 1.5rem;
-  }
-}
-
 .logo {
   inline-size: 32px;
   block-size: 32px;
   object-fit: contain;
-}
-
-.count {
-  color: var(--el-text-color-secondary);
-}
-
-.grow {
-  flex: 1;
 }
 
 .caret {
@@ -335,9 +289,6 @@ const details = (connection: any) =>
   }
 }
 
-[dir='rtl'] .dir-icon {
-  transform: scaleX(-1);
-}
 
 @media (max-width: 639px) {
   .source-page {

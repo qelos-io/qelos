@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppPage from '@/modules/core/components/layout/AppPage.vue';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ArrowDown, Plus } from '@element-plus/icons-vue';
@@ -27,14 +28,10 @@ const newAutomation = (kind: string) => router.push({ name: 'integration-new', q
 </script>
 
 <template>
-  <div class="integrations-page">
-    <header class="page-head">
-      <div>
-        <h1>{{ $t('Integrations') }}</h1>
-        <p>{{ $t('Connect your application to other services: react to events, call APIs and run AI agents.') }}</p>
-      </div>
+  <AppPage :title="$t('Integrations')" :subtitle="$t('Connect your application to other services: react to events, call APIs and run AI agents.')">
+    <template #actions>
       <el-dropdown trigger="click" @command="newAutomation">
-        <el-button type="primary"><el-icon><Plus /></el-icon>{{ $t('New') }}<el-icon class="caret"><ArrowDown /></el-icon></el-button>
+        <el-button type="primary" :icon="Plus">{{ $t('New') }}<el-icon class="caret"><ArrowDown /></el-icon></el-button>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="agent">
@@ -46,7 +43,7 @@ const newAutomation = (kind: string) => router.push({ name: 'integration-new', q
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-    </header>
+    </template>
 
     <div class="tabs" role="tablist" :aria-label="$t('Integrations')">
       <button type="button" role="tab" class="tab" :class="{ active: tab === 'automations' }" :aria-selected="tab === 'automations'" @click="tab = 'automations'">{{ $t('Automations') }}</button>
@@ -56,36 +53,10 @@ const newAutomation = (kind: string) => router.push({ name: 'integration-new', q
     <AutomationsView v-if="tab === 'automations'" />
     <ConnectionsPanel v-else />
 
-  </div>
+  </AppPage>
 </template>
 
 <style scoped lang="scss">
-.integrations-page {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px 20px 32px;
-}
-
-.page-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-
-  h1 {
-    margin: 0;
-    padding: 0;
-    font-size: 1.5rem;
-  }
-
-  p {
-    margin: 4px 0 0;
-    color: var(--el-text-color-secondary);
-    text-align: start;
-  }
-}
-
 .caret {
   margin-inline-start: 6px;
 }
@@ -136,9 +107,4 @@ const newAutomation = (kind: string) => router.push({ name: 'integration-new', q
   }
 }
 
-@media (max-width: 639px) {
-  .integrations-page {
-    padding: 12px 12px 24px;
-  }
-}
 </style>

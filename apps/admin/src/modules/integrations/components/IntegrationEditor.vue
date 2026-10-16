@@ -320,11 +320,14 @@ function onCommand(command: string) {
   inline-size: 100%;
 
   h1 {
-    min-inline-size: 0;
     margin: 0;
     padding: 0;
-    overflow: hidden;
     font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: start;
+    min-inline-size: 0;
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }

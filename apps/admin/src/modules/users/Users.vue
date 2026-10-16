@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import AppPage from '@/modules/core/components/layout/AppPage.vue';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { Plus } from '@element-plus/icons-vue';
@@ -14,14 +15,10 @@ const create = () => router.push({ name: 'createUser' });
 </script>
 
 <template>
-  <div class="users-page">
-    <header class="head">
-      <div>
-        <h1>{{ $t('Users') }}</h1>
-        <p v-if="!loading" class="count">{{ $t('{n} people', { n: view.totalPeople }) }}</p>
-      </div>
+  <AppPage :title="$t('Users')" :subtitle="loading ? undefined : $t('{n} people', { n: view.totalPeople })">
+    <template #actions>
       <el-button type="primary" :icon="Plus" @click="create">{{ $t('Create user') }}</el-button>
-    </header>
+    </template>
 
     <div v-if="view.roleCounts.length > 1" class="chips" role="group" :aria-label="$t('Filter by role')">
       <button type="button" class="chip" :class="{ on: !roles.length }" :aria-pressed="!roles.length" @click="setRoles([])">{{ $t('All') }}<span>{{ view.totalPeople }}</span></button>
@@ -35,44 +32,14 @@ const create = () => router.push({ name: 'createUser' });
     </el-alert>
 
     <UsersList v-else :people="view.people" :services="view.services" :loading="loading" :filtered="filtered" @removed="removeUser" @create="create" />
-  </div>
+  </AppPage>
 </template>
 
 <style scoped lang="scss">
-.users-page {
-  padding: 8px 20px 24px;
-}
-
-.head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  margin-block-end: 14px;
-
-  h1 {
-    margin: 0;
-    padding: 0;
-    font-size: 1.5rem;
-    line-height: 1.25;
-  }
-
-  .count {
-    margin: 2px 0 0;
-    padding: 0;
-    color: var(--el-text-color-secondary);
-  }
-}
-
-.failed {
-  margin-block-end: 14px;
-}
-
 .chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-block-end: 14px;
 }
 
 .chip {
@@ -109,9 +76,4 @@ const create = () => router.push({ name: 'createUser' });
   }
 }
 
-@media (max-width: 640px) {
-  .users-page {
-    padding-inline: 12px;
-  }
-}
 </style>

@@ -1,11 +1,14 @@
 <script lang="ts" setup>
+import AppPage from '@/modules/core/components/layout/AppPage.vue';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { Plus } from '@element-plus/icons-vue';
 import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
 import BlueprintsList from '@/modules/no-code/components/BlueprintsList.vue';
 import BlueprintCreateDrawer from '@/modules/no-code/components/BlueprintCreateDrawer.vue';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const store = useBlueprintsStore();
@@ -14,22 +17,23 @@ const view = computed<'list' | 'graph'>(() => (route.query.view === 'graph' ? 'g
 const total = computed(() => store.blueprints?.length || 0);
 const links = computed(() => (store.blueprints || []).reduce((sum, blueprint) => sum + (blueprint.relations?.length || 0), 0));
 
+const subtitle = computed(() => {
+  if (!store.loaded) return undefined;
+  const count = total.value === 1 ? t('1 blueprint') : t('{count} blueprints', { count: total.value });
+  if (!links.value) return count;
+  return `${count} · ${links.value === 1 ? t('1 link') : t('{count} links', { count: links.value })}`;
+});
+
 const setView = (next: 'list' | 'graph') => router.replace({ query: { ...route.query, view: next === 'graph' ? 'graph' : undefined } });
 const openCreate = () => router.push({ query: { ...route.query, mode: 'create' } });
 const closeCreate = () => router.replace({ query: { ...route.query, mode: undefined } });
 </script>
 
 <template>
-  <div class="blueprints-page">
-    <header class="head">
-      <div>
-        <h1>{{ $t('Blueprints') }}</h1>
-        <p v-if="store.loaded" class="count" dir="auto">
-          {{ total === 1 ? $t('1 blueprint') : $t('{count} blueprints', { count: total }) }}<template v-if="links"> · {{ links === 1 ? $t('1 link') : $t('{count} links', { count: links }) }}</template>
-        </p>
-      </div>
+  <AppPage :title="$t('Blueprints')" :subtitle="subtitle">
+    <template #actions>
       <el-button type="primary" :icon="Plus" @click="openCreate">{{ $t('New blueprint') }}</el-button>
-    </header>
+    </template>
 
     <div class="views" role="group" :aria-label="$t('View')">
       <button type="button" class="chip" :class="{ on: view === 'list' }" :aria-pressed="view === 'list'" @click="setView('list')">{{ $t('List') }}</button>
@@ -38,41 +42,14 @@ const closeCreate = () => router.replace({ query: { ...route.query, mode: undefi
 
     <BlueprintsList :q="route.query.q as string" />
     <BlueprintCreateDrawer :visible="route.query.mode === 'create'" @close="closeCreate" />
-  </div>
+  </AppPage>
 </template>
 
 <style scoped lang="scss">
-.blueprints-page {
-  padding: 8px 20px 24px;
-}
-
-.head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  margin-block-end: 14px;
-
-  h1 {
-    margin: 0;
-    padding: 0;
-    font-size: 1.5rem;
-    line-height: 1.25;
-  }
-
-  .count {
-    margin: 2px 0 0;
-    padding: 0;
-    color: var(--el-text-color-secondary);
-    text-align: start;
-  }
-}
-
 .views {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-block-end: 14px;
 }
 
 .chip {
@@ -99,9 +76,4 @@ const closeCreate = () => router.replace({ query: { ...route.query, mode: undefi
   }
 }
 
-@media (max-width: 640px) {
-  .blueprints-page {
-    padding-inline: 12px;
-  }
-}
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import AppPageHead from '@/modules/core/components/layout/AppPageHead.vue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -96,10 +97,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnload));
 
 <template>
   <div v-if="loaded" class="appearance">
-    <header class="head">
-      <h1>{{ $t('Appearance') }}</h1>
-      <p>{{ $t('Colors, type, shape and layout for your whole application. Edit freely: nothing changes for your users until you publish.') }}</p>
-    </header>
+    <AppPageHead :title="$t('Appearance')" :subtitle="$t('Colors, type, shape and layout for your whole application. Edit freely: nothing changes for your users until you publish.')" />
 
     <ThemePresets :current-main="draft.colorsPalette.mainColor" :current-bg="draft.colorsPalette.bgColor" @pick="applyPreset" />
 
@@ -158,21 +156,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnload));
   flex-direction: column;
   gap: 16px;
   min-block-size: 100%;
-  padding: 16px 20px 0;
-}
-
-.head {
-  h1 {
-    margin: 0;
-    padding: 0;
-    font-size: 1.5rem;
-  }
-
-  p {
-    margin: 4px 0 0;
-    color: var(--el-text-color-secondary);
-    text-align: start;
-  }
+  padding: 20px 20px 0;
 }
 
 .editor {

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import AppPage from '@/modules/core/components/layout/AppPage.vue';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Plus } from '@element-plus/icons-vue';
@@ -20,17 +21,13 @@ const visibility = computed({
 </script>
 
 <template>
-  <div class="settings-page">
-    <header class="page-head">
-      <div>
-        <h1>{{ $t('Settings') }}</h1>
-        <p>{{ $t('Everything that shapes your application: how it looks, who can sign in, and what it connects to.') }}</p>
-      </div>
+  <AppPage :title="$t('Settings')" :subtitle="$t('Everything that shapes your application: how it looks, who can sign in, and what it connects to.')">
+    <template #actions>
       <el-button type="primary" @click="router.push({ name: 'createConfiguration' })">
         <el-icon><Plus /></el-icon>
         <span class="action-label">{{ $t('Custom configuration') }}</span>
       </el-button>
-    </header>
+    </template>
 
     <div class="toolbar">
       <el-segmented
@@ -45,42 +42,5 @@ const visibility = computed({
     </div>
 
     <ConfigurationsList :visibility="visibility" :search-query="($route.query.q as string) || ''" />
-  </div>
+  </AppPage>
 </template>
-
-<style scoped lang="scss">
-.settings-page {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-}
-
-.page-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-
-  h1 {
-    margin: 0;
-    font-size: 24px;
-  }
-
-  p {
-    margin: 4px 0 0;
-    color: var(--el-text-color-secondary);
-    text-align: start;
-  }
-}
-
-@media (max-width: 639px) {
-  .settings-page {
-    padding: 12px;
-  }
-
-  .action-label {
-    display: none;
-  }
-}
-</style>

@@ -2264,5 +2264,7 @@
   "Zoom out": "הקטנה",
   "Relations": "קשרים",
   "{count} blueprints": "{count} בלופרינטים",
-  "1 blueprint": "בלופרינט אחד"
+  "1 blueprint": "בלופרינט אחד",
+  "1 plugin": "תוסף אחד",
+  "{count} plugins": "{count} תוספים"
 }
