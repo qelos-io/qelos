@@ -540,7 +540,6 @@ const typeOptions = [
 }
 
 .property-card {
-  border-left: 3px solid var(--el-color-primary);
   max-width: 100%;
 }
 

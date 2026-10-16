@@ -1,461 +1,282 @@
+<script lang="ts" setup>
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { Delete, Edit, MoreFilled, Plus, WarningFilled } from '@element-plus/icons-vue';
+import { IBlueprint } from '@qelos/global-types';
+import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
+import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
+import sdk from '@/services/sdk';
+import BlueprintsRelationGraph from './BlueprintsRelationGraph.vue';
+import { describeProperty, propertyRows } from '../services/blueprint-editor';
+import { filterBlueprints } from '../services/blueprints-list';
+
+const props = defineProps({
+  q: {
+    type: String,
+    default: '',
+  },
+});
+
+const { t } = useI18n();
+const store = useBlueprintsStore();
+const route = useRoute();
+const router = useRouter();
+
+const removeWithConfirm = useConfirmAction(store.remove);
+const removeAllEntities = useConfirmAction((identifier: string) => sdk.blueprints.entitiesOf(identifier).remove('all', { query: { bypassAdmin: '' } }));
+
+const currentView = computed<'list' | 'graph'>(() => (route.query.view as 'list' | 'graph') || 'list');
+const filteredBlueprints = computed(() => filterBlueprints(store.blueprints, props.q));
+
+const MAX_PROPERTY_CHIPS = 6;
+const chips = (blueprint: IBlueprint) => {
+  const rows = propertyRows(blueprint.properties);
+  return { shown: rows.slice(0, MAX_PROPERTY_CHIPS), more: Math.max(0, rows.length - MAX_PROPERTY_CHIPS) };
+};
+const nameOf = (identifier: string) => store.blueprints.find((item) => item.identifier === identifier)?.name || identifier;
+const openEditor = (blueprint: IBlueprint, section?: string) =>
+  router.push({ name: 'editBlueprint', params: { blueprintIdentifier: blueprint.identifier }, query: section ? { section } : undefined });
+
+function command(blueprint: IBlueprint, name: string) {
+  if (name === 'remove') removeWithConfirm(blueprint.identifier);
+  if (name === 'clear') removeAllEntities(blueprint.identifier);
+}
+
+function handleBlueprintSelect(blueprint: IBlueprint | null) {
+  if (blueprint) store.selectItem(blueprint.identifier);
+}
+</script>
+
 <template>
-  <div class="blueprints-container">
-  
-    <!-- List View -->
-    <div v-if="currentView === 'list'" class="blueprints-grid">
-      <div v-for="blueprint in filteredBlueprints"
-           :key="blueprint.identifier"
-           :id="'blueprint-' + blueprint.identifier"
-           @mouseenter="markRelationships(blueprint)"
-           @mouseleave="unmarkRelationships"
-           :class="{'blueprint-card': true, 'marked': isMarked(blueprint)}"
-           @click="navigateToBlueprint(blueprint.identifier, $event)"
-      >
-        <div class="blueprint-header">
-          <div class="blueprint-title">
-            <h3>
-              <router-link :to="{name: 'editBlueprint', params: {blueprintIdentifier: blueprint.identifier}}" @click.stop>
-                {{ blueprint.name }}
-              </router-link>
-            </h3>
-            <div class="blueprint-badge" :class="getBadgeClass(blueprint)">
-              {{ getPropertiesCount(blueprint) }} {{ $t('Properties') }}
-            </div>
-          </div>
-          <div class="blueprint-description">
-            {{ blueprint.description || $t('No description provided') }}
-          </div>
-        </div>
-        
-        <div class="blueprint-properties">
-          <h4>{{ $t('Properties') }}</h4>
-          <div class="properties-list">
-            <div v-for="(field, key) in blueprint.properties" 
-                 :key="key"
-                 class="property-item"
-            >
-              <div class="property-name">
-                {{ field.title }}
-                <span v-if="field.required" class="required-badge">*</span>
-                <InfoIcon v-if="field.description" :content="field.description" class="info-icon"/>
-              </div>
-              <div class="property-type">
-                <el-tag size="small" :type="getTypeTagType(field.type)">
-                  {{ field.multi ? ($t('List of') + ' ') : '' }}{{ capitalize(field?.type?.toString() || 'string') }}
-                </el-tag>
-                <span v-if="field.min || field.max" class="property-constraints">
-                  {{ getMinMax(field.min, field.max) }}
-                </span>
-              </div>
-            </div>
-            <div v-if="Object.keys(blueprint.properties || {}).length === 0" class="no-properties">
-              {{ $t('No properties defined') }}
-            </div>
-          </div>
-        </div>
-        
-        <div class="blueprint-actions">
-          <el-tooltip :content="$t('Edit Blueprint')" placement="top">
-            <el-button 
-              type="primary" 
-              circle 
-              @click.stop="$router.push({name: 'editBlueprint', params: {blueprintIdentifier: blueprint.identifier}})"
-            >
-              <el-icon><Edit /></el-icon>
-            </el-button>
-          </el-tooltip>
-          
-          <el-tooltip :content="$t('Remove Blueprint')" placement="top">
-            <el-button 
-              type="danger" 
-              circle 
-              @click.stop="removeWithConfirm(blueprint.identifier)"
-            >
-              <el-icon><Delete /></el-icon>
-            </el-button>
-          </el-tooltip>
-          
-          <el-tooltip :content="$t('Remove All Entities')" placement="top">
-            <el-button 
-              type="warning" 
-              circle 
-              @click.stop="removeAllEntities(blueprint.identifier)"
-            >
-              <el-icon><RemoveFilled /></el-icon>
-            </el-button>
-          </el-tooltip>
-        </div>
+  <div class="blueprints">
+    <template v-if="currentView === 'list'">
+      <ul v-if="store.loading && !store.loaded" class="list" aria-hidden="true">
+        <li v-for="i in 4" :key="i" class="row skeleton">
+          <el-skeleton animated>
+            <template #template>
+              <el-skeleton-item variant="h3" style="inline-size: 30%" />
+              <el-skeleton-item variant="text" style="inline-size: 55%" />
+            </template>
+          </el-skeleton>
+        </li>
+      </ul>
+
+      <div v-else-if="!filteredBlueprints.length" class="empty">
+        <el-empty :description="q ? $t('No blueprint matches your search') : $t('No blueprints yet')">
+          <p v-if="!q" class="empty-hint" dir="auto">{{ $t('A blueprint is a data model: the fields of the things your app keeps, like customers or orders. Describe your app and AI drafts them, or start from scratch.') }}</p>
+          <el-button v-if="!q" type="primary" :icon="Plus" @click="router.push({ query: { mode: 'create' } })">{{ $t('New blueprint') }}</el-button>
+        </el-empty>
       </div>
-      
-      <AddNewCard 
-        :title="$t('Create new Blueprint')"
-        :description="$t('Add a new blueprint to your collection')"
-        :to="{ name: 'createBlueprint' }"
-      />
-    </div>
-    
+
+      <ul v-else class="list">
+        <li v-for="blueprint in filteredBlueprints" :id="'blueprint-' + blueprint.identifier" :key="blueprint.identifier" class="row">
+          <div class="main">
+            <div class="title">
+              <router-link class="name" dir="auto" :to="{ name: 'editBlueprint', params: { blueprintIdentifier: blueprint.identifier } }">{{ blueprint.name }}</router-link>
+              <code dir="ltr">{{ blueprint.identifier }}</code>
+            </div>
+            <p v-if="blueprint.description" class="description" dir="auto">{{ blueprint.description }}</p>
+
+            <ul v-if="chips(blueprint).shown.length" class="chips" :aria-label="$t('Properties')">
+              <li v-for="row in chips(blueprint).shown" :key="row.key">
+                <router-link class="chip" :to="{ name: 'editBlueprint', params: { blueprintIdentifier: blueprint.identifier }, query: { section: 'properties' } }" dir="auto">
+                  {{ row.title || row.key }}<small>{{ $t(describeProperty(row).typeLabel) }}</small>
+                </router-link>
+              </li>
+              <li v-if="chips(blueprint).more" class="more">+{{ chips(blueprint).more }}</li>
+            </ul>
+            <p v-else class="idle">{{ $t('No properties yet') }} — <router-link :to="{ name: 'editBlueprint', params: { blueprintIdentifier: blueprint.identifier }, query: { section: 'properties' } }">{{ $t('add the first one') }}</router-link></p>
+
+            <p v-if="blueprint.relations?.length" class="links">
+              <span>{{ $t('Links to') }}</span>
+              <template v-for="(relation, i) in blueprint.relations" :key="relation.key">
+                <router-link :to="{ name: 'editBlueprint', params: { blueprintIdentifier: relation.target } }" dir="auto">{{ nameOf(relation.target) }}</router-link><span v-if="i < blueprint.relations.length - 1" aria-hidden="true">·</span>
+              </template>
+            </p>
+          </div>
+
+          <div class="actions">
+            <el-button class="edit" :icon="Edit" @click="openEditor(blueprint)">{{ $t('Edit') }}</el-button>
+            <el-dropdown trigger="click" @command="(name: string) => command(blueprint, name)">
+              <el-button text circle :aria-label="`${$t('Actions')}: ${blueprint.name}`"><el-icon><MoreFilled /></el-icon></el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="clear" :icon="WarningFilled">{{ $t('Delete all its entities…') }}</el-dropdown-item>
+                  <el-dropdown-item command="remove" :icon="Delete" divided>{{ $t('Remove blueprint') }}</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+        </li>
+      </ul>
+    </template>
+
     <!-- Graph View -->
-    <div v-else-if="currentView === 'graph'" class="graph-view">
+    <div v-else class="graph-view">
       <BlueprintsRelationGraph 
         :blueprints="filteredBlueprints" 
         @select="handleBlueprintSelect"
       />
     </div>
     
-    <EmptyState v-else
-                icon="blueprint"
-                :title="props.q ? 'No Matching Blueprints' : 'No Blueprints Found'"
-                :description="props.q ? `No blueprints match your search '${props.q}'` : 'Create your first blueprint to start using the No-Code module'">
-      <el-button type="primary" @click="$router.push({ name: 'createBlueprint' })">{{ $t('Create new Blueprint') }}</el-button>
-    </EmptyState>
   </div>
 </template>
-<script lang="ts" setup>
-import { capitalize, computed } from 'vue';
-import AddNewCard from '@/modules/core/components/cards/AddNewCard.vue';
-import { useRoute, useRouter } from 'vue-router';
-import { IBlueprint } from '@qelos/global-types'
-import InfoIcon from '@/modules/pre-designed/components/InfoIcon.vue';
 
-import { useBlueprintsStore } from '@/modules/no-code/store/blueprints';
-import { useConfirmAction } from '@/modules/core/compositions/confirm-action';
-import sdk from '@/services/sdk';
-
-import EmptyState from '@/modules/core/components/layout/EmptyState.vue';
-import BlueprintsRelationGraph from './BlueprintsRelationGraph.vue';
-import { Edit, Delete, RemoveFilled } from '@element-plus/icons-vue';
-
-const props = defineProps({
-  q: {
-    type: String,
-    default: ''
-  }
-})
-
-const store = useBlueprintsStore()
-const removeWithConfirm = useConfirmAction(store.remove)
-
-const removeAllEntities = useConfirmAction((identifier: string) => sdk.blueprints.entitiesOf(identifier).remove('all', {query: {bypassAdmin: ''}}))
-
-const route = useRoute();
-const router = useRouter();
-
-// Get current view from route query or default to list
-const currentView = computed<'list' | 'graph'>(() => {
-  return (route.query.view as 'list' | 'graph') || 'list';
-});
-
-// Filter blueprints based on search query
-const filteredBlueprints = computed(() => {
-  if (!props.q) return store.blueprints;
-  
-  const searchTerm = props.q.toLowerCase().trim();
-  return store.blueprints.filter(blueprint => 
-    blueprint.name.toLowerCase().includes(searchTerm) || 
-    blueprint.identifier.toLowerCase().includes(searchTerm) || 
-    (blueprint.description && blueprint.description.toLowerCase().includes(searchTerm)) ||
-    Object.entries(blueprint.properties || {}).some(([key, prop]) => 
-      key.toLowerCase().includes(searchTerm) || 
-      (prop.title && prop.title.toLowerCase().includes(searchTerm)) ||
-      (prop.description && prop.description.toLowerCase().includes(searchTerm))
-    )
-  );
-});
-
-function markRelationships(blueprint: IBlueprint) {
-  // Using a mutable object for temporary state
-  const marked = blueprint.relations.map(r => r.target).reduce((acc, target) => {
-    acc[target] = true;
-    return acc;
-  }, {});
-  
-  // Update DOM directly since we're not using reactive state
-  store.blueprints.forEach(bp => {
-    const element = document.getElementById('blueprint-' + bp.identifier);
-    if (element) {
-      if (marked[bp.identifier]) {
-        element.classList.add('marked');
-      } else {
-        element.classList.remove('marked');
-      }
-    }
-  });
-}
-
-function unmarkRelationships() {
-  // Remove marked class from all blueprint elements
-  store.blueprints.forEach(bp => {
-    const element = document.getElementById('blueprint-' + bp.identifier);
-    if (element) {
-      element.classList.remove('marked');
-    }
-  });
-}
-
-function isMarked(blueprint: IBlueprint) {
-  // This is now handled directly in the DOM via markRelationships and unmarkRelationships
-  return false;
-}
-
-function getPropertiesCount(blueprint: IBlueprint) {
-  return Object.keys(blueprint.properties || {}).length;
-}
-
-function getBadgeClass(blueprint: IBlueprint) {
-  const count = getPropertiesCount(blueprint);
-  if (count === 0) return 'empty';
-  if (count < 3) return 'small';
-  if (count < 6) return 'medium';
-  return 'large';
-}
-
-// '' is not a valid tag type in Element Plus; the default (primary) look is the undefined one
-function getTypeTagType(type: string | undefined): undefined | 'success' | 'warning' | 'info' | 'danger' {
-  switch(type?.toString().toLowerCase()) {
-    case 'string': return undefined;
-    case 'number': return 'success';
-    case 'boolean': return 'warning';
-    case 'date': return 'danger';
-    case 'object': return 'info';
-    default: return undefined;
-  }
-}
-
-function navigateToBlueprint(identifier: string, event: MouseEvent) {
-  // Only navigate if the click wasn't on a child element that has its own click handler
-  if (event.target === event.currentTarget || (event.target as HTMLElement).closest('.blueprint-card') === event.currentTarget) {
-    router.push({name: 'editBlueprint', params: {blueprintIdentifier: identifier}});
-  }
-}
-
-function handleBlueprintSelect(blueprint: IBlueprint | null) {
-  if (blueprint) {
-    store.selectItem(blueprint.identifier);
-  }
-}
-
-function getMinMax(min, max) {
-  if (min && max) {
-    return `(${min} - ${max})`;
-  } else if (min) {
-    return `(${min} and above)`;
-  } else if (max) {
-    return `(up to ${max})`;
-  }
-}
-</script>
-<style scoped>
-.blueprints-container {
+<style scoped lang="scss">
+.list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.view-toggle {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.blueprints-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 20px;
-  width: 100%;
-}
-
-.graph-view {
-  height: 700px;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.blueprint-card {
-  display: flex;
-  flex-direction: column;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  padding: 20px;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px solid #ebeef5;
-}
-
-.blueprint-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  border-color: var(--el-color-primary-light-5);
-}
-
-.blueprint-header {
-  margin-bottom: 16px;
-}
-
-.blueprint-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.blueprint-title h3 {
+  gap: 10px;
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--el-color-primary);
+  padding: 0;
+  list-style: none;
 }
 
-.blueprint-title a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.blueprint-title a:hover {
-  text-decoration: underline;
-}
-
-.blueprint-badge {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 500;
-}
-
-.blueprint-badge.empty {
-  background-color: #f5f7fa;
-  color: #909399;
-}
-
-.blueprint-badge.small {
-  background-color: #ecf5ff;
-  color: #409eff;
-}
-
-.blueprint-badge.medium {
-  background-color: #f0f9eb;
-  color: #67c23a;
-}
-
-.blueprint-badge.large {
-  background-color: #fdf6ec;
-  color: #e6a23c;
-}
-
-.blueprint-description {
-  color: #606266;
-  font-size: 14px;
-  line-height: 1.5;
-  margin-bottom: 12px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.blueprint-properties {
-  flex: 1;
-  margin-bottom: 16px;
-}
-
-.blueprint-properties h4 {
-  margin: 0 0 12px 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-  border-bottom: 1px solid #ebeef5;
-  padding-bottom: 8px;
-}
-
-.properties-list {
+.row {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding-right: 8px;
-}
-
-.property-item {
-  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
-  border-radius: 4px;
-  background-color: #f5f7fa;
-  transition: background-color 0.2s;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--surface, var(--el-bg-color));
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--el-border-color);
+  }
 }
 
-.property-item:hover {
-  background-color: #ecf5ff;
+.skeleton {
+  min-block-size: 76px;
 }
 
-.property-name {
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+
+  code {
+    color: var(--el-text-color-secondary);
+    font-size: 0.8rem;
+  }
+}
+
+.name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--el-color-primary);
+  }
+}
+
+.description,
+.idle,
+.links {
+  margin: 0;
+  padding: 0;
+  text-align: start;
+  font-size: 0.9rem;
+  color: var(--el-text-color-secondary);
+}
+
+.idle a,
+.links a {
+  color: var(--el-color-primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--el-fill-color);
+  color: var(--el-text-color-regular);
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  small {
+    color: var(--el-text-color-secondary);
+    font-size: 0.72rem;
+  }
+
+  &:hover {
+    background: var(--el-color-primary-light-9);
+    color: var(--el-color-primary);
+  }
+}
+
+.more {
+  padding: 2px 6px;
+  color: var(--el-text-color-secondary);
+  font-size: 0.8rem;
+}
+
+.actions {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-weight: 500;
-  color: #303133;
+  flex-shrink: 0;
 }
 
-.required-badge {
-  color: #f56c6c;
-  font-weight: bold;
-  margin-inline-start: 2px;
-}
-
-.info-icon {
-  margin-inline-start: 4px;
-}
-
-.property-type {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.property-constraints {
-  font-size: 12px;
-  color: #909399;
-}
-
-.no-properties {
-  color: #909399;
-  font-style: italic;
+.empty-hint {
+  max-inline-size: 46ch;
+  margin: 0 0 12px;
+  padding: 0;
+  color: var(--el-text-color-secondary);
   text-align: center;
-  padding: 20px 0;
 }
 
-.blueprint-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  padding-block-start: 12px;
-  border-block-start: 1px solid #ebeef5;
-}
-
-.marked {
-  background-color: rgba(250, 246, 212, 0.8);
-  border-color: #e6a23c;
-}
-
-@media (max-width: 768px) {
-  .blueprints-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 640px) {
+  .row {
+    padding: 14px;
   }
-  
-  .graph-view {
-    height: 500px;
+
+  .edit {
+    display: none;
   }
 }
 
-@media (min-width: 769px) and (max-width: 1200px) {
-  .blueprints-grid {
-    grid-template-columns: repeat(2, 1fr);
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .chip {
+    transition: none;
   }
 }
 </style>
