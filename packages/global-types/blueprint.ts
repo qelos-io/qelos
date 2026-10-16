@@ -46,6 +46,8 @@ export interface IBlueprintPropertyDescriptor {
   min?: number,
   max?: number,
   schema?: any;
+  /** admin opt-in: build a dedicated index so filtering and sorting on this property stays fast on large blueprints */
+  indexed?: boolean;
 }
 
 export interface IBlueprintLimitation {
@@ -69,7 +71,11 @@ export interface IBlueprint {
   relations: { key: string, target: string }[];
   limitations?: Array<IBlueprintLimitation>;
   /** physical collection holding this blueprint's entities; assigned once, see no-code `entity-storage.service` */
-  storage?: { collection?: string };
+  storage?: {
+    collection?: string;
+    /** state of the indexes built for `indexed` properties, maintained by the system only */
+    indexes?: Record<string, { state: 'building' | 'ready' | 'failed'; name: string; error?: string }>;
+  };
   dispatchers: {
     create: boolean,
     update: boolean,

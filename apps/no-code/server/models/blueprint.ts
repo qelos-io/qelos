@@ -80,6 +80,8 @@ const BlueprintSchema = new mongoose.Schema<IBlueprint>({
    */
   storage: {
     collection: String,
+    // state per `indexed` property, see entity-indexes.service. System-owned: never taken from a request.
+    indexes: mongoose.SchemaTypes.Mixed,
   },
   relations: [{
     key: String,
