@@ -1,4 +1,5 @@
 import { ChatCompletionMessageParam } from "openai/resources/chat";
+import { MAX_GENERATED_BLUEPRINTS } from "./blueprint-generation";
 
 /**
  * Service for managing AI message templates
@@ -6,91 +7,52 @@ import { ChatCompletionMessageParam } from "openai/resources/chat";
  */
 export class AIMessageTemplates {
   /**
-   * Generate messages for blueprint generation
+   * Step 2 of blueprint generation: one blueprint at a time, knowing the whole plan.
+   * The server fills defaults (permissions, dispatchers) and validates relations, so the model only models data.
    */
   static getBlueprintGenerationMessages(describedBlueprint: string, allBlueprintsDescriptions: string, appIdea: string): ChatCompletionMessageParam[] {
     return [{
       role: 'system',
-      content: `You are a Qelos blueprint generator for the Qelos platform.
-A blueprint is a JSON object that defines the structure of a database model in the Qelos multi-tenant SaaS platform.
-Qelos handles any data related time created, updated, or assigned user and/or workspace, so you don't need to define those properties.
+      content: `You design the data model of an app built on Qelos, a multi-tenant platform.
+A blueprint is one data model (like one database collection). Reply with ONE JSON object for the blueprint you are asked about - no markdown, no code fences, no comments, no text around it.
 
-IMPORTANT: Both "identifier" and "name" MUST always be in singular form, never plural.
-For example, use "user" not "users", "product" not "products", "invoice" not "invoices".
-
-Required blueprint structure:
+Shape (omit what you have no reason to set):
 {
-  "identifier": string,           // Unique identifier (MUST BE SINGULAR, never plural)
-  "name": string,                 // Display name (MUST BE SINGULAR, never plural)
-  "description": string,          // Optional description
-  "entityIdentifierMechanism": "objectid" | "guid",
-  "permissionScope": "user" | "workspace" | "tenant",
-  "permissions": [                // Array of permission objects
-    {
-      "scope": "user" | "workspace" | "tenant",
-      "operation": "create" | "read" | "update" | "delete",
-      "guest": boolean,
-      "roleBased": string[], // optional: ["*"]
-      "workspaceRoleBased": string[], // optional: ["*"]
-      "workspaceLabelsBased": string[] // optional: ["*"]
-    }
-  ],
-  "properties": {                 // Record of property descriptors
-    "[propertyName]": {
-      "title": string,
-      "type": "string" | "number" | "boolean" | "date" | "datetime" | "time" | "object" | "file",
-      "description": string,
-      "required": boolean,
-      "enum": string[],           // Optional
-      "multi": boolean,           // Optional
-      "min": number,              // Optional
-      "max": number,              // Optional
-      "schema": any               // Optional, JSONSCHEMA, when type is "object"
-    }
+  "identifier": "invoice",              // singular, lowercase snake_case, as listed in the plan
+  "name": "Invoice",                    // singular display name
+  "description": "One sentence on what a record is.",
+  "properties": {
+    "number":   { "title": "Number", "type": "string", "description": "Human-facing invoice number", "required": true },
+    "status":   { "title": "Status", "type": "string", "description": "Where the invoice is in its life", "required": true, "enum": ["draft", "sent", "paid", "void"] },
+    "total":    { "title": "Total", "type": "number", "description": "Amount due", "required": true, "min": 0 },
+    "dueDate":  { "title": "Due date", "type": "date", "description": "Payment deadline", "required": false },
+    "customer": { "title": "Customer", "type": "string", "description": "The customer this invoice is for", "required": true }
   },
-  "updateMapping": {              // Record<string, string>
-    "[key]": "[value]" // value is a JQ expression of an entity (properties are available as .metadata.propertyName)
-  },
-  "relations": [                  // Array of relation objects
-    {
-      "key": string, // the key of the relation
-      "target": string // the target blueprint name of the relation
-    }
-  ],
-  "limitations": [                // Optional array of limitation objects
-    {
-      "scope": "user" | "workspace" | "tenant",
-      "workspaceLabels": string[],
-      "roles": string[],
-      "properties": string[],     // Optional
-      "value": number
-    }
-  ],
-  "dispatchers": {
-    "create": boolean,
-    "update": boolean,
-    "delete": boolean
-  }
+  "relations": [ { "key": "customer", "target": "customer" } ],
+  "updateMapping": { "total": ".metadata.quantity * .metadata.unitPrice" },
+  "dispatchers": { "create": false, "update": false, "delete": false }
 }
 
-Return ONLY a complete, valid JSON object. No explanations, markdown formatting, or code blocks.`
+Rules
+- Property keys are camelCase. "type" is one of: string, number, boolean, date, datetime, time, object, file.
+- Qelos stores the creating user, the workspace, and created/updated times on every record. Never add properties for them, and do not model users, workspaces, tenants or roles.
+- A link to another blueprint is a string property that holds the other record's id, plus an entry in "relations" whose "key" is that property and whose "target" is the other blueprint's identifier. Link only to blueprints named in the plan (or to this one). Put the link on the "many" side.
+- Use "enum" (string properties only) for a fixed set of choices. Use "multi": true for a list of values. Use "min"/"max" on numbers only. Use "file" for uploads, "object" with a JSON "schema" for nested structured data.
+- Mark "required" only for what a record cannot exist without. Give every property a short, useful description.
+- 4 to 10 properties is typical. Do not pad with generic fields; do not invent properties the idea does not need.
+- "updateMapping" is optional: each value is a jq expression over the record (properties live under .metadata.<key>) that computes a derived value on every save. Use it only for clear derived fields.
+- "dispatchers" are event switches for create/update/delete. Leave them false unless the idea asks to react to those events.
+- Do not include "permissions", "permissionScope", "limitations" or "entityIdentifierMechanism"; the platform sets safe defaults.`
     },
     {
       role: 'user',
-      content: `Here is the app idea for context:
-      ${appIdea}`
-    },
-    {
-      role: 'user',
-      content: `Here is the description of the all the blueprints in my system for reference:
-      ${allBlueprintsDescriptions}`
-    },
-    {
-      role: 'user',
-      content: `Create blueprint from the following description:
-      ${describedBlueprint}`
-    }
-  ];
+      content: `App idea: ${appIdea}
+
+All blueprints planned for this app:
+${allBlueprintsDescriptions}
+
+Create the blueprint for: ${describedBlueprint}`
+    }];
   }
 
   /**
@@ -451,20 +413,23 @@ quick-table has row-click event, and template slots for customizing the table co
   }
 
   /**
-   * Generate messages for no-code blueprints completion
+   * Step 1 of blueprint generation: decide which blueprints the app needs.
    */
   static getNoCodeBlueprintsSystemMessage(): ChatCompletionMessageParam {
     return {
       role: 'system',
-      content: `You are an expert software architect. your client wants to create an app.
-      help them to describe the blueprints of their database regarding their app idea.
-      Notice that the infra team already developed blueprints for users, workspaces, tenants that handles the authorization and permissions of the platform, so you don't need to describe them.
-      
-      IMPORTANT RULES:
-      1. return a bullets list
-      2. only respond with the list, don't add any additional text.
-      3. specify the name of the blueprint and its purpose in few clear words.
-      `
+      content: `You are a senior data modeler planning the database of an app built on Qelos, a multi-tenant platform.
+Decide which blueprints (data models) the app needs. Reply with ONLY a JSON array - no markdown, no code fences, no text around it.
+
+Each item: { "identifier": "invoice", "name": "Invoice", "purpose": "one short sentence", "relatesTo": ["customer"] }
+- "identifier": singular, lowercase snake_case. "name": singular display name.
+- "relatesTo": identifiers of other blueprints in YOUR list that records of this one point at (the "many" side points at the "one" side). Use [] when there are none.
+
+Rules
+- As few blueprints as the idea really needs, never more than ${MAX_GENERATED_BLUEPRINTS}. A small idea is 1-3 blueprints.
+- Users, workspaces, tenants, roles and files already exist on the platform; every record also stores who created it, its workspace and its timestamps. Do not plan blueprints for them.
+- Do not create a blueprint for something that is just a value or a list of values on another one (use a property instead). Create a link blueprint only when a many-to-many relation carries data of its own.
+- Order them so that blueprints others point at come first.`
     };
   }
 
