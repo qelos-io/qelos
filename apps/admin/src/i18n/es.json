@@ -2261,5 +2261,8 @@
   "Points to the blueprint a property links to; the label is that property.": "Apunta al blueprint al que enlaza una propiedad; la etiqueta es esa propiedad.",
   "Zoom": "Zoom",
   "Zoom in": "Acercar",
-  "Zoom out": "Alejar"
+  "Zoom out": "Alejar",
+  "Relations": "Relaciones",
+  "{count} blueprints": "{count} blueprints",
+  "1 blueprint": "1 blueprint"
 }

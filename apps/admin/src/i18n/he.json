@@ -2261,5 +2261,8 @@
   "Points to the blueprint a property links to; the label is that property.": "מצביע אל הבלופרינט שמאפיין מקושר אליו; התווית היא המאפיין.",
   "Zoom": "זום",
   "Zoom in": "הגדלה",
-  "Zoom out": "הקטנה"
+  "Zoom out": "הקטנה",
+  "Relations": "קשרים",
+  "{count} blueprints": "{count} בלופרינטים",
+  "1 blueprint": "בלופרינט אחד"
 }
