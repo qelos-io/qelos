@@ -2,16 +2,18 @@ import Blueprint, { IBlueprint } from '../models/blueprint';
 import { getEntityModel, pickEntityCollection } from '../services/entity-storage.service';
 import { evictBlueprintCache, getBlueprintCacheKey } from '../services/blueprints.service';
 import { cacheManager } from '../services/cache-manager';
+import { getIndexedKeys, getIndexedPropertiesError, hasIndexedKeysChanged } from '../services/entity-indexes.service';
+import { scheduleEntityIndexSync } from '../services/entity-index-sync.service';
 import logger from '../services/logger';
 import { IBlueprintPropertyDescriptor, BlueprintPropertyType } from '@qelos/global-types';
 
 /**
  * Validates and sanitizes a blueprint property descriptor
- * Only allows specific properties: title, type, required, multi, min, max, enum, description
+ * Only allows specific properties: title, type, required, multi, min, max, enum, description, indexed
  */
 function validateBlueprintProperty(p: IBlueprintPropertyDescriptor): IBlueprintPropertyDescriptor {
   // validate descriptor properties
-  const { title, type, required, multi, min, max, enum: e, description, schema } = p;
+  const { title, type, required, multi, min, max, enum: e, description, schema, indexed } = p;
   
   // return all valid properties, including null, 0, false values
   const data: IBlueprintPropertyDescriptor = {
@@ -21,6 +23,7 @@ function validateBlueprintProperty(p: IBlueprintPropertyDescriptor): IBlueprintP
     required: !!required,
     multi: !!multi,
   };
+  if (indexed === true) data.indexed = true;
   if (min !== undefined) data.min = min;
   if (max !== undefined) data.max = max;
   if (e !== undefined) data.enum = e;
@@ -94,8 +97,16 @@ export async function createBlueprint(req, res) {
 
   try {
     blueprint.properties = validateBlueprintProperties(req.body.properties);
+    const indexedError = getIndexedPropertiesError(blueprint.properties);
+    if (indexedError) {
+      res.status(400).json({ message: indexedError }).end();
+      return;
+    }
     await blueprint.save();
     cacheManager.setItem(getBlueprintCacheKey(req.headers.tenant, blueprint.identifier), JSON.stringify(blueprint)).catch(() => undefined)
+    if (getIndexedKeys(blueprint.properties).length) {
+      scheduleEntityIndexSync(blueprint);
+    }
     res.json(blueprint).end();
   } catch (err) {
     logger.error(err);
@@ -130,12 +141,22 @@ export async function updateBlueprint(req, res) {
     permittedData.properties = validateBlueprintProperties(req.body.properties);
   }
 
+  const previousProperties = blueprint.properties;
   Object.assign(blueprint, permittedData);
   blueprint.updated = new Date();
+
+  const indexedError = getIndexedPropertiesError(blueprint.properties);
+  if (indexedError) {
+    res.status(400).json({ message: indexedError }).end();
+    return;
+  }
 
   try {
     await blueprint.save();
     cacheManager.setItem(`blueprint:${req.headers.tenant}:${bluePrintIdentifier}`, JSON.stringify(blueprint)).catch()
+    if (hasIndexedKeysChanged(previousProperties, blueprint.properties, blueprint.storage)) {
+      scheduleEntityIndexSync(blueprint);
+    }
     res.json(blueprint).end();
   } catch {
     res.status(400).json({ message: 'failed to update blueprint' }).end();
@@ -173,6 +194,7 @@ export async function patchBlueprint(req, res) {
       return map;
     }, {});
 
+  const previousProperties = blueprint.properties;
   Object.assign(
     blueprint,
     permittedData,
@@ -190,9 +212,18 @@ export async function patchBlueprint(req, res) {
   );
   blueprint.updated = new Date();
 
+  const indexedError = getIndexedPropertiesError(blueprint.properties);
+  if (indexedError) {
+    res.status(400).json({ message: indexedError }).end();
+    return;
+  }
+
   try {
     await blueprint.save();
     cacheManager.setItem(`blueprint:${req.headers.tenant}:${bluePrintIdentifier}`, JSON.stringify(blueprint)).catch()
+    if (hasIndexedKeysChanged(previousProperties, blueprint.properties, blueprint.storage)) {
+      scheduleEntityIndexSync(blueprint);
+    }
     res.json(blueprint).end();
   } catch {
     res.status(400).json({ message: 'failed to update blueprint' }).end();
@@ -222,6 +253,10 @@ export async function removeBlueprint(req, res) {
       identifier: blueprintIdentifier
     }).exec()
     await evictBlueprintCache(req.headers.tenant, blueprintIdentifier);
+    if (blueprint && (getIndexedKeys(blueprint.properties).length || Object.keys(blueprint.storage?.indexes || {}).length)) {
+      // no entities are left, so drop the blueprint's partial indexes too
+      scheduleEntityIndexSync({ ...blueprint, properties: {} });
+    }
     res.json(blueprint).end();
   } catch {
     res.status(500).json({ message: 'failed to remove blueprint' }).end();
