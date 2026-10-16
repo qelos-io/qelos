@@ -68,6 +68,8 @@ export interface IBlueprint {
   updateMapping: Record<string, string>;
   relations: { key: string, target: string }[];
   limitations?: Array<IBlueprintLimitation>;
+  /** physical collection holding this blueprint's entities; assigned once, see no-code `entity-storage.service` */
+  storage?: { collection?: string };
   dispatchers: {
     create: boolean,
     update: boolean,

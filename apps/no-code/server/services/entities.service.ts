@@ -1,6 +1,7 @@
 import { IBlueprint } from '../models/blueprint';
 import { IBlueprintPropertyDescriptor, PermissionScope } from '@qelos/global-types';
-import BlueprintEntity, { IBlueprintEntity } from '../models/blueprint-entity';
+import { IBlueprintEntity } from '../models/blueprint-entity';
+import { getEntityModel } from './entity-storage.service';
 import * as jq from 'node-jq';
 import Ajv from 'ajv';
 import { ResponseError } from '@qelos/api-kit'
@@ -159,24 +160,29 @@ export async function updateEntityMapping(blueprint: IBlueprint, entity: IBluepr
   );
 }
 
-export function validateEntityRelations(tenant: string, blueprint: IBlueprint, entity: IBlueprintEntity) {
-  return Promise.all(blueprint.relations.map(relation => {
+export function validateEntityRelations(
+  tenant: string,
+  blueprint: IBlueprint,
+  entity: IBlueprintEntity,
+  // injected so this file stays free of the cache connection that `blueprints.service` opens
+  getTargetBlueprint: (tenant: string, identifier: string) => Promise<IBlueprint>,
+) {
+  return Promise.all(blueprint.relations.map(async relation => {
     const target = entity.metadata?.[relation.key];
     if (!target) {
       return;
     }
-    return BlueprintEntity.findOne({
+    const targetBlueprint = await getTargetBlueprint(tenant, relation.target);
+    const targetEntity = await getEntityModel(targetBlueprint).findOne({
       tenant,
       blueprint: relation.target,
       identifier: target,
     }).select('_id')
       .lean()
-      .exec()
-      .then(targetEntity => {
-        if (!targetEntity) {
-          throw new ResponseError(`relation target ${relation.target} not found: ${target}`, 406);
-        }
-      });
+      .exec();
+    if (!targetEntity) {
+      throw new ResponseError(`relation target ${relation.target} not found: ${target}`, 406);
+    }
   }))
 }
 

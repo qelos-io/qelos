@@ -11,13 +11,13 @@ if (!TENANT) {
 }
 
 const Blueprint = mongoose.model('Blueprint');
-const BlueprintEntity = mongoose.model('BlueprintEntity');
+const { getAllEntityModels } = require('../server/services/entity-storage.service');
 
 console.log('initiate remove tenant');
 
 Promise.all([
   Blueprint.deleteMany({ tenant: TENANT }),
-  BlueprintEntity.deleteMany({ tenant: TENANT }),
+  ...getAllEntityModels().map((model) => model.deleteMany({ tenant: TENANT })),
 ])
   .then(() => {
     console.log('tenant deleted successfully');

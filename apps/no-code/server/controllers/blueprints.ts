@@ -1,5 +1,6 @@
 import Blueprint, { IBlueprint } from '../models/blueprint';
-import BlueprintEntity from '../models/blueprint-entity';
+import { getEntityModel } from '../services/entity-storage.service';
+import { evictBlueprintCache, getBlueprintCacheKey } from '../services/blueprints.service';
 import { cacheManager } from '../services/cache-manager';
 import logger from '../services/logger';
 import { IBlueprintPropertyDescriptor, BlueprintPropertyType } from '@qelos/global-types';
@@ -91,6 +92,7 @@ export async function createBlueprint(req, res) {
   try {
     blueprint.properties = validateBlueprintProperties(req.body.properties);
     await blueprint.save();
+    cacheManager.setItem(getBlueprintCacheKey(req.headers.tenant, blueprint.identifier), JSON.stringify(blueprint)).catch(() => undefined)
     res.json(blueprint).end();
   } catch (err) {
     logger.error(err);
@@ -197,7 +199,12 @@ export async function patchBlueprint(req, res) {
 export async function removeBlueprint(req, res) {
   const blueprintIdentifier = req.params.blueprintIdentifier.toString();
   try {
-    const existingEntities = await BlueprintEntity.countDocuments({
+    const blueprint = await Blueprint.findOne({
+      tenant: req.headers.tenant,
+      identifier: blueprintIdentifier
+    }).lean().exec()
+
+    const existingEntities = await getEntityModel(blueprint).countDocuments({
       tenant: req.headers.tenant,
       blueprint: blueprintIdentifier
     }).lean().exec();
@@ -207,14 +214,11 @@ export async function removeBlueprint(req, res) {
       return;
     }
 
-    const blueprint = await Blueprint.findOne({
-      tenant: req.headers.tenant,
-      identifier: blueprintIdentifier
-    }).lean().exec()
     await Blueprint.deleteOne({
       tenant: req.headers.tenant,
       identifier: blueprintIdentifier
     }).exec()
+    await evictBlueprintCache(req.headers.tenant, blueprintIdentifier);
     res.json(blueprint).end();
   } catch {
     res.status(500).json({ message: 'failed to remove blueprint' }).end();

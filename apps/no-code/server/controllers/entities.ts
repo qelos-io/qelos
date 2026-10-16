@@ -1,5 +1,6 @@
 import qs from 'qs'
-import BlueprintEntity, { IAuditItem, IBlueprintEntity } from '../models/blueprint-entity';
+import { IAuditItem, IBlueprintEntity } from '../models/blueprint-entity';
+import { getEntityModel } from '../services/entity-storage.service';
 import Blueprint, { IBlueprint } from '../models/blueprint';
 import { RequestWithUser } from '@qelos/api-kit/dist/types';
 import { CRUDOperation, PermissionScope } from '@qelos/global-types';
@@ -47,7 +48,7 @@ async function updateAllEntityMetadata(req: Full<RequestWithUser>, blueprint: IB
   await updateEntityMapping(blueprint, entity);
 
   // validate the relations
-  await validateEntityRelations(req.headers.tenant, blueprint, entity);
+  await validateEntityRelations(req.headers.tenant, blueprint, entity, getBlueprint);
 
   entity.indexes = getEntityIndexes(blueprint, entity);
 
@@ -93,7 +94,7 @@ async function hasReachedLimitations(req: Full<RequestWithUser>, blueprint: IBlu
         return false; // "false" means hasReachedLimitations ? === false, because this specific limit is not meant for this kind of workspace
       }
     }
-    const existingEntities = await BlueprintEntity.countDocuments(query).lean().exec();
+    const existingEntities = await getEntityModel(blueprint).countDocuments(query).lean().exec();
     if (existingEntities >= limit.value) {
       return true;
     }
@@ -279,7 +280,7 @@ export async function getAllBlueprintEntities(req, res) {
         query[fullKey] = convertPropertyValueByType(query[fullKey], property.type);
       }
     });
-    const entities = await BlueprintEntity
+    const entities = await getEntityModel(blueprint)
       .find(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS, {
         sort,
         limit: limit || (req.query.$page ? DEFAULT_LIMIT : undefined),
@@ -317,9 +318,10 @@ export async function getAllBlueprintEntities(req, res) {
                 }).filter(Boolean)))
               }
             }
+            const targetBlueprint = await getBlueprint(req.headers.tenant, relation.target);
             return {
               key: relation.key,
-              items: await BlueprintEntity.find(query).select(GLOBAL_PERMITTED_FIELDS).lean().exec()
+              items: await getEntityModel(targetBlueprint).find(query).select(GLOBAL_PERMITTED_FIELDS).lean().exec()
             }
           })
         )
@@ -402,7 +404,7 @@ export async function getAllBlueprintEntities(req, res) {
             entityQuery.indexes = { $in: entities.map(entity => `${relation.key}:${entity.identifier}`) };
             
             // Build the find query with optional parameters
-            let findQuery = BlueprintEntity.find(entityQuery);
+            let findQuery = getEntityModel(queryBuilder.blueprint).find(entityQuery);
             
             // Apply fields selection if provided
             if (fields) {
@@ -471,7 +473,7 @@ export async function getSingleBlueprintEntity(req, res) {
       markWrappedResponseDeprecated(req, res);
     }
 
-    const entity = await BlueprintEntity.findOne(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS)
+    const entity = await getEntityModel(blueprint).findOne(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS)
       .lean()
       .exec()
 
@@ -495,7 +497,8 @@ export async function getSingleBlueprintEntity(req, res) {
               blueprint: relation.target,
               identifier: entity.metadata[relation.key]
             }
-            entity.metadata[relation.key] = await BlueprintEntity.findOne(query).select(GLOBAL_PERMITTED_FIELDS).lean().exec()
+            const targetBlueprint = await getBlueprint(req.headers.tenant, relation.target);
+            entity.metadata[relation.key] = await getEntityModel(targetBlueprint).findOne(query).select(GLOBAL_PERMITTED_FIELDS).lean().exec()
           })
         )
       ])
@@ -541,7 +544,7 @@ export async function createBlueprintEntity(req, res) {
     }
   }
   try {
-    const entity = new BlueprintEntity({
+    const entity = new (getEntityModel(blueprint))({
       tenant: req.headers.tenant,
       blueprint: blueprint.identifier,
       identifier: blueprint.entityIdentifierMechanism === 'objectid' ? new mongoose.Types.ObjectId() : (await getUuidV7()).uuidv7().toString(),
@@ -620,7 +623,7 @@ export async function updateBlueprintEntity(req, res) {
   const query = getEntityQuery({ blueprint, req, entityIdentifier, permittedScopes });
   let entity: IBlueprintEntity
   try {
-    const givenEntity = await BlueprintEntity.findOne(query).exec()
+    const givenEntity = await getEntityModel(blueprint).findOne(query).exec()
 
     if (!givenEntity) {
       res.status(404).json({ message: 'entity not found' }).end();
@@ -708,7 +711,7 @@ export async function removeBlueprintEntity(req, res) {
     }
   }
   try {
-    const entity = await BlueprintEntity.findOne(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS)
+    const entity = await getEntityModel(blueprint).findOne(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS)
       .lean()
       .exec()
 
@@ -716,7 +719,7 @@ export async function removeBlueprintEntity(req, res) {
       res.status(404).json({ message: 'entity not found' }).end();
       return;
     }
-    await BlueprintEntity.deleteOne(query).exec();
+    await getEntityModel(blueprint).deleteOne(query).exec();
 
     if (blueprint.dispatchers?.delete) {
       emitPlatformEvent({
@@ -768,35 +771,46 @@ export async function removeAllBlueprintEntities(req, res) {
     }
   }
 
-  const blueprintsWithRelations = await Blueprint.find({
-    ...query,
+  // `query` is scoped to the entities being deleted (blueprint/user/workspace), which are not Blueprint fields
+  const blueprintsWithRelations = (await Blueprint.find({
+    tenant: req.headers.tenant,
     'relations.target': blueprintIdentifier
-  }).select('identifier relations').lean().exec();
+  }).select('identifier relations storage').lean().exec())
+    .filter(relating => relating.identifier !== blueprintIdentifier);
 
   if (blueprintsWithRelations.length) {
-    const entitiesOfRelations = await BlueprintEntity.countDocuments({
-      ...query,
-      $or: blueprintsWithRelations
-        .filter(blueprint => blueprint.identifier !== blueprintIdentifier)
-        .map(blueprint => {
-          const relation = blueprint.relations.find(relation => relation.target === blueprintIdentifier) as any;
-          return {
-            [`metadata.${relation.key}`]: {
-              $exists: true
-            },
-            blueprint: blueprint.identifier
-          }
-        })
-    }).exec();
+    const deletedIdentifiers = await getEntityModel(blueprint).distinct('identifier', query).exec();
 
-    if (entitiesOfRelations) {
-      res.status(403).json({ message: 'you cannot remove entities with related entities' }).end();
-      return;
+    if (deletedIdentifiers.length) {
+      // the relating blueprints may live in different physical collections, so count per collection.
+      // Relations are stored as `${relation.key}:${identifier}` in `indexes` (see getEntityIndexes).
+      const branchesByModel = new Map<ReturnType<typeof getEntityModel>, any[]>();
+      blueprintsWithRelations.forEach(relating => {
+        const model = getEntityModel(relating);
+        const branches = branchesByModel.get(model) || [];
+        relating.relations
+          .filter(relation => relation.target === blueprintIdentifier)
+          .forEach(relation => {
+            branches.push({
+              blueprint: relating.identifier,
+              indexes: { $in: deletedIdentifiers.map(identifier => `${relation.key}:${identifier}`) }
+            });
+          });
+        branchesByModel.set(model, branches);
+      });
+      const hasRelatedEntities = (await Promise.all(
+        Array.from(branchesByModel, ([model, $or]) => model.exists({ tenant: req.headers.tenant, $or }).exec())
+      )).some(Boolean);
+
+      if (hasRelatedEntities) {
+        res.status(403).json({ message: 'you cannot remove entities with related entities' }).end();
+        return;
+      }
     }
   }
 
   try {
-    const result = await BlueprintEntity.deleteMany(query).exec();
+    const result = await getEntityModel(blueprint).deleteMany(query).exec();
 
     res.json(result).end();
   } catch {
