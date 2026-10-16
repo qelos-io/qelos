@@ -24,7 +24,9 @@ export interface IBlueprintEntity extends Document {
   auditInfo: IAuditInfo;
 }
 
-const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
+export const LEGACY_ENTITIES_COLLECTION = 'blueprintentities';
+
+export const BlueprintEntitySchema = new mongoose.Schema<IBlueprintEntity>({
   tenant: {
     type: String,
     required: true

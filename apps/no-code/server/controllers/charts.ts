@@ -5,7 +5,7 @@ import { BlueprintPropertyType, CRUDOperation, PermissionScope } from '@qelos/gl
 import { IBlueprint } from '../models/blueprint';
 import { getBypassAdmin } from '@qelos/api-kit';
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
-import BlueprintEntity from '../models/blueprint-entity';
+import { getEntityModel } from '../services/entity-storage.service';
 import { getEntityQuery } from '../services/entities.service';
 import mongoose from 'mongoose'
 
@@ -108,7 +108,7 @@ export async function getStandardChart(req, res: Response) {
       return;
   }
 
-  const data = await BlueprintEntity.aggregate([
+  const data = await getEntityModel(blueprint).aggregate([
     { $match: query },
     {
       $group,
@@ -204,7 +204,7 @@ export async function getPieChart(req, res: Response) {
     query.user = new mongoose.Types.ObjectId(query.user);
   }
 
-  const data = await BlueprintEntity.aggregate([
+  const data = await getEntityModel(blueprint).aggregate([
     { $match: query },
     { $group },
     { $sort: { _id: 1 } }
@@ -248,7 +248,7 @@ export async function getCountCard(req, res: Response) {
   }
   delete query.bypassAdmin;
 
-  const data = await BlueprintEntity.countDocuments(query).exec();
+  const data = await getEntityModel(blueprint).countDocuments(query).exec();
   res.json({ count: data }).end();
 }
 
@@ -287,7 +287,7 @@ export async function getSumCard(req, res: Response) {
   }
   
   if (!propToGroupBy) {
-    const result = await BlueprintEntity.aggregate([
+    const result = await getEntityModel(blueprint).aggregate([
       { $match: query },
       { 
         $group: { 
@@ -346,7 +346,7 @@ export async function getSumCard(req, res: Response) {
       return;
   }
   
-  const data = await BlueprintEntity.aggregate([
+  const data = await getEntityModel(blueprint).aggregate([
     { $match: query },
     { $group },
     { $sort: { _id: 1 } }

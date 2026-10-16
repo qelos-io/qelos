@@ -69,6 +69,18 @@ const BlueprintSchema = new mongoose.Schema<IBlueprint>({
     enum: Object.values(PermissionScope)
   },
   properties: mongoose.SchemaTypes.Mixed,
+  /**
+   * Which physical entities collection holds this blueprint's rows. Read by `getEntityModel()`.
+   * Missing means the legacy collection, so existing blueprints need no data migration.
+   * Today it is assigned once and never changes, and it is NOT derived from the identifier.
+   *
+   * FUTURE: tenant admins may request a storage migration (e.g. to a "log", read-heavy,
+   * write-heavy, no-index or many-index collection). It would run as an internal background
+   * job (dual-write, backfill in batches, verify, then flip this field). Not supported yet.
+   */
+  storage: {
+    collection: String,
+  },
   relations: [{
     key: String,
     target: String

@@ -1,5 +1,6 @@
 import Blueprint, { IBlueprint } from '../models/blueprint';
-import BlueprintEntity from '../models/blueprint-entity';
+import { getEntityModel, pickEntityCollection } from '../services/entity-storage.service';
+import { evictBlueprintCache, getBlueprintCacheKey } from '../services/blueprints.service';
 import { cacheManager } from '../services/cache-manager';
 import logger from '../services/logger';
 import { IBlueprintPropertyDescriptor, BlueprintPropertyType } from '@qelos/global-types';
@@ -83,14 +84,18 @@ export async function getSingleBlueprint(req, res) {
 }
 
 export async function createBlueprint(req, res) {
+  // storage is assigned by the system only, never from the request
+  const { storage, ...body } = req.body;
   const blueprint = new Blueprint({
-    ...req.body,
+    ...body,
     tenant: req.headers.tenant,
+    storage: { collection: pickEntityCollection(req.headers.tenant, body.identifier) },
   });
 
   try {
     blueprint.properties = validateBlueprintProperties(req.body.properties);
     await blueprint.save();
+    cacheManager.setItem(getBlueprintCacheKey(req.headers.tenant, blueprint.identifier), JSON.stringify(blueprint)).catch(() => undefined)
     res.json(blueprint).end();
   } catch (err) {
     logger.error(err);
@@ -118,7 +123,7 @@ export async function updateBlueprint(req, res) {
     return;
   }
 
-  const { tenant, identifier, created, ...permittedData } = req.body;
+  const { tenant, identifier, created, storage, ...permittedData } = req.body;
 
   // Apply validated properties if they exist in the request
   if (req.body.properties) {
@@ -157,7 +162,7 @@ export async function patchBlueprint(req, res) {
     return;
   }
 
-  const { tenant, identifier, created, permissions, ...permittedData } = req.body as Partial<IBlueprint>;
+  const { tenant, identifier, created, permissions, storage, ...permittedData } = req.body as Partial<IBlueprint>;
 
   const relations = [
     ...blueprint.relations,
@@ -197,7 +202,12 @@ export async function patchBlueprint(req, res) {
 export async function removeBlueprint(req, res) {
   const blueprintIdentifier = req.params.blueprintIdentifier.toString();
   try {
-    const existingEntities = await BlueprintEntity.countDocuments({
+    const blueprint = await Blueprint.findOne({
+      tenant: req.headers.tenant,
+      identifier: blueprintIdentifier
+    }).lean().exec()
+
+    const existingEntities = await getEntityModel(blueprint).countDocuments({
       tenant: req.headers.tenant,
       blueprint: blueprintIdentifier
     }).lean().exec();
@@ -207,14 +217,11 @@ export async function removeBlueprint(req, res) {
       return;
     }
 
-    const blueprint = await Blueprint.findOne({
-      tenant: req.headers.tenant,
-      identifier: blueprintIdentifier
-    }).lean().exec()
     await Blueprint.deleteOne({
       tenant: req.headers.tenant,
       identifier: blueprintIdentifier
     }).exec()
+    await evictBlueprintCache(req.headers.tenant, blueprintIdentifier);
     res.json(blueprint).end();
   } catch {
     res.status(500).json({ message: 'failed to remove blueprint' }).end();
