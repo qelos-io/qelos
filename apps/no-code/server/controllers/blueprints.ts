@@ -92,7 +92,7 @@ export async function createBlueprint(req, res) {
   const blueprint = new Blueprint({
     ...body,
     tenant: req.headers.tenant,
-    storage: { collection: pickEntityCollection(req.headers.tenant, body.identifier) },
+    storage: { collection: pickEntityCollection(req.headers.tenant, body.identifier, body.name) },
   });
 
   try {
