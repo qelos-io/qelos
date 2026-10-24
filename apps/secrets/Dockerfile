@@ -1,4 +1,4 @@
-FROM node:26.7-slim
+FROM node:26.12-slim
 ENV PORT=9002
 EXPOSE $PORT
 ENV NODE_ENV=production

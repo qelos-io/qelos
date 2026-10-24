@@ -1,4 +1,4 @@
-FROM node:26.7
+FROM node:26.12
 COPY . .
 ENV NODE_ENV=development
 RUN pnpm install --unsafe-perm

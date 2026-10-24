@@ -1,4 +1,4 @@
-FROM node:26.7-slim
+FROM node:26.12-slim
 ENV PORT=9006
 ENV NODE_JQ_PATH="/usr/bin/jq"
 EXPOSE $PORT
