@@ -18,6 +18,7 @@ import { cacheManager } from '../services/cache-manager';
 import { getRequestHost } from '../services/req-host';
 import logger from '../services/logger';
 import { authenticateByApiToken } from '../services/api-tokens';
+import { getWorkspaceForUser } from '../services/workspaces';
 import {
   applyTenantImpersonation,
   getImpersonatedTenant,
@@ -177,7 +178,21 @@ async function apiKeyVerify(req: AuthRequest, res: Response, next: NextFunction)
       return;
     }
 
-    const { user, workspace } = result;
+    const { user } = result;
+    let { workspace } = result;
+
+    // Tokens not bound to a workspace may select one per request via the x-workspace header.
+    // Membership is always verified; it is never trusted from the header alone.
+    const requestedWorkspace = req.headers['x-workspace'];
+    if (!workspace && typeof requestedWorkspace === 'string' && requestedWorkspace) {
+      try {
+        workspace = await getWorkspaceForUser(tenant, user._id.toString(), requestedWorkspace);
+      } catch {
+        res.status(403).json({ message: 'User is not a member of the requested workspace' }).end();
+        return;
+      }
+    }
+
     const payload = {
       sub: user._id.toString(),
       tenant: user.tenant,

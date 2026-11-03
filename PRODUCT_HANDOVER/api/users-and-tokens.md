@@ -55,7 +55,7 @@ Return user and workspace counts (tenant admin).
 |--------|---------------|----------|
 | Cookie session | `qlt_` cookie | Browser admin panel |
 | Bearer JWT | `Authorization: Bearer` | Mobile/API clients |
-| API token | `x-api-key: ql_...` | Server-to-server, CLI, SDK |
+| API token | `x-api-key: ql_...` (+ optional `x-workspace` when the token has no workspace) | Server-to-server, CLI, SDK |
 
 ## Related
 

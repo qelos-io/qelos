@@ -300,9 +300,12 @@ export default class QlAuthentication extends BaseSDK {
     };
   }
 
-  async apiTokenSignin(apiToken: string): Promise<IUser> {
+  async apiTokenSignin(apiToken: string, workspace?: string): Promise<IUser> {
     this.#apiToken = apiToken;
     this.qlOptions.apiToken = apiToken;
+    if (workspace) {
+      this.qlOptions.workspace = workspace;
+    }
     return this.callJsonApi<IUser>('/api/me').then(decodeMeUser);
   }
 

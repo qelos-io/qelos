@@ -32,6 +32,7 @@ The gateway resolves **tenant** from the request hostname (or falls back to conf
 | `Authorization: Bearer <access_token>` | OAuth-style access token from `POST /api/signin` with `authType: "oauth"`. |
 | `Cookie` | Session cookie from cookie-based sign-in (`qlt_*`). |
 | `x-api-key: <token>` | Long-lived API token / plugin token. |
+| `x-workspace: <workspaceId>` | Selects the workspace for `x-api-key` tokens that are not bound to one. Requires workspace membership (`403` otherwise); ignored for workspace-bound tokens. |
 | `x-impersonate-user`, `x-impersonate-workspace` | Admin impersonation (privileged callers); see administrator SDK. |
 
 Anonymous endpoints (sign-in, sign-up, OAuth redirects) omit `Authorization` / `x-api-key`.

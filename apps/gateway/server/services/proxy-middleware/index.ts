@@ -250,6 +250,7 @@ export default function apiProxy(app: any, config: Partial<IApiProxyConfig>, cac
         tenanthost: req.headers.host,
         authorization: req.headers.authorization,
         'x-api-key': req.headers['x-api-key'] || '',
+        'x-workspace': req.get('x-workspace') || '',
         'x-impersonate-tenant': req.get('x-impersonate-tenant') || req.query.impersonateTenant?.toString() || '',
         'x-impersonate-user': req.get('x-impersonate-user') || req.query.impersonateUser?.toString() || '',
         'x-impersonate-workspace': req.get('x-impersonate-workspace') || req.query.impersonateWorkspace?.toString() || '',

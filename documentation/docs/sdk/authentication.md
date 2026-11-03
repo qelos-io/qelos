@@ -104,6 +104,29 @@ console.log('Authenticated as', user.fullName);
 - No access token or refresh token is involved — the API token is permanent until it expires or is revoked.
 - Token refresh logic is automatically skipped when using API token authentication.
 - If the token is scoped to a workspace, all requests are bound to that workspace. The workspace **cannot** be changed.
+- If the token is **not** scoped to a workspace, you can pick one per request with the `x-workspace` header (see below).
+
+### Selecting a Workspace with an Unbound Token
+
+Tokens created without a workspace can act inside any workspace the token's user is a member of. Pass the workspace id and the SDK sends it as the `x-workspace` header:
+
+```typescript
+const sdk = new QelosSDK({
+  appUrl: 'https://your-app.qelos.app',
+  apiToken: 'ql_your_api_token_here',
+  workspace: 'workspace-id',
+});
+
+// Switch at runtime (pass undefined to clear)
+sdk.setWorkspace('another-workspace-id');
+
+// Or set it while signing in
+await sdk.authentication.apiTokenSignin('ql_your_api_token_here', 'workspace-id');
+```
+
+- Membership is verified on every request. If the user is not a member (or the id is invalid), the request fails with `403`.
+- Tokens that are already bound to a workspace ignore `x-workspace`; they cannot switch workspaces.
+- The header only applies to `x-api-key` authentication.
 
 ### Differences from OAuth / Cookie Authentication
 
@@ -111,7 +134,7 @@ console.log('Authenticated as', user.fullName);
 |---|---|---|---|
 | **Token type** | Access + Refresh | Session cookie | Permanent API key |
 | **Refresh cycle** | Automatic | Automatic | None |
-| **Workspace** | Can switch | Can switch | Locked at creation |
+| **Workspace** | Can switch | Can switch | Locked at creation, or chosen per request via `x-workspace` if unbound |
 | **Use case** | SSO, browser apps | Browser apps | Scripts, CI/CD, plugins, CLI |
 | **Expiration** | Short-lived (auto-refresh) | Session-based | Custom (30d, 90d, 1y, etc.) |
 

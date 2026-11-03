@@ -87,7 +87,11 @@ export default class QelosSDK extends BaseSDK {
     if (!options.extraHeaders) {
       options.extraHeaders = async (relativeUrl: string, forceRefresh?: boolean) => {
         if (options.apiToken) {
-          return { 'x-api-key': options.apiToken, ...this.#customHeaders };
+          return {
+            'x-api-key': options.apiToken,
+            ...(options.workspace ? { 'x-workspace': options.workspace } : {}),
+            ...this.#customHeaders,
+          };
         }
         if (isBrowser || noExtraHeadersUrls.has(relativeUrl)) {
           return { ...this.#customHeaders };
@@ -107,6 +111,15 @@ export default class QelosSDK extends BaseSDK {
 
   entities<T = any>(blueprintKey: string): QlBlueprintEntities<T> {
     return this.blueprints.entitiesOf<T>(blueprintKey);
+  }
+
+  /**
+   * Selects the workspace for API-token authentication (sent as `x-workspace`).
+   * Ignored by the server when the token is already bound to a workspace.
+   * Pass `undefined` to clear it.
+   */
+  setWorkspace(workspaceId?: string) {
+    this.options.workspace = workspaceId;
   }
 
   setCustomHeader(key: string, value: string) {

@@ -4,7 +4,7 @@ TypeScript SDK that lets external developers call a Qelos app's REST API for dat
 
 ## What Developers Can Do
 
-- **Instantiate client**: `new QelosSDK({ appUrl, fetch, apiToken? })`
+- **Instantiate client**: `new QelosSDK({ appUrl, fetch, apiToken?, workspace? })` (`workspace` selects a workspace for API tokens not bound to one)
 - **CRUD entities**: Query and mutate blueprint-backed records with fluent API
 - **Authenticate users**: Sign in/up, refresh sessions, social OAuth, API tokens
 - **Manage workspaces**: Create, invite, switch, manage members

@@ -166,6 +166,20 @@ const response = await fetch('https://your-app.qelos.app/api/me', {
 });
 ```
 
+### Selecting a Workspace (`x-workspace`)
+
+A token created **without** a workspace can choose one per request with the `x-workspace` header:
+
+```bash
+curl -H "x-api-key: ql_a1b2c3d4e5f6789..." \
+     -H "x-workspace: <workspaceId>" \
+     https://your-app.qelos.app/api/me
+```
+
+- The token's user must be a member of the workspace; otherwise the response is `403`.
+- Tokens already bound to a workspace ignore the header.
+- SDK: `new QelosSDK({ apiToken, workspace })`, `sdk.setWorkspace(id)`, or `apiTokenSignin(token, workspaceId)`.
+
 ## Token Lifecycle
 
 ```

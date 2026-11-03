@@ -117,6 +117,26 @@ expired cookie-only sessions and the rotated cookie is written back to the
 outbound response. Call it directly only when you need to refresh
 proactively — e.g. before handing the session off to another service.
 
+#### API token with a workspace
+
+An API token that is not bound to a workspace can select one per request via
+the `x-workspace` header. The server verifies the user is a member of that
+workspace (otherwise `403`). Tokens already bound to a workspace ignore it.
+
+```typescript
+const sdk = new QelosSDK({
+  appUrl: 'https://your-instance.com',
+  apiToken: 'ql_...',
+  workspace: 'workspace-id', // optional, sent as `x-workspace`
+});
+
+sdk.setWorkspace('another-workspace-id'); // switch at runtime
+sdk.setWorkspace(undefined);              // clear
+
+// or at sign-in time
+await sdk.authentication.apiTokenSignin('ql_...', 'workspace-id');
+```
+
 #### MCP client OAuth (Cursor, Claude, remote MCP)
 
 External MCP clients use Qelos as an OAuth authorization server. The SDK
