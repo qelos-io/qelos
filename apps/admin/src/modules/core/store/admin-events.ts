@@ -125,97 +125,34 @@ const activityTimeframe = ref('week');
   // Activity chart data based on real events
   const activityChartOption = computed(() => {
     // Process events data for different timeframes
+    // Buckets are rolling windows ending now, so they line up with the "last-day/week/month" queries
+    const HOUR = 60 * 60 * 1000;
+    const DAY = 24 * HOUR;
+    const bucketConfig: Record<string, { count: number; size: number; label: (d: Date) => string }> = {
+      day: { count: 6, size: 4 * HOUR, label: (d) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
+      week: { count: 7, size: DAY, label: (d) => d.toLocaleDateString([], { weekday: 'short' }) },
+      month: { count: 5, size: 6 * DAY, label: (d) => d.toLocaleDateString([], { month: 'short', day: 'numeric' }) },
+    };
+
     const processEventsForTimeframe = (registeredUsers: IEvent[] = [], createdUsers: IEvent[] = [], createdWorkspaces: IEvent[] = [], timeframe: string) => {
-      if (!registeredUsers && !createdUsers && !createdWorkspaces) return { xAxis: [], registered: [], created: [], createdWorkspaces: [] };
-      
-      let xAxis: string[] = [];
-      let registeredCounts: number[] = [];
-      let createdCounts: number[] = [];
-      let createdWorkspacesCounts: number[] = [];
-      
-      if (timeframe === 'day') {
-        // Group by hours for 24-hour view
-        xAxis = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'];
-        const hourRanges = [0, 4, 8, 12, 16, 20];
-        
-        registeredCounts = hourRanges.map(startHour => {
-          const endHour = startHour + 4;
-          return registeredUsers?.filter(event => {
-            const hour = new Date(event.created).getHours();
-            return hour >= startHour && hour < endHour;
-          }).length || 0;
-        });
-        
-        createdCounts = hourRanges.map(startHour => {
-          const endHour = startHour + 4;
-          return createdUsers?.filter(event => {
-            const hour = new Date(event.created).getHours();
-            return hour >= startHour && hour < endHour;
-          }).length || 0;
-        });
-
-        createdWorkspacesCounts = hourRanges.map(startHour => {
-          const endHour = startHour + 4;
-          return createdWorkspaces?.filter(event => {
-            const hour = new Date(event.created).getHours();
-            return hour >= startHour && hour < endHour;
-          }).length || 0;
-        });
-
-        return { xAxis, registered: registeredCounts, created: createdCounts, createdWorkspaces: createdWorkspacesCounts };
-      }
-
-      if (timeframe === 'week') {
-        // Group by days of the week
-        xAxis = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        
-        registeredCounts = [0, 1, 2, 3, 4, 5, 6].map(dayIndex => {
-          return registeredUsers?.filter(event => {
-            const day = new Date(event.created).getDay();
-            // Convert from Sunday=0 to Monday=0 format
-            const adjustedDay = day === 0 ? 6 : day - 1;
-            return adjustedDay === dayIndex;
-          }).length || 0;
-        });
-        
-        createdCounts = [0, 1, 2, 3, 4, 5, 6].map(dayIndex => {
-          return createdUsers?.filter(event => {
-            const day = new Date(event.created).getDay();
-            // Convert from Sunday=0 to Monday=0 format
-            const adjustedDay = day === 0 ? 6 : day - 1;
-            return adjustedDay === dayIndex;
-          }).length || 0;
-        });
-
-        return { xAxis, registered: registeredCounts, created: createdCounts, createdWorkspaces: createdWorkspacesCounts };
-      }
-
-      if (timeframe === 'month') {
-        // Group by weeks of the month
-        xAxis = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-        
-        registeredCounts = [0, 1, 2, 3].map(weekIndex => {
-          return registeredUsers?.filter(event => {
-            const date = new Date(event.created);
-            const dayOfMonth = date.getDate();
-            // Approximate week based on day of month
-            const week = Math.floor((dayOfMonth - 1) / 7);
-            return week === weekIndex;
-          }).length || 0;
-        });
-        
-        createdCounts = [0, 1, 2, 3].map(weekIndex => {
-          return createdUsers?.filter(event => {
-            const date = new Date(event.created);
-            const dayOfMonth = date.getDate();
-            // Approximate week based on day of month
-            const week = Math.floor((dayOfMonth - 1) / 7);
-            return week === weekIndex;
-          }).length || 0;
-        });
-      }
-      
-      return { xAxis, registered: registeredCounts, created: createdCounts, createdWorkspaces: createdWorkspacesCounts };
+      const { count, size, label } = bucketConfig[timeframe] || bucketConfig.week;
+      const now = Date.now();
+      const start = now - count * size;
+      const xAxis = Array.from({ length: count }, (_, i) => label(new Date(start + i * size)));
+      const countEvents = (events: IEvent[] = []) => {
+        const counts = new Array(count).fill(0);
+        for (const event of events) {
+          const index = Math.floor((new Date(event.created).getTime() - start) / size);
+          if (index >= 0 && index < count) counts[index]++;
+        }
+        return counts;
+      };
+      return {
+        xAxis,
+        registered: countEvents(registeredUsers),
+        created: countEvents(createdUsers),
+        createdWorkspaces: countEvents(createdWorkspaces),
+      };
     };
 
     const getEventsForTimeframe = () => {
