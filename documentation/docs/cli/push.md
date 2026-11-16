@@ -508,37 +508,57 @@ See [CLI Configuration](/cli/#configuration) for more details.
 
 ## File Format
 
-### Components
+### Components and scripts
 
-Components must be `.vue` files. The filename (without extension) becomes the component identifier:
+The `components` folder holds two kinds of files, and `qelos push components` publishes both, **recursively**:
+
+- **`.vue`** files are Vue components
+- **`.ts` / `.js`** files are [scripts](/getting-started/components-and-scripts): modules that are compiled, minified and served by Qelos, and that components (and other scripts) can import
+
+The identifier of a file is its path inside the folder, without the extension. Folders are part of the identifier:
 
 ```
-header-component.vue  →  identifier: "header-component"
-footer-component.vue  →  identifier: "footer-component"
+header-component.vue          →  identifier: "header-component"
+products/ProductCard.vue      →  identifier: "products/ProductCard"
+utils/format-price.ts         →  identifier: "utils/format-price"
 ```
 
 **Example component:**
 ```vue
-<!-- header-component.vue -->
+<!-- products/ProductCard.vue -->
 <template>
-  <header class="app-header">
-    <h1>{{ title }}</h1>
-  </header>
+  <div class="card">{{ formatPrice(price) }}</div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-const title = ref('My App')
+<script setup lang="ts">
+import { formatPrice } from '../utils/format-price.ts'
+
+defineProps<{ price: number }>()
 </script>
 
 <style scoped>
-.app-header {
-  background: #333;
-  color: white;
+.card {
   padding: 1rem;
 }
 </style>
 ```
+
+**Example script:**
+```ts
+// utils/format-price.ts
+export const formatPrice = (value: number) => '$' + value.toFixed(2)
+```
+
+Everything is pushed in one request, and scripts are processed before components, so a component can import a script that is pushed alongside it. Relative imports resolve from the importing file's folder, exactly like locally, and are resolved at runtime to the compiled script.
+
+Scripts may import other scripts with relative paths, and the libraries `vue`, `vue-router`, `element-plus`, `vue-i18n` and `@sdk`. Other packages are not available, and a script that fails to compile fails the push with the compile error.
+
+Descriptions can be set in a `components.json` file next to the files (keyed by component name for components, and by identifier for scripts). `qelos pull components` creates it for you.
+
+**Notes:**
+- `.d.ts` declaration files, `node_modules` and `.git` are skipped.
+- Pushing scripts requires a recent `@qelos/sdk`. With an older one, only the `.vue` files are pushed and a warning is shown.
+- `qelos push committed|staged` classifies `.vue`, `.ts` and `.js` files under `components/` the same way and keeps their nested paths.
 
 ### Blueprints
 
@@ -753,8 +773,8 @@ export QELOS_PASSWORD=your-password
 # Check directory exists and contains files
 ls -la ./my-components
 
-# Verify file extensions (.vue for components)
-ls ./my-components/*.vue
+# Verify file extensions (.vue for components, .ts/.js for scripts)
+find ./my-components -name "*.vue" -o -name "*.ts" -o -name "*.js"
 
 # Use correct path
 qelos push components ./my-components
@@ -865,7 +885,7 @@ git commit -m "Update changelog"
 Before pushing, ensure:
 
 - ✅ Files are in the correct format:
-  - `.vue` for components and blocks
+  - `.vue` for components and blocks, `.ts` / `.js` for scripts (in the components folder)
   - `.blueprint.json` for blueprints
   - `.config.json` for configurations
   - Plugin directories with proper structure
@@ -873,7 +893,7 @@ Before pushing, ensure:
   - `.connection.json` for connections
   - `.pricing-plan.json` for pricing plans
 - ✅ File names match the required pattern:
-  - Components: `{identifier}.vue`
+  - Components: `{identifier}.vue`, scripts: `{identifier}.ts` (the identifier is the path, e.g. `utils/format-price.ts`)
   - Blueprints: `{identifier}.blueprint.json`
   - Configurations: `{key}.config.json`
   - Blocks: `{identifier}.vue`

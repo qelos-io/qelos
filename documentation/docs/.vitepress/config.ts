@@ -101,6 +101,7 @@ export default defineConfig({
           { text: 'Design System Overview', link: '/getting-started/design-system' },
           { text: 'Header & Navigation', link: '/getting-started/header-navigation-customization' },
           { text: 'Component Guide', link: '/getting-started/component-guide' },
+          { text: 'Components & Scripts', link: '/getting-started/components-and-scripts' },
           {
             text: 'Components',
             collapsed: true,
@@ -177,6 +178,7 @@ export default defineConfig({
           { text: 'Managing Users', link: '/sdk/managing_users' },
           { text: 'Managing Workspaces', link: '/sdk/managing_workspaces' },
           { text: 'Managing Blocks', link: '/sdk/managing_blocks' },
+          { text: 'Managing Scripts & Components', link: '/sdk/managing_scripts' },
           { text: 'Managing Invites', link: '/sdk/managing_invites' },
           { text: 'Payments', link: '/sdk/payments' },
           { text: 'AI SDK Structure', link: '/sdk/ai_sdk_structure' },
@@ -202,6 +204,7 @@ export default defineConfig({
           { text: 'Blueprints', link: '/api/blueprints' },
           { text: 'Blueprint Entities', link: '/api/blueprint-entities' },
           { text: 'Blocks', link: '/api/blocks' },
+          { text: 'Scripts & Components', link: '/api/scripts' },
           { text: 'Configurations', link: '/api/configurations' },
           { text: 'Webhooks / Lambdas', link: '/api/webhooks' },
           { text: 'Payments', link: '/api/payments' },

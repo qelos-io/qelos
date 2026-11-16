@@ -23,7 +23,7 @@ qelos pull <type> <path>
 
 Currently supported resource types:
 
-- **components** - Vue components from your Qelos instance
+- **components** - Vue components and scripts (`.ts`) from your Qelos instance
 - **blueprints** - Data model blueprints and entity schemas
 - **config** / **configs** / **configuration** - Custom configuration objects
 - **plugins** - Plugin configurations and code
@@ -73,6 +73,19 @@ my-components/
 ├── modal-component.vue
 └── components.json
 ```
+
+The `components` folder holds both Vue components and [scripts](/getting-started/components-and-scripts). Identifiers are paths, so nested identifiers are pulled into nested folders, and scripts are saved as `.ts` files:
+
+```
+my-components/
+├── products/
+│   └── ProductCard.vue
+├── utils/
+│   └── format-price.ts
+└── components.json
+```
+
+The original extension of a script isn't stored, so scripts always come back as `.ts` (TypeScript is a superset of JavaScript, so `.js` code stays valid). `components.json` is keyed by component name for components, and by identifier for scripts.
 
 ### Pull Blueprints
 
