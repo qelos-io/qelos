@@ -26,6 +26,25 @@ export function toKebab(name: string) {
 /** An identifier is a path: `/`-separated segments of letters, numbers and hyphens (`products/product-card`). */
 export const IDENTIFIER_PATTERN = /^[a-zA-Z0-9-]+(\/[a-zA-Z0-9-]+)*$/;
 
+/** Script identifiers are extension-less paths and may also contain `_`, `@` and `.` (`utils/date_format`). */
+export const SCRIPT_IDENTIFIER_PATTERN = /^[\w@.-]+(\/[\w@.-]+)*$/;
+
+/** Cleans a typed or pasted script identifier: `./utils/demo.ts` → `utils/demo`. */
+export function normalizeScriptIdentifier(value: string) {
+  return value
+    .trim()
+    .replace(/\\/g, '/')
+    .replace(/\/{2,}/g, '/')
+    .replace(/^(\.\/)+/, '')
+    .replace(/^\/+|\/+$/g, '')
+    .replace(/\.(m?[jt]sx?)$/i, '');
+}
+
+/** The relative import that pulls a script into a component or another script. */
+export function scriptImportSnippet(identifier: string) {
+  return `import {} from './${identifier || 'utils/my-script'}.ts';`;
+}
+
 /** Cleans a typed or pasted identifier: no surrounding/duplicate slashes and no `.vue` extension. */
 export function normalizeIdentifier(value: string) {
   return value

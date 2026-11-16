@@ -5,11 +5,15 @@ import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowLeft, CopyDocument, Upload } from '@element-plus/icons-vue';
 import type { INoCodeComponent } from '@qelos/global-types';
+import type { IScript } from '@qelos/sdk/src/administrator/scripts';
 import Monaco from '@/modules/users/components/Monaco.vue';
 import ComponentPreview from './ComponentPreview.vue';
 import { useVueFileTemplate } from '../compositions/vue-file-template';
 import {
   IDENTIFIER_PATTERN,
+  SCRIPT_IDENTIFIER_PATTERN,
+  normalizeScriptIdentifier,
+  scriptImportSnippet,
   componentUsageTag,
   extractComponentInfo,
   folderOf,
@@ -19,39 +23,45 @@ import {
 } from '../services/library';
 
 const props = defineProps<{
-  component?: Partial<INoCodeComponent> | null;
+  /** `script` edits a js/ts module instead of a Vue component: no name, no preview */
+  kind?: 'component' | 'script';
+  component?: Partial<INoCodeComponent | IScript> | null;
   /** folder a new component is created in; its identifier starts with this path */
   initialFolder?: string;
   saving?: boolean;
   compileError?: CompileError | null;
 }>();
-const emit = defineEmits<{ submitted: [payload: { componentName: string; identifier: string; description: string; content: string }] }>();
+const emit = defineEmits<{ submitted: [payload: { componentName?: string; identifier: string; description: string; content: string }] }>();
 
 const { t } = useI18n();
 const router = useRouter();
 const { defaultVueTemplate } = useVueFileTemplate();
+const defaultScriptTemplate = `export function hello(name: string) {\n  return \`Hello \${name}\`;\n}\n`;
 
+const isScript = computed(() => props.kind === 'script');
+const normalize = (value: string) => (isScript.value ? normalizeScriptIdentifier(value) : normalizeIdentifier(value));
 const isNew = computed(() => !props.component?._id);
-const name = ref(props.component?.componentName || '');
+const name = ref((props.component as any)?.componentName || '');
 const folderPrefix = props.initialFolder ? `${props.initialFolder}/` : '';
 const identifier = ref(props.component?.identifier || folderPrefix);
 const description = ref(props.component?.description || '');
-const content = ref(props.component?.content || defaultVueTemplate);
+const content = ref(props.component?.content || (props.kind === 'script' ? defaultScriptTemplate : defaultVueTemplate));
 const identifierTouched = ref(!!props.component?.identifier);
 
 // a new component suggests its identifier from the name until the identifier is edited by hand
 watch(name, (value) => {
-  if (!identifierTouched.value) identifier.value = folderPrefix + toKebab(value);
+  if (!isScript.value && !identifierTouched.value) identifier.value = folderPrefix + toKebab(value);
 });
 
 const errors = ref<{ name?: string; identifier?: string }>({});
 
 function validate() {
   const result: typeof errors.value = {};
-  if (!name.value.trim()) result.name = t('Component name is required');
-  const normalized = normalizeIdentifier(identifier.value);
+  if (!isScript.value && !name.value.trim()) result.name = t('Component name is required');
+  const normalized = normalize(identifier.value);
+  const pattern = isScript.value ? SCRIPT_IDENTIFIER_PATTERN : IDENTIFIER_PATTERN;
   if (!normalized) result.identifier = t('Identifier is required');
-  else if (!IDENTIFIER_PATTERN.test(normalized)) result.identifier = t('Use letters, numbers, hyphens and slashes only');
+  else if (normalized.split('/').some((part) => part === '.' || part === '..') || !pattern.test(normalized)) result.identifier = t('Use letters, numbers, hyphens and slashes only');
   errors.value = result;
   return !Object.keys(result).length;
 }
@@ -86,9 +96,9 @@ const warnUnload = (event: BeforeUnloadEvent) => {
 function save() {
   if (!validate()) return;
   // a pasted "products/card.vue" or "/products/card/" is saved as the path "products/card"
-  identifier.value = normalizeIdentifier(identifier.value);
+  identifier.value = normalize(identifier.value);
   emit('submitted', {
-    componentName: name.value.trim(),
+    ...(isScript.value ? {} : { componentName: name.value.trim() }),
     identifier: identifier.value,
     description: description.value,
     content: content.value,
@@ -119,13 +129,19 @@ async function importFile(event: Event) {
   const file = input.files?.[0];
   input.value = '';
   if (!file) return;
-  if (!file.name.toLowerCase().endsWith('.vue')) {
-    ElMessage.error(t('Please choose a .vue file'));
+  const extension = isScript.value ? /\.(m?[jt]s)$/i : /\.vue$/i;
+  if (!extension.test(file.name)) {
+    ElMessage.error(isScript.value ? t('Please choose a .js or .ts file') : t('Please choose a .vue file'));
     return;
   }
   const text = await file.text();
   content.value = text;
-  if (isNew.value || !name.value) {
+  if (isScript.value) {
+    if (isNew.value || !identifier.value) {
+      identifier.value = folderPrefix + normalizeScriptIdentifier(file.name);
+      identifierTouched.value = true;
+    }
+  } else if (isNew.value || !name.value) {
     const info = extractComponentInfo(text, file.name);
     name.value = info.componentName;
     identifier.value = folderPrefix + info.identifier;
@@ -137,7 +153,7 @@ async function importFile(event: Event) {
 
 // ---- right panel ----
 type Panel = 'preview' | 'usage' | 'output';
-const panel = ref<Panel>('preview');
+const panel = ref<Panel>(props.kind === 'script' ? 'usage' : 'preview');
 const propsText = ref('');
 watch(() => props.compileError, (error) => error && (panel.value = 'output'));
 
@@ -145,6 +161,7 @@ const registeredName = computed(() => props.component?.componentName);
 // back to the folder the component lives in
 const backFolder = computed(() => folderOf(props.component?.identifier || folderPrefix.slice(0, -1)));
 const goBack = () => router.push({ name: 'components', query: backFolder.value ? { folder: backFolder.value } : undefined });
+const importLine = computed(() => scriptImportSnippet(normalizeScriptIdentifier(identifier.value)));
 const tag = computed(() => componentUsageTag(registeredName.value || name.value || 'my-component'));
 
 async function copy(text: string) {
@@ -165,7 +182,7 @@ async function copy(text: string) {
       </el-button>
 
       <div class="titles">
-        <div class="field">
+        <div v-if="!isScript" class="field">
           <input v-model="name" class="name-input" :class="{ invalid: errors.name }" :placeholder="$t('Component name')" :aria-label="$t('Component name')" :aria-invalid="!!errors.name" @input="errors.name = undefined" />
           <span v-if="errors.name" class="error" role="alert">{{ errors.name }}</span>
         </div>
@@ -187,14 +204,14 @@ async function copy(text: string) {
 
       <span v-if="dirty" class="dirty" role="status">{{ $t('Unsaved changes') }}</span>
 
-      <input ref="fileInput" type="file" accept=".vue" class="file-input" @change="importFile" />
-      <el-button @click="fileInput?.click()"><el-icon><Upload /></el-icon><span class="btn-label">{{ $t('Import .vue') }}</span></el-button>
+      <input ref="fileInput" type="file" :accept="isScript ? '.js,.ts,.mjs,.mts' : '.vue'" class="file-input" @change="importFile" />
+      <el-button @click="fileInput?.click()"><el-icon><Upload /></el-icon><span class="btn-label">{{ isScript ? $t('Import .js/.ts') : $t('Import .vue') }}</span></el-button>
       <el-button type="primary" native-type="submit" :loading="saving">{{ $t('Save') }}</el-button>
     </header>
 
     <div class="split">
       <section class="pane code" :aria-label="$t('Code')">
-        <Monaco v-model="content" language="html" height="100%" />
+        <Monaco :key="kind" v-model="content" :language="isScript ? 'typescript' : 'html'" height="100%" />
       </section>
 
       <section class="pane side" :aria-label="$t('Preview')">
@@ -203,7 +220,7 @@ async function copy(text: string) {
             v-model="panel"
             size="small"
             :options="[
-              { label: $t('Preview'), value: 'preview' },
+              ...(isScript ? [] : [{ label: $t('Preview'), value: 'preview' }]),
               { label: $t('Usage'), value: 'usage' },
               { label: compileError ? `${$t('Output')} •` : $t('Output'), value: 'output' },
             ]"
@@ -211,7 +228,7 @@ async function copy(text: string) {
           />
         </div>
 
-        <div v-show="panel === 'preview'" class="side-body">
+        <div v-if="!isScript" v-show="panel === 'preview'" class="side-body">
           <label v-if="registeredName" class="props">
             <span>{{ $t('Props (JSON)') }}</span>
             <textarea v-model="propsText" dir="ltr" rows="2" spellcheck="false" placeholder='{ "title": "Hello" }' />
@@ -220,6 +237,16 @@ async function copy(text: string) {
         </div>
 
         <div v-show="panel === 'usage'" class="side-body">
+          <template v-if="isScript">
+            <h3>{{ $t('Use this script') }}</h3>
+            <p class="hint">{{ $t('Import it from a component with this path. Inside another script, the path is relative to the folder of that script.') }}</p>
+            <div class="snippet">
+              <pre dir="ltr">{{ importLine }}</pre>
+              <el-button size="small" @click="copy(importLine)"><el-icon><CopyDocument /></el-icon>{{ $t('Copy') }}</el-button>
+            </div>
+            <p v-if="isNew" class="hint">{{ $t('Save the script first: it can only be imported after it compiled successfully.') }}</p>
+          </template>
+          <template v-else>
           <h3>{{ $t('Use this component') }}</h3>
           <p class="hint">{{ $t('Once saved and compiled, the component is registered globally under its name. Use it in any page or template:') }}</p>
           <div class="snippet">
@@ -227,6 +254,7 @@ async function copy(text: string) {
             <el-button size="small" @click="copy(tag)"><el-icon><CopyDocument /></el-icon>{{ $t('Copy') }}</el-button>
           </div>
           <p v-if="isNew" class="hint">{{ $t('Save the component first: it can only be used after it compiled successfully.') }}</p>
+          </template>
         </div>
 
         <div v-show="panel === 'output'" class="side-body">

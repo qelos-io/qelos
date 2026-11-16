@@ -45,6 +45,18 @@ export const componentsRoutes: RouteRecordRaw = {
       meta: { roles: ['admin'] },
     },
     {
+      path: 'scripts/new',
+      name: 'createScript',
+      component: async () => (await import('./CreateScriptPage.vue')).default,
+      meta: { roles: ['admin'] },
+    },
+    {
+      path: 'scripts/:scriptId',
+      name: 'editScript',
+      component: async () => (await import('./EditScriptPage.vue')).default,
+      meta: { roles: ['admin'] },
+    },
+    {
       path: ':componentId',
       name: 'editComponent',
       component: async () => (await import('./EditComponentPage.vue')).default,

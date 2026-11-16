@@ -2267,5 +2267,14 @@
   "{count} blueprints": "{count} blueprints",
   "1 blueprint": "1 blueprint",
   "1 plugin": "1 plugin",
-  "{count} plugins": "{count} plugins"
+  "{count} plugins": "{count} plugins",
+  "New script": "New script",
+  "Use this script": "Use this script",
+  "Import it from a component with this path. Inside another script, the path is relative to the folder of that script.": "Import it from a component with this path. Inside another script, the path is relative to that script's own folder.",
+  "Save the script first: it can only be imported after it compiled successfully.": "Save the script first: it can only be imported after it compiled successfully.",
+  "Import .js/.ts": "Import .js/.ts",
+  "Please choose a .js or .ts file": "Please choose a .js or .ts file",
+  "Script not found": "Script not found",
+  "Script removed successfully": "Script removed successfully",
+  "Failed to remove script": "Failed to remove script"
 }

@@ -8,16 +8,22 @@ import { ElMessage } from 'element-plus';
 import { ArrowRight, CopyDocument, Delete, Folder, Plus, Search } from '@element-plus/icons-vue';
 import { useComponentsList } from './store/components-list';
 import { useConfirmAction } from '../core/compositions/confirm-action';
-import { componentUsageTag, folderCrumbs, folderOf, listFolder, matchesQuery, normalizeIdentifier } from './services/library';
+import { useScriptsList } from './store/scripts-list';
+import { scriptImportSnippet, componentUsageTag, folderCrumbs, folderOf, listFolder, matchesQuery, normalizeIdentifier } from './services/library';
 import { formatRelative } from '@/modules/admins/services/event-presentation';
 
 const { t, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const store = useComponentsList();
+const scriptsStore = useScriptsList();
 
 const query = ref('');
-const components = computed(() => store.components || []);
+// scripts live next to the components in the same folders; `isScript` tells the rows apart
+const components = computed(() => [
+  ...(store.components || []),
+  ...(scriptsStore.scripts || []).map((s: any) => ({ ...s, isScript: true, componentName: s.identifier.split('/').pop() })),
+]);
 
 // the folder being browsed lives in the url (`?folder=products/cards`), so it survives reloads and the back button
 const folder = computed(() => normalizeIdentifier(String(route.query.folder || '')));
@@ -34,10 +40,15 @@ const crumbs = computed(() => [
 ]);
 const openFolder = (path: string) => router.push({ name: 'components', query: { folder: path } });
 const createNew = () => router.push({ name: 'createComponent', query: folder.value ? { folder: folder.value } : undefined });
-const remove = useConfirmAction(store.removeComponent);
+const removeComponent = useConfirmAction(store.removeComponent);
+const removeScript = useConfirmAction(scriptsStore.removeScript);
+const remove = (item: any) => (item.isScript ? removeScript(item) : removeComponent(item));
+const createScript = () => router.push({ name: 'createScript', query: folder.value ? { folder: folder.value } : undefined });
+const editRoute = (c: any) => (c.isScript ? { name: 'editScript', params: { scriptId: c._id } } : { name: 'editComponent', params: { componentId: c._id } });
+const usage = (c: any) => (c.isScript ? scriptImportSnippet(c.identifier) : componentUsageTag(c.componentName));
 
 const updated = (c: any) => (c.updated ? formatRelative(c.updated, new Date(), locale.value || undefined) : '');
-const edit = (c: any) => router.push({ name: 'editComponent', params: { componentId: c._id } });
+const edit = (c: any) => router.push(editRoute(c));
 
 async function copy(text: string, message: string) {
   try {
@@ -52,6 +63,10 @@ async function copy(text: string, message: string) {
 <template>
   <AppPage :title="$t('Components')" :subtitle="$t('Reusable Vue components you can use across your pages and templates.')">
     <template #actions>
+      <el-button @click="createScript">
+        <el-icon><Plus /></el-icon>
+        <span class="action-label">{{ $t('New script') }}</span>
+      </el-button>
       <el-button type="primary" @click="createNew">
         <el-icon><Plus /></el-icon>
         <span class="action-label">{{ $t('New component') }}</span>
@@ -87,11 +102,11 @@ async function copy(text: string, message: string) {
       <li v-for="c in visibleFiles" :key="c._id" class="row">
         <div class="main">
           <span v-if="searching && folderOf(c.identifier)" class="path" dir="ltr">{{ folderOf(c.identifier) }}/</span>
-          <router-link class="name" :to="{ name: 'editComponent', params: { componentId: c._id } }" dir="auto">{{ c.componentName }}</router-link>
+          <router-link class="name" :to="editRoute(c)" dir="auto">{{ c.componentName }}</router-link>
           <p class="desc" dir="auto">{{ c.description || $t('No description') }}</p>
         </div>
-        <button type="button" class="chip" dir="ltr" :title="$t('Copy usage tag')" :aria-label="`${$t('Copy usage tag')}: ${componentUsageTag(c.componentName)}`" @click="copy(componentUsageTag(c.componentName), $t('Usage tag copied'))">
-          <code>{{ componentUsageTag(c.componentName) }}</code>
+        <button type="button" class="chip" dir="ltr" :title="$t('Copy usage tag')" :aria-label="`${$t('Copy usage tag')}: ${usage(c)}`" @click="copy(usage(c), $t('Usage tag copied'))">
+          <code>{{ usage(c) }}</code>
           <el-icon><CopyDocument /></el-icon>
         </button>
         <span class="meta">{{ updated(c) }}</span>
