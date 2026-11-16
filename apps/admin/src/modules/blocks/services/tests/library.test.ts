@@ -1,7 +1,12 @@
 import {
+  IDENTIFIER_PATTERN,
   componentUsageTag,
   contentBoxEmbed,
   extractComponentInfo,
+  folderCrumbs,
+  folderOf,
+  listFolder,
+  normalizeIdentifier,
   htmlToText,
   matchesQuery,
   parseCompileError,
@@ -53,5 +58,48 @@ describe('library helpers', () => {
     expect(matchesQuery('hero ban', 'Hero banner', 'top of page')).toBe(true);
     expect(matchesQuery('hero footer', 'Hero banner')).toBe(false);
     expect(matchesQuery('', 'anything')).toBe(true);
+  });
+
+  it('accepts path identifiers with slashes', () => {
+    ['card', 'products/card', 'products/cards/product-card-2'].forEach((id) => expect(IDENTIFIER_PATTERN.test(id)).toBe(true));
+    ['', '/card', 'card/', 'a//b', 'a/b.vue', 'a b', 'a/../b'].forEach((id) => expect(IDENTIFIER_PATTERN.test(id)).toBe(false));
+  });
+
+  it('normalizes pasted identifiers', () => {
+    expect(normalizeIdentifier('products/ClientProductEditModal.vue')).toBe('products/ClientProductEditModal');
+    expect(normalizeIdentifier(' /products//cards/ ')).toBe('products/cards');
+    expect(normalizeIdentifier('products\\card')).toBe('products/card');
+  });
+
+  it('finds the folder of an identifier', () => {
+    expect(folderOf('card')).toBe('');
+    expect(folderOf('products/cards/card')).toBe('products/cards');
+  });
+
+  it('lists the direct folders and items of a folder', () => {
+    const items = [
+      { identifier: 'hero', componentName: 'Hero' },
+      { identifier: 'products/card', componentName: 'Card' },
+      { identifier: 'products/list', componentName: 'List' },
+      { identifier: 'products/modals/edit', componentName: 'Edit' },
+      { identifier: 'products-extra/x', componentName: 'X' },
+      { identifier: 'admin/panel', componentName: 'Panel' },
+    ];
+    const root = listFolder(items);
+    expect(root.files.map((i) => i.identifier)).toEqual(['hero']);
+    expect(root.folders).toEqual([
+      { name: 'admin', path: 'admin', count: 1 },
+      { name: 'products', path: 'products', count: 3 },
+      { name: 'products-extra', path: 'products-extra', count: 1 },
+    ]);
+
+    const products = listFolder(items, 'products');
+    expect(products.files.map((i) => i.identifier)).toEqual(['products/card', 'products/list']);
+    expect(products.folders).toEqual([{ name: 'modals', path: 'products/modals', count: 1 }]);
+  });
+
+  it('builds breadcrumb crumbs', () => {
+    expect(folderCrumbs('')).toEqual([]);
+    expect(folderCrumbs('a/b')).toEqual([{ name: 'a', path: 'a' }, { name: 'b', path: 'a/b' }]);
   });
 });
