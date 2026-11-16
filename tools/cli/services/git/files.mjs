@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process';
 import { logger } from '../utils/logger.mjs';
 import path from 'node:path';
 import fs from 'node:fs';
+import { isPublishableFile, isScriptFile } from '../resources/components.mjs';
 
 /**
  * Resolve the actual file path from Git output
@@ -328,7 +329,7 @@ function classifyFiles(files, basePath) {
     const basename = path.basename(fullPath, ext);
 
     // Check for specific file types
-    if (relativePath.startsWith('components/') && ext === '.vue') {
+    if (relativePath.startsWith('components/') && isPublishableFile(fullPath)) {
       classified.components.push(fullPath);
     } else if (relativePath.startsWith('blueprints/') && ext === '.json') {
       classified.blueprints.push(fullPath);
@@ -474,7 +475,7 @@ export function getGitFiles(type, basePath) {
  * @param {string} tempDir - Temporary directory base path
  * @returns {Object} Object with paths to temporary directories
  */
-export function prepareTempDirectories(classifiedFiles, tempDir) {
+export function prepareTempDirectories(classifiedFiles, tempDir, basePath) {
   const tempPaths = {};
   const copiedRefs = new Set(); // Track which ref files have been copied
 
@@ -496,7 +497,14 @@ export function prepareTempDirectories(classifiedFiles, tempDir) {
 
     // Copy files to temp directory
     for (const file of uniqueFiles) {
-      const dest = path.join(typeDir, path.basename(file));
+      // scripts are identified by their path (`utils/demo.ts` -> `utils/demo`), so keep the nested structure
+      let destRelative = path.basename(file);
+      if (type === 'components' && isScriptFile(file) && basePath) {
+        const relative = path.relative(path.join(path.resolve(basePath), 'components'), file);
+        if (!relative.startsWith('..') && !path.isAbsolute(relative)) destRelative = relative;
+      }
+      const dest = path.join(typeDir, destRelative);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.copyFileSync(file, dest);
       logger.debug(`Copied ${file} to ${dest}`);
       

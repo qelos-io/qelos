@@ -1,7 +1,11 @@
 import Component, { IComponent } from '../models/component';
+import Script from '../models/script';
 import logger from '../services/logger';
 import { compileVueComponent, compileVueComponentsBulk } from '../services/components-compiler.service';
 import { cacheManager } from '../services/cache-manager';
+
+const getScriptIdentifiers = async (tenant: string): Promise<string[]> =>
+  (await Script.find({ tenant }).select('identifier').lean().exec()).map(s => s.identifier);
 
 const LONG_TTL = 60 * 60 * 24;
 
@@ -54,7 +58,8 @@ export const createComponent = async (req, res) => {
     const componentNames = existingComponents.map(c => c.componentName);
     
      // Compile the Vue component with existing components list
-    ({ js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost, componentNames));
+    const existingScripts = await getScriptIdentifiers(req.headers.tenant);
+    ({ js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost, componentNames, existingScripts));
   } catch (err: any | Error) {
     logger.log('failed to compile a component', err?.message);
     const sanitizedError = sanitizeCompilationError(err);
@@ -107,7 +112,8 @@ export const updateComponent = async (req, res) => {
             .exec();
           const componentNames = existingComponents.map(c => c.componentName);
           
-          const { js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost, componentNames);
+          const existingScripts = await getScriptIdentifiers(req.headers.tenant);
+          const { js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost, componentNames, existingScripts);
           $set.compiledContent = { js, css };
           $set.requiredProps = props;
         } catch (compileErr: any) {
@@ -231,22 +237,15 @@ export const getComponentsList = async (req, res) => {
   }
 };
 
-export const bulkCreateOrUpdateComponents = async (req, res) => {
-  const components: Array<{
-    identifier: string;
-    componentName: string;
-    description?: string;
-    content: string;
-  }> = req.body.components;
+export type BulkComponentInput = {
+  identifier: string;
+  componentName: string;
+  description?: string;
+  content: string;
+};
 
-  if (!Array.isArray(components) || components.length === 0) {
-    return res.status(400).json({ message: 'components array is required' }).end();
-  }
-
-  const tenant = req.headers.tenant;
-  const tenanthost = req.headers.tenanthost;
-
-  try {
+export async function upsertComponentsBulk(tenant: string, tenanthost: string, components: BulkComponentInput[]) {
+  {
     const existingDbComponents = await Component.find({ tenant })
       .select('identifier componentName content')
       .lean()
@@ -270,7 +269,7 @@ export const bulkCreateOrUpdateComponents = async (req, res) => {
 
     // Compile all changed components through the memory-managed queue
     const compilationResults = toCompile.length > 0
-      ? await compileVueComponentsBulk(toCompile, tenanthost, componentNames)
+      ? await compileVueComponentsBulk(toCompile, tenanthost, componentNames, await getScriptIdentifiers(tenant))
       : [];
 
     const compilationMap = new Map(compilationResults.map(r => [r.identifier, r]));
@@ -356,7 +355,17 @@ export const bulkCreateOrUpdateComponents = async (req, res) => {
     const succeeded = results.filter(r => r.success).length;
     const failed = results.filter(r => !r.success).length;
 
-    res.json({ total: results.length, succeeded, failed, results }).end();
+    return { total: results.length, succeeded, failed, results };
+  }
+}
+
+export const bulkCreateOrUpdateComponents = async (req, res) => {
+  const components = req.body.components;
+  if (!Array.isArray(components) || components.length === 0) {
+    return res.status(400).json({ message: 'components array is required' }).end();
+  }
+  try {
+    res.json(await upsertComponentsBulk(req.headers.tenant, req.headers.tenanthost, components)).end();
   } catch (err: any) {
     logger.error('failed to bulk create/update components', err?.message);
     res.status(500).json({ message: 'failed to bulk create/update components' }).end();

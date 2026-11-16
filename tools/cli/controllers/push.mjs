@@ -58,7 +58,7 @@ export default async function pushController({ type, path: sourcePath, hard = fa
       tempDir = await mkdtemp(path.join(tmpdir(), 'qelos-push-'));
       
       // Prepare temporary directories and copy files
-      const tempPaths = prepareTempDirectories(classifiedFiles, tempDir);
+      const tempPaths = prepareTempDirectories(classifiedFiles, tempDir, sourcePath);
       
       logger.section(`Pushing ${type} files from ${sourcePath}`);
       

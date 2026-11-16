@@ -3,6 +3,7 @@ import path from 'node:path';
 import { red, yellow } from './logger.mjs';
 import { logger } from './logger.mjs';
 import { confirmDialog } from './interactive-select.mjs';
+import { identifierFromFile, listVueFilesRecursively } from '../resources/components.mjs';
 
 /**
  * Get local files from directory
@@ -10,9 +11,13 @@ import { confirmDialog } from './interactive-select.mjs';
 export function getLocalFiles(typePath, type) {
   if (!fs.existsSync(typePath)) return [];
   
+  // components and scripts share one recursive folder, listed as paths relative to it
+  if (type === 'components') {
+    return listVueFilesRecursively(typePath).map(file => path.relative(typePath, file).replaceAll('\\', '/'));
+  }
+
   const files = fs.readdirSync(typePath);
   return files.filter(file => {
-    if (type === 'components') return file.endsWith('.vue');
     if (type === 'blueprints') return file.endsWith('.blueprint.json');
     if (type === 'plugins') return file.endsWith('.plugin.json');
     if (type === 'integrations') return file.endsWith('.integration.json');
@@ -27,7 +32,8 @@ export async function getRemoteResources(sdk, type) {
   try {
     switch (type) {
       case 'components':
-        return await sdk.components.getList();
+        // the unified API lists scripts as well as components
+        return sdk.scripts?.getList ? await sdk.scripts.getList() : await sdk.components.getList();
       case 'blueprints':
         return await sdk.manageBlueprints.getList();
       case 'plugins':
@@ -48,7 +54,7 @@ export async function getRemoteResources(sdk, type) {
  */
 export function getIdentifierFromFile(filename, type) {
   if (type === 'components') {
-    return filename.replace('.vue', '');
+    return identifierFromFile(filename);
   }
   if (type === 'blueprints') {
     return filename.replace('.blueprint.json', '');
@@ -90,6 +96,15 @@ export async function removeResources(sdk, toRemove) {
       switch (type) {
         case 'components':
           // For components, we need to find the component by identifier first
+          if (sdk.scripts?.getList) {
+            // unified API: matches both components and scripts by identifier
+            const items = await sdk.scripts.getList();
+            const item = items.find(c => c.identifier === identifier);
+            if (item) {
+              await sdk.scripts.remove(item._id);
+            }
+            break;
+          }
           const components = await sdk.components.getList();
           const component = components.find(c => c.identifier === identifier);
           if (component) {

@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
+import { createHash } from 'node:crypto'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -28,15 +29,21 @@ export default defineConfig({
     },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
-      external: ['vue', 'vue-router', 'element-plus', 'vue-i18n', '@sdk'],
+      // `qelos-script:*` are published scripts, bridged in via globals set by the served module's import prelude
+      external: (id: string) => ['vue', 'vue-router', 'element-plus', 'vue-i18n', '@sdk'].includes(id) || id.startsWith('qelos-script:'),
       output: {
         // Provide global variables to use in the UMD build
-        globals: {
-          vue: 'Vue',
-          'vue-router': 'VueRouter',
-          'element-plus': 'ElementPlus',
-          'vue-i18n': 'VueI18n',
-          '@sdk': 'QelosSDK',
+        globals: (id: string) => {
+          if (id.startsWith('qelos-script:')) {
+            return 'qs_' + createHash('sha1').update(id.slice('qelos-script:'.length)).digest('hex').substring(0, 12)
+          }
+          return ({
+            vue: 'Vue',
+            'vue-router': 'VueRouter',
+            'element-plus': 'ElementPlus',
+            'vue-i18n': 'VueI18n',
+            '@sdk': 'QelosSDK',
+          } as Record<string, string>)[id]
         },
       },
     },

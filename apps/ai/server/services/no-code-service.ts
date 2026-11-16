@@ -125,17 +125,17 @@ export function createComponent(tenant: string, payload: {
   description?: string;
   content: string;
 }) {
-  return callNoCodeService(`/internal-api/components`, 'POST', tenant, payload);
+  return callNoCodeService(`/internal-api/scripts`, 'POST', tenant, { ...payload, type: 'component' });
 }
 
 export function getComponents(tenant: string) {
-  return callNoCodeService(`/internal-api/components`, 'GET', tenant);
+  return callNoCodeService(`/internal-api/scripts?type=component`, 'GET', tenant);
 }
 
 export function getComponent(tenant: string, componentIdentifier: string) {
-  return callNoCodeService(`/internal-api/components/${componentIdentifier}`, 'GET', tenant);
+  return callNoCodeService(`/internal-api/scripts/${componentIdentifier}`, 'GET', tenant);
 }
 
 export function updateComponent(tenant: string, componentIdentifier: string, payload: any) {
-  return callNoCodeService(`/internal-api/components/${componentIdentifier}`, 'PUT', tenant, payload);
+  return callNoCodeService(`/internal-api/scripts/${componentIdentifier}`, 'PUT', tenant, payload);
 }
