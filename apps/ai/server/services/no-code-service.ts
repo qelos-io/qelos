@@ -119,23 +119,48 @@ export function deleteBlueprintEntity(tenant: string, blueprintIdentifier: strin
   return callNoCodeService(`/internal-api/blueprints/${blueprintIdentifier}/entities/${entityId}`, 'DELETE', tenant);
 }
 
+export type ScriptItemType = 'script' | 'component';
+
+/** Scripts (js/ts modules) and Vue components share one api; `type` tells them apart. */
+export function getScripts(tenant: string, type?: ScriptItemType) {
+  return callNoCodeService(`/internal-api/scripts${type ? `?type=${type}` : ''}`, 'GET', tenant);
+}
+
+export function getScript(tenant: string, scriptId: string) {
+  return callNoCodeService(`/internal-api/scripts/${scriptId}`, 'GET', tenant);
+}
+
+export function createScript(tenant: string, payload: {
+  identifier: string;
+  content: string;
+  description?: string;
+  type?: ScriptItemType;
+  componentName?: string;
+}) {
+  return callNoCodeService(`/internal-api/scripts`, 'POST', tenant, payload);
+}
+
+export function updateScript(tenant: string, scriptId: string, payload: any) {
+  return callNoCodeService(`/internal-api/scripts/${scriptId}`, 'PUT', tenant, payload);
+}
+
 export function createComponent(tenant: string, payload: {
   identifier: string;
   componentName: string;
   description?: string;
   content: string;
 }) {
-  return callNoCodeService(`/internal-api/scripts`, 'POST', tenant, { ...payload, type: 'component' });
+  return createScript(tenant, { ...payload, type: 'component' });
 }
 
 export function getComponents(tenant: string) {
-  return callNoCodeService(`/internal-api/scripts?type=component`, 'GET', tenant);
+  return getScripts(tenant, 'component');
 }
 
-export function getComponent(tenant: string, componentIdentifier: string) {
-  return callNoCodeService(`/internal-api/scripts/${componentIdentifier}`, 'GET', tenant);
+export function getComponent(tenant: string, componentId: string) {
+  return getScript(tenant, componentId);
 }
 
-export function updateComponent(tenant: string, componentIdentifier: string, payload: any) {
-  return callNoCodeService(`/internal-api/scripts/${componentIdentifier}`, 'PUT', tenant, payload);
+export function updateComponent(tenant: string, componentId: string, payload: any) {
+  return updateScript(tenant, componentId, payload);
 }
