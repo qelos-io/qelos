@@ -10,6 +10,7 @@ import { QlRoles } from './roles';
 import QlIntegrationSources from './integration-sources';
 import QlManagePlugins from './manage-plugins';
 import QlComponents from './components';
+import QlScripts from './scripts';
 import QlIntegrations from './integrations';
 import QlManageLambdas from './admin-lambdas';
 import QlPaymentsAdmin from './payments';
@@ -26,7 +27,9 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
   roles: QlRoles;
   integrationSources: QlIntegrationSources;
   managePlugins: QlManagePlugins;
+  /** @deprecated use `scripts`, which accepts both scripts and components */
   components: QlComponents;
+  scripts: QlScripts;
   integrations: QlIntegrations;
   managePayments: QlPaymentsAdmin;
 
@@ -43,6 +46,7 @@ export default class QelosAdministratorSDK<T = any> extends QelosSDK {
     this.integrationSources = new QlIntegrationSources(options);
     this.managePlugins = new QlManagePlugins(options);
     this.components = new QlComponents(options);
+    this.scripts = new QlScripts(options);
     this.integrations = new QlIntegrations(options);
     this.managePayments = new QlPaymentsAdmin(options);
 

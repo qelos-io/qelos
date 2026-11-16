@@ -1,5 +1,6 @@
 import logger from "../logger";
-import { getAllBlueprints, getComponents } from "../no-code-service";
+import { getAllBlueprints, getScripts } from "../no-code-service";
+import { filterItems, summarizeItem, type ScriptItem } from "../scripts-tools.service";
 import { getPluginAndPage } from "../plugins-service-api";
 
 // Instruction sets for different task types
@@ -35,11 +36,14 @@ const instructionSets = {
   component: {
     title: "Component Creation Instructions",
     rules: [
-      "1. Use createComponent with: name (PascalCase), props, purpose, uxAndDesign",
+      "1. Use createComponent with: name (PascalCase), props, purpose, uxAndDesign. Optionally a folder to organize related components (e.g. products/ProductCard)",
       "2. All logic, state, and event handlers go in components",
       "3. Follow Vue 3 Composition API patterns",
       "4. Components become available as kebab-case tags",
-      "5. Make components reusable and modular"
+      "5. Make components reusable and modular",
+      "6. Put reusable non-UI logic (formatting, calculations, API wrappers) in scripts: use createScript, ideally under a folder like utils/ or services/",
+      "7. Import a script from a component or another script with a relative path: import { formatPrice } from './utils/format-price.ts'",
+      "8. Use getComponents/searchComponents to find existing components and scripts, and getScript to read a script's source and exports before importing it"
     ]
   }
 };
@@ -183,7 +187,7 @@ export const getPageContextCalling = {
 export const getExistingComponentsCalling = {
   type: 'function',
   name: 'getExistingComponents',
-  description: 'Get list of available components with descriptions',
+  description: 'Get list of available components and scripts (ts/js modules components can import) with descriptions',
   parameters: {
     type: 'object',
     properties: {
@@ -196,7 +200,7 @@ export const getExistingComponentsCalling = {
   },
   function: {
     name: 'getExistingComponents',
-    description: 'Get list of available components with descriptions',
+    description: 'Get list of available components and scripts (ts/js modules components can import) with descriptions',
     parameters: {
       type: 'object',
       properties: {
@@ -211,35 +215,17 @@ export const getExistingComponentsCalling = {
   handler: async (req, payload: { filter?: string }) => {
     try {
       const tenant = req.headers.tenant;
-      const components = await getComponents(tenant);
-      
-      let filteredComponents = components.map(c => ({
-        id: c._id,
-        name: c.componentName,
-        description: c.description,
-        props: c.props || {}
-      }));
+      const items: ScriptItem[] = await getScripts(tenant);
 
-      // Apply filter if provided
-      if (payload.filter) {
-        const filterTerms = payload.filter.toLowerCase().split(',').map(t => t.trim());
-        filteredComponents = filteredComponents.filter(c => {
-          const nameLower = c.name.toLowerCase();
-          const descLower = c.description.toLowerCase();
-          
-          // Check if ANY filter term matches
-          return filterTerms.some(term => 
-            nameLower.includes(term) ||
-            descLower.includes(term) ||
-            // Also check camelCase splitting (e.g., "BalloonsCard" contains "balloons" and "card")
-            nameLower.replace(/([A-Z])/g, ' $1').toLowerCase().includes(term)
-          );
-        });
-      }
+      // components and scripts, matched by any of the comma separated terms (name, path or description)
+      const filtered = filterItems(items, { query: payload.filter }).map(item => {
+        const summary = summarizeItem(item);
+        return { ...summary, props: (item as any).props || (summary as any).props || {} };
+      });
 
       return {
-        components: filteredComponents,
-        total: filteredComponents.length
+        components: filtered,
+        total: filtered.length
       };
     } catch (error) {
       logger.error('Error getting existing components', error);

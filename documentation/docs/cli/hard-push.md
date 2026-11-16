@@ -19,7 +19,7 @@ qelos push <type> <path> -h
 ## Supported Resource Types
 
 The `--hard` flag only works with the following resource types:
-- `components` - Vue components
+- `components` - Vue components and scripts (`.vue`, `.ts`, `.js`)
 - `blueprints` - Blueprint definitions
 - `plugins` - Plugin configurations
 - `integrations` - Integration configurations
@@ -151,7 +151,7 @@ Check network connection and permissions. The resource might be in use by other 
 3. This ensures no conflicts during the push operation
 
 ### Resource Identification
-- **Components**: Identified by filename (without .vue extension)
+- **Components and scripts**: Identified by their path inside the folder, without the extension (`products/ProductCard.vue` → `products/ProductCard`, `utils/format-price.ts` → `utils/format-price`)
 - **Blueprints**: Identified by filename (without .blueprint.json extension)
 - **Plugins**: Identified by the `key` field in the JSON
 - **Integrations**: Identified by the `identifier` field in the JSON

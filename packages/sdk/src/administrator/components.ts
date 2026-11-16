@@ -40,6 +40,7 @@ interface IBulkComponentResponse {
 
 type IComponentUpdateParams = Partial<Pick<IComponent, 'identifier' | 'componentName' | 'description' | 'content'>>;
 
+/** @deprecated use `QlScripts` (`sdkAdmin.scripts`), which accepts both scripts and components */
 export default class QlComponents extends BaseSDK {
   private relativePath = '/api/components';
 

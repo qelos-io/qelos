@@ -12,12 +12,16 @@ import {
   IDENTIFIER_PATTERN,
   componentUsageTag,
   extractComponentInfo,
+  folderOf,
+  normalizeIdentifier,
   toKebab,
   type CompileError,
 } from '../services/library';
 
 const props = defineProps<{
   component?: Partial<INoCodeComponent> | null;
+  /** folder a new component is created in; its identifier starts with this path */
+  initialFolder?: string;
   saving?: boolean;
   compileError?: CompileError | null;
 }>();
@@ -29,14 +33,15 @@ const { defaultVueTemplate } = useVueFileTemplate();
 
 const isNew = computed(() => !props.component?._id);
 const name = ref(props.component?.componentName || '');
-const identifier = ref(props.component?.identifier || '');
+const folderPrefix = props.initialFolder ? `${props.initialFolder}/` : '';
+const identifier = ref(props.component?.identifier || folderPrefix);
 const description = ref(props.component?.description || '');
 const content = ref(props.component?.content || defaultVueTemplate);
 const identifierTouched = ref(!!props.component?.identifier);
 
 // a new component suggests its identifier from the name until the identifier is edited by hand
 watch(name, (value) => {
-  if (!identifierTouched.value) identifier.value = toKebab(value);
+  if (!identifierTouched.value) identifier.value = folderPrefix + toKebab(value);
 });
 
 const errors = ref<{ name?: string; identifier?: string }>({});
@@ -44,8 +49,9 @@ const errors = ref<{ name?: string; identifier?: string }>({});
 function validate() {
   const result: typeof errors.value = {};
   if (!name.value.trim()) result.name = t('Component name is required');
-  if (!identifier.value.trim()) result.identifier = t('Identifier is required');
-  else if (!IDENTIFIER_PATTERN.test(identifier.value)) result.identifier = t('Use letters, numbers and hyphens only');
+  const normalized = normalizeIdentifier(identifier.value);
+  if (!normalized) result.identifier = t('Identifier is required');
+  else if (!IDENTIFIER_PATTERN.test(normalized)) result.identifier = t('Use letters, numbers, hyphens and slashes only');
   errors.value = result;
   return !Object.keys(result).length;
 }
@@ -79,9 +85,11 @@ const warnUnload = (event: BeforeUnloadEvent) => {
 
 function save() {
   if (!validate()) return;
+  // a pasted "products/card.vue" or "/products/card/" is saved as the path "products/card"
+  identifier.value = normalizeIdentifier(identifier.value);
   emit('submitted', {
     componentName: name.value.trim(),
-    identifier: identifier.value.trim(),
+    identifier: identifier.value,
     description: description.value,
     content: content.value,
   });
@@ -120,7 +128,7 @@ async function importFile(event: Event) {
   if (isNew.value || !name.value) {
     const info = extractComponentInfo(text, file.name);
     name.value = info.componentName;
-    identifier.value = info.identifier;
+    identifier.value = folderPrefix + info.identifier;
     identifierTouched.value = true;
     description.value = description.value || info.description;
   }
@@ -134,6 +142,9 @@ const propsText = ref('');
 watch(() => props.compileError, (error) => error && (panel.value = 'output'));
 
 const registeredName = computed(() => props.component?.componentName);
+// back to the folder the component lives in
+const backFolder = computed(() => folderOf(props.component?.identifier || folderPrefix.slice(0, -1)));
+const goBack = () => router.push({ name: 'components', query: backFolder.value ? { folder: backFolder.value } : undefined });
 const tag = computed(() => componentUsageTag(registeredName.value || name.value || 'my-component'));
 
 async function copy(text: string) {
@@ -149,7 +160,7 @@ async function copy(text: string) {
 <template>
   <form class="workspace" novalidate @submit.prevent="save">
     <header class="bar">
-      <el-button text :aria-label="$t('Back to components')" @click="router.push({ name: 'components' })">
+      <el-button text :aria-label="$t('Back to components')" @click="goBack">
         <el-icon class="dir-icon"><ArrowLeft /></el-icon>
       </el-button>
 

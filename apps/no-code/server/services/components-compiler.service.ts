@@ -4,6 +4,12 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import logger from './logger';
+import {
+  SCRIPT_EXTERNAL_PREFIX,
+  resolveScriptSpecifier,
+  scriptGlobalName,
+  scriptUrl,
+} from './scripts-compiler.service';
 
 const execPromise = promisify(exec);
 
@@ -336,17 +342,45 @@ function extractPropsFromRegularScript(scriptContent: string): Array<{type: stri
 }
 
 
+const SCRIPT_IMPORT_REGEX = /(\bfrom\s*|\bimport\s*)(['"])(\.{1,2}\/[^'"\n]+)\2/g;
+
+/**
+ * Points relative imports of published scripts (`import { x } from './utils/demo.ts'`) at an external placeholder.
+ * The placeholder is resolved at runtime by an ES import prelude added to the served module.
+ * Only imports that match an existing script are touched.
+ */
+export function rewriteScriptImports(
+  fileContent: string,
+  existingScripts: string[],
+  fromIdentifier = ''
+): { content: string, scripts: string[] } {
+  if (!existingScripts.length) return { content: fileContent, scripts: [] };
+  const known = new Set(existingScripts);
+  const used = new Set<string>();
+  const content = fileContent.replace(SCRIPT_IMPORT_REGEX, (match, prefix, quote, specifier) => {
+    // relative to the importing component's own folder, like in a local project
+    const identifier = resolveScriptSpecifier(specifier, fromIdentifier);
+    if (!identifier || !known.has(identifier)) return match;
+    used.add(identifier);
+    return `${prefix}${quote}${SCRIPT_EXTERNAL_PREFIX}${identifier}${quote}`;
+  });
+  return { content, scripts: [...used] };
+}
+
 /**
  * Runs the actual vite build for a single component (must be called sequentially)
  */
 async function runViteBuild(
   fileContent: string,
   tenanthost: string,
-  existingComponents: string[]
+  existingComponents: string[],
+  existingScripts: string[] = [],
+  identifier = ''
 ): Promise<{js: string, css: string, props: Array<{type: string, prop: string}>}> {
   const hash = 'Comp' + crypto.createHash('sha256').update(fileContent).digest('hex').substring(0, 8);
 
-  const { cleanedContent, removedImports } = extractAndRemoveLocalImports(fileContent, existingComponents);
+  const { cleanedContent: contentWithoutComponents, removedImports } = extractAndRemoveLocalImports(fileContent, existingComponents);
+  const { content: cleanedContent, scripts } = rewriteScriptImports(contentWithoutComponents, existingScripts, identifier);
   const props = extractPropsFromVueComponent(cleanedContent);
 
   if (removedImports.length > 0) {
@@ -402,8 +436,13 @@ window['components:${hash}'] = Component;`;
       fs.readFile(path.join(DIST_DIR, hash + '.css'), 'utf-8').catch(() => ''),
     ]);
 
+    // ES imports are hoisted, so the scripts are loaded and exposed as globals before the UMD factory runs
+    const scriptsPrelude = scripts
+      .map(id => `import * as ${scriptGlobalName(id)} from '${scriptUrl(id)}';\nwindow['${scriptGlobalName(id)}'] = ${scriptGlobalName(id)};\n`)
+      .join('');
+
     return {
-      js: jsContent + `
+      js: scriptsPrelude + jsContent + `
       const Component = window['components:${hash}'];
       delete window['components:${hash}'];
       export default Component;`,
@@ -429,9 +468,11 @@ window['components:${hash}'] = Component;`;
 export async function compileVueComponent(
   fileContent: string,
   tenanthost: string = 'http://localhost',
-  existingComponents: string[] = []
+  existingComponents: string[] = [],
+  existingScripts: string[] = [],
+  identifier = ''
 ): Promise<{js: string, css: string, props: Array<{type: string, prop: string}>}> {
-  return enqueue(() => runViteBuild(fileContent, tenanthost, existingComponents));
+  return enqueue(() => runViteBuild(fileContent, tenanthost, existingComponents, existingScripts, identifier));
 }
 
 /**
@@ -442,7 +483,8 @@ export async function compileVueComponent(
 export async function compileVueComponentsBulk(
   components: Array<{ fileContent: string, identifier: string }>,
   tenanthost: string = 'http://localhost',
-  existingComponents: string[] = []
+  existingComponents: string[] = [],
+  existingScripts: string[] = []
 ): Promise<Array<{
   identifier: string,
   success: boolean,
@@ -458,7 +500,7 @@ export async function compileVueComponentsBulk(
 
   for (const component of components) {
     try {
-      const result = await enqueue(() => runViteBuild(component.fileContent, tenanthost, existingComponents));
+      const result = await enqueue(() => runViteBuild(component.fileContent, tenanthost, existingComponents, existingScripts, component.identifier));
       results.push({ identifier: component.identifier, success: true, result });
     } catch (err: any) {
       const stderr = err?.stderr || err?.message || '';

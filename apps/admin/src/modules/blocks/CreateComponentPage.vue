@@ -1,10 +1,11 @@
 <template>
-  <ComponentWorkspace ref="workspace" :saving="saving" :compile-error="compileError" @submitted="submit" />
+  <ComponentWorkspace ref="workspace" :initial-folder="initialFolder" :saving="saving" :compile-error="compileError" @submitted="submit" />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { normalizeIdentifier } from './services/library';
 import { ElMessage } from 'element-plus';
 import ComponentWorkspace from './components/ComponentWorkspace.vue';
 import componentsService from '@/services/apis/components-service';
@@ -12,7 +13,10 @@ import { useComponentSave } from './compositions/component-save';
 import { useComponentsList } from './store/components-list';
 import { useStaticComponentsStore } from '@/modules/no-code/store/static-components';
 
+const route = useRoute();
 const router = useRouter();
+// the folder the "New component" button was pressed in
+const initialFolder = normalizeIdentifier(String(route.query.folder || ''));
 const workspace = ref<InstanceType<typeof ComponentWorkspace>>();
 const componentsStore = useComponentsList();
 const staticComponents = useStaticComponentsStore();

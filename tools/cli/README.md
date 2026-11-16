@@ -65,6 +65,8 @@ qelos pull <type> <path>
 qelos pull components ./my-components
 ```
 
+The `components` folder holds both Vue components (`.vue`) and plain scripts (`.js`/`.ts`). Scripts are pulled as `.ts` files (the original extension isn't stored), with nested folders preserved.
+
 This command will:
 1. Connect to your Qelos instance using the configured credentials
 2. Fetch all components from the instance
@@ -108,6 +110,16 @@ qelos push <type> <path>
 ```bash
 qelos push components ./my-components
 ```
+
+Every `.vue`, `.js` and `.ts` file under the directory (recursively) is pushed. Scripts are compiled, minified and served by Qelos, and a file's identifier is its path without the extension (`utils/demo.ts` → `utils/demo`). Components and other scripts can import them relatively, and scripts are always processed before components:
+
+```vue
+<script setup lang="ts">
+import { formatPrice } from './utils/demo.ts'
+</script>
+```
+
+Scripts may only import other scripts (relative paths) and the host libraries `vue`, `vue-router`, `element-plus`, `vue-i18n` and `@sdk`. Pushing scripts requires a recent `@qelos/sdk`; with an older one only the `.vue` files are pushed.
 
 This command will:
 1. Connect to your Qelos instance using the configured credentials

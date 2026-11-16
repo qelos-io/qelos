@@ -16,6 +16,24 @@ function isSafeRelativeIdentifier(value) {
   return true;
 }
 
+const SCRIPT_EXT_REGEX = /\.(m?[jt]sx?)$/;
+const DECLARATION_REGEX = /\.d\.[mc]?ts$/;
+
+/** js/ts modules (not declaration files) that are published as scripts next to the components */
+export function isScriptFile(fileName) {
+  return SCRIPT_EXT_REGEX.test(fileName) && !DECLARATION_REGEX.test(fileName);
+}
+
+/** `.vue` components and js/ts scripts, the two kinds published from the components folder */
+export function isPublishableFile(fileName) {
+  return fileName.endsWith('.vue') || isScriptFile(fileName);
+}
+
+/** `utils/demo.ts` -> `utils/demo` (the server resolves `./utils/demo.ts` imports to this identifier) */
+export function identifierFromFile(relativePath) {
+  return normalizeRelativeIdentifier(relativePath).replace(/\.vue$/, '').replace(SCRIPT_EXT_REGEX, '');
+}
+
 function listVueFilesRecursively(rootDir, currentDir = rootDir, out = []) {
   const entries = fs.readdirSync(currentDir, { withFileTypes: true });
   for (const entry of entries) {
@@ -26,8 +44,7 @@ function listVueFilesRecursively(rootDir, currentDir = rootDir, out = []) {
       continue;
     }
     if (!entry.isFile()) continue;
-    if (!entry.name.endsWith('.vue')) continue;
-    if (entry.name === 'components.json') continue;
+    if (!isPublishableFile(entry.name)) continue;
     out.push(fullPath);
   }
   return out;
@@ -42,23 +59,23 @@ function listVueFilesRecursively(rootDir, currentDir = rootDir, out = []) {
  */
 export async function pushComponents(sdk, componentsPath, options = {}) {
   const { targetFile } = options;
-  const vueFilePaths = targetFile
+  const filePaths = targetFile
     ? [join(componentsPath, targetFile)]
     : listVueFilesRecursively(componentsPath);
-  const vueFiles = vueFilePaths
+  const files = filePaths
     .filter(filePath => fs.existsSync(filePath))
-    .filter(filePath => filePath.endsWith('.vue'));
+    .filter(filePath => isPublishableFile(filePath));
 
-  if (vueFiles.length === 0) {
+  if (files.length === 0) {
     if (targetFile) {
-      logger.warning(`File ${targetFile} is not a .vue component. Skipping.`);
+      logger.warning(`File ${targetFile} is not a .vue component or a .js/.ts script. Skipping.`);
     } else {
-      logger.warning(`No .vue files found in ${componentsPath}`);
+      logger.warning(`No .vue, .js or .ts files found in ${componentsPath}`);
     }
     return;
   }
 
-  logger.info(`Found ${vueFiles.length} component(s) to push`);
+  logger.info(`Found ${files.length} file(s) to push`);
   let componentsJson = {};
 
   try {
@@ -70,33 +87,69 @@ export async function pushComponents(sdk, componentsPath, options = {}) {
     logger.debug('No components.json found or invalid format');
   }
 
-  // Build the components payload
-  const componentsPayload = [];
-  for (const file of vueFiles) {
+  // Build the payload: .vue files are components, .js/.ts files are scripts
+  const payload = [];
+  for (const file of files) {
     const relativePath = normalizeRelativeIdentifier(path.relative(componentsPath, file));
+    const content = fs.readFileSync(file, 'utf-8');
+
+    if (isScriptFile(file)) {
+      const identifier = identifierFromFile(relativePath);
+      if (!isSafeRelativeIdentifier(identifier)) {
+        logger.error(`Skipping script with unsafe identifier: ${identifier}`);
+        continue;
+      }
+      payload.push({ type: 'script', identifier, content, description: componentsJson[identifier]?.description });
+      continue;
+    }
+
     const componentName = relativePath.split('/').pop().replace('.vue', '');
     const info = componentsJson[componentName] || {};
-    const content = fs.readFileSync(file, 'utf-8');
     const targetIdentifier = normalizeRelativeIdentifier(info.identifier || relativePath.replace('.vue', ''));
-    const targetDescription = info.description || 'Component description';
-
     if (!isSafeRelativeIdentifier(targetIdentifier)) {
       logger.error(`Skipping component with unsafe identifier: ${targetIdentifier}`);
       continue;
     }
-
-    componentsPayload.push({
+    payload.push({
+      type: 'component',
       identifier: targetIdentifier,
       componentName,
       content,
-      description: targetDescription,
+      description: info.description || 'Component description',
     });
   }
 
-  if (componentsPayload.length === 0) {
-    logger.warning('No valid components to push');
+  if (payload.length === 0) {
+    logger.warning('No valid files to push');
     return;
   }
+
+  const scriptsCount = payload.filter(item => item.type === 'script').length;
+
+  // Unified API: accepts components and scripts together, and processes scripts first so components can import them
+  if (sdk.scripts?.bulkCreateOrUpdate) {
+    logger.info(`Pushing ${payload.length} file(s) (${payload.length - scriptsCount} component(s), ${scriptsCount} script(s))...`);
+    const response = await sdk.scripts.bulkCreateOrUpdate(payload);
+    for (const result of response.results) {
+      if (result.success) {
+        logger.success(`Pushed: ${result.identifier}`);
+      } else {
+        logger.error(`Failed: ${result.identifier} - ${result.error}`);
+      }
+    }
+    logger.info(`Push complete: ${response.succeeded} succeeded, ${response.failed} failed out of ${response.total}`);
+    if (response.failed > 0) {
+      throw new Error(`Failed to push ${response.failed} file(s)`);
+    }
+    return;
+  }
+
+  // Older @qelos/sdk: only components are supported
+  if (scriptsCount > 0) {
+    logger.warning(`The installed @qelos/sdk does not support scripts. Skipping ${scriptsCount} .js/.ts file(s), please update @qelos/sdk.`);
+  }
+  const componentsPayload = payload.filter(item => item.type === 'component');
+  if (componentsPayload.length === 0) return;
 
   // Use bulk endpoint when pushing multiple components
   if (componentsPayload.length > 1 && sdk.components.bulkCreateOrUpdate) {
@@ -177,22 +230,28 @@ export async function pullComponents(sdk, targetPath) {
     logger.info(`Created directory: ${targetPath}`);
   }
 
-  const components = await sdk.components.getList();
-  
-  if (components.length === 0) {
+  // Unified API returns components and scripts; older SDKs only know components
+  const unified = Boolean(sdk.scripts?.getList);
+  const items = unified
+    ? await sdk.scripts.getList()
+    : (await sdk.components.getList()).map(component => ({ ...component, type: 'component' }));
+
+  if (items.length === 0) {
     logger.warning('No components found to pull');
     return;
   }
-  
-  logger.info(`Found ${components.length} component(s) to pull`);
 
-  const componentsInformation = await Promise.all(components.map(async (component) => {
-    const normalizedIdentifier = normalizeRelativeIdentifier(component.identifier);
-    const fileName = `${normalizedIdentifier}.vue`;
+  logger.info(`Found ${items.length} file(s) to pull`);
+
+  const information = await Promise.all(items.map(async (item) => {
+    const isScript = item.type === 'script';
+    const normalizedIdentifier = normalizeRelativeIdentifier(item.identifier);
+    // the original script extension isn't stored, and TS is a superset of JS
+    const fileName = `${normalizedIdentifier}${isScript ? '.ts' : '.vue'}`;
     const filePath = join(targetPath, fileName);
 
     if (!isSafeRelativeIdentifier(normalizedIdentifier)) {
-      logger.error(`Skipping pull for unsafe identifier: ${component.identifier}`);
+      logger.error(`Skipping pull for unsafe identifier: ${item.identifier}`);
       return null;
     }
 
@@ -201,26 +260,30 @@ export async function pullComponents(sdk, targetPath) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
 
-    const { content, description } = await sdk.components.getComponent(component._id);
-    
+    const { content, description } = unified
+      ? await sdk.scripts.getScript(item._id)
+      : await sdk.components.getComponent(item._id);
+
     fs.writeFileSync(filePath, content, 'utf-8');
-    logger.step(`Pulled: ${component.identifier}`);
+    logger.step(`Pulled: ${item.identifier}${isScript ? ' (script)' : ''}`);
 
     return {
-      _id: component._id,
-      componentName: component.componentName,
-      identifier: component.identifier,
+      _id: item._id,
+      isScript,
+      componentName: item.componentName,
+      identifier: item.identifier,
       description,
     };
   }));
 
-  const filteredComponentsInformation = componentsInformation.filter(Boolean);
+  const filtered = information.filter(Boolean);
 
+  // components.json is keyed by component name; scripts have no name, so they are keyed by identifier
   fs.writeFileSync(
     join(targetPath, 'components.json'),
     JSON.stringify(
-      filteredComponentsInformation.reduce((obj, current) => {
-        obj[current.componentName] = current;
+      filtered.reduce((obj, { isScript, ...current }) => {
+        obj[isScript ? current.identifier : current.componentName] = current;
         return obj;
       }, {}),
       null,
@@ -229,7 +292,7 @@ export async function pullComponents(sdk, targetPath) {
   );
 
   logger.info(`Saved components.json with metadata`);
-  logger.info(`Pulled ${filteredComponentsInformation.length} component(s)`);
+  logger.info(`Pulled ${filtered.length} file(s)`);
 }
 
 export { listVueFilesRecursively };

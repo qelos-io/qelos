@@ -23,7 +23,64 @@ export function toKebab(name: string) {
     .replace(/^-|-$/g, '');
 }
 
-export const IDENTIFIER_PATTERN = /^[a-zA-Z0-9-]+$/;
+/** An identifier is a path: `/`-separated segments of letters, numbers and hyphens (`products/product-card`). */
+export const IDENTIFIER_PATTERN = /^[a-zA-Z0-9-]+(\/[a-zA-Z0-9-]+)*$/;
+
+/** Cleans a typed or pasted identifier: no surrounding/duplicate slashes and no `.vue` extension. */
+export function normalizeIdentifier(value: string) {
+  return value
+    .trim()
+    .replace(/\\/g, '/')
+    .replace(/\/{2,}/g, '/')
+    .replace(/^\/+|\/+$/g, '')
+    .replace(/\.vue$/i, '');
+}
+
+/** `products/cards/card` → `products/cards` (empty string for a root-level identifier). */
+export function folderOf(identifier: string) {
+  const index = identifier.lastIndexOf('/');
+  return index === -1 ? '' : identifier.slice(0, index);
+}
+
+export interface FolderEntry {
+  name: string;
+  path: string;
+  /** every item below this folder, at any depth */
+  count: number;
+}
+
+/** What a folder contains: its direct sub-folders and the items that live right in it. */
+export function listFolder<T extends { identifier: string; componentName?: string }>(items: T[], folder = '') {
+  const prefix = folder ? `${folder}/` : '';
+  const folders = new Map<string, FolderEntry>();
+  const files: T[] = [];
+
+  for (const item of items) {
+    if (!item.identifier.startsWith(prefix)) continue;
+    const rest = item.identifier.slice(prefix.length);
+    const slash = rest.indexOf('/');
+    if (slash === -1) {
+      files.push(item);
+      continue;
+    }
+    const name = rest.slice(0, slash);
+    const entry = folders.get(name) || { name, path: prefix + name, count: 0 };
+    entry.count++;
+    folders.set(name, entry);
+  }
+
+  const byName = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' });
+  return {
+    folders: [...folders.values()].sort((a, b) => byName(a.name, b.name)),
+    files: files.sort((a, b) => byName(a.componentName || a.identifier, b.componentName || b.identifier)),
+  };
+}
+
+/** `a/b/c` → `[{a, a}, {b, a/b}, {c, a/b/c}]`, for a breadcrumb. */
+export function folderCrumbs(folder: string) {
+  const parts = folder.split('/').filter(Boolean);
+  return parts.map((name, index) => ({ name, path: parts.slice(0, index + 1).join('/') }));
+}
 
 export function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);

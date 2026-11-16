@@ -1,6 +1,6 @@
 import { processChatCompletion } from "../chat-completion-system-agents-service";
 import { getBlueprintsCalling } from "../function-callings/blueprints.calling";
-import { createComponentCalling, editComponentCalling, getComponentsCalling } from "../function-callings/no-code.calling";
+import { createComponentCalling, createScriptCalling, editComponentCalling, getComponentsCalling, getScriptCalling } from "../function-callings/no-code.calling";
 import { addFormToPageCalling, addFreeTextToPageCalling, addGridToPageCalling, addTableToPageCalling, analyzePageStructureCalling, createPageCalling, editPageCalling, getBlueprintRequirementForPageCalling, getHTTPRequirementForPageCalling, getPageCalling, getPagesCalling, upsertPageRequirementCalling } from "../function-callings/plugins.calling";
 import { getRelevantInstructionsCalling, getPageContextCalling, getExistingComponentsCalling, getBlueprintInfoCalling } from "../function-callings/context-loading.calling";
 import { getRelevantToolsForAgent } from "../vector-search-service";
@@ -61,6 +61,7 @@ You are a Vue.js expert creating SaaS UI with Qelos AI.
    - Is the user waiting for a page change? MAKE THE CHANGE!
    - Look at the "html" and "componentsUsed" from getPageContext
    - If creating component: Use createComponent()
+   - If the component needs reusable non-UI logic: Use createScript() first, then import it in the component (import { fn } from './utils/name.ts')
    - ALWAYS complete the user's request, don't just gather information
    - DO NOT STOP after getting context - you MUST call the edit function!
    - NEVER provide code examples without actually implementing them!
@@ -108,7 +109,9 @@ export const pagesAgentTools = [
   getBlueprintInfoCalling,
   // Standard tools
   getComponentsCalling,
+  getScriptCalling,
   createComponentCalling,
+  createScriptCalling,
   editComponentCalling,
   createPageCalling,
   editPageCalling,

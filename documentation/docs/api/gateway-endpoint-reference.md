@@ -14,7 +14,7 @@ This page collects the main **REST** routes grouped by domain, with **`curl`** e
 | Path prefix | Proxied to | Typical responsibility |
 |-------------|------------|-------------------------|
 | `/api/signin`, `/api/signup`, `/api/token`, `/api/me`, `/api/users`, `/api/logout`, `/api/invites`, `/api/workspaces`, `/api/auth`, `/api/roles` | Auth service | Accounts, sessions, workspaces (auth surface), roles |
-| `/api/blueprints`, `/api/components`, `/api/static` | No-code service | Blueprints and blueprint entities |
+| `/api/blueprints`, `/api/scripts`, `/api/components` (deprecated), `/api/static` | No-code service | Blueprints and blueprint entities, scripts and components (compiled code served from `/api/static`) |
 | `/api/ai` | AI service | Threads, chat completions, source integrations |
 | `/api/events`, `/api/plugins`, `/api/lambdas`, `/api/webhooks`, … | Plugins service | Events, plugins, lambdas (broader `/api` fallback on plugins when no earlier proxy matches) |
 | `/api/blocks`, `/api/configurations`, … | Content service | CMS-style configuration |
