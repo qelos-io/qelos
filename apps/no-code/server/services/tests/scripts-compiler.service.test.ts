@@ -55,6 +55,38 @@ describe('component script imports', () => {
     assert.ok(content.includes(`'./C.vue'`));
   });
 
+  it('resolves imports relative to the folder of a nested component', () => {
+    // products/cards/PriceTag.vue lives in "products/cards"
+    const src = `import {x} from '../utils/demo.ts'\nimport {y} from './helpers.ts'\nimport {z} from '../../outside.ts'`;
+    const known = ['products/utils/demo', 'products/cards/helpers', 'outside'];
+    const { content, scripts } = rewriteScriptImports(src, known, 'products/cards/PriceTag');
+    assert.deepStrictEqual(scripts.sort(), [...known].sort());
+    assert.ok(content.includes(`'qelos-script:products/utils/demo'`));
+    assert.ok(content.includes(`'qelos-script:products/cards/helpers'`));
+    assert.ok(content.includes(`'qelos-script:outside'`));
+  });
+
+  it('does not match a root-level script from a nested component by its root path', () => {
+    const { content, scripts } = rewriteScriptImports(`import {x} from './utils/demo.ts'`, ['utils/demo'], 'products/Card');
+    assert.deepStrictEqual(scripts, []);
+    assert.ok(content.includes(`'./utils/demo.ts'`));
+  });
+
+  it('compiles a nested component importing a script from a parent folder', async () => {
+    const result = await compileVueComponent(
+      `<template><div>{{ double(2) }}</div></template>
+<script setup lang="ts">
+import { double } from '../utils/demo.ts'
+</script>`,
+      'http://localhost',
+      [],
+      ['utils/demo'],
+      'products/Card',
+    );
+    const global = scriptGlobalName('utils/demo');
+    assert.ok(result.js.startsWith(`import * as ${global} from '/api/static/scripts/utils/demo.js';`), result.js.slice(0, 200));
+  });
+
   it('compiles a component that imports a script and loads it at runtime', async () => {
     const result = await compileVueComponent(
       `<template><div>{{ double(2) }}</div></template>

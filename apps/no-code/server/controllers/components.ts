@@ -59,7 +59,7 @@ export const createComponent = async (req, res) => {
     
      // Compile the Vue component with existing components list
     const existingScripts = await getScriptIdentifiers(req.headers.tenant);
-    ({ js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost, componentNames, existingScripts));
+    ({ js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost, componentNames, existingScripts, req.body.identifier));
   } catch (err: any | Error) {
     logger.log('failed to compile a component', err?.message);
     const sanitizedError = sanitizeCompilationError(err);
@@ -98,11 +98,13 @@ export const updateComponent = async (req, res) => {
     
     // If content is updated, recompile the component
     if (req.body.content) {
-      const existingComponent = await Component.findOne(componentQuery).select('content').lean().exec();
+      const existingComponent = await Component.findOne(componentQuery).select('content identifier').lean().exec();
       if (!existingComponent) {
         return res.status(404).json({message: 'component not found'}).end();
       }
-      if (req.body.content.trim() !== existingComponent.content.trim()) {
+      // a moved component resolves its relative script imports against a different folder, so it recompiles too
+      const identifierChanged = !!req.body.identifier && req.body.identifier !== existingComponent.identifier;
+      if (req.body.content.trim() !== existingComponent.content.trim() || identifierChanged) {
         $set.content = req.body.content;
         try {
           // Fetch existing component names from the database
@@ -113,7 +115,7 @@ export const updateComponent = async (req, res) => {
           const componentNames = existingComponents.map(c => c.componentName);
           
           const existingScripts = await getScriptIdentifiers(req.headers.tenant);
-          const { js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost, componentNames, existingScripts);
+          const { js, css, props } = await compileVueComponent(req.body.content, req.headers.tenanthost, componentNames, existingScripts, req.body.identifier || existingComponent.identifier);
           $set.compiledContent = { js, css };
           $set.requiredProps = props;
         } catch (compileErr: any) {
@@ -260,7 +262,7 @@ export async function upsertComponentsBulk(tenant: string, tenanthost: string, c
       const existing = existingDbComponents.find(
         e => e.identifier === comp.identifier || e.componentName === comp.componentName
       );
-      if (existing && comp.content.trim() === existing.content?.trim()) {
+      if (existing && comp.content.trim() === existing.content?.trim() && comp.identifier === existing.identifier) {
         skipped.push({ identifier: comp.identifier, existingDoc: existing });
       } else {
         toCompile.push({ fileContent: comp.content, identifier: comp.identifier });

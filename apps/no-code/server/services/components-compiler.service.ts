@@ -351,13 +351,15 @@ const SCRIPT_IMPORT_REGEX = /(\bfrom\s*|\bimport\s*)(['"])(\.{1,2}\/[^'"\n]+)\2/
  */
 export function rewriteScriptImports(
   fileContent: string,
-  existingScripts: string[]
+  existingScripts: string[],
+  fromIdentifier = ''
 ): { content: string, scripts: string[] } {
   if (!existingScripts.length) return { content: fileContent, scripts: [] };
   const known = new Set(existingScripts);
   const used = new Set<string>();
   const content = fileContent.replace(SCRIPT_IMPORT_REGEX, (match, prefix, quote, specifier) => {
-    const identifier = resolveScriptSpecifier(specifier);
+    // relative to the importing component's own folder, like in a local project
+    const identifier = resolveScriptSpecifier(specifier, fromIdentifier);
     if (!identifier || !known.has(identifier)) return match;
     used.add(identifier);
     return `${prefix}${quote}${SCRIPT_EXTERNAL_PREFIX}${identifier}${quote}`;
@@ -372,12 +374,13 @@ async function runViteBuild(
   fileContent: string,
   tenanthost: string,
   existingComponents: string[],
-  existingScripts: string[] = []
+  existingScripts: string[] = [],
+  identifier = ''
 ): Promise<{js: string, css: string, props: Array<{type: string, prop: string}>}> {
   const hash = 'Comp' + crypto.createHash('sha256').update(fileContent).digest('hex').substring(0, 8);
 
   const { cleanedContent: contentWithoutComponents, removedImports } = extractAndRemoveLocalImports(fileContent, existingComponents);
-  const { content: cleanedContent, scripts } = rewriteScriptImports(contentWithoutComponents, existingScripts);
+  const { content: cleanedContent, scripts } = rewriteScriptImports(contentWithoutComponents, existingScripts, identifier);
   const props = extractPropsFromVueComponent(cleanedContent);
 
   if (removedImports.length > 0) {
@@ -466,9 +469,10 @@ export async function compileVueComponent(
   fileContent: string,
   tenanthost: string = 'http://localhost',
   existingComponents: string[] = [],
-  existingScripts: string[] = []
+  existingScripts: string[] = [],
+  identifier = ''
 ): Promise<{js: string, css: string, props: Array<{type: string, prop: string}>}> {
-  return enqueue(() => runViteBuild(fileContent, tenanthost, existingComponents, existingScripts));
+  return enqueue(() => runViteBuild(fileContent, tenanthost, existingComponents, existingScripts, identifier));
 }
 
 /**
@@ -496,7 +500,7 @@ export async function compileVueComponentsBulk(
 
   for (const component of components) {
     try {
-      const result = await enqueue(() => runViteBuild(component.fileContent, tenanthost, existingComponents, existingScripts));
+      const result = await enqueue(() => runViteBuild(component.fileContent, tenanthost, existingComponents, existingScripts, component.identifier));
       results.push({ identifier: component.identifier, success: true, result });
     } catch (err: any) {
       const stderr = err?.stderr || err?.message || '';
