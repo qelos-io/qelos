@@ -64,7 +64,7 @@ import { formatPrice } from '../utils/format-price.ts';
 
 ### What a script can import
 
-- other scripts, with a **relative path** (`./`, `../`)
+- other scripts, with a **relative path** (`./`, `../`) or from the scripts root with the **`@/` alias** (`@/utils/format-price.ts`, also `/utils/format-price.ts`). The alias works the same from a file in any folder. A `./` path that matches nothing next to the file is also tried from the root.
 - the libraries Qelos already provides to the page: `vue`, `vue-router`, `element-plus`, `vue-i18n` and `@sdk`
 
 Any other package (for example `lodash`) is **not** available. Importing one, or a path that goes above the root, fails with a compile error that tells you which import is the problem.

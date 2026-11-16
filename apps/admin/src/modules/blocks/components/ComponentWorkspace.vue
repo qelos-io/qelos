@@ -239,7 +239,7 @@ async function copy(text: string) {
         <div v-show="panel === 'usage'" class="side-body">
           <template v-if="isScript">
             <h3>{{ $t('Use this script') }}</h3>
-            <p class="hint">{{ $t('Import it from a component with this path. Inside another script, the path is relative to the folder of that script.') }}</p>
+            <p class="hint">{{ $t('The @/ prefix means the scripts root, so this import works from a file in any folder. A relative path like ./name.ts also works, and is resolved from the folder of the importing file.') }}</p>
             <div class="snippet">
               <pre dir="ltr">{{ importLine }}</pre>
               <el-button size="small" @click="copy(importLine)"><el-icon><CopyDocument /></el-icon>{{ $t('Copy') }}</el-button>

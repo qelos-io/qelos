@@ -32,10 +32,27 @@ export function isValidScriptIdentifier(identifier: string): boolean {
  * @returns the identifier, or null if the specifier escapes the root
  */
 export function resolveScriptSpecifier(specifier: string, fromIdentifier = ''): string | null {
-  const resolved = path.posix.join(path.posix.dirname(fromIdentifier || 'x'), specifier);
+  // `@/utils/demo.ts` and `/utils/demo.ts` are root aliases: they ignore the importing file's folder
+  const fromRoot = /^(@\/|\/)/.test(specifier);
+  const resolved = fromRoot
+    ? path.posix.normalize(specifier.replace(/^(@\/|\/)+/, ''))
+    : path.posix.join(path.posix.dirname(fromIdentifier || 'x'), specifier);
   if (resolved.startsWith('..') || resolved.startsWith('/')) return null;
   const identifier = resolved.replace(SCRIPT_EXT_REGEX, '');
   return isValidScriptIdentifier(identifier) ? identifier : null;
+}
+
+/** True for specifiers that point at a script: relative (`./x`, `../x`) or from the root (`@/x`, `/x`). */
+export const isScriptSpecifier = (specifier: string) => /^(\.{1,2}\/|@\/|\/)/.test(specifier);
+
+/**
+ * Identifiers a specifier may mean, best first. A `./x` import is relative to the importing file's folder, and falls back
+ * to the root (`./products/x` from inside `products/` still finds `products/x`).
+ */
+export function scriptSpecifierCandidates(specifier: string, fromIdentifier = ''): string[] {
+  const candidates = [resolveScriptSpecifier(specifier, fromIdentifier)];
+  if (specifier.startsWith('./')) candidates.push(resolveScriptSpecifier(`@/${specifier.slice(2)}`));
+  return [...new Set(candidates.filter((id): id is string => !!id))];
 }
 
 export function scriptUrl(identifier: string): string {
@@ -70,7 +87,7 @@ const scriptsPlugin = (identifier: string, content: string) => {
     enforce: 'pre' as const,
     resolveId(source) {
       if (source === entryId) return entryId;
-      if (source.startsWith('.')) {
+      if (isScriptSpecifier(source)) {
         const target = resolveScriptSpecifier(source, identifier);
         if (!target) throw new Error(`Invalid import "${source}"`);
         return { id: scriptUrl(target), external: true };

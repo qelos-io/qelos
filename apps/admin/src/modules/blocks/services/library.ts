@@ -40,9 +40,9 @@ export function normalizeScriptIdentifier(value: string) {
     .replace(/\.(m?[jt]sx?)$/i, '');
 }
 
-/** The relative import that pulls a script into a component or another script. */
+/** The root-alias import (`@/` = the scripts root) that works from a component or script in any folder. */
 export function scriptImportSnippet(identifier: string) {
-  return `import {} from './${identifier || 'utils/my-script'}.ts';`;
+  return `import {} from '@/${identifier || 'utils/my-script'}.ts';`;
 }
 
 /** Cleans a typed or pasted identifier: no surrounding/duplicate slashes and no `.vue` extension. */

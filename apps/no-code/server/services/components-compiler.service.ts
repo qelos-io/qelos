@@ -6,7 +6,7 @@ import fs from 'node:fs/promises';
 import logger from './logger';
 import {
   SCRIPT_EXTERNAL_PREFIX,
-  resolveScriptSpecifier,
+  scriptSpecifierCandidates,
   scriptGlobalName,
   scriptUrl,
 } from './scripts-compiler.service';
@@ -342,7 +342,7 @@ function extractPropsFromRegularScript(scriptContent: string): Array<{type: stri
 }
 
 
-const SCRIPT_IMPORT_REGEX = /(\bfrom\s*|\bimport\s*)(['"])(\.{1,2}\/[^'"\n]+)\2/g;
+const SCRIPT_IMPORT_REGEX = /(\bfrom\s*|\bimport\s*)(['"])((?:\.{1,2}\/|@\/|\/)[^'"\n]+)\2/g;
 
 /**
  * Points relative imports of published scripts (`import { x } from './utils/demo.ts'`) at an external placeholder.
@@ -359,8 +359,8 @@ export function rewriteScriptImports(
   const used = new Set<string>();
   const content = fileContent.replace(SCRIPT_IMPORT_REGEX, (match, prefix, quote, specifier) => {
     // relative to the importing component's own folder, like in a local project
-    const identifier = resolveScriptSpecifier(specifier, fromIdentifier);
-    if (!identifier || !known.has(identifier)) return match;
+    const identifier = scriptSpecifierCandidates(specifier, fromIdentifier).find((id) => known.has(id));
+    if (!identifier) return match;
     used.add(identifier);
     return `${prefix}${quote}${SCRIPT_EXTERNAL_PREFIX}${identifier}${quote}`;
   });

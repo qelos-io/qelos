@@ -43,9 +43,25 @@ describe('scripts compiler', () => {
     assert.equal(resolveScriptSpecifier('../a', 'demo'), null);
     assert.equal(normalizeScriptIdentifier('./utils/demo.ts'), 'utils/demo');
   });
+
+  it('treats @/ and / as root aliases', () => {
+    assert.equal(resolveScriptSpecifier('@/utils/demo.ts', 'products/card'), 'utils/demo');
+    assert.equal(resolveScriptSpecifier('/utils/demo', 'products/card'), 'utils/demo');
+    assert.equal(resolveScriptSpecifier('@/../x', 'a'), null);
+  });
 });
 
 describe('component script imports', () => {
+  it('resolves relative to the folder, falls back to the root, and supports root aliases', () => {
+    const scripts = ['products/test-hello'];
+    const from = 'products/page';
+    for (const specifier of ['./test-hello.ts', './products/test-hello.ts', '@/products/test-hello.ts', '/products/test-hello.ts']) {
+      const { content, scripts: used } = rewriteScriptImports(`import { hello } from '${specifier}';`, scripts, from);
+      assert.deepEqual(used, ['products/test-hello'], specifier);
+      assert.ok(content.includes(`'qelos-script:products/test-hello'`), specifier);
+    }
+  });
+
   it('only rewrites imports of existing scripts', () => {
     const src = `import {x} from './utils/demo.ts'\nimport y from './other.ts'\nimport C from './C.vue'`;
     const { content, scripts } = rewriteScriptImports(src, ['utils/demo']);
@@ -66,10 +82,14 @@ describe('component script imports', () => {
     assert.ok(content.includes(`'qelos-script:outside'`));
   });
 
-  it('does not match a root-level script from a nested component by its root path', () => {
-    const { content, scripts } = rewriteScriptImports(`import {x} from './utils/demo.ts'`, ['utils/demo'], 'products/Card');
-    assert.deepStrictEqual(scripts, []);
-    assert.ok(content.includes(`'./utils/demo.ts'`));
+  it('prefers the script next to the component over the root one', () => {
+    const { scripts } = rewriteScriptImports(`import {x} from './utils/demo.ts'`, ['utils/demo', 'products/utils/demo'], 'products/Card');
+    assert.deepStrictEqual(scripts, ['products/utils/demo']);
+  });
+
+  it('falls back to the root when nothing matches next to the component', () => {
+    const { scripts } = rewriteScriptImports(`import {x} from './utils/demo.ts'`, ['utils/demo'], 'products/Card');
+    assert.deepStrictEqual(scripts, ['utils/demo']);
   });
 
   it('compiles a nested component importing a script from a parent folder', async () => {

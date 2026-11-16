@@ -2270,7 +2270,7 @@
   "{count} plugins": "{count} תוספים",
   "New script": "New script",
   "Use this script": "Use this script",
-  "Import it from a component with this path. Inside another script, the path is relative to the folder of that script.": "Import it from a component with this path. Inside another script, the path is relative to that script's own folder.",
+  "The @/ prefix means the scripts root, so this import works from a file in any folder. A relative path like ./name.ts also works, and is resolved from the folder of the importing file.": "Import it from a component with this path. Inside another script, the path is relative to that script's own folder.",
   "Save the script first: it can only be imported after it compiled successfully.": "Save the script first: it can only be imported after it compiled successfully.",
   "Import .js/.ts": "Import .js/.ts",
   "Please choose a .js or .ts file": "Please choose a .js or .ts file",
