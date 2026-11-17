@@ -166,7 +166,8 @@ wrapped[0].metadata.price;   // ✅
 | `{ 'field[$in]': ['a', 'b'] }` | In set |
 | `{ $q: 'term', $qProps: 'name,desc' }` | Search across listed props |
 | `{ $sort: '-created' }` | Sort (`-` prefix = descending) |
-| `{ $limit: 20, $skip: 20 }` | Pagination |
+| `{ $limit: 20, $skip: 20 }` | Pagination by offset |
+| `{ $limit: 20, $page: 2 }` | Pagination by 1-based page. If `$skip` is also sent, `$skip` takes precedence |
 | `{ $populate: true }` | Resolve referenced relations |
 | `{ $outerPopulate: 'key:blueprint:scope' }` | Populate child entities from another blueprint |
 | `{ $flat: false }` | Use wrapped response shape |

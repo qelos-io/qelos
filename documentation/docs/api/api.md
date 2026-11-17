@@ -68,6 +68,7 @@ Many list endpoints support common query parameters:
 |---|---|---|
 | `$limit` | `number` | Maximum number of results to return |
 | `$skip` | `number` | Number of results to skip (for pagination) |
+| `$page` | `number` | 1-based page number (used with `$limit`, default limit applies if omitted). Alternative to `$skip`. If both are sent, `$skip` takes precedence and `$page` is ignored |
 | `$sort` | `string` | Sort field (prefix with `-` for descending) |
 | `$flat` | `boolean` | Return flat entity structure. **Default `true`** for blueprint entity endpoints; pass `$flat=false` (or `0`) to receive the wrapped shape with metadata nested under `metadata`. |
 | `$populate` | `boolean` | Populate related references |

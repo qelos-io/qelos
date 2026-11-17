@@ -80,6 +80,7 @@ GET /api/blueprints/{blueprintKey}/charts/{chartType}
 | `x` | `string` | Yes | The metadata key to aggregate |
 | `$limit` | `number` | No | Limit the number of entities considered |
 | `$skip` | `number` | No | Skip entities |
+| `$page` | `number` | No | 1-based page number (alternative to `$skip`; if both are sent, `$skip` takes precedence) |
 
 Additional filter parameters are supported (same as [entity listing](/api/blueprint-entities#list-entities)).
 

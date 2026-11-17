@@ -49,7 +49,7 @@ Base path: `/api/blueprints/:blueprintKey/entities` (no-code service). Responses
 
 **Headers:** `Authorization` or session cookie or `x-api-key`; optional `Accept-Version: v1` to pin flat responses.
 
-**Query:** `$limit`, `$skip`, `$sort`, `$flat`, `$populate`, `$q`, filters — see [Blueprint Entities API](/api/blueprint-entities).
+**Query:** `$limit`, `$skip`, `$page`, `$sort`, `$flat`, `$populate`, `$q`, filters — see [Blueprint Entities API](/api/blueprint-entities).
 
 **Response:** `200` — JSON array of entities.
 

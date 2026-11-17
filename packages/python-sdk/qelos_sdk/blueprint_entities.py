@@ -43,6 +43,10 @@ class QlBlueprintEntitiesQuery:
         self._options["$skip"] = value
         return self
 
+    def page(self, value: int) -> "QlBlueprintEntitiesQuery":
+        self._options["$page"] = value
+        return self
+
     def sort(self, value: str) -> "QlBlueprintEntitiesQuery":
         self._options["$sort"] = value
         return self
@@ -120,7 +124,7 @@ class QlBlueprintEntities(BaseSDK):
     ) -> List[Dict[str, Any]]:
         """List entities with optional query filters.
 
-        Supported query filters: ``$populate``, ``$sort``, ``$limit``, ``$page``, ``$flat``,
+        Supported query filters: ``$populate``, ``$sort``, ``$limit``, ``$page``, ``$skip``, ``$flat``,
         and any blueprint-specific property filters. Responses default to the flat shape;
         pass ``$flat=False`` to receive the wrapped shape.
         """

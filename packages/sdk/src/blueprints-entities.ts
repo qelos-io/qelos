@@ -45,6 +45,11 @@ export class QlBlueprintEntitiesQuery<T = any> {
     return this;
   }
 
+  page(value: number): this {
+    this.#options.$page = value;
+    return this;
+  }
+
   sort(value: string): this {
     this.#options.$sort = value;
     return this;

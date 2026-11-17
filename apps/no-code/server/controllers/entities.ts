@@ -22,6 +22,7 @@ import { getUsersByIds, getWorkspaces } from '../services/users';
 import type { Request, Response } from 'express';
 import { hasGuestReachedLimit } from '../services/guest-request-limit';
 import { getBlueprint } from '../services/blueprints.service';
+import { getPagination } from '../services/entity-pagination.service';
 
 const PUBLIC_USER_DATA = ['firstName', 'lastName', 'profileImage'];
 const PUBLIC_WS_DATA = ['name', 'logo'];
@@ -103,7 +104,6 @@ async function hasReachedLimitations(req: Full<RequestWithUser>, blueprint: IBlu
 }
 
 const GLOBAL_PERMITTED_FIELDS = '-auditInfo';
-const DEFAULT_LIMIT = 1000;
 
 function getSortQuery(req: Request) {
   if (!req.query.$sort) {
@@ -240,6 +240,7 @@ export async function getAllBlueprintEntities(req, res) {
     delete query.$sort;
     delete query.$limit;
     delete query.$page;
+    delete query.$skip;
     delete query.$outerPopulate;
     delete query.$flat;
     delete query.$q;
@@ -248,8 +249,8 @@ export async function getAllBlueprintEntities(req, res) {
       delete query.bypassAdmin;
     }
     const sort = getSortQuery(req);
-    const limit = req.query.$limit && (parseInt(req.query.$limit) || DEFAULT_LIMIT);
-    const page = req.query.$page && (parseInt(req.query.$page) || 1);
+    // $skip (offset) and $page (1-based) are both supported; $skip wins when both are sent
+    const pagination = getPagination(req.query);
     const shouldFlat = shouldFlattenResponse(req);
     if (!shouldFlat) {
       markWrappedResponseDeprecated(req, res);
@@ -283,8 +284,8 @@ export async function getAllBlueprintEntities(req, res) {
     const entities = await getEntityModel(blueprint)
       .find(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS, {
         sort,
-        limit: limit || (req.query.$page ? DEFAULT_LIMIT : undefined),
-        skip: req.query.$page ? (page - 1) * (limit || DEFAULT_LIMIT) : undefined
+        limit: pagination.limit,
+        skip: pagination.skip
       })
       .lean()
       .exec()
