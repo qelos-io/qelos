@@ -157,7 +157,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "test": "node --import tsx --test **/**/*.test.ts",
+    "test": "node --import tsx --test \"test/**/*.test.ts\" \"src/**/*.test.ts\"",
     "type-check": "tsc --noEmit",
     "build": "npm run type-check && node scripts/build.mjs",
     "pre-build": "pnpm run type-check && node scripts/build.mjs"
