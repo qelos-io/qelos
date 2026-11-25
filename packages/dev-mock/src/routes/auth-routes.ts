@@ -219,12 +219,26 @@ export const authRoutes: RouteModule = (router, state) => {
       return jsonResponse({ code: 'QELOS_MOCK_NOT_IMPLEMENTED', message: `unknown provider "${params.provider}"` }, 404);
     }
     const current = authenticate(request, state);
-    const user = current?.user || state.users.list()[0];
-    if (!user) return jsonResponse({ message: 'no mock users to sign in as' }, 404);
+    const personaRef = url.searchParams.get('persona');
+    const user = current?.user || (personaRef ? findUserByRef(state, personaRef) : undefined);
+    if (!user) {
+      return jsonResponse(
+        { message: 'social login requires an explicit persona (header, cookie or ?persona=)' },
+        personaRef ? 404 : 401,
+      );
+    }
     const workspace = current?.workspace || pickWorkspace(state, user);
     const access = issueToken(state, user, 'access', workspace);
     const refresh = issueToken(state, user, 'refresh', workspace, access.session.family);
-    const target = new URL(url.searchParams.get('returnUrl') || '/', url);
+    let target: URL;
+    try {
+      target = new URL(url.searchParams.get('returnUrl') || '/', url);
+    } catch {
+      return jsonResponse({ message: 'invalid returnUrl' }, 400);
+    }
+    if (target.origin !== url.origin) {
+      return jsonResponse({ message: 'returnUrl must be a relative path or same-origin' }, 400);
+    }
     target.searchParams.set('rt', refresh.token);
     const passState = url.searchParams.get('state');
     if (passState) target.searchParams.set('state', passState);

@@ -276,9 +276,11 @@ export function workspaceRoutes(router: Router, state: MockState) {
         404,
       );
     }
+    const invite = ws.invites.find((i: Doc) => lower(i.email) === email);
     touch(ws, { invites: ws.invites.filter((i: Doc) => lower(i.email) !== email) });
     if (kind === 'accept' && !findMember(ws, auth.user._id)) {
-      addMember(state, state.workspaces.get(ws._id)!, auth.user._id, ['member', 'user']);
+      const roles = invite?.roles?.length ? invite.roles : ['member'];
+      addMember(state, state.workspaces.get(ws._id)!, auth.user._id, roles);
     }
     return { success: true };
   });

@@ -159,7 +159,9 @@ test('cookie refresh and social callback exchange', async () => {
   assert.notEqual(refreshed.payload.cookieToken, token);
   await assert.rejects(() => sdk.authentication.refreshCookieToken(token), /failed to refresh cookie token/);
 
-  const login = await mock.fetch('/api/auth/github?returnUrl=/done');
+  assert.equal((await mock.fetch('/api/auth/github?returnUrl=/done')).status, 401);
+  assert.equal((await mock.fetch('/api/auth/github?persona=c2@example.com&returnUrl=https://evil.example')).status, 400);
+  const login = await mock.fetch('/api/auth/github?persona=c2@example.com&returnUrl=/done');
   assert.equal(login.status, 302);
   const location = new URL(login.headers.get('location')!);
   assert.equal(location.pathname, '/done');

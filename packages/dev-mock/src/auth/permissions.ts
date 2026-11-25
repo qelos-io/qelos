@@ -17,9 +17,12 @@ export function permissionsForRoles(state: MockState, roles: string[]): string[]
   return [...result].sort();
 }
 
-/** Global user roles plus the roles held in the active workspace. */
+/**
+ * Global user roles only. Workspace roles (e.g. the `admin` every workspace creator gets) never
+ * grant tenant-wide permissions; they are matched through `workspaceRoleBased` descriptors.
+ */
 export function rolesOf(auth: AuthContext): string[] {
-  return [...new Set([...(auth.user.roles || []), ...(auth.workspace?.roles || [])])];
+  return [...new Set<string>(auth.user.roles || [])];
 }
 
 /** Equivalent of `sdk.permissions.getUserPermissions()`, computed from roles. */
