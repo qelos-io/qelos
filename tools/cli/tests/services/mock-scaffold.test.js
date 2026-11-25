@@ -88,7 +88,8 @@ describe('qelos mock scaffold', () => {
     fs.mkdirSync(path.join(pkgDir, 'dist', 'cli'), { recursive: true });
     fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: '@qelos/testing', bin: { 'qelos-testing': './dist/cli/bin.js' } }));
     fs.writeFileSync(path.join(pkgDir, 'dist', 'cli', 'bin.js'), '');
-    assert.strictEqual(resolveTestingBin(root), path.join(pkgDir, 'dist', 'cli', 'bin.js'));
+    // require.resolve returns real paths; os.tmpdir() is a symlink on macOS (/var -> /private/var)
+    assert.strictEqual(resolveTestingBin(root), fs.realpathSync(path.join(pkgDir, 'dist', 'cli', 'bin.js')));
   });
 
   it('the mock command is registered with init and serve subcommands', () => {
