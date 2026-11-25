@@ -1,6 +1,7 @@
 import type { FastifyRequest } from 'fastify';
 import QelosSDK from '@qelos/sdk';
 import type { QelosSDKOptions, FetchLike } from '@qelos/sdk/types';
+import { getQelosMock, MOCK_APP_URL } from './mock';
 import type { QelosFastifyConfig } from './types';
 
 export interface CreateSdkParams {
@@ -16,6 +17,12 @@ export function createRequestSdk({ config, request }: CreateSdkParams): QelosSDK
     fetch: globalThis.fetch as unknown as FetchLike,
     ...baseOptions,
   };
+
+  const mock = getQelosMock(config);
+  if (mock.active) {
+    options.appUrl = MOCK_APP_URL;
+    options.fetch = mock.fetch as unknown as FetchLike;
+  }
 
   if (config.apiToken) {
     options.apiToken = config.apiToken;

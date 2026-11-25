@@ -5,6 +5,7 @@ import { rewriteSetCookieDomain } from './cookies';
 import { applyQelosForwardHeaders } from './forward-headers';
 import { getDefaultQelosConfig } from './env-config';
 import { fetchMeIdentity } from './me-client';
+import { getQelosMock, MOCK_APP_URL } from './mock';
 import { resolveQelosProxyTarget } from './proxy-target';
 import { createRequestSdk } from './sdk-factory';
 import type { QelosNextConfig } from './types';
@@ -78,7 +79,8 @@ export function createQelosMiddleware(
 
     const sdk = createRequestSdk({ config, getHeaders });
 
-    const base = resolveQelosProxyTarget(config);
+    const mock = getQelosMock(config);
+    const base = mock.active ? MOCK_APP_URL : resolveQelosProxyTarget(config);
     if (!base && !config.apiToken) {
       if (config.requireAuth) {
         return unauthorized();
@@ -98,6 +100,7 @@ export function createQelosMiddleware(
         base,
         cookie: h.cookie,
         authorization: h.authorization,
+        fetch: mock.active ? mock.fetch : undefined,
       });
       user = meUser;
       setCookieValues = response.headers.getSetCookie?.() ?? [];

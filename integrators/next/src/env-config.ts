@@ -8,7 +8,9 @@ import type { QelosNextConfig } from './types';
  *
  * Recognized variables:
  *
- * - `QELOS_APP_URL` (required) — Qelos backend base URL.
+ * - `QELOS_APP_URL` (required unless `QELOS_MOCK` is set) — Qelos backend base URL.
+ * - `QELOS_MOCK` — `1`/`true`/folder path: serve the local `@qelos/dev-mock`
+ *   instead of a Qelos tenant (ignored when `NODE_ENV=production`).
  * - `QELOS_API_TOKEN` — service-to-service token (skips cookie identity).
  * - `QELOS_REQUIRE_AUTH` — `"true"` to reject anonymous requests.
  * - `QELOS_SKIP_PATHS` — comma-separated path prefixes to bypass.
@@ -17,14 +19,19 @@ import type { QelosNextConfig } from './types';
  */
 export function loadQelosConfigFromEnv(env: NodeJS.ProcessEnv = process.env): QelosNextConfig {
   const appUrl = env.QELOS_APP_URL;
-  if (!appUrl) {
+  const mockRaw = env.QELOS_MOCK?.trim().toLowerCase();
+  // The mock is ignored when NODE_ENV=production (see mock.ts), so it must not
+  // relax the QELOS_APP_URL requirement there.
+  const mockRequested =
+    !!mockRaw && !['0', 'false', 'no', 'off'].includes(mockRaw) && env.NODE_ENV !== 'production';
+  if (!appUrl && !mockRequested) {
     throw new Error(
       '@qelos/integrator-next: QELOS_APP_URL is required when using the default ' +
         'qelosMiddleware / getQelosContext() exports. Set it in your environment ' +
         'or call createQelosMiddleware({ config: ... }) explicitly.'
     );
   }
-  const config: QelosNextConfig = { appUrl };
+  const config: QelosNextConfig = { appUrl: appUrl ?? '' };
   if (env.QELOS_API_TOKEN) config.apiToken = env.QELOS_API_TOKEN;
   if (env.QELOS_REQUIRE_AUTH === 'true' || env.QELOS_REQUIRE_AUTH === '1') {
     config.requireAuth = true;

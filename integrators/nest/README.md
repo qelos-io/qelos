@@ -163,6 +163,37 @@ QelosModule.forRoot({
 });
 ```
 
+## Local development without a Qelos tenant
+
+Install the optional `@qelos/dev-mock` package and enable mock mode. The proxy middleware then answers `/api/**` from an in-process mock of the Qelos API (auth, workspaces, personas, entities, ...) instead of forwarding upstream, and `request.qelos` / the injected SDK talk to the same mock, with no network involved.
+
+```bash
+npm i -D @qelos/dev-mock
+```
+
+```ts
+QelosModule.forRoot({
+  appUrl: process.env.QELOS_URL ?? '',
+  // true | folder with `qelos pull` / `qelos dump` artifacts + state | MockQelosOptions
+  mock: process.env.NODE_ENV !== 'production' ? './.qelos-mock' : false,
+});
+```
+
+You can also enable it with the environment: `QELOS_MOCK=1`, `QELOS_MOCK=true`
+or `QELOS_MOCK=./path/to/folder` (folder with `qelos pull` / `qelos dump`
+artifacts and mock state). An explicit `mock` config wins over the env.
+
+- Inject `QELOS_MOCK` to get the mock controller: `await mock.get()` resolves to the `@qelos/dev-mock` instance (`state`, ...) for programmatic control in dev.
+
+- The mock is created lazily, once per config, and shared by the proxy and the
+  per-request SDK.
+- If mock mode is requested but `@qelos/dev-mock` is not installed, requests
+  fail with a clear error. Production bundles without it keep working because
+  the package is only imported dynamically when mock mode is on.
+- **Production guard:** with `NODE_ENV=production` mock mode is ignored (a
+  warning is logged) unless you pass `mock: { allowInProduction: true }`.
+  A banner is logged whenever the mock is active.
+
 ## Version support
 
 | Requirement | Supported range |

@@ -12,7 +12,8 @@ import {
   type Type,
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { QELOS_MODULE_OPTIONS, QELOS_SDK } from './constants';
+import { QELOS_MOCK, QELOS_MODULE_OPTIONS, QELOS_SDK } from './constants';
+import { getQelosMock } from './mock';
 import { normalizeModuleOptions } from './module-options';
 import { QelosMiddleware } from './middleware';
 import { QelosProxyMiddleware } from './proxy.middleware';
@@ -44,6 +45,12 @@ export class QelosModule implements NestModule {
     @Inject(QELOS_MODULE_OPTIONS)
     private readonly moduleOptions: QelosModuleOptions,
   ) {}
+
+  private static readonly mockProvider: Provider = {
+    provide: QELOS_MOCK,
+    useFactory: (options: QelosModuleOptions) => getQelosMock(options.config),
+    inject: [QELOS_MODULE_OPTIONS],
+  };
 
   private static readonly sdkProvider: Provider = {
     provide: QELOS_SDK,
@@ -78,12 +85,14 @@ export class QelosModule implements NestModule {
         QelosMiddleware,
         QelosProxyMiddleware,
         QelosModule.sdkProvider,
+        QelosModule.mockProvider,
       ],
       exports: [
         optionsProvider,
         QelosMiddleware,
         QelosProxyMiddleware,
         QELOS_SDK,
+        QELOS_MOCK,
       ],
       global: true,
     };
@@ -99,6 +108,7 @@ export class QelosModule implements NestModule {
       QelosMiddleware,
       QelosProxyMiddleware,
       QelosModule.sdkProvider,
+      QelosModule.mockProvider,
     ];
     return {
       module: QelosModule,
@@ -109,6 +119,7 @@ export class QelosModule implements NestModule {
         QelosMiddleware,
         QelosProxyMiddleware,
         QELOS_SDK,
+        QELOS_MOCK,
       ],
       global: true,
     };

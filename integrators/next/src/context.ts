@@ -4,6 +4,7 @@ import type { IWorkspace } from '@qelos/sdk/workspaces';
 import { rewriteSetCookieDomain } from './cookies';
 import { getDefaultQelosConfig } from './env-config';
 import { fetchMeIdentity } from './me-client';
+import { getQelosMock, MOCK_APP_URL } from './mock';
 import { resolveQelosProxyTarget } from './proxy-target';
 import { createRequestSdk } from './sdk-factory';
 import type { QelosNextConfig, QelosRequestContext } from './types';
@@ -141,7 +142,8 @@ export async function getQelosContext(
     sdk,
   };
 
-  const base = resolveQelosProxyTarget(config);
+  const mock = getQelosMock(config);
+  const base = mock.active ? MOCK_APP_URL : resolveQelosProxyTarget(config);
   if (!base && !config.apiToken) {
     return ctx;
   }
@@ -152,6 +154,7 @@ export async function getQelosContext(
       base,
       cookie: h.cookie,
       authorization: h.authorization,
+      fetch: mock.active ? mock.fetch : undefined,
     });
     const setCookieValues = response.headers.getSetCookie?.() ?? [];
     await forwardSetCookieThroughNextCookies(setCookieValues, h.host);

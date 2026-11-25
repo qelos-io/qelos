@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { rewriteSetCookieDomain } from '../cookies';
+import { getQelosMock } from '../mock';
 import { resolveQelosProxyTarget } from '../proxy-target';
 import type { QelosNextConfig } from '../types';
 
@@ -25,10 +26,44 @@ function buildUpstreamHeaders(req: NextRequest): Headers {
   return out;
 }
 
+async function serveFromMock(
+  req: NextRequest,
+  config: QelosNextConfig,
+): Promise<Response> {
+  try {
+    const instance = await getQelosMock(config).get();
+    if (!instance) throw new Error('Qelos mock is not active');
+    const originalHost = req.headers.get('host');
+    // NextRequest is a web Request: hand it to the mock as-is.
+    const response = await instance.handle(req);
+    const outHeaders = new Headers();
+    response.headers.forEach((value, key) => {
+      const lk = key.toLowerCase();
+      if (lk === 'set-cookie' || HOP_BY_HOP.has(lk)) return;
+      outHeaders.append(key, value);
+    });
+    for (const c of response.headers.getSetCookie?.() ?? []) {
+      outHeaders.append('set-cookie', rewriteSetCookieDomain(c, originalHost ?? undefined));
+    }
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: outHeaders,
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { code: 'QELOS_MOCK_ERROR', message: (err as Error).message },
+      { status: 500 },
+    );
+  }
+}
+
 async function proxyRequest(
   req: NextRequest,
   config: QelosNextConfig
 ): Promise<Response> {
+  if (getQelosMock(config).active) return serveFromMock(req, config);
+
   const base = resolveQelosProxyTarget(config);
   if (!base) {
     return NextResponse.json(
@@ -97,6 +132,8 @@ export function createQelosApiProxyHandlers(config: QelosNextConfig) {
 
   return {
     runtime: 'nodejs' as const,
+    /** Mock controller (`mock.active`, `await mock.get()`). */
+    mock: getQelosMock(config),
     GET: handle,
     POST: handle,
     PUT: handle,

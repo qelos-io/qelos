@@ -8,6 +8,7 @@ import {
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import { rewriteSetCookieDomain } from './cookies';
+import { getQelosMock, MOCK_APP_URL } from './mock';
 import { resolveQelosProxyTarget } from './proxy-target';
 import { createRequestSdk } from './sdk-factory';
 import type { QelosNuxtRuntimeConfig, QelosRequestContext } from './types';
@@ -40,6 +41,7 @@ function buildMeUrl(base: string): string {
 
 export function createQelosMiddleware(options: CreateMiddlewareOptions) {
   const { config, resolveWorkspace } = options;
+  const mock = getQelosMock(config);
 
   return defineEventHandler(async (event) => {
     if (shouldSkip(event, config)) {
@@ -55,8 +57,9 @@ export function createQelosMiddleware(options: CreateMiddlewareOptions) {
       sdk,
     };
     event.context.qelos = ctx;
+    if (mock.active) event.context.qelosMock = mock;
 
-    const base = resolveQelosProxyTarget(config);
+    const base = mock.active ? MOCK_APP_URL : resolveQelosProxyTarget(config);
     if (!base && !config.apiToken) {
       if (config.requireAuth) {
         throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
@@ -75,7 +78,7 @@ export function createQelosMiddleware(options: CreateMiddlewareOptions) {
 
       let response: Response | undefined;
       try {
-        response = await fetch(buildMeUrl(base), {
+        response = await (mock.active ? mock.fetch : fetch)(buildMeUrl(base), {
           method: 'GET',
           headers,
           redirect: 'manual',

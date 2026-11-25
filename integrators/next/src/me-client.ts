@@ -8,6 +8,8 @@ export interface FetchMeIdentityParams {
   base: string;
   cookie?: string;
   authorization?: string;
+  /** Custom fetch (e.g. the Qelos mock's). Defaults to `globalThis.fetch`. */
+  fetch?: typeof globalThis.fetch;
 }
 
 /**
@@ -23,7 +25,7 @@ export async function fetchMeIdentity(
 
   let response: Response;
   try {
-    response = await fetch(buildMeUrl(params.base), {
+    response = await (params.fetch ?? fetch)(buildMeUrl(params.base), {
       method: 'GET',
       headers,
       redirect: 'manual',

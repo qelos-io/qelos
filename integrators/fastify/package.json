@@ -48,11 +48,15 @@
     "node": ">=18"
   },
   "peerDependencies": {
-    "fastify": "^4.0.0 || ^5.0.0"
+    "fastify": "^4.0.0 || ^5.0.0",
+    "@qelos/dev-mock": "workspace:^"
   },
   "peerDependenciesMeta": {
     "fastify": {
       "optional": false
+    },
+    "@qelos/dev-mock": {
+      "optional": true
     }
   },
   "dependencies": {
@@ -64,6 +68,7 @@
     "fastify": "~4.15.0",
     "fastify-v5": "npm:fastify@^5.0.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "@qelos/dev-mock": "workspace:*"
   }
 }

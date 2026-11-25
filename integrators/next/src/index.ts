@@ -43,6 +43,7 @@ export {
 
 export { rewriteSetCookieDomain, rewriteSetCookieDomains } from './cookies';
 export { resolveQelosProxyTarget } from './proxy-target';
+export { getQelosMock, MOCK_APP_URL, type QelosMockController, type MockQelos } from './mock';
 export { createQelosApiProxyHandlers } from './runtime/api-proxy';
 
 export {
