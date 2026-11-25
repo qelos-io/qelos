@@ -44,7 +44,8 @@
   },
   "scripts": {
     "prepublishOnly": "npm run build",
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "test": "node --import tsx --test \"test/**/*.test.ts\""
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
@@ -52,6 +53,9 @@
     "access": "public"
   },
   "devDependencies": {
+    "@types/node": "^22.5.4",
+    "happy-dom": "^21.0.1",
+    "tsx": "^4.21.0",
     "typescript": "^4.9.5"
   },
   "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8"
