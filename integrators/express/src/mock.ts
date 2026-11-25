@@ -91,6 +91,18 @@ function createController(config: QelosExpressConfig): QelosMockController {
     }
   }
 
+  if (active) {
+    const prod = env.NODE_ENV === 'production';
+    console.warn(
+      '\n' +
+        '============================================================\n' +
+        '[@qelos/integrator-express] QELOS MOCK MODE IS ACTIVE\n' +
+        '  /api/** and req.qelos are served by a local mock, not a real Qelos tenant.\n' +
+        (prod ? '  WARNING: running in production (allowInProduction) - mock replaces real auth!\n' : '') +
+        '============================================================\n',
+    );
+  }
+
   let instance: Promise<MockQelos> | undefined;
   const create = (): Promise<MockQelos> =>
     (instance ??= loadDevMock()
@@ -110,22 +122,40 @@ function createController(config: QelosExpressConfig): QelosMockController {
   };
 }
 
-const controllers = new WeakMap<QelosExpressConfig, QelosMockController>();
+const controllers = new Map<string, QelosMockController>();
+const fnIds = new WeakMap<object, number>();
+let fnCounter = 0;
+
+function controllerKey(config: QelosExpressConfig): string {
+  return JSON.stringify(
+    {
+      mock: config.mock ?? null,
+      env: process.env.QELOS_MOCK ?? null,
+      node: process.env.NODE_ENV ?? null,
+    },
+    (_k, v) => {
+      if (typeof v !== 'function') return v;
+      if (!fnIds.has(v)) fnIds.set(v, ++fnCounter);
+      return `fn#${fnIds.get(v)}`;
+    },
+  );
+}
 
 /**
- * Returns the mock controller for a config (one per config object, so the
- * middleware, proxy and SDK built from the same config share one mock).
+ * Returns the mock controller for a config. Controllers are shared by the
+ * resolved mock options (not config object identity), so the middleware,
+ * proxy and SDK share one mock (and its state) whenever they are configured
+ * with structurally equal mock options.
  */
 export function getQelosMock(config: QelosExpressConfig): QelosMockController {
-  let controller = controllers.get(config);
+  const key = controllerKey(config);
+  let controller = controllers.get(key);
   if (!controller) {
     controller = createController(config);
-    controllers.set(config, controller);
+    controllers.set(key, controller);
   }
   return controller;
 }
 
-/** Make `derived` share the mock controller of `source`. */
-export function shareQelosMock(source: QelosExpressConfig, derived: QelosExpressConfig): void {
-  controllers.set(derived, getQelosMock(source));
-}
+/** Kept for compatibility: controllers are already shared by resolved options. */
+export function shareQelosMock(_source: QelosExpressConfig, _derived: QelosExpressConfig): void {}

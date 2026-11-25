@@ -35,22 +35,40 @@ function buildForwardedHeaders(
   return out;
 }
 
-async function readRequestBody(req: Request): Promise<Buffer | undefined> {
-  if (req.method === 'GET' || req.method === 'HEAD') return undefined;
+interface RequestBody {
+  body: Buffer | undefined;
+  /** Set when the body was re-serialized and the original content-type no longer applies. */
+  contentType?: string;
+}
+
+async function readRequestBody(req: Request): Promise<RequestBody> {
+  if (req.method === 'GET' || req.method === 'HEAD') return { body: undefined };
   if (req.readableEnded || (req as { _body?: boolean })._body === true) {
     // a body parser already consumed the stream
+    const raw = (req as { rawBody?: unknown }).rawBody;
+    if (Buffer.isBuffer(raw)) return { body: raw };
+    if (typeof raw === 'string') return { body: Buffer.from(raw) };
     const parsed = (req as { body?: unknown }).body;
-    if (parsed === undefined || parsed === null) return undefined;
-    if (Buffer.isBuffer(parsed)) return parsed;
-    if (typeof parsed === 'string') return Buffer.from(parsed);
-    if (typeof parsed === 'object' && Object.keys(parsed).length === 0) return undefined;
-    return Buffer.from(JSON.stringify(parsed));
+    if (parsed === undefined || parsed === null) return { body: undefined };
+    if (Buffer.isBuffer(parsed)) return { body: parsed };
+    if (typeof parsed === 'string') return { body: Buffer.from(parsed) };
+    if (typeof parsed === 'object' && Object.keys(parsed).length === 0) return { body: undefined };
+    const type = String(req.headers['content-type'] || '').toLowerCase();
+    if (type.includes('application/x-www-form-urlencoded')) {
+      const params = new URLSearchParams();
+      for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+        if (Array.isArray(v)) v.forEach((x) => params.append(k, String(x)));
+        else if (v !== undefined && v !== null) params.append(k, String(v));
+      }
+      return { body: Buffer.from(params.toString()), contentType: 'application/x-www-form-urlencoded' };
+    }
+    return { body: Buffer.from(JSON.stringify(parsed)), contentType: 'application/json' };
   }
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
-  return chunks.length ? Buffer.concat(chunks) : undefined;
+  return { body: chunks.length ? Buffer.concat(chunks) : undefined };
 }
 
 async function serveFromMock(
@@ -69,7 +87,8 @@ async function serveFromMock(
       if (Array.isArray(value)) value.forEach((v) => headers.append(name, v));
       else headers.set(name, value);
     }
-    const body = await readRequestBody(req);
+    const { body, contentType } = await readRequestBody(req);
+    if (contentType) headers.set('content-type', contentType);
     const url = `${req.protocol || 'http'}://${originalHost || 'localhost'}${req.originalUrl || req.url}`;
     const response = await instance.handle(
       new Request(url, { method: req.method, headers, body: body as unknown as BodyInit | undefined }),

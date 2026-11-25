@@ -104,8 +104,28 @@ export function registerMockTests(expressModule: typeof express, label: string):
       assert.equal(forced.mock.active, true);
     } finally {
       console.warn = warn;
-      process.env.NODE_ENV = prev;
+      if (prev === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = prev;
     }
+  });
+
+  test(`[${label}] logs a banner when mock mode is active`, () => {
+    const warn = console.warn;
+    const lines: string[] = [];
+    console.warn = (...a: unknown[]) => void lines.push(a.join(' '));
+    try {
+      createQelosIntegrator({ config: mockConfig() });
+    } finally {
+      console.warn = warn;
+    }
+    assert.ok(lines.some((l) => l.includes('QELOS MOCK MODE IS ACTIVE')));
+  });
+
+  test(`[${label}] structurally equal mock options share one mock`, async () => {
+    const mock = { artifactsDir: FIXTURE, logger: () => {} };
+    const a = createQelosIntegrator({ config: { appUrl: 'http://x.invalid', mock } });
+    const b = createQelosIntegrator({ config: { appUrl: 'http://x.invalid', mock: { ...mock } } });
+    assert.equal(await a.mock.get(), await b.mock.get());
   });
 
   test(`[${label}] without mock config the proxy still reports not configured`, async () => {
