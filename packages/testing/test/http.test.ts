@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
 import { testApp } from '../src/http/index.js';
 
 test('testApp serves a plain listener, keeps cookies and sends the persona header', async () => {
@@ -19,4 +20,19 @@ test('testApp serves a plain listener, keeps cookies and sends the persona heade
   } finally {
     await client.close();
   }
+});
+
+test('testApp closes a server it had to start, and leaves an already listening one alone', async () => {
+  const idle = createServer((_req, res) => res.end('ok'));
+  const client = await testApp(idle);
+  assert.equal((await client.fetch('/')).status, 200);
+  await client.close();
+  assert.equal(idle.listening, false);
+
+  const running = createServer((_req, res) => res.end('ok'));
+  await new Promise<void>((r) => running.listen(0, '127.0.0.1', () => r()));
+  const other = await testApp(running);
+  await other.close();
+  assert.equal(running.listening, true);
+  running.close();
 });
