@@ -57,7 +57,7 @@ non-Node apps or for pointing any integrator's `appUrl` at it. `qelos init` also
 [
   {
     "email": "admin@example.com",
-    "password": "admin-pass",
+    "password": "choose-a-throwaway-password",
     "name": "Ada Admin",
     "roles": ["admin"],
     "metadata": {},

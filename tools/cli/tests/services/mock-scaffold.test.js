@@ -44,7 +44,7 @@ describe('qelos mock scaffold', () => {
   it('mockHintFor prints the QELOS_MOCK hint per framework', async () => {
     const { mockHintFor } = await import(url('services', 'mock', 'scaffold.mjs'));
     assert.ok(mockHintFor('express')[0].startsWith('QELOS_MOCK=./qelos-mock'));
-    assert.ok(mockHintFor('next').join('\n').includes('QELOS_MOCK=./qelos-mock'));
+    assert.ok(mockHintFor('next').join('\n').includes('qelos mock serve ./qelos-mock'));
     assert.ok(mockHintFor('fastapi').join('\n').includes('QELOS_MOCK=./qelos-mock uvicorn'));
   });
 
@@ -52,6 +52,32 @@ describe('qelos mock scaffold', () => {
     const { mockInitController } = await import(url('controllers', 'mock.mjs'));
     const dir = path.join(tmp(), 'out');
     await mockInitController({ dir });
+    assert.ok(fs.existsSync(path.join(dir, 'personas.json')));
+  });
+
+  it('generates random per-persona passwords (no well-known defaults)', async () => {
+    const { scaffoldMockFolder } = await import(url('services', 'mock', 'scaffold.mjs'));
+    const { credentials } = scaffoldMockFolder(path.join(tmp(), 'm'));
+    const pw = credentials.map((c) => c.password);
+    assert.strictEqual(new Set(pw).size, 3);
+    assert.ok(pw.every((p) => p.length >= 12 && !/-pass$/.test(p)));
+  });
+
+  it('mock init --dump/--pull call the existing controllers with the folder', async () => {
+    const { mockInitController } = await import(url('controllers', 'mock.mjs'));
+    const dir = path.join(tmp(), 'wired');
+    const calls = [];
+    const rec = (name) => async (args) => calls.push([name, args]);
+    await mockInitController({
+      dir, dump: true, pull: true,
+      deps: { 'dump-users': rec('users'), 'dump-workspaces': rec('workspaces'), 'dump-blueprints': rec('blueprints'), pull: rec('pull') },
+    });
+    assert.deepStrictEqual(calls, [
+      ['users', { path: dir }],
+      ['workspaces', { path: dir }],
+      ['blueprints', { blueprints: 'all', path: dir }],
+      ['pull', { type: 'all', path: dir }],
+    ]);
     assert.ok(fs.existsSync(path.join(dir, 'personas.json')));
   });
 

@@ -24,7 +24,8 @@ export function resolveDevMockBin(cwd = process.cwd()) {
   return null;
 }
 
-export async function mockInitController({ dir = DEFAULT_MOCK_DIR, pull, dump, force }) {
+export async function mockInitController({ dir = DEFAULT_MOCK_DIR, pull, dump, force, deps = {} }) {
+  const load = async (name) => deps[name] || (await import(`./${name}.mjs`)).default;
   if (fs.existsSync(dir) && !fs.statSync(dir).isDirectory()) {
     logger.error(`Path exists but is not a directory: ${dir}`);
     process.exit(1);
@@ -32,23 +33,29 @@ export async function mockInitController({ dir = DEFAULT_MOCK_DIR, pull, dump, f
 
   // dump/pull first (they need a tenant) so the scaffold never clobbers fetched files
   if (dump) {
-    const { default: dumpUsers } = await import('./dump-users.mjs');
-    const { default: dumpWorkspaces } = await import('./dump-workspaces.mjs');
-    const { default: dumpBlueprints } = await import('./dump-blueprints.mjs');
+    const dumpUsers = await load('dump-users');
+    const dumpWorkspaces = await load('dump-workspaces');
+    const dumpBlueprints = await load('dump-blueprints');
     fs.mkdirSync(dir, { recursive: true });
     await dumpUsers({ path: dir });
     await dumpWorkspaces({ path: dir });
     await dumpBlueprints({ blueprints: 'all', path: dir });
   }
   if (pull) {
-    const { default: pullController } = await import('./pull.mjs');
+    const pullController = await load('pull');
     fs.mkdirSync(dir, { recursive: true });
     await pullController({ type: 'all', path: dir });
   }
 
-  const { dir: root, created, skipped } = scaffoldMockFolder(dir, { force });
+  const { dir: root, created, skipped, credentials } = scaffoldMockFolder(dir, { force });
   created.forEach((f) => logger.success(`Created ${path.relative(process.cwd(), f) || f}`));
   skipped.forEach((f) => logger.info(`Kept existing ${path.relative(process.cwd(), f) || f} (use --force to overwrite)`));
+
+  if (credentials.length) {
+    console.log('');
+    logger.section('Throwaway persona credentials (shown once, also in personas.json; localhost only):');
+    credentials.forEach((c) => console.log(`  ${c.email}  ${c.password}`));
+  }
 
   console.log('');
   logger.section('Next steps:');
@@ -75,7 +82,19 @@ export async function mockServeController({ dir = DEFAULT_MOCK_DIR, port, host }
   if (port !== undefined) args.push('--port', String(port));
   if (host) args.push('--host', host);
   const child = spawn(process.execPath, args, { stdio: 'inherit' });
-  process.on('SIGINT', () => child.kill('SIGINT'));
-  process.on('SIGTERM', () => child.kill('SIGTERM'));
-  await new Promise(() => child.on('exit', (code) => process.exit(code ?? 0)));
+  // On Windows `child.kill()` is a hard kill (the mock would lose its debounced state flush), but Ctrl+C is
+  // already delivered to the whole console group, so the child shuts down gracefully by itself.
+  if (process.platform !== 'win32') {
+    process.on('SIGINT', () => child.kill('SIGINT'));
+    process.on('SIGTERM', () => child.kill('SIGTERM'));
+  } else {
+    process.on('SIGINT', () => {});
+  }
+  await new Promise(() => {
+    child.on('error', (err) => {
+      logger.error(`Failed to start the mock server: ${err.message}`);
+      process.exit(1);
+    });
+    child.on('exit', (code) => process.exit(code ?? 0));
+  });
 }

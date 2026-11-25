@@ -50,9 +50,14 @@ function withPersonasFile<T extends { dataDir?: string; seed?: any }>(config: T)
     throw new Error(`@qelos/dev-mock: failed to read ${file}: ${e.message}`);
   }
   if (!Array.isArray(fromFile)) throw new Error(`@qelos/dev-mock: ${file} must be a JSON array of personas`);
+  fromFile.forEach((p: any, i) => {
+    if (!p || typeof p !== 'object' || typeof p.email !== 'string' || !p.email) {
+      throw new Error(`@qelos/dev-mock: ${file}: persona at index ${i} must be an object with a string "email"`);
+    }
+  });
   const explicit: any[] = config.seed?.personas || [];
-  const emails = new Set(explicit.map((p) => String(p?.email).toLowerCase()));
-  const personas = [...fromFile.filter((p) => !emails.has(String(p?.email).toLowerCase())), ...explicit];
+  const emails = new Set(explicit.map((p) => (typeof p?.email === 'string' ? p.email.toLowerCase() : '')));
+  const personas = [...(fromFile as any[]).filter((p) => !emails.has(p.email.toLowerCase())), ...explicit];
   return { ...config, seed: { ...config.seed, personas } };
 }
 

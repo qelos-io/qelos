@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Minimal Express app running against a local Qelos mock folder (no tenant)",
   "scripts": {
-    "start": "node server.mjs",
+    "start": "node --import tsx server.mjs",
     "verify": "node verify.mjs"
   },
   "dependencies": {

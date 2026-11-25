@@ -1,31 +1,38 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 
 export const DEFAULT_MOCK_DIR = './qelos-mock';
 
-export const PERSONAS = [
+const PERSONA_TEMPLATES = [
   {
     email: 'admin@example.com',
-    password: 'admin-pass',
     name: 'Ada Admin',
     roles: ['admin'],
     workspaces: [{ name: 'Acme', labels: ['company'], roles: ['admin', 'user'] }],
   },
   {
     email: 'member@example.com',
-    password: 'member-pass',
     name: 'Max Member',
     roles: ['user'],
     workspaces: [{ name: 'Acme', labels: ['company'], roles: ['user'] }],
   },
   {
     email: 'guest@example.com',
-    password: 'guest-pass',
     name: 'Gia Guest',
     roles: ['member'],
     workspaces: [{ name: 'Guest Space', labels: ['guest'], roles: ['member'] }],
   },
 ];
+
+/** Personas with a fresh random password each, so no well-known default credentials are ever written. */
+export function generatePersonas() {
+  return PERSONA_TEMPLATES.map(({ email, ...rest }) => ({
+    email,
+    password: randomBytes(9).toString('base64url'),
+    ...rest,
+  }));
+}
 
 export const WORKSPACES = [
   { name: 'Acme', labels: ['company'] },
@@ -45,7 +52,7 @@ qelos mock serve ${dirName}
 
 | Path | Purpose |
 |---|---|
-| \`personas.json\` | Users you can act as (roles, workspace labels/roles). Applied when the mock first starts. |
+| \`personas.json\` | Users you can act as (roles, workspace labels/roles). Passwords are random throwaway values from \`qelos mock init\`; localhost only. Applied when the mock first starts. |
 | \`workspaces.json\` | Workspaces (same format as \`qelos dump workspaces\`). |
 | \`blueprints/\`, \`configs/\`, \`components/\`, \`blocks/\`, ... | Output of \`qelos pull all ${dirName}\` (optional). |
 | \`users.json\`, \`entities/\` | Output of \`qelos dump users\\|blueprints --path ${dirName}\` (optional). |
@@ -58,15 +65,16 @@ after deleting \`state/\`. \`state/\` is git-ignored (it contains hashed passwor
 
 /**
  * Create the mock folder skeleton. Existing files are kept unless `force` is set.
- * @returns {{ dir: string, created: string[], skipped: string[] }}
+ * @returns {{ dir: string, created: string[], skipped: string[], credentials: { email: string, password: string }[] }}
  */
 export function scaffoldMockFolder(dir, { force = false } = {}) {
   const root = path.resolve(dir);
   fs.mkdirSync(path.join(root, 'state'), { recursive: true });
+  const personas = generatePersonas();
   const created = [];
   const skipped = [];
   const files = {
-    'personas.json': JSON.stringify(PERSONAS, null, 2) + '\n',
+    'personas.json': JSON.stringify(personas, null, 2) + '\n',
     'workspaces.json': JSON.stringify(WORKSPACES, null, 2) + '\n',
     'README.md': buildReadme(path.basename(root)),
     'state/.gitkeep': '',
@@ -81,7 +89,10 @@ export function scaffoldMockFolder(dir, { force = false } = {}) {
       created.push(file);
     }
   }
-  return { dir: root, created, skipped };
+  const credentials = created.includes(path.join(root, 'personas.json'))
+    ? personas.map(({ email, password }) => ({ email, password }))
+    : [];
+  return { dir: root, created, skipped, credentials };
 }
 
 /** Lines printed by `qelos init` to run against a local mock instead of a tenant. */
@@ -89,5 +100,12 @@ export function mockHintFor(frameworkId, dir = DEFAULT_MOCK_DIR) {
   if (frameworkId === 'fastapi') {
     return [`QELOS_MOCK=${dir} uvicorn main:app --reload   # the integrator starts the mock sidecar itself`];
   }
-  return [`QELOS_MOCK=${dir} npm run dev`];
+  if (frameworkId === 'express') {
+    return [`QELOS_MOCK=${dir} npm run dev`];
+  }
+  // fastify / nest / next / nuxt: no built-in mock mode yet, point appUrl at the standalone mock server
+  return [
+    `qelos mock serve ${dir} --port 4555          # in a second terminal`,
+    'QELOS_APP_URL=http://127.0.0.1:4555 npm run dev',
+  ];
 }
