@@ -2,6 +2,7 @@ import type QelosSDK from '@qelos/sdk';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import type { QelosSDKOptions } from '@qelos/sdk/types';
+import type { MockQelosOptions } from './mock';
 
 export interface QelosExpressConfig {
   /**
@@ -33,6 +34,15 @@ export interface QelosExpressConfig {
    * Optional extra options merged into the per-request SDK instance.
    */
   sdkOptions?: Partial<QelosSDKOptions>;
+  /**
+   * Serve a local Qelos mock (`@qelos/dev-mock`) instead of proxying to a
+   * Qelos tenant. `true` enables it, a string is a folder holding
+   * `qelos pull` / `qelos dump` artifacts and mock state, an object is passed
+   * to `createMockQelos`. The `QELOS_MOCK` env var (`1`/`true`/path) enables it
+   * too. Never active when `NODE_ENV=production` unless
+   * `mock: { allowInProduction: true }`.
+   */
+  mock?: boolean | string | MockQelosOptions;
 }
 
 export interface QelosRequestContext {

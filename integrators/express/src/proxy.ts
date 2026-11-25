@@ -4,6 +4,7 @@ import * as https from 'node:https';
 import { URL } from 'node:url';
 import type { Request, RequestHandler, Response } from 'express';
 import { rewriteSetCookieDomain } from './cookies';
+import { getQelosMock, type QelosMockController } from './mock';
 import { resolveQelosProxyTarget } from './proxy-target';
 import type { QelosExpressConfig } from './types';
 
@@ -34,6 +35,76 @@ function buildForwardedHeaders(
   return out;
 }
 
+async function readRequestBody(req: Request): Promise<Buffer | undefined> {
+  if (req.method === 'GET' || req.method === 'HEAD') return undefined;
+  if (req.readableEnded || (req as { _body?: boolean })._body === true) {
+    // a body parser already consumed the stream
+    const parsed = (req as { body?: unknown }).body;
+    if (parsed === undefined || parsed === null) return undefined;
+    if (Buffer.isBuffer(parsed)) return parsed;
+    if (typeof parsed === 'string') return Buffer.from(parsed);
+    if (typeof parsed === 'object' && Object.keys(parsed).length === 0) return undefined;
+    return Buffer.from(JSON.stringify(parsed));
+  }
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return chunks.length ? Buffer.concat(chunks) : undefined;
+}
+
+async function serveFromMock(
+  mock: QelosMockController,
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const instance = await mock.get();
+    if (!instance) throw new Error('Qelos mock is not active');
+    if (req.app?.locals) req.app.locals.qelosMock = mock;
+    const originalHost = req.headers.host;
+    const headers = new Headers();
+    for (const [name, value] of Object.entries(req.headers)) {
+      if (value === undefined || HOP_BY_HOP.has(name.toLowerCase())) continue;
+      if (Array.isArray(value)) value.forEach((v) => headers.append(name, v));
+      else headers.set(name, value);
+    }
+    const body = await readRequestBody(req);
+    const url = `${req.protocol || 'http'}://${originalHost || 'localhost'}${req.originalUrl || req.url}`;
+    const response = await instance.handle(
+      new Request(url, { method: req.method, headers, body: body as unknown as BodyInit | undefined }),
+    );
+
+    res.status(response.status);
+    response.headers.forEach((value, name) => {
+      const lower = name.toLowerCase();
+      if (HOP_BY_HOP.has(lower) || lower === 'set-cookie') return;
+      res.setHeader(name, value);
+    });
+    const cookies = response.headers.getSetCookie?.() ?? [];
+    if (cookies.length) {
+      res.setHeader('set-cookie', cookies.map((v) => rewriteSetCookieDomain(v, originalHost)));
+    }
+    if (!response.body) {
+      res.end();
+      return;
+    }
+    const reader = response.body.getReader();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      res.write(value);
+    }
+    res.end();
+  } catch (err) {
+    if (!res.headersSent) {
+      res.status(500).json({ code: 'QELOS_MOCK_ERROR', message: (err as Error).message });
+    } else {
+      res.end();
+    }
+  }
+}
+
 export interface CreateProxyOptions {
   config: QelosExpressConfig;
 }
@@ -49,8 +120,11 @@ export interface CreateProxyOptions {
  */
 export function createQelosProxy(options: CreateProxyOptions): RequestHandler {
   const { config } = options;
+  const mock = getQelosMock(config);
 
-  return function qelosApiProxy(req: Request, res: Response): void {
+  return function qelosApiProxy(req: Request, res: Response): void | Promise<void> {
+    if (mock.active) return serveFromMock(mock, req, res);
+
     const base = resolveQelosProxyTarget(config);
     if (!base) {
       res.status(503).json({

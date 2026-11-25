@@ -2,6 +2,7 @@ import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import { rewriteSetCookieDomain } from './cookies';
+import { getQelosMock, MOCK_APP_URL } from './mock';
 import { resolveQelosProxyTarget } from './proxy-target';
 import { createRequestSdk } from './sdk-factory';
 import type { QelosExpressConfig, QelosRequestContext } from './types';
@@ -45,7 +46,10 @@ export function createQelosMiddleware(
   options: CreateMiddlewareOptions,
 ): RequestHandler {
   const { config, resolveWorkspace } = options;
-  const sdkFetch = (config.sdkOptions?.fetch ?? globalThis.fetch) as typeof globalThis.fetch;
+  const mock = getQelosMock(config);
+  const sdkFetch = (
+    mock.active ? mock.fetch : config.sdkOptions?.fetch ?? globalThis.fetch
+  ) as typeof globalThis.fetch;
 
   return async function qelosMiddleware(
     req: Request,
@@ -67,7 +71,9 @@ export function createQelosMiddleware(
     };
     req.qelos = ctx;
 
-    const base = resolveQelosProxyTarget(config);
+    if (mock.active && req.app?.locals) req.app.locals.qelosMock = mock;
+
+    const base = mock.active ? MOCK_APP_URL : resolveQelosProxyTarget(config);
     if (!base && !config.apiToken) {
       if (config.requireAuth) {
         res.status(401).json({ code: 'UNAUTHORIZED' });
