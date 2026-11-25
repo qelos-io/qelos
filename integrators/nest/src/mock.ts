@@ -157,5 +157,3 @@ export function getQelosMock(config: QelosNestConfig): QelosMockController {
   return controller;
 }
 
-/** Kept for compatibility: controllers are already shared by resolved options. */
-export function shareQelosMock(_source: QelosNestConfig, _derived: QelosNestConfig): void {}

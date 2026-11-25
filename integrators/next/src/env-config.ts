@@ -20,7 +20,10 @@ import type { QelosNextConfig } from './types';
 export function loadQelosConfigFromEnv(env: NodeJS.ProcessEnv = process.env): QelosNextConfig {
   const appUrl = env.QELOS_APP_URL;
   const mockRaw = env.QELOS_MOCK?.trim().toLowerCase();
-  const mockRequested = !!mockRaw && !['0', 'false', 'no', 'off'].includes(mockRaw);
+  // The mock is ignored when NODE_ENV=production (see mock.ts), so it must not
+  // relax the QELOS_APP_URL requirement there.
+  const mockRequested =
+    !!mockRaw && !['0', 'false', 'no', 'off'].includes(mockRaw) && env.NODE_ENV !== 'production';
   if (!appUrl && !mockRequested) {
     throw new Error(
       '@qelos/integrator-next: QELOS_APP_URL is required when using the default ' +
