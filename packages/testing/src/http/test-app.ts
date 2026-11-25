@@ -86,9 +86,11 @@ function build(baseUrl: string, state: { jar: Map<string, string>; close: () => 
  * ```
  */
 export async function testApp(app: TestableApp): Promise<TestAppClient> {
-  const owned = typeof app === 'function';
-  const server: Server = owned ? createServer(app) : isServer(app) ? app : (app as { server: Server }).server;
+  const isListener = typeof app === 'function';
+  let owned = isListener;
+  const server: Server = isListener ? createServer(app as RequestListener) : isServer(app) ? app : (app as { server: Server }).server;
   if (!server.listening) {
+    owned = true; // we start it, so we stop it
     await new Promise<void>((resolve, reject) => {
       server.once('error', reject);
       server.listen(0, '127.0.0.1', () => resolve());
