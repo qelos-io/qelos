@@ -23,7 +23,7 @@ export function parseServeArgs(argv: string[]): ServeArgs {
   return out;
 }
 
-async function toRequest(req: IncomingMessage, origin: string): Promise<Request> {
+export async function toRequest(req: IncomingMessage, origin: string): Promise<Request> {
   const headers = new Headers();
   for (const [k, v] of Object.entries(req.headers)) {
     if (Array.isArray(v)) v.forEach((x) => headers.append(k, x));
@@ -40,7 +40,7 @@ async function toRequest(req: IncomingMessage, origin: string): Promise<Request>
   });
 }
 
-async function send(res: ServerResponse, response: Response) {
+export async function send(res: ServerResponse, response: Response) {
   const headers: Record<string, string | string[]> = {};
   response.headers.forEach((v, k) => {
     if (k !== 'set-cookie') headers[k] = v;
