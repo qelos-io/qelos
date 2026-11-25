@@ -211,3 +211,15 @@ mock.on('GET', '/api/foo/:id', ({ params }) => ({ id: params.id })); // takes pr
 ```
 
 Handlers may return a `Response` or any JSON value, and can `throw new MockHttpError(status, message)`. Routes nobody handles answer `404 { code: 'QELOS_MOCK_NOT_IMPLEMENTED', method, path, message }`.
+
+## Standalone server (`serve`)
+
+For non-Node hosts (e.g. the Python FastAPI integrator) the package ships a
+minimal CLI that exposes the mock over HTTP:
+
+```sh
+npx @qelos/dev-mock serve --dir ./qelos-mock --port 4555   # --port 0 picks a free port; --host defaults to 127.0.0.1
+```
+
+It prints `QELOS_MOCK_READY http://<host>:<port>` once listening and answers
+`GET /__qelos_mock__/health` with `{"ok":true}`. Stop it with SIGINT/SIGTERM.
