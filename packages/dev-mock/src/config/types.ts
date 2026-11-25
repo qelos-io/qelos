@@ -65,6 +65,13 @@ export interface MockSeed {
   blocks?: Array<Record<string, unknown>>;
   /** role -> permissions (supports "*" and "prefix:*"). Merged over the defaults. */
   roles?: Record<string, string[]>;
+  components?: Array<Record<string, unknown>>;
+  events?: Array<Record<string, unknown>>;
+  agents?: Array<Record<string, unknown>>;
+  /** canned AI replies `{ agentId?, match?, content }` - first matching entry wins */
+  aiResponses?: Array<Record<string, unknown>>;
+  /** seeded webhook/lambda results: `{ integrationId, method?, response, status? }` */
+  lambdas?: Array<Record<string, unknown>>;
 }
 
 export interface MockQelosOptions {
