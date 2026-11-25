@@ -12,6 +12,7 @@ import fp from 'fastify-plugin';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import { rewriteSetCookieDomain } from './cookies';
+import { getQelosMock, MOCK_APP_URL, type QelosMockController } from './mock';
 import { resolveQelosProxyTarget } from './proxy-target';
 import { createRequestSdk } from './sdk-factory';
 import type { QelosFastifyConfig, QelosRequestContext } from './types';
@@ -108,7 +109,11 @@ const qelosFastifyPlugin: FastifyPluginAsync<QelosFastifyRegisterOptions> = asyn
     }
   }
 
-  const sdkFetch = (config.sdkOptions?.fetch ?? globalThis.fetch) as typeof globalThis.fetch;
+  const mock = getQelosMock(config);
+  const sdkFetch = (
+    mock.active ? mock.fetch : config.sdkOptions?.fetch ?? globalThis.fetch
+  ) as typeof globalThis.fetch;
+  if (!fastify.hasDecorator('qelosMock')) fastify.decorate('qelosMock', mock);
 
   fastify.addHook('preHandler', async (request, reply) => {
     if (shouldSkip(request, config)) {
@@ -125,7 +130,7 @@ const qelosFastifyPlugin: FastifyPluginAsync<QelosFastifyRegisterOptions> = asyn
     };
     request.qelos = ctx;
 
-    const base = resolveQelosProxyTarget(config);
+    const base = mock.active ? MOCK_APP_URL : resolveQelosProxyTarget(config);
     if (!base && !config.apiToken) {
       if (config.requireAuth) {
         return reply.code(401).send({ code: 'UNAUTHORIZED' });
@@ -201,10 +206,60 @@ const qelosFastifyPlugin: FastifyPluginAsync<QelosFastifyRegisterOptions> = asyn
 
   if (proxyEnabled) {
     fastify.all('/api/*', (request, reply) => {
+      if (mock.active) {
+        void serveFromMock(mock, request, reply);
+        return;
+      }
       proxyApiRequest(request, reply, config);
     });
   }
 };
+
+async function serveFromMock(
+  mock: QelosMockController,
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  try {
+    const instance = await mock.get();
+    if (!instance) throw new Error('Qelos mock is not active');
+    const originalHost = request.headers.host;
+    const headers = new Headers();
+    for (const [name, value] of Object.entries(request.headers)) {
+      if (value === undefined || HOP_BY_HOP.has(name.toLowerCase())) continue;
+      if (Array.isArray(value)) value.forEach((v) => headers.append(name, v));
+      else headers.set(name, String(value));
+    }
+    let body: BodyInit | undefined;
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      const parsed = request.body as unknown;
+      if (parsed === undefined || parsed === null) {
+        body = undefined;
+      } else if (typeof parsed === 'string' || Buffer.isBuffer(parsed)) {
+        body = parsed as unknown as BodyInit;
+      } else {
+        body = JSON.stringify(parsed);
+        headers.set('content-type', 'application/json');
+      }
+    }
+    const url = `${request.protocol || 'http'}://${originalHost || 'localhost'}${request.url}`;
+    const response = await instance.handle(new Request(url, { method: request.method, headers, body }));
+
+    reply.code(response.status);
+    response.headers.forEach((value, name) => {
+      const lower = name.toLowerCase();
+      if (HOP_BY_HOP.has(lower) || lower === 'set-cookie') return;
+      reply.header(name, value);
+    });
+    const cookies = response.headers.getSetCookie?.() ?? [];
+    if (cookies.length) {
+      reply.header('set-cookie', cookies.map((v) => rewriteSetCookieDomain(v, originalHost)));
+    }
+    reply.send(Buffer.from(await response.arrayBuffer()));
+  } catch (err) {
+    reply.code(500).send({ code: 'QELOS_MOCK_ERROR', message: (err as Error).message });
+  }
+}
 
 function proxyApiRequest(
   request: FastifyRequest,

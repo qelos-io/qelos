@@ -9,6 +9,7 @@ import * as https from 'node:https';
 import { URL } from 'node:url';
 import { QELOS_MODULE_OPTIONS } from './constants';
 import { rewriteSetCookieDomain } from './cookies';
+import { getQelosMock, type QelosMockController } from './mock';
 import { resolveQelosProxyTarget } from './proxy-target';
 import type { AnyRequest, AnyResponse, QelosModuleOptions } from './types';
 
@@ -90,6 +91,73 @@ function sendJsonError(res: unknown, status: number, body: object): void {
   }
 }
 
+async function readRequestBody(req: http.IncomingMessage): Promise<Buffer | undefined> {
+  const parsed = (req as { body?: unknown }).body;
+  if (parsed !== undefined && parsed !== null) {
+    if (Buffer.isBuffer(parsed)) return parsed;
+    if (typeof parsed === 'string') return Buffer.from(parsed);
+    return Buffer.from(JSON.stringify(parsed));
+  }
+  if (req.readableEnded) return undefined;
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return chunks.length ? Buffer.concat(chunks) : undefined;
+}
+
+async function serveFromMock(
+  mock: QelosMockController,
+  req: unknown,
+  res: unknown,
+): Promise<void> {
+  try {
+    const instance = await mock.get();
+    if (!instance) throw new Error('Qelos mock is not active');
+    const nodeReq = getIncomingMessage(req);
+    const rawRes = getServerResponse(res);
+    const originalHost = nodeReq.headers.host;
+    const headers = new Headers();
+    for (const [name, value] of Object.entries(nodeReq.headers)) {
+      if (value === undefined || HOP_BY_HOP.has(name.toLowerCase())) continue;
+      if (Array.isArray(value)) value.forEach((v) => headers.append(name, v));
+      else headers.set(name, value);
+    }
+    const method = nodeReq.method || 'GET';
+    let body: Buffer | undefined;
+    if (method !== 'GET' && method !== 'HEAD') {
+      body = await readRequestBody(nodeReq);
+      if (body && (req as { body?: unknown }).body !== undefined && typeof (req as { body?: unknown }).body === 'object' && !Buffer.isBuffer((req as { body?: unknown }).body)) {
+        headers.set('content-type', 'application/json');
+      }
+    }
+    const encrypted = (nodeReq.socket as { encrypted?: boolean } | undefined)?.encrypted;
+    const url = `${encrypted ? 'https' : 'http'}://${originalHost || 'localhost'}${getRequestUrl(req)}`;
+    const response = await instance.handle(
+      new Request(url, { method, headers, body: body as unknown as BodyInit | undefined }),
+    );
+
+    rawRes.statusCode = response.status;
+    response.headers.forEach((value, name) => {
+      const lower = name.toLowerCase();
+      if (HOP_BY_HOP.has(lower) || lower === 'set-cookie') return;
+      rawRes.setHeader(name, value);
+    });
+    const cookies = response.headers.getSetCookie?.() ?? [];
+    if (cookies.length) {
+      rawRes.setHeader('set-cookie', cookies.map((v) => rewriteSetCookieDomain(v, originalHost)));
+    }
+    rawRes.end(Buffer.from(await response.arrayBuffer()));
+  } catch (err) {
+    const rawRes = getServerResponse(res);
+    if (!rawRes.headersSent) {
+      sendJsonError(res, 500, { code: 'QELOS_MOCK_ERROR', message: (err as Error).message });
+    } else {
+      rawRes.end();
+    }
+  }
+}
+
 @Injectable()
 export class QelosProxyMiddleware implements NestMiddleware {
   constructor(
@@ -98,6 +166,11 @@ export class QelosProxyMiddleware implements NestMiddleware {
   ) {}
 
   use(req: unknown, res: unknown, _next: (err?: unknown) => void): void {
+    const mock = getQelosMock(this.options.config);
+    if (mock.active) {
+      void serveFromMock(mock, req, res);
+      return;
+    }
     const request = req as AnyRequest;
     const base = resolveQelosProxyTarget(this.options.config);
     if (!base) {

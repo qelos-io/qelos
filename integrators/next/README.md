@@ -193,6 +193,40 @@ export const getServerSideProps = withQelosSSR(
 | `disableProxy` | Opt out of auto `/api/` skip for middleware |
 | `sdkOptions` | Extra `QelosSDK` constructor options |
 
+## Local development without a Qelos tenant
+
+Install the optional `@qelos/dev-mock` package and enable mock mode. The BFF proxy route then hands the incoming web `Request` straight to the in-process mock of the Qelos API (auth, workspaces, personas, entities, ...) instead of forwarding upstream, and the middleware / `getQelosContext()` / the per-request SDK talk to the same mock, with no network involved. With `QELOS_MOCK` set, `QELOS_APP_URL` is no longer required for the env-based defaults.
+
+```bash
+npm i -D @qelos/dev-mock
+```
+
+```ts
+// app/api/[...qelos]/route.ts
+export const runtime = 'nodejs';
+export const { GET, POST, PUT, PATCH, DELETE, OPTIONS } = createQelosApiProxyHandlers({
+  appUrl: process.env.QELOS_APP_URL ?? '',
+  // true | folder with `qelos pull` / `qelos dump` artifacts + state | MockQelosOptions
+  mock: process.env.NODE_ENV !== 'production' ? './.qelos-mock' : false,
+});
+```
+
+You can also enable it with the environment: `QELOS_MOCK=1`, `QELOS_MOCK=true`
+or `QELOS_MOCK=./path/to/folder` (folder with `qelos pull` / `qelos dump`
+artifacts and mock state). An explicit `mock` config wins over the env.
+
+- The mock reads and writes files, so it needs the Node.js runtime (route handlers, Pages API routes, server components). Edge middleware cannot run it: use `export const config = { runtime: 'nodejs' }` in `middleware.ts` (Next 15.5+) or skip identification in the middleware.
+- `createQelosApiProxyHandlers(config).mock` (or `getQelosMock(config)`) is the mock controller: `await mock.get()` resolves to the `@qelos/dev-mock` instance (`state`, ...).
+
+- The mock is created lazily, once per config, and shared by the proxy and the
+  per-request SDK.
+- If mock mode is requested but `@qelos/dev-mock` is not installed, requests
+  fail with a clear error. Production bundles without it keep working because
+  the package is only imported dynamically when mock mode is on.
+- **Production guard:** with `NODE_ENV=production` mock mode is ignored (a
+  warning is logged) unless you pass `mock: { allowInProduction: true }`.
+  A banner is logged whenever the mock is active.
+
 ## Subpath exports
 
 | Import | Purpose |

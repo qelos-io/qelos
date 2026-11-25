@@ -20,3 +20,6 @@ export type {
   QelosFastifyConfig,
   QelosRequestContext,
 } from './types';
+
+export { getQelosMock, MOCK_APP_URL } from './mock';
+export type { QelosMockController, MockQelos } from './mock';

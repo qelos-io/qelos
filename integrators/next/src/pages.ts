@@ -11,6 +11,7 @@ import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import { rewriteSetCookieDomain } from './cookies';
 import { fetchMeIdentity } from './me-client';
+import { getQelosMock, MOCK_APP_URL } from './mock';
 import { resolveQelosProxyTarget } from './proxy-target';
 import { createRequestSdk } from './sdk-factory';
 import { runWithQelosContext } from './context';
@@ -97,7 +98,8 @@ async function buildContext(
     sdk,
   };
 
-  const base = resolveQelosProxyTarget(config);
+  const mock = getQelosMock(config);
+  const base = mock.active ? MOCK_APP_URL : resolveQelosProxyTarget(config);
   if (!base && !config.apiToken) {
     return { ctx };
   }
@@ -111,6 +113,7 @@ async function buildContext(
     base,
     cookie: h.cookie,
     authorization: h.authorization,
+    fetch: mock.active ? mock.fetch : undefined,
   });
 
   const host = requestHost(req);

@@ -8,6 +8,7 @@ import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import { QELOS_MODULE_OPTIONS } from './constants';
 import { rewriteSetCookieDomain } from './cookies';
+import { getQelosMock, MOCK_APP_URL } from './mock';
 import { resolveQelosProxyTarget } from './proxy-target';
 import { appendSetCookie, shouldSkip } from './request-utils';
 import { createRequestSdk } from './sdk-factory';
@@ -33,7 +34,10 @@ export class QelosMiddleware implements NestMiddleware {
     const request = req as AnyRequest;
     const response = res as AnyResponse;
     const { config, resolveWorkspace } = this.options;
-    const sdkFetch = (config.sdkOptions?.fetch ?? globalThis.fetch) as typeof globalThis.fetch;
+    const mock = getQelosMock(config);
+    const sdkFetch = (
+      mock.active ? mock.fetch : config.sdkOptions?.fetch ?? globalThis.fetch
+    ) as typeof globalThis.fetch;
 
     if (shouldSkip(request, config)) {
       next();
@@ -50,7 +54,7 @@ export class QelosMiddleware implements NestMiddleware {
     };
     request.qelos = ctx;
 
-    const base = resolveQelosProxyTarget(config);
+    const base = mock.active ? MOCK_APP_URL : resolveQelosProxyTarget(config);
     if (!base && !config.apiToken) {
       if (config.requireAuth) {
         next(new UnauthorizedException());

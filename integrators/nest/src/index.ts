@@ -1,4 +1,4 @@
-export { QELOS_MODULE_OPTIONS, QELOS_SDK } from './constants';
+export { QELOS_MOCK, QELOS_MODULE_OPTIONS, QELOS_SDK } from './constants';
 export { QelosModule } from './module';
 export type {
   QelosModuleAsyncOptions,
@@ -20,3 +20,5 @@ export type {
   QelosRequestContext,
   WorkspaceResolver,
 } from './types';
+export { getQelosMock, MOCK_APP_URL } from './mock';
+export type { QelosMockController, MockQelos } from './mock';

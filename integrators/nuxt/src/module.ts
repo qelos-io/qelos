@@ -38,8 +38,12 @@ const qelosNuxtModule: any = defineNuxtModule<QelosNuxtModuleOptions>({
     appUrl: '',
   },
   setup(options, nuxt) {
-    if (!options.appUrl) {
-      throw new Error('[@qelos/integrator-nuxt] `qelos.appUrl` must be set in nuxt.config');
+    const mockEnv = process.env.QELOS_MOCK?.trim().toLowerCase();
+    const mockRequested =
+      (options.mock !== undefined && options.mock !== false) ||
+      (!!mockEnv && !['0', 'false', 'no', 'off'].includes(mockEnv));
+    if (!options.appUrl && !mockRequested) {
+      throw new Error('[@qelos/integrator-nuxt] `qelos.appUrl` must be set in nuxt.config (or enable `qelos.mock` / QELOS_MOCK)');
     }
 
     const { resolve } = createResolver(import.meta.url);
@@ -103,6 +107,8 @@ export default qelosNuxtModule;
 
 export { createQelosMiddleware } from './middleware';
 export { createRequestSdk } from './sdk-factory';
+export { getQelosMock, MOCK_APP_URL } from './mock';
+export type { QelosMockController, MockQelos } from './mock';
 export { defineQelosEventHandler } from './event-handler';
 export type {
   DefineQelosEventHandlerOptions,

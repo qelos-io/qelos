@@ -2,6 +2,7 @@ import type QelosSDK from '@qelos/sdk';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import type { QelosSDKOptions } from '@qelos/sdk/types';
+import type { MockQelosOptions } from './mock';
 
 export interface QelosNuxtRuntimeConfig {
   /**
@@ -36,6 +37,15 @@ export interface QelosNuxtRuntimeConfig {
    * Defaults to `false`.
    */
   disableProxy?: boolean;
+  /**
+   * Serve a local Qelos mock (`@qelos/dev-mock`) instead of proxying to a
+   * Qelos tenant. `true` enables it, a string is a folder holding
+   * `qelos pull` / `qelos dump` artifacts and mock state, an object (JSON
+   * serializable, it lives in runtimeConfig) is passed to `createMockQelos`.
+   * The `QELOS_MOCK` env var (`1`/`true`/path) enables it too. Never active
+   * when `NODE_ENV=production` unless `mock: { allowInProduction: true }`.
+   */
+  mock?: boolean | string | MockQelosOptions;
 }
 
 export interface QelosRequestContext {
@@ -63,5 +73,7 @@ export interface QelosRequestContext {
 declare module 'h3' {
   interface H3EventContext {
     qelos?: QelosRequestContext;
+    /** Mock controller, set when the Qelos middleware runs. */
+    qelosMock?: import('./mock').QelosMockController;
   }
 }
