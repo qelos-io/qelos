@@ -874,6 +874,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/sdk
     devDependencies:
+      '@qelos/dev-mock':
+        specifier: workspace:*
+        version: link:../../packages/dev-mock
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.6

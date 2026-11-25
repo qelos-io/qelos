@@ -4,6 +4,7 @@ import * as https from 'node:https';
 import { URL } from 'node:url';
 import type { Request, RequestHandler, Response } from 'express';
 import { rewriteSetCookieDomain } from './cookies';
+import { getQelosMock, type QelosMockController } from './mock';
 import { resolveQelosProxyTarget } from './proxy-target';
 import type { QelosExpressConfig } from './types';
 
@@ -34,6 +35,95 @@ function buildForwardedHeaders(
   return out;
 }
 
+interface RequestBody {
+  body: Buffer | undefined;
+  /** Set when the body was re-serialized and the original content-type no longer applies. */
+  contentType?: string;
+}
+
+async function readRequestBody(req: Request): Promise<RequestBody> {
+  if (req.method === 'GET' || req.method === 'HEAD') return { body: undefined };
+  if (req.readableEnded || (req as { _body?: boolean })._body === true) {
+    // a body parser already consumed the stream
+    const raw = (req as { rawBody?: unknown }).rawBody;
+    if (Buffer.isBuffer(raw)) return { body: raw };
+    if (typeof raw === 'string') return { body: Buffer.from(raw) };
+    const parsed = (req as { body?: unknown }).body;
+    if (parsed === undefined || parsed === null) return { body: undefined };
+    if (Buffer.isBuffer(parsed)) return { body: parsed };
+    if (typeof parsed === 'string') return { body: Buffer.from(parsed) };
+    if (typeof parsed === 'object' && Object.keys(parsed).length === 0) return { body: undefined };
+    const type = String(req.headers['content-type'] || '').toLowerCase();
+    if (type.includes('application/x-www-form-urlencoded')) {
+      const params = new URLSearchParams();
+      for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+        if (Array.isArray(v)) v.forEach((x) => params.append(k, String(x)));
+        else if (v !== undefined && v !== null) params.append(k, String(v));
+      }
+      return { body: Buffer.from(params.toString()), contentType: 'application/x-www-form-urlencoded' };
+    }
+    return { body: Buffer.from(JSON.stringify(parsed)), contentType: 'application/json' };
+  }
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return { body: chunks.length ? Buffer.concat(chunks) : undefined };
+}
+
+async function serveFromMock(
+  mock: QelosMockController,
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const instance = await mock.get();
+    if (!instance) throw new Error('Qelos mock is not active');
+    if (req.app?.locals) req.app.locals.qelosMock = mock;
+    const originalHost = req.headers.host;
+    const headers = new Headers();
+    for (const [name, value] of Object.entries(req.headers)) {
+      if (value === undefined || HOP_BY_HOP.has(name.toLowerCase())) continue;
+      if (Array.isArray(value)) value.forEach((v) => headers.append(name, v));
+      else headers.set(name, value);
+    }
+    const { body, contentType } = await readRequestBody(req);
+    if (contentType) headers.set('content-type', contentType);
+    const url = `${req.protocol || 'http'}://${originalHost || 'localhost'}${req.originalUrl || req.url}`;
+    const response = await instance.handle(
+      new Request(url, { method: req.method, headers, body: body as unknown as BodyInit | undefined }),
+    );
+
+    res.status(response.status);
+    response.headers.forEach((value, name) => {
+      const lower = name.toLowerCase();
+      if (HOP_BY_HOP.has(lower) || lower === 'set-cookie') return;
+      res.setHeader(name, value);
+    });
+    const cookies = response.headers.getSetCookie?.() ?? [];
+    if (cookies.length) {
+      res.setHeader('set-cookie', cookies.map((v) => rewriteSetCookieDomain(v, originalHost)));
+    }
+    if (!response.body) {
+      res.end();
+      return;
+    }
+    const reader = response.body.getReader();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      res.write(value);
+    }
+    res.end();
+  } catch (err) {
+    if (!res.headersSent) {
+      res.status(500).json({ code: 'QELOS_MOCK_ERROR', message: (err as Error).message });
+    } else {
+      res.end();
+    }
+  }
+}
+
 export interface CreateProxyOptions {
   config: QelosExpressConfig;
 }
@@ -49,8 +139,11 @@ export interface CreateProxyOptions {
  */
 export function createQelosProxy(options: CreateProxyOptions): RequestHandler {
   const { config } = options;
+  const mock = getQelosMock(config);
 
-  return function qelosApiProxy(req: Request, res: Response): void {
+  return function qelosApiProxy(req: Request, res: Response): void | Promise<void> {
+    if (mock.active) return serveFromMock(mock, req, res);
+
     const base = resolveQelosProxyTarget(config);
     if (!base) {
       res.status(503).json({

@@ -28,8 +28,8 @@
     "build": "tsc",
     "pre-build": "tsc",
     "test": "pnpm run test:express5 && pnpm run test:express4",
-    "test:express5": "node --import tsx --test src/**/*.test.ts test/middleware.test.ts",
-    "test:express4": "node --import tsx --test test/middleware.express4.test.ts"
+    "test:express5": "node --import tsx --test src/**/*.test.ts test/middleware.test.ts test/mock.test.ts",
+    "test:express4": "node --import tsx --test test/middleware.express4.test.ts test/mock.express4.test.ts"
   },
   "keywords": [
     "qelos",
@@ -47,11 +47,15 @@
     "node": ">=18"
   },
   "peerDependencies": {
-    "express": "^4.17.0 || ^5.0.0"
+    "express": "^4.17.0 || ^5.0.0",
+    "@qelos/dev-mock": "workspace:^"
   },
   "peerDependenciesMeta": {
     "express": {
       "optional": false
+    },
+    "@qelos/dev-mock": {
+      "optional": true
     }
   },
   "dependencies": {
@@ -63,6 +67,7 @@
     "express": "^5.0.0",
     "express4": "npm:express@^4.21.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "@qelos/dev-mock": "workspace:*"
   }
 }

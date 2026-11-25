@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express';
 import { createQelosMiddleware, type CreateMiddlewareOptions } from './middleware';
 import { createQelosProxy } from './proxy';
+import { getQelosMock, shareQelosMock, type QelosMockController } from './mock';
 import type { QelosExpressConfig } from './types';
 
 export {
@@ -14,6 +15,9 @@ export type {
 
 export { createQelosProxy } from './proxy';
 export type { CreateProxyOptions, QelosProxyHandler } from './proxy';
+
+export { getQelosMock, MOCK_APP_URL } from './mock';
+export type { QelosMockController, MockQelos } from './mock';
 
 export { createRequestSdk } from './sdk-factory';
 export type { CreateSdkParams } from './sdk-factory';
@@ -68,6 +72,12 @@ export interface QelosIntegrator {
    * `null` when `config.disableProxy === true`.
    */
   proxy: RequestHandler | null;
+  /**
+   * Mock controller (`mock.active`, `await mock.get()` -> `@qelos/dev-mock`
+   * instance for programmatic state control). Inactive unless `config.mock`
+   * or `QELOS_MOCK` enables it.
+   */
+  mock: QelosMockController;
 }
 
 /**
@@ -90,8 +100,10 @@ export function createQelosIntegrator(
     }
   }
 
+  if (config !== options.config) shareQelosMock(options.config, config);
+  const mock = getQelosMock(config);
   const middleware = createQelosMiddleware({ ...options, config });
   const proxy = proxyEnabled ? createQelosProxy({ config }) : null;
 
-  return { middleware, proxy };
+  return { middleware, proxy, mock };
 }
