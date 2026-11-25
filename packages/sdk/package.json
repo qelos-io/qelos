@@ -6,6 +6,9 @@
   "types": "./dist/index.d.ts",
   "typesVersions": {
     "*": {
+      "dist/*": [
+        "./dist/*"
+      ],
       "administrator": [
         "./dist/administrator/index.d.ts"
       ],
@@ -23,6 +26,9 @@
       ],
       "types": [
         "./dist/types.d.ts"
+      ],
+      "ai": [
+        "./dist/ai/index.d.ts"
       ],
       "*": [
         "./dist/*.d.ts"
