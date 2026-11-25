@@ -73,7 +73,7 @@ export interface QelosIntegrator {
    */
   proxy: RequestHandler | null;
   /**
-   * Mock controller (`mock.active`, `await mock.get()` -> `@qelos/dev-mock`
+   * Mock controller (`mock.active`, `await mock.get()` -> `@qelos/testing`
    * instance for programmatic state control). Inactive unless `config.mock`
    * or `QELOS_MOCK` enables it.
    */

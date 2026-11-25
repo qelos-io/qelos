@@ -83,7 +83,7 @@ export async function serve(
   const args = parseServeArgs(argv);
   if (!isLoopbackHost(args.host)) {
     log.err(
-      `WARNING: @qelos/dev-mock is bound to ${args.host}. The mock has NO authentication: anyone who can reach it can read and write its state.`,
+      `WARNING: @qelos/testing is bound to ${args.host}. The mock has NO authentication: anyone who can reach it can read and write its state.`,
     );
   }
   const mock = createMockQelos({

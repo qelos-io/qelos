@@ -38,7 +38,7 @@ export interface QelosNuxtRuntimeConfig {
    */
   disableProxy?: boolean;
   /**
-   * Serve a local Qelos mock (`@qelos/dev-mock`) instead of proxying to a
+   * Serve a local Qelos mock (`@qelos/testing`) instead of proxying to a
    * Qelos tenant. `true` enables it, a string is a folder holding
    * `qelos pull` / `qelos dump` artifacts and mock state, an object (JSON
    * serializable, it lives in runtimeConfig) is passed to `createMockQelos`.

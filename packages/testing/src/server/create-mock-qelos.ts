@@ -47,12 +47,12 @@ function withPersonasFile<T extends { dataDir?: string; seed?: any }>(config: T)
   try {
     fromFile = JSON.parse(readFileSync(file, 'utf8'));
   } catch (e: any) {
-    throw new Error(`@qelos/dev-mock: failed to read ${file}: ${e.message}`);
+    throw new Error(`@qelos/testing: failed to read ${file}: ${e.message}`);
   }
-  if (!Array.isArray(fromFile)) throw new Error(`@qelos/dev-mock: ${file} must be a JSON array of personas`);
+  if (!Array.isArray(fromFile)) throw new Error(`@qelos/testing: ${file} must be a JSON array of personas`);
   fromFile.forEach((p: any, i) => {
     if (!p || typeof p !== 'object' || typeof p.email !== 'string' || !p.email) {
-      throw new Error(`@qelos/dev-mock: ${file}: persona at index ${i} must be an object with a string "email"`);
+      throw new Error(`@qelos/testing: ${file}: persona at index ${i} must be an object with a string "email"`);
     }
   });
   const explicit: any[] = config.seed?.personas || [];
@@ -83,7 +83,7 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
     const log = config.logger ?? console.warn;
     importQelosArtifacts(artifactsDir, state, {
       onConflict: config.onConflict,
-      warn: (m) => log(`[qelos-dev-mock] ${m}`),
+      warn: (m) => log(`[qelos-testing] ${m}`),
     });
   }
   const router = new Router();

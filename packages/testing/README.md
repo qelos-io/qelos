@@ -1,9 +1,9 @@
-# @qelos/dev-mock
+# @qelos/testing
 
 A mock Qelos HTTP API for local development with **no connected Qelos tenant**. Framework-agnostic, zero runtime dependencies, web-standard `Request`/`Response`.
 
 ```ts
-import { createMockQelos } from '@qelos/dev-mock';
+import { createMockQelos } from '@qelos/testing';
 
 const mock = createMockQelos({ dataDir: './.qelos-mock', seed: { users: [{ email: 'dev@example.com' }] } });
 const response = await mock.handle(new Request('http://localhost/api/me'));
@@ -87,7 +87,7 @@ createMockQelos({ seed: { roles: { admin: ['*'], editor: ['posts:*'], viewer: ['
 ### `authenticate` for other route modules
 
 ```ts
-import { authenticate, checkPermission, checkBlueprintPermission, scopeMatches, unauthorized } from '@qelos/dev-mock';
+import { authenticate, checkPermission, checkBlueprintPermission, scopeMatches, unauthorized } from '@qelos/testing';
 
 const entitiesRoutes: RouteModule = (router, state) => {
   router.register('GET', '/api/blueprints/:bp/entities', ({ request, params }) => {
@@ -109,7 +109,7 @@ Workspaces keep `members` (`{ user, roles }`) and `invites` embedded, like the r
 `importQelosArtifacts(dir, state, opts)` loads a folder produced by `qelos pull` and/or `qelos dump` (`/tools/cli`) into the mock state. It auto-detects the layout, so `dir` can be a `pull` output, a `dump` output, a mix of both, or a single-type folder (e.g. only the `blueprints/` folder).
 
 ```ts
-import { importQelosArtifacts, MockState } from '@qelos/dev-mock';
+import { importQelosArtifacts, MockState } from '@qelos/testing';
 
 const report = importQelosArtifacts('./qelos-export', new MockState(), { onConflict: 'replace', warn: console.warn });
 // report.kind: 'pull' | 'dump' | 'mixed' | 'empty'; report.counts: per collection { created, replaced, skipped }
@@ -218,7 +218,7 @@ For non-Node hosts (e.g. the Python FastAPI integrator) the package ships a
 minimal CLI that exposes the mock over HTTP:
 
 ```sh
-npx @qelos/dev-mock serve --dir ./qelos-mock --port 4555   # --port 0 picks a free port; --host defaults to 127.0.0.1
+npx @qelos/testing serve --dir ./qelos-mock --port 4555   # --port 0 picks a free port; --host defaults to 127.0.0.1
 ```
 
 It prints `QELOS_MOCK_READY http://<host>:<port>` once listening and answers

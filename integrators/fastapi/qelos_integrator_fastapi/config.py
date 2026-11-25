@@ -37,7 +37,7 @@ class QelosConfig:
     #: Dev mock mode: ``True`` or a path to a folder with ``qelos pull`` /
     #: ``qelos dump`` artifacts and JSON state. When ``None`` the ``QELOS_MOCK``
     #: env var (``1``/``true``/path) is used; ``False`` disables it. The proxy
-    #: and SDK then target a local Node sidecar (``@qelos/dev-mock``).
+    #: and SDK then target a local Node sidecar (``@qelos/testing``).
     mock: Union[bool, str, None] = None
 
     #: Use an already-running mock server instead of spawning one
@@ -47,5 +47,5 @@ class QelosConfig:
     #: Port of the spawned sidecar (``0`` = pick a free port).
     mock_port: int = 0
 
-    #: Override the sidecar launcher command (default ``npx --yes @qelos/dev-mock``).
+    #: Override the sidecar launcher command (default ``npx --yes @qelos/testing``).
     mock_command: Optional[List[str]] = None

@@ -265,7 +265,7 @@ export class MockState {
   /** Generic accessor by collection name. */
   collection(name: CollectionName): Collection {
     const c = this.collections[name];
-    if (!c) throw new Error(`@qelos/dev-mock: unknown collection "${name}"`);
+    if (!c) throw new Error(`@qelos/testing: unknown collection "${name}"`);
     return c;
   }
 
@@ -356,7 +356,7 @@ export class MockState {
       try {
         return JSON.parse(readFileSync(file, 'utf8'));
       } catch (e: any) {
-        throw new Error(`@qelos/dev-mock: failed to read state file ${file}: ${e.message}`);
+        throw new Error(`@qelos/testing: failed to read state file ${file}: ${e.message}`);
       }
     };
     for (const name of COLLECTION_NAMES) {
@@ -384,7 +384,7 @@ export class MockState {
     if (!this.stateDir || this.timer) return;
     this.timer = setTimeout(() => {
       this.timer = null;
-      this.flush().catch((e) => console.error('[qelos-dev-mock] failed to persist state:', e));
+      this.flush().catch((e) => console.error('[qelos-testing] failed to persist state:', e));
     }, this.debounceMs);
     this.timer.unref?.();
   }

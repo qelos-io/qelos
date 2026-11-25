@@ -13,7 +13,7 @@
     "express": "^5.0.0"
   },
   "devDependencies": {
-    "@qelos/dev-mock": "^4.4.0",
+    "@qelos/testing": "^4.4.0",
     "tsx": "^4.20.4"
   }
 }

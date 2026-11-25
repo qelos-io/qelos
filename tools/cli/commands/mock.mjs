@@ -10,7 +10,7 @@ export default function mockCommand(program) {
           .option('dump', { type: 'boolean', description: 'Also dump users, workspaces and blueprint entities into the folder (needs a tenant)' })
           .option('force', { type: 'boolean', description: 'Overwrite existing scaffold files' }),
         mockInitController)
-      .command('serve [dir]', 'Run the @qelos/dev-mock server for a mock folder',
+      .command('serve [dir]', 'Run the @qelos/testing server for a mock folder',
         (y) => y
           .positional('dir', { describe: 'Mock folder', type: 'string', default: './qelos-mock' })
           .option('port', { alias: 'p', type: 'number', description: 'Port (default: a free port)' })

@@ -231,10 +231,10 @@ in `nuxt.config.ts`.
 
 ## Local development without a Qelos tenant
 
-Install the optional `@qelos/dev-mock` package and enable mock mode. The `/api/**` server handler then answers from an in-process mock of the Qelos API (auth, workspaces, personas, entities, ...) instead of forwarding upstream, and `event.context.qelos` / the per-request SDK talk to the same mock, with no network involved. `qelos.appUrl` is not required while mock mode is enabled.
+Install the optional `@qelos/testing` package and enable mock mode. The `/api/**` server handler then answers from an in-process mock of the Qelos API (auth, workspaces, personas, entities, ...) instead of forwarding upstream, and `event.context.qelos` / the per-request SDK talk to the same mock, with no network involved. `qelos.appUrl` is not required while mock mode is enabled.
 
 ```bash
-npm i -D @qelos/dev-mock
+npm i -D @qelos/testing
 ```
 
 ```ts
@@ -253,11 +253,11 @@ You can also enable it with the environment: `QELOS_MOCK=1`, `QELOS_MOCK=true`
 or `QELOS_MOCK=./path/to/folder` (folder with `qelos pull` / `qelos dump`
 artifacts and mock state). An explicit `mock` config wins over the env.
 
-- `event.context.qelosMock` is the mock controller: `await event.context.qelosMock.get()` resolves to the `@qelos/dev-mock` instance (`state`, ...) for programmatic control in dev.
+- `event.context.qelosMock` is the mock controller: `await event.context.qelosMock.get()` resolves to the `@qelos/testing` instance (`state`, ...) for programmatic control in dev.
 
 - The mock is created lazily, once per config, and shared by the proxy and the
   per-request SDK.
-- If mock mode is requested but `@qelos/dev-mock` is not installed, requests
+- If mock mode is requested but `@qelos/testing` is not installed, requests
   fail with a clear error. Production bundles without it keep working because
   the package is only imported dynamically when mock mode is on.
 - **Production guard:** with `NODE_ENV=production` mock mode is ignored (a

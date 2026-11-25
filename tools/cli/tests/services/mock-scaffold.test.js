@@ -81,14 +81,14 @@ describe('qelos mock scaffold', () => {
     assert.ok(fs.existsSync(path.join(dir, 'personas.json')));
   });
 
-  it('resolveDevMockBin finds the dev-mock bin from a project that installs it', async () => {
-    const { resolveDevMockBin } = await import(url('controllers', 'mock.mjs'));
+  it('resolveTestingBin finds the testing bin from a project that installs it', async () => {
+    const { resolveTestingBin } = await import(url('controllers', 'mock.mjs'));
     const root = tmp();
-    const pkgDir = path.join(root, 'node_modules', '@qelos', 'dev-mock');
+    const pkgDir = path.join(root, 'node_modules', '@qelos', 'testing');
     fs.mkdirSync(path.join(pkgDir, 'dist', 'cli'), { recursive: true });
-    fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: '@qelos/dev-mock', bin: { 'qelos-dev-mock': './dist/cli/bin.js' } }));
+    fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: '@qelos/testing', bin: { 'qelos-testing': './dist/cli/bin.js' } }));
     fs.writeFileSync(path.join(pkgDir, 'dist', 'cli', 'bin.js'), '');
-    assert.strictEqual(resolveDevMockBin(root), path.join(pkgDir, 'dist', 'cli', 'bin.js'));
+    assert.strictEqual(resolveTestingBin(root), path.join(pkgDir, 'dist', 'cli', 'bin.js'));
   });
 
   it('the mock command is registered with init and serve subcommands', () => {

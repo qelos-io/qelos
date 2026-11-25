@@ -6,7 +6,7 @@ import type express from 'express';
 import { createQelosIntegrator } from '../src/index';
 import { createRequestSdk } from '../src/sdk-factory';
 
-const FIXTURE = path.resolve(__dirname, '../../../packages/dev-mock/test/fixtures/dump');
+const FIXTURE = path.resolve(__dirname, '../../../packages/testing/test/fixtures/dump');
 
 function mockConfig() {
   return {

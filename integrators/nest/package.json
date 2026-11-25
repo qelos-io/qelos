@@ -51,7 +51,7 @@
     "@nestjs/core": "^9.0.0 || ^10.0.0 || ^11.0.0",
     "reflect-metadata": "^0.1.13 || ^0.2.0",
     "rxjs": "^7.0.0",
-    "@qelos/dev-mock": "workspace:^"
+    "@qelos/testing": "workspace:^"
   },
   "peerDependenciesMeta": {
     "@nestjs/common": {
@@ -66,7 +66,7 @@
     "rxjs": {
       "optional": false
     },
-    "@qelos/dev-mock": {
+    "@qelos/testing": {
       "optional": true
     }
   },
@@ -80,6 +80,6 @@
     "rxjs": "^7.8.1",
     "tsx": "^4.21.0",
     "typescript": "^5.6.3",
-    "@qelos/dev-mock": "workspace:*"
+    "@qelos/testing": "workspace:*"
   }
 }

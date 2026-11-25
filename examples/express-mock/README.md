@@ -1,7 +1,7 @@
 # Express + Qelos mock (no tenant)
 
 A minimal Express app that runs with only a local folder of `qelos pull` / `qelos dump` artifacts and
-`@qelos/dev-mock`. It never contacts a Qelos tenant.
+`@qelos/testing`. It never contacts a Qelos tenant.
 
 This folder is a standalone example: it is not part of the pnpm workspace and nothing in the monorepo depends on it.
 
@@ -27,6 +27,6 @@ Note: `npm start` and `verify.mjs` both run `node --import tsx server.mjs` (the 
 TypeScript-aware loader).
 
 This example is outside the pnpm workspace and depends on the published `@qelos/integrator-express` and
-`@qelos/dev-mock` packages, so it needs a release that includes mock mode. To run it against this checkout, point
+`@qelos/testing` packages, so it needs a release that includes mock mode. To run it against this checkout, point
 the dependencies at the local (built) packages, e.g. `"@qelos/integrator-express": "file:../../integrators/express"`
-and `"@qelos/dev-mock": "file:../../packages/dev-mock"`.
+and `"@qelos/testing": "file:../../packages/testing"`.

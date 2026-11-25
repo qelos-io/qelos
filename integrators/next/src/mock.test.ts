@@ -11,7 +11,7 @@ import { QELOS_USER_HEADER } from './types';
 
 const FIXTURE = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  '../../../packages/dev-mock/test/fixtures/dump',
+  '../../../packages/testing/test/fixtures/dump',
 );
 
 function mockConfig() {

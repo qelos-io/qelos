@@ -65,13 +65,13 @@
   "peerDependencies": {
     "h3": "^1.0.0",
     "nuxt": "^3.0.0 || ^4.0.0",
-    "@qelos/dev-mock": "workspace:^"
+    "@qelos/testing": "workspace:^"
   },
   "peerDependenciesMeta": {
     "nuxt": {
       "optional": false
     },
-    "@qelos/dev-mock": {
+    "@qelos/testing": {
       "optional": true
     }
   },
@@ -85,6 +85,6 @@
     "nuxt": "^4.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.4.5",
-    "@qelos/dev-mock": "workspace:*"
+    "@qelos/testing": "workspace:*"
   }
 }

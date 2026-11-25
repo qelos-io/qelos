@@ -9,7 +9,7 @@ import { QelosProxyMiddleware } from '../src/proxy.middleware';
 import { createRequestSdk } from '../src/sdk-factory';
 import type { AnyRequest } from '../src/types';
 
-const FIXTURE = path.resolve(__dirname, '../../../packages/dev-mock/test/fixtures/dump');
+const FIXTURE = path.resolve(__dirname, '../../../packages/testing/test/fixtures/dump');
 
 function mockConfig() {
   return {
