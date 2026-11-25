@@ -41,6 +41,7 @@ export default defineConfig({
       { text: 'CLI', link: '/cli/' },
       { text: 'Plugins', link: '/plugins/create' },
       { text: 'Integrators', link: '/integrators/' },
+      { text: 'Testing', link: '/testing/' },
       { text: 'MCP', link: '/mcp/' },
       { text: 'Deployment', link: '/deployment/' },
     ],
@@ -246,7 +247,7 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Overview', link: '/integrators/' },
-          { text: 'Local Development (No Tenant)', link: '/integrators/local-development' },
+          { text: 'Local Development (No Tenant)', link: '/testing/local-development' },
           { text: 'Troubleshooting', link: '/integrators/troubleshooting' },
           { text: 'Express', link: '/integrators/express' },
           { text: 'Next.js', link: '/integrators/next' },
@@ -254,6 +255,18 @@ export default defineConfig({
           { text: 'Fastify', link: '/integrators/fastify' },
           { text: 'NestJS', link: '/integrators/nest' },
           { text: 'FastAPI', link: '/integrators/fastapi' },
+        ]
+      },
+      {
+        text: 'TESTING',
+        collapsed: true,
+        items: [
+          { text: 'Overview', link: '/testing/' },
+          { text: 'Develop Locally (No Tenant)', link: '/testing/local-development' },
+          { text: 'Unit Testing (Mock SDK)', link: '/testing/unit-testing' },
+          { text: 'Testing an App (HTTP)', link: '/testing/app-testing' },
+          { text: 'Record & Replay', link: '/testing/record-replay' },
+          { text: 'Mock CLI', link: '/cli/mock' },
         ]
       },
       {

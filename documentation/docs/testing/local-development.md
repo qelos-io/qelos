@@ -6,7 +6,7 @@ editLink: true
 # Develop locally without a Qelos tenant
 
 Qelos integrators normally proxy `/api/**` to a real Qelos tenant. In **mock mode** they answer from
-[`@qelos/dev-mock`](https://github.com/qelos-io/qelos/tree/main/packages/dev-mock) instead: a local
+[`@qelos/testing`](https://github.com/qelos-io/qelos/tree/main/packages/testing) instead: a local
 mimic of the Qelos HTTP API (sign up / sign in, sessions, personas, workspaces, blueprint entities, ...)
 whose state lives in plain JSON files. No network, no account, no tenant.
 
@@ -15,7 +15,7 @@ whose state lives in plain JSON files. No network, no account, no tenant.
 ```
 browser ──► your app (Express + @qelos/integrator-express)
                  ├─ non-/api routes: req.qelos.user / workspace / sdk   ─┐
-                 └─ /api/**  ──────────────────────────────────────────► @qelos/dev-mock ──► <folder>/state/*.json
+                 └─ /api/**  ──────────────────────────────────────────► @qelos/testing ──► <folder>/state/*.json
 ```
 
 Everything is driven by **one folder** (default `./qelos-mock`):
@@ -31,7 +31,7 @@ Everything is driven by **one folder** (default `./qelos-mock`):
 ## Quick start
 
 ```bash
-npm i -D @qelos/dev-mock
+npm i -D @qelos/testing
 qelos mock init            # scaffolds ./qelos-mock
 QELOS_MOCK=./qelos-mock npm run dev
 ```
@@ -112,7 +112,7 @@ qelos dump blueprints all --path ./qelos-mock   # entities
 
 Blueprints are imported before entities, and user/workspace names inside dumped entities are mapped back to
 ids. Secret-bearing user fields are dropped and connection secrets are never pulled. The full layout and
-match keys are documented in the [`@qelos/dev-mock` README](https://github.com/qelos-io/qelos/tree/main/packages/dev-mock#importing-qelos-cli-artifacts).
+match keys are documented in the [`@qelos/testing` README](https://github.com/qelos-io/qelos/tree/main/packages/testing#importing-qelos-cli-artifacts).
 Use `artifactsDir` to import from a different folder than `dataDir`.
 
 ## JSON state files and reset
@@ -182,9 +182,9 @@ Runnable example: [`examples/express-mock`](https://github.com/qelos-io/qelos/tr
 ## Production guard
 
 Mock mode must never run in production. With `NODE_ENV=production` the Express integrator ignores mock mode
-(and logs a warning) and `@qelos/dev-mock` itself throws unless `allowInProduction: true` is passed. A loud
+(and logs a warning) and `@qelos/testing` itself throws unless `allowInProduction: true` is passed. A loud
 banner is logged whenever the mock is active, the `/__qelos_mock__/*` endpoints are not mounted when it is
-disabled, and `qelos mock serve` warns when bound to a non-loopback host. Install `@qelos/dev-mock` as a
+disabled, and `qelos mock serve` warns when bound to a non-loopback host. Install `@qelos/testing` as a
 dev dependency so production bundles do not ship it.
 
 ## Limitations (what is stubbed)

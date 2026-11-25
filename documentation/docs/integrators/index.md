@@ -29,7 +29,7 @@ the overall flow (CLI, blueprints, deployment). The pages below are the
 
 ## Local development
 
-No tenant yet? See [Develop locally without a Qelos tenant](./local-development.md): `qelos mock init`
+No tenant yet? See [Develop locally without a Qelos tenant](../testing/local-development.md): `qelos mock init`
 and `QELOS_MOCK=./qelos-mock` run your app against a local, JSON-backed mock of the Qelos API.
 
 ## Version support
