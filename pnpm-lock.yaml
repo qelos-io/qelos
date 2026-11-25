@@ -1043,6 +1043,18 @@ importers:
         specifier: ^4.9.5
         version: 4.9.5
 
+  packages/dev-mock:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.5.4
+        version: 22.18.0
+      tsx:
+        specifier: ^4.20.4
+        version: 4.20.5
+      typescript:
+        specifier: ^5.4.5
+        version: 5.6.3
+
   packages/global-types:
     devDependencies:
       typescript:
