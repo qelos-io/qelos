@@ -5,10 +5,14 @@
     "outDir": "./dist",
     "sourceMap": true,
     "declaration": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "rootDir": "./src"
   },
   "exclude": [
     "node_modules",
     "dist"
+  ],
+  "include": [
+    "src/**/*"
   ]
 }
