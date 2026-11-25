@@ -118,6 +118,20 @@ expect(mock.ai.calls[0]).toMatchObject({ agentId: 'agent1', message: 'I want a r
 - `reset()` clears rules and recorded calls.
 - Only the mock's text and tool-call shapes are simulated. The mock does not run tools for you.
 
+## Runtime requirement
+
+`@qelos/testing/sdk` imports `@qelos/sdk`, and `@qelos/sdk` 4.4.0 ships ES module syntax with extensionless
+imports and no `"type": "module"`. Plain `node` fails on it with `ERR_MODULE_NOT_FOUND`, so run your tests
+through something that resolves it:
+
+- **Vitest** or any bundler (Vite, webpack, esbuild): works.
+- **`tsx`**: works, for example `node --import tsx --test` or `npx tsx my-test.ts`.
+- **Jest**: untested. You will probably need to transform `@qelos/sdk` (`transformIgnorePatterns`).
+- **Plain `node` / `node --test` without a loader**: does not work.
+
+`@qelos/testing/http`, `/fixtures` and `/cassette` do not import the SDK, and `createMockQelos()` runs fine
+in plain Node. Only the entry points that load `@qelos/sdk` have this limit.
+
 ## Notes
 
 - `@qelos/sdk` is an optional peer dependency, needed only for this entry point.
