@@ -12,8 +12,10 @@ import atexit
 import os
 import queue
 import shutil
+import signal
 import subprocess
 import threading
+import time
 from contextlib import asynccontextmanager
 from typing import Dict, List, Mapping, Optional, Tuple
 
@@ -136,6 +138,12 @@ class MockSidecar:
                 stderr=subprocess.STDOUT,
                 text=True,
                 env={**self._env, "NODE_ENV": "development"},
+                # own process group so stop() can kill npx + node together
+                **(
+                    {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+                    if os.name == "nt"
+                    else {"start_new_session": True}
+                ),
             )
         except OSError as exc:
             raise QelosMockError(f"Failed to start the Qelos dev mock sidecar: {exc}") from exc
@@ -152,10 +160,11 @@ class MockSidecar:
         threading.Thread(target=_pump, daemon=True, name="qelos-mock-stdout").start()
 
         tail: List[str] = []
+        deadline = time.monotonic() + self.startup_timeout
         try:
             while True:
                 try:
-                    line = lines.get(timeout=self.startup_timeout)
+                    line = lines.get(timeout=max(0.0, deadline - time.monotonic()))
                 except queue.Empty:
                     raise QelosMockError(
                         f"Qelos dev mock sidecar did not become ready within {self.startup_timeout}s"
@@ -186,16 +195,43 @@ class MockSidecar:
         proc, self._process, self.origin = self._process, None, None
         if proc is None or proc.poll() is not None:
             return
-        proc.terminate()
+        self._signal_tree(proc, force=False)
         try:
             proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
-            proc.kill()
+            self._signal_tree(proc, force=True)
             proc.wait()
+
+    @staticmethod
+    def _signal_tree(proc: subprocess.Popen, *, force: bool) -> None:
+        """Terminate the whole process tree (npx wrapper + node grandchild)."""
+        try:
+            if os.name == "nt":
+                # npx resolves to npx.cmd on Windows: kill the full tree.
+                subprocess.run(
+                    ["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    check=False,
+                )
+            else:
+                os.killpg(proc.pid, signal.SIGKILL if force else signal.SIGTERM)
+        except (OSError, ProcessLookupError):
+            pass
+        if proc.poll() is None:
+            proc.kill() if force else proc.terminate()
 
 
 _sidecars: Dict[Tuple[Optional[str], int], MockSidecar] = {}
 _lock = threading.Lock()
+
+
+def _in_event_loop() -> bool:
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return False
+    return True
 
 
 def get_mock_origin(config: QelosConfig, env: Optional[Mapping[str, str]] = None) -> Optional[str]:
@@ -216,6 +252,13 @@ def get_mock_origin(config: QelosConfig, env: Optional[Mapping[str, str]] = None
     with _lock:
         sidecar = _sidecars.get(key)
         if sidecar is None or not sidecar.running:
+            if _in_event_loop():
+                # Starting blocks (Popen + readiness wait, up to ~30s) and would
+                # stall the event loop and every other request.
+                raise QelosMockError(
+                    "The Qelos dev mock sidecar is not running. Start it before serving requests "
+                    "by using `FastAPI(lifespan=qelos_mock_lifespan(config))`, or set QELOS_MOCK_URL."
+                )
             sidecar = MockSidecar(
                 directory,
                 port=config.mock_port,
@@ -248,7 +291,7 @@ def qelos_mock_lifespan(config: QelosConfig):
     @asynccontextmanager
     async def _lifespan(_app):
         if is_mock_enabled(config):
-            await asyncio.get_running_loop().run_in_executor(None, get_mock_origin, config)
+            await asyncio.get_running_loop().run_in_executor(None, get_mock_origin, config)  # worker thread: no running loop
         try:
             yield
         finally:

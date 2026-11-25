@@ -34,6 +34,6 @@
     "typescript": "^5.4.5"
   },
   "bin": {
-    "qelos-dev-mock": "./dist/cli/serve.js"
+    "qelos-dev-mock": "./dist/cli/bin.js"
   }
 }

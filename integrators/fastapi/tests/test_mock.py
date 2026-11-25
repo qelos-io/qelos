@@ -133,6 +133,33 @@ def test_lifespan_starts_and_stops() -> None:
     assert FakeSidecar.instances[0].stopped
 
 
+def test_lazy_start_inside_event_loop_is_refused() -> None:
+    import asyncio
+
+    cfg = QelosConfig(app_url="x", mock=True)
+
+    async def run() -> None:
+        with pytest.raises(mock_mod.QelosMockError, match="lifespan"):
+            get_mock_origin(cfg)
+
+    asyncio.run(run())
+    assert FakeSidecar.instances == []
+
+
+def test_startup_timeout_is_an_overall_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.undo()
+    import sys
+
+    script = "import time\nwhile True:\n print('noise', flush=True)\n time.sleep(0.05)\n"
+    sidecar = mock_mod.MockSidecar(command=[sys.executable, "-u", "-c", script], startup_timeout=1.0)
+    monkeypatch.setattr(sidecar, "_build_command", lambda: [sys.executable, "-u", "-c", script])
+    start = mock_mod.time.monotonic()
+    with pytest.raises(mock_mod.QelosMockError, match="did not become ready"):
+        sidecar.start()
+    assert mock_mod.time.monotonic() - start < 5
+    assert not sidecar.running
+
+
 def test_missing_npx_gives_clear_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.undo()  # use the real MockSidecar
     monkeypatch.setattr(mock_mod.shutil, "which", lambda _name: None)
@@ -155,6 +182,9 @@ def test_sidecar_terminates_process(monkeypatch: pytest.MonkeyPatch) -> None:
         def wait(self, timeout=None):
             return 0
 
+    monkeypatch.setattr(
+        mock_mod.MockSidecar, "_signal_tree", staticmethod(lambda p, force: p.terminate())
+    )
     sidecar = mock_mod.MockSidecar()
     proc = Proc()
     sidecar._process = proc  # type: ignore[assignment]

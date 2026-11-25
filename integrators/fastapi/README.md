@@ -195,11 +195,21 @@ QELOS_MOCK_URL=http://127.0.0.1:4555 uvicorn ...   # use an already-running mock
 
 Behaviour:
 
-- **Lazy start.** Without the lifespan, the sidecar is spawned on first use
-  (first proxied request / SDK creation). Startup waits for the sidecar's
-  ready line plus a `/__qelos_mock__/health` check (30 s timeout).
-- **Cleanup.** The lifespan terminates the process on shutdown; an `atexit`
-  hook and `stop_mock_sidecars()` cover other cases.
+- **Start.** Use `FastAPI(lifespan=qelos_mock_lifespan(config))`: the sidecar
+  is spawned off the event loop at startup. Startup waits for the ready line
+  plus a `/__qelos_mock__/health` check (30 s overall deadline). Calling the
+  proxy/SDK from inside a running event loop with no sidecar running raises a
+  clear `QelosMockError` (starting it there would block every request); from
+  synchronous code the sidecar is still started lazily on first use.
+- **Cleanup.** The sidecar runs in its own process group (Windows: new group,
+  killed with `taskkill /T`), so `npx` and the Node server are stopped
+  together. The lifespan stops it on shutdown; an `atexit` hook and
+  `stop_mock_sidecars()` cover other cases. A hard-killed worker (e.g.
+  `uvicorn --reload`) skips these hooks, so prefer a standalone mock plus
+  `QELOS_MOCK_URL` in that case.
+- **Network exposure.** The mock has no authentication. It binds to
+  `127.0.0.1` and rejects requests whose `Host` header is not the bound
+  address; `--host` with a non-loopback address prints a warning.
 - **Missing Node.** If `npx` is not on `PATH` a `QelosMockError` explains how
   to install Node or start the mock yourself and use `QELOS_MOCK_URL`.
 - **Production guard.** Mock mode raises `QelosMockProductionError` when
