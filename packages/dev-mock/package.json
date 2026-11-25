@@ -32,5 +32,8 @@
     "@types/node": "^22.5.4",
     "tsx": "^4.20.4",
     "typescript": "^5.4.5"
+  },
+  "bin": {
+    "qelos-dev-mock": "./dist/cli/serve.js"
   }
 }

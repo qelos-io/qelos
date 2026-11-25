@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 
 @dataclass
@@ -33,3 +33,19 @@ class QelosConfig:
     #: :class:`qelos_sdk.QelosSDKOptions` but as a plain dict — only keys
     #: explicitly set here override the middleware's own configuration.
     sdk_options: Dict[str, Any] = field(default_factory=dict)
+
+    #: Dev mock mode: ``True`` or a path to a folder with ``qelos pull`` /
+    #: ``qelos dump`` artifacts and JSON state. When ``None`` the ``QELOS_MOCK``
+    #: env var (``1``/``true``/path) is used; ``False`` disables it. The proxy
+    #: and SDK then target a local Node sidecar (``@qelos/dev-mock``).
+    mock: Union[bool, str, None] = None
+
+    #: Use an already-running mock server instead of spawning one
+    #: (env ``QELOS_MOCK_URL``).
+    mock_url: Optional[str] = None
+
+    #: Port of the spawned sidecar (``0`` = pick a free port).
+    mock_port: int = 0
+
+    #: Override the sidecar launcher command (default ``npx --yes @qelos/dev-mock``).
+    mock_command: Optional[List[str]] = None

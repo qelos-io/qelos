@@ -5,6 +5,7 @@ from typing import Any, Dict, TYPE_CHECKING
 from qelos_sdk import QelosSDK, QelosSDKOptions
 
 from .config import QelosConfig
+from .mock import get_mock_origin
 
 if TYPE_CHECKING:
     from starlette.requests import Request
@@ -40,6 +41,9 @@ def create_request_sdk(config: QelosConfig, request: "Request") -> QelosSDK:
         "force_refresh": False,
         **overrides,
     }
+    mock_origin = get_mock_origin(config)
+    if mock_origin:
+        options_kwargs["app_url"] = mock_origin
 
     if config.api_token:
         options_kwargs["api_token"] = config.api_token

@@ -34,12 +34,26 @@ from .middleware import (
     WorkspaceResolver,
     qelos_middleware,
 )
+from .mock import (
+    MockSidecar,
+    QelosMockError,
+    QelosMockProductionError,
+    get_mock_origin,
+    qelos_mock_lifespan,
+    stop_mock_sidecars,
+)
 from .models import QelosUser, QelosWorkspace
 from .proxy import create_qelos_proxy_router
 from .proxy_target import resolve_qelos_proxy_target
 from .sdk_factory import create_request_sdk
 
 __all__ = [
+    "MockSidecar",
+    "QelosMockError",
+    "QelosMockProductionError",
+    "get_mock_origin",
+    "qelos_mock_lifespan",
+    "stop_mock_sidecars",
     "QelosConfig",
     "QelosIntegratorMiddleware",
     "QelosMiddleware",
