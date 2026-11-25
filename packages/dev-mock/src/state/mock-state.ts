@@ -17,6 +17,11 @@ export const COLLECTION_NAMES = [
   'blocks',
   'apiTokens',
   'components',
+  'plugins',
+  'integrations',
+  'connections',
+  'pricingPlans',
+
   'events',
   'agents',
   'aiResponses',
@@ -49,6 +54,15 @@ export class Collection<T extends Doc = Doc> {
   insert(doc: Omit<T, '_id'> & { _id?: string }): T {
     const item = { ...doc, _id: doc._id || generateId() } as T;
     this.items.push(item);
+    this.touch();
+    return item;
+  }
+  /** Replace a document wholesale (the new doc may carry a different `_id`). */
+  replace(id: string, doc: Omit<T, '_id'> & { _id?: string }): T | undefined {
+    const idx = this.items.findIndex((i) => i._id === id);
+    if (idx < 0) return undefined;
+    const item = { ...doc, _id: doc._id || id } as T;
+    this.items[idx] = item;
     this.touch();
     return item;
   }
@@ -102,6 +116,15 @@ export class EntityStore {
   insert(blueprint: string, doc: Record<string, any>): Doc {
     const item = { ...doc, _id: doc._id || generateId() } as Doc;
     (this.data[blueprint] ??= []).push(item);
+    this.touch();
+    return item;
+  }
+  replace(blueprint: string, id: string, doc: Record<string, any>): Doc | undefined {
+    const list = this.data[blueprint];
+    const idx = list ? list.findIndex((e) => e._id === id) : -1;
+    if (idx < 0) return undefined;
+    const item = { ...doc, _id: doc._id || id } as Doc;
+    list[idx] = item;
     this.touch();
     return item;
   }
@@ -167,11 +190,18 @@ export class MockState {
   /** incremented by every `reset()`, lets derived data (seeded personas) detect a reseed */
   resetCount = 0;
   readonly components: Collection;
+  readonly plugins: Collection;
+  readonly integrations: Collection;
+  readonly connections: Collection;
+  readonly pricingPlans: Collection;
+
   readonly events: Collection;
   readonly agents: Collection;
   readonly aiResponses: Collection;
   readonly lambdas: Collection;
   readonly entities: EntityStore;
+  /** true when state was loaded from previously persisted JSON files (as opposed to seeded) */
+  readonly restored: boolean;
 
   private collections: Record<CollectionName, Collection>;
   private raw: Record<CollectionName, Doc[]>;
@@ -213,17 +243,30 @@ export class MockState {
       },
     };
     this.components = this.collections.components;
+    this.plugins = this.collections.plugins;
+    this.integrations = this.collections.integrations;
+    this.connections = this.collections.connections;
+    this.pricingPlans = this.collections.pricingPlans;
+
     this.events = this.collections.events;
     this.agents = this.collections.agents;
     this.aiResponses = this.collections.aiResponses;
     this.lambdas = this.collections.lambdas;
     this.entities = new EntityStore(this.rawEntities, touch(ENTITIES_FILE));
 
-    if (!this.loadFromDisk()) {
+    this.restored = this.loadFromDisk();
+    if (!this.restored) {
       this.applySeed();
       // persist the initial seeded state
       if (this.stateDir) this.markAllDirty();
     }
+  }
+
+  /** Generic accessor by collection name. */
+  collection(name: CollectionName): Collection {
+    const c = this.collections[name];
+    if (!c) throw new Error(`@qelos/dev-mock: unknown collection "${name}"`);
+    return c;
   }
 
   /** Find a persona (or user) by id or email. */

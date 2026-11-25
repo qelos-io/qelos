@@ -1,0 +1,12 @@
+{
+  "identifier": "product",
+  "name": "Product",
+  "description": "A product",
+  "properties": { "title": { "type": "string", "title": "Title", "required": true }, "price": { "type": "number", "title": "Price" } },
+  "relations": [],
+  "dispatchers": { "create": true, "update": false, "delete": false },
+  "permissions": [{ "scope": "workspace", "operation": "read", "guest": true }],
+  "permissionScope": "workspace",
+  "entityIdentifierMechanism": "objectid",
+  "limitations": []
+}

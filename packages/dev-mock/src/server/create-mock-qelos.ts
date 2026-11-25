@@ -4,6 +4,7 @@ import { assertMockAllowed, mockBanner } from '../guard/production-guard.js';
 import { jsonResponse, MockHttpError, Router, type HttpMethod, type RouteHandler, type RouteModule } from '../router/router.js';
 import { authRoutes } from '../routes/auth-routes.js';
 import { MockState } from '../state/mock-state.js';
+import { importQelosArtifacts } from '../importers/qelos-artifacts.js';
 import { createActorResolver, createDefaultAuthenticate, type Authenticate } from '../routes/actor.js';
 import { entitiesRoutes } from '../routes/entities.js';
 import { contentRoutes } from '../routes/content.js';
@@ -51,6 +52,15 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
     tenantId: String(config.tenant?._id ?? config.tenant?.id ?? '0'),
     auth: config.auth,
   });
+  // import `qelos pull`/`qelos dump` output on first start (persisted state wins afterwards) or when asked to
+  const artifactsDir = config.artifactsDir ?? config.dataDir;
+  if (artifactsDir && (!state.restored || config.reimport)) {
+    const log = config.logger ?? console.warn;
+    importQelosArtifacts(artifactsDir, state, {
+      onConflict: config.onConflict,
+      warn: (m) => log(`[qelos-dev-mock] ${m}`),
+    });
+  }
   const router = new Router();
   // custom modules first so they can override the built-in ones
   for (const module of [...routes, authRoutes]) router.use(module, state);

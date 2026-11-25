@@ -70,6 +70,11 @@ export function validateMockConfig(options: unknown = {}): ResolvedMockConfig {
   expectType('defaultPersona', o.defaultPersona, 'string');
   expectType('allowInProduction', o.allowInProduction, 'boolean');
   expectType('persistDebounceMs', o.persistDebounceMs, 'number');
+  expectType('artifactsDir', o.artifactsDir, 'string');
+  expectType('reimport', o.reimport, 'boolean');
+  if (o.onConflict !== undefined && o.onConflict !== 'replace' && o.onConflict !== 'skip') {
+    throw new MockConfigError('"onConflict" must be "replace" or "skip"');
+  }
   if (o.dataDir !== undefined && !o.dataDir) throw new MockConfigError('"dataDir" must not be empty');
   if (o.tenant !== undefined) {
     if (!isObject(o.tenant)) throw new MockConfigError('"tenant" must be an object');

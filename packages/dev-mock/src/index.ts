@@ -20,6 +20,14 @@ export {
   type MockSnapshot,
   type MockStateOptions,
 } from './state/mock-state.js';
+export {
+  importQelosArtifacts,
+  type ArtifactState,
+  type ArtifactKind,
+  type ImportCounts,
+  type ImportOptions,
+  type ImportReport,
+} from './importers/qelos-artifacts.js';
 export { generateId, isValidId } from './state/ids.js';
 export { MockHttpError } from './router/router.js';
 export {
