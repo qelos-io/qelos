@@ -26,6 +26,11 @@
       "types": "./dist/http/index.d.ts",
       "import": "./dist/http/index.js",
       "default": "./dist/http/index.js"
+    },
+    "./cassette": {
+      "types": "./dist/cassette/index.d.ts",
+      "import": "./dist/cassette/index.js",
+      "default": "./dist/cassette/index.js"
     }
   },
   "files": [

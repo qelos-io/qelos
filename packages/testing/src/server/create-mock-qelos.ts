@@ -12,6 +12,7 @@ import { entitiesRoutes } from '../routes/entities.js';
 import { contentRoutes } from '../routes/content.js';
 import { stubRoutes } from '../routes/stubs.js';
 import { managementRoutes } from '../routes/management.js';
+import { loadCassette, type Cassette, type CassetteExchange } from '../cassette/index.js';
 import { createAiStub, type AiStub } from '../ai/ai-stub.js';
 import { createFaultInjector, type FaultInjector } from '../faults/faults.js';
 
@@ -25,6 +26,11 @@ export interface CreateMockQelosOptions extends MockQelosOptions {
   authenticate?: Authenticate;
   /** Called for requests no route handles. Return a Response to answer, or nothing to fall through to the 404. */
   onMissing?: (request: Request) => Response | void | Promise<Response | void>;
+  /**
+   * Answer requests no route handles from a recorded cassette (a `cassette.jsonl` file, its folder, or exchanges).
+   * Everything the mock implements itself still comes from the mock. `onMissing` runs only for cassette misses.
+   */
+  cassette?: string | CassetteExchange[] | Cassette;
   /** Register the built-in Qelos API routes (blueprints, entities, content, stubs). Default true. */
   builtinRoutes?: boolean;
 }
@@ -68,7 +74,15 @@ function withPersonasFile<T extends { dataDir?: string; seed?: any }>(config: T)
 }
 
 export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos {
-  const { routes = [], authenticate, onMissing, builtinRoutes = true, ...rest } = options;
+  const { routes = [], authenticate, onMissing: userOnMissing, builtinRoutes = true, cassette: cassetteSource, ...rest } = options;
+  const cassette = cassetteSource && typeof cassetteSource === 'object' && !Array.isArray(cassetteSource) ? cassetteSource : cassetteSource ? loadCassette(cassetteSource) : undefined;
+  const onMissing: CreateMockQelosOptions['onMissing'] = cassette
+    ? async (request) => {
+        const res = await cassette.respond(request.clone());
+        if (!res.headers.has('x-qelos-cassette-miss') || !userOnMissing) return res;
+        return (await userOnMissing(request)) ?? res;
+      }
+    : userOnMissing;
   const config = validateMockConfig(withPersonasFile(rest));
   const env = config.env ?? process.env;
   assertMockAllowed(config, env);
