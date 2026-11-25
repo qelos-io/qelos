@@ -427,7 +427,7 @@ export function importQelosArtifacts(dir: string, state: ArtifactState, opts: Im
   importIntegrations(ctx, connectionIds);
   importPricingPlans(ctx);
   importList(ctx, 'users.json', 'users', ['email', 'username'], stripSecrets);
-  importList(ctx, 'workspaces.json', 'workspaces', ['name']);
+  importList(ctx, 'workspaces.json', 'workspaces', ['name'], (w) => ({ labels: [], members: [], invites: [], ...w }));
   importEntities(ctx);
 
   for (const entry of readdirSync(root).sort()) {

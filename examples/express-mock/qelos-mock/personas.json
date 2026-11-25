@@ -1,0 +1,60 @@
+[
+  {
+    "email": "admin@example.com",
+    "password": "admin-pass",
+    "name": "Ada Admin",
+    "roles": [
+      "admin"
+    ],
+    "workspaces": [
+      {
+        "name": "Acme",
+        "labels": [
+          "company"
+        ],
+        "roles": [
+          "admin",
+          "user"
+        ]
+      }
+    ]
+  },
+  {
+    "email": "member@example.com",
+    "password": "member-pass",
+    "name": "Max Member",
+    "roles": [
+      "user"
+    ],
+    "workspaces": [
+      {
+        "name": "Acme",
+        "labels": [
+          "company"
+        ],
+        "roles": [
+          "user"
+        ]
+      }
+    ]
+  },
+  {
+    "email": "guest@example.com",
+    "password": "guest-pass",
+    "name": "Gia Guest",
+    "roles": [
+      "member"
+    ],
+    "workspaces": [
+      {
+        "name": "Guest Space",
+        "labels": [
+          "guest"
+        ],
+        "roles": [
+          "member"
+        ]
+      }
+    ]
+  }
+]

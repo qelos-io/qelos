@@ -231,6 +231,7 @@ export default defineConfig({
           { text: 'Generate Blueprints', link: '/cli/blueprints' },
           { text: 'Build Blueprint Interfaces', link: '/cli/interfaces' },
           { text: 'Dump Command', link: '/cli/dump' },
+          { text: 'Mock Command', link: '/cli/mock' },
           { text: 'Restore Command', link: '/cli/restore' },
           { text: 'SDK Command', link: '/cli/sdk' },
           { text: 'Agent Command', link: '/cli/agent' },
@@ -245,6 +246,7 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Overview', link: '/integrators/' },
+          { text: 'Local Development (No Tenant)', link: '/integrators/local-development' },
           { text: 'Troubleshooting', link: '/integrators/troubleshooting' },
           { text: 'Express', link: '/integrators/express' },
           { text: 'Next.js', link: '/integrators/next' },

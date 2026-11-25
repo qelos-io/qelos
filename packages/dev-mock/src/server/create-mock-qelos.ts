@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import type { MockQelosOptions } from '../config/types.js';
 import { validateMockConfig } from '../config/resolve.js';
 import { assertMockAllowed, mockBanner } from '../guard/production-guard.js';
@@ -36,9 +38,27 @@ export interface MockQelos {
 
 const BASE_URL = 'http://qelos.mock';
 
+/** `<dataDir>/personas.json` (created by `qelos mock init`): an array of personas merged under the explicit `seed.personas`. */
+function withPersonasFile<T extends { dataDir?: string; seed?: any }>(config: T): T {
+  if (!config.dataDir) return config;
+  const file = join(resolve(config.dataDir), 'personas.json');
+  if (!existsSync(file)) return config;
+  let fromFile: unknown;
+  try {
+    fromFile = JSON.parse(readFileSync(file, 'utf8'));
+  } catch (e: any) {
+    throw new Error(`@qelos/dev-mock: failed to read ${file}: ${e.message}`);
+  }
+  if (!Array.isArray(fromFile)) throw new Error(`@qelos/dev-mock: ${file} must be a JSON array of personas`);
+  const explicit: any[] = config.seed?.personas || [];
+  const emails = new Set(explicit.map((p) => String(p?.email).toLowerCase()));
+  const personas = [...fromFile.filter((p) => !emails.has(String(p?.email).toLowerCase())), ...explicit];
+  return { ...config, seed: { ...config.seed, personas } };
+}
+
 export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos {
   const { routes = [], authenticate, onMissing, builtinRoutes = true, ...rest } = options;
-  const config = validateMockConfig(rest);
+  const config = validateMockConfig(withPersonasFile(rest));
   const env = config.env ?? process.env;
   assertMockAllowed(config, env);
   if (config.enabled) (config.logger ?? console.warn)(mockBanner(config));

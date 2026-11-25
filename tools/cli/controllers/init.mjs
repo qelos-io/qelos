@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { logger, blue, yellow } from '../services/utils/logger.mjs';
 import { confirmDialog, interactiveSelect } from '../services/utils/interactive-select.mjs';
+import { mockHintFor } from '../services/mock/scaffold.mjs';
 import {
   FRAMEWORKS,
   detectFramework,
@@ -143,6 +144,10 @@ QELOS_CONFIG = {
   console.log('');
   logger.section('Next steps:');
   framework.nextSteps.forEach((step) => console.log(`  ${step}`));
+  console.log('');
+  logger.section('No Qelos tenant yet? Develop against a local mock:');
+  console.log('  qelos mock init');
+  mockHintFor(frameworkId).forEach((line) => console.log(`  ${line}`));
   console.log('');
   logger.info('Set QELOS_APP_URL (and optionally QELOS_API_TOKEN) in your environment before running.');
 }
