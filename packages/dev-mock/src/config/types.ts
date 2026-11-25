@@ -35,6 +35,13 @@ export interface MockSeed {
   entities?: Record<string, Array<Record<string, unknown>>>;
   configurations?: Array<Record<string, unknown>>;
   blocks?: Array<Record<string, unknown>>;
+  components?: Array<Record<string, unknown>>;
+  events?: Array<Record<string, unknown>>;
+  agents?: Array<Record<string, unknown>>;
+  /** canned AI replies `{ agentId?, match?, content }` - first matching entry wins */
+  aiResponses?: Array<Record<string, unknown>>;
+  /** seeded webhook/lambda results: `{ integrationId, method?, response, status? }` */
+  lambdas?: Array<Record<string, unknown>>;
 }
 
 export interface MockQelosOptions {
