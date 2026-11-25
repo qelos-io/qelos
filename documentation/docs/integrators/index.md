@@ -27,6 +27,11 @@ the overall flow (CLI, blueprints, deployment). The pages below are the
 | **NestJS** | `@qelos/integrator-nest` | [NestJS setup](./nest.md) |
 | **FastAPI** (Python) | `qelos-integrator-fastapi` | [FastAPI setup](./fastapi.md) |
 
+## Local development
+
+No tenant yet? See [Develop locally without a Qelos tenant](./local-development.md): `qelos mock init`
+and `QELOS_MOCK=./qelos-mock` run your app against a local, JSON-backed mock of the Qelos API.
+
 ## Version support
 
 All Node.js integrators require **Node.js ≥ 18**. Each package declares minimum

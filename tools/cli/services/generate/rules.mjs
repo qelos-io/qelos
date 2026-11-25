@@ -1052,6 +1052,10 @@ function generateQelosResourcesContent(resources) {
     'Framework packages (`@qelos/integrator-express`, `integrator-next`, etc.) proxy requests and attach credentials — use them in **external** apps; monorepo gateway code does not depend on integrators.',
   );
   sections.push('');
+  sections.push(
+    '**No tenant locally?** Run `qelos mock init`, then start the app with `QELOS_MOCK=./qelos-mock` (or the `mock` integrator config option in the integrator config). The integrator then answers `/api/**` from `@qelos/dev-mock` (auth, personas, workspaces, entities) with state persisted as JSON in the folder; it is ignored when `NODE_ENV=production`. Personas live in `qelos-mock/personas.json`; reset state via `POST /__qelos_mock__/reset`. Never point production at the mock.',
+  );
+  sections.push('');
 
   if (summary.blueprints > 0 && resources.blueprints?.length) {
     sections.push('## Blueprints in this project (pulled)');

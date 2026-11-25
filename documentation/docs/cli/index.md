@@ -15,6 +15,7 @@ The CLI provides powerful commands to:
 - **Push** local changes back to your Qelos instance
 - **Generate** IDE-specific rules files for better AI assistance
 - **Agent** interact with AI agents via command line with conversation support
+- **Mock** (`qelos mock init|serve`) scaffold and serve a local mock folder to develop without a Qelos tenant
 - **SDK** invoke any SDK method from the shell (blueprints, entities, users, events, …)
 - Manage components, blueprints, configurations, integrations, connections, plugins, and blocks
 

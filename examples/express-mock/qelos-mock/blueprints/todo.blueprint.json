@@ -1,0 +1,15 @@
+{
+  "identifier": "todo",
+  "name": "Todo",
+  "description": "A todo item",
+  "properties": {
+    "title": { "type": "string", "title": "Title", "required": true },
+    "done": { "type": "boolean", "title": "Done" }
+  },
+  "relations": [],
+  "dispatchers": { "create": false, "update": false, "delete": false },
+  "permissions": [],
+  "permissionScope": "user",
+  "entityIdentifierMechanism": "objectid",
+  "limitations": []
+}

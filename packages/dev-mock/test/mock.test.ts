@@ -115,3 +115,18 @@ test('production guard', () => {
   assert.match(logs[0], /QELOS DEV MOCK IS ACTIVE/);
   createMockQelos({ ...quiet, env: { NODE_ENV: 'development' } });
 });
+
+test('personas.json in dataDir seeds personas', async () => {
+  const { writeFileSync, rmSync } = await import('node:fs');
+  const dir = mkdtempSync(join(tmpdir(), 'qelos-mock-personas-'));
+  try {
+    writeFileSync(join(dir, 'personas.json'), JSON.stringify([{ email: 'a@example.com', name: 'A', roles: ['admin'] }]));
+    const mock = createMockQelos({ dataDir: dir, defaultPersona: 'a@example.com', logger: () => {} });
+    const res = await mock.handle(new Request('http://localhost/api/me'));
+    assert.equal(res.status, 200);
+    assert.equal((await res.json()).email, 'a@example.com');
+    await mock.state.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

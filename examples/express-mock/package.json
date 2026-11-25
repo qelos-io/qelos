@@ -1,0 +1,19 @@
+{
+  "name": "qelos-example-express-mock",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal Express app running against a local Qelos mock folder (no tenant)",
+  "scripts": {
+    "start": "node --import tsx server.mjs",
+    "verify": "node verify.mjs"
+  },
+  "dependencies": {
+    "@qelos/integrator-express": "^4.4.0",
+    "express": "^5.0.0"
+  },
+  "devDependencies": {
+    "@qelos/dev-mock": "^4.4.0",
+    "tsx": "^4.20.4"
+  }
+}

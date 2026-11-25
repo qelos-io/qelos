@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cpSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -132,4 +132,19 @@ test('createMockQelos imports at first start only; persisted state wins afterwar
   assert.equal(c.state.blueprints.get(id)!.name, 'Product');
   const d = createMockQelos({ ...opts, reimport: true, onConflict: 'skip' });
   assert.equal(d.state.blueprints.size, 2);
+});
+
+test('imported workspaces without members/invites (hand-written workspaces.json) get empty arrays', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'qelos-import-ws-'));
+  try {
+    writeFileSync(join(dir, 'workspaces.json'), JSON.stringify([{ name: 'Acme', labels: ['company'] }]));
+    const state = new MockState();
+    importQelosArtifacts(dir, state);
+    const ws = state.workspaces.findOne((w) => w.name === 'Acme')!;
+    assert.deepEqual(ws.members, []);
+    assert.deepEqual(ws.invites, []);
+    assert.deepEqual(ws.labels, ['company']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Acme",
+    "labels": [
+      "company"
+    ]
+  },
+  {
+    "name": "Guest Space",
+    "labels": [
+      "guest"
+    ]
+  }
+]
