@@ -58,3 +58,5 @@ export {
 } from './auth/permissions.js';
 export { cookieTokenName, decodeToken } from './auth/tokens.js';
 export { DEFAULT_ROLE_PERMISSIONS, type MockStateSettings } from './state/mock-state.js';
+export { createFaultInjector, type FaultInjector, type FaultRule, type FaultHandle } from './faults/index.js';
+export { createAiStub, type AiStub, type AiReply, type AiCall, type AiToolCall, type AiRuleHandle, type AiRuleOptions } from './ai/index.js';

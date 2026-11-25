@@ -1,6 +1,7 @@
 import { MockHttpError, type RouteModule } from '../router/router.js';
 import type { Doc, MockState } from '../state/mock-state.js';
 import { requireAdmin, type ActorResolver } from './actor.js';
+import type { AiReply, AiStub } from '../ai/ai-stub.js';
 
 const lastUserMessage = (messages: any[] = []): string => {
   for (let i = messages.length - 1; i >= 0; i--) {
@@ -17,24 +18,47 @@ function aiReply(state: MockState, agentId: string, message: string): string {
   return hit ? String(hit.content ?? '') : `Mock response: ${message}`;
 }
 
-function completion(content: string, threadId?: string) {
+const toolCallsOf = (r: AiReply) =>
+  (r.toolCalls || []).map((t, index) => ({
+    index,
+    id: t.id ?? `call_mock_${index + 1}`,
+    type: 'function',
+    function: {
+      name: t.name,
+      arguments: typeof t.arguments === 'string' ? t.arguments : JSON.stringify(t.arguments ?? {}),
+    },
+  }));
+
+function completion(reply: AiReply, threadId?: string) {
+  const content = reply.chunks ? reply.chunks.join('') : (reply.content ?? '');
+  const tool_calls = toolCallsOf(reply);
   const tokens = Math.ceil(content.length / 4);
   return {
     id: `chatcmpl-mock-${Date.now().toString(36)}`,
     object: 'chat.completion',
     created: Math.floor(Date.now() / 1000),
     model: 'qelos-mock',
-    choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: 'stop' }],
+    choices: [
+      {
+        index: 0,
+        message: { role: 'assistant', content, ...(tool_calls.length ? { tool_calls } : {}) },
+        finish_reason: tool_calls.length ? 'tool_calls' : 'stop',
+      },
+    ],
     usage: { prompt_tokens: 0, completion_tokens: tokens, total_tokens: tokens },
     ...(threadId ? { thread: threadId } : {}),
   };
 }
 
-function sse(content: string): Response {
+function sse(reply: AiReply): Response {
   const created = Math.floor(Date.now() / 1000);
   const chunk = (delta: object, finish: string | null) =>
     `data: ${JSON.stringify({ id: 'chatcmpl-mock', object: 'chat.completion.chunk', created, model: 'qelos-mock', choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`;
-  const body = chunk({ role: 'assistant', content }, null) + chunk({}, 'stop') + 'data: [DONE]\n\n';
+  const pieces = reply.chunks ?? [reply.content ?? ''];
+  const tool_calls = toolCallsOf(reply);
+  let body = pieces.map((c, i) => chunk(i === 0 ? { role: 'assistant', content: c } : { content: c }, null)).join('');
+  if (tool_calls.length) body += chunk({ tool_calls }, null);
+  body += chunk({}, tool_calls.length ? 'tool_calls' : 'stop') + 'data: [DONE]\n\n';
   return new Response(body, { headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' } });
 }
 
@@ -45,8 +69,20 @@ function paginate<T>(list: T[], query: URLSearchParams): T[] {
 }
 
 /** Deterministic stubs for the services an app normally proxies: AI, events, lambdas, payments, secrets. */
-export function stubRoutes({ resolveActor }: { resolveActor: ActorResolver }): RouteModule {
+export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; ai: AiStub }): RouteModule {
   return (router, state) => {
+    /** scripted reply (mock.ai) > seeded `aiResponses` > echo; records the call; honors delay/error */
+    async function respond(agentId: string, messages: any[], stream: boolean, threadId?: string) {
+      const message = lastUserMessage(messages);
+      const scripted = ai.resolve({ agentId, messages, message, stream, threadId });
+      const reply: AiReply = scripted ?? { content: aiReply(state, agentId, message) };
+      if (reply.delay) await new Promise((r) => setTimeout(r, reply.delay));
+      if (reply.error) {
+        throw new MockHttpError(reply.error.status, reply.error.message ?? `Mock AI error ${reply.error.status}`, 'QELOS_MOCK_AI_ERROR');
+      }
+      return stream ? sse(reply) : completion(reply, threadId);
+    }
+
     // ---- AI agents (seeded in `agents`) + chat completions
     router.register('GET', '/api/ai/agents', () => state.agents.list());
     router.register('POST', '/api/ai/agents', async (ctx) => {
@@ -55,15 +91,15 @@ export function stubRoutes({ resolveActor }: { resolveActor: ActorResolver }): R
     });
     router.register('POST', '/api/ai/agents/:id/chat', async (ctx) => {
       const body = (await ctx.json()) || {};
-      return completion(aiReply(state, ctx.params.id, lastUserMessage(body.messages)), body.threadId);
+      return respond(ctx.params.id, body.messages || [], false, body.threadId);
     });
     router.register('GET', '/api/ai/agents/:id/chat', (ctx) => {
       let messages: any[] = [];
       try {
         messages = JSON.parse(ctx.query.get('messages') || '[]');
       } catch {}
-      const message = lastUserMessage(messages) || ctx.query.get('message') || '';
-      return sse(aiReply(state, ctx.params.id, message));
+      if (!lastUserMessage(messages) && ctx.query.get('message')) messages = [{ role: 'user', content: ctx.query.get('message') }];
+      return respond(ctx.params.id, messages, true);
     });
     router.register('GET', '/api/ai/agents/:id', (ctx) => {
       const agent = state.agents.get(ctx.params.id);
@@ -85,8 +121,7 @@ export function stubRoutes({ resolveActor }: { resolveActor: ActorResolver }): R
     for (const path of ['/api/ai/:id/chat-completion', '/api/ai/:id/chat-completion/:threadId']) {
       router.register('POST', path, async (ctx) => {
         const body = (await ctx.json()) || {};
-        const content = aiReply(state, ctx.params.id, lastUserMessage(body.messages));
-        return ctx.query.get('stream') === 'true' ? sse(content) : completion(content, ctx.params.threadId);
+        return respond(ctx.params.id, body.messages || [], ctx.query.get('stream') === 'true', ctx.params.threadId);
       });
     }
 

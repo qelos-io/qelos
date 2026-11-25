@@ -12,6 +12,8 @@ import { entitiesRoutes } from '../routes/entities.js';
 import { contentRoutes } from '../routes/content.js';
 import { stubRoutes } from '../routes/stubs.js';
 import { managementRoutes } from '../routes/management.js';
+import { createAiStub, type AiStub } from '../ai/ai-stub.js';
+import { createFaultInjector, type FaultInjector } from '../faults/faults.js';
 
 export interface CreateMockQelosOptions extends MockQelosOptions {
   /** extra route modules; registered before the built-in auth routes so they can override them */
@@ -31,6 +33,10 @@ export interface MockQelos {
   handle(request: Request): Promise<Response>;
   state: MockState;
   router: Router;
+  /** Fault injection for resilience tests: `mock.faults.fail('GET /api/me', 503)`. */
+  faults: FaultInjector;
+  /** Scripted AI replies and recorded calls: `mock.ai.reply(/refund/, 'Done')`, `mock.ai.calls`. */
+  ai: AiStub;
   fetch: typeof fetch;
   /** Register a handler that takes precedence over every other route, e.g. `mock.on('GET', '/api/foo', () => ({ ok: true }))`. */
   on(method: HttpMethod, pattern: string, handler: RouteHandler): MockQelos;
@@ -86,20 +92,25 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
       warn: (m) => log(`[qelos-testing] ${m}`),
     });
   }
+  const faults = createFaultInjector(state);
+  const ai = createAiStub();
   const router = new Router();
   // custom modules first so they can override the built-in ones
   for (const module of [...routes, authRoutes]) router.use(module, state);
   for (const module of routes) router.use(module, state);
   if (builtinRoutes) {
     const resolveActor = createActorResolver(authenticate ?? createDefaultAuthenticate(config.defaultPersona));
-    for (const module of [entitiesRoutes({ resolveActor }), contentRoutes({ resolveActor }), stubRoutes({ resolveActor })]) {
+    for (const module of [entitiesRoutes({ resolveActor }), contentRoutes({ resolveActor }), stubRoutes({ resolveActor, ai })]) {
       router.use(module, state);
     }
   }
   // dev-only state API: not mounted when the mock is disabled
   if (config.enabled) router.use(managementRoutes, state);
 
+
   async function handle(request: Request): Promise<Response> {
+    const injected = await faults.intercept(request);
+    if (injected) return injected;
     const url = new URL(request.url);
     let cached: Promise<any> | undefined;
     try {
@@ -157,6 +168,8 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
     handle,
     state,
     router,
+    faults,
+    ai,
     fetch: mockFetch,
     on(method, pattern, handler) {
       router.prepend(method, pattern, handler);

@@ -27,7 +27,7 @@ export interface MockSdk {
   mock: MockQelos;
   /** A second SDK on the same mock acting as another persona, e.g. `const admin = as('admin@example.com')`. */
   as(persona: string): QelosSDK;
-  /** Drop all data and reseed from `seed` (call it in `beforeEach`). */
+  /** Drop all data, reseed from `seed` and remove fault rules and scripted AI replies (call it in `beforeEach`). */
   reset(): void;
 }
 
@@ -59,6 +59,8 @@ export function createMockSdk(options: CreateMockSdkOptions = {}): MockSdk {
     as: build,
     reset: () => {
       mock.state.reset();
+      mock.faults.clear();
+      mock.ai.clear();
     },
   };
 }
