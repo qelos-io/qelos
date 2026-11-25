@@ -120,14 +120,16 @@ expect(mock.ai.calls[0]).toMatchObject({ agentId: 'agent1', message: 'I want a r
 
 ## Runtime requirement
 
-`@qelos/testing/sdk` imports `@qelos/sdk`, and `@qelos/sdk` 4.4.0 ships ES module syntax with extensionless
-imports and no `"type": "module"`. Plain `node` fails on it with `ERR_MODULE_NOT_FOUND`, so run your tests
-through something that resolves it:
+`@qelos/sdk` 4.4.0 and earlier ship ES module syntax with extensionless imports and no `"type": "module"`, so
+plain `node` fails on them with `ERR_MODULE_NOT_FOUND`. With those versions `@qelos/testing/sdk` only works
+through a runner that resolves them:
 
 - **Vitest** or any bundler (Vite, webpack, esbuild): works.
 - **`tsx`**: works, for example `node --import tsx --test` or `npx tsx my-test.ts`.
 - **Jest**: untested. You will probably need to transform `@qelos/sdk` (`transformIgnorePatterns`).
 - **Plain `node` / `node --test` without a loader**: does not work.
+
+Releases after 4.4.0 ship a proper ESM and CommonJS build and load in plain Node.
 
 `@qelos/testing/http`, `/fixtures` and `/cassette` do not import the SDK, and `createMockQelos()` runs fine
 in plain Node. Only the entry points that load `@qelos/sdk` have this limit.

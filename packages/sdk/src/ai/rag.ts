@@ -1,11 +1,11 @@
-import BaseSDK from '../base-sdk';
-import { QelosSDKOptions } from '../types';
+import BaseSDK from '../base-sdk.js';
+import { QelosSDKOptions } from '../types.js';
 import { 
   ICreateVectorStorageRequest, 
   IUploadContentRequest, 
   IClearStorageRequest, 
   IVectorStore 
-} from '.';
+} from './index.js';
 
 export default class RagSDK extends BaseSDK {
   private relativePath = '/api/ai';

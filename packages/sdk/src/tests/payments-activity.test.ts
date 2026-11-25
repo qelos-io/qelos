@@ -1,8 +1,8 @@
 import * as assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { QelosSDKOptions } from '../types';
-import QlPayments from '../payments';
-import QlManagePayments from '../administrator/payments';
+import { QelosSDKOptions } from '../types.js';
+import QlPayments from '../payments.js';
+import QlManagePayments from '../administrator/payments.js';
 
 function jsonResponse(body: unknown) {
   const res = new Response(JSON.stringify(body));

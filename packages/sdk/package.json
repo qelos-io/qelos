@@ -2,7 +2,7 @@
   "name": "@qelos/sdk",
   "version": "4.4.0",
   "description": "SDK for Qelos API",
-  "main": "./dist/index.js",
+  "main": "./dist/cjs/index.js",
   "types": "./dist/index.d.ts",
   "typesVersions": {
     "*": {
@@ -31,51 +31,91 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      },
       "default": "./dist/index.js"
     },
     "./administrator": {
-      "types": "./dist/administrator/index.d.ts",
-      "import": "./dist/administrator/index.js",
-      "require": "./dist/administrator/index.js",
+      "import": {
+        "types": "./dist/administrator/index.d.ts",
+        "default": "./dist/administrator/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/administrator/index.d.ts",
+        "default": "./dist/cjs/administrator/index.js"
+      },
       "default": "./dist/administrator/index.js"
     },
     "./administrator/*": {
-      "types": "./dist/administrator/*.d.ts",
-      "import": "./dist/administrator/*.js",
-      "require": "./dist/administrator/*.js",
+      "import": {
+        "types": "./dist/administrator/*.d.ts",
+        "default": "./dist/administrator/*.js"
+      },
+      "require": {
+        "types": "./dist/cjs/administrator/*.d.ts",
+        "default": "./dist/cjs/administrator/*.js"
+      },
       "default": "./dist/administrator/*.js"
     },
     "./ai": {
-      "types": "./dist/ai/index.d.ts",
-      "import": "./dist/ai/index.js",
-      "require": "./dist/ai/index.js",
+      "import": {
+        "types": "./dist/ai/index.d.ts",
+        "default": "./dist/ai/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/ai/index.d.ts",
+        "default": "./dist/cjs/ai/index.js"
+      },
       "default": "./dist/ai/index.js"
     },
     "./ai/*": {
-      "types": "./dist/ai/*.d.ts",
-      "import": "./dist/ai/*.js",
-      "require": "./dist/ai/*.js",
+      "import": {
+        "types": "./dist/ai/*.d.ts",
+        "default": "./dist/ai/*.js"
+      },
+      "require": {
+        "types": "./dist/cjs/ai/*.d.ts",
+        "default": "./dist/cjs/ai/*.js"
+      },
       "default": "./dist/ai/*.js"
     },
     "./workspaces": {
-      "types": "./dist/workspaces.d.ts",
-      "import": "./dist/workspaces.js",
-      "require": "./dist/workspaces.js",
+      "import": {
+        "types": "./dist/workspaces.d.ts",
+        "default": "./dist/workspaces.js"
+      },
+      "require": {
+        "types": "./dist/cjs/workspaces.d.ts",
+        "default": "./dist/cjs/workspaces.js"
+      },
       "default": "./dist/workspaces.js"
     },
     "./configurations": {
-      "types": "./dist/configurations.d.ts",
-      "import": "./dist/configurations.js",
-      "require": "./dist/configurations.js",
+      "import": {
+        "types": "./dist/configurations.d.ts",
+        "default": "./dist/configurations.js"
+      },
+      "require": {
+        "types": "./dist/cjs/configurations.d.ts",
+        "default": "./dist/cjs/configurations.js"
+      },
       "default": "./dist/configurations.js"
     },
     "./types": {
-      "types": "./dist/types.d.ts",
-      "import": "./dist/types.js",
-      "require": "./dist/types.js",
+      "import": {
+        "types": "./dist/types.d.ts",
+        "default": "./dist/types.js"
+      },
+      "require": {
+        "types": "./dist/cjs/types.d.ts",
+        "default": "./dist/cjs/types.js"
+      },
       "default": "./dist/types.js"
     },
     "./src": {
@@ -87,11 +127,25 @@
       "default": "./src/*.ts"
     },
     "./dist": {
-      "types": "./dist/index.d.ts",
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      },
       "default": "./dist/index.js"
     },
     "./dist/*": {
-      "types": "./dist/*.d.ts",
+      "import": {
+        "types": "./dist/*.d.ts",
+        "default": "./dist/*.js"
+      },
+      "require": {
+        "types": "./dist/cjs/*.d.ts",
+        "default": "./dist/cjs/*.js"
+      },
       "default": "./dist/*.js"
     },
     "./package.json": "./package.json"
@@ -99,8 +153,8 @@
   "scripts": {
     "test": "node --import tsx --test **/**/*.test.ts",
     "type-check": "tsc --noEmit",
-    "build": "npm run type-check && tsc",
-    "pre-build": "pnpm run type-check && tsc"
+    "build": "npm run type-check && node scripts/build.mjs",
+    "pre-build": "pnpm run type-check && node scripts/build.mjs"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",
@@ -114,5 +168,6 @@
     "tsx": "^4.21.0",
     "typescript": "^4.9.5"
   },
-  "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8"
+  "gitHead": "13468bc51557291935b96b1aeaa837b8b52861e8",
+  "module": "./dist/index.js"
 }

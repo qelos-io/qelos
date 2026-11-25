@@ -1,5 +1,5 @@
-import BaseSDK from "../base-sdk";
-import { QelosSDKOptions } from "../types";
+import BaseSDK from "../base-sdk.js";
+import { QelosSDKOptions } from "../types.js";
 
 export default class QlManageLambdas extends BaseSDK {
     private relativePath = '/api/lambdas';

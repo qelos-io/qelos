@@ -1,6 +1,6 @@
 import * as assert from 'node:assert/strict';
 import { test } from 'node:test';
-import QelosSDK from '../index';
+import QelosSDK from '../index.js';
 
 function setup(extra: Record<string, unknown> = {}) {
   const headers: Record<string, string>[] = [];

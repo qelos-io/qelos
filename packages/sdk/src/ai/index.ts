@@ -1,9 +1,9 @@
-import { QelosSDKOptions } from '../types';
-import BaseSDK from '../base-sdk';
-import ThreadsSDK from './threads';
-import ChatSDK from './chat';
-import RagSDK from './rag';
-import AgentsSDK from './agents';
+import { QelosSDKOptions } from '../types.js';
+import BaseSDK from '../base-sdk.js';
+import ThreadsSDK from './threads.js';
+import ChatSDK from './chat.js';
+import RagSDK from './rag.js';
+import AgentsSDK from './agents.js';
 import {
   IMessage,
   IMessageSummary,
@@ -21,9 +21,9 @@ import {
   IAgentTool,
   ICreateAgentRequest,
   IUpdateAgentRequest,
-} from './types';
+} from './types.js';
 
-export * from './types';
+export * from './types.js';
 
 // Re-export types for backward compatibility
 export {

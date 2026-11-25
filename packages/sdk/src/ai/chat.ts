@@ -1,10 +1,10 @@
-import BaseSDK from '../base-sdk';
-import { QelosSDKOptions } from '../types';
+import BaseSDK from '../base-sdk.js';
+import { QelosSDKOptions } from '../types.js';
 import { 
   IChatCompletionOptions, 
   IChatCompletionResponse, 
   ISSEStreamProcessor 
-} from '.';
+} from './index.js';
 
 export default class ChatSDK extends BaseSDK {
   private relativePath = '/api/ai';

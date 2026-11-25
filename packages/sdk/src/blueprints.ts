@@ -1,7 +1,7 @@
-import { QelosSDKOptions } from './types';
-import BaseSDK from './base-sdk';
+import { QelosSDKOptions } from './types.js';
+import BaseSDK from './base-sdk.js';
 import type { IBlueprint } from '@qelos/global-types';
-import QlBlueprintEntities from './blueprints-entities';
+import QlBlueprintEntities from './blueprints-entities.js';
 
 // Empty by design — extended via TypeScript declaration merging from
 // generated `.d.ts` files (`qelos interfaces build`) so `entitiesOf("todo")`

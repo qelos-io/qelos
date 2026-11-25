@@ -1,6 +1,6 @@
 import type { IAppConfigurationMetadata as IAppConfiguration } from '@qelos/global-types';
-import { QelosSDKOptions } from "./types";
-import BaseSDK from "./base-sdk";
+import { QelosSDKOptions } from "./types.js";
+import BaseSDK from "./base-sdk.js";
 
 export type { IAppConfiguration };
 

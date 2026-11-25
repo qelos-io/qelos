@@ -2,9 +2,9 @@
 // and the overloaded `entitiesOf` signatures. Runs as part of `tsc --noEmit`
 // (type-check / build); not executed by `node --test`.
 
-import QlBlueprints from '../blueprints';
-import type { IBaseBlueprintEntity } from '../blueprints-entities';
-import type QlBlueprintEntities from '../blueprints-entities';
+import QlBlueprints from '../blueprints.js';
+import type { IBaseBlueprintEntity } from '../blueprints-entities.js';
+import type QlBlueprintEntities from '../blueprints-entities.js';
 
 interface TodoProperties {
   title: string;

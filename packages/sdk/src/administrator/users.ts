@@ -1,6 +1,6 @@
-import { QelosSDKOptions } from '../types';
-import BaseSDK from '../base-sdk';
-import { IUser } from '../authentication';
+import { QelosSDKOptions } from '../types.js';
+import BaseSDK from '../base-sdk.js';
+import { IUser } from '../authentication.js';
 
 export interface IManagedUser<T = any> extends IUser {
   internalMetadata?: T;

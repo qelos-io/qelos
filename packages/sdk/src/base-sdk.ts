@@ -1,4 +1,4 @@
-import { FetchLike, QelosSDKOptions } from './types';
+import { FetchLike, QelosSDKOptions } from './types.js';
 
 /** Path segment of a relative URL, without query or hash — used for auth routing in extraHeaders. */
 export function relativeUrlPath(relativeUrl: string): string {

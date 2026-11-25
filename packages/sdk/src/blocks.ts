@@ -1,5 +1,5 @@
-import {QelosSDKOptions} from './types';
-import BaseSDK from './base-sdk';
+import {QelosSDKOptions} from './types.js';
+import BaseSDK from './base-sdk.js';
 
 export interface IBlock {
   name: string;

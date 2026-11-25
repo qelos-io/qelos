@@ -1,4 +1,4 @@
-import type { IUser } from './authentication';
+import type { IUser } from './authentication.js';
 
 export interface McpAuthorizeOptions {
   redirectUri: string;

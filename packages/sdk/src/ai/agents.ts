@@ -1,6 +1,6 @@
-import BaseSDK from '../base-sdk';
-import { QelosSDKOptions } from '../types';
-import ChatSDK from './chat';
+import BaseSDK from '../base-sdk.js';
+import { QelosSDKOptions } from '../types.js';
+import ChatSDK from './chat.js';
 import {
   IAgent,
   IAgentChatOptions,
@@ -9,7 +9,7 @@ import {
   IMessage,
   ISSEStreamProcessor,
   IUpdateAgentRequest,
-} from '.';
+} from './index.js';
 
 export default class AgentsSDK extends BaseSDK {
   private relativePath = '/api/ai/agents';
