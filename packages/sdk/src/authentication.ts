@@ -1,6 +1,6 @@
-import { QelosSDKOptions } from './types';
-import BaseSDK from './base-sdk';
-import { decodeMeUser } from './services/decode-uri-fields';
+import { QelosSDKOptions } from './types.js';
+import BaseSDK from './base-sdk.js';
+import { decodeMeUser } from './services/decode-uri-fields.js';
 import {
   buildMcpAuthorizePath,
   buildMcpTokenExchangeBody,
@@ -8,7 +8,7 @@ import {
   type McpOAuthTokenResponse,
   type McpTokenExchangeOptions,
   type McpTokenExchangeResult,
-} from './mcp-auth';
+} from './mcp-auth.js';
 
 export type {
   McpAuthorizeOptions,
@@ -18,9 +18,9 @@ export type {
   McpTokenExchangeResult,
   DecodedMcpOAuthStatePayload,
   McpPagePathOptions,
-} from './mcp-auth';
+} from './mcp-auth.js';
 
-export { parseMcpCallbackParams } from './mcp-auth';
+export { parseMcpCallbackParams } from './mcp-auth.js';
 
 export interface IUser {
   _id: string;

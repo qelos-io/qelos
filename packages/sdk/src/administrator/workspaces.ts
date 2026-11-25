@@ -1,6 +1,6 @@
-import { QelosSDKOptions } from '../types';
-import BaseSDK from '../base-sdk';
-import { IWorkspace } from '../workspaces';
+import { QelosSDKOptions } from '../types.js';
+import BaseSDK from '../base-sdk.js';
+import { IWorkspace } from '../workspaces.js';
 
 export default class QlAdminWorkspaces extends BaseSDK {
   private relativePath = '/api/workspaces';

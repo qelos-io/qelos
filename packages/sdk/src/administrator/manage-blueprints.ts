@@ -1,5 +1,5 @@
-import BaseSDK from '../base-sdk';
-import { QelosSDKOptions } from '../types';
+import BaseSDK from '../base-sdk.js';
+import { QelosSDKOptions } from '../types.js';
 import { IBlueprint } from '@qelos/global-types';
 
 type IBlueprintUpdateParams = Omit<IBlueprint, 'tenant' | 'created' | 'updated'>;

@@ -1,6 +1,6 @@
 import * as assert from 'node:assert/strict';
-import {  QelosSDKOptions } from '../../types';
-import { QlRoles } from '../roles';
+import {  QelosSDKOptions } from '../../types.js';
+import { QlRoles } from '../roles.js';
 
 const { describe, beforeEach, test } = require('node:test')
 

@@ -1,5 +1,5 @@
-import { QelosSDKOptions } from './types';
-import BaseSDK from './base-sdk';
+import { QelosSDKOptions } from './types.js';
+import BaseSDK from './base-sdk.js';
 import { IPlan, ISubscription, ISubscriptionActivityItem, IInvoice, ICoupon, BillingCycle, CheckoutCustomer } from '@qelos/global-types';
 
 export interface CheckoutRequest {

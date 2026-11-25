@@ -1,19 +1,19 @@
-import QelosSDK from '../index';
-import { QelosSDKOptions } from '../types';
-import QlDrafts from './drafts';
-import QlEvents from './events';
-import QlUsers from './users';
-import QlManageConfigurations from './manage-configurations';
-import QlAdminWorkspaces from './workspaces';
-import QlManageBlueprints from './manage-blueprints';
-import { QlRoles } from './roles';
-import QlIntegrationSources from './integration-sources';
-import QlManagePlugins from './manage-plugins';
-import QlComponents from './components';
-import QlScripts from './scripts';
-import QlIntegrations from './integrations';
-import QlManageLambdas from './admin-lambdas';
-import QlPaymentsAdmin from './payments';
+import QelosSDK from '../index.js';
+import { QelosSDKOptions } from '../types.js';
+import QlDrafts from './drafts.js';
+import QlEvents from './events.js';
+import QlUsers from './users.js';
+import QlManageConfigurations from './manage-configurations.js';
+import QlAdminWorkspaces from './workspaces.js';
+import QlManageBlueprints from './manage-blueprints.js';
+import { QlRoles } from './roles.js';
+import QlIntegrationSources from './integration-sources.js';
+import QlManagePlugins from './manage-plugins.js';
+import QlComponents from './components.js';
+import QlScripts from './scripts.js';
+import QlIntegrations from './integrations.js';
+import QlManageLambdas from './admin-lambdas.js';
+import QlPaymentsAdmin from './payments.js';
 
 
 export default class QelosAdministratorSDK<T = any> extends QelosSDK {

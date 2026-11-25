@@ -1,5 +1,5 @@
-import { QelosSDKOptions, RequestExtra } from '../types';
-import BaseSDK from '../base-sdk';
+import { QelosSDKOptions, RequestExtra } from '../types.js';
+import BaseSDK from '../base-sdk.js';
 import { IIntegration } from '@qelos/global-types';
 
 export default class QlIntegrations extends BaseSDK {

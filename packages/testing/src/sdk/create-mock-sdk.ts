@@ -1,12 +1,8 @@
-import * as sdkModule from '@qelos/sdk';
+import QelosSDKClass from '@qelos/sdk';
 import { createMockQelos, type CreateMockQelosOptions, type MockQelos } from '../server/create-mock-qelos.js';
 import { PERSONA_HEADER } from '../routes/actor.js';
 
-// the SDK build is CommonJS: the class sits on `default` (twice, depending on the loader)
-const sdkExports: any = sdkModule;
-const QelosSDKClass: new (options: any) => QelosSDK = sdkExports.default?.default ?? sdkExports.default ?? sdkExports;
-
-export type QelosSDK = InstanceType<typeof sdkModule.default.default>;
+export type QelosSDK = InstanceType<typeof QelosSDKClass>;
 
 const APP_URL = 'http://qelos.mock';
 

@@ -1,15 +1,15 @@
-import { QelosSDKOptions } from './types';
-import BaseSDK from './base-sdk';
-import QlAppConfigurations from './configurations';
-import QlBlocks from './blocks';
-import QlAuthentication from './authentication';
-import QlWorkspaces from './workspaces';
-import QlInvites from './invites';
-import QlBlueprints from './blueprints';
-import QlBlueprintEntities from './blueprints-entities';
-import QlAI from './ai';
-import QlLambdas from './lambdas';
-import QlPayments from './payments';
+import { QelosSDKOptions } from './types.js';
+import BaseSDK from './base-sdk.js';
+import QlAppConfigurations from './configurations.js';
+import QlBlocks from './blocks.js';
+import QlAuthentication from './authentication.js';
+import QlWorkspaces from './workspaces.js';
+import QlInvites from './invites.js';
+import QlBlueprints from './blueprints.js';
+import QlBlueprintEntities from './blueprints-entities.js';
+import QlAI from './ai/index.js';
+import QlLambdas from './lambdas.js';
+import QlPayments from './payments.js';
 
 const noExtraHeadersUrls = new Set([
   '/api/token/refresh',
@@ -31,16 +31,16 @@ export type {
   McpTokenExchangeResult,
   DecodedMcpOAuthStatePayload,
   McpPagePathOptions,
-} from './authentication';
+} from './authentication.js';
 
-export type { BlueprintEntitiesRegistry } from './blueprints';
+export type { BlueprintEntitiesRegistry } from './blueprints.js';
 
 export {
   parseSocialCallbackRefreshToken,
   getSocialAuthSetCookieParts,
   applySocialAuthCookiesToServerResponse,
   parseMcpCallbackParams,
-} from './authentication';
+} from './authentication.js';
 
 export {
   buildMcpAuthorizePath,
@@ -51,7 +51,7 @@ export {
   appendMcpAccessDeniedRedirect,
   decodeMcpOAuthStatePayload,
   buildMcpTokenExchangeBody,
-} from './mcp-auth';
+} from './mcp-auth.js';
 
 export default class QelosSDK extends BaseSDK {
   #customHeaders = {}

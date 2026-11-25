@@ -1,5 +1,5 @@
-import BaseSDK from '../base-sdk';
-import { QelosSDKOptions } from '../types';
+import BaseSDK from '../base-sdk.js';
+import { QelosSDKOptions } from '../types.js';
 import { IPlugin, IEventSubscriber, IMicroFrontend, IPluginCrud, IInjectable, INavbarGroup } from '@qelos/global-types';
 
 // Fields that are typically set by the server or not directly updatable by admin

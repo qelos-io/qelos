@@ -1,5 +1,5 @@
-import { QelosSDKOptions, RequestExtra } from '../types';
-import BaseSDK from '../base-sdk';
+import { QelosSDKOptions, RequestExtra } from '../types.js';
+import BaseSDK from '../base-sdk.js';
 import {
   IIntegrationSource,
   IIntegrationSourceStatusRequest,

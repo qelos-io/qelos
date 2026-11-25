@@ -1,8 +1,8 @@
 import * as assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { IntegrationSourceKind } from '@qelos/global-types';
-import { QelosSDKOptions } from '../../types';
-import QlIntegrationSources from '../integration-sources';
+import { QelosSDKOptions } from '../../types.js';
+import QlIntegrationSources from '../integration-sources.js';
 
 function jsonResponse(body: unknown) {
   const res = new Response(JSON.stringify(body));
