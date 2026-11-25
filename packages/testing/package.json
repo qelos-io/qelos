@@ -11,7 +11,22 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./sdk": {
+      "types": "./dist/sdk/index.d.ts",
+      "import": "./dist/sdk/index.js",
+      "default": "./dist/sdk/index.js"
+    },
+    "./fixtures": {
+      "types": "./dist/fixtures/index.d.ts",
+      "import": "./dist/fixtures/index.js",
+      "default": "./dist/fixtures/index.js"
+    },
+    "./http": {
+      "types": "./dist/http/index.d.ts",
+      "import": "./dist/http/index.js",
+      "default": "./dist/http/index.js"
+    }
   },
   "files": [
     "dist",
@@ -35,5 +50,13 @@
   },
   "bin": {
     "qelos-testing": "./dist/cli/bin.js"
+  },
+  "peerDependencies": {
+    "@qelos/sdk": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@qelos/sdk": {
+      "optional": true
+    }
   }
 }
