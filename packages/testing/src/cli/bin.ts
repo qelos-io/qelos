@@ -1,7 +1,11 @@
 #!/usr/bin/env node
-import { serve } from './serve.js';
+import { serve, type ServeHandle } from './serve.js';
+import { record } from './record.js';
 
-serve(process.argv.slice(2))
+const argv = process.argv.slice(2);
+const run: Promise<ServeHandle> = argv[0] === 'record' ? record(argv) : serve(argv);
+
+run
   .then(({ close }) => {
     const stop = () => close().then(() => process.exit(0));
     process.on('SIGINT', stop);

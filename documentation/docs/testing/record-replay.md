@@ -24,6 +24,26 @@ const sdk = new QelosSDK({ appUrl: 'https://my-tenant.example.com', fetch: recor
 await sdk.payments.getPlans(); // recorded
 ```
 
+### Record with the proxy
+
+To record an app you run as is (a frontend, or a server in any language), put the proxy between it and the
+tenant instead of editing code:
+
+```bash
+npx @qelos/testing record --target https://my-tenant.example.com --port 4000 --out ./qelos-fixtures
+```
+
+Point the app's Qelos URL at `http://127.0.0.1:4000` and use it normally. Responses come back unchanged,
+and every `/api/**` exchange is redacted and appended to `qelos-fixtures/cassette.jsonl`.
+
+- Credentials are forwarded to the tenant as sent. The proxy binds to loopback by default, so keep it there.
+- Flags: `--port`, `--host`, `--out`, `--include /api/,/other/` (path prefixes), `--append` (keep an existing
+  cassette) and `--allow-unredacted`.
+- Redirects are passed through, not followed.
+- `Domain` and `Secure` are removed from `Set-Cookie` so the session cookie works on the local proxy origin.
+- Response bodies are buffered, so a streamed response (SSE, AI streams) is recorded as one text body.
+- If the secret scan refuses an exchange, the app gets a `502` and the proxy logs why.
+
 ## Replay
 
 ```ts
