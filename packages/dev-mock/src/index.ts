@@ -21,4 +21,12 @@ export {
   type MockStateOptions,
 } from './state/mock-state.js';
 export { generateId, isValidId } from './state/ids.js';
+export { MockHttpError } from './router/router.js';
+export {
+  PERSONA_HEADER,
+  createDefaultAuthenticate,
+  type Authenticate,
+  type MockActor,
+} from './routes/actor.js';
+export { MANAGEMENT_PREFIX } from './routes/management.js';
 export { createMockQelos, type MockQelos, type CreateMockQelosOptions } from './server/create-mock-qelos.js';
