@@ -3,7 +3,7 @@ import type { MockQelosOptions, MockSeed, ResolvedMockConfig } from './types.js'
 export class MockConfigError extends Error {
   code = 'QELOS_MOCK_INVALID_CONFIG';
   constructor(message: string) {
-    super(`@qelos/dev-mock: ${message}`);
+    super(`@qelos/testing: ${message}`);
     this.name = 'MockConfigError';
   }
 }

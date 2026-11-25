@@ -5,8 +5,9 @@ import { test } from 'node:test';
 import type express from 'express';
 import { createQelosIntegrator } from '../src/index';
 import { createRequestSdk } from '../src/sdk-factory';
+import { testApp } from '@qelos/testing/http';
 
-const FIXTURE = path.resolve(__dirname, '../../../packages/dev-mock/test/fixtures/dump');
+const FIXTURE = path.resolve(__dirname, '../../../packages/testing/test/fixtures/dump');
 
 function mockConfig() {
   return {
@@ -78,6 +79,30 @@ export function registerMockTests(expressModule: typeof express, label: string):
       assert.ok(state.entities.list('product').length >= 2);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  test(`[${label}] testApp: cookie session and persona clients against the integrator`, async () => {
+    const config = mockConfig();
+    config.mock.seed.personas.push({ email: 'other@example.com', password: 'secret-pass-2', roles: ['user'] });
+    const { middleware, proxy } = createQelosIntegrator({ config });
+    const app = expressModule();
+    app.use(middleware);
+    app.use('/api', proxy!);
+    const client = await testApp(app as any);
+    try {
+      assert.equal((await client.signIn('dev@example.com', 'secret-pass-1')).status, 200);
+      assert.equal((await client.json('/api/me')).body.email, 'dev@example.com');
+
+      // a persona client needs no sign-in (the jar's cookie of the first client is not shared with it)
+      const anon = await testApp(app as any);
+      try {
+        assert.equal((await anon.as('other@example.com').json('/api/me')).body.email, 'other@example.com');
+      } finally {
+        await anon.close();
+      }
+    } finally {
+      await client.close();
     }
   });
 

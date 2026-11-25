@@ -35,6 +35,10 @@ features:
   - icon: 🔌
     title: Per-Framework Middleware
     details: Drop-in integrators for Next.js, Nuxt, Express, Fastify, NestJS, and FastAPI — one import and you're wired in.
+  - icon: 🧪
+    title: Testing Suite
+    details: "@qelos/testing: a local, in-memory Qelos API for development, integration tests, and CI. No tenant required."
+    link: /testing/
   - icon: 📜
     title: Events & Audit Log
     details: Every API call, auth event, and AI interaction is recorded. Forward to webhooks or query via the SDK.
@@ -101,6 +105,12 @@ Qelos is the **AI-first application layer gateway**. It plays three roles for yo
   <h3>🔌 Browse integrators</h3>
   <p>Per-framework setup guides for Express, Next.js, Nuxt, Fastify, NestJS, and FastAPI.</p>
   <a href="/integrators/">See available integrators →</a>
+</div>
+
+<div class="custom-card">
+  <h3>🧪 Test your app</h3>
+  <p>Run your app and tests against a local Qelos mock: no tenant, no network. Works with every integrator.</p>
+  <a href="/testing/">Testing guide →</a>
 </div>
 
 <div class="custom-card">

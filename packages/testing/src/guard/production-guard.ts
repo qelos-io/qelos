@@ -4,7 +4,7 @@ export class MockProductionError extends Error {
   code = 'QELOS_MOCK_PRODUCTION';
   constructor() {
     super(
-      '@qelos/dev-mock refuses to run when NODE_ENV=production. Set `allowInProduction: true` to force it (not recommended).',
+      '@qelos/testing refuses to run when NODE_ENV=production. Set `allowInProduction: true` to force it (not recommended).',
     );
     this.name = 'MockProductionError';
   }

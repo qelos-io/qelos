@@ -6,7 +6,7 @@ import qelosFastify from '../src/plugin';
 import { createRequestSdk } from '../src/sdk-factory';
 import { getQelosMock } from '../src/mock';
 
-const FIXTURE = path.resolve(__dirname, '../../../packages/dev-mock/test/fixtures/dump');
+const FIXTURE = path.resolve(__dirname, '../../../packages/testing/test/fixtures/dump');
 
 function mockConfig() {
   return {

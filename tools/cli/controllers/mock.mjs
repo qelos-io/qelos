@@ -5,14 +5,14 @@ import { spawn } from 'node:child_process';
 import { logger } from '../services/utils/logger.mjs';
 import { scaffoldMockFolder, DEFAULT_MOCK_DIR } from '../services/mock/scaffold.mjs';
 
-/** Locate the `@qelos/dev-mock` serve bin from the project or from the CLI install. */
-export function resolveDevMockBin(cwd = process.cwd()) {
+/** Locate the `@qelos/testing` serve bin from the project or from the CLI install. */
+export function resolveTestingBin(cwd = process.cwd()) {
   const bases = [path.join(cwd, 'noop.js'), import.meta.url];
   for (const base of bases) {
     try {
-      const pkgPath = createRequire(base).resolve('@qelos/dev-mock/package.json');
+      const pkgPath = createRequire(base).resolve('@qelos/testing/package.json');
       const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-      const bin = typeof pkg.bin === 'string' ? pkg.bin : pkg.bin?.['qelos-dev-mock'];
+      const bin = typeof pkg.bin === 'string' ? pkg.bin : pkg.bin?.['qelos-testing'];
       if (bin) {
         const file = path.join(path.dirname(pkgPath), bin);
         if (fs.existsSync(file)) return file;
@@ -69,9 +69,9 @@ export async function mockInitController({ dir = DEFAULT_MOCK_DIR, pull, dump, f
 }
 
 export async function mockServeController({ dir = DEFAULT_MOCK_DIR, port, host }) {
-  const bin = resolveDevMockBin();
+  const bin = resolveTestingBin();
   if (!bin) {
-    logger.error('@qelos/dev-mock is not installed. Run `npm i -D @qelos/dev-mock` in your project.');
+    logger.error('@qelos/testing is not installed. Run `npm i -D @qelos/testing` in your project.');
     process.exit(1);
   }
   if (!fs.existsSync(dir)) {

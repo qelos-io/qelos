@@ -34,7 +34,7 @@ export interface QelosNextConfig {
    */
   disableProxy?: boolean;
   /**
-   * Serve a local Qelos mock (`@qelos/dev-mock`) instead of proxying to a
+   * Serve a local Qelos mock (`@qelos/testing`) instead of proxying to a
    * Qelos tenant. `true` enables it, a string is a folder holding
    * `qelos pull` / `qelos dump` artifacts and mock state, an object is passed
    * to `createMockQelos`. The `QELOS_MOCK` env var (`1`/`true`/path) enables it

@@ -1053,7 +1053,7 @@ function generateQelosResourcesContent(resources) {
   );
   sections.push('');
   sections.push(
-    '**No tenant locally?** Run `qelos mock init`, then start the app with `QELOS_MOCK=./qelos-mock` (or the `mock` integrator config option in the integrator config). The integrator then answers `/api/**` from `@qelos/dev-mock` (auth, personas, workspaces, entities) with state persisted as JSON in the folder; it is ignored when `NODE_ENV=production`. Personas live in `qelos-mock/personas.json`; reset state via `POST /__qelos_mock__/reset`. Never point production at the mock.',
+    '**No tenant locally?** Run `qelos mock init`, then start the app with `QELOS_MOCK=./qelos-mock` (or the `mock` integrator config option in the integrator config). The integrator then answers `/api/**` from `@qelos/testing` (auth, personas, workspaces, entities) with state persisted as JSON in the folder; it is ignored when `NODE_ENV=production`. Personas live in `qelos-mock/personas.json`; reset state via `POST /__qelos_mock__/reset`. Never point production at the mock.',
   );
   sections.push('');
 

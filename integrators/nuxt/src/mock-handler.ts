@@ -26,7 +26,7 @@ const SKIP_HEADERS = new Set([
 ]);
 
 /**
- * Answer the current H3/Nitro event from the Qelos mock (`@qelos/dev-mock`)
+ * Answer the current H3/Nitro event from the Qelos mock (`@qelos/testing`)
  * instead of proxying it to a Qelos tenant.
  */
 export async function serveFromMock(

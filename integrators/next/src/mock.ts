@@ -2,7 +2,7 @@ import type { QelosNextConfig } from './types';
 
 /**
  * Minimal structural types so this package's typings don't require the
- * optional `@qelos/dev-mock` peer to be installed.
+ * optional `@qelos/testing` peer to be installed.
  */
 export interface MockQelosOptions {
   enabled?: boolean;
@@ -15,12 +15,12 @@ export interface MockQelosOptions {
 export interface MockQelos {
   handle(request: Request): Promise<Response>;
   fetch: typeof fetch;
-  /** Live mock state (see `MockState` in `@qelos/dev-mock`). */
+  /** Live mock state (see `MockState` in `@qelos/testing`). */
   state: any;
   [key: string]: any;
 }
 
-interface DevMockModule {
+interface TestingModule {
   createMockQelos(options: MockQelosOptions): MockQelos;
   resolveMockConfig(env: Record<string, string | undefined>, explicit?: MockQelosOptions): MockQelosOptions;
 }
@@ -28,7 +28,7 @@ interface DevMockModule {
 /** Placeholder origin used for SDK/`/api/me` calls that are served by the mock. */
 export const MOCK_APP_URL = 'http://qelos-mock.local';
 
-const MOCK_PACKAGE: string = '@qelos/dev-mock';
+const MOCK_PACKAGE: string = '@qelos/testing';
 
 const FALSE_VALUES = new Set(['', '0', 'false', 'no', 'off']);
 
@@ -62,16 +62,16 @@ function isRequested(config: QelosNextConfig, env: NodeJS.ProcessEnv): boolean {
   return !!mock;
 }
 
-async function loadDevMock(): Promise<DevMockModule> {
+async function loadTesting(): Promise<TestingModule> {
   try {
-    return (await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ MOCK_PACKAGE)) as DevMockModule;
+    return (await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ MOCK_PACKAGE)) as TestingModule;
   } catch (err) {
     const code = (err as { code?: string })?.code;
     if (code === 'ERR_MODULE_NOT_FOUND' || code === 'MODULE_NOT_FOUND') {
       throw new Error(
         '[@qelos/integrator-next] Qelos mock mode was requested (config.mock / QELOS_MOCK) ' +
-          'but "@qelos/dev-mock" is not installed. Install it as a dev dependency: ' +
-          'npm i -D @qelos/dev-mock',
+          'but "@qelos/testing" is not installed. Install it as a dev dependency: ' +
+          'npm i -D @qelos/testing',
       );
     }
     throw err;
@@ -107,7 +107,7 @@ function createController(config: QelosNextConfig): QelosMockController {
 
   let instance: Promise<MockQelos> | undefined;
   const create = (): Promise<MockQelos> =>
-    (instance ??= loadDevMock()
+    (instance ??= loadTesting()
       .then((mod) => mod.createMockQelos({ ...mod.resolveMockConfig(env, explicitOptions(config.mock)), enabled: true }))
       .catch((err) => {
         instance = undefined; // allow retry after e.g. installing the package

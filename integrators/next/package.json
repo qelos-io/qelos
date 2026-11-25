@@ -69,13 +69,13 @@
   "peerDependencies": {
     "next": ">=13.4.0",
     "react": ">=18.2.0",
-    "@qelos/dev-mock": "workspace:^"
+    "@qelos/testing": "workspace:^"
   },
   "peerDependenciesMeta": {
     "react": {
       "optional": true
     },
-    "@qelos/dev-mock": {
+    "@qelos/testing": {
       "optional": true
     }
   },
@@ -88,7 +88,7 @@
     "react": "^18.3.1",
     "tsx": "^4.21.0",
     "typescript": "^5.4.5",
-    "@qelos/dev-mock": "workspace:*"
+    "@qelos/testing": "workspace:*"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",

@@ -23,9 +23,9 @@ Putting integrators in their own folder keeps the boundary explicit:
 
 ## Local development without a Qelos tenant
 
-Integrators can run against [`@qelos/dev-mock`](../packages/dev-mock) instead of a real tenant:
+Integrators can run against [`@qelos/testing`](../packages/testing) instead of a real tenant:
 `qelos mock init`, then `QELOS_MOCK=./qelos-mock`. Full guide:
-[Develop locally without a Qelos tenant](../documentation/docs/integrators/local-development.md).
+[Develop locally without a Qelos tenant](../documentation/docs/testing/local-development.md).
 Runnable example: [`examples/express-mock`](../examples/express-mock).
 
 ## Adding a new integrator

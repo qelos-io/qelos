@@ -214,14 +214,14 @@ createQelosIntegrator({
 
 ## Local development without a Qelos tenant
 
-Install the optional `@qelos/dev-mock` package and enable mock mode. The
+Install the optional `@qelos/testing` package and enable mock mode. The
 proxy then answers `/api/**` from an in-process mock of the Qelos API (auth,
 workspaces, personas, entities, ...) instead of forwarding upstream, and
 `req.qelos` / the per-request SDK (including the social-auth and MCP helpers)
 talk to the same mock, with no network involved.
 
 ```bash
-npm i -D @qelos/dev-mock
+npm i -D @qelos/testing
 ```
 
 ```ts
@@ -238,10 +238,10 @@ You can also enable it with the environment: `QELOS_MOCK=1`, `QELOS_MOCK=true`
 or `QELOS_MOCK=./path/to/folder`. An explicit `config.mock` wins over the env.
 
 - The mock is created lazily, once per integrator, and shared by the
-  middleware, proxy and SDK. `mock.get()` resolves to the `@qelos/dev-mock`
+  middleware, proxy and SDK. `mock.get()` resolves to the `@qelos/testing`
   instance (`state`, `on(...)`, ...) for programmatic control in dev; the
   controller is also available as `req.app.locals.qelosMock`.
-- If mock mode is requested but `@qelos/dev-mock` is not installed, requests
+- If mock mode is requested but `@qelos/testing` is not installed, requests
   fail with a clear error. Production bundles without it keep working because
   the package is only imported dynamically when mock mode is on.
 - **Production guard:** with `NODE_ENV=production` mock mode is ignored (a

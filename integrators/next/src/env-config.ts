@@ -9,7 +9,7 @@ import type { QelosNextConfig } from './types';
  * Recognized variables:
  *
  * - `QELOS_APP_URL` (required unless `QELOS_MOCK` is set) — Qelos backend base URL.
- * - `QELOS_MOCK` — `1`/`true`/folder path: serve the local `@qelos/dev-mock`
+ * - `QELOS_MOCK` — `1`/`true`/folder path: serve the local `@qelos/testing`
  *   instead of a Qelos tenant (ignored when `NODE_ENV=production`).
  * - `QELOS_API_TOKEN` — service-to-service token (skips cookie identity).
  * - `QELOS_REQUIRE_AUTH` — `"true"` to reject anonymous requests.

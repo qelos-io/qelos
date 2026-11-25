@@ -1,7 +1,7 @@
-"""Dev mock mode: run ``@qelos/dev-mock`` as a Node sidecar and target it.
+"""Dev mock mode: run ``@qelos/testing`` as a Node sidecar and target it.
 
 The mock Qelos API is a TypeScript package that cannot run in-process in
-Python, so a small ``serve`` CLI is spawned (``npx @qelos/dev-mock serve``) and
+Python, so a small ``serve`` CLI is spawned (``npx @qelos/testing serve``) and
 the proxy / SDK / middleware simply use its origin as the Qelos origin.
 """
 
@@ -88,7 +88,7 @@ def is_mock_enabled(config: QelosConfig, env: Optional[Mapping[str, str]] = None
 
 
 class MockSidecar:
-    """A managed ``@qelos/dev-mock serve`` Node process."""
+    """A managed ``@qelos/testing serve`` Node process."""
 
     def __init__(
         self,
@@ -116,9 +116,9 @@ class MockSidecar:
                 raise QelosMockError(
                     "Qelos dev mock needs Node.js: `npx` was not found on PATH. "
                     "Install Node.js, or start the mock yourself "
-                    "(`npx @qelos/dev-mock serve --dir <folder>`) and set QELOS_MOCK_URL."
+                    "(`npx @qelos/testing serve --dir <folder>`) and set QELOS_MOCK_URL."
                 )
-            base = [npx, "--yes", "@qelos/dev-mock"]
+            base = [npx, "--yes", "@qelos/testing"]
         args = base + ["serve", "--port", str(self.port), "--host", "127.0.0.1"]
         if self.directory:
             args += ["--dir", self.directory]

@@ -11,7 +11,7 @@ import { createRequestSdk } from './sdk-factory';
 
 const FIXTURE = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  '../../../packages/dev-mock/test/fixtures/dump',
+  '../../../packages/testing/test/fixtures/dump',
 );
 
 function mockConfig() {

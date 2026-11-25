@@ -166,9 +166,9 @@ Dev mock mode serves the proxy, the per-request SDK and the middleware's
 `/api/me` lookup from a local mimic of the Qelos API instead of a real tenant.
 
 **Decision.** The mimic is the TypeScript package
-[`@qelos/dev-mock`](../../packages/dev-mock), which cannot run in-process in
+[`@qelos/testing`](../../packages/testing), which cannot run in-process in
 Python. The integrator therefore uses a **Node sidecar**: it spawns
-`npx @qelos/dev-mock serve --dir <folder> --port <p>` (a minimal `serve` bin
+`npx @qelos/testing serve --dir <folder> --port <p>` (a minimal `serve` bin
 built on `node:http` and the package's `handle`) and then points the existing
 proxy / SDK at `http://127.0.0.1:<port>` as the Qelos origin. Nothing else in
 the request path changes, and non-mock behaviour is untouched.
@@ -191,7 +191,7 @@ QELOS_MOCK_URL=http://127.0.0.1:4555 uvicorn ...   # use an already-running mock
 | `mock` / `QELOS_MOCK` | `True`/`1`/`true`, or a folder path. `False`/`0` disables. Config wins over env. |
 | `mock_url` / `QELOS_MOCK_URL` | Existing mock server origin; skips spawning. |
 | `mock_port` | Sidecar port (default `0` = free port). |
-| `mock_command` | Launcher override (default `["npx", "--yes", "@qelos/dev-mock"]`). |
+| `mock_command` | Launcher override (default `["npx", "--yes", "@qelos/testing"]`). |
 
 Behaviour:
 

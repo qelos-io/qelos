@@ -1,0 +1,67 @@
+{
+  "name": "@qelos/testing",
+  "version": "4.4.0",
+  "description": "Testing suite for apps using the Qelos SDK or integrators: a local in-memory Qelos API for development, integration tests and CI",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json",
+    "./sdk": {
+      "types": "./dist/sdk/index.d.ts",
+      "import": "./dist/sdk/index.js",
+      "default": "./dist/sdk/index.js"
+    },
+    "./fixtures": {
+      "types": "./dist/fixtures/index.d.ts",
+      "import": "./dist/fixtures/index.js",
+      "default": "./dist/fixtures/index.js"
+    },
+    "./http": {
+      "types": "./dist/http/index.d.ts",
+      "import": "./dist/http/index.js",
+      "default": "./dist/http/index.js"
+    },
+    "./cassette": {
+      "types": "./dist/cassette/index.d.ts",
+      "import": "./dist/cassette/index.js",
+      "default": "./dist/cassette/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit -p tsconfig.test.json",
+    "test": "node --import tsx --test \"test/**/*.test.ts\""
+  },
+  "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@qelos/sdk": "workspace:^",
+    "@types/node": "^22.5.4",
+    "tsx": "^4.20.4",
+    "typescript": "^5.4.5"
+  },
+  "bin": {
+    "qelos-testing": "./dist/cli/bin.js"
+  },
+  "peerDependencies": {
+    "@qelos/sdk": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@qelos/sdk": {
+      "optional": true
+    }
+  }
+}

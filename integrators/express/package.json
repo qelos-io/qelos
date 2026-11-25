@@ -48,13 +48,13 @@
   },
   "peerDependencies": {
     "express": "^4.17.0 || ^5.0.0",
-    "@qelos/dev-mock": "workspace:^"
+    "@qelos/testing": "workspace:^"
   },
   "peerDependenciesMeta": {
     "express": {
       "optional": false
     },
-    "@qelos/dev-mock": {
+    "@qelos/testing": {
       "optional": true
     }
   },
@@ -68,6 +68,6 @@
     "express4": "npm:express@^4.21.2",
     "tsx": "^4.21.0",
     "typescript": "^5.6.3",
-    "@qelos/dev-mock": "workspace:*"
+    "@qelos/testing": "workspace:*"
   }
 }

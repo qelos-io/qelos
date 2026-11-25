@@ -4,7 +4,7 @@ editLink: true
 ---
 # Mock Command
 
-Develop without a Qelos tenant. See the full guide: [Develop locally without a Qelos tenant](../integrators/local-development.md).
+Develop without a Qelos tenant. See the full guide: [Develop locally without a Qelos tenant](../testing/local-development.md).
 
 ## `qelos mock init [dir]`
 
@@ -18,7 +18,7 @@ Scaffolds a mock folder (default `./qelos-mock`): `personas.json` (admin, member
 
 ## `qelos mock serve [dir]`
 
-Runs the `@qelos/dev-mock` server for the folder (install it with `npm i -D @qelos/dev-mock`).
+Runs the `@qelos/testing` server for the folder (install it with `npm i -D @qelos/testing`).
 
 | Option | Description |
 |---|---|
