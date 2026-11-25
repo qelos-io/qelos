@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { MockState, createMockQelos, importQelosArtifacts } from '../src/index.js';
 
 const fixtures = (name: string) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
+const lf = (s: string) => s.replace(/\r\n/g, '\n');
 const run = (dir: string, state: MockState, opts = {}) => {
   const warnings: string[] = [];
   const debug: string[] = [];
@@ -25,18 +26,18 @@ test('imports a pull folder into state collections', () => {
   assert.ok(bp.properties.title);
   assert.match(bp._id, /^[0-9a-f]{24}$/);
   assert.equal(state.configurations.size, 2);
-  assert.equal(state.configurations.findOne((c) => c.key === 'users-header')!.metadata.html, '<header>Hi</header>\n');
+  assert.equal(lf(state.configurations.findOne((c) => c.key === 'users-header')!.metadata.html),'<header>Hi</header>\n');
   const card = state.components.get('64b0000000000000000000c1')!;
   assert.equal(card.type, 'component');
   assert.match(card.content, /card/);
   assert.equal(state.components.get('64b0000000000000000000c2')!.type, 'script');
-  assert.equal(state.blocks.get('64b0000000000000000000b1')!.content, '<section>hero</section>\n');
+  assert.equal(lf(state.blocks.get('64b0000000000000000000b1')!.content), '<section>hero</section>\n');
   const plugin = state.plugins.findOne((p) => p.apiPath === 'demo')!;
-  assert.equal(plugin.microFrontends[0].structure, '<div>home</div>\n');
+  assert.equal(lf(plugin.microFrontends[0].structure), '<div>home</div>\n');
   assert.equal(state.connections.get('64b0000000000000000000d1')!.authentication.$var, 'OPENAI_API_KEY');
   const integ = state.integrations.get('64b0000000000000000000e1')!;
   assert.equal(integ.trigger.source, '64b0000000000000000000d1');
-  assert.equal(integ.target.details.pre_messages[0].content, 'You are helpful.\n');
+  assert.equal(lf(integ.target.details.pre_messages[0].content), 'You are helpful.\n');
   assert.equal(state.pricingPlans.size, 1);
 });
 
