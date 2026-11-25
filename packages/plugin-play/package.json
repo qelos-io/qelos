@@ -3,6 +3,7 @@
   "version": "4.4.0",
   "description": "Play a plugin for Qelos!",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "create-certs": "node create-cert.js",
     "type-check": "tsc --noEmit",
