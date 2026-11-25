@@ -38,6 +38,22 @@ export function validateSeed(seed: unknown): MockSeed {
       }
     }
   }
+  if (seed.roles !== undefined) {
+    if (!isObject(seed.roles)) throw new MockConfigError('"seed.roles" must be an object keyed by role');
+    for (const [role, perms] of Object.entries(seed.roles)) {
+      if (!Array.isArray(perms) || perms.some((p) => typeof p !== 'string')) {
+        throw new MockConfigError(`"seed.roles.${role}" must be an array of permission strings`);
+      }
+    }
+  }
+  for (const p of (seed.personas as any[]) || []) {
+    if (p.workspaces !== undefined && (!Array.isArray(p.workspaces) || p.workspaces.some((w: unknown) => !isObject(w)))) {
+      throw new MockConfigError('persona "workspaces" must be an array of objects');
+    }
+    if (p.roles !== undefined && (!Array.isArray(p.roles) || p.roles.some((x: unknown) => typeof x !== 'string'))) {
+      throw new MockConfigError('persona "roles" must be an array of strings');
+    }
+  }
   for (const u of [...((seed.users as any[]) || []), ...((seed.personas as any[]) || [])]) {
     if (typeof u.email !== 'string' || !u.email) throw new MockConfigError('seed users/personas require an "email"');
   }
@@ -59,6 +75,14 @@ export function validateMockConfig(options: unknown = {}): ResolvedMockConfig {
     if (!isObject(o.tenant)) throw new MockConfigError('"tenant" must be an object');
     expectType('tenant.name', o.tenant.name, 'string');
     expectType('tenant.appUrl', o.tenant.appUrl, 'string');
+  }
+  if (o.auth !== undefined) {
+    if (!isObject(o.auth)) throw new MockConfigError('"auth" must be an object');
+    for (const k of ['accessTokenTtlMs', 'refreshTokenTtlMs', 'cookieTokenTtlMs'] as const) {
+      expectType(`auth.${k}`, o.auth[k], 'number');
+    }
+    expectType('auth.personalWorkspace', o.auth.personalWorkspace, 'boolean');
+    expectType('auth.defaultRole', o.auth.defaultRole, 'string');
   }
   const persist = o.persist ?? !!o.dataDir;
   if (persist && !o.dataDir) throw new MockConfigError('"persist" requires "dataDir"');

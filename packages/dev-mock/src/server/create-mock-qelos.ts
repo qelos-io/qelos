@@ -2,6 +2,7 @@ import type { MockQelosOptions } from '../config/types.js';
 import { validateMockConfig } from '../config/resolve.js';
 import { assertMockAllowed, mockBanner } from '../guard/production-guard.js';
 import { jsonResponse, MockHttpError, Router, type HttpMethod, type RouteHandler, type RouteModule } from '../router/router.js';
+import { authRoutes } from '../routes/auth-routes.js';
 import { MockState } from '../state/mock-state.js';
 import { createActorResolver, createDefaultAuthenticate, type Authenticate } from '../routes/actor.js';
 import { entitiesRoutes } from '../routes/entities.js';
@@ -10,7 +11,7 @@ import { stubRoutes } from '../routes/stubs.js';
 import { managementRoutes } from '../routes/management.js';
 
 export interface CreateMockQelosOptions extends MockQelosOptions {
-  /** route modules (auth, entities, ...) registered on the router */
+  /** extra route modules; registered before the built-in auth routes so they can override them */
   routes?: RouteModule[];
   /**
    * Resolve the caller of a request (return `null` for "no identity": permissions are then not enforced).
@@ -46,8 +47,13 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
     persist: config.persist,
     seed: config.seed,
     persistDebounceMs: config.persistDebounceMs,
+    defaultPersona: config.defaultPersona,
+    tenantId: String(config.tenant?._id ?? config.tenant?.id ?? '0'),
+    auth: config.auth,
   });
   const router = new Router();
+  // custom modules first so they can override the built-in ones
+  for (const module of [...routes, authRoutes]) router.use(module, state);
   for (const module of routes) router.use(module, state);
   if (builtinRoutes) {
     const resolveActor = createActorResolver(authenticate ?? createDefaultAuthenticate(config.defaultPersona));

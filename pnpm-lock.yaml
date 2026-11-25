@@ -1045,6 +1045,9 @@ importers:
 
   packages/dev-mock:
     devDependencies:
+      '@qelos/sdk':
+        specifier: workspace:^
+        version: link:../sdk
       '@types/node':
         specifier: ^22.5.4
         version: 22.18.0

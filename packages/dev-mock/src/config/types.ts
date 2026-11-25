@@ -18,7 +18,35 @@ export interface MockWorkspaceSeed {
   [key: string]: unknown;
 }
 
-export interface MockPersonaSeed extends MockUserSeed {}
+export interface MockPersonaWorkspaceSeed {
+  /** existing workspace id */
+  _id?: string;
+  /** workspace name (created when missing) */
+  name?: string;
+  labels?: string[];
+  /** roles of the persona inside this workspace */
+  roles?: string[];
+}
+
+export interface MockPersonaSeed extends MockUserSeed {
+  /** when omitted, any non-empty password signs the persona in */
+  password?: string;
+  workspaces?: MockPersonaWorkspaceSeed[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface MockAuthOptions {
+  /** access token lifetime in ms. default 5 hours */
+  accessTokenTtlMs?: number;
+  /** refresh token lifetime in ms. default 30 days */
+  refreshTokenTtlMs?: number;
+  /** cookie token lifetime in ms. default 30 days */
+  cookieTokenTtlMs?: number;
+  /** create a personal workspace for every newly registered user. default false */
+  personalWorkspace?: boolean;
+  /** role given to newly registered users. default "user" */
+  defaultRole?: string;
+}
 
 export interface MockBlueprintSeed {
   _id?: string;
@@ -35,6 +63,8 @@ export interface MockSeed {
   entities?: Record<string, Array<Record<string, unknown>>>;
   configurations?: Array<Record<string, unknown>>;
   blocks?: Array<Record<string, unknown>>;
+  /** role -> permissions (supports "*" and "prefix:*"). Merged over the defaults. */
+  roles?: Record<string, string[]>;
   components?: Array<Record<string, unknown>>;
   events?: Array<Record<string, unknown>>;
   agents?: Array<Record<string, unknown>>;
@@ -54,6 +84,8 @@ export interface MockQelosOptions {
   /** id or email of the auto-logged-in user */
   defaultPersona?: string;
   tenant?: MockTenant;
+  /** tokens, cookies and registration behaviour */
+  auth?: MockAuthOptions;
   /** allow running with NODE_ENV=production */
   allowInProduction?: boolean;
   /** debounce (ms) for persistence writes. default 50 */
