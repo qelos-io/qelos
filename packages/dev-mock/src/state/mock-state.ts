@@ -15,6 +15,11 @@ export const COLLECTION_NAMES = [
   'blueprints',
   'configurations',
   'blocks',
+  'components',
+  'events',
+  'agents',
+  'aiResponses',
+  'lambdas',
 ] as const;
 export type CollectionName = (typeof COLLECTION_NAMES)[number];
 const ENTITIES_FILE = 'entities';
@@ -78,6 +83,12 @@ export class EntityStore {
     Object.assign(this.data, data);
   }
 
+  /** replace all entities of one blueprint */
+  replaceBlueprint(blueprint: string, items: Doc[]) {
+    this.data[blueprint] = items;
+    this.touch();
+  }
+
   blueprints(): string[] {
     return Object.keys(this.data);
   }
@@ -131,6 +142,11 @@ export class MockState {
   readonly blueprints: Collection;
   readonly configurations: Collection;
   readonly blocks: Collection;
+  readonly components: Collection;
+  readonly events: Collection;
+  readonly agents: Collection;
+  readonly aiResponses: Collection;
+  readonly lambdas: Collection;
   readonly entities: EntityStore;
 
   private collections: Record<CollectionName, Collection>;
@@ -158,6 +174,11 @@ export class MockState {
     this.blueprints = this.collections.blueprints;
     this.configurations = this.collections.configurations;
     this.blocks = this.collections.blocks;
+    this.components = this.collections.components;
+    this.events = this.collections.events;
+    this.agents = this.collections.agents;
+    this.aiResponses = this.collections.aiResponses;
+    this.lambdas = this.collections.lambdas;
     this.entities = new EntityStore(this.rawEntities, touch(ENTITIES_FILE));
 
     if (!this.loadFromDisk()) {
@@ -181,6 +202,35 @@ export class MockState {
   reset(): void {
     this.applySeed();
     if (this.stateDir) this.markAllDirty();
+  }
+
+  /**
+   * Merge a seed into the current state without dropping existing data:
+   * documents are upserted by `_id` (new documents get generated ids).
+   */
+  seed(seed: MockSeed): void {
+    const upsert = (list: Doc[], doc: Doc) => {
+      const idx = list.findIndex((d) => d._id === doc._id);
+      if (idx >= 0) list[idx] = doc;
+      else list.push(doc);
+    };
+    const personas = withIds(seed.personas);
+    for (const name of COLLECTION_NAMES) {
+      let items: Doc[] = [];
+      if (name === 'personas') items = personas;
+      else if (name === 'users') items = [...withIds(seed.users), ...personas.map((p) => ({ ...p }))];
+      else if (name in seed) items = withIds((seed as any)[name]);
+      if (!items.length) continue;
+      const merged = this.collections[name].list();
+      for (const item of items) upsert(merged, item);
+      this.collections[name]._replace(merged);
+      this.markDirty(name);
+    }
+    for (const [bp, list] of Object.entries(seed.entities || {})) {
+      const merged = this.entities.list(bp);
+      for (const item of withIds(list)) upsert(merged, item);
+      this.entities.replaceBlueprint(bp, merged);
+    }
   }
 
   /** Write all pending changes now. */

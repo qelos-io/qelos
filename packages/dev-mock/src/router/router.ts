@@ -23,6 +23,18 @@ interface Route {
   handler: RouteHandler;
 }
 
+/** Throw from a handler to answer with a JSON error `{ message }` and the given status. */
+export class MockHttpError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+    public code?: string,
+  ) {
+    super(message);
+    this.name = 'MockHttpError';
+  }
+}
+
 export function jsonResponse(body: unknown, status = 200, headers?: HeadersInit): Response {
   const h = new Headers(headers);
   if (!h.has('content-type')) h.set('content-type', 'application/json');
@@ -42,11 +54,26 @@ export class Router {
   private routes: Route[] = [];
 
   register(method: HttpMethod, pattern: string, handler: RouteHandler): this {
+    this.routes.push(this.build(method, pattern, handler));
+    return this;
+  }
+
+  /** Like `register`, but takes precedence over every route registered so far. */
+  prepend(method: HttpMethod, pattern: string, handler: RouteHandler): this {
+    this.routes.unshift(this.build(method, pattern, handler));
+    return this;
+  }
+
+  /** Registered routes, for introspection. */
+  list(): Array<{ method: string; path: string }> {
+    return this.routes.map((r) => ({ method: r.method, path: '/' + [...r.segments, ...(r.wildcard ? ['*'] : [])].join('/') }));
+  }
+
+  private build(method: HttpMethod, pattern: string, handler: RouteHandler): Route {
     const segments = split(pattern);
     const wildcard = segments[segments.length - 1] === '*';
     if (wildcard) segments.pop();
-    this.routes.push({ method: method.toUpperCase() as HttpMethod, segments, wildcard, handler });
-    return this;
+    return { method: method.toUpperCase() as HttpMethod, segments, wildcard, handler };
   }
 
   use(module: RouteModule, state: MockState): this {
