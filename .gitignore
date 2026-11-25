@@ -41,3 +41,4 @@ aidev.tasks.json
 .codex/config.toml
 opencode.json
 *.aidev-backup
+.aidev/worktrees/
