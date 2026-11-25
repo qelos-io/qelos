@@ -1,4 +1,4 @@
-import { QelosChatWidget, QelosChatWidgetOptions } from './chat-widget';
+import { QelosChatWidget, QelosChatWidgetOptions } from './chat-widget.js';
 
 declare global {
   interface Window {
@@ -63,4 +63,4 @@ if (typeof window !== 'undefined') {
 }
 
 export { QelosChatWidget };
-export type { QelosChatWidgetOptions } from './chat-widget';
+export type { QelosChatWidgetOptions } from './chat-widget.js';

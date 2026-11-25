@@ -2,10 +2,49 @@
   "name": "@qelos/web-sdk",
   "version": "4.4.0",
   "description": "Frontend Web SDK for Qelos API",
-  "main": "./dist/index.js",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      },
+      "default": "./dist/index.js"
+    },
+    "./dist/*.js": {
+      "import": {
+        "types": "./dist/*.d.ts",
+        "default": "./dist/*.js"
+      },
+      "require": {
+        "types": "./dist/cjs/*.d.ts",
+        "default": "./dist/cjs/*.js"
+      },
+      "default": "./dist/*.js"
+    },
+    "./dist/*": {
+      "import": {
+        "types": "./dist/*.d.ts",
+        "default": "./dist/*.js"
+      },
+      "require": {
+        "types": "./dist/cjs/*.d.ts",
+        "default": "./dist/cjs/*.js"
+      },
+      "default": "./dist/*.js"
+    },
+    "./package.json": "./package.json",
+    "./*": "./*"
+  },
   "scripts": {
     "prepublishOnly": "npm run build",
-    "build": "tsc"
+    "build": "node scripts/build.mjs"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",

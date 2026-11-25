@@ -1,5 +1,5 @@
-import loadStyles from './shared-style';
-import {getCode, authorize, unAuthorize} from './auth';
+import loadStyles from './shared-style.js';
+import {getCode, authorize, unAuthorize} from './auth.js';
 
 export const code = getCode();
 
@@ -8,7 +8,7 @@ export {
   unAuthorize
 }
 
-export { QelosChatWidget } from './chat-widget';
-export type { QelosChatWidgetOptions } from './chat-widget';
+export { QelosChatWidget } from './chat-widget.js';
+export type { QelosChatWidgetOptions } from './chat-widget.js';
 
 loadStyles();

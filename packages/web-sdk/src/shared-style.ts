@@ -1,4 +1,4 @@
-import {dispatch, on} from './qelos';
+import {dispatch, on} from './qelos.js';
 
 export default function loadStyles() {
   dispatch('styleInterested');
