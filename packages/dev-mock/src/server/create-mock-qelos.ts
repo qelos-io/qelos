@@ -2,10 +2,11 @@ import type { MockQelosOptions } from '../config/types.js';
 import { validateMockConfig } from '../config/resolve.js';
 import { assertMockAllowed, mockBanner } from '../guard/production-guard.js';
 import { jsonResponse, Router, type RouteModule } from '../router/router.js';
+import { authRoutes } from '../routes/auth-routes.js';
 import { MockState } from '../state/mock-state.js';
 
 export interface CreateMockQelosOptions extends MockQelosOptions {
-  /** route modules (auth, entities, ...) registered on the router */
+  /** extra route modules; registered before the built-in auth routes so they can override them */
   routes?: RouteModule[];
 }
 
@@ -30,9 +31,13 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
     persist: config.persist,
     seed: config.seed,
     persistDebounceMs: config.persistDebounceMs,
+    defaultPersona: config.defaultPersona,
+    tenantId: String(config.tenant?._id ?? config.tenant?.id ?? '0'),
+    auth: config.auth,
   });
   const router = new Router();
-  for (const module of routes) router.use(module, state);
+  // custom modules first so they can override the built-in ones
+  for (const module of [...routes, authRoutes]) router.use(module, state);
 
   async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url);

@@ -22,3 +22,24 @@ export {
 } from './state/mock-state.js';
 export { generateId, isValidId } from './state/ids.js';
 export { createMockQelos, type MockQelos, type CreateMockQelosOptions } from './server/create-mock-qelos.js';
+export { authRoutes, unauthorized } from './routes/auth-routes.js';
+export {
+  authenticate,
+  PERSONA_HEADER,
+  PERSONA_COOKIE,
+  type AuthContext,
+  type AuthSession,
+} from './auth/authenticate.js';
+export {
+  checkPermission,
+  checkBlueprintPermission,
+  getUserPermissions,
+  permissionMatches,
+  permissionsForRoles,
+  scopeMatches,
+  rolesOf,
+  type PermissionScope,
+  type CrudOperation,
+} from './auth/permissions.js';
+export { cookieTokenName, decodeToken } from './auth/tokens.js';
+export { DEFAULT_ROLE_PERMISSIONS, type MockStateSettings } from './state/mock-state.js';

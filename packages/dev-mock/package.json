@@ -28,6 +28,7 @@
     "access": "public"
   },
   "devDependencies": {
+    "@qelos/sdk": "workspace:^",
     "@types/node": "^22.5.4",
     "tsx": "^4.20.4",
     "typescript": "^5.4.5"

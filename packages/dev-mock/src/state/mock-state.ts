@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { writeFile, rename, rm, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { MockSeed } from '../config/types.js';
+import type { MockAuthOptions, MockSeed } from '../config/types.js';
 import { generateId } from './ids.js';
 
 export type Doc = { _id: string; [key: string]: any };
@@ -15,6 +15,7 @@ export const COLLECTION_NAMES = [
   'blueprints',
   'configurations',
   'blocks',
+  'apiTokens',
 ] as const;
 export type CollectionName = (typeof COLLECTION_NAMES)[number];
 const ENTITIES_FILE = 'entities';
@@ -115,7 +116,26 @@ export interface MockStateOptions {
   persist?: boolean;
   seed?: MockSeed;
   persistDebounceMs?: number;
+  defaultPersona?: string;
+  tenantId?: string;
+  auth?: MockAuthOptions;
 }
+
+/** Runtime settings read by route modules (auth, permissions...). */
+export interface MockStateSettings {
+  defaultPersona?: string;
+  tenantId: string;
+  /** role -> permissions, seed merged over the defaults */
+  roles: Record<string, string[]>;
+  auth: Required<MockAuthOptions>;
+}
+
+export const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
+  admin: ['*'],
+  plugin: ['*'],
+  user: ['me:*', 'workspaces:*', 'invites:*', 'entities:*'],
+  member: ['me:*', 'workspaces:read', 'entities:read'],
+};
 
 export type MockSnapshot = Record<CollectionName, Doc[]> & { entities: Record<string, Doc[]> };
 
@@ -131,6 +151,10 @@ export class MockState {
   readonly blueprints: Collection;
   readonly configurations: Collection;
   readonly blocks: Collection;
+  readonly apiTokens: Collection;
+  readonly settings: MockStateSettings;
+  /** incremented by every `reset()`, lets derived data (seeded personas) detect a reseed */
+  resetCount = 0;
   readonly entities: EntityStore;
 
   private collections: Record<CollectionName, Collection>;
@@ -158,6 +182,20 @@ export class MockState {
     this.blueprints = this.collections.blueprints;
     this.configurations = this.collections.configurations;
     this.blocks = this.collections.blocks;
+    this.apiTokens = this.collections.apiTokens;
+    const a = options.auth || {};
+    this.settings = {
+      defaultPersona: options.defaultPersona,
+      tenantId: options.tenantId || '0',
+      roles: { ...DEFAULT_ROLE_PERMISSIONS, ...(options.seed?.roles || {}) },
+      auth: {
+        accessTokenTtlMs: a.accessTokenTtlMs ?? 300 * 60 * 1000,
+        refreshTokenTtlMs: a.refreshTokenTtlMs ?? 30 * 24 * 60 * 60 * 1000,
+        cookieTokenTtlMs: a.cookieTokenTtlMs ?? 30 * 24 * 60 * 60 * 1000,
+        personalWorkspace: a.personalWorkspace ?? false,
+        defaultRole: a.defaultRole ?? 'user',
+      },
+    };
     this.entities = new EntityStore(this.rawEntities, touch(ENTITIES_FILE));
 
     if (!this.loadFromDisk()) {
@@ -179,6 +217,7 @@ export class MockState {
 
   /** Drop all data and reseed from the configured seed. */
   reset(): void {
+    this.resetCount++;
     this.applySeed();
     if (this.stateDir) this.markAllDirty();
   }
