@@ -15,6 +15,11 @@ export const COLLECTION_NAMES = [
   'blueprints',
   'configurations',
   'blocks',
+  'components',
+  'plugins',
+  'integrations',
+  'connections',
+  'pricingPlans',
 ] as const;
 export type CollectionName = (typeof COLLECTION_NAMES)[number];
 const ENTITIES_FILE = 'entities';
@@ -43,6 +48,15 @@ export class Collection<T extends Doc = Doc> {
   insert(doc: Omit<T, '_id'> & { _id?: string }): T {
     const item = { ...doc, _id: doc._id || generateId() } as T;
     this.items.push(item);
+    this.touch();
+    return item;
+  }
+  /** Replace a document wholesale (the new doc may carry a different `_id`). */
+  replace(id: string, doc: Omit<T, '_id'> & { _id?: string }): T | undefined {
+    const idx = this.items.findIndex((i) => i._id === id);
+    if (idx < 0) return undefined;
+    const item = { ...doc, _id: doc._id || id } as T;
+    this.items[idx] = item;
     this.touch();
     return item;
   }
@@ -93,6 +107,15 @@ export class EntityStore {
     this.touch();
     return item;
   }
+  replace(blueprint: string, id: string, doc: Record<string, any>): Doc | undefined {
+    const list = this.data[blueprint];
+    const idx = list ? list.findIndex((e) => e._id === id) : -1;
+    if (idx < 0) return undefined;
+    const item = { ...doc, _id: doc._id || id } as Doc;
+    list[idx] = item;
+    this.touch();
+    return item;
+  }
   update(blueprint: string, id: string, patch: Record<string, any>): Doc | undefined {
     const item = this.get(blueprint, id);
     if (!item) return undefined;
@@ -131,7 +154,14 @@ export class MockState {
   readonly blueprints: Collection;
   readonly configurations: Collection;
   readonly blocks: Collection;
+  readonly components: Collection;
+  readonly plugins: Collection;
+  readonly integrations: Collection;
+  readonly connections: Collection;
+  readonly pricingPlans: Collection;
   readonly entities: EntityStore;
+  /** true when state was loaded from previously persisted JSON files (as opposed to seeded) */
+  readonly restored: boolean;
 
   private collections: Record<CollectionName, Collection>;
   private raw: Record<CollectionName, Doc[]>;
@@ -158,13 +188,26 @@ export class MockState {
     this.blueprints = this.collections.blueprints;
     this.configurations = this.collections.configurations;
     this.blocks = this.collections.blocks;
+    this.components = this.collections.components;
+    this.plugins = this.collections.plugins;
+    this.integrations = this.collections.integrations;
+    this.connections = this.collections.connections;
+    this.pricingPlans = this.collections.pricingPlans;
     this.entities = new EntityStore(this.rawEntities, touch(ENTITIES_FILE));
 
-    if (!this.loadFromDisk()) {
+    this.restored = this.loadFromDisk();
+    if (!this.restored) {
       this.applySeed();
       // persist the initial seeded state
       if (this.stateDir) this.markAllDirty();
     }
+  }
+
+  /** Generic accessor by collection name. */
+  collection(name: CollectionName): Collection {
+    const c = this.collections[name];
+    if (!c) throw new Error(`@qelos/dev-mock: unknown collection "${name}"`);
+    return c;
   }
 
   /** Find a persona (or user) by id or email. */

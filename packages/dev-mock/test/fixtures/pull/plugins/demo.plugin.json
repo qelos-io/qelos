@@ -1,0 +1,5 @@
+{
+  "name": "Demo plugin", "apiPath": "demo", "manifestUrl": "http://localhost:9000/manifest",
+  "subscribedEvents": [], "injectables": [], "navBarGroups": [], "cruds": [],
+  "microFrontends": [{ "name": "Home", "route": { "name": "home", "path": "/home" }, "structure": { "$ref": "./micro-frontends/home.html" } }]
+}

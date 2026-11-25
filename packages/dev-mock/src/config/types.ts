@@ -41,6 +41,12 @@ export interface MockQelosOptions {
   enabled?: boolean;
   /** folder holding state json (`state/*.json`) and optional dump/pull artifacts */
   dataDir?: string;
+  /** folder with `qelos pull` / `qelos dump` output to import at startup. defaults to `dataDir` */
+  artifactsDir?: string;
+  /** import artifacts even when persisted state already exists. default false */
+  reimport?: boolean;
+  /** conflict behavior for artifact import. default 'replace' */
+  onConflict?: 'replace' | 'skip';
   /** defaults to true when dataDir is set */
   persist?: boolean;
   seed?: MockSeed;

@@ -1,0 +1,8 @@
+{
+  "identifier": "category",
+  "name": "Category",
+  "properties": { "label": { "type": "string", "title": "Label" } },
+  "relations": [{ "key": "products", "target": "product" }],
+  "permissions": [],
+  "permissionScope": "user"
+}

@@ -3,6 +3,7 @@ import { validateMockConfig } from '../config/resolve.js';
 import { assertMockAllowed, mockBanner } from '../guard/production-guard.js';
 import { jsonResponse, Router, type RouteModule } from '../router/router.js';
 import { MockState } from '../state/mock-state.js';
+import { importQelosArtifacts } from '../importers/qelos-artifacts.js';
 
 export interface CreateMockQelosOptions extends MockQelosOptions {
   /** route modules (auth, entities, ...) registered on the router */
@@ -31,6 +32,15 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
     seed: config.seed,
     persistDebounceMs: config.persistDebounceMs,
   });
+  // import `qelos pull`/`qelos dump` output on first start (persisted state wins afterwards) or when asked to
+  const artifactsDir = config.artifactsDir ?? config.dataDir;
+  if (artifactsDir && (!state.restored || config.reimport)) {
+    const log = config.logger ?? console.warn;
+    importQelosArtifacts(artifactsDir, state, {
+      onConflict: config.onConflict,
+      warn: (m) => log(`[qelos-dev-mock] ${m}`),
+    });
+  }
   const router = new Router();
   for (const module of routes) router.use(module, state);
 

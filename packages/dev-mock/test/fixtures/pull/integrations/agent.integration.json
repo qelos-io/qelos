@@ -1,0 +1,6 @@
+{
+  "_id": "64b0000000000000000000e1", "kind": ["qelos"], "active": true,
+  "trigger": { "source": { "$refId": "../connections/openai.connection.json" }, "operation": "chatCompletion", "details": { "name": "Agent" } },
+  "target": { "source": { "$refId": "../connections/openai.connection.json" }, "operation": "chatCompletion", "details": { "pre_messages": [{ "role": "system", "content": { "$ref": "./prompts/agent.md" } }] } },
+  "dataManipulation": []
+}

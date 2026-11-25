@@ -1,0 +1,4 @@
+[
+  { "_id": "64b0000000000000000000a1", "username": "jane", "email": "jane@example.com", "roles": ["admin"], "password": "hash-should-not-import", "token": "secret-token" },
+  { "_id": "64b0000000000000000000a2", "username": "joe", "email": "joe@example.com", "roles": ["user"] }
+]

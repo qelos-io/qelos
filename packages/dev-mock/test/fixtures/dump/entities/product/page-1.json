@@ -1,0 +1,4 @@
+[
+  { "_id": "64b000000000000000000101", "identifier": "p-1", "title": "Pen", "price": 2, "user": "jane", "workspace": "Acme" },
+  { "_id": "64b000000000000000000102", "title": "Ink", "price": 7, "user": "64b0000000000000000000a2" }
+]

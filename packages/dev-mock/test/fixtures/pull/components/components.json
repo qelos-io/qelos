@@ -1,0 +1,4 @@
+{
+  "MyCard": { "_id": "64b0000000000000000000c1", "componentName": "MyCard", "identifier": "my-card", "description": "A card" },
+  "utils/demo": { "_id": "64b0000000000000000000c2", "identifier": "utils/demo", "description": "helper script" }
+}
