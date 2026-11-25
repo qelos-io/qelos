@@ -6,7 +6,7 @@
   "scripts": {
     "test": "node --test --import tsx integrators/express.test.ts integrators/fastify.test.ts integrators/nest.test.ts integrators/next.test.ts integrators/nuxt.test.ts",
     "test:login": "node --test --import tsx ./login.e2e.test.ts",
-    "test:packaging": "node --test --import tsx packaging/sdk.e2e.test.ts packaging/web-sdk.e2e.test.ts"
+    "test:packaging": "node --test --import tsx \"packaging/*.e2e.test.ts\""
   },
   "dependencies": {
     "@nestjs/common": "^10.4.5",
