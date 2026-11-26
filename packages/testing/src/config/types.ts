@@ -33,6 +33,10 @@ export interface MockPersonaSeed extends MockUserSeed {
   password?: string;
   workspaces?: MockPersonaWorkspaceSeed[];
   metadata?: Record<string, unknown>;
+  /** requests with no credentials act as this persona, so nobody has to sign in. `defaultPersona` wins over it */
+  default?: boolean;
+  /** API tokens that act as this persona, e.g. for an app's server routes. Made-up values: only the mock accepts them */
+  apiTokens?: string[];
 }
 
 export interface MockAuthOptions {

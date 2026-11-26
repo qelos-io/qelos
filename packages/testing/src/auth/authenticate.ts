@@ -54,10 +54,17 @@ function personaContext(state: MockState, ref: string): AuthContext | null {
   };
 }
 
+/** A token declared on a persona (`apiTokens`): it belongs to that persona's user and does not expire. */
+function personaToken(state: MockState, hash: string): Doc | undefined {
+  const email = state.settings.personaTokens.get(hash);
+  const user = email ? findUserByRef(state, email) : undefined;
+  return user && { _id: `persona-token:${hash.slice(0, 24)}`, userId: user._id };
+}
+
 function apiTokenContext(state: MockState, request: Request, rawToken: string): AuthContext | null {
   const hash = sha256(rawToken);
-  const token = state.apiTokens.findOne((t) => t.tokenHash === hash);
-  if (!token || new Date(token.expiresAt).getTime() <= Date.now()) return null;
+  const token = state.apiTokens.findOne((t) => t.tokenHash === hash) ?? personaToken(state, hash);
+  if (!token || (token.expiresAt && new Date(token.expiresAt).getTime() <= Date.now())) return null;
   const user = state.users.get(token.userId);
   if (!user) return null;
 

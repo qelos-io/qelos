@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { writeFile, rename, rm, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { MockAuthOptions, MockSeed } from '../config/types.js';
+import type { MockAuthOptions, MockPersonaSeed, MockSeed } from '../config/types.js';
+import { sha256 } from '../auth/tokens.js';
 import { generateId } from './ids.js';
 
 export type Doc = { _id: string; [key: string]: any };
@@ -170,6 +171,8 @@ export interface MockStateSettings {
   tenantId: string;
   /** role -> permissions, seed merged over the defaults */
   roles: Record<string, string[]>;
+  /** API tokens declared on personas: token hash -> persona email. Read from the seed on every start, never saved */
+  personaTokens: Map<string, string>;
   auth: Required<MockAuthOptions>;
 }
 
@@ -184,6 +187,10 @@ export type MockSnapshot = Record<CollectionName, Doc[]> & { entities: Record<st
 
 const withIds = (list: Array<Record<string, any>> = []): Doc[] =>
   list.map((i) => ({ ...i, _id: i._id || generateId() }));
+
+/** Personas as they are stored: `default` and `apiTokens` configure the mock and are not part of a user. */
+const personaDocs = (personas: MockPersonaSeed[] = []): Doc[] =>
+  withIds(personas.map(({ default: _default, apiTokens: _apiTokens, ...persona }) => persona));
 
 export class MockState {
   readonly users: Collection;
@@ -244,6 +251,7 @@ export class MockState {
       defaultPersona: options.defaultPersona,
       tenantId: options.tenantId || '0',
       roles: { ...DEFAULT_ROLE_PERMISSIONS, ...(options.seed?.roles || {}) },
+      personaTokens: new Map(),
       auth: {
         accessTokenTtlMs: a.accessTokenTtlMs ?? 300 * 60 * 1000,
         refreshTokenTtlMs: a.refreshTokenTtlMs ?? 30 * 24 * 60 * 60 * 1000,
@@ -252,6 +260,7 @@ export class MockState {
         defaultRole: a.defaultRole ?? 'user',
       },
     };
+    this.addPersonaTokens(options.seed?.personas);
     this.components = this.collections.components;
     this.scripts = this.collections.scripts;
     this.plugins = this.collections.plugins;
@@ -307,7 +316,8 @@ export class MockState {
       if (idx >= 0) list[idx] = doc;
       else list.push(doc);
     };
-    const personas = withIds(seed.personas);
+    this.addPersonaTokens(seed.personas);
+    const personas = personaDocs(seed.personas);
     for (const name of COLLECTION_NAMES) {
       let items: Doc[] = [];
       if (name === 'personas') items = personas;
@@ -341,9 +351,15 @@ export class MockState {
     await this.flush();
   }
 
+  private addPersonaTokens(personas: MockPersonaSeed[] = []) {
+    for (const { email, apiTokens } of personas) {
+      for (const token of apiTokens ?? []) this.settings.personaTokens.set(sha256(token), email);
+    }
+  }
+
   private applySeed() {
     const seed = this.options.seed || {};
-    const personas = withIds(seed.personas);
+    const personas = personaDocs(seed.personas);
     for (const name of COLLECTION_NAMES) {
       let items: Doc[] = [];
       if (name === 'personas') items = personas;

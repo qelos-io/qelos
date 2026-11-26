@@ -301,6 +301,26 @@ function importPricingPlans(ctx: Ctx) {
 
 // ---------------------------------------------------------------- dump types
 
+/**
+ * A persona of the mock folder with a dumped user's login is that user: the account takes the dumped `_id`, so the
+ * user's records stay theirs, and keeps whatever the persona sets (roles, password, ...) over the dumped fields.
+ * @returns true when the dumped user was merged into a persona
+ */
+function mergeIntoPersona(ctx: Ctx, dumped: Record<string, any>): boolean {
+  if (typeof dumped._id !== 'string' || !dumped._id) return false;
+  const logins = [dumped.email, dumped.username].filter((v) => typeof v === 'string' && v).map((v) => v.toLowerCase());
+  const personas = ctx.state.collection('personas');
+  const persona = personas.findOne((p) => typeof p.email === 'string' && logins.includes(p.email.toLowerCase()));
+  if (!persona || (persona._id === dumped._id && !ctx.replace)) return false;
+  const users = ctx.state.collection('users');
+  if (!users.findOne((u) => u._id === persona._id)) return false;
+  const { _id, workspaces: _workspaces, workspacesSeeded: _seeded, ...declared } = persona;
+  users.replace(persona._id, { ...dumped, ...declared, _id: dumped._id });
+  personas.replace(persona._id, { ...persona, _id: dumped._id });
+  count(ctx, 'users', 'replaced');
+  return true;
+}
+
 function importList(ctx: Ctx, file: string, collection: string, keys: string[], clean?: (d: any) => any) {
   const path = join(ctx.root, file);
   if (!existsSync(path)) return;
@@ -312,6 +332,7 @@ function importList(ctx: Ctx, file: string, collection: string, keys: string[], 
   list.forEach((item, i) => {
     if (!isObject(item)) return;
     const doc = clean ? clean(item) : item;
+    if (collection === 'users' && mergeIntoPersona(ctx, doc)) return;
     upsert(ctx, collection, doc, keys, `${file}:${i}:${item.email ?? item.name ?? ''}`);
   });
 }
