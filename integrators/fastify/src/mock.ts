@@ -62,7 +62,9 @@ function isRequested(config: QelosFastifyConfig, env: NodeJS.ProcessEnv): boolea
 
 async function loadTesting(): Promise<TestingModule> {
   try {
-    return (await import('@qelos/testing' as string)) as TestingModule;
+    // require, not import(): this package is CommonJS, and a test runner such as Jest in its default mode cannot
+    // run a dynamic import ("A dynamic import callback was invoked without --experimental-vm-modules")
+    return require('@qelos/testing') as TestingModule;
   } catch (err) {
     const code = (err as { code?: string })?.code;
     if (code === 'ERR_MODULE_NOT_FOUND' || code === 'MODULE_NOT_FOUND') {

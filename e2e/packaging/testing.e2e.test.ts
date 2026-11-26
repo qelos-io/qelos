@@ -54,8 +54,10 @@ describe('the published package', () => {
     assert.match(readFileSync(bin, 'utf8'), /^#!\/usr\/bin\/env node/);
     for (const target of Object.values<any>(pkg.exports)) {
       if (typeof target === 'string') continue;
-      assert.ok(existsSync(join(installed, target.default)), target.default);
-      assert.ok(existsSync(join(installed, target.types)), target.types);
+      for (const file of [target.default, target.import.default, target.import.types, target.require.default, target.require.types]) {
+        assert.ok(existsSync(join(installed, file)), file);
+      }
+      assert.match(target.require.default, /^\.\/dist\/cjs\//, 'require() gets the CommonJS build');
     }
     assert.equal(existsSync(join(installed, 'test')), false, 'tests are not published');
   });
@@ -167,6 +169,47 @@ console.log(JSON.stringify(await (await mock.fetch('/api/custom-plans')).json())
   });
 });
 
+describe('under Jest in its default (CommonJS) mode', () => {
+  const jest = createRequire(join(repo, 'package.json')).resolve('jest/bin/jest');
+
+  test('the entry points load with require() and the mock works, with no transform or experimental flags', async () => {
+    const dir = join(project, 'jest-project');
+    mkdirSync(dir);
+    // its own package.json: a plain CommonJS project, as `jest` sets one up by default
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'jest-project', private: true }));
+    writeFileSync(
+      join(dir, 'mock.test.js'),
+      `const { createMockQelos } = require('@qelos/testing');
+const { createMockSdk } = require('@qelos/testing/sdk');
+const { admin, blueprint, entities } = require('@qelos/testing/fixtures');
+const { testApp } = require('@qelos/testing/http');
+const { createRecorder, loadCassette } = require('@qelos/testing/cassette');
+
+test('mock SDK with fixtures, faults and scripted AI', async () => {
+  const boss = admin({ password: 'pw' });
+  const { sdk, mock } = createMockSdk({ persona: boss.email, seed: { personas: [boss], blueprints: [blueprint('todo')], entities: { todo: entities(2, { title: 't{n}' }) } } });
+  expect((await sdk.authentication.getLoggedInUser()).email).toBe(boss.email);
+  expect(await sdk.entities('todo').getList()).toHaveLength(2);
+  mock.faults.fail('/api/me', 503);
+  await expect(sdk.authentication.getLoggedInUser()).rejects.toThrow();
+});
+
+test('testApp and the server', async () => {
+  const mock = createMockQelos({ logger: () => {} });
+  const client = await testApp((req, res) => res.end(JSON.stringify({ ok: true })));
+  expect((await client.json('/')).body).toEqual({ ok: true });
+  await client.close();
+  expect((await mock.fetch('/api/blueprints')).status).toBe(200);
+  expect(typeof createRecorder).toBe('function');
+  expect(typeof loadCassette).toBe('function');
+});
+`,
+    );
+    const { stderr } = await execFileAsync(process.execPath, [jest, '--rootDir', dir, '--ci', '--testEnvironment', 'node'], { cwd: dir, timeout: 90_000 });
+    assert.match(stderr, /Tests:\s+2 passed, 2 total/);
+  });
+});
+
 describe('TypeScript consumers', () => {
   const ts = createRequire(join(repo, 'packages', 'testing', 'package.json'))('typescript') as typeof import('typescript');
   const source = `import { createMockQelos } from '@qelos/testing';
@@ -183,6 +226,22 @@ export const used = [createMockQelos, sdk.authentication, testApp, createRecorde
     ['bundler', { module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler }],
     ['node10 (moduleResolution: node)', { module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.NodeJs }],
   ];
+  test('a CommonJS file gets the CommonJS declarations under node16', () => {
+    writeFileSync(join(project, 'consumer.cts'), source);
+    const program = ts.createProgram([join(project, 'consumer.cts')], {
+      module: ts.ModuleKind.Node16,
+      moduleResolution: ts.ModuleResolutionKind.Node16,
+      noEmit: true,
+      strict: true,
+      skipLibCheck: true,
+      types: [],
+      lib: ['lib.es2022.d.ts', 'lib.dom.d.ts'],
+      target: ts.ScriptTarget.ES2022,
+    });
+    assert.deepEqual(ts.getPreEmitDiagnostics(program).map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n')), []);
+    assert.ok(program.getSourceFiles().some((f) => /testing\/dist\/cjs\/sdk\/index\.d\.ts$/.test(f.fileName)));
+  });
+
   for (const [label, options] of modes) {
     test(`type-checks under ${label}`, () => {
       writeFileSync(join(project, 'consumer.ts'), source);
