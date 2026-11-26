@@ -1,4 +1,5 @@
-import { describe, mock, test } from 'node:test';
+import { after, before, describe, mock, test } from 'node:test';
+import { createServer } from 'node:http';
 import assert from 'node:assert/strict';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,6 +39,24 @@ const subscription = (n: number, status: string, planId: string, billingCycle = 
 });
 
 describe('the mock follows the payments service', () => {
+  /**
+   * The service reports events to other services over HTTP, after it has answered. This stands in for them, so the
+   * tests never reach a running local stack. Set before the service modules load: they read the address once.
+   */
+  const platform = createServer((_req, res) => res.writeHead(200, { 'content-type': 'application/json' }).end('{}'));
+  before(async () => {
+    await new Promise<void>((resolve) => platform.listen(0, '127.0.0.1', resolve));
+    const { port } = platform.address() as { port: number };
+    for (const name of ['PLUGINS', 'CONTENT']) {
+      Object.assign(process.env, { [`${name}_SERVICE_URL`]: '127.0.0.1', [`${name}_SERVICE_PORT`]: String(port) });
+    }
+  });
+  after(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    platform.closeAllConnections();
+    platform.close();
+  });
+
   test('the administrator summary', async () => {
     const { buildSubscriptionsSummary, pickAttentionItems } = await load('services/subscriptions-summary');
     const list = [
@@ -169,6 +188,52 @@ describe('the mock follows the payments service', () => {
           if (res.status !== 200) assert.deepEqual(await res.json(), expected.body, label);
         }
       }
+    }
+  });
+
+  test('whose billing account a checkout may use', async () => {
+    const Plan = await load('models/plan');
+    const Subscription = await load('models/subscription');
+    const { initiateCheckout } = await load('controllers/checkout');
+    const workspace = { _id: 'ws-1', name: 'Acme', roles: ['member'], labels: [] };
+    const owners = {
+      mine: { billableEntityType: 'user', billableEntityId: 'u-1' },
+      ours: { billableEntityType: 'workspace', billableEntityId: 'ws-1' },
+      theirs: { billableEntityType: 'workspace', billableEntityId: 'ws-2' },
+    };
+    // not pending and not on sale: an allowed checkout stops before reaching a payment provider
+    const subscriptions = Object.entries(owners).map(([_id, owner]) => ({ _id, status: 'active', planId: 'p', billingCycle: 'monthly', ...owner }));
+    const plan = { _id: 'p', name: 'P', monthlyPrice: 1, yearlyPrice: 10, isActive: false };
+    const mockQelos = createMockQelos({
+      logger: () => {},
+      seed: { personas: [{ _id: 'u-1', email: 'u@x.com', roles: ['user'], workspaces: [{ _id: 'ws-1', name: 'Acme' }] }], pricingPlans: [plan], subscriptions },
+    });
+    const inline = { planId: 'p', billingCycle: 'monthly' };
+    const cases: object[] = [
+      inline,
+      { ...inline, billableEntityType: 'user', billableEntityId: 'u-1' },
+      { ...inline, billableEntityType: 'user', billableEntityId: 'u-2' },
+      { ...inline, billableEntityId: 'u-2' },
+      { ...inline, billableEntityType: 'workspace' },
+      { ...inline, billableEntityType: 'workspace', billableEntityId: 'ws-1' },
+      { ...inline, billableEntityType: 'workspace', billableEntityId: 'ws-2' },
+      { ...inline, billableEntityType: 'tenant' },
+      { ...inline, billableEntityType: 'workspace', billableEntityId: { $ne: null } },
+      { subscriptionId: 'mine' },
+      { subscriptionId: 'ours' },
+      { subscriptionId: 'theirs' },
+      { subscriptionId: { $ne: null } },
+      { subscriptionId: 'missing' },
+    ];
+    for (const body of cases) {
+      const queries = [
+        mock.method(Plan, 'findOne', found(plan)),
+        mock.method(Subscription, 'findOne', (filter: any) => found(subscriptions.find((s) => s._id === filter._id) ?? null)()),
+      ];
+      const expected = await real(initiateCheckout, { body, user: { _id: 'u-1', roles: ['user'], workspace } });
+      queries.forEach((query) => query.mock.restore());
+      const res = await mockQelos.fetch('/api/checkout', { method: 'POST', headers: { [PERSONA_HEADER]: 'u@x.com' }, body: JSON.stringify(body) });
+      assert.deepEqual({ status: res.status, body: await res.json() }, expected, JSON.stringify(body));
     }
   });
 

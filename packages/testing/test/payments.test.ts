@@ -227,6 +227,19 @@ describe('who sees what', () => {
     assert.equal((await call('ada@x.com', 'GET', '/api/subscriptions/unknown')).status, 404);
   });
 
+  test('a user checks out for their own accounts only', async () => {
+    const { ada, member, call, user } = setup();
+    const pending = await ada.subscribeToPlan('pro', 'monthly');
+    for (const body of [
+      { planId: 'pro', billingCycle: 'monthly', billableEntityType: 'user', billableEntityId: user('ada@x.com')._id },
+      { planId: 'pro', billingCycle: 'monthly', billableEntityType: 'workspace', billableEntityId: 'ws-acme' },
+      { subscriptionId: pending._id },
+    ]) {
+      assert.deepEqual(await call('bob@x.com', 'POST', '/api/checkout', body), { status: 403, body: { message: 'access denied' } });
+    }
+    await member.checkout({ planId: 'pro', billingCycle: 'monthly', billableEntityType: 'workspace', billableEntityId: 'ws-acme' });
+  });
+
   test("a workspace member lists the workspace's records, and is refused a single one, as by the service", async () => {
     const { member, mock } = setup();
     const created = await member.subscribeToPlan('pro', 'monthly');

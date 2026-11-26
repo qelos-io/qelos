@@ -191,6 +191,7 @@ describe('checkout controller', async () => {
     });
 
     it('should initiate checkout using existing subscriptionId', async () => {
+      getSubscriptionByIdMock.mock.mockImplementation(async () => ({ billableEntityType: 'user', billableEntityId: 'user-1' }));
       initiateCheckoutMock.mock.mockImplementation(async () => ({
         subscriptionId: 'sub-pending-1',
         checkoutUrl: 'url',
@@ -358,6 +359,81 @@ describe('checkout controller', async () => {
       const res = mockRes();
       await CheckoutController.initiateCheckout(req, res);
       assert.strictEqual(res.status.mock.calls[0].arguments[0], 500);
+    });
+  });
+
+  describe('initiateCheckout - whose billing account', () => {
+    // as the user header carries it
+    const user = { _id: 'user-1', workspace: { _id: 'ws-1', roles: ['member'] } };
+    const inline = { planId: 'plan-1', billingCycle: 'monthly' };
+
+    async function checkout(body: any, caller: any = user) {
+      initiateCheckoutMock.mock.mockImplementation(async () => ({ subscriptionId: 'sub-1' }));
+      const res = mockRes();
+      await CheckoutController.initiateCheckout(mockReq({ body, user: caller }), res);
+      return res.status.mock.calls[0].arguments[0];
+    }
+
+    const refused: Array<[string, any]> = [
+      ['another user', { billableEntityType: 'user', billableEntityId: 'user-2' }],
+      ['another user, without a type', { billableEntityId: 'user-2' }],
+      ['another workspace', { billableEntityType: 'workspace', billableEntityId: 'ws-2' }],
+      ['the active workspace as a user', { billableEntityType: 'user', billableEntityId: 'ws-1' }],
+      ['an unknown account type', { billableEntityType: 'tenant' }],
+      ['a query instead of an id', { billableEntityType: 'workspace', billableEntityId: { $ne: null } }],
+      ['an object holding the own id', { billableEntityType: 'workspace', billableEntityId: { _id: 'ws-1', $ne: 'ws-1' } }],
+    ];
+    for (const [name, account] of refused) {
+      it(`should refuse a regular user naming ${name}`, async () => {
+        assert.strictEqual(await checkout({ ...inline, ...account }), 403);
+        assert.strictEqual(initiateCheckoutMock.mock.calls.length, 0);
+        assert.strictEqual(createSubscriptionMock.mock.calls.length, 0);
+        assert.strictEqual(emitCheckoutFailedEventMock.mock.calls[0].arguments[0].code, 'ACCESS_DENIED');
+      });
+    }
+
+    const allowed: Array<[string, any]> = [
+      ['no account', {}],
+      ['themselves', { billableEntityType: 'user', billableEntityId: 'user-1' }],
+      ['their active workspace', { billableEntityType: 'workspace', billableEntityId: 'ws-1' }],
+      ['the workspace type only', { billableEntityType: 'workspace' }],
+    ];
+    for (const [name, account] of allowed) {
+      it(`should accept a regular user naming ${name}`, async () => {
+        assert.strictEqual(await checkout({ ...inline, ...account }), 200);
+      });
+    }
+
+    for (const [billableEntityType, billableEntityId, status] of [
+      ['user', 'user-1', 200],
+      ['workspace', 'ws-1', 200],
+      ['user', 'user-2', 403],
+      ['workspace', 'ws-2', 403],
+    ] as const) {
+      it(`should answer ${status} for a subscription of ${billableEntityType} ${billableEntityId}`, async () => {
+        getSubscriptionByIdMock.mock.mockImplementation(async () => ({ billableEntityType, billableEntityId }));
+        assert.strictEqual(await checkout({ subscriptionId: 'sub-1' }), status);
+        assert.strictEqual(initiateCheckoutMock.mock.calls.length, status === 200 ? 1 : 0);
+      });
+    }
+
+    it('should refuse a query instead of a subscription id', async () => {
+      assert.strictEqual(await checkout({ subscriptionId: { $ne: null } }), 403);
+      assert.strictEqual(getSubscriptionByIdMock.mock.calls.length, 0);
+      assert.strictEqual(initiateCheckoutMock.mock.calls.length, 0);
+    });
+
+    it('should not check out an unknown subscription', async () => {
+      getSubscriptionByIdMock.mock.mockImplementation(async () => { throw { code: 'SUBSCRIPTION_NOT_FOUND' }; });
+      assert.strictEqual(await checkout({ subscriptionId: 'nope' }), 500);
+      assert.strictEqual(initiateCheckoutMock.mock.calls.length, 0);
+    });
+
+    it('should let a privileged user pay for any account', async () => {
+      const admin = { _id: 'admin-1', isPrivileged: true };
+      assert.strictEqual(await checkout({ ...inline, billableEntityType: 'workspace', billableEntityId: 'ws-2' }, admin), 200);
+      assert.strictEqual(await checkout({ subscriptionId: 'sub-2' }, admin), 200);
+      assert.strictEqual(getSubscriptionByIdMock.mock.calls.length, 0);
     });
   });
 
