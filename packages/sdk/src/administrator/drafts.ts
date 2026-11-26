@@ -32,8 +32,9 @@ export default class QlDrafts extends BaseSDK {
     return url.href.replace(url.origin, '');
   }
 
+  /** every draft of the signed-in user */
   getList() {
-    return this.callJsonApi<IDraft[]>(this.relativePath);
+    return this.callJsonApi<IDraft[]>(`${this.relativePath}/all`);
   }
 
   getDraft(contextType: string, contextId: string) {

@@ -4,8 +4,8 @@ import { authenticate } from '../auth/authenticate.js';
 
 /**
  * `sdk.drafts`, following `apps/drafts`: every signed-in user keeps their own drafts, one per `contextType` and
- * `contextId`. `getList` asks for `GET /api/drafts` without a context, which the service answers like one draft:
- * `404` unless a draft was saved without a `contextType`.
+ * `contextId`. `GET /api/drafts` without a context (what `getList` of `@qelos/sdk` 4.4.0 and earlier asks for) is
+ * answered like one draft: `404` unless a draft was saved without a `contextType`.
  */
 export function draftRoutes(router: Router, state: MockState) {
   const drafts = () => state.collection('drafts');

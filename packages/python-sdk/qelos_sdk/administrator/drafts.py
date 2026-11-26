@@ -26,8 +26,8 @@ class QlDrafts(BaseSDK):
         return f"{self._relative_path}{qs}"
 
     async def get_list(self) -> List[Dict[str, Any]]:
-        """List all drafts."""
-        return await self.call_json_api(self._relative_path)
+        """List every draft of the signed-in user."""
+        return await self.call_json_api(f"{self._relative_path}/all")
 
     async def get_draft(self, context_type: str, context_id: str) -> Dict[str, Any]:
         """Get a draft by context type and context ID."""

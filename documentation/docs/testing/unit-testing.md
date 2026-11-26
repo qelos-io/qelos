@@ -303,8 +303,8 @@ The administrator SDK's `scripts` (and the older `components`) create, change an
 in bulk. Nothing is compiled: an invalid source is accepted, `requiredProps` stays empty and there is no
 `compiledContent`.
 
-Its `drafts` keep each signed-in user's own drafts, with `setDraft`, `getDraft` and `remove`. `drafts.getList` rejects
-with `draft not found`, as against the real service.
+Its `drafts` keep each signed-in user's own drafts, with `getList`, `setDraft`, `getDraft` and `remove`. In
+`@qelos/sdk` 4.4.0 and earlier, `getList` rejects with `draft not found`, also against the real service.
 
 ## MCP sign-in
 
