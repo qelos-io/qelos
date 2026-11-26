@@ -18,6 +18,7 @@ import {
 import { reachedLimit } from '../blueprints/limitations.js';
 import { dispatch, modifiedFields } from '../blueprints/events.js';
 import { applyUpdateMapping, createJqLoader } from '../blueprints/mapping.js';
+import { createSchemaLoader } from '../blueprints/schemas.js';
 
 type Operation = 'create' | 'read' | 'update' | 'delete';
 type Scopes = true | string[];
@@ -175,6 +176,12 @@ export interface EntitiesRoutesOptions {
 export function entitiesRoutes({ resolveActor, warn = console.warn }: EntitiesRoutesOptions): RouteModule {
   return (router, state) => {
     const loadJq = createJqLoader(warn);
+    const loadSchemas = createSchemaLoader(warn);
+    /** how values of this blueprint are checked: `ajv` is loaded only for a blueprint that has a custom schema */
+    const valueChecks = async (blueprint: BlueprintDoc, failure: string) => ({
+      failure,
+      schema: Object.values(blueprint.properties ?? {}).some((p) => p.type === 'object' && p.schema) ? await loadSchemas() : undefined,
+    });
     const context = async (ctx: RouteContext) => {
       const actor = await resolveActor(ctx);
       const blueprint = getBlueprint(state, ctx.params.blueprint);
@@ -231,14 +238,15 @@ export function entitiesRoutes({ resolveActor, warn = console.warn }: EntitiesRo
       const { actor, blueprint, query, bypassAdmin } = await context(ctx);
       const { unrestricted } = authorize(actor, blueprint, 'create', bypassAdmin);
       const body = (await ctx.json()) || {};
-      const metadata = validateMetadata(buildMetadataInput({}, body, blueprint), blueprint, 'something went wrong with entity creation');
+      const checks = await valueChecks(blueprint, 'something went wrong with entity creation');
+      const metadata = validateMetadata(buildMetadataInput({}, body, blueprint), blueprint, checks);
       const user = (unrestricted && body.user) || actor?._id;
       const workspace = (unrestricted && body.workspace) || actor?.workspace?._id;
       const now = new Date().toISOString();
       const mechanism = blueprint.entityIdentifierMechanism;
       const id = mechanism && mechanism !== 'objectid' ? randomUUID() : generateId();
       const draft = { _id: id, identifier: id, blueprint: blueprint.identifier, tenant: state.settings.tenantId, user, workspace, metadata, indexes: [], created: now, updated: now };
-      await applyUpdateMapping(blueprint, draft, loadJq, 'something went wrong with entity creation');
+      await applyUpdateMapping(blueprint, draft, loadJq, checks);
       checkRelations(state, blueprint, metadata);
       // like permissions, limitations are not checked for an unidentified caller
       const existing = state.entities.list(blueprint.identifier);
@@ -265,7 +273,8 @@ export function entitiesRoutes({ resolveActor, warn = console.warn }: EntitiesRo
       const entity = findEntity(state, blueprint.identifier, ctx.params.id);
       if (!entity || !scopeFilter(entity)) throw new MockHttpError(404, 'entity not found');
       const body = (await ctx.json()) || {};
-      const metadata = validateMetadata(buildMetadataInput(metadataOf(entity, blueprint), body, blueprint), blueprint);
+      const checks = await valueChecks(blueprint, 'something went wrong with entity');
+      const metadata = validateMetadata(buildMetadataInput(metadataOf(entity, blueprint), body, blueprint), blueprint, checks);
       const patch: Record<string, any> = { metadata, updated: new Date().toISOString() };
       if (unrestricted && body.user) patch.user = body.user;
       if (unrestricted && body.workspace) patch.workspace = body.workspace;
@@ -277,7 +286,7 @@ export function entitiesRoutes({ resolveActor, warn = console.warn }: EntitiesRo
         updated: entity.updated,
         metadata,
       };
-      await applyUpdateMapping(blueprint, draft, loadJq, 'something went wrong with entity');
+      await applyUpdateMapping(blueprint, draft, loadJq, checks);
       checkRelations(state, blueprint, metadata);
       const before = { ...entity, metadata: metadataOf(entity, blueprint) };
       const updated = state.entities.update(blueprint.identifier, entity._id, patch)!;

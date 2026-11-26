@@ -1,6 +1,6 @@
 import { MockHttpError } from '../router/router.js';
 import type { Doc } from '../state/mock-state.js';
-import { validateValue, type BlueprintDoc } from '../routes/entities-query.js';
+import { validateValue, type BlueprintDoc, type ValueChecks } from '../routes/entities-query.js';
 
 /**
  * A blueprint's `updateMapping`: properties calculated with `jq` whenever an entity is saved, following
@@ -39,7 +39,7 @@ export async function applyUpdateMapping(
   blueprint: BlueprintDoc,
   entity: Doc & { metadata: Record<string, unknown> },
   loadJq: () => Promise<Jq | undefined>,
-  failure: string,
+  checks: ValueChecks & { failure: string },
 ): Promise<void> {
   const mapping = Object.entries(blueprint.updateMapping ?? {});
   if (!mapping.length) return;
@@ -52,14 +52,14 @@ export async function applyUpdateMapping(
       try {
         return [key, await jq(filter, input)] as const;
       } catch {
-        throw new MockHttpError(500, failure);
+        throw new MockHttpError(500, checks.failure);
       }
     }),
   );
   for (const [key, result] of results) {
     const property = blueprint.properties?.[key];
     if (!property) throw new MockHttpError(400, `Property ${key} not found in blueprint ${blueprint.identifier}`);
-    const value = validateValue(key, result, property, failure);
+    const value = validateValue(key, result, property, checks);
     if (value === undefined) delete entity.metadata[key];
     else entity.metadata[key] = value;
   }
