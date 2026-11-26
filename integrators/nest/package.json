@@ -49,9 +49,9 @@
   "peerDependencies": {
     "@nestjs/common": "^9.0.0 || ^10.0.0 || ^11.0.0",
     "@nestjs/core": "^9.0.0 || ^10.0.0 || ^11.0.0",
+    "@qelos/testing": "workspace:^",
     "reflect-metadata": "^0.1.13 || ^0.2.0",
-    "rxjs": "^7.0.0",
-    "@qelos/testing": "workspace:^"
+    "rxjs": "^7.0.0"
   },
   "peerDependenciesMeta": {
     "@nestjs/common": {
@@ -76,10 +76,11 @@
   "devDependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.2.12",
+    "@qelos/testing": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "tsx": "^4.21.0",
-    "typescript": "^5.6.3",
-    "@qelos/testing": "workspace:*"
+    "typescript": "^5.6.3"
   }
 }
