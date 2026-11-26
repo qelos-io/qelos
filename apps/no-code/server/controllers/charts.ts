@@ -7,6 +7,7 @@ import { getBypassAdmin } from '@qelos/api-kit';
 import { getUserPermittedScopes } from '../services/entities-permissions.service';
 import { getEntityModel } from '../services/entity-storage.service';
 import { getEntityQuery } from '../services/entities.service';
+import { getChartFilter } from '../services/entity-filters.service';
 import mongoose from 'mongoose'
 
 
@@ -65,12 +66,11 @@ export async function getStandardChart(req, res: Response) {
     return;
   }
 
+  // the caller's filters first: the scope of what they may read is applied on top of them
   const query = {
-    ...qs.parse(req._parsedUrl.query, { depth: 3 }),
+    ...getChartFilter(qs.parse(req._parsedUrl.query, { depth: 3 }), blueprint, ['x']),
     ...getEntityQuery({ blueprint, req, permittedScopes: req.permittedScopes })
   }
-  delete query.x;
-  delete query.bypassAdmin;
   
   // Convert string IDs to ObjectId for aggregation queries
   if (query.workspace && typeof query.workspace === 'string' && mongoose.Types.ObjectId.isValid(query.workspace)) {
@@ -189,12 +189,11 @@ export async function getPieChart(req, res: Response) {
       return;
   }
 
+  // the caller's filters first: the scope of what they may read is applied on top of them
   const query = {
-    ...qs.parse(req._parsedUrl.query, { depth: 3 }),
+    ...getChartFilter(qs.parse(req._parsedUrl.query, { depth: 3 }), blueprint, ['x']),
     ...getEntityQuery({ blueprint, req, permittedScopes: req.permittedScopes })
   }
-  delete query.x;
-  delete query.bypassAdmin;
   
   // Convert string IDs to ObjectId for aggregation queries
   if (query.workspace && typeof query.workspace === 'string' && mongoose.Types.ObjectId.isValid(query.workspace)) {
@@ -243,10 +242,9 @@ export async function getCountCard(req, res: Response) {
   const blueprint: IBlueprint = req.blueprint;
 
   const query = {
-    ...qs.parse(req._parsedUrl.query, { depth: 3 }),
+    ...getChartFilter(qs.parse(req._parsedUrl.query, { depth: 3 }), blueprint),
     ...getEntityQuery({ blueprint, req, permittedScopes: req.permittedScopes })
   }
-  delete query.bypassAdmin;
 
   const data = await getEntityModel(blueprint).countDocuments(query).exec();
   res.json({ count: data }).end();
@@ -271,12 +269,9 @@ export async function getSumCard(req, res: Response) {
   }
   
   const query = {
-    ...qs.parse(req._parsedUrl.query, { depth: 3 }),
+    ...getChartFilter(qs.parse(req._parsedUrl.query, { depth: 3 }), blueprint, ['sum', 'groupBy']),
     ...getEntityQuery({ blueprint, req, permittedScopes: req.permittedScopes })
   }
-  delete query.sum;
-  delete query.groupBy;
-  delete query.bypassAdmin;
   
   // Convert string IDs to ObjectId for aggregation queries
   if (query.workspace && typeof query.workspace === 'string' && mongoose.Types.ObjectId.isValid(query.workspace)) {

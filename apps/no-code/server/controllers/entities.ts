@@ -23,6 +23,7 @@ import type { Request, Response } from 'express';
 import { hasGuestReachedLimit } from '../services/guest-request-limit';
 import { getBlueprint } from '../services/blueprints.service';
 import { getPagination } from '../services/entity-pagination.service';
+import { convertQueryToMetadata, convertQueryValuesByType } from '../services/entity-filters.service';
 
 const PUBLIC_USER_DATA = ['firstName', 'lastName', 'profileImage'];
 const PUBLIC_WS_DATA = ['name', 'logo'];
@@ -115,15 +116,6 @@ function getSortQuery(req: Request) {
   return req.query.$sort;
 }
 
-function convertQueryToMetadata(query: any, blueprint: IBlueprint) {
-  Object.entries(blueprint.properties).forEach(([key, property]) => {
-    if (query[key]) {
-      query[`metadata.${key}`] = query[key];
-      delete query[key];
-    }
-  })
-}
-
 function flattenMetadata(entity: any = {}) {
   Object.entries(entity.metadata || {}).forEach(([key, value]) => {
     entity[key] = value;
@@ -179,42 +171,6 @@ function markWrappedResponseDeprecated(req: Request, res: Response) {
     blueprint: (req as any).blueprint?.identifier,
   });
 }
-
-/**
- * Converts query values to appropriate types based on blueprint property type
- * @param value - The value to convert
- * @param propertyType - The blueprint property type
- * @returns The converted value
- */
-const convertPropertyValueByType = (value: any, propertyType: string): any => {
-  if (propertyType === 'boolean') {
-    return value?.toLowerCase?.() === 'true' || value === '1';
-  } else if (propertyType === 'number' || propertyType === 'datetime') {
-    const conversionFn = propertyType === 'number' ? parseInt : (val: string) => new Date(val);
-    
-    if (typeof value === 'string') {
-      return conversionFn(value);
-    } else if (typeof value === 'object' && (value.$eq || value.$ne || value.$gt || value.$gte || value.$lt || value.$lte)) {
-      return Object.entries(value).reduce((acc, [key, val]) => {
-        if (val && typeof val === 'string') {
-          acc[key] = conversionFn(val as string);
-        } else if (val && typeof val === 'number') {
-          acc[key] = val;
-        }
-        return acc;
-      }, {});
-    }
-  }
-
-  if (typeof value === 'object' && value.$regex) {
-    return {
-      $regex: value.$regex || '',
-      $options: value.$options || 'i'
-    }
-  }
-  
-  return value;
-};
 
 export async function getAllBlueprintEntities(req, res) {
   const blueprint = req.blueprint as IBlueprint;
@@ -274,13 +230,7 @@ export async function getAllBlueprintEntities(req, res) {
 
     convertQueryToMetadata(query, blueprint);
     convertQueryToIndexes(query, blueprint);
-    // if the blueprint properties in the query are boolean or numbers, convert them to numbers or booleans
-    Object.entries(blueprint.properties).forEach(([key, property]) => {
-      const fullKey = `metadata.${key}`;
-      if (query[fullKey]) {
-        query[fullKey] = convertPropertyValueByType(query[fullKey], property.type);
-      }
-    });
+    convertQueryValuesByType(query, blueprint);
     const entities = await getEntityModel(blueprint)
       .find(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS, {
         sort,
