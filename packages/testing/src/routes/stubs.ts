@@ -20,7 +20,6 @@ function aiReply(state: MockState, agentId: string, message: string): string {
 
 const toolCallsOf = (r: AiReply) =>
   (r.toolCalls || []).map((t, index) => ({
-    index,
     id: t.id ?? `call_mock_${index + 1}`,
     type: 'function',
     function: {
@@ -50,15 +49,46 @@ function completion(reply: AiReply, threadId?: string) {
   };
 }
 
-function sse(reply: AiReply): Response {
-  const created = Math.floor(Date.now() / 1000);
-  const chunk = (delta: object, finish: string | null) =>
-    `data: ${JSON.stringify({ id: 'chatcmpl-mock', object: 'chat.completion.chunk', created, model: 'qelos-mock', choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`;
-  const pieces = reply.chunks ?? [reply.content ?? ''];
-  const tool_calls = toolCallsOf(reply);
-  let body = pieces.map((c, i) => chunk(i === 0 ? { role: 'assistant', content: c } : { content: c }, null)).join('');
-  if (tool_calls.length) body += chunk({ tool_calls }, null);
-  body += chunk({}, tool_calls.length ? 'tool_calls' : 'stop') + 'data: [DONE]\n\n';
+/**
+ * The server-sent events the Qelos AI service writes for a streamed completion (`apps/ai`): `{type: "chunk"}` text,
+ * tool events, `{type: "done"}` at the end, or `{type: "error"}` when the provider fails. No `[DONE]` marker.
+ * Tool calls the app declared in `clientTools` are handed back to it (`client_tool_calls`); the others count as run
+ * by the service, which then continues the conversation (`followup`).
+ */
+function streamEvents(reply: AiReply, clientTools: string[]): Array<Record<string, unknown>> {
+  if (reply.error) {
+    return [{ type: 'error', message: reply.error.message ?? `Mock AI error ${reply.error.status}` }];
+  }
+  const events: Array<Record<string, unknown>> = (reply.chunks ?? (reply.content ? [reply.content] : [])).map((content) => ({
+    type: 'chunk',
+    content,
+  }));
+  const calls = toolCallsOf(reply);
+  if (calls.length) {
+    events.push({ type: 'function_calls_detected' });
+    const mine = calls.filter((c) => clientTools.includes(c.function.name));
+    const theirs = calls.filter((c) => !clientTools.includes(c.function.name));
+    if (theirs.length) {
+      events.push({ type: 'function_calls_detected', functionCalls: theirs });
+      for (const functionCall of theirs) {
+        events.push({ type: 'function_executing', functionCall }, { type: 'function_executed', functionCall });
+      }
+    }
+    if (mine.length) {
+      events.push({ type: 'client_tool_calls', functionCalls: mine, backendResults: [], assistantToolCalls: calls });
+    } else {
+      events.push({ type: 'continuing_conversation' });
+      for (const content of ([] as string[]).concat(reply.followup ?? [])) events.push({ type: 'followup_chunk', content });
+    }
+  }
+  events.push({ type: 'done' });
+  return events;
+}
+
+function sse(reply: AiReply, clientTools: string[]): Response {
+  const body = streamEvents(reply, clientTools)
+    .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+    .join('');
   return new Response(body, { headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' } });
 }
 
@@ -72,15 +102,17 @@ function paginate<T>(list: T[], query: URLSearchParams): T[] {
 export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; ai: AiStub }): RouteModule {
   return (router, state) => {
     /** scripted reply (mock.ai) > seeded `aiResponses` > echo; records the call; honors delay/error */
-    async function respond(agentId: string, messages: any[], stream: boolean, threadId?: string) {
+    async function respond(agentId: string, messages: any[], stream: boolean, threadId?: string, clientTools: any[] = []) {
       const message = lastUserMessage(messages);
       const scripted = ai.resolve({ agentId, messages, message, stream, threadId });
       const reply: AiReply = scripted ?? { content: aiReply(state, agentId, message) };
       if (reply.delay) await new Promise((r) => setTimeout(r, reply.delay));
+      // a streamed call has already answered 200 when the provider fails: the error travels inside the stream
+      if (stream) return sse(reply, clientTools.map((tool) => String(tool?.name)));
       if (reply.error) {
         throw new MockHttpError(reply.error.status, reply.error.message ?? `Mock AI error ${reply.error.status}`, 'QELOS_MOCK_AI_ERROR');
       }
-      return stream ? sse(reply) : completion(reply, threadId);
+      return completion(reply, threadId);
     }
 
     // ---- AI agents (seeded in `agents`) + chat completions
@@ -121,7 +153,9 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
     for (const path of ['/api/ai/:id/chat-completion', '/api/ai/:id/chat-completion/:threadId']) {
       router.register('POST', path, async (ctx) => {
         const body = (await ctx.json()) || {};
-        return respond(ctx.params.id, body.messages || [], ctx.query.get('stream') === 'true', ctx.params.threadId);
+        // like the service: stream when asked in the query or through the accept header
+        const stream = ctx.query.get('stream') === 'true' || (ctx.request.headers.get('accept') ?? '').includes('text/event-stream');
+        return respond(ctx.params.id, body.messages || [], stream, ctx.params.threadId, body.clientTools || []);
       });
     }
 

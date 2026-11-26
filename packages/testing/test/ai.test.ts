@@ -57,9 +57,13 @@ test('tool calls, errors and chunks', async () => {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ messages: [{ role: 'user', content: 'stream me' }] }),
   });
-  const body = await stream.text();
-  assert.equal((body.match(/"content":/g) || []).length, 3);
-  assert.ok(body.includes('[DONE]'));
+  const events = (await stream.text()).split('\n\n').filter(Boolean).map((line) => JSON.parse(line.slice('data: '.length)));
+  assert.deepEqual(events, [
+    { type: 'chunk', content: 'Hel' },
+    { type: 'chunk', content: 'lo ' },
+    { type: 'chunk', content: 'there' },
+    { type: 'done' },
+  ]);
 });
 
 test('reset() clears scripted replies and recorded calls', async () => {
