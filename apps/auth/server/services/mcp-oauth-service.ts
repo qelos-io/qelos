@@ -87,14 +87,29 @@ function matchesKnownClientFamily(redirectUri: string, permitted: string): boole
 
   const redirectOrigin = getUrlOrigin(redirectUri);
   const permittedOrigin = getUrlOrigin(permitted);
-  if (redirectOrigin && permittedOrigin && redirectOrigin === permittedOrigin) {
-    return true;
+  // an address with a host: any of its paths, and no other scheme, host or port
+  if (redirectOrigin || permittedOrigin) {
+    return redirectOrigin === permittedOrigin;
   }
 
   const permittedBase = permitted.replace(/\/$/, '');
   return redirectUri === permitted
-    || redirectUri.startsWith(`${permittedBase}/`)
-    || redirectUri.startsWith(permittedBase);
+    || ['/', '?', '#'].some((boundary) => redirectUri.startsWith(`${permittedBase}${boundary}`));
+}
+
+const SCHEME_AND_HOST = String.raw`^[a-z][a-z0-9+.-]*:\/\/(?:\[[^\]]*\]|[^/?#:@[\]]+)`;
+/** a wildcard in place of the port, as in `http://127.0.0.1:*\/callback` */
+const PORT_WILDCARD = new RegExp(String.raw`(${SCHEME_AND_HOST}):\*(?=[/?#]|$)`, 'i');
+const REDIRECT_PORT = new RegExp(String.raw`${SCHEME_AND_HOST}:(\d+)(?=[/?#]|$)`, 'i');
+const NOTHING_OR_SCHEME = /^([a-z][a-z0-9+.-]*:\/\/)?$/i;
+
+function matchesPortWildcard(redirectUri: string, permitted: string): boolean {
+  const port = REDIRECT_PORT.exec(redirectUri)?.[1];
+  if (!port) {
+    return false;
+  }
+  const withPort = permitted.replace(PORT_WILDCARD, `$1:${port}`);
+  return withPort.endsWith('*') ? redirectUri.startsWith(withPort.slice(0, -1)) : redirectUri === withPort;
 }
 
 function matchesPermittedEntry(redirectUri: string, permitted: string): boolean {
@@ -105,15 +120,16 @@ function matchesPermittedEntry(redirectUri: string, permitted: string): boolean 
     return false;
   }
 
-  // Support wildcard patterns for loopback URLs (e.g., http://127.0.0.1:*/auth/callback)
-  if (normalizedPermitted.includes(':*')) {
-    const wildcardPattern = normalizedPermitted.replace(':*', ':\\d+');
-    const regex = new RegExp(`^${wildcardPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
-    return regex.test(normalizedRedirect);
+  // Support port wildcards for loopback URLs (e.g., http://127.0.0.1:*/auth/callback)
+  if (PORT_WILDCARD.test(normalizedPermitted)) {
+    return matchesPortWildcard(normalizedRedirect, normalizedPermitted);
   }
 
   if (normalizedPermitted.endsWith('*')) {
-    return normalizedRedirect.startsWith(normalizedPermitted.slice(0, -1));
+    const prefix = normalizedPermitted.slice(0, -1);
+    // the wildcard stands for the rest of an address, never for more of its host or port
+    return normalizedRedirect.startsWith(prefix)
+      && (NOTHING_OR_SCHEME.test(prefix) || getUrlOrigin(normalizedRedirect) === getUrlOrigin(prefix));
   }
 
   if (normalizedRedirect === normalizedPermitted) {

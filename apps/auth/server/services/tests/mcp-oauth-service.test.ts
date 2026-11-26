@@ -80,6 +80,62 @@ describe('isRedirectUriPermitted', () => {
   });
 });
 
+describe('isRedirectUriPermitted: scheme, host and port', () => {
+  const permits = (uri: string, permitted: string) => isRedirectUriPermitted(uri, [permitted]);
+
+  it('requires the host of the permitted address', () => {
+    for (const permitted of ['https://app.example.org', 'https://app.example.org/', 'https://app.example.org*']) {
+      assert.equal(permits('https://app.example.org/cb', permitted), true, permitted);
+      for (const uri of [
+        'https://app.example.org.other.example/cb',
+        'https://app.example.orgx/cb',
+        'https://app.example.org@other.example/cb',
+      ]) {
+        assert.equal(permits(uri, permitted), false, `${uri} <- ${permitted}`);
+      }
+    }
+    assert.equal(permits('https://claude.ai.other.example/cb', 'https://claude.ai'), false);
+    assert.equal(permits('https://app.devin.ai.other.example/cb', 'https://app.devin.ai/*'), false);
+  });
+
+  it('requires the scheme and the port of the permitted address', () => {
+    assert.equal(permits('http://app.example.org/cb', 'https://app.example.org'), false);
+    assert.equal(permits('https://app.example.org:8443/cb', 'https://app.example.org'), false);
+    assert.equal(permits('http://127.0.0.1:5000/cb', 'http://127.0.0.1'), false);
+    assert.equal(permits('http://localhost:50000/callback', 'http://localhost:5000*'), false);
+  });
+
+  it('accepts the rest of an address after a wildcard, also a whole scheme', () => {
+    assert.equal(permits('https://app.example.org/oauth/cb?x=1', 'https://app.example.org/oauth/*'), true);
+    assert.equal(permits('https://app.example.org/other', 'https://app.example.org/oauth/*'), false);
+    assert.equal(permits('cursor://anysphere.cursor-mcp/oauth/callback', 'cursor://*'), true);
+  });
+
+  it('matches the path of an address without a host only up to a boundary', () => {
+    assert.equal(permits('myapp:///oauth/next', 'myapp:///oauth'), true);
+    assert.equal(permits('myapp:///oauth?code=1', 'myapp:///oauth'), true);
+    assert.equal(permits('myapp:///oauthx', 'myapp:///oauth'), false);
+  });
+
+  it('accepts any port where the permitted address has a port wildcard', () => {
+    for (const host of ['127.0.0.1', 'localhost', '[::1]']) {
+      const permitted = `http://${host}:*/auth/callback`;
+      assert.equal(permits(`http://${host}:5000/auth/callback`, permitted), true, permitted);
+    }
+    const permitted = 'http://127.0.0.1:*/auth/callback';
+    for (const uri of [
+      'http://127.0.0.1/auth/callback',
+      'http://127.0.0.1:5000/other',
+      'http://localhost:5000/auth/callback',
+      'http://127.0.0.1.other.example:5000/auth/callback',
+      'http://127.0.0.1:5000@other.example/auth/callback',
+    ]) {
+      assert.equal(permits(uri, permitted), false, uri);
+    }
+    assert.equal(permits('http://127.0.0.1:5000/auth/callback', 'http://127.0.0.1:*/*'), true);
+  });
+});
+
 describe('MCP OAuth state', () => {
   it('round-trips authorize params through signed state', () => {
     const packed = buildMcpOAuthState({
