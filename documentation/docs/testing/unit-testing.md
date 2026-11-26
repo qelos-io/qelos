@@ -79,6 +79,12 @@ await expect(todos.update(mine.identifier, { title: 'changed' })).rejects.toThro
   `extraQueryParams: () => ({})` to the SDK to keep the admin bypass.
 - `entitiesOf(...).remove()` returns the raw response and does not reject: check its `status`.
 
+### Limitations
+
+A blueprint's `limitations` work as in production: creating one entity more than allowed rejects with
+`reached limit of allowed entities`, by `scope` (`tenant`, `workspace` or `user`), `roles`, `workspaceLabels` and
+`properties`. Like permissions, they are not checked for a call with no credentials, unless `strictPermissions` is on.
+
 ## Inspecting and resetting state
 
 - `mock.state` is the live in-memory state (`snapshot()`, `collection(name)`, `seed()`).

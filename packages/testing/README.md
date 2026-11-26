@@ -176,7 +176,7 @@ Notes:
 | `DELETE .../entities/:id`, `DELETE .../entities/all` | |
 | `GET /api/blueprints/:blueprint/charts/count`, `pie`, `sum`, `:chartType` | `sdk.entities(...).count()` and `sdk.blueprints.getChart` / `getPieChart` / `getSum`. Properties filter by name, as when listing |
 
-Entities carry `identifier`/`id`, `user`, `workspace`, `created`, `updated` and are returned flat (properties at the top level) unless `$flat=false`. Not mirrored: blueprint `limitations`, `updateMapping` and platform events.
+Entities carry `identifier`/`id`, `user`, `workspace`, `created`, `updated` and are returned flat (properties at the top level) unless `$flat=false`. A blueprint's `limitations` refuse creating one entity too many (`403 reached limit of allowed entities`). Not mirrored: `updateMapping`, platform events, and the rate limit on guest writes.
 
 #### Permissions on data and content
 
