@@ -186,10 +186,8 @@ export async function getAllBlueprintEntities(req, res) {
       return;
     }
     const parsedQuery = qs.parse(req._parsedUrl.query, { depth: 3, duplicates: 'combine' });
-    const query = {
-      ...parsedQuery,
-      ...getEntityQuery({ blueprint, req, permittedScopes })
-    }
+    // the caller's filters; what they may read is applied on top of them, after the filters are converted
+    const query: any = { ...parsedQuery };
     // Store $outerPopulate value before removing from query
     const outerPopulateValue = parsedQuery.$outerPopulate;
     delete query.$populate;
@@ -231,6 +229,7 @@ export async function getAllBlueprintEntities(req, res) {
     convertQueryToMetadata(query, blueprint);
     convertQueryToIndexes(query, blueprint);
     convertQueryValuesByType(query, blueprint);
+    Object.assign(query, getEntityQuery({ blueprint, req, permittedScopes }));
     const entities = await getEntityModel(blueprint)
       .find(query, permittedScopes === true ? null : GLOBAL_PERMITTED_FIELDS, {
         sort,
