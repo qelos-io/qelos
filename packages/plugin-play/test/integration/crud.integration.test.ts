@@ -29,11 +29,14 @@ const schema = {
   address: { type: Object, public: true },
 };
 
-// a schema with a nested schema: see the "nested schemas" tests
+// schemas with nested schemas: see the "nested schemas" tests
 const nestedSchema = {
   name: { type: String, public: true },
   address: { type: Object, public: true, schema: { city: { type: String, public: true }, zip: { type: String } } },
+  labels: { type: Array, public: true, schema: { type: String, public: true } },
+  parts: { type: Array, public: true, schema: { sku: { type: String, public: true }, cost: { type: Number } } },
 };
+const nestedSchemaBefore = structuredClone(JSON.parse(JSON.stringify(nestedSchema, (_k, v) => (typeof v === 'function' ? v.name : v))));
 
 before(async () => {
   own = await fakeTenant();
@@ -129,18 +132,41 @@ describe('create', () => {
   });
 });
 
-// createCrud() builds the manifest's JSON schema with getJsonSchema(), which also writes back into the schema it
-// was given. For a schema with a nested `schema` this adds a stray `type` key, and every request then fails with
-// "Cannot read properties of undefined (reading 'type')".
 describe('nested schemas', () => {
-  test('create validates and filters a nested object schema', { todo: 'getJsonSchema mutates the nested schema, so requests answer 500' }, async () => {
-    const res = await call('POST', '/api/play/widgets', { name: 'w', address: { city: 'Paris', zip: '75001' } });
+  test('create validates and filters nested object, array-of-values and array-of-objects schemas', async () => {
+    const res = await call('POST', '/api/play/widgets', {
+      name: 'w',
+      address: { city: 'Paris', zip: '75001', extra: 'dropped' },
+      labels: ['a', 7, 'b'],
+      parts: [{ sku: 's1', cost: 4, extra: 'dropped' }],
+    });
     assert.equal(res.statusCode, 200);
-    assert.deepEqual(json(res), { _id: 'w1', name: 'w', address: { city: 'Paris' } });
+    // the public answer drops address.zip (not public), the number in labels and parts[].cost (not public)
+    assert.deepEqual(json(res), { _id: 'w1', name: 'w', address: { city: 'Paris' }, labels: ['a', 'b'], parts: [{ sku: 's1' }] });
   });
 
-  test('the schema passed to createCrud is not changed', { todo: 'getJsonSchema writes the JSON schema back into the nested schema' }, () => {
+  test('requests keep working after the first one (the schema is not changed by createCrud)', async () => {
+    const res = await call('POST', '/api/play/widgets', { name: 'again', address: { city: 'Rome' } });
+    assert.equal(res.statusCode, 200);
+    assert.equal(json(res).address.city, 'Rome');
+  });
+
+  test('the schema passed to createCrud is left as it was', () => {
+    const now = JSON.parse(JSON.stringify(nestedSchema, (_k, v) => (typeof v === 'function' ? v.name : v)));
+    assert.deepEqual(now, nestedSchemaBefore);
     assert.deepEqual(Object.keys(nestedSchema.address.schema), ['city', 'zip']);
+  });
+
+  test('the manifest schema names every type, nested ones included', () => {
+    const crud: any = manifest.cruds.find((c) => c.name === 'widgets');
+    assert.equal(crud.schema.name.type, 'String');
+    assert.equal(crud.schema.address.type, 'Object');
+    assert.deepEqual(crud.schema.address.schema.city, { type: 'String', public: true });
+    assert.equal(crud.schema.address.schema.zip.type, 'String');
+    assert.deepEqual(crud.schema.labels.schema, { type: 'String', public: true });
+    assert.equal(crud.schema.parts.schema.sku.type, 'String');
+    assert.equal(crud.schema.parts.schema.cost.type, 'Number');
+    assert.equal(JSON.stringify(crud.schema).includes('"type":null'), false);
   });
 });
 

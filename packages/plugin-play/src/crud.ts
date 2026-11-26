@@ -87,17 +87,28 @@ function fillFromSchema(exposed: any, item: any, schema: ResourceSchema, dest: '
   }
 }
 
+/** JSON-friendly copy of a property: the `type` constructor becomes its name, nested schemas are converted too. */
+function getJsonProperty(prop: ResourceProperty) {
+  const json: any = {
+    ...prop,
+    // @ts-ignore
+    type: prop.type?.name
+  };
+  if (prop.schema) {
+    // like the runtime code: a nested schema with a `type` is a single property (array items),
+    // otherwise it is a map of properties (object fields)
+    json.schema = (prop.schema as ResourceProperty).type
+      ? getJsonProperty(prop.schema as ResourceProperty)
+      : getJsonSchema(prop.schema as ResourceSchema);
+  }
+  return json;
+}
+
+/** Builds the manifest's JSON schema. It never changes the schema it is given: that schema is also used to validate requests. */
 function getJsonSchema(schema: ResourceSchema) {
   const json: any = {};
   for (const key in schema) {
-    json[key] = {
-      ...schema[key],
-      // @ts-ignore
-      type: schema[key].type?.name
-    }
-    if (schema[key].schema) {
-      schema[key].schema = getJsonSchema({ data: schema[key].schema }).data;
-    }
+    json[key] = getJsonProperty(schema[key]);
   }
   return json;
 }
