@@ -1,5 +1,5 @@
 import type { Doc, MockState } from '../state/mock-state.js';
-import { claimFor, ensureAuthSeeded, findUserByRef, pickWorkspace } from './accounts.js';
+import { claimFor, ensureAuthSeeded, findUserByRef, isPrivilegedUser, pickWorkspace } from './accounts.js';
 import { cookieTokenName, findSession, isMockToken, parseCookies, sha256, type WorkspaceClaim } from './tokens.js';
 
 /** Header selecting the persona (id or email) for one request. */
@@ -22,7 +22,12 @@ export interface AuthContext {
   workspace: WorkspaceClaim | null;
   session: AuthSession;
   isApiToken: boolean;
+  /** the administrator who is acting as `user` */
+  impersonator?: Doc;
 }
+
+/** Whether the auth service's administrator routes accept the caller; an impersonating administrator keeps access. */
+export const isPrivilegedCaller = (auth: AuthContext) => !!auth.impersonator || isPrivilegedUser(auth.user);
 
 function decode(value: string): string {
   try {
@@ -110,15 +115,35 @@ export function hasEndedCredentials(request: Request, state: MockState): boolean
 }
 
 /**
+ * An administrator acting as another user (`x-impersonate-user`, optionally `x-impersonate-workspace`), as the services
+ * then see the caller. Null when the user or the workspace is unknown.
+ */
+function impersonate(request: Request, state: MockState, caller: AuthContext): AuthContext | null {
+  const wanted = request.headers.get('x-impersonate-user');
+  if (!wanted || !isPrivilegedUser(caller.user)) return caller;
+  const user = state.users.get(wanted);
+  const workspaceId = request.headers.get('x-impersonate-workspace');
+  const workspace = user && workspaceId ? claimFor(state.workspaces.get(workspaceId), user._id) : null;
+  if (!user || (workspaceId && !workspace)) return null;
+  return { ...caller, user, workspace, impersonator: caller.user };
+}
+
+/**
  * Resolve who is calling, like the real auth service's `verifyUser`:
  * persona header/cookie override, then `x-api-key`, then the cookie token, then
  * a bearer access token. Requests without any credentials fall back to the
  * configured `defaultPersona`. Returns null when unauthenticated or when the
  * presented credentials are invalid/expired.
  *
- * Other route modules use it to enforce permissions and permission scopes.
+ * An administrator may impersonate another user. Other route modules use it to enforce permissions and permission
+ * scopes.
  */
 export function authenticate(request: Request, state: MockState): AuthContext | null {
+  const caller = identify(request, state);
+  return caller && impersonate(request, state, caller);
+}
+
+function identify(request: Request, state: MockState): AuthContext | null {
   ensureAuthSeeded(state);
   const cookies = parseCookies(request.headers.get('cookie'));
 

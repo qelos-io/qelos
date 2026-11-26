@@ -254,7 +254,7 @@ test('default persona auto-login with header override', async () => {
   await noDefault.sdk.authentication.signin({ username: 'member@example.com', password: 'anything' });
 });
 
-test('permissions from roles, api tokens and the authenticate helper', async () => {
+test('permission helpers, api tokens and the authenticate helper', async () => {
   const seed = { personas, roles: { user: ['reports:read'], member: [], admin: ['*'] } };
   const { mock, sdk } = setup({ seed, defaultPersona: 'member@example.com' }, {});
 
@@ -269,13 +269,9 @@ test('permissions from roles, api tokens and the authenticate helper', async () 
   assert.equal(checkPermission(admin, mock.state, 'anything:at-all'), true);
   assert.equal(authenticate(request({ authorization: 'Bearer junk' }), mock.state), null);
 
-  const perms: any = await (await mock.fetch('/api/me/permissions')).json();
-  assert.deepEqual(perms.permissions, ['reports:read']);
-  const check: any = await (
-    await mock.fetch('/api/permissions/check', { method: 'POST', body: JSON.stringify({ permissions: ['reports:read', 'x:y'] }) })
-  ).json();
-  assert.deepEqual(check.results, { 'reports:read': true, 'x:y': false });
-  assert.equal(check.allowed, false);
+  // the auth service has no permission-check endpoints; the helpers are for custom routes
+  assert.equal((await mock.fetch('/api/me/permissions')).status, 404);
+  assert.equal((await mock.fetch('/api/permissions/check', { method: 'POST', body: '{}' })).status, 404);
 
   // blueprint permission descriptors + scopes
   const blueprint = {

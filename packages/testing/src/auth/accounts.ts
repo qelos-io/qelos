@@ -1,5 +1,6 @@
 import type { Doc, MockState } from '../state/mock-state.js';
 import { hashPassword } from './passwords.js';
+import { workspaceRules } from './rules.js';
 import type { WorkspaceClaim } from './tokens.js';
 
 export const PRIVILEGED_ROLES = ['admin'];
@@ -158,6 +159,8 @@ export function claimFor(ws: Doc | undefined, userId: string): WorkspaceClaim | 
  * last active one, then the first workspace the user belongs to.
  */
 export function pickWorkspace(state: MockState, user: Doc, preferredId?: string): WorkspaceClaim | null {
+  // a tenant that turned workspaces off signs users in without one
+  if (workspaceRules(state).isActive === false) return null;
   for (const id of [preferredId, user.activeWorkspace]) {
     const claim = id ? claimFor(state.workspaces.get(id), user._id) : null;
     if (claim) return claim;

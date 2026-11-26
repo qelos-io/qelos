@@ -2,6 +2,7 @@ import { jsonResponse, type RouteContext, type RouteModule } from '../router/rou
 import type { Doc, MockState } from '../state/mock-state.js';
 import {
   authenticate,
+  isPrivilegedCaller,
   PERSONA_COOKIE,
   PERSONA_HEADER,
   type AuthContext,
@@ -12,13 +13,12 @@ import {
   ensureAuthSeeded,
   findUserByLogin,
   findUserByRef,
-  isPrivilegedUser,
   meResponse,
   pickWorkspace,
   userSummary,
 } from '../auth/accounts.js';
 import { hashPassword, verifyPassword } from '../auth/passwords.js';
-import { getUserPermissions, checkPermission, rolesOf } from '../auth/permissions.js';
+import { authSettings, mayManageApiTokens } from '../auth/rules.js';
 import {
   buildSetCookie,
   cookieTokenName,
@@ -91,7 +91,10 @@ export const authRoutes: RouteModule = (router, state) => {
     if (!user || !rolesOk || !verifyPassword(body.password, user.passwordHash)) {
       return jsonResponse({ errors: { general: { message: 'Invalid username or password' } } }, 401);
     }
-    return sessionResponse(state, user, pickWorkspace(state, user, body.workspace), body.authType);
+    // a workspace asked for has to be the user's, or there is none
+    const asked = body.workspace ? claimFor(state.workspaces.get(body.workspace), user._id) : null;
+    const workspace = pickWorkspace(state, user, body.workspace);
+    return sessionResponse(state, user, body.workspace && workspace ? asked : workspace, body.authType);
   });
 
   router.register('POST', '/api/signup', async ({ json }) => {
@@ -176,7 +179,7 @@ export const authRoutes: RouteModule = (router, state) => {
             roles: user.roles,
             profileImage: user.profileImage,
           },
-          workspace: workspace ? { _id: workspace._id } : null,
+          workspace,
           cookieToken: fresh.token,
         },
       },
@@ -281,6 +284,11 @@ export const authRoutes: RouteModule = (router, state) => {
     if (current.isApiToken) {
       return jsonResponse({ message: 'API token management is not allowed via token authentication' }, 403);
     }
+    // without an `auth-configuration` in the mock, everyone may; a tenant has to allow it
+    const config = authSettings(state);
+    if (config && !mayManageApiTokens(config, current.user.roles ?? [], current.workspace?.roles)) {
+      return jsonResponse({ message: 'You do not have permission to manage API tokens' }, 403);
+    }
     return current;
   };
   const tokenView = (t: Doc) => ({
@@ -309,7 +317,10 @@ export const authRoutes: RouteModule = (router, state) => {
     if (isNaN(expires.getTime()) || expires <= new Date()) {
       return jsonResponse({ message: 'expiresAt must be a valid future date' }, 400);
     }
-    const raw = randomToken('qlk_');
+    if (state.apiTokens.list((t) => t.userId === current.user._id).length >= 10) {
+      return jsonResponse({ message: 'Maximum 10 active tokens allowed per user' }, 400);
+    }
+    const raw = randomToken('ql_');
     const apiToken = state.apiTokens.insert({
       userId: current.user._id,
       workspace: workspace || null,
@@ -332,36 +343,14 @@ export const authRoutes: RouteModule = (router, state) => {
     return { message: 'Token revoked' };
   });
 
-  // ----------------------------------------------------------- permissions
-
-  router.register('GET', '/api/me/permissions', (ctx) => {
-    const current = auth(ctx);
-    if (!current) return unauthorized();
-    return {
-      roles: current.user.roles,
-      workspaceRoles: current.workspace?.roles || [],
-      permissions: getUserPermissions(current, state),
-    };
-  });
-
-  /** body: `{ permission: string }` or `{ permissions: string[] }` */
-  router.register('POST', '/api/permissions/check', async (ctx) => {
-    const current = auth(ctx);
-    if (!current) return unauthorized();
-    const body = (await ctx.json()) || {};
-    const wanted: string[] = [body.permission, ...(Array.isArray(body.permissions) ? body.permissions : [])].filter(
-      (p) => typeof p === 'string',
-    );
-    if (!wanted.length) return jsonResponse({ message: 'missing "permission" or "permissions"' }, 400);
-    const results = Object.fromEntries(wanted.map((p) => [p, checkPermission(current, state, p)]));
-    return { allowed: Object.values(results).every(Boolean), results, roles: rolesOf(current) };
-  });
+  // ----------------------------------------------------------------- roles
 
   router.register('GET', '/api/roles', (ctx) => {
     const current = auth(ctx);
     if (!current) return unauthorized();
-    if (!isPrivilegedUser(current.user)) return jsonResponse({ message: 'you are not privileged.' }, 401);
-    return [...new Set([...state.users.list().flatMap((u) => u.roles || []), ...Object.keys(state.settings.roles)])];
+    if (!isPrivilegedCaller(current)) return jsonResponse({ message: 'you are not privileged.' }, 401);
+    // the roles users have
+    return [...new Set(state.users.list().flatMap((u) => u.roles || []))];
   });
 
   // -------------------------------------------------------------- personas

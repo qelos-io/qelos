@@ -44,10 +44,11 @@ Built-in routes return the shapes the real `/apps/auth` service returns, so `@qe
 | Sessions | `POST /api/token/refresh` (rotating, single-use refresh token), `POST /api/cookie/refresh`, `POST /api/logout`, `POST /api/auth/callback?rt=` |
 | Social stub | `GET /api/auth/:provider` and `/callback` (`linkedin`, `facebook`, `google`, `github`) sign in the selected persona and redirect to `returnUrl?rt=<refreshToken>` — no provider round trip |
 | Profile | `GET`/`POST /api/me` (name, birth date, image, metadata, password) |
-| API tokens | `GET`/`POST /api/me/api-tokens`, `DELETE /api/me/api-tokens/:id`; authenticate with `x-api-key` (+ optional `x-workspace`) |
-| Workspaces | `/api/workspaces` (list, create), `/api/workspaces/all`, `/:id` (get, update, delete), `/:id/members` (list, add), `/:id/members/:userId` (roles, remove), `/:id/activate` |
+| API tokens | `GET`/`POST /api/me/api-tokens`, `DELETE /api/me/api-tokens/:id` (ten per user); authenticate with `x-api-key` (+ optional `x-workspace`) |
+| Workspaces | `/api/workspaces` (list, create), `/api/workspaces/all`, `/:id` (get, update, delete), `/:id/members` (list, add), `/:id/members/:userId` (roles, remove), `/:id/activate`, `/:id/encrypted` (admins) |
 | Invites | invite by updating `invites` on the workspace (`sdk.workspaces.inviteUser`); `GET`/`POST /api/invites` to list and accept/decline |
-| Permissions | `GET /api/me/permissions`, `POST /api/permissions/check` (`{ permission }` or `{ permissions: [] }`), `GET /api/roles` |
+| Roles | `GET /api/roles` (admins; the roles users have) |
+| Impersonation | an admin sending `x-impersonate-user` (and `x-impersonate-workspace`) is seen as that user by every service, and keeps access to the user and workspace administration routes |
 | Personas | `GET /api/mock/personas`, `POST`/`DELETE /api/mock/persona` (selector cookie) |
 
 Tokens are opaque, unsigned-JWT-shaped (`alg: none`) strings backed by a stored session (`state.sessions`), so they expire, rotate and can be revoked; they survive a restart when `dataDir` is set. Validation mirrors the real service: bad credentials → `401 { errors: { general: { message } } }`, empty password → `401 { errors: { password: { code: 'EMPTY_PASSWORD' } } }`, sign-up form errors and `DUPLICATED_EMAIL` → `200 { errors }`. Passwords are stored hashed.
@@ -77,9 +78,18 @@ Personas are regular users (they can also sign in with their password). Workspac
 
 With `defaultPersona`, every request **without credentials** behaves as that logged-in user, so `sdk.authentication.getLoggedInUser()` works with no sign-in (note: in Node, give the SDK an `extraHeaders: async () => ({})` so it does not try to refresh a missing token first). Per request, `x-qelos-mock-persona: <id|email>` (or the `qelos_mock_persona` cookie, set by `POST /api/mock/persona`) overrides it, and wins over any other credentials. The auth, workspace, user and thread routes reject *invalid or expired* credentials and do not downgrade them to the default persona (for data and content routes see [Permissions on data and content](#permissions-on-data-and-content)); an unknown persona gives `401`.
 
-### Permissions
+### Tenant settings
 
-Permissions are computed from the user's global roles plus their roles in the active workspace. The role → permission map is `seed.roles`, merged over the defaults (`admin`/`plugin`: `['*']`, `user`: `me:*, workspaces:*, invites:*, entities:*`, `member`: `me:*, workspaces:read, entities:read`). Patterns support `*` and `prefix:*`.
+Seed the tenant's own configuration documents to test its rules. Without them the mock allows these actions.
+
+| `configurations` key | Effect |
+|---|---|
+| `auth-configuration` | `allowUserTokenAuthentication` and `tokenAuthenticationPermissions` (`roles`, `wsRoles`) decide who may manage API tokens: **once the document exists, a tenant has to allow it** |
+| `workspace-configuration` | `isActive: false` signs users in without a workspace; `creationPrivilegedRoles`, `allowNonLabeledWorkspaces` and `labels` limit workspace creation |
+
+### Permission helpers
+
+The auth service has no endpoints for checking permissions. For your own mock routes, `checkPermission` and `getUserPermissions` evaluate the user's roles against the role → permission map `seed.roles`, merged over the defaults (`admin`/`plugin`: `['*']`, `user`: `me:*, workspaces:*, invites:*, entities:*`, `member`: `me:*, workspaces:read, entities:read`). Patterns support `*` and `prefix:*`.
 
 ```ts
 createMockQelos({ seed: { roles: { admin: ['*'], editor: ['posts:*'], viewer: ['posts:read'] } } });
@@ -101,7 +111,7 @@ const entitiesRoutes: RouteModule = (router, state) => {
 };
 ```
 
-`authenticate` resolves persona override → `x-api-key` → cookie token → bearer access token → `defaultPersona`. `checkBlueprintPermission` evaluates the blueprint's `permissions` descriptors (`guest`, `roleBased`, `workspaceRoleBased`, `workspaceLabelsBased`) and returns the effective `permissionScope`; `scopeMatches` checks the entity's `user` / `workspace` owner against it. `checkPermission(auth, state, 'posts:read')` is the equivalent of `permissions.check`, `getUserPermissions(auth, state)` of `getUserPermissions`.
+`authenticate` resolves persona override → `x-api-key` → cookie token → bearer access token → `defaultPersona`, then applies an administrator's impersonation headers. `checkBlueprintPermission` evaluates the blueprint's `permissions` descriptors (`guest`, `roleBased`, `workspaceRoleBased`, `workspaceLabelsBased`) and returns the effective `permissionScope`; `scopeMatches` checks the entity's `user` / `workspace` owner against it.
 
 Workspaces keep `members` (`{ user, roles }`) and `invites` embedded, like the real service; the `memberships` collection is reserved and unused by the auth routes.
 
