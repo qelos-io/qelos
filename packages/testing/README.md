@@ -42,7 +42,7 @@ Built-in routes return the shapes the real `/apps/auth` service returns, so `@qe
 |---|---|
 | Sign in / up | `POST /api/signin`, `POST /api/signup` — default `cookie` flow (sets the `qlt_<tenant>` cookie, `HttpOnly; Path=/api`) or `authType: 'oauth'` (returns `token` + `refreshToken`) |
 | Sessions | `POST /api/token/refresh` (rotating, single-use refresh token), `POST /api/cookie/refresh`, `POST /api/logout`, `POST /api/auth/callback?rt=` |
-| Social stub | `GET /api/auth/:provider` and `/callback` (`linkedin`, `facebook`, `google`, `github`) sign in the selected persona and redirect to `returnUrl?rt=<refreshToken>` — no provider round trip |
+| Social stub | `GET /api/auth/:provider` and `/callback` (`linkedin`, `facebook`, `google`, `github`) sign in the selected persona (or the default one) and redirect to `returnUrl?rt=<refreshToken>` — no provider round trip. `returnUrl` is a path, or a URL on the same machine as the mock; a same-origin one is returned as a path, so it also works behind a dev proxy |
 | Profile | `GET`/`POST /api/me` (name, birth date, image, metadata, password) |
 | API tokens | `GET`/`POST /api/me/api-tokens`, `DELETE /api/me/api-tokens/:id` (ten per user); authenticate with `x-api-key` (+ optional `x-workspace`) |
 | Workspaces | `/api/workspaces` (list, create), `/api/workspaces/all`, `/:id` (get, update, delete), `/:id/members` (list, add), `/:id/members/:userId` (roles, remove), `/:id/activate`, `/:id/encrypted` (admins) |
@@ -75,6 +75,20 @@ createMockQelos({
 ```
 
 Personas are regular users (they can also sign in with their password). Workspaces are created on first use and shared by name/id between personas; memberships are seeded once and then owned by the persisted state.
+
+A persona can also carry the settings of a local setup, in code or in `<dataDir>/personas.json`:
+
+```json
+[
+  { "email": "admin@example.com", "roles": ["admin"], "apiTokens": ["ql_local_dev_only"] },
+  { "email": "member@example.com", "roles": ["user"], "default": true }
+]
+```
+
+- `default: true` (one persona) is `defaultPersona` written next to the persona; the option wins over it.
+- `apiTokens` are made-up tokens that act as the persona, for server code that calls Qelos with one. They do not expire and are never written to `state/`.
+
+Both are read on every start, also over a saved state. A persona whose `email` is the login of a user in an imported `users.json` **is** that user: same `_id` and records, with the persona's own fields winning.
 
 With `defaultPersona`, every request **without credentials** behaves as that logged-in user, so `sdk.authentication.getLoggedInUser()` works with no sign-in (note: in Node, give the SDK an `extraHeaders: async () => ({})` so it does not try to refresh a missing token first). Per request, `x-qelos-mock-persona: <id|email>` (or the `qelos_mock_persona` cookie, set by `POST /api/mock/persona`) overrides it, and wins over any other credentials. The auth, workspace, user and thread routes reject *invalid or expired* credentials and do not downgrade them to the default persona (for data and content routes see [Permissions on data and content](#permissions-on-data-and-content)); an unknown persona gives `401`.
 
