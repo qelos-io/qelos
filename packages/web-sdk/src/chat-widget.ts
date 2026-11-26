@@ -82,6 +82,8 @@ export class QelosChatWidget {
   private threadId?: string;
   private isOpen = false;
   private isSending = false;
+  /** set when the service reports a failure inside the stream of the current answer */
+  private streamError = '';
   private destroyed = false;
 
   constructor(options: QelosChatWidgetOptions) {
@@ -351,6 +353,13 @@ export class QelosChatWidget {
     }
   }
 
+  private replaceStreamingContent(content: string): void {
+    const last = this.messages[this.messages.length - 1];
+    if (!last || last.role !== 'assistant' || !last.streaming) return;
+    last.content = content;
+    this.renderMessages();
+  }
+
   private scrollToBottom(): void {
     this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
   }
@@ -434,7 +443,11 @@ export class QelosChatWidget {
         throw new Error(`HTTP ${res.status}: ${res.statusText || 'Request failed'}`);
       }
 
+      this.streamError = '';
       await this.consumeStream(res.body);
+
+      // the request succeeded, but the service may have failed while answering
+      if (this.streamError) throw new Error(this.streamError);
 
       const last = this.messages[this.messages.length - 1];
       if (last) last.streaming = false;
@@ -499,6 +512,18 @@ export class QelosChatWidget {
       if (typeof data.content === 'string' && data.content) {
         this.appendStreamingChunk(data.content);
       }
+      return;
+    }
+    if (data.type === 'full_content') {
+      // the whole message at once: it replaces whatever has arrived so far
+      if (typeof data.content === 'string' && data.content) {
+        this.replaceStreamingContent(data.content);
+      }
+      return;
+    }
+    if (data.type === 'error') {
+      // reported after the rest of the stream was read: the service can keep answering after a failed tool
+      this.streamError = (typeof data.message === 'string' && data.message) || 'Something went wrong';
       return;
     }
     if (data.type === 'done') return;

@@ -266,21 +266,59 @@ describe('the streamed answer', () => {
     assert.equal($('.status').textContent, 'connection lost');
   });
 
-  // The AI service reports failures inside the stream as {"type":"error"}; the widget has no case for it.
-  test('shows an error the service sends inside the stream', { todo: 'handleSSEEvent ignores "error" events: the user sees an empty answer and no message' }, async () => {
-    respond = () => stream(sse({ type: 'error', message: 'model overloaded' }));
+  // The AI service reports failures inside a 200 stream, as {"type":"error"}.
+  test('shows an error the service sends inside the stream, with an apology instead of an empty answer', async () => {
+    respond = () => stream(sse({ type: 'error', error: 'AI chat completion failed', message: 'model overloaded' }));
     const { say, bubbles, $ } = mount();
     await say('hi');
     assert.equal($('.status').textContent, 'model overloaded');
-    assert.notEqual(bubbles().at(-1)!.text, '');
+    assert.equal($('.status').classList.contains('error'), true);
+    assert.match(bubbles().at(-1)!.text, /could not get a response/);
+  });
+
+  test('keeps what arrived before an error, and what follows it', async () => {
+    respond = () =>
+      stream(sse({ type: 'chunk', content: 'Checking. ' }, { type: 'error', message: 'tool timed out' }, { type: 'followup_chunk', content: 'Here is what I know.' }, { type: 'done' }));
+    const { say, bubbles, $ } = mount();
+    await say('hi');
+    assert.equal(bubbles().at(-1)!.text, 'Checking. Here is what I know.');
+    assert.equal($('.status').textContent, 'tool timed out');
+  });
+
+  test('an error without a message still says something went wrong', async () => {
+    respond = () => stream(sse({ type: 'error' }));
+    const { say, $ } = mount();
+    await say('hi');
+    assert.equal($('.status').textContent, 'Something went wrong');
+  });
+
+  test('an error does not stick to the next message', async () => {
+    respond = () => stream(sse({ type: 'error', message: 'first failed' }));
+    const { say, bubbles, $ } = mount();
+    await say('one');
+    respond = () => answer('fine now');
+    await say('two');
+    assert.equal($('.status').textContent, '');
+    assert.equal($('.status').classList.contains('error'), false);
+    assert.equal(bubbles().at(-1)!.text, 'fine now');
   });
 
   // Some providers send the whole message as one {"type":"full_content"} event.
-  test('shows a full_content event', { todo: 'handleSSEEvent ignores "full_content" events: the answer stays empty' }, async () => {
+  test('shows a full_content event', async () => {
     respond = () => stream(sse({ type: 'full_content', content: 'The whole answer' }, { type: 'done' }));
     const { say, bubbles } = mount();
     await say('hi');
     assert.equal(bubbles().at(-1)!.text, 'The whole answer');
+  });
+
+  test('full_content replaces what was streamed before it, and is part of the history', async () => {
+    respond = () => stream(sse({ type: 'chunk', content: 'The wh' }, { type: 'full_content', content: 'The whole answer' }, { type: 'done' }));
+    const { say, bubbles } = mount();
+    await say('hi');
+    assert.equal(bubbles().at(-1)!.text, 'The whole answer');
+    respond = () => answer('ok');
+    await say('again');
+    assert.deepEqual(requests[1].body.messages[1], { role: 'assistant', content: 'The whole answer' });
   });
 });
 
