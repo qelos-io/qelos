@@ -188,7 +188,7 @@ function looseEqual(actual: any, expected: any, type?: string): boolean {
   return String(comparable(actual, type)) === String(comparable(expected, type));
 }
 
-function matches(actual: any, cond: any, type?: string): boolean {
+export function matches(actual: any, cond: any, type?: string): boolean {
   if (Array.isArray(cond)) return cond.some((c) => matches(actual, c, type));
   if (!isOperatorObject(cond)) return looseEqual(actual, cond, type);
   const a = comparable(actual, type);

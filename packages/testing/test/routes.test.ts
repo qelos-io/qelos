@@ -57,6 +57,7 @@ test('sdk entities: create, find with filters, sort and pagination', async () =>
   // $skip wins over $page
   assert.deepEqual((await products.query().limit(2).skip(1).page(3).find()).map((p: any) => p.price), [20, 30]);
   assert.equal(await products.count({ kind: 'b' }), 3);
+  assert.equal(await products.count({ 'metadata.kind': 'b' }), 3);
   assert.equal((await products.query().where({ kind: 'b' }).findOne())?.title, 'item 2');
 });
 

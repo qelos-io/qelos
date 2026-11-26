@@ -192,7 +192,7 @@ dev dependency so production bundles do not ship it.
 
 - Tokens are unsigned, opaque JWT-shaped strings; passwords are hashed but this is **not** a security model.
 - Social login (`/api/auth/:provider`) signs in the selected persona without any provider round trip.
-- Blueprint `limitations`, `updateMapping`, chart types other than `count` and platform events are not mirrored.
+- Blueprint `limitations`, `updateMapping` and platform events are not mirrored.
 - AI agents answer from seeded `aiResponses` (or echo `Mock response: <message>`); no model is called.
 - Lambdas/webhooks answer from the seed only. There are no secrets endpoints: that service is internal and apps cannot
   call it.
