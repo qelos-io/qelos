@@ -53,6 +53,15 @@ export function validateSeed(seed: unknown): MockSeed {
     if (p.roles !== undefined && (!Array.isArray(p.roles) || p.roles.some((x: unknown) => typeof x !== 'string'))) {
       throw new MockConfigError('persona "roles" must be an array of strings');
     }
+    if (p.default !== undefined && typeof p.default !== 'boolean') {
+      throw new MockConfigError('persona "default" must be a boolean');
+    }
+    if (p.apiTokens !== undefined && (!Array.isArray(p.apiTokens) || p.apiTokens.some((t: unknown) => typeof t !== 'string' || !t))) {
+      throw new MockConfigError('persona "apiTokens" must be an array of non-empty strings');
+    }
+  }
+  if (((seed.personas as any[]) || []).filter((p) => p.default).length > 1) {
+    throw new MockConfigError('only one persona may have "default": true');
   }
   for (const u of [...((seed.users as any[]) || []), ...((seed.personas as any[]) || [])]) {
     if (typeof u.email !== 'string' || !u.email) throw new MockConfigError('seed users/personas require an "email"');
@@ -92,7 +101,9 @@ export function validateMockConfig(options: unknown = {}): ResolvedMockConfig {
   }
   const persist = o.persist ?? !!o.dataDir;
   if (persist && !o.dataDir) throw new MockConfigError('"persist" requires "dataDir"');
-  return { ...o, enabled: o.enabled ?? true, persist, seed: validateSeed(o.seed) };
+  const seed = validateSeed(o.seed);
+  const defaultPersona = o.defaultPersona ?? seed.personas?.find((p) => p.default)?.email;
+  return { ...o, ...(defaultPersona ? { defaultPersona } : {}), enabled: o.enabled ?? true, persist, seed };
 }
 
 const TRUE_VALUES = new Set(['1', 'true', 'yes', 'on']);

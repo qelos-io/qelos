@@ -1,7 +1,7 @@
 // Dual build: ES modules in dist/ (the package is "type": "module"), CommonJS in dist/cjs/ for runners that load
 // packages with require(), such as Jest in its default mode.
 import { execFileSync } from 'node:child_process';
-import { rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -12,6 +12,8 @@ rmSync(join(root, 'dist'), { recursive: true, force: true });
 tsc('tsconfig.json');
 tsc('tsconfig.cjs.json');
 writeFileSync(join(root, 'dist', 'cjs', 'package.json'), JSON.stringify({ type: 'commonjs' }) + '\n');
+// installing the package makes the bin executable; a linked checkout relies on the build to do it
+chmodSync(join(root, 'dist', 'cli', 'bin.js'), 0o755);
 
 // Both builds must load in plain Node (the entry points that import @qelos/sdk need the SDK built).
 const entries = ['index.js', 'sdk/index.js', 'fixtures/index.js', 'http/index.js', 'cassette/index.js'];

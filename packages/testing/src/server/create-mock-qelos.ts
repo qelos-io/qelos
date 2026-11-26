@@ -8,6 +8,7 @@ import { authRoutes } from '../routes/auth-routes.js';
 import { MockState } from '../state/mock-state.js';
 import { importQelosArtifacts } from '../importers/qelos-artifacts.js';
 import { createActorResolver, createDefaultAuthenticate, type Authenticate } from '../routes/actor.js';
+import { findUserByRef } from '../auth/accounts.js';
 import { entitiesRoutes } from '../routes/entities.js';
 import { contentRoutes } from '../routes/content.js';
 import { stubRoutes } from '../routes/stubs.js';
@@ -82,7 +83,14 @@ function withPersonasFile<T extends { dataDir?: string; seed?: any }>(config: T)
   });
   const explicit: any[] = config.seed?.personas || [];
   const emails = new Set(explicit.map((p) => (typeof p?.email === 'string' ? p.email.toLowerCase() : '')));
-  const personas = [...(fromFile as any[]).filter((p) => !emails.has(p.email.toLowerCase())), ...explicit];
+  // a default persona given in code replaces the one the file marks
+  const overridden = explicit.some((p) => p?.default);
+  const personas = [
+    ...(fromFile as any[])
+      .filter((p) => !emails.has(p.email.toLowerCase()))
+      .map((p) => (overridden && p.default !== undefined ? { ...p, default: false } : p)),
+    ...explicit,
+  ];
   return { ...config, seed: { ...config.seed, personas } };
 }
 
@@ -118,6 +126,12 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
       onConflict: config.onConflict,
       warn: (m) => log(`[qelos-testing] ${m}`),
     });
+  }
+  const { defaultPersona } = config;
+  if (config.enabled && state.restored && defaultPersona && !findUserByRef(state, defaultPersona) && !state.resolvePersona(defaultPersona)) {
+    (config.logger ?? console.warn)(
+      `[qelos-testing] default persona "${defaultPersona}" is not a user of the saved state, so requests without credentials get 401. The saved state keeps the users it started with: delete ${config.dataDir}/state to apply personas.json.`,
+    );
   }
   const faults = createFaultInjector(state);
   const ai = createAiStub();

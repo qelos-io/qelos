@@ -71,11 +71,45 @@ non-Node apps or for pointing any integrator's `appUrl` at it. `qelos init` also
 | `email` | Required. Used to sign in and as the persona id (`x-qelos-mock-persona: admin@example.com`). |
 | `password` | Optional. If omitted, any non-empty password signs in. Stored hashed. |
 | `roles` | Global roles (`admin`, `user`, `member`, or your own from `seed.roles`). |
-| `workspaces` | `{ name, labels, roles }` memberships. Workspaces are shared between personas by name. |
+| `workspaces` | `{ name, labels, roles }` memberships. A workspace with that name is reused, otherwise created. |
+| `default` | `true` on one persona: requests without credentials act as it. See [Skip the sign-in](#skip-the-sign-in). |
+| `apiTokens` | API tokens that act as this persona. See [API tokens for server code](#api-tokens-for-server-code). |
 
 Switch persona per request with the `x-qelos-mock-persona` header, or with the `qelos_mock_persona` cookie
-set by `POST /api/mock/persona` (`GET /api/mock/personas` lists them). Set `defaultPersona` to be logged in
-automatically.
+set by `POST /api/mock/persona` (`GET /api/mock/personas` lists them).
+
+## Skip the sign-in
+
+Mark one persona as the default and your app starts signed in, in the browser and in server rendering:
+
+```json
+[
+  { "email": "admin@example.com", "roles": ["admin"] },
+  { "email": "member@example.com", "roles": ["user"], "default": true }
+]
+```
+
+Every request **without credentials** behaves as that user. Choosing another persona (header or cookie) or signing
+in overrides it. `default` is read on every start, so moving it to another persona needs only a restart. The
+`defaultPersona` option does the same from code and wins over the file.
+
+Two things follow from it:
+
+- Signing out cannot sign the default persona out. Remove `default` to work on your sign-in screens.
+- A session cookie that expired, for example one from before you deleted `state/`, means "signed out" and not
+  "default persona". Clear the site's cookies.
+
+## API tokens for server code
+
+Server code that calls Qelos with an API token needs a token the mock accepts. Give a made-up value to a persona
+and configure your app with the same one:
+
+```json
+[{ "email": "admin@example.com", "roles": ["admin"], "apiTokens": ["ql_local_dev_only"] }]
+```
+
+A request with `x-api-key: ql_local_dev_only` then acts as that persona. These tokens do not expire, are read on every
+start and are not written to `state/`. Never put a real token here: the file is meant to be committed.
 
 ## Seed config
 
@@ -111,7 +145,18 @@ qelos dump blueprints all --path ./qelos-mock   # entities
 ```
 
 Blueprints are imported before entities, and user/workspace names inside dumped entities are mapped back to
-ids. Secret-bearing user fields are dropped and connection secrets are never pulled. The full layout and
+ids. Secret-bearing user fields are dropped and connection secrets are never pulled.
+
+### Working on real data
+
+A dump holds your users' records. Keep it, and the `state/` made from it, out of git.
+
+- To be one of the dumped users, give a persona their username as `email`. It is the same account, with their
+  records, and what the persona sets (such as `roles`) wins over the dumped fields:
+  `{ "email": "jane@your-company.com", "default": true }`.
+- Dumped workspaces have no members. Name a workspace in a persona's `workspaces` to join it.
+- Entities dumped while `users.json` and `workspaces.json` are in the dump folder refer to users and workspaces by
+  name. If two workspaces share a name, dump the entities first, so that they keep ids. The full layout and
 match keys are documented in the [`@qelos/testing` README](https://github.com/qelos-io/qelos/tree/main/packages/testing#importing-qelos-cli-artifacts).
 Use `artifactsDir` to import from a different folder than `dataDir`.
 
@@ -149,10 +194,23 @@ call `(await qelos.mock.get()).state` directly (for example `state.reset()`).
 
 ## Enabling per framework
 
-The environment variable `QELOS_MOCK` works wherever mock mode is supported: `1`/`true` for an in-memory
-mock, or a folder path (`0`/`false` disables). An explicit config option wins over the env.
+Every integrator has a mock mode. The environment variable `QELOS_MOCK` turns it on: `1`/`true` for an in-memory
+mock, or a folder path (`0`/`false` disables). An explicit config option wins over the env. Node integrators run the
+mock in your app's process, so install `@qelos/testing` next to them.
 
-**Express** (`@qelos/integrator-express`)
+| Integrator | Config option |
+|---|---|
+| `@qelos/integrator-express` | `createQelosIntegrator({ config: { appUrl: '', mock: './qelos-mock' } })` |
+| `@qelos/integrator-fastify` | `app.register(qelosFastify, { config: { appUrl: '', mock: './qelos-mock' } })` |
+| `@qelos/integrator-nest` | `QelosModule.forRoot({ appUrl: '', mock: './qelos-mock' })` |
+| `@qelos/integrator-next` | `createQelosApiProxyHandlers({ appUrl: '', mock: './qelos-mock' })` |
+| `@qelos/integrator-nuxt` | `qelos: { mock: './qelos-mock' }` in `nuxt.config.ts` |
+| `qelos-integrator-fastapi` | `QelosConfig(app_url="", mock="./qelos-mock")`, see below |
+
+Set the option only outside production, for example
+`mock: process.env.NODE_ENV !== 'production' ? './qelos-mock' : false`. Each integrator's README has the details.
+
+For Express:
 
 ```ts
 const qelos = createQelosIntegrator({
@@ -162,7 +220,7 @@ app.use(qelos.middleware);
 app.use('/api', qelos.proxy!);
 ```
 
-**FastAPI** (`qelos-integrator-fastapi`) runs the mock as a Node sidecar:
+**FastAPI** runs the mock as a Node sidecar:
 
 ```python
 cfg = QelosConfig(app_url="", mock="./qelos-mock")
@@ -174,16 +232,15 @@ QELOS_MOCK=./qelos-mock uvicorn main:app --reload
 # or use a mock you started yourself: QELOS_MOCK_URL=http://127.0.0.1:4555
 ```
 
-**Fastify, NestJS, Next.js, Nuxt** do not have built-in mock support yet. Run
-`qelos mock serve ./qelos-mock --port 4555` in a second terminal and set the integrator's `appUrl`
-(`QELOS_APP_URL`) to `http://127.0.0.1:4555`; the standalone server speaks the same API.
+**Anything else** can use the standalone server: run `qelos mock serve ./qelos-mock --port 4555` and set your app's
+Qelos URL to `http://127.0.0.1:4555`.
 
 Runnable example: [`examples/express-mock`](https://github.com/qelos-io/qelos/tree/main/examples/express-mock).
 
 ## Production guard
 
-Mock mode must never run in production. With `NODE_ENV=production` the Express integrator ignores mock mode
-(and logs a warning) and `@qelos/testing` itself throws unless `allowInProduction: true` is passed. A loud
+Mock mode must never run in production. With `NODE_ENV=production` the integrators ignore mock mode
+(and log a warning) and `@qelos/testing` itself throws unless `allowInProduction: true` is passed. A loud
 banner is logged whenever the mock is active, the `/__qelos_mock__/*` endpoints are not mounted when it is
 disabled, and `qelos mock serve` warns when bound to a non-loopback host. Install `@qelos/testing` as a
 dev dependency so production bundles do not ship it.
@@ -191,7 +248,8 @@ dev dependency so production bundles do not ship it.
 ## Limitations (what is stubbed)
 
 - Tokens are unsigned, opaque JWT-shaped strings; passwords are hashed but this is **not** a security model.
-- Social login (`/api/auth/:provider`) signs in the selected persona without any provider round trip.
+- Social login (`/api/auth/:provider`) signs in the selected persona (or the default one) without any provider
+  round trip, and redirects to your `returnUrl`: a path, or a URL on this machine.
 - Blueprint `updateMapping` needs the optional [`node-jq`](/testing/unit-testing#calculated-properties) package.
 - A custom `schema` of an `object` property needs the optional [`ajv`](/testing/unit-testing#object-schemas) package.
 - The rate limit on guest writes is not mirrored. Events are stored, but no subscriber or integration runs on them.

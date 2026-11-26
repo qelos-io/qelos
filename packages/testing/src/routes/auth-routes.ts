@@ -217,6 +217,8 @@ export const authRoutes: RouteModule = (router, state) => {
 
   // ---------------------------------------------------------------- social
 
+  const isLocalHostname = (hostname: string) => ['localhost', '127.0.0.1', '[::1]'].includes(hostname);
+
   /** Social login stub: no provider round trip, signs in the selected persona and redirects with `?rt=`. */
   const socialLogin = ({ request, url, params }: RouteContext) => {
     if (!SOCIAL_PROVIDERS.has(params.provider)) {
@@ -240,13 +242,18 @@ export const authRoutes: RouteModule = (router, state) => {
     } catch {
       return jsonResponse({ message: 'invalid returnUrl' }, 400);
     }
-    if (target.origin !== url.origin) {
-      return jsonResponse({ message: 'returnUrl must be a relative path or same-origin' }, 400);
+    const sameOrigin = target.origin === url.origin;
+    // behind a dev proxy the app and the mock are two ports of this machine
+    if (!sameOrigin && !(isLocalHostname(url.hostname) && isLocalHostname(target.hostname))) {
+      return jsonResponse({ message: 'returnUrl must be a relative path, same-origin, or local like the mock' }, 400);
     }
     target.searchParams.set('rt', refresh.token);
     const passState = url.searchParams.get('state');
     if (passState) target.searchParams.set('state', passState);
-    return emptyResponse(302, { location: target.toString() });
+    // a path, so a browser stays on the origin it called, which behind a proxy is the app and not the mock.
+    // (a path starting with "//" would name another host)
+    const asPath = sameOrigin && !target.pathname.startsWith('//');
+    return emptyResponse(302, { location: asPath ? `${target.pathname}${target.search}${target.hash}` : target.toString() });
   };
   router.register('GET', '/api/auth/:provider', socialLogin);
   router.register('GET', '/api/auth/:provider/callback', socialLogin);

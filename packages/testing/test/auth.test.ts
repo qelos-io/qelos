@@ -163,7 +163,8 @@ test('cookie refresh and social callback exchange', async () => {
   assert.equal((await mock.fetch('/api/auth/github?persona=c2@example.com&returnUrl=https://evil.example')).status, 400);
   const login = await mock.fetch('/api/auth/github?persona=c2@example.com&returnUrl=/done');
   assert.equal(login.status, 302);
-  const location = new URL(login.headers.get('location')!);
+  assert.match(login.headers.get('location')!, /^\/done\?rt=/, 'a path: behind a proxy the browser stays on the app');
+  const location = new URL(login.headers.get('location')!, 'http://qelos.mock');
   assert.equal(location.pathname, '/done');
   const exchanged = await sdk.authentication.socialCallback(location);
   assert.ok(exchanged.headers['set-cookie']);
