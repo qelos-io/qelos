@@ -66,6 +66,12 @@ export interface MockSeed {
   /** role -> permissions (supports "*" and "prefix:*"). Merged over the defaults. */
   roles?: Record<string, string[]>;
   components?: Array<Record<string, unknown>>;
+  /** integrations, their connections (integration sources) and plugins, as `qelos pull` writes them */
+  integrations?: Array<Record<string, unknown>>;
+  connections?: Array<Record<string, unknown>>;
+  plugins?: Array<Record<string, unknown>>;
+  /** functions of an `aws` or `cloudflare` connection: `{ sourceId, name, runtime?, ... }` */
+  functions?: Array<Record<string, unknown>>;
   events?: Array<Record<string, unknown>>;
   agents?: Array<Record<string, unknown>>;
   /** chat threads, e.g. `{ _id, integration, user, workspace?, messages: [] }` */

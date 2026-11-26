@@ -5,6 +5,7 @@ import { isPrivilegedUser } from '../auth/accounts.js';
 import { isValidId } from '../state/ids.js';
 import { newThread, ownsThread } from '../ai/threads.js';
 import { wantsBypassAdmin } from './actor.js';
+import { findAgent, listAgents } from '../ai/agents.js';
 
 /** `sdk.ai.threads`, following `apps/ai/server/controllers/threads.ts`. */
 
@@ -28,8 +29,8 @@ export function threadRoutes(router: Router, state: MockState) {
     const { integration } = (await ctx.json()) ?? {};
     if (typeof integration !== 'string' || !integration) return error('Valid integration ID is required', 400);
     // with no agents in the mock, any id is accepted; once some are seeded the id has to be one of them
-    const agent = state.agents.get(integration);
-    if (state.agents.list().length && (!agent || agent.active === false)) return error('Integration not found', 404);
+    const agent = findAgent(state, integration);
+    if (listAgents(state).length && (!agent || agent.active === false)) return error('Integration not found', 404);
     return jsonResponse(newThread(state, integration, auth), 201);
   });
 

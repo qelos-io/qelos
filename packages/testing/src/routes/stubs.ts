@@ -1,7 +1,7 @@
 import { jsonResponse, MockHttpError, type RouteContext, type RouteModule } from '../router/router.js';
 import type { Doc, MockState } from '../state/mock-state.js';
 import { isSignedIn, mayAct, type ActorResolver, type MockActor } from './actor.js';
-import { agentIntegration, agentRefusal, toAgent } from '../ai/agents.js';
+import { agentCollection, agentIntegration, agentRefusal, findAgent, listAgents, toAgent } from '../ai/agents.js';
 import type { AiReply, AiStub } from '../ai/ai-stub.js';
 import { aiTurn, completionBody, failureResponse, recordTurn, streamResponse } from '../ai/turn.js';
 import { newThread, ownsThread, recordRequest } from '../ai/threads.js';
@@ -64,7 +64,7 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
      * they require one the caller owns. An agent the mock does not know uses a thread id when it names a thread.
      */
     function completionThread(ctx: RouteContext, agentId: string): string | undefined | Response {
-      const agent = state.agents.get(agentId);
+      const agent = findAgent(state, agentId);
       const records = !!agent?.trigger?.details?.recordThread;
       if (agent && !records) return undefined;
       const { threadId } = ctx.params;
@@ -91,9 +91,9 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
       const actor = await resolveActor(ctx);
       if (!isSignedIn(actor)) return unauthorized();
       const id = ctx.params.id;
-      const agent = state.agents.get(id);
-      // with no agents in the mock, any id answers; once some are seeded the id has to be one of them
-      if (state.agents.list().length && (!agent || agent.active === false)) {
+      const agent = findAgent(state, id);
+      // with no agents in the mock, any id answers; once there are some the id has to be one of them
+      if (listAgents(state).length && (!agent || agent.active === false)) {
         return jsonResponse({ message: 'Agent not found' }, 404);
       }
       const refusal = agentRefusal(actor, agent);
@@ -116,13 +116,13 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
     /** an agent by the id of the request, answering 404 with the failure message of the action */
     const existing = (failure: string, handler: (agent: Doc, ctx: RouteContext) => unknown) =>
       manage(() => failed(failure, 401), (ctx) => {
-        const agent = state.agents.get(ctx.params.id);
+        const agent = findAgent(state, ctx.params.id);
         return agent ? handler(agent, ctx) : failed(failure, 404);
       });
 
     router.register('GET', '/api/ai/agents', manage(() => failed('Failed to list agents', 500), ({ query }) => {
       const active = query.get('active');
-      return state.agents.list().map(toAgent).filter((a) => active === null || a.active === ['true', '1'].includes(active));
+      return listAgents(state).map(toAgent).filter((a) => active === null || a.active === ['true', '1'].includes(active));
     }));
     router.register('POST', '/api/ai/agents', async (ctx) => {
       const actor = await resolveActor(ctx);
@@ -155,10 +155,10 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
     router.register('PUT', '/api/ai/agents/:id', existing('Failed to update agent', async (agent, ctx) => {
       const payload = (await ctx.json()) || {};
       const changes = { ...agentIntegration(payload, agent), ...(payload.active !== undefined ? { active: payload.active } : {}) };
-      return toAgent(state.agents.update(agent._id, changes)!);
+      return toAgent(agentCollection(state, agent._id).update(agent._id, changes)!);
     }));
     router.register('DELETE', '/api/ai/agents/:id', existing('Failed to delete agent', (agent) => {
-      state.agents.remove(agent._id);
+      agentCollection(state, agent._id).remove(agent._id);
       return { success: true, message: 'Agent deleted' };
     }));
     for (const path of ['/api/ai/:id/chat-completion', '/api/ai/:id/chat-completion/:threadId']) {
@@ -168,7 +168,7 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
         const stream = ctx.query.get('stream') === 'true' || (ctx.request.headers.get('accept') ?? '').includes('text/event-stream');
         const thread = completionThread(ctx, ctx.params.id);
         if (thread instanceof Response) return thread;
-        const refusal = agentRefusal(await resolveActor(ctx), state.agents.get(ctx.params.id));
+        const refusal = agentRefusal(await resolveActor(ctx), findAgent(state, ctx.params.id));
         if (refusal) return refused(refusal);
         return respond(ctx.params.id, body.messages || [], stream, { threadId: thread, clientTools: body.clientTools });
       });

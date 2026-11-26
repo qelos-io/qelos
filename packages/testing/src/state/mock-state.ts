@@ -32,6 +32,7 @@ export const COLLECTION_NAMES = [
   'threads',
   'encryptedData',
   'vectorStores',
+  'functions',
 ] as const;
 export type CollectionName = (typeof COLLECTION_NAMES)[number];
 const ENTITIES_FILE = 'entities';

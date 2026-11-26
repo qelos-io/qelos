@@ -206,11 +206,15 @@ An admin who sends `bypassAdmin` (body, `?bypassAdmin=true` or the `x-bypass-adm
 | AI threads | `GET`/`POST /api/ai/threads`, `GET`/`DELETE /api/ai/threads/:id` - own threads, all for admins; chats are recorded in them (agents with `recordThread`, and every `agents/:id/chat`) |
 | Users (admin) | `GET /api/users[/stats\|/:id]`, `POST`, `PUT /:id`, `DELETE /:id`, `GET`/`POST /:id/encrypted` - admins only (`401` otherwise) |
 | Events | `GET /api/events` (`{ events, total, page, limit, totalPages }`; filters `kind`, `eventName`, `source`, `user`, `workspace`, `search`, `period` (default `last-week`), `from`/`to`; `page` from 0, `limit` up to 100) and `GET /api/events/:id` (`null` when unknown) for admins; `POST /api/events` for admins and the `plugin` role, answering with no body. Refused callers get `401` |
-| Lambdas | `/api/webhooks/:integrationId` - any method, signed-in users; answers the seed `lambdas` entry `{ integrationId, method?, response, status?, roles?, workspaceLabels? }` (`403` without them) or `{}` |
+| Webhooks | `/api/webhooks/:integrationId` - any method, signed-in users; answers the seed `lambdas` entry `{ integrationId, method?, response, status?, roles?, workspaceLabels? }` (`403` without them) or `{}` |
+| Integrations | `/api/integrations[/:id]` for admins and plugins: ends are checked against the kind of their connection, unknown details are dropped, list filters as in the service, `$populate` on one. Agents are integrations triggered by `chatCompletion`, so both APIs show them |
+| Connections | `/api/integration-sources[/:id]` for admins and plugins: `metadata` is validated per kind and secrets are neither answered nor kept (only which one was given). `POST .../status` answers `connected` when the settings and credentials it needs are there; no provider is called |
+| Functions | `/api/lambdas/:sourceId[/:name]` for admins, on `aws` and `cloudflare` connections, kept in `functions` (`[{ sourceId, name, ... }]`). Nothing is deployed, and `.../execute` is not mirrored |
+| Plugins | `GET /api/plugins` for anyone (all settings but the token for admins, a few for others), `GET /api/plugins/:id` for admins and plugins, writes for admins. Manifests and callbacks are not fetched |
 | Payments | plans, coupons, subscriptions, invoices, checkout and `/api/payments/configuration`, following the payments service; no provider is called - report results with `mock.payments.pay/fail/cancel` |
 | Secrets | none: the secrets service is internal and apps cannot call it |
 
-Writes made by admins/personas land in `mock.state`, so they persist when `dataDir` is set. The seed accepts `components`, `events`, `agents`, `aiResponses`, `lambdas`, `threads`, `pricingPlans`, `coupons`, `subscriptions` and `invoices` in addition to the collections above.
+Writes made by admins/personas land in `mock.state`, so they persist when `dataDir` is set. The seed accepts `components`, `events`, `agents`, `aiResponses`, `lambdas`, `integrations`, `connections`, `plugins`, `functions`, `threads`, `pricingPlans`, `coupons`, `subscriptions` and `invoices` in addition to the collections above.
 
 ## State management API
 
