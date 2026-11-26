@@ -21,7 +21,7 @@ import { createRecorder } from '@qelos/testing/cassette';
 const recorder = createRecorder({ out: './qelos-fixtures' });
 const sdk = new QelosSDK({ appUrl: 'https://my-tenant.example.com', fetch: recorder.fetch, apiToken });
 
-await sdk.blueprints.getPieChart('orders'); // recorded
+await sdk.blueprints.getPieChart('orders', { x: 'status' }); // recorded
 ```
 
 ### Record with the proxy

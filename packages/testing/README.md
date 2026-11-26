@@ -98,12 +98,13 @@ createMockQelos({ seed: { roles: { admin: ['*'], editor: ['posts:*'], viewer: ['
 ### `authenticate` for other route modules
 
 ```ts
-import { authenticate, checkPermission, checkBlueprintPermission, scopeMatches, unauthorized } from '@qelos/testing';
+import { authenticate, checkBlueprintPermission, scopeMatches, unauthorized, type RouteModule } from '@qelos/testing';
 
 const entitiesRoutes: RouteModule = (router, state) => {
   router.register('GET', '/api/blueprints/:bp/entities', ({ request, params }) => {
     const auth = authenticate(request, state); // { user, workspace, session, isApiToken } | null
     const blueprint = state.blueprints.findOne((b) => b.identifier === params.bp);
+    if (!blueprint) return new Response(null, { status: 404 });
     const scope = checkBlueprintPermission(auth, state, blueprint, 'read'); // 'user' | 'workspace' | 'tenant' | null
     if (!scope) return auth ? new Response(null, { status: 403 }) : unauthorized();
     return state.entities.list(params.bp).filter((e) => scopeMatches(auth, scope, e));
@@ -240,7 +241,10 @@ const mock = createMockQelos({
   // answer anything the built-ins don't; return nothing to fall through to the 404
   onMissing: (req) => (new URL(req.url).pathname === '/api/foo' ? Response.json({ foo: 1 }) : undefined),
   // custom identity for data and content routes; return null for "no identity" (permissions not enforced)
-  authenticate: (req, state) => state.resolvePersona(req.headers.get('x-user') ?? '') ?? null,
+  authenticate: (req, state) => {
+    const persona = state.resolvePersona(req.headers.get('x-user') ?? '');
+    return persona ? { ...persona, roles: persona.roles ?? [] } : null;
+  },
 });
 mock.on('GET', '/api/foo/:id', ({ params }) => ({ id: params.id })); // takes precedence over built-ins
 ```

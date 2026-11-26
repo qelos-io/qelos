@@ -94,7 +94,8 @@ the optional `node-jq` package is installed, the library the service uses:
 npm install --save-dev node-jq
 ```
 
-Installing it downloads the `jq` program, so allow its install script if your package manager asks (pnpm does).
+Installing it downloads the `jq` program, so allow its install script if your package manager asks. pnpm blocks it
+until you run `pnpm approve-builds`.
 Without it, the mock warns once and leaves those properties as they were sent.
 
 ### Object schemas
@@ -248,8 +249,8 @@ const { as, mock } = createMockSdk({
 const user = as('user@example.com'); // personas as in the first example
 
 const thread = await user.ai.createThread({ integration: agentId });
-await user.ai.chat.chatInThread(agentId, thread._id, { messages: [{ role: 'user', content: 'Hi' }] });
-const stored = await user.ai.getThread(thread._id); // the question and the answer
+await user.ai.chat.chatInThread(agentId, thread._id!, { messages: [{ role: 'user', content: 'Hi' }] });
+const stored = await user.ai.getThread(thread._id!); // the question and the answer
 ```
 
 - An agent with `trigger.details.recordThread` requires a thread the caller owns. Other agents ignore the thread.
@@ -381,7 +382,9 @@ administrators and users with the **`plugin`** role dispatch them, and everyone 
 
 ```ts
 await admin.events.dispatch({ source: 'billing', kind: 'invoice', eventName: 'sent', description: 'Invoice sent' });
-const { events, total } = await admin.events.getList({ kind: 'invoice' });
+// `getList` answers one page, although the SDK types it as an array
+const page: any = await admin.events.getList({ kind: 'invoice' });
+const { events, total } = page;
 ```
 
 - `admin` is an administrator SDK, created as in [Managing users](#managing-users).

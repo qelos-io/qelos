@@ -36,9 +36,14 @@ export default class QlIntegrationSources extends BaseSDK {
     )
   }
 
-  /** `kind` is required by the service; it is optional here only so that earlier code keeps compiling */
+  /**
+   * `kind` is required by the service. It is optional here, and any text is accepted, so that earlier code keeps
+   * compiling: an object built apart from the call has `kind: string`.
+   */
   create(
-    source: Pick<IIntegrationSource, 'name' | 'labels' | 'metadata' | 'authentication'> & Partial<Pick<IIntegrationSource, 'kind'>>,
+    source: Pick<IIntegrationSource, 'name' | 'labels' | 'metadata' | 'authentication'> & {
+      kind?: IIntegrationSource['kind'] | (string & {});
+    },
   ): Promise<IIntegrationSource> {
     return this.callJsonApi<IIntegrationSource>(this.relativePath, {
       method: 'post',
