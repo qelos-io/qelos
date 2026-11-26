@@ -10,6 +10,7 @@ test('parseServeArgs: defaults, flags and inline values', () => {
     port: 8080,
     host: 'localhost',
   });
+  assert.equal(parseServeArgs(['serve', '--strict']).strict, true);
   assert.throws(() => parseServeArgs(['--port', '70000']));
   assert.throws(() => parseServeArgs(['--nope']));
 });

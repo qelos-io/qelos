@@ -165,3 +165,73 @@ describe('what stays as it was', () => {
     assert.equal((await post(mock)).status, 200);
   });
 });
+
+describe('strictPermissions: callers the mock cannot identify are guests', () => {
+  const strict = () => createMockQelos({ seed, logger: () => {}, strictPermissions: true });
+  const call = (mock: ReturnType<typeof createMockQelos>, method: string, path: string, headers: Record<string, string> = {}) =>
+    mock.fetch(path, { method, headers, ...(method === 'GET' ? {} : { body: '{"title":"x","identifier":"new"}' }) });
+
+  test('no credentials, or made-up ones, get what guests get', async () => {
+    const mock = strict();
+    const unidentified: Array<Record<string, string>> = [{}, { 'x-api-key': 'mock' }, { authorization: 'Bearer a.b.signature' }];
+    for (const headers of unidentified) {
+      assert.equal((await call(mock, 'GET', '/api/blueprints/notice/entities', headers)).status, 200);
+      assert.equal((await call(mock, 'POST', '/api/blueprints/secret/entities', headers)).status, 403);
+      assert.equal((await call(mock, 'POST', '/api/blueprints/notice/entities', headers)).status, 403);
+      assert.equal((await call(mock, 'POST', '/api/blueprints', headers)).status, 403);
+      assert.equal((await call(mock, 'POST', '/api/ai/agents', headers)).status, 403);
+    }
+  });
+
+  test('identified callers and the default persona are unaffected', async () => {
+    assert.equal((await call(strict(), 'POST', '/api/blueprints/secret/entities', { [PERSONA_HEADER]: 'admin@x.com' })).status, 200);
+    const mock = createMockQelos({ seed, logger: () => {}, strictPermissions: true, defaultPersona: 'admin@x.com' });
+    assert.equal((await call(mock, 'POST', '/api/blueprints/secret/entities')).status, 200);
+  });
+
+  test('is checked as a boolean', () => {
+    assert.throws(() => createMockQelos({ strictPermissions: 'yes' as any }), /strictPermissions/);
+  });
+});
+
+describe('bypassAdmin: an administrator asks to be treated as a regular user', () => {
+  const admin = { [PERSONA_HEADER]: 'admin@x.com' };
+  const setupMock = () => createMockQelos({ seed, logger: () => {} });
+  const post = (mock: ReturnType<typeof createMockQelos>, bp: string, headers: Record<string, string> = {}, body: object = {}, query = '') =>
+    mock.fetch(`/api/blueprints/${bp}/entities${query}`, { method: 'POST', headers: { ...admin, ...headers }, body: JSON.stringify({ title: 'x', ...body }) });
+
+  test('by query, header or body', async () => {
+    const mock = setupMock();
+    assert.equal((await post(mock, 'note')).status, 200);
+    // `note` grants the `user` role only
+    assert.equal((await post(mock, 'note', {}, {}, '?bypassAdmin=true')).status, 403);
+    assert.equal((await post(mock, 'note', { 'x-bypass-admin': '1' })).status, 403);
+    assert.equal((await post(mock, 'note', {}, { bypassAdmin: true })).status, 403);
+    // the body wins over the query
+    assert.equal((await post(mock, 'note', {}, { bypassAdmin: false }, '?bypassAdmin=true')).status, 200);
+    // `secret` grants the admin role itself, so it stays allowed
+    assert.equal((await post(mock, 'secret', {}, {}, '?bypassAdmin=true')).status, 200);
+  });
+
+  test('applies to every data call, and the parameter is not a filter', async () => {
+    const mock = setupMock();
+    await post(mock, 'secret');
+    const get = async (path: string) => mock.fetch(path, { headers: admin });
+    assert.equal(((await (await get('/api/blueprints/secret/entities?bypassAdmin=true')).json()) as any[]).length, 1);
+    for (const path of ['/api/blueprints/note/entities', '/api/blueprints/note/charts/count']) {
+      assert.equal((await get(path)).status, 200);
+      assert.equal((await get(`${path}?bypassAdmin=true`)).status, 403);
+    }
+  });
+
+  test('the administrator SDK asks for it by default', async () => {
+    const mock = setupMock();
+    const { default: loaded }: any = await import('@qelos/sdk/administrator');
+    const Admin = loaded?.default ?? loaded;
+    const sdk = new Admin({ appUrl: 'http://qelos.mock', fetch: mock.fetch, extraHeaders: async () => admin });
+    await assert.rejects(sdk.entities('note').getList(), REFUSED);
+    const without = new Admin({ appUrl: 'http://qelos.mock', fetch: mock.fetch, extraHeaders: async () => admin, extraQueryParams: () => ({}) });
+    assert.deepEqual(await without.entities('note').getList(), []);
+  });
+});
+

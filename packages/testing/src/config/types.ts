@@ -70,6 +70,11 @@ export interface MockSeed {
   agents?: Array<Record<string, unknown>>;
   /** chat threads, e.g. `{ _id, integration, user, workspace?, messages: [] }` */
   threads?: Array<Record<string, unknown>>;
+  /** payments: plans (as `qelos pull pricing-plans` writes them), coupons, subscriptions and invoices */
+  pricingPlans?: Array<Record<string, unknown>>;
+  coupons?: Array<Record<string, unknown>>;
+  subscriptions?: Array<Record<string, unknown>>;
+  invoices?: Array<Record<string, unknown>>;
   /** canned AI replies `{ agentId?, match?, content }` - first matching entry wins */
   aiResponses?: Array<Record<string, unknown>>;
   /** seeded webhook/lambda results: `{ integrationId, method?, response, status? }` */
@@ -91,6 +96,11 @@ export interface MockQelosOptions {
   seed?: MockSeed;
   /** id or email of the auto-logged-in user */
   defaultPersona?: string;
+  /**
+   * Treat a call with no credentials, or with ones the mock never issued, as a guest on data, content and agent
+   * routes, like the real services. Default false: such calls are not checked.
+   */
+  strictPermissions?: boolean;
   tenant?: MockTenant;
   /** tokens, cookies and registration behaviour */
   auth?: MockAuthOptions;

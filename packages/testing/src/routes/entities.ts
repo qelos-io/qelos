@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { MockHttpError, type RouteContext, type RouteModule } from '../router/router.js';
 import type { Doc, MockState } from '../state/mock-state.js';
 import { generateId } from '../state/ids.js';
-import { isAdmin, type ActorResolver, type MockActor } from './actor.js';
+import { wantsBypassAdmin, type ActorResolver, type MockActor } from './actor.js';
 import {
   buildFilter,
   buildMetadataInput,
@@ -22,9 +22,10 @@ const PUBLIC_USER_DATA = ['firstName', 'lastName', 'profileImage'];
 const PUBLIC_WS_DATA = ['name', 'logo'];
 
 /** Mirrors `getUserPermittedScopes` of the no-code service. `true` = unrestricted. */
-function permittedScopes(actor: MockActor | null, blueprint: BlueprintDoc, operation: Operation): Scopes {
-  if (isAdmin(actor)) return true;
-  const user = actor!;
+function permittedScopes(actor: MockActor | null, blueprint: BlueprintDoc, operation: Operation, bypassAdmin: boolean): Scopes {
+  // no actor: not enforced
+  if (!actor || (!bypassAdmin && actor.roles.includes('admin'))) return true;
+  const user = actor;
   const scopes = (blueprint.permissions || [])
     .filter((p) => {
       if (p.operation !== operation) return false;
@@ -43,8 +44,8 @@ function permittedScopes(actor: MockActor | null, blueprint: BlueprintDoc, opera
 }
 
 /** Throws 403 when not permitted; otherwise returns a predicate limiting the entities the actor may touch. */
-function authorize(actor: MockActor | null, blueprint: BlueprintDoc, operation: Operation) {
-  const scopes = permittedScopes(actor, blueprint, operation);
+function authorize(actor: MockActor | null, blueprint: BlueprintDoc, operation: Operation, bypassAdmin: boolean) {
+  const scopes = permittedScopes(actor, blueprint, operation, bypassAdmin);
   if (scopes !== true && !scopes.length) throw new MockHttpError(403, 'not permitted');
   let scopeFilter: (e: Doc) => boolean = () => true;
   if (scopes !== true && !scopes.includes('tenant')) {
@@ -127,6 +128,7 @@ function outerPopulate(
   items: ReturnType<typeof parseOuterPopulate>,
   actor: MockActor | null,
   flat: boolean,
+  bypassAdmin: boolean,
 ) {
   for (const { setKey, target, scope, limit, sort } of items) {
     const targetBp = state.blueprints.findOne((b) => b.identifier === target) as BlueprintDoc | undefined;
@@ -134,7 +136,7 @@ function outerPopulate(
     if (!targetBp || !relation) continue;
     let allowed: (e: Doc) => boolean;
     try {
-      allowed = authorize(actor, targetBp, 'read').scopeFilter;
+      allowed = authorize(actor, targetBp, 'read', bypassAdmin).scopeFilter;
     } catch {
       continue;
     }
@@ -166,16 +168,18 @@ export interface EntitiesRoutesOptions {
 /** `/api/blueprints/:blueprint/entities` (+ `charts/count`), mirroring the no-code entities controller. */
 export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteModule {
   return (router, state) => {
-    const context = async (ctx: RouteContext) => ({
-      actor: await resolveActor(ctx),
-      blueprint: getBlueprint(state, ctx.params.blueprint),
-      query: parseQuery(ctx.query),
-    });
+    const context = async (ctx: RouteContext) => {
+      const actor = await resolveActor(ctx);
+      const blueprint = getBlueprint(state, ctx.params.blueprint);
+      const body = ['POST', 'PUT', 'DELETE'].includes(ctx.request.method) ? await ctx.json() : undefined;
+      const { bypassAdmin: _, ...query } = parseQuery(ctx.query);
+      return { actor, blueprint, query: query as Record<string, any>, bypassAdmin: wantsBypassAdmin(ctx, body) };
+    };
     const base = '/api/blueprints/:blueprint/entities';
 
     router.register('GET', base, async (ctx) => {
-      const { actor, blueprint, query } = await context(ctx);
-      const { scopeFilter } = authorize(actor, blueprint, 'read');
+      const { actor, blueprint, query, bypassAdmin } = await context(ctx);
+      const { scopeFilter } = authorize(actor, blueprint, 'read', bypassAdmin);
       const flat = flatDefault(query, ctx.request.headers);
       const { limit, skip } = getPagination(query);
       const items = state.entities.list(blueprint.identifier).filter(scopeFilter).filter(buildFilter(query, blueprint));
@@ -183,19 +187,19 @@ export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteMo
       const page = items.slice(skip || 0, limit === undefined ? undefined : (skip || 0) + limit);
       const shaped = page.map((e) => present(e, blueprint, flat));
       if (query.$populate) populate(state, blueprint, shaped, flat);
-      if (query.$outerPopulate) outerPopulate(state, blueprint, shaped, parseOuterPopulate(query.$outerPopulate), actor, flat);
+      if (query.$outerPopulate) outerPopulate(state, blueprint, shaped, parseOuterPopulate(query.$outerPopulate), actor, flat, bypassAdmin);
       return shaped;
     });
 
     router.register('GET', '/api/blueprints/:blueprint/charts/count', async (ctx) => {
-      const { actor, blueprint, query } = await context(ctx);
-      const { scopeFilter } = authorize(actor, blueprint, 'read');
+      const { actor, blueprint, query, bypassAdmin } = await context(ctx);
+      const { scopeFilter } = authorize(actor, blueprint, 'read', bypassAdmin);
       return { count: state.entities.list(blueprint.identifier).filter(scopeFilter).filter(buildFilter(query, blueprint)).length };
     });
 
     router.register('GET', `${base}/:id`, async (ctx) => {
-      const { actor, blueprint, query } = await context(ctx);
-      const { scopeFilter } = authorize(actor, blueprint, 'read');
+      const { actor, blueprint, query, bypassAdmin } = await context(ctx);
+      const { scopeFilter } = authorize(actor, blueprint, 'read', bypassAdmin);
       const entity = findEntity(state, blueprint.identifier, ctx.params.id);
       if (!entity || !scopeFilter(entity)) throw new MockHttpError(404, 'entity not found');
       const flat = flatDefault(query, ctx.request.headers);
@@ -205,8 +209,8 @@ export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteMo
     });
 
     router.register('POST', base, async (ctx) => {
-      const { actor, blueprint, query } = await context(ctx);
-      const { unrestricted } = authorize(actor, blueprint, 'create');
+      const { actor, blueprint, query, bypassAdmin } = await context(ctx);
+      const { unrestricted } = authorize(actor, blueprint, 'create', bypassAdmin);
       const body = (await ctx.json()) || {};
       const metadata = validateMetadata(buildMetadataInput({}, body, blueprint), blueprint);
       checkRelations(state, blueprint, metadata);
@@ -227,8 +231,8 @@ export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteMo
     });
 
     router.register('PUT', `${base}/:id`, async (ctx) => {
-      const { actor, blueprint, query } = await context(ctx);
-      const { unrestricted, scopeFilter } = authorize(actor, blueprint, 'update');
+      const { actor, blueprint, query, bypassAdmin } = await context(ctx);
+      const { unrestricted, scopeFilter } = authorize(actor, blueprint, 'update', bypassAdmin);
       const entity = findEntity(state, blueprint.identifier, ctx.params.id);
       if (!entity || !scopeFilter(entity)) throw new MockHttpError(404, 'entity not found');
       const body = (await ctx.json()) || {};
@@ -243,16 +247,16 @@ export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteMo
 
     // registered before `:id` so "all" is not treated as an identifier
     router.register('DELETE', `${base}/all`, async (ctx) => {
-      const { actor, blueprint } = await context(ctx);
-      const { scopeFilter } = authorize(actor, blueprint, 'delete');
+      const { actor, blueprint, bypassAdmin } = await context(ctx);
+      const { scopeFilter } = authorize(actor, blueprint, 'delete', bypassAdmin);
       const targets = state.entities.list(blueprint.identifier).filter(scopeFilter);
       for (const e of targets) state.entities.remove(blueprint.identifier, e._id);
       return { deletedCount: targets.length };
     });
 
     router.register('DELETE', `${base}/:id`, async (ctx) => {
-      const { actor, blueprint, query } = await context(ctx);
-      const { scopeFilter } = authorize(actor, blueprint, 'delete');
+      const { actor, blueprint, query, bypassAdmin } = await context(ctx);
+      const { scopeFilter } = authorize(actor, blueprint, 'delete', bypassAdmin);
       const entity = findEntity(state, blueprint.identifier, ctx.params.id);
       if (!entity || !scopeFilter(entity)) throw new MockHttpError(404, 'entity not found');
       state.entities.remove(blueprint.identifier, entity._id);

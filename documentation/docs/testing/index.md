@@ -23,6 +23,7 @@ npm i -D @qelos/testing
 | Build seed data with factories | `persona()`, `admin()`, `blueprint()`, `entities()` from `@qelos/testing/fixtures` | [Fixtures](/testing/unit-testing#fixtures) |
 | Test retries, error handling and expiry | `mock.faults` (latency, 5xx, dropped connections, rate limits, expired sessions) | [Fault injection](/testing/unit-testing#fault-injection) |
 | Script AI agent replies and tool calls | `mock.ai` | [Scripted AI agents](/testing/unit-testing#scripted-ai-agents) |
+| Test checkout, subscriptions and invoices | `sdk.payments` on the mock, `mock.payments` | [Payments](/testing/unit-testing#payments) |
 | Replay recorded tenant responses for endpoints the mock lacks | `createRecorder()` and `createMockQelos({ cassette })` | [Record and replay](/testing/record-replay) |
 | Develop locally with no tenant | Mock mode in your integrator, or `qelos mock serve` | [Develop locally without a tenant](/testing/local-development) |
 | Seed realistic data | Import `qelos dump` / `qelos pull` folders into mock state | [`qelos mock`](/cli/mock) |

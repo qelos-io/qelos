@@ -8,7 +8,7 @@ export class MockConfigError extends Error {
   }
 }
 
-const SEED_ARRAYS = ['users', 'workspaces', 'personas', 'blueprints', 'configurations', 'blocks', 'components', 'events', 'agents', 'aiResponses', 'lambdas', 'threads'] as const;
+const SEED_ARRAYS = ['users', 'workspaces', 'personas', 'blueprints', 'configurations', 'blocks', 'components', 'events', 'agents', 'aiResponses', 'lambdas', 'threads', 'pricingPlans', 'coupons', 'subscriptions', 'invoices'] as const;
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v);
@@ -68,6 +68,7 @@ export function validateMockConfig(options: unknown = {}): ResolvedMockConfig {
   expectType('dataDir', o.dataDir, 'string');
   expectType('persist', o.persist, 'boolean');
   expectType('defaultPersona', o.defaultPersona, 'string');
+  expectType('strictPermissions', o.strictPermissions, 'boolean');
   expectType('allowInProduction', o.allowInProduction, 'boolean');
   expectType('persistDebounceMs', o.persistDebounceMs, 'number');
   expectType('artifactsDir', o.artifactsDir, 'string');

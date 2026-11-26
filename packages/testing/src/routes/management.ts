@@ -2,12 +2,14 @@ import { MockHttpError, type RouteModule } from '../router/router.js';
 import { COLLECTION_NAMES, type CollectionName, type MockState } from '../state/mock-state.js';
 import { validateSeed } from '../config/resolve.js';
 import { generateId } from '../state/ids.js';
+import { createPaymentsControls } from '../payments/controls.js';
 
 export const MANAGEMENT_PREFIX = '/__qelos_mock__';
 
 /**
  * Dev-only state management API: `GET state`, `POST reset`, `POST seed` (merge),
- * `PUT collections/:name` (replace) and `GET routes`.
+ * `PUT collections/:name` (replace), `POST payments/:subscriptionId/pay|fail|cancel` (`mock.payments`) and
+ * `GET routes`.
  * `:name` is a collection (`users`, `blueprints`, ...) or `entities.<blueprint>`.
  */
 export const managementRoutes: RouteModule = (router, state: MockState) => {
@@ -46,6 +48,15 @@ export const managementRoutes: RouteModule = (router, state: MockState) => {
       throw new MockHttpError(404, `unknown collection: ${name}`, 'QELOS_MOCK_UNKNOWN_COLLECTION');
     }
     return { ok: true, count: docs.length };
+  });
+
+  const payments = createPaymentsControls(state);
+  router.register('POST', `${MANAGEMENT_PREFIX}/payments/:subscriptionId/:action`, async (ctx) => {
+    const { subscriptionId, action } = ctx.params;
+    if (!['pay', 'fail', 'cancel'].includes(action)) throw new MockHttpError(404, `unknown payment action: ${action}`);
+    if (!state.collection('subscriptions').get(subscriptionId)) throw new MockHttpError(404, 'subscription not found');
+    if (action === 'pay') return payments.pay(subscriptionId, (await ctx.json()) || {});
+    return payments[action as 'fail' | 'cancel'](subscriptionId);
   });
 
   router.register('GET', `${MANAGEMENT_PREFIX}/routes`, () => router.list());

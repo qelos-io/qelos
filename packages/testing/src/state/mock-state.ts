@@ -21,6 +21,9 @@ export const COLLECTION_NAMES = [
   'integrations',
   'connections',
   'pricingPlans',
+  'coupons',
+  'subscriptions',
+  'invoices',
 
   'events',
   'agents',

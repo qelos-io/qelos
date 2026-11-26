@@ -28,7 +28,7 @@ function paginate<T>(list: T[], query: URLSearchParams): T[] {
   return limit ? list.slice((page - 1) * limit, page * limit) : list;
 }
 
-/** Deterministic stubs for the services an app normally proxies: AI, events, lambdas, payments, secrets. */
+/** Deterministic stubs for the services an app normally proxies: AI, events, lambdas, secrets. */
 export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; ai: AiStub }): RouteModule {
   return (router, state) => {
     /** scripted reply (mock.ai) > seeded `aiResponses` > echo; records the call and the thread; honors delay/error */
@@ -170,17 +170,6 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
         headers: { 'content-type': 'application/json' },
       });
     });
-
-    // ---- payments: nothing sold, nothing owned
-    router.register('GET', '/api/plans/public', () => []);
-    router.register('GET', '/api/plans/:id', () => {
-      throw new MockHttpError(404, 'plan not found');
-    });
-    router.register('GET', '/api/invoices', () => []);
-    router.register('GET', '/api/subscriptions/me', () => {
-      throw new MockHttpError(404, 'subscription not found');
-    });
-    router.register('GET', '/api/subscriptions/:id/activity', () => []);
 
     // ---- secrets: never returned, never stored
     router.register('GET', '/api/secrets', () => []);

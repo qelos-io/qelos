@@ -6,6 +6,8 @@ export interface ServeArgs {
   dir?: string;
   port: number;
   host: string;
+  /** treat calls without credentials as guests (`strictPermissions`) */
+  strict?: boolean;
 }
 
 export function parseServeArgs(argv: string[]): ServeArgs {
@@ -17,6 +19,7 @@ export function parseServeArgs(argv: string[]): ServeArgs {
     if (flag === '--dir') out.dir = value();
     else if (flag === '--port') out.port = Number(value());
     else if (flag === '--host') out.host = value();
+    else if (flag === '--strict') out.strict = true;
     else if (flag !== 'serve') throw new Error(`Unknown argument: ${a}`);
   }
   if (!Number.isInteger(out.port) || out.port < 0 || out.port > 65535) throw new Error('--port must be 0-65535');
@@ -89,6 +92,7 @@ export async function serve(
   const mock = createMockQelos({
     enabled: true,
     dataDir: args.dir,
+    strictPermissions: args.strict,
     logger: (m) => log.err(m),
   });
   let boundPort = args.port;

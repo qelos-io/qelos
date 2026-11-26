@@ -38,7 +38,7 @@ test('record proxy forwards to the target, returns real responses, records a red
         res.setHeader('content-type', 'application/json');
         return res.end(JSON.stringify({ payload: { token: JWT, user: { email: 'a@x.com' } }, echo: JSON.parse(body) }));
       }
-      if (req.url === '/api/plans?active=true') {
+      if (req.url === '/api/reports?active=true') {
         res.setHeader('content-type', 'application/json');
         return res.end(JSON.stringify([{ id: 'p1', name: 'Pro' }]));
       }
@@ -66,8 +66,8 @@ test('record proxy forwards to the target, returns real responses, records a red
     assert.equal(seen[0].auth, 'Bearer real-token-value-123456'); // credentials are forwarded
     assert.equal(seen[0].host, new URL(target).host);
 
-    const plans: any = await (await fetch(`${proxy.origin}/api/plans?active=true`)).json();
-    assert.equal(plans[0].name, 'Pro');
+    const reports: any = await (await fetch(`${proxy.origin}/api/reports?active=true`)).json();
+    assert.equal(reports[0].name, 'Pro');
     const redirect = await fetch(`${proxy.origin}/api/old`, { redirect: 'manual' });
     assert.equal(redirect.status, 302);
 
@@ -75,10 +75,10 @@ test('record proxy forwards to the target, returns real responses, records a red
     assert.ok(!raw.includes('real-password'));
     assert.ok(!raw.includes(JWT));
     assert.ok(!raw.includes('real-token-value'));
-    assert.ok(raw.includes('"/api/plans"') || raw.includes('/api/plans'));
+    assert.ok(raw.includes('/api/reports'));
 
     const mock = createMockQelos({ logger: () => {}, cassette: out });
-    const replayed: any = await (await mock.fetch('/api/plans?active=true')).json();
+    const replayed: any = await (await mock.fetch('/api/reports?active=true')).json();
     assert.equal(replayed[0].name, 'Pro');
   } finally {
     await proxy.close();
