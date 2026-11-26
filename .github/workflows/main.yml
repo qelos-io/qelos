@@ -57,6 +57,13 @@ jobs:
           QELOS_E2E_USERNAME: ${{ secrets.QELOS_E2E_USERNAME }}
           QELOS_E2E_PASSWORD: ${{ secrets.QELOS_E2E_PASSWORD }}
 
+      # an npm project outside the pnpm workspace, so `pnpm -r run test` skips it; it uses the SDK built above
+      - name: Test the CLI
+        working-directory: tools/cli
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
+
       - name: Integrator E2E (requires QELOS_E2E_URL / runs skipped otherwise)
         run: pnpm -F e2e test
         env:
