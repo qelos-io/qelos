@@ -32,6 +32,7 @@ import {
   type WorkspaceClaim,
 } from '../auth/tokens.js';
 import { workspaceRoutes } from './workspace-routes.js';
+import { mcpRoutes } from './mcp-routes.js';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FIRST_NAME = /^[a-zA-Z]+([-\s]?[a-zA-Z]+)*$/;
@@ -373,4 +374,5 @@ export const authRoutes: RouteModule = (router, state) => {
   );
 
   workspaceRoutes(router, state);
+  mcpRoutes(router, state);
 };
