@@ -174,9 +174,9 @@ Notes:
 | `POST .../entities` | validates against the blueprint `properties` (type, `required`, `enum`, `min`/`max`, `multi`, relation targets) - `406 { message }` on failure |
 | `PUT .../entities/:id` | merges the changes into the existing properties and re-validates |
 | `DELETE .../entities/:id`, `DELETE .../entities/all` | |
-| `GET /api/blueprints/:blueprint/charts/count` | `sdk.entities(...).count()` |
+| `GET /api/blueprints/:blueprint/charts/count`, `pie`, `sum`, `:chartType` | `sdk.entities(...).count()` and `sdk.blueprints.getChart` / `getPieChart` / `getSum`. Properties filter by name, as when listing |
 
-Entities carry `identifier`/`id`, `user`, `workspace`, `created`, `updated` and are returned flat (properties at the top level) unless `$flat=false`. Not mirrored: blueprint `limitations`, `updateMapping`, the other chart types and platform events.
+Entities carry `identifier`/`id`, `user`, `workspace`, `created`, `updated` and are returned flat (properties at the top level) unless `$flat=false`. Not mirrored: blueprint `limitations`, `updateMapping` and platform events.
 
 #### Permissions on data and content
 
@@ -202,6 +202,7 @@ An admin who sends `bypassAdmin` (body, `?bypassAdmin=true` or the `x-bypass-adm
 | Blocks | `GET /api/blocks/:id` for anyone (`_id` and `content` only, unless editor); the list and writes for the `editor`, `plugin` and `admin` roles |
 | Components | `/api/components[/:id]` for admins and plugins |
 | AI | `/api/ai/agents` CRUD for admins and plugins (a regular user's list fails with `500`, as in the service); `POST`/`GET /api/ai/agents/:id/chat` for signed-in users and `/api/ai/:id/chat-completion[/:threadId]`, both limited to the agent's `roles`, `workspaceRoles` and `workspaceLabels` (a guest needs the `guest` role). Answers come from `mock.ai`, then seed `aiResponses` (`[{ agentId?, match?, content }]`, first match wins), or echo `Mock response: <message>`; tool calls and `clientTools` are answered like the service |
+| AI storage (RAG) | `POST /api/ai/sources/:id/storage[/upload|/clear]` for admins; no provider is called, stores and files are in the `vectorStores` collection |
 | AI threads | `GET`/`POST /api/ai/threads`, `GET`/`DELETE /api/ai/threads/:id` - own threads, all for admins; chats are recorded in them (agents with `recordThread`, and every `agents/:id/chat`) |
 | Users (admin) | `GET /api/users[/stats\|/:id]`, `POST`, `PUT /:id`, `DELETE /:id`, `GET`/`POST /:id/encrypted` - admins only (`401` otherwise) |
 | Events | `GET /api/events` (`{ events, total, page, limit, totalPages }`; filters `kind`, `eventName`, `source`, `user`, `workspace`, `search`, `period` (default `last-week`), `from`/`to`; `page` from 0, `limit` up to 100) and `GET /api/events/:id` (`null` when unknown) for admins; `POST /api/events` for admins and the `plugin` role, answering with no body. Refused callers get `401` |

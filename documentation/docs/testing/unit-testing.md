@@ -267,6 +267,19 @@ mock.payments.cancel(subscriptionId);           // canceled
 - As in the service today, a non-admin with an **active workspace** can list the workspace's subscriptions and
   invoices, but gets `403` on a single one (including its activity and cancelling it).
 
+## Charts
+
+`sdk.blueprints.getChart`, `getPieChart`, `getSum` and `getCount` are computed from the mock's entities, over what the
+caller may read.
+
+- Filter by property as when listing: `entities('order').count({ status: 'open' })`.
+- Dates group by day of the week (1 is Sunday) and times by hour, both in UTC.
+
+## AI document storage
+
+`sdk.ai.rag` works for administrators without a model provider. Check what the app uploaded in
+`mock.state.collection('vectorStores')`.
+
 ## Platform events
 
 The administrator SDK's `events` work against the mock with the service's permissions: **administrators** read events,

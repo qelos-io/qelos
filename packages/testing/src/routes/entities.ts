@@ -2,7 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { MockHttpError, type RouteContext, type RouteModule } from '../router/router.js';
 import type { Doc, MockState } from '../state/mock-state.js';
 import { generateId } from '../state/ids.js';
-import { wantsBypassAdmin, type ActorResolver, type MockActor } from './actor.js';
+import { isSignedIn, wantsBypassAdmin, type ActorResolver, type MockActor } from './actor.js';
+import { chartFilter, pieChart, standardChart, sumCard } from './charts.js';
 import {
   buildFilter,
   buildMetadataInput,
@@ -165,7 +166,7 @@ export interface EntitiesRoutesOptions {
   resolveActor: ActorResolver;
 }
 
-/** `/api/blueprints/:blueprint/entities` (+ `charts/count`), mirroring the no-code entities controller. */
+/** `/api/blueprints/:blueprint/entities` and `/charts/*`, mirroring the no-code controllers. */
 export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteModule {
   return (router, state) => {
     const context = async (ctx: RouteContext) => {
@@ -191,11 +192,23 @@ export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteMo
       return shaped;
     });
 
-    router.register('GET', '/api/blueprints/:blueprint/charts/count', async (ctx) => {
-      const { actor, blueprint, query, bypassAdmin } = await context(ctx);
-      const { scopeFilter } = authorize(actor, blueprint, 'read', bypassAdmin);
-      return { count: state.entities.list(blueprint.identifier).filter(scopeFilter).filter(buildFilter(query, blueprint)).length };
-    });
+    /** a chart over the entities the caller may read; unlike listing, only for signed-in users */
+    const chart = (
+      path: string,
+      parameters: string[],
+      build: (entities: Doc[], blueprint: BlueprintDoc, query: Record<string, any>, ctx: RouteContext) => unknown,
+    ) =>
+      router.register('GET', `/api/blueprints/:blueprint/charts/${path}`, async (ctx) => {
+        if (!isSignedIn(await resolveActor(ctx))) return new Response(null, { status: 401 });
+        const { actor, blueprint, query, bypassAdmin } = await context(ctx);
+        const { scopeFilter } = authorize(actor, blueprint, 'read', bypassAdmin);
+        const entities = state.entities.list(blueprint.identifier).filter(scopeFilter).filter(chartFilter(query, blueprint, parameters));
+        return build(entities, blueprint, query, ctx);
+      });
+    chart('pie', ['x'], (entities, blueprint, query) => pieChart(entities, blueprint, query.x));
+    chart('count', [], (entities) => ({ count: entities.length }));
+    chart('sum', ['sum', 'groupBy'], (entities, blueprint, query) => sumCard(entities, blueprint, query.sum, query.groupBy));
+    chart(':chartType', ['x'], (entities, blueprint, query, ctx) => standardChart(entities, blueprint, query.x, ctx.params.chartType));
 
     router.register('GET', `${base}/:id`, async (ctx) => {
       const { actor, blueprint, query, bypassAdmin } = await context(ctx);
