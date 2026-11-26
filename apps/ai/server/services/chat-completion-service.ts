@@ -1,5 +1,6 @@
 import logger from './logger';
 import { emitAIProviderErrorEvent } from './platform-events';
+import { withTimeout } from './with-timeout';
 
 // Define constants
 const MAX_AUTO_CONTINUE_STEPS = 10;
@@ -401,7 +402,7 @@ async function processStreamingCompletion(
 
         // Recursively process the next completion with updated messages
         // Add timeout protection for recursive calls
-        await Promise.race([
+        await withTimeout(
           processStreamingCompletion(
             res,
             aiService,
@@ -414,31 +415,30 @@ async function processStreamingCompletion(
             autoContinueCount + 1, // Increment the counter
             context
           ),
-          new Promise((_, reject) => {
-            setTimeout(() => {
-              const timeoutError = new Error('Recursive chat completion timeout after 2 minutes');
-              // Emit platform event for timeout
-              if (context?.tenant) {
-                emitAIProviderErrorEvent({
-                  tenant: context.tenant,
-                  userId: context.userId,
-                  provider: aiService.source?.kind || 'unknown',
-                  sourceId: aiService.source?._id,
-                  stream: true,
-                  model: chatOptions.model,
-                  error: timeoutError,
-                  context: {
-                    integrationId: context.integrationId,
-                    integrationName: context.integrationName,
-                    workspaceId: context.workspaceId,
-                    stage: 'recursive_completion'
-                  }
-                });
-              }
-              reject(timeoutError);
-            }, 120000); // 2 minute timeout
-          })
-        ]);
+          120000, // 2 minute timeout
+          () => {
+            const timeoutError = new Error('Recursive chat completion timeout after 2 minutes');
+            // Emit platform event for timeout
+            if (context?.tenant) {
+              emitAIProviderErrorEvent({
+                tenant: context.tenant,
+                userId: context.userId,
+                provider: aiService.source?.kind || 'unknown',
+                sourceId: aiService.source?._id,
+                stream: true,
+                model: chatOptions.model,
+                error: timeoutError,
+                context: {
+                  integrationId: context.integrationId,
+                  integrationName: context.integrationName,
+                  workspaceId: context.workspaceId,
+                  stage: 'recursive_completion'
+                }
+              });
+            }
+            return timeoutError;
+          }
+        );
       } catch (functionError: any) {
         // If client tool calls are pending, the SSE event was already sent — just return
         if (functionError?.name === 'ClientToolCallsPending') {
@@ -607,32 +607,31 @@ export async function handleNonStreamingChatCompletion(
   try {
     // Get initial completion
     // Add timeout protection for initial AI call
-    const completion = await Promise.race([
+    const completion = await withTimeout(
       aiService.createChatCompletion(chatOptions),
-      new Promise((_, reject) => {
-        setTimeout(() => {
-          const timeoutError = new Error('Initial chat completion timeout after 2 minutes');
-          // Emit platform event for timeout
-          if (context?.tenant) {
-            emitAIProviderErrorEvent({
-              tenant: context.tenant,
-              userId: context.userId,
-              provider: aiService.source?.kind || 'unknown',
-              sourceId: aiService.source?._id,
-              stream: false,
-              model: chatOptions.model,
-              error: timeoutError,
-              context: {
-                integrationId: context.integrationId,
-                integrationName: context.integrationName,
-                workspaceId: context.workspaceId,
-              }
-            });
-          }
-          reject(timeoutError);
-        }, 120000); // 2 minute timeout
-      })
-    ]);
+      120000, // 2 minute timeout
+      () => {
+        const timeoutError = new Error('Initial chat completion timeout after 2 minutes');
+        // Emit platform event for timeout
+        if (context?.tenant) {
+          emitAIProviderErrorEvent({
+            tenant: context.tenant,
+            userId: context.userId,
+            provider: aiService.source?.kind || 'unknown',
+            sourceId: aiService.source?._id,
+            stream: false,
+            model: chatOptions.model,
+            error: timeoutError,
+            context: {
+              integrationId: context.integrationId,
+              integrationName: context.integrationName,
+              workspaceId: context.workspaceId,
+            }
+          });
+        }
+        return timeoutError;
+      }
+    );
     
     // Handle the standardized Chat Completions API format
     const message = completion.choices[0].message;
@@ -650,37 +649,36 @@ export async function handleNonStreamingChatCompletion(
       // Add timeout protection for function execution in non-streaming mode
       let functionResults;
       try {
-        functionResults = await Promise.race([
+        functionResults = await withTimeout(
           executeFunctionCallsHandler(
             message.tool_calls,
             null, // No SSE for non-streaming
             ...additionalArgs
           ),
-          new Promise((_, reject) => {
-            setTimeout(() => {
-              const timeoutError = new Error('Function execution timeout after 10 minutes');
-              // Emit platform event for function execution timeout
-              if (context?.tenant) {
-                emitAIProviderErrorEvent({
-                  tenant: context.tenant,
-                  userId: context.userId,
-                  provider: aiService.source?.kind || 'unknown',
-                  sourceId: aiService.source?._id,
-                  stream: false,
-                  model: chatOptions.model,
-                  error: timeoutError,
-                  context: {
-                    integrationId: context.integrationId,
-                    integrationName: context.integrationName,
-                    workspaceId: context.workspaceId,
-                    stage: 'function_execution'
-                  }
-                });
-              }
-              reject(timeoutError);
-            }, 600000); // 10 minute timeout (same as NESTED_AGENT_TIMEOUT_MS)
-          })
-        ]);
+          600000, // 10 minute timeout (same as NESTED_AGENT_TIMEOUT_MS)
+          () => {
+            const timeoutError = new Error('Function execution timeout after 10 minutes');
+            // Emit platform event for function execution timeout
+            if (context?.tenant) {
+              emitAIProviderErrorEvent({
+                tenant: context.tenant,
+                userId: context.userId,
+                provider: aiService.source?.kind || 'unknown',
+                sourceId: aiService.source?._id,
+                stream: false,
+                model: chatOptions.model,
+                error: timeoutError,
+                context: {
+                  integrationId: context.integrationId,
+                  integrationName: context.integrationName,
+                  workspaceId: context.workspaceId,
+                  stage: 'function_execution'
+                }
+              });
+            }
+            return timeoutError;
+          }
+        );
       } catch (execError: any) {
         // If client tool calls are pending, return them as a special response
         if (execError?.name === 'ClientToolCallsPending') {
@@ -710,36 +708,35 @@ export async function handleNonStreamingChatCompletion(
       
       // Get final completion with function results
       // Add timeout protection for follow-up completion
-      const followUpCompletion = await Promise.race([
+      const followUpCompletion = await withTimeout(
         aiService.createChatCompletion({
           ...chatOptions,
           messages: followUpMessages
         }),
-        new Promise((_, reject) => {
-          setTimeout(() => {
-            const timeoutError = new Error('Follow-up chat completion timeout after 2 minutes');
-            // Emit platform event for timeout
-            if (context?.tenant) {
-              emitAIProviderErrorEvent({
-                tenant: context.tenant,
-                userId: context.userId,
-                provider: aiService.source?.kind || 'unknown',
-                sourceId: aiService.source?._id,
-                stream: false,
-                model: chatOptions.model,
-                error: timeoutError,
-                context: {
-                  integrationId: context.integrationId,
-                  integrationName: context.integrationName,
-                  workspaceId: context.workspaceId,
-                  stage: 'follow_up_completion'
-                }
-              });
-            }
-            reject(timeoutError);
-          }, 120000); // 2 minute timeout
-        })
-      ]);
+        120000, // 2 minute timeout
+        () => {
+          const timeoutError = new Error('Follow-up chat completion timeout after 2 minutes');
+          // Emit platform event for timeout
+          if (context?.tenant) {
+            emitAIProviderErrorEvent({
+              tenant: context.tenant,
+              userId: context.userId,
+              provider: aiService.source?.kind || 'unknown',
+              sourceId: aiService.source?._id,
+              stream: false,
+              model: chatOptions.model,
+              error: timeoutError,
+              context: {
+                integrationId: context.integrationId,
+                integrationName: context.integrationName,
+                workspaceId: context.workspaceId,
+                stage: 'follow_up_completion'
+              }
+            });
+          }
+          return timeoutError;
+        }
+      );
       
       // Handle both API formats for follow-up completion
       let finalContent;

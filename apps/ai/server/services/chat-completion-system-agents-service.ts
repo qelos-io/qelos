@@ -4,6 +4,7 @@ import { createAIService } from "./ai-service";
 import { emitAIProviderErrorEvent } from "./platform-events";
 import { DEFAULT_AI_MODEL_BY_PROVIDER, getProviderFromSourceKind } from '@qelos/global-types';
 import logger from "./logger";
+import { withTimeout } from './with-timeout';
 
 const NESTED_AGENT_TIMEOUT_MS = 600000; // 10 minutes timeout for nested agent calls
 
@@ -157,7 +158,7 @@ export async function processChatCompletion(req: any, res: any, systemPrompt: an
         workspaceId: req.workspace?._id?.toString(),
       };
       
-      const result = await Promise.race([
+      const result = await withTimeout(
         ChatCompletionService.handleNonStreamingChatCompletion(
           aiService,
           chatOptions,
@@ -166,30 +167,29 @@ export async function processChatCompletion(req: any, res: any, systemPrompt: an
           undefined,
           context
         ),
-        new Promise((_, reject) => {
-          setTimeout(() => {
-            const timeoutError = new Error(`Non-streaming chat completion timed out after ${NESTED_AGENT_TIMEOUT_MS}ms`);
-            // Emit platform event for timeout
-            if (req.headers.tenant) {
-              emitAIProviderErrorEvent({
-                tenant: req.headers.tenant,
-                userId: req.user?._id?.toString(),
-                provider: source.kind || 'unknown',
-                sourceId: source._id,
-                stream: false,
-                model: chatOptions.model,
-                error: timeoutError,
-                context: {
-                  integrationId: source._id,
-                  integrationName: source.name,
-                  workspaceId: req.workspace?._id?.toString(),
-                }
-              });
-            }
-            reject(timeoutError);
-          }, NESTED_AGENT_TIMEOUT_MS);
-        })
-      ]);
+        NESTED_AGENT_TIMEOUT_MS,
+        () => {
+          const timeoutError = new Error(`Non-streaming chat completion timed out after ${NESTED_AGENT_TIMEOUT_MS}ms`);
+          // Emit platform event for timeout
+          if (req.headers.tenant) {
+            emitAIProviderErrorEvent({
+              tenant: req.headers.tenant,
+              userId: req.user?._id?.toString(),
+              provider: source.kind || 'unknown',
+              sourceId: source._id,
+              stream: false,
+              model: chatOptions.model,
+              error: timeoutError,
+              context: {
+                integrationId: source._id,
+                integrationName: source.name,
+                workspaceId: req.workspace?._id?.toString(),
+              }
+            });
+          }
+          return timeoutError;
+        }
+      );
       
       if (res) {
         res.status(200).json(result).end();
