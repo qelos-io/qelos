@@ -4,3 +4,5 @@ logs
 tests
 *.test.js
 coverage
+.claude
+.impeccable
