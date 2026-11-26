@@ -47,7 +47,8 @@ const intersects = (a: string[] | undefined, b: string[]) => !!a?.some((x) => x 
 export function checkBlueprintPermission(
   auth: AuthContext | null,
   state: MockState,
-  blueprint: { permissions?: Array<Record<string, any>>; permissionScope?: string },
+  /** a stored blueprint, such as one of `state.blueprints` */
+  blueprint: { permissions?: Array<Record<string, any>>; permissionScope?: string; [key: string]: any },
   operation: CrudOperation,
 ): PermissionScope | null {
   const defaultScope = (blueprint.permissionScope as PermissionScope) || 'workspace';
