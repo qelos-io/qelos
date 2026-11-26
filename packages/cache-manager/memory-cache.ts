@@ -17,7 +17,7 @@ export function createMemoryCache(): ICache {
         return Promise.resolve();
     }
 
-    setInterval(() => {
+    const sweeper = setInterval(() => {
         const now = Date.now();
         keysToRemove.forEach((timeToRemove, key) => {
             if (now > timeToRemove) {
@@ -26,6 +26,9 @@ export function createMemoryCache(): ICache {
             }
         });
     }, 5000);
+    // the sweep must not keep the process alive (a script or a test that only creates a cache could never exit);
+    // a running server stays up because of its own handles
+    (sweeper as { unref?: () => void }).unref?.();
 
     const setIfNotExists = (key: string, value: string, { ttl }: CacheManagerOptions) => {
         if (storage.has(key)) {
