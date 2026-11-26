@@ -3,7 +3,8 @@
   "version": "4.4.0",
   "description": "Testing suite for apps using the Qelos SDK or integrators: a local in-memory Qelos API for development, integration tests and CI",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "typesVersions": {
     "*": {
@@ -23,29 +24,59 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      },
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json",
     "./sdk": {
-      "types": "./dist/sdk/index.d.ts",
-      "import": "./dist/sdk/index.js",
+      "import": {
+        "types": "./dist/sdk/index.d.ts",
+        "default": "./dist/sdk/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/sdk/index.d.ts",
+        "default": "./dist/cjs/sdk/index.js"
+      },
       "default": "./dist/sdk/index.js"
     },
     "./fixtures": {
-      "types": "./dist/fixtures/index.d.ts",
-      "import": "./dist/fixtures/index.js",
+      "import": {
+        "types": "./dist/fixtures/index.d.ts",
+        "default": "./dist/fixtures/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/fixtures/index.d.ts",
+        "default": "./dist/cjs/fixtures/index.js"
+      },
       "default": "./dist/fixtures/index.js"
     },
     "./http": {
-      "types": "./dist/http/index.d.ts",
-      "import": "./dist/http/index.js",
+      "import": {
+        "types": "./dist/http/index.d.ts",
+        "default": "./dist/http/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/http/index.d.ts",
+        "default": "./dist/cjs/http/index.js"
+      },
       "default": "./dist/http/index.js"
     },
     "./cassette": {
-      "types": "./dist/cassette/index.d.ts",
-      "import": "./dist/cassette/index.js",
+      "import": {
+        "types": "./dist/cassette/index.d.ts",
+        "default": "./dist/cassette/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/cassette/index.d.ts",
+        "default": "./dist/cjs/cassette/index.js"
+      },
       "default": "./dist/cassette/index.js"
     }
   },
@@ -54,7 +85,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "node scripts/build.mjs",
     "type-check": "tsc --noEmit -p tsconfig.test.json",
     "test": "node --import tsx --test \"test/**/*.test.ts\""
   },
