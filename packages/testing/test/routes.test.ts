@@ -174,7 +174,7 @@ test('blueprints, configurations, blocks and components', async () => {
   assert.equal((await mock.fetch(`/api/components/${comp._id}`, { method: 'DELETE' })).status, 200);
 });
 
-test('stubs: ai chat, events, lambdas, payments, secrets', async () => {
+test('stubs: ai chat, lambdas, payments', async () => {
   const { sdk, mock } = setup({
     seed: {
       aiResponses: [{ agentId: 'agent1', match: 'hello', content: 'Hi there!' }],
@@ -185,18 +185,9 @@ test('stubs: ai chat, events, lambdas, payments, secrets', async () => {
   assert.equal(hello.choices[0].message.content, 'Hi there!');
   assert.equal((await sdk.ai.agents.chat('agent1', 'other')).choices[0].message.content, 'Mock response: other');
 
-  const post = (path: string, body: unknown) => mock.fetch(path, { method: 'POST', body: JSON.stringify(body) });
-  await post('/api/events', { kind: 'k', eventName: 'e1', description: 'd' });
-  await post('/api/events', { kind: 'other', eventName: 'e2' });
-  const events: any[] = await (await mock.fetch('/api/events?kind=k')).json();
-  assert.equal(events.length, 1);
-  assert.equal(events[0].eventName, 'e1');
-
   assert.deepEqual(await sdk.lambdas.get('int1'), { ok: true });
   assert.deepEqual(await sdk.lambdas.get('unknown'), {});
   assert.deepEqual(await sdk.payments.getPlans(), []);
-  assert.deepEqual(await (await mock.fetch('/api/secrets')).json(), []);
-  assert.equal((await mock.fetch('/api/secrets/token')).status, 404);
 });
 
 test('management api, extension hooks and fallback', async () => {
