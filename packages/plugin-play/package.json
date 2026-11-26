@@ -8,7 +8,7 @@
     "create-certs": "node create-cert.js",
     "type-check": "tsc --noEmit",
     "build": "npm run type-check && tsc",
-    "test": "node --import tsx --test --test-force-exit \"test/unit/**/*.test.ts\" \"test/integration/**/*.test.ts\" \"test/packaging/**/*.test.ts\"",
+    "test": "node --import tsx --test \"test/unit/**/*.test.ts\" \"test/integration/**/*.test.ts\" \"test/packaging/**/*.test.ts\"",
     "test:e2e": "tsx --test test/e2e/*.e2e.test.ts"
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
