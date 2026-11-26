@@ -43,6 +43,7 @@ const PACKAGES = [
   { key: 'cache-manager',         dir: 'packages/cache-manager',        kind: 'npm',    workspace: true  },
   { key: 'web-sdk',               dir: 'packages/web-sdk',              kind: 'npm',    workspace: true  },
   { key: 'sdk',                   dir: 'packages/sdk',                  kind: 'npm',    workspace: true  },
+  { key: 'testing',               dir: 'packages/testing',              kind: 'npm',    workspace: true  },
   { key: 'api-kit',               dir: 'packages/api-kit',              kind: 'npm',    workspace: true  },
   { key: 'plugin-netlify-api',    dir: 'packages/plugin-netlify-api',   kind: 'npm',    workspace: true  },
   { key: 'plugin-play',           dir: 'packages/plugin-play',          kind: 'npm',    workspace: true  },
