@@ -193,7 +193,7 @@ dev dependency so production bundles do not ship it.
 - Tokens are unsigned, opaque JWT-shaped strings; passwords are hashed but this is **not** a security model.
 - Social login (`/api/auth/:provider`) signs in the selected persona without any provider round trip.
 - Blueprint `updateMapping` needs the optional [`node-jq`](/testing/unit-testing#calculated-properties) package.
-- A custom `schema` of an `object` property is checked only for its `type`.
+- A custom `schema` of an `object` property needs the optional [`ajv`](/testing/unit-testing#object-schemas) package.
 - The rate limit on guest writes is not mirrored. Events are stored, but no subscriber or integration runs on them.
 - AI agents answer from seeded `aiResponses` (or echo `Mock response: <message>`); no model is called.
 - Webhooks answer from the seed only. Functions, plugins and connections are records: nothing is deployed, fetched or

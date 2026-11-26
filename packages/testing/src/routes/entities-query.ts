@@ -1,6 +1,7 @@
 import { MockHttpError } from '../router/router.js';
 import type { Doc } from '../state/mock-state.js';
 import type { Limitation } from '../blueprints/limitations.js';
+import type { SchemaCheck } from '../blueprints/schemas.js';
 
 export const DEFAULT_LIMIT = 1000;
 
@@ -86,9 +87,18 @@ function invalid(message: string): never {
 
 const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 
-/** Whether a value suits an `object` property: text values only by default. Of a custom `schema`, the `type` is checked. */
-function suitsObject(value: unknown, schema: Record<string, any> | undefined): boolean {
+/** What checking a value needs besides its property. */
+export interface ValueChecks {
+  /** the answer for values the service fails on before it can say what is wrong with them */
+  failure?: string;
+  /** checks a custom `schema`; without it only the schema's `type` is checked */
+  schema?: SchemaCheck;
+}
+
+/** Whether a value suits an `object` property: text values only by default, else its custom `schema`. */
+function suitsObject(value: unknown, schema: Record<string, any> | undefined, check: SchemaCheck | undefined): boolean {
   if (!schema) return isRecord(value) && Object.values(value).every((item) => typeof item === 'string');
+  if (check) return check(schema, value);
   if (schema.type === 'object') return isRecord(value);
   if (schema.type === 'array') return Array.isArray(value);
   if (schema.type === 'integer') return Number.isInteger(value);
@@ -96,14 +106,11 @@ function suitsObject(value: unknown, schema: Record<string, any> | undefined): b
   return value !== undefined;
 }
 
-/**
- * Mirrors `validateValue` of the no-code service. Returns the value as it is stored. `failure` is the answer for the
- * values the service fails on before it can say what is wrong with them.
- */
-export function validateValue(key: string, value: any, property: BlueprintProperty, failure = 'something went wrong with entity'): any {
+/** Mirrors `validateValue` of the no-code service. Returns the value as it is stored. */
+export function validateValue(key: string, value: any, property: BlueprintProperty, checks: ValueChecks = {}): any {
   if (value === undefined && !property.required) return undefined;
   const fail = (): never => {
-    throw new MockHttpError(500, failure);
+    throw new MockHttpError(500, checks.failure ?? 'something went wrong with entity');
   };
   switch (property.type) {
     case 'number':
@@ -114,9 +121,16 @@ export function validateValue(key: string, value: any, property: BlueprintProper
     case 'boolean':
       value = !!value;
       break;
-    case 'object':
-      if (!suitsObject(value, property.schema)) invalid(`Property ${key} must be a valid according to schema: ${property.schema?.type || 'object'}`);
+    case 'object': {
+      let suits = false;
+      try {
+        suits = suitsObject(value, property.schema, checks.schema);
+      } catch {
+        fail();
+      }
+      if (!suits) invalid(`Property ${key} must be a valid according to schema: ${property.schema?.type || 'object'}`);
       break;
+    }
     case 'string':
       if (typeof value !== 'string') invalid(`Property ${key} must be a string`);
       if (property.enum?.length && !property.enum.includes(value)) {
@@ -151,15 +165,15 @@ export function validateValue(key: string, value: any, property: BlueprintProper
 }
 
 /** Validate the full metadata input against the blueprint's properties; unknown keys are dropped. */
-export function validateMetadata(input: Record<string, any> | undefined, blueprint: BlueprintDoc, failure?: string): Record<string, any> {
+export function validateMetadata(input: Record<string, any> | undefined, blueprint: BlueprintDoc, checks?: ValueChecks): Record<string, any> {
   const valid: Record<string, any> = {};
   for (const [key, property] of Object.entries(blueprint.properties || {})) {
     const value = input?.[key];
     if (property.multi) {
-      if (Array.isArray(value)) valid[key] = value.map((v) => validateValue(key, v, property, failure));
+      if (Array.isArray(value)) valid[key] = value.map((v) => validateValue(key, v, property, checks));
       else if (property.required) invalid(`Property ${key} must be an array`);
     } else {
-      const v = validateValue(key, value, property, failure);
+      const v = validateValue(key, value, property, checks);
       if (v !== undefined) valid[key] = v;
     }
   }

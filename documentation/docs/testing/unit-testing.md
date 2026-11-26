@@ -97,6 +97,17 @@ npm install --save-dev node-jq
 Installing it downloads the `jq` program, so allow its install script if your package manager asks (pnpm does).
 Without it, the mock warns once and leaves those properties as they were sent.
 
+### Object schemas
+
+Entity values are judged as by the service. A custom `schema` of an `object` property is checked with `ajv`, the
+library the service uses, when it is installed:
+
+```bash
+npm install --save-dev ajv@8
+```
+
+Without version 8 of it, the mock warns once and checks only the schema's `type`.
+
 ## Inspecting and resetting state
 
 - `mock.state` is the live in-memory state (`snapshot()`, `collection(name)`, `seed()`).

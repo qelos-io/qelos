@@ -97,6 +97,7 @@
   "devDependencies": {
     "@qelos/sdk": "workspace:^",
     "@types/node": "^22.5.4",
+    "ajv": "^8.17.1",
     "node-jq": "^6.0.1",
     "tsx": "^4.20.4",
     "typescript": "^5.4.5"
@@ -106,10 +107,14 @@
   },
   "peerDependencies": {
     "@qelos/sdk": "workspace:^",
+    "ajv": "^8.0.0",
     "node-jq": ">=4"
   },
   "peerDependenciesMeta": {
     "@qelos/sdk": {
+      "optional": true
+    },
+    "ajv": {
       "optional": true
     },
     "node-jq": {

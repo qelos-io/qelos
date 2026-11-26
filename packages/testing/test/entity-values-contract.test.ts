@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateMetadata } from '../src/routes/entities-query.js';
+import { createSchemaLoader } from '../src/blueprints/schemas.js';
 
 /** Contract between the mock and the data service (`apps/no-code`): which property values it accepts and stores. */
 const server = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'apps', 'no-code', 'server');
@@ -24,7 +25,16 @@ const LIMITS: Record<string, object[]> = {
   date: [{ min: '2026-01-01', max: '2026-12-31' }],
   datetime: [{ min: '2026-01-01' }],
   time: [{ min: '09:00', max: '11:00' }],
-  object: [{ schema: { type: 'object' } }],
+  object: [
+    { schema: { type: 'object' } },
+    { schema: { type: 'object', properties: { a: { type: 'string' } }, required: ['a'] } },
+    { schema: { type: 'object', additionalProperties: false } },
+    { schema: { type: 'array', items: { type: 'number' } } },
+    { schema: { type: 'integer' } },
+    // `ajv` refuses these schemas themselves
+    { schema: { type: 'nothing' } },
+    { schema: { type: 'object', made: 'up' } },
+  ],
 };
 
 const json = (value: unknown) => JSON.parse(JSON.stringify(value));
@@ -32,6 +42,7 @@ const json = (value: unknown) => JSON.parse(JSON.stringify(value));
 describe('the mock follows which values the data service accepts', () => {
   test('each type, required or not, single or multiple, with limits', async () => {
     const { getValidBlueprintMetadata } = await named('services/entities.service');
+    const schema = await createSchemaLoader((warning) => assert.fail(warning))();
     let accepted = 0;
     let refused = 0;
     for (const type of TYPES) {
@@ -40,8 +51,6 @@ describe('the mock follows which values the data service accepts', () => {
           for (const multi of [false, true]) {
             const blueprint = { identifier: 'b', properties: { k: { title: 'K', type, required, multi, ...limit } } };
             for (const value of multi ? [...VALUES, ...VALUES.map((v) => [v])] : VALUES) {
-              // a custom schema is only checked for its type: compare it with the values that type decides
-              if ('schema' in limit && !(value && typeof value === 'object')) continue;
               const input = value === undefined ? {} : { k: value };
               const outcome = (run: () => unknown) => {
                 try {
@@ -52,7 +61,7 @@ describe('the mock follows which values the data service accepts', () => {
                 }
               };
               const expected: any = outcome(() => getValidBlueprintMetadata(structuredClone(input), blueprint));
-              const answer: any = outcome(() => validateMetadata(structuredClone(input), blueprint as any));
+              const answer: any = outcome(() => validateMetadata(structuredClone(input), blueprint as any, { schema }));
               if (answer.status === 500) delete answer.message;
               const label = `${type} ${JSON.stringify(limit)} required=${required} multi=${multi} ${JSON.stringify(value)}`;
               assert.deepEqual(answer, expected, label);

@@ -1141,6 +1141,9 @@ importers:
       '@types/node':
         specifier: ^22.5.4
         version: 22.18.0
+      ajv:
+        specifier: ^8.17.1
+        version: 8.17.1
       node-jq:
         specifier: ^6.0.1
         version: 6.3.1
