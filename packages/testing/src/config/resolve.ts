@@ -8,7 +8,7 @@ export class MockConfigError extends Error {
   }
 }
 
-const SEED_ARRAYS = ['users', 'workspaces', 'personas', 'blueprints', 'configurations', 'blocks', 'components', 'events', 'agents', 'aiResponses', 'lambdas', 'threads', 'pricingPlans', 'coupons', 'subscriptions', 'invoices', 'integrations', 'connections', 'plugins', 'functions'] as const;
+const SEED_ARRAYS = ['users', 'workspaces', 'personas', 'blueprints', 'configurations', 'blocks', 'components', 'events', 'agents', 'aiResponses', 'lambdas', 'threads', 'pricingPlans', 'coupons', 'subscriptions', 'invoices', 'integrations', 'connections', 'plugins', 'functions', 'scripts', 'drafts'] as const;
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v);

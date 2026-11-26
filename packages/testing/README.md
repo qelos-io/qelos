@@ -200,7 +200,8 @@ An admin who sends `bypassAdmin` (body, `?bypassAdmin=true` or the `x-bypass-adm
 | Blueprints | `GET /api/blueprints[/:identifier]` for signed-in users, without permissions and other settings unless admin or `plugin` (`null` when unknown); `POST`, `PUT`, `DELETE` for admins and plugins; one with entities cannot be removed |
 | Configurations | `GET /api/configurations/:key` for anyone when public (the default), else admins (`404` for others); the list (no metadata), `POST`, `PUT /:key` (description and metadata, merged) and `DELETE /:key` for admins |
 | Blocks | `GET /api/blocks/:id` for anyone (`_id` and `content` only, unless editor); the list and writes for the `editor`, `plugin` and `admin` roles |
-| Components | `/api/components[/:id]` for admins and plugins |
+| Scripts and components | `/api/scripts[/:id]`, `/api/scripts/bulk` and the older `/api/components[/:id]`, `/api/components/bulk` for admins and plugins. Nothing is compiled: an invalid source is accepted, `requiredProps` stays empty and there is no `compiledContent` |
+| Drafts | `GET`/`PUT`/`DELETE /api/drafts` (one per `contextType` and `contextId`) and `GET /api/drafts/all`: every signed-in user's own. As in the service, `GET /api/drafts` without a context is `404` |
 | AI | `/api/ai/agents` CRUD for admins and plugins (a regular user's list fails with `500`, as in the service); `POST`/`GET /api/ai/agents/:id/chat` for signed-in users and `/api/ai/:id/chat-completion[/:threadId]`, both limited to the agent's `roles`, `workspaceRoles` and `workspaceLabels` (a guest needs the `guest` role). Answers come from `mock.ai`, then seed `aiResponses` (`[{ agentId?, match?, content }]`, first match wins), or echo `Mock response: <message>`; tool calls and `clientTools` are answered like the service |
 | AI storage (RAG) | `POST /api/ai/sources/:id/storage[/upload|/clear]` for admins; no provider is called, stores and files are in the `vectorStores` collection |
 | AI threads | `GET`/`POST /api/ai/threads`, `GET`/`DELETE /api/ai/threads/:id` - own threads, all for admins; chats are recorded in them (agents with `recordThread`, and every `agents/:id/chat`) |
@@ -214,7 +215,7 @@ An admin who sends `bypassAdmin` (body, `?bypassAdmin=true` or the `x-bypass-adm
 | Payments | plans, coupons, subscriptions, invoices, checkout and `/api/payments/configuration`, following the payments service; no provider is called - report results with `mock.payments.pay/fail/cancel` |
 | Secrets | none: the secrets service is internal and apps cannot call it |
 
-Writes made by admins/personas land in `mock.state`, so they persist when `dataDir` is set. The seed accepts `components`, `events`, `agents`, `aiResponses`, `lambdas`, `integrations`, `connections`, `plugins`, `functions`, `threads`, `pricingPlans`, `coupons`, `subscriptions` and `invoices` in addition to the collections above.
+Writes made by admins/personas land in `mock.state`, so they persist when `dataDir` is set. The seed accepts `components`, `scripts`, `drafts`, `events`, `agents`, `aiResponses`, `lambdas`, `integrations`, `connections`, `plugins`, `functions`, `threads`, `pricingPlans`, `coupons`, `subscriptions` and `invoices` in addition to the collections above.
 
 ## State management API
 

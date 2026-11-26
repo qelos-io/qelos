@@ -33,6 +33,8 @@ export const COLLECTION_NAMES = [
   'encryptedData',
   'vectorStores',
   'functions',
+  'scripts',
+  'drafts',
 ] as const;
 export type CollectionName = (typeof COLLECTION_NAMES)[number];
 const ENTITIES_FILE = 'entities';
@@ -197,6 +199,7 @@ export class MockState {
   /** incremented by every `reset()`, lets derived data (seeded personas) detect a reseed */
   resetCount = 0;
   readonly components: Collection;
+  readonly scripts: Collection;
   readonly plugins: Collection;
   readonly integrations: Collection;
   readonly connections: Collection;
@@ -250,6 +253,7 @@ export class MockState {
       },
     };
     this.components = this.collections.components;
+    this.scripts = this.collections.scripts;
     this.plugins = this.collections.plugins;
     this.integrations = this.collections.integrations;
     this.connections = this.collections.connections;

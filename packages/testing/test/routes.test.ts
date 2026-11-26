@@ -161,7 +161,8 @@ test('blueprints, configurations, blocks and components', async () => {
   assert.equal((await cfg({ 'x-qelos-mock-persona': 'ed@x.io' })).status, 404);
   assert.equal((await cfg()).status, 200);
 
-  const created = await mock.fetch('/api/components', { method: 'POST', body: JSON.stringify({ identifier: 'x' }) });
+  const body = JSON.stringify({ identifier: 'x', componentName: 'X', content: '<template/>' });
+  const created = await mock.fetch('/api/components', { method: 'POST', body });
   const comp: any = await created.json();
   assert.equal((await (await mock.fetch(`/api/components/${comp._id}`)).json() as any).identifier, 'x');
   assert.equal((await mock.fetch(`/api/components/${comp._id}`, { method: 'DELETE' })).status, 200);

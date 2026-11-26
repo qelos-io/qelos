@@ -3,14 +3,14 @@ import type { Doc } from '../state/mock-state.js';
 import { isSignedIn, mayAct, type ActorResolver, type MockActor } from './actor.js';
 
 /**
- * Configurations and blocks (`apps/content`), blueprints and components (`apps/no-code`): who may call each route,
+ * Configurations and blocks (`apps/content`) and blueprints (`apps/no-code`): who may call each route,
  * the status codes and the response bodies of those services.
  */
 
 const ADMINS = ['admin'];
 /** who may change content blocks */
 const BLOCK_EDITORS = ['editor', 'plugin', 'admin'];
-/** who may change blueprints and components */
+/** who may change blueprints */
 const DATA_EDITORS = ['plugin', 'admin'];
 
 const APP_CONFIGURATION = 'app-configuration';
@@ -173,23 +173,6 @@ export function contentRoutes({ resolveActor }: { resolveActor: ActorResolver })
       if (!found) return noBlueprint();
       if (state.entities.list(found.identifier).length) return message('cannot remove blueprint with existing entities', 400);
       state.blueprints.remove(found._id);
-      return found;
-    }));
-
-    // ---------------------------------------------------------------- components
-    const noComponent = () => message('component not found', 404);
-
-    router.register('GET', '/api/components', dataEditor(() => state.components.list()));
-    router.register('GET', '/api/components/:id', dataEditor(({ params }) => state.components.get(params.id) ?? noComponent()));
-    router.register('POST', '/api/components', dataEditor(async (ctx) => state.components.insert((await body(ctx)) as any)));
-    router.register('PUT', '/api/components/:id', dataEditor(async (ctx) => {
-      const { _id, ...changes } = await body(ctx);
-      return state.components.update(ctx.params.id, changes) ?? noComponent();
-    }));
-    router.register('DELETE', '/api/components/:id', dataEditor(({ params }) => {
-      const found = state.components.get(params.id);
-      if (!found) return noComponent();
-      state.components.remove(found._id);
       return found;
     }));
   };
