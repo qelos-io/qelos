@@ -129,7 +129,7 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
     const resolveActor = createActorResolver(
       authenticate ?? createDefaultAuthenticate(config.defaultPersona, { strict: config.strictPermissions }),
     );
-    for (const module of [entitiesRoutes({ resolveActor }), contentRoutes({ resolveActor }), stubRoutes({ resolveActor, ai }), userRoutes, threadRoutes, paymentRoutes, eventRoutes, ragRoutes({ resolveActor }), integrationRoutes({ resolveActor }), pluginRoutes({ resolveActor }), scriptRoutes({ resolveActor }), draftRoutes]) {
+    for (const module of [entitiesRoutes({ resolveActor, warn: config.logger }), contentRoutes({ resolveActor }), stubRoutes({ resolveActor, ai }), userRoutes, threadRoutes, paymentRoutes, eventRoutes, ragRoutes({ resolveActor }), integrationRoutes({ resolveActor }), pluginRoutes({ resolveActor }), scriptRoutes({ resolveActor }), draftRoutes]) {
       router.use(module, state);
     }
   }

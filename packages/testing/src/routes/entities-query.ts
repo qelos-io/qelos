@@ -61,6 +61,7 @@ export interface BlueprintDoc extends Doc {
   relations?: Array<{ key: string; target: string }>;
   entityIdentifierMechanism?: string;
   limitations?: Limitation[];
+  updateMapping?: Record<string, string>;
   name?: string;
   dispatchers?: { create?: boolean; update?: boolean; delete?: boolean };
 }

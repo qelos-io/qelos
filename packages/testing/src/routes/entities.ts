@@ -17,6 +17,7 @@ import {
 } from './entities-query.js';
 import { reachedLimit } from '../blueprints/limitations.js';
 import { dispatch, modifiedFields } from '../blueprints/events.js';
+import { applyUpdateMapping, createJqLoader } from '../blueprints/mapping.js';
 
 type Operation = 'create' | 'read' | 'update' | 'delete';
 type Scopes = true | string[];
@@ -166,11 +167,14 @@ function checkRelations(state: MockState, blueprint: BlueprintDoc, metadata: Rec
 
 export interface EntitiesRoutesOptions {
   resolveActor: ActorResolver;
+  /** where to report what the mock cannot do */
+  warn?: (message: string) => void;
 }
 
 /** `/api/blueprints/:blueprint/entities` and `/charts/*`, mirroring the no-code controllers. */
-export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteModule {
+export function entitiesRoutes({ resolveActor, warn = console.warn }: EntitiesRoutesOptions): RouteModule {
   return (router, state) => {
+    const loadJq = createJqLoader(warn);
     const context = async (ctx: RouteContext) => {
       const actor = await resolveActor(ctx);
       const blueprint = getBlueprint(state, ctx.params.blueprint);
@@ -228,17 +232,19 @@ export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteMo
       const { unrestricted } = authorize(actor, blueprint, 'create', bypassAdmin);
       const body = (await ctx.json()) || {};
       const metadata = validateMetadata(buildMetadataInput({}, body, blueprint), blueprint);
-      checkRelations(state, blueprint, metadata);
       const user = (unrestricted && body.user) || actor?._id;
       const workspace = (unrestricted && body.workspace) || actor?.workspace?._id;
+      const now = new Date().toISOString();
+      const mechanism = blueprint.entityIdentifierMechanism;
+      const id = mechanism && mechanism !== 'objectid' ? randomUUID() : generateId();
+      const draft = { _id: id, identifier: id, blueprint: blueprint.identifier, tenant: state.settings.tenantId, user, workspace, metadata, indexes: [], created: now, updated: now };
+      await applyUpdateMapping(blueprint, draft, loadJq, 'something went wrong with entity creation');
+      checkRelations(state, blueprint, metadata);
       // like permissions, limitations are not checked for an unidentified caller
       const existing = state.entities.list(blueprint.identifier);
       if (actor && reachedLimit(blueprint.limitations ?? [], actor, { user, workspace, metadata }, existing, (e) => metadataOf(e, blueprint))) {
         throw new MockHttpError(403, 'reached limit of allowed entities');
       }
-      const now = new Date().toISOString();
-      const mechanism = blueprint.entityIdentifierMechanism;
-      const id = mechanism && mechanism !== 'objectid' ? randomUUID() : generateId();
       const entity = state.entities.insert(blueprint.identifier, {
         _id: id,
         identifier: id,
@@ -260,10 +266,19 @@ export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteMo
       if (!entity || !scopeFilter(entity)) throw new MockHttpError(404, 'entity not found');
       const body = (await ctx.json()) || {};
       const metadata = validateMetadata(buildMetadataInput(metadataOf(entity, blueprint), body, blueprint), blueprint);
-      checkRelations(state, blueprint, metadata);
       const patch: Record<string, any> = { metadata, updated: new Date().toISOString() };
       if (unrestricted && body.user) patch.user = body.user;
       if (unrestricted && body.workspace) patch.workspace = body.workspace;
+      const draft = {
+        ...entity,
+        ...patch,
+        identifier: identifierOf(entity),
+        tenant: entity.tenant ?? state.settings.tenantId,
+        updated: entity.updated,
+        metadata,
+      };
+      await applyUpdateMapping(blueprint, draft, loadJq, 'something went wrong with entity');
+      checkRelations(state, blueprint, metadata);
       const before = { ...entity, metadata: metadataOf(entity, blueprint) };
       const updated = state.entities.update(blueprint.identifier, entity._id, patch)!;
       dispatch(state, blueprint, 'update', updated, { modifiedFields: modifiedFields(before, updated, blueprint) });
