@@ -30,6 +30,7 @@ const PACKAGES = [
   { key: 'cache-manager',      dir: 'packages/cache-manager' },
   { key: 'web-sdk',            dir: 'packages/web-sdk' },
   { key: 'sdk',                dir: 'packages/sdk' },
+  { key: 'testing',            dir: 'packages/testing' },
   { key: 'api-kit',            dir: 'packages/api-kit' },
   { key: 'plugin-netlify-api', dir: 'packages/plugin-netlify-api' },
   { key: 'plugin-play',        dir: 'packages/plugin-play' },
