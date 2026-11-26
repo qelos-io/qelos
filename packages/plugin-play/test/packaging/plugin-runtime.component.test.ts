@@ -42,6 +42,17 @@ describe('a plugin started from the built package', () => {
         assert.match(out.manifest.body.proxyUrl, /\/api\/play$/);
       });
 
+      test('completes the frontend handshake over real HTTP: callback, authorize, cookie-protected endpoint, un-authorize', () => {
+        assert.deepEqual(out.handshake, {
+          callback: 200,
+          authorize: 200,
+          cookieName: true,
+          protected: { status: 200, body: { email: 'ada@example.com', tenant: 'tenant-1' } },
+          unauthorize: { status: 200, body: 'OK' },
+          withoutCookieRejected: true,
+        });
+      });
+
       test('serves an internal endpoint on its own port, and answers 404 for unknown routes', () => {
         assert.deepEqual(out.internal, { status: 200, body: { pong: true } });
         assert.equal(out.missing, 404);
