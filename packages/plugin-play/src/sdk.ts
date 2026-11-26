@@ -93,7 +93,11 @@ export function getSdk(): QelosAdministratorSDK {
     username: config.qelosUsername,
     password: config.qelosPassword,
   });
-  bootstrapAuthenticate().catch();
+  // A plugin may run without Qelos credentials (its own onRefreshToken handler instead): there is nothing to sign in
+  // to then, and bootstrapAuthenticate() ends the process when it cannot sign in.
+  if (config.qelosUrl) {
+    bootstrapAuthenticate().catch();
+  }
   return localSdk;
 }
 
