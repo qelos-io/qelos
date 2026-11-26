@@ -197,7 +197,7 @@ An admin who sends `bypassAdmin` (body, `?bypassAdmin=true` or the `x-bypass-adm
 
 | Area | Endpoints |
 |---|---|
-| Blueprints | `GET /api/blueprints[/:identifier]` for signed-in users, without permissions and other settings unless admin or `plugin` (`null` when unknown); `POST`, `PUT`, `DELETE` for admins and plugins; one with entities cannot be removed |
+| Blueprints | `GET /api/blueprints[/:identifier]` for signed-in users, without permissions and other settings unless admin or `plugin` (`null` when unknown); `POST`, `PUT`, `PATCH`, `DELETE` for admins and plugins, checked and stored as by the service: `identifier` and `name` are required, properties without a `title` and `type` and unknown fields are dropped, at most 5 properties are `indexed`. One with entities cannot be removed; removing an unknown one answers `null` |
 | Configurations | `GET /api/configurations/:key` for anyone when public (the default), else admins (`404` for others); the list (no metadata), `POST`, `PUT /:key` (description and metadata, merged) and `DELETE /:key` for admins |
 | Blocks | `GET /api/blocks/:id` for anyone (`_id` and `content` only, unless editor); the list and writes for the `editor`, `plugin` and `admin` roles |
 | Scripts and components | `/api/scripts[/:id]`, `/api/scripts/bulk` and the older `/api/components[/:id]`, `/api/components/bulk` for admins and plugins. Nothing is compiled: an invalid source is accepted, `requiredProps` stays empty and there is no `compiledContent` |
