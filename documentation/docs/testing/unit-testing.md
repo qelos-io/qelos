@@ -31,6 +31,28 @@ const { sdk, as, mock, reset } = createMockSdk({
 - **Skip sign-in.** `createMockSdk({ persona: 'admin@example.com' })` makes `sdk` act as that persona from the first call.
 - **Several users in one test.** `const admin = as('admin@example.com')` returns another SDK on the same mock.
 
+### Permissions
+
+Whoever you act as, signed in or not, is held to the blueprint's `permissions` as in production: only admins can use
+a blueprint that has none, so give your test blueprints the permissions the real ones have (`qelos pull blueprints`
+includes them).
+
+```ts
+const todo = blueprint('todo', {
+  permissions: ['create', 'read'].map((operation) => ({ operation, scope: 'user', roleBased: ['user'] })),
+});
+const { sdk } = createMockSdk({ seed: { personas, blueprints: [todo] } });
+
+await sdk.authentication.oAuthSignin({ username: 'user@example.com', password: 'user-pass' });
+const todos = sdk.blueprints.entitiesOf('todo');
+const mine = await todos.create({ title: 'mine' }); // allowed
+await expect(todos.update(mine.identifier, { title: 'changed' })).rejects.toThrow('not permitted');
+```
+
+- After `mock.faults.expireAccessTokens()` a signed-in user is a guest: data calls get only what guests may do.
+- A call with no credentials at all is not checked. Sign in or use a persona to test permissions.
+- `entitiesOf(...).remove()` returns the raw response and does not reject: check its `status`.
+
 ## Inspecting and resetting state
 
 - `mock.state` is the live in-memory state (`snapshot()`, `collection(name)`, `seed()`).

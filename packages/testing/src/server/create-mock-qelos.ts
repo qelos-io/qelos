@@ -23,7 +23,8 @@ export interface CreateMockQelosOptions extends MockQelosOptions {
   routes?: RouteModule[];
   /**
    * Resolve the caller of a request (return `null` for "no identity": permissions are then not enforced).
-   * Default: the `x-qelos-mock-persona` header, then `defaultPersona`.
+   * Default (`createDefaultAuthenticate`): the `x-qelos-mock-persona` header or cookie, then the signed-in user
+   * (API token, session cookie or bearer token), then `defaultPersona`.
    */
   authenticate?: Authenticate;
   /** Called for requests no route handles. Return a Response to answer, or nothing to fall through to the 404. */

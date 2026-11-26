@@ -195,4 +195,5 @@ dev dependency so production bundles do not ship it.
 - AI agents answer from seeded `aiResponses` (or echo `Mock response: <message>`); no model is called.
 - Lambdas/webhooks answer from the seed only; payments, plans and invoices are empty; secrets are never stored or returned.
 - Routes nobody handles return `404 { code: "QELOS_MOCK_NOT_IMPLEMENTED" }`. Extend with `mock.on(...)`, `routes` or `onMissing`.
-- With no persona at all, blueprint permissions are not enforced.
+- Blueprint permissions apply to personas and signed-in users. With no credentials at all (or ones the mock never
+  issued) they are not enforced; the real service would treat that caller as a guest.

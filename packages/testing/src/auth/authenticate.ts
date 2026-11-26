@@ -1,6 +1,6 @@
 import type { Doc, MockState } from '../state/mock-state.js';
 import { claimFor, ensureAuthSeeded, findUserByRef, pickWorkspace } from './accounts.js';
-import { cookieTokenName, findSession, parseCookies, sha256, type WorkspaceClaim } from './tokens.js';
+import { cookieTokenName, findSession, isMockToken, parseCookies, sha256, type WorkspaceClaim } from './tokens.js';
 
 /** Header selecting the persona (id or email) for one request. */
 export const PERSONA_HEADER = 'x-qelos-mock-persona';
@@ -91,6 +91,22 @@ function tokenContext(state: MockState, token: string, kind: 'cookie' | 'access'
     },
     isApiToken: false,
   };
+}
+
+/**
+ * Whether the request carries a token of this mock that no longer signs anyone in: an expired or signed-out session,
+ * or an API token that expired or is not allowed in the requested workspace. The real service treats such a caller
+ * as a guest. Meant for requests `authenticate` returned null for.
+ */
+export function hasEndedCredentials(request: Request, state: MockState): boolean {
+  const apiKey = request.headers.get('x-api-key');
+  if (apiKey) {
+    const hash = sha256(apiKey);
+    return !!state.apiTokens.findOne((t) => t.tokenHash === hash);
+  }
+  const cookies = parseCookies(request.headers.get('cookie'));
+  const token = cookies[cookieTokenName(state)] || cookies.token || bearer(request);
+  return !!token && isMockToken(token);
 }
 
 /**
