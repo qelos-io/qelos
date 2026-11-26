@@ -31,6 +31,7 @@ import { execSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { localOnlyFiles } from './release-guard.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -371,7 +372,20 @@ if (!SKIP_TEST) {
   log.warn('Skipping test (--skip-test)');
 }
 
-// ---------- 5. Login ----------
+// ---------- 5. Check what would be uploaded ----------
+// Runs in --dry-run too: it only reads. All packages are checked before the first one is published.
+if (!SKIP_PUBLISH && npmTargets.length) {
+  log.step('Check that no package contains local-only files');
+  const found = npmTargets.flatMap((p) => localOnlyFiles(join(ROOT, p.dir)).map((file) => `${p.dir}/${file}`));
+  if (found.length) {
+    log.err(`These files would be published:\n  ${found.join('\n  ')}`);
+    log.info("Delete them, or exclude them in the package's .npmignore (or `files` in package.json).");
+    process.exit(1);
+  }
+  log.ok('Nothing local-only');
+}
+
+// ---------- 6. Login ----------
 if (!SKIP_LOGIN && !SKIP_PUBLISH && npmTargets.length) {
   log.step('Verify npm registry login');
   const who = tryRun('pnpm whoami', { stdio: ['inherit', 'pipe', 'pipe'] });
@@ -387,7 +401,7 @@ if (!SKIP_PUBLISH && pyTargets.length) {
   log.info('PyPI auth: ensure ~/.pypirc, TWINE_USERNAME/TWINE_PASSWORD, or a TTY for `twine` prompts.');
 }
 
-// ---------- 6. Publish ----------
+// ---------- 7. Publish ----------
 if (!SKIP_PUBLISH) {
   if (npmTargets.length) {
     log.step('Publish packages to npm');

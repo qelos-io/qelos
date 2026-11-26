@@ -20,6 +20,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { localOnlyFiles } from './release-guard.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -130,6 +131,16 @@ for (const p of targets) {
   const pkg = readPkg(p.dir);
   console.log(`  ${pkg.name}@${pkg.version}  ${C.dim}(${p.dir})${C.reset}`);
 }
+
+// Runs in --dry-run too: it only reads. All packages are checked before the first one is published.
+log.step('Check that no package contains local-only files');
+const found = targets.flatMap((p) => localOnlyFiles(join(ROOT, p.dir)).map((file) => `${p.dir}/${file}`));
+if (found.length) {
+  log.err(`These files would be published:\n  ${found.join('\n  ')}`);
+  log.info("Delete them, or exclude them in the package's .npmignore (or `files` in package.json).");
+  process.exit(1);
+}
+log.ok('Nothing local-only');
 
 if (!SKIP_LOGIN && !DRY) {
   log.step('Verify npm registry login');

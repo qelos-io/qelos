@@ -1,3 +1,6 @@
 node_modules
 .idea
 .vscode
+.claude
+.impeccable
+tmp
