@@ -249,6 +249,7 @@ jobs:
         id: image-tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TITLE: ${{ github.event.workflow_run.display_title }}
         run: |
           set +x
           INPUT_TAG="${{ github.event.inputs.image_tag }}"
@@ -258,10 +259,14 @@ jobs:
             IMAGE_TAG="${INPUT_TAG:0:7}"
             echo "Using provided image tag: sha-$IMAGE_TAG"
           elif [ "${{ github.event_name }}" = "workflow_run" ]; then
-            WORKFLOW_RUN_ID="${{ github.event.workflow_run.id }}"
-            GIT_SHA=$(gh api repos/${{ github.repository }}/actions/runs/$WORKFLOW_RUN_ID --jq '.head_sha')
+            # the commit the release built, from its title (the release run's own head_sha is the newest main commit)
+            GIT_SHA=$(printf '%s' "$RELEASE_TITLE" | grep -oE '[0-9a-f]{40}$' || true)
+            if [ -z "$GIT_SHA" ]; then
+              echo "::error::Cannot tell which commit was released from the run title: '$RELEASE_TITLE'"
+              exit 1
+            fi
             IMAGE_TAG="${GIT_SHA:0:7}"
-            echo "Using Docker Release workflow SHA: sha-$IMAGE_TAG"
+            echo "Using the released commit: sha-$IMAGE_TAG"
           else
             git fetch origin main --depth=1
             GIT_SHA=$(git rev-parse origin/main)
