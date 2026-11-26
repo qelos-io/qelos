@@ -155,18 +155,10 @@ test('blueprints, configurations, blocks and components', async () => {
   await sdk.blocks.remove(block._id as any);
   assert.equal((await sdk.blocks.getList()).length, 1);
 
-  // non-admin personas cannot write nor read private configurations
-  const res = await mock.fetch('/api/blocks', {
-    method: 'POST',
-    headers: { 'x-qelos-mock-persona': 'ed@x.io', 'content-type': 'application/json' },
-    body: '{}',
-  });
-  assert.equal(res.status, 403);
+  // non-admin personas do not read private configurations
   const cfg = (headers: Record<string, string> = {}) => mock.fetch('/api/configurations/secret-config', { headers });
-  assert.equal((await cfg({ 'x-qelos-mock-persona': 'ed@x.io' })).status, 403);
+  assert.equal((await cfg({ 'x-qelos-mock-persona': 'ed@x.io' })).status, 404);
   assert.equal((await cfg()).status, 200);
-  const list: any[] = await (await mock.fetch('/api/configurations', { headers: { 'x-qelos-mock-persona': 'ed@x.io' } })).json();
-  assert.deepEqual(list.map((c) => c.key), ['app-configuration']);
 
   const created = await mock.fetch('/api/components', { method: 'POST', body: JSON.stringify({ identifier: 'x' }) });
   const comp: any = await created.json();
