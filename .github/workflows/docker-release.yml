@@ -1,4 +1,6 @@
 name: Docker Release
+# the commit being released is part of the run's title: the deploy workflow reads it from there
+run-name: Docker Release ${{ github.event.workflow_run.head_sha }}
 
 on:
   workflow_run:
@@ -34,9 +36,19 @@ jobs:
       matrix:
         service: ${{ fromJson(needs.setup.outputs.services) }}
     steps:
-      - name: Checkout code
+      # A workflow_run workflow runs on the newest commit of the default branch, which may already be ahead of the
+      # commit whose build artifacts are released here. Everything below has to use the built commit.
+      - name: Checkout the built commit
         uses: actions/checkout@v4
-      
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Short id of the built commit
+        id: commit
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: echo "short=${SHA:0:7}" >> "$GITHUB_OUTPUT"
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -64,7 +76,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
             type=ref,event=branch
-            type=sha,format=short
+            type=raw,value=sha-${{ steps.commit.outputs.short }}
       
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
