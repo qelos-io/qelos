@@ -382,14 +382,12 @@ administrators and users with the **`plugin`** role dispatch them, and everyone 
 
 ```ts
 await admin.events.dispatch({ source: 'billing', kind: 'invoice', eventName: 'sent', description: 'Invoice sent' });
-// `getList` answers one page, although the SDK types it as an array
-const page: any = await admin.events.getList({ kind: 'invoice' });
-const { events, total } = page;
+const { events, total } = await admin.events.getList({ kind: 'invoice' });
 ```
 
 - `admin` is an administrator SDK, created as in [Managing users](#managing-users).
-- `getList` returns one page: `{ events, total, page, limit, totalPages }`, although the SDK types it as an array.
-  By default it covers the **last week**; pass `period: 'all-time'` to include older seeded events.
+- `getList` returns one page: `{ events, total, page, limit, totalPages }`. By default it covers the **last week**;
+  pass `period: 'all-time'` to include older seeded events.
 - `dispatch` never rejects, also when it is refused or the event is missing `source`, `kind` or `eventName` (which is
   then dropped). Check what arrived with `getList` or `mock.state.events`.
 - Creating, updating and removing entities adds an event when the blueprint's `dispatchers` ask for it

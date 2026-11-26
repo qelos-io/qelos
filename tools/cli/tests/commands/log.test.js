@@ -1,6 +1,17 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
 
+/** an SDK whose events answer in pages, as the service does */
+const eventsSdk = (pages, calls = []) => ({
+  events: {
+    getList: async (params) => {
+      calls.push(params);
+      const events = pages[params.page] || [];
+      return { events, total: pages.flat().length, page: params.page, limit: params.limit, totalPages: pages.length };
+    },
+  },
+});
+
 describe('log command', () => {
   it('parseTime handles units and defaults bare numbers to minutes', async () => {
     const { parseTime } = await import('../../services/log/events.mjs');
@@ -18,7 +29,7 @@ describe('log command', () => {
       [{ _id: 'b0' }],
     ];
     const calls = [];
-    const sdk = { events: { getList: async (p) => { calls.push(p); return pages[p.page] || []; } } };
+    const sdk = eventsSdk(pages, calls);
     const result = await fetchEvents(sdk, { kind: 'x' }, new Date(0), new Date(1));
     assert.strictEqual(result.length, 101);
     assert.strictEqual(result[0]._id, 'b0');
@@ -79,12 +90,25 @@ describe('log services edge cases', () => {
   it('fetchEvents sends from/to as ISO strings and stops on an empty first page', async () => {
     const { fetchEvents } = await import('../../services/log/events.mjs');
     const calls = [];
-    const sdk = { events: { getList: async (p) => { calls.push(p); return []; } } };
+    const sdk = eventsSdk([[]], calls);
     const result = await fetchEvents(sdk, {}, new Date(0), new Date(1000));
     assert.deepStrictEqual(result, []);
     assert.strictEqual(calls.length, 1);
     assert.strictEqual(calls[0].from, '1970-01-01T00:00:00.000Z');
     assert.strictEqual(calls[0].to, '1970-01-01T00:00:01.000Z');
+  });
+
+  it('fetchEvents also reads a service that answers the list itself', async () => {
+    const { fetchEvents } = await import('../../services/log/events.mjs');
+    const sdk = { events: { getList: async () => [{ _id: 'b' }, { _id: 'a' }] } };
+    const result = await fetchEvents(sdk, {}, new Date(0), new Date(1));
+    assert.deepStrictEqual(result.map((event) => event._id), ['a', 'b']);
+  });
+
+  it('fetchEvents fails on an answer without events, instead of showing none', async () => {
+    const { fetchEvents } = await import('../../services/log/events.mjs');
+    const sdk = { events: { getList: async () => ({ message: 'something else' }) } };
+    await assert.rejects(fetchEvents(sdk, {}, new Date(0), new Date(1)), /unexpected answer/i);
   });
 
   it('formatEvent omits the description separator when there is none', async () => {

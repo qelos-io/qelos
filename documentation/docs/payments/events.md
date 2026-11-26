@@ -127,19 +127,19 @@ const sdkAdmin = new QelosAdminSDK({
 await sdkAdmin.authentication.oAuthSignin({ username, password });
 
 // All webhook-reported payment failures across providers
-const paymentFailures = await sdkAdmin.events.getList({
+const { events: paymentFailures } = await sdkAdmin.events.getList({
   source: 'payments',
   eventName: 'payment-failed',
 });
 
 // Sumit credit-card save failures only
-const cardSaveFailures = await sdkAdmin.events.getList({
+const { events: cardSaveFailures } = await sdkAdmin.events.getList({
   source: 'payments:sumit',
   eventName: 'payment-method-save-failed',
 });
 
 // Checkout validation errors in the last 24 hours
-const checkoutErrors = await sdkAdmin.events.getList({
+const { events: checkoutErrors } = await sdkAdmin.events.getList({
   source: 'payments',
   kind: 'checkout',
   eventName: 'checkout-failed',
@@ -147,7 +147,8 @@ const checkoutErrors = await sdkAdmin.events.getList({
 });
 ```
 
-Each returned event includes `description`, `metadata`, `user`, `created`, and other standard `IQelosEvent` fields.
+`getList` returns one page: `{ events, total, page, limit, totalPages }`. Each event in `events` includes `description`,
+`metadata`, `user`, `created`, and other standard `IQelosEvent` fields.
 
 ## Sumit troubleshooting
 

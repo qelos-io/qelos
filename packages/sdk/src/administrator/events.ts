@@ -2,6 +2,7 @@ import {QelosSDKOptions} from '../types.js';
 import BaseSDK from '../base-sdk.js';
 
 export interface IQelosEvent {
+  _id?: string;
   tenant: string;
   user?: string;
   workspace?: string;
@@ -11,6 +12,19 @@ export interface IQelosEvent {
   description: string;
   metadata?: any;
   created: Date;
+}
+
+/** one page of events, the newest first */
+export interface IQelosEventsPage {
+  events: IQelosEvent[];
+  /** how many events match, up to a cap */
+  total: number;
+  /** set when more events match than `total` counts */
+  totalCapped?: boolean;
+  /** counted from 0 */
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export default class QlEvents extends BaseSDK {
@@ -35,7 +49,7 @@ export default class QlEvents extends BaseSDK {
     if (params?.to) queryParams.append('to', params.to);
     
     const queryString = queryParams.toString();
-    return this.callJsonApi<IQelosEvent[]>(this.relativePath + (queryString ? '?' + queryString : ''));
+    return this.callJsonApi<IQelosEventsPage>(this.relativePath + (queryString ? '?' + queryString : ''));
   }
 
   getEvent(eventId: string) {

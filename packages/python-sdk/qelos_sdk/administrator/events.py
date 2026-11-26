@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from urllib.parse import urlencode
 
 from ..base_sdk import BaseSDK
@@ -16,8 +16,10 @@ class QlEvents(BaseSDK):
     def __init__(self, options: QelosSDKOptions) -> None:
         super().__init__(options)
 
-    async def get_list(self, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-        """List events with optional filters.
+    async def get_list(self, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """One page of events, newest first, with optional filters.
+
+        Returns ``{"events", "total", "page", "limit", "totalPages"}``.
 
         Supported filters: ``page``, ``limit``, ``kind``, ``eventName``,
         ``source``, ``user``, ``workspace``, ``search``, ``period``,
