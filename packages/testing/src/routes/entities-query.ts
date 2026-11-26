@@ -84,22 +84,38 @@ function invalid(message: string): never {
   throw new MockHttpError(406, message);
 }
 
-/** Mirrors `validateValue` of the no-code service. Returns the normalized value. */
-export function validateValue(key: string, value: any, property: BlueprintProperty): any {
-  if (value === undefined || value === null) {
-    if (property.required) invalid(`Property ${key} is required`);
-    return undefined;
-  }
+const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
+
+/** Whether a value suits an `object` property: text values only by default. Of a custom `schema`, the `type` is checked. */
+function suitsObject(value: unknown, schema: Record<string, any> | undefined): boolean {
+  if (!schema) return isRecord(value) && Object.values(value).every((item) => typeof item === 'string');
+  if (schema.type === 'object') return isRecord(value);
+  if (schema.type === 'array') return Array.isArray(value);
+  if (schema.type === 'integer') return Number.isInteger(value);
+  if (['string', 'number', 'boolean'].includes(schema.type)) return typeof value === schema.type;
+  return value !== undefined;
+}
+
+/**
+ * Mirrors `validateValue` of the no-code service. Returns the value as it is stored. `failure` is the answer for the
+ * values the service fails on before it can say what is wrong with them.
+ */
+export function validateValue(key: string, value: any, property: BlueprintProperty, failure = 'something went wrong with entity'): any {
+  if (value === undefined && !property.required) return undefined;
+  const fail = (): never => {
+    throw new MockHttpError(500, failure);
+  };
   switch (property.type) {
     case 'number':
-      if (value === '' || typeof value === 'boolean' || isNaN(value)) invalid(`Property ${key} must be a number`);
+      // as in the service, `null`, `''` and booleans count as numbers
+      if (isNaN(value)) invalid(`Property ${key} must be a number`);
       value = Number(value);
       break;
     case 'boolean':
       value = !!value;
       break;
     case 'object':
-      if (typeof value !== 'object') invalid(`Property ${key} must be a valid according to schema: ${property.schema?.type || 'object'}`);
+      if (!suitsObject(value, property.schema)) invalid(`Property ${key} must be a valid according to schema: ${property.schema?.type || 'object'}`);
       break;
     case 'string':
       if (typeof value !== 'string') invalid(`Property ${key} must be a string`);
@@ -108,18 +124,21 @@ export function validateValue(key: string, value: any, property: BlueprintProper
       }
       break;
     case 'file':
-      if (typeof value !== 'string' || !value.startsWith('http')) invalid(`Property ${key} must be a valid file`);
+      if (!value?.startsWith?.('http')) invalid(`Property ${key} must be a valid file`);
+      value = String(value);
       break;
     case 'date':
       if (new Date(value).toString() === 'Invalid Date') invalid(`Property ${key} must be a date`);
-      value = String(value);
+      if (value === null) fail();
+      value = value.toString();
       break;
     case 'datetime':
       if (new Date(value).toString() === 'Invalid Date') invalid(`Property ${key} must be a datetime`);
-      value = new Date(value).toISOString();
+      value = new Date(value);
       break;
     case 'time': {
-      const [hours, minutes] = String(value).split(':');
+      if (typeof value?.split !== 'function') fail();
+      const [hours, minutes] = value.split(':');
       if (isNaN(parseInt(hours)) || isNaN(parseInt(minutes))) invalid(`Property ${key} must be a time`);
       value = `${hours}:${minutes}`;
       break;
@@ -127,19 +146,20 @@ export function validateValue(key: string, value: any, property: BlueprintProper
   }
   if (property.min !== undefined && value < property.min) invalid(`Property ${key} must be greater than ${property.min}`);
   if (property.max !== undefined && value > property.max) invalid(`Property ${key} must be less than ${property.max}`);
-  return value;
+  if (property.required && value === undefined) invalid(`Property ${key} is required`);
+  return value instanceof Date ? value.toISOString() : value;
 }
 
 /** Validate the full metadata input against the blueprint's properties; unknown keys are dropped. */
-export function validateMetadata(input: Record<string, any> | undefined, blueprint: BlueprintDoc): Record<string, any> {
+export function validateMetadata(input: Record<string, any> | undefined, blueprint: BlueprintDoc, failure?: string): Record<string, any> {
   const valid: Record<string, any> = {};
   for (const [key, property] of Object.entries(blueprint.properties || {})) {
     const value = input?.[key];
     if (property.multi) {
-      if (Array.isArray(value)) valid[key] = value.map((v) => validateValue(key, v, property));
+      if (Array.isArray(value)) valid[key] = value.map((v) => validateValue(key, v, property, failure));
       else if (property.required) invalid(`Property ${key} must be an array`);
     } else {
-      const v = validateValue(key, value, property);
+      const v = validateValue(key, value, property, failure);
       if (v !== undefined) valid[key] = v;
     }
   }
