@@ -40,6 +40,9 @@ export function decodeToken(token: string | undefined | null): TokenPayload | nu
   }
 }
 
+/** Whether this mock issued the token: its tokens are unsigned, a real one ends with a signature. */
+export const isMockToken = (token: string) => token.endsWith('.') && !!decodeToken(token);
+
 export const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
 export const randomToken = (prefix: string) => `${prefix}${randomBytes(24).toString('hex')}`;
 

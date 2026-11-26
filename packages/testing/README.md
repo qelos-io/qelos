@@ -74,7 +74,7 @@ createMockQelos({
 
 Personas are regular users (they can also sign in with their password). Workspaces are created on first use and shared by name/id between personas; memberships are seeded once and then owned by the persisted state.
 
-With `defaultPersona`, every request **without credentials** behaves as that logged-in user, so `sdk.authentication.getLoggedInUser()` works with no sign-in (note: in Node, give the SDK an `extraHeaders: async () => ({})` so it does not try to refresh a missing token first). Per request, `x-qelos-mock-persona: <id|email>` (or the `qelos_mock_persona` cookie, set by `POST /api/mock/persona`) overrides it, and wins over any other credentials. Requests that present *invalid or expired* credentials are rejected, not downgraded to the default persona; an unknown persona gives `401`.
+With `defaultPersona`, every request **without credentials** behaves as that logged-in user, so `sdk.authentication.getLoggedInUser()` works with no sign-in (note: in Node, give the SDK an `extraHeaders: async () => ({})` so it does not try to refresh a missing token first). Per request, `x-qelos-mock-persona: <id|email>` (or the `qelos_mock_persona` cookie, set by `POST /api/mock/persona`) overrides it, and wins over any other credentials. The auth, workspace, user and thread routes reject *invalid or expired* credentials and do not downgrade them to the default persona (for data and content routes see [Permissions on data and content](#permissions-on-data-and-content)); an unknown persona gives `401`.
 
 ### Permissions
 
@@ -167,7 +167,18 @@ Notes:
 
 Entities carry `identifier`/`id`, `user`, `workspace`, `created`, `updated` and are returned flat (properties at the top level) unless `$flat=false`. Not mirrored: blueprint `limitations`, `updateMapping`, the other chart types and platform events.
 
-**Permissions.** The caller is resolved with `authenticate(request, state)` (default: the `x-qelos-mock-persona` header - a persona/user id or email - then the `defaultPersona` option). With a persona the blueprint `permissions` / `permissionScope` are enforced like the real service (`admin` role bypasses them, `user`/`workspace` scopes restrict which entities can be read/changed). **With no persona at all permissions are not enforced** (everything is allowed): `authenticate` is the hook to change that.
+#### Permissions on data and content
+
+Entity routes, content writes and agent management resolve the caller in this order:
+
+1. the `x-qelos-mock-persona` header or `qelos_mock_persona` cookie (a persona/user id or email)
+2. the signed-in user: a bearer access token, session cookie or API token issued by the mock
+3. a guest, for a mock token that expired or was signed out
+4. the `defaultPersona` option
+
+The blueprint `permissions` / `permissionScope` are then enforced like the real service: the `admin` role bypasses them, `user`/`workspace` scopes restrict which entities can be read or changed, and a blueprint without permissions is open to admins only. Content and agent writes need an admin.
+
+**Without any of the four, permissions are not enforced** (everything is allowed): no credentials at all, or ones the mock never issued, such as a made-up API token. The real service would treat that caller as a guest. The `authenticate` option replaces this whole resolution.
 
 ### Other endpoints
 
@@ -206,7 +217,7 @@ The same state is available programmatically as `mock.state` (`mock.state.entiti
 const mock = createMockQelos({
   // answer anything the built-ins don't; return nothing to fall through to the 404
   onMissing: (req) => (new URL(req.url).pathname === '/api/foo' ? Response.json({ foo: 1 }) : undefined),
-  // custom identity, return null for "no identity" (permissions not enforced)
+  // custom identity for data and content routes; return null for "no identity" (permissions not enforced)
   authenticate: (req, state) => state.resolvePersona(req.headers.get('x-user') ?? '') ?? null,
 });
 mock.on('GET', '/api/foo/:id', ({ params }) => ({ id: params.id })); // takes precedence over built-ins
