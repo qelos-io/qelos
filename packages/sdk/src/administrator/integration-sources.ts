@@ -36,7 +36,10 @@ export default class QlIntegrationSources extends BaseSDK {
     )
   }
 
-  create(source: Pick<IIntegrationSource, 'name' | 'labels' | 'metadata' | 'authentication'>): Promise<IIntegrationSource> {
+  /** `kind` is required by the service; it is optional here only so that earlier code keeps compiling */
+  create(
+    source: Pick<IIntegrationSource, 'name' | 'labels' | 'metadata' | 'authentication'> & Partial<Pick<IIntegrationSource, 'kind'>>,
+  ): Promise<IIntegrationSource> {
     return this.callJsonApi<IIntegrationSource>(this.relativePath, {
       method: 'post',
       headers: { 'content-type': 'application/json' },

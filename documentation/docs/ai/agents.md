@@ -39,6 +39,7 @@ import { QelosAdministratorSDK } from '@qelos/sdk/dist/administrator';
 const admin = new QelosAdministratorSDK({ appUrl, fetch });
 
 const source = await admin.integrationSources.create({
+  kind: 'openai',
   name: 'OpenAI — Production',
   labels: ['ai', 'prod'],
   metadata: { defaultModel: 'gpt-6-luna' },

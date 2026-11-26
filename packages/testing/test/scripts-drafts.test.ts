@@ -102,12 +102,15 @@ describe('drafts', () => {
     await assert.rejects(sdk.drafts.getDraft('post', '1'), /draft not found/);
   });
 
-  test('getList asks for a draft without a context, as against the service', async () => {
-    const { sdk, mock } = setup();
+  test('are listed per user; without a context there is no single draft', async () => {
+    const { sdk, as, mock } = setup();
     await sdk.drafts.setDraft(draft);
-    await assert.rejects(sdk.drafts.getList(), /draft not found/);
-    const all = await mock.fetch('/api/drafts/all', { headers: { [PERSONA_HEADER]: 'admin@x.com' } });
-    assert.equal(((await all.json()) as unknown[]).length, 1);
+    assert.deepEqual((await sdk.drafts.getList()).map((d: any) => d.contextId), ['1']);
+    as('user@x.com');
+    assert.deepEqual(await sdk.drafts.getList(), []);
+    // what `getList` of earlier SDK releases asks for
+    const single = await mock.fetch('/api/drafts', { headers: { [PERSONA_HEADER]: 'admin@x.com' } });
+    assert.equal(single.status, 404);
   });
 
   test('need a signed-in user', async () => {
