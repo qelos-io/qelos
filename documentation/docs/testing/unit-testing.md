@@ -243,6 +243,8 @@ mock.payments.cancel(subscriptionId);           // canceled
   `managePayments.updatePaymentsConfiguration`, to test a disabled or incomplete setup. Rules of a specific
   provider (such as catalog price ids) are not checked.
 - Plans pulled with `qelos pull pricing-plans` are served as they are.
+- A non-admin checks out for their own user or active workspace only; naming another account, or its subscription,
+  answers `403`.
 - As in the service today, a non-admin with an **active workspace** can list the workspace's subscriptions and
   invoices, but gets `403` on a single one (including its activity and cancelling it).
 

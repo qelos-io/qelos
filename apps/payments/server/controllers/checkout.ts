@@ -44,6 +44,39 @@ function emitControllerCheckoutValidationFailed(req, code: string, message: stri
   });
 }
 
+/** The billing account of a checkout: the one named in the request, else the caller's. */
+function requestedBillableEntity(req): { type: BillableEntityType; id: string } {
+  const type: BillableEntityType = req.body.billableEntityType || req.user?.billableEntityType || 'user';
+  const id: string = req.body.billableEntityId || (type === 'user' ? req.user?._id : req.user?.workspace);
+  return { type, id };
+}
+
+/** Whether the account is the caller's user or their active workspace. */
+function isOwnAccount(req, type: unknown, id: unknown): boolean {
+  // the user header carries the active workspace as an object
+  const own = type === 'user' ? req.user?._id
+    : type === 'workspace' ? req.user?.workspace?._id || req.user?.workspace
+      : undefined;
+  return !!own && id === own;
+}
+
+/**
+ * A regular user may check out for their own accounts only, whether the account is named in the request or comes with
+ * an existing subscription.
+ */
+async function mayCheckOut(req): Promise<boolean> {
+  const { subscriptionId, billableEntityId } = req.body;
+  if (subscriptionId) {
+    if (typeof subscriptionId !== 'string') return false;
+    const subscription = await SubscriptionsService.getSubscriptionById(req.headers.tenant, subscriptionId);
+    return isOwnAccount(req, subscription.billableEntityType, subscription.billableEntityId);
+  }
+  const { type } = requestedBillableEntity(req);
+  if (type !== 'user' && type !== 'workspace') return false;
+  // without an id in the request, the account is derived from the caller
+  return !billableEntityId || isOwnAccount(req, type, billableEntityId);
+}
+
 export async function initiateCheckout(req, res: Response) {
   try {
     const tenant = req.headers.tenant;
@@ -51,8 +84,6 @@ export async function initiateCheckout(req, res: Response) {
       subscriptionId,
       planId,
       billingCycle,
-      billableEntityType,
-      billableEntityId,
       couponCode,
       successUrl,
       cancelUrl,
@@ -74,6 +105,12 @@ export async function initiateCheckout(req, res: Response) {
       return;
     }
 
+    if (!isPrivileged && !(await mayCheckOut(req))) {
+      emitControllerCheckoutValidationFailed(req, 'ACCESS_DENIED', 'access denied');
+      res.status(403).json({ message: 'access denied' }).end();
+      return;
+    }
+
     let resolvedSubscriptionId: string | undefined = subscriptionId;
 
     if (!resolvedSubscriptionId && isPrivileged && planId && amount) {
@@ -83,8 +120,7 @@ export async function initiateCheckout(req, res: Response) {
         res.status(400).json({ message: 'billingCycle is required' }).end();
         return;
       }
-      const entityType: BillableEntityType = billableEntityType || req.user?.billableEntityType || 'user';
-      const entityId: string = billableEntityId || (entityType === 'user' ? req.user?._id : req.user?.workspace);
+      const { type: entityType, id: entityId } = requestedBillableEntity(req);
       if (!entityId) {
         emitControllerCheckoutValidationFailed(req, 'MISSING_BILLABLE_ENTITY', 'Could not determine billable entity');
         res.status(400).json({ message: 'Could not determine billable entity' }).end();
@@ -123,8 +159,7 @@ export async function initiateCheckout(req, res: Response) {
       return;
     }
 
-    const entityType: BillableEntityType = billableEntityType || req.user?.billableEntityType || 'user';
-    const entityId: string = billableEntityId || (entityType === 'user' ? req.user?._id : req.user?.workspace);
+    const { type: entityType, id: entityId } = requestedBillableEntity(req);
     if (!entityId) {
       emitControllerCheckoutValidationFailed(req, 'MISSING_BILLABLE_ENTITY', 'Could not determine billable entity');
       res.status(400).json({ message: 'Could not determine billable entity' }).end();

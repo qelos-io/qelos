@@ -315,6 +315,22 @@ export function paymentRoutes(router: Router, state: MockState) {
     return { subscriptionId: subscription._id, checkoutUrl: `https://checkout.qelos.mock/${subscription._id}` };
   }
 
+  /** a regular user checks out for their own user or active workspace only, however the account is given */
+  function mayCheckOut(auth: AuthContext, body: Record<string, any>): boolean {
+    const own = (type: unknown, id: unknown) => {
+      const account = type === 'user' ? auth.user._id : type === 'workspace' ? auth.workspace?._id : undefined;
+      return !!account && id === account;
+    };
+    if (body.subscriptionId) {
+      if (typeof body.subscriptionId !== 'string') return false;
+      const subscription = store.existing(body.subscriptionId);
+      return own(subscription.billableEntityType, subscription.billableEntityId);
+    }
+    const type = body.billableEntityType || 'user';
+    if (type !== 'user' && type !== 'workspace') return false;
+    return !body.billableEntityId || own(type, body.billableEntityId);
+  }
+
   router.register('POST', '/api/checkout', signedIn(async (ctx, auth) => {
     const body = (await ctx.json()) ?? {};
     const { subscriptionId, planId, billingCycle } = body;
@@ -322,14 +338,16 @@ export function paymentRoutes(router: Router, state: MockState) {
     if (billingCycle && !rules.BILLING_CYCLES.includes(billingCycle)) return message('billingCycle must be monthly or yearly', 400);
     const billableEntityType = body.billableEntityType || 'user';
     const billableEntityId = body.billableEntityId || (billableEntityType === 'user' ? auth.user._id : auth.workspace?._id);
+    const privileged = isPrivilegedUser(auth.user);
     // only an administrator may set the amount; with it, the pending subscription is created here
-    const amount = isPrivilegedUser(auth.user) ? body.amount : undefined;
-    if (!subscriptionId) {
-      if (!billingCycle) return message('billingCycle is required', 400);
-      if (!billableEntityId) return message('Could not determine billable entity', 400);
-    }
+    const amount = privileged ? body.amount : undefined;
     const params = { ...body, billableEntityType, billableEntityId };
     try {
+      if (!privileged && !mayCheckOut(auth, body)) return message('access denied', 403);
+      if (!subscriptionId) {
+        if (!billingCycle) return message('billingCycle is required', 400);
+        if (!billableEntityId) return message('Could not determine billable entity', 400);
+      }
       if (!subscriptionId && amount) {
         params.subscriptionId = store.createSubscription({ planId, billingCycle, billableEntityType, billableEntityId, status: 'pending', dynamicAmount: amount })._id;
       }
