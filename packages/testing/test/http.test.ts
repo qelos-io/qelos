@@ -12,8 +12,11 @@ test('testApp serves a plain listener, keeps cookies and sends the persona heade
   try {
     await client.fetch('/login');
     const res = await client.as('a@x.com').json('/whoami');
-    assert.equal(res.body.cookie, 'sid=abc');
+    // the persona travels as a header and as a cookie (integrators forward cookies only), next to the session cookies
+    assert.equal(res.body.cookie, 'sid=abc; qelos_mock_persona=a%40x.com');
     assert.equal(res.body.persona, 'a@x.com');
+    // a caller that sets its own cookie header is left alone
+    assert.equal((await client.as('a@x.com').json('/whoami', { headers: { cookie: 'own=1' } })).body.cookie, 'own=1');
     assert.equal((await client.json('/whoami')).body.persona, null);
     const echoed = await client.json('/echo', { json: { a: 1 } });
     assert.equal(echoed.status, 200);

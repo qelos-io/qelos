@@ -1,6 +1,7 @@
 import { createServer, type RequestListener, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { PERSONA_HEADER } from '../routes/actor.js';
+import { PERSONA_COOKIE } from '../auth/authenticate.js';
 
 /** Anything that can be served: a Node request listener (Express, Connect, ...) or an already created `http.Server`. */
 export type TestableApp = RequestListener | Server | { server: Server };
@@ -31,7 +32,13 @@ function build(baseUrl: string, state: { jar: Map<string, string>; close: () => 
     async fetch(path, init = {}) {
       const headers = new Headers(init.headers);
       if (persona && !headers.has(PERSONA_HEADER)) headers.set(PERSONA_HEADER, persona);
-      if (state.jar.size && !headers.has('cookie')) headers.set('cookie', cookieHeader());
+      if (!headers.has('cookie')) {
+        // The persona also travels as a cookie: integrators forward cookies to the mock, but not custom headers,
+        // so this is what makes `req.qelos.user` the persona inside the app's own routes.
+        const cookies = [state.jar.size ? cookieHeader() : '', persona ? `${PERSONA_COOKIE}=${encodeURIComponent(persona)}` : ''];
+        const value = cookies.filter(Boolean).join('; ');
+        if (value) headers.set('cookie', value);
+      }
       const res = await fetch(new URL(path, baseUrl), { ...init, headers, redirect: init.redirect ?? 'manual' });
       for (const line of res.headers.getSetCookie?.() ?? []) {
         const [pair] = line.split(';');

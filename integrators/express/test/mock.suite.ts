@@ -88,6 +88,7 @@ export function registerMockTests(expressModule: typeof express, label: string):
     const { middleware, proxy } = createQelosIntegrator({ config });
     const app = expressModule();
     app.use(middleware);
+    app.get('/whoami', (req, res) => void res.json({ email: req.qelos.user?.email ?? null }));
     app.use('/api', proxy!);
     const client = await testApp(app as any);
     try {
@@ -98,6 +99,8 @@ export function registerMockTests(expressModule: typeof express, label: string):
       const anon = await testApp(app as any);
       try {
         assert.equal((await anon.as('other@example.com').json('/api/me')).body.email, 'other@example.com');
+        // the app's own routes see the persona too
+        assert.equal((await anon.as('other@example.com').json('/whoami')).body.email, 'other@example.com');
       } finally {
         await anon.close();
       }

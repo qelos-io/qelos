@@ -1,5 +1,7 @@
 import { MockHttpError, type RouteContext } from '../router/router.js';
 import type { Doc, MockState } from '../state/mock-state.js';
+import { PERSONA_COOKIE } from '../auth/authenticate.js';
+import { parseCookies } from '../auth/tokens.js';
 
 export interface MockActor {
   _id?: string;
@@ -20,6 +22,14 @@ export type Authenticate = (
 
 export const PERSONA_HEADER = 'x-qelos-mock-persona';
 
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 function toActor(state: MockState, doc: Doc): MockActor {
   const ws = doc.workspace;
   const workspace = ws && typeof ws === 'object' ? ws : ws ? state.workspaces.get(String(ws)) : undefined;
@@ -27,12 +37,14 @@ function toActor(state: MockState, doc: Doc): MockActor {
 }
 
 /**
- * Default authentication: the `x-qelos-mock-persona` header (persona/user id or email),
- * falling back to the configured `defaultPersona`. Without either there is no actor.
+ * Default authentication: the `x-qelos-mock-persona` header or the `qelos_mock_persona` cookie (persona/user id
+ * or email), falling back to the configured `defaultPersona`. Without any of them there is no actor.
+ * The cookie matters behind an integrator: it forwards cookies, not custom headers.
  */
 export function createDefaultAuthenticate(defaultPersona?: string): Authenticate {
   return (request, state) => {
-    const wanted = request.headers.get(PERSONA_HEADER) || defaultPersona;
+    const cookie = parseCookies(request.headers.get('cookie'))[PERSONA_COOKIE];
+    const wanted = request.headers.get(PERSONA_HEADER) || (cookie ? safeDecode(cookie) : '') || defaultPersona;
     if (!wanted) return null;
     const doc = state.resolvePersona(wanted);
     if (!doc) {
