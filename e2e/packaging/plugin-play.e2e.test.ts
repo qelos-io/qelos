@@ -84,6 +84,8 @@ describe('the packed @qelos/plugin-play runs from a clean project on plain Node'
       assert.deepEqual(out.hello, { status: 200, body: { hello: 'world' } });
       assert.equal(out.manifest.body.name, 'demo-plugin');
       assert.deepEqual(out.internal, { status: 200, body: { pong: true } });
+      assert.equal(out.handshake.protected.body.email, 'ada@example.com');
+      assert.equal(out.handshake.unauthorize.body, 'OK');
     });
   }
 
