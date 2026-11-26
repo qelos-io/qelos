@@ -19,14 +19,17 @@ export function parseTime(value) {
 export async function fetchEvents(sdk, filters, from, to) {
   const events = [];
   for (let page = 0; page < MAX_PAGES; page++) {
-    const batch = await sdk.events.getList({
+    const answer = await sdk.events.getList({
       ...filters,
       from: from.toISOString(),
       to: to.toISOString(),
       page,
       limit: PAGE_SIZE,
     });
-    if (!Array.isArray(batch) || batch.length === 0) break;
+    // one page, `{ events }`; earlier services answered the list itself
+    const batch = Array.isArray(answer) ? answer : answer?.events;
+    if (!Array.isArray(batch)) throw new Error('Unexpected answer from the events API');
+    if (batch.length === 0) break;
     events.push(...batch);
     if (batch.length < PAGE_SIZE) break;
   }
