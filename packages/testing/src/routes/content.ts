@@ -1,6 +1,7 @@
 import { jsonResponse, type RouteContext, type RouteModule } from '../router/router.js';
 import type { Doc } from '../state/mock-state.js';
 import { isSignedIn, mayAct, type ActorResolver, type MockActor } from './actor.js';
+import { BLUEPRINT_FIELDS, blueprintDocument, indexedError, validProperties } from '../blueprints/rules.js';
 
 /**
  * Configurations and blocks (`apps/content`) and blueprints (`apps/no-code`): who may call each route,
@@ -157,20 +158,53 @@ export function contentRoutes({ resolveActor }: { resolveActor: ActorResolver })
       const found = blueprint(params.identifier);
       return jsonResponse(found ? view(found, actor) : null);
     }));
+    // what the service refuses, and what it stores, is in `blueprints/rules.ts`
+    const accepted = (data: Record<string, any>) => pick(data, BLUEPRINT_FIELDS);
+    /** save a changed blueprint, or answer why the service would not */
+    const save = (found: Doc, changes: Record<string, any>) => {
+      const merged = { ...found, ...changes };
+      const refusal = indexedError(merged.properties);
+      if (refusal) return message(refusal, 400);
+      // a seeded blueprint may have no name
+      const stored = blueprintDocument({ ...merged, name: merged.name ?? found.identifier });
+      if (!stored) return message('failed to update blueprint', 400);
+      const { updateMapping: _, ...kept } = found;
+      return state.blueprints.replace(found._id, { ...kept, ...stored, updated: now() });
+    };
+    /** `PUT` and `PATCH` of a blueprint: the identifier, tenant, creation date and storage never change */
+    const change = (method: 'PUT' | 'PATCH', changes: (found: Doc, data: Record<string, any>) => Record<string, any>) =>
+      router.register(method, '/api/blueprints/:identifier', dataEditor(async (ctx) => {
+        const found = blueprint(ctx.params.identifier);
+        if (!found) return noBlueprint();
+        const { identifier: _, ...data } = accepted(await body(ctx));
+        return save(found, changes(found, data));
+      }));
+
     router.register('POST', '/api/blueprints', dataEditor(async (ctx) => {
-      const { storage: _, ...data } = await body(ctx);
-      if (!data.identifier || blueprint(String(data.identifier))) return message('failed to create a blueprint', 400);
-      return state.blueprints.insert({ ...data, tenant: tenant(), created: now(), updated: now() });
+      const data = accepted(await body(ctx));
+      const properties = validProperties(data.properties);
+      const refusal = indexedError(properties);
+      if (refusal) return message(refusal, 400);
+      // the service fails on a name or identifier that is not text before it can answer; the mock refuses it
+      const unreadable = [data.identifier, data.name].some((value) => value && typeof value !== 'string');
+      const stored = unreadable ? undefined : blueprintDocument({ ...data, properties });
+      if (!stored || blueprint(stored.identifier)) return message('failed to create a blueprint', 400);
+      return state.blueprints.insert({ ...stored, tenant: tenant(), created: now(), updated: now(), __v: 0 });
     }));
-    router.register('PUT', '/api/blueprints/:identifier', dataEditor(async (ctx) => {
-      const found = blueprint(ctx.params.identifier);
-      if (!found) return noBlueprint();
-      const { _id, tenant: _tenant, identifier: _identifier, created: _created, storage: _storage, ...changes } = await body(ctx);
-      return state.blueprints.update(found._id, { ...changes, updated: now() });
+    // the properties given replace the current ones
+    change('PUT', (_found, data) => ({ ...data, ...(data.properties ? { properties: validProperties(data.properties) } : {}) }));
+    // properties, relations (by key) and the update mapping are added to the current ones; permissions stay
+    change('PATCH', (found, { permissions: _, ...data }) => ({
+      ...data,
+      properties: { ...found.properties, ...validProperties(data.properties) },
+      updateMapping: { ...found.updateMapping, ...data.updateMapping },
+      relations: Object.values(
+        Object.fromEntries([...(found.relations ?? []), ...(data.relations ?? [])].map((relation) => [relation.key, relation])),
+      ),
     }));
     router.register('DELETE', '/api/blueprints/:identifier', dataEditor(({ params }) => {
       const found = blueprint(params.identifier);
-      if (!found) return noBlueprint();
+      if (!found) return jsonResponse(null);
       if (state.entities.list(found.identifier).length) return message('cannot remove blueprint with existing entities', 400);
       state.blueprints.remove(found._id);
       return found;

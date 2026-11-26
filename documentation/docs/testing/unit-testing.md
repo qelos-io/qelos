@@ -326,6 +326,12 @@ const { user } = await sdk.authentication.exchangeMcpAuthorizationCode({ code: c
 - Seed an `mcp-configuration` (`{ key, metadata: { enabled, permittedCallbackUrls } }`) in `configurations` to test a
   disabled tenant or a refused address. Without one, MCP sign-in is on and accepts any address.
 
+## Creating blueprints
+
+Blueprints created or changed through the API are checked as by the service. Give each one an `identifier` and a
+`name`, and each property a `title` and a `type`: properties without them are silently dropped. Seeded blueprints are
+used as they are.
+
 ## Charts
 
 `sdk.blueprints.getChart`, `getPieChart`, `getSum` and `getCount` are computed from the mock's entities, over what the

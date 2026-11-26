@@ -50,7 +50,7 @@ export function blueprint(identifier: string, overrides: Partial<MockBlueprintSe
   return {
     identifier,
     name: identifier.charAt(0).toUpperCase() + identifier.slice(1),
-    properties: { title: { type: 'string', required: true } },
+    properties: { title: { title: 'Title', type: 'string', required: true } },
     ...overrides,
   };
 }
