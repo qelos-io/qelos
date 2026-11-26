@@ -27,14 +27,19 @@ async function getCloudflareClient(source) {
     });
 }
 
+/** a connection of the tenant of the request */
+async function findSource(req: Request) {
+    const tenant = req.headers.tenant as string;
+    const source = await IntegrationSource.findOne({ _id: req.params.sourceId, tenant }).lean().exec();
+    if (!source) {
+        throw new ResponseError('Source not found', 404);
+    }
+    return source;
+}
+
 export async function listFunctions(req: Request, res: Response) {
     try {
-        const { sourceId } = req.params;
-        const source = await IntegrationSource.findById(sourceId).lean().exec();
-
-        if (!source) {
-            throw new ResponseError('Source not found', 404);
-        }
+        const source = await findSource(req);
 
         let functions: NormalizedFunction[];
         if (source.kind === IntegrationSourceKind.AWS) {
@@ -65,12 +70,8 @@ export async function listFunctions(req: Request, res: Response) {
 
 export async function executeFunction(req: Request, res: Response) {
     try {
-        const { sourceId, functionName } = req.params;
-        const source = await IntegrationSource.findById(sourceId).lean().exec();
-
-        if (!source) {
-            throw new ResponseError('Source not found', 404);
-        }
+        const { functionName } = req.params;
+        const source = await findSource(req);
 
         let result;
         if (source.kind === IntegrationSourceKind.AWS) {
@@ -104,12 +105,8 @@ export async function executeFunction(req: Request, res: Response) {
 
 export async function getFunction(req: Request, res: Response) {
     try {
-        const { sourceId, functionName } = req.params;
-        const source = await IntegrationSource.findById(sourceId).lean().exec();
-
-        if (!source) {
-            throw new ResponseError('Source not found', 404);
-        }
+        const { functionName } = req.params;
+        const source = await findSource(req);
 
         let func: NormalizedFunction;
         if (source.kind === IntegrationSourceKind.AWS) {
@@ -138,12 +135,8 @@ export async function getFunction(req: Request, res: Response) {
 
 export async function deleteFunction(req: Request, res: Response) {
     try {
-        const { sourceId, functionName } = req.params;
-        const source = await IntegrationSource.findById(sourceId).lean().exec();
-
-        if (!source) {
-            throw new ResponseError('Source not found', 404);
-        }
+        const { functionName } = req.params;
+        const source = await findSource(req);
 
         if (source.kind === IntegrationSourceKind.AWS) {
             const lambda = await getAwsLambdaClient(source);
@@ -170,12 +163,7 @@ export async function deleteFunction(req: Request, res: Response) {
 
 export async function createFunction(req: Request, res: Response) {
     try {
-        const { sourceId } = req.params;
-        const source = await IntegrationSource.findById(sourceId).lean().exec();
-
-        if (!source) {
-            throw new ResponseError('Source not found', 404);
-        }
+        const source = await findSource(req);
 
         let resource;
         const normalizedParams: NormalizedFunction = req.body;
@@ -209,12 +197,8 @@ export async function createFunction(req: Request, res: Response) {
 
 export async function updateFunction(req: Request, res: Response) {
     try {
-        const { sourceId, functionName } = req.params;
-        const source = await IntegrationSource.findById(sourceId).lean().exec();
-
-        if (!source) {
-            throw new ResponseError('Source not found', 404);
-        }
+        const { functionName } = req.params;
+        const source = await findSource(req);
 
         let resource;
         const normalizedParams: NormalizedFunction = req.body;
