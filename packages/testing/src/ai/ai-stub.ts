@@ -11,6 +11,11 @@ export interface AiReply {
   /** stream these pieces as separate chunks (non-streaming calls get them joined) */
   chunks?: string[];
   toolCalls?: AiToolCall[];
+  /**
+   * Streaming with `toolCalls` the app does not run itself: the text the agent answers after the tools ran
+   * (streamed as `followup_chunk` events).
+   */
+  followup?: string | string[];
   /** answer with this HTTP error instead of a completion */
   error?: { status: number; message?: string };
   /** wait before answering (ms) */

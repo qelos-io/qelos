@@ -113,6 +113,13 @@ expect(mock.ai.calls[0]).toMatchObject({ agentId: 'agent1', message: 'I want a r
 ```
 
 - Newest rules win, then seeded `aiResponses`, then an echo (`Mock response: <message>`).
+- Streamed calls (`?stream=true` or `accept: text/event-stream`) send the same server-sent events as the Qelos
+  AI service: `{ type: 'chunk', content }` ... `{ type: 'done' }`.
+  - With `toolCalls`, tools the app declared in `clientTools` come back as a `client_tool_calls` event. Other tools
+    count as run by the service: tool events, `continuing_conversation`, then your `followup` text as
+    `followup_chunk` events.
+  - A failure (`mock.ai.fail` or `error`) is an `{ type: 'error', message }` event inside a `200` stream, as in the
+    real service. Non-streamed calls answer with the HTTP status.
 - Options: `{ agent: 'agent1' }` restricts a rule to one agent, `{ times: 1 }` limits how often it applies.
 - `mock.ai.calls` records every call (`agentId`, `messages`, `message`, `stream`, `threadId`).
 - `reset()` clears rules and recorded calls.
