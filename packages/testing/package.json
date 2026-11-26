@@ -5,6 +5,22 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "sdk": [
+        "./dist/sdk/index.d.ts"
+      ],
+      "fixtures": [
+        "./dist/fixtures/index.d.ts"
+      ],
+      "http": [
+        "./dist/http/index.d.ts"
+      ],
+      "cassette": [
+        "./dist/cassette/index.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
