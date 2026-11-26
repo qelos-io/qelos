@@ -221,7 +221,10 @@ for (const major of [3, 4] as const) {
     before(async () => {
       tenant = await fakeTenant();
       const fixture = join(repo, 'integrators', 'nuxt', 'test', 'fixtures', `nuxt${major}`);
-      ({ work, project } = createProject('nuxt', ['nuxt', '@nuxt/kit', 'h3', 'ufo'], [fixture]));
+      // `vue` is what a real install of nuxt also puts at the top level (the server renderer is traced from there);
+      // take the copy this Nuxt version depends on
+      const nuxtDependencies = dirname(dirname(realpathSync(join(fixture, 'node_modules', 'nuxt'))));
+      ({ work, project } = createProject('nuxt', ['nuxt', 'vue', '@nuxt/kit', 'h3', 'ufo'], [fixture, nuxtDependencies]));
       writeFileSync(join(project, 'package.json'), JSON.stringify({ name: 'consumer', private: true, type: 'module' }));
       writeFileSync(join(project, 'nuxt.config.ts'), `export default defineNuxtConfig({
   modules: ['@qelos/integrator-nuxt'],
@@ -229,7 +232,15 @@ for (const major of [3, 4] as const) {
   telemetry: false,
 });
 `);
-      writeFileSync(join(project, 'app.vue'), '<template><div>consumer</div></template>\n');
+      // `useQelos` is not imported: the module has to register its composables for auto-import
+      writeFileSync(join(project, 'app.vue'), `<script setup>
+const { user, isAuthenticated } = useQelos();
+</script>
+
+<template>
+  <p id="who">{{ isAuthenticated ? user.email : 'anonymous' }}</p>
+</template>
+`);
       mkdirSync(join(project, 'server', 'routes'), { recursive: true });
       writeFileSync(join(project, 'server', 'routes', 'whoami.get.js'), `export default defineEventHandler((event) => ({ email: event.context.qelos?.user?.email ?? null }));
 `);
@@ -256,6 +267,16 @@ for (const major of [3, 4] as const) {
 
     test('a server route sees no user without a session', async () => {
       assert.equal(await who(), null);
+    });
+
+    test('a page renders the identity from the useQelos() composable on the server', async () => {
+      const page = async (cookie?: string) => {
+        const res = await fetch(base, { headers: cookie ? { cookie } : {} });
+        assert.equal(res.status, 200);
+        return (await res.text()).match(/<p id="who">([^<]*)<\/p>/)?.[1];
+      };
+      assert.equal(await page(), 'anonymous');
+      assert.equal(await page('qlt=session-1'), 'dev@example.com');
     });
 
     test('signing in through the proxy reaches the tenant and sets the session cookie', async () => {

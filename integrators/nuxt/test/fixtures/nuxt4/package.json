@@ -1,10 +1,8 @@
 {
   "name": "@qelos/integrator-nuxt-fixture-nuxt4",
   "private": true,
+  "description": "Pins the Nuxt 4 install that e2e/packaging/next-nuxt.e2e.test.ts builds a consumer app with.",
   "type": "module",
-  "scripts": {
-    "prepare:nuxt": "nuxt prepare"
-  },
   "dependencies": {
     "@qelos/integrator-nuxt": "workspace:*",
     "nuxt": "^4.0.0"
