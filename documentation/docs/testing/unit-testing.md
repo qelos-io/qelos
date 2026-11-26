@@ -306,6 +306,26 @@ in bulk. Nothing is compiled: an invalid source is accepted, `requiredProps` sta
 Its `drafts` keep each signed-in user's own drafts, with `setDraft`, `getDraft` and `remove`. `drafts.getList` rejects
 with `draft not found`, as against the real service.
 
+## MCP sign-in
+
+An app that signs users in over MCP can be tested end to end. The mock has no approval page: opening the authorize
+address as a user sends them straight back to the app.
+
+```ts
+const redirectUri = 'http://localhost:8088/callback';
+const url = sdk.authentication.getMcpAuthorizeUrl({ redirectUri, codeChallenge, codeChallengeMethod: 'S256' });
+const response = await mock.fetch(`${url}&persona=user@example.com`);
+const { code } = parseMcpCallbackParams(response.headers.get('location')!);
+
+const { user } = await sdk.authentication.exchangeMcpAuthorizationCode({ code: code!, redirectUri, codeVerifier });
+```
+
+- `parseMcpCallbackParams` comes from `@qelos/sdk`; `codeChallenge` is made from `codeVerifier` by your app.
+- In a browser test, the persona cookie picks the user; without a user the browser is sent to `/login`.
+- A code works once, for its address and verifier.
+- Seed an `mcp-configuration` (`{ key, metadata: { enabled, permittedCallbackUrls } }`) in `configurations` to test a
+  disabled tenant or a refused address. Without one, MCP sign-in is on and accepts any address.
+
 ## Charts
 
 `sdk.blueprints.getChart`, `getPieChart`, `getSum` and `getCount` are computed from the mock's entities, over what the
