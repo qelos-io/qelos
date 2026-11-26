@@ -1,4 +1,4 @@
-import type { QelosNuxtRuntimeConfig } from './types';
+import type { QelosNuxtRuntimeConfig } from './types.js';
 
 /**
  * Resolve the origin to which `/api/**` requests are proxied. The managed

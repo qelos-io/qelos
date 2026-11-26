@@ -5,7 +5,7 @@ import {
   createResolver,
   addTypeTemplate,
 } from '@nuxt/kit';
-import type { QelosNuxtRuntimeConfig } from './types';
+import type { QelosNuxtRuntimeConfig } from './types.js';
 
 export interface QelosNuxtModuleOptions extends QelosNuxtRuntimeConfig {
   /**
@@ -111,17 +111,17 @@ export {};
 
 export default qelosNuxtModule;
 
-export { createQelosMiddleware } from './middleware';
-export { createRequestSdk } from './sdk-factory';
-export { getQelosMock, MOCK_APP_URL } from './mock';
-export type { QelosMockController, MockQelos } from './mock';
-export { defineQelosEventHandler } from './event-handler';
+export { createQelosMiddleware } from './middleware.js';
+export { createRequestSdk } from './sdk-factory.js';
+export { getQelosMock, MOCK_APP_URL } from './mock.js';
+export type { QelosMockController, MockQelos } from './mock.js';
+export { defineQelosEventHandler } from './event-handler.js';
 export type {
   DefineQelosEventHandlerOptions,
   QelosEventContext,
   QelosEventHandler,
-} from './event-handler';
+} from './event-handler.js';
 export type {
   QelosNuxtRuntimeConfig,
   QelosRequestContext,
-} from './types';
+} from './types.js';

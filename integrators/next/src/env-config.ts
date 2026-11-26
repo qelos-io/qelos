@@ -1,4 +1,4 @@
-import type { QelosNextConfig } from './types';
+import type { QelosNextConfig } from './types.js';
 
 /**
  * Build a {@link QelosNextConfig} from `process.env`. Used by the

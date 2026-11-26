@@ -11,10 +11,10 @@ import {
 } from 'h3';
 // @ts-ignore - resolved by Nitro (transitive dep of Nuxt)
 import { joinURL } from 'ufo';
-import { getQelosMock } from '../mock';
-import { serveFromMock } from '../mock-handler';
-import { resolveQelosProxyTarget } from '../proxy-target';
-import type { QelosNuxtRuntimeConfig } from '../types';
+import { getQelosMock } from '../mock.js';
+import { serveFromMock } from '../mock-handler.js';
+import { resolveQelosProxyTarget } from '../proxy-target.js';
+import type { QelosNuxtRuntimeConfig } from '../types.js';
 
 export default defineEventHandler((event) => {
   const config = (useRuntimeConfig().qelos || {}) as QelosNuxtRuntimeConfig;

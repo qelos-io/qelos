@@ -1,10 +1,10 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server.js';
 import {
   getQelosContext,
   runWithQelosContext,
   type GetQelosContextOptions,
-} from './context';
-import type { QelosRequestContext } from './types';
+} from './context.js';
+import type { QelosRequestContext } from './types.js';
 
 export type AppRouteHandler<TContext = unknown> = (
   req: NextRequest,

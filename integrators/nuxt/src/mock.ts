@@ -1,4 +1,4 @@
-import type { QelosNuxtRuntimeConfig } from './types';
+import type { QelosNuxtRuntimeConfig } from './types.js';
 
 /**
  * Minimal structural types so this package's typings don't require the

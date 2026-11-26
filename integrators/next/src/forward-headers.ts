@@ -1,6 +1,6 @@
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
-import { QELOS_USER_HEADER, QELOS_WORKSPACE_HEADER } from './types';
+import { QELOS_USER_HEADER, QELOS_WORKSPACE_HEADER } from './types.js';
 
 /**
  * Replace forwarded identity headers on the outbound request: strip any

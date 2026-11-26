@@ -2,7 +2,7 @@ import type QelosSDK from '@qelos/sdk';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
 import type { QelosSDKOptions } from '@qelos/sdk/types';
-import type { MockQelosOptions } from './mock';
+import type { MockQelosOptions } from './mock.js';
 
 export interface QelosNextConfig {
   /**
