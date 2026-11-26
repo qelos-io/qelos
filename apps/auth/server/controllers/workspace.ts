@@ -11,6 +11,7 @@ import { cookieTokenExpiration } from '../../config';
 import { getRequestHost } from '../services/req-host';
 import { getWorkspaceConfiguration } from '../services/workspace-configuration';
 import { getEncryptedData, setEncryptedData } from '../services/encrypted-data';
+import { mayUseWorkspaceLabels } from '../services/workspace-labels';
 
 const ObjectId = Types.ObjectId;
 
@@ -173,15 +174,15 @@ export async function createWorkspace(req: AuthRequest, res: Response) {
       return;
     }
 
-    const selectedLabelsDefinition = wsConfig.labels.find(definition => {
-      return definition.value?.length === labels.length &&
-        definition.value.map(label => labels.includes(label)).length === labels.length;
-    })
-
-    if (!selectedLabelsDefinition) {
+    if (!wsConfig.labels.some(definition => definition.value?.length === labels.length)) {
       res.status(400).json({ message: 'provided labels does not match available options.' }).end();
       return;
     }
+  }
+
+  if (!req.userPayload.isPrivileged && !mayUseWorkspaceLabels(wsConfig, labels, req.userPayload.roles)) {
+    res.status(400).json({ message: 'provided labels does not match available options.' }).end();
+    return;
   }
 
   try {

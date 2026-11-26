@@ -1,7 +1,7 @@
 import { jsonResponse, type RouteContext, type Router } from '../router/router.js';
 import type { Doc, MockState } from '../state/mock-state.js';
 import { authenticate, isPrivilegedCaller, type AuthContext } from '../auth/authenticate.js';
-import { workspaceRules } from '../auth/rules.js';
+import { mayUseWorkspaceLabels, workspaceRules } from '../auth/rules.js';
 import {
   addMember,
   claimFor,
@@ -122,6 +122,9 @@ export function workspaceRoutes(router: Router, state: MockState) {
       if (!rules.labels?.some((option: Doc) => option.value?.length === labels.length)) {
         return jsonResponse({ message: 'provided labels does not match available options.' }, 400);
       }
+    }
+    if (!isPrivilegedCaller(auth) && !mayUseWorkspaceLabels(rules, labels, auth.user.roles ?? [])) {
+      return jsonResponse({ message: 'provided labels does not match available options.' }, 400);
     }
     if (!name) return jsonResponse({ message: 'failed to create workspace' }, 500);
     const ws = state.workspaces.insert(

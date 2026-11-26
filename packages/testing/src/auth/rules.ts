@@ -27,5 +27,24 @@ export function mayManageApiTokens(authConfig: Record<string, any>, roles: strin
   return matches(permissions.roles, roles) || (!!workspaceRoles && matches(permissions.wsRoles, workspaceRoles));
 }
 
+/**
+ * Whether a user who is not privileged may create a workspace with these labels: when labels are required, an option
+ * the user's roles may choose; otherwise anything but a label kept for options of other roles.
+ */
+export function mayUseWorkspaceLabels(rules: Record<string, any>, labels: string[], roles: string[]): boolean {
+  const options: Array<{ value?: string[]; allowedRolesForCreation?: string[] }> = rules.labels || [];
+  const mayChoose = ({ allowedRolesForCreation: allowed }: (typeof options)[number]) =>
+    !allowed || allowed.includes('*') || allowed.some((role) => roles.includes(role));
+  const open = options.filter(mayChoose);
+  if (!rules.allowNonLabeledWorkspaces) {
+    return open.some(
+      ({ value = [] }) => value.length === labels.length && value.every((l) => labels.includes(l)) && labels.every((l) => value.includes(l)),
+    );
+  }
+  const openLabels = new Set(open.flatMap((option) => option.value || []));
+  const reserved = options.filter((option) => !mayChoose(option)).flatMap((option) => option.value || []);
+  return !labels.some((label) => reserved.includes(label) && !openLabels.has(label));
+}
+
 /** The seeded `auth-configuration`, or undefined when the mock has none. */
 export const authSettings = (state: MockState) => settings(state, 'auth-configuration');
