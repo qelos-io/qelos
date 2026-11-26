@@ -21,19 +21,19 @@ test('router matches method, params and wildcard', async () => {
     ...quiet,
     routes: [
       (r) => {
-        r.register('GET', '/api/users/:id', ({ params }) => ({ id: params.id }));
+        r.register('GET', '/api/widgets/:id', ({ params }) => ({ id: params.id }));
         r.register('POST', '/api/echo', async ({ json }) => ({ got: await json() }));
         r.register('GET', '/api/files/*', ({ params }) => ({ path: params['*'] }));
       },
     ],
   });
   const call = (p: string, init?: RequestInit) => mock.handle(new Request('http://x' + p, init));
-  assert.deepEqual(await (await call('/api/users/a%20b')).json(), { id: 'a b' });
-  assert.deepEqual(await (await call('/api/users/1/')).json(), { id: '1' });
+  assert.deepEqual(await (await call('/api/widgets/a%20b')).json(), { id: 'a b' });
+  assert.deepEqual(await (await call('/api/widgets/1/')).json(), { id: '1' });
   assert.deepEqual(await (await call('/api/files/a/b.txt')).json(), { path: 'a/b.txt' });
   const post = await call('/api/echo', { method: 'POST', body: JSON.stringify({ a: 1 }) });
   assert.deepEqual(await post.json(), { got: { a: 1 } });
-  assert.equal((await call('/api/users/1', { method: 'DELETE' })).status, 404);
+  assert.equal((await call('/api/widgets/1', { method: 'DELETE' })).status, 404);
   assert.equal(new Router().match('GET', '/x'), null);
 });
 

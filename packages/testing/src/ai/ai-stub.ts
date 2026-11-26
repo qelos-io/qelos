@@ -3,6 +3,8 @@ export interface AiToolCall {
   name: string;
   /** object (stringified for you) or a JSON string */
   arguments?: unknown;
+  /** what the tool returned, for tools the service runs itself (not listed in the app's `clientTools`) */
+  result?: unknown;
 }
 
 export interface AiReply {
@@ -12,8 +14,8 @@ export interface AiReply {
   chunks?: string[];
   toolCalls?: AiToolCall[];
   /**
-   * Streaming with `toolCalls` the app does not run itself: the text the agent answers after the tools ran
-   * (streamed as `followup_chunk` events).
+   * With `toolCalls`: the text the agent answers after the tools ran. For tools the service runs itself that is
+   * part of the same response; for the app's `clientTools` it answers the request that brings their results back.
    */
   followup?: string | string[];
   /** answer with this HTTP error instead of a completion */

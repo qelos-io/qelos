@@ -68,6 +68,8 @@ export interface MockSeed {
   components?: Array<Record<string, unknown>>;
   events?: Array<Record<string, unknown>>;
   agents?: Array<Record<string, unknown>>;
+  /** chat threads, e.g. `{ _id, integration, user, workspace?, messages: [] }` */
+  threads?: Array<Record<string, unknown>>;
   /** canned AI replies `{ agentId?, match?, content }` - first matching entry wins */
   aiResponses?: Array<Record<string, unknown>>;
   /** seeded webhook/lambda results: `{ integrationId, method?, response, status? }` */

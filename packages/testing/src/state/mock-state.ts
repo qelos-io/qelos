@@ -26,6 +26,8 @@ export const COLLECTION_NAMES = [
   'agents',
   'aiResponses',
   'lambdas',
+  'threads',
+  'encryptedData',
 ] as const;
 export type CollectionName = (typeof COLLECTION_NAMES)[number];
 const ENTITIES_FILE = 'entities';

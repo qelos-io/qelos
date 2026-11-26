@@ -101,12 +101,18 @@ mock.faults.clear();
 `mock.ai` controls what AI agent chat returns, so tests don't depend on a real model:
 
 ```ts
+// AI calls need a signed-in user, as in production: act as a persona (or sign in first)
+const { sdk, mock } = createMockSdk({ seed, persona: 'user@example.com' });
+
 mock.ai.reply(/refund/i, 'I have started your refund');         // regexp, string (substring) or (call) => boolean
 mock.ai.reply('*', ['first answer', 'second answer']);          // a sequence: the last item repeats
-mock.ai.reply('weather', { toolCalls: [{ name: 'get_weather', arguments: { city: 'Paris' } }] });
+mock.ai.reply('weather', {                                      // the agent uses a tool, then answers
+  toolCalls: [{ name: 'get_weather', arguments: { city: 'Paris' }, result: { temp: 21 } }],
+  followup: 'It is 21°C in Paris',
+});
 mock.ai.reply('story', { chunks: ['Once ', 'upon ', 'a time'] }); // streamed as separate chunks
 mock.ai.reply('slow', { content: 'ok', delay: 1500 });
-mock.ai.fail('boom', 503, 'model overloaded');                   // HTTP error
+mock.ai.fail('boom', 500, 'model overloaded');                   // the model provider fails
 
 await sdk.ai.agents.chat('agent1', 'I want a refund');
 expect(mock.ai.calls[0]).toMatchObject({ agentId: 'agent1', message: 'I want a refund' });
@@ -115,15 +121,93 @@ expect(mock.ai.calls[0]).toMatchObject({ agentId: 'agent1', message: 'I want a r
 - Newest rules win, then seeded `aiResponses`, then an echo (`Mock response: <message>`).
 - Streamed calls (`?stream=true` or `accept: text/event-stream`) send the same server-sent events as the Qelos
   AI service: `{ type: 'chunk', content }` ... `{ type: 'done' }`.
-  - With `toolCalls`, tools the app declared in `clientTools` come back as a `client_tool_calls` event. Other tools
-    count as run by the service: tool events, `continuing_conversation`, then your `followup` text as
-    `followup_chunk` events.
-  - A failure (`mock.ai.fail` or `error`) is an `{ type: 'error', message }` event inside a `200` stream, as in the
-    real service. Non-streamed calls answer with the HTTP status.
+- A failure (`mock.ai.fail` or `error`) is an `{ type: 'error', message }` event inside a `200` stream, as in the
+  real service. Non-streamed calls answer with the status you give. The real service answers `500` when the model
+  provider fails, so script other statuses only for what happens before the model is called.
 - Options: `{ agent: 'agent1' }` restricts a rule to one agent, `{ times: 1 }` limits how often it applies.
 - `mock.ai.calls` records every call (`agentId`, `messages`, `message`, `stream`, `threadId`).
 - `reset()` clears rules and recorded calls.
-- Only the mock's text and tool-call shapes are simulated. The mock does not run tools for you.
+- The mock does not run tools. For tools the service runs, you script what they returned (`result`).
+
+### Tool calls
+
+What a reply with `toolCalls` gives the app depends on who runs the tool, as in the real service:
+
+| | Tools the service runs | Tools in the request's `clientTools` |
+|---|---|---|
+| Non-streamed | the final answer (`followup`) in `choices`, plus `function_calls` and `function_results` | `{ type: 'client_tool_calls', functionCalls, backendResults, assistantToolCalls }` |
+| Streamed | tool events, `continuing_conversation`, then `followup` as `followup_chunk` events | a `client_tool_calls` event with the same fields |
+
+A completion never hands tool calls back in `choices[0].message.tool_calls`. When the app runs its client tools and
+sends their results back (messages with `role: 'tool'` and the matching `tool_call_id`), the same rule answers with
+`followup`:
+
+```ts
+mock.ai.reply('open', { toolCalls: [{ name: 'openModal' }], followup: 'Opened' });
+
+const clientTools = [{ name: 'openModal', description: 'Opens a modal' }];
+const messages: any[] = [{ role: 'user', content: 'open it' }];
+const first: any = await sdk.ai.chat.chat('agent1', { messages, clientTools });
+// run first.functionCalls in the app, then send the results back
+messages.push({ role: 'assistant', content: '', tool_calls: first.assistantToolCalls });
+messages.push({ role: 'tool', tool_call_id: first.functionCalls[0].id, content: 'done' });
+const second: any = await sdk.ai.chat.chat('agent1', { messages, clientTools });
+// second.choices[0].message.content === 'Opened'
+```
+
+## Chat threads
+
+`sdk.ai.createThread`, `getThread`, `listThreads` and `deleteThread` work against the mock, and conversations are
+recorded the way the service records them.
+
+```ts
+const agentId = 'a'.repeat(24);
+const { as, mock } = createMockSdk({
+  seed: {
+    personas,
+    agents: [{ _id: agentId, trigger: { details: { recordThread: true } } }],
+  },
+});
+const user = as('user@example.com'); // personas as in the first example
+
+const thread = await user.ai.createThread({ integration: agentId });
+await user.ai.chat.chatInThread(agentId, thread._id, { messages: [{ role: 'user', content: 'Hi' }] });
+const stored = await user.ai.getThread(thread._id); // the question and the answer
+```
+
+- An agent with `trigger.details.recordThread` requires a thread the caller owns. Other agents ignore the thread.
+- `sdk.ai.agents.chat` keeps each conversation in a thread, creating one when you don't pass a `threadId`.
+- Users see their own threads (in their active workspace). Admins see all of them, unless they send `bypassAdmin`.
+- Without seeded `agents`, any agent id is accepted. Once you seed some, creating a thread or using `agents.chat`
+  with an unknown or inactive agent fails with `404`.
+- The thread title is the start of the first user message. The real service writes one with the model.
+- Seed `threads` to start a test with existing history.
+- `limit` on `listThreads` is not applied, as in the service today.
+
+## Managing users
+
+The administrator SDK's user methods (`sdk.users`) work for personas and seeded users with the `admin` role:
+
+```ts
+import QelosAdministratorSDK from '@qelos/sdk/administrator';
+import { PERSONA_HEADER } from '@qelos/testing';
+
+const admin = new QelosAdministratorSDK({
+  appUrl: 'http://qelos.mock',
+  fetch: mock.fetch,
+  extraHeaders: async () => ({ [PERSONA_HEADER]: 'admin@example.com' }),
+});
+
+const created = await admin.users.create({ username: 'new@example.com', password: 'a-password', firstName: 'New', lastName: 'User' });
+// the new user can sign in
+await sdk.authentication.oAuthSignin({ username: 'new@example.com', password: 'a-password' });
+```
+
+- Anyone else gets `401`, as from the real service.
+- Lists and single users carry the fields the service returns: there is no `email` in them.
+- Tenant settings come from the `auth-configuration` document in `configurations`: `treatUsernameAs` (default
+  `email`) and `additionalUserFields`.
+- Removing a user also removes the persona with the same id, so it can no longer act or sign in.
 
 ## Runtime requirement
 

@@ -176,13 +176,15 @@ Entities carry `identifier`/`id`, `user`, `workspace`, `created`, `updated` and 
 | Blueprints | `GET /api/blueprints[/:id]`; `POST`, `PUT /:id`, `DELETE /:id` for admins |
 | Configurations | `GET`/`PUT /api/configurations/app-configuration` (PUT merges `metadata`); `/api/configurations[/:key]` CRUD (non-public ones readable by admins only) |
 | Blocks / components | `/api/blocks[/:id]`, `/api/components[/:id]` - read for all, write for admins |
-| AI | `/api/ai/agents` CRUD from seed `agents`; `POST /api/ai/agents/:id/chat`, `GET .../chat` (SSE) and `/api/ai/:id/chat-completion[/:threadId]` answer from seed `aiResponses` (`[{ agentId?, match?, content }]`, first match wins) or echo `Mock response: <message>` |
+| AI | `/api/ai/agents` CRUD from seed `agents`; `POST /api/ai/agents/:id/chat`, `GET .../chat` (SSE) and `/api/ai/:id/chat-completion[/:threadId]` answer from `mock.ai`, then seed `aiResponses` (`[{ agentId?, match?, content }]`, first match wins), or echo `Mock response: <message>`; tool calls and `clientTools` are answered like the service |
+| AI threads | `GET`/`POST /api/ai/threads`, `GET`/`DELETE /api/ai/threads/:id` - own threads, all for admins; chats are recorded in them (agents with `recordThread`, and every `agents/:id/chat`) |
+| Users (admin) | `GET /api/users[/stats\|/:id]`, `POST`, `PUT /:id`, `DELETE /:id`, `GET`/`POST /:id/encrypted` - admins only (`401` otherwise) |
 | Events | `GET /api/events` (filters `kind`, `eventName`, `source`, `user`, `workspace`, `search`, `from`/`to`, `page`/`limit`), `GET /api/events/:id`, `POST /api/events` (stored in memory) |
 | Lambdas | `/api/webhooks/:integrationId` - any method; answers the seed `lambdas` entry `{ integrationId, method?, response, status? }` or `{}` |
 | Payments | `GET /api/plans/public` and `/api/invoices` are empty; no plan or subscription exists |
 | Secrets | never returned (`GET` is empty/404) and never stored |
 
-Writes made by admins/personas land in `mock.state`, so they persist when `dataDir` is set. The seed accepts `components`, `events`, `agents`, `aiResponses` and `lambdas` in addition to the collections above.
+Writes made by admins/personas land in `mock.state`, so they persist when `dataDir` is set. The seed accepts `components`, `events`, `agents`, `aiResponses`, `lambdas` and `threads` in addition to the collections above.
 
 ## State management API
 
