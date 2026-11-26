@@ -85,6 +85,18 @@ A blueprint's `limitations` work as in production: creating one entity more than
 `reached limit of allowed entities`, by `scope` (`tenant`, `workspace` or `user`), `roles`, `workspaceLabels` and
 `properties`. Like permissions, they are not checked for a call with no credentials, unless `strictPermissions` is on.
 
+### Calculated properties
+
+A blueprint's `updateMapping` calculates properties with `jq` on every create and update. The mock does the same when
+the optional `node-jq` package is installed, the library the service uses:
+
+```bash
+npm install --save-dev node-jq
+```
+
+Installing it downloads the `jq` program, so allow its install script if your package manager asks (pnpm does).
+Without it, the mock warns once and leaves those properties as they were sent.
+
 ## Inspecting and resetting state
 
 - `mock.state` is the live in-memory state (`snapshot()`, `collection(name)`, `seed()`).
