@@ -5,7 +5,8 @@
   "main": "./dist/index.js",
   "private": false,
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "node --test test/"
   },
   "keywords": [],
   "author": "",
