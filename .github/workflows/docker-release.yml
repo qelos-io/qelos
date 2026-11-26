@@ -14,10 +14,13 @@ permissions:
 jobs:
   setup:
     runs-on: ubuntu-latest
+    # Release only what was pushed to this repository's main branch. This workflow runs with write access to the
+    # registry, so it must never build or publish anything that comes out of a pull request run.
     if: >-
       ${{ github.event.workflow_run.conclusion == 'success' &&
-      (github.event.workflow_run.head_branch == 'main' ||
-      github.event.workflow_run.event == 'pull_request') }}
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository }}
     outputs:
       services: '["admin", "auth", "assets", "content", "drafts", "gateway", "payments", "plugins", "secrets", "no-code", "ai", "mcp"]'
     steps:
