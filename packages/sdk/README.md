@@ -10,6 +10,19 @@ Can be used for both backend and frontend applications.
 npm install @qelos/sdk
 ```
 
+## ES modules and CommonJS
+
+Releases after 4.4.0 ship both builds: `import` loads the ES module build (`dist/`) and `require()` loads the
+CommonJS build (`dist/cjs/`), each with its own type declarations.
+
+Use one of them per application. If a process loads the SDK both ways (for example your code uses `import` while a
+CommonJS dependency uses `require()`), it holds two separate copies of the SDK classes:
+
+- `instanceof` checks fail across the copies (`sdkFromRequire instanceof QelosSDKFromImport` is `false`).
+- Anything stored on a class or module is not shared between them.
+
+Instances themselves work as usual, so pass instances around and avoid relying on `instanceof`.
+
 ## Usage
 
 ### Main SDK
