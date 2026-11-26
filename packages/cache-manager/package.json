@@ -6,7 +6,7 @@
   "private": false,
   "scripts": {
     "build": "tsc",
-    "test": "node --test test/"
+    "test": "node --test \"test/**/*.test.mjs\""
   },
   "keywords": [],
   "author": "",
