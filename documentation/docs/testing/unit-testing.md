@@ -63,7 +63,9 @@ await expect(todos.update(mine.identifier, { title: 'changed' })).rejects.toThro
   | Blueprints | signed-in users (without `permissions` and other settings, unless admin or `plugin`) | `admin`, `plugin` |
   | Configurations | one: anyone if public, else `admin`. The list: `admin` | `admin` |
   | Blocks | one: anyone (content only, unless editor). The list: editors | `editor`, `plugin`, `admin` |
-  | Components, agents | `admin`, `plugin` | `admin`, `plugin` |
+  | Components, agents, integrations, connections | `admin`, `plugin` | `admin`, `plugin` |
+  | Plugins | the list: anyone (fewer settings unless `admin`). One: `admin`, `plugin` | `admin` |
+  | Functions (`manageLambdas`) | `admin` | `admin` |
   | Agent chat and webhooks | signed-in users, within the roles the agent or `lambdas` entry asks for | |
 
   A refused call answers `401`, with these exceptions: a private configuration is `404`, listing agents is `500`, and a
@@ -266,6 +268,33 @@ mock.payments.cancel(subscriptionId);           // canceled
   answers `403`.
 - As in the service today, a non-admin with an **active workspace** can list the workspace's subscriptions and
   invoices, but gets `403` on a single one (including its activity and cancelling it).
+
+## Integrations, connections and plugins
+
+The administrator SDK's `integrations`, `integrationSources`, `manageLambdas` and `managePlugins` work against the
+mock, with the validation of the service and no outside calls:
+
+```ts
+const base = { labels: [], metadata: {}, authentication: {} };
+const qelosSource = { ...base, name: 'qelos', kind: 'qelos' };
+const openaiSource = { ...base, name: 'openai', kind: 'openai', authentication: { token: 'any-value' } };
+const qelos = await admin.integrationSources.create(qelosSource);
+const openai = await admin.integrationSources.create(openaiSource);
+
+await admin.integrations.create({
+  trigger: { source: qelos._id, operation: 'chatCompletion', details: { name: 'Helper' } },
+  target: { source: openai._id, operation: 'chatCompletion', details: {} },
+  active: true,
+});
+// `admin.ai.agents.list()` now has the "Helper" agent
+```
+
+- `admin` is an administrator SDK, created as in [Managing users](#managing-users).
+- Secrets are never answered or stored. A status check answers `connected` when the settings and credentials it needs
+  are there; use [fault injection](#fault-injection) to test a failing one.
+- Functions need an `aws` or `cloudflare` connection. They are kept in `mock.state.collection('functions')`; nothing is
+  deployed or run.
+- `remove` on these APIs does not reject when refused: check the list.
 
 ## Charts
 

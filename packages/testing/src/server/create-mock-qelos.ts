@@ -16,6 +16,8 @@ import { threadRoutes } from '../routes/threads.js';
 import { paymentRoutes } from '../routes/payments.js';
 import { eventRoutes } from '../routes/events.js';
 import { ragRoutes } from '../routes/rag.js';
+import { integrationRoutes } from '../routes/integrations.js';
+import { pluginRoutes } from '../routes/plugins.js';
 import { createPaymentsControls, type PaymentsControls } from '../payments/controls.js';
 import { managementRoutes } from '../routes/management.js';
 import { loadCassette, type Cassette, type CassetteExchange } from '../cassette/index.js';
@@ -125,7 +127,7 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
     const resolveActor = createActorResolver(
       authenticate ?? createDefaultAuthenticate(config.defaultPersona, { strict: config.strictPermissions }),
     );
-    for (const module of [entitiesRoutes({ resolveActor }), contentRoutes({ resolveActor }), stubRoutes({ resolveActor, ai }), userRoutes, threadRoutes, paymentRoutes, eventRoutes, ragRoutes({ resolveActor })]) {
+    for (const module of [entitiesRoutes({ resolveActor }), contentRoutes({ resolveActor }), stubRoutes({ resolveActor, ai }), userRoutes, threadRoutes, paymentRoutes, eventRoutes, ragRoutes({ resolveActor }), integrationRoutes({ resolveActor }), pluginRoutes({ resolveActor })]) {
       router.use(module, state);
     }
   }

@@ -1,9 +1,18 @@
-import type { Doc } from '../state/mock-state.js';
+import type { Doc, MockState } from '../state/mock-state.js';
 import { isSignedIn, type MockActor } from '../routes/actor.js';
 
 /** Agents as `apps/ai` shapes them (`agent-integration-mapping.ts`), and who may use one (`source-service.ts`). */
 
 const defined = <T>(...values: T[]) => values.find((v) => v !== undefined);
+
+/** an integration a chat completion triggers is an agent */
+const isAgentIntegration = (doc: Doc) => doc.trigger?.operation === 'chatCompletion';
+
+/** every agent: the seeded `agents`, and the `integrations` that are agents */
+export const listAgents = (state: MockState): Doc[] => [...state.agents.list(), ...state.integrations.list(isAgentIntegration)];
+export const findAgent = (state: MockState, id: string): Doc | undefined => listAgents(state).find((agent) => agent._id === id);
+/** where an agent is stored */
+export const agentCollection = (state: MockState, id: string) => (state.agents.get(id) ? state.agents : state.integrations);
 
 /** An agent as the API returns it, from a seeded integration (`trigger` / `target`) or a seeded flat agent. */
 export function toAgent(doc: Doc) {
