@@ -290,7 +290,8 @@ await admin_sdk.manage_blueprints.update("key", {...})
 await admin_sdk.manage_blueprints.remove("key")
 
 # Events
-events = await admin_sdk.events.get_list({"kind": "user", "page": 1})
+page = await admin_sdk.events.get_list({"kind": "user", "page": 0})
+events = page["events"]
 await admin_sdk.events.dispatch({
     "source": "my-service",
     "kind": "info",

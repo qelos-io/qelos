@@ -554,11 +554,11 @@ await sdkAdmin.authentication.oAuthSignin({ username, password });
 
 | | |
 |---|---|
-| **Signature** | `sdkAdmin.events.getList(params?: { page?: number; kind?: string; eventName?: string; source?: string; user?: string; workspace?: string; period?: string }): Promise<IQelosEvent[]>` |
-| **Returns** | Events ordered by `created`. Combine `kind` (e.g. `'system'`, `'user'`) with `eventName` to scope. |
+| **Signature** | `sdkAdmin.events.getList(params?: { page?: number; kind?: string; eventName?: string; source?: string; user?: string; workspace?: string; search?: string; period?: string; from?: string; to?: string; limit?: number }): Promise<IQelosEventsPage>` |
+| **Returns** | One page of events, newest first: `{ events, total, totalCapped?, page, limit, totalPages }`. `page` counts from 0. Combine `kind` (e.g. `'system'`, `'user'`) with `eventName` to scope. |
 
 ```typescript
-const recentSignins = await sdkAdmin.events.getList({
+const { events: recentSignins, total } = await sdkAdmin.events.getList({
   eventName: 'user.signin',
   period: '24h',
 });
