@@ -39,7 +39,7 @@ export const managementRoutes: RouteModule = (router, state: MockState) => {
     if (name.startsWith('entities.')) {
       state.entities.replaceBlueprint(name.slice('entities.'.length), docs);
     } else if ((COLLECTION_NAMES as readonly string[]).includes(name)) {
-      const col = state[name as CollectionName];
+      const col = state.collection(name as CollectionName);
       for (const d of col.list()) col.remove(d._id);
       for (const d of docs) col.insert(d);
     } else {

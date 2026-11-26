@@ -11,6 +11,8 @@ import { createActorResolver, createDefaultAuthenticate, type Authenticate } fro
 import { entitiesRoutes } from '../routes/entities.js';
 import { contentRoutes } from '../routes/content.js';
 import { stubRoutes } from '../routes/stubs.js';
+import { userRoutes } from '../routes/users.js';
+import { threadRoutes } from '../routes/threads.js';
 import { managementRoutes } from '../routes/management.js';
 import { loadCassette, type Cassette, type CassetteExchange } from '../cassette/index.js';
 import { createAiStub, type AiStub } from '../ai/ai-stub.js';
@@ -114,7 +116,7 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
   for (const module of routes) router.use(module, state);
   if (builtinRoutes) {
     const resolveActor = createActorResolver(authenticate ?? createDefaultAuthenticate(config.defaultPersona));
-    for (const module of [entitiesRoutes({ resolveActor }), contentRoutes({ resolveActor }), stubRoutes({ resolveActor, ai })]) {
+    for (const module of [entitiesRoutes({ resolveActor }), contentRoutes({ resolveActor }), stubRoutes({ resolveActor, ai }), userRoutes, threadRoutes]) {
       router.use(module, state);
     }
   }

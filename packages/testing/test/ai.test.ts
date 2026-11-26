@@ -41,11 +41,14 @@ test('calls records what the app sent', async () => {
 
 test('tool calls, errors and chunks', async () => {
   const { sdk, mock } = createMockSdk(quiet);
-  mock.ai.reply('weather', { toolCalls: [{ name: 'get_weather', arguments: { city: 'Paris' } }] });
+  // a tool the service runs itself: the answer comes after it, with the calls and their results
+  mock.ai.reply('weather', { toolCalls: [{ name: 'get_weather', arguments: { city: 'Paris' }, result: { temp: 21 } }], followup: '21°C' });
   const res: any = await chat(sdk, 'weather?');
-  assert.equal(res.choices[0].finish_reason, 'tool_calls');
-  assert.equal(res.choices[0].message.tool_calls[0].function.name, 'get_weather');
-  assert.deepEqual(JSON.parse(res.choices[0].message.tool_calls[0].function.arguments), { city: 'Paris' });
+  assert.equal(text(res), '21°C');
+  assert.equal(res.choices[0].finish_reason, 'stop');
+  assert.equal(res.function_calls[0].function.name, 'get_weather');
+  assert.deepEqual(JSON.parse(res.function_calls[0].function.arguments), { city: 'Paris' });
+  assert.deepEqual(res.function_results, [{ tool_call_id: 'call_mock_1', role: 'tool', type: 'function', name: 'get_weather', content: '{"temp":21}' }]);
 
   mock.ai.fail('boom', 503, 'model overloaded');
   await assert.rejects(() => chat(sdk, 'boom'), /overloaded|503/);
