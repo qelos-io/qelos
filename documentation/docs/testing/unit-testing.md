@@ -31,6 +31,13 @@ const { sdk, as, mock, reset } = createMockSdk({
 - **Skip sign-in.** `createMockSdk({ persona: 'admin@example.com' })` makes `sdk` act as that persona from the first call.
 - **Several users in one test.** `const admin = as('admin@example.com')` returns another SDK on the same mock.
 
+### Impersonation and tenant settings
+
+- `adminSdk.impersonateUser(userId, workspaceId)` works as in production: the admin is seen as that user, so what the
+  user may not do is refused. Managing users and workspaces stays open to them.
+- Seed `auth-configuration` or `workspace-configuration` in `configurations` to test who may create API tokens or
+  workspaces. Once an `auth-configuration` exists, API tokens are refused unless it allows them.
+
 ### Permissions
 
 Whoever you act as, signed in or not, is held to the blueprint's `permissions` as in production: only admins can use

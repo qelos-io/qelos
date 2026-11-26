@@ -1,7 +1,6 @@
 import { jsonResponse, type RouteContext, type Router } from '../router/router.js';
 import type { Doc, MockState } from '../state/mock-state.js';
-import { authenticate } from '../auth/authenticate.js';
-import { isPrivilegedUser } from '../auth/accounts.js';
+import { authenticate, isPrivilegedCaller } from '../auth/authenticate.js';
 import { hashPassword } from '../auth/passwords.js';
 import { isValidId } from '../state/ids.js';
 
@@ -52,7 +51,7 @@ export function userRoutes(router: Router, state: MockState) {
   const denied = (ctx: RouteContext): Response | null => {
     const auth = authenticate(ctx.request, state);
     if (!auth) return jsonResponse({ message: 'you are not authorized. must be logged in.' }, 401);
-    if (!isPrivilegedUser(auth.user)) return jsonResponse({ message: 'you are not privileged.' }, 401);
+    if (!isPrivilegedCaller(auth)) return jsonResponse({ message: 'you are not privileged.' }, 401);
     return null;
   };
 

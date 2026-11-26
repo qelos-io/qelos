@@ -72,6 +72,12 @@ function signedInActor(state: MockState, auth: AuthContext): MockActor {
 export function createDefaultAuthenticate(defaultPersona?: string, { strict = false }: { strict?: boolean } = {}): Authenticate {
   return (request, state) => {
     ensureAuthSeeded(state);
+    if (request.headers.get('x-impersonate-user')) {
+      const auth = authenticate(request, state);
+      if (auth?.impersonator) return toActor(auth.user, auth.workspace);
+      // an unknown user or workspace to impersonate leaves nobody signed in
+      if (!auth) return { roles: [] };
+    }
     const cookie = parseCookies(request.headers.get('cookie'))[PERSONA_COOKIE];
     const persona = request.headers.get(PERSONA_HEADER) || (cookie ? safeDecode(cookie) : '');
     if (persona) return personaActor(state, persona);

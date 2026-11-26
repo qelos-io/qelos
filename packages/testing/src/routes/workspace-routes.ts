@@ -1,11 +1,11 @@
 import { jsonResponse, type RouteContext, type Router } from '../router/router.js';
 import type { Doc, MockState } from '../state/mock-state.js';
-import { authenticate, type AuthContext } from '../auth/authenticate.js';
+import { authenticate, isPrivilegedCaller, type AuthContext } from '../auth/authenticate.js';
+import { workspaceRules } from '../auth/rules.js';
 import {
   addMember,
   claimFor,
   findMember,
-  isPrivilegedUser,
   newWorkspaceDoc,
 } from '../auth/accounts.js';
 import { buildSetCookie, cookieTokenName, issueToken } from '../auth/tokens.js';
@@ -52,7 +52,7 @@ export function workspaceRoutes(router: Router, state: MockState) {
   function load(ctx: RouteContext, requireWsAdmin = false, from = 'get-workspace'): Loaded | Response {
     const auth = authenticate(ctx.request, state);
     if (!auth) return unauthorized();
-    const privileged = isPrivilegedUser(auth.user);
+    const privileged = isPrivilegedCaller(auth);
     const ws = state.workspaces.get(ctx.params.workspaceId);
     if (!ws || (!privileged && !findMember(ws, auth.user._id))) {
       return jsonResponse({ message: 'workspace not found', from }, 404);
@@ -84,7 +84,7 @@ export function workspaceRoutes(router: Router, state: MockState) {
   router.register('GET', '/api/workspaces/all', ({ request, query }) => {
     const auth = authenticate(request, state);
     if (!auth) return unauthorized();
-    if (!isPrivilegedUser(auth.user)) return jsonResponse({ message: 'you are not privileged.' }, 401);
+    if (!isPrivilegedCaller(auth)) return jsonResponse({ message: 'you are not privileged.' }, 401);
     const ids = query.get('_id')?.split(',');
     const member = query.get('members.user')?.split(',');
     const labels = query.get('labels')?.split(',');
@@ -109,8 +109,19 @@ export function workspaceRoutes(router: Router, state: MockState) {
     if (!auth) return unauthorized();
     const body = (await ctx.json()) || {};
     const { name, logo, invites = [], labels = [] } = body;
+    const rules = workspaceRules(state);
+    const creators: string[] = rules.creationPrivilegedRoles ?? [];
+    if (creators.length && !creators.some((role) => role === '*' || auth.user.roles?.includes(role))) {
+      return jsonResponse({ message: 'you are not permitted to create a workspace' }, 403);
+    }
     if (!Array.isArray(labels)) {
       return jsonResponse({ message: 'please provide all mandatory properties (missing "labels").' }, 400);
+    }
+    if (!rules.allowNonLabeledWorkspaces) {
+      if (!labels.length) return jsonResponse({ message: 'please provide labels with valid values.' }, 400);
+      if (!rules.labels?.some((option: Doc) => option.value?.length === labels.length)) {
+        return jsonResponse({ message: 'provided labels does not match available options.' }, 400);
+      }
     }
     if (!name) return jsonResponse({ message: 'failed to create workspace' }, 500);
     const ws = state.workspaces.insert(
@@ -120,7 +131,7 @@ export function workspaceRoutes(router: Router, state: MockState) {
         labels,
         invites: normalizeInvites(invites),
         members:
-          isPrivilegedUser(auth.user) && Array.isArray(body.members) && body.members.length
+          isPrivilegedCaller(auth) && Array.isArray(body.members) && body.members.length
             ? body.members
             : [{ user: auth.user._id, roles: ['admin', 'user'], created: new Date().toISOString() }],
       }),
@@ -143,7 +154,7 @@ export function workspaceRoutes(router: Router, state: MockState) {
     if (name) patch.name = name;
     if (typeof logo === 'string') patch.logo = logo;
     if (invites) patch.invites = normalizeInvites(invites, ws.invites);
-    if (isPrivilegedUser(auth.user)) {
+    if (isPrivilegedCaller(auth)) {
       if (members) {
         if (!Array.isArray(members)) return jsonResponse({ message: 'Invalid data. Must be an array.' }, 400);
         if (!members.length) return jsonResponse({ message: 'Members cannot be empty.' }, 400);
@@ -192,7 +203,7 @@ export function workspaceRoutes(router: Router, state: MockState) {
   router.register('POST', '/api/workspaces/:workspaceId/members', async (ctx) => {
     const auth = authenticate(ctx.request, state);
     if (!auth) return unauthorized();
-    if (!isPrivilegedUser(auth.user)) return jsonResponse({ message: 'you are not privileged.' }, 401);
+    if (!isPrivilegedCaller(auth)) return jsonResponse({ message: 'you are not privileged.' }, 401);
     const { userId, roles } = (await ctx.json()) || {};
     if (!userId || !Array.isArray(roles)) {
       return jsonResponse({ message: 'Invalid input. Provide "userId", "roles".' }, 400);
@@ -222,7 +233,7 @@ export function workspaceRoutes(router: Router, state: MockState) {
     const loaded = load(ctx, true);
     if (loaded instanceof Response) return loaded;
     const { userId } = ctx.params;
-    if (!findMember(loaded.ws, userId)) return jsonResponse({ message: 'Member not found in the workspace.' }, 404);
+    if (!findMember(loaded.ws, userId)) return jsonResponse({ message: 'Workspace not found.' }, 404);
     touch(loaded.ws, { members: loaded.ws.members.filter((m: Doc) => m.user !== userId) });
     return { message: 'Member removed from workspace.', removedMemberId: userId, userId };
   });
@@ -233,6 +244,8 @@ export function workspaceRoutes(router: Router, state: MockState) {
     if (loaded instanceof Response) return loaded;
     const { auth, ws } = loaded;
     const claim = claimFor(ws, auth.user._id);
+    // an impersonating administrator changes nobody's session
+    if (auth.impersonator) return memberView(ws, auth.user._id);
     if (!claim) return jsonResponse({ message: 'workspace not found', from: 'get-workspace' }, 404);
     state.users.update(auth.user._id, { activeWorkspace: ws._id });
     const body = JSON.stringify(memberView(ws, auth.user._id));
@@ -246,6 +259,34 @@ export function workspaceRoutes(router: Router, state: MockState) {
       state.sessions.update(session._id, { workspaceId: ws._id });
     }
     return new Response(body, { headers });
+  });
+
+  // ---------------------------------------------------------------- encrypted data (administrators)
+  function encrypted(ctx: RouteContext): { key: string; exists: boolean } | Response {
+    const auth = authenticate(ctx.request, state);
+    if (!auth) return unauthorized();
+    if (!isPrivilegedCaller(auth)) return jsonResponse({ message: 'you are not privileged.' }, 401);
+    const { workspaceId } = ctx.params;
+    const extra = ctx.request.headers.get('x-encrypted-id');
+    return { key: `workspace:${workspaceId}${extra ? `-${extra}` : ''}`, exists: !!state.workspaces.get(workspaceId) };
+  }
+
+  router.register('GET', '/api/workspaces/:workspaceId/encrypted', (ctx) => {
+    const data = encrypted(ctx);
+    if (data instanceof Response) return data;
+    if (!data.exists) return jsonResponse({ message: 'workspace does not exist' }, 404);
+    return jsonResponse(state.collection('encryptedData').get(data.key)?.value ?? null);
+  });
+
+  router.register('POST', '/api/workspaces/:workspaceId/encrypted', async (ctx) => {
+    const data = encrypted(ctx);
+    if (data instanceof Response) return data;
+    if (!data.exists) return jsonResponse({ message: 'failed to set encrypted data for user' }, 400);
+    const value = await ctx.json();
+    const store = state.collection('encryptedData');
+    if (store.get(data.key)) store.replace(data.key, { value });
+    else store.insert({ _id: data.key, value });
+    return {};
   });
 
   // ---------------------------------------------------------------- invites
@@ -276,11 +317,10 @@ export function workspaceRoutes(router: Router, state: MockState) {
         404,
       );
     }
-    const invite = ws.invites.find((i: Doc) => lower(i.email) === email);
     touch(ws, { invites: ws.invites.filter((i: Doc) => lower(i.email) !== email) });
     if (kind === 'accept' && !findMember(ws, auth.user._id)) {
-      const roles = invite?.roles?.length ? invite.roles : ['member'];
-      addMember(state, state.workspaces.get(ws._id)!, auth.user._id, roles);
+      // the service gives these roles, whatever the invite names
+      addMember(state, state.workspaces.get(ws._id)!, auth.user._id, ['member', 'user']);
     }
     return { success: true };
   });
