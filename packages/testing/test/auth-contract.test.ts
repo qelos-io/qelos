@@ -108,8 +108,10 @@ describe('the mock follows the auth service', () => {
       { creationPrivilegedRoles: ['admin'], allowNonLabeledWorkspaces: true, labels: [] },
       { creationPrivilegedRoles: ['*'], allowNonLabeledWorkspaces: true, labels: [] },
       { creationPrivilegedRoles: [], allowNonLabeledWorkspaces: false, labels: [{ value: ['pro'] }, { value: ['a', 'b'] }] },
+      { allowNonLabeledWorkspaces: false, labels: [{ value: ['pro'], allowedRolesForCreation: ['sales'] }, { value: ['free'] }] },
+      { allowNonLabeledWorkspaces: true, labels: [{ value: ['pro'], allowedRolesForCreation: ['sales'] }, { value: ['free'] }] },
     ];
-    const bodies = [{ name: 'w' }, { name: 'w', labels: 'x' }, { name: 'w', labels: ['pro'] }, { name: 'w', labels: ['x', 'y', 'z'] }];
+    const bodies = [{ name: 'w' }, { name: 'w', labels: 'x' }, { name: 'w', labels: ['pro'] }, { name: 'w', labels: ['free'] }, { name: 'w', labels: ['other'] }, { name: 'w', labels: ['x', 'y', 'z'] }];
     for (const [index, metadata] of rules.entries()) {
       // the service caches the configuration per tenant
       const tenant = `tenant-${index}`;

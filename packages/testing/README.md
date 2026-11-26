@@ -85,7 +85,7 @@ Seed the tenant's own configuration documents to test its rules. Without them th
 | `configurations` key | Effect |
 |---|---|
 | `auth-configuration` | `allowUserTokenAuthentication` and `tokenAuthenticationPermissions` (`roles`, `wsRoles`) decide who may manage API tokens: **once the document exists, a tenant has to allow it** |
-| `workspace-configuration` | `isActive: false` signs users in without a workspace; `creationPrivilegedRoles`, `allowNonLabeledWorkspaces` and `labels` limit workspace creation |
+| `workspace-configuration` | `isActive: false` signs users in without a workspace; `creationPrivilegedRoles`, `allowNonLabeledWorkspaces` and `labels` (with `allowedRolesForCreation`) limit who creates workspaces, and with which labels |
 
 ### Permission helpers
 
