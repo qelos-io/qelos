@@ -22,5 +22,6 @@ registerCommands(program);
 ;(async () => {
 
 await program.help().parseAsync();
-process.exit(0);
+// a command reports failure through process.exitCode; an explicit exit(0) would hide it
+process.exit(process.exitCode ?? 0);
 })();

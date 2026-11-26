@@ -111,9 +111,11 @@ function parseToolArguments(argStr) {
  * Streams a chat completion, handling client_tool_calls in a loop.
  * Re-calls the stream automatically when tools are executed.
  *
- * @returns {{ fullResponse: string, allMessages: object[] }}
+ * A failure the service reports inside the stream is printed and returned as `error`; whatever else arrived is kept.
+ *
+ * @returns {{ fullResponse: string, allMessages: object[], error?: string }}
  */
-async function streamWithTools(sdk, integrationId, thread, chatOptions, clientTools, verbose, depth = 0, onMessages = null, approvalManager = null) {
+export async function streamWithTools(sdk, integrationId, thread, chatOptions, clientTools, verbose, depth = 0, onMessages = null, approvalManager = null) {
   const MAX_TOOL_DEPTH = getConfig()?.maxToolDepth ?? 25;
   if (depth >= MAX_TOOL_DEPTH) {
     process.stdout.write(yellow(`\n[warning] Max tool call depth (${MAX_TOOL_DEPTH}) reached.\n\n`));
@@ -143,6 +145,14 @@ async function streamWithTools(sdk, integrationId, thread, chatOptions, clientTo
   let pendingClientToolCalls = null;
   let labelWritten = false;
   let renderer = createStreamingRenderer();
+  let streamError = '';
+
+  const writeLabel = () => {
+    if (!labelWritten) {
+      process.stdout.write(green('Assistant: '));
+      labelWritten = true;
+    }
+  };
 
   for await (const data of processor) {
     if (verbose && data.type !== 'chunk' && data.type !== 'followup_chunk') {
@@ -158,16 +168,30 @@ async function streamWithTools(sdk, integrationId, thread, chatOptions, clientTo
     }
     if (data.type === 'chunk' || data.type === 'followup_chunk') {
       if (data.content) {
-        if (!labelWritten) {
-          process.stdout.write(green('Assistant: '));
-          labelWritten = true;
-        }
+        writeLabel();
         assistantContent += data.content;
         // Stream the content with markdown formatting
         const formatted = renderer.process(data.content);
         process.stdout.write(formatted);
       }
       if (data.chunk?.choices?.[0]?.finish_reason === 'stop') break;
+    } else if (data.type === 'full_content') {
+      // the whole message at once: it replaces what was streamed. Text already printed cannot be taken back,
+      // so only the missing part is printed, or the whole message on a new line if it differs.
+      if (data.content) {
+        writeLabel();
+        const continues = data.content.startsWith(assistantContent);
+        if (!continues) {
+          process.stdout.write(`${renderer.end()}\n`);
+          renderer = createStreamingRenderer();
+        }
+        const missing = continues ? data.content.slice(assistantContent.length) : data.content;
+        assistantContent = data.content;
+        if (missing) process.stdout.write(renderer.process(missing));
+      }
+    } else if (data.type === 'error') {
+      // keep reading: the service can go on answering after a failed tool
+      streamError = data.message || 'Something went wrong';
     } else if (data.type === 'function_executed') {
       let args = {};
       try { args = JSON.parse(data.functionCall?.arguments || '{}'); } catch {}
@@ -178,6 +202,10 @@ async function streamWithTools(sdk, integrationId, thread, chatOptions, clientTo
       break;
     }
   }
+
+  const reportError = () => {
+    if (streamError) console.error(red(`Error: ${streamError}`));
+  };
 
   // No pending tool calls — close formatting and add newlines
   if (!pendingClientToolCalls || !clientTools.length) {
@@ -193,11 +221,13 @@ async function streamWithTools(sdk, integrationId, thread, chatOptions, clientTo
       { role: 'assistant', content: assistantContent },
     ];
     onMessages?.(finalMsgs);
-    return { fullResponse: assistantContent, allMessages: finalMsgs };
+    reportError();
+    return { fullResponse: assistantContent, allMessages: finalMsgs, error: streamError || undefined };
   }
 
   // Handle client tool calls
   process.stdout.write('\n');
+  reportError();
   const { functionCalls, backendResults, assistantToolCalls } = pendingClientToolCalls;
 
   const toolHandlers = new Map(
@@ -260,7 +290,7 @@ async function streamWithTools(sdk, integrationId, thread, chatOptions, clientTo
     process.stdout.write('\n');
     const msgs = chatOptions.messages || [];
     onMessages?.(msgs);
-    return { fullResponse: assistantContent, allMessages: msgs };
+    return { fullResponse: assistantContent, allMessages: msgs, error: streamError || undefined };
   }
 
   // Build updated message history with tool results
@@ -295,7 +325,7 @@ async function streamWithTools(sdk, integrationId, thread, chatOptions, clientTo
   const followUp = await streamWithTools(sdk, integrationId, thread, newChatOptions, clientTools, verbose, depth + 1, onMessages, approvalManager);
 
   const parts = [assistantContent, followUp.fullResponse].filter(s => s?.trim());
-  return { fullResponse: parts.join('\n'), allMessages: followUp.allMessages };
+  return { fullResponse: parts.join('\n'), allMessages: followUp.allMessages, error: followUp.error || streamError || undefined };
 }
 
 export default async function agentController(argv) {
@@ -530,7 +560,7 @@ export default async function agentController(argv) {
 
         // Send initial message if provided
         if (userMessage) {
-          const { fullResponse, allMessages } = await streamWithTools(
+          const { fullResponse, allMessages, error } = await streamWithTools(
             sdk,
             resolvedIntegrationId,
             thread,
@@ -543,6 +573,8 @@ export default async function agentController(argv) {
           );
           currentMessages = allMessages;
           if (exportFile) exportToFile(exportFile, fullResponse);
+          // a script running a single message has to see that it failed
+          if (error && !interactive) process.exitCode = 1;
         }
 
         // Interactive loop with basic input
