@@ -1,6 +1,7 @@
 import { jsonResponse, MockHttpError, type RouteContext, type RouteModule } from '../router/router.js';
 import type { Doc, MockState } from '../state/mock-state.js';
-import { requireAdmin, type ActorResolver } from './actor.js';
+import { isSignedIn, mayAct, type ActorResolver, type MockActor } from './actor.js';
+import { agentIntegration, agentRefusal, toAgent } from '../ai/agents.js';
 import type { AiReply, AiStub } from '../ai/ai-stub.js';
 import { aiTurn, completionBody, failureResponse, recordTurn, streamResponse } from '../ai/turn.js';
 import { newThread, ownsThread, recordRequest } from '../ai/threads.js';
@@ -20,6 +21,19 @@ function aiReply(state: MockState, agentId: string, message: string): string {
     (r) => (!r.agentId || r.agentId === agentId) && (!r.match || message.toLowerCase().includes(String(r.match).toLowerCase())),
   );
   return hit ? String(hit.content ?? '') : `Mock response: ${message}`;
+}
+
+function webhookRefusal(actor: MockActor | null, hit: Doc | undefined): string | undefined {
+  if (!actor || !hit) return undefined;
+  const roles: string[] = [...actor.roles, ...(actor.workspace?.roles ?? [])];
+  if (hit.roles?.length && !hit.roles.some((role: string) => role === 'guest' || roles.includes(role))) {
+    return 'Access denied: insufficient permissions';
+  }
+  const labels: string[] = actor.workspace?.labels ?? [];
+  if (hit.workspaceLabels?.length && !hit.workspaceLabels.every((label: string) => labels.includes(label))) {
+    return 'Access denied: missing required workspace labels';
+  }
+  return undefined;
 }
 
 /** Deterministic stubs for the services an app normally proxies: AI and lambdas. */
@@ -70,13 +84,20 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
       return thread && thread.integration === agentId && ownsThread(thread, auth) ? threadId : threadNotFound();
     }
 
+    const unauthorized = () => new Response(null, { status: 401 });
+    const refused = (text: string) => jsonResponse({ message: text }, 403);
+
     async function agentChat(ctx: RouteContext, messages: any[], threadId: unknown, stream: boolean) {
+      const actor = await resolveActor(ctx);
+      if (!isSignedIn(actor)) return unauthorized();
       const id = ctx.params.id;
       const agent = state.agents.get(id);
       // with no agents in the mock, any id answers; once some are seeded the id has to be one of them
       if (state.agents.list().length && (!agent || agent.active === false)) {
         return jsonResponse({ message: 'Agent not found' }, 404);
       }
+      const refusal = agentRefusal(actor, agent);
+      if (refusal) return refused(refusal);
       if (!messages.length) return jsonResponse({ message: 'messages are required' }, 400);
       const thread = agentThread(ctx, id, threadId);
       if (thread instanceof Response) return thread;
@@ -84,10 +105,39 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
     }
 
     // ---- AI agents (seeded in `agents`) + chat completions
-    router.register('GET', '/api/ai/agents', () => state.agents.list());
+    // The service stores agents as integrations, which only administrators and plugins may manage
+    const AGENT_MANAGERS = ['admin', 'plugin'];
+    const failed = (text: string, status: number) => jsonResponse({ message: text }, status);
+    const manage = (refusal: () => Response, handler: (ctx: RouteContext, actor: MockActor | null) => unknown) => async (ctx: RouteContext) => {
+      const actor = await resolveActor(ctx);
+      if (!isSignedIn(actor)) return unauthorized();
+      return mayAct(actor, AGENT_MANAGERS) ? handler(ctx, actor) : refusal();
+    };
+    /** an agent by the id of the request, answering 404 with the failure message of the action */
+    const existing = (failure: string, handler: (agent: Doc, ctx: RouteContext) => unknown) =>
+      manage(() => failed(failure, 401), (ctx) => {
+        const agent = state.agents.get(ctx.params.id);
+        return agent ? handler(agent, ctx) : failed(failure, 404);
+      });
+
+    router.register('GET', '/api/ai/agents', manage(() => failed('Failed to list agents', 500), ({ query }) => {
+      const active = query.get('active');
+      return state.agents.list().map(toAgent).filter((a) => active === null || a.active === ['true', '1'].includes(active));
+    }));
     router.register('POST', '/api/ai/agents', async (ctx) => {
-      requireAdmin(await resolveActor(ctx));
-      return state.agents.insert((await ctx.json()) || {});
+      const actor = await resolveActor(ctx);
+      if (!isSignedIn(actor)) return unauthorized();
+      const payload = (await ctx.json()) || {};
+      if (!payload.name) return failed('name is required', 400);
+      if (!payload.triggerSource || !payload.targetSource) return failed('triggerSource and targetSource are required', 400);
+      if (!mayAct(actor, AGENT_MANAGERS)) return failed('Failed to create agent', 401);
+      const agent = state.agents.insert({
+        ...agentIntegration(payload),
+        active: payload.active !== false,
+        tenant: state.settings.tenantId,
+        created: new Date().toISOString(),
+      });
+      return jsonResponse(toAgent(agent), 201);
     });
     router.register('POST', '/api/ai/agents/:id/chat', async (ctx) => {
       const body = (await ctx.json()) || {};
@@ -101,23 +151,16 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
       if (!lastUserMessage(messages) && ctx.query.get('message')) messages = [{ role: 'user', content: ctx.query.get('message') }];
       return agentChat(ctx, messages, ctx.query.get('threadId'), true);
     });
-    router.register('GET', '/api/ai/agents/:id', (ctx) => {
-      const agent = state.agents.get(ctx.params.id);
-      if (!agent) throw new MockHttpError(404, 'agent not found');
-      return agent;
-    });
-    router.register('PUT', '/api/ai/agents/:id', async (ctx) => {
-      requireAdmin(await resolveActor(ctx));
-      const { _id, ...changes } = (await ctx.json()) || {};
-      const agent = state.agents.update(ctx.params.id, changes);
-      if (!agent) throw new MockHttpError(404, 'agent not found');
-      return agent;
-    });
-    router.register('DELETE', '/api/ai/agents/:id', async (ctx) => {
-      requireAdmin(await resolveActor(ctx));
-      if (!state.agents.remove(ctx.params.id)) throw new MockHttpError(404, 'agent not found');
-      return { success: true };
-    });
+    router.register('GET', '/api/ai/agents/:id', existing('Failed to get agent', toAgent));
+    router.register('PUT', '/api/ai/agents/:id', existing('Failed to update agent', async (agent, ctx) => {
+      const payload = (await ctx.json()) || {};
+      const changes = { ...agentIntegration(payload, agent), ...(payload.active !== undefined ? { active: payload.active } : {}) };
+      return toAgent(state.agents.update(agent._id, changes)!);
+    }));
+    router.register('DELETE', '/api/ai/agents/:id', existing('Failed to delete agent', (agent) => {
+      state.agents.remove(agent._id);
+      return { success: true, message: 'Agent deleted' };
+    }));
     for (const path of ['/api/ai/:id/chat-completion', '/api/ai/:id/chat-completion/:threadId']) {
       router.register('POST', path, async (ctx) => {
         const body = (await ctx.json()) || {};
@@ -125,16 +168,23 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
         const stream = ctx.query.get('stream') === 'true' || (ctx.request.headers.get('accept') ?? '').includes('text/event-stream');
         const thread = completionThread(ctx, ctx.params.id);
         if (thread instanceof Response) return thread;
+        const refusal = agentRefusal(await resolveActor(ctx), state.agents.get(ctx.params.id));
+        if (refusal) return refused(refusal);
         return respond(ctx.params.id, body.messages || [], stream, { threadId: thread, clientTools: body.clientTools });
       });
     }
 
     // ---- lambdas / integration triggers: seeded `{ integrationId, method?, response, status? }` or `{}`
-    router.register('*', '/api/webhooks/:id', (ctx) => {
+    // like the service: a signed-in caller, who also has the roles and workspace labels the seeded entry asks for
+    router.register('*', '/api/webhooks/:id', async (ctx) => {
+      const actor = await resolveActor(ctx);
+      if (!isSignedIn(actor)) return unauthorized();
       const method = ctx.request.method.toUpperCase();
       const hit: Doc | undefined = state.lambdas.findOne(
         (l) => l.integrationId === ctx.params.id && (!l.method || String(l.method).toUpperCase() === method),
       );
+      const refusal = webhookRefusal(actor, hit);
+      if (refusal) return refused(refusal);
       return new Response(JSON.stringify(hit ? (hit.response ?? {}) : {}), {
         status: Number(hit?.status) || 200,
         headers: { 'content-type': 'application/json' },

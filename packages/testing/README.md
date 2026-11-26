@@ -20,7 +20,7 @@ Unknown routes return `404 { code: 'QELOS_MOCK_NOT_IMPLEMENTED', message }`. Rou
 | `dataDir` | Folder holding state JSON (`state/*.json`) and optional dump/pull artifacts. |
 | `persist` | Persist state to `dataDir/state` (default `true` when `dataDir` is set). Writes are debounced and atomic. |
 | `seed` | Inline `{ users, workspaces, personas, roles, blueprints, entities, configurations, blocks, pricingPlans, coupons, subscriptions, invoices, ... }`. |
-| `strictPermissions` | Treat calls without credentials (or with ones the mock never issued) as guests on data, content and agent routes. Default `false`. |
+| `strictPermissions` | Treat calls without credentials (or with ones the mock never issued) as guests on data, content, agent and webhook routes. Default `false`. |
 | `defaultPersona` | Id or email of the auto-logged-in user (see [Authentication](#authentication-users-workspaces-and-permissions)). |
 | `auth` | `{ accessTokenTtlMs, refreshTokenTtlMs, cookieTokenTtlMs, personalWorkspace, defaultRole }` — token lifetimes (5h / 30d / 30d), create a personal workspace on sign-up (default `false`), role of new users (default `user`). |
 | `tenant` | `{ name, appUrl, ... }`. |
@@ -170,7 +170,7 @@ Entities carry `identifier`/`id`, `user`, `workspace`, `created`, `updated` and 
 
 #### Permissions on data and content
 
-Entity routes, content writes and agent management resolve the caller in this order:
+Entity, content, agent and webhook routes resolve the caller in this order:
 
 1. the `x-qelos-mock-persona` header or `qelos_mock_persona` cookie (a persona/user id or email)
 2. the signed-in user: a bearer access token, session cookie or API token issued by the mock
@@ -187,14 +187,15 @@ An admin who sends `bypassAdmin` (body, `?bypassAdmin=true` or the `x-bypass-adm
 
 | Area | Endpoints |
 |---|---|
-| Blueprints | `GET /api/blueprints[/:id]`; `POST`, `PUT /:id`, `DELETE /:id` for admins |
-| Configurations | `GET`/`PUT /api/configurations/app-configuration` (PUT merges `metadata`); `/api/configurations[/:key]` CRUD (non-public ones readable by admins only) |
-| Blocks / components | `/api/blocks[/:id]`, `/api/components[/:id]` - read for all, write for admins |
-| AI | `/api/ai/agents` CRUD from seed `agents`; `POST /api/ai/agents/:id/chat`, `GET .../chat` (SSE) and `/api/ai/:id/chat-completion[/:threadId]` answer from `mock.ai`, then seed `aiResponses` (`[{ agentId?, match?, content }]`, first match wins), or echo `Mock response: <message>`; tool calls and `clientTools` are answered like the service |
+| Blueprints | `GET /api/blueprints[/:identifier]` for signed-in users, without permissions and other settings unless admin or `plugin` (`null` when unknown); `POST`, `PUT`, `DELETE` for admins and plugins; one with entities cannot be removed |
+| Configurations | `GET /api/configurations/:key` for anyone when public (the default), else admins (`404` for others); the list (no metadata), `POST`, `PUT /:key` (description and metadata, merged) and `DELETE /:key` for admins |
+| Blocks | `GET /api/blocks/:id` for anyone (`_id` and `content` only, unless editor); the list and writes for the `editor`, `plugin` and `admin` roles |
+| Components | `/api/components[/:id]` for admins and plugins |
+| AI | `/api/ai/agents` CRUD for admins and plugins (a regular user's list fails with `500`, as in the service); `POST`/`GET /api/ai/agents/:id/chat` for signed-in users and `/api/ai/:id/chat-completion[/:threadId]`, both limited to the agent's `roles`, `workspaceRoles` and `workspaceLabels` (a guest needs the `guest` role). Answers come from `mock.ai`, then seed `aiResponses` (`[{ agentId?, match?, content }]`, first match wins), or echo `Mock response: <message>`; tool calls and `clientTools` are answered like the service |
 | AI threads | `GET`/`POST /api/ai/threads`, `GET`/`DELETE /api/ai/threads/:id` - own threads, all for admins; chats are recorded in them (agents with `recordThread`, and every `agents/:id/chat`) |
 | Users (admin) | `GET /api/users[/stats\|/:id]`, `POST`, `PUT /:id`, `DELETE /:id`, `GET`/`POST /:id/encrypted` - admins only (`401` otherwise) |
 | Events | `GET /api/events` (`{ events, total, page, limit, totalPages }`; filters `kind`, `eventName`, `source`, `user`, `workspace`, `search`, `period` (default `last-week`), `from`/`to`; `page` from 0, `limit` up to 100) and `GET /api/events/:id` (`null` when unknown) for admins; `POST /api/events` for admins and the `plugin` role, answering with no body. Refused callers get `401` |
-| Lambdas | `/api/webhooks/:integrationId` - any method; answers the seed `lambdas` entry `{ integrationId, method?, response, status? }` or `{}` |
+| Lambdas | `/api/webhooks/:integrationId` - any method, signed-in users; answers the seed `lambdas` entry `{ integrationId, method?, response, status?, roles?, workspaceLabels? }` (`403` without them) or `{}` |
 | Payments | plans, coupons, subscriptions, invoices, checkout and `/api/payments/configuration`, following the payments service; no provider is called - report results with `mock.payments.pay/fail/cancel` |
 | Secrets | none: the secrets service is internal and apps cannot call it |
 

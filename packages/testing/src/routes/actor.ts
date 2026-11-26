@@ -101,11 +101,12 @@ export function wantsBypassAdmin(ctx: RouteContext, body?: { bypassAdmin?: unkno
   return ['true', '1'].includes(ctx.request.headers.get('x-bypass-admin') ?? '');
 }
 
-/** No actor means the mock does not enforce permissions. */
-export function isAdmin(actor: MockActor | null): boolean {
-  return !actor || actor.roles.includes('admin');
+/** Whether the caller may do what the roles may. No actor means the mock does not enforce permissions. */
+export function mayAct(actor: MockActor | null, roles: string[]): boolean {
+  return !actor || actor.roles.some((role) => roles.includes(role));
 }
 
-export function requireAdmin(actor: MockActor | null) {
-  if (!isAdmin(actor)) throw new MockHttpError(403, 'not permitted');
+/** False for a guest only. */
+export function isSignedIn(actor: MockActor | null): boolean {
+  return !actor || !!actor._id || actor.roles.length > 0;
 }

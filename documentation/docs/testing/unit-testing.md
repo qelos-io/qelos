@@ -49,6 +49,18 @@ const mine = await todos.create({ title: 'mine' }); // allowed
 await expect(todos.update(mine.identifier, { title: 'changed' })).rejects.toThrow('not permitted');
 ```
 
+- The other routes follow their services too:
+
+  | | Read | Change |
+  |---|---|---|
+  | Blueprints | signed-in users (without `permissions` and other settings, unless admin or `plugin`) | `admin`, `plugin` |
+  | Configurations | one: anyone if public, else `admin`. The list: `admin` | `admin` |
+  | Blocks | one: anyone (content only, unless editor). The list: editors | `editor`, `plugin`, `admin` |
+  | Components, agents | `admin`, `plugin` | `admin`, `plugin` |
+  | Agent chat and webhooks | signed-in users, within the roles the agent or `lambdas` entry asks for | |
+
+  A refused call answers `401`, with these exceptions: a private configuration is `404`, listing agents is `500`, and a
+  missing role for a chat or webhook is `403`.
 - After `mock.faults.expireAccessTokens()` a signed-in user is a guest: data calls get only what guests may do.
 - A call with no credentials, or with ones the mock never issued (a made-up API token), is not checked. Pass
   `strictPermissions: true` to treat such callers as guests, as production does.

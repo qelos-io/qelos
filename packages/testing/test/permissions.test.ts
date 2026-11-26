@@ -74,9 +74,10 @@ describe('signed-in users are held to the blueprint permissions', () => {
     };
     const [user, admin] = [await bearer('user@x.com'), await bearer('admin@x.com')];
     for (const path of ['/api/blueprints', '/api/ai/agents']) {
-      const post = (headers: Record<string, string>) => mock.fetch(path, { method: 'POST', headers, body: '{"identifier":"new","name":"New"}' });
-      assert.equal((await post(user)).status, 403, path);
-      assert.equal((await post(admin)).status, 200, path);
+      const body = JSON.stringify({ identifier: 'new', name: 'New', triggerSource: 's1', targetSource: 's2' });
+      const post = (headers: Record<string, string>) => mock.fetch(path, { method: 'POST', headers, body });
+      assert.equal((await post(user)).status, 401, path);
+      assert.equal((await post(admin)).status, path === '/api/ai/agents' ? 201 : 200, path);
     }
   });
 });
@@ -90,7 +91,7 @@ describe('other ways of being identified', () => {
     assert.equal((await post('secret')).status, 403);
     assert.equal((await post('note')).status, 200);
     const blueprints = await mock.fetch('/api/blueprints', { method: 'POST', headers: { cookie }, body: '{"identifier":"new"}' });
-    assert.equal(blueprints.status, 403);
+    assert.equal(blueprints.status, 401);
   });
 
   test('an API token acts as its owner; expired, it is a guest', async () => {
@@ -178,8 +179,9 @@ describe('strictPermissions: callers the mock cannot identify are guests', () =>
       assert.equal((await call(mock, 'GET', '/api/blueprints/notice/entities', headers)).status, 200);
       assert.equal((await call(mock, 'POST', '/api/blueprints/secret/entities', headers)).status, 403);
       assert.equal((await call(mock, 'POST', '/api/blueprints/notice/entities', headers)).status, 403);
-      assert.equal((await call(mock, 'POST', '/api/blueprints', headers)).status, 403);
-      assert.equal((await call(mock, 'POST', '/api/ai/agents', headers)).status, 403);
+      assert.equal((await call(mock, 'GET', '/api/blueprints', headers)).status, 401);
+      assert.equal((await call(mock, 'POST', '/api/blueprints', headers)).status, 401);
+      assert.equal((await call(mock, 'POST', '/api/ai/agents', headers)).status, 401);
     }
   });
 

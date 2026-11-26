@@ -77,7 +77,7 @@ export interface MockSeed {
   invoices?: Array<Record<string, unknown>>;
   /** canned AI replies `{ agentId?, match?, content }` - first matching entry wins */
   aiResponses?: Array<Record<string, unknown>>;
-  /** seeded webhook/lambda results: `{ integrationId, method?, response, status? }` */
+  /** seeded webhook/lambda results: `{ integrationId, method?, response, status?, roles?, workspaceLabels? }` */
   lambdas?: Array<Record<string, unknown>>;
 }
 
