@@ -1,6 +1,7 @@
 import * as ChatCompletionService from "./chat-completion-service";
 import { executeDataManipulation, triggerIntegrationSource } from "./plugins-service-api";
 import logger from "./logger";
+import { withTimeout } from "./with-timeout";
 import {
   createBlueprintEntityForUser,
   updateBlueprintEntityForUser,
@@ -360,10 +361,6 @@ export async function executeFunctionCalls(
           try {
             // Convert generator to array with timeout protection
             const argsIterator = ChatCompletionService.parseFunctionArguments(functionCall.function.arguments);
-            const parseTimeout = new Promise((_, reject) => {
-              setTimeout(() => reject(new Error('Argument parsing timeout')), 10000); // 10 second timeout
-            });
-            
             const parsePromise = new Promise<any[]>((resolve) => {
               const args: any[] = [];
               let iterationCount = 0;
@@ -413,7 +410,8 @@ export async function executeFunctionCalls(
               processNextArg();
             });
             
-            argsArray = await Promise.race([parsePromise, parseTimeout]) as any[];
+            // 10 second timeout
+            argsArray = await withTimeout(parsePromise, 10000, () => new Error('Argument parsing timeout'));
           } catch (parseError) {
             logger.error('Failed to parse function arguments', {
               functionName: functionCall.function.name,
