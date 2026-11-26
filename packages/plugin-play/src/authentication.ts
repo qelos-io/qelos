@@ -20,6 +20,11 @@ import { FastifyReply } from 'fastify/types/reply';
 
 const notAuthorized = { message: 'you are not authorized' };
 
+/** Where the code of a callback is kept until the frontend asks to be authorized with it. */
+function authorizationCacheKey(returnUrl: string, tenantSub: string, username: string) {
+  return `${returnUrl}:${tenantSub}:${username}`;
+}
+
 function getHostname(fullUrl: string) {
   if (!fullUrl.startsWith('http')) {
     fullUrl = 'https://' + fullUrl;
@@ -270,7 +275,7 @@ export function getCallbackRoute(): RouteOptions {
       const code = Math.floor(Math.random() * 1000).toString();
       // set the code on cache manager
       const username = user?.username || 'anonymous';
-      await cacheManager.setItem(`${returnUrl}:${request.tenantPayload.sub}:${username}`, JSON.stringify({
+      await cacheManager.setItem(authorizationCacheKey(returnUrl, request.tenantPayload.sub, username), JSON.stringify({
         code,
         user,
         created: Date.now(),
@@ -326,7 +331,11 @@ export function getFrontendAuthorizationRoute(): RouteOptions {
   if (config.qelosUrl) {
     onFrontendAuthorization(async ({ returnUrl, user, tenant }) => {
       try {
-        const data = JSON.parse(await cacheManager.getItem(`${returnUrl}:${tenant.sub}:${user.email}`))
+        // a session needs an identified user: an anonymous callback is not authorized
+        if (!user?.username) {
+          return;
+        }
+        const data = JSON.parse(await cacheManager.getItem(authorizationCacheKey(returnUrl, tenant.sub, user.username)))
         if (data) {
           return {
             code: data.code,
