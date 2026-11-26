@@ -1,14 +1,14 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server.js';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
-import { rewriteSetCookieDomain } from './cookies';
-import { applyQelosForwardHeaders } from './forward-headers';
-import { getDefaultQelosConfig } from './env-config';
-import { fetchMeIdentity } from './me-client';
-import { getQelosMock, MOCK_APP_URL } from './mock';
-import { resolveQelosProxyTarget } from './proxy-target';
-import { createRequestSdk } from './sdk-factory';
-import type { QelosNextConfig } from './types';
+import { rewriteSetCookieDomain } from './cookies.js';
+import { applyQelosForwardHeaders } from './forward-headers.js';
+import { getDefaultQelosConfig } from './env-config.js';
+import { fetchMeIdentity } from './me-client.js';
+import { getQelosMock, MOCK_APP_URL } from './mock.js';
+import { resolveQelosProxyTarget } from './proxy-target.js';
+import { createRequestSdk } from './sdk-factory.js';
+import type { QelosNextConfig } from './types.js';
 
 export interface CreateMiddlewareOptions {
   config: QelosNextConfig;

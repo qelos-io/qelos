@@ -1,4 +1,4 @@
-import type { QelosNextConfig } from './types';
+import type { QelosNextConfig } from './types.js';
 
 /**
  * Resolve the origin to which `/api/**` requests are proxied. The managed

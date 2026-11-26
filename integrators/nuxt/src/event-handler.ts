@@ -5,7 +5,7 @@ import {
   type EventHandlerResponse,
   type H3Event,
 } from 'h3';
-import type { QelosRequestContext } from './types';
+import type { QelosRequestContext } from './types.js';
 
 export interface QelosEventContext<T extends EventHandlerRequest = EventHandlerRequest> {
   event: H3Event<T>;

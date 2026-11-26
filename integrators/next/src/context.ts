@@ -1,13 +1,13 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
-import { rewriteSetCookieDomain } from './cookies';
-import { getDefaultQelosConfig } from './env-config';
-import { fetchMeIdentity } from './me-client';
-import { getQelosMock, MOCK_APP_URL } from './mock';
-import { resolveQelosProxyTarget } from './proxy-target';
-import { createRequestSdk } from './sdk-factory';
-import type { QelosNextConfig, QelosRequestContext } from './types';
+import { rewriteSetCookieDomain } from './cookies.js';
+import { getDefaultQelosConfig } from './env-config.js';
+import { fetchMeIdentity } from './me-client.js';
+import { getQelosMock, MOCK_APP_URL } from './mock.js';
+import { resolveQelosProxyTarget } from './proxy-target.js';
+import { createRequestSdk } from './sdk-factory.js';
+import type { QelosNextConfig, QelosRequestContext } from './types.js';
 
 const storage = new AsyncLocalStorage<QelosRequestContext>();
 
@@ -61,7 +61,7 @@ let nextHeadersModulePromise: Promise<NextHeadersModule> | null = null;
 function loadNextHeaders(): Promise<NextHeadersModule> {
   if (!nextHeadersModulePromise) {
     nextHeadersModulePromise = (async () => {
-      const mod = (await import('next/headers')) as unknown as NextHeadersModule;
+      const mod = (await import('next/headers.js')) as unknown as NextHeadersModule;
       return mod;
     })();
   }
@@ -90,7 +90,7 @@ async function forwardSetCookieThroughNextCookies(
     rewriteSetCookieDomain(v, originalHost ?? undefined),
   );
   try {
-    const { cookies } = await import('next/headers');
+    const { cookies } = await import('next/headers.js');
     const jar = await Promise.resolve(cookies());
     for (const line of rewritten) {
       const semi = line.indexOf(';');

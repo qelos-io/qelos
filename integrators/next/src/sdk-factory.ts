@@ -1,8 +1,8 @@
 import sdkModule from '@qelos/sdk';
 import type QelosSDKInstance from '@qelos/sdk';
 import type { QelosSDKOptions, FetchLike } from '@qelos/sdk/types';
-import { getQelosMock, MOCK_APP_URL } from './mock';
-import type { QelosNextConfig } from './types';
+import { getQelosMock, MOCK_APP_URL } from './mock.js';
+import type { QelosNextConfig } from './types.js';
 
 type QelosSdkCtor = new (options: QelosSDKOptions) => QelosSDKInstance;
 

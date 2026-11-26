@@ -1,4 +1,4 @@
-import type { QelosNextConfig } from './types';
+import type { QelosNextConfig } from './types.js';
 
 /**
  * Minimal structural types so this package's typings don't require the

@@ -8,9 +8,9 @@ import {
   setResponseStatus,
   type H3Event,
 } from 'h3';
-import { rewriteSetCookieDomain } from './cookies';
-import { getQelosMock } from './mock';
-import type { QelosNuxtRuntimeConfig } from './types';
+import { rewriteSetCookieDomain } from './cookies.js';
+import { getQelosMock } from './mock.js';
+import type { QelosNuxtRuntimeConfig } from './types.js';
 
 const SKIP_HEADERS = new Set([
   'connection',

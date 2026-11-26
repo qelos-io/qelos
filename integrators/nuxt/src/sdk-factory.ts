@@ -2,8 +2,8 @@ import sdkModule from '@qelos/sdk';
 import type QelosSDKInstance from '@qelos/sdk';
 import type { QelosSDKOptions, FetchLike } from '@qelos/sdk/types';
 import { getRequestHeader, type H3Event } from 'h3';
-import { getQelosMock, MOCK_APP_URL } from './mock';
-import type { QelosNuxtRuntimeConfig } from './types';
+import { getQelosMock, MOCK_APP_URL } from './mock.js';
+import type { QelosNuxtRuntimeConfig } from './types.js';
 
 type QelosSdkCtor = new (options: QelosSDKOptions) => QelosSDKInstance;
 

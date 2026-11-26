@@ -9,13 +9,13 @@ import type {
 } from 'next';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
-import { rewriteSetCookieDomain } from './cookies';
-import { fetchMeIdentity } from './me-client';
-import { getQelosMock, MOCK_APP_URL } from './mock';
-import { resolveQelosProxyTarget } from './proxy-target';
-import { createRequestSdk } from './sdk-factory';
-import { runWithQelosContext } from './context';
-import type { QelosNextConfig, QelosRequestContext } from './types';
+import { rewriteSetCookieDomain } from './cookies.js';
+import { fetchMeIdentity } from './me-client.js';
+import { getQelosMock, MOCK_APP_URL } from './mock.js';
+import { resolveQelosProxyTarget } from './proxy-target.js';
+import { createRequestSdk } from './sdk-factory.js';
+import { runWithQelosContext } from './context.js';
+import type { QelosNextConfig, QelosRequestContext } from './types.js';
 
 type CookieMap = Partial<Record<string, string>>;
 

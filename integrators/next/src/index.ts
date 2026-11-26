@@ -3,14 +3,14 @@ export {
   qelosMiddleware,
   type CreateMiddlewareOptions,
   type QelosMiddleware,
-} from './middleware';
+} from './middleware.js';
 
 export {
   loadQelosConfigFromEnv,
   getDefaultQelosConfig,
-} from './env-config';
+} from './env-config.js';
 
-export { createRequestSdk, type CreateSdkParams } from './sdk-factory';
+export { createRequestSdk, type CreateSdkParams } from './sdk-factory.js';
 
 export {
   getQelosContext,
@@ -19,32 +19,32 @@ export {
   getStoredQelosContext,
   requireQelosUser,
   type GetQelosContextOptions,
-} from './context';
+} from './context.js';
 
 export {
   withQelosApi,
   withQelosSSR,
   requireQelosApiUser,
   type PagesIntegratorOptions,
-} from './pages';
+} from './pages.js';
 
 export {
   withQelosRoute,
   type AppRouteHandler,
   type QelosAppRouteHandler,
-} from './route';
+} from './route.js';
 
 export {
   QELOS_USER_HEADER,
   QELOS_WORKSPACE_HEADER,
   type QelosNextConfig,
   type QelosRequestContext,
-} from './types';
+} from './types.js';
 
-export { rewriteSetCookieDomain, rewriteSetCookieDomains } from './cookies';
-export { resolveQelosProxyTarget } from './proxy-target';
-export { getQelosMock, MOCK_APP_URL, type QelosMockController, type MockQelos } from './mock';
-export { createQelosApiProxyHandlers } from './runtime/api-proxy';
+export { rewriteSetCookieDomain, rewriteSetCookieDomains } from './cookies.js';
+export { resolveQelosProxyTarget } from './proxy-target.js';
+export { getQelosMock, MOCK_APP_URL, type QelosMockController, type MockQelos } from './mock.js';
+export { createQelosApiProxyHandlers } from './runtime/api-proxy.js';
 
 export {
   completeSocialAuthCallback,
@@ -53,7 +53,7 @@ export {
   parseSocialCallbackRefreshToken,
   type SocialAuthCallbackPayload,
   type SocialCallbackInput,
-} from './social-auth';
+} from './social-auth.js';
 
 export {
   completeMcpAuthorizationCallback,
@@ -74,4 +74,4 @@ export {
   type McpPagePathOptions,
   type McpTokenExchangeOptions,
   type McpTokenExchangeResult,
-} from './mcp-auth';
+} from './mcp-auth.js';

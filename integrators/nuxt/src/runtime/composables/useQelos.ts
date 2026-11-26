@@ -5,7 +5,7 @@
 import { useState, useRequestEvent } from '#imports';
 import type { IUser } from '@qelos/sdk/dist/authentication';
 import type { IWorkspace } from '@qelos/sdk/workspaces';
-import type { QelosRequestContext } from '../../types';
+import type { QelosRequestContext } from '../../types.js';
 
 // Minimal local Ref type — structurally matches `vue`'s Ref for the consumer.
 // We don't take a `vue` dep at this package's `tsc` build time.

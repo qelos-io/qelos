@@ -1,8 +1,8 @@
-import { type NextRequest, NextResponse } from 'next/server';
-import { rewriteSetCookieDomain } from '../cookies';
-import { getQelosMock } from '../mock';
-import { resolveQelosProxyTarget } from '../proxy-target';
-import type { QelosNextConfig } from '../types';
+import { type NextRequest, NextResponse } from 'next/server.js';
+import { rewriteSetCookieDomain } from '../cookies.js';
+import { getQelosMock } from '../mock.js';
+import { resolveQelosProxyTarget } from '../proxy-target.js';
+import type { QelosNextConfig } from '../types.js';
 
 const HOP_BY_HOP = new Set([
   'connection',
