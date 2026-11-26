@@ -91,10 +91,19 @@ describe('POST /api/register', () => {
     assert.match(json(res).message, /^missing credentials/);
   });
 
-  // The route is meant to name what is missing, but it lists the fields that were provided.
-  test('names the missing fields, not the provided ones', { todo: 'checkMissingCredentialsError pushes the present fields instead of the missing ones' }, async () => {
-    const res = await register({ username: 'a@127.0.0.1' });
-    assert.equal(json(res).message, 'missing credentials: password, appUrl');
+  test('names exactly the missing fields', async () => {
+    const cases: Array<[object, string]> = [
+      [{}, 'missing credentials: username, password, appUrl'],
+      [{ username: 'a@127.0.0.1' }, 'missing credentials: password, appUrl'],
+      [{ username: 'a@127.0.0.1', password: 'pw' }, 'missing credentials: appUrl'],
+      [{ password: 'pw', appUrl: 'http://x' }, 'missing credentials: username'],
+      [{ username: 'a@127.0.0.1', password: '', appUrl: 'http://x' }, 'missing credentials: password'],
+    ];
+    for (const [body, message] of cases) {
+      const res = await register(body);
+      assert.equal(res.statusCode, 401);
+      assert.equal(json(res).message, message, JSON.stringify(body));
+    }
   });
 
   test('rejects a tenant that is not on the allow list', async () => {
@@ -168,10 +177,19 @@ describe('the frontend authorization handshake', () => {
     assert.equal(claims.tenant.sub, tenantPayload.sub);
   });
 
-  // verifyAccessToken accepts a base64 encoded user header, but the callback handler parses the raw header again.
-  test('callback also works with a base64 encoded user header', { todo: 'the callback handler JSON.parses the raw header, so base64 answers 401' }, async () => {
+  test('callback also works with a base64 encoded user header, the same user as with plain JSON', async () => {
     const res = await callback({ authorization: `Bearer ${accessToken()}`, user: Buffer.from(JSON.stringify(user)).toString('base64') });
     assert.equal(res.statusCode, 200);
+    const claims: any = jwt.verify(json(res).token, secrets.accessTokenSecret);
+    assert.equal(claims.user.email, user.email);
+    // a new callback for the same page and user replaces the cached code: the next steps continue with this one
+    handshake = json(res);
+  });
+
+  test('callback without a user header still answers a code (anonymous callback)', async () => {
+    const res = await callback({ authorization: `Bearer ${accessToken()}` });
+    assert.equal(res.statusCode, 200);
+    assert.equal(jwt.verify(json(res).token, secrets.accessTokenSecret) && (jwt.decode(json(res).token) as any).user, undefined);
   });
 
   test('callback with an invalid return url answers 401', async () => {

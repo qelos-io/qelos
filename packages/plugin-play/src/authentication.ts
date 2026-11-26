@@ -222,20 +222,12 @@ export function getRegisterRoute(): RouteOptions {
   }
 
   function checkMissingCredentialsError({ username, password, appUrl }: any) {
-    if (username && password && appUrl) {
-      return;
+    const missing = Object.entries({ username, password, appUrl })
+      .filter(([, value]) => !value)
+      .map(([key]) => key);
+    if (missing.length) {
+      throw new ResponseError('missing credentials: ' + missing.join(', '));
     }
-    const missing = [];
-    if (username) {
-      missing.push('username');
-    }
-    if (password) {
-      missing.push('password');
-    }
-    if (appUrl) {
-      missing.push('appUrl');
-    }
-    throw new ResponseError('missing credentials: ' + missing.join(', '))
   }
 
   return {
@@ -297,8 +289,8 @@ export function getCallbackRoute(): RouteOptions {
 
       try {
         const returnUrl = new URL(atob(queryParams.returnUrl));
-        const user = request.headers.user ? JSON.parse(request.headers.user as string) : undefined;
-        request.user = user;
+        // verifyAccessToken (the pre handler) already decoded the user header, base64 or plain JSON
+        const user = request.user || undefined;
 
         for (let handler of handlers.callback) {
           const code = await handler({ user, returnUrl: returnUrl.href }, request)
