@@ -272,3 +272,23 @@ test('query operators with bracket syntax', async () => {
   assert.equal((await get('title[$regex]=^item [12]$')).length, 2);
   assert.deepEqual((await get('$sort=-price&$limit=2')).map((p) => p.price), [60, 50]);
 });
+
+test('the persona cookie identifies the caller on entity routes too (integrators forward cookies, not headers)', async () => {
+  const { mock } = setup({
+    seed: {
+      blueprints: blueprints as any,
+      personas: [
+        { email: 'editor@x.com', roles: ['editor'] },
+        { email: 'reader@x.com', roles: ['user'] },
+      ],
+    },
+  });
+  const create = (persona: string) =>
+    mock.fetch('/api/blueprints/product/entities', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie: `qelos_mock_persona=${encodeURIComponent(persona)}` },
+      body: JSON.stringify({ title: 'x' }),
+    });
+  assert.equal((await create('editor@x.com')).status, 200);
+  assert.equal((await create('reader@x.com')).status, 403);
+});
