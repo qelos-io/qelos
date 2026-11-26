@@ -194,8 +194,9 @@ dev dependency so production bundles do not ship it.
 - Social login (`/api/auth/:provider`) signs in the selected persona without any provider round trip.
 - Blueprint `limitations`, `updateMapping` and platform events are not mirrored.
 - AI agents answer from seeded `aiResponses` (or echo `Mock response: <message>`); no model is called.
-- Lambdas/webhooks answer from the seed only. There are no secrets endpoints: that service is internal and apps cannot
-  call it.
+- Webhooks answer from the seed only. Functions, plugins and connections are records: nothing is deployed, fetched or
+  called. Scripts and components are not compiled.
+- There are no secrets endpoints: that service is internal and apps cannot call it.
 - Payments have no provider: nothing is charged, and provider webhooks are replaced by [`mock.payments`](/testing/unit-testing#payments).
 - Routes nobody handles return `404 { code: "QELOS_MOCK_NOT_IMPLEMENTED" }`. Extend with `mock.on(...)`, `routes` or `onMissing`.
 - Blueprint permissions apply to personas and signed-in users. With no credentials at all (or ones the mock never

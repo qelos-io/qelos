@@ -63,7 +63,8 @@ await expect(todos.update(mine.identifier, { title: 'changed' })).rejects.toThro
   | Blueprints | signed-in users (without `permissions` and other settings, unless admin or `plugin`) | `admin`, `plugin` |
   | Configurations | one: anyone if public, else `admin`. The list: `admin` | `admin` |
   | Blocks | one: anyone (content only, unless editor). The list: editors | `editor`, `plugin`, `admin` |
-  | Components, agents, integrations, connections | `admin`, `plugin` | `admin`, `plugin` |
+  | Scripts, components, agents, integrations, connections | `admin`, `plugin` | `admin`, `plugin` |
+  | Drafts | signed-in users, their own | signed-in users, their own |
   | Plugins | the list: anyone (fewer settings unless `admin`). One: `admin`, `plugin` | `admin` |
   | Functions (`manageLambdas`) | `admin` | `admin` |
   | Agent chat and webhooks | signed-in users, within the roles the agent or `lambdas` entry asks for | |
@@ -295,6 +296,15 @@ await admin.integrations.create({
 - Functions need an `aws` or `cloudflare` connection. They are kept in `mock.state.collection('functions')`; nothing is
   deployed or run.
 - `remove` on these APIs does not reject when refused: check the list.
+
+## Scripts and drafts
+
+The administrator SDK's `scripts` (and the older `components`) create, change and remove scripts and components, also
+in bulk. Nothing is compiled: an invalid source is accepted, `requiredProps` stays empty and there is no
+`compiledContent`.
+
+Its `drafts` keep each signed-in user's own drafts, with `setDraft`, `getDraft` and `remove`. `drafts.getList` rejects
+with `draft not found`, as against the real service.
 
 ## Charts
 
