@@ -192,7 +192,8 @@ dev dependency so production bundles do not ship it.
 
 - Tokens are unsigned, opaque JWT-shaped strings; passwords are hashed but this is **not** a security model.
 - Social login (`/api/auth/:provider`) signs in the selected persona without any provider round trip.
-- Blueprint `updateMapping`, platform events on entity changes and the rate limit on guest writes are not mirrored.
+- Blueprint `updateMapping` and the rate limit on guest writes are not mirrored. Events are stored, but no subscriber or
+  integration runs on them.
 - AI agents answer from seeded `aiResponses` (or echo `Mock response: <message>`); no model is called.
 - Webhooks answer from the seed only. Functions, plugins and connections are records: nothing is deployed, fetched or
   called. Scripts and components are not compiled.
