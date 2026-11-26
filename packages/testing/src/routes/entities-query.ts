@@ -61,6 +61,8 @@ export interface BlueprintDoc extends Doc {
   relations?: Array<{ key: string; target: string }>;
   entityIdentifierMechanism?: string;
   limitations?: Limitation[];
+  name?: string;
+  dispatchers?: { create?: boolean; update?: boolean; delete?: boolean };
 }
 
 const SYSTEM_FIELDS = new Set(['_id', 'identifier', 'id', 'user', 'workspace', 'tenant', 'blueprint', 'created', 'updated', 'metadata']);

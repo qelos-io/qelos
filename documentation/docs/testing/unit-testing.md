@@ -366,6 +366,9 @@ const { events, total } = await admin.events.getList({ kind: 'invoice' });
   By default it covers the **last week**; pass `period: 'all-time'` to include older seeded events.
 - `dispatch` never rejects, also when it is refused or the event is missing `source`, `kind` or `eventName` (which is
   then dropped). Check what arrived with `getList` or `mock.state.events`.
+- Creating, updating and removing entities adds an event when the blueprint's `dispatchers` ask for it
+  (`source: 'blueprints'`, `kind` is the blueprint, `eventName` is `create`, `update` or `delete`). On an update,
+  `metadata.modifiedFields` lists every property of the entity, changed or not, as the service does.
 
 ## Managing users
 

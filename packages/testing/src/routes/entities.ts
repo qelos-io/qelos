@@ -16,6 +16,7 @@ import {
   type BlueprintDoc,
 } from './entities-query.js';
 import { reachedLimit } from '../blueprints/limitations.js';
+import { dispatch, modifiedFields } from '../blueprints/events.js';
 
 type Operation = 'create' | 'read' | 'update' | 'delete';
 type Scopes = true | string[];
@@ -248,6 +249,7 @@ export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteMo
         created: now,
         updated: now,
       });
+      dispatch(state, blueprint, 'create', entity);
       return present(entity, blueprint, flatDefault(query, ctx.request.headers));
     });
 
@@ -262,7 +264,9 @@ export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteMo
       const patch: Record<string, any> = { metadata, updated: new Date().toISOString() };
       if (unrestricted && body.user) patch.user = body.user;
       if (unrestricted && body.workspace) patch.workspace = body.workspace;
+      const before = { ...entity, metadata: metadataOf(entity, blueprint) };
       const updated = state.entities.update(blueprint.identifier, entity._id, patch)!;
+      dispatch(state, blueprint, 'update', updated, { modifiedFields: modifiedFields(before, updated, blueprint) });
       return present(updated, blueprint, flatDefault(query, ctx.request.headers));
     });
 
@@ -281,6 +285,7 @@ export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteMo
       const entity = findEntity(state, blueprint.identifier, ctx.params.id);
       if (!entity || !scopeFilter(entity)) throw new MockHttpError(404, 'entity not found');
       state.entities.remove(blueprint.identifier, entity._id);
+      dispatch(state, blueprint, 'delete', entity);
       return present(entity, blueprint, flatDefault(query, ctx.request.headers));
     });
   };

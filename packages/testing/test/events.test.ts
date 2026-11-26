@@ -105,3 +105,26 @@ test('secrets are not part of the API apps can call', async () => {
     assert.deepEqual([res.status, ((await res.json()) as any).code], [404, 'QELOS_MOCK_NOT_IMPLEMENTED'], path);
   }
 });
+
+describe('events of entity changes', () => {
+  test('a blueprint with dispatchers emits them, and administrators read them', async () => {
+    const todo = { identifier: 'todo', name: 'Todo', properties: { title: { title: 'Title', type: 'string' } }, dispatchers: { create: true, delete: true } };
+    const mock = createMockQelos({ logger: () => {}, seed: { personas, blueprints: [todo] } });
+    const admin = new Admin({
+      appUrl: 'http://qelos.mock',
+      fetch: mock.fetch,
+      extraHeaders: async () => ({ [PERSONA_HEADER]: 'admin@x.com' }),
+      // the administrator SDK sends `bypassAdmin` by default, which a blueprint without permissions refuses
+      extraQueryParams: () => ({}),
+    });
+    const created = await admin.entities('todo').create({ title: 'a' });
+    await admin.entities('todo').update(created.identifier, { title: 'b' });
+    await admin.entities('todo').remove(created.identifier);
+
+    const { events } = await admin.events.getList({ source: 'blueprints', kind: 'todo' });
+    assert.deepEqual(events.map((e: any) => [e.eventName, e.description, e.metadata.entity]).sort(), [
+      ['create', 'Todo created', created.identifier],
+      ['delete', 'Todo deleted', created.identifier],
+    ]);
+  });
+});
