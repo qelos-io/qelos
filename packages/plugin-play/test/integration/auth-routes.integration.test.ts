@@ -242,3 +242,53 @@ describe('the frontend authorization handshake', () => {
     assert.equal((unauthorizeCalls[0] as any).user.email, user.email);
   });
 });
+
+describe('the handshake finds the code whatever identifies the user', () => {
+  // in Qelos a username is required, an email is optional, and the two need not match
+  const returnUrl = 'http://front.test/identity';
+  const handshake = async (u: object) => {
+    const back = await app().inject({
+      method: 'GET',
+      url: `/api/callback?returnUrl=${encodeURIComponent(Buffer.from(returnUrl).toString('base64'))}`,
+      headers: { authorization: `Bearer ${accessToken()}`, user: JSON.stringify(u) },
+    });
+    assert.equal(back.statusCode, 200);
+    const { code, token } = json(back);
+    const res = await app().inject({ method: 'POST', url: '/api/authorize', payload: { returnUrl, token } });
+    return { res, code };
+  };
+
+  for (const [label, u] of [
+    ['a username that differs from the email', { ...user, _id: 'a', username: 'ada', email: 'ada@example.com' }],
+    ['no email', { ...user, _id: 'b', username: 'grace', email: undefined }],
+  ] as const) {
+    test(`a user with ${label} is authorized`, async () => {
+      const { res, code } = await handshake(u);
+      assert.equal(res.statusCode, 200);
+      assert.equal(json(res).user.username, u.username);
+      assert.ok(cookieOf(res, `token_${code}`), 'the session cookie is set');
+    });
+  }
+
+  test('two users with the same email each get their own code', async () => {
+    const first = await handshake({ ...user, _id: 'c', username: 'shared-one', email: 'team@example.com' });
+    const second = await handshake({ ...user, _id: 'd', username: 'shared-two', email: 'team@example.com' });
+    assert.ok(cookieOf(first.res, `token_${first.code}`));
+    assert.ok(cookieOf(second.res, `token_${second.code}`));
+  });
+
+  test('without a username there is still no session', async () => {
+    const { res } = await handshake({ _id: 'e', email: 'nameless@example.com', roles: ['user'] });
+    assert.equal(res.statusCode, 401);
+  });
+
+  test('an anonymous callback does not authorize a session', async () => {
+    const back = await app().inject({
+      method: 'GET',
+      url: `/api/callback?returnUrl=${encodeURIComponent(Buffer.from(returnUrl).toString('base64'))}`,
+      headers: { authorization: `Bearer ${accessToken()}` },
+    });
+    const res = await app().inject({ method: 'POST', url: '/api/authorize', payload: { returnUrl, token: json(back).token } });
+    assert.equal(res.statusCode, 401);
+  });
+});
