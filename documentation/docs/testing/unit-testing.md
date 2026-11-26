@@ -248,6 +248,22 @@ mock.payments.cancel(subscriptionId);           // canceled
 - As in the service today, a non-admin with an **active workspace** can list the workspace's subscriptions and
   invoices, but gets `403` on a single one (including its activity and cancelling it).
 
+## Platform events
+
+The administrator SDK's `events` work against the mock with the service's permissions: **administrators** read events,
+administrators and users with the **`plugin`** role dispatch them, and everyone else gets `401`.
+
+```ts
+await admin.events.dispatch({ source: 'billing', kind: 'invoice', eventName: 'sent', description: 'Invoice sent' });
+const { events, total } = await admin.events.getList({ kind: 'invoice' });
+```
+
+- `admin` is an administrator SDK, created as in [Managing users](#managing-users).
+- `getList` returns one page: `{ events, total, page, limit, totalPages }`, although the SDK types it as an array.
+  By default it covers the **last week**; pass `period: 'all-time'` to include older seeded events.
+- `dispatch` never rejects, also when it is refused or the event is missing `source`, `kind` or `eventName` (which is
+  then dropped). Check what arrived with `getList` or `mock.state.events`.
+
 ## Managing users
 
 The administrator SDK's user methods (`sdk.users`) work for personas and seeded users with the `admin` role:

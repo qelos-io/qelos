@@ -22,13 +22,7 @@ function aiReply(state: MockState, agentId: string, message: string): string {
   return hit ? String(hit.content ?? '') : `Mock response: ${message}`;
 }
 
-function paginate<T>(list: T[], query: URLSearchParams): T[] {
-  const limit = parseInt(query.get('limit') || '') || undefined;
-  const page = Math.max(parseInt(query.get('page') || '') || 1, 1);
-  return limit ? list.slice((page - 1) * limit, page * limit) : list;
-}
-
-/** Deterministic stubs for the services an app normally proxies: AI, events, lambdas, secrets. */
+/** Deterministic stubs for the services an app normally proxies: AI and lambdas. */
 export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; ai: AiStub }): RouteModule {
   return (router, state) => {
     /** scripted reply (mock.ai) > seeded `aiResponses` > echo; records the call and the thread; honors delay/error */
@@ -135,30 +129,6 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
       });
     }
 
-    // ---- events (in-memory list/emit)
-    router.register('GET', '/api/events', (ctx) => {
-      const q = ctx.query;
-      const search = q.get('search')?.toLowerCase();
-      const events = state.events
-        .list((e) =>
-          ['kind', 'eventName', 'source', 'user', 'workspace'].every((k) => !q.get(k) || String(e[k]) === q.get(k)) &&
-          (!search || JSON.stringify(e).toLowerCase().includes(search)) &&
-          (!q.get('from') || String(e.created) >= q.get('from')!) &&
-          (!q.get('to') || String(e.created) <= q.get('to')!),
-        )
-        .sort((a, b) => String(b.created).localeCompare(String(a.created)));
-      return paginate(events, q);
-    });
-    router.register('GET', '/api/events/:id', (ctx) => {
-      const event = state.events.get(ctx.params.id);
-      if (!event) throw new MockHttpError(404, 'event not found');
-      return event;
-    });
-    router.register('POST', '/api/events', async (ctx) => {
-      const body = (await ctx.json()) || {};
-      return state.events.insert({ source: 'mock', kind: 'mock', eventName: 'event', description: '', ...body, created: new Date().toISOString() });
-    });
-
     // ---- lambdas / integration triggers: seeded `{ integrationId, method?, response, status? }` or `{}`
     router.register('*', '/api/webhooks/:id', (ctx) => {
       const method = ctx.request.method.toUpperCase();
@@ -170,13 +140,5 @@ export function stubRoutes({ resolveActor, ai }: { resolveActor: ActorResolver; 
         headers: { 'content-type': 'application/json' },
       });
     });
-
-    // ---- secrets: never returned, never stored
-    router.register('GET', '/api/secrets', () => []);
-    router.register('GET', '/api/secrets/*', () => {
-      throw new MockHttpError(404, 'secret not found');
-    });
-    for (const method of ['POST', 'PUT', 'DELETE'] as const) router.register(method, '/api/secrets/*', () => ({}));
-    router.register('POST', '/api/secrets', () => ({}));
   };
 }
