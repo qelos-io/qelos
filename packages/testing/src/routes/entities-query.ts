@@ -1,5 +1,6 @@
 import { MockHttpError } from '../router/router.js';
 import type { Doc } from '../state/mock-state.js';
+import type { Limitation } from '../blueprints/limitations.js';
 
 export const DEFAULT_LIMIT = 1000;
 
@@ -59,6 +60,7 @@ export interface BlueprintDoc extends Doc {
   permissionScope?: 'user' | 'workspace' | 'tenant';
   relations?: Array<{ key: string; target: string }>;
   entityIdentifierMechanism?: string;
+  limitations?: Limitation[];
 }
 
 const SYSTEM_FIELDS = new Set(['_id', 'identifier', 'id', 'user', 'workspace', 'tenant', 'blueprint', 'created', 'updated', 'metadata']);

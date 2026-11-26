@@ -15,6 +15,7 @@ import {
   validateMetadata,
   type BlueprintDoc,
 } from './entities-query.js';
+import { reachedLimit } from '../blueprints/limitations.js';
 
 type Operation = 'create' | 'read' | 'update' | 'delete';
 type Scopes = true | string[];
@@ -227,6 +228,13 @@ export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteMo
       const body = (await ctx.json()) || {};
       const metadata = validateMetadata(buildMetadataInput({}, body, blueprint), blueprint);
       checkRelations(state, blueprint, metadata);
+      const user = (unrestricted && body.user) || actor?._id;
+      const workspace = (unrestricted && body.workspace) || actor?.workspace?._id;
+      // like permissions, limitations are not checked for an unidentified caller
+      const existing = state.entities.list(blueprint.identifier);
+      if (actor && reachedLimit(blueprint.limitations ?? [], actor, { user, workspace, metadata }, existing, (e) => metadataOf(e, blueprint))) {
+        throw new MockHttpError(403, 'reached limit of allowed entities');
+      }
       const now = new Date().toISOString();
       const mechanism = blueprint.entityIdentifierMechanism;
       const id = mechanism && mechanism !== 'objectid' ? randomUUID() : generateId();
@@ -234,8 +242,8 @@ export function entitiesRoutes({ resolveActor }: EntitiesRoutesOptions): RouteMo
         _id: id,
         identifier: id,
         blueprint: blueprint.identifier,
-        user: (unrestricted && body.user) || actor?._id,
-        workspace: (unrestricted && body.workspace) || actor?.workspace?._id,
+        user,
+        workspace,
         metadata,
         created: now,
         updated: now,
