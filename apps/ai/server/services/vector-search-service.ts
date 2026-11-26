@@ -1,5 +1,6 @@
 import { redisUrl } from '../../config';
 import logger from './logger';
+import { withTimeout } from './with-timeout';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { RedisVectorStore } from '@langchain/redis';
 import { Document } from '@langchain/core/documents';
@@ -61,12 +62,7 @@ async function getRedisClient() {
     });
     
     // Add timeout to connection
-    await Promise.race([
-      redisClient.connect(),
-      new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Redis connection timeout')), 10000);
-      })
-    ]);
+    await withTimeout(redisClient.connect(), 10000, () => new Error('Redis connection timeout'));
   }
   
   return redisClient;
@@ -258,12 +254,7 @@ export async function findSimilarTools({
     };
     
     // Execute with 30-second timeout
-    const results = await Promise.race([
-      vectorOperations(),
-      new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Vector search timeout')), 30000);
-      })
-    ]) as any[];
+    const results = (await withTimeout(vectorOperations(), 30000, () => new Error('Vector search timeout'))) as any[];
     
     // Convert results back to Tool objects
     const relevantTools = results
