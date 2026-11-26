@@ -59,7 +59,7 @@ export async function applyUpdateMapping(
   for (const [key, result] of results) {
     const property = blueprint.properties?.[key];
     if (!property) throw new MockHttpError(400, `Property ${key} not found in blueprint ${blueprint.identifier}`);
-    const value = validateValue(key, result, property);
+    const value = validateValue(key, result, property, failure);
     if (value === undefined) delete entity.metadata[key];
     else entity.metadata[key] = value;
   }

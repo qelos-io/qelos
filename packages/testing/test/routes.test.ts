@@ -88,7 +88,7 @@ test('sdk entities: getById, update, delete and response shape', async () => {
 
 test('entity validation: required, type, enum and unknown blueprint', async () => {
   const { products, sdk } = setup();
-  await assert.rejects(() => products.create({ price: 1 } as any), /Property title is required/);
+  await assert.rejects(() => products.create({ price: 1 } as any), /Property title must be a string/);
   await assert.rejects(() => products.create({ title: 'x', price: 'abc' } as any), /must be a number/);
   await assert.rejects(() => products.create({ title: 'x', kind: 'z' } as any), /must be one of a, b/);
   await assert.rejects(() => sdk.entities('nope').find(), /blueprint not found/);

@@ -171,7 +171,7 @@ Notes:
 |---|---|
 | `GET .../entities` | filters on properties (`kind=a`, `price[$gt]=3`, `$in`, `$ne`, `$regex`, `$exists`...), system fields (`user`, `workspace`, `identifier`, `created`), `$q`/`$qProps`, `$sort` (`-price,name`, default `created`), `$limit`, `$skip`, `$page` (`$skip` wins; paging without `$limit` uses 1000), `$populate` (user, workspace, relations), `$outerPopulate`, `$flat` |
 | `GET .../entities/:id` | by `identifier` |
-| `POST .../entities` | validates against the blueprint `properties` (type, `required`, `enum`, `min`/`max`, `multi`, relation targets) - `406 { message }` on failure |
+| `POST .../entities` | validates against the blueprint `properties` (type, `required`, `enum`, `min`/`max`, `multi`, relation targets) - `406 { message }` on failure. Values are judged as by the service: `null` is a value (refused for text, stored as `0` or `false` for numbers and booleans), a missing required property is refused by its type, and objects hold text values unless the property has a `schema`, of which only the `type` is checked |
 | `PUT .../entities/:id` | merges the changes into the existing properties and re-validates |
 | `DELETE .../entities/:id`, `DELETE .../entities/all` | |
 | `GET /api/blueprints/:blueprint/charts/count`, `pie`, `sum`, `:chartType` | `sdk.entities(...).count()` and `sdk.blueprints.getChart` / `getPieChart` / `getSum`. Properties filter by name, as when listing |
