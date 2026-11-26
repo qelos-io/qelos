@@ -66,10 +66,10 @@ function signedInActor(state: MockState, auth: AuthContext): MockActor {
  * 3. a guest (no roles), for a token of the mock that expired or was signed out
  * 4. the configured `defaultPersona`
  *
- * Otherwise there is no actor: no credentials, or ones the mock never issued.
+ * Otherwise (no credentials, or ones the mock never issued) there is no actor, or with `strict` a guest.
  * The persona cookie matters behind an integrator: it forwards cookies, not custom headers.
  */
-export function createDefaultAuthenticate(defaultPersona?: string): Authenticate {
+export function createDefaultAuthenticate(defaultPersona?: string, { strict = false }: { strict?: boolean } = {}): Authenticate {
   return (request, state) => {
     ensureAuthSeeded(state);
     const cookie = parseCookies(request.headers.get('cookie'))[PERSONA_COOKIE];
@@ -79,7 +79,8 @@ export function createDefaultAuthenticate(defaultPersona?: string): Authenticate
     // `authenticate` falls back to the default persona too; that case is step 4
     if (auth && auth.session.kind !== 'persona') return signedInActor(state, auth);
     if (hasEndedCredentials(request, state)) return { roles: [] };
-    return defaultPersona ? personaActor(state, defaultPersona) : null;
+    if (defaultPersona) return personaActor(state, defaultPersona);
+    return strict ? { roles: [] } : null;
   };
 }
 
@@ -87,6 +88,17 @@ export type ActorResolver = (ctx: RouteContext) => Promise<MockActor | null>;
 
 export function createActorResolver(authenticate: Authenticate): ActorResolver {
   return async (ctx) => (await authenticate(ctx.request, ctx.state)) || null;
+}
+
+/**
+ * Whether the caller asks to be treated as a regular user, like `getBypassAdmin` of the services: `bypassAdmin` in
+ * the body, else `?bypassAdmin=true`, else the `x-bypass-admin` header. The administrator SDK sends the query
+ * parameter by default.
+ */
+export function wantsBypassAdmin(ctx: RouteContext, body?: { bypassAdmin?: unknown }): boolean {
+  if (body?.bypassAdmin !== undefined) return !!body.bypassAdmin;
+  if (ctx.query.get('bypassAdmin') === 'true') return true;
+  return ['true', '1'].includes(ctx.request.headers.get('x-bypass-admin') ?? '');
 }
 
 /** No actor means the mock does not enforce permissions. */

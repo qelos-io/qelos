@@ -140,6 +140,7 @@ Mounted under `/__qelos_mock__/` only while the mock is enabled:
 | `POST /__qelos_mock__/reset` | Drop everything and reseed. |
 | `POST /__qelos_mock__/seed` | Body is a seed; documents are upserted by `_id`. |
 | `PUT /__qelos_mock__/collections/:name` | Replace a collection (or `entities.<blueprint>`) with the JSON array body. |
+| `POST /__qelos_mock__/payments/:subscriptionId/pay` | Report a payment (`/fail`, `/cancel` too), like [`mock.payments`](/testing/unit-testing#payments). |
 | `GET /__qelos_mock__/routes` | Registered `{ method, path }` list. |
 | `GET /__qelos_mock__/health` | `{ "ok": true }` (standalone `serve` only). |
 
@@ -193,7 +194,9 @@ dev dependency so production bundles do not ship it.
 - Social login (`/api/auth/:provider`) signs in the selected persona without any provider round trip.
 - Blueprint `limitations`, `updateMapping`, chart types other than `count` and platform events are not mirrored.
 - AI agents answer from seeded `aiResponses` (or echo `Mock response: <message>`); no model is called.
-- Lambdas/webhooks answer from the seed only; payments, plans and invoices are empty; secrets are never stored or returned.
+- Lambdas/webhooks answer from the seed only; secrets are never stored or returned.
+- Payments have no provider: nothing is charged, and provider webhooks are replaced by [`mock.payments`](/testing/unit-testing#payments).
 - Routes nobody handles return `404 { code: "QELOS_MOCK_NOT_IMPLEMENTED" }`. Extend with `mock.on(...)`, `routes` or `onMissing`.
 - Blueprint permissions apply to personas and signed-in users. With no credentials at all (or ones the mock never
-  issued) they are not enforced; the real service would treat that caller as a guest.
+  issued) they are not enforced unless `strictPermissions` is on (`--strict` for `qelos-testing serve`); the real
+  service treats that caller as a guest.

@@ -13,6 +13,8 @@ import { contentRoutes } from '../routes/content.js';
 import { stubRoutes } from '../routes/stubs.js';
 import { userRoutes } from '../routes/users.js';
 import { threadRoutes } from '../routes/threads.js';
+import { paymentRoutes } from '../routes/payments.js';
+import { createPaymentsControls, type PaymentsControls } from '../payments/controls.js';
 import { managementRoutes } from '../routes/management.js';
 import { loadCassette, type Cassette, type CassetteExchange } from '../cassette/index.js';
 import { createAiStub, type AiStub } from '../ai/ai-stub.js';
@@ -24,7 +26,7 @@ export interface CreateMockQelosOptions extends MockQelosOptions {
   /**
    * Resolve the caller of a request (return `null` for "no identity": permissions are then not enforced).
    * Default (`createDefaultAuthenticate`): the `x-qelos-mock-persona` header or cookie, then the signed-in user
-   * (API token, session cookie or bearer token), then `defaultPersona`.
+   * (API token, session cookie or bearer token), then `defaultPersona`. See also `strictPermissions`.
    */
   authenticate?: Authenticate;
   /** Called for requests no route handles. Return a Response to answer, or nothing to fall through to the 404. */
@@ -46,6 +48,8 @@ export interface MockQelos {
   faults: FaultInjector;
   /** Scripted AI replies and recorded calls: `mock.ai.reply(/refund/, 'Done')`, `mock.ai.calls`. */
   ai: AiStub;
+  /** Report payment results, as the provider would: `mock.payments.pay(subscriptionId)`, `fail`, `cancel`. */
+  payments: PaymentsControls;
   fetch: typeof fetch;
   /** Register a handler that takes precedence over every other route, e.g. `mock.on('GET', '/api/foo', () => ({ ok: true }))`. */
   on(method: HttpMethod, pattern: string, handler: RouteHandler): MockQelos;
@@ -116,8 +120,10 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
   for (const module of [...routes, authRoutes]) router.use(module, state);
   for (const module of routes) router.use(module, state);
   if (builtinRoutes) {
-    const resolveActor = createActorResolver(authenticate ?? createDefaultAuthenticate(config.defaultPersona));
-    for (const module of [entitiesRoutes({ resolveActor }), contentRoutes({ resolveActor }), stubRoutes({ resolveActor, ai }), userRoutes, threadRoutes]) {
+    const resolveActor = createActorResolver(
+      authenticate ?? createDefaultAuthenticate(config.defaultPersona, { strict: config.strictPermissions }),
+    );
+    for (const module of [entitiesRoutes({ resolveActor }), contentRoutes({ resolveActor }), stubRoutes({ resolveActor, ai }), userRoutes, threadRoutes, paymentRoutes]) {
       router.use(module, state);
     }
   }
@@ -187,6 +193,7 @@ export function createMockQelos(options: CreateMockQelosOptions = {}): MockQelos
     router,
     faults,
     ai,
+    payments: createPaymentsControls(state),
     fetch: mockFetch,
     on(method, pattern, handler) {
       router.prepend(method, pattern, handler);

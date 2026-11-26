@@ -19,7 +19,8 @@ Unknown routes return `404 { code: 'QELOS_MOCK_NOT_IMPLEMENTED', message }`. Rou
 | `enabled` | Enable the mock (default `true` for `createMockQelos`). |
 | `dataDir` | Folder holding state JSON (`state/*.json`) and optional dump/pull artifacts. |
 | `persist` | Persist state to `dataDir/state` (default `true` when `dataDir` is set). Writes are debounced and atomic. |
-| `seed` | Inline `{ users, workspaces, personas, roles, blueprints, entities, configurations, blocks }`. |
+| `seed` | Inline `{ users, workspaces, personas, roles, blueprints, entities, configurations, blocks, pricingPlans, coupons, subscriptions, invoices, ... }`. |
+| `strictPermissions` | Treat calls without credentials (or with ones the mock never issued) as guests on data, content and agent routes. Default `false`. |
 | `defaultPersona` | Id or email of the auto-logged-in user (see [Authentication](#authentication-users-workspaces-and-permissions)). |
 | `auth` | `{ accessTokenTtlMs, refreshTokenTtlMs, cookieTokenTtlMs, personalWorkspace, defaultRole }` — token lifetimes (5h / 30d / 30d), create a personal workspace on sign-up (default `false`), role of new users (default `user`). |
 | `tenant` | `{ name, appUrl, ... }`. |
@@ -178,7 +179,9 @@ Entity routes, content writes and agent management resolve the caller in this or
 
 The blueprint `permissions` / `permissionScope` are then enforced like the real service: the `admin` role bypasses them, `user`/`workspace` scopes restrict which entities can be read or changed, and a blueprint without permissions is open to admins only. Content and agent writes need an admin.
 
-**Without any of the four, permissions are not enforced** (everything is allowed): no credentials at all, or ones the mock never issued, such as a made-up API token. The real service would treat that caller as a guest. The `authenticate` option replaces this whole resolution.
+**Without any of the four, permissions are not enforced** (everything is allowed): no credentials at all, or ones the mock never issued, such as a made-up API token. The real service treats that caller as a guest; `strictPermissions: true` does the same. The `authenticate` option replaces this whole resolution.
+
+An admin who sends `bypassAdmin` (body, `?bypassAdmin=true` or the `x-bypass-admin` header) is treated as a regular user on entity routes. The administrator SDK sends it by default.
 
 ### Other endpoints
 
@@ -192,10 +195,10 @@ The blueprint `permissions` / `permissionScope` are then enforced like the real 
 | Users (admin) | `GET /api/users[/stats\|/:id]`, `POST`, `PUT /:id`, `DELETE /:id`, `GET`/`POST /:id/encrypted` - admins only (`401` otherwise) |
 | Events | `GET /api/events` (filters `kind`, `eventName`, `source`, `user`, `workspace`, `search`, `from`/`to`, `page`/`limit`), `GET /api/events/:id`, `POST /api/events` (stored in memory) |
 | Lambdas | `/api/webhooks/:integrationId` - any method; answers the seed `lambdas` entry `{ integrationId, method?, response, status? }` or `{}` |
-| Payments | `GET /api/plans/public` and `/api/invoices` are empty; no plan or subscription exists |
+| Payments | plans, coupons, subscriptions, invoices, checkout and `/api/payments/configuration`, following the payments service; no provider is called - report results with `mock.payments.pay/fail/cancel` |
 | Secrets | never returned (`GET` is empty/404) and never stored |
 
-Writes made by admins/personas land in `mock.state`, so they persist when `dataDir` is set. The seed accepts `components`, `events`, `agents`, `aiResponses`, `lambdas` and `threads` in addition to the collections above.
+Writes made by admins/personas land in `mock.state`, so they persist when `dataDir` is set. The seed accepts `components`, `events`, `agents`, `aiResponses`, `lambdas`, `threads`, `pricingPlans`, `coupons`, `subscriptions` and `invoices` in addition to the collections above.
 
 ## State management API
 
@@ -207,6 +210,7 @@ Mounted under `/__qelos_mock__/` only when the mock is `enabled` (dev only, neve
 | `POST /__qelos_mock__/reset` | drop everything and reseed from the configured seed |
 | `POST /__qelos_mock__/seed` | body is a seed; documents are merged (upsert by `_id`) |
 | `PUT /__qelos_mock__/collections/:name` | replace a collection with the JSON array body; `:name` is a collection (`blocks`, `users`...) or `entities.<blueprint>` |
+| `POST /__qelos_mock__/payments/:subscriptionId/pay` | report a payment (`/fail`, `/cancel` too), like `mock.payments` |
 | `GET /__qelos_mock__/routes` | registered `{ method, path }` list |
 
 The same state is available programmatically as `mock.state` (`mock.state.entities.insert('todo', {...})`, `mock.state.seed(seed)`, `mock.state.reset()`, `await mock.state.flush()`).
@@ -231,7 +235,7 @@ For non-Node hosts (e.g. the Python FastAPI integrator) the package ships a
 minimal CLI that exposes the mock over HTTP:
 
 ```sh
-npx @qelos/testing serve --dir ./qelos-mock --port 4555   # --port 0 picks a free port; --host defaults to 127.0.0.1
+npx @qelos/testing serve --dir ./qelos-mock --port 4555   # --port 0 picks a free port; --host defaults to 127.0.0.1; --strict turns on strictPermissions
 ```
 
 It prints `QELOS_MOCK_READY http://<host>:<port>` once listening and answers

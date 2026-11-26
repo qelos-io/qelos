@@ -50,7 +50,11 @@ await expect(todos.update(mine.identifier, { title: 'changed' })).rejects.toThro
 ```
 
 - After `mock.faults.expireAccessTokens()` a signed-in user is a guest: data calls get only what guests may do.
-- A call with no credentials at all is not checked. Sign in or use a persona to test permissions.
+- A call with no credentials, or with ones the mock never issued (a made-up API token), is not checked. Pass
+  `strictPermissions: true` to treat such callers as guests, as production does.
+- An admin who sends `bypassAdmin` is treated as a regular user on data calls. **The administrator SDK sends it by
+  default**, so its `entities(...)` calls need a permission that names the `admin` role, here as in production. Pass
+  `extraQueryParams: () => ({})` to the SDK to keep the admin bypass.
 - `entitiesOf(...).remove()` returns the raw response and does not reject: check its `status`.
 
 ## Inspecting and resetting state
@@ -205,6 +209,42 @@ const stored = await user.ai.getThread(thread._id); // the question and the answ
 - The thread title is the start of the first user message. The real service writes one with the model.
 - Seed `threads` to start a test with existing history.
 - `limit` on `listThreads` is not applied, as in the service today.
+
+## Payments
+
+`sdk.payments` and the administrator SDK's `managePayments` work against the mock: plans, coupons, subscriptions,
+checkout, invoices and the payments configuration. There is no payment provider, so your test says what happened:
+
+```ts
+const { sdk, mock } = createMockSdk({
+  seed: {
+    personas,
+    pricingPlans: [{ _id: 'pro', name: 'Pro', monthlyPrice: 30, yearlyPrice: 300 }],
+    coupons: [{ code: 'HALF', discountType: 'percentage', discountValue: 50 }],
+  },
+  persona: 'user@example.com',
+});
+
+const { subscriptionId } = await sdk.payments.checkout({ planId: 'pro', billingCycle: 'monthly', couponCode: 'HALF' });
+await sdk.payments.getMySubscription();         // null: still pending
+
+mock.payments.pay(subscriptionId);              // the provider reports a successful payment
+await sdk.payments.getMySubscription();         // active
+await sdk.payments.getInvoices();               // one paid invoice, amount 15
+
+mock.payments.fail(subscriptionId);             // past_due
+mock.payments.cancel(subscriptionId);           // canceled
+```
+
+- `checkoutUrl` points at `checkout.qelos.mock`, which does not exist. Take the `subscriptionId` and call
+  `mock.payments`. With a served mock (e2e tests), use `POST /__qelos_mock__/payments/<subscriptionId>/pay`
+  (or `/fail`, `/cancel`).
+- Without a `payments-configuration` every checkout is accepted. Seed one in `configurations`, or set it with
+  `managePayments.updatePaymentsConfiguration`, to test a disabled or incomplete setup. Rules of a specific
+  provider (such as catalog price ids) are not checked.
+- Plans pulled with `qelos pull pricing-plans` are served as they are.
+- As in the service today, a non-admin with an **active workspace** can list the workspace's subscriptions and
+  invoices, but gets `403` on a single one (including its activity and cancelling it).
 
 ## Managing users
 

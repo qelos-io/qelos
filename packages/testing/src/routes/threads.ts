@@ -4,11 +4,9 @@ import { authenticate, type AuthContext } from '../auth/authenticate.js';
 import { isPrivilegedUser } from '../auth/accounts.js';
 import { isValidId } from '../state/ids.js';
 import { newThread, ownsThread } from '../ai/threads.js';
+import { wantsBypassAdmin } from './actor.js';
 
 /** `sdk.ai.threads`, following `apps/ai/server/controllers/threads.ts`. */
-
-const bypassAdmin = (ctx: RouteContext) =>
-  ctx.query.get('bypassAdmin') === 'true' || ['true', '1'].includes(ctx.request.headers.get('x-bypass-admin') ?? '');
 
 export function threadRoutes(router: Router, state: MockState) {
   const threads = () => state.collection('threads');
@@ -19,7 +17,7 @@ export function threadRoutes(router: Router, state: MockState) {
     const { threadId } = ctx.params;
     if (!isValidId(threadId)) return error('Valid thread ID is required', 400);
     const thread = threads().get(threadId);
-    const privileged = isPrivilegedUser(auth.user) && !bypassAdmin(ctx);
+    const privileged = isPrivilegedUser(auth.user) && !wantsBypassAdmin(ctx);
     if (!thread || (!privileged && !ownsThread(thread, auth))) return error('Thread not found', 404);
     return thread;
   }
@@ -38,7 +36,7 @@ export function threadRoutes(router: Router, state: MockState) {
   router.register('GET', '/api/ai/threads', (ctx) => {
     const auth = authenticate(ctx.request, state);
     if (!auth) return error('Authentication required', 401);
-    const privileged = isPrivilegedUser(auth.user) && !bypassAdmin(ctx);
+    const privileged = isPrivilegedUser(auth.user) && !wantsBypassAdmin(ctx);
     const wanted = (key: string, value: unknown) => !ctx.query.get(key) || ctx.query.get(key) === value;
     const list = threads().list((t) =>
       privileged
