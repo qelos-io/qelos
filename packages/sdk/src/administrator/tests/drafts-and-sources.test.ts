@@ -34,6 +34,16 @@ describe('QlDrafts', () => {
 });
 
 describe('QlIntegrationSources', () => {
+  test('create accepts a source built apart from the call, with any text as its kind or none', async () => {
+    const { requests, options } = recording({});
+    const sources = new QlIntegrationSources(options);
+    const built = { kind: 'openai', name: 'ai', labels: [], metadata: {}, authentication: {} };
+    const { kind: _, ...withoutKind } = built;
+    await sources.create(built);
+    await sources.create(withoutKind);
+    assert.deepEqual(requests.map((r) => JSON.parse(r.body!).kind), ['openai', undefined]);
+  });
+
   test('create takes the kind of the source and sends it', async () => {
     const { requests, options } = recording({});
     await new QlIntegrationSources(options).create({
