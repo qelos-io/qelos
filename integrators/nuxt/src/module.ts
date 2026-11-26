@@ -25,7 +25,7 @@ export interface QelosNuxtModuleOptions extends QelosNuxtRuntimeConfig {
 // makes tsc's declaration-portability check for the exported module non-deterministic
 // across runs. `any` sidesteps needing to name a cross-package type for the export;
 // runtime behavior is unaffected and is verified against real Nuxt 3 and 4 projects by
-// test/module-smoke.test.ts.
+// e2e/packaging/next-nuxt.e2e.test.ts (at the repository root).
 const qelosNuxtModule: any = defineNuxtModule<QelosNuxtModuleOptions>({
   meta: {
     name: '@qelos/integrator-nuxt',

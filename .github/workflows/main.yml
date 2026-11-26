@@ -35,9 +35,6 @@ jobs:
       - name: Packaging e2e (packed SDK installed in a clean project)
         run: pnpm -F e2e test:packaging
 
-      - name: Nuxt integrator compatibility smoke tests
-        run: pnpm --filter @qelos/integrator-nuxt test:smoke
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
