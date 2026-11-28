@@ -160,7 +160,8 @@
     "test": "node --import tsx --test \"test/**/*.test.ts\" \"src/**/*.test.ts\"",
     "type-check": "tsc --noEmit",
     "build": "npm run type-check && node scripts/build.mjs",
-    "pre-build": "pnpm run type-check && node scripts/build.mjs"
+    "pre-build": "pnpm run type-check && node scripts/build.mjs",
+    "prebuildOnly": "pnpm pre-build"    
   },
   "author": "David Meir-Levy <davidmeirlevy@gmail.com>",
   "license": "MIT",

@@ -5,7 +5,7 @@
   "scripts": {
     "install:prod-only": "pnpm install --prod",
     "prebuild": "pnpm -r run pre-build",
-    "build": "pnpm -r --parallel --stream run build",
+    "build": "pnpm -r --stream run build",
     "clean": "pnpm -r exec -- rm -rf node_modules",
     "dev:run": "pnpm -r run db && pnpm -r --parallel --stream run dev",
     "dev": "env-cmd pnpm run dev:run",
