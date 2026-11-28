@@ -1,6 +1,6 @@
 {
   "name": "@qelos/integrator-nuxt",
-  "version": "4.4.0",
+  "version": "4.5.1",
   "type": "module",
   "description": "Nuxt integrator for Qelos: server middleware/module that identifies the user and workspace from the Qelos SDK before your handlers run.",
   "main": "./dist/module.js",
@@ -59,9 +59,9 @@
     "node": ">=18"
   },
   "peerDependencies": {
+    "@qelos/testing": "workspace:^",
     "h3": "^1.0.0",
-    "nuxt": "^3.0.0 || ^4.0.0",
-    "@qelos/testing": "workspace:^"
+    "nuxt": "^3.0.0 || ^4.0.0"
   },
   "peerDependenciesMeta": {
     "nuxt": {
@@ -77,10 +77,10 @@
   "devDependencies": {
     "@nuxt/kit": "^3.13.0 || ^4.0.0",
     "@nuxt/schema": "^3.13.0 || ^4.0.0",
+    "@qelos/testing": "workspace:*",
     "h3": "^1.13.0",
     "nuxt": "^4.0.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.4.5",
-    "@qelos/testing": "workspace:*"
+    "typescript": "^5.4.5"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@qelos/testing",
-  "version": "4.4.0",
+  "version": "4.5.1",
   "description": "Testing suite for apps using the Qelos SDK or integrators: a local in-memory Qelos API for development, integration tests and CI",
   "type": "module",
   "main": "./dist/cjs/index.js",
