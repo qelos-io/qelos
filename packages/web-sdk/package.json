@@ -1,6 +1,6 @@
 {
   "name": "@qelos/web-sdk",
-  "version": "4.5.0",
+  "version": "4.5.1",
   "description": "Frontend Web SDK for Qelos API",
   "main": "./dist/cjs/index.js",
   "module": "./dist/index.js",
