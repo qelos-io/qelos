@@ -1,6 +1,6 @@
 {
   "name": "@qelos/integrator-fastify",
-  "version": "4.4.0",
+  "version": "4.5.0",
   "description": "Fastify plugin that identifies the Qelos user and active workspace before your route handlers run",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -48,8 +48,8 @@
     "node": ">=18"
   },
   "peerDependencies": {
-    "fastify": "^4.0.0 || ^5.0.0",
-    "@qelos/testing": "workspace:^"
+    "@qelos/testing": "workspace:^",
+    "fastify": "^4.0.0 || ^5.0.0"
   },
   "peerDependenciesMeta": {
     "fastify": {
@@ -65,10 +65,10 @@
     "fastify-plugin": "^4.5.1 || ^5.0.0"
   },
   "devDependencies": {
+    "@qelos/testing": "workspace:*",
     "fastify": "~4.15.0",
     "fastify-v5": "npm:fastify@^5.0.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.6.3",
-    "@qelos/testing": "workspace:*"
+    "typescript": "^5.6.3"
   }
 }
